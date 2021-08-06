@@ -88,7 +88,8 @@ get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *st
         ++value_end;
       }
       PluginDebug("Decoding JWS: %.*s", (int)(key_end - key), key);
-      cjose_err err    = {0};
+      cjose_err err;
+      memset(&err, 0, sizeof(cjose_err));
       cjose_jws_t *jws = cjose_jws_import(value, (size_t)(value_end - value), &err);
       if (!jws) {
         PluginDebug("Unable to read JWS: %.*s, %s", (int)(key_end - key), key, err.message ? err.message : "");
@@ -106,7 +107,7 @@ get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *st
         if (value_end != end && strchr(sub_delim_string, *value_end)) {
           /*Strip from first char of package name to sub-delimeter that terminates the signed JWT */
           memcpy(strip_uri, uri, (key - uri));
-          memcpy(strip_uri + (key - uri), value_end + 1, (end - value_end + 1));
+          memcpy(strip_uri + (key - uri), value_end + 1, end - value_end - 1);
         } else {
           /*Strip from reserved char to the last char of the JWT */
           memcpy(strip_uri, uri, (key - uri - 1));
@@ -135,7 +136,8 @@ get_jws_from_cookie(const char **cookie, size_t *cookie_ct, const char *paramNam
   if (!value || !value_ct) {
     return NULL;
   }
-  cjose_err err    = {0};
+  cjose_err err;
+  memset(&err, 0, sizeof(cjose_err));
   cjose_jws_t *jws = cjose_jws_import(value, value_ct, &err);
   if (!jws) {
     PluginDebug("Unable to read JWS: %.*s, %s", (int)value_ct, value, err.message ? err.message : "");
@@ -160,7 +162,8 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
   } while (0)
 
   PluginDebug("Validating JWS for %16p", jws);
-  cjose_err cerr = {0};
+  cjose_err cerr;
+  memset(&cerr, 0, sizeof(cjose_err));
   size_t pt_ct;
   const char *pt;
   if (!cjose_jws_get_plaintext(jws, (uint8_t **)&pt, &pt_ct, &cerr)) {
@@ -170,8 +173,9 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
 
   TimerDebug("getting jws plaintext");
 
-  json_error_t jerr = {0};
-  struct jwt *jwt   = parse_jwt(json_loadb(pt, pt_ct, 0, &jerr));
+  json_error_t jerr;
+  memset(&jerr, 0, sizeof(json_error_t));
+  struct jwt *jwt = parse_jwt(json_loadb(pt, pt_ct, 0, &jerr));
   TimerDebug("parsing jwt");
   if (!jwt) {
     if (jerr.text[0]) {
