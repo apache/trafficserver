@@ -42,6 +42,20 @@ static void ts_lua_init_globals(lua_State *L);
 static void ts_lua_inject_ts_api(lua_State *L);
 static ts_lua_ctx_stats *ts_lua_create_ctx_stats();
 static void ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats);
+static void ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx);
+
+/**
+   Update http_ctx->server_response_hdrp if there.
+
+   This is required in the beginning of toughing response, because holding old pointer could be freed by core.
+ */
+void
+ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx)
+{
+  if (http_ctx->server_response_hdrp) {
+    TSHttpTxnServerRespGet(http_ctx->txnp, &http_ctx->server_response_bufp, &http_ctx->server_response_hdrp);
+  }
+}
 
 int
 ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
@@ -913,6 +927,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    ts_lua_update_server_response_hdrp(http_ctx);
 
     lua_getglobal(L, TS_LUA_FUNCTION_READ_RESPONSE);
 
@@ -993,6 +1008,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
+    ts_lua_update_server_response_hdrp(http_ctx);
+
     lua_getglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       if (lua_pcall(L, 0, 1, 0)) {
