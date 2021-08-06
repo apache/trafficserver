@@ -45,9 +45,11 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     int expected_result;
     int expected_bytes_consumed;
   };
-  static const std::array<Test, 21> tests = {{
+  static const std::array<Test, 23> tests = {{
     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
+    {"GET /index.html HTTP/1.0\r\na\rb\n", PARSE_RESULT_ERROR, 28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r \n", PARSE_RESULT_ERROR, 45},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
     {"GET", PARSE_RESULT_ERROR, 3},
     {"GET /index.html", PARSE_RESULT_ERROR, 15},
