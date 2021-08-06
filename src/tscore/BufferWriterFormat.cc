@@ -900,8 +900,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
     if (e._e < 0) {
       w.write(InkStrerror(-e._e));
     } else {
-      w.write(short_name(e._e));
-      w.write(strerror(e._e));
+      if (spec._ext.empty() || spec._ext.find('s')) {
+        w.write(short_name(e._e));
+      }
+      if (spec._ext.empty() || spec._ext.find('l')) {
+        w.write(strerror(e._e));
+      }
     }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');

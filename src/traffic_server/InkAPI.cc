@@ -8669,6 +8669,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_max_retries_dead_server, conv);
     break;
+  case TS_CONFIG_HTTP_CONNECT_DEAD_POLICY:
+    ret = _memberp_to_generic(&overridableHttpConfig->connect_dead_policy, conv);
+    break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_rr_retries, conv);
     break;

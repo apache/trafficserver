@@ -349,6 +349,8 @@ enum {
   http_origin_shutdown_cleanup_entry,
   http_origin_shutdown_tunnel_abort,
 
+  http_dead_server_no_requests,
+
   http_stat_count
 };
 
@@ -651,6 +653,8 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_rr_retries              = 3;
   MgmtInt connect_attempts_timeout                 = 30;
   MgmtInt post_connect_attempts_timeout            = 1800;
+
+  MgmtInt connect_dead_policy = 2;
 
   ////////////////////////////////////
   // parent proxy connect attempts //
