@@ -50,6 +50,19 @@ br
 -
 br
 -
+X-Au-Test: www.ae-3.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
 X-Au-Test: www.no-oride.com
 ACCEPT-ENCODING MISSING
 -
@@ -101,4 +114,17 @@ br
 br
 -
 br
+-
+X-Au-Test: www.ae-3.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
 -

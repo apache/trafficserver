@@ -1894,6 +1894,8 @@ Proxy User Variables
          *blank* (for any header that does not include ``gzip``)
    ``2`` ``Accept-Encoding: br`` if the header has ``br`` (with any ``q``) **ELSE**
          normalize as for value ``1``
+   ``3`` ``Accept-Encoding: br, gzip`` (if the header has ``br`` and ``gzip`` (with any ``q`` for either) then ``br, gzip``) **ELSE**
+         normalize as for value ``2``
    ===== ======================================================================
 
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``).

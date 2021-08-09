@@ -1235,6 +1235,22 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
           header->field_delete(ae_field);
           Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br Accept-Encoding");
         }
+      } else if (normalize_ae == 3) {
+        // Force Accept-Encoding header to br,gzip, or br, or gzip, or no header.
+        if (HttpTransactCache::match_content_encoding(ae_field, "br") &&
+            HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
+          header->field_value_set(ae_field, "br, gzip", 8);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
+        } else if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
+          header->field_value_set(ae_field, "br", 2);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
+        } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
+          header->field_value_set(ae_field, "gzip", 4);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+        } else {
+          header->field_delete(ae_field);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br non-gzip Accept-Encoding");
+        }
       } else {
         static bool logged = false;
 

@@ -69,6 +69,10 @@ def baselineTsSetup(ts):
         'map http://www.ae-2.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
         ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2'
     )
+    ts.Disk.remap_config.AddLine(
+        'map http://www.ae-3.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
+        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3'
+    )
 
 
 baselineTsSetup(ts)
@@ -130,6 +134,7 @@ def perTsTest(shouldWaitForUServer, ts):
     allAEHdrs(False, False, ts, 'www.ae-0.com')
     allAEHdrs(False, False, ts, 'www.ae-1.com')
     allAEHdrs(False, False, ts, 'www.ae-2.com')
+    allAEHdrs(False, False, ts, 'www.ae-3.com')
 
 
 perTsTest(True, ts)
