@@ -219,6 +219,12 @@ Machine::is_self(std::string_view name)
 }
 
 bool
+Machine::is_self(char const *name)
+{
+  return this->is_self(std::string(name));
+}
+
+bool
 Machine::is_self(IpAddr const &ipaddr)
 {
   return machine_id_ipaddrs.end() != machine_id_ipaddrs.find(ipaddr);
