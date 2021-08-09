@@ -381,6 +381,7 @@ Changes with Apache Traffic Server 9.1.0
   #8004 - Fix HPACK eviction iterator manipulation
   #8005 - Updates to webp_transform to convert webp to jpeg
   #8021 - rate_limit: Add a global hook to rate limit concurrent connections based on SNI
+  #8031 - Add the origin IP to the error message for invalid server response in OSDNSLookup
   #8058 - Replace assert with warning in error event processing
   #8070 - Finishes #/7748 with some additional cleanup
   #8074 - Make the InkAPI mHandleAllocator be a Proxy Allocator
