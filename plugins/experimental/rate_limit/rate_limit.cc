@@ -17,6 +17,7 @@
  */
 #include <unistd.h>
 #include <cstdlib>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
