@@ -77,6 +77,7 @@ struct Machine {
   /// @return The global instance of this class.
   static self_type *instance();
   bool is_self(std::string_view name);
+  bool is_self(char const *name);
   bool is_self(std::string const &name);
   bool is_self(IpAddr const &ipaddr);
   bool is_self(struct sockaddr const *addr);
