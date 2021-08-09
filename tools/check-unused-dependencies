@@ -53,7 +53,8 @@ def get_dependencies(program):
                     'libdl.so.',      # Because we add -ldl to LIBS
                     'libgcc_s.so.',
                     'libm.so.',       # Why does Libtool call ld with -lm?
-                    'libpthread.so.'  # Because we add -lpthread to LIBS
+                    'libpthread.so.', # Because we add -lpthread to LIBS
+                    'librt.so.'       # clang + asan pulls this in
                 ])):
             continue
 
