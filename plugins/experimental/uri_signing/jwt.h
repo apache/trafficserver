@@ -22,6 +22,7 @@
 #include <jansson.h>
 
 struct jwt {
+  json_t *raw;
   const char *iss;
   const char *sub;
   json_t *aud;
