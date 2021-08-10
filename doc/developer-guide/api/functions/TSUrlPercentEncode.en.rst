@@ -65,7 +65,7 @@ length of the source *not* including the null. E.g. ::
    size_t length; // return value.
    // sizeof(ORIGINAL) includes the null, so don't include that in the input.
    static const size_t N_CHARS = sizeof(ORIGINAL) - 1;
-   TSReturnCode result = TSUrlPercentDecode(source, N_CHARS, source, N_CHARS + 1, &length);
+   TSReturnCode result = TSStringPercentDecode(source, N_CHARS, source, N_CHARS + 1, &length);
    ink_assert(length == N_CHARS);
 
 Return Values
