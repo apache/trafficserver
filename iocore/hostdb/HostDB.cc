@@ -2328,7 +2328,11 @@ struct HostDBRegressionContinuation : public Continuation {
       // since this is a lookup done, data is either hostdbInfo or nullptr
       if (r) {
         rprintf(test, "hostdbinfo r=%x\n", r);
-        rprintf(test, "hostdbinfo hostname=%s\n", r->perm_hostname());
+        char const *hname = r->perm_hostname();
+        if (nullptr == hname) {
+          hname = "(null)";
+        }
+        rprintf(test, "hostdbinfo hostname=%s\n", hname);
         rprintf(test, "hostdbinfo rr %x\n", r->rr());
         // If RR, print all of the enclosed records
         if (r->rr()) {
