@@ -56,7 +56,7 @@ ts_lua_inject_server_response_api(lua_State *L)
   lua_newtable(L);
 
   ts_lua_inject_server_response_header_api(L);
-  ts_lua_inject_client_request_header_table_api(L);
+  ts_lua_inject_server_response_header_table_api(L);
   ts_lua_inject_server_response_headers_api(L);
   ts_lua_inject_server_response_misc_api(L);
 
