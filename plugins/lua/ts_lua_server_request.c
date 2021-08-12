@@ -92,7 +92,7 @@ ts_lua_inject_server_request_api(lua_State *L)
 
   ts_lua_inject_server_request_socket_api(L);
   ts_lua_inject_server_request_header_api(L);
-  ts_lua_inject_client_request_header_table_api(L);
+  ts_lua_inject_server_request_header_table_api(L);
   ts_lua_inject_server_request_headers_api(L);
   ts_lua_inject_server_request_get_header_size_api(L);
   ts_lua_inject_server_request_get_body_size_api(L);
