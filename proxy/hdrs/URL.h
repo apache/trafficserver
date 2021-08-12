@@ -190,17 +190,28 @@ void url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash);
 const char *url_scheme_set(HdrHeap *heap, URLImpl *url, const char *value, int value_wks_idx, int length, bool copy_string);
 
 /* Internet specific */
+const char *url_user_get(URLImpl *url, int *length);
+const char *url_password_get(URLImpl *url, int *length);
+const char *url_host_get(URLImpl *url, int *length);
+int url_port_get(URLImpl *url);
 void url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_port_set(HdrHeap *heap, URLImpl *url, unsigned int port);
 
 /* HTTP specific */
+const char *url_path_get(URLImpl *url, int *length);
 void url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
-void url_type_set(URLImpl *url, unsigned int type);
+int url_type_get(URLImpl *url);
+void url_type_set(URLImpl *url, int type);
+int url_type_code_get(URLImpl *url);
+void url_type_code_set(URLImpl *url, unsigned int typecode);
 
 /* HTTP specific */
+const char *url_params_get(URLImpl *url, int *length);
+const char *url_query_get(URLImpl *url, int *length);
+const char *url_fragment_get(URLImpl *url, int *length);
 void url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
@@ -285,8 +296,8 @@ public:
   const char *path_get(int *length);
   void path_set(const char *value, int length);
 
-  int type_get();
-  void type_set(int type);
+  int type_code_get();
+  void type_code_set(int type);
 
   const char *params_get(int *length);
   void params_set(const char *value, int length);
@@ -543,8 +554,7 @@ inline const char *
 URL::user_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_user;
-  return m_url_impl->m_ptr_user;
+  return url_user_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -564,8 +574,7 @@ inline const char *
 URL::password_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_password;
-  return m_url_impl->m_ptr_password;
+  return url_password_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -585,8 +594,7 @@ inline const char *
 URL::host_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_host;
-  return m_url_impl->m_ptr_host;
+  return url_host_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -606,7 +614,7 @@ inline int
 URL::port_get() const
 {
   ink_assert(valid());
-  return url_canonicalize_port(m_url_impl->m_url_type, m_url_impl->m_port);
+  return url_canonicalize_port(url_type_get(m_url_impl), url_port_get(m_url_impl));
 }
 
 /*-------------------------------------------------------------------------
@@ -616,7 +624,7 @@ inline int
 URL::port_get_raw() const
 {
   ink_assert(valid());
-  return m_url_impl->m_port;
+  return url_port_get(m_url_impl);
 }
 
 /*-------------------------------------------------------------------------
@@ -636,8 +644,7 @@ inline const char *
 URL::path_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_path;
-  return m_url_impl->m_ptr_path;
+  return url_path_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -654,20 +661,20 @@ URL::path_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline int
-URL::type_get()
+URL::type_code_get()
 {
   ink_assert(valid());
-  return m_url_impl->m_type_code;
+  return url_type_code_get(m_url_impl);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::type_set(int type)
+URL::type_code_set(int typecode)
 {
   ink_assert(valid());
-  url_type_set(m_url_impl, type);
+  url_type_code_set(m_url_impl, typecode);
 }
 
 /*-------------------------------------------------------------------------
@@ -677,8 +684,7 @@ inline const char *
 URL::params_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_params;
-  return m_url_impl->m_ptr_params;
+  return url_params_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -698,8 +704,7 @@ inline const char *
 URL::query_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_query;
-  return m_url_impl->m_ptr_query;
+  return url_query_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------
@@ -719,8 +724,7 @@ inline const char *
 URL::fragment_get(int *length)
 {
   ink_assert(valid());
-  *length = m_url_impl->m_len_fragment;
-  return m_url_impl->m_ptr_fragment;
+  return url_fragment_get(m_url_impl, length);
 }
 
 /*-------------------------------------------------------------------------

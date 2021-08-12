@@ -543,7 +543,17 @@ url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, boo
   -------------------------------------------------------------------------*/
 
 void
-url_type_set(URLImpl *url, unsigned int typecode)
+url_type_set(URLImpl *url, int type)
+{
+  url_called_set(url);
+  url->m_url_type = type;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+void
+url_type_code_set(URLImpl *url, unsigned int typecode)
 {
   url_called_set(url);
   url->m_type_code = typecode;
@@ -752,6 +762,15 @@ url_fragment_get(URLImpl *url, int *length)
 
 int
 url_type_get(URLImpl *url)
+{
+  return url->m_url_type;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+url_type_code_get(URLImpl *url)
 {
   return url->m_type_code;
 }
