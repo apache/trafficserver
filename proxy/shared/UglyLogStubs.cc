@@ -25,6 +25,7 @@
 // TODO: Clean up the dependency mess, and get rid of this.
 
 #include "tscore/ink_platform.h"
+#include "tscore/ink_uuid.h"
 #include "LogObject.h"
 
 #if defined(solaris)
@@ -66,30 +67,21 @@ ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
 }
 
 struct Machine {
-  Machine();
-  ~Machine();
+  IpEndpoint ip;
+  IpEndpoint ip4;
+  IpEndpoint ip6;
+
+  std::string host_name{"test.host.com"};
+  std::string ip_hex_string;
+  ATSUuid uuid;
+
   static Machine *instance();
-  char *hostname = nullptr;
-
-private:
-  static Machine _instance;
 };
-
-Machine Machine::_instance;
-
-Machine::Machine()
-{
-  hostname = ats_strdup("test.host.com");
-}
-
-Machine::~Machine()
-{
-  ats_free(hostname);
-}
 
 Machine *
 Machine::instance()
 {
+  static Machine _instance;
   return &_instance;
 }
 
