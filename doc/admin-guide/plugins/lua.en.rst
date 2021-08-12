@@ -887,6 +887,16 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.header_table
+------------------------------
+**syntax:** *VALUE = ts.client_request.header_table[HEADER]*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** get the current client request's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.get_headers
 -----------------------------
 **syntax:** *ts.client_request.get_headers()*
@@ -1498,6 +1508,16 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.cached_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.cached_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point or later
+
+**description:** get the current cached response's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.cached_response.get_headers
 ------------------------------
 **syntax:** *ts.cached_response.get_headers()*
@@ -1703,6 +1723,16 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 
 ``Mozilla/5.0``
 
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.header_table
+------------------------------
+**syntax:** *VALUE = ts.server_request.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** get the current server request's HEADER as a table.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -2381,6 +2411,16 @@ We will get the output:
 
 :ref:`TOP <admin-plugins-ts-lua>`'
 
+ts.server_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.server_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** get the current server response's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.get_headers
 ------------------------------
 **syntax:** *ts.server_response.get_headers()*
@@ -2528,6 +2568,35 @@ Here is an example:
 We will get the output:
 
 ``text/html``
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.client_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point.
+
+**description:** get the current client response's HEADER as a table.
+
+Here is an example:
+
+::
+
+    function send_response()
+        hdrs = ts.client_response.header_table['Set-Cookie']
+        for k, v in pairs(hdrs) do
+            ts.debug(k..': '..v)
+        end
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+        return 0
+    end
+
+If there are multiple 'Set-Cookie' response header, they will be printed as debug message.
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
