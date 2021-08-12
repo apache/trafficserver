@@ -134,6 +134,7 @@ def expand(template):
             for cdr in expand(template[1:]):
                 yield car + cdr
 
+
 def gen_events():
     for template in gen_templates():
         for events in expand(template):

@@ -23,6 +23,7 @@ noinst_LTLIBRARIES = libyamlcpp.la
 
 libyamlcpp_la_SOURCES = src/binary.cpp \
 src/convert.cpp \
+src/depthguard.cpp \
 src/directives.cpp \
 src/emit.cpp \
 src/emitfromevents.cpp \
@@ -62,4 +63,4 @@ yamlcpp_node_include_HEADERS = \
 yamlcpp_node_detail_includedir=$(includedir)/yaml-cpp/node/detail
 yamlcpp_node_detail_include_HEADERS = \
 	$(srcdir)/include/yaml-cpp/node/detail/*.h
-	
+
