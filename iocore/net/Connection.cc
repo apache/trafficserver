@@ -266,6 +266,17 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 #endif
 
+  if (opt.f_mptcp) {
+#if MPTCP_ENABLED
+    if (safe_setsockopt(fd, IPPROTO_TCP, MPTCP_ENABLED, SOCKOPT_ON, sizeof(int)) < 0) {
+      Error("[Server::listen] Unable to enable MPTCP socket-option [%d] %s\n", errno, strerror(errno));
+      goto Lerror;
+    }
+#else
+    Error("[Server::listen] Multipath TCP requested but not configured on this host\n");
+#endif
+  }
+
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
