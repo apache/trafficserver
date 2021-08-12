@@ -472,7 +472,7 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   crt = &ci->routine;
   L   = crt->lua;
 
-  // find out if need to resumt luaVM before async item cleanup
+  // find out if need to resume luaVM before async item cleanup
   if (ai->data != NULL) {
     resume = 1;
   } else {
