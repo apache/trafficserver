@@ -119,4 +119,8 @@ private:
   ResourceIDs _ids        = RSRC_NONE;
   OperModifiers _opermods = OPER_NONE;
   bool _last              = false;
+
+  // Regex conditional and pattern values
+  std::string _regex_cond;
+  std::string _regex_pat;
 };

@@ -23,6 +23,7 @@
 
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "ts/ts.h"
 
@@ -47,7 +48,7 @@ public:
   Value(const Value &) = delete;
   void operator=(const Value &) = delete;
 
-  void set_value(const std::string &val);
+  void set_value(const std::string &val, Parser &p);
 
   void
   append_value(std::string &s, const Resources &res) const
@@ -58,6 +59,11 @@ public:
       }
     } else {
       s += _value;
+    }
+    if (s.find("$") != std::string::npos && _regex_cond != nullptr) {
+      std::string _regex_cond_exp;
+      _regex_cond->append_value(_regex_cond_exp, res);
+      s = std::regex_replace(_regex_cond_exp, std::regex(_regex_pat), s);
     }
   }
 
@@ -96,4 +102,6 @@ private:
   double _float_value = 0.0;
   std::string _value;
   std::vector<Condition *> _cond_vals;
+  Condition *_regex_cond = nullptr;
+  std::string _regex_pat = "";
 };

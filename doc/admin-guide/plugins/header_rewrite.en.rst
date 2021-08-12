@@ -858,6 +858,22 @@ change just the hostname via::
   cond %{HEADER:X-Mobile} = "foo"
   set-destination HOST foo.mobile.bar.com [L]
 
+Regex Substitutions
+-------------------
+
+As mentioned above, regex operands are available to match a condition's provided value against
+a regular expression. The substitution elements from these conditional replacement patterns
+can be used in operators within the same header rewriting rule.
+
+For example, ``$ number`` can be used to capture the number group in the replacement
+string defined in the conditional::
+
+   cond %{HEADER:Location} /foo.com([^\/]*)(.*)/
+      set-header Location-Sub foo.com$2
+
+With ``%{HEADER:Location}`` set as ``foo.com:8080/bar``, the following configuration will match
+the captured groups and set the replacement string in header Location-Sub as ``foo.com/bar``
+
 Requests vs. Responses
 ======================
 

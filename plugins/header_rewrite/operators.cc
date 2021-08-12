@@ -35,7 +35,7 @@ OperatorSetConfig::initialize(Parser &p)
   _config = p.get_arg();
 
   if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
-    _value.set_value(p.get_value());
+    _value.set_value(p.get_value(), p);
   } else {
     _key = TS_CONFIG_NULL;
     TSError("[%s] no such records config: %s", PLUGIN_NAME, _config.c_str());
@@ -75,7 +75,7 @@ OperatorSetStatus::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg());
+  _status.set_value(p.get_arg(), p);
 
   if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
@@ -126,7 +126,7 @@ OperatorSetStatusReason::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _reason.set_value(p.get_arg());
+  _reason.set_value(p.get_arg(), p);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
@@ -159,7 +159,7 @@ OperatorSetDestination::initialize(Parser &p)
   Operator::initialize(p);
 
   _url_qual = parse_url_qualifier(p.get_arg());
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), p);
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
@@ -338,8 +338,8 @@ OperatorSetRedirect::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg());
-  _location.set_value(p.get_value());
+  _status.set_value(p.get_arg(), p);
+  _location.set_value(p.get_value(), p);
   auto status = _status.get_int_value();
   if (status < 300 || status > 399 || status == TS_HTTP_STATUS_NOT_MODIFIED) {
     TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, status);
@@ -515,7 +515,7 @@ OperatorSetTimeoutOut::initialize(Parser &p)
     TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
-  _timeout.set_value(p.get_value());
+  _timeout.set_value(p.get_value(), p);
 }
 
 void
@@ -590,7 +590,7 @@ OperatorAddHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), p);
 }
 
 void
@@ -626,7 +626,7 @@ OperatorSetHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), p);
 }
 
 void
@@ -753,7 +753,7 @@ void
 OperatorAddCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), p);
 }
 
 void
@@ -798,7 +798,7 @@ void
 OperatorSetCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value());
+  _value.set_value(p.get_value(), p);
 }
 
 void
@@ -935,7 +935,7 @@ OperatorSetConnDSCP::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg());
+  _ds_value.set_value(p.get_arg(), p);
 }
 
 void
@@ -961,7 +961,7 @@ OperatorSetConnMark::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg());
+  _ds_value.set_value(p.get_arg(), p);
 }
 
 void

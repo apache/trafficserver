@@ -99,10 +99,10 @@ class BodyBufferTest:
         })
 
         self._ts.Streams.stderr = Testers.ContainsExpression(
-            rf"request_buffer_plugin gets the request body with length\[{self.content_length_size}\]",
+            rfr"request_buffer_plugin gets the request body with length\[{self.content_length_size}\]",
             "Verify that the plugin parsed the content-length request body data.")
         self._ts.Streams.stderr += Testers.ContainsExpression(
-            rf"request_buffer_plugin gets the request body with length\[{self.encoded_chunked_size}\]",
+            rfr"request_buffer_plugin gets the request body with length\[{self.encoded_chunked_size}\]",
             "Verify that the plugin parsed the chunked request body.")
 
     def run(self):

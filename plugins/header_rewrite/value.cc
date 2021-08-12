@@ -39,7 +39,7 @@ Value::~Value()
 }
 
 void
-Value::set_value(const std::string &val)
+Value::set_value(const std::string &val, Parser &p)
 {
   _value = val;
 
@@ -63,6 +63,10 @@ Value::set_value(const std::string &val)
           }
         }
       } else {
+        if (token.find("$") != std::string::npos && p.get_regex_cond().length() > 0) {
+          _regex_cond = condition_factory(p.get_regex_cond());
+          _regex_pat  = p.get_regex_pat();
+        }
         tcond_val = new ConditionStringLiteral(token);
       }
 
@@ -70,6 +74,9 @@ Value::set_value(const std::string &val)
         _cond_vals.push_back(tcond_val);
       }
     }
+  } else if (_value.find("$") != std::string::npos && p.get_regex_cond().length() > 0) {
+    _regex_cond = condition_factory(p.get_regex_cond());
+    _regex_pat  = p.get_regex_pat();
   } else {
     _int_value   = strtol(_value.c_str(), nullptr, 10);
     _float_value = strtod(_value.c_str(), nullptr);
