@@ -28,45 +28,49 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <unistd.h>
 #include <ts/ts.h>
 
-// This gets the PRI*64 types
-#define __STDC_FORMAT_MACROS 1
-#include <inttypes.h>
+#include <string>
+#include <string_view>
 
-#define PLUGIN_NAME "txn_data_sink"
-#define PCP "[" PLUGIN_NAME "] "
+namespace
+{
+constexpr char const *PLUGIN_NAME = "txn_data_sink";
 
-// Activate the data sink if this field is present in the request.
-static const char FLAG_MIME_FIELD[] = "TS-Agent";
-static size_t const FLAG_MIME_LEN   = sizeof(FLAG_MIME_FIELD) - 1;
+/** Activate the data sink if this header field is present in the request. */
+std::string_view FLAG_HEADER_FIELD = "TS-Agent";
 
-typedef struct {
-  int64_t total;
-} SinkData;
+/** The sink data for a transaction. */
+struct SinkData {
+  /** The bytes for the response body streamed in from the sink.
+   *
+   * @note This example plugin buffers the body which is useful for the
+   * associated Autest. In most production scenarios the user will want to
+   * interact with the body as a stream rather than buffering the entire body
+   * for each transaction.
+   */
+  std::string body_bytes;
+};
 
 // This serves to consume all the data that arrives. If it's not consumed the tunnel gets stalled
 // and the transaction doesn't complete. Other things could be done with the data, accessible via
 // the IO buffer @a reader, such as writing it to disk to make an externally accessible copy.
-static int
+int
 client_reader(TSCont contp, TSEvent event, void *edata)
 {
-  SinkData *data = TSContDataGet(contp);
+  SinkData *data = static_cast<SinkData *>(TSContDataGet(contp));
 
   // If we got closed, we're done.
   if (TSVConnClosedGet(contp)) {
-    TSfree(data);
+    delete data;
     TSContDestroy(contp);
     return 0;
   }
 
   TSVIO input_vio = TSVConnWriteVIOGet(contp);
 
-  if (!data) {
-    data        = TSmalloc(sizeof(SinkData));
-    data->total = 0;
+  if (data == nullptr) {
+    data = new SinkData;
     TSContDataSet(contp, data);
   }
 
@@ -81,25 +85,28 @@ client_reader(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_IMMEDIATE:
     TSDebug(PLUGIN_NAME, "Data event - %s", event == TS_EVENT_IMMEDIATE ? "IMMEDIATE" : "READ_READY");
-    // Look for data and if we find any, consume.
+    // Look for data and if we find any, consume it.
     if (TSVIOBufferGet(input_vio)) {
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
-      int64_t n               = TSIOBufferReaderAvail(reader);
+      size_t const n          = TSIOBufferReaderAvail(reader);
       if (n > 0) {
+        auto const offset = data->body_bytes.size();
+        data->body_bytes.resize(offset + n);
+        TSIOBufferReaderCopy(reader, data->body_bytes.data() + offset, n);
+
         TSIOBufferReaderConsume(reader, n);
         TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
-        data->total += n; // internal accounting so we can print the value at the end.
-        TSDebug(PLUGIN_NAME, "Consumed %" PRId64 " bytes", n);
+        TSDebug(PLUGIN_NAME, "Consumed %zd bytes", n);
       }
       if (TSVIONTodoGet(input_vio) > 0) {
-        // signal that we can accept more data.
+        // Signal that we can accept more data.
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
       } else {
-        TSDebug(PLUGIN_NAME, "send WRITE_COMPLETE");
+        TSDebug(PLUGIN_NAME, "Consumed the following body: \"%.*s\"", (int)data->body_bytes.size(), data->body_bytes.data());
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
       }
-    } else { // buffer gone, we're done.
-      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %" PRId64 " bytes", data->total);
+    } else { // The buffer is gone so we're done.
+      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %zd bytes", data->body_bytes.size());
     }
     break;
   default:
@@ -110,7 +117,7 @@ client_reader(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-static int
+int
 enable_agent_check(TSHttpTxn txnp)
 {
   TSMBuffer req_buf;
@@ -119,14 +126,14 @@ enable_agent_check(TSHttpTxn txnp)
 
   // Enable the sink agent if the header is present.
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-    TSMLoc range_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_MIME_FIELD, FLAG_MIME_LEN);
-    zret               = NULL == range_field ? 0 : 1;
+    TSMLoc agent_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_HEADER_FIELD.data(), FLAG_HEADER_FIELD.length());
+    zret               = nullptr == agent_field ? 0 : 1;
   }
 
   return zret;
 }
 
-static void
+void
 client_add(TSHttpTxn txnp)
 {
   // We use @c TSTransformCreate because ATS sees this the same as a transform, but with only
@@ -136,7 +143,7 @@ client_add(TSHttpTxn txnp)
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, TSTransformCreate(client_reader, txnp));
 }
 
-static int
+int
 main_hook(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
@@ -156,6 +163,7 @@ main_hook(TSCont contp, TSEvent event, void *edata)
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
+} // anonymous namespace
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -167,10 +175,10 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError(PCP "Plugin registration failed.\n");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
     return;
   }
 
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(main_hook, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(main_hook, nullptr));
   return;
 }
