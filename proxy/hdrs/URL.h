@@ -40,7 +40,9 @@ enum URLType {
   URL_TYPE_HTTPS,
 };
 
-struct URLImpl : public HdrHeapObjImpl {
+class URLImpl : public HdrHeapObjImpl
+{
+public:
   // HdrHeapObjImpl is 4 bytes
   uint16_t m_len_scheme;
   uint16_t m_len_user;
@@ -79,6 +81,30 @@ struct URLImpl : public HdrHeapObjImpl {
   uint32_t m_normalization_flags : 2; // Only valid if both m_clean and m_ptr_printed_sting are non-zero.
   // 8 bytes + 4 bits, will result in padding
 
+  // Accessors
+  const char *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
+  const char *get_user(int *length);
+  void set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char *get_password(int *length);
+  void set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char *get_host(int *length);
+  void set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int get_port();
+  void set_port(HdrHeap *heap, unsigned int port);
+  void set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char *get_path(int *length);
+  void set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int get_type();
+  void set_type(int type);
+  int get_type_code();
+  void set_type_code(unsigned int typecode);
+  const char *get_params(int *length);
+  void set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char *get_query(int *length);
+  void set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char *get_fragment(int *length);
+  void set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
+
   // Marshaling Functions
   int marshal(MarshalXlate *str_xlate, int num_xlate);
   void unmarshal(intptr_t offset);
@@ -88,6 +114,8 @@ struct URLImpl : public HdrHeapObjImpl {
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
+
+private:
 };
 
 using URLHashContext = CryptoContext;
@@ -187,34 +215,6 @@ char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *lengt
 
 void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, cache_generation_t generation = -1);
 void url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash);
-const char *url_scheme_set(HdrHeap *heap, URLImpl *url, const char *value, int value_wks_idx, int length, bool copy_string);
-
-/* Internet specific */
-const char *url_user_get(URLImpl *url, int *length);
-const char *url_password_get(URLImpl *url, int *length);
-const char *url_host_get(URLImpl *url, int *length);
-int url_port_get(URLImpl *url);
-void url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-void url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-void url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-void url_port_set(HdrHeap *heap, URLImpl *url, unsigned int port);
-
-/* HTTP specific */
-const char *url_path_get(URLImpl *url, int *length);
-void url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-
-int url_type_get(URLImpl *url);
-void url_type_set(URLImpl *url, int type);
-int url_type_code_get(URLImpl *url);
-void url_type_code_set(URLImpl *url, unsigned int typecode);
-
-/* HTTP specific */
-const char *url_params_get(URLImpl *url, int *length);
-const char *url_query_get(URLImpl *url, int *length);
-const char *url_fragment_get(URLImpl *url, int *length);
-void url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
-void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
 constexpr bool USE_STRICT_URI_PARSING = true;
 
@@ -544,7 +544,7 @@ URL::scheme_set(const char *value, int length)
 {
   ink_assert(valid());
   int scheme_wks_idx = (value ? hdrtoken_tokenize(value, length) : -1);
-  url_scheme_set(m_heap, m_url_impl, value, scheme_wks_idx, length, true);
+  m_url_impl->set_scheme(m_heap, value, scheme_wks_idx, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -554,7 +554,7 @@ inline const char *
 URL::user_get(int *length)
 {
   ink_assert(valid());
-  return url_user_get(m_url_impl, length);
+  return m_url_impl->get_user(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -564,7 +564,7 @@ inline void
 URL::user_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_user_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_user(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -574,7 +574,7 @@ inline const char *
 URL::password_get(int *length)
 {
   ink_assert(valid());
-  return url_password_get(m_url_impl, length);
+  return m_url_impl->get_password(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -584,7 +584,7 @@ inline void
 URL::password_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_password_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_password(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -594,7 +594,7 @@ inline const char *
 URL::host_get(int *length)
 {
   ink_assert(valid());
-  return url_host_get(m_url_impl, length);
+  return m_url_impl->get_host(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -604,7 +604,7 @@ inline void
 URL::host_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_host_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_host(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -614,7 +614,7 @@ inline int
 URL::port_get() const
 {
   ink_assert(valid());
-  return url_canonicalize_port(url_type_get(m_url_impl), url_port_get(m_url_impl));
+  return url_canonicalize_port(m_url_impl->get_type(), m_url_impl->get_port());
 }
 
 /*-------------------------------------------------------------------------
@@ -624,7 +624,7 @@ inline int
 URL::port_get_raw() const
 {
   ink_assert(valid());
-  return url_port_get(m_url_impl);
+  return m_url_impl->get_port();
 }
 
 /*-------------------------------------------------------------------------
@@ -634,7 +634,7 @@ inline void
 URL::port_set(int port)
 {
   ink_assert(valid());
-  url_port_set(m_heap, m_url_impl, port);
+  m_url_impl->set_port(m_heap, port);
 }
 
 /*-------------------------------------------------------------------------
@@ -644,7 +644,7 @@ inline const char *
 URL::path_get(int *length)
 {
   ink_assert(valid());
-  return url_path_get(m_url_impl, length);
+  return m_url_impl->get_path(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -654,7 +654,7 @@ inline void
 URL::path_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_path_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_path(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -664,7 +664,7 @@ inline int
 URL::type_code_get()
 {
   ink_assert(valid());
-  return url_type_code_get(m_url_impl);
+  return m_url_impl->get_type_code();
 }
 
 /*-------------------------------------------------------------------------
@@ -674,7 +674,7 @@ inline void
 URL::type_code_set(int typecode)
 {
   ink_assert(valid());
-  url_type_code_set(m_url_impl, typecode);
+  m_url_impl->set_type_code(typecode);
 }
 
 /*-------------------------------------------------------------------------
@@ -684,7 +684,7 @@ inline const char *
 URL::params_get(int *length)
 {
   ink_assert(valid());
-  return url_params_get(m_url_impl, length);
+  return m_url_impl->get_params(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -694,7 +694,7 @@ inline void
 URL::params_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_params_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_params(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -704,7 +704,7 @@ inline const char *
 URL::query_get(int *length)
 {
   ink_assert(valid());
-  return url_query_get(m_url_impl, length);
+  return m_url_impl->get_query(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -714,7 +714,7 @@ inline void
 URL::query_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_query_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_query(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -724,7 +724,7 @@ inline const char *
 URL::fragment_get(int *length)
 {
   ink_assert(valid());
-  return url_fragment_get(m_url_impl, length);
+  return m_url_impl->get_fragment(length);
 }
 
 /*-------------------------------------------------------------------------
@@ -734,7 +734,7 @@ inline void
 URL::fragment_set(const char *value, int length)
 {
   ink_assert(valid());
-  url_fragment_set(m_heap, m_url_impl, value, length, true);
+  m_url_impl->set_fragment(m_heap, value, length, true);
 }
 
 /**
