@@ -1317,14 +1317,12 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         state = P_STATE_RESULT;
         // Just skip the IP, we no longer assume it's always the same.
         {
-          LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
-          int len        = sizeof(LogFieldIp);
-          if (AF_INET == ip->_family) {
+          IpAddr *ip        = reinterpret_cast<IpAddr *>(read_from);
+          constexpr int len = sizeof(IpAddr);
+          if (ip->isIp4()) {
             ipv6 = false;
-            len  = sizeof(LogFieldIp4);
-          } else if (AF_INET6 == ip->_family) {
+          } else if (ip->isIp6()) {
             ipv6 = true;
-            len  = sizeof(LogFieldIp6);
           }
           read_from += INK_ALIGN_DEFAULT(len);
         }

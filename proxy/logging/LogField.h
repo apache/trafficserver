@@ -270,29 +270,3 @@ private:
   Queue<LogField> m_field_list;
   std::string _badSymbols;
 };
-
-/** Base IP address data.
-    To unpack an IP address, the generic memory is first cast to
-    this type to get the family. That pointer can then be static_cast
-    to the appropriate subtype to get the actual address data.
-
-    @note We don't use our own enum for the family. Instead we use
-    @c AF_INET and @c AF_INET6.
-*/
-struct LogFieldIp {
-  uint16_t _family; ///< IP address family.
-};
-/// IPv4 address as log field.
-struct LogFieldIp4 : public LogFieldIp {
-  in_addr_t _addr; ///< IPv4 address.
-};
-/// IPv6 address as log field.
-struct LogFieldIp6 : public LogFieldIp {
-  in6_addr _addr; ///< IPv6 address.
-};
-/// Something big enough to hold any of the IP field types.
-union LogFieldIpStorage {
-  LogFieldIp _ip;
-  LogFieldIp4 _ip4;
-  LogFieldIp6 _ip6;
-};

@@ -833,11 +833,9 @@ LogFilterIP::is_match(LogAccess *lad)
   bool zret = false;
 
   if (m_field && lad) {
-    LogFieldIpStorage value;
-    m_field->marshal(lad, reinterpret_cast<char *>(&value));
-    // This is bad, we abuse the fact that the initial layout of LogFieldIpStorage and IpAddr
-    // are identical. We should look at converting the log stuff to use IpAddr directly.
-    zret = m_map.contains(reinterpret_cast<IpAddr &>(value));
+    IpAddr field_ip_addr;
+    m_field->marshal(lad, reinterpret_cast<char *>(&field_ip_addr));
+    zret = m_map.contains(field_ip_addr);
   }
 
   return zret;

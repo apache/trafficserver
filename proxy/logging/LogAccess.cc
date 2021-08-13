@@ -387,26 +387,8 @@ LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padde
 int
 LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 {
-  LogFieldIpStorage data;
-  int len = sizeof(data._ip);
-  if (nullptr == ip) {
-    data._ip._family = AF_UNSPEC;
-  } else if (ats_is_ip4(ip)) {
-    if (dest) {
-      data._ip4._family = AF_INET;
-      data._ip4._addr   = ats_ip4_addr_cast(ip);
-    }
-    len = sizeof(data._ip4);
-  } else if (ats_is_ip6(ip)) {
-    if (dest) {
-      data._ip6._family = AF_INET6;
-      data._ip6._addr   = ats_ip6_addr_cast(ip);
-    }
-    len = sizeof(data._ip6);
-  } else {
-    data._ip._family = AF_UNSPEC;
-  }
-
+  IpAddr data(ip);
+  constexpr int len = sizeof(data);
   if (dest) {
     memcpy(dest, &data, len);
   }
@@ -846,25 +828,20 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_ip(char **buf, IpEndpoint *dest)
 {
-  int len = sizeof(LogFieldIp); // of object processed.
-
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  LogFieldIp *raw = reinterpret_cast<LogFieldIp *>(*buf);
-  if (AF_INET == raw->_family) {
-    LogFieldIp4 *ip4 = static_cast<LogFieldIp4 *>(raw);
-    ats_ip4_set(dest, ip4->_addr);
-    len = sizeof(*ip4);
-  } else if (AF_INET6 == raw->_family) {
-    LogFieldIp6 *ip6 = static_cast<LogFieldIp6 *>(raw);
-    ats_ip6_set(dest, ip6->_addr);
-    len = sizeof(*ip6);
+  IpAddr *raw = reinterpret_cast<IpAddr *>(*buf);
+  if (raw->isIp4()) {
+    ats_ip4_set(dest, raw->_addr._ip4);
+  } else if (raw->isIp6()) {
+    ats_ip6_set(dest, raw->_addr._ip6);
   } else {
     ats_ip_invalidate(dest);
   }
-  len = INK_ALIGN_DEFAULT(len);
+  int len = sizeof(*raw);
+  len     = INK_ALIGN_DEFAULT(len);
   *buf += len;
   return len;
 }
