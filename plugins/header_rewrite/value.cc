@@ -63,7 +63,7 @@ Value::set_value(const std::string &val, Parser &p)
           }
         }
       } else {
-        if (token.find("$") != std::string::npos && p.get_regex_cond().length() > 0) {
+        if (p.get_regex_cond().length() > 0 && token.find("$") != std::string::npos) {
           _regex_cond = condition_factory(p.get_regex_cond());
           _regex_pat  = p.get_regex_pat();
         }
@@ -74,7 +74,7 @@ Value::set_value(const std::string &val, Parser &p)
         _cond_vals.push_back(tcond_val);
       }
     }
-  } else if (_value.find("$") != std::string::npos && p.get_regex_cond().length() > 0) {
+  } else if (p.get_regex_cond().length() > 0 && _value.find("$") != std::string::npos) {
     _regex_cond = condition_factory(p.get_regex_cond());
     _regex_pat  = p.get_regex_pat();
   } else {

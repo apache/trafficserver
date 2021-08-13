@@ -76,8 +76,8 @@ public:
     _regex_pat  = pat;
   }
 
-  std::string &
-  get_regex_cond()
+  const std::string &
+  get_regex_cond() const
   {
     return _regex_cond;
   }

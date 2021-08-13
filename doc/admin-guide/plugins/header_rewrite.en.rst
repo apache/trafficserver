@@ -863,10 +863,11 @@ Regex Substitutions
 
 As mentioned above, regex operands are available to match a condition's provided value against
 a regular expression. The substitution elements from these conditional replacement patterns
-can be used in operators within the same header rewriting rule.
+can be used in operators within the same header rewriting rule. Note: The max number of capture
+groups supported is 9.
 
 For example, ``$ number`` can be used to capture the number group in the replacement
-string defined in the conditional::
+string defined in the conditional (where number is between 1 and 9)::
 
    cond %{HEADER:Location} /foo.com([^\/]*)(.*)/
       set-header Location-Sub foo.com$2

@@ -60,7 +60,7 @@ public:
     } else {
       s += _value;
     }
-    if (s.find("$") != std::string::npos && _regex_cond != nullptr) {
+    if (_regex_cond != nullptr && s.find("$") != std::string::npos) {
       std::string _regex_cond_exp;
       _regex_cond->append_value(_regex_cond_exp, res);
       s = std::regex_replace(_regex_cond_exp, std::regex(_regex_pat), s);
