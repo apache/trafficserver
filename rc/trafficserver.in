@@ -358,7 +358,7 @@ case "$1" in
             action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
             action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
-	    ebegin "Starting ${TS_PACKAGE_NAME}"
+	    ebegin "Stopping ${TS_PACKAGE_NAME}"
 	    do_stop
 	    eend $?
         elif [ "$DISTRIB_ID" = "suse" ]; then
