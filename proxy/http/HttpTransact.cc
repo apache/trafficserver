@@ -3758,7 +3758,9 @@ HttpTransact::handle_response_from_parent(State *s)
     return CallOSDNSLookup(s);
     break;
   case HOST_NONE:
-    handle_parent_died(s);
+    // Check if content can be served from cache
+    s->current.request_to = PARENT_PROXY;
+    handle_server_connection_not_open(s);
     break;
   default:
     // This handles:
@@ -4047,7 +4049,17 @@ HttpTransact::handle_server_connection_not_open(State *s)
     TxnDebug("http_trans", "[hscno] serving stale doc to client");
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
-    handle_server_died(s);
+    switch (s->current.request_to) {
+    case PARENT_PROXY:
+      handle_parent_died(s);
+      break;
+    case ORIGIN_SERVER:
+      handle_server_died(s);
+      break;
+    default:
+      ink_assert(!("s->current.request_to is not P.P. or O.S. - hmmm."));
+      break;
+    }
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
 
