@@ -1,0 +1,8 @@
+2020-02-02: Version 0.5.0
+
+    Minor speed improvement on the decompressor.
+    Prevent memory violation when decompressing corrupted input.
+
+2020-01-10: Version 0.4.0
+
+    Only code & infrastructure clean-up, no new functionality.

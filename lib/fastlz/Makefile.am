@@ -1,4 +1,5 @@
-# lib Makefile.am
+#
+# Makefile.am for fastlz
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,26 +17,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records fastlz
+include $(top_srcdir)/build/tidy.mk
 
-if BUILD_PERL_LIB
-SUBDIRS += perl
-endif
+AM_CPPFLAGS += -I$(abs_top_srcdir)/lib/fastlz
 
-# to prevent Clang Analyzer warning
-LOCAL =
+noinst_LIBRARIES = libfastlz.a
 
-if BUILD_YAML_CPP
-LOCAL += yamlcpp
-endif
-
-all-local:	$(LOCAL)
-	$(MAKE) -C yamlcpp
-
-clean-local:
-	$(MAKE) -C yamlcpp clean
-
-if EXPORT_YAML_HEADERS
-install-data-local:
-	$(MAKE) -C yamlcpp install
-endif
+libfastlz_a_SOURCES = \
+	fastlz.h \
+	fastlz.cc
