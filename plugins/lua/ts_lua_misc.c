@@ -444,13 +444,17 @@ ts_lua_host_lookup(lua_State *L)
 
   host = luaL_checklstring(L, 1, &host_len);
 
-  contp  = TSContCreate(ts_lua_host_lookup_handler, ci->mutex);
-  action = TSHostLookup(contp, host, host_len);
+  contp = TSContCreate(ts_lua_host_lookup_handler, ci->mutex);
+  ai    = ts_lua_async_create_item(contp, ts_lua_host_lookup_cleanup, NULL, ci);
 
-  ai = ts_lua_async_create_item(contp, ts_lua_host_lookup_cleanup, (void *)action, ci);
   TSContDataSet(contp, ai);
+  action = TSHostLookup(contp, host, host_len);
+  if (!TSActionDone(action)) {
+    ai->data = (void *)action;
+    return lua_yield(L, 0);
+  }
 
-  return lua_yield(L, 0);
+  return 1;
 }
 
 static int
@@ -458,16 +462,24 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
 {
   ts_lua_async_item *ai;
   ts_lua_cont_info *ci;
-  struct sockaddr const *addr;
   char cip[128];
   lua_State *L;
   ts_lua_coroutine *crt;
+  unsigned int resume;
 
   ai  = TSContDataGet(contp);
   ci  = ai->cinfo;
   crt = &ci->routine;
   L   = crt->lua;
 
+  // find out if need to resume luaVM before async item cleanup
+  if (ai->data != NULL) {
+    resume = 1;
+  } else {
+    resume = 0;
+  }
+
+  // async item cleanup
   ai->data = NULL;
   ts_lua_host_lookup_cleanup(ai);
 
@@ -477,8 +489,8 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   } else if (!edata) {
     lua_pushnil(L);
   } else {
-    TSHostLookupResult result = (TSHostLookupResult)edata;
-    addr                      = TSHostLookupResultAddrGet(result);
+    TSHostLookupResult result   = (TSHostLookupResult)edata;
+    struct sockaddr const *addr = TSHostLookupResultAddrGet(result);
     if (addr->sa_family == AF_INET) {
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)addr)->sin_addr, cip, sizeof(cip));
     } else {
@@ -487,7 +499,9 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
     lua_pushstring(L, cip);
   }
 
-  TSContCall(ci->contp, TS_LUA_EVENT_COROUTINE_CONT, (void *)1);
+  if (resume == 1) {
+    TSContCall(ci->contp, TS_LUA_EVENT_COROUTINE_CONT, (void *)1);
+  }
 
   return 0;
 }
