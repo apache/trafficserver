@@ -28,6 +28,9 @@ server = Test.MakeVerifierServerProcess("server", replay_file)
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'log',
+
     'proxy.config.net.connections_throttle': 100,
     'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
     'proxy.config.dns.resolv_conf': 'NULL'
@@ -41,17 +44,34 @@ ts.Disk.logging_yaml.AddLines(
     '''
 logging:
   filters:
+    - name: only_localhost
+      action: accept
+      condition: chi MATCH 127.0.0.1
+
+    - name: not_localhost
+      action: accept
+      condition: chi MATCH 3.3.3.3
+
     - name: queryparamescaper_cquuc
       action: WIPE_FIELD_VALUE
       condition: cquuc CASE_INSENSITIVE_CONTAIN password,secret,access_token,session_redirect,cardNumber,code,query,search-query,prefix,keywords,email,handle
+
   formats:
     - name: custom
       format: '%<cquuc>'
+
   logs:
     - filename: filter-test
       format: custom
       filters:
       - queryparamescaper_cquuc
+      - only_localhost
+
+    - filename: should-not-be-written
+      format: custom
+      filters:
+      - queryparamescaper_cquuc
+      - not_localhost
 '''.split("\n")
 )
 
@@ -75,3 +95,11 @@ test_run.Processes.Default.Command = (
     os.path.join(ts.Variables.LOGDIR, 'filter-test.log')
 )
 test_run.Processes.Default.ReturnCode = 0
+
+# We already waited for the above, so we don't have to wait for this one.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 1 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'should-not-be-written.log')
+)
+test_run.Processes.Default.ReturnCode = 1
