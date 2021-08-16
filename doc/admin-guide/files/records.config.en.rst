@@ -3935,6 +3935,15 @@ TLS v1.3 0-RTT Configuration
 
    Set to ``1`` to allow HTTP parameters on early data requests.
 
+SNI Routing
+-----------
+
+.. ts:cv:: CONFIG proxy.config.tunnel.activity_check_period INT 0
+   :units: seconds
+
+   Frequency of checking the activity of SNI Routing Tunnel. Set to ``0`` to disable monitoring of the activity of the SNI tunnels.
+   The feature is disabled by default.
+
 OCSP Stapling Configuration
 ===========================
 

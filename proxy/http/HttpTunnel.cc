@@ -494,6 +494,7 @@ HttpTunnel::kill_tunnel()
     ink_assert(producer.alive == false);
   }
   active = false;
+  this->mark_tls_tunnel_inactive();
   this->deallocate_buffers();
   this->reset();
 }
@@ -1169,6 +1170,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    if (sm->get_tunnel_type() != SNIRoutingType::NONE) {
+      mark_tls_tunnel_active();
+    }
+
     // Data read from producer, reenable consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
       if (c->alive && c->write_vio) {
@@ -1629,6 +1634,14 @@ HttpTunnel::close_vc(HttpTunnelConsumer *c)
 int
 HttpTunnel::main_handler(int event, void *data)
 {
+  if (event == HTTP_TUNNEL_EVENT_ACTIVITY_CHECK) {
+    if (!_is_tls_tunnel_active()) {
+      mark_tls_tunnel_inactive();
+    }
+
+    return EVENT_DONE;
+  }
+
   HttpTunnelProducer *p = nullptr;
   HttpTunnelConsumer *c = nullptr;
   bool sm_callback      = false;
@@ -1688,4 +1701,71 @@ HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
 void
 HttpTunnel::internal_error()
 {
+}
+
+void
+HttpTunnel::mark_tls_tunnel_active()
+{
+  _tls_tunnel_last_update = Thread::get_hrtime();
+
+  if (_tls_tunnel_active) {
+    return;
+  }
+
+  _tls_tunnel_active = true;
+  HTTP_INCREMENT_DYN_STAT(tunnel_current_active_connections_stat);
+
+  _schedule_tls_tunnel_activity_check_event();
+}
+
+void
+HttpTunnel::mark_tls_tunnel_inactive()
+{
+  if (!_tls_tunnel_active) {
+    return;
+  }
+
+  _tls_tunnel_active = false;
+  HTTP_DECREMENT_DYN_STAT(tunnel_current_active_connections_stat);
+
+  if (_tls_tunnel_activity_check_event) {
+    _tls_tunnel_activity_check_event->cancel();
+    _tls_tunnel_activity_check_event = nullptr;
+  }
+}
+
+void
+HttpTunnel::_schedule_tls_tunnel_activity_check_event()
+{
+  if (_tls_tunnel_activity_check_event) {
+    return;
+  }
+
+  ink_hrtime period = HRTIME_SECONDS(sm->t_state.txn_conf->tunnel_activity_check_period);
+
+  if (period > 0) {
+    EThread *ethread                 = this_ethread();
+    _tls_tunnel_activity_check_event = ethread->schedule_every_local(this, period, HTTP_TUNNEL_EVENT_ACTIVITY_CHECK);
+  }
+}
+
+bool
+HttpTunnel::_is_tls_tunnel_active() const
+{
+  ink_hrtime period = HRTIME_SECONDS(sm->t_state.txn_conf->tunnel_activity_check_period);
+
+  // This should not be called if period is 0
+  ink_release_assert(period > 0);
+
+  ink_hrtime now = Thread::get_hrtime();
+
+  Debug("http_tunnel", "now=%" PRId64 " last_update=%" PRId64, now, _tls_tunnel_last_update);
+
+  // In some cases, m_tls_tunnel_last_update could be larger than now, because it's using cached current time.
+  // - e.g. comparing Thread::cur_time of different threads.
+  if (_tls_tunnel_last_update >= now || now - _tls_tunnel_last_update <= period) {
+    return true;
+  }
+
+  return false;
 }

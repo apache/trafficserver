@@ -403,6 +403,7 @@ public:
   // See if we should allow the transaction
   // based on sni and host name header values
   void check_sni_host();
+  SNIRoutingType get_tunnel_type() const;
 
 protected:
   int reentrancy_count = 0;
@@ -701,7 +702,8 @@ private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
-  bool _from_early_data = false;
+  bool _from_early_data       = false;
+  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat

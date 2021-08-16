@@ -1236,8 +1236,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     do_http_server_open(true);
     return 0;
 
-  case NET_EVENT_OPEN:
-
+  case NET_EVENT_OPEN: {
     // Record the VC in our table
     server_entry     = vc_table.new_entry();
     server_entry->vc = netvc = static_cast<NetVConnection *>(data);
@@ -1248,8 +1247,13 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     netvc->set_inactivity_timeout(get_server_inactivity_timeout());
     netvc->set_active_timeout(get_server_active_timeout());
     t_state.current.server->clear_connect_fail();
-    break;
 
+    if (get_tunnel_type() != SNIRoutingType::NONE) {
+      tunnel.mark_tls_tunnel_active();
+    }
+
+    break;
+  }
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
@@ -5281,7 +5285,7 @@ HttpSM::do_http_server_open(bool raw)
     SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
     if (ssl_vc && raw) {
       tls_upstream = ssl_vc->upstream_tls();
-
+      _tunnel_type = ssl_vc->tunnel_type();
       // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
       if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
         int pid = ssl_vc->get_negotiated_protocol_id();
@@ -8258,6 +8262,12 @@ HttpSM::is_redirect_required()
     }
   }
   return redirect_required;
+}
+
+SNIRoutingType
+HttpSM::get_tunnel_type() const
+{
+  return _tunnel_type;
 }
 
 // Fill in the client protocols used.  Return the number of entries populated.
