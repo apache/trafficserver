@@ -96,7 +96,6 @@ test_LogUtils2_CPPFLAGS = \
 
 test_LogUtils2_SOURCES = \
 	LogUtils.cc \
-	unit-tests/BufferWriterFormat.cc \
 	unit-tests/test_LogUtils2.cc
 
 test_LogUtils2_LDADD = \
