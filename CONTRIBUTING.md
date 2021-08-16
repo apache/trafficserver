@@ -32,7 +32,7 @@ Making a good PR or Issue
 -------------------------
 
 Since Github _PRs_ and _Issues_ are now our primary way of tracking both code
-changes and outstanding issues, it's important the we wall play nicely. Here
+changes and outstanding issues, it's important that we all play nicely. Here
 are a few simple rules to follow:
 
 1. Always branch off the master branch, unless you are requesting a subsequent
