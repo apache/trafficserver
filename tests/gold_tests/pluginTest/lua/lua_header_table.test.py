@@ -54,4 +54,3 @@ ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("test1test2", "expected header table results")
 tr.StillRunningAfter = ts
-
