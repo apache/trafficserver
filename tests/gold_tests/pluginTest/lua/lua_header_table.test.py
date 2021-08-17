@@ -40,8 +40,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nSet-Cooki
 server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam={}/header_table.lua'.format(Test.TestDirectory)
+    f"map / http://127.0.0.1:{server.Variables.Port} @plugin=tslua.so @pparam={Test.TestDirectory}/header_table.lua"
 )
 
 # Test - Check for header table
@@ -49,8 +48,8 @@ tr = Test.AddTestRun("Lua Header Table ")
 ps = tr.Processes.Default  # alias
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = "curl -v http://127.0.0.1:{0}".format(ts.Variables.port)
+ps.Command = f"curl -v http://127.0.0.1:{ts.Variables.port}"
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ps.Streams.stderr.Content = Testers.ContainsExpression("test1test2", "expected header table results")
+ps.Streams.stderr.Content = Testers.ContainsExpression("test1, test2", "expected header table results")
 tr.StillRunningAfter = ts
