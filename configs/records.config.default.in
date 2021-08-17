@@ -169,9 +169,12 @@ CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 ##############################################################################
 # Debugging. Docs:
 #    https://docs.trafficserver.apache.org/records.config#diagnostic-logging-configuration
+#    https://docs.trafficserver.apache.org/records.config#proxy-config-res-track-memory
+#    https://docs.trafficserver.apache.org/records.config#proxy-config-dump-mem-info-frequency
+#    https://docs.trafficserver.apache.org/records.config#proxy-config-http-slow-log-threshold
 ##############################################################################
 CONFIG proxy.config.diags.debug.enabled INT 0
 CONFIG proxy.config.diags.debug.tags STRING http|dns
-# ToDo: Undocumented
+CONFIG proxy.config.res_track_memory INT 0
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0
