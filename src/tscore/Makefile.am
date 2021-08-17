@@ -63,7 +63,6 @@ libtscore_la_SOURCES = \
 	Errata.cc \
 	EventNotify.cc \
 	Extendible.cc \
-	fastlz.c \
 	Hash.cc \
 	HashFNV.cc \
 	HashMD5.cc \
