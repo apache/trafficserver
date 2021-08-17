@@ -594,23 +594,12 @@ public:
   sockaddr const *get_local_addr();
   IpEndpoint const &get_local_endpoint();
 
-  /** Returns local ip.
-      @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
-  */
-
-  in_addr_t get_local_ip();
-
   /** Returns local port. */
   uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
   sockaddr const *get_remote_addr();
   IpEndpoint const &get_remote_endpoint();
-
-  /** Returns remote ip.
-      @deprecated get_remote_addr() should be used instead for AF_INET6 compatibility.
-  */
-  in_addr_t get_remote_ip();
 
   /** Returns remote port. */
   uint16_t get_remote_port();
