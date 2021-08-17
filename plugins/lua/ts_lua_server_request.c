@@ -327,6 +327,13 @@ ts_lua_server_request_header_table_get(lua_State *L)
   /*  we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
 
+  if (!http_ctx->server_request_hdrp) {
+    if (TSHttpTxnServerReqGet(http_ctx->txnp, &http_ctx->server_request_bufp, &http_ctx->server_request_hdrp) != TS_SUCCESS) {
+      lua_pushnil(L);
+      return 1;
+    }
+  }
+
   if (key && key_len) {
     field_loc = TSMimeHdrFieldFind(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, key, key_len);
 

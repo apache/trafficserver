@@ -316,6 +316,8 @@ ts_lua_server_response_header_table_get(lua_State *L)
   /*  we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
 
+  TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
+
   if (key && key_len) {
     field_loc = TSMimeHdrFieldFind(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, key, key_len);
 
