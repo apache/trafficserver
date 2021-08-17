@@ -32,6 +32,7 @@ namespace traffic_dump
 {
 int TransactionData::transaction_arg_index = 0;
 sensitive_fields_t TransactionData::sensitive_fields;
+bool TransactionData::_dump_body = false;
 
 std::string default_sensitive_field_value;
 
@@ -45,6 +46,62 @@ sensitive_fields_t default_sensitive_fields = {
   "Set-Cookie",
   "Cookie",
 };
+
+int
+TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto *txnData = reinterpret_cast<TransactionData *>(TSContDataGet(contp));
+  // This should always have been set by the TransactionData creator of this Transform.
+  TSAssert(txnData != nullptr);
+
+  // If the virtual connection is closed, we're done.
+  if (TSVConnClosedGet(contp)) {
+    TSContDestroy(contp);
+    return 0;
+  }
+
+  TSVIO input_vio = TSVConnWriteVIOGet(contp);
+
+  switch (event) {
+  case TS_EVENT_ERROR:
+    TSDebug(debug_tag, "Received an error event reading body data");
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
+    break;
+  case TS_EVENT_VCONN_READ_COMPLETE:
+    break;
+  case TS_EVENT_VCONN_READ_READY:
+  case TS_EVENT_IMMEDIATE:
+    // Look for data and if we find any, consume.
+    if (TSVIOBufferGet(input_vio)) {
+      TSIOBufferReader reader = TSVIOReaderGet(input_vio);
+      int64_t read_avail      = TSIOBufferReaderAvail(reader);
+      if (read_avail > 0) {
+        char response_buffer[read_avail];
+        TSIOBufferReaderCopy(reader, response_buffer, read_avail);
+        std::string_view response_bytes{response_buffer, (size_t)read_avail};
+        txnData->_response_body.append(response_bytes);
+
+        TSIOBufferReaderConsume(reader, read_avail);
+        TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + read_avail);
+        TSDebug(debug_tag, "Consumed %" PRId64 " bytes of response body data", read_avail);
+      }
+      if (TSVIONTodoGet(input_vio) > 0) {
+        // signal that we can accept more data.
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
+      } else {
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+      }
+    } else { // There is no buffer.
+      TSError("[%s] upstream buffer disappeared while reading the response body.", debug_tag);
+    }
+    break;
+  default:
+    TSDebug(debug_tag, "unhandled event %d", event);
+    break;
+  }
+
+  return 0;
+}
 
 void
 TransactionData::initialize_default_sensitive_field()
@@ -86,17 +143,17 @@ TransactionData::TransactionData(TSHttpTxn txnp, std::string_view http_version_f
 }
 
 bool
-TransactionData::init(sensitive_fields_t &&new_fields)
+TransactionData::init(bool dump_body, sensitive_fields_t &&new_fields)
 {
   sensitive_fields = std::move(new_fields);
-  return init_helper();
+  return init_helper(dump_body);
 }
 
 bool
-TransactionData::init()
+TransactionData::init(bool dump_body)
 {
   sensitive_fields = default_sensitive_fields;
-  return init_helper();
+  return init_helper(dump_body);
 }
 
 std::string_view
@@ -120,6 +177,18 @@ std::string
 TransactionData::write_content_node(int64_t num_body_bytes)
 {
   return std::string(R"(,"content":{"encoding":"plain","size":)" + std::to_string(num_body_bytes) + '}');
+}
+
+std::string
+TransactionData::write_content_node(std::string_view body)
+{
+  std::ostringstream content_node;
+  content_node << R"(,"content":{"encoding":"plain","size":)" + std::to_string(body.length());
+  if (!body.empty()) {
+    content_node << R"(,"data":")" + escape_json(std::string(body)) + R"(")";
+  }
+  content_node << '}';
+  return content_node.str();
 }
 
 std::string
@@ -215,6 +284,14 @@ TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t 
   return result + "}";
 }
 
+std::string
+TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, std::string_view body, std::string_view http_version)
+{
+  std::string result = write_message_node_no_content(buffer, hdr_loc, http_version);
+  result += write_content_node(body);
+  return result + "}";
+}
+
 std::string_view
 TransactionData::remove_scheme_prefix(std::string_view url)
 {
@@ -227,8 +304,10 @@ TransactionData::remove_scheme_prefix(std::string_view url)
 }
 
 bool
-TransactionData::init_helper()
+TransactionData::init_helper(bool dump_body)
 {
+  _dump_body = dump_body;
+  TSDebug(debug_tag, "Dumping body bytes: %s", _dump_body ? "true" : "false");
   initialize_default_sensitive_field();
   const std::string sensitive_fields_string = get_sensitive_field_description();
   TSDebug(debug_tag, "Sensitive fields for which generic values will be dumped: %s", sensitive_fields_string.c_str());
@@ -302,8 +381,12 @@ TransactionData::write_server_response_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
 void
 TransactionData::write_proxy_response_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
 {
-  _txn_json += R"(,"proxy-response":{)" +
-               write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(_txnp), _http_version_from_client_stack);
+  if (_dump_body) {
+    _txn_json += R"(,"proxy-response":{)" + write_message_node(buffer, hdr_loc, _response_body, _http_version_from_client_stack);
+  } else {
+    _txn_json += R"(,"proxy-response":{)" +
+                 write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(_txnp), _http_version_from_client_stack);
+  }
 }
 
 // Transaction handler: writes headers to the log file using AIO
@@ -387,6 +470,11 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       break;
     }
     txnData->_server_protocol_description = ssnData->get_server_protocol_description(txnp);
+    if (_dump_body) {
+      TSVConn connp = TSTransformCreate(response_buffer_handler, txnp);
+      TSContDataSet(connp, txnData);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, connp);
+    }
     break;
   }
 

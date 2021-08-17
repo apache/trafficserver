@@ -18,6 +18,7 @@ Verify traffic_dump functionality.
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Verify traffic_dump functionality.
 '''
@@ -103,6 +104,9 @@ ts.Streams.stderr += Testers.ContainsExpression(
 ts.Streams.stderr += Testers.ContainsExpression(
     "Finish a session with log file of.*bytes",
     "Verify traffic_dump sees the end of sessions and accounts for it.")
+ts.Streams.stderr += Testers.ContainsExpression(
+    "Dumping body bytes: false",
+    "Verify that dumping body bytes is enabled.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -126,8 +130,7 @@ ts.Disk.File(replay_file_session_9, exists=True)
 replay_file_session_10 = os.path.join(replay_dir, "127", "0000000000000009")
 ts.Disk.File(replay_file_session_10, exists=True)
 
-# Execute the first transaction. We limit the threads to 1 so that the sessions
-# are run in serial.
+# Run our test traffic.
 tr = Test.AddTestRun("Run the test traffic.")
 tr.AddVerifierClientProcess(
     "client", replay_file, http_ports=[ts.Variables.port],

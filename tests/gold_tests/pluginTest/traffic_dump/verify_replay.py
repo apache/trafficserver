@@ -288,11 +288,73 @@ def verify_client_http_version(replay_json, expected_client_http_version):
     return True
 
 
+def verify_client_request_body_bytes(replay_json, expected_body_bytes):
+    """
+    Verify that the replay file has the specified client request body bytes in it.
+    """
+    try:
+        received_body_bytes = replay_json['sessions'][0]['transactions'][0]['client-request']['content']['data']
+    except KeyError:
+        print("The replay file did not have a client-request content data element in the first transaction.")
+        return False
+
+    if received_body_bytes != expected_body_bytes:
+        print("Expected body bytes of '{0}' but got '{1}'".format(expected_body_bytes, received_body_bytes))
+        return False
+
+    # If the client request had that many bytes, verify that the proxy-request
+    # does too. This is not guaranteed to always be true, but for our autest it
+    # currently holds and this check is worthwhile.
+    try:
+        proxy_request_body_size = replay_json['sessions'][0]['transactions'][0]['proxy-request']['content']['size']
+    except KeyError:
+        print("The replay file did not have a proxy-request content size element in the first transaction.")
+        return False
+
+    if int(proxy_request_body_size) != len(expected_body_bytes):
+        print("Expected the proxy-request content size to be '{0}' but got '{1}'".format(
+            len(expected_body_bytes), proxy_request_body_size))
+        return False
+
+    return True
+
+
+def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
+    """
+    Verify that the replay file has the specified proxy response body bytes in it.
+    """
+    try:
+        received_body_bytes = replay_json['sessions'][0]['transactions'][0]['proxy-response']['content']['data']
+    except KeyError:
+        print("The replay file did not have a proxy-response content data element in the first transaction.")
+        return False
+
+    if received_body_bytes != expected_body_bytes:
+        print("Expected body bytes of '{0}' but got '{1}'".format(expected_body_bytes, received_body_bytes))
+        return False
+
+    # If the proxy response had that many bytes, verify that the server-response
+    # does too. This is not guaranteed to always be true, but for our autest it
+    # currently holds and this check is worthwhile.
+    try:
+        server_response_body_size = replay_json['sessions'][0]['transactions'][0]['server-response']['content']['size']
+    except KeyError:
+        print("The replay file did not have a server-response content size element in the first transaction.")
+        return False
+
+    if int(server_response_body_size) != len(expected_body_bytes):
+        print("Expected the server-response content size to be '{0}' but got '{1}'".format(
+            len(expected_body_bytes), server_response_body_size))
+        return False
+
+    return True
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_file",
                         type=argparse.FileType('r'),
-                        help="The schema in which to interpret validate the replay file.")
+                        help="The schema in which to validate the replay file.")
     parser.add_argument("replay_file",
                         type=argparse.FileType('r'),
                         help="The replay file to validate.")
@@ -314,6 +376,12 @@ def parse_args():
                         help="The TLS values to expect for the server connection.")
     parser.add_argument("--client-http-version",
                         help="The client HTTP version to expect")
+    parser.add_argument("--request_body",
+                        type=str,
+                        help="Verify that the client request has the specified body bytes.")
+    parser.add_argument("--response_body",
+                        type=str,
+                        help="Verify that the proxy response has the specified body bytes.")
     return parser.parse_args()
 
 
@@ -363,6 +431,12 @@ def main():
         return 1
 
     if args.client_http_version and not verify_client_http_version(replay_json, args.client_http_version):
+        return 1
+
+    if args.request_body and not verify_client_request_body_bytes(replay_json, args.request_body):
+        return 1
+
+    if args.response_body and not verify_proxy_response_body_bytes(replay_json, args.response_body):
         return 1
 
     return 0
