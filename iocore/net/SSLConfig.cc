@@ -539,11 +539,14 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLMultiCertConfigLoader loader(params);
-  loader.load(lookup);
+  if (!loader.load(lookup)) {
+    retStatus = false;
+  }
 
   if (!lookup->is_valid) {
     retStatus = false;
   }
+
   // If there are errors in the certificate configs and we had wanted to exit on error
   // we won't want to reset the config
   if (lookup->is_valid || !params->configExitOnLoadError) {
