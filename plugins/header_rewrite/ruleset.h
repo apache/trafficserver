@@ -86,12 +86,12 @@ public:
   }
 
   bool
-  eval(const Resources &res) const
+  eval(const Resources &res)
   {
     if (nullptr == _cond) {
       return true;
     } else {
-      return _cond->do_eval(res);
+      return _cond->do_eval(res, _regex_vec);
     }
   }
 
@@ -104,6 +104,7 @@ public:
   OperModifiers
   exec(const Resources &res) const
   {
+    _oper->regex_sub_vector = _regex_vec;
     _oper->do_exec(res);
     return _opermods;
   }
@@ -120,7 +121,6 @@ private:
   OperModifiers _opermods = OPER_NONE;
   bool _last              = false;
 
-  // Regex conditional and pattern values
-  std::string _regex_cond;
-  std::string _regex_pat;
+  // Regex substring vector
+  std::vector<std::string> _regex_vec;
 };

@@ -64,12 +64,6 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
     _last |= c->last();
     _ids = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
 
-    // Store regex substitution values
-    if (c->get_cond_op() == MatcherOps::MATCH_REGULAR_EXPRESSION) {
-      _regex_cond = p.get_op();
-      _regex_pat  = p.get_arg();
-    }
-
     return true;
   }
 
@@ -83,11 +77,6 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 
   if (nullptr != o) {
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
-
-    // Update parser object with regex substitution values
-    if (_regex_cond.length() > 0 && _regex_pat.length() > 0) {
-      p.set_regex(_regex_cond, _regex_pat);
-    }
 
     o->initialize(p);
     if (!o->set_hook(_hook)) {

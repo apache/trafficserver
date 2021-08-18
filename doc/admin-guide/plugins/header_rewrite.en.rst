@@ -858,13 +858,14 @@ change just the hostname via::
   cond %{HEADER:X-Mobile} = "foo"
   set-destination HOST foo.mobile.bar.com [L]
 
-Regex Substitutions
--------------------
+Regex Numbered Group Substitutions
+----------------------------------
 
 As mentioned above, regex operands are available to match a condition's provided value against
-a regular expression. The substitution elements from these conditional replacement patterns
-can be used in operators within the same header rewriting rule. Note: The max number of capture
-groups supported is 9.
+a regular expression. Number substitution elements from these conditional replacement patterns
+can be used in operators within the same header rewriting rule. Note: Only numbered groups are
+supported and unmatched substrings will not be replaced. The max number of capture groups
+supported is 9.
 
 For example, ``$ number`` can be used to capture the number group in the replacement
 string defined in the conditional (where number is between 1 and 9)::

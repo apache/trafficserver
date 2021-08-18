@@ -24,6 +24,7 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "ts/ts.h"
 
@@ -125,6 +126,29 @@ public:
     return false;
   }
 
+  bool
+  test(const T &t, std::vector<std::string> &regex_vec) const
+  {
+    switch (_op) {
+    case MATCH_EQUAL:
+      return test_eq(t);
+      break;
+    case MATCH_LESS_THEN:
+      return test_lt(t);
+      break;
+    case MATCH_GREATER_THEN:
+      return test_gt(t);
+      break;
+    case MATCH_REGULAR_EXPRESSION:
+      return test_reg(t, regex_vec);
+      break;
+    default:
+      // ToDo: error
+      break;
+    }
+    return false;
+  }
+
 private:
   void
   debug_helper(const T &t, const char *op, bool r) const
@@ -190,6 +214,24 @@ private:
 
     TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
     if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
+      TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
+      return true;
+    }
+    return false;
+  }
+
+  bool
+  test_reg(const std::string &t, std::vector<std::string> &regex_vector) const
+  {
+    int ovector[OVECCOUNT];
+
+    TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
+    int ovector_size = helper.regexMatch(t.c_str(), t.length(), ovector);
+    regex_vector.clear();
+    for (int i = 0; i < ovector_size * 2; i += 2) {
+      regex_vector.push_back(t.substr(ovector[i], ovector[i + 1] - ovector[i]));
+    }
+    if (ovector_size > 0) {
       TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
       return true;
     }

@@ -279,7 +279,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   }
 
   if (hook != TS_HTTP_LAST_HOOK) {
-    const RuleSet *rule = conf->rule(hook);
+    RuleSet *rule = conf->rule(hook);
     Resources res(txnp, contp);
 
     // Get the resources necessary to process this event

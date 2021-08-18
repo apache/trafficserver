@@ -8,7 +8,8 @@
 < Server: ATS/10.0.0
 < Host: www.example.com
 < Test-Server-Sub: 9.0:Apache
-< Test-Host-Sub: www.foo.example.com
+< Test-Host-Sub: example-www.example.com
+< Test-Latest-Regex: example
 < Date: ``
 < Age: 0
 < Transfer-Encoding: ``

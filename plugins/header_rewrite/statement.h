@@ -142,6 +142,8 @@ public:
     return _initialized;
   }
 
+  std::vector<std::string> regex_sub_vector;
+
 protected:
   virtual void initialize_hooks();
 

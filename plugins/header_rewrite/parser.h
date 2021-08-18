@@ -69,25 +69,6 @@ public:
     return _val;
   }
 
-  void
-  set_regex(std::string cond, std::string pat)
-  {
-    _regex_cond = cond;
-    _regex_pat  = pat;
-  }
-
-  const std::string &
-  get_regex_cond() const
-  {
-    return _regex_cond;
-  }
-
-  std::string &
-  get_regex_pat()
-  {
-    return _regex_pat;
-  }
-
   bool
   mod_exist(const std::string &m) const
   {
@@ -113,8 +94,6 @@ private:
   std::string _op;
   std::string _arg;
   std::string _val;
-  std::string _regex_cond;
-  std::string _regex_pat;
 
 protected:
   std::vector<std::string> _tokens;

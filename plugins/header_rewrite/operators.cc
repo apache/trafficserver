@@ -35,7 +35,7 @@ OperatorSetConfig::initialize(Parser &p)
   _config = p.get_arg();
 
   if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
-    _value.set_value(p.get_value(), p);
+    _value.set_value(p.get_value());
   } else {
     _key = TS_CONFIG_NULL;
     TSError("[%s] no such records config: %s", PLUGIN_NAME, _config.c_str());
@@ -75,7 +75,7 @@ OperatorSetStatus::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg(), p);
+  _status.set_value(p.get_arg());
 
   if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
@@ -126,7 +126,7 @@ OperatorSetStatusReason::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _reason.set_value(p.get_arg(), p);
+  _reason.set_value(p.get_arg());
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
@@ -144,7 +144,7 @@ OperatorSetStatusReason::exec(const Resources &res) const
   if (res.bufp && res.hdr_loc) {
     std::string reason;
 
-    _reason.append_value(reason, res);
+    _reason.append_value(reason, res, regex_sub_vector);
     if (reason.size() > 0) {
       TSDebug(PLUGIN_NAME, "Setting Status Reason to %s", reason.c_str());
       TSHttpHdrReasonSet(res.bufp, res.hdr_loc, reason.c_str(), reason.size());
@@ -159,7 +159,7 @@ OperatorSetDestination::initialize(Parser &p)
   Operator::initialize(p);
 
   _url_qual = parse_url_qualifier(p.get_arg());
-  _value.set_value(p.get_value(), p);
+  _value.set_value(p.get_value());
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
@@ -198,7 +198,7 @@ OperatorSetDestination::exec(const Resources &res) const
     // Never set an empty destination value (I don't think that ever makes sense?)
     switch (_url_qual) {
     case URL_QUAL_HOST:
-      _value.append_value(value, res);
+      _value.append_value(value, res, regex_sub_vector);
       if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination HOST to an empty value, skipping");
       } else {
@@ -209,7 +209,7 @@ OperatorSetDestination::exec(const Resources &res) const
       break;
 
     case URL_QUAL_PATH:
-      _value.append_value(value, res);
+      _value.append_value(value, res, regex_sub_vector);
       if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination PATH to an empty value, skipping");
       } else {
@@ -220,7 +220,7 @@ OperatorSetDestination::exec(const Resources &res) const
       break;
 
     case URL_QUAL_QUERY:
-      _value.append_value(value, res);
+      _value.append_value(value, res, regex_sub_vector);
       if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination QUERY to an empty value, skipping");
       } else {
@@ -250,7 +250,7 @@ OperatorSetDestination::exec(const Resources &res) const
       }
       break;
     case URL_QUAL_URL:
-      _value.append_value(value, res);
+      _value.append_value(value, res, regex_sub_vector);
       if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
       } else {
@@ -266,7 +266,7 @@ OperatorSetDestination::exec(const Resources &res) const
       }
       break;
     case URL_QUAL_SCHEME:
-      _value.append_value(value, res);
+      _value.append_value(value, res, regex_sub_vector);
       if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
       } else {
@@ -338,8 +338,8 @@ OperatorSetRedirect::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _status.set_value(p.get_arg(), p);
-  _location.set_value(p.get_value(), p);
+  _status.set_value(p.get_arg());
+  _location.set_value(p.get_value());
   auto status = _status.get_int_value();
   if (status < 300 || status > 399 || status == TS_HTTP_STATUS_NOT_MODIFIED) {
     TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, status);
@@ -413,7 +413,7 @@ OperatorSetRedirect::exec(const Resources &res) const
   if (res.bufp && res.hdr_loc && res.client_bufp && res.client_hdr_loc) {
     std::string value;
 
-    _location.append_value(value, res);
+    _location.append_value(value, res, regex_sub_vector);
 
     bool remap = false;
     if (nullptr != res._rri) {
@@ -515,7 +515,7 @@ OperatorSetTimeoutOut::initialize(Parser &p)
     TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
-  _timeout.set_value(p.get_value(), p);
+  _timeout.set_value(p.get_value());
 }
 
 void
@@ -590,7 +590,7 @@ OperatorAddHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value(), p);
+  _value.set_value(p.get_value());
 }
 
 void
@@ -598,7 +598,7 @@ OperatorAddHeader::exec(const Resources &res) const
 {
   std::string value;
 
-  _value.append_value(value, res);
+  _value.append_value(value, res, regex_sub_vector);
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
@@ -626,7 +626,7 @@ OperatorSetHeader::initialize(Parser &p)
 {
   OperatorHeaders::initialize(p);
 
-  _value.set_value(p.get_value(), p);
+  _value.set_value(p.get_value());
 }
 
 void
@@ -634,7 +634,7 @@ OperatorSetHeader::exec(const Resources &res) const
 {
   std::string value;
 
-  _value.append_value(value, res);
+  _value.append_value(value, res, regex_sub_vector);
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
@@ -753,7 +753,7 @@ void
 OperatorAddCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value(), p);
+  _value.set_value(p.get_value());
 }
 
 void
@@ -761,7 +761,7 @@ OperatorAddCookie::exec(const Resources &res) const
 {
   std::string value;
 
-  _value.append_value(value, res);
+  _value.append_value(value, res, regex_sub_vector);
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec() invoked on cookie %s", _cookie.c_str());
@@ -798,7 +798,7 @@ void
 OperatorSetCookie::initialize(Parser &p)
 {
   OperatorCookies::initialize(p);
-  _value.set_value(p.get_value(), p);
+  _value.set_value(p.get_value());
 }
 
 void
@@ -806,7 +806,7 @@ OperatorSetCookie::exec(const Resources &res) const
 {
   std::string value;
 
-  _value.append_value(value, res);
+  _value.append_value(value, res, regex_sub_vector);
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec() invoked on cookie %s", _cookie.c_str());
@@ -935,7 +935,7 @@ OperatorSetConnDSCP::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg(), p);
+  _ds_value.set_value(p.get_arg());
 }
 
 void
@@ -961,7 +961,7 @@ OperatorSetConnMark::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _ds_value.set_value(p.get_arg(), p);
+  _ds_value.set_value(p.get_arg());
 }
 
 void

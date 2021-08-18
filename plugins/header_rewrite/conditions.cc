@@ -100,7 +100,7 @@ ConditionMethod::eval(const Resources &res)
   append_value(s, res);
   TSDebug(PLUGIN_NAME, "Evaluating METHOD()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s);
+  return static_cast<const MatcherType *>(_matcher)->test(s, regex_sub_vector);
 }
 
 void
@@ -257,8 +257,7 @@ ConditionHeader::eval(const Resources &res)
 
   append_value(s, res);
   TSDebug(PLUGIN_NAME, "Evaluating HEADER()");
-
-  return static_cast<const MatcherType *>(_matcher)->test(s);
+  return static_cast<const MatcherType *>(_matcher)->test(s, regex_sub_vector);
 }
 
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
@@ -376,7 +375,7 @@ ConditionUrl::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+  return static_cast<const Matchers<std::string> *>(_matcher)->test(s, regex_sub_vector);
 }
 
 // ConditionDBM: do a lookup against a DBM
@@ -510,7 +509,7 @@ ConditionCookie::eval(const Resources &res)
   append_value(s, res);
   TSDebug(PLUGIN_NAME, "Evaluating COOKIE()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s);
+  return static_cast<const MatcherType *>(_matcher)->test(s, regex_sub_vector);
 }
 
 // ConditionInternalTxn: Is the txn internal?
@@ -560,7 +559,7 @@ ConditionIp::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, regex_sub_vector);
 
   TSDebug(PLUGIN_NAME, "Evaluating IP(): %s - rval: %d", s.c_str(), rval);
 
@@ -827,7 +826,7 @@ ConditionGeo::eval(const Resources &res)
     std::string s;
 
     append_value(s, res);
-    ret = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+    ret = static_cast<const Matchers<std::string> *>(_matcher)->test(s, regex_sub_vector);
   }
 
   return ret;
@@ -914,7 +913,7 @@ ConditionId::eval(const Resources &res)
     std::string s;
 
     append_value(s, res);
-    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, regex_sub_vector);
 
     TSDebug(PLUGIN_NAME, "Evaluating ID(): %s - rval: %d", s.c_str(), rval);
     return rval;
@@ -974,7 +973,7 @@ ConditionCidr::eval(const Resources &res)
   append_value(s, res);
   TSDebug(PLUGIN_NAME, "Evaluating CIDR()");
 
-  return static_cast<MatcherType *>(_matcher)->test(s);
+  return static_cast<MatcherType *>(_matcher)->test(s, regex_sub_vector);
 }
 
 void
@@ -1073,7 +1072,7 @@ ConditionInbound::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, regex_sub_vector);
 
   TSDebug(PLUGIN_NAME, "Evaluating %s(): %s - rval: %d", TAG, s.c_str(), rval);
 
@@ -1165,7 +1164,7 @@ ConditionStringLiteral::eval(const Resources &res)
 {
   TSDebug(PLUGIN_NAME, "Evaluating StringLiteral");
 
-  return static_cast<const MatcherType *>(_matcher)->test(_literal);
+  return static_cast<const MatcherType *>(_matcher)->test(_literal, regex_sub_vector);
 }
 
 // ConditionSessionTransactCount

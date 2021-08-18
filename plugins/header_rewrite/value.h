@@ -23,7 +23,6 @@
 
 #include <string>
 #include <vector>
-#include <regex>
 
 #include "ts/ts.h"
 
@@ -48,10 +47,10 @@ public:
   Value(const Value &) = delete;
   void operator=(const Value &) = delete;
 
-  void set_value(const std::string &val, Parser &p);
+  void set_value(const std::string &val);
 
   void
-  append_value(std::string &s, const Resources &res) const
+  append_value(std::string &s, const Resources &res, std::vector<std::string> regex_vector) const
   {
     if (!_cond_vals.empty()) {
       for (auto _cond_val : _cond_vals) {
@@ -60,10 +59,25 @@ public:
     } else {
       s += _value;
     }
-    if (_regex_cond != nullptr && s.find("$") != std::string::npos) {
-      std::string _regex_cond_exp;
-      _regex_cond->append_value(_regex_cond_exp, res);
-      s = std::regex_replace(_regex_cond_exp, std::regex(_regex_pat), s);
+    if (regex_vector.size() > 1) {
+      replace_regex_sub(s, regex_vector);
+    }
+  }
+
+  void
+  replace_regex_sub(std::string &s, std::vector<std::string> regex_vector) const
+  {
+    int vector_size = static_cast<int>(regex_vector.size());
+    std::size_t sub = s.find("$");
+    while (sub != std::string::npos && sub < s.length() - 1) {
+      int sub_num = std::stoi(s.substr(sub + 1, 1));
+      if (sub_num > 0 && sub_num < vector_size) {
+        TSDebug(PLUGIN_NAME, "Replacing regex group $%d: %s", sub_num, regex_vector[sub_num].c_str());
+        s.replace(sub, 2, regex_vector[sub_num]);
+        sub = s.find("$");
+      } else {
+        sub = s.find("$", sub + 1);
+      }
     }
   }
 
@@ -102,6 +116,4 @@ private:
   double _float_value = 0.0;
   std::string _value;
   std::vector<Condition *> _cond_vals;
-  Condition *_regex_cond = nullptr;
-  std::string _regex_pat = "";
 };

@@ -61,9 +61,10 @@ public:
 
   // Inline this, it's critical for speed (and only used twice)
   bool
-  do_eval(const Resources &res)
+  do_eval(const Resources &res, std::vector<std::string> &vector)
   {
     bool rt = eval(res);
+    vector  = regex_sub_vector;
 
     if (_mods & COND_NOT) {
       rt = !rt;
@@ -71,11 +72,11 @@ public:
 
     if (_next) {
       if (_mods & COND_OR) {
-        return rt || (static_cast<Condition *>(_next)->do_eval(res));
+        return rt || (static_cast<Condition *>(_next)->do_eval(res, vector));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
         if (rt) {
-          return static_cast<Condition *>(_next)->do_eval(res);
+          return static_cast<Condition *>(_next)->do_eval(res, vector);
         } else {
           return false;
         }
