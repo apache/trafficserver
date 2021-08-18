@@ -130,6 +130,12 @@ IpAllow::startup()
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
 
   reconfigure();
+
+  ConfigInfo *config = configProcessor.get(configid);
+  if (config == nullptr) {
+    configid = configProcessor.set(configid, new self_type("proxy.config.cache.ip_allow.filename"));
+    Warning("%s not loaded; All IP Addresses will be blocked.", ts::filename::IP_ALLOW);
+  }
 }
 
 void
@@ -139,12 +145,15 @@ IpAllow::reconfigure()
 
   Note("%s loading ...", ts::filename::IP_ALLOW);
 
-  new_table = new self_type("proxy.config.cache.ip_allow.filename");
-  new_table->BuildTable();
-
-  configid = configProcessor.set(configid, new_table);
-
-  Note("%s finished loading", ts::filename::IP_ALLOW);
+  new_table     = new self_type("proxy.config.cache.ip_allow.filename");
+  int retStatus = new_table->BuildTable();
+  if (retStatus) {
+    Error("%s failed to load", ts::filename::IP_ALLOW);
+    delete new_table;
+  } else {
+    configid = configProcessor.set(configid, new_table);
+    Note("%s finished loading", ts::filename::IP_ALLOW);
+  }
 }
 
 IpAllow *
@@ -262,7 +271,12 @@ IpAllow::BuildTable()
   if (ec.value() == 0) {
     // If it's a .yaml or the root tag is present, treat as YAML.
     if (TextView{config_file.view()}.take_suffix_at('.') == "yaml" || std::string::npos != content.find(YAML_TAG_ROOT)) {
-      this->YAMLBuildTable(content);
+      try {
+        this->YAMLBuildTable(content);
+      } catch (std::exception &ex) {
+        ParseError("{} - Invalid config: {}", this, ex.what());
+        return 1;
+      }
     } else {
       this->ATSBuildTable(content);
     }
@@ -271,6 +285,7 @@ IpAllow::BuildTable()
       ParseError("{} - No entries found. All IP Addresses will be blocked", this);
       return 1;
     }
+
     // convert the coloring from indices to pointers.
     for (auto &item : _src_map) {
       item.setData(&_src_acls[reinterpret_cast<size_t>(item.data())]);
