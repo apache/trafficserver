@@ -52,6 +52,7 @@ parse_jwt(json_t *raw)
   }
 
   struct jwt *jwt = malloc(sizeof *jwt);
+  jwt->raw        = raw;
   jwt->iss        = json_string_value(json_object_get(raw, "iss"));
   jwt->sub        = json_string_value(json_object_get(raw, "sub"));
   jwt->aud        = json_object_get(raw, "aud");
@@ -76,7 +77,7 @@ jwt_delete(struct jwt *jwt)
     return;
   }
 
-  json_decref(jwt->aud);
+  json_decref(jwt->raw);
   free(jwt);
 }
 

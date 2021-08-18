@@ -144,16 +144,20 @@ jwt_parsing_helper(const char *jwt_string)
 {
   fprintf(stderr, "Parsing JWT from string: %s\n", jwt_string);
   bool resp;
-  json_error_t jerr = {};
-  size_t pt_ct      = strlen(jwt_string);
-  struct jwt *jwt   = parse_jwt(json_loadb(jwt_string, pt_ct, 0, &jerr));
-
-  if (jwt) {
-    resp = jwt_validate(jwt);
-  } else {
-    resp = false;
+  json_error_t jerr             = {};
+  size_t pt_ct                  = strlen(jwt_string);
+  struct json_t *const jwk_json = json_loadb(jwt_string, pt_ct, 0, &jerr);
+  if (!jwk_json) {
+    return false;
   }
 
+  struct jwt *jwt = parse_jwt(jwk_json);
+  if (!jwt) {
+    json_decref(jwk_json);
+    return false;
+  }
+
+  resp = jwt_validate(jwt);
   jwt_delete(jwt);
   return resp;
 }
@@ -601,7 +605,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": \"tester\"}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -610,7 +613,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": [ \"foo\", \"bar\",  \"tester\"]}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -619,7 +621,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": \"foo\"}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -628,7 +629,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": [\"foo\", \"bar\", \"foobar\"]}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -637,7 +637,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": 1}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -646,7 +645,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"tester\"]}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -655,7 +653,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": \"TESTer\"}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -664,7 +661,6 @@ TEST_CASE("6", "[AudTests]")
     json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"Tester\"]}", 0, err);
     json_t *aud = json_object_get(raw, "aud");
     REQUIRE(!jwt_check_aud(aud, "tester"));
-    json_decref(aud);
     json_decref(raw);
   }
 
@@ -700,13 +696,12 @@ jws_validation_helper(const char *url, const char *package, struct config *cfg)
     return false;
   }
   struct jwt *jwt = validate_jws(jws, cfg, uri_strip, strip_ct);
-  if (jwt) {
-    jwt_delete(jwt);
-    cjose_jws_release(jws);
-    return true;
-  }
   cjose_jws_release(jws);
-  return false;
+  if (!jwt) {
+    return false;
+  }
+  jwt_delete(jwt);
+  return true;
 }
 
 TEST_CASE("8", "[TestsWithConfig]")

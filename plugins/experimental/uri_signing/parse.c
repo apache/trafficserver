@@ -165,7 +165,7 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
   cjose_err cerr;
   memset(&cerr, 0, sizeof(cjose_err));
   size_t pt_ct;
-  const char *pt;
+  char const *pt;
   if (!cjose_jws_get_plaintext(jws, (uint8_t **)&pt, &pt_ct, &cerr)) {
     PluginDebug("Cannot get plaintext for %16p", jws);
     return false;
@@ -175,14 +175,20 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
 
   json_error_t jerr;
   memset(&jerr, 0, sizeof(json_error_t));
-  struct jwt *jwt = parse_jwt(json_loadb(pt, pt_ct, 0, &jerr));
+  json_t *const jwk_json = json_loadb(pt, pt_ct, 0, &jerr);
+  if (!jwk_json) {
+    if (jerr.text[0]) {
+      PluginDebug("Cannot load json for %16p: %.*s '%s'", jws, (int)pt_ct, pt, jerr.text);
+    } else {
+      PluginDebug("Cannot load json for %16p: %.*s", jws, (int)pt_ct, pt);
+    }
+    return false;
+  }
+  struct jwt *jwt = parse_jwt(jwk_json);
+
   TimerDebug("parsing jwt");
   if (!jwt) {
-    if (jerr.text[0]) {
-      PluginDebug("Cannot parse json for %16p: %.*s '%s'", jws, (int)pt_ct, pt, jerr.text);
-    } else {
-      PluginDebug("Cannot parse jwt for %16p: %.*s", jws, (int)pt_ct, pt);
-    }
+    json_decref(jwk_json);
     return NULL;
   }
 
