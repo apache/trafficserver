@@ -325,7 +325,7 @@ BgFetchState::uniqueRelease(const String &url)
   permitted     = _unique->release(url);
   TSMutexUnlock(_lock);
 
-  TSAssert(cachedCounter < 0);
+  PrefetchDebug("cachedCounter: %zd", cachedCounter);
 
   /* Update the metrics, no need to lock? */
   if (permitted) {

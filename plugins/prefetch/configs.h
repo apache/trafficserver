@@ -177,6 +177,18 @@ public:
     return _logName;
   }
 
+  void
+  setQueryKey(const char *optarg)
+  {
+    _queryKey.assign(optarg);
+  }
+
+  const String &
+  getQueryKeyName() const
+  {
+    return _queryKey;
+  }
+
   /**
    * @brief provides means for post-processing of the plugin parameters to finalize the configuration.
    * @return true if successful, false if failure.
@@ -191,6 +203,7 @@ private:
   std::string _namespace;
   std::string _metricsPrefix;
   std::string _logName;
+  std::string _queryKey;
   unsigned _fetchCount = 1;
   unsigned _fetchMax   = 0;
   bool _front          = false;
