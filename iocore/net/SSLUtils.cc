@@ -1953,8 +1953,9 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
+      // missing config file is an acceptable runtime state
       Warning("Cannot open SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
-      return false;
+      return true;
     default:
       Error("Failed to read SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
       return false;
@@ -1989,7 +1990,9 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
           // There must be a certificate specified unless the tunnel action is set
           if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
-            this->_store_ssl_ctx(lookup, sslMultiCertSettings);
+            if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
+              return false;
+            }
           } else {
             Warning("No ssl_cert_name specified and no tunnel action set");
           }
