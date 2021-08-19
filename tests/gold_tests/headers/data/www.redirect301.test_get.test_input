@@ -1,0 +1,2 @@
+GET http://www.redirect301.test/ HTTP/1.1
+

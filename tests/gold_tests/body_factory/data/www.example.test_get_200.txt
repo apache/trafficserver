@@ -1,3 +1,0 @@
-GET /get200 HTTP/1.1
-Host: www.example.test
-
