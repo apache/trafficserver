@@ -221,8 +221,8 @@ compromises:
   plugin is already being used to alleviate the load on the disks).
 * **Throttle the prefetch activity** - if necessary a limit can by imposed on the
   number of concurrent prefetch requests by using ``--fetch-max`` plugin parameter.
-* **Request amplification** - when using ``--fetch-query`` it is easy to create request 
-  multiplication of malicious requests. Using tokenization is advisable  when using 
+* **Request amplification** - when using ``--fetch-query`` it is easy to create request
+  multiplication of malicious requests. Using tokenization is advisable  when using
   ``--fetch-query``.
 
 Plugin parameters
