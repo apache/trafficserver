@@ -843,7 +843,7 @@ LogFilterIP::is_match(LogAccess *lad)
     } else if (field_ip_storage._ip._family == AF_INET6) {
       field_ip = field_ip_storage._ip6._addr;
     }
-    zret = m_map.contains(reinterpret_cast<IpAddr &>(field_ip));
+    zret = m_map.contains(field_ip);
   }
 
   return zret;
