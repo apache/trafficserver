@@ -261,19 +261,29 @@ NetAccept::do_blocking_accept(EThread *t)
   do {
     if ((res = server.accept(&con)) < 0) {
       int seriousness = accept_error_seriousness(res);
-      if (seriousness >= 0) { // not so bad
-        if (!seriousness) {   // bad enough to warn about
-          check_transient_accept_error(res);
-        }
+      switch (seriousness) {
+      case 0:
+        // bad enough to warn about
+        check_transient_accept_error(res);
         safe_delay(net_throttle_delay);
         return 0;
+      case 1:
+        // not so bad but needs delay
+        safe_delay(net_throttle_delay);
+        return 0;
+      case 2:
+        // ignore
+        return 0;
+      case -1:
+        [[fallthrough]];
+      default:
+        if (!action_->cancelled) {
+          SCOPED_MUTEX_LOCK(lock, action_->mutex ? action_->mutex : t->mutex, t);
+          action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
+          Warning("accept thread received fatal error: errno = %d", errno);
+        }
+        return -1;
       }
-      if (!action_->cancelled) {
-        SCOPED_MUTEX_LOCK(lock, action_->mutex, t);
-        action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
-        Warning("accept thread received fatal error: errno = %d", errno);
-      }
-      return -1;
     }
     // check for throttle
     if (!opt.backdoor && check_net_throttle(ACCEPT)) {
