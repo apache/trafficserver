@@ -29,7 +29,7 @@ Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts")
 
 ts.Disk.remap_config.AddLine(
-    f"map / http://127.0.0.1:{server.Variables.Port} @plugin=tslua.so @pparam={Test.TestDirectory}/header_table.lua"
+    f"map / http://127.0.0.1 @plugin=tslua.so @pparam={Test.TestDirectory}/header_table.lua"
 )
 
 # Test - Check for header table
