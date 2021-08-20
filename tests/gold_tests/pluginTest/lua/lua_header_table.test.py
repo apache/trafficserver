@@ -39,5 +39,5 @@ ps.StartBefore(Test.Processes.ts)
 ps.Command = f"curl -s -D /dev/stderr -H 'X-Test: test1' -H 'X-Test: test2' http://127.0.0.1:{ts.Variables.port}"
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ps.Streams.stderr.Content = Testers.ContainsExpression("test1test2", "expected header table results")
+ps.Streams.stdout.Content = Testers.ContainsExpression("test1test2", "expected header table results")
 tr.StillRunningAfter = ts
