@@ -14,17 +14,13 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-function send_response()
-    hdrs = ts.client_request.header_table['X-Test'] or {}
+function do_remap()
+    local hdrs = ts.client_request.header_table['X-Test'] or {}
     local h = ''
     for k, v in pairs(hdrs) do
         h = h..v
     end
-    ts.client_response.header['X-Result'] = h
-    return 0
-end
-
-function do_remap()
-    ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+    ts.http.set_resp(200, h)
+    hdrs = {}
     return 0
 end

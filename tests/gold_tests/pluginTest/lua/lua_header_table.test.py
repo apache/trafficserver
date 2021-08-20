@@ -27,17 +27,6 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
-server = Test.MakeOriginServer("server")
-
-Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-# expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-
-# add response to the server dictionary
-server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
     f"map / http://127.0.0.1:{server.Variables.Port} @plugin=tslua.so @pparam={Test.TestDirectory}/header_table.lua"
@@ -46,9 +35,8 @@ ts.Disk.remap_config.AddLine(
 # Test - Check for header table
 tr = Test.AddTestRun("Lua Header Table")
 ps = tr.Processes.Default  # alias
-ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = f"curl -H 'X-Test: test1' -H 'X-Test: test2' -v http://127.0.0.1:{ts.Variables.port}"
+ps.Command = f"curl -s -D /dev/stderr -H 'X-Test: test1' -H 'X-Test: test2' http://127.0.0.1:{ts.Variables.port}"
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("test1test2", "expected header table results")
