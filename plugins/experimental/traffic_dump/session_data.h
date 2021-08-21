@@ -28,6 +28,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <optional>
 
 #include "ts/ts.h"
 #include "tscore/ts_file.h"
