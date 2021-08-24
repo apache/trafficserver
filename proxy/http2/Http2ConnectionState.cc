@@ -811,7 +811,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     auto error = cstate.increment_client_rwnd(size);
     if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, error);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, error, "Erroneous client window update");
     }
 
     cstate.restart_streams();
