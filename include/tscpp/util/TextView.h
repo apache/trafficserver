@@ -1273,21 +1273,47 @@ namespace literals
  * std::set<std::string, ts::caseless_compare> strings;
  * @endcode
  */
-struct caseless_compare {
+struct caseless_less_than {
   bool
   operator()(std::string_view const &lhs, std::string_view const &rhs) const
   {
-    return strcasecmp(lhs, rhs);
+    return strcasecmp(lhs, rhs) < 0;
   }
   bool
   operator()(TextView const &lhs, TextView const &rhs) const
   {
-    return strcasecmp(lhs, rhs);
+    return strcasecmp(lhs, rhs) < 0;
   }
   bool
   operator()(std::string const &lhs, std::string const &rhs) const
   {
-    return strcasecmp(lhs, rhs);
+    return strcasecmp(lhs, rhs) < 0;
+  }
+};
+
+/** Functor for STL containers that need caseless equality of standard string types.
+ *
+ * For example a @c std::set of strings with caseless comparison would be
+ *
+ * @code
+ * std::set<std::string, ts::caseless_compare> strings;
+ * @endcode
+ */
+struct caseless_equal {
+  bool
+  operator()(std::string_view const &lhs, std::string_view const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
+  }
+  bool
+  operator()(TextView const &lhs, TextView const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
+  }
+  bool
+  operator()(std::string const &lhs, std::string const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
   }
 };
 
