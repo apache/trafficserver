@@ -4461,6 +4461,7 @@ Sockets
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
    back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
+   On FreeBSD, ``accf_data`` module needs to be loaded.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
    :reloadable:
