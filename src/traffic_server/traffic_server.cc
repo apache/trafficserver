@@ -119,7 +119,6 @@ extern "C" int plock(int);
 #if TS_USE_OPENTRACING
 #include <opentracing/dynamic_load.h>
 #include <fstream>
-static opentracing::expected<opentracing::DynamicTracingLibraryHandle, std::error_code> ot_lib;
 #endif
 
 //
@@ -1753,21 +1752,13 @@ init_tracing()
 
     ats_scoped_str ot_config_path(RecConfigReadConfigPath("proxy.config.opentracing.config", ""));
     std::ifstream in(ot_config_path, std::ios::in | std::ios::binary);
-    std::string ot_config;
     if (in) {
       std::ostringstream contents;
       contents << in.rdbuf();
       in.close();
       ot_config = contents.str();
     }
-
-    auto &tracer_factory = ot_lib->tracer_factory();
-    auto tracer          = tracer_factory.MakeTracer(ot_config.c_str(), ot_error_message);
-    if (!tracer) {
-      Error("Failed to inintialize tracer: %s", ot_error_message.c_str());
-      ::exit(1);
-    }
-    opentracing::Tracer::InitGlobal(std::static_pointer_cast<opentracing::Tracer>(*tracer));
+    ink_thread_key_create(&thread_specific_tracer_key, nullptr);
     available = true;
   }
 #endif

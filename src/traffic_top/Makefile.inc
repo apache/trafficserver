@@ -34,7 +34,6 @@ traffic_top_traffic_top_CPPFLAGS = \
 traffic_top_traffic_top_LDFLAGS = \
     $(AM_LDFLAGS) \
 	@CURSES_LDFLAGS@ \
-	@OPENTRACING_LIBS@ \
 	@OPENSSL_LDFLAGS@
 
 traffic_top_traffic_top_SOURCES = \

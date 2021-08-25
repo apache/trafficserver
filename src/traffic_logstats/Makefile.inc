@@ -56,5 +56,4 @@ traffic_logstats_traffic_logstats_LDADD = \
 traffic_logstats_traffic_logstats_LDADD += \
   @HWLOC_LIBS@ \
   @YAMLCPP_LIBS@ \
-  @OPENTRACING_LIBS@ \
   @LIBPROFILER@ -lm

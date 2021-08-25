@@ -23,11 +23,23 @@
 
 #pragma once
 
+#include <opentracing/dynamic_load.h>
 #include <opentracing/tracer.h>
 #include <opentracing/span.h>
 #include <string_view>
+#include <vector>
+#include "ink_thread.h"
+#include "Diags.h"
 
 using TRACER = opentracing::Span;
+
+extern opentracing::expected<opentracing::DynamicTracingLibraryHandle, std::error_code> ot_lib;
+extern std::string ot_config;
+extern std::mutex tracers_mutex;
+extern std::vector<std::shared_ptr<opentracing::Tracer>> tracers;
+extern ink_thread_key thread_specific_tracer_key;
+extern std::string ot_config;
+extern opentracing::expected<opentracing::DynamicTracingLibraryHandle, std::error_code> ot_lib;
 
 inline void
 tracing_tag(TRACER &out, std::string_view name, std::string_view value)
@@ -56,7 +68,21 @@ tracing_log(TRACER &out, std::string_view category, int value)
 inline TRACER *
 tracing_new(const char *name)
 {
-  auto span = opentracing::Tracer::Global()->StartSpan(name);
+  opentracing::Tracer *tracer = static_cast<opentracing::Tracer *>(ink_thread_getspecific(thread_specific_tracer_key));
+  if (tracer == nullptr) {
+    std::lock_guard<std::mutex> lock(tracers_mutex);
+    std::string ot_emsg;
+    auto t = std::static_pointer_cast<opentracing::Tracer>(*ot_lib->tracer_factory().MakeTracer(ot_config.c_str(), ot_emsg));
+    if (t) {
+      tracers.push_back(t);
+      ink_thread_setspecific(thread_specific_tracer_key, t.get());
+      tracer = t.get();
+    } else {
+      Error("Failed to inintialize tracer: %s", ot_emsg.c_str());
+      return nullptr;
+    }
+  }
+  auto span = tracer->StartSpan(name);
   return span.release();
 }
 

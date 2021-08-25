@@ -49,6 +49,7 @@ libtscore_la_LIBADD = \
 	@OPENSSL_LIBS@ \
 	@LIBRESOLV@ \
 	@LIBCAP@ \
+	@OPENTRACING_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	-lc
 

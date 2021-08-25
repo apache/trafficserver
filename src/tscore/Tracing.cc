@@ -25,6 +25,14 @@
 
 std::unique_ptr<Tracing> tracing = nullptr;
 
+#if TS_USE_OPENTRACING
+std::mutex tracers_mutex;
+std::vector<std::shared_ptr<opentracing::Tracer>> tracers;
+ink_thread_key thread_specific_tracer_key;
+std::string ot_config;
+opentracing::expected<opentracing::DynamicTracingLibraryHandle, std::error_code> ot_lib;
+#endif
+
 void
 Tracing::enable(int value)
 {
