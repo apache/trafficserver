@@ -89,7 +89,8 @@ def make_done_stat_ready(tsenv):
         retval = subprocess.run(
             "traffic_ctl metric get ssntxnorder_verify.test.done",
             shell=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             env=tsenv)
         return retval.returncode == 0 and b'1' in retval.stdout
 
