@@ -78,6 +78,8 @@
 
 #define USE_NEW_EMPTY_MIOBUFFER
 
+static const std::string TRACE_CAT_MILESTONE = "milestone";
+
 extern int cache_config_read_while_writer;
 
 extern HttpBodyFactory *body_factory;
@@ -536,6 +538,7 @@ void
 HttpSM::attach_client_session(ProxyTransaction *client_vc)
 {
   milestones[TS_MILESTONE_UA_BEGIN] = Thread::get_hrtime();
+  TRACE_LOG(client_vc->tracer(), TRACE_CAT_MILESTONE, "UA_BEGIN");
   ink_assert(client_vc != nullptr);
 
   NetVConnection *netvc = client_vc->get_netvc();
@@ -760,6 +763,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //
   if ((ua_txn->get_remote_reader()->read_avail() > 0) && (client_request_hdr_bytes == 0)) {
     milestones[TS_MILESTONE_UA_FIRST_READ] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_FIRST_READ");
     ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   }
   /////////////////////
@@ -828,6 +832,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     ua_entry->vc_read_handler                    = &HttpSM::state_watch_for_client_abort;
     ua_entry->vc_write_handler                   = &HttpSM::state_watch_for_client_abort;
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_READ_HEADER_DONE");
   }
 
   switch (state) {
@@ -1055,6 +1060,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
     milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_CLOSE");
     set_ua_abort(HttpTransact::ABORTED, event);
 
     terminate_sm = true;
@@ -1203,6 +1209,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_READ_HEADER_DONE");
   }
 
   switch (state) {
@@ -1237,7 +1244,8 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   STATE_ENTER(&HttpSM::state_raw_http_server_open, event);
   ink_assert(server_entry == nullptr);
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
-  NetVConnection *netvc                       = nullptr;
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_CONNECT_END");
+  NetVConnection *netvc = nullptr;
 
   pending_action = nullptr;
   switch (event) {
@@ -1897,6 +1905,7 @@ HttpSM::state_http_server_open(int event, void *data)
     pending_action = nullptr;
   }
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_CONNECT_END");
 
   switch (event) {
   case NET_EVENT_OPEN: {
@@ -2053,6 +2062,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   //
   if (server_response_hdr_bytes == 0) {
     milestones[TS_MILESTONE_SERVER_FIRST_READ] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_FIRST_READ");
 
     server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
 
@@ -2087,6 +2097,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_READ_HEADER_DONE");
 
     // If there is a post body in transit, give up on it
     if (tunnel.is_tunnel_alive()) {
@@ -2386,6 +2397,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
   }
 
   milestones[TS_MILESTONE_DNS_LOOKUP_END] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "DNS_LOOKUP_END");
 
   if (is_debug_tag_set("http_timeout")) {
     if (t_state.api_txn_dns_timeout_value != -1) {
@@ -2575,7 +2587,8 @@ HttpSM::state_cache_open_write(int event, void *data)
   pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
-  pending_action                                = nullptr;
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "CACHE_OPEN_WRITE_END");
+  pending_action = nullptr;
 
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
@@ -2737,6 +2750,7 @@ HttpSM::state_cache_open_read(int event, void *data)
   }
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "CACHE_OPEN_READ_END");
 
   return 0;
 }
@@ -3109,6 +3123,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   // statistics are calculated from epoch time.
   if (0 != milestones[TS_MILESTONE_SERVER_CONNECT]) {
     milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_CLOSE");
   }
 
   bool close_connection = false;
@@ -3383,6 +3398,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == ua_txn);
   milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_CLOSE");
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -4294,6 +4310,7 @@ HttpSM::do_hostdb_lookup()
   ink_assert(pending_action.empty());
 
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "DNS_LOOKUP_BEGIN");
 
   if (t_state.txn_conf->srv_enabled) {
     char d[MAXDNAME];
@@ -4781,7 +4798,8 @@ HttpSM::do_cache_lookup_and_read()
   HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CACHE_LOOKUP_NONE;
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "CACHE_OPEN_READ_BEGIN");
+  t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
   t_state.cache_info.lookup_count++;
   // YTS Team, yamsat Plugin
   // Changed the lookup_url to c_url which enables even
@@ -4833,6 +4851,7 @@ inline void
 HttpSM::do_cache_prepare_write()
 {
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "CACHE_OPEN_WRITE_BEGIN");
   do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, true);
 }
 
@@ -5045,8 +5064,10 @@ HttpSM::do_http_server_open(bool raw)
 
   // set the server first connect milestone here in case we return in the plugin_tunnel case that follows
   milestones[TS_MILESTONE_SERVER_CONNECT] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_CONNECT");
   if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
     milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_FIRST_CONNECT");
   }
 
   if (plugin_tunnel) {
@@ -5486,6 +5507,7 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     cur_hook_id                             = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     milestones[TS_MILESTONE_UA_BEGIN_WRITE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_BEGIN_WRITE");
     break;
   case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
@@ -6388,7 +6410,8 @@ HttpSM::setup_server_send_request()
   }
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
-  server_entry->write_vio                     = server_entry->vc->do_io_write(this, hdr_length, buf_start);
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_BEGIN_WRITE");
+  server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 
   // Make sure the VC is using correct timeouts.  We may be reusing a previously used server session
   server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
@@ -7046,6 +7069,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   IOBufferReader *r_to   = to_ua_buf->alloc_reader();
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SERVER_BEGIN_WRITE");
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
     if (initial && initial->read_avail()) {
@@ -7300,6 +7324,7 @@ void
 HttpSM::update_stats()
 {
   milestones[TS_MILESTONE_SM_FINISH] = Thread::get_hrtime();
+  TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "SM_FINISH");
 
   if (is_action_tag_set("bad_length_state_dump")) {
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
@@ -7329,6 +7354,7 @@ HttpSM::update_stats()
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
   if (milestones[TS_MILESTONE_UA_CLOSE] == 0 && milestones[TS_MILESTONE_UA_READ_HEADER_DONE] > 0) {
     milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
+    TRACE_LOG(ua_txn->tracer(), TRACE_CAT_MILESTONE, "UA_CLOSE");
   }
 
   // request_process_time  = The time after the header is parsed to the completion of the transaction

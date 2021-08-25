@@ -26,6 +26,8 @@
 #include "ProxySession.h"
 #include <string_view>
 
+#include "tscore/Tracing.h"
+
 class HttpSM;
 
 // Abstract Class for any transaction with-in the HttpSM
@@ -135,10 +137,14 @@ public:
 
   IOBufferReader *get_remote_reader();
 
+  TRACER *tracer() const;
+
 protected:
   ProxySession *_proxy_ssn = nullptr;
   HttpSM *_sm              = nullptr;
   IOBufferReader *_reader  = nullptr;
+
+  TRACER *_tracer = nullptr;
 
 private:
 };

@@ -23,6 +23,7 @@
 
 #include "http/HttpSM.h"
 #include "Plugin.h"
+#include "tscore/Tracing.h"
 
 #define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
 
@@ -49,6 +50,9 @@ ProxyTransaction::new_transaction(bool from_early_data)
   if (tracing->is_enabled()) {
     this->_tracer = tracing->make_tracer("ProxyTransaction");
   }
+
+  TRACE_TAG(this->tracer(), "ssn_id", _proxy_ssn->connection_id());
+  TRACE_TAG(this->tracer(), "txn_id", this->get_transaction_id());
 
   _sm = THREAD_ALLOC(httpSMAllocator, this_thread());
   _sm->init(from_early_data);
@@ -257,4 +261,10 @@ ProxyTransaction::allow_half_open() const
 void
 ProxyTransaction::set_close_connection(HTTPHdr &hdr) const
 {
+}
+
+TRACER *
+ProxyTransaction::tracer() const
+{
+  return this->_tracer;
 }
