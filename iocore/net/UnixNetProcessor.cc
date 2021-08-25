@@ -104,7 +104,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   }
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
   if (accept_threads > 0 && listen_per_thread > 0) {
-    Fatal("Please disable accept_threads or exec_threads.listen");
+    Fatal("Please disable accept_threads or exec_thread.listen");
   }
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
