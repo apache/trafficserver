@@ -1005,7 +1005,7 @@ load_config_file(config_holder_t *config_holder)
     fh = TSfopen(config_holder->config_path, "r");
   }
 
-  if (!fh) {
+  if (!fh && config_holder->config_path != NULL) {
     TSError("[%s] Unable to open config: %s. Will use the param as the path, or %s if null\n", PLUGIN_NAME,
             config_holder->config_path, DEFAULT_URL_PATH);
     if (config_holder->config) {
