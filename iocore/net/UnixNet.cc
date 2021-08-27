@@ -603,8 +603,8 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
     if (ne == enabling_ne) {
       continue;
     }
-    if ((ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) ||
-        (ne->active_timeout_in && ne->next_activity_timeout_at <= now)) {
+    if ((ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at <= now) ||
+        (ne->next_activity_timeout_at && ne->next_activity_timeout_at <= now)) {
       _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
     }
     if (ignore_queue_size == false && max_requests_per_thread_in > active_queue_size) {
