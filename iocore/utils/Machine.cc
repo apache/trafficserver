@@ -65,7 +65,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
       // limit is 63, or 255 for a FQDN.
       auto result = gethostname(localhost, sizeof(localhost));
       ink_release_assert(result == 0);
-      host_name.assign(localhost, result);
+      host_name.assign(localhost, strlen(localhost));
     }
 
 #if HAVE_IFADDRS_H
