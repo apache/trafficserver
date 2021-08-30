@@ -232,7 +232,7 @@ def get_port(obj, name):
                 "Using port from port queue: {}".format(port))
             # setup clean up step to recycle the port
             obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
-                port), description="recycling port")
+                port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}")
         except PortQueueSelectionError:
             port = _get_port_by_bind()
             host.WriteVerbose(
