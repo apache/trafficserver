@@ -44,7 +44,7 @@ def parse_records_file(filename):
             try:
                 settings[parts[1]] = parts[3]
             except IndexError:
-                sys.stderr.write("Skipping malformed line: %s\n" % line)
+                sys.stderr.write(f"Skipping malformed line: {line}\n")
                 continue
     return settings
 
@@ -61,7 +61,7 @@ def compare_settings(old, new):
             # Skip predefined values
             continue
         if old[key] != new[key]:
-            print("%s %s -> %s" % (key, old[key], new[key]))
+            print(f"{key} {old[key]} -> {new[key]}")
 
 
 if __name__ == '__main__':
