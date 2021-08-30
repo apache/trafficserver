@@ -1688,7 +1688,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(0)) {
+  if (stream->is_write_vio_done()) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
