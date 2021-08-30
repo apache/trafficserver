@@ -33,7 +33,7 @@
 #include "Http2DependencyTree.h"
 #include "Http2FrequencyCounter.h"
 
-class Http2ClientSession;
+class Http2CommonSession;
 class Http2Frame;
 
 enum class Http2SendDataFrameResult {
@@ -80,7 +80,7 @@ public:
 
   ProxyError rx_error_code;
   ProxyError tx_error_code;
-  Http2ClientSession *ua_session   = nullptr;
+  Http2CommonSession *session      = nullptr;
   HpackHandle *local_hpack_handle  = nullptr;
   HpackHandle *remote_hpack_handle = nullptr;
   DependencyTree *dependency_tree  = nullptr;
@@ -90,7 +90,7 @@ public:
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void init(Http2ClientSession *ssn);
+  void init(Http2CommonSession *ssn);
   void send_connection_preface();
   void destroy();
   void rcv_frame(const Http2Frame *frame);
@@ -299,7 +299,7 @@ Http2ConnectionState::get_shutdown_reason() const
 inline bool
 Http2ConnectionState::is_state_closed() const
 {
-  return ua_session == nullptr || fini_received;
+  return session == nullptr || fini_received;
 }
 
 inline bool
