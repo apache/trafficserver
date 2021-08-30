@@ -90,7 +90,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Apache Traffic Server'
-copyright = u'{}, dev@trafficserver.apache.org'.format(date.today().year)
+copyright = f'{date.today().year}, dev@trafficserver.apache.org'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

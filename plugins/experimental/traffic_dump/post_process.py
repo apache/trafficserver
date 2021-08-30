@@ -189,7 +189,7 @@ def write_sessions(sessions, filename, indent):
     new_json["sessions"] = deepcopy(sessions)
     with open(filename, "w") as f:
         json.dump(new_json, f, ensure_ascii=False, indent=indent)
-        logging.debug("{} has {} sessions".format(filename, len(sessions)))
+        logging.debug(f"{filename} has {len(sessions)} sessions")
 
 
 class ParseJSONError(PostProcessError):
@@ -274,11 +274,11 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
             session_count += 1
             transaction_count += len(session["transactions"])
         if len(sessions) >= num_sessions_per_file:
-            write_sessions(sessions, "{}/{}_{}.json".format(out_dir, base_name, batch_count), indent)
+            write_sessions(sessions, f"{out_dir}/{base_name}_{batch_count}.json", indent)
             sessions = []
             batch_count += 1
     if sessions:
-        write_sessions(sessions, "{}/{}_{}.json".format(out_dir, base_name, batch_count), indent)
+        write_sessions(sessions, f"{out_dir}/{base_name}_{batch_count}.json", indent)
 
     return session_count, transaction_count, error_count
 
@@ -409,17 +409,17 @@ def main():
         transaction_count += count_tuple[1]
         for e in count_tuple[2]:
             errors[e] += count_tuple[2][e]
-    summary = "Total {} sessions and {} transactions.".format(session_count, transaction_count)
+    summary = f"Total {session_count} sessions and {transaction_count} transactions."
     logging.info(summary)
     if errors:
         logging.info("Total errors:")
         for e in errors:
-            logging.info("{}: {}".format(e, errors[e]))
+            logging.info(f"{e}: {errors[e]}")
     else:
         logging.info("Total errors: 0")
 
-    with open("{}/summary.txt".format(args.out_dir), "w", encoding="ascii") as f:
-        f.write("{}\n".format(summary))
+    with open(f"{args.out_dir}/summary.txt", "w", encoding="ascii") as f:
+        f.write(f"{summary}\n")
 
 
 if __name__ == "__main__":

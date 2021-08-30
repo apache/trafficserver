@@ -30,21 +30,21 @@ if __name__ == '__main__':
         min_sphinx_version_info = (1, 7, 5)
         min_sphinx_version = '.'.join(str(x) for x in min_sphinx_version_info)
 
-        print('checking for sphinx version >= {0}... '.format(min_sphinx_version), end="")
+        print(f'checking for sphinx version >= {min_sphinx_version}... ', end="")
         # Need at least 1.5.1 to use svg
         # version >= 1.2 guarantees sphinx.version_info is available.
         try:
             import sphinx
 
             if 'version_info' in dir(sphinx):
-                print('Found Sphinx version {0}'.format(sphinx.version_info))
+                print(f'Found Sphinx version {sphinx.version_info}')
             else:
                 version = sphinx.__version__
-                print('Found Sphinx version (old) {0}'.format(sphinx.__version__))
+                print(f'Found Sphinx version (old) {sphinx.__version__}')
                 sphinx.version_info = version.split('.')
 
             if sphinx.version_info < min_sphinx_version_info:
-                print('sphinx version is older than {0}'.format(min_sphinx_version))
+                print(f'sphinx version is older than {min_sphinx_version}')
                 sys.exit(1)
 
         except Exception as e:
