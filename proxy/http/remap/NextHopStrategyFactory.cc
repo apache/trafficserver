@@ -45,8 +45,19 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
   constexpr std::string_view rr_ip           = "rr_ip";
   constexpr std::string_view latched         = "latched";
 
+  bool error_loading   = false;
   strategies_loaded    = true;
   const char *basename = fn.substr(fn.find_last_of('/') + 1).data();
+
+  NH_Note("%s loading ...", basename);
+
+  struct stat sbuf;
+  if (stat(std::string(fn).c_str(), &sbuf) == -1 && errno == ENOENT) {
+    // missing config file is an acceptable runtime state
+    strategies_loaded = false;
+    NH_Note("%s doesn't exist", std::string(fn).c_str());
+    goto done;
+  }
 
   // load the strategies yaml config file.
   try {
@@ -62,6 +73,7 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
       if (strategies.Type() != YAML::NodeType::Sequence) {
         NH_Error("malformed %s file, expected a 'strategies' sequence", basename);
         strategies_loaded = false;
+        error_loading     = true;
       }
     }
     // loop through the strategies document.
@@ -95,11 +107,16 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
       }
     }
   } catch (std::exception &ex) {
-    NH_Note("%s", ex.what());
+    NH_Error("%s", ex.what());
     strategies_loaded = false;
+    error_loading     = true;
   }
-  if (strategies_loaded) {
+
+done:
+  if (!error_loading) {
     NH_Note("%s finished loading", basename);
+  } else {
+    Error("%s failed to load", basename);
   }
 }
 
