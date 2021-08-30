@@ -8,7 +8,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 15
+< Age: ``
 < Server: ATS/10.0.0
 < Connection: keep-alive
 < Warning: ``
