@@ -56,6 +56,7 @@ are available:
    The default queue size is `UINT_MAX`, which is essentially unlimited.
 
 .. option:: --error
+
    An optional HTTP status error code, to be used together with the
    :option:`--queue` option above. The default is `429`.
 
