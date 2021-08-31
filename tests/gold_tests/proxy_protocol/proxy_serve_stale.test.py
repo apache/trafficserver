@@ -63,12 +63,23 @@ ts_parent.Disk.remap_config.AddLine(
     'map http://localhost:{0} http://localhost:{0}'.format(server.Variables.Port)
 )
 
-
 # Request content to cache in parent proxy
 curl_request_running = (
     'curl -s -v http://localhost:{0};'  # miss
     'sleep 5;curl -v http://localhost:{0}'  # hit-fresh
 )
+
+# Request stale content
+curl_request_down = (
+    'sleep 10; curl -s -v http://localhost:{0};'  # hit-stale, serve stale with warning
+    'sleep 10; curl -v http://localhost:{0}'  # max_stale_age expires, can't reach parent
+)
+
+
+def stopParent(event):
+    ts_parent.RunningEvent.Connect(Testers.Lambda(lambda ev: event.object.Stop()))
+    return 0, "cached curl commands done", "stop parent process"
+
 
 # Test case for when origin server is running, so parent proxy can cache object
 tr = Test.AddTestRun()
@@ -80,16 +91,15 @@ tr.Processes.Default.StartBefore(ts_child)
 tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_running.gold"
 tr.StillRunningAfter = ts_child
 
-# Request stale content
-curl_request_down = (
-    'sleep 10;curl -s -v http://localhost:{0};'  # hit-stale, serve stale with warning
-    'sleep 15;curl -v http://localhost:{0}'  # max_stale_age expires, can't reach parent
-)
+tr.FinishedEvent.Connect(Testers.Lambda(lambda ev: stopParent(ev)))
+ts_parent.FinishedEvent.Connect(Testers.Lambda(lambda ev: serveStaleTest(ev)))
 
-# Test case for when origin server goes down
-tr = Test.AddTestRun()
-ts_parent.RunningEvent.Connect(Testers.Lambda(lambda ev: StopProcess(ev, 40)))
-tr.Processes.Default.Command = curl_request_down.format(ts_child.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_down.gold"
-tr.StillRunningAfter = ts_child
+
+def serveStaleTest(event):
+    # Test case for when parent proxy goes down
+    tr = Test.AddTestRun()
+    tr.Processes.Default.Command = curl_request_down.format(ts_child.Variables.port)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_down.gold"
+    tr.StillRunningAfter = ts_child
+    return 0, "parent process down", "serve stale content from child process"

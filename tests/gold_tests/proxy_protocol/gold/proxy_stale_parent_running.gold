@@ -8,7 +8,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Server: ATS/10.0.0
 < Connection: keep-alive
 ``
@@ -21,7 +21,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 5
+< Age: ``
 < Server: ATS/10.0.0
 < Connection: keep-alive
 ``
