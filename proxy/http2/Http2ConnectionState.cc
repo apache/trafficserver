@@ -1676,6 +1676,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     payload_length = 0;
   }
 
+  stream->update_sent_count(payload_length);
+
   // Are we at the end?
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
@@ -1685,7 +1687,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(0)) {
+  if (stream->is_write_vio_done()) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
@@ -1699,8 +1701,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
   this->session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
-
-  stream->update_sent_count(payload_length);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(session, stream->get_id(), "END_STREAM");
