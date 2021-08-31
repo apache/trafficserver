@@ -47,12 +47,13 @@ testcall(char *foo, char * /*configName */)
 void
 registerFile(const char *configName, const char *defaultName, bool isRequired)
 {
-  bool found        = false;
-  const char *fname = REC_readString(configName, &found);
+  bool found  = false;
+  char *fname = REC_readString(configName, &found);
   if (!found) {
-    fname = defaultName;
+    fname = ats_strdup(defaultName);
   }
   configFiles->addFile(fname, configName, false, isRequired);
+  ats_free(fname);
 }
 
 //

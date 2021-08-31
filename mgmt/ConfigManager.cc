@@ -56,27 +56,22 @@ ConfigManager::ConfigManager(const char *fileName_, const char *configName_, boo
   }
 
   // Copy the file name.
-  fileName   = ats_strdup(fileName_);
-  configName = ats_strdup(configName_);
+  fileName   = std::string{fileName_};
+  configName = std::string{configName_};
 
   ink_mutex_init(&fileAccessLock);
   // Check to make sure that our configuration file exists
   //
   if (statFile(&fileInfo) < 0) {
-    mgmt_log("[ConfigManager::ConfigManager] %s Unable to load: %s", fileName, strerror(errno));
+    mgmt_log("[ConfigManager::ConfigManager] %s Unable to load: %s", fileName.c_str(), strerror(errno));
 
     if (isRequired) {
-      mgmt_fatal(0, "[ConfigManager::ConfigManager] Unable to open required configuration file %s.\n\tStat failed : %s\n", fileName,
-                 strerror(errno));
+      mgmt_fatal(0, "[ConfigManager::ConfigManager] Unable to open required configuration file %s.\n\tStat failed : %s\n",
+                 fileName.c_str(), strerror(errno));
     }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
   }
-}
-
-ConfigManager::~ConfigManager()
-{
-  ats_free(fileName);
 }
 
 //
@@ -118,9 +113,9 @@ ConfigManager::checkForUserUpdate(RollBackCheckType how)
     if (how == ROLLBACK_CHECK_AND_UPDATE) {
       fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       if (!this->isChildManaged()) {
-        configFiles->fileChanged(fileName, configName);
+        configFiles->fileChanged(fileName.c_str(), configName.c_str());
       }
-      mgmt_log("User has changed config file %s\n", fileName);
+      mgmt_log("User has changed config file %s\n", fileName.c_str());
     }
     result = true;
   } else {
