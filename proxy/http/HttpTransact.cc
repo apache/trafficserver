@@ -48,6 +48,11 @@
 #include "../IPAllow.h"
 #include "I_Machine.h"
 
+namespace
+{
+char const Dns_error_body[] = "connect#dns_failed";
+}
+
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
                                                   const HostResData *host_res_data = static_cast<const HostResData *>(data);
@@ -1899,7 +1904,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
   } else {
     // Our ReDNS failed so output the DNS failure error message
     // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
-    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
@@ -8144,7 +8149,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_SERVER);
     break;
   case HTTP_STATUS_INTERNAL_SERVER_ERROR:
-    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_DNS_FAILURE);
+    if (Dns_error_body == error_body_type) {
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_DNS_FAILURE);
+    } else {
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_UNKNOWN);
+    }
     break;
   case HTTP_STATUS_MOVED_TEMPORARILY:
     SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_MOVED_TEMPORARILY);
