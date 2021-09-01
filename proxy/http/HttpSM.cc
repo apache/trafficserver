@@ -1998,8 +1998,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
   // a WRITE event appear after receiving EOS from the server connection
   if (server_entry->eos) {
     return 0;
-  } else if (data == server_entry->write_vio) {
-    return this->state_send_server_request_header(event, data);
   }
 
   ink_assert(server_entry->eos != true);
@@ -2165,9 +2163,6 @@ int
 HttpSM::state_send_server_request_header(int event, void *data)
 {
   ink_assert(server_entry != nullptr);
-  if (server_entry->read_vio == data) {
-    return this->state_read_server_response_header(event, data);
-  }
   ink_assert(server_entry->eos == false);
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(&HttpSM::state_send_server_request_header, event);
