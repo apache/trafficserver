@@ -115,7 +115,7 @@ def _get_available_port(queue):
     return port
 
 
-def _setup_port_queue(amount=2000):
+def _setup_port_queue(amount=1000):
     """
     Build up the set of ports that the OS in theory will not use.
     """
