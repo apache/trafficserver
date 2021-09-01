@@ -16,10 +16,18 @@ Test child proxy serving stale content when parents are exhausted
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+
+def setPid(event):
+    Test.Env['SERVERPID'] = str(event.object.pid())
+
+
 Test.ContinueOnFail = True
+# Set up hierarchical caching processes
 ts_child = Test.MakeATSProcess("ts_child")
 ts_parent = Test.MakeATSProcess("ts_parent")
 server = Test.MakeOriginServer("server")
+ts_parent.RunningEvent.Connect(setPid)
 
 Test.testName = "STALE"
 
@@ -75,14 +83,8 @@ curl_request_down = (
     'sleep 10; curl -v http://localhost:{0}'  # max_stale_age expires, can't reach parent
 )
 
-
-def stopParent(event):
-    ts_parent.RunningEvent.Connect(Testers.Lambda(lambda ev: event.object.Stop()))
-    return 0, "cached curl commands done", "stop parent process"
-
-
-# Test case for when origin server is running, so parent proxy can cache object
-tr = Test.AddTestRun()
+# Test case for when parent server is running, so child proxy can cache object
+tr = Test.AddTestRun("Send request with parent running")
 tr.Processes.Default.Command = curl_request_running.format(ts_child.Variables.port, ts_parent.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
@@ -90,16 +92,15 @@ tr.Processes.Default.StartBefore(ts_parent)
 tr.Processes.Default.StartBefore(ts_child)
 tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_running.gold"
 tr.StillRunningAfter = ts_child
+tr.StillRunningAfter = ts_parent
 
-tr.FinishedEvent.Connect(Testers.Lambda(lambda ev: stopParent(ev)))
-ts_parent.FinishedEvent.Connect(Testers.Lambda(lambda ev: serveStaleTest(ev)))
+tr = Test.AddTestRun("Kill parent server")
+tr.Processes.Default.Command = 'kill ${SERVERPID}'
+tr.Processes.Default.ReturnCode = 0
 
-
-def serveStaleTest(event):
-    # Test case for when parent proxy goes down
-    tr = Test.AddTestRun()
-    tr.Processes.Default.Command = curl_request_down.format(ts_child.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_down.gold"
-    tr.StillRunningAfter = ts_child
-    return 0, "parent process down", "serve stale content from child process"
+# Test case for when parent server is down, so child can serve stale content
+tr = Test.AddTestRun("Send request with parent down")
+tr.Processes.Default.Command = curl_request_down.format(ts_child.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/proxy_stale_parent_down.gold"
+tr.StillRunningAfter = ts_child
