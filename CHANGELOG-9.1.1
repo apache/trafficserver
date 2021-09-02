@@ -1,6 +1,7 @@
 Changes with Apache Traffic Server 9.1.1
   #7501 - JeMalloc performance improvments
   #7913 - Ensure TS_VCONN_CLOSE_HOOK hook is called during TS_EVENT_VCONN_CLOSE.
+  #7994 - Allow to TLS handshake to error out on TSVConnReenable
   #8028 - Use thread_local to speed things up in JeAllocator
   #8067 - Add a new log tag %<vs>
   #8230 - Updating our AuTests to use Proxy Verifier v2.2.2
@@ -12,5 +13,7 @@ Changes with Apache Traffic Server 9.1.1
   #8270 - Add missing #include directive
   #8279 - stats_over_http: don't show config file error when not specified
   #8280 - Report to user correct configurable to tweak on error
+  #8285 - Cleanup generated LDFLAGS for jemalloc
   #8293 - Fixes a typo in the Rate Limit plugin
   #8295 - Align strategies.yaml loading logging with other config files (#8262)
+  #8308 - Truly treat multiple certs with the same SAN as a warning (#8303)
