@@ -1408,7 +1408,6 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names), SSL_CTX_free);
 
   if (!ctx || !sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, common_names)) {
-    retval = false;
     std::string names;
     for (auto name : data.cert_names_list) {
       names.append(name);
