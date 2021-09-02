@@ -2343,9 +2343,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
-    if (server_entry->write_vio != nullptr) {
-      // We are done sending the request header, deallocate
-      //  our buffer and then decide what to do next
+    // We are done sending the request header, deallocate
+    //  our buffer and then decide what to do next
+    if (server_entry->write_buffer) {
       free_MIOBuffer(server_entry->write_buffer);
       server_entry->write_buffer = nullptr;
       method                     = t_state.hdr_info.server_request.method_get_wksidx();
