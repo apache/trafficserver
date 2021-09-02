@@ -64,7 +64,10 @@ static int StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int StaticHitTxnHook(TSCont contp, TSEvent event, void *edata);
 
 struct StaticHitConfig {
-  explicit StaticHitConfig(const std::string &filePath, const std::string &mimeType) : filePath(filePath), mimeType(mimeType) {}
+  explicit StaticHitConfig(const std::string &filePath, const std::string &mimeType, bool disableExact)
+    : filePath(filePath), mimeType(mimeType), disableExact(disableExact)
+  {
+  }
 
   ~StaticHitConfig() {}
 
@@ -74,6 +77,8 @@ struct StaticHitConfig {
   int successCode = 200;
   int failureCode = 404;
   int maxAge      = 0;
+
+  bool disableExact = false;
 };
 
 struct StaticHitRequest;
@@ -577,13 +582,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     return TSREMAP_NO_REMAP;
   }
 
-  // Anchor to URL specified in remap
-  int pathsz;
-  TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
-  if (pathsz > 0) {
-    VERROR("Path is not an exact match. Rejecting!");
-    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
-    return TSREMAP_NO_REMAP;
+  if (!cfg->disableExact) {
+    // Anchor to URL specified in remap
+    int pathsz;
+    TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
+    if (pathsz > 0) {
+      VERROR("Path is not an exact match. Rejecting!");
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
+      return TSREMAP_NO_REMAP;
+    }
   }
 
   if (!cfg->maxAge) {
@@ -600,14 +607,18 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {
-    {"file-path", required_argument, nullptr, 'f'},    {"mime-type", required_argument, nullptr, 'm'},
-    {"max-age", required_argument, nullptr, 'a'},      {"failure-code", required_argument, nullptr, 'c'},
-    {"success-code", required_argument, nullptr, 's'}, {nullptr, no_argument, nullptr, '\0'}};
+  static const struct option longopt[] = {{"file-path", required_argument, nullptr, 'f'},
+                                          {"mime-type", required_argument, nullptr, 'm'},
+                                          {"max-age", required_argument, nullptr, 'a'},
+                                          {"failure-code", required_argument, nullptr, 'c'},
+                                          {"success-code", required_argument, nullptr, 's'},
+                                          {"disable-exact", no_argument, nullptr, 'd'},
+                                          {nullptr, no_argument, nullptr, '\0'}};
 
   std::string filePath;
   std::string mimeType = "text/plain";
   int maxAge = 0, failureCode = 0, successCode = 0;
+  bool disableExact = false;
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -616,7 +627,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   optind = 0;
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "f:m:a:c:s:", longopt, nullptr);
+    int opt = getopt_long(argc, (char *const *)argv, "f:m:a:c:s:d", longopt, nullptr);
 
     switch (opt) {
     case 'f': {
@@ -634,6 +645,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     case 's': {
       successCode = atoi(optarg);
     } break;
+    case 'd': {
+      disableExact = true;
+    } break;
     }
 
     if (opt == -1) {
@@ -650,7 +664,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     filePath = std::string(TSConfigDirGet()) + '/' + filePath;
   }
 
-  StaticHitConfig *tc = new StaticHitConfig(filePath, mimeType);
+  StaticHitConfig *tc = new StaticHitConfig(filePath, mimeType, disableExact);
   if (maxAge > 0) {
     tc->maxAge = maxAge;
   }
