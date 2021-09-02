@@ -45,7 +45,7 @@ tr = Test.AddTestRun("Test domain {0}".format(CUSTOM_PLUGIN_204_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_PLUGIN_204_HOST}_get.test_input"
+tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_PLUGIN_204_HOST}_get.txt"
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-204-custom-plugin.gold"

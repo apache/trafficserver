@@ -2349,6 +2349,8 @@ ParseResult
 MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
   ParseResult zret = PARSE_RESULT_CONT;
+  // Need this for handling dangling CR.
+  static const char RAW_CR{ParseRules::CHAR_CR};
 
   auto text = input;
   while (PARSE_RESULT_CONT == zret && !text.empty()) {
@@ -2366,7 +2368,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         }
       } else if (ParseRules::is_lf(*text)) {
         ++text;
-        zret = PARSE_RESULT_ERROR; // lone LF
+        zret = PARSE_RESULT_DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
         m_state = MIME_PARSE_INSIDE;
@@ -2378,28 +2380,21 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         ++text;
         zret = PARSE_RESULT_DONE;
       } else {
-        zret = PARSE_RESULT_ERROR; // lone CR
+        // This really should be an error (spec doesn't permit lone CR) but the regression tests
+        // require it.
+        this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
     case MIME_PARSE_INSIDE: {
-      auto cr_off = text.find(ParseRules::CHAR_CR);
-      if (cr_off != TextView::npos) {
-        text.remove_prefix(cr_off + 1); // drop up to and including CR
-        // Is the next item a LF?
-        if (!text.empty()) {
-          if (text[0] == ParseRules::CHAR_LF) {
-            text.remove_prefix(1); // drop up to and including LF
-            if (LINE == scan_type) {
-              zret    = PARSE_RESULT_OK;
-              m_state = MIME_PARSE_BEFORE;
-            } else {
-              m_state = MIME_PARSE_AFTER; // looking for line folding.
-            }
-          } else { // Next char is not LF, you lose
-            zret = PARSE_RESULT_ERROR;
-          }
-        } else { // No LF yet, adjust state to note
-          m_state = MIME_PARSE_FOUND_CR;
+      auto lf_off = text.find(ParseRules::CHAR_LF);
+      if (lf_off != TextView::npos) {
+        text.remove_prefix(lf_off + 1); // drop up to and including LF
+        if (LINE == scan_type) {
+          zret    = PARSE_RESULT_OK;
+          m_state = MIME_PARSE_BEFORE;
+        } else {
+          m_state = MIME_PARSE_AFTER; // looking for line folding.
         }
       } else { // no EOL, consume all text without changing state.
         text.remove_prefix(text.size());
@@ -2536,11 +2531,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       return err;
     }
 
-    ///////////////////////////////////////////////////
-    // if got a CR and LF on its own, end the header //
-    ///////////////////////////////////////////////////
+    //////////////////////////////////////////////////
+    // if got a LF or CR on its own, end the header //
+    //////////////////////////////////////////////////
 
     if ((parsed.size() >= 2) && (parsed[0] == ParseRules::CHAR_CR) && (parsed[1] == ParseRules::CHAR_LF)) {
+      return PARSE_RESULT_DONE;
+    }
+
+    if ((parsed.size() >= 1) && (parsed[0] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 

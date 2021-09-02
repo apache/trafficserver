@@ -77,7 +77,7 @@ defaultTr = Test.AddTestRun("Test domain {0}".format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.StartBefore(Test.Processes.ts)
 defaultTr.StillRunningAfter = ts
 
-defaultTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{DEFAULT_204_HOST}_get.test_input"
+defaultTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{DEFAULT_204_HOST}_get.txt"
 defaultTr.Processes.Default.TimeOut = 5  # seconds
 defaultTr.Processes.Default.ReturnCode = 0
 defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
@@ -86,7 +86,7 @@ defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
 customTemplateTr = Test.AddTestRun(f"Test domain {CUSTOM_TEMPLATE_204_HOST}")
 customTemplateTr.StillRunningBefore = ts
 customTemplateTr.StillRunningAfter = ts
-customTemplateTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_TEMPLATE_204_HOST}_get.test_input"
+customTemplateTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_TEMPLATE_204_HOST}_get.txt"
 customTemplateTr.Processes.Default.TimeOut = 5  # seconds
 customTemplateTr.Processes.Default.ReturnCode = 0
 customTemplateTr.Processes.Default.Streams.stdout = "gold/http-204-custom.gold"
