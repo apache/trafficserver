@@ -100,12 +100,12 @@ ts.addSSLfile('ssl/server.key')
 
 ts.Setup.Copy('test-0rtt-s_client.py')
 ts.Setup.Copy('h2_early_decode.py')
-ts.Setup.Copy('early_h1_get.test_input')
-ts.Setup.Copy('early_h1_post.test_input')
-ts.Setup.Copy('early_h2_get.test_input')
-ts.Setup.Copy('early_h2_post.test_input')
-ts.Setup.Copy('early_h2_multi1.test_input')
-ts.Setup.Copy('early_h2_multi2.test_input')
+ts.Setup.Copy('early_h1_get.txt')
+ts.Setup.Copy('early_h1_post.txt')
+ts.Setup.Copy('early_h2_get.txt')
+ts.Setup.Copy('early_h2_post.txt')
+ts.Setup.Copy('early_h2_multi1.txt')
+ts.Setup.Copy('early_h2_multi2.txt')
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,

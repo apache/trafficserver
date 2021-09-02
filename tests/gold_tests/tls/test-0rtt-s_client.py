@@ -28,7 +28,7 @@ def main():
     http_ver = sys.argv[2]
     test = sys.argv[3]
     sess_file_path = os.path.join(sys.argv[4], 'sess.dat')
-    early_data_file_path = os.path.join(sys.argv[4], 'early_{0}_{1}.test_input'.format(http_ver, test))
+    early_data_file_path = os.path.join(sys.argv[4], 'early_{0}_{1}.txt'.format(http_ver, test))
 
     s_client_cmd_1 = shlex.split(
         'openssl s_client -connect 127.0.0.1:{0} -tls1_3 -quiet -sess_out {1}'.format(ats_port, sess_file_path))

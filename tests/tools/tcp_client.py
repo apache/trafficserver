@@ -63,9 +63,8 @@ def main(argv):
     args = parser.parse_args()
 
     data = ''
-    with open(args.file, 'rb') as f:
-        raw_data = f.read()
-        data = raw_data.decode()
+    with open(args.file, 'r') as f:
+        data = f.read()
     tcp_client(args.host, args.port, data, args.delay_after_send)
 
 

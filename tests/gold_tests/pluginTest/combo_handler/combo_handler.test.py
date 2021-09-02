@@ -117,10 +117,10 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-                                          "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\r\n" +
-                                          "Host: xyz\r\n" +
-                                          "Connection: close\r\n" +
-                                          "\r\n"
+                                          "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" +
+                                          "Host: xyz\n" +
+                                          "Connection: close\n" +
+                                          "\n"
                                           )
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/1-tr-Default/stream.all.txt")
@@ -128,10 +128,10 @@ f.Content = "combo_handler_files/tr1.gold"
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-                                          "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\r\n" +
-                                          "Host: xyz\r\n" +
-                                          "Connection: close\r\n" +
-                                          "\r\n"
+                                          "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" +
+                                          "Host: xyz\n" +
+                                          "Connection: close\n" +
+                                          "\n"
                                           )
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")

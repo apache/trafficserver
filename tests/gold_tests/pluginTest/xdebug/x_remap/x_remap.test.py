@@ -59,7 +59,7 @@ def sendMsg(msgFile):
 
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
-        "( python3 {}/tcp_client.py 127.0.0.1 {} {}/{}.test_input".format(
+        "( python3 {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
             Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
         " ; echo '======' ) | sed 's/:{}/:SERVER_PORT/' >>  {}/out.log 2>&1 ".format(
             server.Variables.Port, Test.RunDirectory)

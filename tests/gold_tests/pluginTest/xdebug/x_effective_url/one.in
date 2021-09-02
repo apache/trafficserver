@@ -1,0 +1,5 @@
+GET /argh HTTP/1.1
+Host: one
+X-Debug: x-effective-url
+Connection: close
+
