@@ -2175,21 +2175,22 @@ HttpSM::state_send_server_request_header(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
-    // We are done sending the request header, deallocate
-    //  our buffer and then decide what to do next
-    free_MIOBuffer(server_entry->write_buffer);
-    server_entry->write_buffer = nullptr;
-    server_entry->write_vio    = nullptr;
-    method                     = t_state.hdr_info.server_request.method_get_wksidx();
-    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
-        ua_txn->has_request_body(t_state.hdr_info.request_content_length,
-                                 t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
-      if (post_transform_info.vc) {
-        setup_transform_to_server_transfer();
-      } else {
-        // Go ahead and set up the post tunnel if we are not waiting for a 100 response
-        if (!t_state.hdr_info.client_request.m_100_continue_required) {
-          do_setup_post_tunnel(HTTP_SERVER_VC);
+    if (server_entry->write_vio != nullptr) {
+      // We are done sending the request header, deallocate
+      //  our buffer and then decide what to do next
+      free_MIOBuffer(server_entry->write_buffer);
+      server_entry->write_buffer = nullptr;
+      method                     = t_state.hdr_info.server_request.method_get_wksidx();
+      if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
+          ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                   t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+        if (post_transform_info.vc) {
+          setup_transform_to_server_transfer();
+        } else {
+          // Go ahead and set up the post tunnel if we are not waiting for a 100 response
+          if (!t_state.hdr_info.client_request.m_100_continue_required) {
+            do_setup_post_tunnel(HTTP_SERVER_VC);
+          }
         }
       }
     }
