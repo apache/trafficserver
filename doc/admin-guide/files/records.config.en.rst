@@ -1296,6 +1296,14 @@ Parent Proxy Configuration
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
+   :reloadable:
+   :overridable:
+
+   The timeout value (in seconds) for parent cache connection attempts.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
    :overridable:
@@ -1631,6 +1639,15 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
    ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
+   :reloadable:
+   :overridable:
+
+   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
+   request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 

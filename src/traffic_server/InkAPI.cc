@@ -8673,6 +8673,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
+  case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
+    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
     break;
@@ -8846,6 +8849,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
     ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
+    break;
+  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
     break;
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);

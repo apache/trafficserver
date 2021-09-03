@@ -346,7 +346,15 @@ HttpSM::get_server_connect_timeout()
   if (t_state.api_txn_connect_timeout_value != -1) {
     retval = HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value);
   } else {
-    retval = HRTIME_SECONDS(t_state.txn_conf->connect_attempts_timeout);
+    int connect_timeout;
+    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
+      connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
+    } else if (t_state.current.server == &t_state.parent_info) {
+      connect_timeout = t_state.txn_conf->parent_connect_timeout;
+    } else {
+      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
+    }
+    retval = HRTIME_SECONDS(connect_timeout);
   }
   return retval;
 }

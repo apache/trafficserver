@@ -663,6 +663,7 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_max_retries_dead_server = 3;
   MgmtInt connect_attempts_rr_retries              = 3;
   MgmtInt connect_attempts_timeout                 = 30;
+  MgmtInt post_connect_attempts_timeout            = 1800;
 
   MgmtInt connect_dead_policy = 2;
 
@@ -673,6 +674,7 @@ struct OverridableHttpConfigParams {
   MgmtInt parent_retry_time           = 300;
   MgmtInt parent_fail_threshold       = 10;
   MgmtInt per_parent_connect_attempts = 2;
+  MgmtInt parent_connect_timeout      = 30;
 
   MgmtInt down_server_timeout    = 300;
   MgmtInt client_abort_threshold = 1000;
