@@ -89,6 +89,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {OutboundConnTrack::CONFIG_VAR_MIN, {TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.anonymize_remove_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.open_read_retry_time", {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}},
+     // TODO: Remove for 10.  Leaving for now to keep enums consistent
+     {"proxy.config.http.down_server.abort_threshold", {TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD, TS_RECORDDATATYPE_INT}},
      {OutboundConnTrack::CONFIG_VAR_MATCH, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.parent_proxy.fail_threshold", {TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.ignore_authentication", {TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, TS_RECORDDATATYPE_INT}},

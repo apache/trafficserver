@@ -8679,6 +8679,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
     break;
+  case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
+    ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, conv);
+    break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, conv);
     break;
