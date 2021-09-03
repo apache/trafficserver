@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
+.. c:function:: TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp)
 
 Description
 -----------
@@ -36,10 +36,6 @@ Description
 :c:func:`TSHttpTxnAborted` returns :c:data:`TS_SUCCESS` if the requested
 transaction is aborted. This function should be used to determine whether
 a transaction has been aborted before attempting to cache the results.
-
-Broadly, transaction aborts can be classified into either client side aborts or
-server side. To distinguish between these, we have another boolean parameter
-which gets set to TRUE in case of client side aborts.
 
 Return values
 -------------

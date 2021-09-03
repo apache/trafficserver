@@ -5676,19 +5676,16 @@ TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
 }
 
 TSReturnCode
-TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
+TSHttpTxnAborted(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(client_abort != nullptr);
 
-  *client_abort = false;
-  HttpSM *sm    = (HttpSM *)txnp;
+  HttpSM *sm = (HttpSM *)txnp;
   switch (sm->t_state.squid_codes.log_code) {
   case SQUID_LOG_ERR_CLIENT_ABORT:
   case SQUID_LOG_ERR_CLIENT_READ_ERROR:
   case SQUID_LOG_TCP_SWAPFAIL:
     // check for client abort and cache read error
-    *client_abort = true;
     return TS_SUCCESS;
   default:
     break;
