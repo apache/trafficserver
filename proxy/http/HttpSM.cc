@@ -5228,8 +5228,31 @@ HttpSM::do_http_server_open(bool raw)
 
       ink_assert(pending_action.is_empty()); // in case of reschedule must not have already pending.
 
-      ct_state.blocked();
-      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      // If the queue is disabled, reschedule.
+      if (t_state.http_config_param->outbound_conntrack.queue_size < 0) {
+        ct_state.enqueue();
+        ct_state.rescheduled();
+        pending_action =
+          eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
+      } else if (t_state.http_config_param->outbound_conntrack.queue_size > 0) { // queue enabled, check for a slot
+        auto wcount = ct_state.enqueue();
+        if (wcount < t_state.http_config_param->outbound_conntrack.queue_size) {
+          ct_state.rescheduled();
+          SMDebug("http", "%s", lbw().print("[{}] queued for {}\0", sm_id, t_state.current.server->dst_addr).data());
+          pending_action =
+            eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
+        } else {              // the queue is full
+          ct_state.dequeue(); // release the queue slot
+          ct_state.blocked(); // note the blockage.
+          HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+          send_origin_throttled_response();
+        }
+      } else { // queue size is 0, always block.
+        ct_state.blocked();
+        HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+        send_origin_throttled_response();
+      }
+
       ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
                             debug_on && is_debug_tag_set("http") ? "http" : nullptr);
       send_origin_throttled_response();

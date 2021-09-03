@@ -1434,9 +1434,17 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections                = m_master.server_max_connections;
-  params->max_websocket_connections             = m_master.max_websocket_connections;
-  params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
+  params->server_max_connections    = m_master.server_max_connections;
+  params->max_websocket_connections = m_master.max_websocket_connections;
+  params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
+  // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
+  if (params->outbound_conntrack.queue_size > 0 &&
+      !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
+    Warning("'%s' is set, but neither '%s' nor '%s' are "
+            "set, please correct your %s",
+            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
+  }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
 
