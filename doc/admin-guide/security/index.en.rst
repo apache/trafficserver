@@ -23,7 +23,9 @@ Security
 ********
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
+
+   mtls.en
 
 .. _admin-controlling-access:
 
@@ -41,8 +43,8 @@ the proxy cache.
 
 .. _admin-ssl-termination:
 
-SSL Termination
-===============
+Basic SSL Termination
+=====================
 
 The Traffic Server *SSL termination* option enables you to secure
 connections in reverse proxy mode between a client and a Traffic Server
@@ -234,6 +236,11 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.CA.cert.filename STRING CAs.pem
 
 #. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
+
+:doc:`mtls.en`
+==============
+|TS| allow for the fine-grained specification for TLS client certificates for both 
+client to |TS| connections and |TS| to origin server connections.
 
 .. _admin-rotating-tls-session-ticket-keys:
 
