@@ -239,7 +239,7 @@ and origin server connections, you must do the following:
 
 :doc:`mtls.en`
 ==============
-|TS| allow for the fine-grained specification for TLS client certificates for both 
+|TS| allow for the fine-grained specification for TLS client certificates for both
 client to |TS| connections and |TS| to origin server connections.
 
 .. _admin-rotating-tls-session-ticket-keys:
