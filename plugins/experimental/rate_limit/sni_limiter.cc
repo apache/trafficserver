@@ -47,7 +47,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
     SSL *ssl                  = reinterpret_cast<SSL *>(ssl_conn);
     std::string_view sni_name = getSNI(ssl);
 
-    if (sni_name.size() > 0) { // This should likely always succeed, but without it we can't do anything
+    if (!sni_name.empty()) { // This should likely always succeed, but without it we can't do anything
       SniRateLimiter *limiter = selector->find(sni_name);
 
       TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s", static_cast<int>(sni_name.length()), sni_name.data());
@@ -77,6 +77,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
     SniRateLimiter *limiter = static_cast<SniRateLimiter *>(TSUserArgGet(vc, gVCIdx));
 
     if (limiter) {
+      TSUserArgSet(vc, gVCIdx, nullptr);
       limiter->release();
     }
     TSVConnReenable(vc);

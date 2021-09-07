@@ -57,7 +57,7 @@ getSNI(SSL *ssl)
     }
   }
 
-  return std::string_view(servername, len);
+  return std::string_view(servername, servername ? len : 0);
 }
 
 #endif
