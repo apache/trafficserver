@@ -5,11 +5,12 @@
 > Accept: */*
 ``
 < HTTP/1.1 200 OK
-< Cache-Control: max-age=10,public
-< Content-Length: 6
-< Date: ``
-< Age: ``
 < Server: ATS/10.0.0
+< Accept-Ranges: bytes
+< Content-Length: 6
+< Cache-Control: public, max-age=5
+< Age: ``
+< Date: ``
 < Connection: keep-alive
 < Warning: ``
 ``
