@@ -63,6 +63,8 @@ bool
 NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
 {
   NH_Debug(NH_DEBUG_TAG, "calling Init()");
+  std::string self_host;
+  bool self_host_used = false;
 
   try {
     if (n["scheme"]) {
@@ -108,7 +110,12 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
         } else if (ring_mode_val == exhaust_rings) {
           ring_mode = NH_EXHAUST_RING;
         } else if (ring_mode_val == peering_rings) {
-          ring_mode = NH_PEERING_RING;
+          ring_mode            = NH_PEERING_RING;
+          YAML::Node self_node = failover_node["self"];
+          if (self_node) {
+            self_host = self_node.Scalar();
+            NH_Debug(NH_DEBUG_TAG, "%s is self", self_host.c_str());
+          }
         } else {
           ring_mode = NH_ALTERNATE_RING;
           NH_Note("Invalid 'ring_mode' value, '%s', for the strategy named '%s', using default '%s'.", ring_mode_val.c_str(),
@@ -214,8 +221,14 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
               std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
-              if (mach->is_self(host_rec->hostname)) {
+              if ((self_host == host_rec->hostname) || mach->is_self(host_rec->hostname.c_str())) {
+                if (ring_mode == NH_PEERING_RING && grp != 0) {
+                  throw std::invalid_argument("self host (" + self_host +
+                                              ") can only appear in first host group for peering ring mode");
+                }
                 h_stat.setHostStatus(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+                host_rec->self = true;
+                self_host_used = true;
               }
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;
@@ -226,14 +239,24 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
         }
       }
     }
+    if (!self_host.empty() && !self_host_used) {
+      throw std::invalid_argument("self host (" + self_host + ") does not appear in the first (peer) group");
+    }
   } catch (std::exception &ex) {
     NH_Error("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(), ex.what());
     return false;
   }
 
   if (ring_mode == NH_PEERING_RING) {
-    if (groups != 2) {
-      NH_Error("ring mode is '%s', requires two host groups (peering group and an upstream group).", peering_rings.data());
+    if (groups == 1) {
+      if (!go_direct) {
+        NH_Error("when ring mode is '%s', go_direct must be true when there is only one host group.", peering_rings.data());
+        return false;
+      }
+    } else if (groups != 2) {
+      NH_Error("when ring mode is '%s', requires two host groups (peering group and an upstream group),"
+               " or just a single peering group with go_direct.",
+               peering_rings.data());
       return false;
     }
     if (policy_type != NH_CONSISTENT_HASH) {

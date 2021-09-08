@@ -631,7 +631,7 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
   // Get all of the HTTP WKS items populated.
   http_init();
 
-  GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
+  GIVEN("Loading the peering.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/peering.yaml");
@@ -646,6 +646,12 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
         REQUIRE(strategy->groups == 2);
         REQUIRE(strategy->ring_mode == NH_PEERING_RING);
         REQUIRE(strategy->policy_type == NH_CONSISTENT_HASH);
+        for (std::size_t i = 0; i < strategy->host_groups.size(); ++i) {
+          for (auto const &elem : strategy->host_groups[i]) {
+            bool should_be_self = elem.get()->hostname == "p3.bar.com" && i == 0;
+            REQUIRE(elem.get()->self == should_be_self);
+          }
+        }
       }
     }
   }
