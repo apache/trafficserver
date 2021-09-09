@@ -76,7 +76,8 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.client.sni_policy': 'host'
+    'proxy.config.ssl.client.sni_policy': 'host',
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE'
 })
 
 ts.Disk.sni_yaml.AddLines([

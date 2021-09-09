@@ -4640,40 +4640,6 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, TSHRTime timeout)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  /* ensure we are on a EThread */
-  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    eth = this_ethread();
-    i->setThreadAffinity(eth);
-  }
-
-  TSAction action;
-  if (timeout == 0) {
-    action = reinterpret_cast<TSAction>(eth->schedule_imm(i));
-  } else {
-    action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
-  }
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
 TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
@@ -4747,35 +4713,6 @@ TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
   } else {
     action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
   }
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
-TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  /* ensure we are on a EThread */
-  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    eth = this_ethread();
-    i->setThreadAffinity(eth);
-  }
-
-  TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
 
   /* This is a hack. Should be handled in ink_types */
   action = (TSAction)((uintptr_t)action | 0x1);
@@ -5739,16 +5676,19 @@ TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
 }
 
 TSReturnCode
-TSHttpTxnAborted(TSHttpTxn txnp)
+TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(client_abort != nullptr);
 
-  HttpSM *sm = (HttpSM *)txnp;
+  *client_abort = false;
+  HttpSM *sm    = (HttpSM *)txnp;
   switch (sm->t_state.squid_codes.log_code) {
   case SQUID_LOG_ERR_CLIENT_ABORT:
   case SQUID_LOG_ERR_CLIENT_READ_ERROR:
   case SQUID_LOG_TCP_SWAPFAIL:
     // check for client abort and cache read error
+    *client_abort = true;
     return TS_SUCCESS;
   default:
     break;
@@ -8736,14 +8676,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
-  case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
-    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
-    break;
-  case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
-    ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, conv);
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, conv);
@@ -8912,9 +8846,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
     ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
     break;
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);

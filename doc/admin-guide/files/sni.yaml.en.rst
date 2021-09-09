@@ -121,9 +121,6 @@ client_sni_policy         Outbound  Policy of SNI on outbound connection.
 http2                     Inbound   Indicates whether the H2 protocol should be added to or removed from the
                                     protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
-disable_h2                Inbound   Deprecated for the more general h2 setting.  Setting disable_h2
-                                    to :code:`true` is the same as setting http2 to :code:`on`.
-
 tunnel_route              Inbound   Destination as an FQDN and port, separated by a colon ``:``.
                                     Match group number can be specified by ``$N`` where N should refer to a specified group
                                     in the FQDN, ``tunnel_route: $1.domain``.

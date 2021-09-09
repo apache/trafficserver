@@ -1296,14 +1296,6 @@ Parent Proxy Configuration
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for parent cache connection attempts.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
    :overridable:
@@ -1573,14 +1565,8 @@ Origin Server Connect Attempts
 
    Set a limit for the number of concurrent connections to an upstream server group. A value of
    ``0`` disables checking. If a transaction attempts to connect to a group which already has the
-   maximum number of concurrent connections the transaction either rechecks after a delay or a 503
+   maximum number of concurrent connections a 503
    (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
-
-   Number of transactions that can be delayed concurrently
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_size`.
-
-   How long to delay before rechecking
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_delay`.
 
    Upstream server group definition
       See :ts:cv:`proxy.config.http.per_server.connection.match`.
@@ -1615,26 +1601,6 @@ Origin Server Connect Attempts
    This setting is independent of the :ts:cv:`setting for upstream session sharing matching
    <proxy.config.http.server_session_sharing.match>`.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
-   :reloadable:
-
-   Controls the number of transactions that can be waiting on an upstream server group.
-
-   ``-1``
-      Unlimited.
-
-   ``0``
-      Never wait. If the connection maximum has been reached immediately respond with an error.
-
-   A positive number
-      If there are less than this many waiting transactions, delay this transaction and try again. Otherwise respond immediately with an error.
-
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_delay INT 100
-   :reloadable:
-   :units: milliseconds
-
-   If a transaction is delayed due to too many connections in an upstream server group, delay this amount of time before checking again.
-
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
@@ -1665,15 +1631,6 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
    ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
-.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
-   request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -3773,7 +3730,7 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
    :reloadable:
    :overridable:
 

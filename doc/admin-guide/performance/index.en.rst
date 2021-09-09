@@ -331,28 +331,9 @@ connection attempt until the origin fully establishes a connection (the connecti
 After the connection is established the value of
 :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` is used to established timeouts on the data over the connection.
 
-In the case where you wish to have a different (generally longer) timeout for
-``POST`` and ``PUT`` connections to an origin server, you may also adjust
-:ts:cv:`proxy.config.http.post_connect_attempts_timeout` which applies only to
-origin connections using those HTTP verbs.
-
 ::
 
     CONFIG proxy.config.http.connect_attempts_timeout INT 30
-    CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
-
-Parent Proxy Timeout
-~~~~~~~~~~~~~~~~~~~~
-
-In hierarchical caching configurations, the :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
-setting is used for all connection attempts to parent caches. It may be useful,
-in cases where you wish to have |TS| fall back to an alternate parent cache
-(in configurations where you have multiple parents for the same cache) more
-quickly, to lower this timeout.
-
-::
-
-    CONFIG  proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
 
 Polling Timeout
 ~~~~~~~~~~~~~~~
