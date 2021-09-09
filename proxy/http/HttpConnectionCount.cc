@@ -105,6 +105,30 @@ Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void
 }
 
 bool
+Config_Update_Conntrack_Queue_Size(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    config->queue_size = data.rec_int;
+    return true;
+  }
+  return false;
+}
+
+bool
+Config_Update_Conntrack_Queue_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
+
+  if (RECD_INT == dtype && data.rec_int > 0) {
+    config->queue_delay = std::chrono::milliseconds(data.rec_int);
+    return true;
+  }
+  return false;
+}
+
+bool
 Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
@@ -147,6 +171,8 @@ OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
   Enable_Config_Var(CONFIG_VAR_MIN, &Config_Update_Conntrack_Min, txn);
   Enable_Config_Var(CONFIG_VAR_MAX, &Config_Update_Conntrack_Max, txn);
   Enable_Config_Var(CONFIG_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_SIZE, &Config_Update_Conntrack_Queue_Size, global);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_DELAY, &Config_Update_Conntrack_Queue_Delay, global);
   Enable_Config_Var(CONFIG_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
 }
 
@@ -243,13 +269,13 @@ OutboundConnTrack::to_json_string()
   static const ts::BWFormat header_fmt{R"({{"count": {}, "list": [
 )"};
   static const ts::BWFormat item_fmt{
-    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
+    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "queued": {}, "alert": {}}},
 )"};
   static const std::string_view trailer{" \n]}"};
 
   static const auto printer = [](ts::BufferWriter &w, Group const *g) -> ts::BufferWriter & {
     w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
-            g->get_last_alert_epoch_time());
+            g->_rescheduled.load(), g->get_last_alert_epoch_time());
     return w;
   };
 
@@ -284,17 +310,18 @@ OutboundConnTrack::dump(FILE *f)
   self_type::get(groups);
 
   if (groups.size()) {
-    fprintf(f, "\nUpstream Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
-            "Match");
-    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+    fprintf(f, "\nUpstream Connection Tracking\n%7s | %5s | %10s | %24s | %33s | %8s |\n", "Current", "Block", "Queue", "Address",
+            "Hostname Hash", "Match");
+    fprintf(f, "------|-------|---------|--------------------------|-----------------------------------|----------|\n");
 
     for (Group const *g : groups) {
       ts::LocalBufferWriter<128> w;
-      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      w.print("{:7} | {:5} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_rescheduled.load(),
+              g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
     }
 
-    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+    fprintf(f, "------|-------|-------|--------------------------|-----------------------------------|----------|\n");
   }
 }
 
@@ -349,11 +376,12 @@ OutboundConnTrack::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
 {
   time_t lat; // last alert time (epoch seconds)
 
-  if (_g->_blocked > 0 && _g->should_alert(&lat)) {
-    auto blocked = _g->_blocked.exchange(0);
+  if ((_g->_blocked > 0 || _g->_rescheduled > 0) && _g->should_alert(&lat)) {
+    auto blocked     = _g->_blocked.exchange(0);
+    auto rescheduled = _g->_rescheduled.exchange(0);
     ts::LocalBufferWriter<256> w;
-    w.print("upstream unblocked: [{}] count={} limit={} group=({}) blocked={} upstream={}\0",
-            ts::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->max, *_g, blocked, addr);
+    w.print("upstream unblocked: [{}] count={} limit={} group=({}) blocked={} queued={} upstream={}\0",
+            ts::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->max, *_g, blocked, rescheduled, addr);
     Debug(DEBUG_TAG, "%s", w.data());
     Note("%s", w.data());
   }
@@ -363,13 +391,14 @@ void
 OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, sockaddr const *addr,
                                           char const *debug_tag)
 {
-  bool alert_p = _g->should_alert();
-  auto blocked = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();
+  bool alert_p     = _g->should_alert();
+  auto blocked     = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();
+  auto rescheduled = alert_p ? _g->_rescheduled.exchange(0) : _g->_rescheduled.load();
 
   if (alert_p || debug_tag) {
     ts::LocalBufferWriter<256> w;
-    w.print("[{}] too many connections: count={} limit={} group=({}) blocked={} upstream={}\0", sm_id, count, config->max, *_g,
-            blocked, addr);
+    w.print("[{}] too many connections: count={} limit={} group=({}) blocked={} queued={} upstream={}\0", sm_id, count, config->max,
+            *_g, blocked, rescheduled, addr);
 
     if (debug_tag) {
       Debug(debug_tag, "%s", w.data());

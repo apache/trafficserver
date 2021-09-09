@@ -43,6 +43,7 @@ delay_get_ttfb = Test.Processes.Process(
 ts.Disk.records_config.update({
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.connect_attempts_timeout': 1,
+    'proxy.config.http.post_connect_attempts_timeout': 1,
     'proxy.config.http.connect_attempts_max_retries': 1,
     'proxy.config.http.transaction_no_activity_timeout_out': 4,
     'proxy.config.diags.debug.enabled': 0,

@@ -220,8 +220,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/continuations/index.en.rst:56
 msgid ""
-"uses ``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, or ``TSContScheduleOnPool`` "
+"uses ``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, or ``TSContSchedule`` "
 "APIs"
 msgstr ""
-"``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, もしくは ``TSContScheduleOnPool`` "
+"``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, もしくは ``TSContSchedule`` "
 "API を使用する。"

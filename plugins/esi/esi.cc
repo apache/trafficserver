@@ -578,8 +578,7 @@ removeCacheKey(TSHttpTxn txnp)
 static void
 cacheNodeList(ContData *cont_data)
 {
-  bool client_abort;
-  if (TSHttpTxnAborted(cont_data->txnp, &client_abort) == TS_SUCCESS) {
+  if (TSHttpTxnAborted(cont_data->txnp) == TS_SUCCESS) {
     TSDebug(cont_data->debug_tag, "[%s] Not caching node list as txn has been aborted", __FUNCTION__);
     return;
   }

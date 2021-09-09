@@ -1246,8 +1246,10 @@ tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
 tsapi void TSContDestroy(TSCont contp);
 tsapi void TSContDataSet(TSCont contp, void *data);
 tsapi void *TSContDataGet(TSCont contp);
+tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
 tsapi TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 tsapi TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
+tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */);
 tsapi TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 tsapi TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
 tsapi TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
@@ -2385,11 +2387,10 @@ tsapi TSReturnCode TSAIOThreadNumSet(int thread_num);
 
 /**
     Check if transaction was aborted (due client/server errors etc.)
-    Client_abort is set as True, in case the abort was caused by the Client.
 
     @return 1 if transaction was aborted
 */
-tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort);
+tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
 
 tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 tsapi TSVConn TSVConnFdCreate(int fd);

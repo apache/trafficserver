@@ -32,6 +32,7 @@
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
+TSDECL(disable_h2);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
