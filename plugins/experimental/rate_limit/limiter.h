@@ -22,6 +22,7 @@
 #include <atomic>
 #include <chrono>
 #include <string>
+#include <climits>
 
 #include "tscore/ink_config.h"
 #include "ts/ts.h"
