@@ -220,7 +220,7 @@ test()
   RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(cachePartitions);
   printf("Created...\n");
 
-  LoadRefCountCacheFromPath<ExampleStruct>(*cache, "/tmp", "/tmp/hostdb_cache", ExampleStruct::unmarshall);
+  LoadRefCountCacheFromPath<ExampleStruct>(*cache, "/tmp/hostdb_cache", ExampleStruct::unmarshall);
   printf("Cache started...\n");
   int numTestEntries = 10000;
 

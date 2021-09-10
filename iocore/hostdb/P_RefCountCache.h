@@ -568,7 +568,7 @@ RefCountCache<C>::clear()
 // Errors are -1
 template <typename CacheEntryType>
 int
-LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::string &dirname, const std::string &filepath,
+LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::string &filepath,
                           CacheEntryType *(*load_func)(char *, unsigned int))
 {
   // If we have no load method, then we can't load anything so lets just stop right here
