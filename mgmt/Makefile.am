@@ -34,7 +34,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/hdrs \
-	-I$(abs_top_srcdir)/lib/yamlcpp/include \
+	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
 
 libmgmt_c_la_SOURCES = \
