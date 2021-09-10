@@ -43,7 +43,7 @@ server.addResponse("sessionlog.log", request_header, response_header)
 ts_child.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|remap|parent|host',
-    'proxy.config.http.cache.max_stale_age': 60,
+    'proxy.config.http.cache.max_stale_age': 90,
 })
 ts_child.Disk.parent_config.AddLine(
     f'dest_domain=. parent="{ts_parent}" round_robin=consistent_hash go_direct=false'
@@ -52,10 +52,12 @@ ts_child.Disk.remap_config.AddLine(
     f'map http://localhost:{ts_child.Variables.port} http://localhost:{server.Variables.Port}'
 )
 
+stale_output = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
+
 curl_request = (
-    f'curl -X PUSH --data-binary @{Test.TestDirectory}/serve_stale_output "http://localhost:{ts_child.Variables.port}";'
+    f'curl -X PUSH -d "{stale_output}" "http://localhost:{ts_child.Variables.port}";'
     f'sleep 10; curl -s -v http://localhost:{ts_child.Variables.port};'  # hit-stale, serve stale with warning
-    f'sleep 60; curl -v http://localhost:{ts_child.Variables.port}'  # max_stale_age expires, can't reach parent
+    f'sleep 90; curl -v http://localhost:{ts_child.Variables.port}'  # max_stale_age expires, can't reach parent
 )
 
 # Test case for when parent server is down but child proxy can serve cache object
