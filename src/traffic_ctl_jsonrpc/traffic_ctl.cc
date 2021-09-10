@@ -29,14 +29,23 @@
 
 #include "CtrlCommands.h"
 
-static constexpr int status_code{0};
+constexpr int CTRL_EX_OK            = 0;
+constexpr int CTRL_EX_ERROR         = 2;
+constexpr int CTRL_EX_UNIMPLEMENTED = 3;
+
+int status_code{CTRL_EX_OK};
+
 int
 main(int argc, const char **argv)
 {
   ts::ArgParser parser;
 
   std::shared_ptr<CtrlCommand> command;
-  auto CtrlUnimplementedCommand = [](std::string_view cmd) { std::cout << "Command " << cmd << " unimplemented.\n"; };
+
+  auto CtrlUnimplementedCommand = [](std::string_view cmd) {
+    std::cout << "Command " << cmd << " unimplemented.\n";
+    status_code = CTRL_EX_UNIMPLEMENTED;
+  };
 
   parser.add_description("Apache Traffic Server RPC CLI");
   parser.add_global_usage("traffic_ctl [OPTIONS] CMD [ARGS ...]");
@@ -173,7 +182,8 @@ main(int argc, const char **argv)
     // Execute
     args.invoke();
   } catch (std::exception const &ex) {
-    std::cout << "Error found.\n" << ex.what() << '\n';
+    status_code = CTRL_EX_ERROR;
+    std::cerr << "Error found.\n" << ex.what() << '\n';
   }
 
   return status_code;
