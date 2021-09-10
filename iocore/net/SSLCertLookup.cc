@@ -363,6 +363,7 @@ SSLCertLookup::insert(const char *name, SSLCertContext const &cc)
     return this->ec_storage->insert(name, cc);
   default:
     ink_assert(false);
+    return -1;
   }
 #else
   return this->ssl_storage->insert(name, cc);
@@ -383,6 +384,7 @@ SSLCertLookup::insert(const IpEndpoint &address, SSLCertContext const &cc)
     return this->ec_storage->insert(key.get(), cc);
   default:
     ink_assert(false);
+    return -1;
   }
 #else
   return this->ssl_storage->insert(key.get(), cc);
