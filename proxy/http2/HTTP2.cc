@@ -431,7 +431,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       const char *scheme = field->value_get(&scheme_len);
 
       int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len);
-      url_scheme_set(headers->m_heap, headers->m_http->u.req.m_url_impl, scheme, scheme_wks_idx, scheme_len, true);
+      headers->m_http->u.req.m_url_impl->set_scheme(headers->m_heap, scheme, scheme_wks_idx, scheme_len, true);
 
       headers->field_delete(field);
     } else {
@@ -444,7 +444,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       int authority_len;
       const char *authority = field->value_get(&authority_len);
 
-      url_host_set(headers->m_heap, headers->m_http->u.req.m_url_impl, authority, authority_len, true);
+      headers->m_http->u.req.m_url_impl->set_host(headers->m_heap, authority, authority_len, true);
 
       headers->field_delete(field);
     } else {
@@ -462,7 +462,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
         --path_len;
       }
 
-      url_path_set(headers->m_heap, headers->m_http->u.req.m_url_impl, path, path_len, true);
+      headers->m_http->u.req.m_url_impl->set_path(headers->m_heap, path, path_len, true);
 
       headers->field_delete(field);
     } else {

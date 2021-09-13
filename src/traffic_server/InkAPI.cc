@@ -2492,7 +2492,7 @@ TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc obj)
   URL u;
   u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
   u.m_url_impl = (URLImpl *)obj;
-  return u.type_get();
+  return u.type_code_get();
 }
 
 TSReturnCode
@@ -2508,7 +2508,7 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 
     u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
     u.m_url_impl = (URLImpl *)obj;
-    u.type_set(type);
+    u.type_code_set(type);
     return TS_SUCCESS;
   }
 
