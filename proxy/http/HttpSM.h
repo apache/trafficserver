@@ -274,17 +274,8 @@ public:
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
-  ProxyTransaction *
-  get_ua_txn()
-  {
-    return ua_txn;
-  }
-
-  ProxyTransaction *
-  get_server_txn()
-  {
-    return server_txn;
-  }
+  ProxyTransaction *get_ua_txn();
+  ProxyTransaction *get_server_txn();
 
   // Called by transact.  Updates are fire and forget
   //  so there are no callbacks and are safe to do
@@ -323,11 +314,7 @@ public:
 
   // Called by transact(HttpTransact::is_request_retryable), temporarily.
   // This function should be remove after #1994 fixed.
-  bool
-  is_post_transform_request()
-  {
-    return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
-  }
+  bool is_post_transform_request();
 
   // Called from InkAPI.cc which acquires the state machine lock
   //  before calling
@@ -335,11 +322,7 @@ public:
   int state_api_callout(int event, void *data);
 
   // Used for Http Stat Pages
-  HttpTunnel *
-  get_tunnel()
-  {
-    return &tunnel;
-  }
+  HttpTunnel *get_tunnel();
 
   // Debugging routines to dump the SM history, hdrs
   void dump_state_on_assert();
@@ -662,35 +645,12 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
-  bool
-  is_dying() const
-  {
-    return terminate_sm;
-  }
+  bool is_dying() const;
 
-  int
-  client_connection_id() const
-  {
-    return _client_connection_id;
-  }
-
-  int
-  client_transaction_id() const
-  {
-    return _client_transaction_id;
-  }
-
-  int
-  client_transaction_priority_weight() const
-  {
-    return _client_transaction_priority_weight;
-  }
-
-  int
-  client_transaction_priority_dependence() const
-  {
-    return _client_transaction_priority_dependence;
-  }
+  int client_connection_id() const;
+  int client_transaction_id() const;
+  int client_transaction_priority_weight() const;
+  int client_transaction_priority_dependence() const;
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -703,6 +663,63 @@ private:
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
   bool _from_early_data = false;
 };
+
+////
+// Inline Functions
+//
+inline ProxyTransaction *
+HttpSM::get_ua_txn()
+{
+  return ua_txn;
+}
+
+inline ProxyTransaction *
+HttpSM::get_server_txn()
+{
+  return server_txn;
+}
+
+inline bool
+HttpSM::is_post_transform_request()
+{
+  return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
+}
+
+inline HttpTunnel *
+HttpSM::get_tunnel()
+{
+  return &tunnel;
+}
+
+inline bool
+HttpSM::is_dying() const
+{
+  return terminate_sm;
+}
+
+inline int
+HttpSM::client_connection_id() const
+{
+  return _client_connection_id;
+}
+
+inline int
+HttpSM::client_transaction_id() const
+{
+  return _client_transaction_id;
+}
+
+inline int
+HttpSM::client_transaction_priority_weight() const
+{
+  return _client_transaction_priority_weight;
+}
+
+inline int
+HttpSM::client_transaction_priority_dependence() const
+{
+  return _client_transaction_priority_dependence;
+}
 
 // Function to get the cache_sm object - YTS Team, yamsat
 inline HttpCacheSM &

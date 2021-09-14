@@ -275,11 +275,8 @@ public:
   void reset();
   void abort_tunnel();
   void kill_tunnel();
-  bool
-  is_tunnel_active() const
-  {
-    return active;
-  }
+
+  bool is_tunnel_active() const;
   bool is_tunnel_alive() const;
   bool has_cache_writer() const;
   bool has_consumer_besides_client() const;
@@ -356,6 +353,15 @@ private:
   int reentrancy_count = 0;
   bool call_sm         = false;
 };
+
+////
+// Inline Functions
+//
+inline bool
+HttpTunnel::is_tunnel_active() const
+{
+  return active;
+}
 
 // void HttpTunnel::abort_cache_write_finish_others
 //
