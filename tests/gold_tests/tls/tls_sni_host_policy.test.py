@@ -17,6 +17,9 @@ Test exercising host and SNI mismatch controls
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Test exercising host and SNI mismatch controls
 '''
@@ -45,9 +48,8 @@ ts.Disk.records_config.update({
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.http.host_sni_policy': 2,
     'proxy.config.ssl.TLSv1_3': 0,
-
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ssl|http'
+    'proxy.config.diags.debug.tags': 'ssl',
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -101,7 +103,7 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun("Connect to dave without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:Bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
@@ -118,6 +120,16 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
 # case 5
+# sni=Bob and host=boB.  Do provide client cert.  Should succeed because the hosts match and the cert is provided.
+tr = Test.AddTestRun("Connect to bob with cert")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boB' --resolve 'Bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
+
+# case 6
 # sni=ellen and host=Boblite.  Do not provide client cert.  Should warn due to sni-host mismatch,
 # but should note get an Access Denied because boblite has host_sni_policy: PERMISSIVE configured.
 tr = Test.AddTestRun("Connect to ellen without cert")
@@ -128,9 +140,9 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:Boblite' --res
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
-# case 6
+# case 7
 # sni=ellen and host=Boblite.  Do provide client cert.  This should behave the same as above because
-# providing a client cert does not mean SNI and hostname will not be matched.
+# providing a client cert does not mean SNI and hostname will not be compared.
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -139,7 +151,7 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
-# case 7
+# case 8
 # sni=ellen and host=fran.  Do not provide client cert.  No warning since neither name is mentioned in sni.yaml
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
@@ -149,7 +161,7 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:fran' --resolv
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
-# case 8
+# case 9
 # sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
@@ -159,6 +171,12 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
+# Wait for the error.log to appaer.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'error.log')
+)
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
@@ -166,3 +184,8 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI/hostname mismatch sni=ellen host=fran",
                                                         "Should not have warning on mismatch with non-policy host")
+
+test_run.Processes.Default.ReturnCode = 0
+ts.Disk.error_log.Content += Testers.ContainsExpression(
+    "SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
+    "error.log should contain information about the 403 response.")

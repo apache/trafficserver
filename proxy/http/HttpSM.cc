@@ -4192,15 +4192,39 @@ HttpSM::check_sni_host()
           const char *action_value = host_sni_policy == 2 ? "terminate" : "continue";
           if (!sni_value || sni_value[0] == '\0') { // No SNI
             Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
+            SMDebug("ssl_sni", "[HttpSM::check_sni_host] No SNI for TLS request with hostname %.*s action=%s", host_len, host_name,
+                    action_value);
             if (host_sni_policy == 2) {
+              Log::error("%s", lbw()
+                                 .clip(1)
+                                 .print("No SNI for TLS request: connecting to {} for host='{}', returning a 403",
+                                        t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)})
+                                 .extend(1)
+                                 .write('\0')
+                                 .data());
               this->t_state.client_connection_enabled = false;
             }
           } else if (strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
             Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
+            SMDebug("ssl_sni", "[HttpSM::check_sni_host] SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len,
+                    host_name, action_value);
             if (host_sni_policy == 2) {
+              Log::error("%s", lbw()
+                                 .clip(1)
+                                 .print("SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
+                                        t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)},
+                                        sni_value)
+                                 .extend(1)
+                                 .write('\0')
+                                 .data());
               this->t_state.client_connection_enabled = false;
             }
+          } else {
+            SMDebug("ssl_sni", "[HttpSM::check_sni_host] SNI/hostname sucessfully match sni=%s host=%.*s", sni_value, host_len,
+                    host_name);
           }
+        } else {
+          SMDebug("ssl_sni", "[HttpSM::check_sni_host] No SNI/hostname check configured for host=%.*s", host_len, host_name);
         }
       }
     }
