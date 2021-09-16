@@ -1437,6 +1437,8 @@ HttpConfig::reconfigure()
   params->server_max_connections    = m_master.server_max_connections;
   params->max_websocket_connections = m_master.max_websocket_connections;
   params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
+  params->outbound_conntrack        = m_master.outbound_conntrack;
+
   // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
   if (params->outbound_conntrack.queue_size > 0 &&
       !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
