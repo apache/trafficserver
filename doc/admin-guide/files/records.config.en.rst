@@ -2009,9 +2009,14 @@ Security
    is 1, a warning is generated but the transaction is allowed to proceed.  If the value is 2 and there is a
    mismatch, a warning is generated and a status 403 is returned.
 
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
+   Note that SNI and hostname consistency checking is not performed on all connections indiscriminately, even if this
+   global ``proxy.config.http.host_sni_policy`` is set to a value of 1 or 2. It is only performed for connections to
+   hosts specifying ``verify_client`` and/or ``ip_allow`` policies in :file:`sni.yaml`. That is, the SNI and hostname
+   mismatch check is only performed if a relevant security policy for the SNI is set in :file:`sni.yaml`. The
+   ``proxy.config.http.host_sni_policy`` :file:`records.config` value is used as the default value if either of these
+   policies is set in the corresponding :file:`sni.yaml` file entry and the :file:`sni.yaml` entry does not override
+   this value via a :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
 
-   Currently, only the verify_client and ip_allow policies are checked for host name and SNI matching.
 
 Cache Control
 =============
