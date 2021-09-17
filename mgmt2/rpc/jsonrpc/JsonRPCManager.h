@@ -159,7 +159,7 @@ private:
       T cb; ///< Function handler (std::function<T>)
     };
 
-    class InternalHandler; ///< fw declaration
+    struct InternalHandler; ///< fw declaration
 
   public:
     Dispatcher();
