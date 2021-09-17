@@ -3775,6 +3775,18 @@ SSL Termination
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.ssl.keylog_file STRING NULL
+   :reloadable:
+
+   If configured, TLS session keys for TLS connections will be logged to the
+   specified file. This file is formatted in such a way that it can be
+   conveniently imported into tools such as Wireshark to decrypt packet
+   captures.  This should only be used for debugging purposes since the data in
+   the keylog file can be used to decrypt the otherwise encrypted traffic. A
+   NULL value for this disables the feature.
+
+   This feature is disabled by default.
+
 Client-Related Configuration
 ----------------------------
 
@@ -4233,12 +4245,6 @@ removed in the future without prior notice.
    Only available for :program:`traffic_quic`.
    If specified, TLS session data will be stored to the file, and will be used
    for resuming a session.
-
-.. ts:cv:: CONFIG proxy.config.quic.client.keylog_file STRING ""
-   :reloadable:
-
-   Only available for :program:`traffic_quic`.
-   If specified, key information will be stored to the file.
 
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
    :reloadable:

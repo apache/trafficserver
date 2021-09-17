@@ -28,6 +28,7 @@
 #include <records/I_RecHttp.h>
 
 #include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
 
 #include "QUICGlobals.h"
 #include "QUICTransportParameters.h"
@@ -82,8 +83,8 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
     SSL_CTX_sess_set_new_cb(ssl_ctx.get(), QUIC::ssl_client_new_session);
   }
 
-  if (params->client_keylog_file() != nullptr) {
-    SSL_CTX_set_keylog_callback(ssl_ctx.get(), QUIC::ssl_client_keylog_cb);
+  if (unlikely(TLSKeyLogger::is_enabled())) {
+    SSL_CTX_set_keylog_callback(ssl_ctx.get(), TLSKeyLogger::ssl_keylog_cb);
   }
 
   return ssl_ctx;
@@ -116,7 +117,6 @@ QUICConfigParams::initialize()
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
-  REC_ReadConfigStringAlloc(this->_client_keylog_file, "proxy.config.quic.client.keylog_file");
   REC_ReadConfigStringAlloc(this->_qlog_dir, "proxy.config.quic.qlog_dir");
 
   // Transport Parameters
@@ -439,12 +439,6 @@ const char *
 QUICConfigParams::client_session_file() const
 {
   return this->_client_session_file;
-}
-
-const char *
-QUICConfigParams::client_keylog_file() const
-{
-  return this->_client_keylog_file;
 }
 
 const char *

@@ -43,7 +43,7 @@ class QUICTLS : public QUICHandshakeProtocol
 {
 public:
   QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
-          const NetVCOptions &netvc_options, const char *session_file = nullptr, const char *keylog_file = nullptr);
+          const NetVCOptions &netvc_options, const char *session_file = nullptr);
   ~QUICTLS();
 
   // TODO: integrate with _early_data_processed
@@ -61,7 +61,6 @@ public:
   void set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override;
 
   const char *session_file() const;
-  const char *keylog_file() const;
 
   // FIXME Should not exist
   SSL *ssl_handle();
@@ -110,7 +109,6 @@ private:
 
   static void _msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg);
   const char *_session_file              = nullptr;
-  const char *_keylog_file               = nullptr;
   SSL *_ssl                              = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
   bool _early_data_processed             = false;
