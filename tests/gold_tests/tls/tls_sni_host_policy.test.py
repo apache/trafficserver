@@ -88,6 +88,11 @@ tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
+#
+# For the following tests, note that host_sni_policy is keyed off of the HTTP Host
+# header field rather than the SNI in sni.yaml.
+#
+
 # case 3
 # sni=dave and host=bob.  Do not provide client cert.  Should fail due to sni-host mismatch
 tr = Test.AddTestRun("Connect to dave without cert")
@@ -130,6 +135,8 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 
 # case 7
 # sni=ellen and host=fran.  Do not provide client cert.  No warning since neither name is mentioned in sni.yaml
+# and the records.config host_sni_policy only applies to hosts which have relevant security policies configured
+# in sni.yaml.
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -139,7 +146,9 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
 # case 8
-# sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml
+# sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml and
+# the records.config host_sni_policy only applies to hosts which have security relevant policies configured in
+# sni.yaml.
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
