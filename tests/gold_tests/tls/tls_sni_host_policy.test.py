@@ -44,7 +44,10 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.http.host_sni_policy': 2,
-    'proxy.config.ssl.TLSv1_3': 0
+    'proxy.config.ssl.TLSv1_3': 0,
+
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl|http'
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -56,103 +59,102 @@ ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}/'.format(server.Variables.Port)
 )
 
-# Scenario 1:  Default no client cert required.  cert required for bar.com
+# Scenario 1:  Default no client cert required.  cert required for bar.com.
+# Make boblite and bob mixed case to verify that we can match hostnames case
+# insensitively.
 ts.Disk.sni_yaml.AddLines([
     'sni:',
-    '- fqdn: boblite',
+    '- fqdn: boBliTe',
     '  verify_client: STRICT',
     '  host_sni_policy: PERMISSIVE',
-    '- fqdn: bob',
+    '- fqdn: bOb',
     '  verify_client: STRICT',
 ])
 
 # case 1
-# sni=bob and host=dave.  Do not provide client cert.  Should fail
+# sni=Bob and host=dave.  Do not provide client cert.  This should match fqdn bOb which has
+# verify_client: STRICT and thus should fail.
 tr = Test.AddTestRun("Connect to bob without cert")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k -H 'host:dave' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
 
 # case 2
-# sni=bob and host=dave.  Do provide client cert.  Should succeed
+# sni=Bob and host=dave.  Do provide client cert.  This should match fqdn bOb which has
+# verify_client: STRICT, but since the cert is good it should succeed.
 tr = Test.AddTestRun("Connect to bob with good cert")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
-#
-# For the following tests, note that host_sni_policy is keyed off of the HTTP Host
-# header field rather than the SNI in sni.yaml.
-#
-
 # case 3
-# sni=dave and host=bob.  Do not provide client cert.  Should fail due to sni-host mismatch
+# sni=dave and host=bob.  Do not provide client cert.  This should not need a cert, but should still
+# fail due to sni-host mismatch.
 tr = Test.AddTestRun("Connect to dave without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
 # case 4
-# sni=dave and host=bob.  Do provide client cert.  Should fail due to sni-host mismatch
+# sni=dave and host=bob.  Do provide client cert.  Again, this should not need a cert, but provide
+# one anyway and verify it fails due to sni-host mismatch.
 tr = Test.AddTestRun("Connect to dave with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
 # case 5
-# sni=ellen and host=boblite.  Do not provide client cert.  Should warn due to sni-host mismatch
+# sni=ellen and host=Boblite.  Do not provide client cert.  Should warn due to sni-host mismatch,
+# but should note get an Access Denied because boblite has host_sni_policy: PERMISSIVE configured.
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k -H 'host:boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
 # case 6
-# sni=ellen and host=boblite.  Do provide client cert.  Should warn due to sni-host mismatch
+# sni=ellen and host=Boblite.  Do provide client cert.  This should behave the same as above because
+# providing a client cert does not mean SNI and hostname will not be matched.
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
 # case 7
 # sni=ellen and host=fran.  Do not provide client cert.  No warning since neither name is mentioned in sni.yaml
-# and the records.config host_sni_policy only applies to hosts which have relevant security policies configured
-# in sni.yaml.
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
 # case 8
-# sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml and
-# the records.config host_sni_policy only applies to hosts which have security relevant policies configured in
-# sni.yaml.
+# sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
@@ -161,6 +163,6 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=ellen host=boblite action=continue", "Should have warning on mismatch")
+    "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI/hostname mismatch sni=ellen host=fran",
                                                         "Should not have warning on mismatch with non-policy host")
