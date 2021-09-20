@@ -10,6 +10,7 @@
                 "/usr/local/opt/openssl@1.1/include",
                 "/usr/local/opt/openssl/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -28,10 +29,12 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [],
             "intelliSenseMode": "${default}",
@@ -60,6 +63,7 @@
                 "/usr/include",
                 "/usr/local/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -78,10 +82,12 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [],
             "intelliSenseMode": "${default}",
@@ -104,6 +110,7 @@
                 "C",
                 "/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -122,10 +129,12 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [
                 "_DEBUG",
