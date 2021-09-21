@@ -8,7 +8,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: miss
@@ -22,7 +22,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-fresh
@@ -36,7 +36,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-stale
@@ -50,7 +50,7 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-fresh
