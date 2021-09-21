@@ -259,7 +259,7 @@ struct AutoStopCont : public Continuation {
     pmgmt->stop();
 
     // if the jsonrpc feature was disabled, the object will not be created.
-    if (jsonrpcServer) {
+    if (jsonrpcServer != nullptr) {
       jsonrpcServer->stop_thread();
     }
 
@@ -404,7 +404,15 @@ public:
 class DiagsLogContinuation : public Continuation
 {
 public:
-  DiagsLogContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&DiagsLogContinuation::periodic); }
+  DiagsLogContinuation() : Continuation(new_ProxyMutex())
+  {
+    SET_HANDLER(&DiagsLogContinuation::periodic);
+
+    char *configured_traffic_out_name(REC_ConfigReadString("proxy.config.output.logfile"));
+    traffic_out_name = std::string(configured_traffic_out_name);
+    ats_free(configured_traffic_out_name);
+  }
+
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
@@ -417,16 +425,33 @@ public:
     // to send a notification from TS to TM, informing TM that outputlog has
     // been rolled. It is much easier sending a notification (in the form
     // of SIGUSR2) from TM -> TS.
-    int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-    int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-    int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-    diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+    int diags_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
+    int diags_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
+    int diags_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+    diags->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
 
     if (diags->should_roll_diagslog()) {
       Note("Rolled %s", diags_log_filename);
     }
+
+    // If we are using the JSONRPC service, then there is no traffic_manager
+    // and we are responsible for rolling traffic.out.
+    if (jsonrpcServer != nullptr) {
+      int output_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec"));
+      int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
+      int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
+      diags->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
+                                   output_log_roll_size);
+
+      if (diags->should_roll_outputlog()) {
+        Note("Rolled %s", traffic_out_name.c_str());
+      }
+    }
     return EVENT_CONT;
   }
+
+private:
+  std::string traffic_out_name;
 };
 
 class MemoryLimit : public Continuation
@@ -741,6 +766,9 @@ initialize_jsonrpc_server()
     jsonrpcServer = new rpc::RPCServer{serverConfig};
     jsonrpcServer->start_thread(TSThreadInit, TSThreadDestroy);
   } catch (std::exception const &ex) {
+    // Only the constructor throws, so if we are here there should be no
+    // jsonrpcServer object.
+    ink_assert(jsonrpcServer == nullptr);
     std::string msg;
     return {false, ts::bwprint(msg, "Server failed: '{}'", ex.what())};
   }
