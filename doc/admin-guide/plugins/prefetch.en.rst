@@ -221,6 +221,9 @@ compromises:
   plugin is already being used to alleviate the load on the disks).
 * **Throttle the prefetch activity** - if necessary a limit can by imposed on the
   number of concurrent prefetch requests by using ``--fetch-max`` plugin parameter.
+* **Request amplification** - when using ``--fetch-query`` it is easy to create request
+  multiplication of malicious requests. Using tokenization is advisable  when using
+  ``--fetch-query``.
 
 Plugin parameters
 =================
@@ -234,6 +237,7 @@ Plugin parameters
   - ``lru:n`` - this policy uses LRU to identify "hot" objects and triggers prefetch if the object is not found. `n` is the size of the LRU
 * ``--fetch-count`` - how many objects to be prefetched.
 * ``--fetch-path-pattern`` - regex/capture pattern that would transform the **incoming** into the **next object** path.
+* ``--fetch-query`` - path to fetch **relative to the incoming** object path.
 * ``--fetch-max`` - maximum concurrent fetches allowed, this would allow to throttle the prefetch activity if necessary
 * ``--replace-host`` - allows the prefetch requests to be forwarded to a different host or remap rule (replaces the host in the prefetch request)
 * ``--name-space`` - by default all plugin instances used for all remap use a single background fetch state, this parameter allows to specify a separate state per remap rule of per group of remap rules.
