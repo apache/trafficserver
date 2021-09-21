@@ -310,6 +310,12 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.websocket.current_active_client_connections", RECD_INT,
                      RECP_NON_PERSISTENT, (int)http_websocket_current_active_client_connections_stat, RecRawStatSyncSum);
   HTTP_CLEAR_DYN_STAT(http_websocket_current_active_client_connections_stat);
+
+  // Tunnel Stats
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.tunnel.current_active_connections", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)tunnel_current_active_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(tunnel_current_active_connections_stat);
+
   // Current Transaction Stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_client_transactions", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_client_transactions_stat, RecRawStatSyncSum);
@@ -1146,6 +1152,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
   HttpEstablishStaticConfigLongLong(c.oride.max_proxy_cycles, "proxy.config.http.max_proxy_cycles");
 
+  HttpEstablishStaticConfigLongLong(c.oride.tunnel_activity_check_period, "proxy.config.tunnel.activity_check_period");
+
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
 
@@ -1449,6 +1457,7 @@ HttpConfig::reconfigure()
   }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
+  params->oride.tunnel_activity_check_period    = m_master.oride.tunnel_activity_check_period;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;

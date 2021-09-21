@@ -232,3 +232,8 @@ SSL/TLS
 
    Incoming client SSL connections terminated due to an unsupported or disabled
    version of SSL/TLS, since statistics collection began.
+
+.. ts:stat:: global proxy.process.tunnel.current_active_connections integer
+   :type: gauge
+
+   A gauge of current active SNI Routing Tunnels.

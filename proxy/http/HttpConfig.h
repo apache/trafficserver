@@ -62,6 +62,7 @@ enum {
   http_current_client_connections_stat,
   http_current_active_client_connections_stat,
   http_websocket_current_active_client_connections_stat,
+  tunnel_current_active_connections_stat,
   http_current_client_transactions_stat,
   http_total_incoming_connections_stat,
   http_current_server_transactions_stat,
@@ -507,6 +508,7 @@ struct OverridableHttpConfigParams {
   MgmtByte uncacheable_requests_bypass_parent = 1;
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt max_proxy_cycles                    = 0;
+  MgmtInt tunnel_activity_check_period        = 0;
 
   MgmtByte forward_connect_method = 0;
 
