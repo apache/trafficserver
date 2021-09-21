@@ -4195,7 +4195,7 @@ HttpSM::check_sni_host()
             if (host_sni_policy == 2) {
               this->t_state.client_connection_enabled = false;
             }
-          } else if (strncmp(host_name, sni_value, host_len) != 0) { // Name mismatch
+          } else if (strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
             Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
             if (host_sni_policy == 2) {
               this->t_state.client_connection_enabled = false;
