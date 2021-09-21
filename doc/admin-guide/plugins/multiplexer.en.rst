@@ -22,31 +22,37 @@
 |Name|
 **********
 
-|Name| is a remap plug-in that allows a request to be multiplexed one or more times and sent to
-different remap entries. Both headers and body (in case of POST or PUT methods, only) are copied
-into the new requests. Optionally POST/PUT requests can be skipped via
+|Name| is a remap plug-in that allows requests to certain origins to be multiplexed (i.e.,
+duplicated and dispatched in parallel) to one or more other hosts.  The headers are copied into the
+new requests as well as POST bodies.  Optionally POST and PUT requests can be skipped via
 ``pparam=proxy.config.multiplexer.skip_post_put=1``.
 
 Description
 ===========
 
-Actions:
+|Name| does the following for requests it is configured to multiplex:
 
-#. Adds ``X-Multiplexer: original`` header into client's request.
-#. Copies client's request (bodies are copied by transforming the request)
-#. Changes ``Host`` header of the copy according to ``pparam`` from the remap rule.
-#. Changes ``X-Multiplexer header`` to "copy".
-#. Sends the copied request with :code:`TSHttpConnect`.
+#. Add the ``X-Multiplexer: original`` header into the client's request.
+#. For each host in ``pparam`` of the remap rule:
 
-|Name| dispatches the request in background without blocking the original request. Multiplexed
-responses are drained and discarded.
+   #. Copies the resulting request (POST bodies are copied via the :ref:`HTTP Transform <developer-plugins-http-transformations>` mechanism).
+   #. Changes the ``Host`` header of the copy according to ``pparam`` from the remap rule.
+   #. Changes ``X-Multiplexer`` header value to ``copy`` instead of ``original``.
+   #. Asynchronously sends the copied request with :c:func:`TSHttpConnect`.
 
-A global timeout can be overwritten through ``multiplexer__timeout`` environment variable representing how many nanoseconds to wait. A default 1s timeout is hard-coded.
+|Name| dispatches the requests in the background without blocking the original request. Multiplexed
+responses are drained and discarded. Note that these multiplexed requests are made using
+:c:func:`TSHttpConnect` and are thus HTTP (not HTTPS) connections.
 
-Please use ``multiplexer`` tag for debugging purposes. While debugging, multiplexed requests and
-responses are printed into the logs.
+A default ``1`` second timeout is configured when communicating with each of the hosts receiving the
+multiplexed requests. This timeout can be overwritten via the ``multiplexer__timeout`` environment
+variable representing how many nanoseconds to wait.
 
-Multiplexer produces the following statistics consumed with ``traffic_ctl``:
+The ``multiplexer`` debug tag can be used for debugging purposes (see
+:ts:cv:`proxy.config.diags.debug.tags`). While debugging, multiplexed requests and responses are
+printed into the logs.
+
+|Name| produces the following statistics consumed with ``traffic_ctl``:
 
 *  failures: number of failed multiplexed requests
 *  hits: number of successful multiplexed requests
@@ -55,13 +61,22 @@ Multiplexer produces the following statistics consumed with ``traffic_ctl``:
 *  timeouts: number of multiplexed requests which timed-out
 *  size(avg): average size of multiplexed responses
 
-Example remap.config::
+Here are some example :file:`remap.config` configuration lines::
 
     map http://www.example.com/a http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com
     map http://www.example.com/b http://www.example.com/ @plugin=multiplexer.so @pparam=host2.example.com
     map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
     map http://www.example.com/d http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com @pparam=proxy.config.multiplexer.skip_post_put=1
 
+#. The first entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/a``
+   to ``host1.example.com``.
+#. The second entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/b``
+   to ``host2.example.com``.
+#. The third entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/c``
+   to both ``host1.example.com`` and ``host2.example.com``.
+#. The fourth entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/d``
+   to both ``host1.example.com`` and ``host2.example.com``, but POST and PUT requests will
+   not be multiplexed.
 
 Implementation
 ==============
@@ -113,8 +128,3 @@ a chunk to be consumed. The local variable / parameter :code:`size` is raw input
    kInvalid --> [*]
    kEnd --> [*]
    @enduml
-
-Notes
-=====
-
-.. note:: This should be moved to the |TS| documentation.
