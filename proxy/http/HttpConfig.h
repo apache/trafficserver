@@ -832,7 +832,7 @@ public:
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
-  OutboundConnTrack::GlobalConfig outbound_conntrack;
+  OutboundConnTrack::GlobalConfig global_outbound_conntrack;
 
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;
