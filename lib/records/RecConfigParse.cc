@@ -147,8 +147,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
   Tokenizer line_tok("\r\n");
   tok_iter_state line_tok_state;
 
-  RecConfigFileEntry *cfe;
-
   RecDebug(DL_Note, "Reading '%s'", path);
 
   // watch out, we're altering our g_rec_config_xxx structures
@@ -249,9 +247,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
     // update our g_rec_config_contents_xxx
-    cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
-    cfe->entry_type = RECE_RECORD;
-    cfe->entry      = ats_strdup(name_str);
     g_rec_config_contents_ht.emplace(name_str);
 
   L_done:
