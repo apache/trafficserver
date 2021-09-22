@@ -151,30 +151,41 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(!arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr2));
 
+  std::vector<Thing *> things;
+
   Thing *thing_one{arena.make<Thing>()};
+  things.push_back(thing_one);
 
   REQUIRE(thing_one->ten == 10);
   REQUIRE(thing_one->name == "name");
 
   thing_one = arena.make<Thing>(17, "bob"sv);
+  things.push_back(thing_one);
 
   REQUIRE(thing_one->name == "bob");
   REQUIRE(thing_one->ten == 17);
 
   thing_one = arena.make<Thing>("Dave", 137);
+  things.push_back(thing_one);
 
   REQUIRE(thing_one->name == "Dave");
   REQUIRE(thing_one->ten == 137);
 
   thing_one = arena.make<Thing>(9999);
+  things.push_back(thing_one);
 
   REQUIRE(thing_one->ten == 9999);
   REQUIRE(thing_one->name == "name");
 
   thing_one = arena.make<Thing>("Persia");
+  things.push_back(thing_one);
 
   REQUIRE(thing_one->ten == 10);
   REQUIRE(thing_one->name == "Persia");
+
+  for (auto thing : things) {
+    delete thing;
+  }
 }
 
 TEST_CASE("MemArena large alloc", "[libts][MemArena]")
