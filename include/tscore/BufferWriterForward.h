@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <limits>
 #include <utility>
 #include <cstring>
 #include <vector>
