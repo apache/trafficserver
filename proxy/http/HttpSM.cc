@@ -5258,18 +5258,18 @@ HttpSM::do_http_server_open(bool raw)
       ink_assert(pending_action.is_empty()); // in case of reschedule must not have already pending.
 
       // If the queue is disabled, reschedule.
-      if (t_state.http_config_param->outbound_conntrack.queue_size < 0) {
+      if (t_state.http_config_param->global_outbound_conntrack.queue_size < 0) {
         ct_state.enqueue();
         ct_state.rescheduled();
-        pending_action =
-          eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
-      } else if (t_state.http_config_param->outbound_conntrack.queue_size > 0) { // queue enabled, check for a slot
+        pending_action = eventProcessor.schedule_in(
+          this, HRTIME_MSECONDS(t_state.http_config_param->global_outbound_conntrack.queue_delay.count()));
+      } else if (t_state.http_config_param->global_outbound_conntrack.queue_size > 0) { // queue enabled, check for a slot
         auto wcount = ct_state.enqueue();
-        if (wcount < t_state.http_config_param->outbound_conntrack.queue_size) {
+        if (wcount < t_state.http_config_param->global_outbound_conntrack.queue_size) {
           ct_state.rescheduled();
           SMDebug("http", "%s", lbw().print("[{}] queued for {}\0", sm_id, t_state.current.server->dst_addr).data());
-          pending_action =
-            eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
+          pending_action = eventProcessor.schedule_in(
+            this, HRTIME_MSECONDS(t_state.http_config_param->global_outbound_conntrack.queue_delay.count()));
         } else {              // the queue is full
           ct_state.dequeue(); // release the queue slot
           ct_state.blocked(); // note the blockage.
