@@ -4557,6 +4557,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4591,6 +4592,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4641,6 +4643,11 @@ Sockets
    (the packets that make up an origin request).
 
    .. seealso:: `Traffic Shaping`_
+
+.. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 16384
+   :overridable:
+
+   Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 

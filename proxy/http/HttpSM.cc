@@ -5299,7 +5299,7 @@ HttpSM::do_http_server_open(bool raw)
   opt.f_blocking_connect = false;
   opt.set_sock_param(t_state.txn_conf->sock_recv_buffer_size_out, t_state.txn_conf->sock_send_buffer_size_out,
                      t_state.txn_conf->sock_option_flag_out, t_state.txn_conf->sock_packet_mark_out,
-                     t_state.txn_conf->sock_packet_tos_out);
+                     t_state.txn_conf->sock_packet_tos_out, t_state.txn_conf->sock_packet_notsent_lowat);
 
   set_tls_options(opt, t_state.txn_conf);
 
@@ -5720,10 +5720,12 @@ HttpSM::handle_http_server_open()
       server_connection_provided_cert = vc->provided_cert();
       if (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
           vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
-          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out) {
-        vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
-        vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
-        vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
+          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out ||
+          vc->options.packet_notsent_lowat != t_state.txn_conf->sock_packet_notsent_lowat) {
+        vc->options.sockopt_flags        = t_state.txn_conf->sock_option_flag_out;
+        vc->options.packet_mark          = t_state.txn_conf->sock_packet_mark_out;
+        vc->options.packet_tos           = t_state.txn_conf->sock_packet_tos_out;
+        vc->options.packet_notsent_lowat = t_state.txn_conf->sock_packet_notsent_lowat;
         vc->apply_options();
       }
     }

@@ -286,6 +286,13 @@ Connection::apply_options(NetVCOptions const &opt)
       safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l));
       Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");
     }
+#ifdef TCP_NOTSENT_LOWAT
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_NOTSENT_LOWAT) {
+      uint32_t lowat = opt.packet_notsent_lowat;
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NOTSENT_LOWAT, reinterpret_cast<char *>(&lowat), sizeof(lowat));
+      Debug("socket", "::open:: setsockopt() set TCP_NOTSENT_LOWAT to %d", lowat);
+    }
+#endif
   }
 
 #if TS_HAS_SO_MARK

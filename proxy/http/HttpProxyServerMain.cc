@@ -148,6 +148,10 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
   REC_ReadConfigInteger(net.sockopt_flags, "proxy.config.net.sock_option_flag_in");
   REC_ReadConfigInteger(net.defer_accept, "proxy.config.net.defer_accept");
 
+#if TCP_NOTSENT_LOWAT
+  REC_ReadConfigInteger(net.packet_notsent_lowat, "proxy.config.net.sock_notsent_lowat");
+#endif
+
 #ifdef TCP_FASTOPEN
   REC_ReadConfigInteger(net.tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
 #endif

@@ -180,9 +180,12 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_PACKET_MARK = 16;
   /// Value for IP_TOS @c sockopt_flags
   static uint32_t const SOCK_OPT_PACKET_TOS = 32;
+  /// Value for TCP_NOTSENT_LOWAT @c sockopt_flags
+  static uint32_t const SOCK_OPT_TCP_NOTSENT_LOWAT = 64;
 
   uint32_t packet_mark;
   uint32_t packet_tos;
+  uint32_t packet_notsent_lowat;
 
   EventType etype;
 
@@ -241,7 +244,7 @@ struct NetVCOptions {
   void reset();
 
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark = 0,
-                      unsigned long _packet_tos = 0);
+                      unsigned long _packet_tos = 0, unsigned long _packet_notsent_lowat = 0);
 
   NetVCOptions() { reset(); }
   ~NetVCOptions() {}
