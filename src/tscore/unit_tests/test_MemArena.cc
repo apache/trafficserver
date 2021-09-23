@@ -118,13 +118,13 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
 {
   struct Thing {
     int ten{10};
-    std::string name{"name"};
+    std::string_view name{"name"};
 
     Thing() {}
-    Thing(int x) : ten(x) {}
-    Thing(std::string const &s) : name(s) {}
-    Thing(int x, std::string_view s) : ten(x), name(s) {}
-    Thing(std::string const &s, int x) : ten(x), name(s) {}
+    Thing(int const x) : ten(x) {}
+    Thing(std::string_view const sv) : name(sv) {}
+    Thing(int const x, std::string_view const sv) : ten(x), name(sv) {}
+    Thing(std::string_view const sv, int const x) : ten(x), name(sv) {}
   };
 
   ts::MemArena arena{256};
@@ -156,12 +156,14 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(thing_one->ten == 10);
   REQUIRE(thing_one->name == "name");
 
-  thing_one = arena.make<Thing>(17, "bob"sv);
+  std::string_view const bob{"bob"};
+  thing_one = arena.make<Thing>(17, bob);
 
   REQUIRE(thing_one->name == "bob");
   REQUIRE(thing_one->ten == 17);
 
-  thing_one = arena.make<Thing>("Dave", 137);
+  std::string const dave{"Dave"};
+  thing_one = arena.make<Thing>(dave, 137);
 
   REQUIRE(thing_one->name == "Dave");
   REQUIRE(thing_one->ten == 137);
@@ -171,7 +173,8 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(thing_one->ten == 9999);
   REQUIRE(thing_one->name == "name");
 
-  thing_one = arena.make<Thing>("Persia");
+  std::string const persia{"Persia"};
+  thing_one = arena.make<Thing>(persia);
 
   REQUIRE(thing_one->ten == 10);
   REQUIRE(thing_one->name == "Persia");
