@@ -1,0 +1,298 @@
+Changes with Apache Traffic Server 9.2.0
+  #6609 - Add hook for loading certificate and key data from plugin 
+  #7232 - Fix lua_states_stats Au test.
+  #7253 - Don't waste IOBufferBlocks for receiving UDPPackets
+  #7279 - Add throttled log functions
+  #7350 - Convert RamCache auxkey from 2 uint32_t to 1 uint64_t.
+  #7370 - Update thread config tests
+  #7434 - Split SSL_CTX initialization logic into small functions
+  #7447 - Use OpenSSL EVP API if SHA1 API is not available (cache_promote)
+  #7448 - Use OpenSSL EVP API if SHA1 API is not available (prefetch)
+  #7467 - Parent Select Plugin
+  #7476 - Add STL compliant field iteration to MIMEHdr.
+  #7479 - Origin session reuse
+  #7480 - Fix spacing in clang-analyzer.sh script
+  #7481 - Remove unused function ink_microseconds.
+  #7505 - Updated to build latest versions of Fedora and CentOS docker images
+  #7529 - Update the session reuse tests
+  #7531 - Remove dependency for SSL stuff from P_Net.h
+  #7537 - Enable origin server session cache by default
+  #7541 - Fix tls_session_reuse test
+  #7542 - Fix origin_session_reuse test
+  #7543 - Fix a crash on origin session reuse
+  #7552 - Use SSL_CTX address as part of the lookup key
+  #7553 - Get rid of kruft LogObject copy constructor.
+  #7555 - Move ALPN and NPN related logic into ALPNSupport
+  #7556 - Introduce TLSBasicSupport interface
+  #7557 - Remove reference to CoreUtils
+  #7559 - Check verify policy and properties
+  #7560 - Adding lower_ support to stats and bonding_slave data points for port status
+  #7565 - Remove unused enums from YamlSNIConfig struct.
+  #7566 - Updates the STATUS file with all recent releases
+  #7570 - Cleanup: Remove unused member of Http2ClientSession
+  #7582 - Add pointer/reference downcast function that is checked in debug builds.
+  #7593 - Fix ALPN support on QUIC connections
+  #7594 - Call do_io_close instead of HTTP2_SESSION_EVENT_FINI handler
+  #7599 - Get rid of code for OpenSSL that has old QUIC API
+  #7604 - Fix the connection limit crash while using parents
+  #7613 - Add AuTest for Background Fill
+  #7614 - Change ROUNDUP from function-like macro to function template.
+  #7617 - Typo in output when forcing kqueue for configure
+  #7618 - Reload server session inactivity timeout before placing a session into the pool
+  #7629 - Add proxy.config.cache.log.alternate.eviction
+  #7635 - generator: allow for POST requests
+  #7636 - Use correct default value for verify.server.policy
+  #7639 - Remove reference to client.verify.server from tests and other bits
+  #7645 - Fix tls_client_versions and tls_hooks18 tests
+  #7648 - Comment why log eviction isn't implemented via a log field.
+  #7651 - Fixing Throttler.h for older clang and gcc compilers
+  #7657 - Add proxy.config.http.max_proxy_cycles
+  #7668 - AuTest: address various permissions issues
+  #7670 - create a new cache status RWW_HIT
+  #7673 - Change debug tags and make sure sni is printed on certain logs
+  #7675 - Automatically marks PRs and issues stale
+  #7676 - Doc: Clarify connection direction of configs in sni.yaml
+  #7678 - sslheaders AuTest: Skip if plugin does not exist
+  #7690 - Scalar; Move "tag" struct to be inside the "ts" namespace to avoid collisions
+  #7691 - Remove undefined method HttpSM::setup_client_header_nca
+  #7692 - Remove undefined method HttpSM::perform_nca_cache_action
+  #7697 - Add NixOS support
+  #7700 - Remove support for --enable-remote-cov-commit
+  #7702 - Remove configure-time loopback interface detection
+  #7703 - Override proxy.config.ssl.client.sni_policy from sni.yaml
+  #7704 - Add DynamicStats
+  #7708 - Ran clang-tidy over the code
+  #7713 - Include in parentselectdefs.h in install target
+  #7719 - Fix cpu utilization problem in session cache
+  #7723 - Update VSCode CPP standard configuration
+  #7731 - Fix monitor threads in lib records to exit on system shutdown.
+  #7733 - Test: Add nameserver to TLS tunnel forward test.
+  #7734 - AIO_NOT_IN_PROGRESS should not be 0
+  #7737 - ink_utf8_to_latin1 is not defined, removing declaration
+  #7744 - Update Nexthop strategies to limit the number of simultaneous host retries
+  #7752 - AuTest extension: check for unrecognized configurations
+  #7757 - Add dead server policy control and metric. Improve messages.
+  #7762 - Add traffic_server command line option for debugging in Au test.
+  #7765 - Adds bytes counting as a trigger to the cache_promote LRU
+  #7770 - Elevate privileges for traffic_manager during SSL cert reload
+  #7772 - Apply log throttling to HTTP/2 session error rate messages
+  #7773 - Test: Update tls_partial_blind_tunnel to have a nameserver.
+  #7774 - Test: update tls_forward_nonhttp to have a nameserver.
+  #7775 - Test: add nameserver to regex_remap test.
+  #7776 - Test: add nameserver to log-filter test.
+  #7777 - BWF: Add support for std::error_code.
+  #7778 - DNS: Clean up argument passing to DNS queries.
+  #7779 - Test: add nameserver to log-field test.
+  #7782 - Short circuit remap reload when a valid remap file is not specified
+  #7787 - Fixes an issue where next hop unit tests crash when run on macOS.
+  #7788 - Cleans up uninitialized warning in LogMessage.cc
+  #7789 - tests: Fixes spelling
+  #7792 - Fix to cookie_remap.cc to avoid Intel compiler warning.
+  #7802 - SSL Cert lookup using PP dest ip when ProxyProtocol is enabled
+  #7804 - NetEvent cleanup - replace #define with constexpr
+  #7808 - Fix origin session related crashes
+  #7811 - Remove a redundant argument
+  #7812 - Cleanup: unused functions of Http2ClientSession
+  #7813 - Cleanup: Remove unused members of Http2Stream
+  #7814 - Cleanup: Remove a meaningless Http2Stream::do_io_close() call
+  #7815 - Cancel cross_thread_event on clear_io_events
+  #7816 - Update HTTP version info in HostDB on new outbound connection
+  #7817 - Simplification dir_init_done
+  #7821 - Add method to write an IpAddr value to a sockaddr.
+  #7822 - Add URI Signing cdnistd Claim Implementation
+  #7829 - Apply fmt compile time argument checking to log functions
+  #7831 - Fix stall on sending response for request with trailer header
+  #7832 - Fixup TS_USE_LINUX_NATIVE_AIO AIO_MODE_NATIVE
+  #7836 - build_h3_tools: use OpenSSL_1_1_1k+quic
+  #7837 - Update NextHop strategies so that unavailable server retry codes are configurable.
+  #7841 - Unifdef test code for MMH and moved it into its own test file
+  #7844 - Clean up lua plugin doc for overridable configurations
+  #7847 - Fixed double declaration types for log buffer tracking
+  #7848 - Remove bucket search from IntrusiveHashMap::erase
+  #7849 - Make HttpSM server reference a Transaction instead of a Session
+  #7853 - Cleanup: refer Http2ClientSession::mutex
+  #7854 - Cleanup: Move member functions defined inside of class definitions of Http2ConnectionState & Http2ConnectionSettings
+  #7859 - Thread safe Mersenne Twister 64 using c++11
+  #7864 - Do not invalidate cached resources upon error responses
+  #7868 - Fixed ASAN issues with MMH test
+  #7869 - Fixed some spelling mistakes in comments
+  #7870 - Add log SQUID code testing to redirect.test.py Au test.
+  #7873 - Remove second call to TRANSACT_RETURN while handling cache write lock
+  #7876 - Cleanup Http2ClientSession SessionHandler
+  #7878 - Cleanup: Get rid of HTTP2_SESSION_EVENT_INIT
+  #7879 - Cleanup: Get rid of HTTP2_SESSION_EVENT_RECV
+  #7882 - Add an HTTP/2 304 "Not Modified" AuTest.
+  #7883 - Origin session cache mem leak fix
+  #7884 - Test bad request behavior
+  #7897 - Adds a new peering ring mode to next hop selection strategies.
+  #7899 - add MISS capability to the regex_revalidate plugin
+  #7917 - Update docs languages file to add 9.1.x for en and ja
+  #7921 - Fix race condition on server session state
+  #7924 - Ensure that URL components are valid when alternate eviction is logged
+  #7925 - For strategies.yaml, add peering_ring with go_direct, and Au tests for peering_ring.
+  #7926 - AuTest: Enable h2spec generic test cases
+  #7927 - fix grammar
+  #7928 - regex_reval: fix bug where rule type is always reported as the first
+  #7930 - Remove duplicate entry in overridable txn vars.
+  #7931 - Adds new X-Effective-URL header to the xdebug plugin
+  #7934 - Internal DLL container forward iterators
+  #7936 - Add support for Remap rule hit stats
+  #7937 - Add log name configuration and stderr/stdout support.
+  #7939 - regex_revalidate: optionally retain rule epoch state across restarts
+  #7942 - cache_promote: Don't promote on uncacheable requests
+  #7943 - Use proxy.config.log.hostname for rotated log filenames
+  #7944 - Compilation error fixes for QUIC unit tests
+  #7947 - Fixed memory leak in QUIC ack frame unit test
+  #7948 - Improve parsing error messages for strategies.yaml.
+  #7949 - Cleanup: Constify MIMEHdr
+  #7950 - regex_revalidate: add stats for miss/stale counts
+  #7951 - Fixed memory leak in the QUIC stream manager
+  #7952 - Update GitHub stale action to auto close old PRs
+  #7954 - Revert "Do not invalidate cached resources upon error responses to un…
+  #7956 - Fix double test flakiness due to EOS/TXN_CLOSE race
+  #7957 - Fix the scheme of h2 0rtt tests
+  #7959 - Implement TLSBasicSupport for QUICNetVC
+  #7961 - Don't rely on SSLNetVC when HttpSM gathers info about SSL
+  #7962 - Pass through expect header and handle 100-continue response
+  #7967 - Tweak QUIC protocol stack support to include TLS.
+  #7976 - Be ready to process response headers sent before the post tunnel is finished
+  #7978 - Doc: Update documentation to build cleanly in Sphinx 3. 
+  #7981 - Reject TLS if client offers alpn with no match
+  #7992 - Session reuse test with multiple reuses
+  #7995 - Add null checks for http_load
+  #7997 - Reset content type on conversion failure
+  #7998 - Timing and permissions update for regex_revalidate test
+  #7999 - Do not invalidate cached resources upon error responses to unsafe methods
+  #8001 - Fix BoringSSL build
+  #8007 - Cleanup SSLUtils
+  #8009 - Remove unnecessary old code for QUIC
+  #8010 - Merge quic-latest into master
+  #8012 - Add option to mostly strictly check URL characters
+  #8014 - Dual cert support for BoringSSL
+  #8015 - Update documentation of the url log fields
+  #8019 - Micro benchmark tool for global freelist
+  #8022 - Fix use after free
+  #8025 - header_rewrite rm-destination support
+  #8026 - tls_bad_alpn: Add an openssl version skip check
+  #8029 - Make it slightly harder to dump private keys to logs
+  #8030 - Fix server cert reload
+  #8032 - Stablize trace curl test in good_request_after_bad
+  #8033 - Treat Sphinx doc build warnings as errors.
+  #8034 - crr plugin: change global hook to POST_REMAP, optimize cachekey creation logic
+  #8036 - When loading async SSL configuration file fails, log SSL error
+  #8037 - For test async_engine, export all symbols
+  #8038 - Doc build: treat warnings as errors only by default
+  #8039 - Doc build in CI: build English docs with -W
+  #8045 - tests: Add conditions for BoringSSL and OpenSSL
+  #8047 - Added reloadable and overridable notation to the default_buffer_size parameter
+  #8048 - Test for SSL_set1_verify_cert_store at configure time
+  #8054 - Add URI Signing Docs
+  #8055 - Add docs for parent_select plugin
+  #8056 - Adjust capitalization of OpenSSL when not referencing openssl CLI
+  #8059 - Allow for unlimited ProxyAllocator sizes
+  #8060 - Fixed spelling mistakes in docs
+  #8061 - Fixed spelling mistakes in code and other files
+  #8062 - Log meta file: ensure the entire contents are written
+  #8063 - Fix bug in atscppapi::TranformationPluginState constructor.
+  #8064 - Remove check_system_constants(), which is unused
+  #8068 - Document TSHttpTxnPostBufferReaderGet
+  #8071 - docs: only use -W for supported branches.
+  #8073 - Remove unused macros defined on ink_apidefs.h
+  #8075 - Add plugin parent_select reloading
+  #8076 - Fix plugin parent_select missing null checks.
+  #8078 - Clean up constructors and initialization in LogAccess class.
+  #8083 - Cancel active timeout when releasing session
+  #8084 - Defer canceling UA inactivity timeout for chunked bodies too
+  #8085 - Add cache condition in header_rewrite plugin for lookup results
+  #8086 - Set milestone for first connect before returning in the PluginVC case.
+  #8088 - Allow variable buffer sizes and watermarks with transaction intercept plugins
+  #8089 - Modified slice to leverage APIs to specify buffer size and watermark.
+  #8090 - Run autoupdate on our autoconf files
+  #8091 - ci: removes use of --enable-luajit
+  #8092 - Remove unused read_vio_cont/write_vio_cont methods
+  #8093 - Add pointer check in TSHttpTxnAborted
+  #8094 - Remove unused OOB network logic
+  #8095 - Clean up Machine implementation for issue #4159.
+  #8096 - Fail requests with incomplete line ends
+  #8100 - url_sig: add url_type = pristine config file option
+  #8101 - CI: allow whitespace in *.test_input test files
+  #8158 - Remove unused multicast functions
+  #8159 - Fixes an issue in ParentSelection and NextHop strategies where a down parent may not be retried
+  #8160 - Remove unused configuration related methods from Store and Span.
+  #8167 - Remove unused HdrCsvIter methods
+  #8169 - Remove used url_copy_onto_as_server_url
+  #8177 - Fix typo in documentation
+  #8178 - Abstract adding Connection: close header to avoid triggering H2 draining logic
+  #8181 - Various maxmind_acl fixes
+  #8187 - Ran clang-tidy over the master branch
+  #8188 - lua: add ts.is_debug_tag_set function
+  #8190 - Add TSMgmtConfigFileAdd api doc
+  #8191 - Fix error connection logging crash
+  #8194 - Remove global g_rec_config_contents_llq
+  #8201 - Fix H2 logic when setting EOS flag on DATA frame
+  #8204 - transaction data sink: only stream body bytes
+  #8207 - Remove some const casting
+  #8214 - Fix client ip debug logging for the entire transaction
+  #8215 - Fix heap-use-after-free of ts-lua plugin
+  #8221 - Add some header tests
+  #8223 - Updated STATUS file
+  #8225 - Disambiguate overloads of Machine::is_self.
+  #8226 - Add normalize_ae option 3
+  #8227 - Fix the skipping logic for autest and docs
+  #8228 - Doc: Fix TSUrlPercentEncode documentation. Invalid function in the example.
+  #8229 - uri_signing: address memory leak with the internal jwt struct
+  #8231 - Upgrade Catch.hpp to v2.13.7
+  #8232 - Updates yaml-cpp to 0.7.0
+  #8234 - Add debug message when there is a header parse error for http/2
+  #8237 - Cleanup url_*_get/set functions
+  #8240 - UglyLogStubs: properly fill out the Machine stub struct
+  #8244 - rc: Emit Stopping message when stop called
+  #8245 - Upgrades to latest fastlz version
+  #8247 - Traffic Dump: dump response bodies and filter by client IP
+  #8249 - Fix log filters for IP conditions.
+  #8250 - Docs: Fix typo in CONTRIBUTING.md
+  #8251 - Add links to docs for debugging
+  #8252 - Cleanup: Get rid of deprecated functions of NetVConnection
+  #8255 - Fix documentation on lua plugin
+  #8259 - Remove unnecessary IPAddr cast.
+  #8261 - Add support for header_table for lua plugin
+  #8262 - Align strategies.yaml load logging with other config files
+  #8263 - Add ACCEPT_FILTER Support on FreeBSD
+  #8264 - Prefetch plugin: add  --fetch-query option
+  #8267 - Align TS API Au test with Yahoo internal version.
+  #8269 - Fix leaks in ConfigManager::configName
+  #8271 - Add warning message about why enhance your calm is being sent
+  #8274 - Use better done file locations for some AuTests
+  #8275 - Fix some minor issues with loading the self identifying data.
+  #8276 - Fixes an issue with next hop self detection, issue #8254
+  #8278 - AuTests: Avoid capture_output subprocess command
+  #8281 - In preparation for H2 outbound, split out common Session
+  #8284 - autest: log port # when port is recycled
+  #8290 - Do not log all errors with HTTP status 500/internal error as DNS failures.
+  #8292 - autest: double the initial port pool for get_port
+  #8296 - Make port queue an ordered set
+  #8298 - Update nghttp gold file based on previous h2 fix
+  #8300 - Revert "autest: double the initial port pool for get_port (#8292)"
+  #8301 - Make separate read and write vc_handlers
+  #8303 - Truly treat multiple certs with the same SAN as a warning
+  #8305 - Revert "Fail requests with incomplete line ends (#8096)"
+  #8306 - Fix crash during raw connect failures
+  #8309 - Fix a compile error in SSLCertLookup
+  #8314 - Add mTLS scenario documentation
+  #8316 - Remove incompatible changes for 9.2.0
+  #8319 - Fix yamlcpp include folder by using the YAMLCPP_INCLUDE  variable
+  #8320 - Add virtual destructor to Http2CommonSession because it now has virtual methods.
+  #8322 - Removed unused dirname from LoadRefCountCacheFromPath
+  #8323 - Add current active SNI Routing Tunnel stats
+  #8324 - Cleanup: Move member function definitions of HttpSM & HttpTunnel
+  #8325 - Doc: multiplixer plugin documentation updates
+  #8326 - SNI: updating SNI/hostname mismatch logging
+  #8327 - Make fqdn of sni.yaml case insensitive.
+  #8328 - Fix missing outbound_conntrack config assigment(from master config to global parameter config)
+  #8332 - docs: Update host_sni_policy for some behaviors
+  #8336 - Updated the CODEOWNERS for me
+  #8339 - Update age in header_rewrite_cond_cache autest
+  #8341 - Revert "Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit (#6189)
+  #8343 - Rename outbound_conntrack to global_outbound_conntrack to reduce confusion.
+  #8345 - Add <limits> include to BufferWriterForward.h
+  #8348 - remove unused RecConfigFileEntry from RecConfigParse
