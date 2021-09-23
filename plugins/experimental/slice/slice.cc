@@ -39,7 +39,7 @@ read_request(TSHttpTxn txnp, Config *const config)
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
-  HttpHeader const header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
+  HttpHeader header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
   if (TS_HTTP_METHOD_GET == header.method()) {
     static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
@@ -184,7 +184,8 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       return true;
     } else {
-      DEBUG_LOG("slice passing GET request through to next plugin");
+      DEBUG_LOG("slice removing header and passing GET request through to next plugin");
+      header.removeKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO);
     }
   }
 
