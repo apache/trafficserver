@@ -35,10 +35,10 @@
 #define MAX_STAT_LENGTH (1 << 8)
 
 struct config_t {
-  bool post_remap_host;
-  int txn_slot;
-  TSStatPersistence persist_type;
   TSMutex stat_creation_mutex;
+  int txn_slot;
+  bool post_remap_host{false};
+  TSStatPersistence persist_type{TS_STAT_NON_PERSISTENT};
 };
 
 // From "core".... sigh, but we need it for now at least.
@@ -111,13 +111,12 @@ int
 handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  config_t *config;
-  void *txnd;
 
-  config = static_cast<config_t *>(TSContDataGet(cont));
-  txnd   = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
+  config_t *const config = static_cast<config_t *>(TSContDataGet(cont));
+
+  // low bit left 0 because we do not know that remap succeeded yet
+  void *const txnd = static_cast<void *>(get_effective_host(txn));
   TSUserArgSet(txn, config->txn_slot, txnd);
-
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   TSDebug(DEBUG_TAG, "Read Req Handler Finished");
   return 0;
@@ -126,19 +125,19 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 int
 handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  config_t *config;
-  void *txnd = (void *)0x01; // low bit 1 because we are post remap and thus success
+  TSHttpTxn txn          = static_cast<TSHttpTxn>(edata);
+  config_t *const config = static_cast<config_t *>(TSContDataGet(cont));
 
-  config = static_cast<config_t *>(TSContDataGet(cont));
+  // low bit 1 because we are post remap and thus success
+  void *txnd = (void *)0x01;
 
-  if (config->post_remap_host) {
-    TSUserArgSet(txn, config->txn_slot, txnd);
-  } else {
-    txnd = (void *)((uintptr_t)txnd | (uintptr_t)TSUserArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
-    TSUserArgSet(txn, config->txn_slot, txnd);
+  // We need the hostname pre-remap
+  if (!config->post_remap_host) {
+    txnd = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(TSUserArgGet(txn, config->txn_slot)) |
+                                    reinterpret_cast<uintptr_t>(txnd));
   }
 
+  TSUserArgSet(txn, config->txn_slot, txnd);
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   TSDebug(DEBUG_TAG, "Post Remap Handler Finished");
   return 0;
@@ -155,21 +154,20 @@ create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view h, std::stri
 int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn const txn      = static_cast<TSHttpTxn>(edata);
-  char const *remap        = nullptr;
-  char *hostname           = nullptr;
-  char *effective_hostname = nullptr;
-
-  static char const *const unknown = "unknown";
-
+  TSHttpTxn const txn          = static_cast<TSHttpTxn>(edata);
   config_t const *const config = static_cast<config_t *>(TSContDataGet(cont));
   void const *const txnd       = TSUserArgGet(txn, config->txn_slot);
 
-  hostname = reinterpret_cast<char *>(reinterpret_cast<uintptr_t>(txnd) & ~0x01); // Get hostname
+  static char const *const unknown = "unknown";
 
   if (nullptr != txnd) {
-    if (reinterpret_cast<uintptr_t>(txnd) & 0x01) // remap succeeded?
-    {
+    char *const hostname = reinterpret_cast<char *>(reinterpret_cast<uintptr_t>(txnd) & ~0x01); // Get hostname
+
+    // remap successful
+    if (0 != (reinterpret_cast<uintptr_t>(txnd) & 0x01)) {
+      char const *remap        = nullptr;
+      char *effective_hostname = nullptr;
+
       if (!config->post_remap_host) {
         remap = hostname;
       } else {
@@ -224,7 +222,8 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
       if (nullptr != effective_hostname) {
         TSfree(effective_hostname);
       }
-    } else if (nullptr != hostname) {
+    }
+    if (0x0 != hostname) {
       TSfree(hostname);
     }
   }
@@ -255,9 +254,9 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   auto config                 = new config_t;
+  config->stat_creation_mutex = TSMutexCreate();
   config->post_remap_host     = false;
   config->persist_type        = TS_STAT_NON_PERSISTENT;
-  config->stat_creation_mutex = TSMutexCreate();
 
   if (argc > 1) {
     // Argument parser
