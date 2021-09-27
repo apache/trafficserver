@@ -72,6 +72,7 @@ SSLSecret::loadFile(const std::string &name, std::string &data_item)
 bool
 SSLSecret::setSecret(const std::string &name, const char *data, int data_len)
 {
+  std::scoped_lock lock(secret_map_mutex);
   auto iter = secret_map.find(name);
   if (iter == secret_map.end()) {
     secret_map[name] = "";
@@ -88,6 +89,7 @@ SSLSecret::setSecret(const std::string &name, const char *data, int data_len)
 const std::string *
 SSLSecret::getSecretItem(const std::string &name) const
 {
+  std::scoped_lock lock(secret_map_mutex);
   auto iter = secret_map.find(name);
   if (iter == secret_map.end()) {
     return nullptr;
@@ -111,6 +113,7 @@ SSLSecret::getSecret(const std::string &name, std::string_view &data) const
 bool
 SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, std::string_view &data1, std::string_view &data2)
 {
+  std::scoped_lock lock(secret_map_mutex);
   bool found_secret1 = this->getSecret(name1, data1);
   bool found_secret2 = name2.empty() || this->getSecret(name2, data2);
 
