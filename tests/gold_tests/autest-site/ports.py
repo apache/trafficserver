@@ -23,10 +23,8 @@ import platform
 
 import hosts.output as host
 
-try:
-    import queue as Queue
-except ImportError:
-    import Queue
+from ordered_set_queue import OrderedSetQueue
+
 
 g_ports = None  # ports we can use
 
@@ -55,7 +53,7 @@ def PortOpen(port, address=None):
 def setup_port_queue(amount=1000):
     global g_ports
     if g_ports is None:
-        g_ports = Queue.LifoQueue()
+        g_ports = OrderedSetQueue()
     else:
         return
     try:
