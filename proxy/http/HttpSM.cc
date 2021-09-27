@@ -6049,6 +6049,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     // When redirect in process is true and redirection is enabled
     // add http server as the consumer
     if (post_redirect) {
+      chunked = false;
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_for_partial_post);
       tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
                           "redirect http server post");
