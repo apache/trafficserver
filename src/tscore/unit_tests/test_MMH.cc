@@ -85,6 +85,9 @@ TEST_CASE("MMH", "[libts][MMH]")
       printf("********** collision %d\n", xy);
   }
 
+  ats_free(xf);
+  ats_free(xxh);
+
   unsigned char *s       = (unsigned char *)MMH_x;
   int l                  = sizeof(MMH_x);
   unsigned char *s1      = (unsigned char *)ats_malloc(l + sizeof(uint32_t));
