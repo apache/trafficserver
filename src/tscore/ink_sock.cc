@@ -59,7 +59,7 @@ check_valid_sockaddr(sockaddr *sa, char *file, int line)
 #endif
 
 int
-safe_setsockopt(int s, int level, int optname, void *optval, int optlevel)
+safe_setsockopt(int s, int level, int optname, const void *optval, int optlevel)
 {
   int r;
   do {
