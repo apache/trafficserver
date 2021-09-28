@@ -19,6 +19,11 @@
   limitations under the License.
  */
 
+#include <string>
+#include <string_view>
+#include <mutex>
+#include <unordered_map>
+
 class SSLSecret
 {
 public:
@@ -33,4 +38,5 @@ private:
   bool loadFile(const std::string &name, std::string &data_item);
 
   std::unordered_map<std::string, std::string> secret_map;
+  mutable std::recursive_mutex secret_map_mutex;
 };
