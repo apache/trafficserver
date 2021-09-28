@@ -946,10 +946,23 @@ SSLNetVConnection::clear()
   _ca_cert_file.reset();
   _ca_cert_dir.reset();
 
+  // SSL_SESSION_free() must only be called for SSL_SESSION objects,
+  // for which the reference count was explicitly incremented (e.g.
+  // by calling SSL_get1_session(), see SSL_get_session(3)) or when
+  // the SSL_SESSION object was generated outside a TLS handshake
+  // operation, e.g. by using d2i_SSL_SESSION(3). It must not be called
+  // on other SSL_SESSION objects, as this would cause incorrect
+  // reference counts and therefore program failures.
+  if (client_sess != nullptr) {
+    SSL_SESSION_free(client_sess);
+    client_sess = nullptr;
+  }
+
   if (ssl != nullptr) {
     SSL_free(ssl);
     ssl = nullptr;
   }
+
   ALPNSupport::clear();
   TLSBasicSupport::clear();
   TLSSessionResumptionSupport::clear();
@@ -2078,7 +2091,14 @@ SSLNetVConnection::_ssl_connect()
 
       sess = this->getOriginSession(ssl, lookup_key);
       if (sess) {
-        SSL_set_session(ssl, sess);
+        if (SSL_set_session(ssl, sess) == 0) {
+          SSL_SESSION_free(sess);
+        } else {
+          if (this->client_sess) {
+            SSL_SESSION_free(this->client_sess);
+          }
+          this->client_sess = sess;
+        }
       }
     }
   }

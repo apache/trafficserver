@@ -331,6 +331,8 @@ public:
   ink_hrtime sslLastWriteTime = 0;
   int64_t sslTotalBytesSent   = 0;
 
+  SSL_SESSION *client_sess = nullptr;
+
   // The serverName is either a pointer to the (null-terminated) name fetched from the
   // SSL object or the empty string.
   const char *

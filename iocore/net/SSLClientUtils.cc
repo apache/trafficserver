@@ -165,13 +165,15 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
     std::string lookup_key;
     ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
     origin_sess_cache->insert_session(lookup_key, sess, ssl);
-    return 1;
   } else {
     if (is_debug_tag_set("ssl.origin_session_cache")) {
       Debug("ssl.origin_session_cache", "Failed to fetch SNI/IP.");
     }
-    return 0;
   }
+
+  // return 0 here since we're converting the sessions using i2d_SSL_SESSION,
+  // meaning if we return 1, openssl will keep an extra refcount on the session.
+  return 0;
 }
 
 SSL_CTX *
