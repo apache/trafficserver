@@ -77,7 +77,11 @@ If :option:`--policy` is set to ``lru`` the following options are also available
 *  **plugin.cache_promote.${remap-identifier}.promoted** - count requests promoted, available in all policies.
 *  **plugin.cache_promote.${remap-identifier}.total_requests** - count of all requests.
 
-These two options combined with your usage patterns will control how likely a
+.. option:: --internal-enabled
+
+   Allow cache promote to operate on internal (plugin-initiated) requests.
+
+These options combined with your usage patterns will control how likely a
 URL is to become promoted to enter the cache.
 
 Examples

@@ -50,7 +50,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   // After the cache lookups check if it should be promoted on cache misses
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (!TSHttpTxnIsInternal(txnp)) {
+    if (!TSHttpTxnIsInternal(txnp) || config->getPolicy()->isInternalEnabled()) {
       int obj_status;
 
       if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {
