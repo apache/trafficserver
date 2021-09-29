@@ -57,6 +57,11 @@ impact system performance by blocking other continuations on the threads.
 Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
 Calling it from raw non-EThreads can result in unpredictable behavior.
 
+Note that some times if the TASK threads are not ready when you schedule a "contp" on the  ``TS_THREAD_POOL_TASK`` then
+the "contp" could end up being executed in a ``ET_NET`` thread instead, more likely this is not what you want.
+To avoid this you can use the ``TS_LIFECYCLE_TASK_THREADS_READY_HOOK`` to make sure that the task threads
+have been started when you schedule a "contp". You can refer to :func:`TSLifecycleHookAdd` for more details.
+
 Example Scenarios
 =================
 
@@ -127,3 +132,4 @@ See Also
 :doc:`TSContSchedule.en`
 :doc:`TSContScheduleEvery.en`
 :doc:`TSContScheduleOnThread.en`
+:doc:`TSLifecycleHookAdd.en`
