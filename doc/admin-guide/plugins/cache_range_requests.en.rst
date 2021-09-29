@@ -161,6 +161,24 @@ incorrectly *WILL* result in cache poisoning.
 generated in the logs and the cache_range_requests plugin will disable
 transaction caching in order to avoid cache poisoning.
 
+Verify Cacheability
+-------------------
+
+.. option:: --verify-cacheability
+.. option:: -v
+
+This option causes the plugin to verify whether the requested object is
+cacheable.
+
+By default, an object's cacheability is not verified after
+the plugin changes the response code of the upstream response from 206
+to 200 to force the object into cache. When this option is enabled,
+cacheability is considered, and if the object is not cacheable, the
+status code is reset back to 206, which leads to the object not being cached.
+
+This option is useful when used with other plugins, such as Cache Promote.
+
+
 Configuration examples
 ======================
 

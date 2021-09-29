@@ -78,3 +78,20 @@ X-CRR-IMS header support
 
     Consider using the header_rewrite plugin to protect the parent
 		from using this option as an attack vector against an origin.
+
+Object Cacheability:
+    Normally objects are forced into the cache by changing the status code in the
+    response from the upstream host from 206 to 200. The default behavior is to
+    perform this operation blindly without checking cacheability. Add the `-v`
+    flag to cause the plugin to ensure the object is cacheable; when it is not,
+    the 206 status code is restored and the object will not be cached.
+
+    Global Plugin (plugin.config):
+
+      cache_range_requests.so --verify-cacheability
+      cache_range_requests.so -v
+
+    Remap Plugin (remap.config):
+
+      <from-url> <to-url> @plugin=cache_range_requests.so @pparam=--verify-cacheability
+      <from-url> <to-url> @plugin=cache_range_requests.so @pparam=-v
