@@ -573,6 +573,9 @@ SSLCertificateConfig::acquire()
 void
 SSLCertificateConfig::release(SSLCertLookup *lookup)
 {
+  if (lookup == nullptr) {
+    return;
+  }
   configProcessor.release(configid, lookup);
 }
 

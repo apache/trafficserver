@@ -9511,15 +9511,19 @@ TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secr
   SSLConfigParams *load_params = SSLConfig::load_acquire();
   SSLConfigParams *params      = SSLConfig::acquire();
   if (load_params != nullptr) { // Update the current data structure
+    Debug("ssl.cert_update", "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
     if (!load_params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
       retval = TS_ERROR;
     }
-    SSLConfig::load_release(params);
+    load_params->updateCTX(std::string(secret_name, secret_name_length));
+    SSLConfig::load_release(load_params);
   }
   if (params != nullptr) {
+    Debug("ssl.cert_update", "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
     if (!params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
       retval = TS_ERROR;
     }
+    params->updateCTX(std::string(secret_name, secret_name_length));
     SSLConfig::release(params);
   }
   return retval;
