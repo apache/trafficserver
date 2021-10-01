@@ -135,7 +135,7 @@
           "items": {
             "description": "HTTP field.",
             "type": "array",
-            "items": [
+            "prefixItems": [
               {
                 "description": "Name of the field.",
                 "type": "string"
