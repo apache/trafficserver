@@ -82,7 +82,7 @@ SSLSecret::setSecret(const std::string &name, const char *data, int data_len)
     return false;
   }
   iter->second.assign(data, data_len);
-  Debug("secret_ssl", "Set secret=%10.s... to %*.s", name.c_str(), static_cast<int>(iter->second.size()), iter->second.data());
+  Debug("ssl_secret", "Set secret for %s to %.*s", name.c_str(), static_cast<int>(iter->second.size()), iter->second.data());
   return true;
 }
 
@@ -102,9 +102,10 @@ SSLSecret::getSecret(const std::string &name, std::string_view &data) const
 {
   const std::string *data_item = this->getSecretItem(name);
   if (data_item) {
-    Debug("secret_ssl", "Get secret=%10.s...  %s(%zd)", name.c_str(), data_item->data(), data_item->length());
+    Debug("ssl_secret", "Get secret for %s: %.*s", name.c_str(), static_cast<int>(data_item->length()), data_item->data());
     data = *data_item;
   } else {
+    Debug("ssl_secret", "Get secret for %s: not found", name.c_str());
     data = std::string_view{};
   }
   return data_item != nullptr;
@@ -113,11 +114,12 @@ SSLSecret::getSecret(const std::string &name, std::string_view &data) const
 bool
 SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, std::string_view &data1, std::string_view &data2)
 {
+  Debug("ssl_secret", "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
   std::scoped_lock lock(secret_map_mutex);
   bool found_secret1 = this->getSecret(name1, data1);
   bool found_secret2 = name2.empty() || this->getSecret(name2, data2);
 
-  // If we can't find either secret, load the both again
+  // If we can't find either secret, load them both again
   if (!found_secret1 || !found_secret2) {
     // Make sure each name has an entry
     if (!found_secret1) {

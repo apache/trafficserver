@@ -1747,6 +1747,13 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
   bool retval = true;
 
   SSLCertificateConfig::scoped_config lookup;
+  if (!lookup) {
+    // SSLCertificateConfig is still being configured, thus there are no SSL
+    // contexts to update. This situation can happen during startup if a
+    // registered hook updates certs before SSLCertContext configuration is
+    // complete.
+    return retval;
+  }
   std::set<shared_SSLMultiCertConfigParams> policies;
   lookup->getPolicies(secret_name, policies);
 
