@@ -23,7 +23,7 @@
 #include <string>
 #include <optional>
 
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 #include "rpc/jsonrpc/error/RPCError.h"
 

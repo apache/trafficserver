@@ -87,4 +87,4 @@ private:
 };
 } // namespace rpc
 
-inkcoreapi extern rpc::RPCServer *jsonrpcServer;
+extern rpc::RPCServer *jsonrpcServer;

@@ -20,7 +20,7 @@
 #include "RPCServer.h"
 #include "rpc/server/IPCSocketServer.h"
 
-inkcoreapi rpc::RPCServer *jsonrpcServer = nullptr;
+rpc::RPCServer *jsonrpcServer = nullptr;
 
 namespace rpc
 {
