@@ -139,7 +139,7 @@ The actual registration:
 This API also accepts a RPCRegistryInfo pointer which will provide a context data for the particular handler, for instance it will
 display the provider's name when the service descriptor gets called. There is a global object created for this purpose which can be used
 As a generic registry context object,  ``core_ats_rpc_service_provider_handle`` is defined in the  ``JsonRPC.h`` header. Please check
-:ref:`get_service_descriptor` for more information.
+`get_service_descriptor` for more information.
 
 
 Notification example:
