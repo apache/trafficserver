@@ -3961,6 +3961,30 @@ SNI Routing
    Frequency of checking the activity of SNI Routing Tunnel. Set to ``0`` to disable monitoring of the activity of the SNI tunnels.
    The feature is disabled by default.
 
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm INT 0
+
+   Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.max_stats_size INT 100
+
+   Max size of :ref:`dynamic stats for Pre-warming TLS Tunnel <pre-warming-tls-tunnel-stats>`.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.algorithm INT 2
+
+   Version of pre-warming algorithm.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``1`` Periodical pre-warming only
+   ``2`` Event based pre-warming + Periodical pre-warming
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.event_period INT 1000
+   :units: milliseconds
+
+   Frequency of periodical pre-warming in milli-seconds.
+
 OCSP Stapling Configuration
 ===========================
 

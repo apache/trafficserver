@@ -865,6 +865,8 @@ public:
 class HttpConfig
 {
 public:
+  using scoped_config = ConfigProcessor::scoped_config<HttpConfig, HttpConfigParams>;
+
   static void startup();
 
   static void reconfigure();

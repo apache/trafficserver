@@ -343,3 +343,11 @@ void
 HttpCacheAction::cancel(Continuation *c)
 {
 }
+
+#include "PreWarmManager.h"
+void
+PreWarmManager::reconfigure()
+{
+}
+
+PreWarmManager prewarmManager;

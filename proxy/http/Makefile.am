@@ -77,13 +77,15 @@ libhttp_a_SOURCES = \
 	HttpTransactHeaders.h \
 	HttpTunnel.cc \
 	HttpTunnel.h \
-	ForwardedConfig.cc
+	ForwardedConfig.cc \
+	PreWarmConfig.cc \
+	PreWarmManager.cc
 
 if BUILD_TESTS
 libhttp_a_SOURCES += RegressionHttpTransact.cc
 endif
 
-check_PROGRAMS = test_proxy_http
+check_PROGRAMS = test_proxy_http test_PreWarm
 
 TESTS = $(check_PROGRAMS)
 
@@ -110,6 +112,16 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	@HWLOC_LIBS@ \
 	@LIBCAP@
+
+test_PreWarm_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+
+test_PreWarm_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la
+
+test_PreWarm_SOURCES = \
+	unit_tests/test_PreWarm.cc
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)
