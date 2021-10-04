@@ -45,7 +45,7 @@
 
 namespace
 {
-constexpr size_t MAX_REQUEST_BUFFER_SIZE{32001};
+constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();

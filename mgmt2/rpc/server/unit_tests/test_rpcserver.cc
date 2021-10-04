@@ -39,7 +39,7 @@
 #include "rpc/server/RPCServer.h"
 #include "rpc/server/IPCSocketServer.h"
 
-#include "tools/cpp/IPCSocketClient.h"
+#include "shared/rpc/IPCSocketClient.h"
 #include "I_EventSystem.h"
 #include "tscore/I_Layout.h"
 #include "diags.i"
@@ -58,6 +58,7 @@ static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
 static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
 static constexpr int default_backlog{5};
 static constexpr int default_maxRetriesOnTransientErrors{64};
+static constexpr auto logTag{"rpc.test.client"};
 
 struct RPCServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -134,8 +135,8 @@ namespace
 {
 // Handy class to avoid manually disconecting the socket.
 // TODO: should it also connect?
-struct ScopedLocalSocket : IPCSocketClient {
-  using super = IPCSocketClient;
+struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
+  using super = shared::rpc::IPCSocketClient;
   // TODO, use another path.
   ScopedLocalSocket() : IPCSocketClient(sockPath) {}
   ~ScopedLocalSocket() { IPCSocketClient::disconnect(); }
@@ -144,8 +145,6 @@ struct ScopedLocalSocket : IPCSocketClient {
   void
   send_in_chunks(std::string_view data, int disconnect_after_chunk_n = -1)
   {
-    assert(_state == State::CONNECTED || _state == State::SENT);
-
     int chunk_number{1};
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
@@ -161,19 +160,16 @@ struct ScopedLocalSocket : IPCSocketClient {
       }
       ++chunk_number;
     }
-    _state = State::SENT;
   }
 
   // basic read, if fail, why it fail is irrelevant in this test.
   std::string
   read()
   {
-    if (_state != State::DISCONNECTED) {
-      ts::LocalBufferWriter<32000> bw;
-      auto ret = super::read(bw);
-      if (ret == ReadStatus::OK) {
-        return {bw.data(), bw.size()};
-      }
+    ts::LocalBufferWriter<32000> bw;
+    auto ret = super::read_all(bw);
+    if (ret == ReadStatus::NO_ERROR) {
+      return {bw.data(), bw.size()};
     }
     return {};
   }
@@ -182,8 +178,8 @@ struct ScopedLocalSocket : IPCSocketClient {
   query(std::string_view msg)
   {
     ts::LocalBufferWriter<32000> bw;
-    auto ret = connect().send(msg).read(bw);
-    if (ret == ReadStatus::OK) {
+    auto ret = connect().send(msg).read_all(bw);
+    if (ret == ReadStatus::NO_ERROR) {
       return {bw.data(), bw.size()};
     }
 

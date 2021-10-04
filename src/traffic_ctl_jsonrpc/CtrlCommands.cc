@@ -22,10 +22,13 @@
 #include <unordered_map>
 
 #include "CtrlCommands.h"
-#include "jsonrpc/RPCRequests.h"
-
+#include "jsonrpc/CtrlRPCRequests.h"
+#include "jsonrpc/ctrl_yaml_codecs.h"
 namespace
 {
+/// We use yamlcpp as codec implementation.
+using Codec = yamlcpp_json_emitter;
+
 const std::unordered_map<std::string_view, BasePrinter::Options::Format> _Fmt_str_to_enum = {
   {"pretty", BasePrinter::Options::Format::PRETTY},  {"legacy", BasePrinter::Options::Format::LEGACY},
   {"json", BasePrinter::Options::Format::JSON},      {"req", BasePrinter::Options::Format::DATA_REQ},
@@ -78,7 +81,7 @@ CtrlCommand::invoke_rpc(std::string const &request)
     ts::bwprint(text, "--> {}", request);
     _printer->write_debug(std::string_view{text});
   }
-  if (auto resp = _rpcClient.call(request); !resp.empty()) {
+  if (auto resp = _rpcClient.invoke(request); !resp.empty()) {
     // all good.
     if (_printer->print_resp_msg()) {
       std::string text;
@@ -91,8 +94,8 @@ CtrlCommand::invoke_rpc(std::string const &request)
   return {};
 }
 
-specs::JSONRPCResponse
-CtrlCommand::invoke_rpc(CtrlClientRequest const &request)
+shared::rpc::JSONRPCResponse
+CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request)
 {
   std::string encodedRequest = Codec::encode(request);
   std::string resp           = invoke_rpc(encodedRequest);
@@ -100,7 +103,7 @@ CtrlCommand::invoke_rpc(CtrlClientRequest const &request)
 }
 
 void
-CtrlCommand::invoke_rpc(CtrlClientRequest const &request, std::string &resp)
+CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request, std::string &resp)
 {
   std::string encodedRequest = Codec::encode(request);
   resp                       = invoke_rpc(encodedRequest);
@@ -153,12 +156,13 @@ ConfigCommand::execute_subcommand()
   }
 }
 
-specs::JSONRPCResponse
+shared::rpc::JSONRPCResponse
 RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType)
 {
-  RecordLookupRequest request;
+  shared::rpc::RecordLookupRequest request;
   for (auto &&it : argData) {
-    request.emplace_rec(it, isRegex, recQueryType == RecordQueryType::CONFIG ? CONFIG_REC_TYPES : METRIC_REC_TYPES);
+    request.emplace_rec(it, isRegex,
+                        recQueryType == RecordQueryType::CONFIG ? shared::rpc::CONFIG_REC_TYPES : shared::rpc::METRIC_REC_TYPES);
   }
   return invoke_rpc(request);
 }
@@ -166,32 +170,32 @@ RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryT
 void
 ConfigCommand::config_match()
 {
-  _printer->write_output(record_fetch(_arguments.get("match"), REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(_arguments.get("match"), shared::rpc::REGEX, RecordQueryType::CONFIG));
 }
 
 void
 ConfigCommand::config_get()
 {
-  _printer->write_output(record_fetch(_arguments.get("get"), NOT_REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(_arguments.get("get"), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
 }
 
 void
 ConfigCommand::config_describe()
 {
-  _printer->write_output(record_fetch(_arguments.get("describe"), NOT_REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(_arguments.get("describe"), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
 }
 void
 ConfigCommand::config_defaults()
 {
   const bool configs{true};
-  specs::JSONRPCResponse response = invoke_rpc(GetAllRecordsRequest{configs});
+  shared::rpc::JSONRPCResponse response = invoke_rpc(GetAllRecordsRequest{configs});
   _printer->write_output(response);
 }
 void
 ConfigCommand::config_diff()
 {
   GetAllRecordsRequest request{true};
-  specs::JSONRPCResponse response = invoke_rpc(request);
+  shared::rpc::JSONRPCResponse response = invoke_rpc(request);
   _printer->write_output(response);
 }
 
@@ -199,7 +203,7 @@ void
 ConfigCommand::config_status()
 {
   ConfigStatusRequest request;
-  specs::JSONRPCResponse response = invoke_rpc(request);
+  shared::rpc::JSONRPCResponse response = invoke_rpc(request);
   _printer->write_output(response);
 }
 
@@ -208,7 +212,7 @@ ConfigCommand::config_set()
 {
   auto const &data = _arguments.get("set");
   ConfigSetRecordRequest request{{data[0], data[1]}};
-  specs::JSONRPCResponse response = invoke_rpc(request);
+  shared::rpc::JSONRPCResponse response = invoke_rpc(request);
 
   _printer->write_output(response);
 }
@@ -251,19 +255,19 @@ MetricCommand::execute_subcommand()
 void
 MetricCommand::metric_get()
 {
-  _printer->write_output(record_fetch(_arguments.get("get"), NOT_REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(_arguments.get("get"), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
 }
 
 void
 MetricCommand::metric_match()
 {
-  _printer->write_output(record_fetch(_arguments.get("match"), REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(_arguments.get("match"), shared::rpc::REGEX, RecordQueryType::METRIC));
 }
 
 void
 MetricCommand::metric_describe()
 {
-  _printer->write_output(record_fetch(_arguments.get("describe"), NOT_REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(_arguments.get("describe"), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
 }
 
 void
@@ -305,7 +309,7 @@ HostCommand::status_get()
   HostGetStatusRequest request;
   for (auto it : data) {
     std::string name = std::string{HostGetStatusRequest::STATUS_PREFIX} + "." + it;
-    request.emplace_rec(name, NOT_REGEX, METRIC_REC_TYPES);
+    request.emplace_rec(name, shared::rpc::NOT_REGEX, shared::rpc::METRIC_REC_TYPES);
   }
   auto response = invoke_rpc(request);
 
@@ -459,7 +463,7 @@ ServerCommand::ServerCommand(ts::Arguments args) : CtrlCommand(args)
 void
 ServerCommand::server_drain()
 {
-  specs::JSONRPCResponse response;
+  shared::rpc::JSONRPCResponse response;
   // TODO, can call_request take a && ?? if needed in the cmd just pass by ref.
 
   if (_arguments.get("undo")) {

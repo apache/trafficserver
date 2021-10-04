@@ -31,15 +31,7 @@
 // While we use yamlcpp for parsing, internally we model the request/response on our wrappers (RPCRequest, RPCResponse)
 namespace rpc::specs
 {
-static constexpr auto JSONRPC_VERSION{"2.0"};
-
-// /// @brief Class that contains a translated error from an std::error_code that can be understand by the YAMLCodec when building a
-// /// response.
-// struct RPCError {
-//   RPCError(int c, std::string const &m) : code(c), message(m) {}
-//   int code;
-//   std::string message;
-// };
+const std::string JSONRPC_VERSION{"2.0"};
 
 /// @brief  This class encapsulate the registered handler call data.
 /// It contains the YAML::Node that will contain the response of a call and  if any error, will also encapsulate the  error from the

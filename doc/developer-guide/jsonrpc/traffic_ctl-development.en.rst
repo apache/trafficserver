@@ -60,8 +60,8 @@ Command implementation
 
       * Implement the member function that will be dealing with the particular command, ie: (config_status())
 
-      * If a new JsonRPC Message needs to be done, then implement it by deriving from ``CtrlClientRequest`` if a method is needed, or from
-        ``CtrlClientRequestNotification`` if it's a notification.         More info can be found here :ref:`jsonrpc-request` and
+      * If a new JsonRPC Message needs to be done, then implement it by deriving from ``shared::rpc::ClientRequest`` if a method is needed, or from
+        ``shared::rpc::ClientRequestNotification`` if it's a notification.         More info can be found here :ref:`jsonrpc-request` and
         :ref:`jsonrpc_development-design`. This can be done inside the ``RPCRequest.h`` file.
 
 
@@ -106,8 +106,8 @@ Let's define a new command for a new specific API with name == ``admin_new_comma
    .. code-block:: cpp
 
       // RPCRequests.h
-      struct NewCommandJsonRPCRequest : CtrlClientRequest {
-         using super = CtrlClientRequest;
+      struct NewCommandJsonRPCRequest : shared::rpc::ClientRequest {
+         using super = shared::rpc::ClientRequest;
          struct Params {
             std::string named_var_1;
          };

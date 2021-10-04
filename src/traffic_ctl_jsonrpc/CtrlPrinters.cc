@@ -17,12 +17,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include "CtrlPrinters.h"
+
 #include <iostream>
 #include <unordered_map>
 #include <string_view>
 
-#include "CtrlPrinters.h"
-#include "jsonrpc/yaml_codecs.h"
+#include "jsonrpc/ctrl_yaml_codecs.h"
 #include "tscpp/util/ts_meta.h"
 #include <tscore/BufferWriter.h>
 #include "PrintUtils.h"
@@ -32,7 +33,7 @@
 namespace
 {
 void
-print_record_error_list(std::vector<RecordLookUpResponse::RecordError> const &errors)
+print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordError> const &errors)
 {
   if (errors.size()) {
     std::cout << "------------ Errors ----------\n";
@@ -49,7 +50,7 @@ print_record_error_list(std::vector<RecordLookUpResponse::RecordError> const &er
 }
 } // namespace
 void
-BasePrinter::write_output(specs::JSONRPCResponse const &response)
+BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 {
   // If json, then we print the full message, either ok or error.
   if (this->is_json_format()) {
@@ -62,7 +63,7 @@ BasePrinter::write_output(specs::JSONRPCResponse const &response)
 
   if (response.is_error() && this->is_pretty_format()) {
     // we print the error in this case. Already formatted.
-    std::cout << response.error.as<specs::JSONRPCError>();
+    std::cout << response.error.as<shared::rpc::JSONRPCError>();
     return;
   }
 
@@ -89,7 +90,7 @@ BasePrinter::write_debug(std::string_view output)
 void
 RecordPrinter::write_output(YAML::Node const &result)
 {
-  auto response = result.as<RecordLookUpResponse>();
+  auto response = result.as<shared::rpc::RecordLookUpResponse>();
   if (is_legacy_format()) {
     write_output_legacy(response);
   } else {
@@ -97,7 +98,7 @@ RecordPrinter::write_output(YAML::Node const &result)
   }
 }
 void
-RecordPrinter::write_output_legacy(RecordLookUpResponse const &response)
+RecordPrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &response)
 {
   std::string text;
   for (auto &&recordInfo : response.recordList) {
@@ -110,7 +111,7 @@ RecordPrinter::write_output_legacy(RecordLookUpResponse const &response)
   }
 }
 void
-RecordPrinter::write_output_pretty(RecordLookUpResponse const &response)
+RecordPrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
 {
   write_output_legacy(response);
   print_record_error_list(response.errorList);
@@ -119,7 +120,7 @@ RecordPrinter::write_output_pretty(RecordLookUpResponse const &response)
 void
 MetricRecordPrinter::write_output(YAML::Node const &result)
 {
-  auto response = result.as<RecordLookUpResponse>();
+  auto response = result.as<shared::rpc::RecordLookUpResponse>();
   for (auto &&recordInfo : response.recordList) {
     std::cout << recordInfo.name << " " << recordInfo.currentValue << '\n';
   }
@@ -130,7 +131,7 @@ void
 DiffConfigPrinter::write_output(YAML::Node const &result)
 {
   std::string text;
-  auto response = result.as<RecordLookUpResponse>();
+  auto response = result.as<shared::rpc::RecordLookUpResponse>();
   for (auto &&recordInfo : response.recordList) {
     auto const &currentValue = recordInfo.currentValue;
     auto const &defaultValue = recordInfo.defaultValue;
@@ -158,7 +159,7 @@ ConfigReloadPrinter::write_output(YAML::Node const &result)
 void
 RecordDescribePrinter::write_output(YAML::Node const &result)
 {
-  auto const &response = result.as<RecordLookUpResponse>();
+  auto const &response = result.as<shared::rpc::RecordLookUpResponse>();
   if (is_legacy_format()) {
     write_output_legacy(response);
   } else {
@@ -167,7 +168,7 @@ RecordDescribePrinter::write_output(YAML::Node const &result)
 }
 
 void
-RecordDescribePrinter::write_output_legacy(RecordLookUpResponse const &response)
+RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &response)
 {
   std::string text;
   for (auto &&recordInfo : response.recordList) {
@@ -178,7 +179,7 @@ RecordDescribePrinter::write_output_legacy(RecordLookUpResponse const &response)
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Data Type ", recordInfo.dataType);
 
     std::visit(ts::meta::overloaded{
-                 [&](RecordLookUpResponse::RecordParamInfo::ConfigMeta const &meta) {
+                 [&](shared::rpc::RecordLookUpResponse::RecordParamInfo::ConfigMeta const &meta) {
                    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Access Control ", rec_accessof(meta.accessType));
                    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(meta.updateType));
                    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Status ", meta.updateStatus);
@@ -186,7 +187,7 @@ RecordDescribePrinter::write_output_legacy(RecordLookUpResponse const &response)
 
                    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Syntax Check ", meta.checkExpr);
                  },
-                 [&](RecordLookUpResponse::RecordParamInfo::StatMeta const &meta) {
+                 [&](shared::rpc::RecordLookUpResponse::RecordParamInfo::StatMeta const &meta) {
                    // This may not be what we want, as for a metric we may not need to print all the same info. In that case
                    // just create a new printer for this.
                    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Persist Type ", meta.persistType);
@@ -202,7 +203,7 @@ RecordDescribePrinter::write_output_legacy(RecordLookUpResponse const &response)
 }
 
 void
-RecordDescribePrinter::write_output_pretty(RecordLookUpResponse const &response)
+RecordDescribePrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
 {
   std::string text;
 
@@ -213,7 +214,7 @@ RecordDescribePrinter::write_output_pretty(RecordLookUpResponse const &response)
 void
 GetHostStatusPrinter::write_output(YAML::Node const &result)
 {
-  auto response = result.as<RecordLookUpResponse>();
+  auto response = result.as<shared::rpc::RecordLookUpResponse>();
   std::string text;
   for (auto &&recordInfo : response.recordList) {
     std::cout << recordInfo.name << " " << recordInfo.currentValue << '\n';
@@ -272,7 +273,7 @@ CacheDiskStorageOfflinePrinter::write_output_pretty(YAML::Node const &result)
     if (auto n = item["has_online_storage_left"]) {
       bool any_left = n.as<bool>();
       if (!any_left) {
-        std::cout << "No more online storage left" << try_extract<std::string>(n, "path") << '\n';
+        std::cout << "No more online storage left" << helper::try_extract<std::string>(n, "path") << '\n';
       }
     }
   }
@@ -296,44 +297,3 @@ RPCAPIPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------------------
-
-std::ostream &
-operator<<(std::ostream &os, const RecordLookUpResponse::RecordError &re)
-{
-  std::string text;
-  os << ts::bwprint(text, "{:16s}: {}\n", "Record Name ", re.recordName);
-  os << ts::bwprint(text, "{:16s}: {}\n", "Code", re.code);
-  if (!re.message.empty()) {
-    os << ts::bwprint(text, "{:16s}: {}\n", "Message", re.message);
-  }
-  return os;
-}
-
-namespace specs
-{
-std::ostream &
-operator<<(std::ostream &os, const specs::JSONRPCError &err)
-{
-  os << "Error found.\n";
-  os << "code: " << err.code << '\n';
-  os << "message: " << err.message << '\n';
-  if (err.data.size() > 0) {
-    os << "---\nAdditional error information found:\n";
-    auto my_print = [&](auto const &e) {
-      os << "+ code: " << e.first << '\n';
-      os << "+ message: " << e.second << '\n';
-    };
-
-    auto iter = std::begin(err.data);
-
-    my_print(*iter);
-    ++iter;
-    for (; iter != std::end(err.data); ++iter) {
-      os << "---\n";
-      my_print(*iter);
-    }
-  }
-
-  return os;
-}
-} // namespace specs

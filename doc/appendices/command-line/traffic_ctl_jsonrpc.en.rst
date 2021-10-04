@@ -241,35 +241,14 @@ traffic_ctl metric
 traffic_ctl server
 ------------------
 .. program:: traffic_ctl server
-.. option:: restart
-
-   Option not yet available
-
-.. program:: traffic_ctl server restart
-.. option:: --drain
-
-   This option modifies the behavior of :option:`traffic_ctl server restart` such that
-   :program:`traffic_server` is not shut down until the number of active client connections drops to
-   the number given by the :ts:cv:`proxy.config.restart.active_client_threshold` configuration
-   variable.
 
 .. program:: traffic_ctl server
-.. option:: start
+.. option:: drain
 
-   Option not yet available
+   Drop the number of active client connections.{
 
 .. program:: traffic_ctl server
 .. option:: status
-
-   Option not yet available
-
-.. program:: traffic_ctl server
-.. option:: stop
-
-   Option not yet available
-
-.. program:: traffic_ctl server
-.. option:: backtrace
 
    Option not yet available
 

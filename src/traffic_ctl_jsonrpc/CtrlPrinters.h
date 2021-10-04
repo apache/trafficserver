@@ -23,7 +23,7 @@
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
-#include "jsonrpc/RPCRequests.h"
+#include "shared/rpc/RPCRequests.h"
 
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
@@ -65,7 +65,7 @@ public:
   /// be called.
   /// @param response the  server response.
   ///
-  void write_output(specs::JSONRPCResponse const &response);
+  void write_output(shared::rpc::JSONRPCResponse const &response);
 
   ///
   /// Write output based on the response values.
@@ -148,8 +148,8 @@ public:
 class RecordPrinter : public BasePrinter
 {
   void write_output(YAML::Node const &result) override;
-  void write_output_legacy(RecordLookUpResponse const &result);
-  void write_output_pretty(RecordLookUpResponse const &result);
+  void write_output_legacy(shared::rpc::RecordLookUpResponse const &result);
+  void write_output_pretty(shared::rpc::RecordLookUpResponse const &result);
 
 public:
   RecordPrinter(Options opt) : BasePrinter(opt) { _printAsRecords = is_records_format(); }
@@ -186,8 +186,8 @@ public:
 //------------------------------------------------------------------------------------------------------------------------------------
 class RecordDescribePrinter : public BasePrinter
 {
-  void write_output_legacy(RecordLookUpResponse const &result);
-  void write_output_pretty(RecordLookUpResponse const &result);
+  void write_output_legacy(shared::rpc::RecordLookUpResponse const &result);
+  void write_output_pretty(shared::rpc::RecordLookUpResponse const &result);
   void write_output(YAML::Node const &result) override;
 
 public:

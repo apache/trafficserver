@@ -24,13 +24,13 @@ traffic_ctl_jsonrpc_traffic_ctl_CPPFLAGS = \
 	$(TS_INCLUDES) \
 	-I$(abs_top_srcdir)/mgmt2 \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/tests \
 	@YAMLCPP_INCLUDES@
 
 traffic_ctl_jsonrpc_traffic_ctl_SOURCES = \
 	traffic_ctl_jsonrpc/traffic_ctl.cc \
 	traffic_ctl_jsonrpc/CtrlPrinters.cc \
-	traffic_ctl_jsonrpc/CtrlCommands.cc
+	traffic_ctl_jsonrpc/CtrlCommands.cc \
+	shared/rpc/IPCSocketClient.cc
 
 traffic_ctl_jsonrpc_traffic_ctl_LDADD = \
     $(top_builddir)/src/tscore/libtscore.la \

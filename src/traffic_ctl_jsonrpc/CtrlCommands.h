@@ -1,21 +1,21 @@
 /**
-  @section license License
+@section license License
 
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 #pragma once
 
@@ -23,9 +23,7 @@
 
 #include "tscore/ArgParser.h"
 
-// traffic_ctl specifics
-#include "jsonrpc/RPCClient.h"
-#include "jsonrpc/yaml_codecs.h"
+#include "shared/rpc/RPCClient.h"
 #include "CtrlPrinters.h"
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -36,9 +34,6 @@
 /// parsed by the traffic_ctl are available as a member to all the derived classes.
 class CtrlCommand
 {
-  /// We use yamlcpp as codec implementation.
-  using Codec = yamlcpp_json_emitter;
-
 public:
   virtual ~CtrlCommand() = default;
 
@@ -56,16 +51,16 @@ protected:
   ///        and message should be already en|de coded.
   /// @param request A string representation of the json/yaml request.
   /// @return a string with the json/yaml response.
-  /// @note This function does print the raw string if requested by the "--debugrpc". No printer involved, standard output.
+  /// @note This function does print the raw string if requested by the "--format". No printer involved, standard output.
   std::string invoke_rpc(std::string const &request);
 
   /// @brief Function that calls the rpc server. This function takes a json objects and uses the defined coded to convert them to a
   ///        string. This function will call invoke_rpc(string) overload.
   /// @param A Client request.
   /// @return A server response.
-  specs::JSONRPCResponse invoke_rpc(CtrlClientRequest const &request);
+  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
   /// @brief Function that calls the rpc server. The response will not be decoded, it will be a raw string.
-  void invoke_rpc(CtrlClientRequest const &request, std::string &bw);
+  void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw);
 
   ts::Arguments _arguments;              //!< parsed traffic_ctl arguments.
   std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
@@ -76,7 +71,7 @@ protected:
   std::function<void(void)> _invoked_func; //!< Actual function that the command will execute.
 
 private:
-  RPCClient _rpcClient; //!< RPC socket client implementation.
+  shared::rpc::RPCClient _rpcClient; //!< RPC socket client implementation.
 };
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -100,7 +95,7 @@ protected:
   /// @param argData argument's data.
   /// @param isRegex if the request should be done by regex or name.
   /// @param recQueryType Config or Metric.
-  specs::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType);
+  shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType);
 
   /// @brief To be override
   virtual void

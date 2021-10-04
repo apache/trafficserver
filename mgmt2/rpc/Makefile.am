@@ -106,6 +106,7 @@ test_jsonrpcserver_LDFLAGS = \
 
 test_jsonrpcserver_SOURCES = \
 	server/unit_tests/unit_test_main.cc \
+	$(shared_rpc_ipc_client_SOURCES) \
 	server/unit_tests/test_rpcserver.cc
 
 test_jsonrpcserver_LDADD = \
@@ -164,19 +165,23 @@ librpcpublichandlers_la_SOURCES = \
 shared_overridable_txn_vars_SOURCES = overridable_txn_vars.cc
 nodist_librpcpublichandlers_la_SOURCES = $(shared_overridable_txn_vars_SOURCES)
 
+shared_rpc_ipc_client_SOURCES = IPCSocketClient.cc
+
 # This may not be needed. Ok for now.
-CLEANDIST = $(shared_overridable_txn_vars_SOURCES)
+CLEANDIST = $(shared_overridable_txn_vars_SOURCES) $(shared_rpc_ipc_client_SOURCES)
 
 clean-local:
-	rm -f $(shared_overridable_txn_vars_SOURCES)
+	rm -f $(shared_overridable_txn_vars_SOURCES) $(shared_rpc_ipc_client_SOURCES)
 
 distclean-local:
-	rm -f $(shared_overridable_txn_vars_SOURCES)
+	rm -f $(shared_overridable_txn_vars_SOURCES) $(shared_rpc_ipc_client_SOURCES)
 
 # Build with this file instead of the original one.
 $(shared_overridable_txn_vars_SOURCES):
 	echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
 
+$(shared_rpc_ipc_client_SOURCES):
+	echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
 
 include $(top_srcdir)/build/tidy.mk
 
