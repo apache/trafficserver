@@ -135,7 +135,7 @@ ConfigCommand::ConfigCommand(ts::Arguments args) : RecordCommand(args)
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_defaults(); };
   } else if (args.get("set")) {
-    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _printer      = std::make_unique<ConfigSetPrinter>(printOpts);
     _invoked_func = [&]() { config_set(); };
   } else if (args.get("status")) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);

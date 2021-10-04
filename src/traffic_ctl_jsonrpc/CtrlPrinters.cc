@@ -109,12 +109,13 @@ RecordPrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &resp
                                recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
     }
   }
+  // we print errors if found.
+  print_record_error_list(response.errorList);
 }
 void
 RecordPrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
 {
   write_output_legacy(response);
-  print_record_error_list(response.errorList);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
@@ -149,11 +150,36 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------------------------------------------------------------
 void
 ConfigReloadPrinter::write_output(YAML::Node const &result)
 {
+}
+//------------------------------------------------------------------------------------------------------------------------------------
+void
+ConfigSetPrinter::write_output(YAML::Node const &result)
+{
+  // we match the legacy format, the only one supported for now.
+  static const std::unordered_map<std::string, std::string> Update_Type_To_String_Message = {
+    {"0", "Set {}"},                                                                                           // UNDEFINED
+    {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
+    {"2", "Set {}, restart required"},                                                                         // RESTART_TS
+    {"3", "Set {}, restart required"} // RESTART TM, we take care of this in case we get it from TS.
+  };
+  std::string text;
+  try {
+    auto const &response = result.as<ConfigSetRecordResponse>();
+    for (auto &&updatedRec : response.data) {
+      if (auto search = Update_Type_To_String_Message.find(updatedRec.updateType);
+          search != std::end(Update_Type_To_String_Message)) {
+        std::cout << ts::bwprint(text, search->second, updatedRec.recName) << '\n';
+      } else {
+        std::cout << "Oops we don't know how to handle the update status for '" << updatedRec.recName << "' ["
+                  << updatedRec.updateType << "]\n";
+      }
+    }
+  } catch (std::exception const &ex) {
+    std::cout << ts::bwprint(text, "Unexpected error found {}", ex.what());
+  }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
@@ -205,8 +231,6 @@ RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse con
 void
 RecordDescribePrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
 {
-  std::string text;
-
   write_output_legacy(response);
   print_record_error_list(response.errorList);
 }
@@ -215,7 +239,6 @@ void
 GetHostStatusPrinter::write_output(YAML::Node const &result)
 {
   auto response = result.as<shared::rpc::RecordLookUpResponse>();
-  std::string text;
   for (auto &&recordInfo : response.recordList) {
     std::cout << recordInfo.name << " " << recordInfo.currentValue << '\n';
   }

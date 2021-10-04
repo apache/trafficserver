@@ -89,6 +89,13 @@ struct ConfigSetRecordRequest : shared::rpc::ClientRequest {
     return "admin_config_set_records";
   }
 };
+struct ConfigSetRecordResponse {
+  struct UpdatedRec {
+    std::string recName;
+    std::string updateType;
+  };
+  std::vector<UpdatedRec> data;
+};
 //------------------------------------------------------------------------------------------------------------------------------------
 struct HostSetStatusRequest : shared::rpc::ClientRequest {
   using super = shared::rpc::ClientRequest;

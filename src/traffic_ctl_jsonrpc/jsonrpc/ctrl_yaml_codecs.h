@@ -146,5 +146,16 @@ template <> struct convert<DeviceStatusInfoResponse> {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
-
+template <> struct convert<ConfigSetRecordResponse> {
+  static bool
+  decode(Node const &node, ConfigSetRecordResponse &info)
+  {
+    for (auto &&item : node) {
+      info.data.push_back(
+        {helper::try_extract<std::string>(item, "record_name"), helper::try_extract<std::string>(item, "update_type")});
+    }
+    return true;
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 } // namespace YAML

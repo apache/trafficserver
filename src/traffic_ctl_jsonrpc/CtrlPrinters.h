@@ -184,6 +184,14 @@ public:
   ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+class ConfigSetPrinter : public BasePrinter
+{
+  void write_output(YAML::Node const &result) override;
+
+public:
+  using BasePrinter::BasePrinter;
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 class RecordDescribePrinter : public BasePrinter
 {
   void write_output_legacy(shared::rpc::RecordLookUpResponse const &result);

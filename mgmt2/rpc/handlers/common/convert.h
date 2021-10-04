@@ -35,7 +35,7 @@
 /// @brief Namespace to group all the names used for key access to the yaml lookup nodes.
 ///
 ///
-namespace
+namespace constants_rec
 {
 static constexpr auto NAME{"record_name"};
 static constexpr auto RECORD_TYPE{"record_type"};
@@ -58,7 +58,7 @@ static constexpr auto STAT_META{"stat_meta"};
 
 static constexpr auto PERSIST_TYPE{"persist_type"};
 
-} // namespace
+} // namespace constants_rec
 
 namespace YAML
 {
@@ -82,12 +82,12 @@ template <> struct convert<RecConfigMeta> {
   {
     Node node;
     // TODO: do we really want each specific encode implementation for each enum type?
-    node[ACCESS_TYPE]   = static_cast<int>(configMeta.access_type);
-    node[UPDATE_STATUS] = static_cast<int>(configMeta.update_required);
-    node[UPDATE_TYPE]   = static_cast<int>(configMeta.update_type);
-    node[CHECK_TYPE]    = static_cast<int>(configMeta.check_type);
-    node[SOURCE]        = static_cast<int>(configMeta.source);
-    node[CHECK_EXPR]    = configMeta.check_expr ? configMeta.check_expr : "null";
+    node[constants_rec::ACCESS_TYPE]   = static_cast<int>(configMeta.access_type);
+    node[constants_rec::UPDATE_STATUS] = static_cast<int>(configMeta.update_required);
+    node[constants_rec::UPDATE_TYPE]   = static_cast<int>(configMeta.update_type);
+    node[constants_rec::CHECK_TYPE]    = static_cast<int>(configMeta.check_type);
+    node[constants_rec::SOURCE]        = static_cast<int>(configMeta.source);
+    node[constants_rec::CHECK_EXPR]    = configMeta.check_expr ? configMeta.check_expr : "null";
 
     return node;
   }
@@ -102,7 +102,7 @@ template <> struct convert<RecStatMeta> {
   {
     // TODO. just make sure that we know which data should be included here.
     Node node;
-    node[PERSIST_TYPE] = statMeta.persist_type;
+    node[constants_rec::PERSIST_TYPE] = statMeta.persist_type;
     return node;
   }
 };
@@ -116,45 +116,45 @@ template <> struct convert<RecRecord> {
   {
     Node node;
     try {
-      node[NAME]           = record.name ? record.name : "null";
-      node[RECORD_TYPE]    = static_cast<int>(record.data_type);
-      node[RECORD_VERSION] = record.version;
-      node[RSB]            = record.rsb_id;
-      node[ORDER]          = record.order;
+      node[constants_rec::NAME]           = record.name ? record.name : "null";
+      node[constants_rec::RECORD_TYPE]    = static_cast<int>(record.data_type);
+      node[constants_rec::RECORD_VERSION] = record.version;
+      node[constants_rec::RSB]            = record.rsb_id;
+      node[constants_rec::ORDER]          = record.order;
 
       if (REC_TYPE_IS_CONFIG(record.rec_type)) {
-        node[CONFIG_META] = record.config_meta;
+        node[constants_rec::CONFIG_META] = record.config_meta;
       } else if (REC_TYPE_IS_STAT(record.rec_type)) {
-        node[STAT_META] = record.stat_meta;
+        node[constants_rec::STAT_META] = record.stat_meta;
       }
 
-      node[CLASS] = static_cast<int>(record.rec_type);
+      node[constants_rec::CLASS] = static_cast<int>(record.rec_type);
 
       if (record.name) {
-        const auto it     = ts::Overridable_Txn_Vars.find(record.name);
-        node[OVERRIDABLE] = (it == ts::Overridable_Txn_Vars.end()) ? "false" : "true";
+        const auto it                    = ts::Overridable_Txn_Vars.find(record.name);
+        node[constants_rec::OVERRIDABLE] = (it == ts::Overridable_Txn_Vars.end()) ? "false" : "true";
       }
 
       switch (record.data_type) {
       case RECD_INT:
-        node[DATA_TYPE]     = "INT";
-        node[CURRENT_VALUE] = record.data.rec_int;
-        node[DEFAULT_VALUE] = record.data_default.rec_int;
+        node[constants_rec::DATA_TYPE]     = "INT";
+        node[constants_rec::CURRENT_VALUE] = record.data.rec_int;
+        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_int;
         break;
       case RECD_FLOAT:
-        node[DATA_TYPE]     = "FLOAT";
-        node[CURRENT_VALUE] = record.data.rec_float;
-        node[DEFAULT_VALUE] = record.data_default.rec_float;
+        node[constants_rec::DATA_TYPE]     = "FLOAT";
+        node[constants_rec::CURRENT_VALUE] = record.data.rec_float;
+        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_float;
         break;
       case RECD_STRING:
-        node[DATA_TYPE]     = "STRING";
-        node[CURRENT_VALUE] = record.data.rec_string ? record.data.rec_string : "null";
-        node[DEFAULT_VALUE] = record.data_default.rec_string ? record.data_default.rec_string : "null";
+        node[constants_rec::DATA_TYPE]     = "STRING";
+        node[constants_rec::CURRENT_VALUE] = record.data.rec_string ? record.data.rec_string : "null";
+        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_string ? record.data_default.rec_string : "null";
         break;
       case RECD_COUNTER:
-        node[DATA_TYPE]     = "COUNTER";
-        node[CURRENT_VALUE] = record.data.rec_counter;
-        node[DEFAULT_VALUE] = record.data_default.rec_counter;
+        node[constants_rec::DATA_TYPE]     = "COUNTER";
+        node[constants_rec::CURRENT_VALUE] = record.data.rec_counter;
+        node[constants_rec::DEFAULT_VALUE] = record.data_default.rec_counter;
         break;
       default:
         // this is an error, internal we should flag it

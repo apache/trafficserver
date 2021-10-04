@@ -108,7 +108,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
   ts::Rv<YAML::Node> resp;
 
   // we need the type and the udpate type for now.
-  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *>;
+  using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT>;
 
   for (auto const &kv : params) {
     SetRecordCmdInfo info;
@@ -125,13 +125,14 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     const auto ret = RecLookupRecord(
       info.name.c_str(),
       [](const RecRecord *record, void *data) {
-        auto &[dataType, checkType, pattern] = *static_cast<LookupContext *>(data);
+        auto &[dataType, checkType, pattern, updateType] = *static_cast<LookupContext *>(data);
         if (REC_TYPE_IS_CONFIG(record->rec_type)) {
           dataType  = record->data_type;
           checkType = record->config_meta.check_type;
           if (record->config_meta.check_expr) {
             pattern = record->config_meta.check_expr;
           }
+          updateType = record->config_meta.update_type;
         }
       },
       &recordCtx);
@@ -143,7 +144,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     }
 
     // now set the value.
-    auto const &[dataType, checkType, pattern] = recordCtx;
+    auto const &[dataType, checkType, pattern, updateType] = recordCtx;
 
     // run the check only if we have something to check against it.
     if (pattern != nullptr && utils::recordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
@@ -168,7 +169,8 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     if (set_ok) {
       YAML::Node updatedRecord;
-      updatedRecord[utils::RECORD_NAME_KEY] = info.name;
+      updatedRecord[utils::RECORD_NAME_KEY]        = info.name;
+      updatedRecord[utils::RECORD_UPDATE_TYPE_KEY] = std::to_string(updateType);
       resp.result().push_back(updatedRecord);
     } else {
       resp.errata().push({err::RecordError::GENERAL_ERROR});

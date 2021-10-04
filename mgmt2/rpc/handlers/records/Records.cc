@@ -222,7 +222,7 @@ lookup_records(std::string_view const &id, YAML::Node const &params)
     auto &&[recordNode, error] = find_records(recordElement);
 
     if (error) {
-      ErrorInfo ei{error.value()};
+      ErrorInfo ei{error};
       ei.recordName = recordElement.recName;
 
       errorList.push_back(ei);
