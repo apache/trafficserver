@@ -228,6 +228,8 @@ struct NetVCOptions {
 
   bool tls_upstream = false;
 
+  int32_t ssl_max_record_size;
+
   /// Reset all values to defaults.
 
   /**

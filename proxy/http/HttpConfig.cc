@@ -1377,6 +1377,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.plugin_vc_default_buffer_water_mark,
                                     "proxy.config.plugin.vc.default_buffer_water_mark");
 
+  // SSL Tunables
+  HttpEstablishStaticConfigLongLong(c.oride.ssl_max_record_size, "proxy.config.ssl.max_record_size");
+
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
 
@@ -1696,6 +1699,8 @@ HttpConfig::reconfigure()
 
   params->oride.plugin_vc_default_buffer_index      = m_master.oride.plugin_vc_default_buffer_index;
   params->oride.plugin_vc_default_buffer_water_mark = m_master.oride.plugin_vc_default_buffer_water_mark;
+
+  params->oride.ssl_max_record_size = m_master.oride.ssl_max_record_size;
 
   m_id = configProcessor.set(m_id, params);
 }

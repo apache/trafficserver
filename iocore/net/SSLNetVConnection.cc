@@ -762,7 +762,15 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   // Dynamic TLS record sizing
   ink_hrtime now = 0;
-  if (SSLConfigParams::ssl_maxrecord == -1) {
+  int32_t ssl_max_record_size;
+
+  if (this->options.ssl_max_record_size != 0) {
+    ssl_max_record_size = this->options.ssl_max_record_size;
+  } else {
+    ssl_max_record_size = SSLConfigParams::ssl_maxrecord;
+  }
+
+  if (ssl_max_record_size == -1) {
     now                       = Thread::get_hrtime_updated();
     int msec_since_last_write = ink_hrtime_diff_msec(now, sslLastWriteTime);
 
@@ -801,9 +809,16 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       l             = redoWriteSize;
       redoWriteSize = 0;
     } else {
-      if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
-        l = SSLConfigParams::ssl_maxrecord;
-      } else if (SSLConfigParams::ssl_maxrecord == -1) {
+      int32_t ssl_max_record_size;
+
+      if (options.ssl_max_record_size != 0) {
+        ssl_max_record_size = options.ssl_max_record_size;
+      } else {
+        ssl_max_record_size = SSLConfigParams::ssl_maxrecord;
+      }
+      if (ssl_max_record_size > 0 && l > ssl_max_record_size) {
+        l = ssl_max_record_size;
+      } else if (ssl_max_record_size == -1) {
         if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
           dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
           SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);

@@ -729,6 +729,9 @@ struct OverridableHttpConfigParams {
 
   // Host Resolution order
   HostResData host_res_data;
+
+  // SSL Tunables
+  MgmtInt ssl_max_record_size = 0;
 };
 
 /////////////////////////////////////////////////////////////

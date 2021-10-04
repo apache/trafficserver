@@ -153,6 +153,7 @@ Enumeration Members
 .. c:enumerator:: TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX
 .. c:enumerator:: TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK
 .. c:enumerator:: TS_CONFIG_NET_SOCK_NOTSENT_LOWAT
+.. c:enumerator:: TS_CONFIG_SSL_MAX_RECORD_SIZE
 
 
 Description

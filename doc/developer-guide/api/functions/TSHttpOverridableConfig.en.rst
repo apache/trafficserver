@@ -188,6 +188,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX`                  :ts:cv:`proxy.config.plugin.vc.default_buffer_index`
 :c:enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK`             :ts:cv:`proxy.config.plugin.vc.default_buffer_water_mark`
 :c:enumerator:`TS_CONFIG_NET_SOCK_NOTSENT_LOWAT`                          :ts:cv:`proxy.config.net.sock_notsent_lowat`
+:c:enumerator:`TS_CONFIG_SSL_MAX_RECORD_SIZE`                             :ts:cv:`proxy.config.ssl.max_record_size`
 ========================================================================  ====================================================================
 
 Examples

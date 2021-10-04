@@ -3643,6 +3643,7 @@ SSL Termination
    If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
+   :overridable:
 
   This configuration specifies the maximum number of bytes to write
   into a SSL record when replying over a SSL session. In some

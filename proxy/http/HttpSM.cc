@@ -4957,6 +4957,10 @@ set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
       opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
     }
   }
+
+  if (txn_conf->ssl_max_record_size != 0) {
+    opt.ssl_max_record_size = txn_conf->ssl_max_record_size;
+  }
 }
 
 std::string_view

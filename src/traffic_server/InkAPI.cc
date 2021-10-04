@@ -8947,6 +8947,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_NET_SOCK_NOTSENT_LOWAT:
     ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_notsent_lowat, conv);
     break;
+  case TS_CONFIG_SSL_MAX_RECORD_SIZE:
+    ret = _memberp_to_generic(&overridableHttpConfig->ssl_max_record_size, conv);
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8975,13 +8978,38 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
+  OverridableHttpConfigParams *overridableHttpConfig = &(s->t_state.my_txn_conf());
+  void *dest                                         = _conf_to_memberp(conf, overridableHttpConfig, conv);
 
   if (!dest || !conv->store_int) {
     return TS_ERROR;
   }
 
   conv->store_int(dest, value);
+
+  // If there's a UA transaction in play, attempt to set values directly on the vc
+  if (nullptr == s->ua_txn) {
+    return TS_SUCCESS;
+  }
+
+  NetVConnection *vc = s->ua_txn->get_netvc();
+  if (nullptr == vc) {
+    return TS_SUCCESS;
+  }
+
+  bool changed = false;
+  switch (conf) {
+  case TS_CONFIG_SSL_MAX_RECORD_SIZE:
+    vc->options.ssl_max_record_size = overridableHttpConfig->ssl_max_record_size;
+    changed                         = true;
+    break;
+  default:
+    break;
+  }
+
+  if (changed) {
+    vc->apply_options();
+  }
 
   return TS_SUCCESS;
 }
