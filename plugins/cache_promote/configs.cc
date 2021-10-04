@@ -34,6 +34,7 @@ static const struct option longopt[] = {
   {const_cast<char *>("hits"), required_argument, nullptr, 'h'},
   {const_cast<char *>("bytes"), required_argument, nullptr, 'B'},
   {const_cast<char *>("label"), required_argument, nullptr, 'l'},
+  {const_cast<char *>("internal-enabled"), no_argument, nullptr, 'i'},
   // EOF
   {nullptr, no_argument, nullptr, '\0'},
 };
@@ -80,6 +81,9 @@ PromotionConfig::factory(int argc, char *argv[])
         // The --sample (-s) option is allowed for all configs, but only after --policy is specified.
         if (opt == 's') {
           _policy->setSample(optarg);
+        } else if (opt == 'i') {
+          _policy->setInternalEnabled(true);
+          TSDebug(PLUGIN_NAME, "internal_enabled set to true");
         } else {
           if (!_policy->parseOption(opt, optarg)) {
             TSError("[%s] The specified policy (%s) does not support the -%c option", PLUGIN_NAME, _policy->policyName(), opt);

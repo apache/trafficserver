@@ -102,6 +102,18 @@ public:
   {
   }
 
+  bool
+  isInternalEnabled() const
+  {
+    return _internal_enabled;
+  }
+
+  void
+  setInternalEnabled(const bool enabled)
+  {
+    _internal_enabled = enabled;
+  }
+
   bool doSample() const;
   int create_stat(std::string_view name, std::string_view remap_identifier);
 
@@ -113,6 +125,7 @@ public:
 
   // when true stats are incremented.
   bool _stats_enabled    = false;
+  bool _internal_enabled = false;
   int _cache_hits_id     = -1;
   int _promoted_id       = -1;
   int _total_requests_id = -1;
