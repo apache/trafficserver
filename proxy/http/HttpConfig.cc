@@ -1256,6 +1256,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_mark_out, "proxy.config.net.sock_packet_mark_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_tos_out, "proxy.config.net.sock_packet_tos_out");
+  HttpEstablishStaticConfigLongLong(c.oride.sock_packet_notsent_lowat, "proxy.config.net.sock_notsent_lowat");
 
   HttpEstablishStaticConfigByte(c.oride.fwd_proxy_auth_to_parent, "proxy.config.http.forward.proxy_auth_to_parent");
 
@@ -1547,6 +1548,7 @@ HttpConfig::reconfigure()
   params->oride.sock_packet_mark_out      = m_master.oride.sock_packet_mark_out;
   params->oride.sock_packet_tos_out       = m_master.oride.sock_packet_tos_out;
   params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
+  params->oride.sock_packet_notsent_lowat = m_master.oride.sock_packet_notsent_lowat;
 
   // Clear the TCP Fast Open option if it is not supported on this host.
   if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {

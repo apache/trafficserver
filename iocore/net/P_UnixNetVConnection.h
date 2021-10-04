@@ -60,10 +60,11 @@ NetVCOptions::reset()
 #else
     0;
 #endif
-  socket_send_bufsize = 0;
-  sockopt_flags       = 0;
-  packet_mark         = 0;
-  packet_tos          = 0;
+  socket_send_bufsize  = 0;
+  sockopt_flags        = 0;
+  packet_mark          = 0;
+  packet_tos           = 0;
+  packet_notsent_lowat = 0;
 
   etype = ET_NET;
 
@@ -77,13 +78,14 @@ NetVCOptions::reset()
 
 inline void
 NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark,
-                             unsigned long _packet_tos)
+                             unsigned long _packet_tos, unsigned long _packet_notsent_lowat)
 {
-  socket_recv_bufsize = _recv_bufsize;
-  socket_send_bufsize = _send_bufsize;
-  sockopt_flags       = _opt_flags;
-  packet_mark         = _packet_mark;
-  packet_tos          = _packet_tos;
+  socket_recv_bufsize  = _recv_bufsize;
+  socket_send_bufsize  = _send_bufsize;
+  sockopt_flags        = _opt_flags;
+  packet_mark          = _packet_mark;
+  packet_tos           = _packet_tos;
+  packet_notsent_lowat = _packet_notsent_lowat;
 }
 
 enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
