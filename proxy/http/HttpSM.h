@@ -61,6 +61,7 @@ static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
 class Http1ServerSession;
 class AuthHttpAdapter;
+class PreWarmSM;
 
 class HttpSM;
 typedef int (HttpSM::*HttpSMHandler)(int event, void *data);
@@ -665,6 +666,7 @@ private:
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
   bool _from_early_data       = false;
   SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
+  PreWarmSM *_prewarm_sm      = nullptr;
 };
 
 ////

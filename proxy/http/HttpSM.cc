@@ -32,6 +32,8 @@
 #include "HttpSessionManager.h"
 #include "P_Cache.h"
 #include "P_Net.h"
+#include "PreWarmConfig.h"
+#include "PreWarmManager.h"
 #include "StatPages.h"
 #include "Log.h"
 #include "LogAccess.h"
@@ -378,6 +380,12 @@ HttpSM::cleanup()
   transform_cache_sm.mutex.clear();
   magic    = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
+
+  if (_prewarm_sm) {
+    _prewarm_sm->destroy();
+    THREAD_FREE(_prewarm_sm, preWarmSMAllocator, this_ethread());
+    _prewarm_sm = nullptr;
+  }
 }
 
 void
@@ -5312,12 +5320,50 @@ HttpSM::do_http_server_open(bool raw)
     if (ssl_vc && raw) {
       tls_upstream = ssl_vc->upstream_tls();
       _tunnel_type = ssl_vc->tunnel_type();
+
       // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
+      int pid = SessionProtocolNameRegistry::INVALID;
       if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
-        int pid = ssl_vc->get_negotiated_protocol_id();
+        pid = ssl_vc->get_negotiated_protocol_id();
         if (pid != SessionProtocolNameRegistry::INVALID) {
           opt.alpn_protos = SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(pid);
         }
+      }
+
+      //
+      // Grab pre-warmed NetVConnection if possible
+      //
+      PreWarmConfig::scoped_config prewarm_conf;
+      bool use_prewarm = prewarm_conf->enabled;
+
+      // override "proxy.config.tunnel.prewarm" by "tunnel_prewarm" in sni.yaml
+      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = ssl_vc->tunnel_prewarm();
+          sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
+        use_prewarm = static_cast<bool>(sni_use_prewarm);
+      }
+
+      if (use_prewarm) {
+        // TODO: avoid copy of string -> make map key std::variant
+        PreWarm::SPtrConstDst dst =
+          std::make_shared<const PreWarm::Dst>(ssl_vc->get_tunnel_host(), ssl_vc->get_tunnel_port(),
+                                               tls_upstream ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
+
+        EThread *ethread = this_ethread();
+        _prewarm_sm      = ethread->prewarm_queue->dequeue(dst);
+
+        if (_prewarm_sm != nullptr) {
+          NetVConnection *netvc = _prewarm_sm->move_netvc();
+          ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+
+          SMDebug("http_ss", "using pre-warmed tunnel netvc=%p", netvc);
+
+          t_state.current.attempts = 0;
+
+          ink_release_assert(default_handler == HttpSM::default_handler);
+          handleEvent(NET_EVENT_OPEN, netvc);
+          return;
+        }
+        SMDebug("http_ss", "no pre-warmed tunnel");
       }
     }
     opt.local_port = ua_txn->get_outbound_port();
@@ -7010,6 +7056,12 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
     client_request_body_bytes += from_ua_buf->write(ua_raw_buffer_reader, client_request_hdr_bytes);
     ua_raw_buffer_reader->dealloc();
     ua_raw_buffer_reader = nullptr;
+  }
+
+  // if pre-warmed connection is used and it has data from origin server, foward it to ua
+  if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
+    ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+    client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());
   }
 
   // Next order of business if copy the remaining data from the

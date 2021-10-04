@@ -44,6 +44,7 @@
 #include "P_QUICNextProtocolAccept.h"
 #include "http3/Http3SessionAccept.h"
 #endif
+#include "PreWarmManager.h"
 
 #include <vector>
 
@@ -383,6 +384,8 @@ start_HttpProxyServer()
     hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, nullptr);
     hook = hook->next();
   }
+
+  prewarmManager.start();
 }
 
 void
