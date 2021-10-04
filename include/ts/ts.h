@@ -2713,6 +2713,11 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_l
 tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
                            const unsigned int reason);
 
+/*
+ * Set or get various HTTP Transaction control settings.
+ */
+tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
