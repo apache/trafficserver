@@ -27,7 +27,6 @@
 #include "tscore/ink_memory.h"
 #include "tscore/Diags.h"
 #include "tscore/TextBuffer.h"
-#include "mgmtapi.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
 // include it if we are planning to use it.
