@@ -630,6 +630,7 @@ struct OverridableHttpConfigParams {
   MgmtInt sock_option_flag_out      = 0;
   MgmtInt sock_packet_mark_out      = 0;
   MgmtInt sock_packet_tos_out       = 0;
+  MgmtInt sock_packet_notsent_lowat = 0;
 
   ///////////////
   // Hdr Limit //
