@@ -58,7 +58,7 @@ curl_and_args = 'curl -s -D - -v --proxy localhost:{} '.format(ts.Variables.port
 
 ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines([
     "# regex_remap configuration\n"
-    "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ http://example.one @status=301\n"
+    "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301\n"
 ])
 
 ts.Disk.File(regex_remap2_conf_path, typename="ats:config").AddLines([

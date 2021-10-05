@@ -1067,8 +1067,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           const char *start = dest;
 
           // Setup the new URL
-          if (TS_PARSE_ERROR == TSUrlParse(rri->redirect ? src_url.bufp : rri->requestBufp,
-                                           rri->redirect ? src_url.loc : rri->requestUrl, &start, start + dest_len)) {
+          if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
             TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
             TSError("[%s] can't parse substituted URL string", PLUGIN_NAME);
           }
