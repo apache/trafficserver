@@ -20,6 +20,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+#pragma once
+
 #if HAS_CURL
 #include <curl/curl.h>
 #endif
@@ -30,7 +32,10 @@
 #include <fcntl.h>
 #include <cinttypes>
 #include <sys/time.h>
-#include "mgmtapi.h"
+
+#include "shared/rpc/RPCRequests.h"
+#include "shared/rpc/RPCClient.h"
+#include "shared/rpc/yaml_codecs.h"
 
 struct LookupItem {
   LookupItem(const char *s, const char *n, const int t) : pretty(s), name(n), numerator(""), denominator(""), type(t) {}
@@ -57,6 +62,19 @@ const char separator[] = "\": \"";
 const char end[]       = "\",\n";
 }; // namespace constant
 
+// Convenient definitions
+namespace detail
+{
+/// This is a convenience class to abstract the metric params. It makes it less verbose to add  a metric info object inside the
+/// record lookup object.
+struct MetricParam : shared::rpc::RecordLookupRequest::Params {
+  MetricParam(std::string name)
+    : // not regex
+      shared::rpc::RecordLookupRequest::Params{std::move(name), shared::rpc::NOT_REGEX, shared::rpc::METRIC_REC_TYPES}
+  {
+  }
+};
+} // namespace detail
 //----------------------------------------------------------------------------
 class Stats
 {
@@ -270,7 +288,6 @@ public:
   getStats()
   {
     if (_url == "") {
-      int64_t value = 0;
       if (_old_stats != nullptr) {
         delete _old_stats;
         _old_stats = nullptr;
@@ -281,35 +298,21 @@ public:
       gettimeofday(&_time, nullptr);
       double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
 
+      // We will lookup for all the metrics on one single request.
+      shared::rpc::RecordLookupRequest request;
+
       for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin(); lookup_it != lookup_table.end(); ++lookup_it) {
         const LookupItem &item = lookup_it->second;
 
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
-          if (strcmp(item.pretty, "Version") == 0) {
-            // special case for Version information
-            TSString strValue = nullptr;
-            if (TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY) {
-              string key     = item.name;
-              (*_stats)[key] = strValue;
-              TSfree(strValue);
-            } else {
-              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetString() failed: file \"%s\", line %d\n\n", item.name,
-                      __FILE__, __LINE__);
-              abort();
-            }
-          } else {
-            if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
-              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n", item.name,
-                      __FILE__, __LINE__);
-              abort();
-            }
-            string key = item.name;
-            char buffer[32];
-            sprintf(buffer, "%" PRId64, value);
-            string foo     = buffer;
-            (*_stats)[key] = foo;
-          }
+          // Add records names to the rpc request.
+          request.emplace_rec(detail::MetricParam{item.name});
         }
+      }
+      // query the rpc node.
+      if (auto const &error = fetch_and_fill_stats(request, _stats); !error.empty()) {
+        fprintf(stderr, "Error getting stats from the RPC node:\n%s", error.c_str());
+        abort();
       }
       _old_time  = _now;
       _now       = now;
@@ -382,7 +385,7 @@ public:
   getStat(const string &key, string &value)
   {
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
-    assert(lookup_it != lookup_table.end());
+    ink_assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
 
     map<string, string>::const_iterator stats_it = _stats->find(item.name);
@@ -400,7 +403,7 @@ public:
     value = 0;
 
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
-    assert(lookup_it != lookup_table.end());
+    ink_assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
     prettyName             = item.pretty;
     if (overrideType != 0) {
@@ -540,6 +543,51 @@ private:
   make_pair(std::string s, LookupItem i)
   {
     return std::make_pair(s, i);
+  }
+
+  /// Invoke the remote server and fill the responses into the stats map.
+  std::string
+  fetch_and_fill_stats(shared::rpc::RecordLookupRequest const &request, std::map<std::string, std::string> *stats) noexcept
+  {
+    namespace rpc = shared::rpc;
+
+    if (stats == nullptr) {
+      return "Invalid stats parameter, it shouldn't be null.";
+    }
+    try {
+      rpc::RPCClient rpcClient;
+
+      // invoke the rpc.
+      auto const &rpcResponse = rpcClient.invoke<>(request);
+
+      if (!rpcResponse.is_error()) {
+        auto const &records = rpcResponse.result.as<rpc::RecordLookUpResponse>();
+
+        // we check if we got some specific record error, if any we report it.
+        if (records.errorList.size()) {
+          std::stringstream ss;
+
+          for (auto const &err : records.errorList) {
+            ss << err;
+            ss << "----\n";
+          }
+          return ss.str();
+        } else {
+          // No records error, so we are good to fill the list
+          for (auto &&recordInfo : records.recordList) {
+            (*stats)[recordInfo.name] = recordInfo.currentValue;
+          }
+        }
+      } else {
+        // something didn't work inside the RPC server.
+        std::stringstream ss;
+        ss << rpcResponse.error.as<rpc::JSONRPCError>();
+        return ss.str();
+      }
+    } catch (std::exception const &ex) {
+      return {ex.what()};
+    }
+    return {}; // no error
   }
 
   map<string, string> *_stats;

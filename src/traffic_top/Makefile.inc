@@ -21,34 +21,30 @@ if BUILD_TRAFFIC_TOP
 bin_PROGRAMS += traffic_top/traffic_top
 
 traffic_top_traffic_top_CPPFLAGS = \
-    $(AM_CPPFLAGS) \
-	$(iocore_include_dirs) \
+	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES) \
 	@CURL_CFLAGS@ \
-	@CURSES_CFLAGS@
+	@CURSES_CFLAGS@ \
+	@YAMLCPP_INCLUDES@
 
 traffic_top_traffic_top_LDFLAGS = \
-    $(AM_LDFLAGS) \
+	$(AM_LDFLAGS) \
 	@CURSES_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LIBS@
+
 
 traffic_top_traffic_top_SOURCES = \
-    traffic_top/traffic_top.cc
+	traffic_top/traffic_top.cc \
+	shared/rpc/IPCSocketClient.cc
 
 traffic_top_traffic_top_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@CURL_LIBS@ \
 	@CURSES_LIBS@ \
-	@HWLOC_LIBS@
-
+	@HWLOC_LIBS@ \
+	@YAMLCPP_LIBS@
 endif
