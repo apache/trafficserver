@@ -2428,6 +2428,17 @@ Cache Control
    write vector. For further details on cache write vectors, refer to the
    developer documentation for :cpp:class:`CacheVC`.
 
+.. ts::cv:: CONFIG proxy.config.cache.mutex_retry_delay INT 2
+   :reloadable:
+   :units: milliseconds
+
+   The retry delay for missing a lock on a mutex in the cache component. This is used generically
+   for most locks, except those that have an explicit configuration for the retry delay. For
+   instance, if the cache component is notifying another continuation of a cache event and fails to
+   get the lock for that continuation, it will use this as the delay for the retry. This is also
+   used from the asynchronous IO threads when IO finishes and the ``CacheVC`` lock or stripe lock is
+   required.
+
 RAM Cache
 =========
 
