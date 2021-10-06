@@ -1,0 +1,219 @@
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+.. include:: ../../../common.defs
+
+.. default-domain:: c
+
+TSRPCRegister
+*************
+
+Traffic Server JSONRPC method registration.
+
+Synopsis
+========
+
+.. code-block:: cpp
+
+    #include <ts/ts.h>
+
+.. type:: TSYaml
+
+   An opaque pointer to an internal representation of a YAML::Node type from yamlcpp library..
+
+
+.. type:: TSRPCProviderHandle
+
+   An opaque pointer to an internal representation of rpc::RPCRegistryInfo. This object contains context information about the RPC
+   handler.
+
+.. type::  void (*TSRPCMethodCb)(const char *id, TSYaml params);
+
+   JSONRPC callback signature for method.
+
+.. type::  void (*TSRPCNotificationCb)(TSYaml params);
+
+   JSONRPC callback signature for notification.
+
+.. function:: TSRPCProviderHandle TSRPCRegister(const char *provider_name, const char *yamlcpp_lib_version);
+.. function:: TSReturnCode TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb callback, TSRPCProviderHandle info);
+.. function:: TSReturnCode TSRPCRegisterNotificationHandler(const char *name, TSRPCNotificationCb callback, TSRPCProviderHandle info);
+.. function:: TSReturnCode TSRPCHandlerDone(TSYaml resp);
+.. function:: void TSRPCHandlerError(int code, const char *descr);
+
+Description
+===========
+
+:type:`TSRPCRegister` Should be used to accomplish two basic tasks:
+
+#. To perform a ``yamlcpp`` version library validation.
+    To avoid binary compatibility issues with some plugins using a different ``yamlcpp`` library version, plugins should
+    check-in with TS before registering any handler and validate that their ``yamlcpp`` version is the same as used internally
+    in TS.
+
+#. To create the ``TSRPCProviderHandle`` that will be used as a context object for each subsequent handler registration.
+    The ``provider_name`` will be used as a part of the service descriptor API(:ref:`get_service_descriptor`) which is available as part of the RPC api.
+
+    .. code-block:: cpp
+
+        TSRPCProviderHandle info = TSRPCRegister("FooBar's Plugin!", "0.6.3");
+        ...
+        TSRPCRegisterMethodHandler("my_join_string_handler", &func, info);
+
+
+    Then when requesting :ref:`get_service_descriptor` It will then display as follows:
+
+    .. code-block:: json
+
+        {
+            "jsonrpc":"2.0",
+            "result":{
+            "methods":[
+                {
+                    "name":"my_join_string_handler",
+                    "type":"method",
+                    "provider":"FooBar's plugin!",
+                    "schema":{ }
+                }
+            ]
+        }
+
+
+.. note::
+
+   We will provide binary compatibility within the lifespan of a major release.
+
+:arg:`yamlcpp_lib_version` should be a string with the yaml-cpp library version
+the plugin is using. A null terminated string is expected.
+
+:arg:`provider_name` should be a string with the Plugin's descriptor. A null terminated string is expected.
+
+:c:func:`TSRPCRegisterMethodHandler` Add new registered method handler to the JSON RPC engine.
+:arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
+If you register **get_stats** then the incoming jsonrpc call should have this very
+same name in the **method** field. .. {...'method': 'get_stats'...}.
+:arg:`callback` The function to be registered. Check :c:func:`TSRPCMethodCb`.  :arg:`info` TSRPCProviderHandle pointer,
+this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
+
+Please check :ref:`jsonrpc_development` for examples.
+
+:c:func:`TSRPCRegisterNotificationHandler` Add new registered method handler to the JSON RPC engine.
+:arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
+If you register **get_stats** then the incoming jsonrpc call should have this very
+same name in the **method** field. .. {...'method': 'get_stats'...}.
+:arg:`callback` The function to be registered. Check :c:func:`TSRPCNotificationCb`.  :arg:`info` TSRPCProviderHandle pointer,
+this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
+
+Please check :ref:`jsonrpc_development` for examples.
+
+:c:func:`TSRPCHandlerDone` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request.
+This function must be used when implementing a 'method' rpc handler. Once the work is done and the
+response is ready to be sent back to the client, this function should be called.
+Is expected to set the YAML node as response. If the response is empty a **success** message will be
+added to the client's response. The :arg:`resp` holds the *YAML::Node* response for this call.
+
+
+Example:
+
+    .. code-block:: cpp
+
+        void my_join_string_handler(const char *id, TSYaml p) {
+            // id = "abcd-id"
+            // join string "["abcd", "efgh"]
+            std::string join = join_string(p);
+            YAML::Node resp;
+            resp["join"] = join;
+
+            TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
+        }
+
+    This will generate:
+
+    .. code-block:: json
+
+        {
+            "jsonrpc":"2.0",
+            "result":{
+                "join":"abcdefgh"
+            },
+            "id":"abcd-id"
+        }
+
+
+:c:func:`TSRPCHandlerError` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request with an error.
+
+:arg:`code` Should be the error number for this particular error. :arg:`descr` should be a text with a description of the error. It's up to the
+developer to specify their own error codes and description. Error will be part of the *data* field in the jsonrpc response. See :ref:`jsonrpc-error`
+
+Example:
+
+    .. code-block:: cpp
+
+        void my_handler_func(const char *id, TSYaml p) {
+            try {
+                // some code
+            } catch (std::exception const &e) {
+                std::string buff;
+                ts::bwprint(buff, "Error during rpc handling: {}.", e.what());
+                TSRPCHandlerError(ID_123456, buff.c_str());
+                return;
+            }
+        }
+
+    This will generate:
+
+    .. code-block:: json
+
+        {
+            "jsonrpc":"2.0",
+            "error":{
+                "code":9,
+                "message":"Error during execution",
+                "data":[
+                    {
+                        "code":123456,
+                        "message":"Error during rpc handling: File not found."
+                    }
+                ]
+            },
+            "id":"abcd-id"
+        }
+
+.. important::
+
+    You must always inform the RPC after processing the jsonrpc request. Either by calling :c:func:`TSRPCHandlerDone` or :c:func:`TSRPCHandlerError`
+    . Calling either of these functions twice is a serious error. You should call exactly one of these functions.
+
+Return Values
+=============
+
+:c:func:`TSRPCRegister` returns :const:`TS_SUCCESS` if all is good, :const:`TS_ERROR` if the :arg:`yamlcpp_lib_version`
+was not set, or the ``yamlcpp`` version does not match with the one used internally in TS.
+
+:c:func:`TSRPCRegisterMethodHandler` :const:`TS_SUCCESS` if the handler was successfully registered, :const:`TS_ERROR` if the handler is already registered.
+
+:c:func:`TSRPCRegisterNotificationHandler`:const:`TS_SUCCESS` if the handler was successfully registered, :const:`TS_ERROR` if the handler is already registered.
+
+:c:func:`TSRPCHandlerDone` Returns :const:`TS_SUCCESS` if no issues, or  :const:`TS_ERROR` if an issue was found.
+
+:c:func:`TSRPCHandlerError` Returns :const:`TS_SUCCESS` if no issues, or  :const:`TS_ERROR` if an issue was found.
+
+
+See also
+========
+
+Please check :ref:`jsonrpc_development` for more details on how to use this API.
+

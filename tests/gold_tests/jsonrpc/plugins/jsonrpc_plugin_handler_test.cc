@@ -1,0 +1,301 @@
+/** @file
+
+  Test JSONRPC method and notification handling inside a plugin.
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+#include <ts/ts.h>
+#include <string_view>
+#include <thread>
+#include <algorithm>
+#include <fstream>
+
+#include "yaml-cpp/yaml.h"
+#include "tscore/ts_file.h"
+#include "tscore/Errata.h"
+#include "tscore/I_Layout.h"
+#include "tscore/BufferWriter.h"
+#include "rpc/jsonrpc/JsonRPC.h"
+
+namespace
+{
+static constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
+
+static const std::string MY_YAML_VERSION{"0.6.3"};
+static const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
+} // namespace
+
+namespace
+{
+void
+test_join_hosts_method(const char *id, TSYaml p)
+{
+  TSDebug(PLUGIN_NAME, "Got a call! id: %s", id);
+  YAML::Node params = *reinterpret_cast<YAML::Node *>(p);
+
+  // This handler errors.
+  enum HandlerErrors { NO_HOST_ERROR = 10001, EMPTY_HOSTS_ERROR, UNKNOWN_ERROR };
+  try {
+    std::vector<std::string> hosts;
+    if (auto node = params["hosts"]) {
+      hosts = node.as<std::vector<std::string>>();
+    } else {
+      // We can't continue. Notify the RPC manager.
+      TSRPCHandlerError(NO_HOST_ERROR, "No host provided");
+      return;
+    }
+
+    if (0 == hosts.size()) {
+      // We can't continue. Notify the RPC manager.
+      TSRPCHandlerError(EMPTY_HOSTS_ERROR, "At least one host should be provided");
+      return;
+    }
+
+    std::string join;
+    std::for_each(std::begin(hosts), std::end(hosts), [&join](auto &&s) { join += s; });
+    YAML::Node resp;
+    resp["join"] = join;
+    // All done. Notify the RPC manager.
+    TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
+  } catch (YAML::Exception const &ex) {
+    TSDebug(PLUGIN_NAME, "Oops, something went wrong: %s", ex.what());
+    TSRPCHandlerError(UNKNOWN_ERROR, ex.what());
+  }
+}
+
+// It's a notificaion, we do not care to respond back to the JSONRPC manager.
+void
+test_join_hosts_notification(TSYaml p)
+{
+  TSDebug(PLUGIN_NAME, "Got a call!");
+  try {
+    YAML::Node params = *reinterpret_cast<YAML::Node *>(p);
+
+    std::vector<std::string> hosts;
+    if (auto hosts = params["hosts"]) {
+      hosts = hosts.as<std::vector<std::string>>();
+    }
+    if (0 == hosts.size()) {
+      TSDebug(PLUGIN_NAME, "No hosts field provided. Nothing we can do. No response back.");
+      return;
+    }
+    std::string join;
+    std::for_each(std ::begin(hosts), std::end(hosts), [&join](auto &&s) { join += s; });
+    TSDebug(PLUGIN_NAME, "Notification properly handled: %s", join.c_str());
+  } catch (YAML::Exception const &ex) {
+    TSDebug(PLUGIN_NAME, "Oops, something went wrong: %s", ex.what());
+  }
+}
+} // namespace
+namespace
+{
+// Incoming host info structure.
+struct HostItem {
+  std::string name;
+  std::string status;
+};
+
+int
+CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
+{
+  namespace fs = ts::file;
+
+  TSDebug(PLUGIN_NAME, "Working on the update now");
+  YAML::Node params = *static_cast<YAML::Node *>(TSContDataGet(contp));
+
+  // This handler errors.
+  enum HandlerErrors { INVALID_PARAM_TYPE = 10010, INVALID_HOST_PARAM_TYPE, FILE_UPDATE_ERROR, UNKNOWN_ERROR };
+
+  // we only care for a map type {}
+  if (params.Type() != YAML::NodeType::Map) {
+    TSRPCHandlerError(INVALID_PARAM_TYPE, "Handler is expecting a map.");
+    return TS_SUCCESS;
+  }
+
+  // we want to keep track of the work done! This will become part of the response
+  // and it will be validated on the client side. The whole test validation is base
+  // on this.
+  int updatedHosts{0};
+  int addedHosts{0};
+
+  std::vector<HostItem> incHosts;
+  if (auto &&passedHosts = params["hosts"]; passedHosts.Type() == YAML::NodeType::Sequence) {
+    // fill in
+    for (auto &&h : passedHosts) {
+      std::string name, status;
+      if (auto &&n = h["name"]) {
+        name = n.as<std::string>();
+      }
+
+      if (auto &&s = h["status"]) {
+        status = s.as<std::string>();
+      }
+      incHosts.push_back({name, status});
+    }
+  } else {
+    TSRPCHandlerError(INVALID_HOST_PARAM_TYPE, "not a sequence, we expect a list of hosts");
+    return TS_SUCCESS;
+  }
+
+  // Basic stuffs here.
+  // We open the file if exist, we update/add the host in the structure. For simplicity we do not delete anything.
+  fs::path sandbox  = ts::file::current_path();
+  fs::path dumpFile = sandbox / "my_test_plugin_dump.yaml";
+  bool newFile{false};
+  if (!ts::file::exists(dumpFile)) {
+    newFile = true;
+  }
+
+  // handle function to add new hosts to a node.
+  auto add_host = [](std::string const &name, std::string const &status, YAML::Node &out) -> void {
+    YAML::Node newHost;
+    newHost["name"]   = name;
+    newHost["status"] = status;
+    out.push_back(newHost);
+  };
+
+  YAML::Node dump;
+  if (!newFile) {
+    try {
+      dump = YAML::LoadFile(dumpFile.c_str());
+      if (dump.IsSequence()) {
+        std::vector<HostItem> tobeAdded;
+        for (auto &&incHost : incHosts) {
+          auto search = std::find_if(std::begin(dump), std::end(dump), [&incHost](YAML::Node const &node) {
+            if (auto &&n = node["name"]) {
+              return incHost.name == n.as<std::string>();
+            } else {
+              throw std::runtime_error("We couldn't find 'name' field.");
+            }
+          });
+
+          if (search != std::end(dump)) {
+            (*search)["status"] = incHost.status;
+            ++updatedHosts;
+          } else {
+            add_host(incHost.name, incHost.status, dump);
+            ++addedHosts;
+          }
+        }
+      }
+    } catch (YAML::Exception const &e) {
+      std::string buff;
+      ts::bwprint(buff, "Error during file handling: {}", e.what());
+      TSRPCHandlerError(UNKNOWN_ERROR, buff.c_str());
+      return TS_SUCCESS;
+    }
+  } else {
+    for (auto &&incHost : incHosts) {
+      add_host(incHost.name, incHost.status, dump);
+      ++addedHosts;
+    }
+  }
+
+  // Dump it..
+  YAML::Emitter out;
+  out << dump;
+
+  fs::path tmpFile = sandbox / "tmpfile.yaml";
+  std::ofstream ofs(tmpFile.c_str());
+  ofs << out.c_str();
+  ofs.close();
+
+  std::error_code ec;
+  if (fs::copy(tmpFile, dumpFile, ec); ec) {
+    std::string buff;
+    ts::bwprint(buff, "Error during file handling: {}, {}", ec.value(), ec.message());
+    TSRPCHandlerError(FILE_UPDATE_ERROR, buff.c_str());
+    return TS_SUCCESS;
+  }
+
+  // clean up the temp file if possible.
+  if (fs::remove(tmpFile, ec); ec) {
+    TSDebug(PLUGIN_NAME, "Temp file could not be removed: %s", tmpFile.c_str());
+  }
+
+  // make the response. For complex structures YAML::convert<T>::encode() would be the preferred way.
+  YAML::Node resp;
+  resp["updatedHosts"] = updatedHosts;
+  resp["addedHosts"]   = addedHosts;
+  resp["dumpFile"]     = dumpFile.c_str(); // In case you need this
+
+  // we are done!!
+  TSContDestroy(contp);
+  TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
+  return TS_SUCCESS;
+}
+
+// Perform a field updated on a yaml file. Host will be added or updated
+void
+test_io_on_et_task(const char *id, TSYaml p)
+{
+  // A possible scenario would be that a handler needs to perform a "heavy" operation or that the handler
+  // is not yet ready to perform the operation when is called, under this scenarios(and some others)
+  // we can use the RPC API to easily achieve this and respond just when we are ready.
+  TSCont c = TSContCreate(CB_handle_rpc_io_call, TSMutexCreate());
+  TSContDataSet(c, p);
+  TSContScheduleOnPool(c, 1000 /* no particular reason */, TS_THREAD_POOL_TASK);
+}
+} // namespace
+
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
+
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
+  }
+
+  // Check-in to make sure we are compliant with the YAML version in TS.
+  TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister(RPC_PROVIDER_NAME.c_str(), MY_YAML_VERSION.c_str());
+
+  if (rpcRegistrationInfo == nullptr) {
+    TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
+  }
+
+  TSRPCHandlerOptions opt{{true}};
+  if (TSRPCRegisterMethodHandler("test_join_hosts_method", test_join_hosts_method, rpcRegistrationInfo, &opt) == TS_ERROR) {
+    TSDebug(PLUGIN_NAME, "test_join_hosts_method failed to register");
+  } else {
+    TSDebug(PLUGIN_NAME, "test_join_hosts_method successfully registered");
+  }
+
+  // TASK thread
+  if (TSRPCRegisterMethodHandler("test_io_on_et_task", test_io_on_et_task, rpcRegistrationInfo, &opt) == TS_ERROR) {
+    TSDebug(PLUGIN_NAME, "test_io_on_et_task failed to register");
+  } else {
+    TSDebug(PLUGIN_NAME, "test_io_on_et_task successfully registered");
+  }
+
+  // Notification - not restricted
+  TSRPCHandlerOptions nOpt{{false}};
+  if (TSRPCRegisterNotificationHandler("test_join_hosts_notification", test_join_hosts_notification, rpcRegistrationInfo, &nOpt) ==
+      TS_ERROR) {
+    TSDebug(PLUGIN_NAME, "test_join_hosts_notification failed to register");
+  } else {
+    TSDebug(PLUGIN_NAME, "test_join_hosts_notification successfully registered");
+  }
+
+  TSDebug(PLUGIN_NAME, "Test Plugin Initialized.");
+}

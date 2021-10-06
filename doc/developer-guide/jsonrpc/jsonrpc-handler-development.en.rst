@@ -74,6 +74,8 @@ Methods:
 
     ts::Rv<YAML::Node> your_rpc_handler_function_name(std::string_view const &id, YAML::Node const &params);
 
+    // Plugins:
+    void (*TSRPCMethodCb)(const char *id, TSYaml params);
 
 
 Notifications:
@@ -82,11 +84,19 @@ Notifications:
 
     void your_rpc_handler_function_name(YAML::Node const &params);
 
+    // Plugins:
+    void (*TSRPCNotificationCb)(TSYaml params);
+
 
 * Incoming method request's id will be passed to the handler, this is read only value as the server is expected to respond with the same value.
 * ``YAML::Node`` params is expected to be a ``Sequence`` or a ``Map``, as per protocol this cannot be a single value, so do not expect things like:
   ``param=123`` or ``param=SomeString``.
 * The ``params`` can be empty and contains no data at all.
+
+.. note::
+
+    Plugins should cast ``TSYaml`` to a ``YAML::Node``. Regarding the `yamlcpp` library we will provide binary
+    compatibility within the lifespan of a major release only.
 
 
 It is important to know that ``method`` handlers are expected to respond to the requests, while ``notifications``` will not respond with
@@ -139,7 +149,7 @@ The actual registration:
 This API also accepts a RPCRegistryInfo pointer which will provide a context data for the particular handler, for instance it will
 display the provider's name when the service descriptor gets called. There is a global object created for this purpose which can be used
 As a generic registry context object,  ``core_ats_rpc_service_provider_handle`` is defined in the  ``JsonRPC.h`` header. Please check
-`get_service_descriptor` for more information.
+:ref:`get_service_descriptor` for more information.
 
 
 Notification example:
@@ -165,7 +175,128 @@ Registration for notifications uses a different API:
 
 
 The registration API allows the client to pass a  ``RPCRegistryInfo`` which provides extra information for a particular handler. Non plugins handlers
-should use the default provided Registry Info, located in the `JsonRPC.h` header file.
+should use the default provided Registry Info, located in the `JsonRPC.h` header file, ``core_ats_rpc_service_provider_handle``. Plugins should use the
+one created by ``TSRPCRegister``
+
+Plugin API
+~~~~~~~~~~
+
+
+Plugins have a different API to register and handle RPC. Unlike registering and handling rpc using the JSONRPC Manager directly, this
+API provides a different approach, it's understood that plugins may not be able to respond a rpc with a valid response at the very
+same moment that they are called, this could be because the rpc needs to perform an intensive operation or because the data that should
+be returned by the handler is not yet ready, in any case plugin have the flexibility to say when they finished processing the request, either with
+a successful response or with an error. **The JSONRPC manager will wait for the plugin to "mark" the current call as done**.
+
+.. note:
+
+    Check :c:func:`TSRPCRegister` for API details.
+
+
+RPC method registration and implementation examples
+
+#. No reschedule work on the rpc handler, we set the response in the same call. This runs on the RPC thread.
+
+    .. code-block:: cpp
+
+        #include <ts/ts.h>
+
+        namespace {
+            static const std::string MY_YAML_VERSION{"0.6.3"};
+        }
+
+        void
+        my_join_string_handler(const char *id, TSYaml p)
+        {
+            YAML::Node params = *(YAML::Node *)p;
+            // extract the strings from the params node
+            std::vector<std::string> passedStrings;
+            if (auto node = params["strings"]) {
+                passedStrings = node.as<std::vector<std::string>>();
+            } else {
+                // We can't continue, let the JSONRPC Manager know that we have finished
+                TSRPCHandlerError(NO_STRINGS_ERROR_CODE, " no strings field passed");
+                return;
+            }
+
+            std::string join;
+            std::for_each(std::begin(passedStrings), std::end(passedStrings), [&join](auto &&s) { join += s; });
+            YAML::Node resp; // start building the response.
+            resp["join"] = join; // add the join string into a "join" field.
+            TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp)); // Let the JSONRPC Manager know that we have finished
+        }
+
+        void
+        TSPluginInit(int argc, const char *argv[])
+        {
+            ...
+            // Check-in to make sure we are compliant with the YAML version in TS.
+            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.6.3");
+            if (rpcRegistrationInfo == nullptr) {
+                TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
+            }
+
+            if (TSRPCRegisterMethodHandler("join_strings", my_join_string_handler, rpcRegistrationInfo) == TS_ERROR) {
+                TSDebug(PLUGIN_NAME, "%s failed to register", rpcCallName.c_str());
+            } else {
+                TSDebug(PLUGIN_NAME, "%s successfully registered", rpcCallName.c_str());
+            }
+        }
+
+#. RPC handling rescheduled to run on a ET TASK thread.
+
+    .. code-block:: cpp
+
+        #include <ts/ts.h>
+
+        namespace {
+            static const std::string MY_YAML_VERSION{"0.6.3"};
+        }
+
+        int
+        merge_yaml_file_on_et_task(TSCont contp, TSEvent event, void *data)
+        {
+            // read the incoming node and merge it with the copy on disk.
+            YAML::Node params = *static_cast<YAML::Node *>(TSContDataGet(contp));
+
+            // we only care for a map type {}
+            if (params.Type() != YAML::NodeType::Map) {
+                TSRPCHandlerError(INVALID_PARAM_TYPE_CODE, "Handler is expecting a map.");
+                return TS_SUCCESS;
+            }
+
+            // do the actual work.
+            merge_yaml(params);
+            // ...
+            YAML::Node resp;
+            TSContDestroy(contp);
+            TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
+        }
+
+        void
+        merge_yaml_file(const char *id, TSYaml p)
+        {
+            TSCont c = TSContCreate(merge_yaml_file_on_et_task, TSMutexCreate());
+            TSContDataSet(c, p);
+            TSContScheduleOnPool(c, 3000 /* no particular reason */, TS_THREAD_POOL_TASK);
+        }
+
+        void
+        TSPluginInit(int argc, const char *argv[])
+        {
+            // ...
+            // Check-in to make sure we are compliant with the YAML version in TS.
+            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.6.3");
+            if (rpcRegistrationInfo == nullptr) {
+                TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
+            }
+
+            if (TSRPCRegisterMethodHandler("merge_yaml_file", merge_yaml_file, rpcRegistrationInfo) == TS_ERROR) {
+                TSDebug(PLUGIN_NAME, "%s failed to register", rpcCallName.c_str());
+            } else {
+                TSDebug(PLUGIN_NAME, "%s successfully registered", rpcCallName.c_str());
+            }
+        }
 
 
 Error Handling
@@ -294,6 +425,40 @@ Examples:
 We have selected the ``ts::Rv<YAML::Node>`` as a message interface as this can hold the actual response/error.
 
 
+Plugin API
+~~~~~~~~~~
+
+When implementing rpc handlers inside a plugin, errors should be handled differently:
+
+
+.. code-block::
+
+    #include <ts/ts.h>
+
+    ...
+
+    void
+    foo_handler(const char *id, TSYaml p)
+    {
+        // read the incoming node and merge it with the copy on disk.
+        YAML::Node params = *static_cast<YAML::Node *>(TSContDataGet(contp));
+
+        if (check_if_error(params)) {
+            TSRPCHandlerError(FOO_ERROR_CODE, "Some error descr.");
+            return;
+        }
+
+        ...
+    }
+
+
+.. note::
+
+    Errors can be a part of the request response(result field), this depends on the API design. The above example
+    shows how to set an error that will be sent back as part of the Error field.
+
+
+For more information check the  :c:func:`TSRPCRegister` for API details and :ref:`jsonrpc-error`.
 
 .. _jsonrpc-handler-unit-test:
 

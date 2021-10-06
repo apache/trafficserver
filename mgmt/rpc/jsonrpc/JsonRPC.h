@@ -38,7 +38,16 @@ add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *in
   return JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), info, opt);
 }
 
+/// As a plugin you should use  @c TSRPCRegisterMethodHandlerfor to register your function to handle RPC messages.
+template <typename Func>
+inline bool
+add_method_handler_from_plugin(const std::string &name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt)
+{
+  return JsonRPCManager::instance().add_method_handler_from_plugin(name, std::forward<Func>(call), info, opt);
+}
+
 /// @see JsonRPCManager::add_notification_handler for details
+/// @note Plugins must use @c TSRPCRegisterNotificationHandler to register.
 template <typename Func>
 inline bool
 add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt)
