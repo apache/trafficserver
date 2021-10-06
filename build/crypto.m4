@@ -274,6 +274,21 @@ AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
 dnl
 dnl Since OpenSSL 1.1.1
 dnl
+AC_DEFUN([TS_CHECK_CRYPTO_KEYLOGGING], [
+  _keylogging_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_FUNCS(SSL_CTX_set_keylog_callback, [enable_tls_keylogging=yes], [enable_tls_keylogging=no])
+  LIBS=$_keylogging_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLS keylogging support)
+  AC_MSG_RESULT([$enable_tls_keylogging])
+  TS_ARG_ENABLE_VAR([has], [tls-keylogging])
+  AC_SUBST(has_tls_keylogging)
+])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
 AC_DEFUN([TS_CHECK_CRYPTO_SET_CIPHERSUITES], [
   _set_ciphersuites_saved_LIBS=$LIBS
 

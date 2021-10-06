@@ -68,23 +68,6 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 }
 
 void
-QUIC::ssl_client_keylog_cb(const SSL *ssl, const char *line)
-{
-  QUICTLS *qtls           = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
-  const char *keylog_file = qtls->keylog_file();
-  std::ofstream file(keylog_file, std::ios_base::app);
-
-  if (!file.is_open()) {
-    QUICGlobalDebug("could not open keylog file: %s", keylog_file);
-    return;
-  }
-
-  file.write(line, strlen(line));
-  file.put('\n');
-  file.flush();
-}
-
-void
 QUIC::_register_stats()
 {
   quic_rsb = RecAllocateRawStatBlock(static_cast<int>(QUICStats::count));

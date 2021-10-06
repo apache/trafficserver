@@ -1286,6 +1286,9 @@ TS_CHECK_CRYPTO_OCSP
 # Check for SSL_CTX_set_ciphersuites call
 TS_CHECK_CRYPTO_SET_CIPHERSUITES
 
+# Check for TOLS keylogging support.
+TS_CHECK_CRYPTO_KEYLOGGING
+
 # Check for openssl early data support
 TS_CHECK_EARLY_DATA
 
