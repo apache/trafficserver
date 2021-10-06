@@ -14,9 +14,19 @@ JsonRPCManager instance()
 note left: Singleton class.
 
 class Dispatcher {
-    _methods: std::unordered_map<std::string, MethodHandler>
-    _notifications: std::unordered_map<std::string, NotificationHandler>
+    _handlers: std::unordered_map<std::string, InternalHandler>
 }
-note right: Class that knows how to call each callback handler. Storage class.
+
+class InternalHandler {
+    _func: std::variant<std::monostate, Notification, Method, PluginMethod>
+}
+
+class FunctionWrapper {
+    callback: std::function
+}
+
 JsonRPCManager *-- Dispatcher
+note right: Class that knows how to call each callback handler. Storage class.
+Dispatcher *-- InternalHandler
+InternalHandler *-- FunctionWrapper
 @enduml

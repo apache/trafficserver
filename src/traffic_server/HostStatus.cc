@@ -24,8 +24,7 @@
 #include "ProcessManager.h"
 
 #include "tscore/BufferWriter.h"
-#include "rpc/jsonrpc/JsonRPCManager.h"
-#include "rpc/handlers/common/ErrorUtils.h"
+#include "rpc/jsonrpc/JsonRPC.h"
 
 ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
 
@@ -214,7 +213,7 @@ HostStatus::HostStatus()
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
 
-  rpc::JsonRPCManager::instance().add_handler("admin_host_set_status", &server_set_status);
+  rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle);
 }
 
 HostStatus::~HostStatus()

@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/jsonrpc/JsonRPC.h"
 
 // Admin API Implementation headers.
 #include "rpc/handlers/config/Configuration.h"
@@ -28,39 +28,36 @@
 #include "rpc/handlers/plugins/Plugins.h"
 
 #include "RpcAdminPubHandlers.h"
-
 namespace rpc::admin
 {
 void
 register_admin_jsonrpc_handlers()
 {
-  rpc::JsonRPCManager::instance().register_internal_api();
-
   // Config
   using namespace rpc::handlers::config;
-  rpc::JsonRPCManager::instance().add_handler("admin_config_set_records", &set_config_records);
-  rpc::JsonRPCManager::instance().add_handler("admin_config_reload", &reload_config);
+  rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle);
 
   // Records
   using namespace rpc::handlers::records;
-  rpc::JsonRPCManager::instance().add_handler("admin_lookup_records", &lookup_records);
-  rpc::JsonRPCManager::instance().add_handler("admin_clear_all_metrics_records", &clear_all_metrics_records);
-  rpc::JsonRPCManager::instance().add_handler("admin_clear_metrics_records", &clear_metrics_records);
+  rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_clear_all_metrics_records", &clear_all_metrics_records, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_clear_metrics_records", &clear_metrics_records, &core_ats_rpc_service_provider_handle);
 
   // plugin
   using namespace rpc::handlers::plugins;
-  rpc::JsonRPCManager::instance().add_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg);
+  rpc::add_method_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg, &core_ats_rpc_service_provider_handle);
 
   // server
   using namespace rpc::handlers::server;
-  rpc::JsonRPCManager::instance().add_handler("admin_server_start_drain", &server_start_drain);
-  rpc::JsonRPCManager::instance().add_handler("admin_server_stop_drain", &server_stop_drain);
-  rpc::JsonRPCManager::instance().add_notification_handler("admin_server_shutdown", &server_shutdown);
-  rpc::JsonRPCManager::instance().add_notification_handler("admin_server_restart", &server_shutdown);
+  rpc::add_method_handler("admin_server_start_drain", &server_start_drain, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_server_stop_drain", &server_stop_drain, &core_ats_rpc_service_provider_handle);
+  rpc::add_notification_handler("admin_server_shutdown", &server_shutdown, &core_ats_rpc_service_provider_handle);
+  rpc::add_notification_handler("admin_server_restart", &server_shutdown, &core_ats_rpc_service_provider_handle);
 
   // storage
   using namespace rpc::handlers::storage;
-  rpc::JsonRPCManager::instance().add_handler("admin_storage_set_device_offline", &set_storage_offline);
-  rpc::JsonRPCManager::instance().add_handler("admin_storage_get_device_status", &get_storage_status);
+  rpc::add_method_handler("admin_storage_set_device_offline", &set_storage_offline, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_storage_get_device_status", &get_storage_status, &core_ats_rpc_service_provider_handle);
 }
 } // namespace rpc::admin

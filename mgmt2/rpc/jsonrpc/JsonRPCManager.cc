@@ -23,58 +23,117 @@
 #include <iostream>
 #include <chrono>
 #include <system_error>
+#include <mutex>
+#include <condition_variable>
 
 #include "json/YAMLCodec.h"
 
+namespace
+{
+// RPC service info constants.
+const std::string RPC_SERVICE_METHOD_STR{"method"};
+const std::string RPC_SERVICE_NOTIFICATION_STR{"notification"};
+const std::string RPC_SERVICE_NAME_KEY{"name"};
+const std::string RPC_SERVICE_TYPE_KEY{"type"};
+const std::string RPC_SERVICE_PROVIDER_KEY{"provider"};
+const std::string RPC_SERVICE_SCHEMA_KEY{"schema"};
+const std::string RPC_SERVICE_METHODS_KEY{"methods"};
+const std::string RPC_SERVICE_NOTIFICATIONS_KEY{"notifications"};
+const std::string RPC_SERVICE_N_A_STR{"N/A"};
+} // namespace
+
 namespace rpc
 {
-static constexpr auto logTag = "rpc";
+RPCRegistryInfo core_ats_rpc_service_provider_handle = {
+  "Traffic Server JSONRPC 2.0 API" // Provider's description
+};
+
+// plugin rpc handling variables.
+std::mutex g_rpcHandlingMutex;
+std::condition_variable g_rpcHandlingCompletion;
+ts::Rv<YAML::Node> g_rpcHandlerResponseData;
+bool g_rpcHandlerProccessingCompleted{false};
+
+// jsonrpc log tag.
+static constexpr auto logTag    = "rpc";
+static constexpr auto logTagMsg = "rpc.msg";
+
+// --- Dispatcher
+JsonRPCManager::Dispatcher::Dispatcher()
+{
+  register_service_descriptor_handler();
+}
+void
+JsonRPCManager::Dispatcher::register_service_descriptor_handler()
+{
+  // TODO: revisit this.
+  if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
+        "show_registered_handlers",
+        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
+          return show_registered_handlers(id, req);
+        },
+        &core_ats_rpc_service_provider_handle)) {
+    Warning("Handler already registered.");
+  }
+
+  if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
+        "get_service_descriptor",
+        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return get_service_descriptor(id, req); },
+        &core_ats_rpc_service_provider_handle)) {
+    Warning("Handler already registered.");
+  }
+}
 
 JsonRPCManager::Dispatcher::response_type
 JsonRPCManager::Dispatcher::dispatch(specs::RPCRequestInfo const &request) const
 {
-  if (request.is_notification()) {
-    std::error_code ec;
-    invoke_notification_handler(request, ec);
-    if (ec) {
-      return {std::nullopt, ec};
-    }
-  } else {
-    return invoke_handler(request);
+  std::error_code ec;
+  auto const &handler = find_handler(request, ec);
+
+  if (ec) {
+    return {std::nullopt, ec};
   }
 
-  return {};
+  if (request.is_notification()) {
+    return invoke_notification_handler(handler, request);
+  }
+
+  // just a method call.
+  return invoke_method_handler(handler, request);
 }
 
-JsonRPCManager::MethodHandler
-JsonRPCManager::Dispatcher::find_handler(const std::string &methodName) const
+JsonRPCManager::Dispatcher::InternalHandler const &
+JsonRPCManager::Dispatcher::find_handler(specs::RPCRequestInfo const &request, std::error_code &ec) const
 {
+  static InternalHandler no_handler{};
+
   std::lock_guard<std::mutex> lock(_mutex);
 
-  auto search = _methods.find(methodName);
-  return search != std::end(_methods) ? search->second : nullptr;
-}
+  auto search = _handlers.find(request.method);
 
-JsonRPCManager::NotificationHandler
-JsonRPCManager::Dispatcher::find_notification_handler(const std::string &notificationName) const
-{
-  std::lock_guard<std::mutex> lock(_mutex);
+  if (search == std::end(_handlers)) {
+    // no more checks, no handler either notification or method
+    ec = error::RPCErrorCode::METHOD_NOT_FOUND;
+    return no_handler;
+  }
 
-  auto search = _notifications.find(notificationName);
-  return search != std::end(_notifications) ? search->second : nullptr;
+  // we need to make sure we the request is valid against the internal handler.
+  if ((request.is_method() && search->second.is_method()) || (request.is_notification() && !search->second.is_method())) {
+    return search->second;
+  }
+
+  ec = error::RPCErrorCode::INVALID_REQUEST;
+  return no_handler;
 }
 
 JsonRPCManager::Dispatcher::response_type
-JsonRPCManager::Dispatcher::invoke_handler(specs::RPCRequestInfo const &request) const
+JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::InternalHandler const &handler,
+                                                  specs::RPCRequestInfo const &request) const
 {
-  auto handler = find_handler(request.method);
-  if (!handler) {
-    return {std::nullopt, error::RPCErrorCode::METHOD_NOT_FOUND};
-  }
   specs::RPCResponseInfo response{request.id};
 
   try {
-    auto const &rv = handler(*request.id, request.params);
+    auto const &rv = handler.invoke(request);
 
     if (rv.isOK()) {
       response.callResult.result = rv.result();
@@ -83,80 +142,44 @@ JsonRPCManager::Dispatcher::invoke_handler(specs::RPCRequestInfo const &request)
       response.callResult.errata = rv.errata();
     }
   } catch (std::exception const &e) {
-    Debug(logTag, "Ups, something happened during the callback invocation: %s", e.what());
-    return {std::nullopt, error::RPCErrorCode::INTERNAL_ERROR};
+    Debug(logTag, "Oops, something happened during the callback invocation: %s", e.what());
+    return {std::nullopt, error::RPCErrorCode::ExecutionError};
   }
 
   return {response, {}};
 }
 
-void
-JsonRPCManager::Dispatcher::invoke_notification_handler(specs::RPCRequestInfo const &notification, std::error_code &ec) const
+JsonRPCManager::Dispatcher::response_type
+JsonRPCManager::Dispatcher::invoke_notification_handler(JsonRPCManager::Dispatcher::InternalHandler const &handler,
+                                                        specs::RPCRequestInfo const &notification) const
 {
-  auto handler = find_notification_handler(notification.method);
-  if (!handler) {
-    ec = error::RPCErrorCode::METHOD_NOT_FOUND;
-    return;
-  }
   try {
-    handler(notification.params);
+    handler.invoke(notification);
   } catch (std::exception const &e) {
-    Debug(logTag, "Ups, something happened during the callback(notification) invocation: %s", e.what());
+    Debug(logTag, "Oops, something happened during the callback(notification) invocation: %s", e.what());
     // it's a notification so we do not care much.
   }
+
+  return response_type{};
 }
 
 bool
 JsonRPCManager::Dispatcher::remove_handler(std::string const &name)
 {
   std::lock_guard<std::mutex> lock(_mutex);
-  auto foundIt = std::find_if(std::begin(_methods), std::end(_methods), [&](auto const &p) { return p.first == name; });
-  if (foundIt != std::end(_methods)) {
-    _methods.erase(foundIt);
+  auto foundIt = std::find_if(std::begin(_handlers), std::end(_handlers), [&](auto const &p) { return p.first == name; });
+  if (foundIt != std::end(_handlers)) {
+    _handlers.erase(foundIt);
     return true;
   }
 
   return false;
 }
-
-bool
-JsonRPCManager::Dispatcher::remove_notification_handler(std::string const &name)
-{
-  std::lock_guard<std::mutex> lock(_mutex);
-  auto foundIt = std::find_if(std::begin(_notifications), std::end(_notifications), [&](auto const &p) { return p.first == name; });
-  if (foundIt != std::end(_notifications)) {
-    _notifications.erase(foundIt);
-    return true;
-  }
-
-  return false;
-}
-
-// RPC
-
-void
-JsonRPCManager::register_internal_api()
-{
-  // register. TMP
-  if (!_dispatcher.add_handler("show_registered_handlers",
-                               // TODO: revisit this.
-                               [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
-                                 return _dispatcher.show_registered_handlers(id, req);
-                               })) {
-    Warning("Something happened, we couldn't register the rpc show_registered_handlers handler");
-  }
-}
-
+// --- JsonRPCManager
 bool
 JsonRPCManager::remove_handler(std::string const &name)
 {
   return _dispatcher.remove_handler(name);
-}
-
-bool
-JsonRPCManager::remove_notification_handler(std::string const &name)
-{
-  return _dispatcher.remove_notification_handler(name);
 }
 
 static inline specs::RPCResponseInfo
@@ -186,7 +209,7 @@ make_error_response(std::error_code const &ec)
 std::optional<std::string>
 JsonRPCManager::handle_call(std::string const &request)
 {
-  Debug(logTag, "Incoming request '%s'", request.c_str());
+  Debug(logTagMsg, "--> JSONRPC request\n'%s'", request.c_str());
 
   std::error_code ec;
   try {
@@ -223,14 +246,19 @@ JsonRPCManager::handle_call(std::string const &request)
         }
 
       } else {
-        // If the request was marked as error(decode error), we still need to send the error back, so we save it.
+        // If the request was marked as an error(decode error), we still need to send the error back, so we save it.
         response.add_message(make_error_response(req, decode_error));
       }
     }
 
     // We will not have a response for notification(s); This could be a batch of notifications only.
-    return response.is_notification() ? std::nullopt : std::make_optional<std::string>(Encoder::encode(response));
+    std::optional<std::string> resp;
 
+    if (!response.is_notification()) {
+      resp = Encoder::encode(response);
+      Debug(logTagMsg, "<-- JSONRPC Response\n '%s'", (*resp).c_str());
+    }
+    return resp;
   } catch (std::exception const &ex) {
     ec = error::RPCErrorCode::INTERNAL_ERROR;
   }
@@ -238,22 +266,94 @@ JsonRPCManager::handle_call(std::string const &request)
   return {Encoder::encode(make_error_response(ec))};
 }
 
+// ---------------------------- InternalHandler ---------------------------------
+inline ts::Rv<YAML::Node>
+JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const &request) const
+{
+  ts::Rv<YAML::Node> ret;
+  std::visit(ts::meta::overloaded{[](std::monostate) -> void { /* no op */ },
+                                  [&request](Notification const &handler) -> void {
+                                    // Notification handler call. Ignore response, there is no completion cv check in here basically
+                                    // because we do  not deal with any response, the callee can just re-schedule the work if
+                                    // needed. We fire and forget.
+                                    handler.cb(request.params);
+                                  },
+                                  [&ret, &request](Method const &handler) -> void {
+                                    // Regular Method Handler call, No cond variable check here, this should have not be created by
+                                    // a plugin.
+                                    ret = handler.cb(*request.id, request.params);
+                                  },
+                                  [&ret, &request](PluginMethod const &handler) -> void {
+                                    // We call the method handler, we'll lock and wait till the condition_variable
+                                    // gets set on the other side. The handler may return immediately with no response being set.
+                                    // cond var will give us green to proceed.
+                                    handler.cb(*request.id, request.params);
+                                    std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
+                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProccessingCompleted; });
+                                    g_rpcHandlerProccessingCompleted = false;
+                                    // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
+                                    // error and non error cases
+                                    ret = g_rpcHandlerResponseData;
+                                    lock.unlock();
+                                  }},
+             this->_func);
+  return ret;
+}
+
+inline bool
+JsonRPCManager::Dispatcher::InternalHandler::is_method() const
+{
+  const auto index = static_cast<InternalHandler::VariantTypeIndexId>(_func.index());
+  switch (index) {
+  case VariantTypeIndexId::METHOD:
+  case VariantTypeIndexId::METHOD_FROM_PLUGIN:
+    return true;
+    break;
+  default:;
+  }
+  // For now, we say, if not method, it's a notification.
+  return false;
+}
+
 ts::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, const YAML::Node &)
 {
   ts::Rv<YAML::Node> resp;
-  // use the same lock?
   std::lock_guard<std::mutex> lock(_mutex);
-  for (auto const &m : _methods) {
-    std::string sm = m.first;
-    resp.result()["methods"].push_back(sm);
+  for (auto const &[name, handler] : _handlers) {
+    std::string const &key = handler.is_method() ? RPC_SERVICE_METHODS_KEY : RPC_SERVICE_NOTIFICATIONS_KEY;
+    resp.result()[key].push_back(name);
   }
-
-  for (auto const &m : _notifications) {
-    std::string sm = m.first;
-    resp.result()["notifications"].push_back(sm);
-  }
-
   return resp;
+}
+
+// -----------------------------------------------------------------------------
+// This jsonrpc handler can provides a service descriptor for the RPC
+ts::Rv<YAML::Node>
+JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, const YAML::Node &)
+{
+  YAML::Node rpcService;
+  std::lock_guard<std::mutex> lock(_mutex);
+  // std::for_each(std::begin(_handlers), std::end(_handlers), [&rpcService](auto const &h) {
+  for (auto const &[name, handler] : _handlers) {
+    YAML::Node method;
+    method[RPC_SERVICE_NAME_KEY] = name;
+    method[RPC_SERVICE_TYPE_KEY] = handler.is_method() ? RPC_SERVICE_METHOD_STR : RPC_SERVICE_NOTIFICATION_STR;
+    /* most of this information will be eventually populated from the RPCRegistryInfo object */
+    auto regInfo = handler.get_reg_info();
+    std::string provider;
+    if (regInfo && regInfo->provider.size()) {
+      provider = std::string{regInfo->provider};
+    } else {
+      provider = RPC_SERVICE_N_A_STR;
+    }
+    method[RPC_SERVICE_PROVIDER_KEY] = provider;
+    YAML::Node schema{YAML::NodeType::Map}; // no schema for now, but we have a placeholder for it. Schema should provide
+                                            // description and all the details about the call
+    method[RPC_SERVICE_SCHEMA_KEY] = std::move(schema);
+    rpcService[RPC_SERVICE_METHODS_KEY].push_back(method);
+  }
+
+  return rpcService;
 }
 } // namespace rpc

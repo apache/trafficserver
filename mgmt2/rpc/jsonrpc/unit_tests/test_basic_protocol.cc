@@ -23,15 +23,34 @@
 #include <tscore/BufferWriter.h>
 
 #include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/jsonrpc/JsonRPC.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
 namespace
 {
 const int ErratId{1};
-}
-// To avoid using the Singleton mechanism.
+
+// Not using the singleton logic.
 struct JsonRpcUnitTest : rpc::JsonRPCManager {
   JsonRpcUnitTest() : JsonRPCManager() {}
+  using base = JsonRPCManager;
+  bool
+  remove_handler(std::string const &name)
+  {
+    return rpc::JsonRPCManager::remove_handler(name);
+  }
+  template <typename Func>
+  bool
+  add_notification_handler(const std::string &name, Func &&call)
+  {
+    return base::add_notification_handler(name, std::forward<Func>(call), nullptr);
+  }
+  template <typename Func>
+  bool
+  add_method_handler(const std::string &name, Func &&call)
+  {
+    return base::add_method_handler(name, std::forward<Func>(call), nullptr);
+  }
 };
 
 inline ts::Rv<YAML::Node>
@@ -77,14 +96,14 @@ test_nofitication(YAML::Node const &params)
 {
   notificationCallCount++;
 }
-
+} // namespace
 TEST_CASE("Multiple Registrations - methods", "[methods]")
 {
   JsonRpcUnitTest rpc;
   SECTION("More than  one method")
   {
-    REQUIRE(rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
-    REQUIRE(rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error) == false);
+    REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
+    REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error) == false);
   }
 }
 
@@ -104,7 +123,7 @@ TEST_CASE("Register/call method", "[method]")
 
   SECTION("Registring the method")
   {
-    REQUIRE(rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
+    REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
 
     SECTION("Calling the method")
     {
@@ -124,7 +143,7 @@ TEST_CASE("Register/call method - respond with errors (data field)", "[method][e
 
   SECTION("Registring the method")
   {
-    REQUIRE(rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
+    REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
 
     SECTION("Calling the method")
     {
@@ -161,7 +180,7 @@ TEST_CASE("Basic test, batch calls", "[methods][notifications]")
 
   SECTION("inserting multiple functions, mixed method and notifications.")
   {
-    const auto f1_added = rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error);
+    const auto f1_added = rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error);
     const bool f2_added = rpc.add_notification_handler("test_nofitication", &test_nofitication);
 
     REQUIRE(f1_added);
@@ -246,7 +265,7 @@ TEST_CASE("Invalid parameters base on the jsonrpc 2.0 protocol", "[protocol]")
 {
   JsonRpcUnitTest rpc;
 
-  REQUIRE(rpc.add_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
+  REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
   REQUIRE(rpc.add_notification_handler("test_nofitication", &test_nofitication));
 
   SECTION("version field")
@@ -326,9 +345,9 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
     bool
     register_member_function_as_callback(JsonRpcUnitTest &rpc)
     {
-      return rpc.add_handler("member_function", [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
-        return test(id, req);
-      });
+      return rpc.add_method_handler(
+        "member_function",
+        [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return test(id, req); });
     }
     ts::Rv<YAML::Node>
     test(std::string_view const &id, const YAML::Node &req)
@@ -368,9 +387,9 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
 TEST_CASE("Test Dispatcher rpc method", "[dispatcher]")
 {
   JsonRpcUnitTest rpc;
-  rpc.register_internal_api();
   const auto response = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "show_registered_handlers", "id": "AbC"})");
-  REQUIRE(*response == R"({"jsonrpc": "2.0", "result": {"methods": ["show_registered_handlers"]}, "id": "AbC"})");
+  REQUIRE(*response ==
+          R"({"jsonrpc": "2.0", "result": {"methods": ["get_service_descriptor", "show_registered_handlers"]}, "id": "AbC"})");
 }
 
 [[maybe_unused]] static ts::Rv<YAML::Node>
@@ -387,13 +406,9 @@ subtract(std::string_view const &id, YAML::Node const &numbers)
     }
 
     res.result() = total;
-    // auto &r      = res.result();
-    // r       = total;
   } else if (numbers.Type() == YAML::NodeType::Map) {
     if (numbers["subtrahend"] && numbers["minuend"]) {
-      int total = numbers["minuend"].as<int>() - numbers["subtrahend"].as<int>();
-      // auto &r   = res.result;
-      // r         = total;
+      int total    = numbers["minuend"].as<int>() - numbers["subtrahend"].as<int>();
       res.result() = total;
     }
   }
@@ -441,7 +456,7 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
   {
     JsonRpcUnitTest rpc;
 
-    REQUIRE(rpc.add_handler("subtract", &subtract));
+    REQUIRE(rpc.add_method_handler("subtract", &subtract));
     const auto resp = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": "1"})");
     REQUIRE(resp);
     REQUIRE(*resp == R"({"jsonrpc": "2.0", "result": "19", "id": "1"})");
@@ -455,7 +470,7 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
   {
     JsonRpcUnitTest rpc;
 
-    REQUIRE(rpc.add_handler("subtract", &subtract));
+    REQUIRE(rpc.add_method_handler("subtract", &subtract));
     const auto resp =
       rpc.handle_call(R"({"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 23, "minuend": 42}, "id": "3"})");
     REQUIRE(resp);
@@ -544,5 +559,48 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
     const auto resp = rpc.handle_call(
       R"( [{"jsonrpc": "2.0", "method": "notify_sum", "params": [1,2,4]}, {"jsonrpc": "2.0", "method": "notify_hello", "params": [7]}])");
     REQUIRE(!resp);
+  }
+}
+
+TEST_CASE("Handle un-handle handler's error", "[throw]")
+{
+  JsonRpcUnitTest rpc;
+  SECTION("Basic exception thrown")
+  {
+    REQUIRE(
+      rpc.add_method_handler("oops_i_did_it_again", [](std::string_view const &id, const YAML::Node &params) -> ts::Rv<YAML::Node> {
+        throw std::runtime_error("Oops, I did it again");
+      }));
+    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "oops_i_did_it_again", "id": "1"})");
+    std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution"}, "id": "1"})";
+    REQUIRE(*resp == expected);
+  }
+}
+
+TEST_CASE("Call registered method with no ID", "[no-id]")
+{
+  JsonRpcUnitTest rpc;
+  SECTION("Basic test, no id on method call")
+  {
+    REQUIRE(
+      rpc.add_method_handler("call_me_with_no_id", [](std::string_view const &id, const YAML::Node &params) -> ts::Rv<YAML::Node> {
+        throw std::runtime_error("Oops, I did it again");
+      }));
+    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_no_id"})");
+    std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})";
+    REQUIRE(*resp == expected);
+  }
+}
+
+TEST_CASE("Call registered notification with ID", "[notification_and_id]")
+{
+  JsonRpcUnitTest rpc;
+  SECTION("Basic test, id on a notification call")
+  {
+    REQUIRE(rpc.add_notification_handler(
+      "call_me_with_id", [](const YAML::Node &params) -> void { throw std::runtime_error("Oops, I did it again"); }));
+    const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_id", "id": "1"})");
+    std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": "1"})";
+    REQUIRE(*resp == expected);
   }
 }

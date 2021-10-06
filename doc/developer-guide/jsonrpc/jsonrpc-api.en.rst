@@ -34,7 +34,8 @@
 .. |object| replace:: *object*
 .. |array| replace:: *array*
 .. |optional| replace:: ``optional``
-
+.. |method| replace:: ``method``
+.. |notification| replace:: ``notification``
 .. |arrayrecord| replace:: ``array[record]``
 .. |arrayerror| replace:: ``array[errors]``
 
@@ -442,6 +443,7 @@ JSONRPC API
 
 * `show_registered_handlers`_
 
+* `get_service_descriptor`_
 
 .. _jsonapi-management-records:
 
@@ -455,6 +457,7 @@ Records
 admin_lookup_records
 --------------------
 
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -807,6 +810,8 @@ Examples
 admin_config_set_records
 ------------------------
 
+|method|
+
 Description
 ~~~~~~~~~~~
 
@@ -884,6 +889,8 @@ Response:
 admin_config_reload
 -------------------
 
+|method|
+
 Description
 ~~~~~~~~~~~
 
@@ -940,6 +947,7 @@ Metrics
 admin_clear_metrics_records
 ---------------------------
 
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1013,6 +1021,8 @@ Response:
 
 admin_clear_all_metrics_records
 -------------------------------
+
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1219,6 +1229,7 @@ Response:
 admin_server_stop_drain
 -----------------------
 
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1254,6 +1265,8 @@ Examples
 
 admin_server_start_drain
 ------------------------
+
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1329,6 +1342,8 @@ Response could be either:
 admin_plugin_send_basic_msg
 ---------------------------
 
+|method|
+
 Description
 ~~~~~~~~~~~
 
@@ -1374,6 +1389,8 @@ Examples
 
 admin_storage_get_device_status
 -------------------------------
+
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1450,6 +1467,8 @@ Response:
 admin_storage_set_device_offline
 --------------------------------
 
+|method|
+
 Description
 ~~~~~~~~~~~
 
@@ -1514,6 +1533,7 @@ Response:
 show_registered_handlers
 ------------------------
 
+|method|
 
 Description
 ~~~~~~~~~~~
@@ -1581,4 +1601,78 @@ Response:
       }
    }
 
+.. get_service_descriptor:
 
+get_service_descriptor
+------------------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+List and describe all the registered RPC handler.
+
+Parameters
+~~~~~~~~~~
+
+* ``params``: Omitted
+
+Result
+~~~~~~
+
+An |object| with the following fields:
+
+
+``methods`` object
+
+=============== ============= ===========================================
+Field           Type          Description
+=============== ============= ===========================================
+``name``        |str|         Handler's name. Call name
+``type``        |str|         Either 'method' or 'notification'
+``provider``    |str|         Provider's information.
+``schema``      |str|         A json-schema definition
+=============== ============= ===========================================
+
+
+Examples
+~~~~~~~~
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "f4477ac4-0d44-11eb-958d-001fc69cc946",
+      "jsonrpc": "2.0",
+      "method": "get_service_descriptor"
+   }
+
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+   "jsonrpc":"2.0",
+   "result":{
+      "methods":[
+         {
+            "name":"admin_host_set_status",
+            "type":"method",
+            "provider":"Traffic Server JSONRPC 2.0 API",
+            "schema":{
+            }
+         },
+         {
+            "name":"some_plugin_call",
+            "type":"notification",
+            "provider":"ABC Plugin's details.",
+            "schema":{
+            }
+         }]
+      }
+   }

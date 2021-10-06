@@ -30,6 +30,8 @@
 
 #include "rpc/handlers/common/RecordsUtils.h"
 
+namespace utils = rpc::handlers::records::utils;
+
 namespace
 {
 /// key value pair from each element passed in the set command.
@@ -45,12 +47,12 @@ template <> struct convert<SetRecordCmdInfo> {
   static bool
   decode(Node const &node, SetRecordCmdInfo &info)
   {
-    if (!node["record_name"] || !node["record_value"]) {
+    if (!node[utils::RECORD_NAME_KEY] || !node[utils::RECORD_VALUE_KEY]) {
       return false;
     }
 
-    info.name  = node["record_name"].as<std::string>();
-    info.value = node["record_value"].as<std::string>();
+    info.name  = node[utils::RECORD_NAME_KEY].as<std::string>();
+    info.value = node[utils::RECORD_VALUE_KEY].as<std::string>();
     return true;
   }
 };
@@ -166,7 +168,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     if (set_ok) {
       YAML::Node updatedRecord;
-      updatedRecord["record_name"] = info.name;
+      updatedRecord[utils::RECORD_NAME_KEY] = info.name;
       resp.result().push_back(updatedRecord);
     } else {
       resp.errata().push({err::RecordError::GENERAL_ERROR});

@@ -57,6 +57,13 @@ template <> struct is_error_code_enum<rpc::handlers::errors::RecordError> : true
 
 namespace rpc::handlers::records::utils
 {
+inline const std::string RECORD_NAME_REGEX_KEY{"record_name_regex"};
+inline const std::string RECORD_NAME_KEY{"record_name"};
+inline const std::string RECORD_VALUE_KEY{"record_value"};
+inline const std::string RECORD_TYPES_KEY{"rec_types"};
+inline const std::string ERROR_CODE_KEY{"code"};
+inline const std::string ERROR_MESSAGE_KEY{"message"};
+
 using ValidateRecType = std::function<bool(RecT, std::error_code &)>;
 
 ///

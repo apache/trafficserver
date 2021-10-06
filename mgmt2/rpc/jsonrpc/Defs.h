@@ -74,12 +74,17 @@ struct RPCRequestInfo {
   std::optional<std::string> id; //!< incoming request if (only used for method calls.)
   YAML::Node params;             //!< incoming parameter structure.
 
-  /// Convenience function that checks for the type of request. If contains id then it should be threated as method call, otherwise
+  /// Convenience functions that checks for the type of request. If contains id then it should be handle as method call, otherwise
   /// will be a notification.
   bool
   is_notification() const
   {
     return !id.has_value();
+  }
+  bool
+  is_method() const
+  {
+    return !this->is_notification();
   }
 };
 

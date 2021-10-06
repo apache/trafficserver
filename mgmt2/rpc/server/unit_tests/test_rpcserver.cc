@@ -35,7 +35,7 @@
 #include <tscore/ts_file.h>
 #include "ts/ts.h"
 
-#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/jsonrpc/JsonRPC.h"
 #include "rpc/server/RPCServer.h"
 #include "rpc/server/IPCSocketServer.h"
 
@@ -46,6 +46,14 @@
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 
+namespace rpc
+{
+bool
+test_remove_handler(std::string const &name)
+{
+  return rpc::JsonRPCManager::instance().remove_handler(name);
+}
+} // namespace rpc
 static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
 static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
 static constexpr int default_backlog{5};
@@ -83,7 +91,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
       jsonrpcServer->start_thread();
     } catch (std::exception const &ex) {
-      Debug(logTag, "Ups: %s", ex.what());
+      Debug(logTag, "Oops: %s", ex.what());
     }
   }
 
@@ -230,8 +238,8 @@ TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 {
   SECTION("A registered handlers")
   {
-    rpc::add_handler("some_foo", &some_foo);
-    rpc::add_handler("some_foo2", &some_foo);
+    rpc::add_method_handler("some_foo", &some_foo);
+    rpc::add_method_handler("some_foo2", &some_foo);
 
     std::promise<std::string> p1;
     std::promise<std::string> p2;
@@ -286,7 +294,7 @@ DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 
 TEST_CASE("Basic message sending to a running server", "[socket]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
   SECTION("Basic single request to the rpc server")
   {
     const int S{500};
@@ -298,12 +306,12 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
     }());
   }
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
 
   SECTION("Message larger than the the accepted size.")
   {
@@ -316,12 +324,12 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
     }());
   }
 
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with invalid json message", "[socket]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
 
   SECTION("A rpc server")
   {
@@ -334,12 +342,12 @@ TEST_CASE("Test with invalid json message", "[socket]")
       CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
 
   SECTION("Sending request by chunks")
   {
@@ -356,12 +364,12 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
     }());
   }
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
 
   SECTION("Sending request by chunks")
   {
@@ -379,12 +387,12 @@ TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
       REQUIRE(resp == "");
     }());
   }
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
 
   SECTION("Sending request by chunks, broken message")
   {
@@ -402,7 +410,7 @@ TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
-  REQUIRE(rpc::remove_handler("do_nothing"));
+  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 // Enable toggle

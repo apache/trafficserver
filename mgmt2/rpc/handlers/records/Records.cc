@@ -29,8 +29,11 @@
 /// @brief Local definitions to map requests and responsponses(not fully supported yet) to custom structures. All this definitions
 /// are used during decoding and encoding of the  RPC requests.
 ///
+namespace utils = rpc::handlers::records::utils;
 namespace
 {
+const std::string RECORD_LIST_KEY{"recordList"};
+const std::string ERROR_LIST_KEY{"errorList"};
 /// @brief This class maps the incoming rpc record request in general. This should be used to handle all the data around the
 /// record requests.
 ///
@@ -65,12 +68,6 @@ struct ErrorInfo {
   std::string message;
 };
 
-static constexpr auto RECORD_NAME_REGEX{"record_name_regex"};
-static constexpr auto RECORD_NAME{"record_name"};
-static constexpr auto RECORD_TYPES{"rec_types"};
-static constexpr auto ERROR_CODE{"code"};
-static constexpr auto ERROR_MESSAGE{"message"};
-
 } // namespace
 // using namespace rpc::codec::types;
 // YAML Converter for the incoming record request @see RequestRecordElement. Make sure you protect this by try/catch. We may get
@@ -82,19 +79,19 @@ template <> struct convert<RequestRecordElement> {
   static bool
   decode(Node const &node, RequestRecordElement &info)
   {
-    if (!node[RECORD_NAME_REGEX] && !node[RECORD_NAME]) {
+    if (!node[utils::RECORD_NAME_REGEX_KEY] && !node[utils::RECORD_NAME_KEY]) {
       // if we don't get any specific name, seems a bit risky to send them all back. At least some * would be nice.
       return false;
     }
 
     // if both are provided, we can't proceed.
-    if (node[RECORD_NAME_REGEX] && node[RECORD_NAME]) {
+    if (node[utils::RECORD_NAME_REGEX_KEY] && node[utils::RECORD_NAME_KEY]) {
       return false;
     }
 
     // TODO: Add "type" paramater to just say, `config`, `metric`. May be handier.
 
-    if (auto n = node[RECORD_TYPES]) {
+    if (auto n = node[utils::RECORD_TYPES_KEY]) {
       // if it's empty should be ok, will get all of them.
       if (n && n.IsSequence()) {
         auto const &passedTypes = n.as<std::vector<int>>();
@@ -118,11 +115,11 @@ template <> struct convert<RequestRecordElement> {
       }
     }
 
-    if (auto n = node[RECORD_NAME_REGEX]) {
+    if (auto n = node[utils::RECORD_NAME_REGEX_KEY]) {
       info.recName = n.as<std::string>();
       info.isRegex = true;
     } else {
-      info.recName = node[RECORD_NAME].as<std::string>();
+      info.recName = node[utils::RECORD_NAME_KEY].as<std::string>();
       info.isRegex = false;
     }
 
@@ -135,12 +132,12 @@ template <> struct convert<ErrorInfo> {
   encode(ErrorInfo const &errorInfo)
   {
     Node errorInfoNode;
-    errorInfoNode[ERROR_CODE] = errorInfo.code;
+    errorInfoNode[utils::ERROR_CODE_KEY] = errorInfo.code;
     if (!errorInfo.message.empty()) {
-      errorInfoNode[ERROR_MESSAGE] = errorInfo.message;
+      errorInfoNode[utils::ERROR_MESSAGE_KEY] = errorInfo.message;
     }
     if (!errorInfo.recordName.empty()) {
-      errorInfoNode[RECORD_NAME] = errorInfo.recordName;
+      errorInfoNode[utils::RECORD_NAME_KEY] = errorInfo.recordName;
     }
 
     return errorInfoNode;
@@ -245,10 +242,10 @@ lookup_records(std::string_view const &id, YAML::Node const &params)
 
   YAML::Node resp;
   if (!recordList.IsNull()) {
-    resp["recordList"] = recordList;
+    resp[RECORD_LIST_KEY] = recordList;
   }
   if (!errorList.IsNull()) {
-    resp["errorList"] = errorList;
+    resp[ERROR_LIST_KEY] = errorList;
   }
   return resp;
 }
@@ -296,7 +293,7 @@ clear_metrics_records(std::string_view const &id, YAML::Node const &params)
   }
 
   if (!errorList.IsNull()) {
-    resp["errorList"] = errorList;
+    resp[ERROR_LIST_KEY] = errorList;
   }
 
   return resp;

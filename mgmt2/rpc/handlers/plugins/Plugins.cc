@@ -25,7 +25,10 @@
 
 namespace
 {
+const std::string PLUGIN_TAG_KEY{"tag"};
+const std::string PLUGIN_DATA_KEY{"data"};
 static constexpr auto logTag{"rpc.plugins"};
+
 struct PluginMsgInfo {
   std::string data;
   std::string tag;
@@ -37,11 +40,11 @@ template <> struct convert<PluginMsgInfo> {
   static bool
   decode(Node const &node, PluginMsgInfo &msg)
   {
-    if (!node["tag"] || !node["data"]) {
+    if (!node[PLUGIN_TAG_KEY] || !node[PLUGIN_DATA_KEY]) {
       return false;
     }
-    msg.tag  = node["tag"].as<std::string>();
-    msg.data = node["data"].as<std::string>();
+    msg.tag  = node[PLUGIN_TAG_KEY].as<std::string>();
+    msg.data = node[PLUGIN_DATA_KEY].as<std::string>();
 
     return true;
   }

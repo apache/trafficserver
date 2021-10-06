@@ -101,7 +101,7 @@ def AddJsonRPCClientRequest(obj, ts, request='', file=None, schema_file_name=Non
             tr.AddJsonRPCClientRequest(ts, Request.foo_bar(fqdn=["yahoo.com", "aol.com", "vz.com"]))
 
         schema_file_name:
-            Unsupported for now. This will be used to validate the request against a schema file. if empty no request schema
+            Used to validate the request against a schema file. if empty no request schema
             validation will be performed.
 
         params_field_schema_file_name:
