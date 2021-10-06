@@ -21,47 +21,6 @@
 #include "ts/remap.h"
 #include "utilities.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
-std::string_view
-getSNI(SSL *ssl)
-{
-  const char *servername = nullptr;
-  const unsigned char *p;
-  size_t remaining, len = 0;
-
-  // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-  if (SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
-    // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
-    /* Extract the length of the supplied list of names. */
-    len = *(p++) << 8;
-    len += *(p++);
-    if (len + 2 == remaining) {
-      remaining = len;
-      /*
-       * The list in practice only has a single element, so we only consider
-       * the first one.
-       */
-      if (*p++ == TLSEXT_NAMETYPE_host_name) {
-        remaining--;
-        /* Now we can finally pull out the byte array with the actual hostname. */
-        if (remaining > 2) {
-          len = *(p++) << 8;
-          len += *(p++);
-          if (len + 2 <= remaining) {
-            servername = reinterpret_cast<const char *>(p);
-          }
-        }
-      }
-    }
-  }
-
-  return std::string_view(servername, servername ? len : 0);
-}
-
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 // Add a header with the delay imposed on this transaction. This can be used
 // for logging, and other types of metrics.
