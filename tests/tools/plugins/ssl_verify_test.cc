@@ -61,6 +61,10 @@ CB_server_verify(TSCont cont, TSEvent event, void *edata)
           event == TS_EVENT_SSL_VERIFY_SERVER ? "good" : "bad", sni_name,
           reenable_event == TS_EVENT_ERROR ? "error HS" : "good HS");
 
+  int len;
+  const char *method2_name = TSVConnSslSniGet(ssl_vc, &len);
+  TSDebug(PN, "Server verify callback SNI APIs match=%s", 0 == strncmp(method2_name, sni_name, len) ? "true" : "false");
+
   // All done, reactivate things
   TSVConnReenableEx(ssl_vc, reenable_event);
   return TS_SUCCESS;

@@ -92,7 +92,7 @@ tr3.Processes.Default.Command = "curl --resolve \"bar.com:{0}:127.0.0.1\" -k  ht
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
 
-# Over riding the built in ERROR check since we expect tr2 to fail
+# Overriding the built in ERROR check since we expect tr2 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     "WARNING: TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for 127.0.0.1.  Action=Terminate SNI=random.com",
     "random.com should fail")
@@ -113,3 +113,4 @@ ts.Streams.All += Testers.ContainsExpression(
     "Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
 ts.Streams.All += Testers.ContainsExpression(
     "Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
+ts.Streams.All += Testers.ContainsExpression("Server verify callback SNI APIs match=true", "verify SNI names match")
