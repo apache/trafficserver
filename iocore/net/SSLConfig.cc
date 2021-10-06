@@ -50,6 +50,7 @@
 #include "P_SSLSNI.h"
 #include "P_SSLCertLookup.h"
 #include "P_SSLSNI.h"
+#include "P_SSLUtils.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
@@ -114,6 +115,7 @@ SSLConfigParams::reset()
   client_tls13_cipher_suites                 = nullptr;
   server_groups_list                         = nullptr;
   client_groups_list                         = nullptr;
+  keylog_file                                = nullptr;
   client_ctx                                 = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = 0;
   verifyServerPolicy                                   = YamlSNIConfig::Policy::DISABLED;
@@ -152,6 +154,7 @@ SSLConfigParams::cleanup()
   client_tls13_cipher_suites = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
   server_groups_list         = static_cast<char *>(ats_free_null(server_groups_list));
   client_groups_list         = static_cast<char *>(ats_free_null(client_groups_list));
+  keylog_file                = static_cast<char *>(ats_free_null(keylog_file));
 
   cleanupCTXTable();
   reset();
@@ -422,6 +425,13 @@ SSLConfigParams::initialize()
   ats_free(ssl_client_ca_cert_filename);
 
   REC_ReadConfigStringAlloc(client_groups_list, "proxy.config.ssl.client.groups_list");
+
+  REC_ReadConfigStringAlloc(keylog_file, "proxy.config.ssl.keylog_file");
+  if (keylog_file == nullptr) {
+    TLSKeyLogger::disable_keylogging();
+  } else {
+    TLSKeyLogger::enable_keylogging(keylog_file);
+  }
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 

@@ -125,12 +125,8 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
 }
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
-                 const NetVCOptions &netvc_options, const char *session_file, const char *keylog_file)
-  : QUICHandshakeProtocol(pp_key_info),
-    _session_file(session_file),
-    _keylog_file(keylog_file),
-    _ssl(SSL_new(ssl_ctx)),
-    _netvc_context(nvc_ctx)
+                 const NetVCOptions &netvc_options, const char *session_file)
+  : QUICHandshakeProtocol(pp_key_info), _session_file(session_file), _ssl(SSL_new(ssl_ctx)), _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 
