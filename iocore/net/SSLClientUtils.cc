@@ -27,6 +27,7 @@
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
+#include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
@@ -233,6 +234,12 @@ SSLInitClientContext(const SSLConfigParams *params)
     SSL_CTX_set_session_cache_mode(client_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_AUTO_CLEAR | SSL_SESS_CACHE_NO_INTERNAL);
     SSL_CTX_sess_set_new_cb(client_ctx, ssl_new_session_callback);
   }
+
+#if TS_HAS_TLS_KEYLOGGING
+  if (unlikely(TLSKeyLogger::is_enabled())) {
+    SSL_CTX_set_keylog_callback(client_ctx, TLSKeyLogger::ssl_keylog_cb);
+  }
+#endif
 
   return client_ctx;
 

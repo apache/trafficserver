@@ -590,6 +590,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
+ proxy.config.ssl.keylog_file
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
  proxy.config.syslog_facility

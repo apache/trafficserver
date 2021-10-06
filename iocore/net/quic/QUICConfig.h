@@ -46,7 +46,6 @@ public:
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
   const char *client_session_file() const;
-  const char *client_keylog_file() const;
   const char *qlog_dir() const;
 
   shared_SSL_CTX client_ssl_ctx() const;
@@ -107,7 +106,6 @@ private:
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;
   char *_client_session_file     = nullptr;
-  char *_client_keylog_file      = nullptr;
   char *_qlog_dir                = nullptr;
 
   shared_SSL_CTX _client_ssl_ctx = nullptr;
