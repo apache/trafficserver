@@ -1,5 +1,5 @@
 Changes with Apache Traffic Server 9.2.0
-  #6609 - Add hook for loading certificate and key data from plugin
+  #6609 - Add hook for loading certificate and key data from plugin 
   #7232 - Fix lua_states_stats Au test.
   #7253 - Don't waste IOBufferBlocks for receiving UDPPackets
   #7279 - Add throttled log functions
@@ -47,6 +47,7 @@ Changes with Apache Traffic Server 9.2.0
   #7648 - Comment why log eviction isn't implemented via a log field.
   #7651 - Fixing Throttler.h for older clang and gcc compilers
   #7657 - Add proxy.config.http.max_proxy_cycles
+  #7661 - Add Pre-warm TLS Tunnel
   #7668 - AuTest: address various permissions issues
   #7670 - create a new cache status RWW_HIT
   #7673 - Change debug tags and make sure sni is printed on certain logs
@@ -156,7 +157,7 @@ Changes with Apache Traffic Server 9.2.0
   #7962 - Pass through expect header and handle 100-continue response
   #7967 - Tweak QUIC protocol stack support to include TLS.
   #7976 - Be ready to process response headers sent before the post tunnel is finished
-  #7978 - Doc: Update documentation to build cleanly in Sphinx 3.
+  #7978 - Doc: Update documentation to build cleanly in Sphinx 3. 
   #7981 - Reject TLS if client offers alpn with no match
   #7992 - Session reuse test with multiple reuses
   #7995 - Add null checks for http_load
@@ -291,8 +292,19 @@ Changes with Apache Traffic Server 9.2.0
   #8328 - Fix missing outbound_conntrack config assigment(from master config to global parameter config)
   #8332 - docs: Update host_sni_policy for some behaviors
   #8336 - Updated the CODEOWNERS for me
+  #8337 - Adding TLS session key logging capability
   #8339 - Update age in header_rewrite_cond_cache autest
   #8341 - Revert "Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit (#6189)
   #8343 - Rename outbound_conntrack to global_outbound_conntrack to reduce confusion.
+  #8344 - [doc] Add a note for TSLifecycleHookAdd.
   #8345 - Add <limits> include to BufferWriterForward.h
   #8348 - remove unused RecConfigFileEntry from RecConfigParse
+  #8354 - Adds support for TCP_NOTSENT_LOWAT sockopt
+  #8358 - Locking around SSLSecret::secret_map access
+  #8360 - Stabilize regex_revalidate Au test.
+  #8363 - Added support for promoting internal (plugin-initiated) requests.
+  #8364 - Added support for verifying cacheability before attempting to force an object into cache.
+  #8365 - Fixes issue #8329 crash in NextHopConsistentHash
+  #8370 - Traffic Dump: update json-schema for new tuple requirements
+  #8373 - Removed references to the throttle option from the slice plugin.
+  #8374 - 9.2.x autest fixes
