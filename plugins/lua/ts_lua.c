@@ -602,14 +602,16 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   http_ctx->rri      = NULL;
   http_ctx->has_hook = 0;
 
-  if (!http_ctx->client_request_bufp) {
-    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
-      http_ctx->client_request_bufp = bufp;
-      http_ctx->client_request_hdrp = hdr_loc;
+  // This is a memory location relative to a header heap represented by a TSMBuffer and must always
+  // be used in conjunction with that TSMBuffer instance. It identifies a specific object in the TSMBuffer.
+  // This indirection is needed so that the TSMBuffer can reallocate space as needed. Therefore a raw address
+  // obtained from a TSMLoc should be considered volatile that may become invalid across any API call.
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+    http_ctx->client_request_bufp = bufp;
+    http_ctx->client_request_hdrp = hdr_loc;
 
-      if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
-        http_ctx->client_request_url = url_loc;
-      }
+    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
+      http_ctx->client_request_url = url_loc;
     }
   }
 
