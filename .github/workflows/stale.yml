@@ -28,3 +28,4 @@ jobs:
         days-before-pr-close: 7
         days-before-issue-close: -1
         debug-only: false
+        operations-per-run: 100
