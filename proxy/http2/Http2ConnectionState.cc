@@ -1655,6 +1655,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   if (this->session->write_avail() == 0) {
     Http2StreamDebug(this->session, stream->get_id(), "Not write avail");
+    this->session->flush();
     return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
 
