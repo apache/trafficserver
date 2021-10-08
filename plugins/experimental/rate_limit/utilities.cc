@@ -111,3 +111,48 @@ retryAfter(TSHttpTxn txnp, unsigned retry)
     }
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Parse a URL to obtain a description for use with metrics when no user
+// provided tag is available. This is used by the remap side of the plugin,
+// while the SNI side uses the FQDN associated with each limiter instance
+// which is obtained from the list of SNIs in the global plugin configuration.
+//
+std::string
+getDescriptionFromUrl(const char *url)
+{
+  TSMBuffer const buf = TSMBufferCreate();
+  TSMLoc url_loc      = nullptr;
+
+  const int url_len = strlen(url);
+  std::string description;
+
+  if (TS_SUCCESS == TSUrlCreate(buf, &url_loc) && TS_PARSE_DONE == TSUrlParse(buf, url_loc, &url, url + url_len)) {
+    int host_len, scheme_len = 0;
+    const char *s  = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+    const char *h  = TSUrlHostGet(buf, url_loc, &host_len);
+    const int port = TSUrlPortGet(buf, url_loc);
+
+    const std::string hostname = std::string(h, host_len);
+    const std::string scheme   = std::string(s, scheme_len);
+
+    TSDebug(PLUGIN_NAME, "scheme = %s, host = %s, port = %d", scheme.c_str(), hostname.c_str(), port);
+
+    description = scheme;
+    description.append("." + hostname);
+
+    // only append the port when it is non-standard
+    if (!(strncmp(s, TS_URL_SCHEME_HTTP, scheme_len) == 0 && port == 80) &&
+        !(strncmp(s, TS_URL_SCHEME_HTTPS, scheme_len) == 0 && port == 443)) {
+      description.append(":" + std::to_string(port));
+    }
+  }
+
+  if (url_loc != nullptr) {
+    TSHandleMLocRelease(buf, nullptr, url_loc);
+  }
+
+  TSMBufferDestroy(buf);
+
+  return description;
+}
