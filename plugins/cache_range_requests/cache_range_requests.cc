@@ -340,21 +340,24 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
     }
     DEBUG_LOG("%d %.*s", status, length, p);
     if (TS_HTTP_STATUS_OK == status && partial_content_reason) {
+      // reset status code to 206
       DEBUG_LOG("Got TS_HTTP_STATUS_OK.");
       TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
       DEBUG_LOG("Set response header to TS_HTTP_STATUS_PARTIAL_CONTENT.");
+
+      // inject range related response headers from client request
+      std::string const &rv = txn_state->range_value;
+      // add the range request header back in so that range requests may be logged.
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) && !rv.empty()) {
+        if (set_header(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.length())) {
+          DEBUG_LOG("added range header: %s", rv.c_str());
+        } else {
+          DEBUG_LOG("set_header() failed.");
+        }
+      } else {
+        DEBUG_LOG("failed to get Request Headers");
+      }
     }
-  }
-  std::string const &rv = txn_state->range_value;
-  // add the range request header back in so that range requests may be logged.
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) && !rv.empty()) {
-    if (set_header(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.length())) {
-      DEBUG_LOG("added range header: %s", rv.c_str());
-    } else {
-      DEBUG_LOG("set_header() failed.");
-    }
-  } else {
-    DEBUG_LOG("failed to get Request Headers");
   }
   TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
   TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
