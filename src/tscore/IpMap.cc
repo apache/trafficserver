@@ -365,8 +365,9 @@ namespace detail
         if (x) {
           if (n->_max <= max) {
             // next range is covered, so we can remove and continue.
+            N *const nnext = next(x);
             this->remove(n);
-            n = next(x);
+            n = nnext;
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
             x->setMax(n->_max);
