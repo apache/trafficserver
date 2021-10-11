@@ -44,13 +44,13 @@ sessions:
         fields:
         - [ Host, www.example.com ]
         - [ Content-Length, 0 ]
-        - [ X-Request, alpn_request ]
+        - [ X-Request, alpn_http1_request ]
         - [ uuid, first-request ]
 
     proxy-request:
       headers:
         fields:
-        - [ X-Request, {value: 'alpn_request', as: equal } ]
+        - [ X-Request, {value: 'alpn_http1_request', as: equal } ]
 
     server-response:
         status: 200
@@ -59,13 +59,12 @@ sessions:
           fields:
           - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
           - [ Content-Length, 36 ]
-          - [ Connection, keep-alive ]
-          - [ X-Response, alpn_response ]
+          - [ X-Response, alpn_http1_response ]
 
     proxy-response:
       headers:
         fields:
-        - [ X-Response, {value: 'alpn_response', as: equal } ]
+        - [ X-Response, {value: 'alpn_http1_response', as: equal } ]
 
 # HTTP/2 over TLS.
 - protocol:
@@ -81,32 +80,36 @@ sessions:
   # This test has more to do with ALPN configuration than the transactions. The
   # following generates a simple request and response.
   - client-request:
-      method: GET
-      url: /some/path/2
-      version: '1.1'
       headers:
         fields:
-        - [ Host, www.example.com ]
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /some/path/2 ]
         - [ Content-Length, 0 ]
-        - [ X-Request, alpn_request ]
-        - [ uuid, first-request ]
+        - [ X-Request, alpn_http2_request ]
+        - [ uuid, second-request ]
+      content:
+        encoding: plain
+        size: 0
 
     proxy-request:
       headers:
         fields:
-        - [ X-Request, {value: 'alpn_request', as: equal } ]
+        - [ X-Request, {value: 'alpn_http2_request', as: equal } ]
 
     server-response:
-        status: 200
-        reason: OK
-        headers:
-          fields:
-          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
-          - [ Content-Length, 36 ]
-          - [ Connection, keep-alive ]
-          - [ X-Response, alpn_response ]
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+        - [ Content-Length, 0 ]
+        - [ X-Response, alpn_http2_response ]
+      content:
+        encoding: plain
+        size: 0
 
     proxy-response:
       headers:
         fields:
-        - [ X-Response, {value: 'alpn_response', as equal } ]
+        - [ X-Response, {value: 'alpn_http2_response', as equal } ]

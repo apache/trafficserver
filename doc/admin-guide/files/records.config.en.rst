@@ -3984,10 +3984,14 @@ Client-Related Configuration
 
    Sets the ALPN string that |TS| will send to the origin in the ClientHello of TLS handshakes.
    Configuring this to an empty string (the default configuration) means that the ALPN extension
-   will not be sent as a part of the TLS ClientHello.
+   will not be sent as a part of the TLS ClientHello, resulting in HTTP/1.x being negotiated for all
+   origin-side connections.
 
    Configuring the ALPN string provides a mechanism to control origin-side HTTP protocol
-   negotiation. Configuring this requires an understanding of the ALPN TLS protocol extension. See
+   negotiation. Including ``h2`` in the ALPN list is required for negotiatnge origin-side HTTP/2
+   connections.
+
+   Configuring this requires an understanding of the ALPN TLS protocol extension. See
    `RFC 7301 <https://www.rfc-editor.org/rfc/rfc7301.html>`_ for details about the ALPN protocol.
    See the official `IANA ALPN protocol registration
    <https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>`_
@@ -4002,27 +4006,27 @@ Client-Related Configuration
 
     - ``http/1.0``
     - ``http/1.1``
+    - ``h2``
 
    Here are some example configurations and the consequences of each:
 
-   ================================ ======================================================================
-   Value                            Description
-   ================================ ======================================================================
-   ``""``                           No ALPN extension is sent by |TS| in origin-side TLS handshakes.
-                                    |TS| will assume an HTTP/1.1 connection in this case.
-   ``"http/1.1"``                   Only HTTP/1.1 is advertized by |TS|. Thus, the origin will
-                                    either negotiate HTTP/1.1, or it will fail the handshake if that
-                                    is not supported by the origin.
-   ``"http/1.1,http/1.0"``          Both HTTP/1.1 and HTTP/1.0 are supported by |TS|, but HTTP/1.1
-                                    is preferred.
-   ``"h2,http/1.1,http/1.0"``       HTTP/2 is preferred by |TS| over HTTP/1.1 and HTTP/1.0. Thus, if the
-                                    origin supports HTTP/2, it will be used for the connection. If
-                                    not, it will fall back to HTTP/1.1 or, if that is not supported,
-                                    HTTP/1.0. (HTTP/2 to origin is currently not supported by |TS|.)
-   ``"h2"``                         |TS| only advertizes HTTP/2 support. Thus, the origin will
-                                    either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
-                                    is currently not supported by |TS|.)
-   ================================ ======================================================================
+   ==================== ======================================================================
+   Value                Description
+   ==================== ======================================================================
+   ``""``               No ALPN extension is sent by |TS| in origin-side TLS handshakes. |TS| will
+                        assume an HTTP/1.1 connection in this case.
+   ``"http/1.1"``       Only HTTP/1.1 is advertized by |TS|. Thus, the origin will either negotiate
+                        HTTP/1.1, or it will fail the handshake if that is not supported by the
+                        origin.
+   ``"h2,http/1.1"``    HTTP/2 is preferred by |TS| over HTTP/1.1. Thus, if the origin supports
+                        HTTP/2, it will be used for the connection. If not, it will fall back to
+                        HTTP/1.1.
+   ``"h2"``             |TS| only advertizes HTTP/2 support. Thus, the origin will
+                        either negotiate HTTP/2 or fail the TLS handshake.
+   ==================== ======================================================================
+
+   Note that this is an overridable configuration, so the ALPN can be configured on a per-origin
+   basis via the :ref:`admin-plugins-conf-remap` plugin.
 
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
@@ -4258,6 +4262,13 @@ HTTP/2 Configuration
    transaction stalls. Lowering this timeout can ease pressure on the proxy if
    misconfigured or misbehaving clients are opening a large number of
    connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_out INT 120
+   :reloadable:
+   :units: seconds
+
+   Specifies how long |TS| keeps connections to origins open if a
+   transaction stalls.
 
 .. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
    :reloadable:

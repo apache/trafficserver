@@ -49,6 +49,9 @@
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
 #define HTTP_API_ERROR    (INK_API_EVENT_EVENTS_START + 1)
 
+#define CONNECT_EVENT_TXN    (HTTP_NET_CONNECTION_EVENT_EVENTS_START) + 0
+#define CONNECT_EVENT_DIRECT (HTTP_NET_CONNECTION_EVENT_EVENTS_START) + 1
+
 // The default size for http header buffers when we don't
 //   need to include extra space for the document
 static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
@@ -60,7 +63,7 @@ static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ
 //   the larger buffer size
 static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
-class Http1ServerSession;
+class PoolableSession;
 class AuthHttpAdapter;
 class PreWarmSM;
 
@@ -225,13 +228,15 @@ public:
   //  holding the lock for the server session
   void attach_server_session();
 
-  PoolableSession *create_server_session(NetVConnection *netvc);
+  PoolableSession *create_server_session(NetVConnection *netvc, MIOBuffer *netvc_read_buffer, IOBufferReader *netvc_reader);
   bool create_server_txn(PoolableSession *new_session);
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
   ProxyTransaction *get_ua_txn();
   ProxyTransaction *get_server_txn();
+  // Write out the proxy_protocol information on a new outbound connection
+  void write_outbound_proxy_protocol();
 
   // Called by transact.  Updates are fire and forget
   //  so there are no callbacks and are safe to do
@@ -263,6 +268,8 @@ public:
   // A NULL 'r' argument indicates the hostdb lookup failed
   void process_hostdb_info(HostDBRecord *record);
   void process_srv_info(HostDBRecord *record);
+  bool origin_multiplexed() const;
+  bool add_to_existing_request();
 
   // Called by transact.  Synchronous.
   VConnection *do_transform_open();
@@ -288,7 +295,7 @@ public:
   void txn_hook_add(TSHttpHookID id, INKContInternal *cont);
   APIHook *txn_hook_get(TSHttpHookID id);
 
-  bool is_private();
+  bool is_private() const;
   bool is_redirect_required();
 
   /// Get the protocol stack for the inbound (client, user agent) connection.
@@ -402,6 +409,7 @@ private:
   int tunnel_handler(int event, void *data);
   int tunnel_handler_push(int event, void *data);
   int tunnel_handler_post(int event, void *data);
+  int tunnel_handler_trailer(int event, void *data);
 
   // YTS Team, yamsat Plugin
   int tunnel_handler_for_partial_post(int event, void *data);
@@ -451,6 +459,8 @@ private:
   int tunnel_handler_cache_read(int event, HttpTunnelProducer *p);
   int tunnel_handler_post_ua(int event, HttpTunnelProducer *c);
   int tunnel_handler_post_server(int event, HttpTunnelConsumer *c);
+  int tunnel_handler_trailer_ua(int event, HttpTunnelConsumer *c);
+  int tunnel_handler_trailer_server(int event, HttpTunnelProducer *c);
   int tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p);
   int tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer *p);
   int tunnel_handler_transform_write(int event, HttpTunnelConsumer *c);
@@ -460,7 +470,7 @@ private:
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
   void do_cache_lookup_and_read();
-  void do_http_server_open(bool raw = false);
+  void do_http_server_open(bool raw = false, bool only_direct = false);
   void send_origin_throttled_response();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
   void do_cache_prepare_write();
@@ -494,7 +504,6 @@ private:
   void setup_server_send_request();
   void setup_server_send_request_api();
   HttpTunnelProducer *setup_server_transfer();
-  void setup_server_transfer_to_cache_only();
   HttpTunnelProducer *setup_cache_read_transfer();
   void setup_internal_transfer(HttpSMHandler handler);
   void setup_error_transfer();
@@ -637,12 +646,17 @@ public:
   void rewind_state_machine();
 
 private:
+  void cancel_pending_server_connection();
+
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
-  bool _from_early_data       = false;
-  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
-  PreWarmSM *_prewarm_sm      = nullptr;
+  bool _from_early_data         = false;
+  SNIRoutingType _tunnel_type   = SNIRoutingType::NONE;
+  PreWarmSM *_prewarm_sm        = nullptr;
+  NetVConnection *_netvc        = nullptr;
+  IOBufferReader *_netvc_reader = nullptr;
+  MIOBuffer *_netvc_read_buffer = nullptr;
 };
 
 ////

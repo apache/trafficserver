@@ -111,7 +111,7 @@ class TestAlpnFunctionality:
             "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
 
             'proxy.config.diags.debug.enabled': 3,
-            'proxy.config.diags.debug.tags': 'ssl',
+            'proxy.config.diags.debug.tags': 'ssl|http',
         })
 
         if records_config_alpn is not None:
@@ -158,7 +158,14 @@ class TestAlpnFunctionality:
         TestAlpnFunctionality._client_counter += 1
 
 
+#
+# Test default configuration.
+#
 TestAlpnFunctionality().run()
+
+#
+# Test various valid ALPN configurations.
+#
 TestAlpnFunctionality(
     records_config_alpn='http/1.1').run()
 TestAlpnFunctionality(
@@ -166,18 +173,18 @@ TestAlpnFunctionality(
 TestAlpnFunctionality(
     records_config_alpn='http/1.1',
     conf_remap_alpn='http/1.1,http/1.0').run()
+TestAlpnFunctionality(
+    records_config_alpn='h2,http/1.1').run()
+TestAlpnFunctionality(
+    records_config_alpn='h2').run()
 
-# TODO: HTTP/2 to origin comes later.
-# TestAlpnFunctionality(
-#   records_config_alpn='h2,http1.1').run()
-
+#
+# Test malformed ALPN configurations.
+#
 TestAlpnFunctionality(
     records_config_alpn='not_a_protocol',
     alpn_is_malformed=True).run()
-
-# Since we do not currently support ALPN with HTTP/2, this will be considered a
-# malformed ALPN protocol.
-# TODO: remove this when we support HTTP/2 to origin.
+# Note that HTTP/3 to origin is not currently supported.
 TestAlpnFunctionality(
-    records_config_alpn='h2',
+    records_config_alpn='h3',
     alpn_is_malformed=True).run()

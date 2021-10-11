@@ -886,16 +886,10 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
       Error("Unknown protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()), protocol.data());
       return false;
     }
-    // We currently only support HTTP/1.x protocols toward the origin.
-    if (!HTTP_PROTOCOL_SET.contains(protocol_index)) {
-      Error("Unsupported non-HTTP/1.x protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
-            protocol.data());
-      return false;
-    }
-    // But not HTTP/0.9.
-    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9) {
-      Error("Unsupported \"http/0.9\" protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
-            protocol.data());
+    // Make sure the protocol is one of our supported protocols.
+    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 ||
+        (!HTTP_PROTOCOL_SET.contains(protocol_index) && !HTTP2_PROTOCOL_SET.contains(protocol_index))) {
+      Error("Unsupported protocol name in configured ALPN list: %.*s", static_cast<int>(protocol.size()), protocol.data());
       return false;
     }
 

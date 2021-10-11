@@ -109,6 +109,11 @@ public:
 
   virtual ProxySession *get_proxy_session() = 0;
 
+  virtual void add_session();
+  virtual bool is_outbound() const;
+
+  virtual void set_no_activity_timeout() = 0;
+
   ///////////////////
   // Variables
   Http2ConnectionState connection_state;
@@ -203,7 +208,7 @@ Http2CommonSession::is_url_pushed(const char *url, int url_len)
     return false;
   }
 
-  return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
+  return _h2_pushed_urls->find(std::string{url, static_cast<size_t>(url_len)}) != _h2_pushed_urls->end();
 }
 
 inline int64_t

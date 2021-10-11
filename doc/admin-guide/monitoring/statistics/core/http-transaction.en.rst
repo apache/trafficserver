@@ -165,6 +165,16 @@ HTTP/2
 
    Represents the current number of HTTP/2 streams from client to the |TS|.
 
+.. ts:stat:: global proxy.process.http2.total_server_streams integer
+   :type: counter
+
+   Represents the total number of HTTP/2 streams from |TS| to the origin.
+
+.. ts:stat:: global proxy.process.http2.current_server_streams integer
+   :type: gauge
+
+   Represents the current number of HTTP/2 streams from |TS| to the origin.
+
 .. ts:stat:: global proxy.process.http2.total_transactions_time integer
    :type: counter
    :units: seconds

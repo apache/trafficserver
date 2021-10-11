@@ -236,6 +236,34 @@ ProxyTransaction::get_version(HTTPHdr &hdr) const
 }
 
 bool
+ProxyTransaction::is_read_closed() const
+{
+  return false;
+}
+
+bool
+ProxyTransaction::expect_send_trailer() const
+{
+  return false;
+}
+
+void
+ProxyTransaction::set_expect_send_trailer()
+{
+}
+
+bool
+ProxyTransaction::expect_receive_trailer() const
+{
+  return false;
+}
+
+void
+ProxyTransaction::set_expect_receive_trailer()
+{
+}
+
+bool
 ProxyTransaction::allow_half_open() const
 {
   return false;

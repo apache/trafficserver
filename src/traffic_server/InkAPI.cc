@@ -41,7 +41,7 @@
 #include "HTTP.h"
 #include "ProxySession.h"
 #include "Http2ClientSession.h"
-#include "Http1ServerSession.h"
+#include "PoolableSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -4948,12 +4948,11 @@ TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
-  TSVConn vconn       = nullptr;
   PoolableSession *ss = reinterpret_cast<PoolableSession *>(ssnp);
   if (ss != nullptr) {
-    vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
+    return reinterpret_cast<TSVConn>(ss->get_netvc());
   }
-  return vconn;
+  return nullptr;
 }
 
 TSVConn
@@ -7851,9 +7850,8 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  *fdp       = -1;
-
+  HttpSM *sm           = reinterpret_cast<HttpSM *>(txnp);
+  *fdp                 = -1;
   TSReturnCode retval  = TS_ERROR;
   ProxyTransaction *ss = sm->get_server_txn();
   if (ss != nullptr) {

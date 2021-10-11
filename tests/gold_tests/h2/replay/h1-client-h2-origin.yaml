@@ -1,0 +1,596 @@
+meta:
+  version: '1.0'
+
+sessions:
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tls
+        version: TLSv1.3
+        sni: data.brian.example.com
+        proxy-verify-mode: 0
+        proxy-provided-cert: true
+      - name: tcp
+      - name: ip
+        version: '4'
+
+    transactions:
+      #
+      # Test 1: Zero length response.
+      #
+      - all: { headers: { fields: [[ uuid, 1 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: GET
+          url: /some/path
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '2'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: GET
+          url: /some/path
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+
+      #
+      # Test 2: Non-zero length response.
+      #
+      - all: { headers: { fields: [[ uuid, 2 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: GET
+          url: /some/path2
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '2'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: GET
+          url: /some/path2
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 16 ]
+          content:
+            encoding: plain
+            size: 16
+
+        proxy-response:
+          version: '1.1'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 16 ]
+          content:
+            encoding: plain
+            size: 16
+
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tls
+        version: TLSv1.3
+        sni: data.brian.example.com
+        proxy-verify-mode: 0
+        proxy-provided-cert: true
+      - name: tcp
+      - name: ip
+        version: '4'
+
+    transactions:
+      #
+      # Test 3: 8 byte post with a 404 response.
+      #
+      - all: { headers: { fields: [[ uuid, 3 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path3
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 8 ]
+          content:
+            encoding: plain
+            size: 8
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '2'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: POST
+          url: /some/path3
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 8 ]
+          content:
+            encoding: plain
+            size: 8
+
+        server-response:
+          version: '2'
+          status: 404
+          reason: "Not Found"
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-response:
+          version: '2'
+          status: 404
+          reason: "Not Found"
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+      #
+      # Test 4: 32 byte POST with a 200 response.
+      #
+      - all: { headers: { fields: [[ uuid, 4 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '2'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+        proxy-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+      #
+      # Test 5: 3200 byte POST with a 200 response.
+      #
+      - all: { headers: { fields: [[ uuid, 12 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 1600 ]
+          content:
+            encoding: plain
+            size: 1600
+
+        proxy-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 1600 ]
+          content:
+            encoding: plain
+            size: 1600
+
+      #
+      # Test 6: large post body small response
+      #
+      - all: { headers: { fields: [[ uuid, 13 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 16 ]
+          content:
+            encoding: plain
+            size: 16
+
+        proxy-response:
+          version: '1.1'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 16 ]
+          content:
+            encoding: plain
+            size: 16
+
+      #
+      # Test 7: small post body large response
+      #
+      - all: { headers: { fields: [[ uuid, 14 ]]}}
+
+        client-request:
+          protocol:
+            - name: http
+              version: '1.1'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '1.1'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+        proxy-request:
+          protocol:
+            - name: http
+              version: '2'
+            - name: tls
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+            - name: tcp
+            - name: ip
+              version: '4'
+
+          version: '2'
+          scheme: https
+          method: POST
+          url: /some/path4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 32 ]
+          content:
+            encoding: plain
+            size: 32
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
+
+        proxy-response:
+          version: '1.1'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 3200 ]
+          content:
+            encoding: plain
+            size: 3200
