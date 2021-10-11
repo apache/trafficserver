@@ -3764,7 +3764,8 @@ HttpTransact::handle_response_from_server(State *s)
 
     TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts.get());
 
-    if (is_request_retryable(s) && s->current.attempts.get() < max_connect_retries) {
+    if (is_request_retryable(s) && s->current.attempts.get() < max_connect_retries &&
+        !HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
       if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {

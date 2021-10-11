@@ -35,7 +35,7 @@
 class Http2Stream;
 class Http2ConnectionState;
 
-typedef Http2DependencyTree::Tree<Http2Stream *> DependencyTree;
+using DependencyTree = Http2DependencyTree::Tree<Http2Stream *>;
 
 enum class Http2StreamMilestone {
   OPEN = 0,
@@ -48,6 +48,8 @@ enum class Http2StreamMilestone {
   LAST_ENTRY,
 };
 
+constexpr bool STREAM_IS_REGISTERED = true;
+
 class Http2Stream : public ProxyTransaction
 {
 public:
@@ -55,13 +57,15 @@ public:
   using super           = ProxyTransaction; ///< Parent type.
 
   Http2Stream() {} // Just to satisfy ClassAllocator
-  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_peer_rwnd, ssize_t initial_local_rwnd);
-  ~Http2Stream();
+  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_peer_rwnd, ssize_t initial_local_rwnd,
+              bool registered_stream);
+  ~Http2Stream() override;
 
   int main_event_handler(int event, void *edata);
 
   void release() override;
   void reenable(VIO *vio) override;
+  void reenable_write();
   void transaction_done() override;
 
   void
@@ -72,17 +76,22 @@ public:
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
 
+  bool expect_send_trailer() const override;
+  void set_expect_send_trailer() override;
+  bool expect_receive_trailer() const override;
+  void set_expect_receive_trailer() override;
+
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
   void send_request(Http2ConnectionState &cstate);
   void initiating_close();
+  bool is_outbound_connection() const;
   void terminate_if_possible();
   void update_read_request(bool send_update);
   void update_write_request(bool send_update);
 
   void signal_read_event(int event);
-  void signal_write_event(int event);
   static constexpr auto CALL_UPDATE = true;
-  void signal_write_event(bool call_update = CALL_UPDATE);
+  void signal_write_event(int event, bool call_update = CALL_UPDATE);
 
   void restart_sending();
   bool push_promise(URL &url, const MIMEField *accept_encoding);
@@ -116,17 +125,31 @@ public:
   bool is_first_transaction() const override;
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
+  void set_transaction_id(int new_id);
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;
+  bool is_read_closed() const override;
+
+  HTTPHdr *
+  get_send_header()
+  {
+    return &_send_header;
+  }
+
+  void read_update(int count);
+  void read_done();
 
   void clear_io_events();
 
   bool is_state_writeable() const;
   bool is_closed() const;
   IOBufferReader *get_data_reader_for_send() const;
+  void set_rx_error_code(ProxyError e) override;
+  void set_tx_error_code(ProxyError e) override;
 
   bool has_request_body(int64_t content_length, bool is_chunked_set) const override;
+  HTTPVersion get_version(HTTPHdr &hdr) const override;
 
   void mark_milestone(Http2StreamMilestone type);
 
@@ -139,15 +162,20 @@ public:
   bool change_state(uint8_t type, uint8_t flags);
   void set_peer_rwnd(Http2WindowSize new_size);
   void set_local_rwnd(Http2WindowSize new_size);
-  bool has_trailing_header() const;
+  bool trailing_header_is_possible() const;
+  void set_trailing_header_is_possible();
   void set_receive_headers(HTTPHdr &h2_headers);
+  void reset_receive_headers();
+  void reset_send_headers();
   MIOBuffer *read_vio_writer() const;
   int64_t read_vio_read_avail();
+  bool read_enabled() const;
 
   //////////////////
   // Variables
   uint8_t *header_blocks        = nullptr;
-  uint32_t header_blocks_length = 0; // total length of header blocks (not include Padding or other fields)
+  uint32_t header_blocks_length = 0; // total length of header blocks (not include
+                                     // Padding or other fields)
 
   bool receive_end_stream = false;
   bool send_end_stream    = false;
@@ -156,10 +184,12 @@ public:
   bool is_first_transaction_flag = false;
 
   HTTPHdr _send_header;
+  IOBufferReader *_send_reader             = nullptr;
   Http2DependencyTree::Node *priority_node = nullptr;
 
+  Http2ConnectionState &get_connection_state();
+
 private:
-  bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_body(bool call_update);
   void _clear_timers();
@@ -180,15 +210,28 @@ private:
 
   HTTPHdr _receive_header;
   MIOBuffer _receive_buffer = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  int64_t read_vio_nbytes;
   VIO read_vio;
   VIO write_vio;
 
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
-  bool is_trailing_header = false;
-  bool has_body           = false;
+  bool _trailing_header_is_possible = false;
+  bool _expect_send_trailer         = false;
+  bool _expect_receive_trailer      = false;
+
+  bool has_body = false;
+
+  /** Whether this is an outbound (toward the origin) connection.
+   *
+   * We store this upon construction as a cached version of the session's
+   * is_outbound() call. In some circumstances we need this value after a
+   * session close in which is_outbound is not accessible.
+   */
+  bool _is_outbound = false;
+
+  /** Whether the stream has been registered with the connection state. */
+  bool _registered_stream = true;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -265,6 +308,12 @@ Http2Stream::get_transaction_id() const
   return _id;
 }
 
+inline void
+Http2Stream::set_transaction_id(int new_id)
+{
+  _id = new_id;
+}
+
 inline Http2StreamState
 Http2Stream::get_state() const
 {
@@ -284,15 +333,35 @@ Http2Stream::set_local_rwnd(Http2WindowSize new_size)
 }
 
 inline bool
-Http2Stream::has_trailing_header() const
+Http2Stream::trailing_header_is_possible() const
 {
-  return is_trailing_header;
+  return _trailing_header_is_possible;
+}
+
+inline void
+Http2Stream::set_trailing_header_is_possible()
+{
+  _trailing_header_is_possible = true;
 }
 
 inline void
 Http2Stream::set_receive_headers(HTTPHdr &h2_headers)
 {
   _receive_header.copy(&h2_headers);
+}
+
+inline void
+Http2Stream::reset_receive_headers()
+{
+  this->_receive_header.destroy();
+  this->_receive_header.create(HTTP_TYPE_RESPONSE);
+}
+
+inline void
+Http2Stream::reset_send_headers()
+{
+  this->_send_header.destroy();
+  this->_send_header.create(HTTP_TYPE_RESPONSE);
 }
 
 // Check entire DATA payload length if content-length: header is exist
@@ -306,6 +375,10 @@ inline bool
 Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _receive_header.get_content_length();
+  if (content_length != 0 && content_length != data_length) {
+    Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
+            static_cast<int>(data_length), _proxy_ssn->connection_id());
+  }
   return content_length == 0 || content_length == data_length;
 }
 
@@ -313,7 +386,8 @@ inline bool
 Http2Stream::is_state_writeable() const
 {
   return _state == Http2StreamState::HTTP2_STREAM_STATE_OPEN || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
-         _state == Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL;
+         _state == Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL ||
+         (this->is_outbound_connection() && _state == Http2StreamState::HTTP2_STREAM_STATE_IDLE);
 }
 
 inline bool
@@ -334,9 +408,27 @@ Http2Stream::read_vio_writer() const
   return this->read_vio.get_writer();
 }
 
+inline bool
+Http2Stream::read_enabled() const
+{
+  return !this->read_vio.is_disabled();
+}
+
 inline void
 Http2Stream::_clear_timers()
 {
   _timeout.cancel_active_timeout();
   _timeout.cancel_inactive_timeout();
+}
+
+inline void
+Http2Stream::read_update(int count)
+{
+  read_vio.ndone += count;
+}
+
+inline void
+Http2Stream::read_done()
+{
+  read_vio.nbytes = read_vio.ndone;
 }

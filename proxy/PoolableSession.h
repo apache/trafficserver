@@ -85,6 +85,7 @@ public:
   bool is_private() const;
 
   virtual void set_netvc(NetVConnection *newvc);
+  virtual bool is_multiplexing() const;
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
@@ -236,4 +237,10 @@ PoolableSession::attach_hostname(const char *hostname)
   if (CRYPTO_HASH_ZERO == hostname_hash) {
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
+}
+
+inline bool
+PoolableSession::is_multiplexing() const
+{
+  return false;
 }
