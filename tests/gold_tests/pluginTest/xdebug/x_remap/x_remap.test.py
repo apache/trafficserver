@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
+
 Test.Summary = '''
 Test xdebug plugin X-Remap, Probe and fwd headers
 '''
@@ -59,10 +61,8 @@ def sendMsg(msgFile):
 
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
-        "( python3 {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
-            Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
-        " ; echo '======' ) | sed 's/:{}/:SERVER_PORT/' >>  {}/out.log 2>&1 ".format(
-            server.Variables.Port, Test.RunDirectory)
+        f"( {sys.executable} {Test.RunDirectory}/tcp_client.py 127.0.0.1 {ts.Variables.port} {Test.TestDirectory}/{msgFile}.in"
+        f" ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  {Test.RunDirectory}/out.log 2>&1 "
     )
     tr.Processes.Default.ReturnCode = 0
 

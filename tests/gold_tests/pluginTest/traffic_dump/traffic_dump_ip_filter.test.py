@@ -18,6 +18,7 @@ Verify traffic_dump IP filter functionality.
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Verify traffic_dump IP filter functionality.
@@ -64,7 +65,7 @@ def get_common_ats_process(name, plugin_command, replay_exists):
 # Common verification variables.
 verify_replay = "verify_replay.py"
 schema = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
-verify_command_prefix = f'python3 {verify_replay} {schema}'
+verify_command_prefix = f'{sys.executable} {verify_replay} {schema}'
 
 #
 # Test 1: Verify -4 works for a specified address.

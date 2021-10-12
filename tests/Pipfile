@@ -35,6 +35,7 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 httpbin = "*"
+psutil = "*"
 
 # Keep init.cli.ext updated with this required microserver version.
 microserver = ">=1.0.6"

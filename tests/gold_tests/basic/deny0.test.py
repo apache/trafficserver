@@ -18,6 +18,8 @@ Test that Trafficserver rejects requests for host 0
 #  limitations under the License.
 
 import os
+import sys
+
 Test.Summary = '''
 Test that Trafficserver rejects requests for host 0
 '''
@@ -61,10 +63,13 @@ def buildMetaTest(testName, requestString):
         tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.StartBefore(redirect_serv, ready=When.PortOpen(redirect_serv.Variables.Port))
         tr.Processes.Default.StartBefore(dns)
-    with open(os.path.join(data_path, tr.Name), 'w') as f:
+
+    requestCommandPath = os.path.join(data_path, tr.Name)
+    with open(requestCommandPath, 'w') as f:
         f.write(requestString)
-    tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | head -1".format(
-        ts.Variables.port, os.path.join(data_dirname, tr.Name))
+    tr.Processes.Default.Command = \
+        (f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} "
+         f"{requestCommandPath} | head -1")
     tr.ReturnCode = 0
     tr.Processes.Default.Streams.stdout = gold_filepath
     tr.StillRunningAfter = ts
