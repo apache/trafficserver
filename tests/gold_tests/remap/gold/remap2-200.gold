@@ -1,0 +1,14 @@
+``
+> GET http://www.example2.com``
+> Host: www.example2.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+< 
+``
