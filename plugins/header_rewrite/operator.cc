@@ -70,3 +70,10 @@ OperatorCookies::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
+
+void
+OperatorBody::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  _value = p.get_arg();
+}

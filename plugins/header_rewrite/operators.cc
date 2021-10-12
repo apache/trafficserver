@@ -677,6 +677,33 @@ OperatorSetHeader::exec(const Resources &res) const
   }
 }
 
+// OperatorSetBody
+void
+OperatorSetBody::initialize(Parser &p)
+{
+  OperatorBody::initialize(p);
+
+  // we want the arg since body only takes one value
+  _value.set_value(p.get_arg());
+}
+
+void
+OperatorSetBody::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+void
+OperatorSetBody::exec(const Resources &res) const
+{
+  std::string value;
+
+  _value.append_value(value, res);
+  char *msg = TSstrdup(_value.get_value().c_str());
+  TSHttpTxnErrorBodySet(res.txnp, msg, _value.size(), nullptr);
+}
+
 // OperatorCounter
 void
 OperatorCounter::initialize(Parser &p)

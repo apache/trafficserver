@@ -650,6 +650,14 @@ rm-cookie
 
 Removes the cookie ``<name>``.
 
+set-body
+~~~~~~~~
+::
+
+  set-body <text>
+
+Sets the body to ``<text>``. Can also be used to delete a body with ``""``
+
 set-config
 ~~~~~~~~~~
 ::
