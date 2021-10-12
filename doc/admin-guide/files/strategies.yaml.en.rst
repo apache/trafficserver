@@ -178,9 +178,9 @@ Each **strategy** in the list may using the following parameters:
    #. **cache_key**: Uses the hash key from the **cachekey** plugin.  defaults to **path** if the **cachekey** plugin is not configured on the **remap**.
    #. **url**: Creates a hash from the entire request url.
 
-- **go_direct**: - A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
+- **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
-- **cache_peer_result**: - A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
+- **cache_peer_result**: A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
 - **scheme**: Indicates which scheme the strategy supports, *http* or *https*
 - **failover**: A map of **failover** information.
 
