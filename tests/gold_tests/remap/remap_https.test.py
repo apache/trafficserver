@@ -57,6 +57,9 @@ ts.Disk.remap_config.AddLine(
     'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 ts.Disk.remap_config.AddLine(
+    'map_with_recv_port https://www.example3.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
+ts.Disk.remap_config.AddLine(
     'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
@@ -99,6 +102,13 @@ tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
+
+# www.example3.com (match on receive port)
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example3.com" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-https-200_3.gold"
 
 # no rule for this
 tr = Test.AddTestRun()

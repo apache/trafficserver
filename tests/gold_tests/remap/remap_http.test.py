@@ -55,6 +55,9 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 ts.Disk.remap_config.AddLine(
+    'map_with_recv_port http://www.example2.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
     'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 ts.Disk.remap_config.AddLine(
@@ -90,6 +93,13 @@ tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.c
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-200.gold"
+
+# www.example2.com host (match on receive port)
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example2.com"  -H "Proxy-Connection: keep-alive" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap2-200.gold"
 
 # www.example.com:80 host
 tr = Test.AddTestRun()
