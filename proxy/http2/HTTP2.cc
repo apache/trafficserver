@@ -84,6 +84,10 @@ static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
 static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
   "proxy.process.http2.max_priority_frames_per_minute_exceeded";
 static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
+static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
+  "proxy.process.http2.max_concurrent_streams_exceeded_in";
+static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME =
+  "proxy.process.http2.max_concurrent_streams_exceeded_out";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -899,6 +903,10 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT), RecRawStatSyncSum);
 
   http2_init();
 }

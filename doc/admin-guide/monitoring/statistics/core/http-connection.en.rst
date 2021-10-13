@@ -256,3 +256,17 @@ HTTP/2
    Represents the total number of closed HTTP/2 connections for not reaching the
    minimum average window increment limit which is configured by
    :ts:cv:`proxy.config.http2.min_avg_window_update`.
+
+.. ts:stat:: global proxy.process.http2.max_concurrent_streams_exceeded_in integer
+   :type: counter
+
+   Represents the number of times an inbound HTTP/2 stream was not created for
+   reaching the maximum number of concurrent streams per inbound connection
+   configured by :ts:cv:`proxy.config.http2.max_concurrent_streams_in`.
+
+.. ts:stat:: global proxy.process.http2.max_concurrent_streams_exceeded_out integer
+   :type: counter
+
+   Represents the number of times an outbound HTTP/2 stream was not created for
+   reaching the maximum number of concurrent streams per outbound connection
+   the client can initiate as specified by the server.
