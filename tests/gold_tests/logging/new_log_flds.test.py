@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Test new log fields
@@ -117,7 +118,7 @@ test_run.Processes.Default.ReturnCode = 0
 # Validate generated log.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 {0} < {1}'.format(
-    os.path.join(Test.TestDirectory, 'new_log_flds_observer.py'),
-    os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'))
+observer_script = os.path.join(Test.TestDirectory, 'new_log_flds_observer.py')
+log_path = os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log')
+tr.Processes.Default.Command = f'{sys.executable} {observer_script} < {log_path}'
 tr.Processes.Default.ReturnCode = 0
