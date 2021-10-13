@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Test combo_handler plugin
@@ -36,7 +37,7 @@ _data_file__file_count = 0
 
 def data_file(data):
     global _data_file__file_count
-    file_path = Test.RunDirectory + "/tcp_client_in_{}".format(_data_file__file_count)
+    file_path = Test.RunDirectory + f"/tcp_client_in_{_data_file__file_count}"
     _data_file__file_count += 1
     with open(file_path, "x") as f:
         f.write(data)
@@ -47,7 +48,7 @@ def data_file(data):
 
 
 def tcp_client_cmd(host, port, file_path):
-    return "python3 {}/tcp_client.py {} {} {}".format(Test.Variables.AtsTestToolsDir, host, port, file_path)
+    return f"{sys.executable} {Test.Variables.AtsTestToolsDir}/tcp_client.py {host} {port} {file_path}"
 
 # Function to return command (string) to run tcp_client.py tool.  'host' and 'port' are the first two parameters to tcp_client.
 # 'data' is the data to put in the data file input to tcp_client.
@@ -100,10 +101,10 @@ ts.Disk.remap_config.AddLine(
     'map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://localhost/127.0.0.1/ http://127.0.0.1:{}/'.format(server.Variables.Port)
+    f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://localhost/sub/ http://127.0.0.1:{}/sub/'.format(server.Variables.Port)
+    f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/'
 )
 
 # Configure the combo_handler's configuration file.

@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Test custom log file format
@@ -162,7 +163,7 @@ buffer_verifier = "pipe_buffer_is_larger_than.py"
 tr.Setup.Copy(buffer_verifier)
 verify_buffer_size = tr.Processes.Process(
     "verify_buffer_size",
-    "python3 {} {} {}".format(buffer_verifier, pipe_path, pipe_size))
+    f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size}")
 verify_buffer_size.Return = 0
 verify_buffer_size.Streams.All += Testers.ContainsExpression(
     "Success",

@@ -18,6 +18,7 @@ Verify support of external log rotation via SIGUSR2.
 #  limitations under the License.
 
 import os
+import sys
 
 
 TRAFFIC_MANAGER_PID_SCRIPT = 'ts_process_handler.py'
@@ -107,8 +108,8 @@ class Sigusr2Test:
         Return the command that will send a USR2 signal to the traffic manager
         process.
         """
-        return r"python3 {} --parent --signal SIGUSR2 {}".format(
-            TRAFFIC_MANAGER_PID_SCRIPT, self._ts_name)
+        return (f"{sys.executable} {TRAFFIC_MANAGER_PID_SCRIPT} --parent "
+                f"--signal SIGUSR2 {self._ts_name}")
 
 
 Test.Summary = '''

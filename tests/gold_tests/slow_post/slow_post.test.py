@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
 
 Test.SkipUnless(
     Condition.PluginExists('request_buffer.so')
@@ -60,8 +61,8 @@ class SlowPostAttack:
 
     def run(self):
         tr = Test.AddTestRun()
-        tr.Processes.Default.Command = 'python3 {0} -p {1} -c {2}'.format(
-            self._slow_post_client, self._ts.Variables.port, self._origin_max_connections)
+        tr.Processes.Default.Command = \
+            f'{sys.executable} {self._slow_post_client} -p {self._ts.Variables.port} -c {self._origin_max_connections}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)
