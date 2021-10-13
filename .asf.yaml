@@ -28,7 +28,8 @@ github:
   protected_branches:
     master:
       required_status_checks:
-        strict: true
+        # strict means "Require branches to be up to date before merging"
+        strict: false
         contexts:
           - AuTest
           - CentOS
