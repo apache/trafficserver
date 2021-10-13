@@ -18,6 +18,8 @@ Test redirection
 #  limitations under the License.
 
 import os
+import sys
+
 Test.Summary = '''
 Test redirection
 '''
@@ -71,10 +73,10 @@ os.makedirs(data_path, exist_ok=True)
 # Here and below: spaces are deliberately omitted from the test run names because autest creates directories using these names.
 tr = Test.AddTestRun("FollowsRedirectWithAbsoluteLocationURI")
 # Here and below: because autest's Copy does not behave like standard cp, it's easiest to write all of our files out and copy last.
-with open(os.path.join(data_path, tr.Name), 'w') as f:
+command_path = os.path.join(data_path, tr.Name)
+with open(command_path, 'w') as f:
     f.write('GET /redirect HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(
-    ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} {command_path} | egrep -v '^(Date: |Server: ATS/)'"
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv)
 tr.Processes.Default.StartBefore(dest_serv)
@@ -92,11 +94,11 @@ redirect_response_header = {"headers": "HTTP/1.1 204 No Content\r\nConnection: c
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 
 tr = Test.AddTestRun("FollowsRedirectWithRelativeLocationURI")
-with open(os.path.join(data_path, tr.Name), 'w') as f:
+command_path = os.path.join(data_path, tr.Name)
+with open(command_path, 'w') as f:
     f.write(
         'GET /redirect-relative-path HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(
-    ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} {command_path} | egrep -v '^(Date: |Server: ATS/)'"
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = redirect_serv
 tr.StillRunningAfter = dest_serv
@@ -111,11 +113,11 @@ redirect_response_header = {"headers": "HTTP/1.1 302 Found\r\nLocation: redirect
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 
 tr = Test.AddTestRun("FollowsRedirectWithRelativeLocationURIMissingLeadingSlash")
-with open(os.path.join(data_path, tr.Name), 'w') as f:
+command_path = os.path.join(data_path, tr.Name)
+with open(command_path, 'w') as f:
     f.write(
         'GET /redirect-relative-path-no-leading-slash HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(
-    ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} {command_path} | egrep -v '^(Date: |Server: ATS/)'"
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = redirect_serv
 tr.StillRunningAfter = dest_serv
@@ -149,12 +151,12 @@ for status, phrase in sorted({
     redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 
     tr = Test.AddTestRun("FollowsRedirect{0}".format(status))
-    with open(os.path.join(data_path, tr.Name), 'w') as f:
+    command_path = os.path.join(data_path, tr.Name)
+    with open(command_path, 'w') as f:
         f.write(('GET /redirect{0} HTTP/1.1\r\n'
                  'Host: iwillredirect.test:{1}\r\n\r\n').
                 format(status, redirect_serv.Variables.Port))
-    tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".\
-        format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+    tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} {command_path} | egrep -v '^(Date: |Server: ATS/)'"
     tr.StillRunningAfter = ts
     tr.StillRunningAfter = redirect_serv
     tr.StillRunningAfter = dest_serv

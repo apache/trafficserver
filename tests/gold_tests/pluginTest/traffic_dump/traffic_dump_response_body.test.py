@@ -18,6 +18,7 @@ Verify traffic_dump response body functionality.
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Verify traffic_dump response body functionality.
@@ -99,7 +100,7 @@ tr.StillRunningAfter = ts
 # Common verification variables.
 verify_replay = "verify_replay.py"
 schema = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
-verify_command_prefix = f'python3 {verify_replay} {schema}'
+verify_command_prefix = f'{sys.executable} {verify_replay} {schema}'
 
 #
 # Verify a response without a body is dumped correctly.
