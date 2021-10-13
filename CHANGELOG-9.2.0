@@ -301,10 +301,19 @@ Changes with Apache Traffic Server 9.2.0
   #8348 - remove unused RecConfigFileEntry from RecConfigParse
   #8354 - Adds support for TCP_NOTSENT_LOWAT sockopt
   #8358 - Locking around SSLSecret::secret_map access
+  #8359 - Fix regex_remap plugin redirection.
   #8360 - Stabilize regex_revalidate Au test.
   #8363 - Added support for promoting internal (plugin-initiated) requests.
   #8364 - Added support for verifying cacheability before attempting to force an object into cache.
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
   #8370 - Traffic Dump: update json-schema for new tuple requirements
+  #8372 - Add Au test for pqsi and pqsp log fields.
   #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
+  #8381 - Fix a potential H2 stall
+  #8388 - body factory does not respect runroot
+  #8392 - Update the feature lists available for autest
+  #8405 - Update CacheWrite.cc
+  #8406 - Fix map_with_recv_port URL remapping type.
+  #8409 - Add stats for concurrent stream limits exceeded
+  #8412 - AuTest: Execute Test Python Scripts with sys.executable
