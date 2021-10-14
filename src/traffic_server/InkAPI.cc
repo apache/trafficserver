@@ -6581,6 +6581,10 @@ TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
     sm->debug_on = data;
     break;
 
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    sm->t_state.api_skip_all_remapping = data;
+    break;
+
   default:
     return TS_ERROR;
     break;
@@ -6619,6 +6623,10 @@ TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
 
   case TS_HTTP_CNTL_TXN_DEBUG:
     return sm->debug_on;
+    break;
+
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    return sm->t_state.api_skip_all_remapping;
     break;
 
   default:

@@ -25,14 +25,14 @@ typedef enum {
   TS_LUA_HTTP_CNTL_REQUEST_CACHEABLE    = TS_HTTP_CNTL_REQUEST_CACHEABLE,
   TS_LUA_HTTP_CNTL_SERVER_NO_STORE      = TS_HTTP_CNTL_SERVER_NO_STORE,
   TS_LUA_HTTP_CNTL_TXN_DEBUG            = TS_HTTP_CNTL_TXN_DEBUG,
-
+  TS_LUA_HTTP_CNTL_SKIP_REMAPPING       = TS_HTTP_CNTL_SKIP_REMAPPING
 } TSLuaHttpCntlType;
 
 ts_lua_var_item ts_lua_http_cntl_type_vars[] = {
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_LOGGING_MODE),       TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE),
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_RESPONSE_CACHEABLE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_REQUEST_CACHEABLE),
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_SERVER_NO_STORE),    TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_TXN_DEBUG),
-};
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_SKIP_REMAPPING)};
 
 static void ts_lua_inject_http_cntl_variables(lua_State *L);
 
@@ -74,7 +74,7 @@ ts_lua_http_cntl_set(lua_State *L)
   cntl_type = luaL_checkinteger(L, 1);
   value     = luaL_checkinteger(L, 2);
 
-  TSHttpTxnCntlSet(http_ctx->txnp, cntl_type, value ? TS_HTTP_CNTL_ON : TS_HTTP_CNTL_OFF);
+  TSHttpTxnCntlSet(http_ctx->txnp, cntl_type, value ? true : false);
 
   return 0;
 }

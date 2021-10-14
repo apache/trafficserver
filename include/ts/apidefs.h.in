@@ -1434,10 +1434,8 @@ typedef enum {
   TS_HTTP_CNTL_REQUEST_CACHEABLE,
   TS_HTTP_CNTL_SERVER_NO_STORE,
   TS_HTTP_CNTL_TXN_DEBUG,
+  TS_HTTP_CNTL_SKIP_REMAPPING
 } TSHttpCntlType;
-
-#define TS_HTTP_CNTL_OFF false
-#define TS_HTTP_CNTL_ON true
 
 #ifdef __cplusplus
 namespace ts
