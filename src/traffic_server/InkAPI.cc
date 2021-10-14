@@ -6577,6 +6577,10 @@ TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
     sm->t_state.api_server_response_no_store = data;
     break;
 
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    sm->debug_on = data;
+    break;
+
   default:
     return TS_ERROR;
     break;
@@ -6611,6 +6615,10 @@ TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
 
   case TS_HTTP_CNTL_SERVER_NO_STORE:
     return sm->t_state.api_server_response_no_store;
+    break;
+
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    return sm->debug_on;
     break;
 
   default:
