@@ -11,6 +11,7 @@ github:
     - cdn
     - cache
     - apache
+    - hacktoberfest
   features:
     # Enable wiki for documentation
     wiki: false
