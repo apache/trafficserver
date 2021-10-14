@@ -6565,6 +6565,18 @@ TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
     sm->t_state.api_info.retry_intercept_failures = data;
     break;
 
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    sm->t_state.api_resp_cacheable = data;
+    break;
+
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    sm->t_state.api_req_cacheable = data;
+    break;
+
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    sm->t_state.api_server_response_no_store = data;
+    break;
+
   default:
     return TS_ERROR;
     break;
@@ -6587,6 +6599,18 @@ TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
 
   case TS_HTTP_CNTL_INTERCEPT_RETRY_MODE:
     return sm->t_state.api_info.retry_intercept_failures;
+    break;
+
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    return sm->t_state.api_resp_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    return sm->t_state.api_req_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    return sm->t_state.api_server_response_no_store;
     break;
 
   default:

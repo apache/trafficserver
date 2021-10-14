@@ -1427,7 +1427,13 @@ typedef enum {
 typedef struct tsapi_uuid *TSUuid;
 
 /* Various HTTP "control" modes */
-typedef enum { TS_HTTP_CNTL_LOGGING_MODE, TS_HTTP_CNTL_INTERCEPT_RETRY_MODE } TSHttpCntlType;
+typedef enum {
+  TS_HTTP_CNTL_LOGGING_MODE,
+  TS_HTTP_CNTL_INTERCEPT_RETRY_MODE,
+  TS_HTTP_CNTL_RESPONSE_CACHEABLE,
+  TS_HTTP_CNTL_REQUEST_CACHEABLE,
+  TS_HTTP_CNTL_SERVER_NO_STORE,
+} TSHttpCntlType;
 
 #define TS_HTTP_CNTL_OFF false
 #define TS_HTTP_CNTL_ON true
