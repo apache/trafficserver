@@ -1,5 +1,5 @@
 Changes with Apache Traffic Server 9.2.0
-  #6609 - Add hook for loading certificate and key data from plugin 
+  #6609 - Add hook for loading certificate and key data from plugin
   #7232 - Fix lua_states_stats Au test.
   #7253 - Don't waste IOBufferBlocks for receiving UDPPackets
   #7279 - Add throttled log functions
@@ -157,7 +157,7 @@ Changes with Apache Traffic Server 9.2.0
   #7962 - Pass through expect header and handle 100-continue response
   #7967 - Tweak QUIC protocol stack support to include TLS.
   #7976 - Be ready to process response headers sent before the post tunnel is finished
-  #7978 - Doc: Update documentation to build cleanly in Sphinx 3. 
+  #7978 - Doc: Update documentation to build cleanly in Sphinx 3
   #7981 - Reject TLS if client offers alpn with no match
   #7992 - Session reuse test with multiple reuses
   #7995 - Add null checks for http_load
@@ -306,7 +306,6 @@ Changes with Apache Traffic Server 9.2.0
   #8363 - Added support for promoting internal (plugin-initiated) requests.
   #8364 - Added support for verifying cacheability before attempting to force an object into cache.
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
-  #8370 - Traffic Dump: update json-schema for new tuple requirements
   #8372 - Add Au test for pqsi and pqsp log fields.
   #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
@@ -316,4 +315,6 @@ Changes with Apache Traffic Server 9.2.0
   #8405 - Update CacheWrite.cc
   #8406 - Fix map_with_recv_port URL remapping type.
   #8409 - Add stats for concurrent stream limits exceeded
+  #8411 - Add set-body to header rewrite
   #8412 - AuTest: Execute Test Python Scripts with sys.executable
+  #8424 - Remove operatorbody class, its not needed at this time
