@@ -681,8 +681,7 @@ OperatorSetHeader::exec(const Resources &res) const
 void
 OperatorSetBody::initialize(Parser &p)
 {
-  OperatorBody::initialize(p);
-
+  Operator::initialize(p);
   // we want the arg since body only takes one value
   _value.set_value(p.get_arg());
 }

@@ -88,25 +88,6 @@ protected:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Base class for all Body based Operators, this is obviously also an
-// Operator interface.
-//
-class OperatorBody : public Operator
-{
-public:
-  OperatorBody() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorBody"); }
-
-  // noncopyable
-  OperatorBody(const OperatorBody &) = delete;
-  void operator=(const OperatorBody &) = delete;
-
-  void initialize(Parser &p) override;
-
-protected:
-  std::string _value;
-};
-
-///////////////////////////////////////////////////////////////////////////////
 // Base class for all Cookie based Operators, this is obviously also an
 // Operator interface.
 //
