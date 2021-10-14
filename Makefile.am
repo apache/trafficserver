@@ -27,7 +27,7 @@ export CCACHE_BASEDIR
 # and mgmt, hence we have to build proxy/hdrs first.
 
 # depends on the generates ts/ts.h include file.
-SUBDIRS = src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs include tests
+SUBDIRS = include src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs tests
 
 if BUILD_DOCS
 SUBDIRS += doc include
