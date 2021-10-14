@@ -2248,6 +2248,8 @@ AC_CONFIG_FILES([
   include/ts/Makefile
   include/tscpp/api/Makefile
   include/tscpp/util/Makefile
+  include/ts/apidefs.h
+  include/tscore/ink_config.h
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
@@ -2262,8 +2264,6 @@ AC_CONFIG_FILES([
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
-  include/ts/apidefs.h
-  include/tscore/ink_config.h
   src/wccp/Makefile
   lib/fastlz/Makefile
   lib/yamlcpp/Makefile
