@@ -86,6 +86,7 @@ src/tscore/ink_autoconf.h.in
 include/tscore/ink_config.h
 include/ts/apidefs.h
 src/tscore/CompileParseRules
+src/tscore/CompileParseRules.dSYM
 src/tscore/ParseRulesCType
 src/tscore/ParseRulesCTypeToLower
 src/tscore/ParseRulesCTypeToUpper
