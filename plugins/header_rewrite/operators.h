@@ -405,7 +405,7 @@ protected:
   void exec(const Resources &res) const override;
 };
 
-class OperatorSetBody : public OperatorBody
+class OperatorSetBody : public Operator
 {
 public:
   OperatorSetBody() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetBody"); }
