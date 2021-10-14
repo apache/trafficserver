@@ -157,7 +157,7 @@ Strategies definitions
 The **strategies** namespace defines a **YAML** list of strategies that may be applied to a **remap**
 entry using the **@strategy** tag in remap.config.
 
-Each **strategy** in the list may using the following parameters::
+Each **strategy** in the list may using the following parameters:
 
 - **strategy**: The value is the name of the strategy.
 - **policy**: The algorithm the **strategy** uses to select hosts. Currently one of the following:
@@ -178,13 +178,14 @@ Each **strategy** in the list may using the following parameters::
    #. **cache_key**: Uses the hash key from the **cachekey** plugin.  defaults to **path** if the **cachekey** plugin is not configured on the **remap**.
    #. **url**: Creates a hash from the entire request url.
 
-- **go_direct** - A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
+- **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
-- **cache_peer_result** - A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
-- **scheme** Indicates which scheme the strategy supports, *http* or *https*
-  - **failover**: A map of **failover** information.
+- **cache_peer_result**: A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
+- **scheme**: Indicates which scheme the strategy supports, *http* or *https*
+- **failover**: A map of **failover** information.
+
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
-  - **max_unavailable_retries Part of the **failover** map and is an integer value of the maximum number of retries for a **unavailable retry** on the list of indicated markdown response codes.  **unavailable retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the markdown response codes configured for this strategy in the **failover** map.  If no failover markdown response codes are configured, no **unavailable retry** is attempted.  **unavailable retry** differs from **simple retry** in that if a failover for retry is done, the previously retried server is marked down for rety.
+  - **max_unavailable_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **unavailable retry** on the list of indicated markdown response codes.  **unavailable retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the markdown response codes configured for this strategy in the **failover** map.  If no failover markdown response codes are configured, no **unavailable retry** is attempted.  **unavailable retry** differs from **simple retry** in that if a failover for retry is done, the previously retried server is marked down for rety.
 
   - **ring_mode**: Part of the **failover** map. The host ring selection mode.  Use either **exhaust_ring**,  **alternate_ring** or **peering_ring**
 
@@ -219,7 +220,7 @@ Example:
       groups:
         - *g1
         - *g2
-      scheme http
+      scheme: http
       failover:
         ring_mode: exhaust_ring
         response_codes:
@@ -235,7 +236,7 @@ Example:
       groups:
         - *g1
         - *g2
-      scheme http
+      scheme: http
       failover:
         ring_mode: exhaust_ring
         response_codes:
