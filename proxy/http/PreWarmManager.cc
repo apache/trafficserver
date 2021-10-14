@@ -281,7 +281,7 @@ PreWarmSM::state_dns_lookup(int event, void *data)
     IpEndpoint addr;
 
     ats_ip_copy(addr, info->ip());
-    addr.port() = htons(_dst->port);
+    addr.network_order_port() = htons(_dst->port);
 
     if (is_debug_tag_set("v_prewarm_sm")) {
       char addrbuf[INET6_ADDRPORTSTRLEN];

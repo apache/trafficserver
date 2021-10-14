@@ -1395,7 +1395,7 @@ int
 LogAccess::marshal_client_host_port(char *buf)
 {
   if (buf) {
-    uint16_t port = ntohs(m_http_sm->t_state.client_info.src_addr.port());
+    uint16_t port = m_http_sm->t_state.client_info.src_addr.host_order_port();
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -2274,7 +2274,8 @@ int
 LogAccess::marshal_proxy_req_server_port(char *buf)
 {
   if (buf) {
-    uint16_t port = ntohs(m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->src_addr.port() : 0);
+    uint16_t port =
+      m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->src_addr.host_order_port() : 0;
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -2290,7 +2291,8 @@ int
 LogAccess::marshal_next_hop_port(char *buf)
 {
   if (buf) {
-    uint16_t port = ntohs(m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->dst_addr.port() : 0);
+    uint16_t port =
+      m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->dst_addr.host_order_port() : 0;
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
