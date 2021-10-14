@@ -318,3 +318,4 @@ Changes with Apache Traffic Server 9.2.0
   #8411 - Add set-body to header rewrite
   #8412 - AuTest: Execute Test Python Scripts with sys.executable
   #8424 - Remove operatorbody class, its not needed at this time
+  #8427 - Make sure the include files are built first
