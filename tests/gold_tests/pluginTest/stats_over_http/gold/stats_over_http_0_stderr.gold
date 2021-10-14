@@ -1,0 +1,11 @@
+``
+> GET /_stats HTTP/1.1
+``
+< HTTP/1.1 200 Ok
+< Content-Type: text/json
+< Cache-Control: no-cache
+< Date:``
+< Age:``
+< Transfer-Encoding: chunked
+< Connection:``
+``
