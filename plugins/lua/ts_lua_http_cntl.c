@@ -19,15 +19,12 @@
 #include "ts_lua_util.h"
 
 typedef enum {
-  TS_LUA_HTTP_CNTL_GET_LOGGING_MODE         = TS_HTTP_CNTL_GET_LOGGING_MODE,
-  TS_LUA_HTTP_CNTL_SET_LOGGING_MODE         = TS_HTTP_CNTL_SET_LOGGING_MODE,
-  TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE = TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE,
-  TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE = TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+  TS_LUA_HTTP_CNTL_LOGGING_MODE         = TS_HTTP_CNTL_LOGGING_MODE,
+  TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE = TS_HTTP_CNTL_INTERCEPT_RETRY_MODE,
 } TSLuaHttpCntlType;
 
-ts_lua_var_item ts_lua_http_cntl_type_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_GET_LOGGING_MODE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_SET_LOGGING_MODE),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE)};
+ts_lua_var_item ts_lua_http_cntl_type_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_LOGGING_MODE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE)};
 
 static void ts_lua_inject_http_cntl_variables(lua_State *L);
 
@@ -69,7 +66,7 @@ ts_lua_http_cntl_set(lua_State *L)
   cntl_type = luaL_checkinteger(L, 1);
   value     = luaL_checkinteger(L, 2);
 
-  TSHttpTxnCntl(http_ctx->txnp, cntl_type, value ? TS_HTTP_CNTL_ON : TS_HTTP_CNTL_OFF);
+  TSHttpTxnCntlSet(http_ctx->txnp, cntl_type, value ? TS_HTTP_CNTL_ON : TS_HTTP_CNTL_OFF);
 
   return 0;
 }
@@ -85,7 +82,7 @@ ts_lua_http_cntl_get(lua_State *L)
 
   cntl_type = luaL_checkinteger(L, 1);
 
-  TSHttpTxnCntl(http_ctx->txnp, cntl_type, &value);
+  value = (int64_t)TSHttpTxnCntlGet(http_ctx->txnp, cntl_type);
 
   lua_pushnumber(L, value);
 

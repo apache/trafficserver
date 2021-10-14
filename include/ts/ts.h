@@ -2716,7 +2716,8 @@ tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHo
 /*
  * Set or get various HTTP Transaction control settings.
  */
-tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
+tsapi bool TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl);
+tsapi TSReturnCode TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType ctrl, bool data);
 
 #ifdef __cplusplus
 }
