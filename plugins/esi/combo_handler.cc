@@ -495,8 +495,8 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
           InterceptData *int_data = new InterceptData(contp);
           TSContDataSet(contp, int_data);
           // todo: check if these two cacheable sets are required
-          TSHttpTxnReqCacheableSet(txnp, 1);
-          TSHttpTxnRespCacheableSet(txnp, 1);
+          TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, true);
+          TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, true);
           getClientRequest(txnp, bufp, hdr_loc, url_loc, int_data->creq);
           LOG_DEBUG("Setup server intercept to handle client request");
         }

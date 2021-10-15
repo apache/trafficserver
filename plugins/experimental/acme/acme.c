@@ -269,7 +269,7 @@ acme_hook(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
       goto cleanup;
     }
 
-    TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true); /* not strictly necessary, but speed is everything these days */
 
     /* This request is for us -- register our intercept */
     icontp = TSContCreate(acme_intercept, TSMutexCreate());
