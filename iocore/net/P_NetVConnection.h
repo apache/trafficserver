@@ -85,7 +85,7 @@ NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) cons
 {
   const IpEndpoint &addr = (src_or_dst == ProxyProtocolData::SRC ? pp_info.src_addr : pp_info.dst_addr);
 
-  if ((addr.isValid() && addr.port() != 0) || (ats_is_ip4(&addr) && INADDR_ANY != ats_ip4_addr_cast(&addr)) // IPv4
+  if ((addr.isValid() && addr.network_order_port() != 0) || (ats_is_ip4(&addr) && INADDR_ANY != ats_ip4_addr_cast(&addr)) // IPv4
       || (ats_is_ip6(&addr) && !IN6_IS_ADDR_UNSPECIFIED(&addr.sin6.sin6_addr))) {
     return &addr.sa;
   }

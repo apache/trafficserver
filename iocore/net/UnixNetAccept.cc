@@ -267,13 +267,14 @@ NetAccept::do_listen(bool non_blocking)
 
   if (server.fd != NO_FD) {
     if ((res = server.setup_fd_for_listen(non_blocking, opt))) {
-      Warning("unable to listen on main accept port %d: errno = %d, %s", ntohs(server.accept_addr.port()), errno, strerror(errno));
+      Warning("unable to listen on main accept port %d: errno = %d, %s", server.accept_addr.host_order_port(), errno,
+              strerror(errno));
       goto Lretry;
     }
   } else {
   Lretry:
     if ((res = server.listen(non_blocking, opt))) {
-      Warning("unable to listen on port %d: %d %d, %s", ntohs(server.accept_addr.port()), res, errno, strerror(errno));
+      Warning("unable to listen on port %d: %d %d, %s", server.accept_addr.host_order_port(), res, errno, strerror(errno));
     }
   }
 

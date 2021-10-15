@@ -570,7 +570,7 @@ QUICPreferredAddress::store(uint8_t *buf, uint16_t &len) const
 QUICFiveTuple::QUICFiveTuple(IpEndpoint src, IpEndpoint dst, int protocol) : _source(src), _destination(dst), _protocol(protocol)
 {
   // FIXME Generate a hash code
-  this->_hash_code = src.port() + dst.port() + protocol;
+  this->_hash_code = src.network_order_port() + dst.network_order_port() + protocol;
 }
 void
 QUICFiveTuple::update(IpEndpoint src, IpEndpoint dst, int protocol)
@@ -580,7 +580,7 @@ QUICFiveTuple::update(IpEndpoint src, IpEndpoint dst, int protocol)
   this->_protocol    = protocol;
 
   // FIXME Generate a hash code
-  this->_hash_code = src.port() + dst.port() + protocol;
+  this->_hash_code = src.network_order_port() + dst.network_order_port() + protocol;
 }
 
 IpEndpoint

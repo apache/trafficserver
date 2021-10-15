@@ -5032,7 +5032,7 @@ HttpSM::do_http_server_open(bool raw)
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action.is_empty());
-  ink_assert(t_state.current.server->dst_addr.port() != 0);
+  ink_assert(t_state.current.server->dst_addr.network_order_port() != 0);
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   SMDebug("http", "[%" PRId64 "] open connection to %s: %s", sm_id, t_state.current.server->name,

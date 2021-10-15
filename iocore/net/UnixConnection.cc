@@ -134,8 +134,8 @@ Connection::open(NetVCOptions const &opt)
     // No local address specified, so use family option if possible.
     family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
     local_addr.setToAnyAddr(family);
-    is_any_address    = true;
-    local_addr.port() = htons(opt.local_port);
+    is_any_address                  = true;
+    local_addr.network_order_port() = htons(opt.local_port);
   }
 
   res = socketManager.socket(family, sock_type, 0);
@@ -196,7 +196,7 @@ Connection::open(NetVCOptions const &opt)
   // apply dynamic options
   apply_options(opt);
 
-  if (local_addr.port() || !is_any_address) {
+  if (local_addr.network_order_port() || !is_any_address) {
     if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       return -errno;
     }
