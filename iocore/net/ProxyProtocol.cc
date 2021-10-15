@@ -189,7 +189,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
           static_cast<int>(token.size()), token.data());
     return 0;
   }
-  pp_info->src_addr.port() = htons(src_port);
+  pp_info->src_addr.network_order_port() = htons(src_port);
 
   // Next is the TCP destination port represented as a decimal number in the range of [0..65535] inclusive.
   // Final trailer is CR LF so split at CR.
@@ -205,7 +205,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
           static_cast<int>(token.size()), token.data());
     return 0;
   }
-  pp_info->dst_addr.port() = htons(dst_port);
+  pp_info->dst_addr.network_order_port() = htons(dst_port);
 
   pp_info->version = ProxyProtocolVersion::V1;
 

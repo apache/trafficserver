@@ -106,7 +106,7 @@ union IpEndpoint {
   );
   /// Assign from an @a addr and @a port.
   self &assign(IpAddr const &addr, ///< Address and address family.
-               in_port_t port = 0  ///< Port (network order).
+               in_port_t port = 0  ///< Port (network byte order).
   );
 
   /// Test for valid IP address.
@@ -129,11 +129,11 @@ union IpEndpoint {
   self &setToLoopback(int family ///< Address family.
   );
 
-  /// Port in network order.
-  in_port_t &port();
-  /// Port in network order.
-  in_port_t port() const;
-  /// Port in host order.
+  /// Port in network byte order.
+  in_port_t &network_order_port();
+  /// Port in network byte order.
+  in_port_t network_order_port() const;
+  /// Port in host byte order.
   in_port_t host_order_port() const;
 
   operator sockaddr *() { return &sa; }
@@ -436,7 +436,7 @@ ats_ip_addr_size(IpEndpoint const *addr ///< Address object.
 }
 
 /** Get a reference to the port in an address.
-    @note Because this is direct access, the port value is in network order.
+    @note Because this is direct access, the port value is in network byte order.
     @see ats_ip_port_host_order.
     @return A reference to the port value in an IPv4 or IPv6 address.
     @internal This is primarily for internal use but it might be handy for
@@ -468,7 +468,7 @@ ats_ip_port_cast(IpEndpoint *ip)
 
     If this is not an IPv4 address a zero valued address is returned.
     @note This is direct access to the address so it will be in
-    network order.
+    network byte order.
 
     @return A reference to the IPv4 address in @a addr.
 */
@@ -483,7 +483,7 @@ ats_ip4_addr_cast(sockaddr *addr)
 
     If this is not an IPv4 address a zero valued address is returned.
     @note This is direct access to the address so it will be in
-    network order.
+    network byte order.
 
     @return A reference to the IPv4 address in @a addr.
 */
@@ -498,7 +498,7 @@ ats_ip4_addr_cast(sockaddr const *addr)
 
     If this is not an IPv4 address a zero valued address is returned.
     @note This is direct access to the address so it will be in
-    network order.
+    network byte order.
     @note Convenience overload.
 
     @return A reference to the IPv4 address in @a addr.
@@ -513,7 +513,7 @@ ats_ip4_addr_cast(IpEndpoint *ip)
 
     If this is not an IPv4 address a zero valued address is returned.
     @note This is direct access to the address so it will be in
-    network order.
+    network byte order.
     @note Convenience overload.
 
     @return A reference to the IPv4 address in @a addr.
@@ -528,7 +528,7 @@ ats_ip4_addr_cast(IpEndpoint const *ip)
 
     If this is not an IPv6 address a zero valued address is returned.
     @note This is direct access to the address so it will be in
-    network order.
+    network byte order.
 
     @return A reference to the IPv6 address in @a addr.
 */
@@ -778,8 +778,8 @@ ats_ip_copy(sockaddr *dst, IpEndpoint const *src)
     Non-IP < IPv4 < IPv6
 
      - all non-IP addresses are the same ( including @c AF_UNSPEC )
-     - IPv4 addresses are compared numerically (host order)
-     - IPv6 addresses are compared byte wise in network order (MSB to LSB)
+     - IPv4 addresses are compared numerically (host byte order)
+     - IPv6 addresses are compared byte wise in network byte order (MSB to LSB)
 
     @return
       - -1 if @a lhs is less than @a rhs.
@@ -886,7 +886,7 @@ ats_ip_addr_port_eq(sockaddr const *lhs, sockaddr const *rhs)
 //@}
 
 /// Get IP TCP/UDP port.
-/// @return The port in host order for an IPv4 or IPv6 address,
+/// @return The port in host byte order for an IPv4 or IPv6 address,
 /// or zero if neither.
 inline in_port_t
 ats_ip_port_host_order(sockaddr const *addr ///< Address with port.
@@ -898,7 +898,7 @@ ats_ip_port_host_order(sockaddr const *addr ///< Address with port.
 }
 
 /// Get IP TCP/UDP port.
-/// @return The port in host order for an IPv4 or IPv6 address,
+/// @return The port in host byte order for an IPv4 or IPv6 address,
 /// or zero if neither.
 inline in_port_t
 ats_ip_port_host_order(IpEndpoint const *ip ///< Address with port.
@@ -910,7 +910,7 @@ ats_ip_port_host_order(IpEndpoint const *ip ///< Address with port.
 }
 
 /** Extract the IPv4 address.
-    @return Host order IPv4 address.
+    @return Host byte order IPv4 address.
 */
 inline in_addr_t
 ats_ip4_addr_host_order(sockaddr const *addr ///< Address object.
@@ -922,8 +922,8 @@ ats_ip4_addr_host_order(sockaddr const *addr ///< Address object.
 /// Write IPv4 data to storage @a dst.
 inline sockaddr *
 ats_ip4_set(sockaddr_in *dst,  ///< Destination storage.
-            in_addr_t addr,    ///< address, IPv4 network order.
-            in_port_t port = 0 ///< port, network order.
+            in_addr_t addr,    ///< address, IPv4 network byte order.
+            in_port_t port = 0 ///< port, network byte order.
 )
 {
   ink_zero(*dst);
@@ -941,8 +941,8 @@ ats_ip4_set(sockaddr_in *dst,  ///< Destination storage.
 */
 inline sockaddr *
 ats_ip4_set(IpEndpoint *dst,   ///< Destination storage.
-            in_addr_t ip4,     ///< address, IPv4 network order.
-            in_port_t port = 0 ///< port, network order.
+            in_addr_t ip4,     ///< address, IPv4 network byte order.
+            in_port_t port = 0 ///< port, network byte order.
 )
 {
   return ats_ip4_set(&dst->sin, ip4, port);
@@ -955,8 +955,8 @@ ats_ip4_set(IpEndpoint *dst,   ///< Destination storage.
 */
 inline sockaddr *
 ats_ip4_set(sockaddr *dst,     ///< Destination storage.
-            in_addr_t ip4,     ///< address, IPv4 network order.
-            in_port_t port = 0 ///< port, network order.
+            in_addr_t ip4,     ///< address, IPv4 network byte order.
+            in_port_t port = 0 ///< port, network byte order.
 )
 {
   return ats_ip4_set(ats_ip4_cast(dst), ip4, port);
@@ -966,8 +966,8 @@ ats_ip4_set(sockaddr *dst,     ///< Destination storage.
  */
 inline sockaddr *
 ats_ip6_set(sockaddr_in6 *dst,    ///< Destination storage.
-            in6_addr const &addr, ///< address in network order.
-            in_port_t port = 0    ///< Port, network order.
+            in6_addr const &addr, ///< address in network byte order.
+            in_port_t port = 0    ///< Port, network byte order.
 )
 {
   ink_zero(*dst);
@@ -984,8 +984,8 @@ ats_ip6_set(sockaddr_in6 *dst,    ///< Destination storage.
  */
 inline sockaddr *
 ats_ip6_set(sockaddr *dst,        ///< Destination storage.
-            in6_addr const &addr, ///< address in network order.
-            in_port_t port = 0    ///< Port, network order.
+            in6_addr const &addr, ///< address in network byte order.
+            in_port_t port = 0    ///< Port, network byte order.
 )
 {
   return ats_ip6_set(ats_ip6_cast(dst), addr, port);
@@ -995,8 +995,8 @@ ats_ip6_set(sockaddr *dst,        ///< Destination storage.
  */
 inline sockaddr *
 ats_ip6_set(IpEndpoint *dst,      ///< Destination storage.
-            in6_addr const &addr, ///< address in network order.
-            in_port_t port = 0    ///< Port, network order.
+            in6_addr const &addr, ///< address in network byte order.
+            in_port_t port = 0    ///< Port, network byte order.
 )
 {
   return ats_ip6_set(&dst->sin6, addr, port);
@@ -1203,7 +1203,7 @@ struct IpAddr {
     return this->assign(&ip.sa);
   }
   /// Assign from IPv4 raw address.
-  /// @param ip Network order IPv4 address.
+  /// @param ip Network byte order IPv4 address.
   self &operator=(in_addr_t ip);
 
   /// Assign from IPv6 raw address.
@@ -1263,7 +1263,7 @@ struct IpAddr {
   int cmp(self const &that) const;
 
   /** Return a normalized hash value.
-      - Ipv4: the address in host order.
+      - Ipv4: the address in host byte order.
       - Ipv6: folded 32 bit of the address.
       - Else: 0.
   */
@@ -1480,7 +1480,7 @@ IpAddr::hash() const
 /// @return @s dst.
 sockaddr *ats_ip_set(sockaddr *dst,      ///< Destination storage.
                      IpAddr const &addr, ///< source address.
-                     in_port_t port = 0  ///< port, network order.
+                     in_port_t port = 0  ///< port, network byte order.
 );
 
 /** Convert @a text to an IP address and write it to @a addr.
@@ -1512,13 +1512,13 @@ IpEndpoint::assign(sockaddr const *ip)
 }
 
 inline in_port_t &
-IpEndpoint::port()
+IpEndpoint::network_order_port()
 {
   return ats_ip_port_cast(&sa);
 }
 
 inline in_port_t
-IpEndpoint::port() const
+IpEndpoint::network_order_port() const
 {
   return ats_ip_port_cast(&sa);
 }
@@ -1526,7 +1526,7 @@ IpEndpoint::port() const
 inline in_port_t
 IpEndpoint::host_order_port() const
 {
-  return ntohs(this->port());
+  return ntohs(this->network_order_port());
 }
 
 inline bool

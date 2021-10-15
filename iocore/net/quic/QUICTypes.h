@@ -468,11 +468,13 @@ public:
   inline bool
   operator==(const QUICPath &x) const
   {
-    if ((this->_local_ep.port() != 0 && x._local_ep.port() != 0) && this->_local_ep.port() != x._local_ep.port()) {
+    if ((this->_local_ep.network_order_port() != 0 && x._local_ep.network_order_port() != 0) &&
+        this->_local_ep.network_order_port() != x._local_ep.network_order_port()) {
       return false;
     }
 
-    if ((this->_remote_ep.port() != 0 && x._remote_ep.port() != 0) && this->_remote_ep.port() != x._remote_ep.port()) {
+    if ((this->_remote_ep.network_order_port() != 0 && x._remote_ep.network_order_port() != 0) &&
+        this->_remote_ep.network_order_port() != x._remote_ep.network_order_port()) {
       return false;
     }
 
@@ -498,7 +500,7 @@ public:
   std::size_t
   operator()(const QUICPath &k) const
   {
-    return k.remote_ep().port();
+    return k.remote_ep().network_order_port();
   }
 };
 

@@ -5925,8 +5925,8 @@ TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm                              = reinterpret_cast<HttpSM *>(txnp);
-  sm->t_state.client_info.dst_addr.port() = htons(port);
+  HttpSM *sm                                            = reinterpret_cast<HttpSM *>(txnp);
+  sm->t_state.client_info.dst_addr.network_order_port() = htons(port);
 }
 
 // [amc] This might use the port. The code path should do that but it
