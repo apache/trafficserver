@@ -68,7 +68,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
               // transaction is terminated early.
               TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
             }
-            TSHttpTxnServerRespNoStoreSet(txnp, 1);
+            TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
           }
           break;
         default:

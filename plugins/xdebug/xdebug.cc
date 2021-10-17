@@ -644,7 +644,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
       } else if (header_field_eq("diags", value, vsize)) {
         // Enable diagnostics for DebugTxn()'s only
-        TSHttpTxnDebugSet(txn, 1);
+        TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_TXN_DEBUG, true);
 
       } else if (header_field_eq("probe", value, vsize)) {
         xheaders |= XHEADER_X_PROBE_HEADERS;
@@ -661,9 +661,9 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         TSHttpTxnHookAdd(txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 
         // disable writing to cache because we are injecting data into the body.
-        TSHttpTxnReqCacheableSet(txn, 0);
-        TSHttpTxnRespCacheableSet(txn, 0);
-        TSHttpTxnServerRespNoStoreSet(txn, 1);
+        TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);
+        TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_REQUEST_CACHEABLE, false);
+        TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_SERVER_NO_STORE, true);
         TSHttpTxnTransformedRespCache(txn, 0);
         TSHttpTxnUntransformedRespCache(txn, 0);
 

@@ -356,8 +356,8 @@ setupServerIntercept(TSHttpTxn txnp)
   SContData *cont_data = new SContData(contp);
   TSContDataSet(contp, cont_data);
   TSHttpTxnServerIntercept(contp, txnp);
-  TSHttpTxnReqCacheableSet(txnp, 1);
-  TSHttpTxnRespCacheableSet(txnp, 1);
+  TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, true);
+  TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, true);
   TSDebug(DEBUG_TAG, "[%s] Setup server intercept successfully", __FUNCTION__);
   return true;
 }

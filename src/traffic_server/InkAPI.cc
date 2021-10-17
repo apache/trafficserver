@@ -6549,68 +6549,91 @@ TSHttpTxnStatusGet(TSHttpTxn txnp)
   return static_cast<TSHttpStatus>(sm->t_state.http_return_code);
 }
 
-/* control channel for HTTP */
 TSReturnCode
-TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
+TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *)txnp;
 
   switch (cntl) {
-  case TS_HTTP_CNTL_GET_LOGGING_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
-
-    intptr_t *rptr = static_cast<intptr_t *>(data);
-
-    if (sm->t_state.api_info.logging_enabled) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
-
-    return TS_SUCCESS;
-  }
-
-  case TS_HTTP_CNTL_SET_LOGGING_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.logging_enabled = (bool)data;
-      return TS_SUCCESS;
-    }
+  case TS_HTTP_CNTL_LOGGING_MODE:
+    sm->t_state.api_info.logging_enabled = data;
     break;
 
-  case TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
+  case TS_HTTP_CNTL_INTERCEPT_RETRY_MODE:
+    sm->t_state.api_info.retry_intercept_failures = data;
+    break;
 
-    intptr_t *rptr = static_cast<intptr_t *>(data);
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    sm->t_state.api_resp_cacheable = data;
+    break;
 
-    if (sm->t_state.api_info.retry_intercept_failures) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    sm->t_state.api_req_cacheable = data;
+    break;
 
-    return TS_SUCCESS;
-  }
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    sm->t_state.api_server_response_no_store = data;
+    break;
 
-  case TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.retry_intercept_failures = (bool)data;
-      return TS_SUCCESS;
-    }
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    sm->debug_on = data;
+    break;
+
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    sm->t_state.api_skip_all_remapping = data;
+    break;
+
   default:
     return TS_ERROR;
+    break;
   }
 
-  return TS_ERROR;
+  return TS_SUCCESS;
+}
+
+bool
+TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+
+  switch (ctrl) {
+  case TS_HTTP_CNTL_LOGGING_MODE:
+    return sm->t_state.api_info.logging_enabled;
+    break;
+
+  case TS_HTTP_CNTL_INTERCEPT_RETRY_MODE:
+    return sm->t_state.api_info.retry_intercept_failures;
+    break;
+
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    return sm->t_state.api_resp_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    return sm->t_state.api_req_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    return sm->t_state.api_server_response_no_store;
+    break;
+
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    return sm->debug_on;
+    break;
+
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    return sm->t_state.api_skip_all_remapping;
+    break;
+
+  default:
+    break;
+  }
+
+  return false; // Unknown here, but oh well.
 }
 
 /* This is kinda horky, we have to use TSServerState instead of
