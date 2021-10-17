@@ -227,9 +227,9 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
               } else {
                 ERROR_LOG("failed to change the cache url to '%s'", cache_key_url);
                 ERROR_LOG("Disabling cache for this transaction to avoid cache poisoning.");
-                TSHttpTxnServerRespNoStoreSet(txnp, 1);
-                TSHttpTxnRespCacheableSet(txnp, 0);
-                TSHttpTxnReqCacheableSet(txnp, 0);
+                TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
+                TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);
+                TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, false);
               }
             }
 
@@ -388,7 +388,7 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
       }
     } else if (TS_HTTP_STATUS_OK == status) {
       DEBUG_LOG("The origin does not support range requests, attempting to disable cache write.");
-      if (TS_SUCCESS == TSHttpTxnServerRespNoStoreSet(txnp, 1)) {
+      if (TS_SUCCESS == TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true)) {
         DEBUG_LOG("Cache write has been disabled for this transaction.");
       } else {
         DEBUG_LOG("Unable to disable cache write for this transaction.");

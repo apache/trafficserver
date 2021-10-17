@@ -592,7 +592,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
     goto notforme;
   }
 
-  TSSkipRemappingSet(txnp, 1); // not strictly necessary, but speed is everything these days
+  TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true); // not strictly necessary, but speed is everything these days
 
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");

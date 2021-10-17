@@ -1427,6 +1427,17 @@ typedef enum {
 #define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 
+/* Various HTTP "control" modes */
+typedef enum {
+  TS_HTTP_CNTL_LOGGING_MODE,
+  TS_HTTP_CNTL_INTERCEPT_RETRY_MODE,
+  TS_HTTP_CNTL_RESPONSE_CACHEABLE,
+  TS_HTTP_CNTL_REQUEST_CACHEABLE,
+  TS_HTTP_CNTL_SERVER_NO_STORE,
+  TS_HTTP_CNTL_TXN_DEBUG,
+  TS_HTTP_CNTL_SKIP_REMAPPING
+} TSHttpCntlType;
+
 #ifdef __cplusplus
 namespace ts
 {

@@ -113,7 +113,7 @@ cont_handle_cache(TSCont contp, TSEvent event, void *edata)
     if (requested) // Made a background fetch request, do not cache the response
     {
       TSDebug(PLUGIN_NAME, "setting no store");
-      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
       TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_MISS);
     }
 

@@ -38,6 +38,8 @@ build/ltsugar.m4
 build/ltversion.m4
 build/lt~obsolete.m4
 
+BUILD
+
 Makefile
 Makefile-pl
 config.cache

@@ -601,7 +601,7 @@ ts_lua_http_set_debug(lua_State *L)
   value = luaL_checkinteger(L, 1);
 
   TSDebug(TS_LUA_DEBUG_TAG, "set debug");
-  TSHttpTxnDebugSet(http_ctx->txnp, value);
+  TSHttpTxnCntlSet(http_ctx->txnp, TS_HTTP_CNTL_TXN_DEBUG, (value != 0));
 
   return 0;
 }

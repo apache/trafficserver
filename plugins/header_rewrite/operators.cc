@@ -562,7 +562,7 @@ void
 OperatorSkipRemap::exec(const Resources &res) const
 {
   TSDebug(PLUGIN_NAME, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
-  TSSkipRemappingSet(res.txnp, _skip_remap ? 1 : 0);
+  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
 }
 
 // OperatorRMHeader
@@ -1025,5 +1025,5 @@ OperatorSetDebug::initialize_hooks()
 void
 OperatorSetDebug::exec(const Resources &res) const
 {
-  TSHttpTxnDebugSet(res.txnp, 1);
+  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
 }

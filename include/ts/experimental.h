@@ -73,23 +73,6 @@ int64_t TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop);
 tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
 tsapi TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
 
-/* Various HTTP "control" modes */
-typedef enum {
-  TS_HTTP_CNTL_GET_LOGGING_MODE,
-  TS_HTTP_CNTL_SET_LOGGING_MODE,
-  TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE,
-  TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
-} TSHttpCntlType;
-
-#define TS_HTTP_CNTL_OFF (void *)0
-#define TS_HTTP_CNTL_ON (void *)1
-/* usage:
-   void *onoff = 0;
-   TSHttpTxnCntl(.., TS_HTTP_CNTL_GET_LOGGING_MODE, &onoff);
-   if (onoff == TS_HTTP_CNTL_ON) ....
-*/
-tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
-
 /* Protocols APIs */
 tsapi void TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop);
 
