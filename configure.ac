@@ -2288,7 +2288,6 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
-  tests/unit_tests/Makefile
   tests/Makefile
 ])
 
