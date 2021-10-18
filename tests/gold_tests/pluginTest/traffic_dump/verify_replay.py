@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Verify that a given JSON replay file fulfills basic expectations.
 """
