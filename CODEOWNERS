@@ -75,7 +75,6 @@ tests/*                     @SolidWallOfCode
 tests/include/*             @SolidWallOfCode
 tests/gold_tests/*          @SolidWallOfCode
 tests/tools/*               @SolidWallOfCode
-tests/unit_tests/*          @SolidWallOfCode
 
 # The manager source
 mgmt/*                      @zwoop @bryancall
