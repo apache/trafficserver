@@ -28,6 +28,8 @@ class HTTPVersion
 public:
   HTTPVersion() {}
   HTTPVersion(HTTPVersion const &that) = default;
+  HTTPVersion &operator=(const HTTPVersion &) = default;
+
   explicit HTTPVersion(int version);
   constexpr HTTPVersion(uint8_t ver_major, uint8_t ver_minor);
 
