@@ -39,10 +39,17 @@ Description
    #. Changes the ``Host`` header of the copy according to ``pparam`` from the remap rule.
    #. Changes ``X-Multiplexer`` header value to ``copy`` instead of ``original``.
    #. Asynchronously sends the copied request with :c:func:`TSHttpConnect`.
+   #. The copied request with the specified host is then itself processed via :file:`remap.config`.
 
 |Name| dispatches the requests in the background without blocking the original request. Multiplexed
-responses are drained and discarded. Note that these multiplexed requests are made using
-:c:func:`TSHttpConnect` and are thus HTTP (not HTTPS) connections.
+responses are drained and discarded. Note that you will need :file:`remap.config` entries for the
+multiplexed hosts. If no such rules exist, the plugin will internally receive the typical 404
+response for the multiplexed request since a matching remap entry for the multiplexed host will not
+be found, with the result that no request will be sent to that host. When creating the
+:file:`remap.config` entries for the multiplexed hosts, be aware that the multiplexed requests will
+be originated with the HTTP scheme (not HTTPS), and therefore the corresponding "from" URL of the
+remap rule should be constructed with the ``http://`` scheme prefix. See the sample
+:file:`remap.config` rules below for example |Name| entries.
 
 A default ``1`` second timeout is configured when communicating with each of the hosts receiving the
 multiplexed requests. This timeout can be overwritten via the ``multiplexer__timeout`` environment
@@ -64,16 +71,22 @@ printed into the logs.
 Here are some example :file:`remap.config` configuration lines::
 
     map http://www.example.com/a http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com
+    map http://host1.example.com http://host1.example.com
+
     map http://www.example.com/b http://www.example.com/ @plugin=multiplexer.so @pparam=host2.example.com
-    map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
+    map http://host2.example.com https://host2.example.com
+
+    map https://www.example.com/c https://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
     map http://www.example.com/d http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com @pparam=proxy.config.multiplexer.skip_post_put=1
 
 #. The first entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/a``
-   to ``host1.example.com``.
+   to ``host1.example.com``. The ``host1.example.com`` remap rule specifies that the multiplexed
+   requests to ``host1`` will be sent over HTTP.
 #. The second entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/b``
-   to ``host2.example.com``.
-#. The third entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/c``
-   to both ``host1.example.com`` and ``host2.example.com``.
+   to ``host2.example.com``. The ``host2.example.com`` remap rule specifies that the multiplexed
+   requests to ``host2`` will be sent over HTTPS.
+#. The third entry will multiplex HTTPS requests sent to ``https://www.example.com`` with a path of
+   ``/c`` to both ``host1.example.com`` and ``host2.example.com``.
 #. The fourth entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/d``
    to both ``host1.example.com`` and ``host2.example.com``, but POST and PUT requests will
    not be multiplexed.
