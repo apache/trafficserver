@@ -161,14 +161,12 @@ spawn_same_session_send(void *arg)
 
   char input_buf[1024];
   int read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
-  int total_read = 0;
   while (read_bytes != 0) {
     fd_set reads;
     fd_set writes;
     FD_ZERO(&reads);
     FD_ZERO(&writes);
     if (read_bytes > 0) {
-      total_read += read_bytes;
       FD_SET(sfd, &reads);
     } else {
       int error = SSL_get_error(ssl, read_bytes);
