@@ -237,6 +237,7 @@ public:
 
   /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
+  MemSpan &operator=(const MemSpan &) = default;
 
   /** Cross type copy constructor.
    *
