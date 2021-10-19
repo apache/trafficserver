@@ -119,7 +119,6 @@ process_file(int in_fd, int out_fd)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
   int nread, buffer_bytes;
-  unsigned bytes = 0;
 
   while (true) {
     // read the next buffer from file descriptor
@@ -200,7 +199,7 @@ process_file(int in_fd, int out_fd)
     // convert the buffer to ascii entries and place onto stdout
     //
     if (header->fmt_fieldlist()) {
-      bytes += LogFile::write_ascii_logbuffer(header, out_fd, ".", alt_format);
+      LogFile::write_ascii_logbuffer(header, out_fd, ".", alt_format);
     } else {
       // TODO investigate why this buffer goes wonky
     }
