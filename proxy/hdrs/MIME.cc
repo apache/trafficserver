@@ -557,7 +557,7 @@ checksum_block(const char *s, int len)
   return sum;
 }
 
-#ifdef DEBUG
+#ifdef ENABLE_MIME_SANITY_CHECK
 void
 mime_hdr_sanity_check(MIMEHdrImpl *mh)
 {
