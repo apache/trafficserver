@@ -44,6 +44,7 @@
 #include "../ProxyTransaction.h"
 #include "HdrUtils.h"
 #include "tscore/History.h"
+#include "tscore/PendingAction.h"
 
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
 #define HTTP_API_ERROR (INK_API_EVENT_EVENTS_START + 1)
@@ -167,54 +168,6 @@ enum HttpPluginTunnel_t {
 };
 
 class PluginVCCore;
-
-class PendingAction
-{
-public:
-  bool
-  is_empty() const
-  {
-    return pending_action == nullptr;
-  }
-  PendingAction &
-  operator=(Action *b)
-  {
-    // Don't do anything if the new action is _DONE
-    if (b != ACTION_RESULT_DONE) {
-      if (b != pending_action && pending_action != nullptr) {
-        pending_action->cancel();
-      }
-      pending_action = b;
-    }
-    return *this;
-  }
-  Continuation *
-  get_continuation() const
-  {
-    return pending_action ? pending_action->continuation : nullptr;
-  }
-  Action *
-  get() const
-  {
-    return pending_action;
-  }
-  void
-  clear_if_action_is(Action *current_action)
-  {
-    if (current_action == pending_action) {
-      pending_action = nullptr;
-    }
-  }
-  ~PendingAction()
-  {
-    if (pending_action) {
-      pending_action->cancel();
-    }
-  }
-
-private:
-  Action *pending_action = nullptr;
-};
 
 class PostDataBuffers
 {
