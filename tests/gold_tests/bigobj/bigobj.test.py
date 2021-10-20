@@ -1,6 +1,3 @@
-'''
-Test PUSHing an object into the cache and the GETting it with a few variations on the client connection protocol.
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,11 +14,13 @@ Test PUSHing an object into the cache and the GETting it with a few variations o
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test PUSHing an object into the cache and the GETting it with a few variations on the client connection protocol.
 '''
 
-# NOTE: You can also use this to test client-side communication when GETting very large (multi-GB) objects
+# NOTE: You can also use this to test client-side communication when GET-ing very large (multi-GB) objects
 # by increasing the value of the obj_kilobytes variable below.  (But do not increase it on any shared branch
 # that we do CI runs on.)
 
@@ -29,8 +28,12 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+# push_request and check_ramp are built via `make`. Here we copy the built binary down to the test
+# directory so that the test runs in this file can use it.
+Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'bigobj', 'push_request'))
+Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'bigobj', 'check_ramp'))
 
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
@@ -62,14 +65,6 @@ log_id.Content = "log2.gold"
 # proxy.config.diags.debug.enabled is 1, the PUSH request will timeout and fail.)
 #
 obj_kilobytes = 10 * 1024
-
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'cc ' + Test.TestDirectory + '/push_request.c -o push_request'
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'cc ' + Test.TestDirectory + '/check_ramp.c -o check_ramp'
-tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Delay on readiness of TS IPv4 ssl port
