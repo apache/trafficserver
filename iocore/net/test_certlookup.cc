@@ -25,15 +25,6 @@
 #include "tscore/TestBox.h"
 #include <fstream>
 
-static IpEndpoint
-make_endpoint(const char *address)
-{
-  IpEndpoint ip;
-
-  assert(ats_ip_pton(address, &ip) == 0);
-  return ip;
-}
-
 REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
@@ -127,15 +118,20 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */,
   SSLCertContext ip4_cc(context.ip4);
   SSLCertContext ip4p_cc(context.ip4p);
 
-  endpoint.ip6  = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
-  endpoint.ip6p = make_endpoint("[fe80::7ed1:c3ff:fe90:2582]:80");
-  endpoint.ip4  = make_endpoint("10.0.0.5");
-  endpoint.ip4p = make_endpoint("10.0.0.5:80");
+  ats_ip_pton("fe80::7ed1:c3ff:fe90:2582", &endpoint.ip6);
+  ats_ip_pton("[fe80::7ed1:c3ff:fe90:2582]:80", &endpoint.ip6p);
+  ats_ip_pton("10.0.0.5", &endpoint.ip4);
+  ats_ip_pton("10.0.0.5:80", &endpoint.ip4p);
 
   box = REGRESSION_TEST_PASSED;
 
   // For each combination of address with port and address without port, make sure that we find the
   // the most specific match (ie. find the context with the port if it is available) ...
+
+  box.check(endpoint.ip6.isValid(), "Invalid IpEndpoint");
+  box.check(endpoint.ip6p.isValid(), "Invalid IpEndpoint");
+  box.check(endpoint.ip4.isValid(), "Invalid IpEndpoint");
+  box.check(endpoint.ip4p.isValid(), "Invalid IpEndpoint");
 
   box.check(lookup.insert(endpoint.ip6, ip6_cc) >= 0, "insert IPv6 address");
   box.check(lookup.find(endpoint.ip6)->getCtx().get() == context.ip6, "IPv6 exact match lookup");
