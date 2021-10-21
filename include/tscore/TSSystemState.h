@@ -32,12 +32,19 @@ class TSSystemState
 {
 private:
   struct Data {
-    bool ssl_handshaking_stopped;
-    bool event_system_shut_down;
-    bool draining;
+    bool initializing            = true;
+    bool ssl_handshaking_stopped = false;
+    bool event_system_shut_down  = false;
+    bool draining                = false;
   };
 
 public:
+  static bool
+  is_initializing()
+  {
+    return unlikely(_instance().initializing);
+  }
+
   static bool
   is_ssl_handshaking_stopped()
   {
@@ -56,6 +63,14 @@ public:
   is_draining()
   {
     return unlikely(_instance().draining);
+  }
+
+  static void
+  initialization_done()
+  {
+    ink_assert(_instance().initializing);
+
+    _instance().initializing = false;
   }
 
   static void

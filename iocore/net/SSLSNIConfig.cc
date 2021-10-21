@@ -39,6 +39,7 @@
 #include "tscpp/util/TextView.h"
 #include "tscore/I_Layout.h"
 #include <sstream>
+#include <utility>
 #include <pcre.h>
 
 static constexpr int OVECSIZE{30};
@@ -170,13 +171,19 @@ SNIConfigParams::Initialize()
     return 1;
   }
 
-  ts::Errata zret = Y_sni.loader(sni_filename);
+  YamlSNIConfig Y_sni_tmp;
+  ts::Errata zret = Y_sni_tmp.loader(sni_filename);
   if (!zret.isOK()) {
     std::stringstream errMsg;
     errMsg << zret;
-    Error("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+    if (TSSystemState::is_initializing()) {
+      Emergency("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+    } else {
+      Error("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+    }
     return 1;
   }
+  Y_sni = std::move(Y_sni_tmp);
 
   loadSNIConfig();
   Note("%s finished loading", sni_filename);
