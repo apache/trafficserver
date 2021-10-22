@@ -209,7 +209,7 @@ freelist_benchmark_SOURCES = unit_tests/freelist_benchmark.cc
 CompileParseRules_SOURCES = CompileParseRules.cc
 
 CompileParseRules$(BUILD_EXEEXT): $(CompileParseRules_OBJECTS)
-	$(CXX_FOR_BUILD) $(AM_CXXFLAGS) -I$(top_builddir)/include -I$(abs_top_srcdir)/include -o $@ $(abs_top_srcdir)/src/tscore/CompileParseRules.cc
+	$(CXX_FOR_BUILD) $(AM_CXXFLAGS) $(CPPFLAGS) -I$(top_builddir)/include -I$(abs_top_srcdir)/include -o $@ $(abs_top_srcdir)/src/tscore/CompileParseRules.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
