@@ -1390,6 +1390,9 @@ AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
+if test "x${enable_zlib}" != "xyes"; then
+  AC_MSG_ERROR([Cannot find zlib library. Configure --with-zlib=DIR])
+fi
 
 #
 # Check for lzma presence and usability
