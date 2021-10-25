@@ -2072,7 +2072,7 @@ HttpSM::state_http_server_open(int event, void *data)
       this->create_server_txn(this->create_server_session(_netvc, _netvc_read_buffer, _netvc_reader));
       handle_http_server_open();
     }
-    ink_assert(pending_action.is_empty());
+    ink_assert(pending_action.empty());
     return 0;
   }
   case CONNECT_EVENT_DIRECT:
