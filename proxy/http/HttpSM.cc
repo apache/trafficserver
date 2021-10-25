@@ -406,12 +406,15 @@ ConnectingEntry::state_http_server_open(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED: {
-    ink_release_assert(_netvc != nullptr);
     Debug("http_connect", "Stop %" PRId64 " state machines waiting for failed origin", _connect_sms.size());
     this->remove_entry();
-    int vc_provided_cert = _netvc->provided_cert();
-    int lerrno           = _netvc->lerrno;
-    _netvc->do_io_close();
+    int vc_provided_cert = 0;
+    int lerrno           = EIO;
+    if (_netvc != nullptr) {
+      vc_provided_cert = _netvc->provided_cert();
+      lerrno           = _netvc->lerrno;
+      _netvc->do_io_close();
+    }
     while (!_connect_sms.empty()) {
       auto entry = _connect_sms.begin();
       SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
