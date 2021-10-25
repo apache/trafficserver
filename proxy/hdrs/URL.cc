@@ -386,17 +386,17 @@ URLImpl::check_strings(HeapCheck *heaps, int num_heaps)
  ***********************************************************************/
 
 const char *
-url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_wks_idx, int length, bool copy_string)
+URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, int length, bool copy_string)
 {
   const char *scheme_wks;
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     scheme_str = nullptr;
   }
 
-  mime_str_u16_set(heap, scheme_str, length, &(url->m_ptr_scheme), &(url->m_len_scheme), copy_string);
+  mime_str_u16_set(heap, scheme_str, length, &(this->m_ptr_scheme), &(this->m_len_scheme), copy_string);
 
-  url->m_scheme_wks_idx = scheme_wks_idx;
+  this->m_scheme_wks_idx = scheme_wks_idx;
   if (scheme_wks_idx >= 0) {
     scheme_wks = hdrtoken_index_to_wks(scheme_wks_idx);
   } else {
@@ -404,11 +404,11 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
   }
 
   if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
-    url->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URL_TYPE_HTTP;
   } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
-    url->m_url_type = URL_TYPE_HTTPS;
+    this->m_url_type = URL_TYPE_HTTPS;
   } else {
-    url->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URL_TYPE_HTTP;
   }
 
   return scheme_wks; // tokenized string or NULL if not well known
@@ -418,59 +418,59 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
   -------------------------------------------------------------------------*/
 
 void
-url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_user(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_user), &(url->m_len_user), copy_string);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_user), &(this->m_len_user), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_password(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_password), &(url->m_len_password), copy_string);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_password), &(this->m_len_password), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_host(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_host), &(this->m_len_host), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_port_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_port(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), copy_string);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), copy_string);
 
-  url->m_port = 0;
+  this->m_port = 0;
   for (int i = 0; i < length; i++) {
     if (!ParseRules::is_digit(value[i])) {
       break;
     }
-    url->m_port = url->m_port * 10 + (value[i] - '0');
+    this->m_port = this->m_port * 10 + (value[i] - '0');
   }
 }
 
@@ -478,32 +478,32 @@ url_port_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
   -------------------------------------------------------------------------*/
 
 void
-url_port_set(HdrHeap *heap, URLImpl *url, unsigned int port)
+URLImpl::set_port(HdrHeap *heap, unsigned int port)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (port > 0) {
     char value[6];
     int length;
 
     length = ink_fast_itoa(port, value, sizeof(value));
-    mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), true);
+    mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), true);
   } else {
-    mime_str_u16_set(heap, nullptr, 0, &(url->m_ptr_port), &(url->m_len_port), true);
+    mime_str_u16_set(heap, nullptr, 0, &(this->m_ptr_port), &(this->m_len_port), true);
   }
-  url->m_port = port;
+  this->m_port = port;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
+  url_called_set(this);
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_path), &(url->m_len_path), copy_string);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_path), &(this->m_len_path), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -513,40 +513,50 @@ url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
 // url_{params|query|fragment}_set()
 
 void
-url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_params), &(url->m_len_params), copy_string);
+  url_called_set(this);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_params), &(this->m_len_params), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_query(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_query), &(url->m_len_query), copy_string);
+  url_called_set(this);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_query), &(this->m_len_query), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
+URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  url_called_set(url);
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_fragment), &(url->m_len_fragment), copy_string);
+  url_called_set(this);
+  mime_str_u16_set(heap, value, length, &(this->m_ptr_fragment), &(this->m_len_fragment), copy_string);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-url_type_set(URLImpl *url, unsigned int typecode)
+URLImpl::set_type(int type)
 {
-  url_called_set(url);
-  url->m_type_code = typecode;
+  url_called_set(this);
+  this->m_url_type = type;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+void
+URLImpl::set_type_code(unsigned int typecode)
+{
+  url_called_set(this);
+  this->m_type_code = typecode;
 }
 
 /*-------------------------------------------------------------------------
@@ -672,88 +682,97 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 const char *
-url_user_get(URLImpl *url, int *length)
+URLImpl::get_user(int *length)
 {
-  *length = url->m_len_user;
-  return url->m_ptr_user;
+  *length = this->m_len_user;
+  return this->m_ptr_user;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_password_get(URLImpl *url, int *length)
+URLImpl::get_password(int *length)
 {
-  *length = url->m_len_password;
-  return url->m_ptr_password;
+  *length = this->m_len_password;
+  return this->m_ptr_password;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_host_get(URLImpl *url, int *length)
+URLImpl::get_host(int *length)
 {
-  *length = url->m_len_host;
-  return url->m_ptr_host;
+  *length = this->m_len_host;
+  return this->m_ptr_host;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
-url_port_get(URLImpl *url)
+URLImpl::get_port()
 {
-  return url->m_port;
+  return this->m_port;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_path_get(URLImpl *url, int *length)
+URLImpl::get_path(int *length)
 {
-  *length = url->m_len_path;
-  return url->m_ptr_path;
+  *length = this->m_len_path;
+  return this->m_ptr_path;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_params_get(URLImpl *url, int *length)
+URLImpl::get_params(int *length)
 {
-  *length = url->m_len_params;
-  return url->m_ptr_params;
+  *length = this->m_len_params;
+  return this->m_ptr_params;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_query_get(URLImpl *url, int *length)
+URLImpl::get_query(int *length)
 {
-  *length = url->m_len_query;
-  return url->m_ptr_query;
+  *length = this->m_len_query;
+  return this->m_ptr_query;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-url_fragment_get(URLImpl *url, int *length)
+URLImpl::get_fragment(int *length)
 {
-  *length = url->m_len_fragment;
-  return url->m_ptr_fragment;
+  *length = this->m_len_fragment;
+  return this->m_ptr_fragment;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
-url_type_get(URLImpl *url)
+URLImpl::get_type()
 {
-  return url->m_type_code;
+  return this->m_url_type;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+URLImpl::get_type_code()
+{
+  return this->m_type_code;
 }
 
 /*-------------------------------------------------------------------------
@@ -1128,7 +1147,7 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
             }
           }
         }
-        url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
+        url->set_scheme(heap, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
       }
     }
     *start = scheme_end;
@@ -1320,9 +1339,9 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   // character past the parse area.
 
   if (user) {
-    url_user_set(heap, url, user._ptr, user._size, copy_strings_p);
+    url->set_user(heap, user._ptr, user._size, copy_strings_p);
     if (passw) {
-      url_password_set(heap, url, passw._ptr, passw._size, copy_strings_p);
+      url->set_password(heap, passw._ptr, passw._size, copy_strings_p);
     }
   }
 
@@ -1337,7 +1356,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   }
   if (host._size) {
     if (!verify_host_characters || validate_host_name(std::string_view(host._ptr, host._size))) {
-      url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+      url->set_host(heap, host._ptr, host._size, copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;
     }
@@ -1349,7 +1368,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     if (!port._size) {
       return PARSE_RESULT_ERROR; // colon w/o port value.
     }
-    url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
+    url->set_port(heap, port._ptr, port._size, copy_strings_p);
   }
   *start = cur;
   return PARSE_RESULT_DONE;
@@ -1473,7 +1492,7 @@ done:
       // absolutely empty so we can reconstruct such URLs.
       ++path_start;
     }
-    url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
+    url->set_path(heap, path_start, path_end - path_start, copy_strings);
   } else if (!nothing_after_host) {
     // There was no path set via '/': it is absolutely empty. However, if there
     // is no path, query, or fragment after the host, we by convention add a
@@ -1485,21 +1504,21 @@ done:
     if (!params_end) {
       params_end = cur;
     }
-    url_params_set(heap, url, params_start, params_end - params_start, copy_strings);
+    url->set_params(heap, params_start, params_end - params_start, copy_strings);
   }
   if (query_start) {
     // There was a query string marked by '?'.
     if (!query_end) {
       query_end = cur;
     }
-    url_query_set(heap, url, query_start, query_end - query_start, copy_strings);
+    url->set_query(heap, query_start, query_end - query_start, copy_strings);
   }
   if (fragment_start) {
     // There was a fragment string marked by '#'.
     if (!fragment_end) {
       fragment_end = cur;
     }
-    url_fragment_set(heap, url, fragment_start, fragment_end - fragment_start, copy_strings);
+    url->set_fragment(heap, fragment_start, fragment_end - fragment_start, copy_strings);
   }
 
   *start = cur;
@@ -1552,16 +1571,16 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
       port_len = host_end - port - 1; // must compute this first.
       host_end = port;                // then point at colon.
       ++port;                         // drop colon from port.
-      url_port_set(heap, url, port, port_len, copy_strings);
+      url->set_port(heap, port, port_len, copy_strings);
     }
 
     // Now we can set the host.
-    url_host_set(heap, url, base, host_end - base, copy_strings);
+    url->set_host(heap, base, host_end - base, copy_strings);
   }
 
   // path is anything that's left.
   if (cur < end) {
-    url_path_set(heap, url, cur, end - cur, copy_strings);
+    url->set_path(heap, cur, end - cur, copy_strings);
     cur = end;
   }
   *start = cur;

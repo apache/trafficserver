@@ -25,9 +25,6 @@
 #include "txn_limiter.h"
 #include "utilities.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
 #include "sni_selector.h"
 #include "sni_limiter.h"
 
@@ -83,8 +80,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Usage: rate_limit.so SNI|HOST [option arguments]", PLUGIN_NAME);
   }
 }
-
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup stuff for the remap plugin

@@ -126,7 +126,7 @@ prettyPrint(const int x, const int y, const double number, const int type)
   }
   attron(COLOR_PAIR(color));
   attron(A_BOLD);
-  mvprintw(y, x, buffer);
+  mvprintw(y, x, "%s", buffer);
   attroff(COLOR_PAIR(color));
   attroff(A_BOLD);
 }
@@ -143,7 +143,7 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
     int type;
 
     stats.getStat(item, value, prettyName, type);
-    mvprintw(my_y, x, prettyName.c_str());
+    mvprintw(my_y, x, "%s", prettyName.c_str());
     prettyPrint(x + 10, my_y++, value, type);
   }
 }

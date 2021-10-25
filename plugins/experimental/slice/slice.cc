@@ -68,9 +68,9 @@ read_request(TSHttpTxn txnp, Config *const config)
       }
 
       // turn off any and all transaction caching (shouldn't matter)
-      TSHttpTxnServerRespNoStoreSet(txnp, 1);
-      TSHttpTxnRespCacheableSet(txnp, 0);
-      TSHttpTxnReqCacheableSet(txnp, 0);
+      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
+      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_RESPONSE_CACHEABLE, false);
+      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_REQUEST_CACHEABLE, false);
 
       DEBUG_LOG("slice accepting and slicing");
       // connection back into ATS
@@ -177,7 +177,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       TSContDataSet(icontp, (void *)data);
 
       // Skip remap and remap rule requirement
-      TSSkipRemappingSet(txnp, 1);
+      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
 
       // Grab the transaction
       TSHttpTxnIntercept(icontp, txnp);

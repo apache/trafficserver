@@ -42,7 +42,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
 
   // Checking that we have no rw heap
   CHECK(heap->m_read_write_heap.get() == nullptr);
-  url_path_set(heap, url, buf, next_required_overflow_size, true);
+  url->set_path(heap, buf, next_required_overflow_size, true);
 
   // Checking that we've completely consumed the rw heap
   CHECK(heap->m_read_write_heap->m_free_size == 0);
@@ -63,7 +63,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
     }
 
     URLImpl *url2 = url_create(heap);
-    url_path_set(heap, url2, buf2, next_required_overflow_size, true);
+    url2->set_path(heap, buf2, next_required_overflow_size, true);
 
     // Checking the current rw heap is next_rw_heap_size bytes
     CHECK(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size);
@@ -92,7 +92,7 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   }
 
   URLImpl *aliased_str_url = url_create(heap);
-  url_path_set(heap, aliased_str_url, buf3, next_required_overflow_size, false); // don't copy this string
+  aliased_str_url->set_path(heap, buf3, next_required_overflow_size, false); // don't copy this string
   // Checking that the aliased string shows having proper length
   CHECK(aliased_str_url->m_len_path == next_required_overflow_size);
   // Checking that the aliased string is correctly pointing at buf

@@ -8,9 +8,9 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Cache-Result: miss
 ``
 > GET / HTTP/1.1
@@ -22,9 +22,9 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Cache-Result: hit-fresh
 ``
 > GET / HTTP/1.1
@@ -36,9 +36,9 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Cache-Result: hit-stale
 ``
 > GET / HTTP/1.1
@@ -50,8 +50,8 @@
 < Cache-Control: max-age=10,public
 < Content-Length: 6
 < Date: ``
-< Age: 0
+< Age: ``
 < Connection: keep-alive
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Cache-Result: hit-fresh
 ``

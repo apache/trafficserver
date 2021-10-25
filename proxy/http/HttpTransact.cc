@@ -1709,8 +1709,8 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->server_info.http_version                = HTTP_1_0;
   s->server_info.keep_alive                  = HTTP_NO_KEEPALIVE;
   s->host_db_info.app.http_data.http_version = HTTP_1_0;
-  s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
-  s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
+  s->server_info.dst_addr.setToAnyAddr(AF_INET); // must set an address or we can't set the port.
+  s->server_info.dst_addr.network_order_port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
   // Build the request to the server
   build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->client_info.http_version);
@@ -1832,7 +1832,7 @@ HttpTransact::PPDNSLookup(State *s)
   } else {
     // lookup succeeded, open connection to p.p.
     ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
-    s->parent_info.dst_addr.port() = htons(s->parent_result.port);
+    s->parent_info.dst_addr.network_order_port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
 
     char addrbuf[INET6_ADDRSTRLEN];
@@ -1892,7 +1892,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
     ink_assert(s->current.server->dst_addr.isValid() && 0 != server_port);
 
     ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
-    s->server_info.dst_addr.port() = htons(server_port);
+    s->server_info.dst_addr.network_order_port() = htons(server_port);
     ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
 
@@ -2014,9 +2014,9 @@ HttpTransact::OSDNSLookup(State *s)
   ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
   if (s->dns_info.srv_lookup_success) {
-    s->server_info.dst_addr.port() = htons(s->dns_info.srv_port);
+    s->server_info.dst_addr.network_order_port() = htons(s->dns_info.srv_port);
   } else if (!s->api_server_addr_set) {
-    s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
+    s->server_info.dst_addr.network_order_port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);

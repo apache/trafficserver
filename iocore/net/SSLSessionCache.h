@@ -33,6 +33,7 @@
 #include <shared_mutex>
 
 #define SSL_MAX_SESSION_SIZE 256
+#define SSL_MAX_ORIG_SESSION_SIZE 4096
 
 struct ssl_session_cache_exdata {
   ssl_curve_id curve = 0;
@@ -187,15 +188,14 @@ class SSLOriginSession
 {
 public:
   std::string key;
-  SSL_SESSION *session;
+  Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
+  size_t len_asn1_data;
   ssl_curve_id curve_id;
 
-  SSLOriginSession(const std::string &lookup_key, SSL_SESSION *sess, ssl_curve_id curve)
-    : key(lookup_key), session(sess), curve_id(curve)
+  SSLOriginSession(const std::string &lookup_key, const Ptr<IOBufferData> &asn1, size_t len_asn1, ssl_curve_id curve)
+    : key(lookup_key), asn1_data(asn1), len_asn1_data(len_asn1), curve_id(curve)
   {
   }
-
-  ~SSLOriginSession() { SSL_SESSION_free(session); }
 
   LINK(SSLOriginSession, link);
 };
@@ -208,6 +208,7 @@ public:
 
   void insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
   bool get_session(const std::string &lookup_key, SSL_SESSION **sess, ssl_curve_id *curve);
+  void remove_session(const std::string &lookup_key);
 
 private:
   void remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock);

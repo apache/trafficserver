@@ -280,7 +280,7 @@ Transaction::setCacheUrl(const string &cache_url)
 void
 Transaction::setSkipRemapping(int flag)
 {
-  TSSkipRemappingSet(state_->txn_, flag);
+  TSHttpTxnCntlSet(state_->txn_, TS_HTTP_CNTL_SKIP_REMAPPING, flag);
 }
 
 const sockaddr *

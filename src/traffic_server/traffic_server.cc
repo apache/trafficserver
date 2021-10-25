@@ -2224,6 +2224,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
+  TSSystemState::initialization_done();
+
   while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }

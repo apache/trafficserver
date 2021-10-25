@@ -497,7 +497,7 @@ QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, ui
   QUICPacketFactory pf(ppki);
   QUICPacketHeaderProtector php(ppki);
   QUICCertConfig::scoped_config server_cert;
-  QUICTLS tls(ppki, server_cert->ssl_default.get(), NET_VCONNECTION_IN, {}, "", "");
+  QUICTLS tls(ppki, server_cert->ssl_default.get(), NET_VCONNECTION_IN, {}, "");
   tls.initialize_key_materials(dcid_in_initial, version_in_initial);
 
   // Create INITIAL packet

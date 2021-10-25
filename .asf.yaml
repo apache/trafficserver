@@ -11,6 +11,7 @@ github:
     - cdn
     - cache
     - apache
+    - hacktoberfest
   features:
     # Enable wiki for documentation
     wiki: false
@@ -25,3 +26,18 @@ github:
     rebase: false
     # Disable merge button:
     merge: false
+  protected_branches:
+    master:
+      required_status_checks:
+        # strict means "Require branches to be up to date before merging"
+        strict: false
+        contexts:
+          - AuTest
+          - CentOS
+          - Clang-Analyzer
+          - Clang-Format
+          - Debian
+          - Docs
+          - Fedora
+          - RAT
+          - Ubuntu

@@ -232,3 +232,50 @@ SSL/TLS
 
    Incoming client SSL connections terminated due to an unsupported or disabled
    version of SSL/TLS, since statistics collection began.
+
+.. ts:stat:: global proxy.process.tunnel.current_active_connections integer
+   :type: gauge
+
+   A gauge of current active SNI Routing Tunnels.
+
+.. _pre-warming-tls-tunnel-stats:
+
+Pre-warming TLS Tunnel
+----------------------
+
+Stats for Pre-warming TLS Tunnel is registered dynamically. The ``POOL`` in below represents combination of ``<Hostname of destination>.<Type of Tunnel>.<ALPN Name (if there)>``.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.current_init integer
+   :type: gauge
+
+   Represents the current number of initializing connections in the pool.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.current_open integer
+   :type: gauge
+
+   Represents the current number of established connections in the pool.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.total_hit integer
+   :type: counter
+
+   Represents the total number of pre-warmed connection is used.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.total_miss integer
+   :type: counter
+
+   Represents the total number of pre-warmed connection is not used.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.total_handshake_time integer
+   :type: counter
+
+   Represents the total number of handshake duration of pre-warming.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.total_handshake_count integer
+   :type: counter
+
+   Represents the total number of handshake time of pre-warming.
+
+.. ts:stat:: global proxy.process.tunnel.prewarm.POOL.total_retry integer
+   :type: counter
+
+   Represents the total number of pre-warming retry.

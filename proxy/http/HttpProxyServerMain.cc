@@ -44,6 +44,7 @@
 #include "P_QUICNextProtocolAccept.h"
 #include "http3/Http3SessionAccept.h"
 #endif
+#include "PreWarmManager.h"
 
 #include <vector>
 
@@ -147,6 +148,10 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
   REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
   REC_ReadConfigInteger(net.sockopt_flags, "proxy.config.net.sock_option_flag_in");
   REC_ReadConfigInteger(net.defer_accept, "proxy.config.net.defer_accept");
+
+#if TCP_NOTSENT_LOWAT
+  REC_ReadConfigInteger(net.packet_notsent_lowat, "proxy.config.net.sock_notsent_lowat");
+#endif
 
 #ifdef TCP_FASTOPEN
   REC_ReadConfigInteger(net.tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
@@ -383,6 +388,8 @@ start_HttpProxyServer()
     hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, nullptr);
     hook = hook->next();
   }
+
+  prewarmManager.start();
 }
 
 void

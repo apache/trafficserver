@@ -326,8 +326,25 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
     Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess);
   }
 
+  size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_ORIG_SESSION_SIZE bytes
+
+  /* do not cache a session that's too big. */
+  if (len > static_cast<size_t>(SSL_MAX_ORIG_SESSION_SIZE)) {
+    Debug("ssl.origin_session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len,
+          SSL_MAX_ORIG_SESSION_SIZE);
+    return;
+  } else if (len == 0) {
+    Debug("ssl.origin_session_cache", "Unable to save SSL session because size is 0");
+    return;
+  }
+
+  Ptr<IOBufferData> buf;
+  buf = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
+  unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
+  i2d_SSL_SESSION(sess, &loc);
   ssl_curve_id curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
-  ats_scoped_obj<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, sess, curve));
+  ats_scoped_obj<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, buf, len, curve));
   auto new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
@@ -358,7 +375,8 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, SSL_SESSION **
     return false;
   }
 
-  *sess = entry->second->session;
+  const unsigned char *loc = reinterpret_cast<const unsigned char *>(entry->second->asn1_data->data());
+  *sess                    = d2i_SSL_SESSION(nullptr, &loc, entry->second->len_asn1_data);
   if (curve != nullptr) {
     *curve = entry->second->curve_id;
   }
@@ -379,4 +397,24 @@ SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<std::shared_
     orig_sess_map.erase(node->key);
     delete node;
   }
+}
+
+void
+SSLOriginSessionCache::remove_session(const std::string &lookup_key)
+{
+  // We can't bail on contention here because this session MUST be removed.
+  if (is_debug_tag_set("ssl.origin_session_cache")) {
+    Debug("ssl.origin_session_cache", "remove session: %s", lookup_key.c_str());
+  }
+
+  std::unique_lock lock(mutex);
+  auto entry = orig_sess_map.find(lookup_key);
+  if (entry != orig_sess_map.end()) {
+    auto node = entry->second;
+    orig_sess_que.remove(node);
+    orig_sess_map.erase(entry);
+    delete node;
+  }
+
+  return;
 }

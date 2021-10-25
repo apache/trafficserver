@@ -49,6 +49,7 @@ SSLClientCoordinator::startup()
   sslClientUpdate->attach("proxy.config.ssl.client.cert.filename");
   sslClientUpdate->attach("proxy.config.ssl.client.private_key.path");
   sslClientUpdate->attach("proxy.config.ssl.client.private_key.filename");
+  sslClientUpdate->attach("proxy.config.ssl.keylog_file");
   SSLConfig::startup();
   sslClientUpdate->attach("proxy.config.ssl.servername.filename");
   SNIConfig::startup();

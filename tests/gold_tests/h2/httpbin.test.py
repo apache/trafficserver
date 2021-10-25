@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import sys
 
 # ----
 # Setup Test
@@ -75,8 +76,8 @@ logging:
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/httpbin_access.gold')
 
 # TODO: when httpbin 0.8.0 or later is released, remove below json pretty print hack
-json_printer = '''
-python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, separators=(',', ': ')))"
+json_printer = f'''
+{sys.executable} -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, separators=(',', ': ')))"
 '''
 
 # ----

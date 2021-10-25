@@ -58,11 +58,6 @@ enum RecEntryT {
   RECE_RECORD,
 };
 
-struct RecConfigFileEntry {
-  RecEntryT entry_type;
-  char *entry;
-};
-
 typedef struct RecConfigCbList_t {
   RecConfigUpdateCb update_cb;
   void *update_cookie;

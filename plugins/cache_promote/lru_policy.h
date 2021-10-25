@@ -120,7 +120,8 @@ public:
   const std::string
   id() const override
   {
-    return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits) + ",B:" + std::to_string(_bytes);
+    return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits) + ",B:" + std::to_string(_bytes) +
+           ",i:" + std::to_string(_internal_enabled);
   }
 
   void

@@ -1,4 +1,3 @@
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,16 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
+noinst_PROGRAMS += gold_tests/bigobj/check_ramp gold_tests/bigobj/push_request
 
-AM_CPPFLAGS += \
-	-I$(abs_top_srcdir) \
-	$(TS_INCLUDES)
-
-bin_PROGRAMS = unit_tests
-
-unit_tests_SOURCES = main.cpp
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
-	
+gold_tests_bigobj_check_ramp_SOURCES = gold_tests/bigobj/check_ramp.c
+gold_tests_bigobj_push_request_SOURCES = gold_tests/bigobj/push_request.c

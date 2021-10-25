@@ -26,7 +26,7 @@ Description
 ===========
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
-connections. The configuration is driven by the SNI values provided by the inbound connection. The
+connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
 file consists of a set of configuration items, each identified by an SNI value (``fqdn``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
@@ -89,7 +89,16 @@ host_sni_policy           Inbound   One of the values :code:`DISABLED`, :code:`P
 
                                     If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
                                     This controls how policy impacting mismatches between host header and SNI values are
-                                    dealt with.
+                                    dealt with.  For details about hos this configuration behaves, see the corresponding
+                                    :ts:cv:`proxy.config.http.host_sni_policy` :file:`records.config` documentation.
+
+                                    Note that this particular configuration will be inspected at the time the HTTP Host
+                                    header field is processed. Further, this policy check will be keyed off of the Host header
+                                    field value rather than the SNI in this :file:`sni.yaml` file. This is done because
+                                    the Host header field is ultimately the resource that will be retrieved from the
+                                    origin and the administrator will intend to guard this resource rather than the SNI,
+                                    which a malicious user may alter to some other server value whose policies are more
+                                    lenient than the host he is trying to access.
 
 valid_tls_versions_in     Inbound   This specifies the list of TLS protocols that will be offered to user agents during
                                     the TLS negotiation.  This replaces the global settings in
@@ -146,6 +155,27 @@ tunnel_alpn               Inbound   List of ALPN Protocol Ids for Partial Blind 
                                     ATS negotiates application protocol with the client on behalf of the origin server.
                                     This only works with ``partial_blind_route``.
 ========================= ========= ========================================================================================
+
+Pre-warming TLS Tunnel
+----------------------
+
+=============================== ========================================================================================
+Key                             Meaning
+=============================== ========================================================================================
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm` in records.config.
+
+tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
+
+tunnel_prewarm_rate             Rate of how many connections to pre-warm. Default is ``1.0``.
+
+tunnel_prewarm_min              Minimum number of pre-warming queue size (per thread). Default is ``0``.
+
+tunnel_prewarm_max              Maximum number of pre-warming queue size (per thread). Default is ``-1`` (unlimited).
+
+tunnel_prewarm_connect_timeout  Timeout for TCP/TLS handshake (in seconds).
+
+tunnel_prewarm_inactive_timeout Inactive timeout for connections in the pool (in seconds).
+=============================== ========================================================================================
 
 Client verification, via ``verify_client``, corresponds to setting
 :ts:cv:`proxy.config.ssl.client.certification_level` for this connection as noted below.

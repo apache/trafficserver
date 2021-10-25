@@ -778,6 +778,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.sock_mss_in", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.net.sock_notsent_lowat", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.net.poll_timeout", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.default_inactivity_timeout", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -972,6 +974,22 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.hostdb.host_file.interval", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  //##########################################################################
+  //#
+  //# SNI Routing
+  //#
+  //##########################################################################
+  {RECT_CONFIG, "proxy.config.tunnel.activity_check_period", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.tunnel.prewarm", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.tunnel.prewarm.max_stats_size", RECD_INT, "100", RECU_RESTART_TS, RR_NULL, RECC_INT, "[5-65536]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.tunnel.prewarm.event_period", RECD_INT, "1000", RECU_DYNAMIC, RR_NULL, RECC_INT, "[10-3600000]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.tunnel.prewarm.algorithm", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_INT, "[1-2]", RECA_NULL}
+  ,
+
   //##########################################################################
   //#
   //# HTTP
@@ -1185,6 +1203,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.server.max_early_data", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.allow_early_data_params", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.keylog_file", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //##############################################################################
   //#
@@ -1400,8 +1420,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.client.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.session_file", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.client.keylog_file", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.qlog_dir", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

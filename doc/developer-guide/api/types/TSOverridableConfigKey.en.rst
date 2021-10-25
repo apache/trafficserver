@@ -151,6 +151,7 @@ Enumeration Members
 .. c:enumerator:: TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE
 .. c:enumerator:: TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX
 .. c:enumerator:: TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK
+.. c:enumerator:: TS_CONFIG_NET_SOCK_NOTSENT_LOWAT
 
 
 Description

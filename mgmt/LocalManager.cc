@@ -1012,7 +1012,7 @@ LocalManager::bindUdpProxyPort(HttpProxyPort &port)
   } else {
     mgmt_fatal(0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
   }
-  ip.port() = htons(port.m_port);
+  ip.network_order_port() = htons(port.m_port);
   if (bind(port.m_fd, &ip.sa, ats_ip_size(&ip)) < 0) {
     mgmt_fatal(0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
   }
@@ -1107,7 +1107,7 @@ LocalManager::bindTcpProxyPort(HttpProxyPort &port)
   } else {
     mgmt_fatal(0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
   }
-  ip.port() = htons(port.m_port);
+  ip.network_order_port() = htons(port.m_port);
   if (bind(port.m_fd, &ip.sa, ats_ip_size(&ip)) < 0) {
     mgmt_fatal(0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
   }

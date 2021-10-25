@@ -231,19 +231,19 @@ more widely. Those are described on this page.
 
    Contains the data for a TLS certificate and key.
 
-   .. member:: const char * cert_name;
+   .. member:: const char * cert_name
 
       The TLS certificate name.
 
-   .. member:: size_t cert_name_len;
+   .. member:: size_t cert_name_len
 
       The length of the TLS certificate name.
 
-   .. member:: const char * key_name;
+   .. member:: const char * key_name
 
       The name of the TLS key.
 
-   .. member:: size_t key_name_len;
+   .. member:: size_t key_name_len
 
       The length of the name of the TLS key.
 

@@ -209,7 +209,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
     accept_ip.setToAnyAddr(opt.ip_family);
   }
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
-  accept_ip.port() = htons(opt.local_port);
+  accept_ip.network_order_port() = htons(opt.local_port);
 
   na->accept_fn = net_accept;
   na->server.fd = fd;

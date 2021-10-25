@@ -85,6 +85,7 @@ public:
     uint32_t sockopt_flags;
     uint32_t packet_mark;
     uint32_t packet_tos;
+    uint32_t packet_notsent_lowat;
 
     int tfo_queue_length;
 

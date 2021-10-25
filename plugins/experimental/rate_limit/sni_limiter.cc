@@ -17,9 +17,6 @@
  */
 #include "tscore/ink_config.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
 #include <unistd.h>
 #include <getopt.h>
 #include <cstdlib>
@@ -43,9 +40,9 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_SSL_CLIENT_HELLO: {
-    TSSslConnection ssl_conn  = TSVConnSslConnectionGet(vc);
-    SSL *ssl                  = reinterpret_cast<SSL *>(ssl_conn);
-    std::string_view sni_name = getSNI(ssl);
+    int len;
+    const char *server_name = TSVConnSslSniGet(vc, &len);
+    std::string_view sni_name(server_name, len);
 
     if (!sni_name.empty()) { // This should likely always succeed, but without it we can't do anything
       SniRateLimiter *limiter = selector->find(sni_name);
@@ -128,5 +125,3 @@ SniRateLimiter::initialize(int argc, const char *argv[])
 
   return true;
 }
-
-#endif

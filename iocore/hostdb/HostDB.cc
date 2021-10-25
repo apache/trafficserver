@@ -366,7 +366,7 @@ HostDBCache::start(int flags)
 
     Debug("hostdb", "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions, hostdb_max_size,
           hostdb_max_count);
-    int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, storage_path, full_path, HostDBInfo::unmarshall);
+    int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, full_path, HostDBInfo::unmarshall);
     if (load_ret != 0) {
       Warning("Error loading cache from %s: %d", full_path, load_ret);
     }

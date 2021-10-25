@@ -73,6 +73,8 @@ class Http2CommonSession
 public:
   using SessionHandler = int (Http2CommonSession::*)(int, void *);
 
+  virtual ~Http2CommonSession() = default;
+
   /////////////////////
   // Methods
 

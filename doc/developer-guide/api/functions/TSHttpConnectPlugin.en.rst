@@ -34,7 +34,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSVConn TSHttpConnectPlugin(TSHttpConnectOptions * options);
+.. function:: TSVConn TSHttpConnectPlugin(TSHttpConnectOptions * options)
 
 Description
 ===========

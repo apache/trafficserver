@@ -1322,12 +1322,14 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   // stream limit to be exceeded MUST treat this as a stream error.
   if (client_streamid) {
     if (client_streams_in_count >= server_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN, this_ethread());
       error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                          "recv headers creating inbound stream beyond max_concurrent limit");
       return nullptr;
     }
   } else {
     if (client_streams_out_count >= client_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT, this_ethread());
       error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                          "recv headers creating outbound stream beyond max_concurrent limit");
       return nullptr;
@@ -1655,6 +1657,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   if (this->session->write_avail() == 0) {
     Http2StreamDebug(this->session, stream->get_id(), "Not write avail");
+    this->session->flush();
     return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
 

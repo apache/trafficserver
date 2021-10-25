@@ -2492,7 +2492,7 @@ TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc obj)
   URL u;
   u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
   u.m_url_impl = (URLImpl *)obj;
-  return u.type_get();
+  return u.type_code_get();
 }
 
 TSReturnCode
@@ -2508,7 +2508,7 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 
     u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
     u.m_url_impl = (URLImpl *)obj;
-    u.type_set(type);
+    u.type_code_set(type);
     return TS_SUCCESS;
   }
 
@@ -5865,8 +5865,8 @@ TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm                              = reinterpret_cast<HttpSM *>(txnp);
-  sm->t_state.client_info.dst_addr.port() = htons(port);
+  HttpSM *sm                                            = reinterpret_cast<HttpSM *>(txnp);
+  sm->t_state.client_info.dst_addr.network_order_port() = htons(port);
 }
 
 // [amc] This might use the port. The code path should do that but it
@@ -6489,68 +6489,91 @@ TSHttpTxnStatusGet(TSHttpTxn txnp)
   return static_cast<TSHttpStatus>(sm->t_state.http_return_code);
 }
 
-/* control channel for HTTP */
 TSReturnCode
-TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
+TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *)txnp;
 
   switch (cntl) {
-  case TS_HTTP_CNTL_GET_LOGGING_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
-
-    intptr_t *rptr = static_cast<intptr_t *>(data);
-
-    if (sm->t_state.api_info.logging_enabled) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
-
-    return TS_SUCCESS;
-  }
-
-  case TS_HTTP_CNTL_SET_LOGGING_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.logging_enabled = (bool)data;
-      return TS_SUCCESS;
-    }
+  case TS_HTTP_CNTL_LOGGING_MODE:
+    sm->t_state.api_info.logging_enabled = data;
     break;
 
-  case TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
+  case TS_HTTP_CNTL_INTERCEPT_RETRY_MODE:
+    sm->t_state.api_info.retry_intercept_failures = data;
+    break;
 
-    intptr_t *rptr = static_cast<intptr_t *>(data);
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    sm->t_state.api_resp_cacheable = data;
+    break;
 
-    if (sm->t_state.api_info.retry_intercept_failures) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    sm->t_state.api_req_cacheable = data;
+    break;
 
-    return TS_SUCCESS;
-  }
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    sm->t_state.api_server_response_no_store = data;
+    break;
 
-  case TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.retry_intercept_failures = (bool)data;
-      return TS_SUCCESS;
-    }
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    sm->debug_on = data;
+    break;
+
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    sm->t_state.api_skip_all_remapping = data;
+    break;
+
   default:
     return TS_ERROR;
+    break;
   }
 
-  return TS_ERROR;
+  return TS_SUCCESS;
+}
+
+bool
+TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+
+  switch (ctrl) {
+  case TS_HTTP_CNTL_LOGGING_MODE:
+    return sm->t_state.api_info.logging_enabled;
+    break;
+
+  case TS_HTTP_CNTL_INTERCEPT_RETRY_MODE:
+    return sm->t_state.api_info.retry_intercept_failures;
+    break;
+
+  case TS_HTTP_CNTL_RESPONSE_CACHEABLE:
+    return sm->t_state.api_resp_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_REQUEST_CACHEABLE:
+    return sm->t_state.api_req_cacheable;
+    break;
+
+  case TS_HTTP_CNTL_SERVER_NO_STORE:
+    return sm->t_state.api_server_response_no_store;
+    break;
+
+  case TS_HTTP_CNTL_TXN_DEBUG:
+    return sm->debug_on;
+    break;
+
+  case TS_HTTP_CNTL_SKIP_REMAPPING:
+    return sm->t_state.api_skip_all_remapping;
+    break;
+
+  default:
+    break;
+  }
+
+  return false; // Unknown here, but oh well.
 }
 
 /* This is kinda horky, we have to use TSServerState instead of
@@ -8875,6 +8898,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK:
     ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_water_mark, conv);
     break;
+  case TS_CONFIG_NET_SOCK_NOTSENT_LOWAT:
+    ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_notsent_lowat, conv);
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -9379,6 +9405,25 @@ TSVConnSslConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+const char *
+TSVConnSslSniGet(TSVConn sslp, int *length)
+{
+  char const *server_name = nullptr;
+  NetVConnection *vc      = reinterpret_cast<NetVConnection *>(sslp);
+
+  if (vc == nullptr) {
+    return nullptr;
+  }
+
+  server_name = vc->get_server_name();
+
+  if (length) {
+    *length = server_name ? strlen(server_name) : 0;
+  }
+
+  return server_name;
+}
+
 tsapi TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
@@ -9442,15 +9487,19 @@ TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secr
   SSLConfigParams *load_params = SSLConfig::load_acquire();
   SSLConfigParams *params      = SSLConfig::acquire();
   if (load_params != nullptr) { // Update the current data structure
+    Debug("ssl.cert_update", "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
     if (!load_params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
       retval = TS_ERROR;
     }
-    SSLConfig::load_release(params);
+    load_params->updateCTX(std::string(secret_name, secret_name_length));
+    SSLConfig::load_release(load_params);
   }
   if (params != nullptr) {
+    Debug("ssl.cert_update", "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
     if (!params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
       retval = TS_ERROR;
     }
+    params->updateCTX(std::string(secret_name, secret_name_length));
     SSLConfig::release(params);
   }
   return retval;

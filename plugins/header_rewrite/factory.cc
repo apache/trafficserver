@@ -71,6 +71,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetConnMark();
   } else if (op == "set-debug") {
     o = new OperatorSetDebug();
+  } else if (op == "set-body") {
+    o = new OperatorSetBody();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;

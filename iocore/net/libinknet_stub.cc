@@ -175,3 +175,13 @@ ProcessManager::signalManager(int, char const *)
   ink_assert(false);
   return;
 }
+
+#include "PreWarmManager.h"
+void
+PreWarmManager::reconfigure()
+{
+  ink_assert(false);
+  return;
+}
+
+PreWarmManager prewarmManager;

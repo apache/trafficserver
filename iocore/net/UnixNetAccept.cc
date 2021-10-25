@@ -267,13 +267,14 @@ NetAccept::do_listen(bool non_blocking)
 
   if (server.fd != NO_FD) {
     if ((res = server.setup_fd_for_listen(non_blocking, opt))) {
-      Warning("unable to listen on main accept port %d: errno = %d, %s", ntohs(server.accept_addr.port()), errno, strerror(errno));
+      Warning("unable to listen on main accept port %d: errno = %d, %s", server.accept_addr.host_order_port(), errno,
+              strerror(errno));
       goto Lretry;
     }
   } else {
   Lretry:
     if ((res = server.listen(non_blocking, opt))) {
-      Warning("unable to listen on port %d: %d %d, %s", ntohs(server.accept_addr.port()), res, errno, strerror(errno));
+      Warning("unable to listen on port %d: %d %d, %s", server.accept_addr.host_order_port(), res, errno, strerror(errno));
     }
   }
 
@@ -337,9 +338,10 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
-    vc->options.packet_mark = opt.packet_mark;
-    vc->options.packet_tos  = opt.packet_tos;
-    vc->options.ip_family   = opt.ip_family;
+    vc->options.packet_mark          = opt.packet_mark;
+    vc->options.packet_tos           = opt.packet_tos;
+    vc->options.packet_notsent_lowat = opt.packet_notsent_lowat;
+    vc->options.ip_family            = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     if (opt.f_mptcp) {
@@ -488,9 +490,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
-    vc->options.packet_mark = opt.packet_mark;
-    vc->options.packet_tos  = opt.packet_tos;
-    vc->options.ip_family   = opt.ip_family;
+    vc->options.packet_mark          = opt.packet_mark;
+    vc->options.packet_tos           = opt.packet_tos;
+    vc->options.packet_notsent_lowat = opt.packet_notsent_lowat;
+    vc->options.ip_family            = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     if (opt.f_mptcp) {

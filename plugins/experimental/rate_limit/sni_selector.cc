@@ -17,9 +17,6 @@
  */
 #include "tscore/ink_config.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
 #include <cstring>
 
 #include "sni_limiter.h"
@@ -136,5 +133,3 @@ SniSelector::setupQueueCont()
     _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
 }
-
-#endif

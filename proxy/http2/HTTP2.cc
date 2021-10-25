@@ -84,6 +84,10 @@ static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
 static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
   "proxy.process.http2.max_priority_frames_per_minute_exceeded";
 static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
+static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
+  "proxy.process.http2.max_concurrent_streams_exceeded_in";
+static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME =
+  "proxy.process.http2.max_concurrent_streams_exceeded_out";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -431,7 +435,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       const char *scheme = field->value_get(&scheme_len);
 
       int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len);
-      url_scheme_set(headers->m_heap, headers->m_http->u.req.m_url_impl, scheme, scheme_wks_idx, scheme_len, true);
+      headers->m_http->u.req.m_url_impl->set_scheme(headers->m_heap, scheme, scheme_wks_idx, scheme_len, true);
 
       headers->field_delete(field);
     } else {
@@ -444,7 +448,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       int authority_len;
       const char *authority = field->value_get(&authority_len);
 
-      url_host_set(headers->m_heap, headers->m_http->u.req.m_url_impl, authority, authority_len, true);
+      headers->m_http->u.req.m_url_impl->set_host(headers->m_heap, authority, authority_len, true);
 
       headers->field_delete(field);
     } else {
@@ -462,7 +466,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
         --path_len;
       }
 
-      url_path_set(headers->m_heap, headers->m_http->u.req.m_url_impl, path, path_len, true);
+      headers->m_http->u.req.m_url_impl->set_path(headers->m_heap, path, path_len, true);
 
       headers->field_delete(field);
     } else {
@@ -899,6 +903,10 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT), RecRawStatSyncSum);
 
   http2_init();
 }

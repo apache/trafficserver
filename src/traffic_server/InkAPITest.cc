@@ -3423,7 +3423,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     if (test->hook_mask == 1) {
       test->hook_mask |= 2;
     }
-    TSSkipRemappingSet(static_cast<TSHttpTxn>(data), 1);
+    TSHttpTxnCntlSet(static_cast<TSHttpTxn>(data), TS_HTTP_CNTL_SKIP_REMAPPING, true);
     checkHttpTxnClientReqGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
@@ -6973,7 +6973,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_TXN_START:
-    TSSkipRemappingSet(static_cast<TSHttpTxn>(edata), 1);
+    TSHttpTxnCntlSet(static_cast<TSHttpTxn>(edata), TS_HTTP_CNTL_SKIP_REMAPPING, true);
     SDK_RPRINT(data->test, "TSHttpSsnReenable", "TestCase", TC_PASS, "ok");
     data->test_passed_ssn_reenable++;
     {
@@ -7245,7 +7245,7 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
 
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -7406,7 +7406,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -7876,7 +7876,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -8165,7 +8165,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -8695,7 +8695,8 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.hostdb.ip_resolve",
    "proxy.config.http.connect.dead.policy",
    "proxy.config.plugin.vc.default_buffer_index",
-   "proxy.config.plugin.vc.default_buffer_water_mark"}};
+   "proxy.config.plugin.vc.default_buffer_water_mark",
+   "proxy.config.net.sock_notsent_lowat"}};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

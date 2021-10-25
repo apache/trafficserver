@@ -111,17 +111,6 @@ The slice plugin supports the following options::
         Requires setting up an intermediate loopback remap rule.
         -r for short
 
-    --throttle (optional)
-        Under certain circumstances where many contiguous slices are in
-        RAM cache ATS will aggressively try to push these through the
-        slice plugin.  The downside of this is that all these contiguous
-        slices end up being marked as fresh even if the downstream
-        client aborts.  This option keeps track of how much data the
-        client has already passed down and slows down issuing new
-        slice requests.
-        Normally leave this off.
-        -o for short
-
 Examples::
 
     @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so

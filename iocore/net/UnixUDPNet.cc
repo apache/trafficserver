@@ -637,8 +637,8 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     // No local address specified, so use family option if possible.
     int family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
     local_addr.setToAnyAddr(family);
-    is_any_address    = true;
-    local_addr.port() = htons(opt.local_port);
+    is_any_address                  = true;
+    local_addr.network_order_port() = htons(opt.local_port);
   }
 
   *resfd = -1;
@@ -698,7 +698,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
   }
 
-  if (local_addr.port() || !is_any_address) {
+  if (local_addr.network_order_port() || !is_any_address) {
     if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       char buff[INET6_ADDRPORTSTRLEN];
       Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));

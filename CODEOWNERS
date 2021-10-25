@@ -38,11 +38,11 @@ src/tscore/*                @SolidWallOfCode @zwoop
 src/wccp/*                  @SolidWallOfCode
 
 # Include tree
-include/*                   @bryan_call
+include/*                   @bryan_call @zwoop
 include/tscpp/*             @SolidWallOfCode
 include/wccp/*              @SolidWallOfCode
-include/shared/*            @SolidWallOfCode @zwoop
-include/tscore/*            @SolidWallOfCode @zwoop
+include/shared/*            @SolidWallOfCode
+include/tscore/*            @SolidWallOfCode
 include/ts/*                @zwoop
 
 # iocore src
@@ -58,7 +58,7 @@ tscore/utils/*              @bryan_call
 # Old lib tree
 lib/records/*               @zwoop
 lib/perl/*                  @zwoop
-lib/yamlcpp/*               @bryancall
+lib/yamlcpp/*               @bryancall @zwoop
 
 # The proxy tree, where all flavor of HTTP lives
 proxy/*                     @zwoop
@@ -75,14 +75,13 @@ tests/*                     @SolidWallOfCode
 tests/include/*             @SolidWallOfCode
 tests/gold_tests/*          @SolidWallOfCode
 tests/tools/*               @SolidWallOfCode
-tests/unit_tests/*          @SolidWallOfCode
 
 # The manager source
 mgmt/*                      @zwoop @bryancall
 
 # Various plugins
 plugins/*                   @zwoop
-plugins/cachekey/*          @gtenev
+plugins/cachekey/*          @zwoop @gtenev
 
 # Example plugins / code
 example/*                   @SolidWallOfCode

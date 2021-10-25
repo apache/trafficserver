@@ -98,8 +98,9 @@ private:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest, SNIRoutingType type, const std::vector<int> &alpn)
-    : destination(dest), type(type), alpn_ids(alpn)
+  TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
+                    const std::vector<int> &alpn)
+    : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
   {
     need_fix = (destination.find_first_of('$') != std::string::npos);
   }
@@ -115,10 +116,10 @@ public:
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
         const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
-        ssl_netvc->set_tunnel_destination(fixed_dst, type);
+        ssl_netvc->set_tunnel_destination(fixed_dst, type, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       } else {
-        ssl_netvc->set_tunnel_destination(destination, type);
+        ssl_netvc->set_tunnel_destination(destination, type, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       }
 
@@ -202,7 +203,8 @@ private:
   }
 
   std::string destination;
-  SNIRoutingType type = SNIRoutingType::NONE;
+  SNIRoutingType type                         = SNIRoutingType::NONE;
+  YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
   bool need_fix;
 };

@@ -576,9 +576,7 @@ RecRawStatUpdateSum(RecRawStatBlock *rsb, int id)
 {
   RecRawStat *raw = rsb->global[id];
   if (nullptr != raw) {
-    RecRecord *r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(raw) -
-                                                 (reinterpret_cast<char *>(&reinterpret_cast<RecRecord *>(0)->stat_meta) -
-                                                  reinterpret_cast<char *>(reinterpret_cast<RecRecord *>(0))));
+    RecRecord *r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(raw) - offsetof(struct RecRecord, stat_meta));
 
     RecDataSetFromInt64(r->data_type, &r->data, rsb->global[id]->sum);
     r->sync_required = REC_SYNC_REQUIRED;

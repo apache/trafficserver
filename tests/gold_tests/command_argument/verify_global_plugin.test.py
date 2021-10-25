@@ -166,8 +166,8 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-    "ERROR: .*: undefined symbol: .*foo.*",
-    "Should warn about the need for the TSPluginInit symbol")
+    "ERROR:.*unable to load",
+    "Should log failure to load shared object")
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     "ERROR",
-    "ERROR: .*: undefined symbol: .*foo.*")
+    "Should log failure to load shared object")

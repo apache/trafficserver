@@ -62,6 +62,7 @@ enum {
   http_current_client_connections_stat,
   http_current_active_client_connections_stat,
   http_websocket_current_active_client_connections_stat,
+  tunnel_current_active_connections_stat,
   http_current_client_transactions_stat,
   http_total_incoming_connections_stat,
   http_current_server_transactions_stat,
@@ -507,6 +508,7 @@ struct OverridableHttpConfigParams {
   MgmtByte uncacheable_requests_bypass_parent = 1;
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt max_proxy_cycles                    = 0;
+  MgmtInt tunnel_activity_check_period        = 0;
 
   MgmtByte forward_connect_method = 0;
 
@@ -628,6 +630,7 @@ struct OverridableHttpConfigParams {
   MgmtInt sock_option_flag_out      = 0;
   MgmtInt sock_packet_mark_out      = 0;
   MgmtInt sock_packet_tos_out       = 0;
+  MgmtInt sock_packet_notsent_lowat = 0;
 
   ///////////////
   // Hdr Limit //
@@ -826,7 +829,7 @@ public:
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
-  OutboundConnTrack::GlobalConfig outbound_conntrack;
+  OutboundConnTrack::GlobalConfig global_outbound_conntrack;
 
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;
@@ -858,6 +861,8 @@ public:
 class HttpConfig
 {
 public:
+  using scoped_config = ConfigProcessor::scoped_config<HttpConfig, HttpConfigParams>;
+
   static void startup();
 
   static void reconfigure();

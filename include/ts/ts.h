@@ -1323,6 +1323,7 @@ tsapi int TSVConnIsSsl(TSVConn sslp);
 /* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
  */
 tsapi int TSVConnProvidedSslCert(TSVConn sslp);
+tsapi const char *TSVConnSslSniGet(TSVConn sslp, int *length);
 
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
@@ -2711,6 +2712,12 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_l
  */
 tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
                            const unsigned int reason);
+
+/*
+ * Set or get various HTTP Transaction control settings.
+ */
+tsapi bool TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl);
+tsapi TSReturnCode TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType ctrl, bool data);
 
 #ifdef __cplusplus
 }

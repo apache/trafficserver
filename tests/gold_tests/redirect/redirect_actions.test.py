@@ -21,6 +21,8 @@ from enum import Enum
 import re
 import os
 import socket
+import sys
+
 Test.Summary = '''
 Test redirection behavior to invalid addresses
 '''
@@ -149,13 +151,17 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
     origin.addResponse('sessionfile.log', request_header, response_header)
 
     # Generate the request data file.
-    with open(os.path.join(data_path, tr.Name), 'w') as f:
+    command_path = os.path.join(data_path, tr.Name)
+    with open(command_path, 'w') as f:
         f.write(('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
                  'Host: iwillredirect.test:{2}\r\n\r\n').
                 format(normConfig, normRedirectTarget, origin.Variables.Port))
     # Set the command with the appropriate URL.
-    tr.Processes.Default.Command = "bash -o pipefail -c 'python3 tcp_client.py 127.0.0.1 {0} {1} | head -n 1'".\
-        format(trafficservers[config].Variables.port, os.path.join(data_dirname, tr.Name))
+    port = trafficservers[config].Variables.port
+    dir_path = os.path.join(data_dirname, tr.Name)
+    tr.Processes.Default.Command = \
+        (f"bash -o pipefail -c '{sys.executable} tcp_client.py 127.0.0.1 {port} "
+         f"{dir_path} | head -n 1'")
     tr.Processes.Default.ReturnCode = 0
     # Generate and set the 'gold file' to check stdout
     goldFilePath = os.path.join(data_path, '{0}.gold'.format(tr.Name))

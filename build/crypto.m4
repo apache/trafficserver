@@ -45,7 +45,8 @@ dnl Check OpenSSL Version
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO_VERSION], [
   AC_MSG_CHECKING([OpenSSL version])
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+  AC_RUN_IFELSE([AC_LANG_SOURCE(
+  [
 #include <openssl/opensslv.h>
 int main() {
   if (OPENSSL_VERSION_NUMBER < 0x1000200fL) {
@@ -53,7 +54,9 @@ int main() {
   }
   return 0;
 }
-]])],[AC_MSG_RESULT([ok])],[AC_MSG_FAILURE([requires OpenSSL version 1.0.2 or greater])],[])
+  ])],
+  [AC_MSG_RESULT([ok])], [AC_MSG_FAILURE([requires OpenSSL version 1.0.2 or greater])], [AC_MSG_RESULT([assuming ok])]
+  )
 ])
 
 dnl
@@ -269,6 +272,21 @@ AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
   AC_MSG_RESULT([$enable_tls_ocsp])
   TS_ARG_ENABLE_VAR([use], [tls-ocsp])
   AC_SUBST(use_tls_ocsp)
+])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_KEYLOGGING], [
+  _keylogging_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_FUNCS(SSL_CTX_set_keylog_callback, [enable_tls_keylogging=yes], [enable_tls_keylogging=no])
+  LIBS=$_keylogging_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLS keylogging support)
+  AC_MSG_RESULT([$enable_tls_keylogging])
+  TS_ARG_ENABLE_VAR([has], [tls-keylogging])
+  AC_SUBST(has_tls_keylogging)
 ])
 
 dnl

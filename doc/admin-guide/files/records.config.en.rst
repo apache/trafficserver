@@ -1966,9 +1966,14 @@ Security
    is 1, a warning is generated but the transaction is allowed to proceed.  If the value is 2 and there is a
    mismatch, a warning is generated and a status 403 is returned.
 
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
+   Note that SNI and hostname consistency checking is not performed on all connections indiscriminately, even if this
+   global ``proxy.config.http.host_sni_policy`` is set to a value of 1 or 2. It is only performed for connections to
+   hosts specifying ``verify_client`` and/or ``ip_allow`` policies in :file:`sni.yaml`. That is, the SNI and hostname
+   mismatch check is only performed if a relevant security policy for the SNI is set in :file:`sni.yaml`. The
+   ``proxy.config.http.host_sni_policy`` :file:`records.config` value is used as the default value if either of these
+   policies is set in the corresponding :file:`sni.yaml` file entry and the :file:`sni.yaml` entry does not override
+   this value via a :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
 
-   Currently, only the verify_client and ip_allow policies are checked for host name and SNI matching.
 
 Cache Control
 =============
@@ -2346,6 +2351,17 @@ Cache Control
    small enough to trigger a rewrite of the resident alt fragment within a
    write vector. For further details on cache write vectors, refer to the
    developer documentation for :cpp:class:`CacheVC`.
+
+.. ts::cv:: CONFIG proxy.config.cache.mutex_retry_delay INT 2
+   :reloadable:
+   :units: milliseconds
+
+   The retry delay for missing a lock on a mutex in the cache component. This is used generically
+   for most locks, except those that have an explicit configuration for the retry delay. For
+   instance, if the cache component is notifying another continuation of a cache event and fails to
+   get the lock for that continuation, it will use this as the delay for the retry. This is also
+   used from the asynchronous IO threads when IO finishes and the ``CacheVC`` lock or stripe lock is
+   required.
 
 RAM Cache
 =========
@@ -3727,6 +3743,18 @@ SSL Termination
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.ssl.keylog_file STRING NULL
+   :reloadable:
+
+   If configured, TLS session keys for TLS connections will be logged to the
+   specified file. This file is formatted in such a way that it can be
+   conveniently imported into tools such as Wireshark to decrypt packet
+   captures.  This should only be used for debugging purposes since the data in
+   the keylog file can be used to decrypt the otherwise encrypted traffic. A
+   NULL value for this disables the feature.
+
+   This feature is disabled by default.
+
 Client-Related Configuration
 ----------------------------
 
@@ -3891,6 +3919,39 @@ TLS v1.3 0-RTT Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
 
    Set to ``1`` to allow HTTP parameters on early data requests.
+
+SNI Routing
+-----------
+
+.. ts:cv:: CONFIG proxy.config.tunnel.activity_check_period INT 0
+   :units: seconds
+
+   Frequency of checking the activity of SNI Routing Tunnel. Set to ``0`` to disable monitoring of the activity of the SNI tunnels.
+   The feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm INT 0
+
+   Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.max_stats_size INT 100
+
+   Max size of :ref:`dynamic stats for Pre-warming TLS Tunnel <pre-warming-tls-tunnel-stats>`.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.algorithm INT 2
+
+   Version of pre-warming algorithm.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``1`` Periodical pre-warming only
+   ``2`` Event based pre-warming + Periodical pre-warming
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.event_period INT 1000
+   :units: milliseconds
+
+   Frequency of periodical pre-warming in milli-seconds.
 
 OCSP Stapling Configuration
 ===========================
@@ -4176,12 +4237,6 @@ removed in the future without prior notice.
    Only available for :program:`traffic_quic`.
    If specified, TLS session data will be stored to the file, and will be used
    for resuming a session.
-
-.. ts:cv:: CONFIG proxy.config.quic.client.keylog_file STRING ""
-   :reloadable:
-
-   Only available for :program:`traffic_quic`.
-   If specified, key information will be stored to the file.
 
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
    :reloadable:
@@ -4500,6 +4555,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4534,6 +4590,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4584,6 +4641,11 @@ Sockets
    (the packets that make up an origin request).
 
    .. seealso:: `Traffic Shaping`_
+
+.. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 16384
+   :overridable:
+
+   Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 
