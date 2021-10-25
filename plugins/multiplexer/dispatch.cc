@@ -86,8 +86,13 @@ copy(const TSIOBufferReader &r, const TSIOBuffer b)
     const void *const pointer = TSIOBufferBlockReadStart(block, r, &size);
 
     if (pointer != nullptr && size > 0) {
-      CHECK(TSIOBufferWrite(b, pointer, size) == size);
-      length += size;
+      auto const num_written = TSIOBufferWrite(b, pointer, size);
+      if (num_written != size) {
+        TSError("[" PLUGIN_TAG "] did not write the expected number of body bytes. "
+                "Wrote: %" PRId64 ", expected: %" PRId64,
+                num_written, size);
+      }
+      length += num_written;
     }
   }
 
