@@ -206,7 +206,7 @@ Http2CommonSession::is_url_pushed(const char *url, int url_len)
     return false;
   }
 
-  return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
+  return _h2_pushed_urls->find(std::string{url, static_cast<size_t>(url_len)}) != _h2_pushed_urls->end();
 }
 
 inline int64_t

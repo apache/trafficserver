@@ -1424,7 +1424,7 @@ Http2ConnectionState::create_initiating_stream(bool client_streamid, Http2Error 
                                               peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), true, true);
 
   ink_assert(nullptr != new_stream);
-  !stream_list.in(new_stream);
+  ink_assert(!stream_list.in(new_stream));
 
   stream_list.enqueue(new_stream);
   if (client_streamid) {
