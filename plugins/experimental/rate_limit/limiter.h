@@ -188,8 +188,8 @@ public:
     }
 
     for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {
-      size_t metricsz = metric_prefix.length() + strlen(types[type]) + description.length() + 16; // padding for suffixes+dots
-      char *metric    = (char *)TSmalloc(metricsz);
+      size_t const metricsz = metric_prefix.length() + strlen(suffixes[i]) + 2; // padding for dot+terminator
+      char *const metric    = (char *)TSmalloc(metricsz);
       snprintf(metric, metricsz, "%s.%s", metric_prefix.data(), suffixes[i]);
 
       _metrics[i] = TS_ERROR;

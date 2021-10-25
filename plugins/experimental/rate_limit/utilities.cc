@@ -139,7 +139,8 @@ getDescriptionFromUrl(const char *url)
     TSDebug(PLUGIN_NAME, "scheme = %s, host = %s, port = %d", scheme.c_str(), hostname.c_str(), port);
 
     description = scheme;
-    description.append("." + hostname);
+    description.append(".");
+    description.append(hostname);
 
     // only append the port when it is non-standard
     if (!(strncmp(s, TS_URL_SCHEME_HTTP, scheme_len) == 0 && port == 80) &&
