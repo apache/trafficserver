@@ -101,6 +101,8 @@ public:
 
   // Stream control interfaces
   Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error, bool initiating_connection = false);
+  Http2Stream *create_initiating_stream(bool client_request, Http2Error &error);
+  void set_stream_id(Http2Stream *stream);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   void start_streams();
@@ -114,7 +116,8 @@ public:
   Http2StreamId get_latest_stream_id_out() const;
   int get_stream_requests() const;
   void increment_stream_requests();
-  bool is_peer_concurrent_stream_max() const;
+  bool is_peer_concurrent_stream_ub() const;
+  bool is_peer_concurrent_stream_lb() const;
 
   // Continuated header decoding
   Http2StreamId get_continued_stream_id() const;

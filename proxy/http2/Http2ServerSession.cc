@@ -147,19 +147,16 @@ void
 Http2ServerSession::do_io_close(int alerrno)
 {
   REMEMBER(NO_EVENT, this->recursion)
-  Http2SsnDebug("session closed");
 
-  this->remove_session();
+  if (!this->connection_state.is_state_closed()) {
+    Http2SsnDebug("session closed");
+    this->remove_session();
 
-  ink_assert(this->mutex->thread_holding == this_ethread());
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
+    ink_assert(this->mutex->thread_holding == this_ethread());
+    send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  {
-    SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-    this->connection_state.release_stream();
+    // Destroy will be called from connection_state.release_stream() once the number of active streams goes to 0
   }
-
-  // Destroy will be called from connection_state.release_stream() once the number of active streams goes to 0
 }
 
 int
@@ -330,17 +327,13 @@ Http2ServerSession::get_proxy_session()
 ProxyTransaction *
 Http2ServerSession::new_transaction()
 {
-  // In == client side
-  Http2StreamId latest_id = connection_state.get_latest_stream_id_in();
-  Http2StreamId stream_id = (latest_id == 0) ? 3 : latest_id + 2;
   this->set_session_active();
 
   // Create a new stream/transaction
   Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
-  Http2Stream *stream = connection_state.create_stream(stream_id, error, true);
+  Http2Stream *stream = connection_state.create_initiating_stream(true, error);
 
-  if (connection_state.is_peer_concurrent_stream_max()) {
-    Warning("Remove SSN %" PRId64, con_id);
+  if (!stream || connection_state.is_peer_concurrent_stream_ub()) {
     remove_session();
   }
 
