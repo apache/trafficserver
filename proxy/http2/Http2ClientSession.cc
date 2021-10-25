@@ -133,17 +133,20 @@ void
 Http2ClientSession::do_io_close(int alerrno)
 {
   REMEMBER(NO_EVENT, this->recursion)
-  Http2SsnDebug("session closed");
 
-  ink_assert(this->mutex->thread_holding == this_ethread());
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
+  if (!this->connection_state.is_state_closed()) {
+    Http2SsnDebug("session closed");
 
-  this->connection_state.release_stream();
+    ink_assert(this->mutex->thread_holding == this_ethread());
+    send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  this->clear_session_active();
+    this->connection_state.release_stream();
 
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(this, 0, nullptr);
+    this->clear_session_active();
+
+    // Clean up the write VIO in case of inactivity timeout
+    this->do_io_write(this, 0, nullptr);
+  }
 }
 
 int
@@ -151,6 +154,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
   int retval;
+  bool set_closed = false;
 
   recursion++;
 
@@ -184,7 +188,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     Http2SsnDebug("Closing event %d", event);
     this->set_dying_event(event);
     this->do_io_close();
-    retval = 0;
+    retval     = 0;
+    set_closed = true;
     break;
 
   case VC_EVENT_WRITE_READY:
@@ -226,7 +231,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     }
   }
 
-  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
+  if (!set_closed && this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
     send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_SHUTDOWN_INIT, this);
   }
 

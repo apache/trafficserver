@@ -69,7 +69,6 @@ public:
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
   void removeSession(PoolableSession *ssn);
   void addSession(PoolableSession *ssn);
-  void testSession(PoolableSession *ssn);
   int
   count() const
   {

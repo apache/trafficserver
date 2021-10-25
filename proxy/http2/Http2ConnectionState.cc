@@ -116,7 +116,8 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
   }
 
-  if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+  if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED ||
+      stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
     cstate.send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
@@ -226,10 +227,12 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     stream->read_done();
   }
 
-  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    stream->signal_read_event(VC_EVENT_READ_COMPLETE);
-  } else {
-    stream->signal_read_event(VC_EVENT_READ_READY);
+  if (stream->read_enabled()) {
+    if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+      stream->signal_read_event(VC_EVENT_READ_COMPLETE);
+    } else {
+      stream->signal_read_event(VC_EVENT_READ_READY);
+    }
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -289,7 +292,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (reset_header_after_decoding) {
       free_stream_after_decoding = true;
       stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), cstate.session->get_proxy_session(), stream_id,
-                                 cstate.peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), true);
+                                 cstate.peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), true, false);
     } else {
       // Create new stream
       Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -911,7 +914,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     ssize_t wnd = std::min(cstate.client_rwnd(), stream->client_rwnd());
-    if (!stream->is_closed() && stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
+    if (wnd > 0) {
       SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
       stream->restart_sending();
     }
@@ -1343,9 +1346,109 @@ Http2ConnectionState::state_closed(int event, void *edata)
 }
 
 bool
-Http2ConnectionState::is_peer_concurrent_stream_max() const
+Http2ConnectionState::is_peer_concurrent_stream_ub() const
 {
-  return client_streams_in_count >= peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+  return client_streams_in_count >= (peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) * 0.9;
+}
+
+bool
+Http2ConnectionState::is_peer_concurrent_stream_lb() const
+{
+  return client_streams_in_count <= (peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) / 2;
+}
+
+void
+Http2ConnectionState::set_stream_id(Http2Stream *stream)
+{
+  if (stream->get_transaction_id() < 0) {
+    Http2StreamId stream_id = (latest_streamid_in == 0) ? 3 : latest_streamid_in + 2;
+    stream->set_transaction_id(stream_id);
+    latest_streamid_in = stream_id;
+  }
+}
+
+Http2Stream *
+Http2ConnectionState::create_initiating_stream(bool client_streamid, Http2Error &error)
+{
+  // first check if we've hit the active connection limit
+  if (!session->get_netvc()->add_to_active_queue()) {
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_NO_ERROR,
+                       "refused to create new stream, maxed out active connections");
+    return nullptr;
+  }
+
+  // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
+  if (session->get_half_close_local_flag()) {
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                       "refused to create new stream, because session is in half_close state");
+    return nullptr;
+  }
+
+  // Endpoints MUST NOT exceed the limit set by their peer.  An endpoint
+  // that receives a HEADERS frame that causes their advertised concurrent
+  // stream limit to be exceeded MUST treat this as a stream error.
+  int check_max_concurrent_limit;
+  int check_count;
+  if (client_streamid) {
+    check_count = client_streams_in_count;
+    // If this is an outbound client stream, must check against the peer's max_concurrent
+    if (session->is_outbound()) {
+      check_max_concurrent_limit = peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+    } else { // Inbound client streamm check against our own max_connecurent limits
+      check_max_concurrent_limit = local_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+    }
+  } else { // Not a client stream (i.e. a push)
+    check_count = client_streams_out_count;
+    // If this is an outbound non-client stream, must check against the local max_concurrent
+    if (session->is_outbound()) {
+      check_max_concurrent_limit = local_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+    } else { // Inbound non-client streamm check against the peer's max_connecurent limits
+      check_max_concurrent_limit = peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
+    }
+  }
+  ink_release_assert(check_max_concurrent_limit != 0);
+  // If we haven't got the peers settings yet, just hope for the best
+  if (check_max_concurrent_limit >= 0) {
+    if (session->is_outbound() && Http2ConnectionState::is_peer_concurrent_stream_ub()) {
+      error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                         "recv headers creating stream beyond max_concurrent limit");
+      return nullptr;
+    } else if (check_count >= check_max_concurrent_limit) {
+      error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                         "recv headers creating stream beyond max_concurrent limit");
+      return nullptr;
+    }
+  }
+
+  Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), -1,
+                                              peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), true, true);
+
+  ink_assert(nullptr != new_stream);
+  !stream_list.in(new_stream);
+
+  stream_list.enqueue(new_stream);
+  if (client_streamid) {
+    ink_assert(client_streams_in_count < UINT32_MAX);
+    ++client_streams_in_count;
+  } else {
+    ink_assert(client_streams_out_count < UINT32_MAX);
+    ++client_streams_out_count;
+  }
+  ++total_client_streams_count;
+
+  if (zombie_event != nullptr) {
+    zombie_event->cancel();
+    zombie_event = nullptr;
+  }
+
+  new_stream->mutex                     = new_ProxyMutex();
+  new_stream->is_first_transaction_flag = get_stream_requests() == 0;
+  increment_stream_requests();
+
+  // Clear the session timeout.  Let the transaction timeouts reign
+  session->get_proxy_session()->cancel_inactivity_timeout();
+
+  return new_stream;
 }
 
 Http2Stream *
@@ -1418,7 +1521,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error, boo
   }
 
   Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), new_id,
-                                              peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initiating_connection);
+                                              peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initiating_connection, true);
 
   ink_assert(nullptr != new_stream);
   ink_assert(!stream_list.in(new_stream));
@@ -1494,16 +1597,14 @@ Http2ConnectionState::restart_streams()
     // Call send_response_body() for each streams
     while (s != end) {
       Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
-      if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
-          std::min(this->client_rwnd(), s->client_rwnd()) > 0) {
+      if (std::min(this->client_rwnd(), s->client_rwnd()) > 0) {
         SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
         s->restart_sending();
       }
       ink_assert(s != next);
       s = next;
     }
-    if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
-        std::min(this->client_rwnd(), s->client_rwnd()) > 0) {
+    if (std::min(this->client_rwnd(), s->client_rwnd()) > 0) {
       SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
       s->restart_sending();
     }
@@ -1519,7 +1620,7 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
   uint32_t min_rwnd     = std::min(initial_rwnd, this->local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
 
   // Connection level WINDOW UPDATE
-  if (this->server_rwnd() < min_rwnd) {
+  if (this->server_rwnd() < initial_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - this->server_rwnd();
     this->increment_server_rwnd(diff_size);
     this->send_window_update_frame(0, diff_size);
@@ -1609,7 +1710,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   if (http2_is_client_streamid(stream->get_id())) {
     ink_assert(client_streams_in_count > 0);
     --client_streams_in_count;
-    if (!fini_received && !is_peer_concurrent_stream_max()) {
+    if (!fini_received && is_peer_concurrent_stream_lb()) {
       session->add_session();
     }
   } else {
@@ -1722,7 +1823,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
       dependency_tree->update(node, len);
 
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-      stream->signal_write_event(true);
+      stream->signal_write_event(stream->is_write_vio_done() ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY);
     }
     break;
   }
@@ -1847,19 +1948,22 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     result    = send_a_data_frame(stream, len);
     more_data = resp_reader->is_read_avail_more_than(0);
 
-    if (result == Http2SendDataFrameResult::DONE && !stream->is_outbound_connection()) {
-      // Delete a stream immediately
-      // TODO its should not be deleted for a several time to handling
-      // RST_STREAM and WINDOW_UPDATE.
-      // See 'closed' state written at [RFC 7540] 5.1.
-      Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
-      stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
-      stream->initiating_close();
-      break;
-    } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
-      stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
-      break;
+    if (result == Http2SendDataFrameResult::DONE) {
+      if (!stream->is_outbound_connection()) {
+        // Delete a stream immediately
+        // TODO its should not be deleted for a several time to handling
+        // RST_STREAM and WINDOW_UPDATE.
+        // See 'closed' state written at [RFC 7540] 5.1.
+        Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
+        stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
+        stream->do_io_close();
+      } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
+        stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
+      }
     }
+  }
+  if (!more_data && result != Http2SendDataFrameResult::DONE) {
+    stream->signal_write_event(VC_EVENT_WRITE_READY);
   }
 
   return;
@@ -1873,6 +1977,12 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   uint8_t flags               = 0x00;
 
   Http2StreamDebug(session, stream->get_id(), "Send HEADERS frame");
+
+  // For outbound streams, set the ID if it has not yet already been set
+  // Need to defer setting the stream ID to avoid another later created stream
+  // sending out first.  This may cause the peer to issue a stream or connection
+  // error (new stream less that the greatest we have seen so far)
+  this->set_stream_id(stream);
 
   HTTPHdr *send_hdr = stream->get_send_header();
   if (stream->expect_send_trailer()) {

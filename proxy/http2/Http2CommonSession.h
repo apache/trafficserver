@@ -139,7 +139,6 @@ protected:
   MIOBuffer *write_buffer              = nullptr;
   IOBufferReader *_write_buffer_reader = nullptr;
 
-
   int64_t total_write_len = 0;
 
   Http2FrameHeader current_hdr        = {0, 0, 0, 0};
@@ -233,4 +232,3 @@ Http2CommonSession::do_clear_session_active()
 {
   get_proxy_session()->clear_session_active();
 }
-

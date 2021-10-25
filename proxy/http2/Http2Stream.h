@@ -55,7 +55,7 @@ public:
   using super           = ProxyTransaction; ///< Parent type.
 
   Http2Stream() {} // Just to satisfy ClassAllocator
-  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd, bool outbound_connection = false);
+  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd, bool outbound_connection, bool registered_stream);
   ~Http2Stream();
 
   int main_event_handler(int event, void *edata);
@@ -88,8 +88,7 @@ public:
   void update_write_request(bool send_update);
 
   void signal_read_event(int event);
-  void signal_write_event(int event);
-  void signal_write_event(bool call_update);
+  void signal_write_event(int event, bool call_update = true);
 
   void restart_sending();
   bool push_promise(URL &url, const MIMEField *accept_encoding);
@@ -114,6 +113,7 @@ public:
   bool is_first_transaction() const override;
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
+  void set_transaction_id(int new_id);
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;
@@ -209,7 +209,8 @@ private:
 
   bool has_body = false;
 
-  bool _outbound_flag = false;
+  bool _outbound_flag     = false;
+  bool _registered_stream = true;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -284,6 +285,12 @@ inline int
 Http2Stream::get_transaction_id() const
 {
   return _id;
+}
+
+inline void
+Http2Stream::set_transaction_id(int new_id)
+{
+  _id = new_id;
 }
 
 inline Http2StreamState

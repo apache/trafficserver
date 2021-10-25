@@ -770,7 +770,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, ua_txn->get_remote_reader()->mbuf);
+  ua_entry->read_vio  = client_vc->do_io_read(this, 0, ua_txn->get_remote_reader()->mbuf);
+  ua_entry->write_vio = client_vc->do_io_write(this, 0, nullptr);
 
   /////////////////////////
   // set up timeouts     //
@@ -956,8 +957,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_raw_buffer_reader = nullptr;
     }
     http_parser_clear(&http_parser);
-    ua_entry->vc_read_handler                    = &HttpSM::state_watch_for_client_abort;
-    ua_entry->vc_write_handler                   = &HttpSM::state_watch_for_client_abort;
+    ua_entry->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
+    ua_entry->vc_write_handler = &HttpSM::state_watch_for_client_abort;
     ua_txn->cancel_inactivity_timeout();
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = Thread::get_hrtime();
   }
@@ -2158,7 +2159,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
   if (server_entry->eos) {
     return 0;
   }
-
   ink_assert(server_entry->eos != true);
   ink_assert(server_entry->read_vio == (VIO *)data);
   ink_assert(t_state.current.server->state == HttpTransact::STATE_UNDEFINED);
@@ -2224,6 +2224,12 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+
+    // Any other events to the end
+    if (server_entry->vc_type == HTTP_SERVER_VC) {
+      server_entry->vc_read_handler  = &HttpSM::tunnel_handler;
+      server_entry->vc_write_handler = &HttpSM::tunnel_handler;
+    }
 
     // If there is a post body in transit, give up on it
     if (tunnel.is_tunnel_alive()) {
@@ -2351,6 +2357,10 @@ HttpSM::state_send_server_request_header(int event, void *data)
             do_setup_post_tunnel(HTTP_SERVER_VC);
           }
         }
+      }
+      // Any other events to these read response
+      if (server_entry->vc_type == HTTP_SERVER_VC) {
+        server_entry->vc_read_handler = &HttpSM::state_read_server_response_header;
       }
     }
 
@@ -2489,6 +2499,9 @@ HttpSM::add_to_existing_request()
     // Check that entry matches sni, hostname, and cert
     if (proposed_hostname == ip_iter->second->hostname && proposed_sni == ip_iter->second->sni &&
         proposed_cert == ip_iter->second->cert_name && ip_iter->second->_connect_sms.size() < 50) {
+      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
+      // bytes are received back
+      this->t_state.set_connect_fail(EIO);
       ip_iter->second->_connect_sms.insert(this);
       Debug("http_connect", "Add entry to connection queue. size=%" PRId64, ip_iter->second->_connect_sms.size());
       retval = true;
@@ -2994,7 +3007,7 @@ HttpSM::main_handler(int event, void *data)
   }
 
   if (vc_entry) {
-    jump_point = static_cast<VIO *>(data) == vc_entry->read_vio ? vc_entry->vc_read_handler : vc_entry->vc_write_handler;
+    jump_point = (static_cast<VIO *>(data) == vc_entry->read_vio) ? vc_entry->vc_read_handler : vc_entry->vc_write_handler;
     ink_assert(jump_point != (HttpSMHandler) nullptr);
     ink_assert(vc_entry->vc != (VConnection *)nullptr);
     (this->*jump_point)(event, data);
@@ -5886,6 +5899,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->hostname  = t_state.current.server->name;
       new_entry->sni       = this->get_outbound_sni();
       new_entry->cert_name = this->get_outbound_cert();
+      this->t_state.set_connect_fail(EIO);
       new_entry->_connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->_ipaddr, new_entry));
     }

@@ -983,6 +983,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       ink_assert(c_write > 0);
       if (c->write_vio == nullptr) {
         consumer_handler(VC_EVENT_ERROR, c);
+      } else if (c->write_vio->ntodo() == 0 && c->alive) {
+        consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
     }
   }
@@ -1222,6 +1224,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     // Kick off the consumers if appropriate
     for (c = p->consumer_list.head; c; c = c->link.next) {
       if (c->alive && c->write_vio) {
+        if (c->write_vio->nbytes == INT64_MAX) {
+          c->write_vio->nbytes = p->bytes_read + p->init_bytes_done - c->skip_bytes;
+        }
         c->write_vio->reenable();
       }
     }
