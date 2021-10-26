@@ -80,6 +80,18 @@ are available:
    An optional `max-age` for how long a transaction can sit in the delay queue.
    The value (default 0) is the age in milliseconds.
 
+.. option:: --prefix
+
+   An optional metric prefix to use instead of the default (plugin.rate_limiter).
+
+.. option:: --tag
+
+   An optional metric tag to use instead of the default. When a tag is not specified
+   the plugin will use the scheme, FQDN, and port when it is non-standard. For example
+   a default plugin tag might be "https.example.com" or "http.example.com:8080"
+   noting that in the latter exampe, the non-standard scheme and port led to
+   ":8080" being appended to the string.
+
 Global Plugin
 -------------
 
@@ -122,6 +134,61 @@ The following options are available:
    An optional `max-age` for how long a transaction can sit in the delay queue.
    The value (default 0) is the age in milliseconds.
 
+.. option:: --prefix
+
+   An optional metric prefix to use instead of the default (plugin.rate_limiter).
+
+.. option:: --tag
+
+   An optional metric tag to use instead of the default. When a tag is not specified
+   the plugin will use the FQDN of the SNI associated with each rate limiter instance
+   created during plugin initialization.
+
+Metrics
+-------
+Metric names are generated either using defaults or user-supplied values. In either
+case, the format of the metric names is as follows:
+
+   ``prefix.type.tag.metric``
+
+A user can specify their own prefixes and tags, but not types or metrics.
+
+``prefix``
+   The default prefix for all metrics is `plugin.rate_limiter`.
+
+``type``
+   There are two types of metrics: `sni` and `remap`. Each type corresponds with the
+   type of configuration used to generate the metric. The global configuration is for
+   rate limiting requests during TLS negotiation, hence, the type of ``sni``. Similarly
+   ``remap`` connotes a remap configuration.
+
+``tag``
+   By default the metric tag is derived from a description that is set conditionally.
+   When configured in global mode, the ``SNI`` argument allows a comma separated list
+   of FQDNs that require rate limiting. Each FQDN is associated with an instance of
+   the rate limiter, and the description of each limiter is set to the FQDN.
+
+   When configured on a remap, the plugin will generate a description based on the
+   configuration. When the scheme and port number are standard, the port is omitted
+   from the generated description, however, when the scheme and port combination are
+   non-standard, the port is appended. For example, a standard scheme and port would
+   lead to a description of ``http.example.com`` or ``https.example.com`` but if a
+   non-standard port was used, a description might be ``https.example.com:8443`` or
+   ``http.example.com:8080``. This approach allows each limiter to increment metrics
+   for the correct remaps.
+
+``metric``
+   There are four metrics that may be incremented, depending on which action the plugin takes:
+
+   ============== ===================================================================
+   Metric         Definition
+   ============== ===================================================================
+   ``queued``     Request queued due to being at the limit but under the queue limit.
+   ``rejected``   Request rejected due to being over the defined limits.
+   ``expired``    Queued connection is too old to be resumed and is rejected.
+   ``resumed``    Queued connection is resumed.
+   ============== ===================================================================
+
 Examples
 --------
 
@@ -158,3 +225,70 @@ In this case, the response would look like this when the queue is full: ::
     Content-Language: en
     Retry-After: 3600
     Content-Length: 207
+
+Metric Examples
+---------------
+The following examples show the metric names that result from various settings
+using a hypothetical domain of example.com with both global and remap configurations.
+Note that in this example the remap configuration contains both TLS and non-TLS
+remap rules.
+
+Defaults:
+::
+
+   proxy.rate_limiter.sni.example.com.queued
+   proxy.rate_limiter.sni.example.com.rejected
+   proxy.rate_limiter.sni.example.com.expired
+   proxy.rate_limiter.sni.example.com.resumed
+
+   proxy.rate_limiter.remap.https.example.com.queued
+   proxy.rate_limiter.remap.https.example.com.rejected
+   proxy.rate_limiter.remap.https.example.com.expired
+   proxy.rate_limiter.remap.https.example.com.resumed
+
+   proxy.rate_limiter.remap.http.example.com.queued
+   proxy.rate_limiter.remap.http.example.com.rejected
+   proxy.rate_limiter.remap.http.example.com.expired
+   proxy.rate_limiter.remap.http.example.com.resumed
+
+Defaults with non-standard scheme+port combinations in the remap rules:
+::
+
+   proxy.rate_limiter.sni.example.com.queued
+   proxy.rate_limiter.sni.example.com.rejected
+   proxy.rate_limiter.sni.example.com.expired
+   proxy.rate_limiter.sni.example.com.resumed
+
+   proxy.rate_limiter.remap.https.example.com:8443.queued
+   proxy.rate_limiter.remap.https.example.com:8443.rejected
+   proxy.rate_limiter.remap.https.example.com:8443.expired
+   proxy.rate_limiter.remap.https.example.com:8443.resumed
+
+   proxy.rate_limiter.remap.http.example.com:8080.queued
+   proxy.rate_limiter.remap.http.example.com:8080.rejected
+   proxy.rate_limiter.remap.http.example.com:8080.expired
+   proxy.rate_limiter.remap.http.example.com:8080.resumed
+
+With:
+  * ``--prefix=limiter`` on the global configuration
+  * ``--tag=tls.example.com`` on the global configuration
+  * ``@pparam=--prefix=limiter`` on the remap configurations
+  * ``@pparam=--tag=secure.example.com`` on the TLS-enabled remap configuration
+  * ``@pparam=--tag=insecure.example.com`` on the non-TLS-enabled remap configuration
+
+::
+
+   limiter.sni.tls.example.com.queued
+   limiter.sni.tls.example.com.rejected
+   limiter.sni.tls.example.com.expired
+   limiter.sni.tls.example.com.resumed
+
+   limiter.remap.secure.example.com.queued
+   limiter.remap.secure.example.com.rejected
+   limiter.remap.secure.example.com.expired
+   limiter.remap.secure.example.com.resumed
+
+   limiter.remap.insecure.example.com.queued
+   limiter.remap.insecure.example.com.rejected
+   limiter.remap.insecure.example.com.expired
+   limiter.remap.insecure.example.com.resumed
