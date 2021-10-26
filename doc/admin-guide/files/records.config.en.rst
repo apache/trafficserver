@@ -209,6 +209,12 @@ System Variables
 
    The name of the executable that runs the :program:`traffic_manager` process.
 
+.. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
+   :units: bytes
+
+   Throttle incoming connections if resident memory usage exceeds this value.
+   Setting the option to 0 disables the feature.
+
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
    The script executed before the :program:`traffic_manager` process spawns
