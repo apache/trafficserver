@@ -5358,6 +5358,17 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return BAD_CONNECT_PORT;
     }
 
+    if (s->client_info.transfer_encoding == CHUNKED_ENCODING && incoming_hdr->version_get() < HTTP_1_1) {
+      // Per spec, Transfer-Encoding is only supported in HTTP/1.1. For earlier
+      // versions, we must reject Transfer-Encoding rather than interpret it
+      // since downstream proxies may ignore the chunk header and rely upon the
+      // Content-Length, or interpret the body some other way. These
+      // differences in interpretation may open up the door to compatibility
+      // issues. To protect against this, we reply with a 4xx if the client
+      // uses Transfer-Encoding with HTTP versions that do not support it.
+      return UNACCEPTABLE_TE_REQUIRED;
+    }
+
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
