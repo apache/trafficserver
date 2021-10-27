@@ -258,6 +258,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_ink_inet.cc \
+	unit_tests/test_ink_memory.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \

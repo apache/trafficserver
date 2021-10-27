@@ -26,6 +26,7 @@
 #include <cstring>
 #include <strings.h>
 #include <cinttypes>
+#include <limits>
 #include <string>
 #include <string_view>
 
@@ -202,6 +203,24 @@ inline void
 ink_zero(T &t)
 {
   memset(static_cast<void *>(&t), 0, sizeof(t));
+}
+
+/** Verify that we can safely shift value num_places places left.
+ *
+ * This checks that the shift will not cause the variable to overflow and that
+ * the value will not become negative.
+ *
+ * @param[in] value The value against which to check whether the shift is safe.
+ *
+ * @param[in] num_places The number of places to check that shifting left is safe.
+ *
+ */
+template <typename T>
+inline constexpr bool
+can_safely_shift_left(T value, int num_places)
+{
+  constexpr auto max_value = std::numeric_limits<T>::max();
+  return value >= 0 && value <= (max_value >> num_places);
 }
 
 /** Scoped resources.
