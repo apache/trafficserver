@@ -1,0 +1,48 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      method: "POST"
+      # HTTP/1.0 does not support Transfer-Encoding. ATS should therefore
+      # reject it with a 4xx response.
+      version: "1.0"
+      url: /unexpected/chunk/header
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 51 ]
+      content:
+        size: 32
+
+    # This request should not make it to the server, but if it does reply with
+    # a 200 response so that we detect the non-4xx response we expect.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ X-Response, "Unexpected origin response." ]
+
+    proxy-response:
+      status: 406
+      reason: "Transcoding Not Available"
