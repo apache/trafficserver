@@ -2652,8 +2652,17 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     // find_value_last
     field_value_last = line_e - 1;
+    int suffix_count = 0;
     while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last)) {
       --field_value_last;
+      ++suffix_count;
+    }
+
+    // Make sure the field ends in CRLF. If not, we'll fix the field via the n_v_raw_printable
+    // flag.
+    bool raw_print_field = true;
+    if (suffix_count < 2 || *(line_e - 2) != '\r' || *(line_e - 1) != '\n') {
+      raw_print_field = false;
     }
 
     field_name_length  = (int)(field_name_last - field_name_first + 1);
@@ -2690,7 +2699,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
-                              field_value_length, true, total_line_length, false);
+                              field_value_length, raw_print_field, total_line_length, false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }
