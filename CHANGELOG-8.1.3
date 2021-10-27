@@ -1,0 +1,22 @@
+Changes with Apache Traffic Server 8.1.3
+  #5114 - Fix #5093: new/delete mismatch in test_IntrusivePtr.cc
+  #7720 - 81x - freebsd fixes, Disable building grammar, use built in
+  #7740 - slice port from master to 8.1.x -- self healing and throttle by default.
+  #7771 - Headerrewrite tcpinfo cherry pick
+  #7860 - Eliminate next dup call using stale mime field mloc is s3_auth plugin (#7825)
+  #7861 - Don't call next next dup on destroyed mime field mloc. (#7833)
+  #7912 - Do not delete the continuation twice (#7862)
+  #7984 - 8.1.x doc tweaks to support Sphinx 3.x
+  #8041 - Fix uri_signing unit test for out of source builds
+  #8051 - Fix clang compiler warnings.
+  #8195 - Revert "Remove UnixNetVConnection::startEvent - not actually called. (#7596)
+  #8282 - Fix #5093: new/delete mismatch in test_IntrusivePtr.cc.
+  #8283 - Update common.m4 to correctly use $LIBS instead of $LDFLAGS
+  #8288 - check-unused-dependencies: add librt for clang/asan case (#8220)
+  #8299 - AuTest: Use OrderedSetQueue for port selection.
+  #8347 - Add <limits> include to BufferWriterForward.h (#8345)
+  #8382 - Traffic Dump: update json-schema for new tuple requirements
+  #8456 - Ignore ECONNABORTED on blocking accept
+  #8457 - 8.1.x: Reject Transfer-Encoding in pre-HTTP/1.1 requests
+  #8458 - 8.1.x: Detect and handle chunk header size truncation
+  #8460 - 8.1.x: Fix output '\n' HTTP field line endings
