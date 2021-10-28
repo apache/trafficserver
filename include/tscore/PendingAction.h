@@ -73,13 +73,15 @@ public:
    *
    * @param action @c Action to check.
    *
+   * @return @c true if the action was cleared, @c false if not.
+   *
    * This clears the internal pointer without any side effect. it is used when the @c Action
    * is handled and therefore should no longer be canceled.
    */
-  void clear_if_action_is(Action *action);
+  bool clear_if_action_is(Action *action);
 
 private:
-  Action *pending_action = nullptr;
+  std::atomic<Action *> pending_action = nullptr;
 };
 
 inline bool
@@ -91,14 +93,24 @@ PendingAction::empty() const
 inline PendingAction &
 PendingAction::operator=(Action *action)
 {
-  // Apparently HttpSM depends on not canceling the previous action if anew
+  // Apparently @c HttpSM depends on not canceling the previous action if a new
   // one completes immediately. Canceling the contained action in that case
-  // cause the HttpSm to permanently stall.
+  // cause the @c HttpSM to permanently stall.
   if (ACTION_RESULT_DONE != action) {
-    if (action != pending_action && pending_action != nullptr) {
-      pending_action->cancel();
+    Action *expected; // Need for exchange, and to load @a pending_action only once.
+    // Avoid race conditions - for each assigned action, ensure exactly one thread
+    // cancels it. Assigning @a expected in the @c while expression avoids potential
+    // races if two calls to this method have the same @a action.
+    while ((expected = pending_action) != action) {
+      if (pending_action.compare_exchange_strong(expected, action)) {
+        // This thread did the swap and now no other thread can get @a expected which
+        // must be canceled if it's not @c nullptr and then this thread is done.
+        if (expected != nullptr) {
+          expected->cancel();
+        }
+        break;
+      }
     }
-    pending_action = action;
   }
   return *this;
 }
@@ -106,7 +118,7 @@ PendingAction::operator=(Action *action)
 inline Continuation *
 PendingAction::get_continuation() const
 {
-  return pending_action ? pending_action->continuation : nullptr;
+  return pending_action ? pending_action.load()->continuation : nullptr;
 }
 
 inline Action *
@@ -118,14 +130,20 @@ PendingAction::get() const
 inline PendingAction::~PendingAction()
 {
   if (pending_action) {
-    pending_action->cancel();
+    pending_action.load()->cancel();
   }
 }
 
-inline void
+inline bool
 PendingAction::clear_if_action_is(Action *action)
 {
-  if (action == pending_action) {
-    pending_action = nullptr;
+  if (action != nullptr) {
+    while (action == pending_action) {
+      if (pending_action.compare_exchange_strong(action, nullptr)) {
+        // do NOT cancel - this is called when the event is handled.
+        return true;
+      }
+    }
   }
+  return false;
 }
