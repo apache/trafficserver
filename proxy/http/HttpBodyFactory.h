@@ -250,9 +250,8 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int enable_customizations     = 0;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging           = true; // the user wants body factory logging
-  int response_suppression_mode = 0;    // when to suppress responses
+  int enable_customizations = 0;    // 0:no custom,1:custom,2:language-targeted
+  bool enable_logging       = true; // the user wants body factory logging
 
   ////////////////////
   // internal state //
