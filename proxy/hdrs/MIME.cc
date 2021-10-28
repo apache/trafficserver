@@ -1691,6 +1691,19 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
   MIME_HDR_SANITY_CHECK(mh);
 }
 
+auto
+MIMEHdrImpl::find(MIMEField const *field) -> iterator
+{
+  for (MIMEFieldBlockImpl *fblock = &m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    if (fblock->contains(field)) {
+      return {fblock, unsigned(field - fblock->m_field_slots)};
+    }
+  }
+  return {};
+}
+
+// This function needs to be removed - use of it indicates poorly implemented code.
+// That code should be updated to use the field iterators, which are much more performant.
 int
 mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 {
