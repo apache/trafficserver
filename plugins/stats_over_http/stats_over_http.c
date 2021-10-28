@@ -61,6 +61,10 @@
 /* global holding the path used for access to this JSON data */
 #define DEFAULT_URL_PATH "_stats"
 
+// TODO: replace with TS_HTTP_* when BROTLI is supported
+#define HTTP_VALUE_BR "BR"
+#define HTTP_LEN_BR 2
+
 // from mod_deflate:
 // ZLIB's compression algorithm uses a
 // 0-9 based scale that GZIP does where '1' is 'Best speed'
@@ -618,15 +622,15 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   if (accept_encoding_field != TS_NULL_MLOC) {
     int len         = -1;
     const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
-    if (strstr(str, "deflate") != NULL) {
+    if (len >= TS_HTTP_LEN_DEFLATE && strstr(str, TS_HTTP_VALUE_DEFLATE) != NULL) {
       TSDebug(PLUGIN_NAME, "Saw deflate in accept encoding");
       my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
-    } else if (strstr(str, "gzip") != NULL) {
+    } else if (len >= TS_HTTP_LEN_GZIP && strstr(str, TS_HTTP_VALUE_GZIP) != NULL) {
       TSDebug(PLUGIN_NAME, "Saw gzip in accept encoding");
       my_state->encoding = init_gzip(my_state, GZIP_MODE);
     }
 #if HAVE_BROTLI_ENCODE_H
-    else if (strstr(str, "br") != NULL) {
+    else if (len >= HTTP_LEN_BR && strstr(str, HTTP_VALUE_BR) != NULL) {
       TSDebug(PLUGIN_NAME, "Saw br in accept encoding");
       my_state->encoding = init_br(my_state);
     }
