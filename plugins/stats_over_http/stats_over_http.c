@@ -61,10 +61,6 @@
 /* global holding the path used for access to this JSON data */
 #define DEFAULT_URL_PATH "_stats"
 
-// TODO: replace with TS_HTTP_* when BROTLI is supported
-#define HTTP_VALUE_BR "br"
-#define HTTP_LEN_BR 2
-
 // from mod_deflate:
 // ZLIB's compression algorithm uses a
 // 0-9 based scale that GZIP does where '1' is 'Best speed'
@@ -630,7 +626,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
       my_state->encoding = init_gzip(my_state, GZIP_MODE);
     }
 #if HAVE_BROTLI_ENCODE_H
-    else if (len >= HTTP_LEN_BR && strstr(str, HTTP_VALUE_BR) != NULL) {
+    else if (len >= TS_HTTP_LEN_BROTLI && strstr(str, TS_HTTP_VALUE_BROTLI) != NULL) {
       TSDebug(PLUGIN_NAME, "Saw br in accept encoding");
       my_state->encoding = init_br(my_state);
     }
