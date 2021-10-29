@@ -14,6 +14,7 @@ Changes with Apache Traffic Server 9.1.1
   #8279 - stats_over_http: don't show config file error when not specified
   #8280 - Report to user correct configurable to tweak on error
   #8285 - Cleanup generated LDFLAGS for jemalloc
+  #8287 - Fix timeout checks of NetHandler::manage_active_queue()
   #8289 - Use flynt to convert contrib,doc and plugins to python f-strings
   #8293 - Fixes a typo in the Rate Limit plugin
   #8295 - Align strategies.yaml loading logging with other config files (#8262)
@@ -31,3 +32,5 @@ Changes with Apache Traffic Server 9.1.1
   #8453 - Ignore ECONNABORTED on blocking accept
   #8455 - Fix output '\n' HTTP field line endings
   #8465 - Add some checking to validate the scheme matches the wire protocol.
+  #8475 - Check length before search accept-encoding header
+  #8476 - Fix case of brotli
