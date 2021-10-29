@@ -1238,7 +1238,9 @@ fail:
   if (fd != NO_FD) {
     con.fd = NO_FD;
   }
-  nh->free_netevent(this);
+  if (nullptr != nh) {
+    nh->free_netevent(this);
+  }
   return CONNECT_FAILURE;
 }
 
