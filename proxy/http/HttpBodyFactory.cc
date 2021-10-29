@@ -73,6 +73,11 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   bool found_requested_template = false;
   bool plain_flag               = false;
 
+  *resulting_buffer_length = 0;
+
+  ink_strlcpy(content_language_out_buf, "en", content_language_buf_size);
+  ink_strlcpy(content_type_out_buf, "text/html", content_type_buf_size);
+
   ///////////////////////////////////////////////
   // if suppressing this response, return NULL //
   ///////////////////////////////////////////////
@@ -84,11 +89,6 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   }
 
   lock();
-
-  *resulting_buffer_length = 0;
-
-  ink_strlcpy(content_language_out_buf, "en", content_language_buf_size);
-  ink_strlcpy(content_type_out_buf, "text/html", content_type_buf_size);
 
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
