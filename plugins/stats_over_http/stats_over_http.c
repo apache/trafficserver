@@ -62,7 +62,7 @@
 #define DEFAULT_URL_PATH "_stats"
 
 // TODO: replace with TS_HTTP_* when BROTLI is supported
-#define HTTP_VALUE_BR "BR"
+#define HTTP_VALUE_BR "br"
 #define HTTP_LEN_BR 2
 
 // from mod_deflate:
