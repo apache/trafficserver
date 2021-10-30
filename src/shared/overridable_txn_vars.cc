@@ -166,4 +166,6 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.hostdb.ip_resolve", {TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.plugin.vc.default_buffer_index", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX, TS_RECORDDATATYPE_INT}},
      {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
-     {"proxy.config.net.sock_notsent_lowat", {TS_CONFIG_NET_SOCK_NOTSENT_LOWAT, TS_RECORDDATATYPE_INT}}});
+     {"proxy.config.net.sock_notsent_lowat", {TS_CONFIG_NET_SOCK_NOTSENT_LOWAT, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.body_factory.response_suppression_mode",
+      {TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE, TS_RECORDDATATYPE_INT}}});

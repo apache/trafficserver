@@ -8947,6 +8947,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_NET_SOCK_NOTSENT_LOWAT:
     ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_notsent_lowat, conv);
     break;
+  case TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE:
+    ret = _memberp_to_generic(&overridableHttpConfig->response_suppression_mode, conv);
+    break;
+
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
