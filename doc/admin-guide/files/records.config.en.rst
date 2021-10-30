@@ -2586,6 +2586,8 @@ Customizable User Response Pages
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
+    :reloadable:
+    :overridable:
 
    Specifies when |TS| suppresses generated response pages:
 

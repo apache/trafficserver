@@ -205,6 +205,8 @@ public:
                                                StrList *acpt_charset_list, float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr,
                                                int *I_best_ptr);
 
+  bool is_response_suppressed(HttpTransact::State *context);
+
 private:
   char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
                   int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
@@ -213,7 +215,6 @@ private:
   const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
   const char *determine_set_by_host(HttpTransact::State *context);
   HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
-  bool is_response_suppressed(HttpTransact::State *context);
   bool
   is_sane()
   {
@@ -250,9 +251,8 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int enable_customizations     = 0;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging           = true; // the user wants body factory logging
-  int response_suppression_mode = 0;    // when to suppress responses
+  int enable_customizations = 0;    // 0:no custom,1:custom,2:language-targeted
+  bool enable_logging       = true; // the user wants body factory logging
 
   ////////////////////
   // internal state //
