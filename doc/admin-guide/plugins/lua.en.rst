@@ -4166,11 +4166,11 @@ ts.http.cntl_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retrieve the value of control channel.
+**description:** This function can be used to retrieve the value of various control mechanisms in HTTP transaction.
 
 ::
 
-    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_GET_LOGGING_MODE)
+    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_LOGGING_MODE)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4181,30 +4181,33 @@ ts.http.cntl_set
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to set the value of control channel.
+**description:** This function can be used to set the value of various control mechanisms in HTTP transaction.
 
 Here is an example:
 
 ::
 
     function do_remap()
-        ts.http.cntl_set(TS_LUA_HTTP_CNTL_SET_LOGGING_MODE, 0)      -- do not log the request
+        ts.http.cntl_set(TS_LUA_HTTP_CNTL_LOGGING_MODE, 0)      -- do not log the request
         return 0
     end
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-Http control channel constants
-------------------------------
+Http control mechanism constants
+--------------------------------
 **context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
-    TS_LUA_HTTP_CNTL_GET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_SET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE
-    TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_LOGGING_MODE
+    TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_RESPONSE_CACHEABLE
+    TS_LUA_HTTP_CNTL_REQUEST_CACHEABLE
+    TS_LUA_HTTP_CNTL_SERVER_NO_STORE
+    TS_LUA_HTTP_CNTL_TXN_DEBUG
+    TS_LUA_HTTP_CNTL_SKIP_REMAPPING
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
