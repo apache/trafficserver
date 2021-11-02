@@ -304,26 +304,6 @@ is_localhost(const char *name, int len)
   return (len == (sizeof(local) - 1)) && (memcmp(name, local, len) == 0);
 }
 
-inline static bool
-is_response_simple_code(HTTPStatus response_code)
-{
-  if (static_cast<unsigned int>(response_code) < 400 || static_cast<unsigned int>(response_code) > 499) {
-    return false;
-  }
-
-  return true;
-}
-
-inline static bool
-is_response_unavailable_code(HTTPStatus response_code)
-{
-  if (static_cast<unsigned int>(response_code) < 500 || static_cast<unsigned int>(response_code) > 599) {
-    return false;
-  }
-
-  return true;
-}
-
 bool
 HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
 {
@@ -399,20 +379,22 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
     return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
-  if (s->parent_params && !s->parent_result.response_is_retryable(response_code)) {
+  if (s->parent_params && !s->parent_result.response_is_retryable((ParentRetry_t)(s->parent_result.retry_type()), response_code)) {
     return PARENT_RETRY_NONE;
   }
-
-  const unsigned int s_retry_type  = retry_type(s);
-  const HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
-  if ((s_retry_type & PARENT_RETRY_SIMPLE) && is_response_simple_code(server_response) &&
+  const unsigned int s_retry_type = retry_type(s);
+  // If simple or both, check if code is simple-retryable and for retry attempts
+  if ((s_retry_type & PARENT_RETRY_SIMPLE) && s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE)) {
     if (s->current.simple_retry_attempts < numParents(s)) {
       return PARENT_RETRY_SIMPLE;
     }
     return PARENT_RETRY_NONE;
   }
-  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) && is_response_unavailable_code(server_response) &&
+  // If unavailable or both, check if code is unavailable-retryable AND also not simple-retryable, then unavailable retry attempts
+  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) &&
+      s->parent_result.response_is_retryable(PARENT_RETRY_UNAVAILABLE_SERVER, response_code) &&
+      !s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
     if (s->current.unavailable_server_retry_attempts < numParents(s)) {
       return PARENT_RETRY_UNAVAILABLE_SERVER;
