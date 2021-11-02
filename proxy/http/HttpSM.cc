@@ -881,18 +881,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
       break;
     }
 
-    if (!is_internal) {
-      auto scheme = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
-      if ((client_connection_is_ssl && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
-          (!client_connection_is_ssl && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
-        SMDebug("http", "scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
-                client_connection_is_ssl ? "tls" : "plaintext");
-        t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
-        call_transact_and_set_next_state(HttpTransact::BadRequest);
-        break;
-      }
-    }
-
     if (_from_early_data) {
       // Only allow early data for safe methods defined in RFC7231 Section 4.2.1.
       // https://tools.ietf.org/html/rfc7231#section-4.2.1
@@ -1925,8 +1913,8 @@ HttpSM::state_http_server_open(int event, void *data)
     this->create_server_txn(new_session);
 
     // Since the UnixNetVConnection::action_ or SocksEntry::action_ may be returned from netProcessor.connect_re, and the
-    // SocksEntry::action_ will be copied into UnixNetVConnection::action_ before call back NET_EVENT_OPEN from
-    // SocksEntry::free(), so we just compare the Continuation between pending_action and VC's action_.
+    // SocksEntry::action_ will be copied into UnixNetVConnection::action_ before call back NET_EVENT_OPEN from SocksEntry::free(),
+    // so we just compare the Continuation between pending_action and VC's action_.
     ink_release_assert(pending_action.empty() || pending_action.get_continuation() == vc->get_action()->continuation);
     pending_action = nullptr;
 
