@@ -275,20 +275,15 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   auto f_host = [](TextView b, TextView &host, TextView &port) -> void {
     if ('[' == *b) {
       auto idx = b.find(']');
-      if (idx <= b.size() && b[idx + 1] == ':') {
+      if (idx < b.size() - 1 && b[idx + 1] == ':') {
         host = b.take_prefix_at(idx + 1);
         port = b;
       } else {
         host = b;
       }
     } else {
-      auto x = b.split_prefix_at(':');
-      if (x) {
-        host = x;
-        port = b;
-      } else {
-        host = b;
-      }
+      host = b.take_prefix_at(':');
+      port = b;
     }
   };
 

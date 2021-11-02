@@ -2284,20 +2284,15 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
     if (b) {
       if ('[' == *b) {
         auto idx = b.find(']');
-        if (idx <= b.size() && b[idx + 1] == ':') {
+        if (idx < b.size() - 1 && b[idx + 1] == ':') {
           host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        auto x = b.split_prefix_at(':');
-        if (x) {
-          host = x;
-          port = b;
-        } else {
-          host = b;
-        }
+        host = b.take_prefix_at(':');
+        port = b;
       }
 
       if (host) {
