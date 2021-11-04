@@ -963,7 +963,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
 {
   struct msghdr msg;
   struct iovec iov[32];
-  int real_len = 0;
   int n, count, iov_len = 0;
 
   p->conn->lastSentPktStartTime = p->delivery_time;
@@ -981,7 +980,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
     iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
     iov[iov_len].iov_len  = b->size();
-    real_len += iov[iov_len].iov_len;
     iov_len++;
   }
   msg.msg_iov    = iov;
