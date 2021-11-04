@@ -208,7 +208,7 @@ ts::Rv<YAML::Node>
 lookup_records(std::string_view const &id, YAML::Node const &params)
 {
   // TODO: we may want to deal with our own object instead of a node here.
-  YAML::Node recordList, errorList;
+  YAML::Node recordList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
 
   for (auto &&node : params) {
     RequestRecordElement recordElement;
@@ -241,12 +241,9 @@ lookup_records(std::string_view const &id, YAML::Node const &params)
   }
 
   YAML::Node resp;
-  if (!recordList.IsNull()) {
-    resp[RECORD_LIST_KEY] = recordList;
-  }
-  if (!errorList.IsNull()) {
-    resp[ERROR_LIST_KEY] = errorList;
-  }
+  // Even if the records/errors are an empty list, we want them in the response.
+  resp[RECORD_LIST_KEY] = recordList;
+  resp[ERROR_LIST_KEY]  = errorList;
   return resp;
 }
 

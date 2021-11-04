@@ -37,9 +37,12 @@
 ///
 namespace constants_rec
 {
+static constexpr auto REC{"record"};
+
 static constexpr auto NAME{"record_name"};
 static constexpr auto RECORD_TYPE{"record_type"};
 static constexpr auto RECORD_VERSION{"version"};
+static constexpr auto REGISTERED{"registered"};
 static constexpr auto RSB{"raw_stat_block"};
 static constexpr auto ORDER{"order"};
 static constexpr auto ACCESS_TYPE{"access_type"};
@@ -119,6 +122,7 @@ template <> struct convert<RecRecord> {
       node[constants_rec::NAME]           = record.name ? record.name : "null";
       node[constants_rec::RECORD_TYPE]    = static_cast<int>(record.data_type);
       node[constants_rec::RECORD_VERSION] = record.version;
+      node[constants_rec::REGISTERED]     = record.registered;
       node[constants_rec::RSB]            = record.rsb_id;
       node[constants_rec::ORDER]          = record.order;
 
@@ -167,7 +171,7 @@ template <> struct convert<RecRecord> {
     }
 
     Node yrecord;
-    yrecord["record"] = node;
+    yrecord[constants_rec::REC] = node;
     return yrecord;
   }
 };

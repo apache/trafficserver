@@ -102,6 +102,11 @@ RecordPrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &resp
 {
   std::string text;
   for (auto &&recordInfo : response.recordList) {
+    if (!recordInfo.registered) {
+      std::cout << recordInfo.name
+                << ": Unrecognized configuration value. Record is a configuration name/value but is not registered\n";
+      continue;
+    }
     if (!_printAsRecords) {
       std::cout << recordInfo.name << ": " << recordInfo.currentValue << '\n';
     } else {
@@ -198,6 +203,11 @@ RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse con
 {
   std::string text;
   for (auto &&recordInfo : response.recordList) {
+    if (!recordInfo.registered) {
+      std::cout << recordInfo.name
+                << ": Unrecognized configuration value. Record is a configuration name/value but is not registered\n";
+      continue;
+    }
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Name", recordInfo.name);
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Current Value ", recordInfo.currentValue);
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Default Value ", recordInfo.defaultValue);
@@ -226,13 +236,16 @@ RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse con
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Order ", recordInfo.order);
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Raw Stat Block ", recordInfo.rsb);
   }
+
+  // also print errors.
+  print_record_error_list(response.errorList);
 }
 
 void
 RecordDescribePrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
 {
+  // we default for legacy.
   write_output_legacy(response);
-  print_record_error_list(response.errorList);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void

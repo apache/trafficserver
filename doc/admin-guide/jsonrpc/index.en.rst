@@ -73,6 +73,7 @@ File `jsonrpc.yaml` is a YAML format. The default configuration is::
          sock_path_name: /tmp/conf_jsonrpc.sock
          backlog: 5
          max_retry_on_transient_errors: 64
+         restricted_api: true
 
 
 ===================== =========================================================================================
@@ -92,6 +93,7 @@ Field Name                            Description
 ``sock_path_name``                    Sock path, including the file name. This will be used as ``sockaddr_un.sun_path``. (changing this may have impacts in :program:`traffic_ctl`)
 ``backlog``                           Check https://man7.org/linux/man-pages/man2/listen.2.html
 ``max_retry_on_transient_errors``     Number of times the implementation is allowed to retry when a transient error is encountered.
+``restricted_api``                    Used to set rpc unix socket permissions. If restricted `0700` will be set, otherwise `0777`. ``true`` by default.
 ===================================== =========================================================================================
 
 

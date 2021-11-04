@@ -113,7 +113,8 @@ protected: // unit test access
 
     int backlog{5};
     int maxRetriesOnTransientErrors{64};
-    bool restrictedAccessApi{false};
+    bool restrictedAccessApi{
+      true}; // This config value will drive the permissions of the jsonrpc socket(either 0700(default) or 0777).
   };
 
   friend struct YAML::convert<rpc::comm::IPCSocketServer::Config>;

@@ -101,6 +101,7 @@ template <> struct convert<shared::rpc::RecordLookUpResponse::RecordParamInfo> {
     info.name         = helper::try_extract<std::string>(node, "record_name");
     info.type         = helper::try_extract<int32_t>(node, "record_type");
     info.version      = helper::try_extract<int32_t>(node, "version");
+    info.registered   = helper::try_extract<bool>(node, "registered");
     info.rsb          = helper::try_extract<int32_t>(node, "raw_stat_block");
     info.order        = helper::try_extract<int32_t>(node, "order");
     info.rclass       = helper::try_extract<int32_t>(node, "record_class");

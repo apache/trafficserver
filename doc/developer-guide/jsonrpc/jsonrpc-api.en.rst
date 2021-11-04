@@ -181,7 +181,7 @@ When querying for a record(s), in the majority of the cases the record api will 
 Field               Type                 Description
 =================== ==================== ========================================================================
 ``recordList``      |arrayrecord|         A list of record |object|. See `RecordRequestObject`_
-``errorList``       |arrayerror|          A list of error |object| . See `RecordErrorObject`_
+``errorList``       |arrayerror|          A list of error |object|. See `RecordErrorObject`_
 =================== ==================== ========================================================================
 
 
@@ -259,6 +259,33 @@ Examples:
       }
 
    In this case we get the response indicating that the requested fields couldn't be retrieved. See `RecordErrorObject`_ for more details.
+
+   The error list can also be included among with a recordList
+
+   .. code-block:: json
+      :linenos:
+
+      {
+         "jsonrpc":"2.0",
+         "result":{
+            "recordList":[]
+            ,"errorList":[
+               {
+                  "code":"2000",
+                  "record_name":"non.existing.record"
+               },
+               {
+                  "code":"2007",
+                  "record_name":"proxy.process.http.total_client_connections_ipv4"
+               }
+            ]
+         },
+         "id":"ded7018e-0720-11eb-abe2-001fc69cc946"
+      }
+
+   .. note::
+
+      If there is no errors to report, the "errorList" field will be represented as an empty  list (``[]``).
 
 .. _RecordErrorObject-Enum:
 
@@ -530,6 +557,7 @@ Response:
                   }
                }
             ]
+            ,"errorList":[]
          },
          "id":"b2bb16a5-135a-4c84-b0a7-8d31ebd82542"
       }
@@ -692,6 +720,7 @@ Examples
                   }
                }
             ]
+            ,"errorList":[]
          },
          "id":"ded7018e-0720-11eb-abe2-001fc69cc946"
       }
@@ -1220,6 +1249,7 @@ Response:
                "default_value": "HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0"
             }
          }]
+         ,"errorList":[]
       }
    }
 

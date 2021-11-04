@@ -152,6 +152,7 @@ struct RecordLookUpResponse {
     std::string name;
     int32_t type;
     int32_t version;
+    bool registered;
     int32_t rsb;
     int32_t order;
     int32_t rclass;
