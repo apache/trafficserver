@@ -586,6 +586,10 @@ UnixNetVConnection::get_data(int id, void *data)
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
+  if (buf) {
+    this->_need_do_io_close = true;
+  }
+
   if (closed && !(c == nullptr && nbytes == 0 && buf == nullptr)) {
     Error("do_io_read invoked on closed vc %p, cont %p, nbytes %" PRId64 ", buf %p", this, c, nbytes, buf);
     return nullptr;
@@ -611,6 +615,10 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
+  if (reader) {
+    this->_need_do_io_close = true;
+  }
+
   if (closed && !(c == nullptr && nbytes == 0 && reader == nullptr)) {
     Error("do_io_write invoked on closed vc %p, cont %p, nbytes %" PRId64 ", reader %p", this, c, nbytes, reader);
     return nullptr;
@@ -635,6 +643,13 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
+{
+  this->_need_do_io_close = false;
+  this->_do_io_close(alerrno);
+}
+
+void
+UnixNetVConnection::_do_io_close(int alerrno)
 {
   // FIXME: the nh must not nullptr.
   ink_assert(nh);

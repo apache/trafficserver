@@ -134,7 +134,6 @@ public:
   int sslClientHandShakeEvent(int &err);
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //
@@ -435,6 +434,8 @@ public:
   }
 
 protected:
+  void _do_io_close(int lerrno) override;
+
   SSL *
   _get_ssl_object() const override
   {

@@ -891,7 +891,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 SSLNetVConnection::SSLNetVConnection() {}
 
 void
-SSLNetVConnection::do_io_close(int lerrno)
+SSLNetVConnection::_do_io_close(int lerrno)
 {
   if (this->ssl != nullptr) {
     if (get_context() == NET_VCONNECTION_OUT) {
@@ -937,7 +937,7 @@ SSLNetVConnection::do_io_close(int lerrno)
     }
   }
   // Go on and do the unix socket cleanups
-  super::do_io_close(lerrno);
+  super::_do_io_close(lerrno);
 }
 
 void

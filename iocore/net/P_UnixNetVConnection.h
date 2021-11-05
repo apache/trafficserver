@@ -271,7 +271,12 @@ public:
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
+protected:
+  virtual void _do_io_close(int lerrno);
+
 private:
+  bool _need_do_io_close = false;
+
   virtual void *_prepareForMigration();
   virtual NetProcessor *_getNetProcessor();
 };
@@ -357,7 +362,10 @@ UnixNetVConnection::cancel_active_timeout()
   next_activity_timeout_at = 0;
 }
 
-inline UnixNetVConnection::~UnixNetVConnection() {}
+inline UnixNetVConnection::~UnixNetVConnection()
+{
+  ink_assert(!this->_need_do_io_close);
+}
 
 inline SOCKET
 UnixNetVConnection::get_socket()
