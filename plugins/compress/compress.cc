@@ -55,8 +55,6 @@ using namespace Gzip;
 
 const int ZLIB_COMPRESSION_LEVEL = 6;
 const char *dictionary           = nullptr;
-const char *TS_HTTP_VALUE_BROTLI = "br";
-const int TS_HTTP_LEN_BROTLI     = 2;
 
 // brotli compression quality 1-11. Testing proved level '6'
 #if HAVE_BROTLI_ENCODE_H

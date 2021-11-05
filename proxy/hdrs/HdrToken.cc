@@ -113,7 +113,10 @@ static const char *_hdrtoken_strs[] = {
   "Forwarded",
 
   // RFC-8470
-  "Early-Data"};
+  "Early-Data",
+
+  // RFC-7932
+  "br"};
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file", HDRTOKEN_TYPE_SCHEME},
@@ -366,7 +369,10 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Forwarded",
 
   // RFC-8470
-  "Early-Data"};
+  "Early-Data",
+
+  // RFC-7932
+  "br"};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
