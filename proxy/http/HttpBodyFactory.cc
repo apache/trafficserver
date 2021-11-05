@@ -286,7 +286,11 @@ HttpBodyFactory::reconfigure()
     }
     if (access(directory_of_template_sets, R_OK) < 0) {
       Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
-      Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+      if (TSSystemState::is_initializing()) {
+        Emergency(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+      } else {
+        Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+      }
     }
   }
 
