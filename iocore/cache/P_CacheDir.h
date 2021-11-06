@@ -203,8 +203,7 @@ struct FreeDir {
 #define dir_set_head(_e, _v) dir_set_bit(_e, 2, 13, _v)
 #define dir_pinned(_e) dir_bit(_e, 2, 14)
 #define dir_set_pinned(_e, _v) dir_set_bit(_e, 2, 14, _v)
-#define dir_token(_e) dir_bit(_e, 2, 15)
-#define dir_set_token(_e, _v) dir_set_bit(_e, 2, 15, _v)
+// Bit 2:15 is unused.
 #define dir_next(_e) (_e)->w[3]
 #define dir_set_next(_e, _o) (_e)->w[3] = (uint16_t)(_o)
 #define dir_prev(_e) (_e)->w[2]
