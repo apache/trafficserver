@@ -1639,7 +1639,7 @@ LogAccess::validate_unmapped_url_path()
           // Attempt to find first '/' in the path
           if (m_client_req_unmapped_url_host_len > 0 &&
               (c = static_cast<char *>(
-                 memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len))) != nullptr) {
+                 memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_host_len))) != nullptr) {
             m_client_req_unmapped_url_host_len = static_cast<int>(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
