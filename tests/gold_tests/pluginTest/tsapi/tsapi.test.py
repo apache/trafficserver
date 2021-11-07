@@ -27,11 +27,6 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 
 plugin_name = "test_tsapi"
-log_file_name = "log.txt"
-
-
-# The test plugin will output test logging to this file.
-Test.Env["OUTPUT_FILE"] = os.path.join(Test.RunDirectory, log_file_name)
 
 server = Test.MakeOriginServer("server")
 
@@ -48,6 +43,10 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # Disable the cache to make sure each request is forwarded to the origin
 # server.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+
+# The test plugin will output test logging to this file.
+log_file_name = os.path.join(ts.Variables.LOGDIR, "log.txt")
+Test.Env["OUTPUT_FILE"] = log_file_name
 
 ts.addDefaultSSLFiles()
 
@@ -99,7 +98,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Change server port number (which can vary) to a fixed string for compare to gold file.
-second_log_file_name = "log2.txt"
+second_log_file_name = os.path.join(ts.Variables.LOGDIR, "log2.txt")
 tr.Processes.Default.Command = f"sed 's/{server.Variables.Port}/SERVER_PORT/' < {log_file_name} > {second_log_file_name}"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(second_log_file_name)

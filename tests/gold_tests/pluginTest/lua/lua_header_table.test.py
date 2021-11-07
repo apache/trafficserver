@@ -29,8 +29,10 @@ Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts")
 
 ts.Disk.remap_config.AddLine(
-    f"map / http://127.0.0.1 @plugin=tslua.so @pparam={Test.TestDirectory}/header_table.lua"
+    f"map / http://127.0.0.1 @plugin=tslua.so @pparam=header_table.lua"
 )
+# Configure the tslua's configuration file.
+ts.Setup.Copy("header_table.lua", ts.Variables.CONFIGDIR)
 
 # Test - Check for header table
 tr = Test.AddTestRun("Lua Header Table")
