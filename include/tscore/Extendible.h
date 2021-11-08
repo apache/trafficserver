@@ -284,6 +284,7 @@ public:
   FieldId(ext::details::FieldDesc const &);
   FieldId() {}
   FieldId(FieldId const &) = default;
+  FieldId &operator=(FieldId const &) = default;
 };
 
 namespace details
