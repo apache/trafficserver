@@ -185,10 +185,21 @@ PID of the traffic_server process (second column of output).
 */
 static int cmd_block = 0;
 
-// 1: the main thread delayed accepting, start accepting.
-// 0: delay accept, wait for cache initialization.
-// -1: cache is already initialized, don't delay.
-static int delay_listen_for_cache = 0;
+namespace
+{
+/** State of waiting for cache to initialize.
+ * Transitions:
+ * WAIT -> DELAYED : wait enabled and proxy initialization was delayed.
+ * WAIT -> INITIALIZED : cache is initialized before delay, don't delay.
+ * DELAYED -> INITIALIZED : cache is initialized, need to proxy init after delay.
+ */
+enum class CacheWaitState {
+  WAIT        = 0, ///< Wait for initialization
+  DELAYED     = 1, ///< The waiting has started.
+  INITIALIZED = -1 ///< Cache is initialized, no more waiting.
+};
+std::atomic<CacheWaitState> delay_listen_for_cache{CacheWaitState::WAIT};
+} // namespace
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
@@ -762,10 +773,8 @@ static void
 CB_After_Cache_Init()
 {
   APIHook *hook;
-  int start;
-
-  start = ink_atomic_swap(&delay_listen_for_cache, -1);
-  emit_fully_initialized_message();
+  // Mark cache as initialized and grab the current value to see if there's more to be done here.
+  auto cache_wait_state = delay_listen_for_cache.exchange(CacheWaitState::INITIALIZED);
 
 #if TS_ENABLE_FIPS == 0
   // Check for cache BC after the cache is initialized and before listen, if possible.
@@ -779,14 +788,13 @@ CB_After_Cache_Init()
   }
 #endif
 
-  if (1 == start) {
-    // The delay_listen_for_cache value was 1, therefore the main function
-    // delayed the call to start_HttpProxyServer until we got here. We must
-    // call accept on the ports now that the cache is initialized.
+  if (CacheWaitState::DELAYED == cache_wait_state) {
+    // Initialization was delayed to wait for cache. Cache is now initialized and therefore
+    // it's time to get the party started.
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();
-    emit_fully_initialized_message();
   }
+  emit_fully_initialized_message();
 
   time_t cache_ready_at = time(nullptr);
   RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at, REC_SOURCE_DEFAULT);
@@ -2160,18 +2168,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         etUdpCheck.wait(lock, [] { return et_udp_threads_ready; });
       }
 #endif
-      // Delay only if config value set and flag value is zero
-      // (-1 => cache already initialized)
-      if (delay_p && ink_atomic_cas(&delay_listen_for_cache, 0, 1)) {
+      // Delay only if config value set and flag value is @c WAIT
+      auto expected = CacheWaitState::WAIT;
+      if (delay_p && delay_listen_for_cache.compare_exchange_strong(expected, CacheWaitState::DELAYED)) {
         Debug("http_listen", "Delaying listen, waiting for cache initialization");
       } else {
-        // If we've come here, either:
+        // At this point there's no waiting because either
         //
-        // 1. The user did not configure wait_for_cache, and/or
-        // 2. The previous delay_listen_for_cache value was not 0, thus the cache
-        //    must have been initialized already.
-        //
-        // In either case we should not delay to accept the ports.
+        // 1. @c wait_for_cache was not enabled
+        // 2. The previous @c delay_listen_for_cache value was not @c WAIT thus the cache
+        //    is already initialized.
         Debug("http_listen", "Not delaying listen");
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
         emit_fully_initialized_message();
