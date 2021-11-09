@@ -189,6 +189,6 @@ ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "error condition hit")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("failed to change the cache url", "ensure failure for misconfiguration")
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "Disabling cache for this transaction to avoid cache poisoning", "ensure transaction caching disabled")
+    "Failed to change the cache url, disabling cache for this transaction to avoid cache poisoning.",
+    "ensure failure for misconfiguration")
