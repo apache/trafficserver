@@ -27,6 +27,7 @@ Basic cache_range_requests plugin test
 
 Test.SkipUnless(
     Condition.PluginExists('cache_range_requests.so'),
+    Condition.PluginExists('header_rewrite.so'),
     Condition.PluginExists('xdebug.so'),
 )
 Test.ContinueOnFail = False
@@ -207,9 +208,10 @@ req_psd = {"headers":
 server.addResponse("sessionlog.json", req_psd, res_pselect)
 
 # cache range requests plugin remap
+ts.Setup.CopyAs('reason.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLines([
     'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=cache_range_requests.so',
+    ' @plugin=header_rewrite.so @pparam={}/reason.conf @plugin=cache_range_requests.so'.format(Test.RunDirectory),
 
     # parent select cache key option
     'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
@@ -226,7 +228,7 @@ ts.Disk.plugin_config.AddLine('xdebug.so')
 # minimal configuration
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cache_range_requests',
+    'proxy.config.diags.debug.tags': 'cache_range_requests|http',
 })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
@@ -250,6 +252,7 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
 tr.StillRunningAfter = ts
 
 # 2 Test - Fetch from cache
@@ -260,6 +263,7 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
 tr.StillRunningAfter = ts
 
 # full range
@@ -272,6 +276,7 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
 tr.StillRunningAfter = ts
 
 # 4 Test - 0- request
@@ -281,7 +286,8 @@ ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(frange_
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
-ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected Content-Range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar header")
 tr.StillRunningAfter = ts
 
 # end range
@@ -294,6 +300,7 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
 tr.StillRunningAfter = ts
 
 # 6 Test - -5 request hit
@@ -304,6 +311,7 @@ ps.ReturnCode = 0
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
+ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Bar Bar status")
 tr.StillRunningAfter = ts
 
 # Ensure 404's aren't getting cached
@@ -322,13 +330,22 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/404 -r 0-'
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("404 Not Found", "expected 404 response")
+tr.StillRunningAfter = ts
 
+# 9 Test - origin returns 200 response to range request
+tr = Test.AddTestRun("origin returns 200")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: full"'
+ps.ReturnCode = 3  # <--- note the return code
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "expected full 200 response")
+ps.Streams.stdout.Content += Testers.ExcludesExpression("Content-Range:", "didn't expect Content-Range header")
 tr.StillRunningAfter = ts
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-parentselection-key"'.format(
     ts.Variables.port)
 
-# 9 Test - cache_key_url request
+# 10 Test - cache_key_url request
 tr = Test.AddTestRun("cache_key_url request")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://parentselect/path -r {} -H "uuid: pselect"'.format(pselect_str)
@@ -340,7 +357,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-# 10 Test - non cache_key_url request ... no X-ParentSelection-Key
+# 11 Test - non cache_key_url request ... no X-ParentSelection-Key
 tr = Test.AddTestRun("non cache_key_url request")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
@@ -349,7 +366,7 @@ ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key", 
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-# 11 Test - cache_key_url request -- deprecated
+# 12 Test - cache_key_url request -- deprecated
 tr = Test.AddTestRun("cache_key_url request - deprecated")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str)
