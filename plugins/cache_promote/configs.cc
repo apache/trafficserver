@@ -42,7 +42,7 @@ static const struct option longopt[] = {
 // The destructor is responsible for returning the policy to the PolicyManager.
 PromotionConfig::~PromotionConfig()
 {
-  if (_policy) {
+  if (_policy != nullptr) {
     _manager->releasePolicy(_policy);
   }
 }
@@ -99,7 +99,7 @@ PromotionConfig::factory(int argc, char *argv[])
     }
   }
 
-  if (!_policy) {
+  if (_policy == nullptr) {
     return false;
   }
 
