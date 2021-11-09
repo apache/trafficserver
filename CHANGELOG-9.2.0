@@ -102,7 +102,6 @@ Changes with Apache Traffic Server 9.2.0
   #7821 - Add method to write an IpAddr value to a sockaddr.
   #7822 - Add URI Signing cdnistd Claim Implementation
   #7829 - Apply fmt compile time argument checking to log functions
-  #7831 - Fix stall on sending response for request with trailer header
   #7832 - Fixup TS_USE_LINUX_NATIVE_AIO AIO_MODE_NATIVE
   #7836 - build_h3_tools: use OpenSSL_1_1_1k+quic
   #7837 - Update NextHop strategies so that unavailable server retry codes are configurable.
@@ -151,7 +150,6 @@ Changes with Apache Traffic Server 9.2.0
   #7952 - Update GitHub stale action to auto close old PRs
   #7954 - Revert "Do not invalidate cached resources upon error responses to un…
   #7956 - Fix double test flakiness due to EOS/TXN_CLOSE race
-  #7957 - Fix the scheme of h2 0rtt tests
   #7959 - Implement TLSBasicSupport for QUICNetVC
   #7961 - Don't rely on SSLNetVC when HttpSM gathers info about SSL
   #7962 - Pass through expect header and handle 100-continue response
@@ -233,6 +231,7 @@ Changes with Apache Traffic Server 9.2.0
   #8201 - Fix H2 logic when setting EOS flag on DATA frame
   #8204 - transaction data sink: only stream body bytes
   #8207 - Remove some const casting
+  #8208 - Make sni.yaml errors cause an unrecoverable TS crash.
   #8214 - Fix client ip debug logging for the entire transaction
   #8215 - Fix heap-use-after-free of ts-lua plugin
   #8221 - Add some header tests
@@ -279,6 +278,7 @@ Changes with Apache Traffic Server 9.2.0
   #8305 - Revert "Fail requests with incomplete line ends (#8096)"
   #8306 - Fix crash during raw connect failures
   #8309 - Fix a compile error in SSLCertLookup
+  #8313 - Adds new API: TSVConnSslSniGet
   #8314 - Add mTLS scenario documentation
   #8316 - Remove incompatible changes for 9.2.0
   #8319 - Fix yamlcpp include folder by using the YAMLCPP_INCLUDE  variable
@@ -306,6 +306,7 @@ Changes with Apache Traffic Server 9.2.0
   #8363 - Added support for promoting internal (plugin-initiated) requests.
   #8364 - Added support for verifying cacheability before attempting to force an object into cache.
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
+  #8368 - TSSslSecretSet: Update SSL_CTX TLS Secrets
   #8372 - Add Au test for pqsi and pqsp log fields.
   #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
@@ -314,8 +315,35 @@ Changes with Apache Traffic Server 9.2.0
   #8392 - Update the feature lists available for autest
   #8405 - Update CacheWrite.cc
   #8406 - Fix map_with_recv_port URL remapping type.
+  #8408 - Doc: fix typos in Strategy documentation
   #8409 - Add stats for concurrent stream limits exceeded
   #8411 - Add set-body to header rewrite
   #8412 - AuTest: Execute Test Python Scripts with sys.executable
+  #8414 - rate_limit: convert to using TSVConnSslSniGet
+  #8420 - Adding doc/README.md
+  #8421 - Rename IpEndpoint member functions named port() to network_order_port().
   #8424 - Remove operatorbody class, its not needed at this time
   #8427 - Make sure the include files are built first
+  #8428 - Refactors and promotes the Txn Control mechanism with Get() and Set()
+  #8429 - Remove empty tests/unit_tests directory+makefile
+  #8430 - tests: Add shbang to python scripts with a main
+  #8439 - Fix Multiplexer POST Body Handling
+  #8440 - Update the Multiplexer Docs for Multplexed HTTPS Connections
+  #8441 - bigobj: use automake to build test utilities
+  #8449 - Add AuTest for HTTP CONNECT
+  #8450 - Document proxy.config.memory.max_usage
+  #8453 - Ignore ECONNABORTED on blocking accept
+  #8469 - Make factory.response_suppression_mode an overridable config
+  #8473 - Serve stale content from child if parent returns invalid/marked down
+  #8477 - Define TS_HTTP_VALUE_BROTLI and TS_HTTP_LEN_BROTLI
+  #8482 - Update control mechanism changes in lua plugin documentation
+  #8483 - ssl_secret debug printing: print only the first 50 bytes
+  #8485 - Adding a forward proxy AuTest.
+  #8489 - Better TLS Secrets Truncation.
+  #8491 - Fix wording for jemalloc autoconf
+  #8492 - When checking for SSL_set1_verify_cert_store, save/restore LIBS before manipulating LIBS
+  #8493 - clang 13: Removed unused variable
+  #8494 - clang 13: Added default assignment operator
+  #8497 - Block TS startup if configured body factory directory does not exist.
+  #8499 - tests: Adjust generated file paths to work within some restricted environments
+  #8502 - build: fix detection of boringocsp
