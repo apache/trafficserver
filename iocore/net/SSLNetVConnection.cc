@@ -953,10 +953,9 @@ SSLNetVConnection::clear()
   // operation, e.g. by using d2i_SSL_SESSION(3). It must not be called
   // on other SSL_SESSION objects, as this would cause incorrect
   // reference counts and therefore program failures.
-  if (client_sess != nullptr) {
-    SSL_SESSION_free(client_sess);
-    client_sess = nullptr;
-  }
+  // Since we created the shared pointer with a custom deleter,
+  // resetting here will decrement the ref-counter.
+  client_sess.reset();
 
   if (ssl != nullptr) {
     SSL_free(ssl);
@@ -2089,16 +2088,11 @@ SSLNetVConnection::_ssl_connect()
 
       Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 
-      sess = this->getOriginSession(ssl, lookup_key);
-      if (sess) {
-        if (SSL_set_session(ssl, sess) == 0) {
-          SSL_SESSION_free(sess);
-        } else {
-          if (this->client_sess) {
-            SSL_SESSION_free(this->client_sess);
-          }
-          this->client_sess = sess;
-        }
+      std::shared_ptr<SSL_SESSION> shared_sess = this->getOriginSession(ssl, lookup_key);
+
+      if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
+        // Keep a reference of this shared pointer in the connection
+        this->client_sess = shared_sess;
       }
     }
   }
@@ -2106,14 +2100,14 @@ SSLNetVConnection::_ssl_connect()
   int ret = SSL_connect(ssl);
 
   if (ret > 0) {
-    if (sess && SSL_session_reused(ssl)) {
+    if (SSL_session_reused(ssl)) {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_reused_count);
       if (is_debug_tag_set("ssl.origin_session_cache")) {
-        Debug("ssl.origin_session_cache", "reused session to origin server = %p", sess);
+        Debug("ssl.origin_session_cache", "reused session to origin server");
       }
     } else {
       if (is_debug_tag_set("ssl.origin_session_cache")) {
-        Debug("ssl.origin_session_cache", "new session to origin server = %p", sess);
+        Debug("ssl.origin_session_cache", "new session to origin server");
       }
     }
     return SSL_ERROR_NONE;
