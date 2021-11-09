@@ -268,7 +268,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         }
 
         // Set up the continuation
-        TSCont const txn_contp = TSContCreate(static_cast<TSEventFunc>(transaction_handler), nullptr);
+        TSCont const txn_contp = TSContCreate(transaction_handler, nullptr);
         TSContDataSet(txn_contp, txn_state);
         TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp);
         TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp);
