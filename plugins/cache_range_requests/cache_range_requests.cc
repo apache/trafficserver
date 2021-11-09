@@ -186,8 +186,6 @@ handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata)
 void
 range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
 {
-  txndata *txn_state = nullptr;
-
   TSMBuffer hdr_buf = nullptr;
   TSMLoc hdr_loc    = TS_NULL_MLOC;
 
@@ -200,7 +198,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
       if (!hdr_value || len <= 0) {
         DEBUG_LOG("Not a range request.");
       } else {
-        txn_state = new txndata;
+        txndata *const txn_state = new txndata;
         txn_state->range_value.assign(hdr_value, len);
 
         std::string const &rv = txn_state->range_value;
