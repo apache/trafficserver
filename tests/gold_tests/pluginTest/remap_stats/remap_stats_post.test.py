@@ -22,7 +22,7 @@ Test.SkipUnless(Condition.PluginExists('remap_stats.so'))
 
 server = Test.MakeOriginServer("server")
 
-Test.Setup.Copy("metrics.sh")
+Test.Setup.Copy("metrics_post.sh")
 
 request_header = {
     "headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -32,7 +32,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
-ts.Disk.plugin_config.AddLine('remap_stats.so')
+ts.Disk.plugin_config.AddLine('remap_stats.so --post-remap-host')
 
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
@@ -65,7 +65,7 @@ tr.StillRunningAfter = server
 
 # 2 Test - Gather output
 tr = Test.AddTestRun("analyze stats")
-tr.Processes.Default.Command = 'bash -c ./metrics.sh'
+tr.Processes.Default.Command = 'bash -c ./metrics_post.sh'
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
