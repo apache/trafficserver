@@ -283,6 +283,10 @@ Http2ConnectionState::get_stream_error_rate() const
 {
   int total = get_stream_requests();
 
+  if (static_cast<uint32_t>(total) < Http2::stream_error_sampling_threshold) {
+    return 0;
+  }
+
   if (total >= (1 / Http2::stream_error_rate_threshold)) {
     return (double)stream_error_count / (double)total;
   } else {
