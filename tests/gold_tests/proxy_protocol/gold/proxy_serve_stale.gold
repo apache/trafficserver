@@ -5,7 +5,7 @@
 > Accept: */*
 ``
 < HTTP/1.1 200 OK
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Accept-Ranges: bytes
 < Content-Length: 6
 < Cache-Control: public, max-age=5
@@ -20,7 +20,7 @@
 > Accept: */*
 ``
 < HTTP/1.1 200 OK
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Accept-Ranges: bytes
 < Content-Length: 6
 < Cache-Control: public, max-age=5
@@ -35,7 +35,7 @@
 > Accept: */*
 ``
 < HTTP/1.1 200 OK
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Accept-Ranges: bytes
 < Content-Length: 6
 < Cache-Control: public, max-age=5
@@ -52,7 +52,7 @@
 < HTTP/1.1 502 Next Hop Connection Failed
 < Date: ``
 < Connection: keep-alive
-< Server: ATS/10.0.0
+< Server: ATS/{}
 < Cache-Control: ``
 < Content-Length: ``
 ``
