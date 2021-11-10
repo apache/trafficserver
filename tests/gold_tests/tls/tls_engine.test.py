@@ -27,7 +27,10 @@ Test.Summary = '''
 Test tls via the async interface with the sample async_engine
 '''
 
-Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion('1.1.1'),
+    Condition.IsOpenSSL(),
+)
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
