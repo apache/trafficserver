@@ -357,7 +357,8 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
   unsigned char decoded_string[2048] = {'\0'};
   char new_url[8192]; /* new_url is not null_terminated */
   char *p = NULL, *sig_anchor = NULL, *saveptr = NULL;
-  int i = 0, numtoks = 0, decoded_len = 0, sig_anchor_seg = 0;
+  int i = 0, numtoks = 0, sig_anchor_seg = 0;
+  size_t decoded_len = 0;
 
   strncat(url, url_in, sizeof(url) - strlen(url) - 1);
 
@@ -452,13 +453,12 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
   // no signature anchor was found so decode and save the signing parameters assumed
   // to be in the last path segment.
   if (sig_anchor == NULL) {
-    if (TSBase64Decode(segment[numtoks - 2], strlen(segment[numtoks - 2]), decoded_string, sizeof(decoded_string),
-                       (size_t *)&decoded_len) != TS_SUCCESS) {
+    if (TSBase64Decode(segment[numtoks - 2], strlen(segment[numtoks - 2]), decoded_string, sizeof(decoded_string), &decoded_len) !=
+        TS_SUCCESS) {
       TSDebug(PLUGIN_NAME, "Unable to decode the  path parameter string.");
     }
   } else {
-    if (TSBase64Decode(sig_anchor, strlen(sig_anchor), decoded_string, sizeof(decoded_string), (size_t *)&decoded_len) !=
-        TS_SUCCESS) {
+    if (TSBase64Decode(sig_anchor, strlen(sig_anchor), decoded_string, sizeof(decoded_string), &decoded_len) != TS_SUCCESS) {
       TSDebug(PLUGIN_NAME, "Unable to decode the  path parameter string.");
     }
   }
