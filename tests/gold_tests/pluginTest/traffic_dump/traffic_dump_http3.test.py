@@ -18,6 +18,8 @@ Verify traffic_dump HTTP/3 functionality.
 #  limitations under the License.
 
 import os
+import sys
+
 Test.Summary = '''
 Verify traffic_dump HTTP/3 functionality.
 '''
@@ -29,6 +31,8 @@ Test.SkipUnless(
 Test.SkipIf(
     Condition.true("Skip this test until the TS_EVENT_HTTP_SSN are supported for QUIC connections."),
 )
+
+schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 
 # Configure the origin server.
 replay_file = "replay/http3.yaml"
@@ -53,10 +57,10 @@ ts.Disk.records_config.update({
 
     'proxy.config.quic.qlog_dir': qlog_dir,
 
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
+    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
     'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.http.host_sni_policy': 2,
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
@@ -67,13 +71,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map https://www.client_only_tls.com/ http://127.0.0.1:{0}'.format(server.Variables.http_port)
+    f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}'
 )
 ts.Disk.remap_config.AddLine(
-    'map https://www.tls.com/ https://127.0.0.1:{0}'.format(server.Variables.https_port)
+    f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}'
 )
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
+    f'map / http://127.0.0.1:{server.Variables.http_port}'
 )
 
 # Configure traffic_dump.
@@ -141,13 +145,9 @@ sensitive_fields_arg = (
     "--sensitive-fields x-request-2 ")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
-    ('python3 {0} {1} {2} {3} --client-http-version "3" '
-     '--client-protocols "{4}"'.format(
-         verify_replay,
-         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-         replay_file_session_1,
-         sensitive_fields_arg,
-         http_protocols))
+    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
+     f'{sensitive_fields_arg} --client-http-version "3" '
+     f'--client-protocols "{http_protocols}"')
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

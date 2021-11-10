@@ -44,6 +44,7 @@
 #include "../ProxyTransaction.h"
 #include "HdrUtils.h"
 #include "tscore/History.h"
+#include "tscore/PendingAction.h"
 
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
 #define HTTP_API_ERROR (INK_API_EVENT_EVENTS_START + 1)
@@ -61,6 +62,7 @@ static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
 class Http1ServerSession;
 class AuthHttpAdapter;
+class PreWarmSM;
 
 class HttpSM;
 typedef int (HttpSM::*HttpSMHandler)(int event, void *data);
@@ -90,7 +92,8 @@ struct HttpVCTableEntry {
   MIOBuffer *write_buffer;
   VIO *read_vio;
   VIO *write_vio;
-  HttpSMHandler vc_handler;
+  HttpSMHandler vc_read_handler;
+  HttpSMHandler vc_write_handler;
   HttpVC_t vc_type;
   HttpSM *sm;
   bool eos;
@@ -166,54 +169,6 @@ enum HttpPluginTunnel_t {
 
 class PluginVCCore;
 
-class PendingAction
-{
-public:
-  bool
-  is_empty() const
-  {
-    return pending_action == nullptr;
-  }
-  PendingAction &
-  operator=(Action *b)
-  {
-    // Don't do anything if the new action is _DONE
-    if (b != ACTION_RESULT_DONE) {
-      if (b != pending_action && pending_action != nullptr) {
-        pending_action->cancel();
-      }
-      pending_action = b;
-    }
-    return *this;
-  }
-  Continuation *
-  get_continuation() const
-  {
-    return pending_action ? pending_action->continuation : nullptr;
-  }
-  Action *
-  get() const
-  {
-    return pending_action;
-  }
-  void
-  clear_if_action_is(Action *current_action)
-  {
-    if (current_action == pending_action) {
-      pending_action = nullptr;
-    }
-  }
-  ~PendingAction()
-  {
-    if (pending_action) {
-      pending_action->cancel();
-    }
-  }
-
-private:
-  Action *pending_action = nullptr;
-};
-
 class PostDataBuffers
 {
 public:
@@ -274,17 +229,8 @@ public:
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
-  ProxyTransaction *
-  get_ua_txn()
-  {
-    return ua_txn;
-  }
-
-  ProxyTransaction *
-  get_server_txn()
-  {
-    return server_txn;
-  }
+  ProxyTransaction *get_ua_txn();
+  ProxyTransaction *get_server_txn();
 
   // Called by transact.  Updates are fire and forget
   //  so there are no callbacks and are safe to do
@@ -323,11 +269,7 @@ public:
 
   // Called by transact(HttpTransact::is_request_retryable), temporarily.
   // This function should be remove after #1994 fixed.
-  bool
-  is_post_transform_request()
-  {
-    return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
-  }
+  bool is_post_transform_request();
 
   // Called from InkAPI.cc which acquires the state machine lock
   //  before calling
@@ -335,11 +277,7 @@ public:
   int state_api_callout(int event, void *data);
 
   // Used for Http Stat Pages
-  HttpTunnel *
-  get_tunnel()
-  {
-    return &tunnel;
-  }
+  HttpTunnel *get_tunnel();
 
   // Debugging routines to dump the SM history, hdrs
   void dump_state_on_assert();
@@ -403,6 +341,7 @@ public:
   // See if we should allow the transaction
   // based on sni and host name header values
   void check_sni_host();
+  SNIRoutingType get_tunnel_type() const;
 
 protected:
   int reentrancy_count = 0;
@@ -662,35 +601,12 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
-  bool
-  is_dying() const
-  {
-    return terminate_sm;
-  }
+  bool is_dying() const;
 
-  int
-  client_connection_id() const
-  {
-    return _client_connection_id;
-  }
-
-  int
-  client_transaction_id() const
-  {
-    return _client_transaction_id;
-  }
-
-  int
-  client_transaction_priority_weight() const
-  {
-    return _client_transaction_priority_weight;
-  }
-
-  int
-  client_transaction_priority_dependence() const
-  {
-    return _client_transaction_priority_dependence;
-  }
+  int client_connection_id() const;
+  int client_transaction_id() const;
+  int client_transaction_priority_weight() const;
+  int client_transaction_priority_dependence() const;
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -701,8 +617,67 @@ private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
-  bool _from_early_data = false;
+  bool _from_early_data       = false;
+  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
+  PreWarmSM *_prewarm_sm      = nullptr;
 };
+
+////
+// Inline Functions
+//
+inline ProxyTransaction *
+HttpSM::get_ua_txn()
+{
+  return ua_txn;
+}
+
+inline ProxyTransaction *
+HttpSM::get_server_txn()
+{
+  return server_txn;
+}
+
+inline bool
+HttpSM::is_post_transform_request()
+{
+  return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
+}
+
+inline HttpTunnel *
+HttpSM::get_tunnel()
+{
+  return &tunnel;
+}
+
+inline bool
+HttpSM::is_dying() const
+{
+  return terminate_sm;
+}
+
+inline int
+HttpSM::client_connection_id() const
+{
+  return _client_connection_id;
+}
+
+inline int
+HttpSM::client_transaction_id() const
+{
+  return _client_transaction_id;
+}
+
+inline int
+HttpSM::client_transaction_priority_weight() const
+{
+  return _client_transaction_priority_weight;
+}
+
+inline int
+HttpSM::client_transaction_priority_dependence() const
+{
+  return _client_transaction_priority_dependence;
+}
 
 // Function to get the cache_sm object - YTS Team, yamsat
 inline HttpCacheSM &

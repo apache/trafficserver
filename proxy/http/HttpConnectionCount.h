@@ -77,7 +77,9 @@ public:
 
   /** Static configuration values. */
   struct GlobalConfig {
-    std::chrono::seconds alert_delay{60}; ///< Alert delay in seconds.
+    int queue_size{0};                          ///< Maximum delayed transactions.
+    std::chrono::milliseconds queue_delay{100}; ///< Reschedule / queue delay in ms.
+    std::chrono::seconds alert_delay{60};       ///< Alert delay in seconds.
   };
 
   // The names of the configuration values.
@@ -86,6 +88,8 @@ public:
   static constexpr std::string_view CONFIG_VAR_MAX{"proxy.config.http.per_server.connection.max"_sv};
   static constexpr std::string_view CONFIG_VAR_MIN{"proxy.config.http.per_server.connection.min"_sv};
   static constexpr std::string_view CONFIG_VAR_MATCH{"proxy.config.http.per_server.connection.match"_sv};
+  static constexpr std::string_view CONFIG_VAR_QUEUE_SIZE{"proxy.config.http.per_server.connection.queue_size"_sv};
+  static constexpr std::string_view CONFIG_VAR_QUEUE_DELAY{"proxy.config.http.per_server.connection.queue_delay"_sv};
   static constexpr std::string_view CONFIG_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"_sv};
 
   /// A record for the outbound connection count.
@@ -118,6 +122,7 @@ public:
     std::atomic<int> _count{0};         ///< Number of outbound connections.
     std::atomic<int> _count_max{0};     ///< largest observed @a count value.
     std::atomic<int> _blocked{0};       ///< Number of outbound connections blocked since last alert.
+    std::atomic<int> _rescheduled{0};   ///< # of connection reschedules.
     std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
@@ -163,6 +168,8 @@ public:
     void dequeue();
     /// Note blocking a transaction.
     void blocked();
+    /// Note a rescheduling
+    void rescheduled();
     /// Clear all reservations.
     void clear();
     /// Drop the reservation - assume it will be cleaned up elsewhere.
@@ -383,6 +390,12 @@ inline void
 OutboundConnTrack::TxnState::blocked()
 {
   ++_g->_blocked;
+}
+
+inline void
+OutboundConnTrack::TxnState::rescheduled()
+{
+  ++_g->_rescheduled;
 }
 
 /* === Linkage === */

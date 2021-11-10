@@ -45,26 +45,24 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     int expected_result;
     int expected_bytes_consumed;
   };
-  static const std::array<Test, 23> tests = {{
+  static const std::array<Test, 21> tests = {{
     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
-    {"GET /index.html HTTP/1.0\r\na\rb\n", PARSE_RESULT_ERROR, 28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r \n", PARSE_RESULT_ERROR, 45},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
     {"GET", PARSE_RESULT_ERROR, 3},
     {"GET /index.html", PARSE_RESULT_ERROR, 15},
     {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
     {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
     {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
-    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_ERROR, 25},
-    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_ERROR, 26},
+    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
+    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
     {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_ERROR, 45},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_ERROR, 44},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_ERROR, 53},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
     {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},

@@ -157,7 +157,7 @@ mysql_remap(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     TSDebug(PLUGIN_NAME, "Reading Request");
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     if (!do_mysql_remap(contp, txnp)) {
       reenable = TS_EVENT_HTTP_ERROR;
     }

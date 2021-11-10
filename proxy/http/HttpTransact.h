@@ -154,6 +154,7 @@ enum ViaString_t {
   VIA_ERROR_CACHE_READ        = 'R',
   VIA_ERROR_MOVED_TEMPORARILY = 'M',
   VIA_ERROR_LOOP_DETECTED     = 'L',
+  VIA_ERROR_UNKNOWN           = ' ',
   //
   // Now the detailed stuff
   //

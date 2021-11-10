@@ -19,9 +19,10 @@ Test remap_stats plugin
 '''
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('remap_stats.so'))
-Test.SkipIf(Condition.true("Test cannot deterministically wait until the stats appear"))
 
 server = Test.MakeOriginServer("server")
+
+Test.Setup.Copy("metrics.sh")
 
 request_header = {
     "headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -64,13 +65,7 @@ tr.StillRunningAfter = server
 
 # 2 Test - Gather output
 tr = Test.AddTestRun("analyze stats")
-tr.Processes.Default.Command = r'traffic_ctl metric match \.\*remap_stats\*'
+tr.Processes.Default.Command = 'bash -c ./metrics.sh'
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.TimeOut = 5
-tr.DelayStart = 15
-tr.TimeOut = 5
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "plugin.remap_stats.one.status_2xx 1", "expected 2xx on first remap")
-tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "plugin.remap_stats.two.status_4xx 1", "expected 4xx on second remap")
+tr.StillRunningAfter = ts

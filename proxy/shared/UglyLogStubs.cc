@@ -122,6 +122,7 @@ NetProcessor::AcceptOptions::reset()
   sockopt_flags         = 0;
   packet_mark           = 0;
   packet_tos            = 0;
+  packet_notsent_lowat  = 0;
   f_inbound_transparent = false;
   return *this;
 }

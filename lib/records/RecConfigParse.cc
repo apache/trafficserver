@@ -89,7 +89,7 @@ RecConfigOverrideFromRunroot(const char *name)
   if (!get_runroot().empty()) {
     if (!strcmp(name, "proxy.config.bin_path") || !strcmp(name, "proxy.config.local_state_dir") ||
         !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir") ||
-        !strcmp(name, "proxy.config.hostdb.storage_path")) {
+        !strcmp(name, "proxy.config.hostdb.storage_path") || !strcmp(name, "proxy.config.body_factory.template_sets_dir")) {
       return true;
     }
   }
@@ -146,8 +146,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
 
   Tokenizer line_tok("\r\n");
   tok_iter_state line_tok_state;
-
-  RecConfigFileEntry *cfe;
 
   RecDebug(DL_Note, "Reading '%s'", path);
 
@@ -249,9 +247,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
     // update our g_rec_config_contents_xxx
-    cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
-    cfe->entry_type = RECE_RECORD;
-    cfe->entry      = ats_strdup(name_str);
     g_rec_config_contents_ht.emplace(name_str);
 
   L_done:

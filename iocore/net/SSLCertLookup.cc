@@ -326,7 +326,7 @@ SSLCertLookup::find(const IpEndpoint &address) const
   }
 
   // If that failed, try the address without the port.
-  if (address.port()) {
+  if (address.network_order_port()) {
     key.split();
     if ((cc = this->ec_storage->lookup(key.get()))) {
       return cc;
@@ -343,7 +343,7 @@ SSLCertLookup::find(const IpEndpoint &address) const
   }
 
   // If that failed, try the address without the port.
-  if (address.port()) {
+  if (address.network_order_port()) {
     key.split();
     return this->ssl_storage->lookup(key.get());
   }
@@ -363,6 +363,7 @@ SSLCertLookup::insert(const char *name, SSLCertContext const &cc)
     return this->ec_storage->insert(name, cc);
   default:
     ink_assert(false);
+    return -1;
   }
 #else
   return this->ssl_storage->insert(name, cc);
@@ -383,6 +384,7 @@ SSLCertLookup::insert(const IpEndpoint &address, SSLCertContext const &cc)
     return this->ec_storage->insert(key.get(), cc);
   default:
     ink_assert(false);
+    return -1;
   }
 #else
   return this->ssl_storage->insert(key.get(), cc);

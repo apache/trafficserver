@@ -60,6 +60,7 @@ PrefetchConfig::init(int argc, char *argv[])
                                           {const_cast<char *>("fetch-policy"), optional_argument, nullptr, 'p'},
                                           {const_cast<char *>("fetch-count"), optional_argument, nullptr, 'c'},
                                           {const_cast<char *>("fetch-path-pattern"), optional_argument, nullptr, 'e'},
+                                          {const_cast<char *>("fetch-query"), optional_argument, nullptr, 'q'},
                                           {const_cast<char *>("fetch-max"), optional_argument, nullptr, 'x'},
                                           {const_cast<char *>("replace-host"), optional_argument, nullptr, 'r'},
                                           {const_cast<char *>("name-space"), optional_argument, nullptr, 's'},
@@ -118,6 +119,10 @@ PrefetchConfig::init(int argc, char *argv[])
       }
     } break;
 
+    case 'q': /* --fetch-query */ {
+      setQueryKey(optarg);
+    } break;
+
     case 'x': /* --fetch-max */
       setFetchMax(optarg);
       break;
@@ -159,6 +164,7 @@ PrefetchConfig::finalize()
 {
   PrefetchDebug("front-end: %s", (_front ? "true" : "false"));
   PrefetchDebug("exact match: %s", (_exactMatch ? "true" : "false"));
+  PrefetchDebug("query key: %s", _queryKey.c_str());
   PrefetchDebug("API header name: %s", _apiHeader.c_str());
   PrefetchDebug("next object header name: %s", _nextHeader.c_str());
   PrefetchDebug("fetch policy parameters: %s", _fetchPolicy.c_str());

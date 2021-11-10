@@ -209,6 +209,12 @@ System Variables
 
    The name of the executable that runs the :program:`traffic_manager` process.
 
+.. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
+   :units: bytes
+
+   Throttle incoming connections if resident memory usage exceeds this value.
+   Setting the option to 0 disables the feature.
+
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
    The script executed before the :program:`traffic_manager` process spawns
@@ -1296,6 +1302,14 @@ Parent Proxy Configuration
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
+   :reloadable:
+   :overridable:
+
+   The timeout value (in seconds) for parent cache connection attempts.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
    :overridable:
@@ -1565,8 +1579,14 @@ Origin Server Connect Attempts
 
    Set a limit for the number of concurrent connections to an upstream server group. A value of
    ``0`` disables checking. If a transaction attempts to connect to a group which already has the
-   maximum number of concurrent connections a 503
+   maximum number of concurrent connections the transaction either rechecks after a delay or a 503
    (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
+
+   Number of transactions that can be delayed concurrently
+      See :ts:cv:`proxy.config.http.per_server.connection.queue_size`.
+
+   How long to delay before rechecking
+      See :ts:cv:`proxy.config.http.per_server.connection.queue_delay`.
 
    Upstream server group definition
       See :ts:cv:`proxy.config.http.per_server.connection.match`.
@@ -1601,6 +1621,26 @@ Origin Server Connect Attempts
    This setting is independent of the :ts:cv:`setting for upstream session sharing matching
    <proxy.config.http.server_session_sharing.match>`.
 
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
+   :reloadable:
+
+   Controls the number of transactions that can be waiting on an upstream server group.
+
+   ``-1``
+      Unlimited.
+
+   ``0``
+      Never wait. If the connection maximum has been reached immediately respond with an error.
+
+   A positive number
+      If there are less than this many waiting transactions, delay this transaction and try again. Otherwise respond immediately with an error.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_delay INT 100
+   :reloadable:
+   :units: milliseconds
+
+   If a transaction is delayed due to too many connections in an upstream server group, delay this amount of time before checking again.
+
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
@@ -1631,6 +1671,15 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
    ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
+   :reloadable:
+   :overridable:
+
+   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
+   request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -1966,9 +2015,14 @@ Security
    is 1, a warning is generated but the transaction is allowed to proceed.  If the value is 2 and there is a
    mismatch, a warning is generated and a status 403 is returned.
 
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
+   Note that SNI and hostname consistency checking is not performed on all connections indiscriminately, even if this
+   global ``proxy.config.http.host_sni_policy`` is set to a value of 1 or 2. It is only performed for connections to
+   hosts specifying ``verify_client`` and/or ``ip_allow`` policies in :file:`sni.yaml`. That is, the SNI and hostname
+   mismatch check is only performed if a relevant security policy for the SNI is set in :file:`sni.yaml`. The
+   ``proxy.config.http.host_sni_policy`` :file:`records.config` value is used as the default value if either of these
+   policies is set in the corresponding :file:`sni.yaml` file entry and the :file:`sni.yaml` entry does not override
+   this value via a :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
 
-   Currently, only the verify_client and ip_allow policies are checked for host name and SNI matching.
 
 Cache Control
 =============
@@ -2347,6 +2401,17 @@ Cache Control
    write vector. For further details on cache write vectors, refer to the
    developer documentation for :cpp:class:`CacheVC`.
 
+.. ts::cv:: CONFIG proxy.config.cache.mutex_retry_delay INT 2
+   :reloadable:
+   :units: milliseconds
+
+   The retry delay for missing a lock on a mutex in the cache component. This is used generically
+   for most locks, except those that have an explicit configuration for the retry delay. For
+   instance, if the cache component is notifying another continuation of a cache event and fails to
+   get the lock for that continuation, it will use this as the delay for the retry. This is also
+   used from the asynchronous IO threads when IO finishes and the ``CacheVC`` lock or stripe lock is
+   required.
+
 RAM Cache
 =========
 
@@ -2521,6 +2586,8 @@ Customizable User Response Pages
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
+    :reloadable:
+    :overridable:
 
    Specifies when |TS| suppresses generated response pages:
 
@@ -3727,10 +3794,22 @@ SSL Termination
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.ssl.keylog_file STRING NULL
+   :reloadable:
+
+   If configured, TLS session keys for TLS connections will be logged to the
+   specified file. This file is formatted in such a way that it can be
+   conveniently imported into tools such as Wireshark to decrypt packet
+   captures.  This should only be used for debugging purposes since the data in
+   the keylog file can be used to decrypt the otherwise encrypted traffic. A
+   NULL value for this disables the feature.
+
+   This feature is disabled by default.
+
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
    :reloadable:
    :overridable:
 
@@ -3891,6 +3970,39 @@ TLS v1.3 0-RTT Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
 
    Set to ``1`` to allow HTTP parameters on early data requests.
+
+SNI Routing
+-----------
+
+.. ts:cv:: CONFIG proxy.config.tunnel.activity_check_period INT 0
+   :units: seconds
+
+   Frequency of checking the activity of SNI Routing Tunnel. Set to ``0`` to disable monitoring of the activity of the SNI tunnels.
+   The feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm INT 0
+
+   Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.max_stats_size INT 100
+
+   Max size of :ref:`dynamic stats for Pre-warming TLS Tunnel <pre-warming-tls-tunnel-stats>`.
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.algorithm INT 2
+
+   Version of pre-warming algorithm.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``1`` Periodical pre-warming only
+   ``2`` Event based pre-warming + Periodical pre-warming
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.event_period INT 1000
+   :units: milliseconds
+
+   Frequency of periodical pre-warming in milli-seconds.
 
 OCSP Stapling Configuration
 ===========================
@@ -4177,12 +4289,6 @@ removed in the future without prior notice.
    If specified, TLS session data will be stored to the file, and will be used
    for resuming a session.
 
-.. ts:cv:: CONFIG proxy.config.quic.client.keylog_file STRING ""
-   :reloadable:
-
-   Only available for :program:`traffic_quic`.
-   If specified, key information will be stored to the file.
-
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
    :reloadable:
 
@@ -4461,6 +4567,7 @@ Sockets
 
    This directive enables operating system specific optimizations for a listening socket. ``defer_accept`` holds a call to ``accept(2)``
    back until data has arrived. In Linux' special case this is up to a maximum of 45 seconds.
+   On FreeBSD, ``accf_data`` module needs to be loaded.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
    :reloadable:
@@ -4499,6 +4606,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4533,6 +4641,7 @@ Sockets
         TCP_FASTOPEN (8)
         PACKET_MARK (16)
         PACKET_TOS (32)
+        TCP_NOTSENT_LOWAT (64)
 
 .. note::
 
@@ -4583,6 +4692,11 @@ Sockets
    (the packets that make up an origin request).
 
    .. seealso:: `Traffic Shaping`_
+
+.. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 16384
+   :overridable:
+
+   Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 

@@ -16,14 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set +x
+set -x
 
 cd src
 sleep 30
 
 git branch --contains ${ghprbActualCommit} > /dev/null
 if [ $? = 0 -a ! -z "$ghprbActualCommit" ]; then
-    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E '^(build|iocore|proxy|tests|include|mgmt|plugins|proxy|src)/' > /dev/null
+    git diff HEAD~1 --name-only | egrep -E '^(build|iocore|proxy|tests|include|mgmt|plugins|proxy|src)/' > /dev/null
     if [ $? = 1 ]; then
         echo "No relevant files changed, skipping run"
         exit 0

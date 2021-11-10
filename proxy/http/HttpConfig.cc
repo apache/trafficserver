@@ -310,6 +310,12 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.websocket.current_active_client_connections", RECD_INT,
                      RECP_NON_PERSISTENT, (int)http_websocket_current_active_client_connections_stat, RecRawStatSyncSum);
   HTTP_CLEAR_DYN_STAT(http_websocket_current_active_client_connections_stat);
+
+  // Tunnel Stats
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.tunnel.current_active_connections", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)tunnel_current_active_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(tunnel_current_active_connections_stat);
+
   // Current Transaction Stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_client_transactions", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_client_transactions_stat, RecRawStatSyncSum);
@@ -1146,6 +1152,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
   HttpEstablishStaticConfigLongLong(c.oride.max_proxy_cycles, "proxy.config.http.max_proxy_cycles");
 
+  HttpEstablishStaticConfigLongLong(c.oride.tunnel_activity_check_period, "proxy.config.tunnel.activity_check_period");
+
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
 
@@ -1234,11 +1242,13 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
+  HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.oride.parent_retry_time, "proxy.config.http.parent_proxy.retry_time");
   HttpEstablishStaticConfigLongLong(c.oride.parent_fail_threshold, "proxy.config.http.parent_proxy.fail_threshold");
   HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts,
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
+  HttpEstablishStaticConfigLongLong(c.oride.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
@@ -1246,6 +1256,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_mark_out, "proxy.config.net.sock_packet_mark_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_tos_out, "proxy.config.net.sock_packet_tos_out");
+  HttpEstablishStaticConfigLongLong(c.oride.sock_packet_notsent_lowat, "proxy.config.net.sock_notsent_lowat");
 
   HttpEstablishStaticConfigByte(c.oride.fwd_proxy_auth_to_parent, "proxy.config.http.forward.proxy_auth_to_parent");
 
@@ -1285,6 +1296,9 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
 
+  // Body factory
+  HttpEstablishStaticConfigByte(c.oride.response_suppression_mode, "proxy.config.body_factory.response_suppression_mode");
+
   // open read failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
   HttpEstablishStaticConfigLongLong(c.oride.cache_open_read_retry_time, "proxy.config.http.cache.open_read_retry_time");
@@ -1311,6 +1325,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
+
+  HttpEstablishStaticConfigByte(c.keepalive_internal_vc, "proxy.config.http.keepalive_internal_vc");
 
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
@@ -1387,7 +1403,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
 
-  OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
+  OutboundConnTrack::config_init(&c.global_outbound_conntrack, &c.oride.outbound_conntrack);
 
   MUTEX_TRY_LOCK(lock, http_config_cont->mutex, this_ethread());
   if (!lock.is_locked()) {
@@ -1430,11 +1446,22 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections                = m_master.server_max_connections;
-  params->max_websocket_connections             = m_master.max_websocket_connections;
-  params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
+  params->server_max_connections    = m_master.server_max_connections;
+  params->max_websocket_connections = m_master.max_websocket_connections;
+  params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
+  params->global_outbound_conntrack = m_master.global_outbound_conntrack;
+
+  // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
+  if (params->global_outbound_conntrack.queue_size > 0 &&
+      !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
+    Warning("'%s' is set, but neither '%s' nor '%s' are "
+            "set, please correct your %s",
+            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
+  }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
+  params->oride.tunnel_activity_check_period    = m_master.oride.tunnel_activity_check_period;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
@@ -1511,10 +1538,12 @@ HttpConfig::reconfigure()
   params->oride.connect_attempts_rr_retries   = m_master.oride.connect_attempts_rr_retries;
   params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
   params->oride.connect_dead_policy           = m_master.oride.connect_dead_policy;
+  params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
   params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
   params->oride.parent_retry_time             = m_master.oride.parent_retry_time;
   params->oride.parent_fail_threshold         = m_master.oride.parent_fail_threshold;
   params->oride.per_parent_connect_attempts   = m_master.oride.per_parent_connect_attempts;
+  params->oride.parent_connect_timeout        = m_master.oride.parent_connect_timeout;
   params->oride.parent_failures_update_hostdb = m_master.oride.parent_failures_update_hostdb;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
@@ -1522,6 +1551,7 @@ HttpConfig::reconfigure()
   params->oride.sock_packet_mark_out      = m_master.oride.sock_packet_mark_out;
   params->oride.sock_packet_tos_out       = m_master.oride.sock_packet_tos_out;
   params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
+  params->oride.sock_packet_notsent_lowat = m_master.oride.sock_packet_notsent_lowat;
 
   // Clear the TCP Fast Open option if it is not supported on this host.
   if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {
@@ -1568,6 +1598,8 @@ HttpConfig::reconfigure()
 
   params->oride.allow_half_open = m_master.oride.allow_half_open;
 
+  params->oride.response_suppression_mode = m_master.oride.response_suppression_mode;
+
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;
   params->oride.cache_open_read_retry_time  = m_master.oride.cache_open_read_retry_time;
@@ -1593,6 +1625,7 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
+  params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
   if (params->oride.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {

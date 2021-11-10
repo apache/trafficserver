@@ -1,0 +1,57 @@
+``
+> GET / HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Cache-Control: max-age=10,public
+< Content-Length: 6
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/{}
+< Cache-Result: miss
+``
+> GET / HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Cache-Control: max-age=10,public
+< Content-Length: 6
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/{}
+< Cache-Result: hit-fresh
+``
+> GET / HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Cache-Control: max-age=10,public
+< Content-Length: 6
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/{}
+< Cache-Result: hit-stale
+``
+> GET / HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Cache-Control: max-age=10,public
+< Content-Length: 6
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/{}
+< Cache-Result: hit-fresh
+``

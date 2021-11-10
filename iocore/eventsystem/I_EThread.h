@@ -43,6 +43,8 @@ struct DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;
+class PreWarmQueue;
+
 class Event;
 class Continuation;
 
@@ -349,6 +351,7 @@ public:
   Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
+  PreWarmQueue *prewarm_queue            = nullptr;
 
   /** Default handler used until it is overridden.
 

@@ -905,6 +905,16 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.header_table
+------------------------------
+**syntax:** *VALUE = ts.client_request.header_table[HEADER]*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** get the current client request's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.get_headers
 -----------------------------
 **syntax:** *ts.client_request.get_headers()*
@@ -1516,6 +1526,16 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.cached_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.cached_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point or later
+
+**description:** get the current cached response's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.cached_response.get_headers
 ------------------------------
 **syntax:** *ts.cached_response.get_headers()*
@@ -1721,6 +1741,16 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 
 ``Mozilla/5.0``
 
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.header_table
+------------------------------
+**syntax:** *VALUE = ts.server_request.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** get the current server request's HEADER as a table.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -2399,6 +2429,16 @@ We will get the output:
 
 :ref:`TOP <admin-plugins-ts-lua>`'
 
+ts.server_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.server_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** get the current server response's HEADER as a table.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.get_headers
 ------------------------------
 **syntax:** *ts.server_response.get_headers()*
@@ -2546,6 +2586,35 @@ Here is an example:
 We will get the output:
 
 ``text/html``
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.client_response.header_table
+-------------------------------
+**syntax:** *VALUE = ts.client_response.header_table[HEADER]*
+
+**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point.
+
+**description:** get the current client response's HEADER as a table.
+
+Here is an example:
+
+::
+
+    function send_response()
+        local hdrs = ts.client_response.header_table['Set-Cookie'] or {}
+        for k, v in pairs(hdrs) do
+            ts.debug(k..': '..v)
+        end
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+        return 0
+    end
+
+If there are multiple 'Set-Cookie' response header, they will be printed as debug message.
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -3872,6 +3941,7 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES
     TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT
     TS_LUA_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME
+    TS_LUA_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD
     TS_LUA_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS
     TS_LUA_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT
     TS_LUA_CONFIG_HTTP_RESPONSE_SERVER_STR
@@ -3937,6 +4007,8 @@ Http config constants
     TS_LUA_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE
     TS_LUA_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX
     TS_LUA_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK
+    TS_LUA_CONFIG_NET_SOCK_NOTSENT_LOWAT
+    TS_LUA_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE
     TS_LUA_CONFIG_LAST_ENTRY
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4095,11 +4167,11 @@ ts.http.cntl_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retrieve the value of control channel.
+**description:** This function can be used to retrieve the value of various control mechanisms in HTTP transaction.
 
 ::
 
-    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_GET_LOGGING_MODE)
+    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_LOGGING_MODE)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4110,30 +4182,33 @@ ts.http.cntl_set
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to set the value of control channel.
+**description:** This function can be used to set the value of various control mechanisms in HTTP transaction.
 
 Here is an example:
 
 ::
 
     function do_remap()
-        ts.http.cntl_set(TS_LUA_HTTP_CNTL_SET_LOGGING_MODE, 0)      -- do not log the request
+        ts.http.cntl_set(TS_LUA_HTTP_CNTL_LOGGING_MODE, 0)      -- do not log the request
         return 0
     end
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-Http control channel constants
-------------------------------
+Http control mechanism constants
+--------------------------------
 **context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
-    TS_LUA_HTTP_CNTL_GET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_SET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE
-    TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_LOGGING_MODE
+    TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_RESPONSE_CACHEABLE
+    TS_LUA_HTTP_CNTL_REQUEST_CACHEABLE
+    TS_LUA_HTTP_CNTL_SERVER_NO_STORE
+    TS_LUA_HTTP_CNTL_TXN_DEBUG
+    TS_LUA_HTTP_CNTL_SKIP_REMAPPING
 
 
 :ref:`TOP <admin-plugins-ts-lua>`

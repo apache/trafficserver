@@ -88,6 +88,6 @@ protected:
   Machine(char const *hostname, sockaddr const *addr);
 
   static self_type *_instance; ///< Singleton for the class.
-  std::unordered_set<std::string, std::hash<std::string>, ts::caseless_compare> machine_id_strings;
+  std::unordered_set<std::string, std::hash<std::string>, ts::caseless_equal> machine_id_strings;
   std::unordered_set<IpAddr, IpAddr::Hasher> machine_id_ipaddrs;
 };

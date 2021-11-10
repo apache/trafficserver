@@ -562,7 +562,7 @@ void
 OperatorSkipRemap::exec(const Resources &res) const
 {
   TSDebug(PLUGIN_NAME, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
-  TSSkipRemappingSet(res.txnp, _skip_remap ? 1 : 0);
+  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
 }
 
 // OperatorRMHeader
@@ -675,6 +675,32 @@ OperatorSetHeader::exec(const Resources &res) const
       }
     }
   }
+}
+
+// OperatorSetBody
+void
+OperatorSetBody::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  // we want the arg since body only takes one value
+  _value.set_value(p.get_arg());
+}
+
+void
+OperatorSetBody::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+void
+OperatorSetBody::exec(const Resources &res) const
+{
+  std::string value;
+
+  _value.append_value(value, res);
+  char *msg = TSstrdup(_value.get_value().c_str());
+  TSHttpTxnErrorBodySet(res.txnp, msg, _value.size(), nullptr);
 }
 
 // OperatorCounter
@@ -999,5 +1025,5 @@ OperatorSetDebug::initialize_hooks()
 void
 OperatorSetDebug::exec(const Resources &res) const
 {
-  TSHttpTxnDebugSet(res.txnp, 1);
+  TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
 }

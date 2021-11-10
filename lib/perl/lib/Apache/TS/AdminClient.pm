@@ -474,11 +474,13 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.per_server.connection.max
  proxy.config.http.origin_min_keep_alive_connections
  proxy.config.http.parent_proxies
+ proxy.config.http.parent_proxy.connect_attempts_timeout
  proxy.config.http.parent_proxy.fail_threshold
  proxy.config.http.parent_proxy.file
  proxy.config.http.parent_proxy.per_parent_connect_attempts
  proxy.config.http.parent_proxy.retry_time
  proxy.config.http.parent_proxy.total_connect_attempts
+ proxy.config.http.post_connect_attempts_timeout
  proxy.config.http.post_copy_size
  proxy.config.http.push_method_enabled
  proxy.config.http.quick_filter.mask
@@ -588,6 +590,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
+ proxy.config.ssl.keylog_file
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
  proxy.config.syslog_facility

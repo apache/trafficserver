@@ -89,6 +89,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {OutboundConnTrack::CONFIG_VAR_MIN, {TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.anonymize_remove_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.open_read_retry_time", {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}},
+     // TODO: Remove for 10.  Leaving for now to keep enums consistent
+     {"proxy.config.http.down_server.abort_threshold", {TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD, TS_RECORDDATATYPE_INT}},
      {OutboundConnTrack::CONFIG_VAR_MATCH, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.parent_proxy.fail_threshold", {TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.ignore_authentication", {TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, TS_RECORDDATATYPE_INT}},
@@ -114,6 +116,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.http.cache.guaranteed_min_lifetime", {TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.guaranteed_max_lifetime", {TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.transaction_active_timeout_in", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.post_connect_attempts_timeout", {TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.ignore_client_cc_max_age", {TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.negative_revalidating_lifetime", {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.transaction_active_timeout_out", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
@@ -146,6 +149,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
       {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.ignore_accept_encoding_mismatch",
       {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.parent_proxy.connect_attempts_timeout",
+      {TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.connect_attempts_max_retries_dead_server",
       {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.parent_proxy.per_parent_connect_attempts",
@@ -160,4 +165,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.ssl.client.CA.cert.filename", {TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.hostdb.ip_resolve", {TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.plugin.vc.default_buffer_index", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX, TS_RECORDDATATYPE_INT}},
-     {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}}});
+     {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.net.sock_notsent_lowat", {TS_CONFIG_NET_SOCK_NOTSENT_LOWAT, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.body_factory.response_suppression_mode",
+      {TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE, TS_RECORDDATATYPE_INT}}});

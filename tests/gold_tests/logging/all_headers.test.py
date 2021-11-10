@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Test new "all headers" log fields
@@ -60,8 +61,8 @@ logging:
 
 # Configure comparison of "sanitized" log file with gold file at end of test.
 #
-Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
-               exists=True, content='gold/test_all_headers.gold')
+sanitized_log_path = os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san')
+Test.Disk.File(sanitized_log_path, exists=True, content='gold/test_all_headers.gold')
 
 
 def reallyLong():
@@ -94,10 +95,12 @@ tr.Processes.Default.ReturnCode = 0
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 {0} {2} {4} | sh {1} > {3}'.format(
-    os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py'),
-    os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh'),
-    os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log'),
-    os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
-    server.Variables.Port)
+
+log_path = os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log')
+sanitizer_python_script = os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py')
+sanitizer_shell_script = os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh')
+
+tr.Processes.Default.Command = \
+    (f'{sys.executable} {sanitizer_python_script} {log_path} {server.Variables.Port} | '
+     f'sh {sanitizer_shell_script} > {sanitized_log_path}')
 tr.Processes.Default.ReturnCode = 0

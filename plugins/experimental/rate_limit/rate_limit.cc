@@ -25,14 +25,11 @@
 #include "txn_limiter.h"
 #include "utilities.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
 #include "sni_selector.h"
 #include "sni_limiter.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// As a global plugin, things works a little difference since we don't setup
+// As a global plugin, things works a little different since we don't setup
 // per transaction or via remap.config.
 extern int gVCIdx;
 
@@ -84,8 +81,6 @@ TSPluginInit(int argc, const char *argv[])
   }
 }
 
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 // Setup stuff for the remap plugin
 //
@@ -117,6 +112,9 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   TxnRateLimiter *limiter = new TxnRateLimiter();
+
+  // set the description based on the pristine remap URL prior to advancing the pointer below
+  limiter->description = getDescriptionFromUrl(argv[0]);
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.

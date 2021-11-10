@@ -111,12 +111,6 @@ QUICTLS::session_file() const
   return this->_session_file;
 }
 
-const char *
-QUICTLS::keylog_file() const
-{
-  return this->_keylog_file;
-}
-
 QUICTLS::~QUICTLS()
 {
   SSL_free(this->_ssl);

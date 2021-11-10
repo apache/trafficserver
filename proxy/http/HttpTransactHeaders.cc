@@ -601,6 +601,10 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
     hier_code = SQUID_HIER_NONE;
     break;
+  case VIA_ERROR_UNKNOWN:
+    log_code  = SQUID_LOG_ERR_UNKNOWN;
+    hier_code = SQUID_HIER_NONE;
+    break;
   default:
     break;
   }

@@ -610,7 +610,7 @@ ts_lua_http_set_server_resp_no_store(lua_State *L)
 
   status = luaL_checknumber(L, 1);
 
-  TSHttpTxnServerRespNoStoreSet(http_ctx->txnp, status);
+  TSHttpTxnCntlSet(http_ctx->txnp, TS_HTTP_CNTL_SERVER_NO_STORE, (status != 0));
 
   return 0;
 }
@@ -767,8 +767,8 @@ ts_lua_http_is_aborted(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
-  bool client_abort = false;
-  if (TSHttpTxnAborted(http_ctx->txnp, &client_abort)) {
+
+  if (TSHttpTxnAborted(http_ctx->txnp)) {
     lua_pushnumber(L, 1);
   } else {
     lua_pushnumber(L, 0);
@@ -787,7 +787,7 @@ ts_lua_http_skip_remapping_set(lua_State *L)
 
   action = luaL_checkinteger(L, 1);
 
-  TSSkipRemappingSet(http_ctx->txnp, action);
+  TSHttpTxnCntlSet(http_ctx->txnp, TS_HTTP_CNTL_SKIP_REMAPPING, (action != 0));
 
   return 0;
 }

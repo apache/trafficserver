@@ -3423,7 +3423,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     if (test->hook_mask == 1) {
       test->hook_mask |= 2;
     }
-    TSSkipRemappingSet(static_cast<TSHttpTxn>(data), 1);
+    TSHttpTxnCntlSet(static_cast<TSHttpTxn>(data), TS_HTTP_CNTL_SKIP_REMAPPING, true);
     checkHttpTxnClientReqGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
@@ -6636,9 +6636,8 @@ enum ORIG_TSHttpHookID {
   ORIG_TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
   ORIG_TS_HTTP_PRE_REMAP_HOOK,
   ORIG_TS_HTTP_POST_REMAP_HOOK,
-  ORIG_TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK,
   ORIG_TS_HTTP_RESPONSE_CLIENT_HOOK,
-  ORIG_TS_SSL_FIRST_HOOK   = 201,
+  ORIG_TS_SSL_FIRST_HOOK,
   ORIG_TS_VCONN_START_HOOK = ORIG_TS_SSL_FIRST_HOOK,
   ORIG_TS_VCONN_CLOSE_HOOK,
   ORIG_TS_SSL_CLIENT_HELLO_HOOK,
@@ -6650,6 +6649,7 @@ enum ORIG_TSHttpHookID {
   ORIG_TS_VCONN_OUTBOUND_START_HOOK,
   ORIG_TS_VCONN_OUTBOUND_CLOSE_HOOK,
   ORIG_TS_SSL_LAST_HOOK = ORIG_TS_VCONN_OUTBOUND_CLOSE_HOOK,
+  ORIG_TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK,
   ORIG_TS_HTTP_LAST_HOOK
 };
 
@@ -6973,7 +6973,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_TXN_START:
-    TSSkipRemappingSet(static_cast<TSHttpTxn>(edata), 1);
+    TSHttpTxnCntlSet(static_cast<TSHttpTxn>(edata), TS_HTTP_CNTL_SKIP_REMAPPING, true);
     SDK_RPRINT(data->test, "TSHttpSsnReenable", "TestCase", TC_PASS, "ok");
     data->test_passed_ssn_reenable++;
     {
@@ -7245,7 +7245,7 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
 
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -7406,7 +7406,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -7876,7 +7876,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -8165,7 +8165,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = static_cast<TSHttpTxn>(edata);
-    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -8624,7 +8624,9 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect_attempts_max_retries_dead_server",
    "proxy.config.http.connect_attempts_rr_retries",
    "proxy.config.http.connect_attempts_timeout",
+   "proxy.config.http.post_connect_attempts_timeout",
    "proxy.config.http.down_server.cache_time",
+   "proxy.config.http.down_server.abort_threshold",
    "proxy.config.http.doc_in_cache_skip_dns",
    "proxy.config.http.background_fill_active_timeout",
    "proxy.config.http.response_server_str",
@@ -8678,6 +8680,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.fail_threshold",
    "proxy.config.http.parent_proxy.retry_time",
    "proxy.config.http.parent_proxy.per_parent_connect_attempts",
+   "proxy.config.http.parent_proxy.connect_attempts_timeout",
    "proxy.config.http.normalize_ae",
    "proxy.config.http.insert_forwarded",
    "proxy.config.http.proxy_protocol_out",
@@ -8695,7 +8698,9 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.hostdb.ip_resolve",
    "proxy.config.http.connect.dead.policy",
    "proxy.config.plugin.vc.default_buffer_index",
-   "proxy.config.plugin.vc.default_buffer_water_mark"}};
+   "proxy.config.plugin.vc.default_buffer_water_mark",
+   "proxy.config.net.sock_notsent_lowat",
+   "proxy.config.body_factory.response_suppression_mode"}};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

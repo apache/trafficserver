@@ -49,10 +49,10 @@
 #else
 
 // Check if expression X returns a value that implicitly converts to bool false (such as TS_SUCCESS).
-#define CHECK(X)                \
-  {                             \
-    static_assert(!TS_SUCCESS); \
-    assert(!(X));               \
+#define CHECK(X)                                         \
+  {                                                      \
+    const TSReturnCode r = static_cast<TSReturnCode>(X); \
+    assert(r == TS_SUCCESS);                             \
   }
 
 #endif

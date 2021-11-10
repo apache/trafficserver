@@ -1246,8 +1246,10 @@ tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
 tsapi void TSContDestroy(TSCont contp);
 tsapi void TSContDataSet(TSCont contp, void *data);
 tsapi void *TSContDataGet(TSCont contp);
+tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
 tsapi TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 tsapi TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
+tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */);
 tsapi TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 tsapi TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
 tsapi TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
@@ -1323,6 +1325,7 @@ tsapi int TSVConnIsSsl(TSVConn sslp);
 /* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
  */
 tsapi int TSVConnProvidedSslCert(TSVConn sslp);
+tsapi const char *TSVConnSslSniGet(TSVConn sslp, int *length);
 
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
@@ -2385,11 +2388,10 @@ tsapi TSReturnCode TSAIOThreadNumSet(int thread_num);
 
 /**
     Check if transaction was aborted (due client/server errors etc.)
-    Client_abort is set as True, in case the abort was caused by the Client.
 
     @return 1 if transaction was aborted
 */
-tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort);
+tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
 
 tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 tsapi TSVConn TSVConnFdCreate(int fd);
@@ -2711,6 +2713,12 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_l
  */
 tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
                            const unsigned int reason);
+
+/*
+ * Set or get various HTTP Transaction control settings.
+ */
+tsapi bool TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl);
+tsapi TSReturnCode TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType ctrl, bool data);
 
 #ifdef __cplusplus
 }

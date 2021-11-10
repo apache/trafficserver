@@ -37,23 +37,23 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': '{0}'.format(pluginName),
+    'proxy.config.diags.debug.tags': f'{pluginName}',
 })
 
 ts.Disk.plugin_config.AddLine(
-    '# {1}/{0}.so {2}'.format(pluginName, path, configFile)
+    f'# {path}/{pluginName}.so {configFile}'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    f'map http://www.example.com http://127.0.0.1:{server.Variables.Port}'
 )
 
-goldFile = os.path.join(Test.RunDirectory, "{0}.gold".format(pluginName))
+goldFile = os.path.join(Test.RunDirectory, f"{pluginName}.gold")
 with open(goldFile, 'w+') as jf:
-    jf.write("``loading plugin ``{0}.so``".format(pluginName))
+    jf.write(f"``loading plugin ``{pluginName}.so``")
 
 # call localhost straight
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com" --verbose'.format(ts.Variables.port)
+tr.Processes.Default.Command = f'curl --proxy 127.0.0.1:{ts.Variables.port} "http://www.example.com" --verbose'
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

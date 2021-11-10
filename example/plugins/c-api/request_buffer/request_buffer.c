@@ -67,7 +67,7 @@ request_buffer_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSDebug(PLUGIN_NAME, "request_buffer_plugin starting, event[%d]", event);
   TSHttpTxn txnp = (TSHttpTxn)(edata);
-  if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE) {
+  if (event == TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE) {
     int len    = 0;
     char *body = request_body_get(txnp, &len);
     TSDebug(PLUGIN_NAME, "request_buffer_plugin gets the request body with length[%d]", len);

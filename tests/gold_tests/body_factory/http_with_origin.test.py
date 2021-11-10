@@ -74,7 +74,7 @@ trhead200.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Varia
 trhead200.StillRunningAfter = ts
 trhead200.StillRunningAfter = server
 
-trhead200.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_head_200.test_input"
+trhead200.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_head_200.txt"
 trhead200.Processes.Default.TimeOut = 5  # seconds
 trhead200.Processes.Default.ReturnCode = 0
 trhead200.Processes.Default.Streams.stdout = "gold/http-head-200.gold"
@@ -86,7 +86,7 @@ trget200.StillRunningBefore = server
 trget200.StillRunningAfter = ts
 trget200.StillRunningAfter = server
 
-trget200.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_get_200.test_input"
+trget200.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_get_200.txt"
 trget200.Processes.Default.TimeOut = 5  # seconds
 trget200.Processes.Default.ReturnCode = 0
 trget200.Processes.Default.Streams.stdout = "gold/http-get-200.gold"
@@ -98,7 +98,7 @@ trget304.StillRunningBefore = server
 trget304.StillRunningAfter = ts
 trget304.StillRunningAfter = server
 
-cmd_tpl = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_get_304.test_input"
+cmd_tpl = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HOST}_get_304.txt"
 trget304.Processes.Default.Command = cmd_tpl
 trget304.Processes.Default.TimeOut = 5  # seconds
 trget304.Processes.Default.ReturnCode = 0

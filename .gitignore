@@ -38,6 +38,8 @@ build/ltsugar.m4
 build/ltversion.m4
 build/lt~obsolete.m4
 
+BUILD
+
 Makefile
 Makefile-pl
 config.cache
@@ -78,6 +80,7 @@ src/tscore/ink_autoconf.h.in
 include/tscore/ink_config.h
 include/ts/apidefs.h
 src/tscore/CompileParseRules
+src/tscore/CompileParseRules.dSYM
 src/tscore/ParseRulesCType
 src/tscore/ParseRulesCTypeToLower
 src/tscore/ParseRulesCTypeToUpper
@@ -116,6 +119,7 @@ proxy/http/remap/test_PluginDso
 proxy/http/remap/test_PluginFactory
 proxy/http/remap/test_RemapPluginInfo
 proxy/http/test_proxy_http
+proxy/http/test_PreWarm
 proxy/http/remap/test_*
 proxy/http2/test_libhttp2
 proxy/http2/test_Http2DependencyTree
@@ -202,6 +206,8 @@ RELEASE
 tests/env-test/
 tests/proxy-verifier
 tests/Pipfile.lock
+tests/gold_tests/bigobj/check_ramp
+tests/gold_tests/bigobj/push_request
 tests/gold_tests/chunked_encoding/smuggle-client
 tests/gold_tests/tls/ssl-post
 

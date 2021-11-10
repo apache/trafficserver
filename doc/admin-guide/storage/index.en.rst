@@ -337,7 +337,7 @@ To push an object, first save the object headers and body into a file. For insta
 
 Then, to push the object, post the object using the PUSH method: ::
 
-      $ curl -x -s -o /dev/null -X PUSH --data-binary /path/to/file "http://example.com/push_me.html"
+      $ curl -s -o /dev/null -X PUSH --data-binary @/path/to/file "http://example.com/push_me.html"
 
 .. _inspecting-the-cache:
 

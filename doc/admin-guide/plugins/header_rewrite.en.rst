@@ -163,6 +163,25 @@ Returns true if |TS| was able to successfully update the access time on the
 file at ``<path>``. This condition will return false if the file does not exist
 or |TS| cannot access it for any other reason.
 
+CACHE
+~~~~~
+::
+
+    cond %{CACHE} <operand>
+
+This condition provides the server's cache lookup results to inform headers
+where the requested data was generated from. The cache values are:
+
+  ==========  ===========
+  Value       Description
+  ==========  ===========
+  none        No cache lookup was attempted.
+  miss        The object was not found in the cache.
+  hit-stale   The object was found in the cache, but it was stale.
+  hit-fresh   The object was fresh in the cache.
+  skipped     The cache lookup was skipped.
+  ==========  ===========
+
 CLIENT-HEADER
 ~~~~~~~~~~~~~
 ::
@@ -630,6 +649,14 @@ rm-cookie
   rm-cookie <name>
 
 Removes the cookie ``<name>``.
+
+set-body
+~~~~~~~~
+::
+
+  set-body <text>
+
+Sets the body to ``<text>``. Can also be used to delete a body with ``""``
 
 set-config
 ~~~~~~~~~~
@@ -1224,3 +1251,29 @@ The following ruleset removes any query parameters set by the client.::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY
+
+Mimic X-Debug Plugin's X-Cache Header
+-------------------------------------
+
+This rule can mimic X-Debug plugin's ``X-Cache`` header by accumulating
+the ``CACHE`` condition results to a header.::
+
+   cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+   cond %{HEADER:All-Cache} ="" [NOT]
+   set-header All-Cache "%{HEADER:All-Cache}, %{CACHE}"
+
+   cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+   cond %{HEADER:All-Cache} =""
+   set-header All-Cache %{CACHE}
+
+Add Identifier from Server with Data
+------------------------------------
+
+This rule adds an unique identifier from the server if the data is fresh from
+the cache or if the identifier has not been generated yet. This will inform
+the client where the requested data was served from.::
+
+   cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+   cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
+   cond %{CACHE} ="hit-fresh"
+   set-header ATS-SRVR-UUID %{ID:UNIQUE}

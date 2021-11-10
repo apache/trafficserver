@@ -141,6 +141,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`             :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
 :c:enumerator:`TS_CONFIG_HTTP_NORMALIZE_AE`                               :ts:cv:`proxy.config.http.normalize_ae`
 :c:enumerator:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                     :ts:cv:`proxy.config.http.number_of_redirections`
+:c:enumerator:`TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT`             :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
 :c:enumerator:`TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD`                :ts:cv:`proxy.config.http.parent_proxy.fail_threshold`
 :c:enumerator:`TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME`                    :ts:cv:`proxy.config.http.parent_proxy.retry_time`
 :c:enumerator:`TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS`        :ts:cv:`proxy.config.http.parent_proxy.total_connect_attempts`
@@ -148,6 +149,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH`                :ts:cv:`proxy.config.http.per_server.connection.match`
 :c:enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                  :ts:cv:`proxy.config.http.per_server.connection.max`
 :c:enumerator:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`          :ts:cv:`proxy.config.http.post.check.content_length.enabled`
+:c:enumerator:`TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT`              :ts:cv:`proxy.config.http.post_connect_attempts_timeout`
 :c:enumerator:`TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY`                :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
 :c:enumerator:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                     :ts:cv:`proxy.config.http.request_buffer_enabled`
 :c:enumerator:`TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE`                    :ts:cv:`proxy.config.http.request_header_max_size`
@@ -185,6 +187,8 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE`                 :ts:cv:`proxy.config.hostdb.ip_resolve`
 :c:enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX`                  :ts:cv:`proxy.config.plugin.vc.default_buffer_index`
 :c:enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK`             :ts:cv:`proxy.config.plugin.vc.default_buffer_water_mark`
+:c:enumerator:`TS_CONFIG_NET_SOCK_NOTSENT_LOWAT`                          :ts:cv:`proxy.config.net.sock_notsent_lowat`
+:c:enumerator:`TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE`          :ts:cv:`proxy.config.body_factory.response_suppression_mode`
 ========================================================================  ====================================================================
 
 Examples

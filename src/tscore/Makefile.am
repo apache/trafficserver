@@ -27,6 +27,8 @@ endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
+BUILT_SOURCES = ParseRules.cc
+
 TESTS = $(check_PROGRAMS)
 
 lib_LTLIBRARIES = libtscore.la
@@ -38,7 +40,7 @@ AM_CPPFLAGS += \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
-libtscore_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
+libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
 libtscore_la_LIBADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@ \
@@ -172,6 +174,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
+	unit_tests/test_ink_memory.cc \
 	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
@@ -203,6 +206,9 @@ freelist_benchmark_LDADD = libtscore.la @HWLOC_LIBS@
 freelist_benchmark_SOURCES = unit_tests/freelist_benchmark.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
+
+CompileParseRules$(BUILD_EXEEXT): $(CompileParseRules_OBJECTS)
+	$(CXX_FOR_BUILD) $(AM_CXXFLAGS) $(CPPFLAGS) -I$(top_builddir)/include -I$(abs_top_srcdir)/include -o $@ $(abs_top_srcdir)/src/tscore/CompileParseRules.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper

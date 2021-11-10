@@ -164,6 +164,7 @@ const char *MIME_VALUE_CLOSE;
 const char *MIME_VALUE_COMPRESS;
 const char *MIME_VALUE_DEFLATE;
 const char *MIME_VALUE_GZIP;
+const char *MIME_VALUE_BROTLI;
 const char *MIME_VALUE_IDENTITY;
 const char *MIME_VALUE_KEEP_ALIVE;
 const char *MIME_VALUE_MAX_AGE;
@@ -557,7 +558,7 @@ checksum_block(const char *s, int len)
   return sum;
 }
 
-#ifdef DEBUG
+#ifdef ENABLE_MIME_SANITY_CHECK
 void
 mime_hdr_sanity_check(MIMEHdrImpl *mh)
 {
@@ -919,6 +920,7 @@ mime_init()
     MIME_VALUE_COMPRESS             = hdrtoken_string_to_wks("compress");
     MIME_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
     MIME_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
+    MIME_VALUE_BROTLI               = hdrtoken_string_to_wks("br");
     MIME_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
     MIME_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
     MIME_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");
@@ -2282,20 +2284,15 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
     if (b) {
       if ('[' == *b) {
         auto idx = b.find(']');
-        if (idx <= b.size() && b[idx + 1] == ':') {
+        if (idx < b.size() - 1 && b[idx + 1] == ':') {
           host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        auto x = b.split_prefix_at(':');
-        if (x) {
-          host = x;
-          port = b;
-        } else {
-          host = b;
-        }
+        host = b.take_prefix_at(':');
+        port = b;
       }
 
       if (host) {
@@ -2349,6 +2346,8 @@ ParseResult
 MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
   ParseResult zret = PARSE_RESULT_CONT;
+  // Need this for handling dangling CR.
+  static const char RAW_CR{ParseRules::CHAR_CR};
 
   auto text = input;
   while (PARSE_RESULT_CONT == zret && !text.empty()) {
@@ -2366,7 +2365,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         }
       } else if (ParseRules::is_lf(*text)) {
         ++text;
-        zret = PARSE_RESULT_ERROR; // lone LF
+        zret = PARSE_RESULT_DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
         m_state = MIME_PARSE_INSIDE;
@@ -2378,28 +2377,21 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         ++text;
         zret = PARSE_RESULT_DONE;
       } else {
-        zret = PARSE_RESULT_ERROR; // lone CR
+        // This really should be an error (spec doesn't permit lone CR) but the regression tests
+        // require it.
+        this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
     case MIME_PARSE_INSIDE: {
-      auto cr_off = text.find(ParseRules::CHAR_CR);
-      if (cr_off != TextView::npos) {
-        text.remove_prefix(cr_off + 1); // drop up to and including CR
-        // Is the next item a LF?
-        if (!text.empty()) {
-          if (text[0] == ParseRules::CHAR_LF) {
-            text.remove_prefix(1); // drop up to and including LF
-            if (LINE == scan_type) {
-              zret    = PARSE_RESULT_OK;
-              m_state = MIME_PARSE_BEFORE;
-            } else {
-              m_state = MIME_PARSE_AFTER; // looking for line folding.
-            }
-          } else { // Next char is not LF, you lose
-            zret = PARSE_RESULT_ERROR;
-          }
-        } else { // No LF yet, adjust state to note
-          m_state = MIME_PARSE_FOUND_CR;
+      auto lf_off = text.find(ParseRules::CHAR_LF);
+      if (lf_off != TextView::npos) {
+        text.remove_prefix(lf_off + 1); // drop up to and including LF
+        if (LINE == scan_type) {
+          zret    = PARSE_RESULT_OK;
+          m_state = MIME_PARSE_BEFORE;
+        } else {
+          m_state = MIME_PARSE_AFTER; // looking for line folding.
         }
       } else { // no EOL, consume all text without changing state.
         text.remove_prefix(text.size());
@@ -2536,11 +2528,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       return err;
     }
 
-    ///////////////////////////////////////////////////
-    // if got a CR and LF on its own, end the header //
-    ///////////////////////////////////////////////////
+    //////////////////////////////////////////////////
+    // if got a LF or CR on its own, end the header //
+    //////////////////////////////////////////////////
 
     if ((parsed.size() >= 2) && (parsed[0] == ParseRules::CHAR_CR) && (parsed[1] == ParseRules::CHAR_LF)) {
+      return PARSE_RESULT_DONE;
+    }
+
+    if ((parsed.size() >= 1) && (parsed[0] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 
@@ -2580,6 +2576,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         return PARSE_RESULT_ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
+      raw_print_field = false;
+    } else if (parsed.suffix(2) != "\r\n") {
       raw_print_field = false;
     }
 

@@ -154,10 +154,12 @@ Http2Stream::main_event_handler(int event, void *edata)
   if (e == _read_vio_event) {
     _read_vio_event = nullptr;
     this->signal_read_event(e->callback_event);
+    reentrancy_count--;
     return 0;
   } else if (e == _write_vio_event) {
     _write_vio_event = nullptr;
     this->signal_write_event(e->callback_event);
+    reentrancy_count--;
     return 0;
   } else if (e == cross_thread_event) {
     cross_thread_event = nullptr;
@@ -218,8 +220,12 @@ Http2Stream::main_event_handler(int event, void *edata)
 Http2ErrorCode
 Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
 {
-  return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr, hpack_handle,
-                                    trailing_header, maximum_table_size);
+  Http2ErrorCode error = http2_decode_header_blocks(&_req_header, header_blocks, header_blocks_length, nullptr, hpack_handle,
+                                                    trailing_header, maximum_table_size);
+  if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+    Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
+  }
+  return error;
 }
 
 void
@@ -516,7 +522,7 @@ Http2Stream::initiating_close()
       if (write_vio.cont) {
         SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
         // Are we done?
-        if (write_vio.nbytes == write_vio.ndone) {
+        if (write_vio.nbytes > 0 && write_vio.nbytes == write_vio.ndone) {
           Http2StreamDebug("handle write from destroy (event=%d)", VC_EVENT_WRITE_COMPLETE);
           write_event = send_tracked_event(write_event, VC_EVENT_WRITE_COMPLETE, &write_vio);
         } else {

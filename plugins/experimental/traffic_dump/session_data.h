@@ -28,6 +28,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <optional>
 
 #include "ts/ts.h"
 #include "tscore/ink_inet.h"

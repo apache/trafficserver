@@ -24,7 +24,6 @@
 .*\.config$
 .*\.yaml$
 .*\.gold$
-.*\.test_input$
 ^\.gitignore$
 ^\.gitmodules$
 ^\.perltidyrc$

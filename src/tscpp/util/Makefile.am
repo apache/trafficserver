@@ -26,7 +26,7 @@ lib_LTLIBRARIES = libtscpputil.la
 
 AM_CPPFLAGS += -I$(abs_top_srcdir)/include
 
-libtscpputil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
 	TextView.cc

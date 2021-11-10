@@ -109,10 +109,13 @@ tr.StillRunningAfter = ts
 
 def make_done_stat_ready(tsenv):
     def done_stat_ready(process, hasRunFor, **kw):
-        retval = subprocess.run("traffic_ctl metric get continuations_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
-        if retval.returncode == 0:
-            retval = subprocess.run("grep 1 done > /dev/null", shell=True, env=tsenv)
-        return retval.returncode == 0
+        retval = subprocess.run(
+            "traffic_ctl metric get continuations_verify.test.done",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=tsenv)
+        return retval.returncode == 0 and b'1' in retval.stdout
 
     return done_stat_ready
 

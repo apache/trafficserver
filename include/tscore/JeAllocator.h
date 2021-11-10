@@ -70,15 +70,13 @@ public:
 
 private:
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-  static extent_alloc_t *original_alloc;
-  static extent_hooks_t extent_hooks;
-  static std::shared_mutex je_mutex;
-  static std::unordered_map<pthread_t, unsigned int> arenas;
-  static std::unordered_map<unsigned int, int> arena_flags;
+  thread_local static extent_alloc_t *original_alloc;
+  thread_local static extent_hooks_t extent_hooks;
+  thread_local static int arena_flags;
 
   static void *alloc(extent_hooks_t *extent, void *new_addr, size_t size, size_t alignment, bool *zero, bool *commit,
                      unsigned int arena_id);
-  unsigned int extend_and_setup_arena(pthread_t thread_id);
+  int extend_and_setup_arena();
 #endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
 };
 

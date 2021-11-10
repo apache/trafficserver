@@ -106,6 +106,8 @@ struct SSLConfigParams : public ConfigInfo {
   char *server_groups_list;
   char *client_groups_list;
 
+  char *keylog_file;
+
   static uint32_t server_max_early_data;
   static uint32_t server_recv_max_early_data;
   static bool server_allow_early_data_params;

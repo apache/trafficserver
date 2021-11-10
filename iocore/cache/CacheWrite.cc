@@ -458,7 +458,7 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     }
     alternate_tmp = vector.get(alternate_index);
     doc_len       = alternate_tmp->object_size_get();
-    Debug("cache_evac", "evacuateReadHead http earliest %X first: %X len: %" PRId64, first_key.slice32(0), earliest_key.slice32(0),
+    Debug("cache_evac", "evacuateReadHead http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0), first_key.slice32(0),
           doc_len);
   } else {
     // non-http document
@@ -468,8 +468,8 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       goto Ldone;
     }
     doc_len = doc->total_len;
-    DDebug("cache_evac", "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, first_key.slice32(0),
-           earliest_key.slice32(0), doc_len);
+    DDebug("cache_evac", "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
+           first_key.slice32(0), doc_len);
   }
   if (doc_len == total_len) {
     // the whole document has been evacuated. Insert the directory

@@ -23,10 +23,8 @@ import platform
 
 import hosts.output as host
 
-try:
-    import queue as Queue
-except ImportError:
-    import Queue
+from ordered_set_queue import OrderedSetQueue
+
 
 g_ports = None  # ports we can use
 
@@ -126,7 +124,7 @@ def _setup_port_queue(amount=1000):
         host.WriteDebug(
             '_setup_port_queue',
             "Populating the port queue.")
-        g_ports = Queue.Queue()
+        g_ports = OrderedSetQueue()
     else:
         # The queue has already been populated.
         host.WriteDebug(
@@ -232,7 +230,7 @@ def get_port(obj, name):
                 "Using port from port queue: {}".format(port))
             # setup clean up step to recycle the port
             obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
-                port), description="recycling port")
+                port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}")
         except PortQueueSelectionError:
             port = _get_port_by_bind()
             host.WriteVerbose(

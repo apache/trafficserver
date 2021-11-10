@@ -32,12 +32,20 @@
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
+TSDECL(disable_h2);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
 TSDECL(forward_route);
 TSDECL(partial_blind_route);
 TSDECL(tunnel_alpn);
+TSDECL(tunnel_prewarm);
+TSDECL(tunnel_prewarm_min);
+TSDECL(tunnel_prewarm_max);
+TSDECL(tunnel_prewarm_rate);
+TSDECL(tunnel_prewarm_connect_timeout);
+TSDECL(tunnel_prewarm_inactive_timeout);
+TSDECL(tunnel_prewarm_srv);
 TSDECL(verify_server_policy);
 TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
@@ -54,6 +62,7 @@ struct YamlSNIConfig {
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
   enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3, UNSET };
   enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
+  enum class TunnelPreWarm : uint8_t { DISABLED = 0, ENABLED, UNSET };
 
   YamlSNIConfig() {}
 
@@ -75,6 +84,14 @@ struct YamlSNIConfig {
     bool protocol_unset = true;
     unsigned long protocol_mask;
     std::vector<int> tunnel_alpn{};
+
+    bool tunnel_prewarm_srv                  = false;
+    uint32_t tunnel_prewarm_min              = 0;
+    int32_t tunnel_prewarm_max               = -1;
+    double tunnel_prewarm_rate               = 1.0;
+    uint32_t tunnel_prewarm_connect_timeout  = 0;
+    uint32_t tunnel_prewarm_inactive_timeout = 0;
+    TunnelPreWarm tunnel_prewarm             = TunnelPreWarm::UNSET;
 
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };

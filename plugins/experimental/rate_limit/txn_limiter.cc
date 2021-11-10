@@ -40,6 +40,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_POST_REMAP:
     limiter->push(static_cast<TSHttpTxn>(edata), cont);
+    limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
     return TS_EVENT_NONE;
     break;
 
@@ -47,6 +48,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
     retryAfter(static_cast<TSHttpTxn>(edata), limiter->retry);
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+    limiter->incrementMetric(RATE_LIMITER_METRIC_REJECTED);
     return TS_EVENT_CONTINUE;
     break;
 
@@ -74,6 +76,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    limiter->incrementMetric(RATE_LIMITER_METRIC_RESUMED);
   }
 
   // Kill any queued txns if they are too old
@@ -90,6 +93,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
       TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
     }
   }
 
@@ -109,6 +113,8 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
     {const_cast<char *>("header"), required_argument, nullptr, 'h'},
     {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
+    {const_cast<char *>("prefix"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("tag"), required_argument, nullptr, 't'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
@@ -135,6 +141,12 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     case 'h':
       this->header = optarg;
       break;
+    case 'p':
+      this->prefix = std::string(optarg);
+      break;
+    case 't':
+      this->tag = std::string(optarg);
+      break;
     }
     if (opt == -1) {
       break;
@@ -147,6 +159,8 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     TSContDataSet(_queue_cont, this);
     _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
+
+  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP);
 
   return true;
 }

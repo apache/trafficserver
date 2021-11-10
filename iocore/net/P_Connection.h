@@ -171,6 +171,7 @@ struct Server : public Connection {
 
   int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
   int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
+  int setup_fd_after_listen(const NetProcessor::AcceptOptions &opt);
 
   Server() : Connection() { ink_zero(accept_addr); }
 };

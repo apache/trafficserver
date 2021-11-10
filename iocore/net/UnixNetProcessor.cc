@@ -49,6 +49,7 @@ NetProcessor::AcceptOptions::reset()
   sockopt_flags         = 0;
   packet_mark           = 0;
   packet_tos            = 0;
+  packet_notsent_lowat  = 0;
   tfo_queue_length      = 0;
   f_inbound_transparent = false;
   f_mptcp               = false;
@@ -104,7 +105,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   }
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
   if (accept_threads > 0 && listen_per_thread > 0) {
-    Fatal("Please disable accept_threads or exec_threads.listen");
+    Fatal("Please disable accept_threads or exec_thread.listen");
   }
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
@@ -119,7 +120,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     accept_ip.setToAnyAddr(opt.ip_family);
   }
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
-  accept_ip.port() = htons(opt.local_port);
+  accept_ip.network_order_port() = htons(opt.local_port);
 
   na->accept_fn = net_accept; // All callers used this.
   na->server.fd = fd;

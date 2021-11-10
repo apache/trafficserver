@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
+
 Test.Summary = '''
 Test xdebug plugin X-Cache-Info header
 '''
@@ -51,13 +53,13 @@ Test.Setup.Copy(f'{Test.Variables.AtsTestToolsDir}')
 files = ["none", "one", "two", "three"]
 
 for file in files:
-    Test.Setup.Copy(f'{Test.TestDirectory}/{file}.test_input')
+    Test.Setup.Copy(f'{Test.TestDirectory}/{file}.in')
 
 
 def sendMsg(msgFile):
     global started
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = f"( python3 tools/tcp_client.py 127.0.0.1 {ts.Variables.port} {msgFile}.test_input ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  out.log 2>&1"
+    tr.Processes.Default.Command = f"( {sys.executable} tools/tcp_client.py 127.0.0.1 {ts.Variables.port} {msgFile}.in ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  out.log 2>&1"
     tr.Processes.Default.ReturnCode = 0
 
     if not started:

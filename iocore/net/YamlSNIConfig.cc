@@ -123,12 +123,20 @@ TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {
 TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
+                                               TS_disable_h2,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
                                                TS_forward_route,
                                                TS_partial_blind_route,
                                                TS_tunnel_alpn,
+                                               TS_tunnel_prewarm,
+                                               TS_tunnel_prewarm_min,
+                                               TS_tunnel_prewarm_max,
+                                               TS_tunnel_prewarm_rate,
+                                               TS_tunnel_prewarm_connect_timeout,
+                                               TS_tunnel_prewarm_inactive_timeout,
+                                               TS_tunnel_prewarm_srv,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
                                                TS_client_cert,
@@ -158,6 +166,9 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.fqdn = node[TS_fqdn].as<std::string>();
     } else {
       return false; // servername must be present
+    }
+    if (node[TS_disable_h2]) {
+      item.offer_h2 = false;
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
@@ -228,15 +239,64 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.host_sni_policy = static_cast<uint8_t>(policy);
     }
 
+    YamlSNIConfig::TunnelPreWarm t_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
+    uint32_t t_min                         = item.tunnel_prewarm_min;
+    int32_t t_max                          = item.tunnel_prewarm_max;
+    double t_rate                          = item.tunnel_prewarm_rate;
+    uint32_t t_connect_timeout             = item.tunnel_prewarm_connect_timeout;
+    uint32_t t_inactive_timeout            = item.tunnel_prewarm_inactive_timeout;
+    bool t_srv                             = item.tunnel_prewarm_srv;
+
+    if (node[TS_tunnel_prewarm]) {
+      auto is_prewarm_enabled = node[TS_tunnel_prewarm].as<bool>();
+      if (is_prewarm_enabled) {
+        t_prewarm = YamlSNIConfig::TunnelPreWarm::ENABLED;
+      } else {
+        t_prewarm = YamlSNIConfig::TunnelPreWarm::DISABLED;
+      }
+    }
+    if (node[TS_tunnel_prewarm_min]) {
+      t_min = node[TS_tunnel_prewarm_min].as<uint32_t>();
+    }
+    if (node[TS_tunnel_prewarm_max]) {
+      t_max = node[TS_tunnel_prewarm_max].as<int32_t>();
+    }
+    if (node[TS_tunnel_prewarm_rate]) {
+      t_rate = node[TS_tunnel_prewarm_rate].as<double>();
+    }
+    if (node[TS_tunnel_prewarm_connect_timeout]) {
+      t_connect_timeout = node[TS_tunnel_prewarm_connect_timeout].as<uint32_t>();
+    }
+    if (node[TS_tunnel_prewarm_inactive_timeout]) {
+      t_inactive_timeout = node[TS_tunnel_prewarm_inactive_timeout].as<uint32_t>();
+    }
+    if (node[TS_tunnel_prewarm_srv]) {
+      t_srv = node[TS_tunnel_prewarm_srv].as<bool>();
+    }
+
     if (node[TS_tunnel_route]) {
       item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
       item.tunnel_type        = SNIRoutingType::BLIND;
     } else if (node[TS_forward_route]) {
-      item.tunnel_destination = node[TS_forward_route].as<std::string>();
-      item.tunnel_type        = SNIRoutingType::FORWARD;
+      item.tunnel_destination              = node[TS_forward_route].as<std::string>();
+      item.tunnel_type                     = SNIRoutingType::FORWARD;
+      item.tunnel_prewarm                  = t_prewarm;
+      item.tunnel_prewarm_min              = t_min;
+      item.tunnel_prewarm_max              = t_max;
+      item.tunnel_prewarm_rate             = t_rate;
+      item.tunnel_prewarm_connect_timeout  = t_connect_timeout;
+      item.tunnel_prewarm_inactive_timeout = t_inactive_timeout;
+      item.tunnel_prewarm_srv              = t_srv;
     } else if (node[TS_partial_blind_route]) {
-      item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
-      item.tunnel_type        = SNIRoutingType::PARTIAL_BLIND;
+      item.tunnel_destination              = node[TS_partial_blind_route].as<std::string>();
+      item.tunnel_type                     = SNIRoutingType::PARTIAL_BLIND;
+      item.tunnel_prewarm                  = t_prewarm;
+      item.tunnel_prewarm_min              = t_min;
+      item.tunnel_prewarm_max              = t_max;
+      item.tunnel_prewarm_rate             = t_rate;
+      item.tunnel_prewarm_connect_timeout  = t_connect_timeout;
+      item.tunnel_prewarm_inactive_timeout = t_inactive_timeout;
+      item.tunnel_prewarm_srv              = t_srv;
 
       if (node[TS_tunnel_alpn]) {
         load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);

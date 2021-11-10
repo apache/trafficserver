@@ -673,7 +673,7 @@ CB_Read_Request_Hdr(TSCont contp, TSEvent ev_idx, void *data)
           // Arrange for cleanup.
           TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, actor);
           // Skip remap and remap rule requirement - authorized by TLS bridge config.
-          TSSkipRemappingSet(txn, 1);
+          TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_SKIP_REMAPPING, true);
           // Grab the transaction
           TSHttpTxnIntercept(actor, txn);
         }

@@ -21,47 +21,6 @@
 #include "ts/remap.h"
 #include "utilities.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
-std::string_view
-getSNI(SSL *ssl)
-{
-  const char *servername = nullptr;
-  const unsigned char *p;
-  size_t remaining, len = 0;
-
-  // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-  if (SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
-    // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
-    /* Extract the length of the supplied list of names. */
-    len = *(p++) << 8;
-    len += *(p++);
-    if (len + 2 == remaining) {
-      remaining = len;
-      /*
-       * The list in practice only has a single element, so we only consider
-       * the first one.
-       */
-      if (*p++ == TLSEXT_NAMETYPE_host_name) {
-        remaining--;
-        /* Now we can finally pull out the byte array with the actual hostname. */
-        if (remaining > 2) {
-          len = *(p++) << 8;
-          len += *(p++);
-          if (len + 2 <= remaining) {
-            servername = reinterpret_cast<const char *>(p);
-          }
-        }
-      }
-    }
-  }
-
-  return std::string_view(servername, len);
-}
-
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 // Add a header with the delay imposed on this transaction. This can be used
 // for logging, and other types of metrics.
@@ -110,4 +69,50 @@ retryAfter(TSHttpTxn txnp, unsigned retry)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Parse a URL to obtain a description for use with metrics when no user
+// provided tag is available. This is used by the remap side of the plugin,
+// while the SNI side uses the FQDN associated with each limiter instance
+// which is obtained from the list of SNIs in the global plugin configuration.
+//
+std::string
+getDescriptionFromUrl(const char *url)
+{
+  TSMBuffer const buf = TSMBufferCreate();
+  TSMLoc url_loc      = nullptr;
+
+  const int url_len = strlen(url);
+  std::string description;
+
+  if (TS_SUCCESS == TSUrlCreate(buf, &url_loc) && TS_PARSE_DONE == TSUrlParse(buf, url_loc, &url, url + url_len)) {
+    int host_len, scheme_len = 0;
+    const char *s  = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+    const char *h  = TSUrlHostGet(buf, url_loc, &host_len);
+    const int port = TSUrlPortGet(buf, url_loc);
+
+    const std::string hostname = std::string(h, host_len);
+    const std::string scheme   = std::string(s, scheme_len);
+
+    TSDebug(PLUGIN_NAME, "scheme = %s, host = %s, port = %d", scheme.c_str(), hostname.c_str(), port);
+
+    description = scheme;
+    description.append(".");
+    description.append(hostname);
+
+    // only append the port when it is non-standard
+    if (!(strncmp(s, TS_URL_SCHEME_HTTP, scheme_len) == 0 && port == 80) &&
+        !(strncmp(s, TS_URL_SCHEME_HTTPS, scheme_len) == 0 && port == 443)) {
+      description.append(":" + std::to_string(port));
+    }
+  }
+
+  if (url_loc != nullptr) {
+    TSHandleMLocRelease(buf, nullptr, url_loc);
+  }
+
+  TSMBufferDestroy(buf);
+
+  return description;
 }

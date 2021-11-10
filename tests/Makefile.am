@@ -30,6 +30,7 @@ AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 # generation of so objects for these test files.
 AM_LDFLAGS += -rpath $(abs_builddir)
 
+include gold_tests/bigobj/Makefile.inc
 include gold_tests/continuations/plugins/Makefile.inc
 include gold_tests/chunked_encoding/Makefile.inc
 include gold_tests/pluginTest/tsapi/Makefile.inc

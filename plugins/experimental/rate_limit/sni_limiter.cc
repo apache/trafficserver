@@ -17,9 +17,6 @@
  */
 #include "tscore/ink_config.h"
 
-// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
-#if TS_USE_HELLO_CB
-
 #include <unistd.h>
 #include <getopt.h>
 #include <cstdlib>
@@ -43,11 +40,11 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_SSL_CLIENT_HELLO: {
-    TSSslConnection ssl_conn  = TSVConnSslConnectionGet(vc);
-    SSL *ssl                  = reinterpret_cast<SSL *>(ssl_conn);
-    std::string_view sni_name = getSNI(ssl);
+    int len;
+    const char *server_name = TSVConnSslSniGet(vc, &len);
+    std::string_view sni_name(server_name, len);
 
-    if (sni_name.size() > 0) { // This should likely always succeed, but without it we can't do anything
+    if (!sni_name.empty()) { // This should likely always succeed, but without it we can't do anything
       SniRateLimiter *limiter = selector->find(sni_name);
 
       TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s", static_cast<int>(sni_name.length()), sni_name.data());
@@ -57,12 +54,14 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
           TSVConnReenableEx(vc, TS_EVENT_ERROR);
           TSDebug(PLUGIN_NAME, "Rejecting connection, we're at capacity and queue is full");
           TSUserArgSet(vc, gVCIdx, nullptr);
+          limiter->incrementMetric(RATE_LIMITER_METRIC_REJECTED);
 
           return TS_ERROR;
         } else {
           TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
           limiter->push(vc, contp);
           TSDebug(PLUGIN_NAME, "Queueing the VC, we are at capacity");
+          limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
         }
       } else {
         // Not at limit on the handshake, we can re-enable
@@ -77,6 +76,7 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
     SniRateLimiter *limiter = static_cast<SniRateLimiter *>(TSUserArgGet(vc, gVCIdx));
 
     if (limiter) {
+      TSUserArgSet(vc, gVCIdx, nullptr);
       limiter->release();
     }
     TSVConnReenable(vc);
@@ -102,6 +102,8 @@ SniRateLimiter::initialize(int argc, const char *argv[])
     {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
     {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
     {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
+    {const_cast<char *>("prefix"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("tag"), required_argument, nullptr, 't'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
@@ -119,6 +121,12 @@ SniRateLimiter::initialize(int argc, const char *argv[])
     case 'm':
       this->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
       break;
+    case 'p':
+      this->prefix = std::string(optarg);
+      break;
+    case 't':
+      this->tag = std::string(optarg);
+      break;
     }
     if (opt == -1) {
       break;
@@ -127,5 +135,3 @@ SniRateLimiter::initialize(int argc, const char *argv[])
 
   return true;
 }
-
-#endif

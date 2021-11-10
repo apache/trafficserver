@@ -1,5 +1,6 @@
 {
-    "configurations": [{
+    "configurations": [
+        {
             "name": "Mac",
             "includePath": [
                 "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
@@ -9,6 +10,7 @@
                 "/usr/local/opt/openssl@1.1/include",
                 "/usr/local/opt/openssl/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -27,13 +29,15 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [],
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "${default}",
             "browse": {
                 "path": [
                     "${workspaceFolder}",
@@ -42,8 +46,7 @@
                     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.1/include",
                     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"
                 ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
+                "limitSymbolsToIncludedHeaders": true
             },
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
@@ -51,7 +54,8 @@
             ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerArgs": []
         },
         {
             "name": "Linux",
@@ -59,6 +63,7 @@
                 "/usr/include",
                 "/usr/local/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -77,13 +82,15 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [],
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "${default}",
             "browse": {
                 "path": [
                     "/usr/include",
@@ -94,13 +101,16 @@
                 "databaseFilename": ""
             },
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerPath": "/usr/bin/clang"
         },
         {
             "name": "Win32",
             "includePath": [
-                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C",
+                "/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                 "${workspaceFolder}",
+                "${workspaceFolder}/BUILD/include",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
@@ -119,25 +129,32 @@
                 "${workspaceFolder}/proxy",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
-                "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/http3",
                 "${workspaceFolder}/proxy/logging",
-                "${workspaceFolder}/proxy/shared"
+                "${workspaceFolder}/proxy/private",
+                "${workspaceFolder}/proxy/shared",
+                "${workspaceFolder}/proxy/http/remap"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "intelliSenseMode": "msvc-x64",
+            "intelliSenseMode": "${default}",
             "browse": {
                 "path": [
-                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                    "C",
+                    "/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
                     "${workspaceFolder}"
                 ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            }
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "macFrameworkPath": [],
+            "compilerArgs": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "compilerPath": "/usr/bin/clang"
         }
     ],
     "version": 4

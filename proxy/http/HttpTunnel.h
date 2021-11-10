@@ -48,6 +48,7 @@
 #define HTTP_TUNNEL_EVENT_DONE (HTTP_TUNNEL_EVENTS_START + 1)
 #define HTTP_TUNNEL_EVENT_PRECOMPLETE (HTTP_TUNNEL_EVENTS_START + 2)
 #define HTTP_TUNNEL_EVENT_CONSUMER_DETACH (HTTP_TUNNEL_EVENTS_START + 3)
+#define HTTP_TUNNEL_EVENT_ACTIVITY_CHECK (HTTP_TUNNEL_EVENTS_START + 4)
 
 #define HTTP_TUNNEL_STATIC_PRODUCER (VConnection *)!0
 
@@ -275,14 +276,15 @@ public:
   void reset();
   void abort_tunnel();
   void kill_tunnel();
-  bool
-  is_tunnel_active() const
-  {
-    return active;
-  }
+
+  bool is_tunnel_active() const;
   bool is_tunnel_alive() const;
   bool has_cache_writer() const;
   bool has_consumer_besides_client() const;
+
+  // CAVEAT: This is different from the HttpTunnel::active flag
+  void mark_tls_tunnel_active();
+  void mark_tls_tunnel_inactive();
 
   HttpTunnelProducer *add_producer(VConnection *vc, int64_t nbytes, IOBufferReader *reader_start, HttpProducerHandler sm_handler,
                                    HttpTunnelType_t vc_type, const char *name);
@@ -334,6 +336,8 @@ private:
   void finish_all_internal(HttpTunnelProducer *p, bool chain);
   void update_stats_after_abort(HttpTunnelType_t t);
   void producer_run(HttpTunnelProducer *p);
+  void _schedule_tls_tunnel_activity_check_event();
+  bool _is_tls_tunnel_active() const;
 
   HttpTunnelProducer *get_producer(VIO *vio);
   HttpTunnelConsumer *get_consumer(VIO *vio);
@@ -349,6 +353,11 @@ private:
 
   bool active = false;
 
+  // Activity check for SNI Routing Tunnel
+  bool _tls_tunnel_active                 = false;
+  Event *_tls_tunnel_activity_check_event = nullptr;
+  ink_hrtime _tls_tunnel_last_update      = 0;
+
   /// State data about flow control.
   FlowControl flow_state;
 
@@ -356,6 +365,15 @@ private:
   int reentrancy_count = 0;
   bool call_sm         = false;
 };
+
+////
+// Inline Functions
+//
+inline bool
+HttpTunnel::is_tunnel_active() const
+{
+  return active;
+}
 
 // void HttpTunnel::abort_cache_write_finish_others
 //

@@ -366,7 +366,7 @@ HostDBCache::start(int flags)
 
     Debug("hostdb", "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions, hostdb_max_size,
           hostdb_max_count);
-    int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, storage_path, full_path, HostDBInfo::unmarshall);
+    int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, full_path, HostDBInfo::unmarshall);
     if (load_ret != 0) {
       Warning("Error loading cache from %s: %d", full_path, load_ret);
     }
@@ -1109,11 +1109,20 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
   }
   EThread *thread = mutex->thread_holding;
   if (event != DNS_EVENT_LOOKUP) {
-    // This was an event_interval or an event_immediate
-    // Either we timed out, or remove_trigger_pending gave up on us
+    // Event should be immediate or interval.
     if (!action.continuation) {
-      // give up on insert, it has been too long
-      hostDB.pending_dns_for_hash(hash.hash).remove(this);
+      // Nothing to do, give up.
+      if (event == EVENT_INTERVAL) {
+        // Timeout - clear all queries queued up for this FQDN because none of the other ones have sent an
+        // actual DNS query. If the request rate is high enough this can cause a persistent queue where the
+        // DNS query is never sent and all requests timeout, even if it was a transient error.
+        // See issue #8417.
+        remove_trigger_pending_dns();
+      } else {
+        // "local" signal to give up, usually due this being one of those "other" queries.
+        // That generally means @a this has already been removed from the queue, but just in case...
+        hostDB.pending_dns_for_hash(hash.hash).remove(this);
+      }
       hostdb_cont_free(this);
       return EVENT_DONE;
     }

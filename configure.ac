@@ -640,6 +640,8 @@ AM_PROG_AS
 
 AX_COMPILER_VENDOR
 
+AX_CC_FOR_BUILD
+
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
@@ -1286,6 +1288,9 @@ TS_CHECK_CRYPTO_OCSP
 # Check for SSL_CTX_set_ciphersuites call
 TS_CHECK_CRYPTO_SET_CIPHERSUITES
 
+# Check for TOLS keylogging support.
+TS_CHECK_CRYPTO_KEYLOGGING
+
 # Check for openssl early data support
 TS_CHECK_EARLY_DATA
 
@@ -1368,6 +1373,9 @@ AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
+if test "x${enable_zlib}" != "xyes"; then
+  AC_MSG_ERROR([Cannot find zlib library. Configure --with-zlib=DIR])
+fi
 
 #
 # Check for lzma presence and usability
@@ -2243,6 +2251,8 @@ AC_CONFIG_FILES([
   include/ts/Makefile
   include/tscpp/api/Makefile
   include/tscpp/util/Makefile
+  include/ts/apidefs.h
+  include/tscore/ink_config.h
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
@@ -2257,8 +2267,6 @@ AC_CONFIG_FILES([
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
-  include/ts/apidefs.h
-  include/tscore/ink_config.h
   src/wccp/Makefile
   lib/fastlz/Makefile
   lib/yamlcpp/Makefile
@@ -2285,7 +2293,6 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
-  tests/unit_tests/Makefile
   tests/Makefile
 ])
 

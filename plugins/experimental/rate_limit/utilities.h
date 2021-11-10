@@ -24,6 +24,6 @@
 
 constexpr char const PLUGIN_NAME[] = "rate_limit";
 
-std::string_view getSNI(SSL *ssl);
 void delayHeader(TSHttpTxn txnp, std::string &header, std::chrono::milliseconds delay);
 void retryAfter(TSHttpTxn txnp, unsigned retry);
+std::string getDescriptionFromUrl(const char *url);

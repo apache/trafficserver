@@ -23,7 +23,7 @@ Activating Continuations
 ************************
 
 Continuations are activated when they receive an event or by
-``TSContScheduleOnPool`` (which schedules a continuation to receive an event).
+``TSContSchedule`` (which schedules a continuation to receive an event).
 Continuations might receive an event because:
 
 -  Your plugin calls ``TSContCall``

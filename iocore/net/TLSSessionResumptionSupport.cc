@@ -160,6 +160,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 #if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
       ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
 #endif
+      SSL_SESSION_free(session);
       session = nullptr;
     } else {
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
@@ -172,18 +173,17 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
   return session;
 }
 
-SSL_SESSION *
+std::shared_ptr<SSL_SESSION>
 TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
 {
-  SSL_SESSION *session = nullptr;
-  ssl_curve_id curve   = 0;
-  if (origin_sess_cache->get_session(lookup_key, &session, &curve)) {
-    ink_assert(session);
+  ssl_curve_id curve                       = 0;
+  std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve);
 
+  if (shared_sess != nullptr) {
     // Double check the timeout
-    if (is_ssl_session_timed_out(session)) {
+    if (is_ssl_session_timed_out(shared_sess.get())) {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
-      session = nullptr;
+      origin_sess_cache->remove_session(lookup_key);
     } else {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_hit);
       this->_setSSLSessionCacheHit(true);
@@ -192,7 +192,7 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
   }
-  return session;
+  return shared_sess;
 }
 
 void
