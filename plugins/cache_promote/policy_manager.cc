@@ -56,8 +56,9 @@ PolicyManager::releasePolicy(PromotionPolicy *policy)
         TSDebug(PLUGIN_NAME, "releasing unused PromotionPolicy");
         delete res->second.first;
         _policies.erase(res);
-        return;
       }
+
+      return;
     } else {
       TSDebug(PLUGIN_NAME, "Tried to release a policy which was not properly initialized nor acquired via PolicyManager");
     }
