@@ -513,3 +513,20 @@ origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
+
+Log entries for some transactions are skipped
+---------------------------------------------
+
+You will see lines like this in the diags log file::
+
+   NOTE: Skipping the current log entry for ...
+
+This happens when a log entry is too big to fit in a log buffer.  This is often causeed by very long
+URLs in the entry.  You can truncate long URLs using the slice syntax for the URL log field in the log
+format, for example::
+
+    %<cquc[:1000]>
+
+You can also increase the value of :ts:cv:`proxy.config.log.log_buffer_size`, but this can have impacts
+on performance and memory usage.  Very large values may trigger software bugs.  Some production proxies
+have run successfully using 26624 as the value for this configuration variable.
