@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <typeinfo>
+#include <chrono>
+
 #include <tscore/TSSystemState.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -34,20 +37,16 @@
 #include <sys/eventfd.h>
 #endif
 
-#include <typeinfo>
-
 struct AIOCallback;
 
 #define NO_HEARTBEAT -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 
 // !! THIS MUST BE IN THE ENUM ORDER !!
-char const *const EThread::STAT_NAME[] = {"proxy.process.eventloop.count",      "proxy.process.eventloop.events",
-                                          "proxy.process.eventloop.events.min", "proxy.process.eventloop.events.max",
-                                          "proxy.process.eventloop.wait",       "proxy.process.eventloop.time.min",
-                                          "proxy.process.eventloop.time.max"};
-
-int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
+char const *const EThread::Metrics::Slice::STAT_NAME[] = {
+  "proxy.process.eventloop.count",      "proxy.process.eventloop.events", "proxy.process.eventloop.events.min",
+  "proxy.process.eventloop.events.max", "proxy.process.eventloop.wait",   "proxy.process.eventloop.time.min",
+  "proxy.process.eventloop.time.max"};
 
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 
@@ -216,13 +215,14 @@ EThread::execute_regular()
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
-  EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
+  auto prev_slice =
+    this->metrics.prev_slice(metrics._slice.data() + (ink_get_hrtime_internal() / HRTIME_SECOND) % Metrics::N_SLICES);
 
   int nq_count;
   int ev_count;
 
   // A statically initialized instance we can use as a prototype for initializing other instances.
-  static EventMetrics METRIC_INIT;
+  static const Metrics::Slice SLICE_INIT;
 
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
@@ -230,16 +230,16 @@ EThread::execute_regular()
     nq_count        = 0; // count # of elements put on negative queue.
     ev_count        = 0; // # of events handled.
 
-    current_metric = metrics + (loop_start_time / HRTIME_SECOND) % N_EVENT_METRICS;
-    if (current_metric != prev_metric) {
-      // Mixed feelings - really this shouldn't be needed, but just in case more than one entry is
-      // skipped, clear them all.
+    metrics.current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
+    if (metrics.current_slice != prev_slice) {
+      // I have observed multi-second event loops in production, making this necessary. [amc]
       do {
-        memcpy((prev_metric = this->next(prev_metric)), &METRIC_INIT, sizeof(METRIC_INIT));
-      } while (current_metric != prev_metric);
-      current_metric->_loop_time._start = loop_start_time;
+        // Need @c const_cast to cast away @c volatile
+        memcpy(prev_slice = this->metrics.next_slice(prev_slice), &SLICE_INIT, sizeof(SLICE_INIT));
+      } while (metrics.current_slice != prev_slice);
+      metrics.current_slice->record_loop_start(loop_start_time);
     }
-    ++(current_metric->_count);
+    ++(metrics.current_slice->_count); // loop started, bump count.
 
     process_queue(&NegativeQueue, &ev_count, &nq_count);
 
@@ -280,7 +280,7 @@ EThread::execute_regular()
         // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
         sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
       }
-      ++(current_metric->_wait);
+      ++(metrics.current_slice->_wait);
     } else {
       sleep_time = 0;
     }
@@ -289,26 +289,14 @@ EThread::execute_regular()
 
     // loop cleanup
     loop_finish_time = Thread::get_hrtime_updated();
-    delta            = loop_finish_time - loop_start_time;
-
-    // This can happen due to time of day adjustments (which apparently happen quite frequently). I
+    // @a delta can be negative due to time of day adjustments (which apparently happen quite frequently). I
     // tried using the monotonic clock to get around this but it was *very* stuttery (up to hundreds
     // of milliseconds), far too much to be actually used.
-    if (delta > 0) {
-      if (delta > current_metric->_loop_time._max) {
-        current_metric->_loop_time._max = delta;
-      }
-      if (delta < current_metric->_loop_time._min) {
-        current_metric->_loop_time._min = delta;
-      }
-    }
-    if (ev_count < current_metric->_events._min) {
-      current_metric->_events._min = ev_count;
-    }
-    if (ev_count > current_metric->_events._max) {
-      current_metric->_events._max = ev_count;
-    }
-    current_metric->_events._total += ev_count;
+    delta = std::max<ink_hrtime>(0, loop_finish_time - loop_start_time);
+
+    metrics.decay();
+    metrics.record_loop_time(delta);
+    metrics.current_slice->record_event_count(ev_count);
   }
 }
 
@@ -318,7 +306,7 @@ EThread::execute_regular()
 // Execute loops forever on:
 // Find the earliest event.
 // Sleep until the event time or until an earlier event is inserted
-// When its time for the event, try to get the appropriate continuation
+// When it's time for the event, try to get the appropriate continuation
 // lock. If successful, call the continuation, otherwise put the event back
 // into the queue.
 //
@@ -360,41 +348,47 @@ EThread::execute()
   // coverity[missing_unlock]
 }
 
-EThread::EventMetrics &
-EThread::EventMetrics::operator+=(EventMetrics const &that)
+EThread::Metrics::Slice &
+EThread::Metrics::Slice::operator+=(Slice const &that)
 {
   this->_events._max = std::max(this->_events._max, that._events._max);
   this->_events._min = std::min(this->_events._min, that._events._min);
   this->_events._total += that._events._total;
-  this->_loop_time._min = std::min(this->_loop_time._min, that._loop_time._min);
-  this->_loop_time._max = std::max(this->_loop_time._max, that._loop_time._max);
+  this->_duration._min = std::min(this->_duration._min, that._duration._min);
+  this->_duration._max = std::max(this->_duration._max, that._duration._max);
   this->_count += that._count;
   this->_wait += that._wait;
   return *this;
 }
 
 void
-EThread::summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES])
+EThread::Metrics::summarize(Metrics &global)
 {
   // Accumulate in local first so each sample only needs to be processed once,
   // not N_EVENT_TIMESCALES times.
-  EventMetrics sum;
+  Slice sum;
 
   // To avoid race conditions, we back up one from the current metric block. It's close enough
   // and won't be updated during the time this method runs so it should be thread safe.
-  EventMetrics *m = this->prev(current_metric);
+  Slice *slice = this->prev_slice(current_slice);
 
-  for (int t = 0; t < N_EVENT_TIMESCALES; ++t) {
-    int count = SAMPLE_COUNT[t];
+  for (unsigned t = 0; t < N_TIMESCALES; ++t) {
+    int count = SLICE_SAMPLE_COUNT[t];
     if (t > 0) {
-      count -= SAMPLE_COUNT[t - 1];
+      count -= SLICE_SAMPLE_COUNT[t - 1];
     }
     while (--count >= 0) {
-      if (0 != m->_loop_time._start) {
-        sum += *m;
+      if (0 != slice->_duration._start) {
+        sum += *slice;
       }
-      m = this->prev(m);
+      slice = this->prev_slice(slice);
     }
-    summary[t] += sum; // push out to return vector.
+    global._slice[t] += sum; // push out to return vector.
+  }
+
+  // Only summarize if there's no outstanding decay.
+  if (0 == _decay_count) {
+    global._loop_timing += _loop_timing;
+    global._api_timing += _api_timing;
   }
 }

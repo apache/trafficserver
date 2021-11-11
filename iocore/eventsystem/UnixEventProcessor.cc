@@ -77,43 +77,63 @@ namespace
 int
 EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int)
 {
+  using Graph = EThread::Metrics::Graph;
+
   int id = 0;
-  EThread::EventMetrics summary[EThread::N_EVENT_TIMESCALES];
+  EThread::Metrics summary;
 
   // scan the thread local values
   for (EThread *t : eventProcessor.active_group_threads(ET_CALL)) {
-    t->summarize_stats(summary);
+    t->metrics.summarize(summary);
   }
 
   ink_mutex_acquire(&(rsb->mutex));
 
-  for (int ts_idx = 0; ts_idx < EThread::N_EVENT_TIMESCALES; ++ts_idx, id += EThread::N_EVENT_STATS) {
-    EThread::EventMetrics *m = summary + ts_idx;
-    // Discarding the atomic swaps for global writes, doesn't seem to actually do anything useful.
-    rsb->global[id + EThread::STAT_LOOP_COUNT]->sum   = m->_count;
-    rsb->global[id + EThread::STAT_LOOP_COUNT]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_COUNT);
+  // Update a specific enumerated stat.
+  auto slice_stat_update = [=](EThread::Metrics::Slice::STAT_ID stat_id, int stat_idx, size_t value) {
+    auto idx    = stat_idx + unsigned(stat_id);
+    auto stat   = rsb->global[idx];
+    stat->sum   = value;
+    stat->count = 1;
+    RecRawStatUpdateSum(rsb, idx);
+  };
 
-    rsb->global[id + EThread::STAT_LOOP_WAIT]->sum   = m->_wait;
-    rsb->global[id + EThread::STAT_LOOP_WAIT]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_WAIT);
+  // Enumerated stats are first - one set for each time scale.
+  for (unsigned ts_idx = 0; ts_idx < EThread::Metrics::N_TIMESCALES; ++ts_idx, id += EThread::Metrics::Slice::N_STAT_ID) {
+    using ID   = EThread::Metrics::Slice::STAT_ID;
+    auto slice = summary._slice.data() + ts_idx;
 
-    rsb->global[id + EThread::STAT_LOOP_TIME_MIN]->sum   = m->_loop_time._min;
-    rsb->global[id + EThread::STAT_LOOP_TIME_MIN]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_TIME_MIN);
-    rsb->global[id + EThread::STAT_LOOP_TIME_MAX]->sum   = m->_loop_time._max;
-    rsb->global[id + EThread::STAT_LOOP_TIME_MAX]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_TIME_MAX);
+    slice_stat_update(ID::LOOP_COUNT, id, slice->_count);
+    slice_stat_update(ID::LOOP_WAIT, id, slice->_wait);
+    slice_stat_update(ID::LOOP_TIME_MIN, id, slice->_duration._min);
+    slice_stat_update(ID::LOOP_TIME_MAX, id, slice->_duration._max);
+    slice_stat_update(ID::LOOP_EVENTS, id, slice->_events._total);
+    slice_stat_update(ID::LOOP_EVENTS_MIN, id, slice->_events._min);
+    slice_stat_update(ID::LOOP_EVENTS_MAX, id, slice->_events._max);
+  }
 
-    rsb->global[id + EThread::STAT_LOOP_EVENTS]->sum   = m->_events._total;
-    rsb->global[id + EThread::STAT_LOOP_EVENTS]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_EVENTS);
-    rsb->global[id + EThread::STAT_LOOP_EVENTS_MIN]->sum   = m->_events._min;
-    rsb->global[id + EThread::STAT_LOOP_EVENTS_MIN]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_EVENTS_MIN);
-    rsb->global[id + EThread::STAT_LOOP_EVENTS_MAX]->sum   = m->_events._max;
-    rsb->global[id + EThread::STAT_LOOP_EVENTS_MAX]->count = 1;
-    RecRawStatUpdateSum(rsb, id + EThread::STAT_LOOP_EVENTS_MAX);
+  // Next are the event loop histogram buckets.
+  for (Graph::raw_type idx = 0; idx < Graph::N_BUCKETS; ++idx, ++id) {
+    rsb->global[id]->sum   = summary._loop_timing[idx];
+    rsb->global[id]->count = 1;
+    RecRawStatUpdateSum(rsb, id);
+  }
+
+  // Last are the plugin API histogram buckets.
+  for (Graph::raw_type idx = 0; idx < Graph::N_BUCKETS; ++idx, ++id) {
+    rsb->global[id]->sum   = summary._api_timing[idx];
+    rsb->global[id]->count = 1;
+    RecRawStatUpdateSum(rsb, id);
+  }
+
+  // Check if it's time to schedule a decay of the histogram data.
+  // Done here so that it's (roughly) synchronized across the ET_NET threads.
+  // The decay is done in the local threads, this bumps a counter to indicate it should be done.
+  if (auto now = ts_clock::now(); now > (EThread::Metrics::_last_decay_time + EThread::Metrics::_decay_delay)) {
+    EThread::Metrics::_last_decay_time = now;
+    for (EThread *t : eventProcessor.active_group_threads(ET_CALL)) {
+      ++(t->metrics._decay_count);
+    }
   }
 
   ink_mutex_release(&(rsb->mutex));
@@ -471,6 +491,7 @@ EventProcessor::initThreadState(EThread *t)
 int
 EventProcessor::start(int n_event_threads, size_t stacksize)
 {
+  using Graph = EThread::Metrics::Graph;
   // do some sanity checking.
   static bool started = false;
   ink_release_assert(!started);
@@ -486,14 +507,31 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   thread_group[ET_CALL]._spawnQueue.push(make_event_for_scheduling(&Thread_Affinity_Initializer, EVENT_IMMEDIATE, nullptr));
 
   // Get our statistics set up
-  RecRawStatBlock *rsb = RecAllocateRawStatBlock(EThread::N_EVENT_STATS * EThread::N_EVENT_TIMESCALES);
+  RecRawStatBlock *rsb = RecAllocateRawStatBlock(EThread::Metrics::N_STATS);
+  unsigned stat_idx    = 0;
   char name[256];
 
-  for (int ts_idx = 0; ts_idx < EThread::N_EVENT_TIMESCALES; ++ts_idx) {
-    for (int id = 0; id < EThread::N_EVENT_STATS; ++id) {
-      snprintf(name, sizeof(name), "%s.%ds", EThread::STAT_NAME[id], EThread::SAMPLE_COUNT[ts_idx]);
-      RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, id + (ts_idx * EThread::N_EVENT_STATS), NULL);
+  // Enumerated statistics, one set per time scale.
+  for (unsigned ts_idx = 0; ts_idx < EThread::Metrics::N_TIMESCALES; ++ts_idx) {
+    auto sample_count = EThread::Metrics::SLICE_SAMPLE_COUNT[ts_idx];
+    for (unsigned id = 0; id < EThread::Metrics::Slice::N_STAT_ID; ++id) {
+      snprintf(name, sizeof(name), "%s.%ds", EThread::Metrics::Slice::STAT_NAME[id], sample_count);
+      RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
     }
+  }
+
+  // Event loop timings.
+  for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
+    snprintf(name, sizeof(name), "%s%ldms", EThread::Metrics::LOOP_HISTOGRAM_STAT_STEM.data(),
+             EThread::Metrics::LOOP_HISTOGRAM_BUCKET_SIZE.count() * Graph::lower_bound(id));
+    RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
+  }
+
+  // plugin API timings
+  for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
+    snprintf(name, sizeof(name), "%s%ldms", EThread::Metrics::API_HISTOGRAM_STAT_STEM.data(),
+             EThread::Metrics::API_HISTOGRAM_BUCKET_SIZE.count() * Graph::lower_bound(id));
+    RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
   }
 
   // Name must be that of a stat, pick one at random since we do all of them in one pass/callback.

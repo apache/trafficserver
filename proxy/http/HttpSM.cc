@@ -8438,14 +8438,11 @@ HttpSM::milestone_update_api_time()
     if (!active) {
       api_timer = -api_timer;
     }
-    delta     = Thread::get_hrtime_updated() - api_timer;
-    api_timer = 0;
     // Zero or negative time is a problem because we want to signal *something* happened
     // vs. no API activity at all. This can happen due to graininess or real time
     // clock adjustment.
-    if (delta <= 0) {
-      delta = 1;
-    }
+    delta     = std::max<ink_hrtime>(1, Thread::get_hrtime_updated() - api_timer);
+    api_timer = 0;
 
     if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
       milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
@@ -8457,5 +8454,6 @@ HttpSM::milestone_update_api_time()
       }
       milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
     }
+    this_ethread()->metrics.record_api_time(delta);
   }
 }
