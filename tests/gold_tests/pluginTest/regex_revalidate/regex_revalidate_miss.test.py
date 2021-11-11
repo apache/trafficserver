@@ -18,6 +18,8 @@
 
 import os
 import time
+from jsonrpc import Request
+
 Test.Summary = '''
 regex_revalidate plugin test, MISS (refetch) functionality
 '''
@@ -36,7 +38,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_server", dump_runroot=True)
 
 Test.testName = "regex_revalidate_miss"
 Test.Setup.Copy("metrics_miss.sh")
@@ -139,9 +141,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_ru
 tr.Disk.File(regex_revalidate_conf_path + "_tr2", typename="ats:config").AddLine(path1_rule + ' MISS')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-ps.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
@@ -170,8 +170,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_ru
 tr.Disk.File(regex_revalidate_conf_path + "_tr5", typename="ats:config").AddLine(path1_rule + ' STALE')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-ps.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
@@ -192,8 +191,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_ru
 tr.Disk.File(regex_revalidate_conf_path + "_tr7", typename="ats:config").AddLine(path1_rule + ' MISS')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-ps.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
@@ -214,8 +212,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_ru
 tr.Disk.File(regex_revalidate_conf_path + "_tr9", typename="ats:config").AddLine(path1_rule + ' MISSSTALE')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-ps.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
@@ -232,7 +229,7 @@ tr.StillRunningAfter = ts
 # 11 Stats check
 tr = Test.AddTestRun("Check stats")
 tr.DelayStart = 5
-tr.Processes.Default.Command = "bash -c ./metrics_miss.sh"
+tr.Processes.Default.Command = f"bash -c './metrics_miss.sh {ts.Disk.runroot_yaml.Name}'"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
