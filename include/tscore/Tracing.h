@@ -36,25 +36,25 @@ using TRACER = int;
 inline void
 tracing_tag(TRACER &out, std::string_view name, std::string_view value)
 {
-  ink_assert(!"No tracng library is available");
+  ink_assert(!"No tracing library is available");
 }
 
 inline void
 tracing_tag(TRACER &out, std::string_view name, int value)
 {
-  ink_assert(!"No tracng library is available");
+  ink_assert(!"No tracing library is available");
 }
 
 inline void
 tracing_log(TRACER &out, std::string_view category, std::string_view tag)
 {
-  ink_assert(!"No tracng library is available");
+  ink_assert(!"No tracing library is available");
 }
 
 inline void
 tracing_log(TRACER &out, std::string_view category, int value)
 {
-  ink_assert(!"No tracng library is available");
+  ink_assert(!"No tracing library is available");
 }
 
 inline TRACER *
