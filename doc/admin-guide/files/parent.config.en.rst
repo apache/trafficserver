@@ -221,12 +221,12 @@ The following list shows the possible actions and their allowed values.
       a list of http 5xx responses defined in ``unavailable_server_retry_responses``, the currently selected
       parent is marked down and a new parent is selected to retry the request.  The number of
       retries is controlled by ``max_unavailable_server_retries`` which is set to 1 by default.
-    - ``both`` - This enables both ``simple_retry`` and ``unavailable_server_retry`` as described above. 
+    - ``both`` - This enables both ``simple_retry`` and ``unavailable_server_retry`` as described above.
 
     .. Note::
 
-        If a response code exists in both the simple and unavailable lists and both 
-        is the retry type then simple_retry will take precedence and unavailable_server_retry 
+        If a response code exists in both the simple and unavailable lists and both
+        is the retry type then simple_retry will take precedence and unavailable_server_retry
         will not be used for that code.
 
 .. _parent-config-format-simple-server-retry-responses:
