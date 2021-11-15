@@ -386,6 +386,7 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   // If simple or both, check if code is simple-retryable and for retry attempts
   if ((s_retry_type & PARENT_RETRY_SIMPLE) && s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE)) {
+    TxnDebug("http_trans", "saw parent retry simple first in trans");
     if (s->current.simple_retry_attempts < numParents(s)) {
       return PARENT_RETRY_SIMPLE;
     }
@@ -396,6 +397,7 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
       s->parent_result.response_is_retryable(PARENT_RETRY_UNAVAILABLE_SERVER, response_code) &&
       !s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    TxnDebug("http_trans", "saw parent retry unavailable first in trans");
     if (s->current.unavailable_server_retry_attempts < numParents(s)) {
       return PARENT_RETRY_UNAVAILABLE_SERVER;
     }
