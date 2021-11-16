@@ -285,16 +285,6 @@ public:
   */
   EThread *all_ethreads[MAX_EVENT_THREADS];
 
-  /**
-    An array of pointers, organized by thread group, to all of the
-    EThreads handled by the EventProcessor. An array of pointers to all of
-    the EThreads created throughout the existence of the EventProcessor
-    instance. It is a two-dimensional array whose first dimension is the
-    thread group id and the second the EThread pointers for that group.
-
-  */
-  //  EThread *eventthread[MAX_EVENT_TYPES][MAX_THREADS_IN_EACH_TYPE];
-
   /// Data kept for each thread group.
   /// The thread group ID is the index into an array of these and so is not stored explicitly.
   struct ThreadGroupDescriptor {
