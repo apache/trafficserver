@@ -261,17 +261,17 @@ struct ParentResult {
   }
 
   bool
-  response_is_retryable(HTTPStatus response_code) const
+  response_is_retryable(ParentRetry_t retry_type, HTTPStatus response_code) const
   {
-    Debug("parent_select", "In response_is_retryable, code: %d", response_code);
-    if (retry_type() == PARENT_RETRY_BOTH) {
+    Debug("parent_select", "In response_is_retryable, code: %d, type: %d", response_code, retry_type);
+    if (retry_type == PARENT_RETRY_BOTH) {
       Debug("parent_select", "Saw retry both");
       return (rec->unavailable_server_retry_responses->contains(response_code) ||
               rec->simple_server_retry_responses->contains(response_code));
-    } else if (retry_type() == PARENT_RETRY_UNAVAILABLE_SERVER) {
+    } else if (retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
       Debug("parent_select", "Saw retry unavailable server");
       return rec->unavailable_server_retry_responses->contains(response_code);
-    } else if (retry_type() == PARENT_RETRY_SIMPLE) {
+    } else if (retry_type == PARENT_RETRY_SIMPLE) {
       Debug("parent_select", "Saw retry simple retry");
       return rec->simple_server_retry_responses->contains(response_code);
     } else {

@@ -361,17 +361,17 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
-    if (c > 399 && c < 500) {
+    if (c > 399 && c < 600) {
       codes.push_back(HTTP_STATUS_NOT_FOUND);
     }
   }
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
-    if (c > 399 && c < 500) {
+    if (c > 399 && c < 600) {
       Debug("parent_select", "loading simple response code: %d", c);
       codes.push_back(c);
     } else {
-      Warning("SimpleRetryResponseCodes received non-4xx code '%s', ignoring!", pTok[i]);
+      Warning("SimpleRetryResponseCodes received non-4xx or 5xx code '%s', ignoring!", pTok[i]);
     }
   }
   std::sort(codes.begin(), codes.end());
