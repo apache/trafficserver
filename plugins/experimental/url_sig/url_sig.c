@@ -66,7 +66,7 @@ struct config {
 static void
 free_cfg(struct config *cfg)
 {
-  TSError("[url_sig] Cleaning up");
+  TSDebug(PLUGIN_NAME, "Cleaning up");
   TSfree(cfg->err_url);
   TSfree(cfg->sig_anchor);
 
