@@ -334,6 +334,14 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
   iterator begin();
   /// Iterator past last field.
   iterator end();
+
+  /** Find a field by address.
+   *
+   * @param field Target to find.
+   * @return An iterator referencing @a field if it is in the header, an empty iterator
+   * if not.
+   */
+  iterator find(MIMEField const *field);
 };
 
 inline auto
