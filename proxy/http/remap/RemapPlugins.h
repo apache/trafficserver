@@ -36,10 +36,7 @@
  **/
 struct RemapPlugins : public Continuation {
   RemapPlugins() = default;
-  RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
-    : _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
-  {
-  }
+  RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi) : _s(s), _request_url(u), _request_header(h) {}
 
   // Some basic setters
   void
@@ -57,11 +54,6 @@ struct RemapPlugins : public Continuation {
   {
     _request_header = h;
   }
-  void
-  setHostHeaderInfo(host_hdr_info *h)
-  {
-    _hh_ptr = h;
-  }
 
   int run_remap(int event, Event *e);
   bool run_single_remap();
@@ -75,5 +67,4 @@ private:
   HttpTransact::State *_s  = nullptr;
   URL *_request_url        = nullptr;
   HTTPHdr *_request_header = nullptr;
-  host_hdr_info *_hh_ptr   = nullptr;
 };
