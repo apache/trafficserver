@@ -76,6 +76,7 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
+bool SSLConfigParams::ssl_ktls_enabled                      = false;
 
 const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
 uint32_t SSLConfigParams::server_max_early_data      = 0;
@@ -432,6 +433,8 @@ SSLConfigParams::initialize()
   } else {
     TLSKeyLogger::enable_keylogging(keylog_file);
   }
+
+  REC_ReadConfigInt32(ssl_ktls_enabled, "proxy.config.ssl.ktls.enabled");
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 

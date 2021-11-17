@@ -680,6 +680,21 @@ DH_get_2048_256()
 }
 #endif
 
+bool
+SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
+{
+#ifdef SSL_OP_ENABLE_KTLS
+  if (SSLConfigParams::ssl_ktls_enabled) {
+    if (SSL_CTX_set_options(ctx, SSL_OP_ENABLE_KTLS)) {
+      Debug("ssl.ktls", "KTLS is enabled");
+    } else {
+      return false;
+    }
+  }
+#endif
+  return true;
+}
+
 static SSL_CTX *
 ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
 {
@@ -1412,6 +1427,10 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
     if (!this->_set_curves(ctx)) {
+      goto fail;
+    }
+
+    if (!this->_enable_ktls(ctx)) {
       goto fail;
     }
 
