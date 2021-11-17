@@ -55,7 +55,6 @@ struct RemapPlugins : public Continuation {
     _request_header = h;
   }
 
-  int run_remap(int event, Event *e);
   bool run_single_remap();
   TSRemapStatus run_plugin(RemapPluginInst *plugin);
 
