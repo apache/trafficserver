@@ -35,6 +35,7 @@ Changes with Apache Traffic Server 9.2.0
   #7594 - Call do_io_close instead of HTTP2_SESSION_EVENT_FINI handler
   #7599 - Get rid of code for OpenSSL that has old QUIC API
   #7604 - Fix the connection limit crash while using parents
+  #7611 - Add tries and protection against writer starvation to ink_rwlock.
   #7613 - Add AuTest for Background Fill
   #7614 - Change ROUNDUP from function-like macro to function template.
   #7617 - Typo in output when forcing kqueue for configure
@@ -347,6 +348,7 @@ Changes with Apache Traffic Server 9.2.0
   #8494 - clang 13: Added default assignment operator
   #8497 - Block TS startup if configured body factory directory does not exist.
   #8499 - tests: Adjust generated file paths to work within some restricted environments
+  #8502 - build: fix detection of boringocsp
   #8506 - Add proxy.config.http2.stream_error_sampling_threshold
   #8507 - Add skipped log entries to troubleshooting FAQ in docs.
   #8508 - Makes proxy_serve_stale version independent
