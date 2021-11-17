@@ -310,6 +310,7 @@ Changes with Apache Traffic Server 9.2.0
   #8372 - Add Au test for pqsi and pqsp log fields.
   #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
+  #8375 - Add a set-http-cntl operator for header_rewrite
   #8381 - Fix a potential H2 stall
   #8388 - body factory does not respect runroot
   #8392 - Update the feature lists available for autest
@@ -346,4 +347,9 @@ Changes with Apache Traffic Server 9.2.0
   #8494 - clang 13: Added default assignment operator
   #8497 - Block TS startup if configured body factory directory does not exist.
   #8499 - tests: Adjust generated file paths to work within some restricted environments
-  #8502 - build: fix detection of boringocsp
+  #8506 - Add proxy.config.http2.stream_error_sampling_threshold
+  #8507 - Add skipped log entries to troubleshooting FAQ in docs.
+  #8508 - Makes proxy_serve_stale version independent
+  #8509 - Marks tls_engine test as OpenSSL-only
+  #8517 - Remove commented out EventProcessor::eventthread
+  #8523 - url_sig: change cleanup msg from TSError to TSDebug
