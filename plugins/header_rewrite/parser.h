@@ -69,6 +69,13 @@ public:
     return _val;
   }
 
+  // Return a copy of the string, this implies RVO as well
+  std::string
+  copy_value() const
+  {
+    return _val;
+  }
+
   bool
   mod_exist(const std::string &m) const
   {

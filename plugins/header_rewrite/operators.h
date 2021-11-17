@@ -423,3 +423,23 @@ protected:
 private:
   Value _value;
 };
+
+class OperatorSetHttpCntl : public Operator
+{
+public:
+  OperatorSetHttpCntl() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetHttpCntl"); }
+
+  // noncopyable
+  OperatorSetHttpCntl(const OperatorSetHttpCntl &) = delete;
+  void operator=(const OperatorSetHttpCntl &) = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  void exec(const Resources &res) const override;
+
+private:
+  bool _flag = false;
+  TSHttpCntlType _cntl_qual;
+};

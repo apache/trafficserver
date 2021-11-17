@@ -21,6 +21,7 @@
 //
 #include <arpa/inet.h>
 #include <cstring>
+#include <algorithm>
 
 #include "ts/ts.h"
 
@@ -548,6 +549,7 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
 }
 
 // OperatorSkipRemap
+// Deprecated: Remove for v10.0.0
 void
 OperatorSkipRemap::initialize(Parser &p)
 {
@@ -1008,6 +1010,7 @@ OperatorSetConnMark::exec(const Resources &res) const
 }
 
 // OperatorSetDebug
+// Deprecated: Remove for v10.0.0
 void
 OperatorSetDebug::initialize(Parser &p)
 {
@@ -1026,4 +1029,70 @@ void
 OperatorSetDebug::exec(const Resources &res) const
 {
   TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
+}
+
+// OperatorSetHttpCntl
+TSHttpCntlType
+parse_cntl_qualifier(const std::string &q) // Helper function for parsing modifiers
+{
+  TSHttpCntlType qual = TS_HTTP_CNTL_LOGGING_MODE;
+
+  if (q == "LOGGING") {
+    qual = TS_HTTP_CNTL_LOGGING_MODE;
+  } else if (q == "INTERCEPT_RETRY") {
+    qual = TS_HTTP_CNTL_INTERCEPT_RETRY_MODE;
+  } else if (q == "RESP_CACHEABLE") {
+    qual = TS_HTTP_CNTL_RESPONSE_CACHEABLE;
+  } else if (q == "REQ_CACHEABLE") {
+    qual = TS_HTTP_CNTL_REQUEST_CACHEABLE;
+  } else if (q == "SERVER_NO_STORE") {
+    qual = TS_HTTP_CNTL_SERVER_NO_STORE;
+  } else if (q == "TXN_DEBUG") {
+    qual = TS_HTTP_CNTL_TXN_DEBUG;
+  } else if (q == "SKIP_REMAP") {
+    qual = TS_HTTP_CNTL_SKIP_REMAPPING;
+  } else {
+    TSError("[%s] Invalid HTTP-CNTL() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+
+  return qual;
+}
+
+void
+OperatorSetHttpCntl::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  _cntl_qual = parse_cntl_qualifier(p.get_arg());
+
+  std::string flag = p.copy_value();
+
+  std::transform(flag.begin(), flag.end(), flag.begin(), ::tolower);
+
+  if (flag == "1" || flag == "true" || flag == "on" || flag == "enable") {
+    _flag = true;
+  }
+}
+
+void
+OperatorSetHttpCntl::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+// This is only for the debug statement, and must be in sync with TSHttpCntlType in apidefs.h.in
+static const char *const HttpCntls[] = {"LOGGING",         "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE",
+                                        "SERVER_NO_STORE", "TXN_DEBUG",       "SKIP_REMAP"};
+void
+OperatorSetHttpCntl::exec(const Resources &res) const
+{
+  if (_flag) {
+    TSHttpTxnCntlSet(res.txnp, _cntl_qual, true);
+    TSDebug(PLUGIN_NAME, "   Turning ON %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+  } else {
+    TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
+    TSDebug(PLUGIN_NAME, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+  }
 }

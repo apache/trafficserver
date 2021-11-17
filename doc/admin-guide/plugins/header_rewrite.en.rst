@@ -703,6 +703,9 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
++**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
++with the ``TXN_DEBUG`` control.
+
 set-destination
 ~~~~~~~~~~~~~~~
 ::
@@ -794,6 +797,9 @@ When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
 
+**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+with the ``SKIP_REMAP`` control.
+
 set-cookie
 ~~~~~~~~~~
 ::
@@ -802,6 +808,28 @@ set-cookie
 
 Replaces the value of cookie ``<name>`` with ``<value>``, creating the cookie
 if necessary.
+
+set-http-cntl
+~~~~~~~~~~~~~
+;;
+
+  set-http-cntl <controller> <flag>
+
+This operator lets you turn off (or on) the logging for a particular transaction.
+The ``<flag>`` is any of ``0``, ``off``, and ``false``, or ``1``, ``on`` and ``true``.
+The available controllers are:
+
+================ ====================================================================
+Controller       Description
+================ ====================================================================
+LOGGING          Turns off logging for the transction (default: ``on``)
+INTERCEPT_RETRY  Allow intercepts to be retried (default: ``off``)
+RESP_CACHEABLE   Force the response to be cacheable (default: ``off``)
+REQ_CACHEABLE    Force the request to be cacheable (default: ``off``)
+SERVER_NO_STORE  Don't allow the response to be written to cache (default: ``off``)
+TXN_DEBUG        Enable transaction debugging (default: ``off``)
+SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
+================ ====================================================================
 
 Operator Flags
 --------------
