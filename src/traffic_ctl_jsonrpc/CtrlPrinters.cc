@@ -48,16 +48,14 @@ print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordErr
     }
   }
 }
+
 } // namespace
 void
 BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 {
   // If json, then we print the full message, either ok or error.
   if (this->is_json_format()) {
-    YAML::Emitter out;
-    out << YAML::DoubleQuoted << YAML::Flow;
-    out << response.fullMsg;
-    write_output(std::string_view{out.c_str()});
+    write_output_json(response.fullMsg);
     return;
   }
 
@@ -75,17 +73,24 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 }
 
 void
-BasePrinter::write_output(std::string_view output)
+BasePrinter::write_output(std::string_view output) const
 {
   std::cout << output << '\n';
 }
 
 void
-BasePrinter::write_debug(std::string_view output)
+BasePrinter::write_debug(std::string_view output) const
 {
   std::cout << output << '\n';
 }
-
+void
+BasePrinter::write_output_json(YAML::Node const &node) const
+{
+  YAML::Emitter out;
+  out << YAML::DoubleQuoted << YAML::Flow;
+  out << node;
+  write_output(std::string_view{out.c_str()});
+}
 //------------------------------------------------------------------------------------------------------------------------------------
 void
 RecordPrinter::write_output(YAML::Node const &result)
@@ -158,6 +163,32 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 void
 ConfigReloadPrinter::write_output(YAML::Node const &result)
 {
+}
+//------------------------------------------------------------------------------------------------------------------------------------
+void
+ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)
+{
+  if (is_pretty_format()) {
+    this->write_output_pretty(result);
+  } else {
+    if (auto registry = result["config_registry"]) {
+      write_output_json(registry);
+    }
+  }
+}
+
+void
+ConfigShowFileRegistryPrinter::write_output_pretty(YAML::Node const &result)
+{
+  if (auto &&registry = result["config_registry"]) {
+    for (auto &&element : registry) {
+      std::cout << "┌ " << element["file_path"] << '\n';
+      std::cout << "└┬ Config name: " << element["config_record_name"] << '\n';
+      std::cout << " ├ Parent config: " << element["parent_config"] << '\n';
+      std::cout << " ├ Root access needed: " << element["root_access_needed"] << '\n';
+      std::cout << " └ Is required: " << element["is_required"] << '\n';
+    }
+  }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void

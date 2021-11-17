@@ -91,6 +91,8 @@ main(int argc, const char **argv)
   config_command.add_command("set", "Set a configuration value", "", 2, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config set RECORD VALUE");
 
+  config_command.add_command("registry", "Show configuration file registry", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl config registry");
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl host status HOST  [HOST  ...]");

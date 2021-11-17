@@ -73,12 +73,30 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
 
   return ret;
 }
+
+// JSONRPC endpoint defs.
+const std::string CONFIG_REGISTRY_KEY_STR{"config_registry"};
+const std::string FILE_PATH_KEY_STR{"file_path"};
+const std::string RECORD_NAME_KEY_STR{"config_record_name"};
+const std::string PARENT_CONFIG_KEY_STR{"parent_config"};
+const std::string ROOT_ACCESS_NEEDED_KEY_STR{"root_access_needed"};
+const std::string IS_REQUIRED_KEY_STR{"is_required"};
+const std::string NA_STR{"N/A"};
+
 } // namespace
 
 FileManager::FileManager()
 {
   ink_mutex_init(&accessLock);
   this->registerCallback(&handle_file_reload);
+
+  // Register the files registry jsonrpc endpoint
+  rpc::add_method_handler(
+    "filemanager.get_files_registry",
+    [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
+      return get_files_registry_rpc_endpoint(id, req);
+    },
+    &rpc::core_ats_rpc_service_provider_handle);
 }
 
 // FileManager::~FileManager
@@ -308,6 +326,32 @@ FileManager::configFileChild(const char *parent, const char *child)
     addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig);
   }
   ink_mutex_release(&accessLock);
+}
+
+auto
+FileManager::get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params) -> ts::Rv<YAML::Node>
+{
+  // If any error, the rpc manager will catch it and respond with it.
+  YAML::Node configs{YAML::NodeType::Sequence};
+  {
+    ink_scoped_mutex_lock lock(accessLock);
+    for (auto &&it : bindings) {
+      if (ConfigManager *cm = it.second; cm) {
+        YAML::Node element{YAML::NodeType::Map};
+        std::string sysconfdir(RecConfigReadConfigDir());
+        element[FILE_PATH_KEY_STR]          = Layout::get()->relative_to(sysconfdir, cm->getFileName());
+        element[RECORD_NAME_KEY_STR]        = cm->getConfigName();
+        element[PARENT_CONFIG_KEY_STR]      = (cm->isChildManaged() ? cm->getParentConfig()->getFileName() : NA_STR);
+        element[ROOT_ACCESS_NEEDED_KEY_STR] = cm->rootAccessNeeded();
+        element[IS_REQUIRED_KEY_STR]        = cm->getIsRequired();
+        configs.push_back(element);
+      }
+    }
+  }
+
+  YAML::Node registry;
+  registry[CONFIG_REGISTRY_KEY_STR] = configs;
+  return registry;
 }
 
 /// ConfigFile

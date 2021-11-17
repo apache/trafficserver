@@ -50,6 +50,17 @@ struct ConfigReloadRequest : shared::rpc::ClientRequest {
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
+/// @brief To fetch config file registry from the RPC node.
+///
+struct ConfigShowFileRegistryRequest : shared::rpc::ClientRequest {
+  std::string
+  get_method() const
+  {
+    return "filemanager.get_files_registry";
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+///
 /// @brief Models the clear 'all' metrics request.
 ///
 struct ClearAllMetricRequest : shared::rpc::ClientRequest {

@@ -78,8 +78,8 @@ public:
   ///
   virtual void write_output(YAML::Node const &result) = 0;
 
-  virtual void write_output(std::string_view output);
-  virtual void write_debug(std::string_view output);
+  virtual void write_output(std::string_view output) const;
+  virtual void write_debug(std::string_view output) const;
 
   /// Format getters.
   Options::Format get_format() const;
@@ -91,8 +91,10 @@ public:
   bool is_pretty_format() const;
 
 protected:
+  void write_output_json(YAML::Node const &node) const;
   Options _printOpt;
 };
+
 inline BasePrinter::Options::Format
 BasePrinter::get_format() const
 {
@@ -182,6 +184,15 @@ class ConfigReloadPrinter : public BasePrinter
 
 public:
   ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+class ConfigShowFileRegistryPrinter : public BasePrinter
+{
+  void write_output(YAML::Node const &result) override;
+  void write_output_pretty(YAML::Node const &result);
+
+public:
+  using BasePrinter::BasePrinter;
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class ConfigSetPrinter : public BasePrinter

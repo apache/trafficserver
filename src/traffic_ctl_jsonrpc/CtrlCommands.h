@@ -114,6 +114,7 @@ class ConfigCommand : public RecordCommand
   void config_status();
   void config_set();
   void config_reload();
+  void config_show_file_registry();
 
 public:
   ConfigCommand(ts::Arguments args);

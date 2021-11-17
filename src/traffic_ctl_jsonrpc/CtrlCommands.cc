@@ -143,6 +143,9 @@ ConfigCommand::ConfigCommand(ts::Arguments args) : RecordCommand(args)
   } else if (args.get("reload")) {
     _printer      = std::make_unique<ConfigReloadPrinter>(printOpts);
     _invoked_func = [&]() { config_reload(); };
+  } else if (args.get("registry")) {
+    _printer      = std::make_unique<ConfigShowFileRegistryPrinter>(printOpts);
+    _invoked_func = [&]() { config_show_file_registry(); };
   } else {
     // work in here.
   }
@@ -220,6 +223,11 @@ void
 ConfigCommand::config_reload()
 {
   _printer->write_output(invoke_rpc(ConfigReloadRequest{}));
+}
+void
+ConfigCommand::config_show_file_registry()
+{
+  _printer->write_output(invoke_rpc(ConfigShowFileRegistryRequest{}));
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 MetricCommand::MetricCommand(ts::Arguments args) : RecordCommand(args)

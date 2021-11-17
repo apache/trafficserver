@@ -472,6 +472,8 @@ JSONRPC API
 
 * `get_service_descriptor`_
 
+* `filemanager.get_files_registry`_
+
 .. _jsonapi-management-records:
 
 
@@ -1704,5 +1706,94 @@ Response:
             "schema":{
             }
          }]
+      }
+   }
+
+
+
+.. _filemanager.get_files_registry:
+
+filemanager.get_files_registry
+------------------------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+Fetch the registered config files within ATS. All configured files in the system will be retrieved by this API. This basically drops
+the `FileManager` binding files. File Manager keeps track of all the configured files in |TS|.
+
+Parameters
+~~~~~~~~~~
+
+* ``params``: Omitted
+
+Result
+~~~~~~
+
+An list of |object| with the following fields:
+
+
+``config_registry`` object:
+
+======================= ============= ===========================================
+Field                   Type          Description
+======================= ============= ===========================================
+``file_path``           |str|         File path, includes the full path and the file name configured in the record config name(if it's the case)
+``config_record_name``  |str|         Internal record config variable name.
+``parent_config``       |str|         Parent's configuration file name. e.g. If a top level remap.config includes additional mapping files,
+                                      then the top level file will be set in this field.
+``root_access_needed``  |str|         Elevated access needed.
+``is_required``         |str|         If it's required by |TS|. This specifies if |TS| treat this file as required to start the system(e.g. storage.config)
+======================= ============= ===========================================
+
+
+Examples
+~~~~~~~~
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id":"14c10697-5b09-40f6-b7e5-4be85f64aa5e",
+      "jsonrpc":"2.0",
+      "method":"filemanager.get_files_registry"
+   }
+
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc":"2.0",
+      "result":{
+         "config_registry":[
+            {
+               "file_path":"/home/xyz/ats/etc/trafficserver/sni.yaml",
+               "config_record_name":"proxy.config.ssl.servername.filename",
+               "parent_config":"N/A",
+               "root_access_needed":"false",
+               "is_required":"false"
+            },
+            {
+               "file_path":"/home/xyz/ats/etc/trafficserver/storage.config",
+               "config_record_name":"",
+               "parent_config":"N/A",
+               "root_access_needed":"false",
+               "is_required":"true"
+            },
+            {
+               "file_path":"/home/xyz/ats/etc/trafficserver/jsonrpc3.yaml",
+               "config_record_name":"proxy.config.jsonrpc.filename",
+               "parent_config":"N/A",
+               "root_access_needed":"false",
+               "is_required":"false"
+            }
+         ]
       }
    }

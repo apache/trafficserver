@@ -207,6 +207,13 @@ traffic_ctl config
    information, whether the internal configuration store is current and whether any daemon processes
    should be restarted.
 
+.. program:: traffic_ctl config
+.. option:: registry
+
+   Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
+   if needs root access and if the file is required in |TS|. This command uses :ref:`filemanager.get_files_registry`
+
+
 .. _traffic-control-command-metric:
 
 traffic_ctl metric

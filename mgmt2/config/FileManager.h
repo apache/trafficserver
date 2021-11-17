@@ -28,6 +28,8 @@
 
 #include "tscore/Errata.h"
 
+#include <rpc/jsonrpc/JsonRPC.h>
+
 #include <unordered_map>
 #include <string_view>
 #include <forward_list>
@@ -165,6 +167,8 @@ private:
   std::unordered_map<std::string, ConfigManager *> bindings;
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                      ConfigManager *parentConfig);
+  /// JSONRPC endpoint
+  ts::Rv<YAML::Node> get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
