@@ -1121,8 +1121,8 @@ Field               Type          Description
 ``host``            |arraystr|    A list of hosts that we want to interact with.
 ``reason``          |str|         Reason for the operation.
 ``time``            |str|         Set the duration of an operation to ``count`` seconds. A value of ``0`` means no duration, the
-                                    condition persists until explicitly changed. The default is ``0`` if an operation requires a time
-                                    and none is provided by this option. optional when ``op=up``
+                                  condition persists until explicitly changed. The default is ``0`` if an operation requires a time
+                                  and none is provided by this option. optional when ``op=up``
 =================== ============= =================================================================================================
 
 operation:
@@ -1131,12 +1131,12 @@ operation:
 Field               Type          Description
 =================== ============= =================================================================================================
 ``up``              |str|         Marks the listed hosts as ``up`` so that they will be available for use as a next hop parent. Use
-                                    ``reason`` to mark the host reason code. The 'self_detect' is an internal reason code
-                                    used by parent selection to mark down a parent when it is identified as itself and
+                                  ``reason`` to mark the host reason code. The 'self_detect' is an internal reason code
+                                  used by parent selection to mark down a parent when it is identified as itself and
 ``down``            |str|         Marks the listed hosts as down so that they will not be chosen as a next hop parent. If
-                                    ``time`` is included the host is marked down for the specified number of seconds after
-                                    which the host will automatically be marked up. A host is not marked up until all reason codes
-                                    are cleared by marking up the host for the specified reason code.
+                                  ``time`` is included the host is marked down for the specified number of seconds after
+                                  which the host will automatically be marked up. A host is not marked up until all reason codes
+                                  are cleared by marking up the host for the specified reason code.
 =================== ============= =================================================================================================
 
 reason:
@@ -1147,7 +1147,7 @@ Field               Type          Description
 ``active``          |str|         Set the active health check reason.
 ``local``           |str|         Set the local health check reason.
 ``manual``          |str|         Set the administrative reason. This is the default reason if a reason is needed and not provided
-                                    by this option. If an invalid reason is provided ``manual`` will be defaulted.
+                                  by this option. If an invalid reason is provided ``manual`` will be defaulted.
 =================== ============= =================================================================================================
 
 Internally the reason can be ``self_detect`` if
