@@ -85,14 +85,13 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Setup.Copy(p.Variables.BINDIR, bin_path, CopyLogic.SoftFiles)
 
     # setup config directory
+    AddMethodToInstance(p, chownForATSProcess)
 
     # copy all basic config files we need to get this to work
     cfg_dir = os.path.join(AUTEST_SITE_PATH, "min_cfg")
 
     p.Setup.MakeDir(config_dir)
-    p.Setup.Chown(config_dir, "nobody", "nobody", ignore=True)
-    # covers ubuntu's unprivileged group
-    p.Setup.Chown(config_dir, "nobody", "nogroup", ignore=True)
+    p.chownForATSProcess(config_dir)
 
     for f in os.listdir(cfg_dir):
         p.Setup.CopyAs(os.path.join(cfg_dir, f), config_dir)
@@ -126,9 +125,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     # create subdirectories that need to exist (but are empty)
     # log directory has to be created with correct permissions
     p.Setup.MakeDir(log_dir)  # log directory has to be created
-    p.Setup.Chown(log_dir, "nobody", "nobody", ignore=True)
-    # covers ubuntu's unprivileged group
-    p.Setup.Chown(log_dir, "nobody", "nogroup", ignore=True)
+    p.chownForATSProcess(log_dir)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_LOG_LOGFILE_DIR'] = log_dir
@@ -143,9 +140,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Variables.LOCALSTATEDIR = runtime_dir
 
     p.Setup.MakeDir(runtime_dir)
-    p.Setup.Chown(runtime_dir, "nobody", "nobody", ignore=True)
-    # covers ubuntu's unprivileged group
-    p.Setup.Chown(runtime_dir, "nobody", "nogroup", ignore=True)
+    p.chownForATSProcess(runtime_dir)
 
     # will need this for traffic_manager is it runs
     p.Setup.MakeDir(os.path.join(config_dir, 'snapshots'))
@@ -154,9 +149,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     # create subdirectories that need to exist (but are empty)
     # ssl directory has to be created for keeping certs and keys
     p.Setup.MakeDir(ssl_dir)
-    p.Setup.Chown(ssl_dir, "nobody", "nobody", ignore=True)
-    # covers ubuntu's unprivileged server
-    p.Setup.Chown(ssl_dir, "nobody", "nogroup", ignore=True)
+    p.chownForATSProcess(ssl_dir)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_SSL_DIR'] = ssl_dir
@@ -169,9 +162,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     ########################################################
     # cache.db directory
     p.Setup.MakeDir(storage_dir)
-    p.Setup.Chown(storage_dir, "nobody", "nobody", ignore=True)
-    # covers ubuntu's unprivileged group
-    p.Setup.Chown(storage_dir, "nobody", "nogroup", ignore=True)
+    p.chownForATSProcess(storage_dir)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_STORAGE_DIR'] = storage_dir
@@ -461,6 +452,12 @@ class RecordsConfig(Config, dict):
 ##########################################################################
 
 
+def chownForATSProcess(self, path):
+    self.Setup.Chown(path, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged group
+    self.Setup.Chown(path, "nobody", "nogroup", ignore=True)
+
+
 def addSSLfile(self, filename):
     self.Setup.CopyAs(filename, self.Variables.SSLDir)
 
@@ -476,4 +473,5 @@ def addSSLFileFromDefaultTestFolder(self, filename):
 
 RegisterFileType(Config, "ats:config")
 RegisterFileType(RecordsConfig, "ats:config:records")
+ExtendTestRun(chownForATSProcess, name="ChownForATSProcess")
 ExtendTest(MakeATSProcess, name="MakeATSProcess")

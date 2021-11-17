@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test combo_handler plugin
 '''
@@ -104,12 +106,8 @@ ts.Disk.remap_config.AddLine(
     'map http://localhost/sub/ http://127.0.0.1:{}/sub/'.format(server.Variables.Port)
 )
 
-ts.Disk.File(ts.Variables.CONFIGDIR + "/ctwl.txt", id="ctwl_cfg", typename="ats:config")
-ts.Disk.ctwl_cfg.AddLine("# test  ")
-ts.Disk.ctwl_cfg.AddLine("")
-ts.Disk.ctwl_cfg.AddLine("		text/javascript  # test side comment")
-ts.Disk.ctwl_cfg.AddLine("  application/javascript")
-ts.Disk.ctwl_cfg.AddLine("text/css")
+# Configure the combo_handler's configuration file.
+ts.Setup.Copy("ctwl.txt", ts.Variables.CONFIGDIR)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(ts)

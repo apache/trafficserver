@@ -26,9 +26,6 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
-# test_hooks.so will output test logging to this file.
-Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
-
 server = Test.MakeOriginServer("server")
 
 request_header = {
@@ -39,6 +36,10 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # Disable the cache to make sure each request is forwarded to the origin
 # server.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+
+# test_hooks.so will output test logging to this file.
+log_path = os.path.join(ts.Variables.LOGDIR, "log.txt")
+Test.Env["OUTPUT_FILE"] = log_path
 
 ts.addDefaultSSLFiles()
 
@@ -96,6 +97,6 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
-f = tr.Disk.File("log.txt")
+f = tr.Disk.File(log_path)
 f.Content = "log.gold"
 f.Content += Testers.ContainsExpression("Global: event=TS_EVENT_VCONN_CLOSE", "VCONN_CLOSE should trigger 2 times")
