@@ -836,7 +836,7 @@ Examples
 
 
 
-.. admin_config_set_records:
+.. _admin_config_set_records:
 
 admin_config_set_records
 ------------------------
@@ -973,7 +973,7 @@ You can request for the record `proxy.node.config.reconfigure_time` which will b
 Metrics
 =======
 
-.. admin_clear_metrics_records:
+.. _admin_clear_metrics_records:
 
 admin_clear_metrics_records
 ---------------------------
@@ -1048,7 +1048,7 @@ Response:
    }
 
 
-.. admin_clear_all_metrics_records:
+.. _admin_clear_all_metrics_records:
 
 admin_clear_all_metrics_records
 -------------------------------
@@ -1098,7 +1098,7 @@ Response:
 The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
-.. admin_host_set_status:
+.. _admin_host_set_status:
 
 admin_host_set_status
 ---------------------
@@ -1256,7 +1256,7 @@ Response:
    }
 
 
-.. admin_server_stop_drain:
+.. _admin_server_stop_drain:
 
 admin_server_stop_drain
 -----------------------
@@ -1293,7 +1293,7 @@ Examples
 
 
 
-.. admin_server_start_drain:
+.. _admin_server_start_drain:
 
 admin_server_start_drain
 ------------------------
@@ -1369,7 +1369,7 @@ Response could be either:
    }
 
 
-.. admin_plugin_send_basic_msg:
+.. _admin_plugin_send_basic_msg:
 
 admin_plugin_send_basic_msg
 ---------------------------
@@ -1417,7 +1417,7 @@ Examples
 
 
 
-.. admin_storage_get_device_status:
+.. _admin_storage_get_device_status:
 
 admin_storage_get_device_status
 -------------------------------
@@ -1494,7 +1494,7 @@ Response:
 
 
 
-.. admin_storage_set_device_offline:
+.. _admin_storage_set_device_offline:
 
 admin_storage_set_device_offline
 --------------------------------
@@ -1560,7 +1560,7 @@ Response:
    }
 
 
-.. show_registered_handlers:
+.. _show_registered_handlers:
 
 show_registered_handlers
 ------------------------
@@ -1633,7 +1633,7 @@ Response:
       }
    }
 
-.. get_service_descriptor:
+.. _get_service_descriptor:
 
 get_service_descriptor
 ------------------------

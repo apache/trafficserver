@@ -146,11 +146,15 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: defaults [--records]
 
+   :ref:`admin_lookup_records`
+
    Display the default values for all configuration records. The ``--records`` flag has the same
    behavior as :option:`traffic_ctl config get --records`.
 
 .. program:: traffic_ctl config
 .. option:: describe RECORD [RECORD...]
+
+   :ref:`admin_lookup_records`
 
    Display all the known information about a configuration record. This includes the current and
    default values, the data type, the record class and syntax checking expression.
@@ -160,11 +164,15 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: diff [--records]
 
+   :ref:`admin_lookup_records`
+
    Display configuration records that have non-default values. The ``--records`` flag has the same
    behavior as :option:`traffic_ctl config get --records`.
 
 .. program:: traffic_ctl config
 .. option:: get [--records] RECORD [RECORD...]
+
+   :ref:`admin_lookup_records`
 
    Display the current value of a configuration record.
 
@@ -179,12 +187,16 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: match [--records] REGEX [REGEX...]
 
+   :ref:`admin_lookup_records`
+
    Display the current values of all configuration variables whose names match the given regular
    expression. The ``--records`` flag has the same behavior as :option:`traffic_ctl config get
    --records`.
 
 .. program:: traffic_ctl config
 .. option:: reload
+
+   :ref:`admin_config_reload`
 
    Initiate a Traffic Server configuration reload. Use this command to update the running
    configuration after any configuration file modification. If no configuration files have been
@@ -196,12 +208,16 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: set RECORD VALUE
 
+   :ref:`admin_config_set_records`
+
    Set the named configuration record to the specified value. Refer to the :file:`records.config`
    documentation for a list of the configuration variables you can specify. Note that this is not a
    synchronous operation.
 
 .. program:: traffic_ctl config
 .. option:: status
+
+   :ref:`admin_lookup_records`
 
    Display detailed status about the Traffic Server configuration system. This includes version
    information, whether the internal configuration store is current and whether any daemon processes
@@ -210,16 +226,20 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: registry
 
-   Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
-   if needs root access and if the file is required in |TS|. This command uses :ref:`filemanager.get_files_registry`
+   :ref:`filemanager.get_files_registry`
 
+   Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
+   if needs root access and if the file is required in |TS|.
 
 .. _traffic-control-command-metric:
 
 traffic_ctl metric
 ------------------
+
 .. program:: traffic_ctl metric
 .. option:: get METRIC [METRIC...]
+
+   :ref:`admin_lookup_records`
 
    Display the current value of the specified statistics.
 
@@ -228,16 +248,22 @@ traffic_ctl metric
 .. program:: traffic_ctl metric
 .. option:: match REGEX [REGEX...]
 
+   :ref:`admin_lookup_records`
+
    Display the current values of all statistics whose names match
    the given regular expression.
 
 .. program:: traffic_ctl metric
 .. option:: zero METRIC [METRIC...]
 
+   :ref:`admin_clear_metrics_records`
+
    Reset the named statistics to zero.
 
 .. program:: traffic_ctl metric
 .. option:: describe RECORD [RECORD...]
+
+   :ref:`admin_lookup_records`
 
    Display all the known information about a metric record.
 
@@ -247,12 +273,17 @@ traffic_ctl metric
 
 traffic_ctl server
 ------------------
+
 .. program:: traffic_ctl server
 
 .. program:: traffic_ctl server
 .. option:: drain
 
-   Drop the number of active client connections.{
+   :ref:`admin_server_start_drain`
+
+   :ref:`admin_server_stop_drain`
+
+   Drop the number of active client connections.
 
 .. program:: traffic_ctl server
 .. option:: status
@@ -263,8 +294,11 @@ traffic_ctl server
 
 traffic_ctl storage
 -------------------
+
 .. program:: traffic_ctl storage
 .. option:: offline PATH [PATH ...]
+
+   :ref:`admin_storage_set_device_offline`
 
    Mark a cache storage device as offline. The storage is identified by :arg:`PATH` which must match
    exactly a path specified in :file:`storage.config`. This removes the storage from the cache and
@@ -272,12 +306,22 @@ traffic_ctl storage
    effect as a disk failure for that storage. This does not persist across restarts of the
    :program:`traffic_server` process.
 
+.. program:: traffic_ctl storage
+.. option:: status PATH [PATH ...]
+
+   :ref:`admin_storage_get_device_status`
+
+   Show the storage configuration status.
+
 .. _traffic-control-command-plugin:
 
 traffic_ctl plugin
 -------------------
+
 .. program:: traffic_ctl plugin
 .. option:: msg TAG DATA
+
+   :ref:`admin_plugin_send_basic_msg`
 
    Send a message to plugins. All plugins that have hooked the
    ``TSLifecycleHookID::TS_LIFECYCLE_MSG_HOOK`` will receive a callback for that hook.
@@ -329,10 +373,14 @@ endpoint.
 
 .. option:: status HOSTNAME [HOSTNAME ...]
 
+   :ref:`admin_lookup_records`
+
    Get the current status of the specified hosts with respect to their use as targets for parent
    selection. This returns the same information as the per host stat.
 
 .. option:: down HOSTNAME [HOSTNAME ...]
+
+   :ref:`admin_host_set_status`
 
    Marks the listed hosts as down so that they will not be chosen as a next hop parent. If
    :option:`--time` is included the host is marked down for the specified number of seconds after
@@ -342,6 +390,8 @@ endpoint.
    Supports :option:`--time`, :option:`--reason`.
 
 .. option:: up HOSTNAME [HOSTNAME ...]
+
+   :ref:`admin_host_set_status`
 
    Marks the listed hosts as up so that they will be available for use as a next hop parent. Use
    :option:`--reason` to mark the host reason code. The 'self_detect' is an internal reason code
@@ -372,6 +422,8 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
       traffic_ctl rpc file jsonrpc_cmd1.json jsonrpc_cmd2.yaml
 
 .. option:: get-api
+
+   :ref:`show_registered_handlers`
 
    Request the entire admin api. This will retrieve all the registered methods and notifications on the server side.
 
@@ -535,7 +587,7 @@ If you want to interact with |TS| under a unit test, then a few things need to b
 
       `dump_runroot` will write out some of the keys inside the runroot file, in this case the `runtimedir`.
 
-      2. Then you should specify the :option:`traffic_ctl --run-root` when invoking the command:
+      1. Then you should specify the :option:`traffic_ctl --run-root` when invoking the command:
 
          .. code-block:: python
 
