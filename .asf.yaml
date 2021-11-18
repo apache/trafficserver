@@ -14,7 +14,7 @@ github:
     - hacktoberfest
   features:
     # Enable wiki for documentation
-    wiki: false
+    wiki: true
     # Enable issue management
     issues: true
     # Enable projects for project management boards
