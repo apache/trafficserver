@@ -51,9 +51,9 @@ asn1_string_extract(ASN1_STRING *s)
 void
 dump_context(const char *ca_path, const char *ck_path)
 {
-  SSL_CTX *ctx = reinterpret_cast<SSL_CTX *>(TSSslClientContextFindByName(ca_path, ck_path));
+  TSSslContext ctx = TSSslClientContextFindByName(ca_path, ck_path);
   if (ctx) {
-    SSL *s = SSL_new(ctx);
+    SSL *s = SSL_new(reinterpret_cast<SSL_CTX *>(ctx));
     if (s) {
       char *data  = nullptr;
       long length = 0;
@@ -137,6 +137,7 @@ dump_context(const char *ca_path, const char *ck_path)
       }
     }
     SSL_free(s);
+    TSSslContextDestroy(ctx);
   }
 }
 

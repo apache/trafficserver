@@ -59,4 +59,9 @@ Server source distribution. It demonstrates how to use :func:`TSSslClientContext
 
 .. literalinclude:: ../../../../example/plugins/c-api/client_context_dump/client_context_dump.cc
   :language: c
-  :lines: 137-145
+  :lines: 154-166
+
+
+.. literalinclude:: ../../../../example/plugins/c-api/client_context_dump/client_context_dump.cc
+  :language: c
+  :lines: 51-55
