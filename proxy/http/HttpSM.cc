@@ -98,41 +98,6 @@ using lbw = ts::LocalBufferWriter<256>;
 
 namespace
 {
-/// Update the milestone state given the milestones and timer.
-inline void
-milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_timer)
-{
-  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
-  // non-active API time. In that case we need to make a note of it and flip the value back
-  // to positive.
-  if (api_timer) {
-    ink_hrtime delta;
-    bool active = api_timer >= 0;
-    if (!active) {
-      api_timer = -api_timer;
-    }
-    delta     = Thread::get_hrtime_updated() - api_timer;
-    api_timer = 0;
-    // Zero or negative time is a problem because we want to signal *something* happened
-    // vs. no API activity at all. This can happen due to graininess or real time
-    // clock adjustment.
-    if (delta <= 0) {
-      delta = 1;
-    }
-
-    if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
-      milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
-    }
-    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
-    if (active) {
-      if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE]) {
-        milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
-      }
-      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
-    }
-  }
-}
-
 // Unique state machine identifier
 std::atomic<int64_t> next_sm_id(0);
 
@@ -1449,7 +1414,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
 //    with setting and changing the default_handler
 //    function.  As such, this is an entry point
 //    and needs to handle the reentrancy counter and
-//    deallocation the state machine if necessary
+//    deallocation of the state machine if necessary
 //
 int
 HttpSM::state_api_callback(int event, void *data)
@@ -1459,7 +1424,7 @@ HttpSM::state_api_callback(int event, void *data)
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
 
-  milestone_update_api_time(milestones, api_timer);
+  this->milestone_update_api_time();
 
   STATE_ENTER(&HttpSM::state_api_callback, event);
 
@@ -1509,7 +1474,7 @@ HttpSM::state_api_callout(int event, void *data)
     // the transaction got an event without the plugin calling TsHttpTxnReenable().
     // The call chain does not recurse here if @a api_timer < 0 which means this call
     // is the first from an event dispatch in this case.
-    milestone_update_api_time(milestones, api_timer);
+    this->milestone_update_api_time();
   }
 
   switch (event) {
@@ -1586,7 +1551,7 @@ plugins required to work with sni_routing.
 
       hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
       if (api_timer > 0) { // true if the hook did not call TxnReenable()
-        milestone_update_api_time(milestones, api_timer);
+        this->milestone_update_api_time();
         api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
         // which means that if we get back from the invoke with api_timer < 0 we're already
         // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
@@ -8513,4 +8478,39 @@ HTTPVersion
 HttpSM::get_server_version(HTTPHdr &hdr) const
 {
   return this->server_txn->get_proxy_ssn()->get_version(hdr);
+}
+
+/// Update the milestone state given the milestones and timer.
+void
+HttpSM::milestone_update_api_time()
+{
+  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
+  // non-active API time. In that case we need to make a note of it and flip the value back
+  // to positive.
+  if (api_timer) {
+    ink_hrtime delta;
+    bool active = api_timer >= 0;
+    if (!active) {
+      api_timer = -api_timer;
+    }
+    delta     = Thread::get_hrtime_updated() - api_timer;
+    api_timer = 0;
+    // Zero or negative time is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen due to graininess or real time
+    // clock adjustment.
+    if (delta <= 0) {
+      delta = 1;
+    }
+
+    if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
+      milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
+    }
+    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
+    if (active) {
+      if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE]) {
+        milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
+      }
+      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
+    }
+  }
 }

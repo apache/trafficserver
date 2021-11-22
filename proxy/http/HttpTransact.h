@@ -1071,6 +1071,8 @@ public:
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,
                                          int64_t origin_server_response_body_size, int pushed_response_header_size,
                                          int64_t pushed_response_body_size, const TransactionMilestones &milestones);
+  static void milestone_start_api_time(State *s);
+  static void milestone_update_api_time(State *s);
   static void histogram_request_document_size(State *s, int64_t size);
   static void histogram_response_document_size(State *s, int64_t size);
   static void user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
