@@ -99,7 +99,6 @@ void *ats_realloc(void *ptr, size_t size);
 void *ats_memalign(size_t alignment, size_t size);
 void ats_free(void *ptr);
 void *ats_free_null(void *ptr);
-int ats_mallopt(int param, int value);
 
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
