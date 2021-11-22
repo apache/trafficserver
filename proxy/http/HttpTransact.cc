@@ -8322,6 +8322,19 @@ ink_local_time()
 //
 // The stat functions
 //
+
+void
+HttpTransact::milestone_start_api_time(State *s)
+{
+  s->state_machine->api_timer = Thread::get_hrtime_updated();
+}
+
+void
+HttpTransact::milestone_update_api_time(State *s)
+{
+  s->state_machine->milestone_update_api_time();
+}
+
 void
 HttpTransact::histogram_response_document_size(State *s, int64_t doc_size)
 {

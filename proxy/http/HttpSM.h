@@ -204,6 +204,7 @@ public:
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpPagesHandler;
+  friend class HttpTransact;
 
 public:
   HttpSM();
@@ -521,6 +522,9 @@ protected:
   int find_server_buffer_size();
   int find_http_resp_buffer_size(int64_t cl);
   int64_t server_transfer_init(MIOBuffer *buf, int hdr_size);
+
+  /// Update the milestones to track time spent in the plugin API.
+  void milestone_update_api_time();
 
 public:
   // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
