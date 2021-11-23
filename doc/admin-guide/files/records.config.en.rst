@@ -4157,10 +4157,10 @@ HTTP/2 Configuration
    |TS| gracefully closes connections that have stream error rates above this
    setting by sending GOAWAY frames.
 
-.. ts:cv:: CONFIG proxy.config.http2.stream_error_sampling_threashold INT 10
+.. ts:cv:: CONFIG proxy.config.http2.stream_error_sampling_threshold INT 10
    :reloadable:
 
-   This is the threashold of sampling stream number to start checking the stream error rate.
+   This is the threshold of sampling stream number to start checking the stream error rate.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
    :reloadable:

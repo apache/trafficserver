@@ -67,7 +67,7 @@ handler makes use of :c:func:`TSHttpTxnPostBufferReaderGet`.
        // request's body.
      }
 
-     // Remeber to free the TSIOBufferReader.
+     // Remember to free the TSIOBufferReader.
      TSIOBufferReaderFree(post_buffer_reader);
 
      TSHttpTxnReenable(txnp);
