@@ -435,6 +435,11 @@ SSLConfigParams::initialize()
   }
 
   REC_ReadConfigInt32(ssl_ktls_enabled, "proxy.config.ssl.ktls.enabled");
+#ifndef SSL_OP_ENABLE_KTLS
+  if (ssl_ktls_enabled) {
+    Error("kTLS configured but not supported by OpenSSL library");
+  }
+#endif
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
