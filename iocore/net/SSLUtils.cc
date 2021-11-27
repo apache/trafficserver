@@ -576,7 +576,11 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
+#else
   if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
+#endif
     Error("failed to set session ticket callback");
     ticket_block_free(keyblock);
     return nullptr;
