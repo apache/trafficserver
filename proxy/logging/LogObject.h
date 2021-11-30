@@ -100,7 +100,6 @@ public:
   ~LogObject() override;
 
   void add_filter(LogFilter *filter, bool copy = true);
-  void set_filter_list(const LogFilterList &list, bool copy = true);
 
   inline void
   set_fmt_timestamps()
@@ -123,16 +122,6 @@ public:
   int va_log(LogAccess *lad, const char *fmt, va_list ap);
 
   unsigned roll_files(long time_now = 0);
-
-  inline int
-  add_to_flush_queue(LogBuffer *buffer)
-  {
-    int idx = m_buffer_manager_idx++ % m_flush_threads;
-
-    m_buffer_manager[idx].add_to_flush_queue(buffer);
-
-    return idx;
-  }
 
   inline size_t
   preproc_buffers(int idx = -1)
