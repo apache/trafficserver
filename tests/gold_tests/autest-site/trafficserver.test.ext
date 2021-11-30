@@ -246,11 +246,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    # for conf_remap_float, used by conf_remap plugin
-    fname = "delain.config"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
     fname = "hosting.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
@@ -259,7 +254,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    # magic file that should probally not exist
     fname = "logging.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
