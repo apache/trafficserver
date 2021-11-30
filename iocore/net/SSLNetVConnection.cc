@@ -170,7 +170,7 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
     } else {
       this->initialize_handshake_buffers();
       BIO *rbio = BIO_new(BIO_s_mem());
-      BIO *wbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
+      BIO *wbio = BIO_new_socket(this->get_socket(), BIO_NOCLOSE);
       BIO_set_mem_eof_return(wbio, -1);
       SSL_set_bio(ssl, rbio, wbio);
 
@@ -515,7 +515,7 @@ SSLNetVConnection::update_rbio(bool move_to_socket)
       retval = true;
       // Handshake buffer is empty but we have read something, move to the socket rbio
     } else if (move_to_socket && this->handShakeHolder->is_read_avail_more_than(0)) {
-      BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
+      BIO *rbio = BIO_new_socket(this->get_socket(), BIO_NOCLOSE);
       BIO_set_mem_eof_return(rbio, -1);
       SSL_set0_rbio(this->ssl, rbio);
       free_handshake_buffers();

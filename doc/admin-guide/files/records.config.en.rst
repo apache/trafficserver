@@ -3806,6 +3806,18 @@ SSL Termination
 
    This feature is disabled by default.
 
+.. ts:cv:: CONFIG proxy.config.ssl.ktls.enabled INT 0
+
+   Enables the use of Kernel TLS. This configuration requires OpenSSL v3.0 and
+   above, and it must have been compiled with support for Kernel TLS.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the use of Kernel TLS.
+   ``1`` Enables the use of Kernel TLS..
+   ===== ======================================================================
+
 Client-Related Configuration
 ----------------------------
 
