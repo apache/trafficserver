@@ -329,12 +329,14 @@ Changes with Apache Traffic Server 9.2.0
   #8428 - Refactors and promotes the Txn Control mechanism with Get() and Set()
   #8429 - Remove empty tests/unit_tests directory+makefile
   #8430 - tests: Add shbang to python scripts with a main
+  #8435 - Fix unused-but-set-variable warnings
   #8439 - Fix Multiplexer POST Body Handling
   #8440 - Update the Multiplexer Docs for Multplexed HTTPS Connections
   #8441 - bigobj: use automake to build test utilities
   #8449 - Add AuTest for HTTP CONNECT
   #8450 - Document proxy.config.memory.max_usage
   #8453 - Ignore ECONNABORTED on blocking accept
+  #8462 - ssl_verify_test: clang-analyzer fix to account for null sni_name
   #8469 - Make factory.response_suppression_mode an overridable config
   #8473 - Serve stale content from child if parent returns invalid/marked down
   #8477 - Define TS_HTTP_VALUE_BROTLI and TS_HTTP_LEN_BROTLI
@@ -344,8 +346,6 @@ Changes with Apache Traffic Server 9.2.0
   #8489 - Better TLS Secrets Truncation.
   #8491 - Fix wording for jemalloc autoconf
   #8492 - When checking for SSL_set1_verify_cert_store, save/restore LIBS before manipulating LIBS
-  #8493 - clang 13: Removed unused variable
-  #8494 - clang 13: Added default assignment operator
   #8497 - Block TS startup if configured body factory directory does not exist.
   #8499 - tests: Adjust generated file paths to work within some restricted environments
   #8502 - build: fix detection of boringocsp
@@ -355,3 +355,8 @@ Changes with Apache Traffic Server 9.2.0
   #8509 - Marks tls_engine test as OpenSSL-only
   #8517 - Remove commented out EventProcessor::eventthread
   #8523 - url_sig: change cleanup msg from TSError to TSDebug
+  #8524 - Set an appropriate callback function for OpenSSL 3
+  #8525 - Remove unused function "ats_mallopt"
+  #8532 - Adds autest to test error cases loading ssl_multicert.config
+  #8540 - Enable conf_remap_float test and remove special case for local config file
+  #8541 - Eliminate unused code in LogObject.
