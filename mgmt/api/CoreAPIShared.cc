@@ -142,7 +142,6 @@ TSMgmtError
 sendHTTPRequest(int sock, char *req, uint64_t timeout)
 {
   char request[BUFSIZ];
-  char *requestPtr;
   size_t length = 0;
 
   memset(request, 0, BUFSIZ);
@@ -158,7 +157,6 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
     goto error;
   }
   // Write the request to the server.
-  requestPtr = request;
   while (length > 0) {
     do {
       err = write(sock, request, length);
@@ -168,7 +166,6 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
       //      printf("(test) write failed [%d '%s']\n", errno, strerror (errno));
       goto error;
     }
-    requestPtr += err;
     length -= err;
   }
 

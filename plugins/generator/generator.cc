@@ -475,7 +475,6 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
     VDEBUG("reading vio=%p vc=%p, grq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.grq);
 
     TSIOBufferBlock blk;
-    ssize_t consumed     = 0;
     TSParseResult result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
@@ -530,8 +529,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
         return TS_EVENT_NONE;
 
       case TS_PARSE_CONT:
-        // We consumed the buffer we got minus the remainder.
-        consumed += (nbytes - std::distance(ptr, end));
+        break;
       }
     }
 
