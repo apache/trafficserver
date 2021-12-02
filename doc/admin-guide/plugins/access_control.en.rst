@@ -343,7 +343,7 @@ The following configuration can be used to implement `use case 1`_
 Configuration files
 ~~~~~~~~~~~~~~~~~~~
 
-* Apache traffic server ``remap.config``
+* Apache |TS| ``remap.config``
 
 :ref:`admin-plugins-cachekey` is used to add the access token `subject` into the cache key (``@TokenSubject``). and should always follow the :ref:`admin-plugins-access_control` in the remap rule in order for this mechanism to work properly.
 
