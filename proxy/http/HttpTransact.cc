@@ -214,8 +214,8 @@ markParentDown(HttpTransact::State *s)
   HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
-  TxnDebug("http_trans", "sm_id[%" PRId64 "] enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
-           s->state_machine->sm_id, s->txn_conf->enable_parent_timeout_markdowns, s->txn_conf->disable_parent_markdowns);
+  TxnDebug("http_trans", "enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
+           s->txn_conf->enable_parent_timeout_markdowns, s->txn_conf->disable_parent_markdowns);
 
   if (s->txn_conf->disable_parent_markdowns == 1) {
     TxnDebug("http_trans", "parent markdowns are disabled for this request");
@@ -274,9 +274,8 @@ parentExists(HttpTransact::State *s)
 inline static void
 nextParent(HttpTransact::State *s)
 {
-  TxnDebug("parent_down", "sm_id[%" PRId64 "] connection to parent %s failed, conn_state: %s, request to origin: %s",
-           s->state_machine->sm_id, s->parent_result.hostname, HttpDebugNames::get_server_state_name(s->current.state),
-           s->request_data.get_host());
+  TxnDebug("parent_down", "connection to parent %s failed, conn_state: %s, request to origin: %s", s->parent_result.hostname,
+           HttpDebugNames::get_server_state_name(s->current.state), s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -1827,7 +1826,7 @@ HttpTransact::PPDNSLookup(State *s)
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
 
     char addrbuf[INET6_ADDRSTRLEN];
-    TxnDebug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64 "] successful IP: %s", s->state_machine->sm_id,
+    TxnDebug("http_trans", "[PPDNSLookup] DNS lookup for successful IP: %s",
              ats_ip_ntop(&s->parent_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
