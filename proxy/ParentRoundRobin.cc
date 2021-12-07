@@ -157,16 +157,13 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     } else {
       if ((result->wrap_around) ||
           (((parents[cur_index].failedAt + retry_time) < request_info->xact_start) && host_stat == TS_HOST_STATUS_UP)) {
-        if (parents[cur_index].retriers.inc(max_retriers)) {
-          Debug("parent_select",
-                "Parent[%d].failedAt = %u, retry = %u, retriers = %d, max_retriers = %u, xact_start = %" PRId64 " but wrap = %d",
-                cur_index, static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time, parents[cur_index].retriers(),
-                max_retriers, static_cast<int64_t>(request_info->xact_start), result->wrap_around);
-          // Reuse the parent
-          parentUp    = true;
-          parentRetry = true;
-          Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
-        }
+        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u, xact_start = %" PRId64 " but wrap = %d", cur_index,
+              static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time, static_cast<int64_t>(request_info->xact_start),
+              result->wrap_around);
+        // Reuse the parent
+        parentUp    = true;
+        parentRetry = true;
+        Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
       } else {
         parentUp = false;
       }
