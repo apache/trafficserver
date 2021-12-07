@@ -55,7 +55,8 @@ if test "$enable_jemalloc" != "no"; then
   jemalloc_have_libs=0
   if test "$jemalloc_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${jemalloc_include}])
-    TS_ADDTO(LDFLAGS, [-L${jemalloc_ldflags} -Wl,-rpath,${jemalloc_ldflags}])
+    TS_ADDTO(LDFLAGS, [-L${jemalloc_ldflags}])
+    TS_ADDTO(LDFLAGS, [-Wl,--add-needed -L${jemalloc_ldflags} -Wl,-rpath,${jemalloc_ldflags} -Wl,--no-as-needed])
     TS_ADDTO_RPATH(${jemalloc_ldflags})
   fi
   # On Darwin, jemalloc symbols are prefixed with je_. Search for that first, then fall back
