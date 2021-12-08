@@ -53,7 +53,6 @@ struct NHHealthStatus {
   virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
   virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                            const time_t now = 0)                                                           = 0;
-  virtual void retryComplete(TSHttpTxn txn, const char *hostname, const int port)                          = 0;
   virtual ~NHHealthStatus() {}
 };
 
@@ -116,7 +115,6 @@ struct HostRecord : ATSConsistentHashNode {
   int group_index;
   bool self = false;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
-  pRetriers retriers;
 
   // construct without locking the _mutex.
   HostRecord()
@@ -145,7 +143,6 @@ struct HostRecord : ATSConsistentHashNode {
     group_index = -1;
     available   = true;
     protocols   = o.protocols;
-    retriers    = o.retriers;
   }
 
   // assign without copying the _mutex.
@@ -162,7 +159,6 @@ struct HostRecord : ATSConsistentHashNode {
     group_index = o.group_index;
     available   = o.available.load();
     protocols   = o.protocols;
-    retriers    = o.retriers;
     return *this;
   }
 
@@ -174,7 +170,6 @@ struct HostRecord : ATSConsistentHashNode {
       std::lock_guard<std::mutex> lock(_mutex);
       failedAt  = time(nullptr);
       available = false;
-      retriers.clear();
     }
   }
 
@@ -188,7 +183,6 @@ struct HostRecord : ATSConsistentHashNode {
       failCount = 0;
       upAt      = time(nullptr);
       available = true;
-      retriers.clear();
     }
   }
 
@@ -225,7 +219,6 @@ public:
   bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
   void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0) override;
-  void retryComplete(TSHttpTxn txn, const char *hostname, const int port) override;
   NextHopHealthStatus(){};
 
 private:
@@ -268,5 +261,4 @@ public:
   uint32_t hst_index               = 0;
   uint32_t num_parents             = 0;
   uint32_t distance                = 0; // index into the strategies list.
-  int max_retriers                 = 1;
 };
