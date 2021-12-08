@@ -105,64 +105,7 @@ struct SimpleRetryResponseCodes {
 private:
   std::vector<int> codes;
 };
-// class pRetriers
-//
-//    Count of retriers with atomic read, increment, and decrement.
-//
-class pRetriers
-{
-public:
-  int
-  operator()() const
-  {
-    return _v.load();
-  }
 
-  void
-  clear()
-  {
-    _v = 0;
-  }
-
-  bool
-  inc(int max_retriers)
-  {
-    ink_assert(max_retriers > 0);
-
-    int r = _v.load(std::memory_order_relaxed);
-    while (r < max_retriers) {
-      if (_v.compare_exchange_weak(r, r + 1)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void
-  dec()
-  {
-    int r = _v.load(std::memory_order_relaxed);
-    while (r > 0) {
-      if (_v.compare_exchange_weak(r, r - 1)) {
-        break;
-      }
-    }
-  }
-
-  pRetriers() = default;
-
-  pRetriers(pRetriers const &o) { _v = o._v.load(); }
-
-  pRetriers &
-  operator=(pRetriers const &o)
-  {
-    _v = o._v.load();
-    return *this;
-  }
-
-private:
-  std::atomic<int> _v = 0;
-};
 // struct pRecord
 //
 //    A record for an individual parent
@@ -178,13 +121,6 @@ public:
   int idx;
   float weight;
   char hash_string[MAXDNAME + 1];
-  pRetriers retriers;
-
-  void
-  retryComplete()
-  {
-    retriers.dec();
-  }
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
@@ -424,16 +360,6 @@ public:
 
   // virtual destructor.
   virtual ~ParentSelectionStrategy(){};
-
-  void
-  retryComplete(ParentResult *result)
-  {
-    pRecord *p = getParents(result);
-    uint32_t n = numParents(result);
-    if (p != nullptr && result->last_parent < n) {
-      p[result->last_parent].retryComplete();
-    }
-  }
 };
 
 class ParentConfigParams : public ConfigInfo
@@ -483,15 +409,6 @@ public:
     } else {
       ink_release_assert(result->rec->selection_strategy != nullptr);
       return result->rec->selection_strategy->numParents(result);
-    }
-  }
-
-  void
-  retryComplete(ParentResult *result)
-  {
-    if (!result->is_api_result()) {
-      ink_release_assert(result != nullptr);
-      result->rec->selection_strategy->retryComplete(result);
     }
   }
 

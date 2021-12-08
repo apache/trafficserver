@@ -366,18 +366,13 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         if (!pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           _now == 0 ? _now = time(nullptr) : _now = now;
           if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
-            NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s, retriers: %d", sm_id, pRec->hostname.c_str(), pRec->retriers());
-            if (pRec->retriers.inc(max_retriers)) {
-              nextHopRetry       = true;
-              result.last_parent = pRec->host_index;
-              result.last_lookup = pRec->group_index;
-              result.retry       = nextHopRetry;
-              result.result      = PARENT_SPECIFIED;
-              NH_Debug(NH_DEBUG_TAG,
-                       "[%" PRIu64 "] next hop %s is now retryable, marked it available, retriers: %d, max_retriers: %d.", sm_id,
-                       pRec->hostname.c_str(), pRec->retriers(), max_retriers);
-              break;
-            }
+            nextHopRetry       = true;
+            result.last_parent = pRec->host_index;
+            result.last_lookup = pRec->group_index;
+            result.retry       = nextHopRetry;
+            result.result      = PARENT_SPECIFIED;
+            NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
+            break;
           }
         }
 

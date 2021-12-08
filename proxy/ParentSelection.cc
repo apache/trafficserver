@@ -539,7 +539,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].name                    = this->parents[i].hostname;
       this->parents[i].available               = true;
       this->parents[i].weight                  = weight;
-      this->parents[i].retriers.clear();
       if (tmp3) {
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
@@ -555,7 +554,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
       this->secondary_parents[i].available               = true;
       this->secondary_parents[i].weight                  = weight;
-      this->secondary_parents[i].retriers.clear();
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
@@ -1839,9 +1837,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
 
-  // max_retriers tests
-  SET_MAX_RETRIERS(1);
-
   // Test 212
   tbl[0] = '\0';
   ST(212);
@@ -1861,16 +1856,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.mouse.com");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "minnie", 80), 213);
-
-  // Test 214
-  // goofy gets chosen because max_retriers was set to 1
-  // and goofy becomes available.
-  sleep(params->policy.ParentRetryTime + 3);
-  ST(214);
-  REINIT;
-  br(request, "i.am.mouse.com");
-  FP;
-  RE(verify(result, PARENT_SPECIFIED, "goofy", 80), 214);
 
   delete request;
   delete result;
