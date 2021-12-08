@@ -391,7 +391,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
   }
 
   case TS_EVENT_HTTP_TXN_CLOSE: {
-    TransactionData *txnData = static_cast<TransactionData *>(TSUserArgGet(txnp, SessionData::get_session_arg_index()));
+    TransactionData *txnData = static_cast<TransactionData *>(TSUserArgGet(txnp, transaction_arg_index));
     if (!txnData) {
       TSError("[%s] No transaction data found for the close hook we registered for.", traffic_dump::debug_tag);
       break;
