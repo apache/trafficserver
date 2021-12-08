@@ -28,7 +28,7 @@ Test.testName = "STALE"
 # Config child proxy to route to parent proxy
 ts_child.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.http.cache.max_stale_age': 30,
+    'proxy.config.http.cache.max_stale_age': 10,
     'proxy.config.http.parent_proxy.self_detect': 0,
 })
 ts_child.Disk.parent_config.AddLine(
@@ -41,7 +41,7 @@ ts_child.Disk.remap_config.AddLine(
 # Configure parent proxy
 ts_parent.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,
-    'proxy.config.http.cache.max_stale_age': 30,
+    'proxy.config.http.cache.max_stale_age': 10,
 })
 ts_parent.Disk.remap_config.AddLine(
     f'map http://localhost:{ts_parent.Variables.port} {server_name}'
@@ -52,20 +52,20 @@ ts_parent.Disk.remap_config.AddLine(
 
 # Object to push to proxies
 stale_5 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
-stale_30 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=30\n\nCACHED"
+stale_10 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=10\n\nCACHED"
 
 
 # Testing scenarios
 child_curl_request = (
     # Test child serving stale with failed DNS OS lookup
     f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
-    f'curl -X PUSH -d "{stale_30}" "http://localhost:{ts_parent.Variables.port}";'
-    f'sleep 10; curl -s -v http://localhost:{ts_child.Variables.port};'
-    f'sleep 40; curl -s -v http://localhost:{ts_child.Variables.port};'
+    f'curl -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
+    f'sleep 7; curl -s -v http://localhost:{ts_child.Variables.port};'
+    f'sleep 15; curl -s -v http://localhost:{ts_child.Variables.port};'
     # Test parent serving stale with failed DNS OS lookup
     f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
-    f'sleep 10; curl -s -v http://localhost:{ts_parent.Variables.port};'
-    f'sleep 40; curl -s -v http://localhost:{ts_parent.Variables.port};'
+    f'sleep 7; curl -s -v http://localhost:{ts_parent.Variables.port};'
+    f'sleep 15; curl -s -v http://localhost:{ts_parent.Variables.port};'
 )
 
 # Test case for when parent server is down but child proxy can serve cache object
