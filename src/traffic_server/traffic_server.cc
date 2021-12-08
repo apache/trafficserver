@@ -1,3 +1,5 @@
+int in_both;
+
 /** @file
 
   A brief file description
