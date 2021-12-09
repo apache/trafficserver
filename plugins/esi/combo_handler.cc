@@ -63,7 +63,7 @@ unsigned MaxFileCount = DEFAULT_MAX_FILE_COUNT;
 // We hardcode "immutable" here because it's not yet defined in the ATS API
 #define HTTP_IMMUTABLE "immutable"
 
-int arg_idx;
+int arg_idx = -1;
 static string SIG_KEY_NAME;
 static vector<string> HEADER_ALLOWLIST;
 
@@ -1234,6 +1234,13 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   if (api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
     return TS_ERROR;
+  }
+
+  if (TSUserArgIndexReserve(TS_USER_ARGS_TXN, DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
+    LOG_ERROR("failed to reserve private data slot");
+    return TS_ERROR;
+  } else {
+    LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
   TSDebug(DEBUG_TAG, "%s plugin's remap part is initialized", DEBUG_TAG);
