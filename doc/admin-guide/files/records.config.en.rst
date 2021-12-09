@@ -1217,11 +1217,6 @@ Parent Proxy Configuration
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.max_trans_retries INT 2
-
-   Limits the number of simultaneous transactions that may retry a parent once the parents
-   ``retry_time`` has expired.
-
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.fail_threshold INT 10
    :reloadable:
    :overridable:

@@ -539,7 +539,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].name                    = this->parents[i].hostname;
       this->parents[i].available               = true;
       this->parents[i].weight                  = weight;
-      this->parents[i].retriers                = 0;
       if (tmp3) {
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
@@ -555,7 +554,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
       this->secondary_parents[i].available               = true;
       this->secondary_parents[i].weight                  = weight;
-      this->secondary_parents[i].retriers                = 0;
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
@@ -1107,11 +1105,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     params->findParent(request, result, fail_threshold, retry_time); \
   } while (0)
 
-#define SET_MAX_RETRIERS(x)                                                                     \
-  do {                                                                                          \
-    RecSetRecordInt("proxy.config.http.parent_proxy.max_trans_retries", x, REC_SOURCE_DEFAULT); \
-  } while (0)
-
   // start tests by marking up all tests hosts that will be marked down
   // as part of testing.  This will insure that test hosts are not loaded
   // from records.snap as DOWN due to previous testing.
@@ -1124,7 +1117,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
 
   // Test 1
-  SET_MAX_RETRIERS(20);
   tbl[0] = '\0';
   ST(1);
   T("dest_domain=. parent=red:37412,orange:37412,yellow:37412 round_robin=strict\n");
@@ -1838,39 +1830,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.stooges.net");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
-
-  // max_retriers tests
-  SET_MAX_RETRIERS(1);
-
-  // Test 212
-  tbl[0] = '\0';
-  ST(212);
-  T("dest_domain=mouse.com parent=mickey:80|0.33;minnie:80|0.33;goofy:80|0.33 "
-    "round_robin=consistent_hash go_direct=false\n");
-  REBUILD;
-  REINIT;
-  br(request, "i.am.mouse.com");
-  FP;
-  RE(verify(result, PARENT_SPECIFIED, "goofy", 80), 212);
-
-  // Test 213
-  // markdown goofy and minnie gets chosen.
-  ST(213);
-  params->markParentDown(result, fail_threshold, retry_time); // marked down goofy
-  REINIT;
-  br(request, "i.am.mouse.com");
-  FP;
-  RE(verify(result, PARENT_SPECIFIED, "minnie", 80), 213);
-
-  // Test 214
-  // goofy gets chosen because max_retriers was set to 1
-  // and goofy becomes available.
-  sleep(params->policy.ParentRetryTime + 3);
-  ST(214);
-  REINIT;
-  br(request, "i.am.mouse.com");
-  FP;
-  RE(verify(result, PARENT_SPECIFIED, "goofy", 80), 214);
 
   delete request;
   delete result;

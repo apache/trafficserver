@@ -240,9 +240,6 @@ parentExists(HttpTransact::State *s)
 inline static void
 nextParent(HttpTransact::State *s)
 {
-  TxnDebug("parent_down", "sm_id[%" PRId64 "] connection to parent %s failed, conn_state: %s, request to origin: %s",
-           s->state_machine->sm_id, s->parent_result.hostname, HttpDebugNames::get_server_state_name(s->current.state),
-           s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.

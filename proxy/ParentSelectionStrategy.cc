@@ -53,23 +53,18 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
   //   handle this condition.  If this was the result of a retry, we
   //   must update move the failedAt timestamp to now so that we continue
   //   negative cache the parent
-  if (pRec->failedAt.load() == 0 || result->retry == true) {
+  if (pRec->failedAt == 0 || result->retry == true) {
     // Reread the current time.  We want this to be accurate since
     //   it relates to how long the parent has been down.
     now = time(nullptr);
 
     // Mark the parent failure time.
-    pRec->failedAt = now;
+    ink_atomic_swap(&pRec->failedAt, now);
 
     // If this is clean mark down and not a failed retry, we
     //   must set the count to reflect this
     if (result->retry == false) {
       new_fail_count = pRec->failCount = 1;
-    } else {
-      // this was a retry that failed, decrement the retriers count
-      if ((pRec->retriers--) < 0) {
-        pRec->retriers = 0;
-      }
     }
 
     Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
@@ -80,12 +75,12 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
 
     // if the last failure was outside the retry window, set the failcount to 1
     // and failedAt to now.
-    if ((pRec->failedAt.load() + retry_time) < now) {
+    if ((pRec->failedAt + retry_time) < now) {
       // coverity[check_return]
-      pRec->failCount = 1;
-      pRec->failedAt  = now;
+      ink_atomic_swap(&pRec->failCount, 1);
+      ink_atomic_swap(&pRec->failedAt, now);
     } else {
-      old_count = pRec->failCount.fetch_add(1, std::memory_order_relaxed);
+      old_count = ink_atomic_increment(&pRec->failCount, 1);
     }
 
     Debug("parent_select", "Parent fail count increased to %d for %s:%d", old_count + 1, pRec->hostname, pRec->port);
@@ -95,9 +90,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
   if (new_fail_count > 0 && new_fail_count >= static_cast<int>(fail_threshold)) {
     Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count, fail_threshold,
          pRec->hostname, pRec->port);
-    pRec->available = false;
-    Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port,
-          pRec->available.load());
+    ink_atomic_swap(&pRec->available, false);
+    Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port, pRec->available);
   }
 }
 
@@ -122,13 +116,11 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   }
 
   ink_assert((int)(result->last_parent) < num_parents);
-  pRec            = parents + result->last_parent;
-  pRec->available = true;
+  pRec = parents + result->last_parent;
+  ink_atomic_swap(&pRec->available, true);
 
-  pRec->failedAt = static_cast<time_t>(0);
-  int old_count  = pRec->failCount.exchange(0, std::memory_order_relaxed);
-  // a retry succeeded, just reset retriers
-  pRec->retriers = 0;
+  ink_atomic_swap(&pRec->failedAt, static_cast<time_t>(0));
+  int old_count = ink_atomic_swap(&pRec->failCount, 0);
 
   if (old_count > 0) {
     Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);

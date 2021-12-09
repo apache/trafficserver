@@ -147,29 +147,22 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     }
     Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
-    if ((parents[cur_index].failedAt.load() == 0) || (parents[cur_index].failCount.load() < static_cast<int>(fail_threshold))) {
+    if ((parents[cur_index].failedAt == 0) || (parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
       if (host_stat == HOST_STATUS_UP) {
         Debug("parent_select", "FailThreshold = %d", fail_threshold);
         Debug("parent_select", "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
-              (unsigned)parents[cur_index].failedAt.load(), parents[cur_index].failCount.load());
+              (unsigned)parents[cur_index].failedAt, parents[cur_index].failCount);
         parentUp = true;
       }
     } else {
       if ((result->wrap_around) ||
-          (((parents[cur_index].failedAt + retry_time) < request_info->xact_start) && host_stat == HOST_STATUS_UP)) {
-        if (parents[cur_index].retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
-          Debug("parent_select",
-                "Parent[%d].failedAt = %u, retry = %u, retriers = %d, max_retriers = %u, xact_start = %" PRId64 " but wrap = %d",
-                cur_index, static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time,
-                parents[cur_index].retriers.load(), max_retriers, static_cast<int64_t>(request_info->xact_start),
-                result->wrap_around);
-          // Reuse the parent
-          parentUp    = true;
-          parentRetry = true;
-          Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
-        } else {
-          parents[cur_index].retriers--;
-        }
+          ((parents[cur_index].failedAt + retry_time) < request_info->xact_start && host_stat == HOST_STATUS_UP)) {
+        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %" PRId64 " but wrap = %d", cur_index,
+              (unsigned)parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start, result->wrap_around);
+        // Reuse the parent
+        parentUp    = true;
+        parentRetry = true;
+        Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
       } else {
         parentUp = false;
       }

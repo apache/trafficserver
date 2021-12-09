@@ -141,7 +141,7 @@ struct HostRecord : ATSConsistentHashNode {
     hash_string = o.hash_string;
     host_index  = o.host_index;
     group_index = o.group_index;
-    available   = o.available.load();
+    available   = o.available;
     protocols   = o.protocols;
     return *this;
   }
