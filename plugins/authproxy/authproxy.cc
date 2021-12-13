@@ -58,6 +58,7 @@ struct AuthOptions {
   int hostport                   = -1;
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
+  bool cache_internal_requests   = false;
 
   AuthOptions()  = default;
   ~AuthOptions() = default;
@@ -624,6 +625,14 @@ AuthRequestIsTagged(TSHttpTxn txn)
   return AuthTaggedRequestArg != -1 && TSUserArgGet(txn, AuthTaggedRequestArg) != nullptr;
 }
 
+// Return true if the internal requests can be cached.
+static bool
+CacheInternalRequests(TSHttpTxn txn)
+{
+  AuthOptions *opt = static_cast<AuthOptions *>(TSUserArgGet(txn, AuthTaggedRequestArg));
+  return opt ? opt->cache_internal_requests : false;
+}
+
 static int
 AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
@@ -635,6 +644,17 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   case TS_EVENT_HTTP_POST_REMAP:
     // Ignore internal requests since we generated them.
     if (TSHttpTxnIsInternal(txn)) {
+      // All our internal requests *must* hit the origin since it is the
+      // agent that needs to make the authorization decision. We can't
+      // allow that to be cached. Note that this only affects the remap
+      // rule that this plugin is instantiated for, *unless* you are using
+      // it as a global plugin (not highly recommended). Also remember that
+      // the HEAD auth request might trip a different remap rule, particularly
+      // if you do not have pristine host-headers enabled.
+      if (CacheInternalRequests(txn))
+        TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 1);
+      else
+        TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0);
       AuthLogDebug("re-enabling internal transaction");
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return TS_EVENT_NONE;
@@ -665,6 +685,7 @@ AuthParseOptions(int argc, const char **argv)
     {const_cast<char *>("auth-port"), required_argument, nullptr, 'p'},
     {const_cast<char *>("auth-transform"), required_argument, nullptr, 't'},
     {const_cast<char *>("force-cacheability"), no_argument, nullptr, 'c'},
+    {const_cast<char *>("cache-internal"), no_argument, nullptr, 'i'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -685,6 +706,9 @@ AuthParseOptions(int argc, const char **argv)
       break;
     case 'c':
       options->force = true;
+      break;
+    case 'i':
+      options->cache_internal_requests = true;
       break;
     case 't':
       if (strcasecmp(optarg, "redirect") == 0) {
