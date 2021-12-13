@@ -292,8 +292,10 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                     g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProccessingCompleted; });
                                     g_rpcHandlerProccessingCompleted = false;
                                     // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
-                                    // error and non error cases
+                                    // error and non error cases.
                                     ret = g_rpcHandlerResponseData;
+                                    // clean up the shared data.
+                                    g_rpcHandlerResponseData.clear();
                                     lock.unlock();
                                   }},
              this->_func);
