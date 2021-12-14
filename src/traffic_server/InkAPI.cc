@@ -6331,6 +6331,9 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
 
   if (TS_SUCCESS == TSUserArgIndexNameLookup(type, name, &idx, &desc)) {
     // Found existing index.
+
+    // No need to add get_user_arg_offset(type) here since
+    // TSUserArgIndexNameLookup already does so.
     *ptr_idx = idx;
     return TS_SUCCESS;
   }
@@ -6344,7 +6347,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
     if (description) {
       arg.description = description;
     }
-    *ptr_idx = idx;
+    *ptr_idx = idx + get_user_arg_offset(type);
 
     return TS_SUCCESS;
   }
@@ -6355,6 +6358,8 @@ TSReturnCode
 TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
 {
   sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
+  sdk_assert(SanityCheckUserIndex(type, idx));
+  idx -= get_user_arg_offset(type);
   if (sdk_sanity_check_null_ptr(name) == TS_SUCCESS) {
     if (idx < UserArgIdx[type]) {
       UserArg &arg(UserArgTable[type][idx]);
@@ -6382,7 +6387,7 @@ TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, con
       if (description) {
         *description = arg->description.c_str();
       }
-      *arg_idx = arg - UserArgTable[type];
+      *arg_idx = arg - UserArgTable[type] + get_user_arg_offset(type);
       return TS_SUCCESS;
     }
   }
@@ -6417,6 +6422,7 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 // -------------
+/* These are deprecated as of v9.0.0, and will be removed in v10.0.0 */
 TSReturnCode
 TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
@@ -6475,7 +6481,6 @@ void
 TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
@@ -6486,7 +6491,6 @@ void *
 TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return sm->get_user_arg(arg_idx);
@@ -6496,7 +6500,6 @@ void
 TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -6507,7 +6510,6 @@ void *
 TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
@@ -6517,7 +6519,6 @@ void
 TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
   PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
   sdk_assert(user_args);
 
@@ -6528,12 +6529,13 @@ void *
 TSVConnArgGet(TSVConn connp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
   PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
   sdk_assert(user_args);
 
   return user_args->get_user_arg(arg_idx);
 }
+
+/* End deprecated Arg functions. */
 
 void
 TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
