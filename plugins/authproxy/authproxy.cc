@@ -651,9 +651,7 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
       // it as a global plugin (not highly recommended). Also remember that
       // the HEAD auth request might trip a different remap rule, particularly
       // if you do not have pristine host-headers enabled.
-      if (CacheInternalRequests(txn))
-        TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 1);
-      else
+      if (!CacheInternalRequests(txn))
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0);
       AuthLogDebug("re-enabling internal transaction");
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
