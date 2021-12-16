@@ -150,7 +150,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     for (const auto &elem : node) {
       if (std::none_of(valid_sni_config_keys.begin(), valid_sni_config_keys.end(),
                        [&elem](const std::string &s) { return s == elem.first.as<std::string>(); })) {
-        throw YAML::ParserException(elem.first.Mark(), "unsupported key " + elem.first.as<std::string>());
+        Warning("unsupported key '%s' in SNI config", elem.first.as<std::string>().c_str());
       }
     }
 
