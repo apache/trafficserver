@@ -8960,6 +8960,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE:
     ret = _memberp_to_generic(&overridableHttpConfig->response_suppression_mode, conv);
     break;
+  case TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS:
+    ret = _memberp_to_generic(&overridableHttpConfig->enable_parent_timeout_markdowns, conv);
+    break;
+  case TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS:
+    ret = _memberp_to_generic(&overridableHttpConfig->disable_parent_markdowns, conv);
+    break;
 
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:

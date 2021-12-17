@@ -1250,6 +1250,9 @@ HttpConfig::startup()
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
+  HttpEstablishStaticConfigByte(c.oride.enable_parent_timeout_markdowns,
+                                "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns");
+  HttpEstablishStaticConfigByte(c.oride.disable_parent_markdowns, "proxy.config.http.parent_proxy.disable_parent_markdowns");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
@@ -1535,16 +1538,18 @@ HttpConfig::reconfigure()
             "will never redispatch to another server",
             m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
   }
-  params->oride.connect_attempts_rr_retries   = m_master.oride.connect_attempts_rr_retries;
-  params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
-  params->oride.connect_dead_policy           = m_master.oride.connect_dead_policy;
-  params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
-  params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
-  params->oride.parent_retry_time             = m_master.oride.parent_retry_time;
-  params->oride.parent_fail_threshold         = m_master.oride.parent_fail_threshold;
-  params->oride.per_parent_connect_attempts   = m_master.oride.per_parent_connect_attempts;
-  params->oride.parent_connect_timeout        = m_master.oride.parent_connect_timeout;
-  params->oride.parent_failures_update_hostdb = m_master.oride.parent_failures_update_hostdb;
+  params->oride.connect_attempts_rr_retries     = m_master.oride.connect_attempts_rr_retries;
+  params->oride.connect_attempts_timeout        = m_master.oride.connect_attempts_timeout;
+  params->oride.connect_dead_policy             = m_master.oride.connect_dead_policy;
+  params->oride.post_connect_attempts_timeout   = m_master.oride.post_connect_attempts_timeout;
+  params->oride.parent_connect_attempts         = m_master.oride.parent_connect_attempts;
+  params->oride.parent_retry_time               = m_master.oride.parent_retry_time;
+  params->oride.parent_fail_threshold           = m_master.oride.parent_fail_threshold;
+  params->oride.per_parent_connect_attempts     = m_master.oride.per_parent_connect_attempts;
+  params->oride.parent_connect_timeout          = m_master.oride.parent_connect_timeout;
+  params->oride.parent_failures_update_hostdb   = m_master.oride.parent_failures_update_hostdb;
+  params->oride.enable_parent_timeout_markdowns = m_master.oride.enable_parent_timeout_markdowns;
+  params->oride.disable_parent_markdowns        = m_master.oride.disable_parent_markdowns;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
