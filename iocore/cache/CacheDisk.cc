@@ -97,7 +97,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     }
   }
 
-  //
+  // read disk header
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf    = reinterpret_cast<char *>(header);
@@ -165,6 +165,10 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
 
   if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
+
+    // the header could have random values by the AIO read error
+    memset(header, 0, header_len);
+
     incrErrors(&io);
     SET_DISK_BAD(this);
     SET_HANDLER(&CacheDisk::openDone);
