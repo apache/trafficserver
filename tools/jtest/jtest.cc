@@ -1838,7 +1838,7 @@ gen_bfc_dist(double f = 10.0)
   double rand2 = 0.0;
   bool f_given = f < 9.0;
   if (!f_given) {
-    rand = ts::Random::drandom();
+    rand  = ts::Random::drandom();
     rand2 = ts::Random::drandom();
   } else {
     rand  = f;
@@ -2445,7 +2445,7 @@ read_response(int sock)
         ink_assert(fd[sock].length >= 0);
         fd[sock].req_pos = -1;
         if (fd[sock].length && ts::Random::drandom() < client_abort_rate) {
-          fd[sock].client_abort = 1;
+          fd[sock].client_abort  = 1;
           fd[sock].length        = (int)(ts::Random::drandom() * (fd[sock].length - 1));
           fd[sock].keepalive     = 0;
           fd[sock].drop_after_CL = 1;
@@ -2899,7 +2899,7 @@ static void
 make_random_url(int sock, double *dr, double *h)
 {
   *dr = ts::Random::drandom();
-  *h = ts::Random::drandom();
+  *h  = ts::Random::drandom();
 
   if (zipf == 0.0) {
     if (*h < hitrate) {
@@ -3040,8 +3040,8 @@ make_host1_request(int sock, double dr, const char *evo_str, const char *extensi
           "%s"
           "\r\n",
           dr, fd[sock].response_length, evo_str, extension, local_host, server_port,
-          fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-          reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+          fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+          eheaders, cookie);
   return 0;
 }
 
@@ -3094,7 +3094,7 @@ build_request(int sock)
     }
   }
   char cookie[256];
-  *cookie = 0;
+  *cookie             = 0;
   fd[sock].nalternate = (int)(alternates * ts::Random::drandom());
   if (alternates) {
     if (!vary_user_agent) {
@@ -3554,9 +3554,8 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             "Accept: */*\r\n"
             "%s"
             "\r\n",
-            curl,
-            reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-            eheaders);
+            curl, reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "", eheaders);
   } else {
     sprintf(fd[sock].req_header,
             "GET /%s%s%s%s%s HTTP/1.0\r\n"
@@ -3567,8 +3566,8 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             "%s"
             "\r\n",
             path, xquer ? "?" : "", quer, xpar ? ";" : "", para, host,
-            reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-            eheaders);
+            reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+            fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", eheaders);
   }
 
   if (verbose) {
