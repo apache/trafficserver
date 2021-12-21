@@ -25,9 +25,8 @@
 
   Basic Threads
 
-
-
 **************************************************************************/
+
 #include "P_EventSystem.h"
 #include "tscore/ink_string.h"
 
