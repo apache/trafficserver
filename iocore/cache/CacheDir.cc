@@ -25,6 +25,7 @@
 
 #include "tscore/hugepages.h"
 #include "tscore/Regression.h"
+#include "tscore/Random.h"
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
@@ -1400,8 +1401,7 @@ regress_rand_CacheKey(const CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
-  // coverity[dont_call]
-  int l    = (static_cast<int>(dir_bucket_length(b, s, d) * drand48()));
+  int l    = (static_cast<int>(dir_bucket_length(b, s, d) * ts::Random::drandom()));
   Dir *e   = b;
   Dir *seg = d->dir_segment(s);
   for (int i = 0; i < l; i++) {

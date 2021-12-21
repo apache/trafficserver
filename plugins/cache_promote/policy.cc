@@ -16,14 +16,14 @@
   limitations under the License.
 */
 #include "tscore/BufferWriter.h"
+#include "tscore/Random.h"
 #include "policy.h"
 
 bool
 PromotionPolicy::doSample() const
 {
   if (_sample > 0) {
-    // coverity[dont_call]
-    double r = drand48();
+    double r = ts::Random::drandom();
 
     if (_sample > r) {
       TSDebug(PLUGIN_NAME, "checking sampling, is %f > %f? Yes!", _sample, r);
