@@ -39,7 +39,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ServerAPI.h"
-#include "tscore/Random.h"
 
 #define PSI_TAG_FORMAT "<!--include=file%d.txt-->"
 #define PSI_TAG_MAX_SIZE 128
@@ -69,7 +68,7 @@ int
 generate_psibility()
 {
   double rand;
-  rand = ts::Random::drandom();
+  rand = drand48();
   if (rand < my_plugin.psi_ratio) {
     return TRUE;
   } else {
