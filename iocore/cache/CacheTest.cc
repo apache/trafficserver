@@ -24,6 +24,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheTest.h"
+#include "tscore/Random.h"
 #include <vector>
 #include <cmath>
 #include <cstdlib>
@@ -590,11 +591,10 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 
   int sample_size = cache_size >> 6;
   build_zipf();
-  srand48(13);
+  ts::Random::seed(13);
   int *r = static_cast<int *>(ats_malloc(sample_size * sizeof(int)));
   for (int i = 0; i < sample_size; i++) {
-    // coverity[dont_call]
-    r[i] = get_zipf(drand48());
+    r[i] = get_zipf(ts::Random::drandom());
   }
   data.clear();
   int misses = 0;

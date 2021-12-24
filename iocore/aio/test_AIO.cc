@@ -25,6 +25,7 @@
 #include "InkAPIInternal.h"
 #include "tscore/I_Layout.h"
 #include "tscore/TSSystemState.h"
+#include "tscore/Random.h"
 #include <iostream>
 #include <fstream>
 
@@ -282,7 +283,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io->action           = this;
   io->thread           = mutex->thread_holding;
 
-  switch (select_mode(drand48())) {
+  switch (select_mode(ts::Random::drandom())) {
   case READ_MODE:
     io->aiocb.aio_offset     = seq_read_point;
     io->aiocb.aio_nbytes     = seq_read_size;
@@ -311,8 +312,8 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   case RANDOM_READ_MODE: {
     // fprintf(stderr, "random read started \n");
     double p, f;
-    p       = drand48();
-    f       = drand48();
+    p       = ts::Random::drandom();
+    f       = ts::Random::drandom();
     off_t o = 0;
     if (f < hotset_frequency) {
       o = static_cast<off_t>(p) * max_hotset_offset;
@@ -430,7 +431,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   RecProcessStart();
   ink_aio_init(AIO_MODULE_PUBLIC_VERSION);
-  srand48(time(nullptr));
+  ts::Random::seed(time(nullptr));
   printf("input file %s\n", argv[1]);
   if (!read_config(argv[1])) {
     exit(1);
