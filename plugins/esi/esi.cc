@@ -1292,6 +1292,20 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
     return false;
   }
 
+  // if origin returns status 304, check cached response instead
+  int response_status;
+  if (is_cache_txn == false) {
+    response_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    if (response_status == TS_HTTP_STATUS_NOT_MODIFIED) {
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      header_obtained = TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
+      if (header_obtained != TS_SUCCESS) {
+        TSError("[esi][%s] Couldn't get txn cache response header", __FUNCTION__);
+        return false;
+      }
+    }
+  }
+
   do {
     *intercept_header = checkHeaderValue(bufp, hdr_loc, SERVER_INTERCEPT_HEADER, SERVER_INTERCEPT_HEADER_LEN);
     if (*intercept_header) {
