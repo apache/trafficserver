@@ -169,7 +169,7 @@ echo date('l jS \of F Y h:i:s A');
 
     def run_cases(self):
         # Test 1: Verify basic ESI functionality.
-        tr = Test.AddTestRun("First request for esi.php: not cached")
+        tr = Test.AddTestRun("First request for esi_etag.php: not cached")
         tr.Processes.Default.Command = \
             ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose'.format(
@@ -180,7 +180,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.StillRunningAfter = self._ts
 
         # Test 2: Repeat the above, origin should now be returning 304 response.
-        tr = Test.AddTestRun("Second request for esi.php: will be cached")
+        tr = Test.AddTestRun("Second request for esi_etag.php: will be cached")
         tr.Processes.Default.Command = \
             ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose'.format(
@@ -196,5 +196,5 @@ echo date('l jS \of F Y h:i:s A');
 #
 
 # Run the tests with ESI configured with no parameters.
-304_test = EsiTest(plugin_config='esi.so --private-response')
-304_test.run_cases()
+private_response_test = EsiTest(plugin_config='esi.so --private-response')
+private_response_test.run_cases()
