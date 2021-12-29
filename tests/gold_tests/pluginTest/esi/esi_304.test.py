@@ -65,9 +65,7 @@ class EsiTest():
         # Configure our server.
         server = Test.MakeOriginServer("server")
 
-        # Generate the set of ESI responses derived right from our ESI docs.
-        # See:
-        #   doc/admin-guide/plugins/esi.en.rst
+        # Generate the set of ESI responses.
         request_header = {
             "headers": (
                 "GET /esi_etag.php HTTP/1.1\r\n"
@@ -76,28 +74,18 @@ class EsiTest():
             "timestamp": "1469733493.993",
             "body": ""
         }
-        esi_body = r'''<?php
-$output = 'WWWWWWWWWWWHHHHHHHHHHHHHHTTTTTTTTTMMMMMMMMMMMLLLLLLLLL<esi:include src="http://www.example.com/date.php"/>';
-$etag = '"'.md5($output).'"';
-$if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ?
-$_SERVER['HTTP_IF_NONE_MATCH'] :
-false ;
-
-if($if_none_match == $etag ){
-header("HTTP/1.1 304 Not Modified");
-exit;
-}
-
-header('cache-control: public, max-age=0');
-header('etag: '.$etag);
-header('X-Esi: 1');
-
-echo $output;
-?>
+        esi_body = r'''<html>
+<body>
+Hello, <esi:include src="http://www.example.com/date.php"/>
+</body>
+</html>
 '''
         response_header = {
             "headers": (
                 "HTTP/1.1 200 OK\r\n"
+                "X-Esi: 1\r\n"
+                "Cache-Control: public, max-age=0\r\n"
+                'Etag: "esi_304_test"\r\n'
                 "Content-Type: text/html\r\n"
                 "Connection: close\r\n"
                 "Content-Length: {}\r\n"
@@ -106,6 +94,28 @@ echo $output;
             "body": esi_body
         }
         server.addResponse("sessionfile.log", request_header, response_header)
+
+        request_header = {
+            "headers": (
+                "GET /esi_etag.php HTTP/1.1\r\n"
+                "Host: www.example.com\r\n"
+                'If-None-Match: "esi_304_test"\r\n'
+                "Content-Length: 0\r\n\r\n"),
+            "timestamp": "1469733493.993",
+            "body": ""
+        }
+        response_header = {
+            "headers": (
+                "HTTP/1.1 304 Not Modified\r\n"
+                "Content-Type: text/html\r\n"
+                "Connection: close\r\n"
+                "Content-Length: 0\r\n"
+                "\r\n"),
+            "timestamp": "1469733493.993",
+            "body": ""
+        }
+        server.addResponse("sessionfile.log", request_header, response_header)
+
         request_header = {
             "headers": (
                 "GET /date.php HTTP/1.1\r\n"
@@ -114,10 +124,8 @@ echo $output;
             "timestamp": "1469733493.993",
             "body": ""
         }
-        date_body = r'''<?php
-header ("Cache-control: no-cache");
-echo date('l jS \of F Y h:i:s A');
-?>
+        date_body = r'''ESI 304 test
+No Date
 '''
         response_header = {
             "headers": (
@@ -195,6 +203,6 @@ echo date('l jS \of F Y h:i:s A');
 # Configure and run the test cases.
 #
 
-# Run the tests with ESI configured with no parameters.
+# Run the tests with ESI configured with private response.
 private_response_test = EsiTest(plugin_config='esi.so --private-response')
 private_response_test.run_cases()
