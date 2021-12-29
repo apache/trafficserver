@@ -70,6 +70,7 @@ class EsiTest():
             "headers":
             "GET /esi_etag.php HTTP/1.1\r\n" +
             "Host: www.example.com\r\n" +
+            "uuid: first\r\n" +
             "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
@@ -98,6 +99,7 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
             "headers":
             "GET /esi_etag.php HTTP/1.1\r\n" +
             "Host: www.example.com\r\n" +
+            "uuid: second\r\n" +
             'If-None-Match: "esi_304_test"\r\n' +
             "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
@@ -177,7 +179,7 @@ No Date
         tr = Test.AddTestRun("First request for esi_etag.php: not cached")
         tr.Processes.Default.Command = \
             ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
-             '-H"Accept: */*" --verbose'.format(
+             '-H"Accept: */*" -H"uuid: first" --verbose'.format(
                  self._ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
@@ -188,7 +190,7 @@ No Date
         tr = Test.AddTestRun("Second request for esi_etag.php: will be cached")
         tr.Processes.Default.Command = \
             ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
-             '-H"Accept: */*" --verbose'.format(
+             '-H"Accept: */*" -H"uuid: second" --verbose'.format(
                  self._ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
