@@ -122,6 +122,7 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
             "headers":
             "GET /date.php HTTP/1.1\r\n" +
             "Host: www.example.com\r\n" +
+            "uuid: date\r\n" +
             "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
