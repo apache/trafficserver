@@ -89,6 +89,7 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
             'Etag: "esi_304_test"\r\n' +
             "Content-Type: text/html\r\n" +
             "Connection: close\r\n" +
+            "Content-Length: {}\r\n".format(len(esi_body)) +
             "\r\n",
             "timestamp": "1469733493.993",
             "body": esi_body
@@ -133,6 +134,7 @@ No Date
             "HTTP/1.1 200 OK\r\n" +
             "Content-Type: text/html\r\n" +
             "Connection: close\r\n" +
+            "Content-Length: {}\r\n".format(len(date_body)) +
             "\r\n",
             "timestamp": "1469733493.993",
             "body": date_body
