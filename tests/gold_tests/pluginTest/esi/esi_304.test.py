@@ -67,10 +67,10 @@ class EsiTest():
 
         # Generate the set of ESI responses.
         request_header = {
-            "headers": (
-                "GET /esi_etag.php HTTP/1.1\r\n"
-                "Host: www.example.com\r\n"
-                "Content-Length: 0\r\n\r\n"),
+            "headers":
+            "GET /esi_etag.php HTTP/1.1\r\n" +
+            "Host: www.example.com\r\n" +
+            "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
         }
@@ -81,46 +81,45 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
 </html>
 '''
         response_header = {
-            "headers": (
-                "HTTP/1.1 200 OK\r\n"
-                "X-Esi: 1\r\n"
-                "Cache-Control: public, max-age=0\r\n"
-                'Etag: "esi_304_test"\r\n'
-                "Content-Type: text/html\r\n"
-                "Connection: close\r\n"
-                "Content-Length: {}\r\n"
-                "\r\n".format(len(esi_body))),
+            "headers":
+            "HTTP/1.1 200 OK\r\n" +
+            "X-Esi: 1\r\n" +
+            "Cache-Control: public, max-age=0\r\n" +
+            'Etag: "esi_304_test"\r\n' +
+            "Content-Type: text/html\r\n" +
+            "Connection: close\r\n" +
+            "\r\n",
             "timestamp": "1469733493.993",
             "body": esi_body
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
         request_header = {
-            "headers": (
-                "GET /esi_etag.php HTTP/1.1\r\n"
-                "Host: www.example.com\r\n"
-                'If-None-Match: "esi_304_test"\r\n'
-                "Content-Length: 0\r\n\r\n"),
+            "headers":
+            "GET /esi_etag.php HTTP/1.1\r\n" +
+            "Host: www.example.com\r\n" +
+            'If-None-Match: "esi_304_test"\r\n' +
+            "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
         }
         response_header = {
-            "headers": (
-                "HTTP/1.1 304 Not Modified\r\n"
-                "Content-Type: text/html\r\n"
-                "Connection: close\r\n"
-                "Content-Length: 0\r\n"
-                "\r\n"),
+            "headers":
+            "HTTP/1.1 304 Not Modified\r\n" +
+            "Content-Type: text/html\r\n" +
+            "Connection: close\r\n" +
+            "Content-Length: 0\r\n" +
+            "\r\n",
             "timestamp": "1469733493.993",
             "body": ""
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
         request_header = {
-            "headers": (
-                "GET /date.php HTTP/1.1\r\n"
-                "Host: www.example.com\r\n"
-                "Content-Length: 0\r\n\r\n"),
+            "headers":
+            "GET /date.php HTTP/1.1\r\n" +
+            "Host: www.example.com\r\n" +
+            "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
         }
@@ -128,13 +127,11 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
 No Date
 '''
         response_header = {
-            "headers": (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html\r\n"
-                "Connection: close\r\n"
-                "Content-Length: {}\r\n"
-                "Cache-Control: max-age=300\r\n"
-                "\r\n".format(len(date_body))),
+            "headers":
+            "HTTP/1.1 200 OK\r\n" +
+            "Content-Type: text/html\r\n" +
+            "Connection: close\r\n" +
+            "\r\n",
             "timestamp": "1469733493.993",
             "body": date_body
         }
