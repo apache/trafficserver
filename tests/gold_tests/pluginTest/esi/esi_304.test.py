@@ -63,7 +63,7 @@ class EsiTest():
         Create and start a server process.
         """
         # Configure our server.
-        server = Test.MakeOriginServer("server")
+        server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
 
         # Generate the set of ESI responses.
         request_header = {
