@@ -77,7 +77,7 @@ class EsiTest():
         }
         esi_body = r'''<html>
 <body>
-Hello, <esi:include src="http://www.example.com/date.php"/>
+Hello, ESI 304 test
 </body>
 </html>
 '''
