@@ -258,14 +258,17 @@ protected:
   bool ignore_self_detect = false;
   PLNHSchemeType scheme   = PL_NH_SCHEME_NONE;
   PLNHRingMode ring_mode  = PL_NH_ALTERNATE_RING;
-  PLResponseCodes resp_codes;
+  PLResponseCodes resp_codes;     // simple retry codes
+  PLResponseCodes markdown_codes; // unavailable server retry and markdown codes
+
   PLHealthChecks health_checks;
   PLNextHopHealthStatus passive_health;
   std::vector<std::vector<std::shared_ptr<PLHostRecord>>> host_groups;
-  uint32_t max_simple_retries = 1;
-  uint32_t groups             = 0;
-  uint32_t grp_index          = 0;
-  uint32_t hst_index          = 0;
-  uint32_t num_parents        = 0;
-  uint32_t distance           = 0; // index into the strategies list.
+  uint32_t max_simple_retries      = 1;
+  uint32_t max_unavailable_retries = 1;
+  uint32_t groups                  = 0;
+  uint32_t grp_index               = 0;
+  uint32_t hst_index               = 0;
+  uint32_t num_parents             = 0;
+  uint32_t distance                = 0; // index into the strategies list.
 };
