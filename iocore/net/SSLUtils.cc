@@ -1332,8 +1332,7 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
    This is public function because of used by SSLCreateServerContext.
  */
 std::vector<SSLLoadingContext>
-SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
-                                              std::set<std::string> &names)
+SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
   std::vector<std::vector<std::string>> cert_names;
   std::vector<std::vector<std::string>> key_names;
@@ -1729,7 +1728,7 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
 
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
 
-  std::vector<SSLLoadingContext> ctxs = loader.init_server_ssl_ctx(data, sslMultiCertSettings, common_names);
+  std::vector<SSLLoadingContext> ctxs = loader.init_server_ssl_ctx(data, sslMultiCertSettings);
   for (auto const &loaderctx : ctxs) {
     ctx.reset(loaderctx.ctx);
 
@@ -1807,18 +1806,25 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     return false;
   }
 
-  std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names);
+  std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
   for (const auto &loadingctx : ctxs) {
     shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
     if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
-      std::string names;
-      for (auto const &name : data.cert_names_list) {
-        names.append(name);
-        names.append(" ");
+      if (!common_names.empty()) {
+        std::string names;
+        for (auto const &name : data.cert_names_list) {
+          names.append(name);
+          names.append(" ");
+        }
+        Warning("(%s) Failed to insert SSL_CTX for certificate %s entries for names already made", this->_debug_tag(),
+                names.c_str());
+      } else {
+        Warning("(%s) Failed to insert SSL_CTX", this->_debug_tag());
       }
-      Warning("(%s) Failed to insert SSL_CTX for certificate %s entries for names already made", this->_debug_tag(), names.c_str());
     } else {
-      lookup->register_cert_secrets(data.cert_names_list, common_names);
+      if (!common_names.empty()) {
+        lookup->register_cert_secrets(data.cert_names_list, common_names);
+      }
     }
   }
 
@@ -1833,7 +1839,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
     single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second);
+    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get());
     for (const auto &loadingctx : ctxs) {
       shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
       if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, loadingctx.ctx_type, iter->second)) {
@@ -1876,19 +1882,17 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       break;
     }
 
-    if (!common_names.empty()) {
-      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, policy_iter->get(), common_names);
-      for (const auto &loadingctx : ctxs) {
-        shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
+    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, policy_iter->get());
+    for (const auto &loadingctx : ctxs) {
+      shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
 
-        if (!ctx) {
-          retval = false;
-        } else {
-          for (auto const &name : common_names) {
-            SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
-            if (cc && cc->userconfig.get() == policy_iter->get()) {
-              cc->setCtx(ctx);
-            }
+      if (!ctx) {
+        retval = false;
+      } else {
+        for (auto const &name : common_names) {
+          SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
+          if (cc && cc->userconfig.get() == policy_iter->get()) {
+            cc->setCtx(ctx);
           }
         }
       }
@@ -1903,7 +1907,7 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
       single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, policy_iter->get(), iter->second);
+      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, policy_iter->get());
       for (auto const &loadingctx : ctxs) {
         shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
 
