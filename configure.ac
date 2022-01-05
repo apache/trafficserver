@@ -1309,6 +1309,7 @@ AC_CHECK_FUNCS([ \
   X509_get0_signature \
   ERR_get_error_all \
   SHA1 \
+  SSL_SESSION_dup \
 ])
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
