@@ -619,15 +619,22 @@ svto_radix(ts::TextView &src)
 {
   static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
   uintmax_t zret{0};
-  uintmax_t v;
-  while (src.size() && (0 <= (v = ts::svtoi_convert[static_cast<unsigned char>(*src)])) && v < N) {
+
+  if (src.empty()) {
+    return zret;
+  }
+
+  uintmax_t v = ts::svtoi_convert[static_cast<unsigned char>(*src)];
+  while (src.size() && v < N) {
     auto n = zret * N + v;
     if (n < zret) { // overflow / wrap
       return std::numeric_limits<uintmax_t>::max();
     }
     zret = n;
     ++src;
+    v = ts::svtoi_convert[static_cast<unsigned char>(*src)];
   }
+
   return zret;
 };
 
