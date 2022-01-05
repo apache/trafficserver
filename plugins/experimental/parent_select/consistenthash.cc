@@ -516,8 +516,10 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
       // try other rings per per the ring mode
       switch (ring_mode) {
       case PL_NH_ALTERNATE_RING:
-        if (groups > 0) {
+        if (pRec && groups > 0) {
           cur_ring = (pRec->group_index + 1) % groups;
+        } else {
+          cur_ring = 0;
         }
         break;
       case PL_NH_EXHAUST_RING:
