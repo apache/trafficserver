@@ -392,7 +392,7 @@ engine.
 
 :ts:cv:`proxy.config.ssl.handshake_timeout_in` configures the time, in seconds,
 after which incoming client connections will abort should the SSL handshake not
-be completed. The default of ``0`` disables the timeout.
+be completed. A value of ``0`` will disable the timeout.
 
 When :ref:`admin-ocsp-stapling` is enabled in |TS|, you can configure two
 separate timeouts; one for setting the length of time which cached OCSP results
@@ -406,7 +406,7 @@ cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
 
 ::
 
-    CONFIG proxy.config.ssl.handshake_timeout_in INT 0
+    CONFIG proxy.config.ssl.handshake_timeout_in INT 30
     CONFIG proxy.config.ssl.ocsp.cache_timeout INT 3600
     CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
     CONFIG proxy.config.ssl.session_cache.timeout INT 0
