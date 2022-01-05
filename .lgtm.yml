@@ -14,7 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
+path_classifiers:
+  3rd-party:
+    - "lib/fastlz"
+    - "lib/yamlcpp"
+    - "tests/include/catch.hpp"
+queries:
+  - exclude:
+      tags:
+        - "3rd-party"
 extraction:
   cpp:
     prepare:
