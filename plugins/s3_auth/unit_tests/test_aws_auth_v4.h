@@ -123,7 +123,7 @@ String base16Encode(const char *in, size_t inLen);
 String uriEncode(const String &in, bool isObjectName = false);
 bool isUriEncoded(const String &in, bool isObjectName = false);
 String lowercase(const char *in, size_t inLen);
-const char *trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen);
+String trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen);
 
 String getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSet &includeHeaders,
                                      const StringSet &excludeHeaders, String &signedHeaders);
