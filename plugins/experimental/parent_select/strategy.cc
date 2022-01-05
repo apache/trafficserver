@@ -47,12 +47,13 @@
 //
 
 // ring mode strings
-constexpr std::string_view alternate_rings = "alternate_ring";
-constexpr std::string_view exhaust_rings   = "exhaust_ring";
+const std::string_view alternate_rings = "alternate_ring";
+const std::string_view exhaust_rings   = "exhaust_ring";
+const std::string_view peering_rings   = "peering_ring";
 
 // health check strings
-constexpr std::string_view active_health_check  = "active";
-constexpr std::string_view passive_health_check = "passive";
+const std::string_view active_health_check  = "active";
+const std::string_view passive_health_check = "passive";
 
 PLNextHopSelectionStrategy::PLNextHopSelectionStrategy(const std::string_view &name)
 {
@@ -96,6 +97,10 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
       ignore_self_detect = n["ignore_self_detect"].as<bool>();
     }
 
+    if (n["cache_peer_result"]) {
+      cache_peer_result = n["cache_peer_result"].as<bool>();
+    }
+
     // failover node.
     YAML::Node failover_node;
     if (n["failover"]) {
@@ -106,6 +111,8 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
           ring_mode = PL_NH_ALTERNATE_RING;
         } else if (ring_mode_val == exhaust_rings) {
           ring_mode = PL_NH_EXHAUST_RING;
+        } else if (ring_mode_val == peering_rings) {
+          ring_mode = PL_NH_PEERING_RING;
         } else {
           ring_mode = PL_NH_ALTERNATE_RING;
           PL_NH_Note("Invalid 'ring_mode' value, '%s', for the strategy named '%s', using default '%s'.", ring_mode_val.c_str(),
