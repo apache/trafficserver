@@ -116,6 +116,10 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
         max_simple_retries = failover_node["max_simple_retries"].as<int>();
       }
 
+      if (failover_node["max_unavailable_retries"]) {
+        max_unavailable_retries = failover_node["max_unavailable_retries"].as<int>();
+      }
+
       YAML::Node resp_codes_node;
       // connection failures are always failure and retryable (pending retries)
       resp_codes.add(STATUS_CONNECTION_FAILURE);
@@ -134,6 +138,24 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
             }
           }
           resp_codes.sort();
+        }
+      }
+      YAML::Node markdown_codes_node;
+      if (failover_node["markdown_codes"]) {
+        markdown_codes_node = failover_node["markdown_codes"];
+        if (markdown_codes_node.Type() != YAML::NodeType::Sequence) {
+          PL_NH_Error("Error in the markdown_codes definition for the strategy named '%s', skipping markdown_codes.",
+                      strategy_name.c_str());
+        } else {
+          for (auto &&k : markdown_codes_node) {
+            auto code = k.as<int>();
+            if (code > 300 && code < 599) {
+              markdown_codes.add(code);
+            } else {
+              PL_NH_Note("Skipping invalid markdown response code '%d' for the strategy named '%s'.", code, strategy_name.c_str());
+            }
+          }
+          markdown_codes.sort();
         }
       }
       YAML::Node health_check_node;
@@ -235,20 +257,21 @@ PLNextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
 bool
 PLNextHopSelectionStrategy::codeIsFailure(TSHttpStatus response_code)
 {
-  return this->resp_codes.contains(response_code);
+  return this->resp_codes.contains(response_code) || this->markdown_codes.contains(response_code);
 }
 
 bool
 PLNextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code)
 {
-  return this->codeIsFailure(response_code) && current_retry_attempts < this->max_simple_retries &&
-         current_retry_attempts < this->num_parents;
+  return (current_retry_attempts < this->num_parents) &&
+         ((this->resp_codes.contains(response_code) && current_retry_attempts < this->max_simple_retries) ||
+          (this->markdown_codes.contains(response_code) && current_retry_attempts < this->max_unavailable_retries));
 }
 
 bool
 PLNextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code)
 {
-  return static_cast<int>(response_code) >= 500 && static_cast<int>(response_code) <= 599;
+  return this->markdown_codes.contains(response_code);
 }
 
 bool
