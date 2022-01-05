@@ -342,7 +342,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
   }
 
   // Duplicate the session from the connection, we'll be keeping track the ref-count with a shared pointer ourself
-  SSL_SESSION *sess_ptr = SSL_SESSION_dup(sess);
+  SSL_SESSION *sess_ptr = SSLSessionDup(sess);
 
   if (is_debug_tag_set("ssl.origin_session_cache")) {
     Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess_ptr);

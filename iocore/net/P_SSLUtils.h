@@ -53,6 +53,8 @@ typedef uint16_t ssl_curve_id;
 // Return the SSL Curve ID associated to the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
 
+SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
+
 enum class SSLCertContextType;
 
 struct SSLLoadingContext {

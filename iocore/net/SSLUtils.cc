@@ -2635,3 +2635,27 @@ SSLGetCurveNID(SSL *ssl)
   return SSL_get_curve_id(ssl);
 #endif
 }
+
+SSL_SESSION *
+SSLSessionDup(SSL_SESSION *sess)
+{
+#ifdef HAVE_SSL_SESSION_DUP
+  return SSL_SESSION_dup(sess);
+#else
+  SSL_SESSION *duplicated = nullptr;
+  int len = i2d_SSL_SESSION(sess, nullptr);
+  if (len < 0) {
+    return nullptr;
+  }
+  uint8_t *buf = static_cast<uint8_t *>(alloca(len));
+  uint8_t **tmp = &buf;
+
+  i2d_SSL_SESSION(sess, tmp);
+  tmp = &buf;
+  if (d2i_SSL_SESSION(&duplicated, const_cast<const uint8_t **>(tmp), len) == nullptr) {
+    return nullptr;
+  }
+
+  return duplicated;
+#endif
+}
