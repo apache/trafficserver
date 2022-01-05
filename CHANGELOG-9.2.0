@@ -348,7 +348,6 @@ Changes with Apache Traffic Server 9.2.0
   #8492 - When checking for SSL_set1_verify_cert_store, save/restore LIBS before manipulating LIBS
   #8497 - Block TS startup if configured body factory directory does not exist.
   #8499 - tests: Adjust generated file paths to work within some restricted environments
-  #8502 - build: fix detection of boringocsp
   #8506 - Add proxy.config.http2.stream_error_sampling_threshold
   #8507 - Add skipped log entries to troubleshooting FAQ in docs.
   #8508 - Makes proxy_serve_stale version independent
@@ -358,5 +357,8 @@ Changes with Apache Traffic Server 9.2.0
   #8524 - Set an appropriate callback function for OpenSSL 3
   #8525 - Remove unused function "ats_mallopt"
   #8532 - Adds autest to test error cases loading ssl_multicert.config
+  #8537 - docs: fix fedora install notes and spelling issues
   #8540 - Enable conf_remap_float test and remove special case for local config file
   #8541 - Eliminate unused code in LogObject.
+  #8550 - TSUserArg: add value type checking
+  #8556 - Fixes macOS arm64 builds (again)
