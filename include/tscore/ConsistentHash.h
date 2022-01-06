@@ -32,8 +32,8 @@
  */
 
 struct ATSConsistentHashNode {
-  std::atomic<bool> available;
-  char *name;
+  std::atomic<bool> available{true};
+  char *name{nullptr};
 };
 
 std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing);
