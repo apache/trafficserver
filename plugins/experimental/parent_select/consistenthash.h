@@ -63,6 +63,10 @@ class PLNextHopConsistentHash : public PLNextHopSelectionStrategy
   std::vector<std::shared_ptr<ATSConsistentHash>> rings;
   uint64_t getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, TSMLoc parent_selection_url, ATSHash64 *h);
 
+  std::shared_ptr<PLHostRecord> chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring,
+                                            PLNextHopConsistentHashTxn *state, bool *wrapped, uint64_t sm_id, TSMBuffer reqp,
+                                            TSMLoc url, TSMLoc parent_selection_url);
+
 public:
   const uint32_t LineNumberPlaceholder = 99999;
 
