@@ -54,11 +54,6 @@ obj_describe(HdrHeapObjImpl *obj, bool recurse)
   Debug("http", "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
         obj->m_obj_flags);
 
-  extern void url_describe(HdrHeapObjImpl * obj, bool recurse);
-  extern void http_hdr_describe(HdrHeapObjImpl * obj, bool recurse);
-  extern void mime_hdr_describe(HdrHeapObjImpl * obj, bool recurse);
-  extern void mime_field_block_describe(HdrHeapObjImpl * obj, bool recurse);
-
   switch (obj->m_type) {
   case HDR_HEAP_OBJ_EMPTY:
     break;
