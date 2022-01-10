@@ -2664,6 +2664,16 @@ void
 HttpTransact::CallOSDNSLookup(State *s)
 {
   TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
+  if (s->state_machine->ua_txn->is_outbound_transparent()) {
+    // No DNS lookup if outbound transparent
+    find_server_and_update_current_info(s);
+    if (!s->hdr_info.server_request.valid()) {
+      build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
+    }
+    // what kind of a connection (raw, simple)
+    s->next_action = how_to_open_connection(s);
+    return;
+  }
   HostStatus &pstatus = HostStatus::instance();
   HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {

@@ -158,7 +158,7 @@ ProxyTransaction::set_outbound_ip(const IpAddr &new_addr)
 bool
 ProxyTransaction::is_outbound_transparent() const
 {
-  return upstream_outbound_options.f_outbound_transparent;
+  return _proxy_ssn->is_outbound_transparent();
 }
 
 void

@@ -100,6 +100,8 @@ public:
   virtual void increment_current_active_connections_stat() = 0;
   virtual void decrement_current_active_connections_stat() = 0;
 
+  virtual bool is_outbound_transparent() const;
+
   // Virtual Accessors
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
