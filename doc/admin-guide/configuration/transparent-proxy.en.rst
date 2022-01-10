@@ -84,31 +84,15 @@ Standard build procedures should work for transparency support but if
 not consult these :ref:`more detailed instructions <building-ats-for-transparency>`.
 
 Transparency is configured per server port, not globally. This is done
-via the configuration values :ts:cv:`proxy.config.http.server_ports`.
-In addition, :ts:cv:`proxy.config.reverse_proxy.enabled` must be enabled if the
-client side is transparent. That should be fixed in a future patch.
-
-.. XXX has that been fixed?
-
-.. XXX revisit section below
-
-In the first case use the attribute character (replacing the default
-'X')
-
-**Attribute** **Transparency Style** **Reverse Proxy**
-
-``=``
-    Full transparency: either
-
-``>``
-    Inbound (client) transparency: enabled
-
-``<``
-    Outbound (origin server) transparency: either
+via the configuration values :ts:cv:`proxy.config.http.server_ports`, specifically tr-in, tr-full, and tr-out.
 
 In the outbound transparent case clients must connect directly to ATS
 either through an explicit proxy mechanism or by advertising the IP
 address of the ATS server via DNS as the origin server address.
+
+The :ts:cv:`proxy.config.http.use_client_target_addr` should also be reviewed when setting up and outbound
+transparent scenario.  If |TS| has the same DNS as the client, options 1 and 2 can be used. Otherwise, 
+option 2 must be used.
 
 Some tested scenarios --
 

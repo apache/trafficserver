@@ -1121,10 +1121,10 @@ mptcp
          in the set of addresses found by the proxy, the request continues to
          the client specified address, but the result is not cached.
    ``2`` Enables the feature with no address verification. No DNS processing is
-         performed. The result is cached (if allowed otherwise). This option is
-         vulnerable to cache poisoning if an incorrect ``Host`` header is
-         specified, so this option should be used with extreme caution.  See
-         bug TS-2954 for details.
+         performed. The result is cached (if allowed otherwise). 
+         This option is vulnerable to cache poisoning if an incorrect ``Host`` header is
+         specified, so this option should be used with extreme caution if HTTP caching is 
+         enabled.  See bug TS-2954 for details.
    ===== ======================================================================
 
    If all of these conditions are met, then the origin server IP address is
