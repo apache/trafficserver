@@ -5110,7 +5110,7 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   // Check for self loop.
-  if (HttpTransact::will_this_request_self_loop(&t_state)) {
+  if (!ua_txn->is_outbound_transparent() && HttpTransact::will_this_request_self_loop(&t_state)) {
     call_transact_and_set_next_state(HttpTransact::SelfLoop);
     return;
   }
