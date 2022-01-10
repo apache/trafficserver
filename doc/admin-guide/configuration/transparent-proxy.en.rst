@@ -1,5 +1,7 @@
 .. _transparent-proxy:
 
+.. include:: ../../common.defs
+
 Transparent Proxying
 ********************
 
@@ -91,7 +93,7 @@ either through an explicit proxy mechanism or by advertising the IP
 address of the ATS server via DNS as the origin server address.
 
 The :ts:cv:`proxy.config.http.use_client_target_addr` should also be reviewed when setting up and outbound
-transparent scenario.  If |TS| has the same DNS as the client, options 1 and 2 can be used. Otherwise, 
+transparent scenario.  If |TS| has the same DNS as the client, options 1 and 2 can be used. Otherwise,
 option 2 must be used.
 
 Some tested scenarios --
