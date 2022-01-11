@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "ts/parentselectdefs.h"
 #include "ParentSelection.h"
 #include "HttpTransact.h"
@@ -103,64 +105,27 @@ struct NHProtocol {
   std::string health_check_url;
 };
 
-struct HostRecord : ATSConsistentHashNode {
-  std::mutex _mutex;
+struct HostRecordCfg {
   std::string hostname;
-  std::atomic<time_t> failedAt;
-  std::atomic<uint32_t> failCount;
-  std::atomic<time_t> upAt;
-  float weight;
-  std::string hash_string;
-  int host_index;
-  int group_index;
-  bool self = false;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
+  float weight{0};
+  std::string hash_string;
+};
 
-  // construct without locking the _mutex.
-  HostRecord()
-  {
-    hostname    = "";
-    failedAt    = 0;
-    failCount   = 0;
-    upAt        = 0;
-    weight      = 0;
-    hash_string = "";
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
-  }
+struct HostRecord : public ATSConsistentHashNode, public HostRecordCfg {
+  std::mutex _mutex;
+  std::atomic<time_t> failedAt{0};
+  std::atomic<uint32_t> failCount{0};
+  std::atomic<time_t> upAt{0};
+  int host_index{-1};
+  int group_index{-1};
+  bool self{false};
 
-  // copy constructor to avoid copying the _mutex.
-  HostRecord(const HostRecord &o)
-  {
-    hostname    = o.hostname;
-    failedAt    = o.failedAt.load();
-    failCount   = o.failCount.load();
-    upAt        = o.upAt.load();
-    weight      = o.weight;
-    hash_string = o.hash_string;
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
-    protocols   = o.protocols;
-  }
+  explicit HostRecord(HostRecordCfg &&o) : HostRecordCfg(std::move(o)) {}
 
-  // assign without copying the _mutex.
-  HostRecord &
-  operator=(const HostRecord &o)
-  {
-    hostname    = o.hostname;
-    failedAt    = o.failedAt.load();
-    failCount   = o.failCount.load();
-    upAt        = o.upAt.load();
-    weight      = o.weight;
-    hash_string = o.hash_string;
-    host_index  = o.host_index;
-    group_index = o.group_index;
-    available   = o.available.load();
-    protocols   = o.protocols;
-    return *this;
-  }
+  // No copying or moving.
+  HostRecord(const HostRecord &) = delete;
+  HostRecord &operator=(const HostRecord &) = delete;
 
   // locks the record when marking this host down.
   void

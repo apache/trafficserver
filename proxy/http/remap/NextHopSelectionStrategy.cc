@@ -211,7 +211,7 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
             std::vector<std::shared_ptr<HostRecord>> hosts_inner;
 
             for (unsigned int hst = 0; hst < hosts_list.size(); ++hst) {
-              std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
+              std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecordCfg>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if ((self_host == host_rec->hostname) || mach->is_self(host_rec->hostname.c_str())) {
@@ -311,9 +311,9 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
 
 namespace YAML
 {
-template <> struct convert<HostRecord> {
+template <> struct convert<HostRecordCfg> {
   static bool
-  decode(const Node &node, HostRecord &nh)
+  decode(const Node &node, HostRecordCfg &nh)
   {
     ts::Yaml::Map map{node};
     ts::Yaml::Map *mmap{&map};
