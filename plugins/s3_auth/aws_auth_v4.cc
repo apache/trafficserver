@@ -168,18 +168,19 @@ canonicalEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief trim the white-space character from the beginning and the end of the string ("in-place", just moving pointers around)
+ * @brief Trim white spaces from beginning and end. Squeeze consecutive spaces from middle.
+ *
+ * @see AWS spec: https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
  *
  * @param in ptr to an input string
  * @param inLen input character count
- * @param newLen trimmed string character count.
  * @return pointer to the trimmed string.
  */
-const char *
-trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen)
+std::string
+trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen)
 {
   if (nullptr == in || inLen == 0) {
-    return in;
+    return std::string(in, inLen);
   }
 
   const char *first = in;
@@ -192,8 +193,22 @@ trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen)
     last--;
   }
 
-  newLen = last - first + 1;
-  return first;
+  std::stringstream result;
+  int consecutiveSpaces = 0;
+  while (first <= last) {
+    if (*first == ' ') {
+      consecutiveSpaces++;
+    } else {
+      if (consecutiveSpaces > 0) {
+        result << ' ';
+      }
+      consecutiveSpaces = 0;
+      result << *first;
+    }
+    first++;
+  }
+
+  return result.str();
 }
 
 /**
@@ -381,14 +396,13 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
       }
     }
 
-    size_t trimValueLen   = 0;
-    const char *trimValue = trimWhiteSpaces(value, valueLen, trimValueLen);
+    std::string trimValue = trimWhiteSpacesAndSqueezeInnerSpaces(value, valueLen);
 
     signedHeadersSet.insert(lowercaseName);
     if (headersMap.find(lowercaseName) == headersMap.end()) {
-      headersMap[lowercaseName] = String(trimValue, trimValueLen);
+      headersMap[lowercaseName] = trimValue;
     } else {
-      headersMap[lowercaseName].append(",").append(String(trimValue, trimValueLen));
+      headersMap[lowercaseName].append(",").append(trimValue);
     }
   }
 
