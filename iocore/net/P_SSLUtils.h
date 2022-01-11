@@ -181,8 +181,7 @@ public:
   virtual SSL_CTX *default_server_ssl_ctx();
 
   virtual std::vector<SSLLoadingContext> init_server_ssl_ctx(CertLoadData const &data,
-                                                             const SSLMultiCertConfigParams *sslMultCertSettings,
-                                                             std::set<std::string> &names);
+                                                             const SSLMultiCertConfigParams *sslMultCertSettings);
 
   static bool load_certs(SSL_CTX *ctx, const std::vector<std::string> &cert_names_list,
                          const std::vector<std::string> &key_names_list, CertLoadData const &data, const SSLConfigParams *params,
