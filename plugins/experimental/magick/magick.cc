@@ -209,7 +209,7 @@ verify(const byte *const msg, const size_t mlen, const byte *const sig, const si
   assert(0 < slen);
   assert(nullptr != pkey);
 
-  if (nullptr == msg || 0 == mlen || nullptr == sig || 0 == slen || nullptr == pkey) {
+  if (nullptr == msg || 0 == mlen || nullptr == sig || 0 == slen || nullptr == pkey) { // lgtm[cpp/constant-comparison]
     return false;
   }
 

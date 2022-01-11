@@ -227,7 +227,7 @@ LayoutEngine::create_runroot()
     empty_check_directory = ts_runroot;
     if (ftw(ts_runroot.c_str(), check_directory_empty, OPEN_MAX_FILE) != 0) {
       // if the directory is not empty, check for valid Y/N
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; true; i++) {
         std::cout << "Are you sure to create runroot inside a non-empty directory Y/N: ";
         std::string input;
         std::cin >> input;

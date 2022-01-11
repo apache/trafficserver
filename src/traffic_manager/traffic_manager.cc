@@ -175,11 +175,15 @@ is_server_idle_from_new_connection()
 {
   RecInt active    = 0;
   RecInt threshold = 0;
-  // TODO implement with the right metric
 
   Debug("lm", "%" PRId64 " active clients, threshold is %" PRId64, active, threshold);
 
+#if 0
+  // TODO implement with the right metric
   return active <= threshold;
+#else
+  return true;
+#endif
 }
 
 static bool

@@ -3777,19 +3777,17 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   url_expected_length =
     strlen(scheme) + strlen("://") + ((user == nullptr) ? 0 : strlen(user)) +
     ((password == nullptr) ? ((user == nullptr) ? 0 : strlen("@")) : strlen(":") + strlen(password) + strlen("@")) + strlen(host) +
-    ((port == 80) ? 0 : strlen(port_char) + strlen(":")) + strlen("/") + strlen(path) +
-    ((params == nullptr) ? 0 : strlen(";") + strlen(params)) + ((query == nullptr) ? 0 : strlen("?") + strlen(query)) +
-    ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
+    strlen(port_char) + strlen(":") + strlen("/") + strlen(path) + ((params == nullptr) ? 0 : strlen(";") + strlen(params)) +
+    ((query == nullptr) ? 0 : strlen("?") + strlen(query)) + ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
 
   size_t len          = url_expected_length + 1;
   url_expected_string = static_cast<char *>(TSmalloc(len * sizeof(char)));
   memset(url_expected_string, 0, url_expected_length + 1);
   snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s%s%s", scheme, ((user == nullptr) ? "" : user),
            ((password == nullptr) ? "" : ":"), ((password == nullptr) ? "" : password),
-           (((user == nullptr) && (password == nullptr)) ? "" : "@"), host, ((port == 80) ? "" : ":"),
-           ((port == 80) ? "" : port_char), ((path == nullptr) ? "" : path), ((params == nullptr) ? "" : ";"),
-           ((params == nullptr) ? "" : params), ((query == nullptr) ? "" : "?"), ((query == nullptr) ? "" : query),
-           ((fragment == nullptr) ? "" : "#"), ((fragment == nullptr) ? "" : fragment));
+           (((user == nullptr) && (password == nullptr)) ? "" : "@"), host, ":", port_char, ((path == nullptr) ? "" : path),
+           ((params == nullptr) ? "" : ";"), ((params == nullptr) ? "" : params), ((query == nullptr) ? "" : "?"),
+           ((query == nullptr) ? "" : query), ((fragment == nullptr) ? "" : "#"), ((fragment == nullptr) ? "" : fragment));
 
   // Set Functions
 
