@@ -1,6 +1,23 @@
-.. _transparent-proxy:
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. include:: ../../common.defs
+
+.. _transparent-proxy:
 
 Transparent Proxying
 ********************
@@ -92,7 +109,7 @@ In the outbound transparent case clients must connect directly to ATS
 either through an explicit proxy mechanism or by advertising the IP
 address of the ATS server via DNS as the origin server address.
 
-The :ts:cv:`proxy.config.http.use_client_target_addr` should also be reviewed when setting up and outbound
+The :ts:cv:`proxy.config.http.use_client_target_addr` should also be reviewed when setting up an outbound
 transparent scenario.  If |TS| has the same DNS as the client, options 1 and 2 can be used. Otherwise,
 option 2 must be used.
 
