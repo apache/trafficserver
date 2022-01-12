@@ -118,12 +118,7 @@ Developer List
     Send an email to ``dev-subscribe@trafficserver.apache.org`` to join the
     list.
 
-Internet Relay Chat (IRC)
--------------------------
+Slack
+-----
 
-The ``#traffic-server`` channel on ``irc.freenode.net`` is the official IRC
-resource for the |TS| project, and boasts active discussions.
-
-Community Forums
-----------------
-
+The `traffic-server <https://the-asf.slack.com/archives/CHQ1FJ9EG>`_ channel on the |ASF| `Slack <https://infra.apache.org/slack.html>`_ is the official live chat resource for the |TS| project, and boasts active discussions.
