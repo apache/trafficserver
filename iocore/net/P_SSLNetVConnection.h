@@ -459,6 +459,7 @@ private:
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
+  bool first_ssl_connect                     = true;
   MIOBuffer *handShakeBuffer                 = nullptr;
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
