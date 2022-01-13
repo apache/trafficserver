@@ -474,7 +474,7 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
 
       // search new param again
       const char *new_param = strchr(lookup_query_param + field_pos, '&');
-      if (new_param && (new_param + 1)) {
+      if (new_param && *(new_param + 1)) {
         pattern_in_param_name = findPatternFromParamName(new_param + 1, pattern);
       } else {
         break;
