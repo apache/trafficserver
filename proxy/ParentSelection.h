@@ -43,6 +43,7 @@
 #include <vector>
 
 #define MAX_PARENTS 64
+#define DEFAULT_PARENT_WEIGHT 1.0
 
 struct RequestData;
 struct matcher_line;

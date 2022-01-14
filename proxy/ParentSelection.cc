@@ -446,7 +446,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   int port            = 0;
   char *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
   const char *errPtr = nullptr;
-  float weight       = 1.0;
+  float weight       = DEFAULT_PARENT_WEIGHT;
 
   if (parents != nullptr && isPrimary == true) {
     return "Can not specify more than one set of parents";
@@ -470,6 +470,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   // Loop through the set of parents specified
   //
   for (int i = 0; i < numTok; i++) {
+    weight  = DEFAULT_PARENT_WEIGHT; // reset weight to the default
     current = pTok[i];
 
     // Find the parent port
