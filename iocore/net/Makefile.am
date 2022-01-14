@@ -191,6 +191,7 @@ libinknet_a_SOURCES = \
 	SSLUtils.cc \
 	OCSPStapling.cc \
 	TLSBasicSupport.cc \
+	TLSEarlyDataSupport.cc \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
 	UDPIOEvent.cc \
