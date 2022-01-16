@@ -83,7 +83,7 @@ sessions:
         transfer: plain
         encoding: uri
         # Chunk header sizes are in hex, so a size of `z` is malformed.
-        data: z%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: z%0D%0Adef%0D%0A0%0D%0A%0D%0A
 
 - transactions:
   - client-request:
@@ -106,4 +106,4 @@ sessions:
         transfer: plain
         encoding: uri
         # Super large chunk header, larger than will fit in an int.
-        data: 111111113%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 111111113%0D%0Adef%0D%0A0%0D%0A%0D%0A
