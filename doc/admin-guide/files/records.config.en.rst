@@ -3979,6 +3979,9 @@ TLS v1.3 0-RTT Configuration
 
    Setting to ``0`` effectively disables 0-RTT.
 
+   If you use BoringSSL, setting a value grater than 0 enables early data but the value won't be used to limit the
+   maximum amount of early data.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
 
    Set to ``1`` to allow HTTP parameters on early data requests.
