@@ -226,6 +226,7 @@ private:
   virtual bool _set_alpn_callback(SSL_CTX *ctx);
   virtual bool _set_keylog_callback(SSL_CTX *ctx);
   virtual bool _enable_ktls(SSL_CTX *ctx);
+  virtual bool _enable_early_data(SSL_CTX *ctx);
 };
 
 // Create a new SSL server context fully configured (cert and keys are optional).
