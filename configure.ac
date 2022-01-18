@@ -805,7 +805,7 @@ AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
 AC_PATH_PROG([PERL], [perl],[not found])
 AS_IF([test "x$PERL" = "xnot found"],
-  [AC_MSG_ERROR([check for perl failed. Have you installed perl?])]
+  BUILD_PERL_LIB=false
 )
 AC_ARG_VAR([DOXYGEN], [full path of Doxygen executable])
 AC_ARG_VAR([PERL], [full path of Perl executable])
