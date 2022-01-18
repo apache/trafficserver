@@ -327,9 +327,11 @@ freelist_free(InkFreeList *f, void *item)
 static void
 malloc_free(InkFreeList *f, void *item)
 {
-  // Avoid compiler warnings
-  (void)f;
-  ats_free(item);
+  if (f->alignment) {
+    jna.deallocate(f, item);
+  } else {
+    ats_free(item);
+  }
 }
 
 void

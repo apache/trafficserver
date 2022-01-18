@@ -67,6 +67,7 @@ class JemallocNodumpAllocator
 {
 public:
   void *allocate(InkFreeList *f);
+  void deallocate(InkFreeList *f, void *ptr);
 
 private:
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
