@@ -1,13 +1,15 @@
 ``
-- "connection": "keep-alive"
+connection: keep-alive
 ``
-- "Connection": "close"
+Connection: close
 ``
-``content: 0000000 0000001 0000002 0000003 
+``content:
+0000000 0000001 0000002 0000003 
 ``
-- "connection": "keep-alive"
+connection: keep-alive
 ``
-- "Connection": "close"
+Connection: close
 ``
-``content: 0000000 0000001 0000002 0000003 
+``content:
+0000000 0000001 0000002 0000003 
 ``

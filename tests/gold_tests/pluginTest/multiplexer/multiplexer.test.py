@@ -55,46 +55,46 @@ class MultiplexerTestBase:
 
         # The origin should never receive "X-Multiplexer: copy"
         self.server_origin.Streams.All += Testers.ExcludesExpression(
-            '"X-Multiplexer": "copy"',
+            'X-Multiplexer: copy',
             'Verify the original server target never receives a "copy".')
 
         # Nor should the multiplexed hosts receive an "original" X-Multiplexer value.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            '"X-Multiplexer": "original"',
+            'X-Multiplexer: original',
             'Verify the HTTP multiplexed host does not receive an "original".')
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            '"X-Multiplexer": "original"',
+            'X-Multiplexer: original',
             'Verify the HTTPS multiplexed host does not receive an "original".')
 
         # In addition, the original server should always receive the POST and
         # PUT requests.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            '"uuid": "POST"',
+            'uuid: POST',
             "Verify the client's original target received the POST transaction.")
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            '"uuid": "PUT"',
+            'uuid: PUT',
             "Verify the client's original target received the PUT transaction.")
 
         # Under all configurations, the GET request should be multiplexed.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            '"X-Multiplexer": "original"',
+            'X-Multiplexer: original',
             'Verify the client\'s original target received the "original" request.')
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            '"uuid": "GET"',
+            'uuid: GET',
             "Verify the client's original target received the GET request.")
 
         self.server_http.Streams.All += Testers.ContainsExpression(
-            '"X-Multiplexer": "copy"',
+            'X-Multiplexer: copy',
             'Verify the HTTP server received a "copy" of the request.')
         self.server_http.Streams.All += Testers.ContainsExpression(
-            '"uuid": "GET"',
+            'uuid: GET',
             "Verify the HTTP server received the GET request.")
 
         self.server_https.Streams.All += Testers.ContainsExpression(
-            '"X-Multiplexer": "copy"',
+            'X-Multiplexer: copy',
             'Verify the HTTPS server received a "copy" of the request.')
         self.server_https.Streams.All += Testers.ContainsExpression(
-            '"uuid": "GET"',
+            'uuid: GET',
             "Verify the HTTPS server received the GET request.")
 
         # Verify that the HTTPS server receives a TLS connection.
@@ -168,18 +168,18 @@ class MultiplexerTest(MultiplexerTestBase):
         # Both of the multiplexed hosts should receive the POST because skip_post
         # is disabled.
         self.server_http.Streams.All += Testers.ContainsExpression(
-            '"uuid": "POST"',
+            'uuid: POST',
             "Verify the HTTP server received the POST request.")
         self.server_https.Streams.All += Testers.ContainsExpression(
-            '"uuid": "POST"',
+            'uuid: POST',
             "Verify the HTTPS server received the POST request.")
 
         # Same with PUT
         self.server_http.Streams.All += Testers.ContainsExpression(
-            '"uuid": "PUT"',
+            'uuid: PUT',
             "Verify the HTTP server received the PUT request.")
         self.server_https.Streams.All += Testers.ContainsExpression(
-            '"uuid": "PUT"',
+            'uuid: PUT',
             "Verify the HTTPS server received the PUT request.")
 
 
@@ -203,18 +203,18 @@ class MultiplexerSkipPostTest(MultiplexerTestBase):
         # Neither of the multiplexed hosts should receive the POST because skip_post
         # is enabled.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            '"uuid": "POST"',
+            'uuid: POST',
             "Verify the HTTP server did not receive the POST request.")
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            '"uuid": "POST"',
+            'uuid: POST',
             "Verify the HTTPS server did not receive the POST request.")
 
         # Same with PUT.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            '"uuid": "PUT"',
+            'uuid: PUT',
             "Verify the HTTP server did not receive the PUT request.")
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            '"uuid": "PUT"',
+            'uuid: PUT',
             "Verify the HTTPS server did not receive the PUT request.")
 
 
