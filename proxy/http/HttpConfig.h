@@ -678,11 +678,13 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////
   // parent proxy connect attempts //
   ///////////////////////////////////
-  MgmtInt parent_connect_attempts     = 4;
-  MgmtInt parent_retry_time           = 300;
-  MgmtInt parent_fail_threshold       = 10;
-  MgmtInt per_parent_connect_attempts = 2;
-  MgmtInt parent_connect_timeout      = 30;
+  MgmtInt parent_connect_attempts          = 4;
+  MgmtInt parent_retry_time                = 300;
+  MgmtInt parent_fail_threshold            = 10;
+  MgmtInt per_parent_connect_attempts      = 2;
+  MgmtInt parent_connect_timeout           = 30;
+  MgmtByte enable_parent_timeout_markdowns = 0;
+  MgmtByte disable_parent_markdowns        = 0;
 
   MgmtInt down_server_timeout    = 300;
   MgmtInt client_abort_threshold = 1000;
