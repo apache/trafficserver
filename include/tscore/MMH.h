@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "tscore/ink_code.h"
 #include "tscore/ink_defs.h"
 #include "tscore/CryptoHash.h"
 

@@ -30,7 +30,6 @@
  *
  ***************************************************************************/
 #include "tscore/ink_platform.h"
-#include "tscore/ink_code.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ParseRules.h"
 #include <climits>

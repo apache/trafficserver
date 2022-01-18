@@ -56,7 +56,7 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_assert.h"
-#include "tscore/INK_MD5.h"
+#include "tscore/MD5.h"
 #include "tscore/ParseRules.h"
 #include "tscore/ink_time.h"
 #include "tscore/ink_args.h"
