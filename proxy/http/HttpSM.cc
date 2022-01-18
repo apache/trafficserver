@@ -593,8 +593,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-  if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
+  auto *tts = dynamic_cast<TLSTunnelSupport *>(netvc);
+  if (is_transparent_passthrough_allowed() || (tts && tts->is_decryption_needed())) {
     ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
   }
 
@@ -644,7 +644,7 @@ HttpSM::setup_blind_tunnel_port()
   NetVConnection *netvc = ua_txn->get_netvc();
   ink_release_assert(netvc);
   int host_len;
-  if (SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc)) {
+  if (auto *tts = dynamic_cast<TLSTunnelSupport *>(netvc)) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
       URL u;
@@ -655,16 +655,16 @@ HttpSM::setup_blind_tunnel_port()
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
 
-      if (ssl_vc->has_tunnel_destination()) {
-        const char *tunnel_host = ssl_vc->get_tunnel_host();
+      if (tts->has_tunnel_destination()) {
+        const char *tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
-        if (ssl_vc->get_tunnel_port() > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(ssl_vc->get_tunnel_port());
+        if (tts->get_tunnel_port() > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
+        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -1499,20 +1499,20 @@ plugins required to work with sni_routing.
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
 
-      NetVConnection *netvc     = ua_txn->get_netvc();
-      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      NetVConnection *netvc = ua_txn->get_netvc();
+      auto *tts             = dynamic_cast<TLSTunnelSupport *>(netvc);
 
-      if (ssl_vc && ssl_vc->has_tunnel_destination()) {
-        const char *tunnel_host = ssl_vc->get_tunnel_host();
+      if (tts && tts->has_tunnel_destination()) {
+        const char *tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
-        ushort tunnel_port = ssl_vc->get_tunnel_port();
+        ushort tunnel_port = tts->get_tunnel_port();
         if (tunnel_port > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
-      } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
+      } else if (tts) {
+        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -1661,9 +1661,9 @@ HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START: {
-    NetVConnection *netvc     = ua_txn->get_netvc();
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    bool forward_dest         = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    NetVConnection *netvc = ua_txn->get_netvc();
+    auto *tts             = dynamic_cast<TLSTunnelSupport *>(netvc);
+    bool forward_dest     = tts != nullptr && tts->is_decryption_needed();
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {
@@ -5284,15 +5284,17 @@ HttpSM::do_http_server_open(bool raw)
   int scheme_to_use = t_state.scheme; // get initial scheme
   bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
   if (ua_txn) {
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
-    if (ssl_vc && raw) {
-      tls_upstream = ssl_vc->upstream_tls();
-      _tunnel_type = ssl_vc->tunnel_type();
+    auto *tts = dynamic_cast<TLSTunnelSupport *>(ua_txn->get_netvc());
+    if (tts && raw) {
+      tls_upstream = tts->is_upstream_tls();
+      _tunnel_type = tts->get_tunnel_type();
 
       // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
       int pid = SessionProtocolNameRegistry::INVALID;
-      if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
-        pid = ssl_vc->get_negotiated_protocol_id();
+      if (tts->get_tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
+        auto *alpns = dynamic_cast<ALPNSupport *>(ua_txn->get_netvc());
+        ink_assert(alpns);
+        pid = alpns->get_negotiated_protocol_id();
         if (pid != SessionProtocolNameRegistry::INVALID) {
           opt.alpn_protos = SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(pid);
         }
@@ -5305,7 +5307,7 @@ HttpSM::do_http_server_open(bool raw)
       bool use_prewarm = prewarm_conf->enabled;
 
       // override "proxy.config.tunnel.prewarm" by "tunnel_prewarm" in sni.yaml
-      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = ssl_vc->tunnel_prewarm();
+      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = tts->get_tunnel_prewarm_configuration();
           sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
         use_prewarm = static_cast<bool>(sni_use_prewarm);
       }
@@ -5313,7 +5315,7 @@ HttpSM::do_http_server_open(bool raw)
       if (use_prewarm) {
         // TODO: avoid copy of string -> make map key std::variant
         PreWarm::SPtrConstDst dst =
-          std::make_shared<const PreWarm::Dst>(ssl_vc->get_tunnel_host(), ssl_vc->get_tunnel_port(),
+          std::make_shared<const PreWarm::Dst>(tts->get_tunnel_host(), tts->get_tunnel_port(),
                                                tls_upstream ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
 
         EThread *ethread = this_ethread();
@@ -6257,8 +6259,8 @@ HttpSM::attach_server_session()
   UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
 
   // set flag for server session is SSL
-  SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
-  if (server_ssl_vc) {
+  TLSBasicSupport *tbs = dynamic_cast<TLSBasicSupport *>(server_vc);
+  if (tbs) {
     server_connection_is_ssl = true;
   }
 

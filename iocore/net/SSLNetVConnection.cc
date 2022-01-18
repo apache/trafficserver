@@ -219,6 +219,7 @@ SSLNetVConnection::_bindSSLObject()
   TLSSessionResumptionSupport::bind(this->ssl, this);
   TLSSNISupport::bind(this->ssl, this);
   TLSEarlyDataSupport::bind(this->ssl, this);
+  TLSTunnelSupport::bind(this->ssl, this);
 }
 
 void
@@ -230,6 +231,7 @@ SSLNetVConnection::_unbindSSLObject()
   TLSSessionResumptionSupport::unbind(this->ssl);
   TLSSNISupport::unbind(this->ssl);
   TLSEarlyDataSupport::unbind(this->ssl);
+  TLSTunnelSupport::unbind(this->ssl);
 }
 
 static void
@@ -968,6 +970,7 @@ SSLNetVConnection::clear()
   TLSBasicSupport::clear();
   TLSSessionResumptionSupport::clear();
   TLSSNISupport::_clear();
+  TLSTunnelSupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslLastWriteTime            = 0;
@@ -990,8 +993,6 @@ SSLNetVConnection::free(EThread *t)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   }
   con.close();
-
-  ats_free(tunnel_host);
 
 #if TS_HAS_TLS_EARLY_DATA
   if (_early_data_reader != nullptr) {
@@ -1340,7 +1341,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
 
-    if (_tunnel_type != SNIRoutingType::NONE) {
+    if (this->get_tunnel_type() != SNIRoutingType::NONE) {
       // Foce to use HTTP/1.1 endpoint for SNI Routing
       if (!this->setSelectedProtocol(reinterpret_cast<const unsigned char *>(IP_PROTO_TAG_HTTP_1_1.data()),
                                      IP_PROTO_TAG_HTTP_1_1.size())) {
@@ -1364,7 +1365,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       }
 
       if (len) {
-        if (_tunnel_type == SNIRoutingType::NONE && !this->setSelectedProtocol(proto, len)) {
+        if (this->get_tunnel_type() == SNIRoutingType::NONE && !this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});

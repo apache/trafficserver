@@ -194,6 +194,7 @@ libinknet_a_SOURCES = \
 	TLSEarlyDataSupport.cc \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
+	TLSTunnelSupport.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \
