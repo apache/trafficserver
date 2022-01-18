@@ -244,6 +244,7 @@ Changes with Apache Traffic Server 9.2.0
   #8229 - uri_signing: address memory leak with the internal jwt struct
   #8231 - Upgrade Catch.hpp to v2.13.7
   #8232 - Updates yaml-cpp to 0.7.0
+  #8233 - Add --with-mimalloc option to build
   #8234 - Add debug message when there is a header parse error for http/2
   #8237 - Cleanup url_*_get/set functions
   #8240 - UglyLogStubs: properly fill out the Machine stub struct
@@ -360,5 +361,14 @@ Changes with Apache Traffic Server 9.2.0
   #8537 - docs: fix fedora install notes and spelling issues
   #8540 - Enable conf_remap_float test and remove special case for local config file
   #8541 - Eliminate unused code in LogObject.
+  #8545 - TSHttpTxnCacheLookupStatusGet: handle cannot respond cases
   #8550 - TSUserArg: add value type checking
   #8556 - Fixes macOS arm64 builds (again)
+  #8585 - Clean up of next hop HostRecord class.
+  #8586 - Eliminate erroneous self-loop error on transparent mode
+  #8593 - Fix transparent mode documentation
+  #8594 - Propagate accept options to HTTP/2
+  #8603 - LogFilter: fix NULL termination check
+  #8606 - Fixed a scoping bug that leads to "sticky" parent weights
+  #8608 - Update to Proxy Verifier version v2.3.0
+  #8609 - Don't use Http1ClientTransaction as an event handler
