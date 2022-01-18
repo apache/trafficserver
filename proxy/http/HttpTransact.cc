@@ -2762,12 +2762,13 @@ HttpTransact::need_to_revalidate(State *s)
     needs_revalidate = false;
   }
 
-  bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
+  s->cache_hit_but_revalidate =
+    ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
   if (needs_cache_auth == true) {
-    s->www_auth_content = send_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
-    send_revalidate     = true;
+    s->www_auth_content         = s->cache_hit_but_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
+    s->cache_hit_but_revalidate = true;
   }
-  return send_revalidate;
+  return s->cache_hit_but_revalidate;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2886,21 +2887,21 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // do we need to revalidate. in other words if the response
   // has to be authorized, is stale or can not be returned, do
   // a revalidate.
-  bool send_revalidate = (needs_authenticate || needs_revalidate || !response_returnable);
+  s->cache_hit_but_revalidate = (needs_authenticate || needs_revalidate || !response_returnable);
 
   if (needs_cache_auth == true) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-    s->www_auth_content = send_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
-    send_revalidate     = true;
+    s->www_auth_content         = s->cache_hit_but_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
+    s->cache_hit_but_revalidate = true;
   }
 
   TxnDebug("http_trans", "CacheOpenRead --- needs_auth          = %d", needs_authenticate);
   TxnDebug("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
   TxnDebug("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
   TxnDebug("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
-  TxnDebug("http_trans", "CacheOpenRead --- send_revalidate     = %d", send_revalidate);
+  TxnDebug("http_trans", "CacheOpenRead --- send_revalidate     = %d", s->cache_hit_but_revalidate);
 
-  if (send_revalidate) {
+  if (s->cache_hit_but_revalidate) {
     TxnDebug("http_trans", "CacheOpenRead --- HIT-STALE");
 
     TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
@@ -3002,7 +3003,8 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // realistically, if we can not make this claim, then there
   // is no reason to cache anything.
   //
-  ink_assert((send_revalidate == true && server_up == false) || (send_revalidate == false && server_up == true));
+  ink_assert((s->cache_hit_but_revalidate == true && server_up == false) ||
+             (s->cache_hit_but_revalidate == false && server_up == true));
 
   TxnDebug("http_trans", "CacheOpenRead --- HIT-FRESH");
   TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "

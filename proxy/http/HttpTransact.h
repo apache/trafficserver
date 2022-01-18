@@ -700,6 +700,13 @@ public:
     ParentResult parent_result;
     CacheControlResult cache_control;
     CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
+    /** There was a cache hit, but the cached resource cannot be used.
+     *
+     * This may happen because it is stale, it needs authentication, or the
+     * request method of the incoming request doesn't match that of the request
+     * corresponding to the cached resource.
+     */
+    bool cache_hit_but_revalidate = false;
 
     StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
     StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
