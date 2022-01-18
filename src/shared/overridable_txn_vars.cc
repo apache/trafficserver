@@ -168,4 +168,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
      {"proxy.config.net.sock_notsent_lowat", {TS_CONFIG_NET_SOCK_NOTSENT_LOWAT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.body_factory.response_suppression_mode",
-      {TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE, TS_RECORDDATATYPE_INT}}});
+      {TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
+      {TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.parent_proxy.disable_parent_markdowns",
+      {TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS, TS_RECORDDATATYPE_INT}}});
