@@ -5448,7 +5448,7 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
     break;
   case HttpTransact::CACHE_LOOKUP_HIT_WARNING:
   case HttpTransact::CACHE_LOOKUP_HIT_FRESH:
-    if (sm->t_state.cache_hit_but_revalidate) {
+    if (HttpTransact::need_to_revalidate(&sm->t_state)) {
       *lookup_status = TS_CACHE_LOOKUP_MISS;
     } else {
       *lookup_status = TS_CACHE_LOOKUP_HIT_FRESH;
