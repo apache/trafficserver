@@ -45,11 +45,14 @@ public:
    * Context should contain extra data needed to be passed to the actual SNIAction.
    */
   struct Context {
+    using CapturedGroupViewVec = std::vector<std::string_view>;
     /**
      * if any, fqdn_wildcard_captured_groups will hold the captured groups from the `fqdn`
-     * match which will be used to construct the tunnel destination.
+     * match which will be used to construct the tunnel destination. This vector contains only
+     * partial views of the original server name, group views are valid as long as the original
+     * string from where the groups were obtained lives.
      */
-    std::optional<std::vector<std::string>> _fqdn_wildcard_captured_groups;
+    std::optional<CapturedGroupViewVec> _fqdn_wildcard_captured_groups;
   };
 
   virtual int SNIAction(TLSSNISupport *snis, const Context &ctx) const = 0;
@@ -144,7 +147,7 @@ private:
    * groups could be at any order.
    */
   std::string
-  replace_match_groups(const std::string &dst, const std::vector<std::string> &groups) const
+  replace_match_groups(const std::string &dst, const ActionItem::Context::CapturedGroupViewVec &groups) const
   {
     if (dst.empty() || groups.empty()) {
       return dst;
