@@ -115,21 +115,20 @@ int SNIConfig::configid = 0;
 SNIConfigParams::SNIConfigParams() {}
 
 std::pair<const actionVector *, ActionItem::Context>
-SNIConfigParams::get(const std::string &servername) const
+SNIConfigParams::get(std::string_view servername) const
 {
   int ovector[OVECSIZE];
-  ActionItem::Context context;
 
   for (const auto &retval : sni_action_list) {
     int length = servername.length();
     if (retval.match == nullptr && length == 0) {
-      return {&retval.actions, context};
-    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.c_str(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
+      return {&retval.actions, {}};
+    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
       if (offset == 1) {
         // first pair identify the portion of the subject string matched by the entire pattern
         if (ovector[0] == 0 && ovector[1] == length) {
           // full match
-          return {&retval.actions, context};
+          return {&retval.actions, {}};
         } else {
           continue;
         }
@@ -140,21 +139,18 @@ SNIConfigParams::get(const std::string &servername) const
         offset = OVECSIZE / 3;
       }
 
-      const char *psubStrMatchStr = nullptr;
-      std::vector<std::string> groups;
+      ActionItem::Context::CapturedGroupViewVec groups;
+      groups.reserve(offset);
       for (int strnum = 1; strnum < offset; strnum++) {
-        pcre_get_substring(servername.c_str(), ovector, offset, strnum, &(psubStrMatchStr));
-        groups.emplace_back(psubStrMatchStr);
-      }
-      context._fqdn_wildcard_captured_groups = std::move(groups);
-      if (psubStrMatchStr) {
-        pcre_free_substring(psubStrMatchStr);
-      }
+        const std::size_t start  = ovector[2 * strnum];
+        const std::size_t length = ovector[2 * strnum + 1] - start;
 
-      return {&retval.actions, context};
+        groups.emplace_back(servername.data() + start, length);
+      }
+      return {&retval.actions, {std::move(groups)}};
     }
   }
-  return {nullptr, context};
+  return {nullptr, {}};
 }
 
 int
