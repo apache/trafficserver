@@ -4639,7 +4639,7 @@ Sockets
 
    Sets the receive buffer size for connections from the client to |TS|.
 
-.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_in INT 0x1
+.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_in INT 0x5
 
    Turns different options "on" for the socket handling client connections:::
 
