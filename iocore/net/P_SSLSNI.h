@@ -31,6 +31,7 @@
 #pragma once
 
 #include <vector>
+#include <string_view>
 #include <strings.h>
 
 #include "ProxyConfig.h"
@@ -109,7 +110,7 @@ struct SNIConfigParams : public ConfigInfo {
   void cleanup();
   int Initialize();
   void loadSNIConfig();
-  std::pair<const actionVector *, ActionItem::Context> get(const std::string &servername) const;
+  std::pair<const actionVector *, ActionItem::Context> get(std::string_view servername) const;
 };
 
 struct SNIConfig {
