@@ -799,7 +799,7 @@ TSPluginInit(int argc, const char *argv[])
         for (int index = 0; index < ts_lua_max_state_count; ++index) {
           ts_lua_main_ctx *const main_ctx = (ts_lua_g_main_ctx_array + index);
           lua_State *const lstate         = main_ctx->lua;
-          if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE|LUAJIT_MODE_OFF) == 0) {
+          if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF) == 0) {
             TSError("[ts_lua][%s] Failed to disable JIT mode", __FUNCTION__);
           }
         }
