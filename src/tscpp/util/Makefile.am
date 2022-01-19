@@ -29,7 +29,7 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/include
 libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
-	TextView.cc
+	TextView.cc string_view_util.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
