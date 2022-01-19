@@ -6079,6 +6079,19 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
     return false;
   }
 
+  // We may be caching responses to methods other than GET, such as POST. Make
+  // sure that our cached resource has a method that matches the incoming
+  // requests's method. If not, then we cannot reply with the cached resource.
+  // That is, we cannot reply to an incoming GET request with a response to a
+  // previous POST request.
+  int const client_request_method = s->hdr_info.client_request.method_get_wksidx();
+  int const cached_request_method = s->cache_info.object_read->request_get()->method_get_wksidx();
+  if (client_request_method != cached_request_method) {
+    TxnDebug("http_trans", "[is_stale_cache_response_returnable] "
+                           "mismatched method prevents serving stale");
+    return false;
+  }
+
   TxnDebug("http_trans", "[is_stale_cache_response_returnable] can serve stale");
   return true;
 }
