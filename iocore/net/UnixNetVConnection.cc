@@ -24,7 +24,6 @@
 #include "P_Net.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
-#include "Log.h"
 
 #include <termios.h>
 
