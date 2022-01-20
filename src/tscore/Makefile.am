@@ -67,7 +67,6 @@ libtscore_la_SOURCES = \
 	Extendible.cc \
 	Hash.cc \
 	HashFNV.cc \
-	HashMD5.cc \
 	HashSip.cc \
 	HostLookup.cc \
 	hugepages.cc \
@@ -75,7 +74,6 @@ libtscore_la_SOURCES = \
 	ink_assert.cc \
 	ink_base64.cc \
 	ink_cap.cc \
-	ink_code.cc \
 	ink_defs.cc \
 	InkErrno.cc \
 	ink_error.cc \

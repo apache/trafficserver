@@ -35,7 +35,6 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
 traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ArgParser.o \
     $(top_builddir)/src/tscore/.libs/ink_assert.o \
-    $(top_builddir)/src/tscore/.libs/ink_code.o \
     $(top_builddir)/src/tscore/.libs/ink_error.o \
     $(top_builddir)/src/tscore/.libs/ink_file.o \
     $(top_builddir)/src/tscore/.libs/ink_memory.o \

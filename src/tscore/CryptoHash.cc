@@ -26,17 +26,18 @@
 #include <new>
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
-#include "tscore/ink_code.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/SHA256.h"
 
 #if TS_ENABLE_FIPS == 1
 CryptoContext::HashType CryptoContext::Setting = CryptoContext::SHA256;
 #else
-#include "tscore/INK_MD5.h"
+#include "tscore/MD5.h"
 #include "tscore/MMH.h"
 CryptoContext::HashType CryptoContext::Setting = CryptoContext::MD5;
 #endif
+
+ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
 
 CryptoContext::CryptoContext()
 {
