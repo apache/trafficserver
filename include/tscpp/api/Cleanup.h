@@ -124,9 +124,13 @@ protected:
 
 using TxnAuxMgrData = TxnAuxDataMgrBase::MgrData;
 
-// Class to manage auxiliary data for a transaction.  If an instance is created for the transaction, the instance
-// will be deleted on the TXN_CLOSE transaction hook (which is always triggered for all transactions).
-// The TxnAuxData class must have a public default constructor.
+// Class to manage auxiliary data for a transaction.  If an instance of auxiliary data is created for the
+// transaction, the instance will be deleted on the TXN_CLOSE transaction hook (which is always triggered
+// for all transactions).  The TxnAuxData class must have a public default constructor.
+//
+// This class and the base class are pseudo-namespaces, have only static member functions (no data members).
+// The manager data cannot simply be in the base class, because the (static member) continuation function that
+// runs on the TXN_CLOSE hook would not be able to access it.
 //
 template <class TxnAuxData, TxnAuxMgrData &MDRef> class TxnAuxDataMgr : private TxnAuxDataMgrBase
 {

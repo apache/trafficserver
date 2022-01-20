@@ -31,11 +31,11 @@
 #include <unistd.h>
 
 #include <ts/ts.h>
-#include "ts/experimental.h"
-#include "tscore/ink_defs.h"
-#include "tscpp/util/PostScript.h"
-#include "tscpp/util/TextView.h"
-#include "Cleanup.h"
+#include <ts/experimental.h>
+#include <tscore/ink_defs.h>
+#include <tscpp/util/PostScript.h>
+#include <tscpp/util/TextView.h>
+#include <tscpp/api/Cleanup.h>
 
 namespace
 {

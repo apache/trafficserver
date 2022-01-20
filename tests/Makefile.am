@@ -34,6 +34,7 @@ include gold_tests/bigobj/Makefile.inc
 include gold_tests/continuations/plugins/Makefile.inc
 include gold_tests/chunked_encoding/Makefile.inc
 include gold_tests/pluginTest/tsapi/Makefile.inc
+include gold_tests/pluginTest/pi_set_err_status/Makefile.inc
 include gold_tests/timeout/Makefile.inc
 include gold_tests/tls/Makefile.inc
 include tools/plugins/Makefile.inc

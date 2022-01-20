@@ -1,0 +1,270 @@
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook READ_REQUEST_HDR, status 400
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook PRE_REMAP, status 400
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook POST_REMAP, status 400
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook CACHE_LOOKUP_COMPLETE, status 400
+=====
+<HTML>
+<HEAD>
+<TITLE>Could Not Connect</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Could Not Connect</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not connect to the requested server host.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook SEND_RESPONSE_HDR, status 400
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook READ_REQUEST_HDR, status 403
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook PRE_REMAP, status 403
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook POST_REMAP, status 403
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook CACHE_LOOKUP_COMPLETE, status 403
+=====
+<HTML>
+<HEAD>
+<TITLE>Could Not Connect</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Could Not Connect</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not connect to the requested server host.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook SEND_RESPONSE_HDR, status 403
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook READ_REQUEST_HDR, status 451
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook PRE_REMAP, status 451
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook POST_REMAP, status 451
+=====
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook CACHE_LOOKUP_COMPLETE, status 451
+=====
+<HTML>
+<HEAD>
+<TITLE>Could Not Connect</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Could Not Connect</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not connect to the requested server host.
+</B></FONT>
+<HR>
+</BODY>
+
+=====
+body for hook SEND_RESPONSE_HDR, status 451
+=====

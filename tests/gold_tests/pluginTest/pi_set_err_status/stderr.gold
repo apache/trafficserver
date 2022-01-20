@@ -1,0 +1,360 @@
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/400/body for hook READ_REQUEST_HDR, status 400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 42
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/400/body for hook PRE_REMAP, status 400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 35
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/400/body for hook POST_REMAP, status 400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 36
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/400/body for hook CACHE_LOOKUP_COMPLETE, status 400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 47
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 247
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/400/body for hook SEND_RESPONSE_HDR, status 400
+> 
+< HTTP/1.1 400 Bad Request
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 43
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/403/body for hook READ_REQUEST_HDR, status 403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 42
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/403/body for hook PRE_REMAP, status 403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 35
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/403/body for hook POST_REMAP, status 403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 36
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/403/body for hook CACHE_LOOKUP_COMPLETE, status 403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 47
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 247
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/403/body for hook SEND_RESPONSE_HDR, status 403
+> 
+< HTTP/1.1 403 Forbidden
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 43
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: READ_REQUEST_HDR/451/body for hook READ_REQUEST_HDR, status 451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 42
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: PRE_REMAP/451/body for hook PRE_REMAP, status 451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 35
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: POST_REMAP/451/body for hook POST_REMAP, status 451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 36
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 207
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: CACHE_LOOKUP_COMPLETE/451/body for hook CACHE_LOOKUP_COMPLETE, status 451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 47
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 247
+< 
+=====
+> GET / HTTP/1.1
+> Host: test-host.com
+> Accept: */*
+> X-Test-Data: SEND_RESPONSE_HDR/451/body for hook SEND_RESPONSE_HDR, status 451
+> 
+< HTTP/1.1 451 Error
+< Cache-Control: no-store
+< Content-Type: text/html
+< Content-Language: en
+< Content-Length: 43
+< 
+=====
