@@ -1,0 +1,3 @@
+cqh: trace-id=foo;parent-id=bar;span-id=baz trace-id=foo;parent-id=baz;span-id=0 pqh: trace-id=foo;parent-id=baz;span-id=0 psh: trace-id=foo;parent-id=bar;span-id=baz
+cqh: - ``;parent-id=0;span-id=1 pqh: - psh: -
+cqh: - trace-id=``;parent-id=0;span-id=2 pqh: trace-id=``;parent-id=0;span-id=2 psh: -
