@@ -599,7 +599,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (e < 0) {
       ret_val = -1;
     } else {
-      if (limit_data.rlim_cur != static_cast<rlim_t> RLIM_INFINITY) {
+      if (limit_data.rlim_cur != static_cast<rlim_t>(RLIM_INFINITY)) {
         if (has_size_limit) {
           *has_size_limit = true;
         }
