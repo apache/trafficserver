@@ -22,13 +22,24 @@
 Lua Plugin
 **********
 
-This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
+This module embeds Lua, via the LuaJIT engine (>2.0.4), into |ATS|. With
 this module, we can implement ATS plugin by writing Lua script instead of C
 code. Lua code executed using this module can be 100% non-blocking because the
 powerful Lua coroutines have been integrated into the ATS event model.
 
-Synopsis
-========
+Installation
+============
+
+This plugin is only built if LuaJIT (>2.0.4) is installed. The configure option
+
+::
+
+    --with-luajit=<path to luajit prefix>
+
+can be used to specify a LuaJIT install. Otherwise, configure will use pkg-config to find a viable installation.
+
+Example Scripts
+===============
 
 **test_hdr.lua**
 
@@ -64,20 +75,24 @@ Synopsis
         return 0
     end
 
-
-Installation
-============
-
-This plugin is only built if LuaJIT (>2.0.4) is installed. The configure option
+**test_global_hdr.lua**
 
 ::
 
-    --with-luajit=<path to luajit prefix>
+    function send_response()
+        ts.client_response.header['Rhost'] = ts.ctx['rhost']
+        return 0
+    end
 
-can be used to specify a LuaJIT install. Otherwise, configure will use pkg-config to find a viable installation.
+    function do_global_read_request()
+        local req_host = ts.client_request.header.Host
+        ts.ctx['rhost'] = string.reverse(req_host)
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+    end
 
-Configuration
-=============
+
+Usage with Example Scripts
+==========================
 
 This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' or 'do_os_response' function in each
 lua script. The path referencing a file with the lua script can be relative to the configuration directory or an absolute
@@ -114,6 +129,10 @@ We can write this in plugin.config:
 ::
 
     tslua.so /etc/trafficserver/script/test_global_hdr.lua
+
+
+Configuration for number of Lua states
+======================================
 
 We can also define the number of Lua states to be used for the plugin. If it is used as global plugin, we can write the
 following in plugin.config
@@ -158,6 +177,16 @@ enabled. The default value of '0' means disabled.
 ::
 
     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--ljgc=1
+
+
+Configuration for JIT mode
+==========================
+
+We can also turn off JIT mode for LuaJIT when it is acting as global plugin for Traffic Server. The default is on (1). We can write this in plugin.config to turn off JIT
+
+::
+
+    tslua.so --jit=0 /etc/trafficserver/script/test_global_hdr.lua
 
 
 Profiling
