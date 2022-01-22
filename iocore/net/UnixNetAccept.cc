@@ -338,6 +338,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
+    vc->options.sockopt_flags        = opt.sockopt_flags;
     vc->options.packet_mark          = opt.packet_mark;
     vc->options.packet_tos           = opt.packet_tos;
     vc->options.packet_notsent_lowat = opt.packet_notsent_lowat;
@@ -490,6 +491,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
+    vc->options.sockopt_flags        = opt.sockopt_flags;
     vc->options.packet_mark          = opt.packet_mark;
     vc->options.packet_tos           = opt.packet_tos;
     vc->options.packet_notsent_lowat = opt.packet_notsent_lowat;
