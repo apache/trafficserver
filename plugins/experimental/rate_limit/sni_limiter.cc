@@ -68,7 +68,10 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
         TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
         TSVConnReenable(vc);
       }
+    } else {
+      TSVConnReenable(vc);
     }
+
     break;
   }
 
