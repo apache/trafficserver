@@ -1169,6 +1169,9 @@ MC::ascii_delete(char *s, char *e)
     }
     SKIP_SPACE;
   }
+  if (*s == '0') {
+    s++;
+  }
   if (*s == '\r') {
     s++;
   }
