@@ -26,6 +26,7 @@
 
 #include <openssl/ssl.h>
 #include "tscore/ink_memory.h"
+#include "tscore/ink_inet.h"
 #include "YamlSNIConfig.h"
 
 class TLSTunnelSupport
