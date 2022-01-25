@@ -1,0 +1,11 @@
+{
+   "id": "a32de1da-08be-11eb-9e1e-001fc69cc946",
+   "jsonrpc": "2.0",
+   "method": "admin_config_set_records",
+   "params": [
+      {
+            "record_name": "$record_name",
+            "record_value": "$record_value"
+      }
+   ]
+}

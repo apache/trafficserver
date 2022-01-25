@@ -40,7 +40,7 @@ default_log_data = {
 
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
                    enable_tls=False, enable_cache=True, enable_quic=False,
-                   block_for_debug=False, log_data=default_log_data):
+                   block_for_debug=False, log_data=default_log_data, dump_runroot=False):
     #####################################
     # common locations
 
@@ -299,6 +299,22 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     fname = "volume.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
+    # The big motivation in exposing this file is that we need to tell the traffic_ctl
+    # where to find the socket to interact with the TS. traffic_ctl cannot rely only
+    # in the build layout for unit test.
+    fname = "runroot.yaml"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
+    # Expect the instruction to set the variables inside the runroot. This is not mandatory
+    if dump_runroot:
+        p.Disk.runroot_yaml.AddLine(f'runtimedir: {runtime_dir}')
+
+    def SetRunRootEnv(self):
+        self.Env['TS_RUNROOT'] = os.path.join(config_dir, "runroot.yaml")
+
+    AddMethodToInstance(p, SetRunRootEnv)
 
     ##########################################################
     # set up default ports

@@ -1,0 +1,10 @@
+{
+   "id":"0ea2672f-b369-4d99-8d46-98c3fadc152d",
+   "jsonrpc":"2.0",
+   "method":"admin_clear_metrics_records",
+   "params":[
+      {
+         "record_name":"$record_name"
+      }
+   ]
+}

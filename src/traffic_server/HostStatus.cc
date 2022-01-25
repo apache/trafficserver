@@ -23,6 +23,11 @@
 #include "HostStatus.h"
 #include "ProcessManager.h"
 
+#include "tscore/BufferWriter.h"
+#include "rpc/jsonrpc/JsonRPC.h"
+
+ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
+
 inline void
 getStatName(std::string &stat_name, const std::string_view name)
 {
@@ -207,6 +212,8 @@ HostStatus::HostStatus()
   ink_rwlock_init(&host_status_rwlock);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
+
+  rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle);
 }
 
 HostStatus::~HostStatus()
@@ -448,4 +455,92 @@ RecErrT
 HostStatus::getHostStat(std::string &stat_name, char *buf, unsigned int buf_len)
 {
   return RecGetRecordString(stat_name.c_str(), buf, buf_len, true);
+}
+
+namespace
+{
+struct HostCmdInfo {
+  TSHostStatus type{TSHostStatus::TS_HOST_STATUS_INIT};
+  unsigned int reasonType{0};
+  std::vector<std::string> hosts;
+  int time{0};
+};
+
+} // namespace
+
+namespace YAML
+{
+template <> struct convert<HostCmdInfo> {
+  static bool
+  decode(const Node &node, HostCmdInfo &rhs)
+  {
+    if (auto n = node["operation"]) {
+      auto const &str = n.as<std::string>();
+      if (str == "up") {
+        rhs.type = TSHostStatus::TS_HOST_STATUS_UP;
+      } else if (str == "down") {
+        rhs.type = TSHostStatus::TS_HOST_STATUS_DOWN;
+      } else {
+        // unknown.
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+    if (auto n = node["host"]; n.IsSequence() && n.size()) {
+      for (auto &&it : n) {
+        rhs.hosts.push_back(it.as<std::string>());
+      }
+    } else {
+      return false;
+    }
+
+    if (auto n = node["reason"]) {
+      auto reasonStr = n.as<std::string>();
+      rhs.reasonType = Reason::getReason(reasonStr.c_str());
+    } // manual by default.
+
+    if (auto n = node["time"]) {
+      rhs.time = std::stoi(n.as<std::string>());
+      if (rhs.time < 0) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+    return true;
+  }
+};
+} // namespace YAML
+
+ts::Rv<YAML::Node>
+server_set_status(std::string_view const &id, YAML::Node const &params)
+{
+  namespace err = rpc::handlers::errors;
+  ts::Rv<YAML::Node> resp;
+  try {
+    if (!params.IsNull()) {
+      auto cmdInfo = params.as<HostCmdInfo>();
+
+      for (auto const &name : cmdInfo.hosts) {
+        HostStatus &hs       = HostStatus::instance();
+        std::string statName = stat_prefix + name;
+        char buf[1024]       = {0};
+        if (hs.getHostStat(statName, buf, 1024) == REC_ERR_FAIL) {
+          hs.createHostStat(name.c_str());
+        }
+        Debug("host_statuses", "marking server %s : %s", name.c_str(),
+              (cmdInfo.type == TSHostStatus::TS_HOST_STATUS_UP ? "up" : "down"));
+        hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
+      }
+    } else {
+      resp.errata().push(err::make_errata(err::Codes::SERVER, "Invalid input parameters, null"));
+    }
+  } catch (std::exception const &ex) {
+    Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
+    resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during host status set: {}", ex.what()));
+  }
+  return resp;
 }

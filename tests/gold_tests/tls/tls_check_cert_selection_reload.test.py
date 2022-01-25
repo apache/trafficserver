@@ -21,7 +21,8 @@ Test ATS offering different certificates based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_tls=True, dump_runroot=True)
+ts.SetRunRootEnv()
 server = Test.MakeOriginServer("server", ssl=True)
 server3 = Test.MakeOriginServer("server3", ssl=True)
 

@@ -21,7 +21,8 @@ Test conf_remp to specify different client certificates to offer to the origin. 
 '''
 
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
+ts.SetRunRootEnv()
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server",

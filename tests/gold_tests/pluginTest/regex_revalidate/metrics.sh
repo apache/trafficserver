@@ -18,7 +18,7 @@ N=60
 while (( N > 0 ))
 do
     rm -f metrics.out
-    traffic_ctl metric match regex_revalidate > metrics.out
+    traffic_ctl metric match regex_revalidate --run-root $1 > metrics.out
     sleep 1
     if diff metrics.out ${AUTEST_TEST_DIR}/gold/metrics.gold
     then

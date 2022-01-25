@@ -24,7 +24,10 @@ Test command: traffic_ctl config describe proxy.config.http.background_fill_comp
 '''
 Test.testName = 'Float in conf_remap Config Test'
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
+
+# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
+ts.SetRunRootEnv()
 
 # Add dummy remap rule
 ts.Disk.remap_config.AddLine(
@@ -47,6 +50,6 @@ tr.TimeOut = 5
 tr.StillRunningAfter = ts
 
 p = tr.Processes.Default
-p.Command = "traffic_ctl config describe proxy.config.http.background_fill_completed_threshold"
+p.Command = f"traffic_ctl config describe proxy.config.http.background_fill_completed_threshold --run-root {ts.Disk.runroot_yaml.Name}"
 p.ReturnCode = 0
 p.StartBefore(Test.Processes.ts, ready=When.FileExists(os.path.join(tr.RunDirectory, 'ts/log/diags.log')))

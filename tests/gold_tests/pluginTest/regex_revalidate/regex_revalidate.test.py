@@ -18,6 +18,8 @@
 
 import os
 import time
+from jsonrpc import Request
+
 Test.Summary = '''
 Test a basic regex_revalidate
 '''
@@ -42,7 +44,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
 
 Test.testName = "regex_revalidate"
 Test.Setup.Copy("metrics.sh")
@@ -194,9 +196,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
@@ -228,9 +228,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
@@ -265,9 +263,7 @@ tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
+tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
@@ -283,7 +279,7 @@ tr.StillRunningAfter = ts
 # 12 Stats check
 tr = Test.AddTestRun("Check stats")
 tr.DelayStart = 5
-tr.Processes.Default.Command = "bash -c ./metrics.sh"
+tr.Processes.Default.Command = f"bash -c './metrics.sh {ts.Disk.runroot_yaml.Name}'"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

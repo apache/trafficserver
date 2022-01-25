@@ -77,10 +77,6 @@ Options
 Caveats
 =======
 
-:program:`traffic_crashlog` makes use of various Traffic Server management
-APIs. If :ref:`traffic_manager` is not available, the crash log will be
-incomplete.
-
 :program:`traffic_crashlog` may generate a crash log containing information you
 would rather not share outside your organization. Please examine the crash log
 carefully before posting it in a public forum.
@@ -89,5 +85,4 @@ See also
 ========
 
 :manpage:`records.config(5)`,
-:manpage:`traffic_manager(8)`,
 :manpage:`traffic_server(8)`
