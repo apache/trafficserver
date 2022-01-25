@@ -4778,6 +4778,9 @@ HttpSM::do_cache_lookup_and_read()
   // ink_assert(server_txn == NULL);
   ink_assert(pending_action.is_empty());
 
+  t_state.request_sent_time      = UNDEFINED_TIME;
+  t_state.response_received_time = UNDEFINED_TIME;
+
   HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
