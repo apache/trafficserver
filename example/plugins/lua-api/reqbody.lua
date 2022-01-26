@@ -17,6 +17,16 @@
 function encrypt(data, eos)
   ts.ctx['reqbody'] = ts.ctx['reqbody'] .. data
 
+  if ts.ctx['len_set'] == nil then
+    ts.debug("len not set")
+    local sz = ts.http.req_transform.get_downstream_bytes()
+    ts.debug("len "..sz)
+    ts.http.req_transform.set_upstream_bytes(sz)
+    ts.ctx['len_set'] = true
+  end
+
+  ts.debug("req transform got " .. string.len(data) .. "bytes, eos=" .. eos)
+
   if (eos == 1) then
     ts.debug('End of Stream and the reqbody is ... ')
     ts.debug(ts.ctx['reqbody'])
