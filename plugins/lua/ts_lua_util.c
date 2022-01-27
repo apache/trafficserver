@@ -57,6 +57,54 @@ ts_lua_update_server_response_hdrp(ts_lua_http_ctx *http_ctx)
   }
 }
 
+void
+ts_lua_clear_http_ctx(ts_lua_http_ctx *http_ctx)
+{
+  if (http_ctx->rri == NULL) {
+    if (http_ctx->client_request_url != NULL) {
+      TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, http_ctx->client_request_url);
+      http_ctx->client_request_url = NULL;
+    }
+
+    if (http_ctx->client_request_bufp != NULL) {
+      TSHandleMLocRelease(http_ctx->client_request_bufp, TS_NULL_MLOC, http_ctx->client_request_hdrp);
+      http_ctx->client_request_bufp = NULL;
+      http_ctx->client_request_hdrp = NULL;
+    }
+  }
+
+  if (http_ctx->server_request_url != NULL) {
+    TSHandleMLocRelease(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, http_ctx->server_request_url);
+    http_ctx->server_request_url = NULL;
+  }
+
+  if (http_ctx->server_request_hdrp != NULL) {
+    TSHandleMLocRelease(http_ctx->server_request_bufp, TS_NULL_MLOC, http_ctx->server_request_hdrp);
+    http_ctx->server_request_bufp = NULL;
+    http_ctx->server_request_hdrp = NULL;
+  }
+
+  if (http_ctx->server_response_bufp != NULL) {
+    TSHandleMLocRelease(http_ctx->server_response_bufp, TS_NULL_MLOC, http_ctx->server_response_hdrp);
+    http_ctx->server_response_bufp = NULL;
+    http_ctx->server_response_hdrp = NULL;
+  }
+
+  if (http_ctx->client_response_hdrp != NULL) {
+    TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
+    http_ctx->client_response_bufp = NULL;
+    http_ctx->client_response_hdrp = NULL;
+  }
+
+  if (http_ctx->cached_response_bufp != NULL) {
+    TSMimeHdrDestroy(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp);
+    TSHandleMLocRelease(http_ctx->cached_response_bufp, TS_NULL_MLOC, http_ctx->cached_response_hdrp);
+    TSMBufferDestroy(http_ctx->cached_response_bufp);
+    http_ctx->cached_response_bufp = NULL;
+    http_ctx->cached_response_hdrp = NULL;
+  }
+}
+
 int
 ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
 {
@@ -703,6 +751,10 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)
   ci = &http_ctx->cinfo;
 
   if (http_ctx->rri == NULL) {
+    if (http_ctx->client_request_url) {
+      TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, http_ctx->client_request_url);
+    }
+
     if (http_ctx->client_request_bufp) {
       TSHandleMLocRelease(http_ctx->client_request_bufp, TS_NULL_MLOC, http_ctx->client_request_hdrp);
     }
@@ -901,6 +953,9 @@ int
 ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 {
   TSHttpTxn txnp;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSMLoc url_loc;
   int event, ret, rc, n, t;
   lua_State *L;
   ts_lua_http_ctx *http_ctx;
@@ -922,6 +977,24 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 
   TSMutexLock(main_ctx->mutexp);
 
+  if (!http_ctx->client_request_bufp) {
+    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      http_ctx->client_request_bufp = bufp;
+      http_ctx->client_request_hdrp = hdr_loc;
+
+      if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
+        http_ctx->client_request_url = url_loc;
+      }
+    }
+  }
+
+  if (!http_ctx->client_request_hdrp) {
+    TSMutexUnlock(main_ctx->mutexp);
+
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return 0;
+  }
+
   ts_lua_set_cont_info(L, ci);
 
   switch (event) {
@@ -933,6 +1006,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -943,6 +1018,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
@@ -952,6 +1029,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       ret = lua_resume(L, 0);
     }
+
+    ts_lua_clear_http_ctx(http_ctx);
 
     break;
 
@@ -964,18 +1043,11 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-
-    // client response can be changed within a transaction
-    // (e.g. due to the follow redirect feature). So, clearing the pointers
-    // to allow API(s) to fetch the pointers again when it re-enters the hook
-    if (http_ctx->client_response_hdrp != NULL) {
-      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
-      http_ctx->client_response_bufp = NULL;
-      http_ctx->client_response_hdrp = NULL;
-    }
 
     lua_getglobal(L, TS_LUA_FUNCTION_SEND_RESPONSE);
 
@@ -983,11 +1055,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
-    if (http_ctx->client_response_hdrp != NULL) {
-      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
-      http_ctx->client_response_bufp = NULL;
-      http_ctx->client_response_hdrp = NULL;
-    }
+    ts_lua_clear_http_ctx(http_ctx);
 
     break;
 
@@ -998,6 +1066,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_TXN_START:
@@ -1006,6 +1076,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       ret = lua_resume(L, 0);
     }
+
+    ts_lua_clear_http_ctx(http_ctx);
 
     break;
 
@@ -1016,6 +1088,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
@@ -1025,6 +1099,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
       ret = lua_resume(L, 0);
     }
 
+    ts_lua_clear_http_ctx(http_ctx);
+
     break;
 
   case TS_EVENT_HTTP_READ_CACHE_HDR:
@@ -1033,6 +1109,8 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       ret = lua_resume(L, 0);
     }
+
+    ts_lua_clear_http_ctx(http_ctx);
 
     break;
 
