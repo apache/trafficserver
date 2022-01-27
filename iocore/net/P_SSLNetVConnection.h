@@ -50,6 +50,7 @@
 #include "TLSSessionResumptionSupport.h"
 #include "TLSSNISupport.h"
 #include "TLSEarlyDataSupport.h"
+#include "TLSTunnelSupport.h"
 #include "TLSBasicSupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
@@ -101,6 +102,7 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public TLSSessionResumptionSupport,
                           public TLSSNISupport,
                           public TLSEarlyDataSupport,
+                          public TLSTunnelSupport,
                           public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
@@ -279,48 +281,6 @@ public:
     return retval;
   }
 
-  bool
-  has_tunnel_destination() const
-  {
-    return tunnel_host != nullptr;
-  }
-
-  const char *
-  get_tunnel_host() const
-  {
-    return tunnel_host;
-  }
-
-  ushort
-  get_tunnel_port() const
-  {
-    return tunnel_port;
-  }
-
-  bool decrypt_tunnel() const;
-  bool upstream_tls() const;
-  SNIRoutingType tunnel_type() const;
-  YamlSNIConfig::TunnelPreWarm tunnel_prewarm() const;
-
-  void
-  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm)
-  {
-    _tunnel_type    = type;
-    _tunnel_prewarm = prewarm;
-
-    auto pos = destination.find(":");
-    if (nullptr != tunnel_host) {
-      ats_free(tunnel_host);
-    }
-    if (pos != std::string::npos) {
-      tunnel_port = std::stoi(destination.substr(pos + 1).data());
-      tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
-    } else {
-      tunnel_port = 0;
-      tunnel_host = ats_strndup(destination.data(), destination.length());
-    }
-  }
-
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
@@ -486,11 +446,6 @@ private:
 
   int64_t redoWriteSize = 0;
 
-  char *tunnel_host                            = nullptr;
-  in_port_t tunnel_port                        = 0;
-  SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
-  YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
-
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
@@ -521,36 +476,3 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-
-//
-// Inline Functions
-//
-inline SNIRoutingType
-SSLNetVConnection::tunnel_type() const
-{
-  return _tunnel_type;
-}
-
-inline YamlSNIConfig::TunnelPreWarm
-SSLNetVConnection::tunnel_prewarm() const
-{
-  return _tunnel_prewarm;
-}
-
-/**
-   Returns true if this vc was configured for forward_route or partial_blind_route
- */
-inline bool
-SSLNetVConnection::decrypt_tunnel() const
-{
-  return _tunnel_type == SNIRoutingType::FORWARD || _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
-}
-
-/**
-   Returns true if this vc was configured partial_blind_route
- */
-inline bool
-SSLNetVConnection::upstream_tls() const
-{
-  return _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
-}
