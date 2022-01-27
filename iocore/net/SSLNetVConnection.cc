@@ -2041,6 +2041,8 @@ SSLNetVConnection::_ssl_accept()
         finished_reading_early_data = true;
       }
 #else
+      // If SSL_read_early_data is unavailable, it's probably BoringSSL,
+      // and SSL_in_early_data should be available.
       ret = SSL_accept(ssl);
       if (ret <= 0) {
         had_error_on_reading_early_data = true;
@@ -2191,6 +2193,10 @@ SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &n
   ERR_clear_error();
 
   int ret;
+  // If SSL_write_early_data is available, it's probably OpenSSL,
+  // and SSL_is_init_finished should be available.
+  // If SSL_write_early_data is unavailable, its' probably BoringSSL,
+  // and we can use SSL_write to send early data.
 #if TS_HAS_TLS_EARLY_DATA
   if (SSL_version(ssl) >= TLS1_3_VERSION) {
 #ifdef HAVE_SSL_WRITE_EARLY_DATA
@@ -2282,6 +2288,8 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
         finished_reading_early_data = true;
       }
 #else
+      // If SSL_read_early_data is unavailable, it's probably OpenSSL,
+      // and SSL_in_early_data should be available.
       if (SSL_in_early_data(ssl)) {
         ret = SSL_read(ssl, buf, nbytes);
         finished_reading_early_data = !SSL_in_early_data(ssl);
