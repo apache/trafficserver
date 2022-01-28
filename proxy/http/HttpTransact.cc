@@ -3652,9 +3652,16 @@ HttpTransact::handle_response_from_parent(State *s)
     }
     // the next hop strategy is configured not
     // to cache a response from a next hop peer.
-    if (s->parent_result.do_not_cache_response) {
-      TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+    if (s->response_action.handled) {
+      if (s->response_action.action.no_cache) {
+        TxnDebug("http_trans", "plugin set response_action.no_cache, do not cache.");
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+      }
+    } else {
+      if (s->parent_result.do_not_cache_response) {
+        TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+      }
     }
     handle_forward_server_connection_open(s);
     break;

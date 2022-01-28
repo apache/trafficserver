@@ -161,6 +161,14 @@ PLNextHopConsistentHash::Init(const YAML::Node &n)
     hash.clear();
     rings.push_back(hash_ring);
   }
+
+  if (ring_mode == PL_NH_PEERING_RING) {
+    if (groups != 2) {
+      PL_NH_Error("ring mode is '%s', requires two host groups (peering group and an upstream group).", peering_rings.data());
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -248,11 +256,13 @@ PLNextHopConsistentHash::getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, 
 }
 
 static void
-makeNextParentErr(const char **hostname, size_t *hostname_len, in_port_t *port)
+makeNextParentErr(const char **hostname, size_t *hostname_len, in_port_t *port, bool *retry, bool *no_cache)
 {
   *hostname     = nullptr;
   *hostname_len = 0;
   *port         = 0;
+  *retry        = false;
+  *no_cache     = false;
 }
 
 void *
@@ -280,7 +290,7 @@ PLNextHopConsistentHash::deleteTxn(void *txn)
 void
 PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                               in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                              bool *out_retry, time_t now)
+                              bool *out_retry, bool *out_no_cache, time_t now)
 {
   // TODO add logic in the strategy to track when someone is retrying, and not give it out to multiple threads at once, to prevent
   // thundering retries See github issue #7485
@@ -296,7 +306,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   TSMLoc hdr;
   ScopedFreeMLoc hdr_cleanup(&reqp, TS_NULL_MLOC, &hdr);
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr) == TS_ERROR) {
-    makeNextParentErr(out_hostname, out_hostname_len, out_port);
+    makeNextParentErr(out_hostname, out_hostname_len, out_port, out_retry, out_no_cache);
     return;
   }
 
@@ -304,7 +314,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   ScopedFreeMLoc parent_selection_url_cleanup(&reqp, TS_NULL_MLOC, &parent_selection_url);
   if (TSUrlCreate(reqp, &parent_selection_url) != TS_SUCCESS) {
     PL_NH_Error("nexthop failed to create url for parent_selection_url");
-    makeNextParentErr(out_hostname, out_hostname_len, out_port);
+    makeNextParentErr(out_hostname, out_hostname_len, out_port, out_retry, out_no_cache);
     return;
   }
   if (TSHttpTxnParentSelectionUrlGet(txnp, reqp, parent_selection_url) != TS_SUCCESS) {
@@ -315,7 +325,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   ScopedFreeMLoc url_cleanup(&reqp, hdr, &url);
   if (TSHttpHdrUrlGet(reqp, hdr, &url) != TS_SUCCESS) {
     PL_NH_Error("failed to get header url, cannot find next hop");
-    makeNextParentErr(out_hostname, out_hostname_len, out_port);
+    makeNextParentErr(out_hostname, out_hostname_len, out_port, out_retry, out_no_cache);
     return;
   }
 
@@ -326,7 +336,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME, &retry_time) != TS_SUCCESS) {
     // TODO get and cache on init, to prevent potential runtime failure?
     PL_NH_Error("failed to get parent retry time, cannot find next hop");
-    makeNextParentErr(out_hostname, out_hostname_len, out_port);
+    makeNextParentErr(out_hostname, out_hostname_len, out_port, out_retry, out_no_cache);
     return;
   }
 
@@ -367,6 +377,12 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
         cur_ring = state->last_group;
       }
       break;
+    case PL_NH_PEERING_RING:
+      ink_assert(groups == 2);
+      // look for the next parent on the
+      // upstream ring.
+      state->last_group = cur_ring = 1;
+      break;
     case PL_NH_EXHAUST_RING:
     default:
       if (!wrapped) {
@@ -395,6 +411,13 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
         const bool hostExists =
           pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, nullptr) == TS_SUCCESS) : false;
         state->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
+        // if peering and the selected host is myself, change rings and search for an upstream
+        // parent.
+        if (ring_mode == PL_NH_PEERING_RING && TSHostnameIsSelf(pRec->hostname.c_str(), pRec->hostname.size()) == TS_SUCCESS) {
+          // switch to the upstream ring.
+          cur_ring = 1;
+          continue;
+        }
         break;
       }
     } else {
@@ -531,6 +554,13 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
       break;
     }
     state->retry = nextHopRetry;
+
+    // if using a peering ring mode and the parent selected came from the 'peering' group,
+    // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
+    state->no_cache = ring_mode == PL_NH_PEERING_RING && !cache_peer_result && cur_ring == 0;
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
+                state->no_cache ? "true" : "false");
+
     ink_assert(state->hostname != nullptr);
     ink_assert(state->port != 0);
     PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] state->result: %s Chosen parent: %.*s:%d", sm_id,
@@ -545,6 +575,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
     state->hostname_len = 0;
     state->port         = 0;
     state->retry        = false;
+    state->no_cache     = false;
     PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] state->result: %s set hostname null port 0 retry false", sm_id,
                 PLNHParentResultStr[state->result]);
   }
@@ -552,6 +583,8 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   *out_hostname     = state->hostname;
   *out_hostname_len = state->hostname_len;
   *out_port         = state->port;
+  *out_retry        = state->retry;
+  *out_no_cache     = state->no_cache;
 }
 
 void

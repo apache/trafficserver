@@ -51,6 +51,7 @@ struct StrategyTxn {
   size_t prev_host_len;
   in_port_t prev_port;
   bool prev_is_retry;
+  bool prev_no_cache;
 };
 
 int
@@ -81,9 +82,10 @@ handle_send_request(TSHttpTxn txnp, StrategyTxn *strategyTxn)
   strategyTxn->prev_host_len = ra.hostname_len;
   strategyTxn->prev_port     = ra.port;
   strategyTxn->prev_is_retry = ra.is_retry;
+  strategyTxn->prev_no_cache = ra.no_cache;
 
   strategy->next(txnp, strategyTxn->txn, ra.hostname, ra.hostname_len, ra.port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry);
+                 &ra.is_retry, &ra.no_cache);
 
   ra.nextHopExists = strategy->nextHopExists(txnp);
   ra.fail = !ra.nextHopExists; // failed is whether to fail and return to the client. failed=false means to retry the parent we set
@@ -121,6 +123,7 @@ mark_response(TSHttpTxn txnp, StrategyTxn *strategyTxn, TSHttpStatus status)
     ra.hostname_len = strategyTxn->prev_host_len;
     ra.port         = strategyTxn->prev_port;
     ra.is_retry     = strategyTxn->prev_is_retry;
+    ra.no_cache     = strategyTxn->prev_no_cache;
     TSDebug(PLUGIN_NAME, "mark_response using prev %.*s:%d", int(ra.hostname_len), ra.hostname, ra.port);
   } else {
     TSHttpTxnResponseActionGet(txnp, &ra);
@@ -201,6 +204,7 @@ handle_read_response(TSHttpTxn txnp, StrategyTxn *strategyTxn)
   strategyTxn->prev_host_len = 0;
   strategyTxn->prev_port     = 0;
   strategyTxn->prev_is_retry = false;
+  strategyTxn->prev_no_cache = false;
 
   TSHandleMLocRelease(resp, TS_NULL_MLOC, resp_hdr);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -235,6 +239,7 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
     strategyTxn->prev_host     = nullptr;
     strategyTxn->prev_port     = 0;
     strategyTxn->prev_is_retry = false;
+    strategyTxn->prev_no_cache = false;
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
@@ -247,7 +252,7 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
   const size_t exclude_host_len  = 0;
   const in_port_t exclude_port   = 0;
   strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry);
+                 &ra.is_retry, &ra.no_cache);
 
   ra.fail = ra.hostname == nullptr; // failed is whether to immediately fail and return the client a 502. In this case: whether or
                                     // not we found another parent.
@@ -419,6 +424,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   strategyTxn->prev_host     = nullptr;
   strategyTxn->prev_port     = 0;
   strategyTxn->prev_is_retry = false;
+  strategyTxn->prev_no_cache = false;
   TSContDataSet(cont, (void *)strategyTxn);
 
   // TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
@@ -434,7 +440,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   constexpr const size_t exclude_host_len  = 0;
   constexpr const in_port_t exclude_port   = 0;
   strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry);
+                 &ra.is_retry, &ra.no_cache);
 
   if (ra.hostname == nullptr) {
     // TODO make configurable
