@@ -55,6 +55,7 @@ struct PLNextHopConsistentHashTxn {
   size_t hostname_len  = 0;
   in_port_t port       = 0;
   bool retry           = false;
+  bool no_cache        = false;
 };
 
 class PLNextHopConsistentHash : public PLNextHopSelectionStrategy
@@ -72,7 +73,8 @@ public:
   ~PLNextHopConsistentHash();
   bool Init(const YAML::Node &n);
   void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len, in_port_t exclude_port,
-            const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port, bool *out_retry, time_t now = 0) override;
+            const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port, bool *out_retry, bool *out_no_cache,
+            time_t now = 0) override;
   void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
             const PLNHCmd status, const time_t now) override;
   void *newTxn() override;

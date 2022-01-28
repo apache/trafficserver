@@ -38,6 +38,15 @@
 
 constexpr const char *PL_NH_DEBUG_TAG = "plugin_nexthop";
 
+// ring mode strings
+extern const std::string_view alternate_rings;
+extern const std::string_view exhaust_rings;
+extern const std::string_view peering_rings;
+
+// health check strings
+extern const std::string_view active_health_check;
+extern const std::string_view passive_health_check;
+
 #define PL_NH_Debug(tag, fmt, ...) TSDebug(tag, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #define PL_NH_Error(fmt, ...) TSError("(%s) [%s:%d]: " fmt, PLUGIN_NAME, __FILE__, __LINE__, ##__VA_ARGS__)
 #define PL_NH_Note(fmt, ...) TSDebug(PL_NH_DEBUG_TAG, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
@@ -59,7 +68,7 @@ enum PLNHPolicyType {
 
 enum PLNHSchemeType { PL_NH_SCHEME_NONE = 0, PL_NH_SCHEME_HTTP, PL_NH_SCHEME_HTTPS };
 
-enum PLNHRingMode { PL_NH_ALTERNATE_RING = 0, PL_NH_EXHAUST_RING };
+enum PLNHRingMode { PL_NH_ALTERNATE_RING = 0, PL_NH_EXHAUST_RING, PL_NH_PEERING_RING };
 
 // response codes container
 struct PLResponseCodes {
@@ -209,7 +218,7 @@ public:
   virtual const char *name()                                                                        = 0;
   virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                     in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                    bool *out_retry, time_t now = 0)                                                = 0;
+                    bool *out_retry, bool *out_no_cache, time_t now = 0)                            = 0;
   virtual void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
                     const PLNHCmd status, const time_t now = 0)                                     = 0;
   virtual bool nextHopExists(TSHttpTxn txnp)                                                        = 0;
@@ -234,9 +243,9 @@ public:
 
   virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                     in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                    bool *out_retry, time_t now = 0)            = 0;
+                    bool *out_retry, bool *out_no_cache, time_t now = 0) = 0;
   virtual void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
-                    const PLNHCmd status, const time_t now = 0) = 0;
+                    const PLNHCmd status, const time_t now = 0)          = 0;
   virtual bool nextHopExists(TSHttpTxn txnp);
   virtual bool codeIsFailure(TSHttpStatus response_code);
   virtual bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code);
@@ -256,6 +265,7 @@ protected:
   bool go_direct          = true;
   bool parent_is_proxy    = true;
   bool ignore_self_detect = false;
+  bool cache_peer_result  = true;
   PLNHSchemeType scheme   = PL_NH_SCHEME_NONE;
   PLNHRingMode ring_mode  = PL_NH_ALTERNATE_RING;
   PLResponseCodes resp_codes;

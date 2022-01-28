@@ -57,4 +57,5 @@ typedef struct {
   bool responseIsRetryable;
   bool goDirect;
   bool parentIsProxy;
+  bool no_cache;
 } TSResponseAction;
