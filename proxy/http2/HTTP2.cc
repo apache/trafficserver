@@ -413,19 +413,22 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     int scheme_len, authority_len, path_len, method_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
-    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr &&
+        field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       scheme = field->value_get(&scheme_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != nullptr && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != nullptr &&
+        field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       authority = field->value_get(&authority_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != nullptr && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != nullptr &&
+        field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       path = field->value_get(&path_len);
     } else {
       return PARSE_RESULT_ERROR;
@@ -445,7 +448,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     arena.str_free(url);
 
     // Get value of :method
-    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr &&
+        field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
@@ -487,7 +491,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   // Check validity of all names and values
   MIMEFieldIter iter;
   for (const MIMEField *field = headers->iter_get_first(&iter); field != nullptr; field = headers->iter_get_next(&iter)) {
-    if (!field->name_is_valid() || !field->value_is_valid()) {
+    if (!field->name_is_valid(is_control_BIT | is_ws_BIT) || !field->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
   }
