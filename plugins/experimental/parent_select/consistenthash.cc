@@ -54,25 +54,16 @@ constexpr std::string_view hash_key_path_query    = "path+query";
 constexpr std::string_view hash_key_path_fragment = "path+fragment";
 constexpr std::string_view hash_key_cache         = "cache_key";
 
-PLHostRecord *
-chash_lookup(const std::shared_ptr<ATSConsistentHash> &ring, uint64_t hash_key, ATSConsistentHashIter *iter, bool *wrapped,
-             ATSHash64Sip24 *hash, bool *hash_init, bool *mapWrapped, uint64_t sm_id)
+static bool
+isWrapped(std::vector<bool> &wrap_around, uint32_t groups)
 {
-  PLHostRecord *host_rec = nullptr;
-
-  if (*hash_init == false) {
-    host_rec   = static_cast<PLHostRecord *>(ring->lookup_by_hashval(hash_key, iter, wrapped));
-    *hash_init = true;
-  } else {
-    host_rec = static_cast<PLHostRecord *>(ring->lookup(nullptr, iter, wrapped, hash));
+  bool all_wrapped = true;
+  for (uint32_t c = 0; c < groups; c++) {
+    if (wrap_around[c] == false) {
+      all_wrapped = false;
+    }
   }
-  bool wrap_around = *wrapped;
-  *wrapped         = *mapWrapped && *wrapped;
-  if (!*mapWrapped && wrap_around) {
-    *mapWrapped = true;
-  }
-
-  return host_rec;
+  return all_wrapped;
 }
 
 void
@@ -83,6 +74,37 @@ chTxnToStatusTxn(PLNextHopConsistentHashTxn *txn, PLStatusTxn *statusTxn)
 }
 
 } // namespace
+
+std::shared_ptr<PLHostRecord>
+PLNextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring,
+                                     PLNextHopConsistentHashTxn *state, bool *wrapped, uint64_t sm_id, TSMBuffer reqp, TSMLoc url,
+                                     TSMLoc parent_selection_url)
+{
+  uint64_t hash_key = 0;
+  ATSHash64Sip24 hash;
+  PLHostRecord *host_rec      = nullptr;
+  ATSConsistentHashIter *iter = &state->chashIter[cur_ring];
+
+  if (state->chash_init[cur_ring] == false) {
+    hash_key                    = getHashKey(sm_id, reqp, url, parent_selection_url, &hash);
+    host_rec                    = static_cast<PLHostRecord *>(ring->lookup_by_hashval(hash_key, iter, wrapped));
+    state->chash_init[cur_ring] = true;
+  } else {
+    host_rec = static_cast<PLHostRecord *>(ring->lookup(nullptr, iter, wrapped, &hash));
+  }
+  bool wrap_around = *wrapped;
+  *wrapped         = (state->mapWrapped[cur_ring] && *wrapped) ? true : false;
+  if (!state->mapWrapped[cur_ring] && wrap_around) {
+    state->mapWrapped[cur_ring] = true;
+  }
+
+  if (host_rec == nullptr) {
+    return nullptr;
+  } else {
+    std::shared_ptr<PLHostRecord> h = host_groups[host_rec->group_index][host_rec->host_index];
+    return h;
+  }
+}
 
 PLNextHopConsistentHash::PLNextHopConsistentHash(const std::string_view name) : PLNextHopSelectionStrategy(name) {}
 
@@ -163,10 +185,21 @@ PLNextHopConsistentHash::Init(const YAML::Node &n)
   }
 
   if (ring_mode == PL_NH_PEERING_RING) {
-    if (groups != 2) {
-      PL_NH_Error("ring mode is '%s', requires two host groups (peering group and an upstream group).", peering_rings.data());
+    if (groups == 1) {
+      if (!go_direct) {
+        PL_NH_Error("when ring mode is '%s', go_direct must be true when there is only one host group.", peering_rings.data());
+        return false;
+      }
+    } else if (groups != 2) {
+      PL_NH_Error("when ring mode is '%s', requires two host groups (peering group and an upstream group),"
+                  " or just a single peering group with go_direct.",
+                  peering_rings.data());
       return false;
     }
+    // if (policy_type != PL_NH_CONSISTENT_HASH) {
+    //   PL_NH_Error("ring mode '%s', is only implemented for a 'consistent_hash' policy.", peering_rings.data());
+    //   return false;
+    // }
   }
 
   return true;
@@ -277,16 +310,6 @@ PLNextHopConsistentHash::deleteTxn(void *txn)
   delete static_cast<PLNextHopConsistentHashTxn *>(txn);
 }
 
-// next returns the next parent, excluding exclue_hostname:exclude_port as if it were marked down.
-//
-// exclude_hostname and exclude_port are parents to not consider for the next parent.
-// This exists to allow getting the next parent if a failure occurs, before it occurs,
-// without actually marking it down which would cause other concurrent transactions to use the wrong parent.
-// This is necessary, because there's no plugin hook after a response which is a connection failure. Hacky, but it works.
-// If they aren't needed, pass nullptr for exclude_hostname.
-//
-// out_retry is whether the returned parent was marked down, and is now being retried.
-//
 void
 PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                               in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
@@ -296,6 +319,8 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   // thundering retries See github issue #7485
 
   PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent NH plugin calling");
+
+  uint32_t const NO_RING_USE_POST_REMAP = uint32_t(0) - 1;
 
   auto state = static_cast<PLNextHopConsistentHashTxn *>(strategyTxn);
 
@@ -341,34 +366,40 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   }
 
   time_t _now       = now;
-  bool firstcall    = false;
   bool nextHopRetry = false;
   bool wrapped      = false;
   std::vector<bool> wrap_around(groups, false);
-  uint32_t cur_ring = 0; // there is a hash ring for each host group
-  uint64_t hash_key = 0;
-  uint32_t lookups  = 0;
-  ATSHash64Sip24 hash;
-  PLHostRecord *hostRec              = nullptr;
+  uint32_t cur_ring                  = 0; // there is a hash ring for each host group
+  uint32_t lookups                   = 0;
   std::shared_ptr<PLHostRecord> pRec = nullptr;
   TSHostStatus host_stat             = TSHostStatus::TS_HOST_STATUS_INIT;
+  std::string_view first_call_host;
+  int first_call_port = 0;
 
-  if (state->line_number == -1 && state->result == PL_NH_PARENT_UNDEFINED) {
-    firstcall = true;
-  }
+  const bool firstcall = state->line_number == -1 && state->result == PL_NH_PARENT_UNDEFINED;
 
+  // firstcall indicates that this is the first time the state machine has called findNextHop() for this
+  // particular transaction so, a parent will be looked up using a hash from the request to locate a
+  // parent on the consistent hash ring.  If not first call, then the transaction was unable to use the parent
+  // returned from the "firstcall" due to some error so, subsequent calls will not search using a hash but,
+  // will instead just increment the hash table iterator to find the next parent on the ring
   if (firstcall) {
-    PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, state->line_number,
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, state->line_number,
                 PLNHParentResultStr[state->result]);
-    state->line_number = PLNextHopConsistentHash::LineNumberPlaceholder;
+    state->line_number = distance;
     cur_ring           = 0;
     for (uint32_t i = 0; i < groups; i++) {
       state->chash_init[i] = false;
       wrap_around[i]       = false;
     }
   } else {
-    PL_NH_Debug(PL_NH_DEBUG_TAG, "getNextHopResult [%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id,
-                state->line_number, PLNHParentResultStr[state->result]);
+    // not first call, save the previously tried parent.
+    if (state->hostname) {
+      first_call_host = state->hostname;
+      first_call_port = state->port;
+    }
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, state->line_number,
+                PLNHParentResultStr[state->result]);
     switch (ring_mode) {
     case PL_NH_ALTERNATE_RING:
       if (groups > 1) {
@@ -378,10 +409,14 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
       }
       break;
     case PL_NH_PEERING_RING:
-      ink_assert(groups == 2);
-      // look for the next parent on the
-      // upstream ring.
-      state->last_group = cur_ring = 1;
+      if (groups == 1) {
+        state->last_group = cur_ring = NO_RING_USE_POST_REMAP;
+      } else {
+        ink_assert(groups == 2);
+        // look for the next parent on the
+        // upstream ring.
+        state->last_group = cur_ring = 1;
+      }
       break;
     case PL_NH_EXHAUST_RING:
     default:
@@ -394,76 +429,91 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
     }
   }
 
-  // Do the initial parent look-up.
-  hash_key = getHashKey(sm_id, reqp, url, parent_selection_url, &hash);
-
-  do { // search until we've selected a different parent if !firstcall
-    std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
-    hostRec               = chash_lookup(r, hash_key, &state->chashIter[cur_ring], &wrapped, &hash, &state->chash_init[cur_ring],
-                           &state->mapWrapped[cur_ring], sm_id);
-    wrap_around[cur_ring] = wrapped;
-    lookups++;
-    // the 'available' flag is maintained in 'host_groups' and not the hash ring.
-    if (hostRec) {
-      pRec = host_groups[hostRec->group_index][hostRec->host_index];
-      if (firstcall) {
-        TSHostStatus hostStatus;
-        const bool hostExists =
-          pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, nullptr) == TS_SUCCESS) : false;
-        state->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
-        // if peering and the selected host is myself, change rings and search for an upstream
-        // parent.
-        if (ring_mode == PL_NH_PEERING_RING && TSHostnameIsSelf(pRec->hostname.c_str(), pRec->hostname.size()) == TS_SUCCESS) {
-          // switch to the upstream ring.
-          cur_ring = 1;
-          continue;
-        }
+  if (cur_ring != NO_RING_USE_POST_REMAP) {
+    do {
+      // all host groups have been searched and there are no available parents found
+      if (isWrapped(wrap_around, groups)) {
+        PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] No available parents.", sm_id);
+        pRec = nullptr;
         break;
       }
-    } else {
-      pRec = nullptr;
-    }
-  } while (pRec && state->hostname && strncmp(pRec->hostname.c_str(), state->hostname, pRec->hostname.size()) == 0);
 
-  PL_NH_Debug(PL_NH_DEBUG_TAG, "getNextHopResult [%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
+      // search for available parent
+      std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
+      pRec                                 = chashLookup(r, cur_ring, state, &wrapped, sm_id, reqp, url, parent_selection_url);
+      wrap_around[cur_ring]                = wrapped;
+      lookups++;
 
-  // ----------------------------------------------------------------------------------------------------
-  // Validate initial parent look-up and perform additional look-ups if required.
-  // ----------------------------------------------------------------------------------------------------
+      TSHostStatus hostStatus;
+      unsigned int hostStatusReasons;
+      const bool hostExists =
+        pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, &hostStatusReasons) == TS_SUCCESS) :
+               false;
 
-  TSHostStatus hostStatus;
-  unsigned int hostReasons;
-  const bool hostExists =
-    pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
-  host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
-  // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-  // ignore the down status and mark it as available
-  if ((pRec && ignore_self_detect) && (hostExists && hostStatus == TS_HOST_STATUS_DOWN)) {
-    if (hostReasons & TS_HOST_STATUS_SELF_DETECT) {
-      host_stat = TS_HOST_STATUS_UP;
-    }
-  }
-  bool pRecExclude = exclude_hostname != nullptr && pRec &&
-                     strncmp(pRec->hostname.c_str(), exclude_hostname, pRec->hostname.size()) == 0 &&
-                     pRec->getPort(scheme) == exclude_port;
-  if (!pRec || (pRec && (!pRec->available || pRecExclude)) || host_stat == TS_HOST_STATUS_DOWN) {
-    do {
-      // check if an unavailable server is now retryable, use it if it is.
-      if (pRec && !pRec->available && host_stat == TS_HOST_STATUS_UP && !pRecExclude) {
-        _now == 0 ? _now = time(nullptr) : _now = now;
-        // check if the host is retryable.  It's retryable if the retry window has elapsed
-        if ((pRec->failedAt + retry_time) < static_cast<unsigned>(_now)) {
-          nextHopRetry       = true;
-          state->last_parent = pRec->host_index;
-          state->last_lookup = pRec->group_index;
-          state->retry       = nextHopRetry;
-          state->result      = PL_NH_PARENT_SPECIFIED;
+      // found a parent
+      if (pRec) {
+        bool is_self = TSHostnameIsSelf(pRec->hostname.c_str(), pRec->hostname.size()) == TS_SUCCESS;
+        host_stat    = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
 
-          PL_NH_Debug(PL_NH_DEBUG_TAG, "getNextHopResult [%" PRIu64 "] next hop %.*s is now retryable, marked it available.", sm_id,
-                      int(pRec->hostname.size()), pRec->hostname.c_str());
+        // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
+        // ignore the down status and mark it as available
+        if ((host_stat == TS_HOST_STATUS_DOWN && is_self && ignore_self_detect)) {
+          if (hostStatusReasons == TS_HOST_STATUS_SELF_DETECT) {
+            host_stat = TS_HOST_STATUS_UP;
+          }
+        }
+
+        if (firstcall) {
+          state->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
+          // if peering and the selected host is myself, change rings and search for an upstream parent.
+          if (ring_mode == PL_NH_PEERING_RING && (pRec->self || is_self)) {
+            PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] peering ring got self %s - searching for upstream parent", sm_id,
+                        pRec->hostname.c_str());
+            if (groups == 1) {
+              PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] peering ring got self %s - 1 group, using host from post-remap URL",
+                          sm_id, pRec->hostname.c_str());
+              // use host from post-remap URL
+              cur_ring = NO_RING_USE_POST_REMAP;
+              pRec     = nullptr;
+              break;
+            } else {
+              PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] peering ring got self %s - !1 group, searching upstream ring", sm_id,
+                          pRec->hostname.c_str());
+              // switch to and search the upstream ring.
+              cur_ring = 1;
+              pRec     = nullptr;
+              continue;
+            }
+          }
+        } else {
+          // not first call, make sure we're not re-using the same parent, search again if we are.
+          if (first_call_host.size() > 0 && first_call_host == pRec->hostname && first_call_port == pRec->getPort(scheme)) {
+            pRec = nullptr;
+            continue;
+          }
+        }
+        // if the parent is not available check to see if the retry window has expired making it available
+        // for retry.
+        if (!pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
+          _now == 0 ? _now = time(nullptr) : _now = now;
+          if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+            nextHopRetry       = true;
+            state->last_parent = pRec->host_index;
+            state->last_lookup = pRec->group_index;
+            state->retry       = nextHopRetry;
+            state->result      = PL_NH_PARENT_SPECIFIED;
+            state->no_cache    = false;
+            PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
+            break;
+          }
+        }
+
+        // use the available selected parent
+        if (pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           break;
         }
       }
+      // try other rings per per the ring mode
       switch (ring_mode) {
       case PL_NH_ALTERNATE_RING:
         if (pRec && groups > 0) {
@@ -479,70 +529,29 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
         }
         break;
       }
-      std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
-      hostRec               = chash_lookup(r, hash_key, &state->chashIter[cur_ring], &wrapped, &hash, &state->chash_init[cur_ring],
-                             &state->mapWrapped[cur_ring], sm_id);
-      wrap_around[cur_ring] = wrapped;
-      lookups++;
-      if (hostRec) {
-        pRec        = host_groups[hostRec->group_index][hostRec->host_index];
-        pRecExclude = exclude_hostname != nullptr && pRec &&
-                      strncmp(pRec->hostname.c_str(), exclude_hostname, pRec->hostname.size()) == 0 &&
-                      pRec->getPort(scheme) == exclude_port;
 
-        TSHostStatus hostStatus;
-        unsigned int hostReasons;
-        const bool hostExists =
-          pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
-        host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
-
-        // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-        // ignore the down status and mark it as available
-        if ((pRec && ignore_self_detect) && (hostExists && hostStatus == TS_HOST_STATUS_DOWN)) {
-          if (hostReasons & TS_HOST_STATUS_SELF_DETECT) {
-            host_stat = TS_HOST_STATUS_UP;
-          }
-        }
-        if (pRec) {
-          PL_NH_Debug(PL_NH_DEBUG_TAG,
-                      "nextParent [%" PRIu64 "] Selected a new parent: %.*s, available: %s, wrapped: %s, lookups: %d, exclude: %s.",
-                      sm_id, int(pRec->hostname.size()), pRec->hostname.c_str(), (pRec->available) ? "true" : "false",
-                      (wrapped) ? "true" : "false", lookups, pRecExclude ? "true" : "false");
-        } else {
-          PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] Selected a new parent: null", sm_id);
-        }
-        // use available host.
-        if (pRec && pRec->available && !pRecExclude && host_stat == TS_HOST_STATUS_UP) {
-          break;
-        }
-      } else {
-        pRec = nullptr;
-      }
-      bool all_wrapped = true;
-      for (uint32_t c = 0; c < groups; c++) {
-        if (wrap_around[c] == false) {
-          all_wrapped = false;
-        }
-      }
-      if (all_wrapped) {
-        PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] No available parents.", sm_id);
-        if (pRec) {
+      if (pRec) {
+        // if the selected host is down, search again.
+        if (!pRec->available || host_stat == TS_HOST_STATUS_DOWN) {
+          PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] hostname: %s, available: %s, host_stat: %d", sm_id, pRec->hostname.c_str(),
+                      pRec->available ? "true" : "false", host_stat);
           pRec = nullptr;
+          continue;
         }
-        break;
       }
-    } while (!pRec || (pRec && (!pRec->available || pRecExclude)) || host_stat == TS_HOST_STATUS_DOWN);
+    } while (!pRec);
+
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
   }
 
   // ----------------------------------------------------------------------------------------------------
   // Validate and return the final result.
   // ----------------------------------------------------------------------------------------------------
 
-  if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available || state->retry) && !pRecExclude) {
-    state->result       = PL_NH_PARENT_SPECIFIED;
-    state->hostname     = pRec->hostname.c_str();
-    state->hostname_len = pRec->hostname.size();
-    state->last_parent  = pRec->host_index;
+  if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || state->retry)) {
+    state->result      = PL_NH_PARENT_SPECIFIED;
+    state->hostname    = pRec->hostname.c_str();
+    state->last_parent = pRec->host_index;
     state->last_lookup = state->last_group = cur_ring;
     switch (scheme) {
     case PL_NH_SCHEME_NONE:
@@ -554,30 +563,23 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
       break;
     }
     state->retry = nextHopRetry;
-
     // if using a peering ring mode and the parent selected came from the 'peering' group,
     // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
     state->no_cache = ring_mode == PL_NH_PEERING_RING && !cache_peer_result && cur_ring == 0;
     PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
-                state->no_cache ? "true" : "false");
-
+                (state->no_cache) ? "true" : "false");
     ink_assert(state->hostname != nullptr);
     ink_assert(state->port != 0);
-    PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] state->result: %s Chosen parent: %.*s:%d", sm_id,
-                PLNHParentResultStr[state->result], int(state->hostname_len), state->hostname, state->port);
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] state->result: %s Chosen parent: %s.%d", sm_id, PLNHParentResultStr[state->result],
+                state->hostname, state->port);
   } else {
-    if (go_direct == true) {
-      state->result = PL_NH_PARENT_DIRECT;
-    } else {
-      state->result = PL_NH_PARENT_FAIL;
-    }
-    state->hostname     = nullptr;
-    state->hostname_len = 0;
-    state->port         = 0;
-    state->retry        = false;
-    state->no_cache     = false;
-    PL_NH_Debug(PL_NH_DEBUG_TAG, "nextParent [%" PRIu64 "] state->result: %s set hostname null port 0 retry false", sm_id,
-                PLNHParentResultStr[state->result]);
+    state->result   = go_direct ? PL_NH_PARENT_DIRECT : PL_NH_PARENT_FAIL;
+    state->retry    = false;
+    state->hostname = nullptr;
+    state->port     = 0;
+    state->no_cache = false;
+    PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] state->result: %s set hostname null port 0 retry %d", sm_id,
+                PLNHParentResultStr[state->result], state->retry);
   }
 
   *out_hostname     = state->hostname;
@@ -585,6 +587,8 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   *out_port         = state->port;
   *out_retry        = state->retry;
   *out_no_cache     = state->no_cache;
+
+  return;
 }
 
 void
