@@ -5448,20 +5448,7 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
     break;
   case HttpTransact::CACHE_LOOKUP_HIT_WARNING:
   case HttpTransact::CACHE_LOOKUP_HIT_FRESH:
-    if (HttpTransact::need_to_revalidate(&sm->t_state)) {
-      // Note that in this case the object was determined to be fresh but there
-      // was a problem with the cached object for this request per
-      // need_to_revalidate(). need_to_revalidate() checks for issues such as
-      // the need to authenticate with the origin or the incoming request
-      // method doesn't equal the method of the request for the cached
-      // response. Issues like this are more accurately described as a MISS
-      // rather than STALE because they are not due to freshness (timing)
-      // issues but rather to characteristics that make the cached object
-      // inappropriate as a response to this request.
-      *lookup_status = TS_CACHE_LOOKUP_MISS;
-    } else {
-      *lookup_status = TS_CACHE_LOOKUP_HIT_FRESH;
-    }
+    *lookup_status = TS_CACHE_LOOKUP_HIT_FRESH;
     break;
   case HttpTransact::CACHE_LOOKUP_SKIPPED:
     *lookup_status = TS_CACHE_LOOKUP_SKIPPED;
