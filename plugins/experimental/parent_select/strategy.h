@@ -105,13 +105,14 @@ struct PLNHProtocol {
 struct PLHostRecord : ATSConsistentHashNode {
   std::mutex _mutex;
   std::string hostname;
-  time_t failedAt;
-  uint32_t failCount;
-  time_t upAt;
+  std::atomic<time_t> failedAt;
+  std::atomic<uint32_t> failCount;
+  std::atomic<time_t> upAt;
   float weight;
   std::string hash_string;
   int host_index;
   int group_index;
+  bool self = false;
   std::vector<std::shared_ptr<PLNHProtocol>> protocols;
 
   // construct without locking the _mutex.
@@ -132,15 +133,16 @@ struct PLHostRecord : ATSConsistentHashNode {
   PLHostRecord(const PLHostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    failCount   = o.failCount;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
+    host_index  = o.host_index;
+    group_index = o.group_index;
+    available   = o.available.load();
     protocols   = o.protocols;
+    self        = o.self;
   }
 
   // assign without copying the _mutex.
@@ -148,14 +150,16 @@ struct PLHostRecord : ATSConsistentHashNode {
   operator=(const PLHostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
     host_index  = o.host_index;
     group_index = o.group_index;
     available   = o.available.load();
     protocols   = o.protocols;
+    self        = o.self;
     return *this;
   }
 

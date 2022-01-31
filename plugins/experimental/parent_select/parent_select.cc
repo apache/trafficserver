@@ -438,7 +438,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
                  &ra.is_retry, &ra.no_cache);
 
-  if (ra.hostname == nullptr) {
+  ra.nextHopExists = ra.hostname != nullptr;
+  ra.fail          = !ra.nextHopExists;
+  // The action here is used for the very first connection, not any retry. So of course we should try it.
+  ra.responseIsRetryable = true;
+  ra.goDirect            = strategy->goDirect();
+  ra.parentIsProxy       = strategy->parentIsProxy();
+
+  if (ra.fail && !ra.goDirect) {
     // TODO make configurable
     TSDebug(PLUGIN_NAME, "TSRemapDoRemap strategy '%s' next returned nil, returning 502!", strategy->name());
     TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_BAD_GATEWAY);
@@ -446,12 +453,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     return TSREMAP_DID_REMAP;
   }
 
-  ra.fail          = false;
-  ra.nextHopExists = true;
-  ra.responseIsRetryable =
-    true; // The action here is used for the very first connection, not any retry. So of course we should try it.
-  ra.goDirect      = strategy->goDirect();
-  ra.parentIsProxy = strategy->parentIsProxy();
   TSDebug(PLUGIN_NAME, "TSRemapDoRemap setting response_action hostname '%.*s' port %d direct %d proxy %d", int(ra.hostname_len),
           ra.hostname, ra.port, ra.goDirect, ra.parentIsProxy);
   TSHttpTxnResponseActionSet(txnp, &ra);
