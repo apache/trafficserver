@@ -40,7 +40,7 @@ def main():
     create_sess_proc = subprocess.Popen(s_client_cmd_1, env=os.environ.copy(
     ), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-        output = create_sess_proc.communicate(timeout=1)[0]
+        output = create_sess_proc.communicate(input=bytes(b'GET / HTTP/1.0\r\n\r\n'), timeout=1)[0]
     except subprocess.TimeoutExpired:
         create_sess_proc.kill()
         output = create_sess_proc.communicate()[0]

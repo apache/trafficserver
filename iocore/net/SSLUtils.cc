@@ -695,6 +695,21 @@ SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
   return true;
 }
 
+bool
+SSLMultiCertConfigLoader::_enable_early_data(SSL_CTX *ctx)
+{
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSLConfigParams::server_max_early_data > 0) {
+#if HAVE_SSL_IN_EARLY_DATA
+    // If SSL_in_early_data is available, it's probably BoringSSL
+    // and SSL_set_early_data_enabled should be available.
+    SSL_CTX_set_early_data_enabled(ctx, 1);
+#endif
+  }
+#endif
+  return true;
+}
+
 static SSL_CTX *
 ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
 {
@@ -1435,6 +1450,10 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
     if (!this->_enable_ktls(ctx)) {
+      goto fail;
+    }
+
+    if (!this->_enable_early_data(ctx)) {
       goto fail;
     }
 

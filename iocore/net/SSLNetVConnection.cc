@@ -184,6 +184,7 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
       // mechanism and causing session resumption to fail.
       SSLConfig::scoped_config params;
       if (SSL_version(ssl) >= TLS1_3_VERSION && params->server_max_early_data > 0) {
+#ifdef HAVE_SSL_SET_MAX_EARLY_DATA
         bool ret1 = false;
         bool ret2 = false;
         if ((ret1 = SSL_set_max_early_data(ssl, params->server_max_early_data)) == 1) {
@@ -202,6 +203,12 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
           Debug("ssl_early_data", "Must disable anti-replay if 0-rtt is enabled.");
           SSL_set_options(ssl, SSL_OP_NO_ANTI_REPLAY);
         }
+#else
+        // If SSL_set_max_early_data is unavailable, it's probably BoringSSL,
+        // and SSL_set_early_data_enabled should be available.
+        SSL_set_early_data_enabled(ssl, 1);
+        Warning("max_early_data is not used due to library limitations");
+#endif
       }
 #endif
     }
@@ -2014,15 +2021,63 @@ SSLNetVConnection::_ssl_accept()
 
 #if TS_HAS_TLS_EARLY_DATA
   if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
-    size_t nread;
+#if HAVE_SSL_READ_EARLY_DATA
+    size_t nread = 0;
+#else
+    ssize_t nread = 0;
+#endif
 
     while (true) {
-      IOBufferBlock *block = new_IOBufferBlock();
+      bool had_error_on_reading_early_data = false;
+      bool finished_reading_early_data     = false;
+      IOBufferBlock *block                 = new_IOBufferBlock();
       block->alloc(BUFFER_SIZE_INDEX_16K);
-      ret = SSL_read_early_data(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K), &nread);
 
+#if HAVE_SSL_READ_EARLY_DATA
+      ret = SSL_read_early_data(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K), &nread);
       if (ret == SSL_READ_EARLY_DATA_ERROR) {
-        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
+        had_error_on_reading_early_data = true;
+      } else if (ret == SSL_READ_EARLY_DATA_FINISH) {
+        finished_reading_early_data = true;
+      }
+#else
+      // If SSL_read_early_data is unavailable, it's probably BoringSSL,
+      // and SSL_in_early_data should be available.
+      ret = SSL_accept(ssl);
+      if (ret <= 0) {
+        had_error_on_reading_early_data = true;
+      } else {
+        if (SSL_in_early_data(ssl)) {
+          ret = SSL_read(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K));
+          finished_reading_early_data = !SSL_in_early_data(ssl);
+          if (ret < 0) {
+            nread = 0;
+            if (finished_reading_early_data) {
+              ret = 2; // SSL_READ_EARLY_DATA_FINISH
+            } else {
+              // Don't override ret here.
+              // Keeping the original retrurn value let ATS allow to check the value by SSL_get_error.
+              // That gives a chance to progress handshake process, or shutdown a connection if the error is serious.
+              had_error_on_reading_early_data = true;
+            }
+          } else {
+            nread = ret;
+            if (finished_reading_early_data) {
+              ret = 2; // SSL_READ_EARLY_DATA_FINISH
+            } else {
+              ret = 1; // SSL_READ_EARLY_DATA_SUCCESS
+            }
+          }
+        } else {
+          nread = 0;
+          ret = 2; // SSL_READ_EARLY_DATA_FINISH
+          finished_reading_early_data = true;
+        }
+      }
+#endif
+
+      if (had_error_on_reading_early_data) {
+        Debug("ssl_early_data", "Error on reading early data: %d", ret);
         block->free();
         break;
       } else {
@@ -2043,7 +2098,7 @@ SSLNetVConnection::_ssl_accept()
           block->free();
         }
 
-        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+        if (finished_reading_early_data) {
           this->_early_data_finish = true;
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
 
@@ -2141,10 +2196,17 @@ SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &n
   ERR_clear_error();
 
   int ret;
+  // If SSL_write_early_data is available, it's probably OpenSSL,
+  // and SSL_is_init_finished should be available.
+  // If SSL_write_early_data is unavailable, its' probably BoringSSL,
+  // and we can use SSL_write to send early data.
 #if TS_HAS_TLS_EARLY_DATA
   if (SSL_version(ssl) >= TLS1_3_VERSION) {
+#ifdef HAVE_SSL_WRITE_EARLY_DATA
     if (SSL_is_init_finished(ssl)) {
+#endif
       ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+#ifdef HAVE_SSL_WRITE_EARLY_DATA
     } else {
       size_t nwrite;
       ret = SSL_write_early_data(ssl, buf, static_cast<size_t>(nbytes), &nwrite);
@@ -2152,6 +2214,7 @@ SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &n
         ret = nwrite;
       }
     }
+#endif
   } else {
     ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
   }
@@ -2208,15 +2271,47 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
     }
 
     if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
+      bool had_error_on_reading_early_data = false;
+      bool finished_reading_early_data     = false;
       Debug("ssl_early_data", "More early data to read.");
       ssl_error_t ssl_error = SSL_ERROR_NONE;
-      size_t read_bytes     = 0;
+      int ret;
+#if HAVE_SSL_READ_EARLY_DATA
+      size_t read_bytes = 0;
+#else
+      ssize_t read_bytes = 0;
+#endif
 
-      int ret = SSL_read_early_data(ssl, buf, static_cast<size_t>(nbytes), &read_bytes);
-
+#ifdef HAVE_SSL_READ_EARLY_DATA
+      ret = SSL_read_early_data(ssl, buf, static_cast<size_t>(nbytes), &read_bytes);
       if (ret == SSL_READ_EARLY_DATA_ERROR) {
-        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
-        ssl_error = SSL_get_error(ssl, ret);
+        had_error_on_reading_early_data = true;
+        ssl_error                       = SSL_get_error(ssl, ret);
+      } else if (ret == SSL_READ_EARLY_DATA_FINISH) {
+        finished_reading_early_data = true;
+      }
+#else
+      // If SSL_read_early_data is unavailable, it's probably OpenSSL,
+      // and SSL_in_early_data should be available.
+      if (SSL_in_early_data(ssl)) {
+        ret = SSL_read(ssl, buf, nbytes);
+        finished_reading_early_data = !SSL_in_early_data(ssl);
+        if (ret < 0) {
+          if (!finished_reading_early_data) {
+            had_error_on_reading_early_data = true;
+            ssl_error = SSL_get_error(ssl, ret);
+          }
+          read_bytes = 0;
+        } else {
+          read_bytes = ret;
+        }
+      } else {
+        finished_reading_early_data = true;
+        read_bytes = 0;
+      }
+#endif
+
+      if (had_error_on_reading_early_data) {
         Debug("ssl_early_data", "Error reading early data: %s", ERR_error_string(ERR_get_error(), nullptr));
       } else {
         if ((nread = read_bytes) > 0) {
@@ -2228,7 +2323,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
           }
         }
 
-        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+        if (finished_reading_early_data) {
           this->_early_data_finish = true;
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %" PRId64, nread);
         } else {
