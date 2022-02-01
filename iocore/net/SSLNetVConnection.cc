@@ -2084,19 +2084,22 @@ SSLNetVConnection::_ssl_connect()
   ERR_clear_error();
 
   SSL_SESSION *sess = SSL_get_session(ssl);
-  if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
-    std::string sni_addr = get_sni_addr(ssl);
-    if (!sni_addr.empty()) {
-      std::string lookup_key;
-      ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
+  if (first_ssl_connect) {
+    first_ssl_connect = false;
+    if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
+      std::string sni_addr = get_sni_addr(ssl);
+      if (!sni_addr.empty()) {
+        std::string lookup_key;
+        ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
 
-      Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
+        Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 
-      std::shared_ptr<SSL_SESSION> shared_sess = this->getOriginSession(ssl, lookup_key);
+        std::shared_ptr<SSL_SESSION> shared_sess = this->getOriginSession(ssl, lookup_key);
 
-      if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
-        // Keep a reference of this shared pointer in the connection
-        this->client_sess = shared_sess;
+        if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
+          // Keep a reference of this shared pointer in the connection
+          this->client_sess = shared_sess;
+        }
       }
     }
   }
