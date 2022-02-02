@@ -294,6 +294,7 @@ Changes with Apache Traffic Server 9.2.0
   #8327 - Make fqdn of sni.yaml case insensitive.
   #8328 - Fix missing outbound_conntrack config assigment(from master config to global parameter config)
   #8330 - Fix origin session cache double free
+  #8331 - Change the function signature of safe_[get|set]sockopt
   #8332 - docs: Update host_sni_policy for some behaviors
   #8336 - Updated the CODEOWNERS for me
   #8337 - Adding TLS session key logging capability
@@ -365,21 +366,20 @@ Changes with Apache Traffic Server 9.2.0
   #8537 - docs: fix fedora install notes and spelling issues
   #8540 - Enable conf_remap_float test and remove special case for local config file
   #8541 - Eliminate unused code in LogObject.
-  #8545 - TSHttpTxnCacheLookupStatusGet: handle cannot respond cases
   #8550 - TSUserArg: add value type checking
   #8556 - Fixes macOS arm64 builds (again)
+  #8568 - Update descriptions of sni.yaml.default
   #8578 - Add SSLSessionDup for older OpenSSL and BoringSSL
   #8585 - Clean up of next hop HostRecord class.
   #8586 - Eliminate erroneous self-loop error on transparent mode
   #8589 - SNIConfig: tunnel_route -  Change the way we extract matched subgroups from the servename
   #8593 - Fix transparent mode documentation
   #8594 - Propagate accept options to HTTP/2
+  #8600 - Prevent calling SSL_set_session in the middle of handshake
   #8603 - LogFilter: fix NULL termination check
   #8606 - Fixed a scoping bug that leads to "sticky" parent weights
   #8608 - Update to Proxy Verifier version v2.3.0
   #8609 - Don't use Http1ClientTransaction as an event handler
   #8611 - Removes hard dependency on having perl installed to build
   #8613 - fix for collapsed forwarding ink_abort for CacheHitFresh fail
-  #8617 - TSHttpTxnCacheLookupStatusGet: call need_to_revalidate
-  #8621 - Commenting TSHttpTxnCacheLookupStatusGet need_to_revalidate
   #8626 - Fix 32bit build failure on Odroid Xu-4
