@@ -25,6 +25,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <string.h>
 
 #if __has_include(<ts/ts.h>)
 #include <ts/ts.h>
@@ -53,6 +54,30 @@
 
 namespace ts
 {
+class Strerror
+{
+public:
+  Strerror(int err_num)
+  {
+    _c_str = strerror_r(err_num, _buf, 256);
+    if (!_c_str) {
+      _c_str = "strerror_r() call failed";
+    } else {
+      _buf[255] = '\0';
+    }
+  }
+
+  char const *
+  c_str() const
+  {
+    return (_c_str);
+  }
+
+private:
+  char _buf[256];
+  char const *_c_str;
+};
+
 // A class with the same interface as std::shared_mutex, but which is not prone to writer starvation.
 //
 class shared_mutex
@@ -70,7 +95,7 @@ public:
   {
     int error = pthread_rwlock_wrlock(&_lock);
     if (error != 0) {
-      TSFatal("pthread_rwlock_wrlock(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_wrlock", &_lock, error);
     }
     X(_exclusive = true;)
   }
@@ -83,7 +108,7 @@ public:
       return false;
     }
     if (error != 0) {
-      TSFatal("pthread_rwlock_trywrlock(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_trywrlock", &_lock, error);
     }
     X(_exclusive = true;)
 
@@ -104,7 +129,7 @@ public:
   {
     int error = pthread_rwlock_rdlock(&_lock);
     if (error != 0) {
-      TSFatal("pthread_rwlock_rdlock(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_rdlock", &_lock, error);
     }
     X(++_shared;)
   }
@@ -117,7 +142,7 @@ public:
       return false;
     }
     if (error != 0) {
-      TSFatal("pthread_rwlock_tryrdlock(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_tryrdlock", &_lock, error);
     }
 
     X(++_shared;)
@@ -139,7 +164,7 @@ public:
   {
     int error = pthread_rwlock_destroy(&_lock);
     if (error != 0) {
-      TSFatal("pthread_rwlock_destory(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_destroy", &_lock, error);
     }
   }
 
@@ -157,7 +182,7 @@ private:
   {
     int error = pthread_rwlock_unlock(&_lock);
     if (error != 0) {
-      TSFatal("pthread_rwlock_unlock(%p) failed: %s (%d)", &_lock, strerror(error), error);
+      _call_fatal("pthread_rwlock_unlock", &_lock, error);
     }
   }
 
@@ -174,6 +199,12 @@ private:
 #warning "Use of ts::shared_mutex may result in writer starvation"
 #endif
 #endif
+
+  void
+  _call_fatal(char const *func_name, void *ptr, int errnum)
+  {
+    TSFatal("%s(%p) failed: %s (%d)", func_name, ptr, Strerror(errnum).c_str(), errnum);
+  }
 
   // In debug builds, make sure shared vs. exlusive locks and unlocks are properly paired.
   //
