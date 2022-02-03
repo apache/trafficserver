@@ -48,7 +48,7 @@ trafficserver_dir = os.path.join(runroot_path, 'var', 'trafficserver')
 tr.ChownForATSProcess(trafficserver_dir)
 
 p = tr.Processes.Default
-p.Command = "$ATS_BIN/traffic_manager --run-root=" + rr_file
+p.Command = "$ATS_BIN/traffic_server --run-root=" + rr_file
 p.RunningEvent.Connect(Testers.Lambda(lambda ev: StopProcess(ev, 10)))
 p.Streams.All = Testers.ContainsExpression("traffic_server: using root directory '" +
                                            runroot_path + "'", "check if the right runroot is passed down")

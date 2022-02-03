@@ -192,7 +192,7 @@ TestHttp1_1('www.forwarded-connection-compact.com')
 TestHttp1_1('www.forwarded-connection-std.com')
 TestHttp1_1('www.forwarded-connection-full.com')
 
-ts2 = Test.MakeATSProcess("ts2", command="traffic_server", enable_tls=True, dump_runroot=True)
+ts2 = Test.MakeATSProcess("ts2", command="traffic_server", enable_tls=True)
 
 baselineTsSetup(ts2)
 
@@ -205,8 +205,6 @@ ts2.Disk.remap_config.AddLine(
     'map https://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
-ts2.SetRunRootEnv()
 
 # Forwarded header with UUID of 2nd ATS.
 tr = Test.AddTestRun()

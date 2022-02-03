@@ -110,7 +110,7 @@ class TestLogRetention:
         """
         ts_name = "ts{counter}".format(counter=TestLogRetention.__ts_counter)
         TestLogRetention.__ts_counter += 1
-        self.ts = Test.MakeATSProcess(ts_name, command=command, dump_runroot=True)
+        self.ts = Test.MakeATSProcess(ts_name, command=command)
 
         combined_records_config = TestLogRetention.__base_records_config.copy()
         combined_records_config.update(records_config)
@@ -525,9 +525,6 @@ test.tr.Processes.Default.Command = "touch " + test.ts.Disk.logging_yaml.AbsRunT
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
-
-# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
-test.ts.SetRunRootEnv()
 
 tr = Test.AddTestRun("Perform a config reload")
 tr.Processes.Default.Command = "traffic_ctl config reload"

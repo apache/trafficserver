@@ -94,9 +94,7 @@ def add_testrun_for_jsonrpc_request(
     return tr
 
 
-ts = Test.MakeATSProcess('ts', enable_cache=True, dump_runroot=True)
-# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
-ts.SetRunRootEnv()
+ts = Test.MakeATSProcess('ts', enable_cache=True)
 
 Test.testName = 'Basic JSONRPC API test'
 

@@ -24,7 +24,7 @@ Test.ContinueOnFail = False
 Test.Setup.Copy("wait_reload.sh")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False, dump_runroot=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/test.inc", id="test_cfg", typename="ats:config")
 ts.Disk.test_cfg.AddLine(
@@ -60,7 +60,7 @@ tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Reload config")
 tr.StillRunningAfter = ts
-tr.Processes.Default.Command = f'traffic_ctl config reload --run-root {ts.Disk.runroot_yaml.Name}'
+tr.Processes.Default.Command = f'traffic_ctl config reload'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
