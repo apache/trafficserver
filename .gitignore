@@ -18,9 +18,15 @@ Makefile.in
 
 .dirstamp
 
+# IDE generated files.
 .project
 .cproject
 .idea
+
+# clangd language server files.
+/compile_commands.json
+/.cache
+*.plist
 
 .diags.log.meta
 
