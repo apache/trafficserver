@@ -145,6 +145,8 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
+# Delay it so the reload can catch up the diff between config files timestamps.
+tr.DelayStart = 1
 
 # 3 Test - Revalidate path1
 tr = Test.AddTestRun("Revalidate MISS path1")
@@ -174,6 +176,8 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
+# Delay it so the reload can catch up the diff between config files timestamps.
+tr.DelayStart = 1
 
 # 6 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
@@ -195,6 +199,8 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
+# Delay it so the reload can catch up the diff between config files timestamps.
+tr.DelayStart = 1
 
 # 8 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
@@ -216,6 +222,8 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
+# Delay it so the reload can catch up the diff between config files timestamps.
+tr.DelayStart = 1
 
 # 10 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
