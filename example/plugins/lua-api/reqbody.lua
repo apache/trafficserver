@@ -14,7 +14,10 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-function encrypt(data, eos)
+-- This example illustrates how to do request body transform.
+-- It stores the request body and prints it at the end of the transform.
+
+function request_transform(data, eos)
   ts.ctx['reqbody'] = ts.ctx['reqbody'] .. data
 
   if ts.ctx['len_set'] == nil then
@@ -39,7 +42,7 @@ function do_remap()
   ts.debug('do_remap')
   if (ts.client_request.get_method() == 'POST') then
     ts.ctx['reqbody'] = ''
-    ts.hook(TS_LUA_REQUEST_TRANSFORM, encrypt)
+    ts.hook(TS_LUA_REQUEST_TRANSFORM, request_transform)
   end
 
   return 0
