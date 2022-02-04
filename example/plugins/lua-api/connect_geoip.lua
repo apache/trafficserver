@@ -22,7 +22,8 @@
 -- 1. install legacy GeoIP library 1.6.12 (https://github.com/maxmind/geoip-api-c)
 --   a. wget https://github.com/maxmind/geoip-api-c/releases/download/v1.6.12/GeoIP-1.6.12.tar.gz
 --   b. tar zxvf GeoIP-1.6.12.tar.gz
---   c. ./configure; make; make install
+--   c. cd GeoIP-1.6.12
+--   d. ./configure; make; make install
 -- 2. Find and install GeoIP legacy country database to /usr/local/share/GeoIP/GeoIP.dat
 -- 3. install luajit-geoip v2.1.0 (https://github.com/leafo/luajit-geoip)
 --   a. wget https://github.com/leafo/luajit-geoip/archive/refs/tags/v2.1.0.tar.gz
