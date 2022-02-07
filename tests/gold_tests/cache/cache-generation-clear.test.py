@@ -23,7 +23,7 @@ Test that incrementing the cache generation acts like a cache clear
 '''
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True)
 
 # setup some config file for this server
 ts.Disk.records_config.update({
@@ -63,7 +63,7 @@ tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
 # Call traffic_ctrl to set new generation
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'traffic_ctl --debug config set proxy.config.http.cache.generation 77 --run-root {ts.Disk.runroot_yaml.Name}'
+tr.Processes.Default.Command = f'traffic_ctl --debug config set proxy.config.http.cache.generation 77'
 tr.Processes.Default.ForceUseShell = False
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env  # set the environment for traffic_control to run in

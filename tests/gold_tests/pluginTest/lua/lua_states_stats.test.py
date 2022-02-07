@@ -30,8 +30,8 @@ server = Test.MakeOriginServer("server")
 
 # It is necessary to redirect stderr to a file so it will be available for examination by a test run.
 ts = Test.MakeATSProcess(
-    "ts", command="traffic_server 2> " + Test.RunDirectory + "/ts.stderr.txt", select_ports=True, dump_runroot=True
-)
+    "ts", command="traffic_server 2> " + Test.RunDirectory + "/ts.stderr.txt", select_ports=True)
+
 ts.ReturnCode = 0
 
 Test.testName = "Lua states and stats"
@@ -63,9 +63,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ts_lua',
     'proxy.config.plugin.lua.max_states': 4,
 })
-
-# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
-ts.SetRunRootEnv()
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(ts.Variables.port)
 

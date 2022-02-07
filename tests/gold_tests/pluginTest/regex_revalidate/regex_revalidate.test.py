@@ -44,7 +44,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True)
 
 Test.testName = "regex_revalidate"
 Test.Setup.Copy("metrics.sh")
@@ -279,7 +279,8 @@ tr.StillRunningAfter = ts
 # 12 Stats check
 tr = Test.AddTestRun("Check stats")
 tr.DelayStart = 5
-tr.Processes.Default.Command = f"bash -c './metrics.sh {ts.Disk.runroot_yaml.Name}'"
+# tr.Processes.Default.Command = f"bash -c './metrics.sh {ts.Disk.runroot_yaml.Name}'"
+tr.Processes.Default.Command = f"bash -c './metrics.sh'"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

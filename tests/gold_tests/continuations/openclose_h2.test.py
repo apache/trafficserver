@@ -27,7 +27,7 @@ Test.SkipUnless(
 )
 
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_server", enable_cache=False, dump_runroot=True)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_server", enable_cache=False)
 
 
 server = Test.MakeOriginServer("server")
@@ -84,9 +84,6 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
-
-# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
-ts.SetRunRootEnv()
 
 # Signal that all the curl processes have completed
 tr = Test.AddTestRun("Curl Done")

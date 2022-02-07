@@ -38,7 +38,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server", dump_runroot=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 Test.testName = "regex_revalidate_miss"
 Test.Setup.Copy("metrics_miss.sh")
@@ -151,7 +151,7 @@ tr.DelayStart = 1
 # 3 Test - Revalidate path1
 tr = Test.AddTestRun("Revalidate MISS path1")
 ps = tr.Processes.Default
-tr.DelayStart = 5
+tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
@@ -182,7 +182,7 @@ tr.DelayStart = 1
 # 6 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
-tr.DelayStart = 5
+tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
@@ -205,7 +205,7 @@ tr.DelayStart = 1
 # 8 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
-tr.DelayStart = 5
+tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
@@ -228,7 +228,7 @@ tr.DelayStart = 1
 # 10 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
-tr.DelayStart = 5
+tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
@@ -237,7 +237,7 @@ tr.StillRunningAfter = ts
 # 11 Stats check
 tr = Test.AddTestRun("Check stats")
 tr.DelayStart = 5
-tr.Processes.Default.Command = f"bash -c './metrics_miss.sh {ts.Disk.runroot_yaml.Name}'"
+tr.Processes.Default.Command = f"bash -c ./metrics_miss.sh"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

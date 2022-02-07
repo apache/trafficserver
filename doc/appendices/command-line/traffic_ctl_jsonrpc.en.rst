@@ -570,38 +570,9 @@ Configure Traffic Server to insert ``Via`` header in the response to the client
 Autest
 ======
 
-If you want to interact with |TS| under a unit test, then a few things need to be considered.
-
-- Runroot needs to be configured in order to  let `traffic_ctl` knows where to find the socket.
-
-   There are currently two ways to do this:
-
-   1. Using `run-root` param.
-
-      1. Let `Test.MakeATSProcess` to create the runroot file under the |TS| config directory. This can be done by passing `dump_runroot=True` to the above function:
-
-       .. code-block:: python
-
-         ts = Test.MakeATSProcess(..., dump_runroot=True)
-
-
-      `dump_runroot` will write out some of the keys inside the runroot file, in this case the `runtimedir`.
-
-      1. Then you should specify the :option:`traffic_ctl --run-root` when invoking the command:
-
-         .. code-block:: python
-
-            tr.Processes.Default.Command = f'traffic_ctl config reload --run-root {ts.Disk.runroot_yaml.Name}'
-
-   2. Setting up the `TS_RUNROOT` environment variable.
-      This is very similar to `1` but, instead of passing the `--run-root` param to `traffic_ctl`, you just need to specify the
-      `TS_RUNROOT` environment variable. To do that, just do as 1.1 shows and then:
-
-      .. code-block:: python
-
-         ts.SetRunRootEnv()
-
-      The above call will set the variable, please be aware that this variable will also be read by TS.
+Runroot needs to be configured in order to let `traffic_ctl` know where to find the socket. This is done by default
+and there is no change you have to do to interact with it, but make sure that you are not overriding the `dump_runroot=False`
+when creating the ATS Process, otherwise the `runroot.yaml` will not be set.
 
 See also
 ========
