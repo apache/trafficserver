@@ -2797,7 +2797,7 @@ ts.http.resp_transform.get_upstream_bytes
 -----------------------------------------
 **syntax:** *ts.http.resp_transform.get_upstream_bytes()*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to retrieve the total bytes to be received from the upstream. If we got
 chunked response body from origin server, TS_LUA_INT64_MAX will be returned.
@@ -2841,7 +2841,7 @@ ts.http.resp_transform.get_upstream_watermark_bytes
 ---------------------------------------------------
 **syntax:** *ts.http.resp_transform.get_upstream_watermark_bytes()*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to retrieve the current watermark bytes for the upstream transform buffer.
 
@@ -2852,7 +2852,7 @@ ts.http.resp_transform.set_upstream_watermark_bytes
 ---------------------------------------------------
 **syntax:** *ts.http.resp_transform.set_upstream_watermark_bytes(NUMBER)*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to set the watermark bytes of the upstream transform buffer.
 
@@ -2865,12 +2865,92 @@ ts.http.resp_transform.set_downstream_bytes
 -------------------------------------------
 **syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to set the total bytes to be sent to the downstream.
 
 Sometimes we want to set Content-Length header in client_response, and this function should be called before any real
 data is returned from the transform handler.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.get_downstream_bytes
+------------------------------------------
+**syntax:** *ts.http.req_transform.get_downstream_bytes()*
+
+**context:** transform handler for request
+
+**description**: This function can be used to retrieve the total bytes to be received from downstream.
+
+Here is an example:
+
+::
+
+    function transform_print(data, eos)
+      ts.ctx['reqbody'] = ts.ctx['reqbody'] .. data
+
+      if ts.ctx['len_set'] == nil then
+        local sz = ts.http.req_transform.get_downstream_bytes()
+        ts.http.req_transform.set_upstream_bytes(sz)
+        ts.ctx['len_set'] = true
+      end
+
+      if (eos == 1) then
+        ts.debug('End of Stream and the reqbody is ... ')
+        ts.debug(ts.ctx['reqbody'])
+      end
+
+      return data, eos
+    end
+
+    function do_remap()
+      if (ts.client_request.get_method() == 'POST') then
+        ts.ctx['reqbody'] = ''
+        ts.hook(TS_LUA_REQUEST_TRANSFORM, transform_print)
+      end
+
+      return 0
+    end
+
+The above example also shows the use of eos passed as a parameter to transform function. It indicates the end of the
+data stream to the transform function.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.get_downstream_watermark_bytes
+----------------------------------------------------
+**syntax:** *ts.http.req_transform.get_downstream_watermark_bytes()*
+
+**context:** transform handler for request
+
+**description**: This function can be used to retrieve the current watermark bytes for the downstream transform buffer.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.set_downstream_watermark_bytes
+----------------------------------------------------
+**syntax:** *ts.http.req_transform.set_downstream_watermark_bytes(NUMBER)*
+
+**context:** transform handler for request
+
+**description**: This function can be used to set the watermark bytes of the downstream transform buffer.
+
+Setting the watermark bytes above 32kb may improve the performance of the transform handler.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.set_upstream_bytes
+----------------------------------------
+**syntax:** *ts.http.req_transform.set_upstream_bytes(NUMBER)*
+
+**context:** transform handler for request
+
+**description**: This function can be used to set the total bytes to be sent to the upstream.
+
+This function should be called before any real data is returned from the transform handler.
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
