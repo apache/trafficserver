@@ -47,64 +47,8 @@ struct StrategyTxn {
   TSNextHopSelectionStrategy *strategy;
   void *txn; // void* because the actual type will depend on the strategy.
   int request_count;
-  const char *prev_host; // the actually tried host, used when send_request sets the response_action to be the next thing to try.
-  size_t prev_host_len;
-  in_port_t prev_port;
-  bool prev_is_retry;
-  bool prev_no_cache;
+  TSResponseAction prev_ra;
 };
-
-int
-handle_send_request(TSHttpTxn txnp, StrategyTxn *strategyTxn)
-{
-  TSDebug(PLUGIN_NAME, "handle_send_request calling");
-  TSDebug(PLUGIN_NAME, "handle_send_request got strategy '%s'", strategyTxn->strategy->name());
-
-  auto strategy = strategyTxn->strategy;
-
-  // if (strategyTxn->retry_attempts == 0) {
-  //   // just did a DoRemap, which means we need to set the response_action of what to do in the event of failure
-  //   // because a failure might not call read_response (e.g. dns failure)
-  //   strategyTxn->retry_attempts = 1;
-  //   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  //   return TS_SUCCESS;
-  // }
-
-  // before sending a req, we need to set what to do on failure.
-  // Because some failures don't call handle_response before getting to HttpTransact::HandleResponse
-  // (e.g. connection failures)
-
-  TSResponseAction ra;
-  TSHttpTxnResponseActionGet(txnp, &ra);
-
-  TSDebug(PLUGIN_NAME, "handle_send_request setting prev %.*s:%d", int(ra.hostname_len), ra.hostname, ra.port);
-  strategyTxn->prev_host     = ra.hostname;
-  strategyTxn->prev_host_len = ra.hostname_len;
-  strategyTxn->prev_port     = ra.port;
-  strategyTxn->prev_is_retry = ra.is_retry;
-  strategyTxn->prev_no_cache = ra.no_cache;
-
-  strategy->next(txnp, strategyTxn->txn, ra.hostname, ra.hostname_len, ra.port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry, &ra.no_cache);
-
-  ra.nextHopExists = ra.hostname_len != 0;
-  ra.fail = !ra.nextHopExists; // failed is whether to fail and return to the client. failed=false means to retry the parent we set
-                               // in the response_action
-
-  // we don't know if it's retryable yet, because we don't have a status. So set it retryable if we have something which could be
-  // retried. We'll set it retryable per the status in handle_response, and os_dns (which is called on connection failures, and
-  // always retryable [notwithstanding num_retries]).
-  ra.responseIsRetryable = ra.nextHopExists;
-  ra.goDirect            = strategy->goDirect();
-  ra.parentIsProxy       = strategy->parentIsProxy();
-
-  TSDebug(PLUGIN_NAME, "handle_send_request setting response_action hostname '%.*s' port %d direct %d proxy %d",
-          int(ra.hostname_len), ra.hostname, ra.port, ra.goDirect, ra.parentIsProxy);
-  TSHttpTxnResponseActionSet(txnp, &ra);
-
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  return TS_SUCCESS;
-}
 
 // mark parents up or down, on failure or successful retry.
 void
@@ -118,17 +62,14 @@ mark_response(TSHttpTxn txnp, StrategyTxn *strategyTxn, TSHttpStatus status)
 
   TSResponseAction ra;
   // if the prev_host isn't null, then that was the actual host we tried which needs to be marked down.
-  if (strategyTxn->prev_host != nullptr) {
-    ra.hostname     = strategyTxn->prev_host;
-    ra.hostname_len = strategyTxn->prev_host_len;
-    ra.port         = strategyTxn->prev_port;
-    ra.is_retry     = strategyTxn->prev_is_retry;
-    ra.no_cache     = strategyTxn->prev_no_cache;
+  if (strategyTxn->prev_ra.hostname_len != 0) {
+    ra = strategyTxn->prev_ra;
     TSDebug(PLUGIN_NAME, "mark_response using prev %.*s:%d", int(ra.hostname_len), ra.hostname, ra.port);
   } else {
     TSHttpTxnResponseActionGet(txnp, &ra);
     TSDebug(PLUGIN_NAME, "mark_response using response_action %.*s:%d", int(ra.hostname_len), ra.hostname, ra.port);
   }
+
   if (isFailure && strategy->onFailureMarkParentDown(status)) {
     if (ra.hostname == nullptr) {
       TSError(
@@ -159,13 +100,6 @@ handle_read_response(TSHttpTxn txnp, StrategyTxn *strategyTxn)
 
   TSDebug(PLUGIN_NAME, "handle_read_response got strategy '%s'", strategy->name());
 
-  // increment request count here, not send_request, because we need to consistently increase with os_dns hooks.
-  // if we incremented the req count in send_request and not here, that would never be called on DNS failures, but DNS successes
-  // would call os_dns and also send_request, resulting in dns failures incrementing the count by 1, and dns successes but http
-  // failures would increment by 2. And successes would increment by 2. Hence, the only consistent way to count requests is on
-  // read_response and os_dns, and not send_request.
-  ++strategyTxn->request_count;
-
   TSMBuffer resp;
   TSMLoc resp_hdr;
   if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &resp, &resp_hdr)) {
@@ -193,18 +127,15 @@ handle_read_response(TSHttpTxn txnp, StrategyTxn *strategyTxn)
     // Status.
     TSResponseAction ra;
     TSHttpTxnResponseActionGet(txnp, &ra);
-    ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count, status);
+    ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count - 1, status);
     TSHttpTxnResponseActionSet(txnp, &ra);
   }
 
   // un-set the "prev" hackery. That only exists for markdown, which we just did.
   // The response_action is now the next thing to try, if this was a failure,
   // and should now be considered authoritative for everything.
-  strategyTxn->prev_host     = nullptr;
-  strategyTxn->prev_host_len = 0;
-  strategyTxn->prev_port     = 0;
-  strategyTxn->prev_is_retry = false;
-  strategyTxn->prev_no_cache = false;
+
+  memset(&strategyTxn->prev_ra, 0, sizeof(TSResponseAction));
 
   TSHandleMLocRelease(resp, TS_NULL_MLOC, resp_hdr);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -216,48 +147,37 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
 {
   TSDebug(PLUGIN_NAME, "handle_os_dns calling");
 
-  ++strategyTxn->request_count; // this is called after connection failures. So if we got here, we attempted a request
-
-  // This is not called on the first attempt.
-  // Thus, if we got called here, we know it's because of a parent failure.
-  // So immediately find the next parent, and set the response_action.
+  ++strategyTxn->request_count;
 
   auto strategy = strategyTxn->strategy;
 
   TSDebug(PLUGIN_NAME, "handle_os_dns got strategy '%s'", strategy->name());
 
-  mark_response(txnp, strategyTxn, STATUS_CONNECTION_FAILURE);
-
-  // now, we need to figure out, are we the first call after send_response set the response_action as the next-thing-to-try,
-  // or are we a subsequent call, and need to actually set a new response_action
-
-  if (strategyTxn->prev_host != nullptr) {
-    TSDebug(PLUGIN_NAME, "handle_os_dns had prev, keeping existing response_action and un-setting prev");
-    // if strategyTxn->prev_host exists, this is the very first call after send_response set the response_action to the next thing
-    // to try. and no handle_response was called in-between (because it was a connection or dns failure) So keep that, and set
-    // prev_host=nullptr (so we get a new response_action the next time we're called)
-    strategyTxn->prev_host     = nullptr;
-    strategyTxn->prev_port     = 0;
-    strategyTxn->prev_is_retry = false;
-    strategyTxn->prev_no_cache = false;
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-    return TS_SUCCESS;
+  const TSServerState server_state = TSHttpTxnServerStateGet(txnp);
+  if (server_state == TS_SRVSTATE_CONNECTION_ERROR || server_state == TS_SRVSTATE_INACTIVE_TIMEOUT) {
+    mark_response(txnp, strategyTxn, STATUS_CONNECTION_FAILURE);
   }
 
   TSDebug(PLUGIN_NAME, "handle_os_dns had no prev, setting new response_action");
 
+  {
+    TSResponseAction ra;
+    TSHttpTxnResponseActionGet(txnp, &ra);
+    strategyTxn->prev_ra = ra;
+  }
+
   TSResponseAction ra;
-  memset(&ra, 0, sizeof(TSResponseAction)); // because {0} gives a C++ warning. Ugh.
-  const char *const exclude_host = nullptr;
-  const size_t exclude_host_len  = 0;
-  const in_port_t exclude_port   = 0;
+  memset(&ra, 0, sizeof(TSResponseAction));
+  const char *const exclude_host = strategyTxn->prev_ra.hostname;
+  const size_t exclude_host_len  = strategyTxn->prev_ra.hostname_len;
+  const in_port_t exclude_port   = strategyTxn->prev_ra.port;
   strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
                  &ra.is_retry, &ra.no_cache);
 
   ra.fail = ra.hostname == nullptr; // failed is whether to immediately fail and return the client a 502. In this case: whether or
                                     // not we found another parent.
   ra.nextHopExists       = ra.hostname_len != 0;
-  ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count, STATUS_CONNECTION_FAILURE);
+  ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count - 1, STATUS_CONNECTION_FAILURE);
   ra.goDirect            = strategy->goDirect();
   ra.parentIsProxy       = strategy->parentIsProxy();
   TSDebug(PLUGIN_NAME, "handle_os_dns setting response_action hostname '%.*s' port %d direct %d proxy %d is_retry %d exists %d",
@@ -298,14 +218,8 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   TSDebug(PLUGIN_NAME, "handle_hook got strategy '%s'", strategyTxn->strategy->name());
 
   switch (event) {
-  // case TS_EVENT_HTTP_READ_REQUEST_HDR:
-  //   return handle_read_request(txnp, strategyTxn);
-  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
-    return handle_send_request(txnp, strategyTxn);
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     return handle_read_response(txnp, strategyTxn);
-  // case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-  //   return handle_send_response(txnp, strategyTxn);
   case TS_EVENT_HTTP_OS_DNS:
     return handle_os_dns(txnp, strategyTxn);
   case TS_EVENT_HTTP_TXN_CLOSE:
@@ -417,16 +331,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   strategyTxn->strategy      = strategy;
   strategyTxn->txn           = strategy->newTxn();
   strategyTxn->request_count = 0;
-  strategyTxn->prev_host     = nullptr;
-  strategyTxn->prev_port     = 0;
-  strategyTxn->prev_is_retry = false;
-  strategyTxn->prev_no_cache = false;
+  memset(&strategyTxn->prev_ra, 0, sizeof(TSResponseAction));
   TSContDataSet(cont, (void *)strategyTxn);
 
-  // TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
-  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, cont);
   TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
-  // TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
   TSHttpTxnHookAdd(txnp, TS_HTTP_OS_DNS_HOOK, cont);
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, cont);
 
