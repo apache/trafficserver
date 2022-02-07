@@ -549,9 +549,10 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
   // ----------------------------------------------------------------------------------------------------
 
   if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || state->retry)) {
-    state->result      = PL_NH_PARENT_SPECIFIED;
-    state->hostname    = pRec->hostname.c_str();
-    state->last_parent = pRec->host_index;
+    state->result       = PL_NH_PARENT_SPECIFIED;
+    state->hostname     = pRec->hostname.c_str();
+    state->hostname_len = pRec->hostname.size();
+    state->last_parent  = pRec->host_index;
     state->last_lookup = state->last_group = cur_ring;
     switch (scheme) {
     case PL_NH_SCHEME_NONE:
@@ -573,11 +574,12 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
     PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] state->result: %s Chosen parent: %s.%d", sm_id, PLNHParentResultStr[state->result],
                 state->hostname, state->port);
   } else {
-    state->result   = go_direct ? PL_NH_PARENT_DIRECT : PL_NH_PARENT_FAIL;
-    state->retry    = false;
-    state->hostname = nullptr;
-    state->port     = 0;
-    state->no_cache = false;
+    state->result       = go_direct ? PL_NH_PARENT_DIRECT : PL_NH_PARENT_FAIL;
+    state->retry        = false;
+    state->hostname     = nullptr;
+    state->hostname_len = 0;
+    state->port         = 0;
+    state->no_cache     = false;
     PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] state->result: %s set hostname null port 0 retry %d", sm_id,
                 PLNHParentResultStr[state->result], state->retry);
   }
