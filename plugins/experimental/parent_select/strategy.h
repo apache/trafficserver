@@ -36,7 +36,7 @@
 // TODO rename, move to respective sub-plugins
 #define PLUGIN_NAME "pparent_select"
 
-constexpr const char *PL_NH_DEBUG_TAG = "plugin_nexthop";
+constexpr const char *PL_NH_DEBUG_TAG = PLUGIN_NAME;
 
 // ring mode strings
 extern const std::string_view alternate_rings;

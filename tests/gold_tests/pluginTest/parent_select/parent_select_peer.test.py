@@ -80,7 +80,7 @@ for i in range(num_peer):
 
     ts.Disk.records_config.update({
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb|cachekey|plugin_nexthop',
+        'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb|cachekey|pparent_select',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",  # Only nameservers if resolv_conf NULL.
         'proxy.config.dns.resolv_conf': "NULL",  # This defaults to /etc/resvolv.conf (OS namesevers) if not NULL.
         'proxy.config.http.cache.http': 1,
@@ -171,7 +171,7 @@ for i in range(num_object):
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     "grep -e '^+++' -e '^[A-Z].*TTP/' -e '^.alts. --' -e 'PARENT_SPECIFIED' trace_peer*.log"
-    " | sed 's/^.*(plugin_nexthop) [^ ]* //' | sed 's/[.][0-9]*$$//'"
+    " | sed 's/^.*(pparent_select) [^ ]* //' | sed 's/[.][0-9]*$$//'"
 )
 tr.Processes.Default.Streams.stdout = "peer.trace.gold"
 tr.Processes.Default.ReturnCode = 0

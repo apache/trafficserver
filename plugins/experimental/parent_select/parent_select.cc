@@ -87,7 +87,7 @@ handle_send_request(TSHttpTxn txnp, StrategyTxn *strategyTxn)
   strategy->next(txnp, strategyTxn->txn, ra.hostname, ra.hostname_len, ra.port, &ra.hostname, &ra.hostname_len, &ra.port,
                  &ra.is_retry, &ra.no_cache);
 
-  ra.nextHopExists = strategy->nextHopExists(txnp);
+  ra.nextHopExists = ra.hostname_len != 0;
   ra.fail = !ra.nextHopExists; // failed is whether to fail and return to the client. failed=false means to retry the parent we set
                                // in the response_action
 
@@ -256,7 +256,7 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
 
   ra.fail = ra.hostname == nullptr; // failed is whether to immediately fail and return the client a 502. In this case: whether or
                                     // not we found another parent.
-  ra.nextHopExists       = strategy->nextHopExists(txnp);
+  ra.nextHopExists       = ra.hostname_len != 0;
   ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count, STATUS_CONNECTION_FAILURE);
   ra.goDirect            = strategy->goDirect();
   ra.parentIsProxy       = strategy->parentIsProxy();
