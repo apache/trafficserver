@@ -100,8 +100,8 @@ struct HealthChecks {
 };
 
 struct NHProtocol {
-  NHSchemeType scheme;
-  uint32_t port;
+  NHSchemeType scheme = NH_SCHEME_NONE;
+  uint32_t port       = 0;
   std::string health_check_url;
 };
 
