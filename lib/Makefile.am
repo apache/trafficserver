@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records fastlz
+SUBDIRS = . records fastlz swoc
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
