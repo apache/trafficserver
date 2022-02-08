@@ -260,16 +260,15 @@ TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle spaces multipl
   CHECK(inLen - 6 == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): does not squeeze middle whitespaces different from spaces, check string",
-          "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle whitespaces, check string", "[utility]")
 {
-  const char in[] = "Very \t\tImportant \t\t\tMessage";
+  const char in[] = "Very \t\nImportant \v\f\rMessage";
   size_t inLen    = strlen(in);
 
   const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK_FALSE(trimmed.compare("Very \t\tImportant \t\t\tMessage"));
-  CHECK(inLen == trimmed.length());
+  CHECK_FALSE(trimmed.compare("Very Important Message"));
+  CHECK(inLen - 5 == trimmed.length());
 }
 
 TEST_CASE("trimWhiteSpaces(): trim both, check string", "[utility]")

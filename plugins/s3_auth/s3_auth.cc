@@ -554,24 +554,29 @@ S3Config::parse_config(const std::string &config_fname)
       }
 
       // Identify the keys (and values if appropriate)
-      if (0 == strncasecmp(pos2, "secret_key=", 11)) {
-        set_secret(pos2 + 11);
-      } else if (0 == strncasecmp(pos2, "access_key=", 11)) {
-        set_keyid(pos2 + 11);
-      } else if (0 == strncasecmp(pos2, "session_token=", 14)) {
-        set_token(pos2 + 14);
-      } else if (0 == strncasecmp(pos2, "version=", 8)) {
-        set_version(pos2 + 8);
-      } else if (0 == strncasecmp(pos2, "virtual_host", 12)) {
+      std::string key_val(pos2, pos1 - pos2 + 1);
+      size_t eq_pos       = key_val.find_first_of("=");
+      std::string key_str = trimWhiteSpaces(key_val.substr(0, eq_pos == String::npos ? key_val.size() : eq_pos));
+      std::string val_str = eq_pos == String::npos ? "" : trimWhiteSpaces(key_val.substr(eq_pos + 1, key_val.size()));
+
+      if (key_str == "secret_key") {
+        set_secret(val_str.c_str());
+      } else if (key_str == "access_key") {
+        set_keyid(val_str.c_str());
+      } else if (key_str == "session_token") {
+        set_token(val_str.c_str());
+      } else if (key_str == "version") {
+        set_version(val_str.c_str());
+      } else if (key_str == "virtual_host") {
         set_virt_host();
-      } else if (0 == strncasecmp(pos2, "v4-include-headers=", 19)) {
-        set_include_headers(pos2 + 19);
-      } else if (0 == strncasecmp(pos2, "v4-exclude-headers=", 19)) {
-        set_exclude_headers(pos2 + 19);
-      } else if (0 == strncasecmp(pos2, "v4-region-map=", 14)) {
-        set_region_map(pos2 + 14);
-      } else if (0 == strncasecmp(pos2, "expiration=", 11)) {
-        set_expiration(pos2 + 11);
+      } else if (key_str == "v4-include-headers") {
+        set_include_headers(val_str.c_str());
+      } else if (key_str == "v4-exclude-headers") {
+        set_exclude_headers(val_str.c_str());
+      } else if (key_str == "v4-region-map") {
+        set_region_map(val_str.c_str());
+      } else if (key_str == "expiration") {
+        set_expiration(val_str.c_str());
       } else {
         // ToDo: warnings?
       }
