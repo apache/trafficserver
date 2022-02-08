@@ -259,7 +259,7 @@ Detailed examples and troubleshooting
 
 The following is an example of how the above sample keys were generated (``Sample 1`` and ``Sample 2``).
 
-Traffic server configuration ::
+|TS| configuration ::
 
   $ cat etc/trafficserver/remap.config
   map http://www.example.com http://www.origin.com \

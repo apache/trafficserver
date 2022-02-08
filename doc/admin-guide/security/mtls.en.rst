@@ -155,7 +155,7 @@ Guidance for testing
 --------------------
 You will want to verify that |TS| will accurately reload to pick up new client certificate files.
 As time goes one, the life time of certificates shrink from months to weeks or days, so you will most likely need
-to have |TS| reload configurations to load up new certificates without restarting the traffic server process (and interrupting
+to have |TS| reload configurations to load up new certificates without restarting the |TS| process (and interrupting
 customer traffic).  The following command should cause updated client certificates and keys to be loaded into the traffic_server process.
 From there you can verify via your origins that the updated certificates are being offered. ::
 

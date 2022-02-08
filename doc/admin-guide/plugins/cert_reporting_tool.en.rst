@@ -1,3 +1,5 @@
+.. include:: ../../common.defs
+
 .. _admin-plugins-cert-reporting-tool:
 
 Cert Reporting Tool Plugin
@@ -40,5 +42,5 @@ Plugin Configuration
 
 Example Usage
 =============
-Start traffic server with cert_reporting_tool loaded, then use traffic_ctl to send plugin message:
+Start |TS| with cert_reporting_tool loaded, then use traffic_ctl to send plugin message:
 ``traffic_ctl plugin msg cert_reporting_tool.client 1``

@@ -15,6 +15,8 @@
   specific language governing permissions and limitations
   under the License.
 
+.. include:: ../../common.defs
+
 .. _admin-plugins-slice:
 
 Slice Plugin
@@ -151,7 +153,7 @@ following options are provided to help with log overrun::
     slice.so -p 1
     slice.so --disable-errorlog
 
-After modifying :file:`remap.config`, restart or reload traffic server
+After modifying :file:`remap.config`, restart or reload |TS|
 (sudo traffic_ctl config reload) or (sudo traffic_ctl server restart)
 to activate the new configuration values.
 

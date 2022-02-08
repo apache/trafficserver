@@ -32,11 +32,11 @@ Security
 Controlling Access
 ==================
 
-Traffic Server can be configured to allow only certain clients to use
+|TS| can be configured to allow only certain clients to use
 the proxy cache.
 
 #. Add a line to :file:`ip_allow.yaml` for each IP address or
-   range of IP addresses allowed to access Traffic Server.
+   range of IP addresses allowed to access |TS|.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
@@ -46,17 +46,17 @@ the proxy cache.
 Basic SSL Termination
 =====================
 
-The Traffic Server *SSL termination* option enables you to secure
-connections in reverse proxy mode between a client and a Traffic Server
-and/or Traffic Server and an origin server.
+The |TS| *SSL termination* option enables you to secure
+connections in reverse proxy mode between a client and a |TS|
+and/or |TS| and an origin server.
 
 The following sections describe how to enable and configure the SSL
 termination option.
 
--  Enable and configure SSL termination for client/Traffic Server
+-  Enable and configure SSL termination for client/|TS|
    connections: :ref:`client-and-traffic-server-connections`
 
--  Enable and configure SSL termination for Traffic Server/origin server
+-  Enable and configure SSL termination for |TS|/origin server
    connections: :ref:`traffic-server-and-origin-server-connections`
 
 .. _client-and-traffic-server-connections:
@@ -66,43 +66,43 @@ Client and Traffic Server Connections
 
 .. XXX sanity check/second opinions on example paths used for certs/keys below
 
-The figure below illustrates communication between a client and Traffic
-Server (and between Traffic Server and an origin server) when the SSL
+The figure below illustrates communication between a client and |TS|
+(and between |TS| and an origin server) when the SSL
 termination option is enabled and configured for Client/Traffic
 Server connections only.
 
 .. figure:: ../../static/images/admin/ssl_c.jpg
    :align: center
-   :alt: Client and Traffic Server communication using SSL termination
+   :alt: Client and |TS| communication using SSL termination
 
-   Client and Traffic Server communication using SSL termination
+   Client and |TS| communication using SSL termination
 
 .. Manual list numbering below corresponds to figure markings above.
 
 The figure above depicts the following:
 
-#. The client sends an HTTPS request for content. Traffic Server receives the
+#. The client sends an HTTPS request for content. |TS| receives the
    request and performs the SSL handshake to authenticate the client (depending
    on the authentication options configured) and determine the encryption
    method that will be used. If the client is allowed access, then Traffic
    Server checks its cache for the requested content.
 
-#. If the request is a cache hit and the content is fresh, then Traffic Server
+#. If the request is a cache hit and the content is fresh, then |TS|
    encrypts the content and sends it to the client. The client decrypts the
    content (using the method determined during the handshake) and displays it.
 
 #. If the request is a cache miss or cached content is stale, then Traffic
    Server communicates with the origin server via HTTP and obtains a plain text
-   version of the content. Traffic Server saves the plain text version of the
+   version of the content. |TS| saves the plain text version of the
    content in its cache, encrypts the content, and sends it to the client. The
    client decrypts and displays the content.
 
-To configure Traffic Server to use the SSL termination option for
-Client/Traffic Server connections, you must do the following:
+To configure |TS| to use the SSL termination option for
+Client/|TS| connections, you must do the following:
 
 #. Obtain and install an SSL server certificate from a recognized
    certificate authority. The SSL server certificate contains
-   information that enables the client to authenticate Traffic Server
+   information that enables the client to authenticate |TS|
    and exchange encryption keys.
 
 #. Set the port number used for SSL communication using
@@ -115,7 +115,7 @@ Client/Traffic Server connections, you must do the following:
         CONFIG proxy.config.ssl.server.private_key.path STRING /opt/ts/etc/ssl/keys/
 
 #. Add an entry to :file:`ssl_multicert.config` for each certificate and key
-   which your Traffic Server system will be using to terminate SSL connections
+   which your |TS| system will be using to terminate SSL connections
    with clients. ::
 
         dest_ip=1.2.3.4 ssl_cert_name=example.com.pem
@@ -123,12 +123,12 @@ Client/Traffic Server connections, you must do the following:
 
 #. *Optional*: Configure the use of client certificates using the variable
    :ts:cv:`proxy.config.ssl.client.certification_level` in :file:`records.config`.
-   If you configure Traffic Server to require client certificates, then Traffic
+   If you configure |TS| to require client certificates, then Traffic
    Server verifies the client certificate during the SSL handshake that
-   authenticates the client. If you configure Traffic Server to not require
+   authenticates the client. If you configure |TS| to not require
    client certificates, or if you configure certificates to be optional and the
-   connecting client does not present one, then access to Traffic Server is
-   managed through other Traffic Server options that have been set (such as
+   connecting client does not present one, then access to |TS| is
+   managed through other |TS| options that have been set (such as
    rules in :file:`ip_allow.yaml`). ::
 
         CONFIG proxy.config.ssl.client.certification_level INT 0
@@ -150,46 +150,46 @@ Client/Traffic Server connections, you must do the following:
 
         CONFIG proxy.config.ssl.CA.cert.path STRING /opt/CA/certs/private-ca.pem
 
-#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
+#. Run the command :option:`traffic_ctl server restart` to restart |TS|.
 
 .. _traffic-server-and-origin-server-connections:
 
-Traffic Server and Origin Server Connections
+|TS| and Origin Server Connections
 --------------------------------------------
 
 .. XXX sanity check/second opinions on example paths used for certs/keys below
 
-The figure below illustrates communication between Traffic Server and an
+The figure below illustrates communication between |TS| and an
 origin server when the SSL termination option is enabled for Traffic
 Server/origin server connections.
 
 .. figure:: ../../static/images/admin/ssl_os.jpg
    :align: center
-   :alt: Traffic Server and origin server communication using SSL termination
+   :alt: |TS| and origin server communication using SSL termination
 
-   Traffic Server and origin server communication using SSL termination
+   |TS| and origin server communication using SSL termination
 
 .. Manual list numbering below corresponds to figure markings above.
 
 The figure above depicts the following:
 
-#. If a client request is a cache miss or is stale, then Traffic Server sends
+#. If a client request is a cache miss or is stale, then |TS| sends
    an HTTPS request for the content to the origin server. The origin server
    receives the request and performs the SSL handshake to authenticate Traffic
    Server and determine the encryption method to be used.
 
-#. If Traffic Server is allowed access, then the origin server encrypts the
-   content and sends it to Traffic Server, where it is decrypted (using the
+#. If |TS| is allowed access, then the origin server encrypts the
+   content and sends it to |TS|, where it is decrypted (using the
    method determined during the handshake). A plain text version of the content
-   is saved in the cache, if Traffic Server deems the content cacheable.
+   is saved in the cache, if |TS| deems the content cacheable.
 
-#. If SSL termination is enabled for Client/Traffic Server connections, then
-   Traffic Server re-encrypts the content and sends it to the client via HTTPS,
+#. If SSL termination is enabled for Client/|TS| connections, then
+   |TS| re-encrypts the content and sends it to the client via HTTPS,
    where it is decrypted and displayed. If SSL termination is not enabled for
-   Client/Traffic Server connections, then Traffic Server sends the plain text
+   Client/|TS| connections, then |TS| sends the plain text
    version of the content to the client via HTTP.
 
-To configure Traffic Server to use the SSL termination option for Traffic Server
+To configure |TS| to use the SSL termination option for |TS|
 and origin server connections, you must do the following:
 
 #. Ensure first that your origin server responds properly to SSL requests, and
@@ -197,7 +197,7 @@ and origin server connections, you must do the following:
    part of your access control scheme.
 
    Refer to your origin server's documentation for details. If your origin
-   server is another Traffic Server system, then you may follow the steps
+   server is another |TS| system, then you may follow the steps
    outlined in `Client and Traffic Server Connections`_ for configuring the
    origin server to validate client certificates.
 
@@ -235,7 +235,7 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.CA.cert.path STRING /opt/ts/etc/ssl/certs/
         CONFIG proxy.config.ssl.client.CA.cert.filename STRING CAs.pem
 
-#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
+#. Run the command :option:`traffic_ctl server restart` to restart |TS|.
 
 :doc:`mtls.en`
 ==============
@@ -276,11 +276,11 @@ significant load on the CA servers since they were required to
 provide a response to every client of a given certificate in real
 time.
 
-Enabling OCSP Stapling instructs Traffic Server to retrieve and cache the
+Enabling OCSP Stapling instructs |TS| to retrieve and cache the
 revocation status of all configured SSL certificates, and present them to the
-client when the client requests the status.  Traffic Server will automatically
+client when the client requests the status.  |TS| will automatically
 query the OCSP responder specified in the SSL certificate to gather the latest
-revocation status.  Traffic Server will then cache the results for each
+revocation status.  |TS| will then cache the results for each
 configured certificate.  The location of the OCSP responder is taken from the
 Authority Information Access field of the signed certificate. For example::
 
@@ -288,9 +288,9 @@ Authority Information Access field of the signed certificate. For example::
                 OCSP - URI:http://ocsp.digicert.com
                 CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2SecureServerCA.crt
 
-Traffic Server can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
+|TS| can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
 is used in :file:`ssl_multicert.config`. Take into account that when using prefetched
-OCSP stapling responses traffic server will not refresh them and it should be done
+OCSP stapling responses, |TS| will not refresh them and it should be done
 externally. This can be done using OpenSSL::
 
     $ openssl ocsp -issuer ca.crt -cert cert.crt -host ocsp.digicert.com:80 \
@@ -309,7 +309,7 @@ Support for OCSP Stapling can be tested using the -status option of the OpenSSL 
 
 Details of the OCSP Stapling TLS extension can be found in :rfc:`6961`.
 
-To configure Traffic Server to use OCSP Stapling, edit the following variables
+To configure |TS| to use OCSP Stapling, edit the following variables
 in :file:`records.config` file:
 
 * :ts:cv:`proxy.config.ssl.ocsp.enabled`
@@ -323,9 +323,9 @@ in :file:`records.config` file:
 Split DNS
 =========
 
-The *Split DNS* option enables you to configure Traffic Server to use
+The *Split DNS* option enables you to configure |TS| to use
 multiple DNS servers, as dictated by your security requirements. For
-example, you might configure Traffic Server to use one set of DNS
+example, you might configure |TS| to use one set of DNS
 servers to resolve hostnames on your internal network, while allowing
 DNS servers outside the firewall to resolve hosts on the Internet. This
 maintains the security of your intranet, while continuing to provide
