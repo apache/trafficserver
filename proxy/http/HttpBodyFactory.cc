@@ -277,13 +277,7 @@ HttpBodyFactory::reconfigure()
   rec_err   = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
   if (rec_err == REC_ERR_OKAY) {
-    // check if we should tweak with run_root value
-    if (s && strlen(s) > 0) {
-      // the value is set via config file or ENV var
-      directory_of_template_sets = Layout::get()->relative(s);
-    } else {
-      directory_of_template_sets = Layout::relative_to(RecConfigReadConfigDir(), "body_factory");
-    }
+    directory_of_template_sets = Layout::get()->relative(s);
     if (access(directory_of_template_sets, R_OK) < 0) {
       Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
       if (TSSystemState::is_initializing()) {
