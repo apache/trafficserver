@@ -14,17 +14,17 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
--- This example depends on "luajit-geoip".
--- It illustrates how to connect to GeoIP and uses it to look up country of an IP address.
+-- This example depends on "libmaxminddb".
+-- It illustrates how to connect to MaxMind DB and uses it to look up country of an IP address.
 -- It can be used in plugin.config with the lua plugin.
 
 -- Setup Instructions
--- 1. install legacy GeoIP library 1.6.12 (https://github.com/maxmind/geoip-api-c)
---   a. wget https://github.com/maxmind/geoip-api-c/releases/download/v1.6.12/GeoIP-1.6.12.tar.gz
---   b. tar zxvf GeoIP-1.6.12.tar.gz
---   c. cd GeoIP-1.6.12
+-- 1. install libmaxminddb 1.6.0 (https://github.com/maxmind/libmaxminddb)
+--   a. wget https://github.com/maxmind/libmaxminddb/releases/download/1.6.0/libmaxminddb-1.6.0.tar.gz
+--   b. tar zxvf libmaxminddb-1.6.0.tar.gz
+--   c. cd libmaxminddb-1.6.0
 --   d. ./configure; make; make install
--- 2. Find and install GeoIP legacy country database to /usr/local/share/GeoIP/GeoIP.dat
+-- 2) Get GeoLite2 country database from https://dev.maxmind.com/geoip/geolite2-free-geolocation-data and put it in /usr/share/GeoIP/GeoLite2-Country.mmdb
 -- 3. install luajit-geoip v2.1.0 (https://github.com/leafo/luajit-geoip)
 --   a. wget https://github.com/leafo/luajit-geoip/archive/refs/tags/v2.1.0.tar.gz
 --   b. tar zxvf v2.1.0.tar.gz
@@ -34,9 +34,12 @@
 
 ts.add_package_path('/usr/local/share/lua/5.1/?.lua')
 
-local geoip = require 'geoip'
+local geoip = require 'geoip.mmdb'
 
 function do_global_send_response()
-  local res = geoip.lookup_addr("8.8.8.8")
-  ts.client_response.header['X-Country'] = res.country_code
+  local mmdb = geoip.load_database("/usr/share/GeoIP/GeoLite2-Country.mmdb")
+
+  local result = mmdb:lookup("8.8.8.8")
+
+  ts.client_response.header['X-Maxmind-Info'] = result.country.iso_code
 end
