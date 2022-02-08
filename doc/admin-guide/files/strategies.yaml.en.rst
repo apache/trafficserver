@@ -60,7 +60,7 @@ In the example below, **hosts** is a **YAML** list of hosts.  Each host entry  u
 **&p1** and **&p2** that may be used elsewhere in the **YAML** document to refer to hosts **p1** and **p2**.
 
 - **host**: the host value is a hostname string
-- **protocol**: a list of schemes, ports, and health check urls for  the host.
+- **protocol**: a list of schemes, ports, and health check urls for the host. The **scheme** is optional; strategies with no scheme will match hosts with no scheme. Note the scheme is only used to match the strategy, the actual scheme used in the upstream request will be the scheme of the remap target, regardless of the strategy or host scheme.
 - **healthcheck**: health check information with the **url** used to check
   the hosts health by some external health check agent.
 
@@ -181,7 +181,7 @@ Each **strategy** in the list may using the following parameters:
 - **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
 - **cache_peer_result**: A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
-- **scheme**: Indicates which scheme the strategy supports, *http* or *https*
+- **scheme**: Indicates which scheme the strategy supports, *http* or *https*. Note this is only used to match hosts to strategies; the actual scheme used in the upstream request will be the scheme of the remap.config target, regardless of this value. The **scheme** is optional, and strategies without a scheme will match hosts without a scheme. This allows for omitting the scheme if hosts are not shared between strategies, or if all strategies using a given host use the same scheme.
 - **failover**: A map of **failover** information.
 
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
