@@ -1240,50 +1240,6 @@ Log::va_error(const char *format, va_list ap)
 }
 
 /*-------------------------------------------------------------------------
-  Log::trace
-
-  These functions are used for wiretracing of incoming SSL connections.
-  They are an extension of the existing Log::error functionality but with
-  special formatting and handling of the non null terminated buffer.
-  -------------------------------------------------------------------------*/
-
-void
-Log::trace_in(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...)
-{
-  va_list ap;
-  va_start(ap, format_string);
-  trace_va(true, peer_addr, peer_port, format_string, ap);
-  va_end(ap);
-}
-
-void
-Log::trace_out(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...)
-{
-  va_list ap;
-  va_start(ap, format_string);
-  trace_va(false, peer_addr, peer_port, format_string, ap);
-  va_end(ap);
-}
-
-void
-Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, va_list ap)
-{
-  if (!peer_addr || !format_string) {
-    return;
-  }
-
-  char ip[INET6_ADDRSTRLEN];
-  ats_ip_ntop(peer_addr, ip, sizeof(ip));
-
-  struct timeval tp = ink_gettimeofday();
-
-  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", static_cast<int>(tp.tv_sec), static_cast<int>(tp.tv_usec / 1000),
-             reinterpret_cast<uint64_t>(ink_thread_self()), in ? "RECV" : "SEND", ip, peer_port);
-  Log::va_error(format_string, ap);
-  Log::error("[End Trace]\n");
-}
-
-/*-------------------------------------------------------------------------
   Log::preproc_thread_main
 
   This function defines the functionality of the logging flush preprocess

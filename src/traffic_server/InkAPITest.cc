@@ -3777,19 +3777,17 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   url_expected_length =
     strlen(scheme) + strlen("://") + ((user == nullptr) ? 0 : strlen(user)) +
     ((password == nullptr) ? ((user == nullptr) ? 0 : strlen("@")) : strlen(":") + strlen(password) + strlen("@")) + strlen(host) +
-    ((port == 80) ? 0 : strlen(port_char) + strlen(":")) + strlen("/") + strlen(path) +
-    ((params == nullptr) ? 0 : strlen(";") + strlen(params)) + ((query == nullptr) ? 0 : strlen("?") + strlen(query)) +
-    ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
+    strlen(port_char) + strlen(":") + strlen("/") + strlen(path) + ((params == nullptr) ? 0 : strlen(";") + strlen(params)) +
+    ((query == nullptr) ? 0 : strlen("?") + strlen(query)) + ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
 
   size_t len          = url_expected_length + 1;
   url_expected_string = static_cast<char *>(TSmalloc(len * sizeof(char)));
   memset(url_expected_string, 0, url_expected_length + 1);
   snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s%s%s", scheme, ((user == nullptr) ? "" : user),
            ((password == nullptr) ? "" : ":"), ((password == nullptr) ? "" : password),
-           (((user == nullptr) && (password == nullptr)) ? "" : "@"), host, ((port == 80) ? "" : ":"),
-           ((port == 80) ? "" : port_char), ((path == nullptr) ? "" : path), ((params == nullptr) ? "" : ";"),
-           ((params == nullptr) ? "" : params), ((query == nullptr) ? "" : "?"), ((query == nullptr) ? "" : query),
-           ((fragment == nullptr) ? "" : "#"), ((fragment == nullptr) ? "" : fragment));
+           (((user == nullptr) && (password == nullptr)) ? "" : "@"), host, ":", port_char, ((path == nullptr) ? "" : path),
+           ((params == nullptr) ? "" : ";"), ((params == nullptr) ? "" : params), ((query == nullptr) ? "" : "?"),
+           ((query == nullptr) ? "" : query), ((fragment == nullptr) ? "" : "#"), ((fragment == nullptr) ? "" : fragment));
 
   // Set Functions
 
@@ -8696,7 +8694,10 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect.dead.policy",
    "proxy.config.plugin.vc.default_buffer_index",
    "proxy.config.plugin.vc.default_buffer_water_mark",
-   "proxy.config.net.sock_notsent_lowat"}};
+   "proxy.config.net.sock_notsent_lowat",
+   "proxy.config.body_factory.response_suppression_mode",
+   "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
+   "proxy.config.http.parent_proxy.disable_parent_markdowns"}};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

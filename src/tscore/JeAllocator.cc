@@ -120,6 +120,22 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
   return newp;
 }
 
+void
+JemallocNodumpAllocator::deallocate(InkFreeList *f, void *ptr)
+{
+  if (f->advice) {
+#if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+    if (likely(ptr)) {
+      dallocx(ptr, MALLOCX_TCACHE_NONE);
+    }
+#else
+    ats_free(ptr);
+#endif
+  } else {
+    ats_free(ptr);
+  }
+}
+
 JemallocNodumpAllocator &
 globalJemallocNodumpAllocator()
 {

@@ -123,7 +123,7 @@ or :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED`. This is an optional ent
 
 These calls are called per *plugin*, not per invocation of the plugin in :file:`remap.config`
 and only will be called if the plugin was instantiated by at least one configuration loaded
-after the traffic server started and at least one configuration using it is still loaded.
+after |TS| started and at least one configuration using it is still loaded.
 
 :func:`TSRemapPreConfigReload` will be called serially for all loaded plugins
 before any call to :func:`TSRemapNewInstance` during parsing of the new configuration.

@@ -680,6 +680,36 @@ DH_get_2048_256()
 }
 #endif
 
+bool
+SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
+{
+#ifdef SSL_OP_ENABLE_KTLS
+  if (SSLConfigParams::ssl_ktls_enabled) {
+    if (SSL_CTX_set_options(ctx, SSL_OP_ENABLE_KTLS)) {
+      Debug("ssl.ktls", "KTLS is enabled");
+    } else {
+      return false;
+    }
+  }
+#endif
+  return true;
+}
+
+bool
+SSLMultiCertConfigLoader::_enable_early_data(SSL_CTX *ctx)
+{
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSLConfigParams::server_max_early_data > 0) {
+#if HAVE_SSL_IN_EARLY_DATA
+    // If SSL_in_early_data is available, it's probably BoringSSL
+    // and SSL_set_early_data_enabled should be available.
+    SSL_CTX_set_early_data_enabled(ctx, 1);
+#endif
+  }
+#endif
+  return true;
+}
+
 static SSL_CTX *
 ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
 {
@@ -746,7 +776,11 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  if (SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket) == 0) {
+#else
   if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
+#endif
     Error("failed to set session ticket callback");
     ticket_block_free(keyblock);
     return nullptr;
@@ -1047,6 +1081,7 @@ SSLInitializeLibrary()
   ALPNSupport::initialize();
   TLSSessionResumptionSupport::initialize();
   TLSSNISupport::initialize();
+  TLSEarlyDataSupport::initialize();
 
   open_ssl_initialized = true;
 }
@@ -1313,8 +1348,7 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
    This is public function because of used by SSLCreateServerContext.
  */
 std::vector<SSLLoadingContext>
-SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
-                                              std::set<std::string> &names)
+SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
   std::vector<std::vector<std::string>> cert_names;
   std::vector<std::vector<std::string>> key_names;
@@ -1412,6 +1446,14 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
     if (!this->_set_curves(ctx)) {
+      goto fail;
+    }
+
+    if (!this->_enable_ktls(ctx)) {
+      goto fail;
+    }
+
+    if (!this->_enable_early_data(ctx)) {
       goto fail;
     }
 
@@ -1706,7 +1748,7 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
 
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
 
-  std::vector<SSLLoadingContext> ctxs = loader.init_server_ssl_ctx(data, sslMultiCertSettings, common_names);
+  std::vector<SSLLoadingContext> ctxs = loader.init_server_ssl_ctx(data, sslMultiCertSettings);
   for (auto const &loaderctx : ctxs) {
     ctx.reset(loaderctx.ctx);
 
@@ -1784,18 +1826,25 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     return false;
   }
 
-  std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names);
+  std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
   for (const auto &loadingctx : ctxs) {
     shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
     if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
-      std::string names;
-      for (auto const &name : data.cert_names_list) {
-        names.append(name);
-        names.append(" ");
+      if (!common_names.empty()) {
+        std::string names;
+        for (auto const &name : data.cert_names_list) {
+          names.append(name);
+          names.append(" ");
+        }
+        Warning("(%s) Failed to insert SSL_CTX for certificate %s entries for names already made", this->_debug_tag(),
+                names.c_str());
+      } else {
+        Warning("(%s) Failed to insert SSL_CTX", this->_debug_tag());
       }
-      Warning("(%s) Failed to insert SSL_CTX for certificate %s entries for names already made", this->_debug_tag(), names.c_str());
     } else {
-      lookup->register_cert_secrets(data.cert_names_list, common_names);
+      if (!common_names.empty()) {
+        lookup->register_cert_secrets(data.cert_names_list, common_names);
+      }
     }
   }
 
@@ -1810,7 +1859,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
     single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second);
+    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get());
     for (const auto &loadingctx : ctxs) {
       shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
       if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, loadingctx.ctx_type, iter->second)) {
@@ -1853,19 +1902,17 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       break;
     }
 
-    if (!common_names.empty()) {
-      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, policy_iter->get(), common_names);
-      for (const auto &loadingctx : ctxs) {
-        shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
+    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, policy_iter->get());
+    for (const auto &loadingctx : ctxs) {
+      shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
 
-        if (!ctx) {
-          retval = false;
-        } else {
-          for (auto const &name : common_names) {
-            SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
-            if (cc && cc->userconfig.get() == policy_iter->get()) {
-              cc->setCtx(ctx);
-            }
+      if (!ctx) {
+        retval = false;
+      } else {
+        for (auto const &name : common_names) {
+          SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
+          if (cc && cc->userconfig.get() == policy_iter->get()) {
+            cc->setCtx(ctx);
           }
         }
       }
@@ -1880,7 +1927,7 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
       single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, policy_iter->get(), iter->second);
+      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, policy_iter->get());
       for (auto const &loadingctx : ctxs) {
         shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
 
@@ -2610,5 +2657,29 @@ SSLGetCurveNID(SSL *ssl)
   return SSL_get_shared_curve(ssl, 0);
 #else
   return SSL_get_curve_id(ssl);
+#endif
+}
+
+SSL_SESSION *
+SSLSessionDup(SSL_SESSION *sess)
+{
+#ifdef HAVE_SSL_SESSION_DUP
+  return SSL_SESSION_dup(sess);
+#else
+  SSL_SESSION *duplicated = nullptr;
+  int len = i2d_SSL_SESSION(sess, nullptr);
+  if (len < 0) {
+    return nullptr;
+  }
+  uint8_t *buf = static_cast<uint8_t *>(alloca(len));
+  uint8_t **tmp = &buf;
+
+  i2d_SSL_SESSION(sess, tmp);
+  tmp = &buf;
+  if (d2i_SSL_SESSION(&duplicated, const_cast<const uint8_t **>(tmp), len) == nullptr) {
+    return nullptr;
+  }
+
+  return duplicated;
 #endif
 }

@@ -82,7 +82,8 @@ SSLSecret::setSecret(const std::string &name, const char *data, int data_len)
     return false;
   }
   iter->second.assign(data, data_len);
-  Debug("ssl_secret", "Set secret for %s to %.*s", name.c_str(), static_cast<int>(iter->second.size()), iter->second.data());
+  // The full secret data can be sensitive. Print only the first 50 bytes.
+  Debug("ssl_secret", "Set secret for %s to %.50s", name.c_str(), iter->second.c_str());
   return true;
 }
 
@@ -102,7 +103,8 @@ SSLSecret::getSecret(const std::string &name, std::string_view &data) const
 {
   const std::string *data_item = this->getSecretItem(name);
   if (data_item) {
-    Debug("ssl_secret", "Get secret for %s: %.*s", name.c_str(), static_cast<int>(data_item->length()), data_item->data());
+    // The full secret data can be sensitive. Print only the first 50 bytes.
+    Debug("ssl_secret", "Get secret for %s: %.50s", name.c_str(), data_item->c_str());
     data = *data_item;
   } else {
     Debug("ssl_secret", "Get secret for %s: not found", name.c_str());

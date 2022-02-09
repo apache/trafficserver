@@ -27,6 +27,11 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
 
+#if TS_HAS_MIMALLOC
+#include <mimalloc-new-delete.h>
+#include <mimalloc-override.h>
+#endif
+
 #if !defined(kfreebsd) && defined(freebsd)
 #include <malloc_np.h> // for malloc_usable_size
 #endif
@@ -130,28 +135,6 @@ ats_free_null(void *ptr)
   }
   return nullptr;
 } /* End ats_free_null */
-
-// This effectively makes mallopt() a no-op (currently) when tcmalloc
-// or jemalloc is used. This might break our usage for increasing the
-// number of mmap areas (ToDo: Do we still really need that??).
-//
-// TODO: I think we might be able to get rid of this?
-int
-ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
-{
-#if TS_HAS_JEMALLOC
-// TODO: jemalloc code ?
-#else
-#if TS_HAS_TCMALLOC
-// TODO: tcmalloc code ?
-#else
-#if defined(__GLIBC__)
-  return mallopt(param, value);
-#endif // ! defined(__GLIBC__)
-#endif // ! TS_HAS_TCMALLOC
-#endif // ! TS_HAS_JEMALLOC
-  return 0;
-}
 
 ats_unique_buf
 ats_unique_malloc(size_t size)

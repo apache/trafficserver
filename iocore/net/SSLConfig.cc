@@ -76,6 +76,7 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
+bool SSLConfigParams::ssl_ktls_enabled                      = false;
 
 const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
 uint32_t SSLConfigParams::server_max_early_data      = 0;
@@ -433,6 +434,13 @@ SSLConfigParams::initialize()
     TLSKeyLogger::enable_keylogging(keylog_file);
   }
 
+  REC_ReadConfigInt32(ssl_ktls_enabled, "proxy.config.ssl.ktls.enabled");
+#ifndef SSL_OP_ENABLE_KTLS
+  if (ssl_ktls_enabled) {
+    Error("kTLS configured but not supported by OpenSSL library");
+  }
+#endif
+
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
   REC_ReadConfigInt32(ssl_misc_max_iobuffer_size_index, "proxy.config.ssl.misc.io.max_buffer_index");
@@ -559,7 +567,7 @@ SSLCertificateConfig::reconfigure()
 
   // If there are errors in the certificate configs and we had wanted to exit on error
   // we won't want to reset the config
-  if (lookup->is_valid || !params->configExitOnLoadError) {
+  if (retStatus || !params->configExitOnLoadError) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;

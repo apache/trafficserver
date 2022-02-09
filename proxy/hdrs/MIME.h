@@ -252,6 +252,59 @@ struct MIMECooked {
  ***********************************************************************/
 
 struct MIMEHdrImpl : public HdrHeapObjImpl {
+  /** Iterator over fields in the header.
+   * This iterator should be stable over field deletes, but not insertions.
+   */
+  class iterator
+  {
+    using self_type = iterator; ///< Self reference types.
+
+  public:
+    iterator() = default;
+
+    // STL iterator compliance types.
+    using difference_type   = void;
+    using value_type        = MIMEField;
+    using pointer           = value_type *;
+    using reference         = value_type &;
+    using iterator_category = std::forward_iterator_tag;
+
+    pointer operator->();
+    reference operator*();
+
+    self_type &operator++();
+    self_type operator++(int);
+
+    bool operator==(self_type const &that);
+    bool operator!=(self_type const &that);
+
+  protected:
+    MIMEFieldBlockImpl *_block = nullptr; ///< Current block.
+    unsigned _slot             = 0;       ///< Slot in @a _block
+
+    /** Internal constructor.
+     *
+     * @param block Block containing current field.
+     * @param slot Index of current field.
+     */
+    iterator(MIMEFieldBlockImpl *block, unsigned slot) : _block(block), _slot(slot) { this->step(); }
+
+    /** Move to a valid (live) slot.
+     *
+     * This enforces the invariant that the iterator is exactly one of
+     * 1. referencing a valid slot
+     * 2. equal to the @c end iterator
+     *
+     * Therefore if called when the iterator is in state (1) the iterator is unchanged.
+     *
+     * @return @a this
+     */
+    self_type &step();
+
+    friend class MIMEHdr;
+    friend struct MIMEHdrImpl;
+  };
+
   // HdrHeapObjImpl is 4 bytes, so this will result in 4 bytes padding
   uint64_t m_presence_bits;
   uint32_t m_slot_accelerators[4];
@@ -275,7 +328,90 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
   // Cooked values
   void recompute_cooked_stuff(MIMEField *changing_field_or_null = nullptr);
   void recompute_accelerators_and_presence_bits();
+
+  // Utility
+  /// Iterator for first field.
+  iterator begin();
+  /// Iterator past last field.
+  iterator end();
+
+  /** Find a field by address.
+   *
+   * @param field Target to find.
+   * @return An iterator referencing @a field if it is in the header, an empty iterator
+   * if not.
+   */
+  iterator find(MIMEField const *field);
 };
+
+inline auto
+MIMEHdrImpl::begin() -> iterator
+{
+  return iterator(&m_first_fblock, 0);
+}
+
+inline auto
+MIMEHdrImpl::end() -> iterator
+{
+  return {}; // default constructed iterator.
+}
+
+inline auto
+MIMEHdrImpl::iterator::step() -> self_type &
+{
+  while (_block) {
+    for (auto limit = _block->m_freetop; _slot < limit; ++_slot) {
+      if (_block->m_field_slots[_slot].is_live()) {
+        return *this;
+      }
+    }
+    _block = _block->m_next;
+    _slot  = 0;
+  }
+  return *this;
+}
+
+inline auto
+MIMEHdrImpl::iterator::operator*() -> reference
+{
+  return _block->m_field_slots[_slot];
+}
+
+inline auto
+MIMEHdrImpl::iterator::operator->() -> pointer
+{
+  return &(_block->m_field_slots[_slot]);
+}
+
+inline bool
+MIMEHdrImpl::iterator::operator==(const self_type &that)
+{
+  return _block == that._block && _slot == that._slot;
+}
+
+inline bool
+MIMEHdrImpl::iterator::operator!=(const self_type &that)
+{
+  return _block != that._block || _slot != that._slot;
+}
+
+inline auto
+MIMEHdrImpl::iterator::operator++() -> self_type &
+{
+  if (_block) {
+    ++_slot;
+    this->step();
+  }
+  return *this;
+}
+
+inline auto
+MIMEHdrImpl::iterator::operator++(int) -> self_type
+{
+  self_type zret{*this};
+  ++*this;
+  return zret;
+}
 
 /***********************************************************************
  *                                                                     *
@@ -466,6 +602,7 @@ extern const char *MIME_VALUE_CLOSE;
 extern const char *MIME_VALUE_COMPRESS;
 extern const char *MIME_VALUE_DEFLATE;
 extern const char *MIME_VALUE_GZIP;
+extern const char *MIME_VALUE_BROTLI;
 extern const char *MIME_VALUE_IDENTITY;
 extern const char *MIME_VALUE_KEEP_ALIVE;
 extern const char *MIME_VALUE_MAX_AGE;
@@ -566,6 +703,7 @@ extern int MIME_LEN_CLOSE;
 extern int MIME_LEN_COMPRESS;
 extern int MIME_LEN_DEFLATE;
 extern int MIME_LEN_GZIP;
+extern int MIME_LEN_BLOTLI;
 extern int MIME_LEN_IDENTITY;
 extern int MIME_LEN_KEEP_ALIVE;
 extern int MIME_LEN_MAX_AGE;
@@ -986,42 +1124,7 @@ struct MIMEFieldIter {
 class MIMEHdr : public HdrHeapSDKHandle
 {
 public:
-  /** Iterator over fields in the header.
-   * This iterator should be stable over field deletes, but not insertions.
-   */
-  class iterator
-  {
-    using self_type = iterator; ///< Self reference types.
-
-  public:
-    iterator() = default;
-
-    // STL iterator compliance types.
-    using difference_type   = void;
-    using value_type        = MIMEField;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-    using iterator_category = std::forward_iterator_tag;
-
-    pointer operator->();
-    reference operator*();
-
-    self_type &operator++();
-    self_type operator++(int);
-
-    bool operator==(self_type const &that);
-    bool operator!=(self_type const &that);
-
-  protected:
-    MIMEFieldBlockImpl *_block = nullptr; ///< Current block.
-    unsigned _slot             = 0;       ///< Slot in @a _block
-
-    /// Internal method to move to a valid slot.
-    /// If the current location is valid, this is a no-op.
-    self_type &step();
-
-    friend class MIMEHdr;
-  };
+  using iterator = MIMEHdrImpl::iterator;
 
   MIMEHdrImpl *m_mime = nullptr;
 
@@ -1273,75 +1376,13 @@ MIMEHdr::field_delete(MIMEField *field, bool delete_all_dups)
 inline auto
 MIMEHdr::begin() const -> iterator
 {
-  iterator spot;
-  spot._block = &m_mime->m_first_fblock;
-  spot._slot  = 0;
-  return spot.step();
+  return m_mime ? m_mime->begin() : iterator();
 }
 
 inline auto
 MIMEHdr::end() const -> iterator
 {
   return {}; // default constructed iterator.
-}
-
-inline auto
-MIMEHdr::iterator::step() -> self_type &
-{
-  while (_block) {
-    auto limit = _block->m_freetop;
-    while (_slot < limit) {
-      if (_block->m_field_slots[_slot].is_live()) {
-        return *this;
-      }
-      ++_slot;
-    }
-    _block = _block->m_next;
-    _slot  = 0;
-  }
-  return *this;
-}
-
-inline auto
-MIMEHdr::iterator::operator*() -> reference
-{
-  return _block->m_field_slots[_slot];
-}
-
-inline auto
-MIMEHdr::iterator::operator->() -> pointer
-{
-  return &(_block->m_field_slots[_slot]);
-}
-
-inline bool
-MIMEHdr::iterator::operator==(const self_type &that)
-{
-  return _block == that._block && _slot == that._slot;
-}
-
-inline bool
-MIMEHdr::iterator::operator!=(const self_type &that)
-{
-  return _block != that._block || _slot != that._slot;
-}
-
-inline auto
-MIMEHdr::iterator::operator++() -> self_type &
-{
-  if (_block) {
-    ++_slot;
-    this->step();
-  }
-  return *this;
-}
-
-inline auto
-MIMEHdr::iterator::operator++(int) -> self_type
-{
-  self_type zret{*this};
-  this->step();
-  return zret;
 }
 
 inline void

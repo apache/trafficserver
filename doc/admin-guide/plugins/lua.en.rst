@@ -22,13 +22,24 @@
 Lua Plugin
 **********
 
-This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
+This module embeds Lua, via the LuaJIT engine (>2.0.4), into |ATS|. With
 this module, we can implement ATS plugin by writing Lua script instead of C
 code. Lua code executed using this module can be 100% non-blocking because the
 powerful Lua coroutines have been integrated into the ATS event model.
 
-Synopsis
-========
+Installation
+============
+
+This plugin is only built if LuaJIT (>2.0.4) is installed. The configure option
+
+::
+
+    --with-luajit=<path to luajit prefix>
+
+can be used to specify a LuaJIT install. Otherwise, configure will use pkg-config to find a viable installation.
+
+Example Scripts
+===============
 
 **test_hdr.lua**
 
@@ -64,20 +75,24 @@ Synopsis
         return 0
     end
 
-
-Installation
-============
-
-This plugin is only built if LuaJIT (>2.0.4) is installed. The configure option
+**test_global_hdr.lua**
 
 ::
 
-    --with-luajit=<path to luajit prefix>
+    function send_response()
+        ts.client_response.header['Rhost'] = ts.ctx['rhost']
+        return 0
+    end
 
-can be used to specify a LuaJIT install. Otherwise, configure will use pkg-config to find a viable installation.
+    function do_global_read_request()
+        local req_host = ts.client_request.header.Host
+        ts.ctx['rhost'] = string.reverse(req_host)
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+    end
 
-Configuration
-=============
+
+Usage with Example Scripts
+==========================
 
 This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' or 'do_os_response' function in each
 lua script. The path referencing a file with the lua script can be relative to the configuration directory or an absolute
@@ -115,6 +130,10 @@ We can write this in plugin.config:
 
     tslua.so /etc/trafficserver/script/test_global_hdr.lua
 
+
+Configuration for number of Lua states
+======================================
+
 We can also define the number of Lua states to be used for the plugin. If it is used as global plugin, we can write the
 following in plugin.config
 
@@ -137,6 +156,16 @@ adding a configuration option to records.config.
     CONFIG proxy.config.plugin.lua.max_states INT 64
 
 Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not reloadable since it must be applied when all the lua states are first initialized.
+
+Configuration for JIT mode
+==========================
+
+We can also turn off JIT mode for LuaJIT when it is acting as global plugin for Traffic Server. The default is on (1). We can write this in plugin.config to turn off JIT
+
+::
+
+    tslua.so --jit=0 /etc/trafficserver/script/test_global_hdr.lua
+
 
 Profiling
 =========
@@ -2775,7 +2804,7 @@ ts.http.resp_transform.get_upstream_bytes
 -----------------------------------------
 **syntax:** *ts.http.resp_transform.get_upstream_bytes()*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to retrieve the total bytes to be received from the upstream. If we got
 chunked response body from origin server, TS_LUA_INT64_MAX will be returned.
@@ -2819,7 +2848,7 @@ ts.http.resp_transform.get_upstream_watermark_bytes
 ---------------------------------------------------
 **syntax:** *ts.http.resp_transform.get_upstream_watermark_bytes()*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to retrieve the current watermark bytes for the upstream transform buffer.
 
@@ -2830,7 +2859,7 @@ ts.http.resp_transform.set_upstream_watermark_bytes
 ---------------------------------------------------
 **syntax:** *ts.http.resp_transform.set_upstream_watermark_bytes(NUMBER)*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to set the watermark bytes of the upstream transform buffer.
 
@@ -2843,12 +2872,92 @@ ts.http.resp_transform.set_downstream_bytes
 -------------------------------------------
 **syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*
 
-**context:** transform handler
+**context:** transform handler for response
 
 **description**: This function can be used to set the total bytes to be sent to the downstream.
 
 Sometimes we want to set Content-Length header in client_response, and this function should be called before any real
 data is returned from the transform handler.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.get_downstream_bytes
+------------------------------------------
+**syntax:** *ts.http.req_transform.get_downstream_bytes()*
+
+**context:** transform handler for request
+
+**description**: This function can be used to retrieve the total bytes to be received from downstream.
+
+Here is an example:
+
+::
+
+    function transform_print(data, eos)
+      ts.ctx['reqbody'] = ts.ctx['reqbody'] .. data
+
+      if ts.ctx['len_set'] == nil then
+        local sz = ts.http.req_transform.get_downstream_bytes()
+        ts.http.req_transform.set_upstream_bytes(sz)
+        ts.ctx['len_set'] = true
+      end
+
+      if (eos == 1) then
+        ts.debug('End of Stream and the reqbody is ... ')
+        ts.debug(ts.ctx['reqbody'])
+      end
+
+      return data, eos
+    end
+
+    function do_remap()
+      if (ts.client_request.get_method() == 'POST') then
+        ts.ctx['reqbody'] = ''
+        ts.hook(TS_LUA_REQUEST_TRANSFORM, transform_print)
+      end
+
+      return 0
+    end
+
+The above example also shows the use of eos passed as a parameter to transform function. It indicates the end of the
+data stream to the transform function.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.get_downstream_watermark_bytes
+----------------------------------------------------
+**syntax:** *ts.http.req_transform.get_downstream_watermark_bytes()*
+
+**context:** transform handler for request
+
+**description**: This function can be used to retrieve the current watermark bytes for the downstream transform buffer.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.set_downstream_watermark_bytes
+----------------------------------------------------
+**syntax:** *ts.http.req_transform.set_downstream_watermark_bytes(NUMBER)*
+
+**context:** transform handler for request
+
+**description**: This function can be used to set the watermark bytes of the downstream transform buffer.
+
+Setting the watermark bytes above 32kb may improve the performance of the transform handler.
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.req_transform.set_upstream_bytes
+----------------------------------------
+**syntax:** *ts.http.req_transform.set_upstream_bytes(NUMBER)*
+
+**context:** transform handler for request
+
+**description**: This function can be used to set the total bytes to be sent to the upstream.
+
+This function should be called before any real data is returned from the transform handler.
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4007,6 +4116,7 @@ Http config constants
     TS_LUA_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX
     TS_LUA_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK
     TS_LUA_CONFIG_NET_SOCK_NOTSENT_LOWAT
+    TS_LUA_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE
     TS_LUA_CONFIG_LAST_ENTRY
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4165,11 +4275,11 @@ ts.http.cntl_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retrieve the value of control channel.
+**description:** This function can be used to retrieve the value of various control mechanisms in HTTP transaction.
 
 ::
 
-    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_GET_LOGGING_MODE)
+    val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_LOGGING_MODE)
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
@@ -4180,30 +4290,33 @@ ts.http.cntl_set
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to set the value of control channel.
+**description:** This function can be used to set the value of various control mechanisms in HTTP transaction.
 
 Here is an example:
 
 ::
 
     function do_remap()
-        ts.http.cntl_set(TS_LUA_HTTP_CNTL_SET_LOGGING_MODE, 0)      -- do not log the request
+        ts.http.cntl_set(TS_LUA_HTTP_CNTL_LOGGING_MODE, 0)      -- do not log the request
         return 0
     end
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-Http control channel constants
-------------------------------
+Http control mechanism constants
+--------------------------------
 **context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
-    TS_LUA_HTTP_CNTL_GET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_SET_LOGGING_MODE
-    TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE
-    TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_LOGGING_MODE
+    TS_LUA_HTTP_CNTL_INTERCEPT_RETRY_MODE
+    TS_LUA_HTTP_CNTL_RESPONSE_CACHEABLE
+    TS_LUA_HTTP_CNTL_REQUEST_CACHEABLE
+    TS_LUA_HTTP_CNTL_SERVER_NO_STORE
+    TS_LUA_HTTP_CNTL_TXN_DEBUG
+    TS_LUA_HTTP_CNTL_SKIP_REMAPPING
 
 
 :ref:`TOP <admin-plugins-ts-lua>`

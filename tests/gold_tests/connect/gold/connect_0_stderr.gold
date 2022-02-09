@@ -1,0 +1,21 @@
+``
+* Connected to 127.0.0.1 (127.0.0.1) port ``
+``
+* Establish HTTP proxy tunnel to foo.com:80
+> CONNECT foo.com:80 HTTP/1.1
+> Host: foo.com:80
+``
+>``
+< HTTP/1.1 200 OK
+``
+<``
+* Proxy replied 200 to CONNECT request
+``
+> GET /get HTTP/1.1
+> Host: foo.com
+>``
+< HTTP/1.1 200 OK
+``
+<``
+``
+* Closing connection 0

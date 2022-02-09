@@ -235,17 +235,13 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         Debug("parent_select", "Parent.failedAt = %u, retry = %u, xact_start = %u", static_cast<unsigned>(pRec->failedAt.load()),
               static_cast<unsigned>(retry_time), static_cast<unsigned>(request_info->xact_start));
         if ((pRec->failedAt.load() + retry_time) < request_info->xact_start) {
-          if (pRec->retriers.inc(max_retriers)) {
-            parentRetry = true;
-            // make sure that the proper state is recorded in the result structure
-            result->last_parent = pRec->idx;
-            result->last_lookup = last_lookup;
-            result->retry       = parentRetry;
-            result->result      = PARENT_SPECIFIED;
-            Debug("parent_select", "Down parent %s is now retryable, retriers = %d, max_retriers = %d", pRec->hostname,
-                  pRec->retriers(), max_retriers);
-            break;
-          }
+          parentRetry = true;
+          // make sure that the proper state is recorded in the result structure
+          result->last_parent = pRec->idx;
+          result->last_lookup = last_lookup;
+          result->retry       = parentRetry;
+          result->result      = PARENT_SPECIFIED;
+          break;
         }
       }
       Debug("parent_select", "wrap_around[PRIMARY]: %d, wrap_around[SECONDARY]: %d", wrap_around[PRIMARY], wrap_around[SECONDARY]);
@@ -393,7 +389,6 @@ ParentConsistentHash::markParentUp(ParentResult *result)
 
   pRec->failedAt = static_cast<time_t>(0);
   int old_count  = pRec->failCount.exchange(0, std::memory_order_relaxed);
-  pRec->retriers.clear();
 
   if (old_count > 0) {
     Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);

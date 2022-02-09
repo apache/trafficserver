@@ -256,18 +256,6 @@ LogObject::add_filter(LogFilter *filter, bool copy)
   m_filter_list.add(filter, copy);
 }
 
-void
-LogObject::set_filter_list(const LogFilterList &list, bool copy)
-{
-  LogFilter *f;
-
-  m_filter_list.clear();
-  for (f = list.first(); f != nullptr; f = list.next(f)) {
-    m_filter_list.add(f, copy);
-  }
-  m_filter_list.set_conjunction(list.does_conjunction());
-}
-
 // we compute the object signature from the fieldlist_str and the printf_str
 // of the LogFormat rather than from the format_str because the format_str
 // is not part of a LogBuffer header

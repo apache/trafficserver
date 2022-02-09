@@ -25,7 +25,7 @@
 #include "HttpDebugNames.h"
 #include "tscore/ink_base64.h"
 #include "Http2CommonSessionInternal.h"
-#include "P_SSLNetVConnection.h"
+#include "TLSEarlyDataSupport.h"
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
@@ -101,9 +101,9 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->connection_state.mutex = this->mutex;
 
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
-  if (ssl_vc != nullptr) {
-    this->read_from_early_data = ssl_vc->read_from_early_data;
+  TLSEarlyDataSupport *eds = dynamic_cast<TLSEarlyDataSupport *>(new_vc);
+  if (eds != nullptr) {
+    this->read_from_early_data = eds->get_early_data_len();
     Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
   }
 

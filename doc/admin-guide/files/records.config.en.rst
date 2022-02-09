@@ -209,6 +209,12 @@ System Variables
 
    The name of the executable that runs the :program:`traffic_manager` process.
 
+.. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
+   :units: bytes
+
+   Throttle incoming connections if resident memory usage exceeds this value.
+   Setting the option to 0 disables the feature.
+
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
    The script executed before the :program:`traffic_manager` process spawns
@@ -1115,10 +1121,10 @@ mptcp
          in the set of addresses found by the proxy, the request continues to
          the client specified address, but the result is not cached.
    ``2`` Enables the feature with no address verification. No DNS processing is
-         performed. The result is cached (if allowed otherwise). This option is
-         vulnerable to cache poisoning if an incorrect ``Host`` header is
-         specified, so this option should be used with extreme caution.  See
-         bug TS-2954 for details.
+         performed. The result is cached (if allowed otherwise).
+         This option is vulnerable to cache poisoning if an incorrect ``Host`` header is
+         specified, so this option should be used with extreme caution if HTTP caching is
+         enabled.  See bug TS-2954 for details.
    ===== ======================================================================
 
    If all of these conditions are met, then the origin server IP address is
@@ -1243,7 +1249,7 @@ mptcp
    An arbitrary string value that, if set, will be used to replace any request
    ``User-Agent`` header.
 
-.. ts:cv:: CONFIG proxy.config.http.strict_uri_parsing INT 0
+.. ts:cv:: CONFIG proxy.config.http.strict_uri_parsing INT 2
 
    Takes a value between 0 and 2.  ``0`` disables strict_uri_parsing.  Any character can appears
    in the URI.  ``1`` causes |TS| to return 400 Bad Request
@@ -1332,6 +1338,32 @@ Parent Proxy Configuration
    ``1`` Remove the matching host from the list.
    ``2`` Mark the host down. This is the default.
    ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.enable_parent_timeout_markdowns INT 0
+   :reloadable:
+   :overridable:
+
+   Enables (``1``) or disables (``0``) parent proxy mark downs due to inactivity
+   timeouts.  By default parent proxies are not marked down due to inactivity
+   timeouts, the transaction will retry using another parent instead.  The
+   default for this configuration keeps this behavior and is disabled (``0``).
+   This setting is overridable using one of the two plugins ``header_rewrite``
+   or ``conf_remap`` to enable inactivity timeout markdowns and should be done
+   so rather than enabling this globally. This setting should not be used in
+   conjunction with ``proxy.config.http.parent_proxy.disable_parent_markdowns``
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.disable_parent_markdowns INT 0
+   :reloadable:
+   :overridable:
+
+   Enables (``1``) or disables (``0``) parent proxy markdowns.  This is useful
+   if parent entries in a parent.config line are VIP's and one doesn't wish
+   to mark down a VIP which may have several origin or parent proxies behind
+   the load balancer.  This setting is overridable using one of the
+   ``header_rewrite`` or the ``conf_remap`` plugins to override the default
+   setting and this method should be used rather than disabling markdowns
+   globally.  This setting should not be used in conjunction with
+   ``proxy.config.http.parent_proxy.enable_parent_timeout_markdowns``
 
 HTTP Connection Timeouts
 ========================
@@ -2537,6 +2569,8 @@ Customizable User Response Pages
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
+    :reloadable:
+    :overridable:
 
    Specifies when |TS| suppresses generated response pages:
 
@@ -3736,9 +3770,9 @@ SSL Termination
    This feature requires |TS| to be built with POSIX
    capabilities enabled.
 
-.. ts:cv:: CONFIG proxy.config.ssl.handshake_timeout_in INT 0
+.. ts:cv:: CONFIG proxy.config.ssl.handshake_timeout_in INT 30
 
-   When enabled this limits the total duration for the server side SSL
+   When enabled this limits the total duration for the incoming side SSL
    handshake.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
@@ -3754,6 +3788,18 @@ SSL Termination
    NULL value for this disables the feature.
 
    This feature is disabled by default.
+
+.. ts:cv:: CONFIG proxy.config.ssl.ktls.enabled INT 0
+
+   Enables the use of Kernel TLS. This configuration requires OpenSSL v3.0 and
+   above, and it must have been compiled with support for Kernel TLS.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the use of Kernel TLS.
+   ``1`` Enables the use of Kernel TLS..
+   ===== ======================================================================
 
 Client-Related Configuration
 ----------------------------
@@ -3915,6 +3961,9 @@ TLS v1.3 0-RTT Configuration
    The minimum value that enables early data, and the suggested value for this option are both 16384 (16KB).
 
    Setting to ``0`` effectively disables 0-RTT.
+
+   If you use BoringSSL, setting a value grater than 0 enables early data but the value won't be used to limit the
+   maximum amount of early data.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
 
@@ -4105,6 +4154,11 @@ HTTP/2 Configuration
    This is the maximum stream error rate |TS| allows on an HTTP/2 connection.
    |TS| gracefully closes connections that have stream error rates above this
    setting by sending GOAWAY frames.
+
+.. ts:cv:: CONFIG proxy.config.http2.stream_error_sampling_threshold INT 10
+   :reloadable:
+
+   This is the threshold of sampling stream number to start checking the stream error rate.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
    :reloadable:

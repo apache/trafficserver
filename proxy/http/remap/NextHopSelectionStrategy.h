@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "ts/parentselectdefs.h"
 #include "ParentSelection.h"
 #include "HttpTransact.h"
@@ -53,7 +55,6 @@ struct NHHealthStatus {
   virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
   virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                            const time_t now = 0)                                                           = 0;
-  virtual void retryComplete(TSHttpTxn txn, const char *hostname, const int port)                          = 0;
   virtual ~NHHealthStatus() {}
 };
 
@@ -99,72 +100,32 @@ struct HealthChecks {
 };
 
 struct NHProtocol {
-  NHSchemeType scheme;
-  uint32_t port;
+  NHSchemeType scheme = NH_SCHEME_NONE;
+  uint32_t port       = 0;
   std::string health_check_url;
 };
 
-struct HostRecord : ATSConsistentHashNode {
-  std::mutex _mutex;
+struct HostRecordCfg {
   std::string hostname;
-  std::atomic<time_t> failedAt;
-  std::atomic<uint32_t> failCount;
-  std::atomic<time_t> upAt;
-  float weight;
-  std::string hash_string;
-  int host_index;
-  int group_index;
-  bool self = false;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
-  pRetriers retriers;
+  float weight{0};
+  std::string hash_string;
+};
 
-  // construct without locking the _mutex.
-  HostRecord()
-  {
-    hostname    = "";
-    failedAt    = 0;
-    failCount   = 0;
-    upAt        = 0;
-    weight      = 0;
-    hash_string = "";
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
-  }
+struct HostRecord : public ATSConsistentHashNode, public HostRecordCfg {
+  std::mutex _mutex;
+  std::atomic<time_t> failedAt{0};
+  std::atomic<uint32_t> failCount{0};
+  std::atomic<time_t> upAt{0};
+  int host_index{-1};
+  int group_index{-1};
+  bool self{false};
 
-  // copy constructor to avoid copying the _mutex.
-  HostRecord(const HostRecord &o)
-  {
-    hostname    = o.hostname;
-    failedAt    = o.failedAt.load();
-    failCount   = o.failCount.load();
-    upAt        = o.upAt.load();
-    weight      = o.weight;
-    hash_string = o.hash_string;
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
-    protocols   = o.protocols;
-    retriers    = o.retriers;
-  }
+  explicit HostRecord(HostRecordCfg &&o) : HostRecordCfg(std::move(o)) {}
 
-  // assign without copying the _mutex.
-  HostRecord &
-  operator=(const HostRecord &o)
-  {
-    hostname    = o.hostname;
-    failedAt    = o.failedAt.load();
-    failCount   = o.failCount.load();
-    upAt        = o.upAt.load();
-    weight      = o.weight;
-    hash_string = o.hash_string;
-    host_index  = o.host_index;
-    group_index = o.group_index;
-    available   = o.available.load();
-    protocols   = o.protocols;
-    retriers    = o.retriers;
-    return *this;
-  }
+  // No copying or moving.
+  HostRecord(const HostRecord &) = delete;
+  HostRecord &operator=(const HostRecord &) = delete;
 
   // locks the record when marking this host down.
   void
@@ -174,7 +135,6 @@ struct HostRecord : ATSConsistentHashNode {
       std::lock_guard<std::mutex> lock(_mutex);
       failedAt  = time(nullptr);
       available = false;
-      retriers.clear();
     }
   }
 
@@ -188,7 +148,6 @@ struct HostRecord : ATSConsistentHashNode {
       failCount = 0;
       upAt      = time(nullptr);
       available = true;
-      retriers.clear();
     }
   }
 
@@ -225,7 +184,6 @@ public:
   bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
   void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0) override;
-  void retryComplete(TSHttpTxn txn, const char *hostname, const int port) override;
   NextHopHealthStatus(){};
 
 private:
@@ -268,5 +226,4 @@ public:
   uint32_t hst_index               = 0;
   uint32_t num_parents             = 0;
   uint32_t distance                = 0; // index into the strategies list.
-  int max_retriers                 = 1;
 };

@@ -24,6 +24,7 @@
 #include <pthread.h>
 
 #include "ts_lua_util.h"
+#include "luajit.h"
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
@@ -644,14 +645,6 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    // client response can be changed within a transaction
-    // (e.g. due to the follow redirect feature). So, clearing the pointers
-    // to allow API(s) to fetch the pointers again when it re-enters the hook
-    if (http_ctx->client_response_hdrp != NULL) {
-      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
-      http_ctx->client_response_bufp = NULL;
-      http_ctx->client_response_hdrp = NULL;
-    }
     lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
     break;
 
@@ -708,14 +701,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   ret = lua_tointeger(l, -1);
   lua_pop(l, 1);
 
-  // client response can be changed within a transaction
-  // (e.g. due to the follow redirect feature). So, clearing the pointers
-  // to allow API(s) to fetch the pointers again when it re-enters the hook
-  if (http_ctx->client_response_hdrp != NULL) {
-    TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
-    http_ctx->client_response_bufp = NULL;
-    http_ctx->client_response_hdrp = NULL;
-  }
+  ts_lua_clear_http_ctx(http_ctx);
 
   if (http_ctx->has_hook) {
     // add a hook to release resources for context
@@ -773,9 +759,11 @@ TSPluginInit(int argc, const char *argv[])
 
   int states = ts_lua_max_state_count;
 
+  int jit                              = 1;
   int reload                           = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
+    {"jit", required_argument, 0, 'j'},
     {"enable-reload", no_argument, 0, 'r'},
     {0, 0, 0, 0},
   };
@@ -788,6 +776,19 @@ TSPluginInit(int argc, const char *argv[])
     case 's':
       states = atoi(optarg);
       // set state
+      break;
+    case 'j':
+      jit = atoi(optarg);
+      if (jit == 0) {
+        TSDebug(TS_LUA_DEBUG_TAG, "[%s] disable JIT mode", __FUNCTION__);
+        for (int index = 0; index < ts_lua_max_state_count; ++index) {
+          ts_lua_main_ctx *const main_ctx = (ts_lua_g_main_ctx_array + index);
+          lua_State *const lstate         = main_ctx->lua;
+          if (luaJIT_setmode(lstate, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF) == 0) {
+            TSError("[ts_lua][%s] Failed to disable JIT mode", __FUNCTION__);
+          }
+        }
+      }
       break;
     case 'r':
       reload = 1;

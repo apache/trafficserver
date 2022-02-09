@@ -69,7 +69,7 @@ public:
   ~RulesConfig()
   {
     TSDebug(PLUGIN_NAME_DBG, "RulesConfig DTOR");
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
+    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) { // lgtm[cpp/constant-comparison]
       delete _rules[i];
     }
     TSContDestroy(_cont);

@@ -201,6 +201,7 @@ loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unorder
         }
       }
     }
+    closedir(dir);
   } else {
     std::ifstream file(fileName);
     if (file.is_open()) {

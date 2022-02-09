@@ -316,6 +316,7 @@ tsapi const char *TS_HTTP_VALUE_CLOSE;
 tsapi const char *TS_HTTP_VALUE_COMPRESS;
 tsapi const char *TS_HTTP_VALUE_DEFLATE;
 tsapi const char *TS_HTTP_VALUE_GZIP;
+tsapi const char *TS_HTTP_VALUE_BROTLI;
 tsapi const char *TS_HTTP_VALUE_IDENTITY;
 tsapi const char *TS_HTTP_VALUE_KEEP_ALIVE;
 tsapi const char *TS_HTTP_VALUE_MAX_AGE;
@@ -339,6 +340,7 @@ tsapi int TS_HTTP_LEN_CLOSE;
 tsapi int TS_HTTP_LEN_COMPRESS;
 tsapi int TS_HTTP_LEN_DEFLATE;
 tsapi int TS_HTTP_LEN_GZIP;
+tsapi int TS_HTTP_LEN_BROTLI;
 tsapi int TS_HTTP_LEN_IDENTITY;
 tsapi int TS_HTTP_LEN_KEEP_ALIVE;
 tsapi int TS_HTTP_LEN_MAX_AGE;
@@ -1765,6 +1767,7 @@ api_init()
     TS_HTTP_VALUE_COMPRESS         = HTTP_VALUE_COMPRESS;
     TS_HTTP_VALUE_DEFLATE          = HTTP_VALUE_DEFLATE;
     TS_HTTP_VALUE_GZIP             = HTTP_VALUE_GZIP;
+    TS_HTTP_VALUE_BROTLI           = HTTP_VALUE_BROTLI;
     TS_HTTP_VALUE_IDENTITY         = HTTP_VALUE_IDENTITY;
     TS_HTTP_VALUE_KEEP_ALIVE       = HTTP_VALUE_KEEP_ALIVE;
     TS_HTTP_VALUE_MAX_AGE          = HTTP_VALUE_MAX_AGE;
@@ -1787,6 +1790,7 @@ api_init()
     TS_HTTP_LEN_COMPRESS         = HTTP_LEN_COMPRESS;
     TS_HTTP_LEN_DEFLATE          = HTTP_LEN_DEFLATE;
     TS_HTTP_LEN_GZIP             = HTTP_LEN_GZIP;
+    TS_HTTP_LEN_BROTLI           = HTTP_LEN_BROTLI;
     TS_HTTP_LEN_IDENTITY         = HTTP_LEN_IDENTITY;
     TS_HTTP_LEN_KEEP_ALIVE       = HTTP_LEN_KEEP_ALIVE;
     TS_HTTP_LEN_MAX_AGE          = HTTP_LEN_MAX_AGE;
@@ -3258,10 +3262,6 @@ TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field
   return TS_SUCCESS;
 }
 
-// TODO: This is implemented horribly slowly, but who's using it anyway?
-//       If we threaded all the MIMEFields, this function could be easier,
-//       but we'd have to print dups in order and we'd need a flag saying
-//       end of dup list or dup follows.
 TSMLoc
 TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
@@ -3269,32 +3269,17 @@ TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
   sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
 
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field;
-
-  if (handle->mh == nullptr) {
-    return TS_NULL_MLOC;
-  }
-
-  int slotnum = mime_hdr_field_slotnum(handle->mh, handle->field_ptr);
-  if (slotnum == -1) {
-    return TS_NULL_MLOC;
-  }
-
-  while (true) {
-    ++slotnum;
-    MIMEField *f = mime_hdr_field_get_slotnum(handle->mh, slotnum);
-
-    if (f == nullptr) {
-      return TS_NULL_MLOC;
-    }
-    if (f->is_live()) {
-      MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, handle->mh);
-
-      h->field_ptr = f;
-      return reinterpret_cast<TSMLoc>(h);
+  if (auto handle = reinterpret_cast<MIMEFieldSDKHandle *>(field); handle->mh != nullptr) {
+    if (auto spot = handle->mh->find(handle->field_ptr); spot != handle->mh->end()) {
+      if (++spot != handle->mh->end()) {
+        MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, handle->mh);
+        h->field_ptr          = &*spot;
+        return reinterpret_cast<TSMLoc>(h);
+      }
     }
   }
-  return TS_NULL_MLOC; // Shouldn't happen.
+
+  return TS_NULL_MLOC;
 }
 
 TSMLoc
@@ -6267,6 +6252,9 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
 
   if (TS_SUCCESS == TSUserArgIndexNameLookup(type, name, &idx, &desc)) {
     // Found existing index.
+
+    // No need to add get_user_arg_offset(type) here since
+    // TSUserArgIndexNameLookup already does so.
     *ptr_idx = idx;
     return TS_SUCCESS;
   }
@@ -6280,7 +6268,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
     if (description) {
       arg.description = description;
     }
-    *ptr_idx = idx;
+    *ptr_idx = idx + get_user_arg_offset(type);
 
     return TS_SUCCESS;
   }
@@ -6291,6 +6279,8 @@ TSReturnCode
 TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
 {
   sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
+  sdk_assert(SanityCheckUserIndex(type, idx));
+  idx -= get_user_arg_offset(type);
   if (sdk_sanity_check_null_ptr(name) == TS_SUCCESS) {
     if (idx < UserArgIdx[type]) {
       UserArg &arg(UserArgTable[type][idx]);
@@ -6318,7 +6308,7 @@ TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, con
       if (description) {
         *description = arg->description.c_str();
       }
-      *arg_idx = arg - UserArgTable[type];
+      *arg_idx = arg - UserArgTable[type] + get_user_arg_offset(type);
       return TS_SUCCESS;
     }
   }
@@ -6353,6 +6343,7 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 // -------------
+/* These are deprecated as of v9.0.0, and will be removed in v10.0.0 */
 TSReturnCode
 TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
@@ -6411,7 +6402,6 @@ void
 TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
@@ -6422,7 +6412,6 @@ void *
 TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return sm->get_user_arg(arg_idx);
@@ -6432,7 +6421,6 @@ void
 TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -6443,7 +6431,6 @@ void *
 TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
@@ -6453,7 +6440,6 @@ void
 TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
   PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
   sdk_assert(user_args);
 
@@ -6464,12 +6450,13 @@ void *
 TSVConnArgGet(TSVConn connp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
   PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
   sdk_assert(user_args);
 
   return user_args->get_user_arg(arg_idx);
 }
+
+/* End deprecated Arg functions. */
 
 void
 TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
@@ -8901,6 +8888,16 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_NET_SOCK_NOTSENT_LOWAT:
     ret = _memberp_to_generic(&overridableHttpConfig->sock_packet_notsent_lowat, conv);
     break;
+  case TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE:
+    ret = _memberp_to_generic(&overridableHttpConfig->response_suppression_mode, conv);
+    break;
+  case TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS:
+    ret = _memberp_to_generic(&overridableHttpConfig->enable_parent_timeout_markdowns, conv);
+    break;
+  case TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS:
+    ret = _memberp_to_generic(&overridableHttpConfig->disable_parent_markdowns, conv);
+    break;
+
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:

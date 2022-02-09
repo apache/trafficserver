@@ -87,6 +87,11 @@ Plugin Options
   that by setting the :ts:cv:`proxy.config.http.cache.ignore_authentication`
   option on the request.
 
+--cache-internal
+  The option will allow the Traffic Server to cache internal
+  requests. By default, internally generated requests are
+  not cached as the agent needs to take the authorization decisions.
+
 Examples
 --------
 

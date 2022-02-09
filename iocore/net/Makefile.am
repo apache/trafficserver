@@ -27,7 +27,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy/http \
@@ -63,7 +62,6 @@ test_UDPNet_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
-	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	@OPENSSL_INCLUDES@
@@ -97,7 +95,6 @@ test_libinknet_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
-	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	@OPENSSL_INCLUDES@
@@ -191,8 +188,10 @@ libinknet_a_SOURCES = \
 	SSLUtils.cc \
 	OCSPStapling.cc \
 	TLSBasicSupport.cc \
+	TLSEarlyDataSupport.cc \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
+	TLSTunnelSupport.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \

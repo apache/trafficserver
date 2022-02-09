@@ -23,6 +23,7 @@
 
 #include "tscore/MMH.h"
 #include "tscore/ink_memory.h"
+#include "tscore/Random.h"
 #include <catch.hpp>
 
 #define TEST_COLLISIONS 10000000
@@ -71,10 +72,10 @@ TEST_CASE("MMH", "[libts][MMH]")
   ink_code_MMH((unsigned char *)sc4, strlen(sc4), h.hash);
   printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
 
-  srand48(time(nullptr));
+  ts::Random::seed(time(nullptr));
   for (int xx = 0; xx < TEST_COLLISIONS; xx++) {
     char xs[256];
-    xf[xx] = drand48();
+    xf[xx] = ts::Random::drandom();
     sprintf(xs, "http://@npdev/%16.14f/4000;?", xf[xx]);
     ink_code_MMH((unsigned char *)xs, strlen(xs), (unsigned char *)&xxh[xx]);
   }

@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+  TLSEarlyDataSupport implements common methods and members to
+  support TLS Early Data
 
   @section license License
 
@@ -23,20 +24,27 @@
 
 #pragma once
 
-#include "tscore/ink_apidefs.h"
-#include "tscore/ink_defs.h"
-#if TS_ENABLE_FIPS == 0
-#include <openssl/md5.h>
+#include <openssl/ssl.h>
 
-/* INK_MD5 context. */
-typedef MD5_CTX INK_DIGEST_CTX;
+class TLSEarlyDataSupport
+{
+public:
+  virtual ~TLSEarlyDataSupport() = default;
 
-/*
-  Wrappers around the MD5 functions, all of this should be deprecated and just use the functions directly
-*/
+  static void initialize();
+  static TLSEarlyDataSupport *getInstance(SSL *ssl);
+  static void bind(SSL *ssl, TLSEarlyDataSupport *srs);
+  static void unbind(SSL *ssl);
 
-int ink_code_md5(unsigned const char *input, int input_length, unsigned char *sixteen_byte_hash_pointer);
-int ink_code_incr_md5_init(INK_DIGEST_CTX *context);
-int ink_code_incr_md5_update(INK_DIGEST_CTX *context, const char *input, int input_length);
-int ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX *context);
-#endif
+  size_t get_early_data_len() const;
+
+protected:
+  void clear();
+
+  void _increment_early_data_len(size_t amount);
+
+private:
+  static int _ex_data_index;
+
+  size_t _early_data_len = 0;
+};

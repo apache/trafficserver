@@ -236,11 +236,7 @@ EThread::execute_regular()
   static EventMetrics METRIC_INIT;
 
   // give priority to immediate events
-  for (;;) {
-    if (TSSystemState::is_event_system_shut_down()) {
-      return;
-    }
-
+  while (!TSSystemState::is_event_system_shut_down()) {
     loop_start_time = Thread::get_hrtime_updated();
     nq_count        = 0; // count # of elements put on negative queue.
     ev_count        = 0; // # of events handled.

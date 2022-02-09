@@ -25,6 +25,7 @@
 #include "../ProxyTransaction.h"
 #include "HttpSM.h"
 #include "HttpTransact.h"
+#include "HttpBodyFactory.h"
 #include "HttpTransactHeaders.h"
 #include "ProxyConfig.h"
 #include "Http1ServerSession.h"
@@ -79,6 +80,8 @@
 
 extern int cache_config_read_while_writer;
 
+extern HttpBodyFactory *body_factory;
+
 // We have a debugging list that can use to find stuck
 //  state machines
 DList(HttpSM, debug_link) debug_sm_list;
@@ -95,41 +98,6 @@ using lbw = ts::LocalBufferWriter<256>;
 
 namespace
 {
-/// Update the milestone state given the milestones and timer.
-inline void
-milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_timer)
-{
-  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
-  // non-active API time. In that case we need to make a note of it and flip the value back
-  // to positive.
-  if (api_timer) {
-    ink_hrtime delta;
-    bool active = api_timer >= 0;
-    if (!active) {
-      api_timer = -api_timer;
-    }
-    delta     = Thread::get_hrtime_updated() - api_timer;
-    api_timer = 0;
-    // Zero or negative time is a problem because we want to signal *something* happened
-    // vs. no API activity at all. This can happen due to graininess or real time
-    // clock adjustment.
-    if (delta <= 0) {
-      delta = 1;
-    }
-
-    if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
-      milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
-    }
-    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
-    if (active) {
-      if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE]) {
-        milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
-      }
-      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
-    }
-  }
-}
-
 // Unique state machine identifier
 std::atomic<int64_t> next_sm_id(0);
 
@@ -617,8 +585,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-  if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
+  auto *tts = dynamic_cast<TLSTunnelSupport *>(netvc);
+  if (is_transparent_passthrough_allowed() || (tts && tts->is_decryption_needed())) {
     ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
   }
 
@@ -668,7 +636,7 @@ HttpSM::setup_blind_tunnel_port()
   NetVConnection *netvc = ua_txn->get_netvc();
   ink_release_assert(netvc);
   int host_len;
-  if (SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc)) {
+  if (auto *tts = dynamic_cast<TLSTunnelSupport *>(netvc)) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
       URL u;
@@ -679,16 +647,16 @@ HttpSM::setup_blind_tunnel_port()
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
 
-      if (ssl_vc->has_tunnel_destination()) {
-        const char *tunnel_host = ssl_vc->get_tunnel_host();
+      if (tts->has_tunnel_destination()) {
+        const char *tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
-        if (ssl_vc->get_tunnel_port() > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(ssl_vc->get_tunnel_port());
+        if (tts->get_tunnel_port() > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
+        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -1438,7 +1406,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
 //    with setting and changing the default_handler
 //    function.  As such, this is an entry point
 //    and needs to handle the reentrancy counter and
-//    deallocation the state machine if necessary
+//    deallocation of the state machine if necessary
 //
 int
 HttpSM::state_api_callback(int event, void *data)
@@ -1448,7 +1416,7 @@ HttpSM::state_api_callback(int event, void *data)
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
 
-  milestone_update_api_time(milestones, api_timer);
+  this->milestone_update_api_time();
 
   STATE_ENTER(&HttpSM::state_api_callback, event);
 
@@ -1498,7 +1466,7 @@ HttpSM::state_api_callout(int event, void *data)
     // the transaction got an event without the plugin calling TsHttpTxnReenable().
     // The call chain does not recurse here if @a api_timer < 0 which means this call
     // is the first from an event dispatch in this case.
-    milestone_update_api_time(milestones, api_timer);
+    this->milestone_update_api_time();
   }
 
   switch (event) {
@@ -1523,20 +1491,20 @@ plugins required to work with sni_routing.
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
 
-      NetVConnection *netvc     = ua_txn->get_netvc();
-      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      NetVConnection *netvc = ua_txn->get_netvc();
+      auto *tts             = dynamic_cast<TLSTunnelSupport *>(netvc);
 
-      if (ssl_vc && ssl_vc->has_tunnel_destination()) {
-        const char *tunnel_host = ssl_vc->get_tunnel_host();
+      if (tts && tts->has_tunnel_destination()) {
+        const char *tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
-        ushort tunnel_port = ssl_vc->get_tunnel_port();
+        ushort tunnel_port = tts->get_tunnel_port();
         if (tunnel_port > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
-      } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
+      } else if (tts) {
+        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -1575,7 +1543,7 @@ plugins required to work with sni_routing.
 
       hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
       if (api_timer > 0) { // true if the hook did not call TxnReenable()
-        milestone_update_api_time(milestones, api_timer);
+        this->milestone_update_api_time();
         api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
         // which means that if we get back from the invoke with api_timer < 0 we're already
         // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
@@ -1685,9 +1653,9 @@ HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START: {
-    NetVConnection *netvc     = ua_txn->get_netvc();
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    bool forward_dest         = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    NetVConnection *netvc = ua_txn->get_netvc();
+    auto *tts             = dynamic_cast<TLSTunnelSupport *>(netvc);
+    bool forward_dest     = tts != nullptr && tts->is_decryption_needed();
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {
@@ -4774,6 +4742,9 @@ HttpSM::do_cache_lookup_and_read()
   // ink_assert(server_txn == NULL);
   ink_assert(pending_action.empty());
 
+  t_state.request_sent_time      = UNDEFINED_TIME;
+  t_state.response_received_time = UNDEFINED_TIME;
+
   HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
@@ -5106,7 +5077,7 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   // Check for self loop.
-  if (HttpTransact::will_this_request_self_loop(&t_state)) {
+  if (!ua_txn->is_outbound_transparent() && HttpTransact::will_this_request_self_loop(&t_state)) {
     call_transact_and_set_next_state(HttpTransact::SelfLoop);
     return;
   }
@@ -5292,15 +5263,17 @@ HttpSM::do_http_server_open(bool raw)
   int scheme_to_use = t_state.scheme; // get initial scheme
   bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
   if (ua_txn) {
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
-    if (ssl_vc && raw) {
-      tls_upstream = ssl_vc->upstream_tls();
-      _tunnel_type = ssl_vc->tunnel_type();
+    auto *tts = dynamic_cast<TLSTunnelSupport *>(ua_txn->get_netvc());
+    if (tts && raw) {
+      tls_upstream = tts->is_upstream_tls();
+      _tunnel_type = tts->get_tunnel_type();
 
       // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
       int pid = SessionProtocolNameRegistry::INVALID;
-      if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
-        pid = ssl_vc->get_negotiated_protocol_id();
+      if (tts->get_tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
+        auto *alpns = dynamic_cast<ALPNSupport *>(ua_txn->get_netvc());
+        ink_assert(alpns);
+        pid = alpns->get_negotiated_protocol_id();
         if (pid != SessionProtocolNameRegistry::INVALID) {
           opt.alpn_protos = SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(pid);
         }
@@ -5313,7 +5286,7 @@ HttpSM::do_http_server_open(bool raw)
       bool use_prewarm = prewarm_conf->enabled;
 
       // override "proxy.config.tunnel.prewarm" by "tunnel_prewarm" in sni.yaml
-      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = ssl_vc->tunnel_prewarm();
+      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = tts->get_tunnel_prewarm_configuration();
           sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
         use_prewarm = static_cast<bool>(sni_use_prewarm);
       }
@@ -5321,7 +5294,7 @@ HttpSM::do_http_server_open(bool raw)
       if (use_prewarm) {
         // TODO: avoid copy of string -> make map key std::variant
         PreWarm::SPtrConstDst dst =
-          std::make_shared<const PreWarm::Dst>(ssl_vc->get_tunnel_host(), ssl_vc->get_tunnel_port(),
+          std::make_shared<const PreWarm::Dst>(tts->get_tunnel_host(), tts->get_tunnel_port(),
                                                tls_upstream ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
 
         EThread *ethread = this_ethread();
@@ -6272,8 +6245,8 @@ HttpSM::attach_server_session()
   UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
 
   // set flag for server session is SSL
-  SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
-  if (server_ssl_vc) {
+  TLSBasicSupport *tbs = dynamic_cast<TLSBasicSupport *>(server_vc);
+  if (tbs) {
     server_connection_is_ssl = true;
   }
 
@@ -6573,7 +6546,8 @@ HttpSM::setup_100_continue_transfer()
 void
 HttpSM::setup_error_transfer()
 {
-  if (t_state.internal_msg_buffer || is_response_body_precluded(t_state.http_return_code)) {
+  if (body_factory->is_response_suppressed(&t_state) || t_state.internal_msg_buffer ||
+      is_response_body_precluded(t_state.http_return_code)) {
     // Since we need to send the error message, call the API
     //   function
     ink_assert(t_state.internal_msg_buffer_size > 0 || is_response_body_precluded(t_state.http_return_code));
@@ -8492,4 +8466,39 @@ HTTPVersion
 HttpSM::get_server_version(HTTPHdr &hdr) const
 {
   return this->server_txn->get_proxy_ssn()->get_version(hdr);
+}
+
+/// Update the milestone state given the milestones and timer.
+void
+HttpSM::milestone_update_api_time()
+{
+  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
+  // non-active API time. In that case we need to make a note of it and flip the value back
+  // to positive.
+  if (api_timer) {
+    ink_hrtime delta;
+    bool active = api_timer >= 0;
+    if (!active) {
+      api_timer = -api_timer;
+    }
+    delta     = Thread::get_hrtime_updated() - api_timer;
+    api_timer = 0;
+    // Zero or negative time is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen due to graininess or real time
+    // clock adjustment.
+    if (delta <= 0) {
+      delta = 1;
+    }
+
+    if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
+      milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
+    }
+    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
+    if (active) {
+      if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE]) {
+        milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
+      }
+      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
+    }
+  }
 }

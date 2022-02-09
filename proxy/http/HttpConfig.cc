@@ -1248,6 +1248,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts,
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
+  HttpEstablishStaticConfigByte(c.oride.enable_parent_timeout_markdowns,
+                                "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns");
+  HttpEstablishStaticConfigByte(c.oride.disable_parent_markdowns, "proxy.config.http.parent_proxy.disable_parent_markdowns");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
@@ -1293,6 +1296,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
   HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
+
+  // Body factory
+  HttpEstablishStaticConfigByte(c.oride.response_suppression_mode, "proxy.config.body_factory.response_suppression_mode");
 
   // open read failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
@@ -1519,14 +1525,16 @@ HttpConfig::reconfigure()
             "will never redispatch to another server",
             m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
   }
-  params->oride.connect_attempts_rr_retries   = m_master.oride.connect_attempts_rr_retries;
-  params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
-  params->oride.connect_dead_policy           = m_master.oride.connect_dead_policy;
-  params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
-  params->oride.parent_retry_time             = m_master.oride.parent_retry_time;
-  params->oride.parent_fail_threshold         = m_master.oride.parent_fail_threshold;
-  params->oride.per_parent_connect_attempts   = m_master.oride.per_parent_connect_attempts;
-  params->oride.parent_failures_update_hostdb = m_master.oride.parent_failures_update_hostdb;
+  params->oride.connect_attempts_rr_retries     = m_master.oride.connect_attempts_rr_retries;
+  params->oride.connect_attempts_timeout        = m_master.oride.connect_attempts_timeout;
+  params->oride.connect_dead_policy             = m_master.oride.connect_dead_policy;
+  params->oride.parent_connect_attempts         = m_master.oride.parent_connect_attempts;
+  params->oride.parent_retry_time               = m_master.oride.parent_retry_time;
+  params->oride.parent_fail_threshold           = m_master.oride.parent_fail_threshold;
+  params->oride.per_parent_connect_attempts     = m_master.oride.per_parent_connect_attempts;
+  params->oride.parent_failures_update_hostdb   = m_master.oride.parent_failures_update_hostdb;
+  params->oride.enable_parent_timeout_markdowns = m_master.oride.enable_parent_timeout_markdowns;
+  params->oride.disable_parent_markdowns        = m_master.oride.disable_parent_markdowns;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
@@ -1579,6 +1587,8 @@ HttpConfig::reconfigure()
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 
   params->oride.allow_half_open = m_master.oride.allow_half_open;
+
+  params->oride.response_suppression_mode = m_master.oride.response_suppression_mode;
 
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;

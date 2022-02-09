@@ -361,17 +361,17 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
-    if (c > 399 && c < 500) {
+    if (c > 399 && c < 600) {
       codes.push_back(HTTP_STATUS_NOT_FOUND);
     }
   }
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
-    if (c > 399 && c < 500) {
+    if (c > 399 && c < 600) {
       Debug("parent_select", "loading simple response code: %d", c);
       codes.push_back(c);
     } else {
-      Warning("SimpleRetryResponseCodes received non-4xx code '%s', ignoring!", pTok[i]);
+      Warning("SimpleRetryResponseCodes received non-4xx or 5xx code '%s', ignoring!", pTok[i]);
     }
   }
   std::sort(codes.begin(), codes.end());
@@ -446,7 +446,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   int port            = 0;
   char *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
   const char *errPtr = nullptr;
-  float weight       = 1.0;
+  float weight       = DEFAULT_PARENT_WEIGHT;
 
   if (parents != nullptr && isPrimary == true) {
     return "Can not specify more than one set of parents";
@@ -470,6 +470,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   // Loop through the set of parents specified
   //
   for (int i = 0; i < numTok; i++) {
+    weight  = DEFAULT_PARENT_WEIGHT; // reset weight to the default
     current = pTok[i];
 
     // Find the parent port
@@ -539,7 +540,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].name                    = this->parents[i].hostname;
       this->parents[i].available               = true;
       this->parents[i].weight                  = weight;
-      this->parents[i].retriers.clear();
       if (tmp3) {
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
@@ -555,7 +555,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
       this->secondary_parents[i].available               = true;
       this->secondary_parents[i].weight                  = weight;
-      this->secondary_parents[i].retriers.clear();
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
@@ -1839,9 +1838,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
 
-  // max_retriers tests
-  SET_MAX_RETRIERS(1);
-
   // Test 212
   tbl[0] = '\0';
   ST(212);
@@ -1861,16 +1857,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.mouse.com");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "minnie", 80), 213);
-
-  // Test 214
-  // goofy gets chosen because max_retriers was set to 1
-  // and goofy becomes available.
-  sleep(params->policy.ParentRetryTime + 3);
-  ST(214);
-  REINIT;
-  br(request, "i.am.mouse.com");
-  FP;
-  RE(verify(result, PARENT_SPECIFIED, "goofy", 80), 214);
 
   delete request;
   delete result;

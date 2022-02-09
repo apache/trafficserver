@@ -1,0 +1,57 @@
+``
+> GET / HTTP/1.1
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Server: ATS``
+< Accept-Ranges: bytes
+< Content-Length: 6
+< Cache-Control: public, max-age=5
+< Expires: ``
+< Age: ``
+< Date: ``
+< Connection: keep-alive
+``
+> GET / HTTP/1.1
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 500 Cannot find server.
+< Date: ``
+< Server: ATS``
+< Cache-Control: no-store
+< Content-Type: ``
+< Content-Language: ``
+< Content-Length: ``
+< Connection: keep-alive
+``
+> GET / HTTP/1.1
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Server: ATS``
+< Accept-Ranges: bytes
+< Content-Length: 6
+< Cache-Control: public, max-age=5
+< Age: ``
+< Date: ``
+< Connection: keep-alive
+``
+> GET / HTTP/1.1
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 500 Cannot find server.
+< Date: ``
+< Server: ATS``
+< Cache-Control: no-store
+< Content-Type: ``
+< Content-Language: ``
+< Content-Length: ``
+``

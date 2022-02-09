@@ -1,5 +1,3 @@
-'''
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,8 +15,6 @@
 #  limitations under the License.
 
 
-import os
-
 Test.Summary = '''
 Test command: traffic_ctl config describe proxy.config.http.background_fill_completed_threshold (YTSATS-3309)
 '''
@@ -26,21 +22,14 @@ Test.testName = 'Float in conf_remap Config Test'
 
 ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True)
 
-# Add dummy remap rule
-ts.Disk.remap_config.AddLine(
-    'map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={file}'.format(
-        file=os.path.join(ts.RunDirectory, 'ts/config/delain.config'))
-)
-
-ts.Disk.delain_config.AddLine(
+ts.Disk.MakeConfigFile('conf_remap.config').AddLines([
     'CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.500000'
+])
+
+ts.Disk.remap_config.AddLine(
+    f"map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={Test.RunDirectory}/ts/config/conf_remap.config"
 )
 
-#
-# Test body
-#
-
-# First reload
 tr = Test.AddTestRun("traffic_ctl command")
 tr.Env = ts.Env
 tr.TimeOut = 5
@@ -49,4 +38,4 @@ tr.StillRunningAfter = ts
 p = tr.Processes.Default
 p.Command = f"traffic_ctl config describe proxy.config.http.background_fill_completed_threshold"
 p.ReturnCode = 0
-p.StartBefore(Test.Processes.ts, ready=When.FileExists(os.path.join(tr.RunDirectory, 'ts/log/diags.log')))
+p.StartBefore(Test.Processes.ts)

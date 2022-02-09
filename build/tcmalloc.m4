@@ -34,8 +34,11 @@ has_tcmalloc=0
 AC_ARG_WITH([tcmalloc], [AS_HELP_STRING([--with-tcmalloc=DIR],[use the tcmalloc library])],
 [
   if test "$withval" != "no"; then
-    if test "x${enable_jemalloc}" = "xyes"; then
+    if test "x${has_jemalloc}" = "xyes"; then
       AC_MSG_ERROR([Cannot compile with both tcmalloc and jemalloc])
+    fi
+    if test "x${has_mimalloc}" = "xyes"; then
+      AC_MSG_ERROR([Cannot compile with both tcmalloc and mimalloc])
     fi
     tcmalloc_have_libs=0
     if test "x$withval" != "xyes" && test "x$withval" != "x"; then

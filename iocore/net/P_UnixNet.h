@@ -480,6 +480,7 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   return 0;
 }
 
+// 2  - ignore
 // 1  - transient
 // 0  - report as warning
 // -1 - fatal
@@ -487,8 +488,9 @@ TS_INLINE int
 accept_error_seriousness(int res)
 {
   switch (res) {
-  case -EAGAIN:
   case -ECONNABORTED:
+    return 2;
+  case -EAGAIN:
   case -ECONNRESET: // for Linux
   case -EPIPE:      // also for Linux
     return 1;

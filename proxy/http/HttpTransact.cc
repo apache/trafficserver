@@ -214,6 +214,18 @@ markParentDown(HttpTransact::State *s)
   HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
+  TxnDebug("http_trans", "sm_id[%" PRId64 "] enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
+           s->state_machine->sm_id, s->txn_conf->enable_parent_timeout_markdowns, s->txn_conf->disable_parent_markdowns);
+
+  if (s->txn_conf->disable_parent_markdowns == 1) {
+    TxnDebug("http_trans", "parent markdowns are disabled for this request");
+    return;
+  }
+
+  if (s->current.state == HttpTransact::INACTIVE_TIMEOUT && s->txn_conf->enable_parent_timeout_markdowns == 0) {
+    return;
+  }
+
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown.
   } else if (mp && mp->strategy) {
@@ -286,42 +298,11 @@ nextParent(HttpTransact::State *s)
   }
 }
 
-inline static void
-retryComplete(HttpTransact::State *s)
-{
-  url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
-    mp->strategy->retryComplete(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port);
-  } else if (s->parent_params) {
-    s->parent_params->retryComplete(&s->parent_result);
-  }
-}
-
 inline static bool
 is_localhost(const char *name, int len)
 {
   static const char local[] = "127.0.0.1";
   return (len == (sizeof(local) - 1)) && (memcmp(name, local, len) == 0);
-}
-
-inline static bool
-is_response_simple_code(HTTPStatus response_code)
-{
-  if (static_cast<unsigned int>(response_code) < 400 || static_cast<unsigned int>(response_code) > 499) {
-    return false;
-  }
-
-  return true;
-}
-
-inline static bool
-is_response_unavailable_code(HTTPStatus response_code)
-{
-  if (static_cast<unsigned int>(response_code) < 500 || static_cast<unsigned int>(response_code) > 599) {
-    return false;
-  }
-
-  return true;
 }
 
 bool
@@ -399,21 +380,25 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
     return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
-  if (s->parent_params && !s->parent_result.response_is_retryable(response_code)) {
+  if (s->parent_params && !s->parent_result.response_is_retryable((ParentRetry_t)(s->parent_result.retry_type()), response_code)) {
     return PARENT_RETRY_NONE;
   }
-
-  const unsigned int s_retry_type  = retry_type(s);
-  const HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
-  if ((s_retry_type & PARENT_RETRY_SIMPLE) && is_response_simple_code(server_response) &&
+  const unsigned int s_retry_type = retry_type(s);
+  // If simple or both, check if code is simple-retryable and for retry attempts
+  if ((s_retry_type & PARENT_RETRY_SIMPLE) && s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE)) {
+    TxnDebug("http_trans", "saw parent retry simple first in trans");
     if (s->current.simple_retry_attempts < numParents(s)) {
       return PARENT_RETRY_SIMPLE;
     }
     return PARENT_RETRY_NONE;
   }
-  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) && is_response_unavailable_code(server_response) &&
+  // If unavailable or both, check if code is unavailable-retryable AND also not simple-retryable, then unavailable retry attempts
+  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) &&
+      s->parent_result.response_is_retryable(PARENT_RETRY_UNAVAILABLE_SERVER, response_code) &&
+      !s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
       s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    TxnDebug("http_trans", "saw parent retry unavailable first in trans");
     if (s->current.unavailable_server_retry_attempts < numParents(s)) {
       return PARENT_RETRY_UNAVAILABLE_SERVER;
     }
@@ -1969,6 +1954,13 @@ HttpTransact::OSDNSLookup(State *s)
     } else {
       TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
 
+      // Even with unsuccessful DNS lookup, return stale object from cache if applicable
+      if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
+        s->source = SOURCE_CACHE;
+        TxnDebug("http_trans", "[hscno] serving stale doc to client");
+        build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+        return;
+      }
       // output the DNS failure error message
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
@@ -2669,16 +2661,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
 
-  if (!s->force_dns) { // If DNS is not performed before
-    if (need_to_revalidate(s)) {
-      TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE,
-                      CallOSDNSLookup); // content needs to be revalidated and we did not perform a dns ....calling DNS lookup
-    } else {                            // document can be served can cache
-      TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
-    }
-  } else { // we have done dns . Its up to HandleCacheOpenReadHit to decide to go OS or serve from cache
-    TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
-  }
+  TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2936,7 +2919,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
     // there are no available parents (all down).
     else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
-      if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
+      if (response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
         TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
@@ -3653,7 +3636,7 @@ HttpTransact::handle_response_from_parent(State *s)
   // if this parent was retried from a markdown, then
   // notify that the retry has completed.
   if (s->parent_result.retry) {
-    retryComplete(s);
+    markParentUp(s);
   }
 
   simple_or_unavailable_server_retry(s);
@@ -3669,9 +3652,16 @@ HttpTransact::handle_response_from_parent(State *s)
     }
     // the next hop strategy is configured not
     // to cache a response from a next hop peer.
-    if (s->parent_result.do_not_cache_response) {
-      TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+    if (s->response_action.handled) {
+      if (s->response_action.action.no_cache) {
+        TxnDebug("http_trans", "plugin set response_action.no_cache, do not cache.");
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+      }
+    } else {
+      if (s->parent_result.do_not_cache_response) {
+        TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+      }
     }
     handle_forward_server_connection_open(s);
     break;
@@ -3731,7 +3721,7 @@ HttpTransact::handle_response_from_parent(State *s)
         // Only mark the parent down if we failed to connect
         //  to the parent otherwise slow origin servers cause
         //  us to mark the parent down
-        if (s->current.state == CONNECTION_ERROR) {
+        if (s->current.state == CONNECTION_ERROR || s->current.state == INACTIVE_TIMEOUT) {
           markParentDown(s);
         }
         // We are done so look for another parent if any
@@ -3742,7 +3732,7 @@ HttpTransact::handle_response_from_parent(State *s)
       //   appropriate
       HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_exhausted_stat);
       TxnDebug("http_trans", "[handle_response_from_parent] Error. No more retries.");
-      if (s->current.state == CONNECTION_ERROR) {
+      if (s->current.state == CONNECTION_ERROR || s->current.state == INACTIVE_TIMEOUT) {
         markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
@@ -3763,7 +3753,9 @@ HttpTransact::handle_response_from_parent(State *s)
     return CallOSDNSLookup(s);
     break;
   case HOST_NONE:
-    handle_parent_died(s);
+    // Check if content can be served from cache
+    s->current.request_to = PARENT_PROXY;
+    handle_server_connection_not_open(s);
     break;
   default:
     // This handles:
@@ -4052,7 +4044,17 @@ HttpTransact::handle_server_connection_not_open(State *s)
     TxnDebug("http_trans", "[hscno] serving stale doc to client");
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
-    handle_server_died(s);
+    switch (s->current.request_to) {
+    case PARENT_PROXY:
+      handle_parent_died(s);
+      break;
+    case ORIGIN_SERVER:
+      handle_server_died(s);
+      break;
+    default:
+      ink_assert(!("s->current.request_to is not P.P. or O.S. - hmmm."));
+      break;
+    }
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
 
@@ -5447,6 +5449,17 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough &&
         (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
       return BAD_CONNECT_PORT;
+    }
+
+    if (s->client_info.transfer_encoding == CHUNKED_ENCODING && incoming_hdr->version_get() < HTTP_1_1) {
+      // Per spec, Transfer-Encoding is only supported in HTTP/1.1. For earlier
+      // versions, we must reject Transfer-Encoding rather than interpret it
+      // since downstream proxies may ignore the chunk header and rely upon the
+      // Content-Length, or interpret the body some other way. These
+      // differences in interpretation may open up the door to compatibility
+      // issues. To protect against this, we reply with a 4xx if the client
+      // uses Transfer-Encoding with HTTP versions that do not support it.
+      return UNACCEPTABLE_TE_REQUIRED;
     }
 
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
@@ -8341,6 +8354,19 @@ ink_local_time()
 //
 // The stat functions
 //
+
+void
+HttpTransact::milestone_start_api_time(State *s)
+{
+  s->state_machine->api_timer = Thread::get_hrtime_updated();
+}
+
+void
+HttpTransact::milestone_update_api_time(State *s)
+{
+  s->state_machine->milestone_update_api_time();
+}
+
 void
 HttpTransact::histogram_response_document_size(State *s, int64_t doc_size)
 {

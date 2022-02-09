@@ -534,7 +534,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
     cont->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
     completionUtil::destroy(event);
     return ACTION_RESULT_DONE;
-  } else if (actual == 0 || (actual < 0 && actual == -EAGAIN)) {
+  } else if (actual == 0 || actual == -EAGAIN) {
     UDPReadContinuation *c = udpReadContAllocator.alloc();
     c->init_token(event);
     c->init_read(fd, buf, len, fromaddr, fromaddrlen);
@@ -963,7 +963,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
 {
   struct msghdr msg;
   struct iovec iov[32];
-  int real_len = 0;
   int n, count, iov_len = 0;
 
   p->conn->lastSentPktStartTime = p->delivery_time;
@@ -981,7 +980,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
     iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
     iov[iov_len].iov_len  = b->size();
-    real_len += iov[iov_len].iov_len;
     iov_len++;
   }
   msg.msg_iov    = iov;
@@ -991,7 +989,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   while (true) {
     // stupid Linux problem: sendmsg can return EAGAIN
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
-    if ((n >= 0) || ((n < 0) && (errno != EAGAIN))) {
+    if ((n >= 0) || (errno != EAGAIN)) {
       // send succeeded or some random error happened.
       if (n < 0) {
         Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);

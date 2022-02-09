@@ -35,7 +35,6 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
 traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ArgParser.o \
     $(top_builddir)/src/tscore/.libs/ink_assert.o \
-    $(top_builddir)/src/tscore/.libs/ink_code.o \
     $(top_builddir)/src/tscore/.libs/ink_error.o \
     $(top_builddir)/src/tscore/.libs/ink_file.o \
     $(top_builddir)/src/tscore/.libs/ink_memory.o \
@@ -46,6 +45,7 @@ traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ts_file.o \
     $(top_builddir)/src/tscore/.libs/Errata.o \
     $(top_builddir)/src/tscpp/util/.libs/TextView.o \
+    $(top_builddir)/src/tscpp/util/.libs/string_view_util.o \
     $(top_builddir)/src/tscore/.libs/Regex.o \
     $(top_builddir)/src/tscore/.libs/CryptoHash.o \
     $(top_builddir)/src/tscore/.libs/MMH.o \

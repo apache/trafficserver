@@ -49,6 +49,8 @@
 #include "P_ALPNSupport.h"
 #include "TLSSessionResumptionSupport.h"
 #include "TLSSNISupport.h"
+#include "TLSEarlyDataSupport.h"
+#include "TLSTunnelSupport.h"
 #include "TLSBasicSupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
@@ -99,6 +101,8 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public ALPNSupport,
                           public TLSSessionResumptionSupport,
                           public TLSSNISupport,
+                          public TLSEarlyDataSupport,
+                          public TLSTunnelSupport,
                           public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
@@ -277,48 +281,6 @@ public:
     return retval;
   }
 
-  bool
-  has_tunnel_destination() const
-  {
-    return tunnel_host != nullptr;
-  }
-
-  const char *
-  get_tunnel_host() const
-  {
-    return tunnel_host;
-  }
-
-  ushort
-  get_tunnel_port() const
-  {
-    return tunnel_port;
-  }
-
-  bool decrypt_tunnel() const;
-  bool upstream_tls() const;
-  SNIRoutingType tunnel_type() const;
-  YamlSNIConfig::TunnelPreWarm tunnel_prewarm() const;
-
-  void
-  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm)
-  {
-    _tunnel_type    = type;
-    _tunnel_prewarm = prewarm;
-
-    auto pos = destination.find(":");
-    if (nullptr != tunnel_host) {
-      ats_free(tunnel_host);
-    }
-    if (pos != std::string::npos) {
-      tunnel_port = std::stoi(destination.substr(pos + 1).data());
-      tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
-    } else {
-      tunnel_port = 0;
-      tunnel_host = ats_strndup(destination.data(), destination.length());
-    }
-  }
-
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
@@ -333,7 +295,7 @@ public:
   ink_hrtime sslLastWriteTime = 0;
   int64_t sslTotalBytesSent   = 0;
 
-  SSL_SESSION *client_sess = nullptr;
+  std::shared_ptr<SSL_SESSION> client_sess = nullptr;
 
   // The serverName is either a pointer to the (null-terminated) name fetched from the
   // SSL object or the empty string.
@@ -358,12 +320,6 @@ public:
 
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
-
-  // early data related stuff
-  bool early_data_finish            = false;
-  MIOBuffer *early_data_buf         = nullptr;
-  IOBufferReader *early_data_reader = nullptr;
-  int64_t read_from_early_data      = 0;
 
   // Only applies during the VERIFY certificate hooks (client and server side)
   // Means to give the plugin access to the data structure passed in during the underlying
@@ -459,6 +415,7 @@ private:
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
+  bool first_ssl_connect                     = true;
   MIOBuffer *handShakeBuffer                 = nullptr;
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
@@ -490,11 +447,6 @@ private:
 
   int64_t redoWriteSize = 0;
 
-  char *tunnel_host                            = nullptr;
-  in_port_t tunnel_port                        = 0;
-  SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
-  YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
-
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
@@ -502,6 +454,13 @@ private:
   std::unique_ptr<char[]> _ca_cert_dir;
 
   EventIO async_ep{};
+
+  // early data related stuff
+#if TS_HAS_TLS_EARLY_DATA
+  bool _early_data_finish            = false;
+  MIOBuffer *_early_data_buf         = nullptr;
+  IOBufferReader *_early_data_reader = nullptr;
+#endif
 
 private:
   void _make_ssl_connection(SSL_CTX *ctx);
@@ -518,36 +477,3 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-
-//
-// Inline Functions
-//
-inline SNIRoutingType
-SSLNetVConnection::tunnel_type() const
-{
-  return _tunnel_type;
-}
-
-inline YamlSNIConfig::TunnelPreWarm
-SSLNetVConnection::tunnel_prewarm() const
-{
-  return _tunnel_prewarm;
-}
-
-/**
-   Returns true if this vc was configured for forward_route or partial_blind_route
- */
-inline bool
-SSLNetVConnection::decrypt_tunnel() const
-{
-  return _tunnel_type == SNIRoutingType::FORWARD || _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
-}
-
-/**
-   Returns true if this vc was configured partial_blind_route
- */
-inline bool
-SSLNetVConnection::upstream_tls() const
-{
-  return _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
-}

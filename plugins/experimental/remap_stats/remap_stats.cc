@@ -34,11 +34,16 @@
 
 #define MAX_STAT_LENGTH (1 << 8)
 
+enum UriType {
+  REMAP,
+  PRISTINE,
+};
+
 struct config_t {
-  bool post_remap_host;
-  int txn_slot;
-  TSStatPersistence persist_type;
-  TSMutex stat_creation_mutex;
+  TSMutex stat_creation_mutex{nullptr};
+  UriType uri_type{PRISTINE};
+  TSStatPersistence persist_type{TS_STAT_NON_PERSISTENT};
+  int txn_slot{-1};
 };
 
 // From "core".... sigh, but we need it for now at least.
@@ -82,70 +87,61 @@ stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSM
   }
 }
 
-char *
-get_effective_host(TSHttpTxn txn)
+std::string
+get_hostname(TSHttpTxn txnp, UriType uriType)
 {
-  char *effective_url, *tmp;
-  const char *host;
-  int len;
-  TSMBuffer buf;
-  TSMLoc url_loc;
+  std::string hostname;
 
-  buf = TSMBufferCreate();
-  if (TS_SUCCESS != TSUrlCreate(buf, &url_loc)) {
-    TSDebug(DEBUG_TAG, "unable to create url");
-    TSMBufferDestroy(buf);
-    return nullptr;
+  switch (uriType) {
+  case PRISTINE: {
+    TSMBuffer hbuf;
+    TSMLoc hloc;
+    if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &hbuf, &hloc)) {
+      int tlen                = 0;
+      char const *const thost = TSUrlHostGet(hbuf, hloc, &tlen);
+      if (nullptr != thost && 0 < tlen) {
+        hostname.assign(thost, tlen);
+      }
+      TSHandleMLocRelease(hbuf, TS_NULL_MLOC, hloc);
+    }
+  } break;
+  case REMAP: {
+    TSMBuffer hbuf;
+    TSMLoc hloc;
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hbuf, &hloc)) {
+      TSMLoc url_loc;
+      if (TS_SUCCESS == TSHttpHdrUrlGet(hbuf, hloc, &url_loc)) {
+        int tlen                = 0;
+        char const *const thost = TSUrlHostGet(hbuf, url_loc, &tlen);
+        if (nullptr != thost && 0 < tlen) {
+          hostname.assign(thost, tlen);
+        }
+        TSHandleMLocRelease(hbuf, hloc, url_loc);
+      }
+      TSHandleMLocRelease(hbuf, TS_NULL_MLOC, hloc);
+    }
+  } break;
+  default:
+    break;
   }
-  tmp = effective_url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
-  TSUrlParse(buf, url_loc, (const char **)(&tmp), (const char *)(effective_url + len));
-  TSfree(effective_url);
-  host = TSUrlHostGet(buf, url_loc, &len);
-  tmp  = TSstrndup(host, len);
-  TSHandleMLocRelease(buf, TS_NULL_MLOC, url_loc);
-  TSMBufferDestroy(buf);
-  return tmp;
-}
 
-int
-handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
-{
-  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  config_t *config;
-  void *txnd;
-
-  config = static_cast<config_t *>(TSContDataGet(cont));
-  txnd   = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
-  TSUserArgSet(txn, config->txn_slot, txnd);
-
-  TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-  TSDebug(DEBUG_TAG, "Read Req Handler Finished");
-  return 0;
+  return hostname;
 }
 
 int
 handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  config_t *config;
-  void *txnd = (void *)0x01; // low bit 1 because we are post remap and thus success
-
-  config = static_cast<config_t *>(TSContDataGet(cont));
-
-  if (config->post_remap_host) {
-    TSUserArgSet(txn, config->txn_slot, txnd);
-  } else {
-    txnd = (void *)((uintptr_t)txnd | (uintptr_t)TSUserArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
-    TSUserArgSet(txn, config->txn_slot, txnd);
-  }
-
+  TSHttpTxn txn          = static_cast<TSHttpTxn>(edata);
+  config_t *const config = static_cast<config_t *>(TSContDataGet(cont));
+  void *const txnd       = reinterpret_cast<void *>(0x01);
+  TSUserArgSet(txn, config->txn_slot, txnd);
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   TSDebug(DEBUG_TAG, "Post Remap Handler Finished");
   return 0;
 }
 
 void
-create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view h, std::string_view b)
+create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view const h, std::string_view const b)
 {
   stat_name.reset().clip(1);
   stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, h, b);
@@ -155,78 +151,64 @@ create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view h, std::stri
 int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn const txn      = static_cast<TSHttpTxn>(edata);
-  char const *remap        = nullptr;
-  char *hostname           = nullptr;
-  char *effective_hostname = nullptr;
-
-  static char const *const unknown = "unknown";
-
+  TSHttpTxn const txn          = static_cast<TSHttpTxn>(edata);
   config_t const *const config = static_cast<config_t *>(TSContDataGet(cont));
   void const *const txnd       = TSUserArgGet(txn, config->txn_slot);
 
-  hostname = reinterpret_cast<char *>(reinterpret_cast<uintptr_t>(txnd) & ~0x01); // Get hostname
+  static std::string_view const unknown = "unknown";
 
+  // check remap successful
   if (nullptr != txnd) {
-    if (reinterpret_cast<uintptr_t>(txnd) & 0x01) // remap succeeded?
-    {
-      if (!config->post_remap_host) {
-        remap = hostname;
-      } else {
-        effective_hostname = get_effective_host(txn);
-        remap              = effective_hostname;
-      }
+    std::string const hostname = get_hostname(txn, config->uri_type);
 
-      if (nullptr == remap) {
-        remap = unknown;
-      }
-
-      uint64_t in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
-      in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
-
-      ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
-
-      create_stat_name(stat_name, remap, "in_bytes");
-      stat_add(stat_name.data(), static_cast<TSMgmtInt>(in_bytes), config->persist_type, config->stat_creation_mutex);
-
-      uint64_t out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
-      out_bytes += TSHttpTxnClientRespBodyBytesGet(txn);
-
-      create_stat_name(stat_name, remap, "out_bytes");
-      stat_add(stat_name.data(), static_cast<TSMgmtInt>(out_bytes), config->persist_type, config->stat_creation_mutex);
-
-      TSMBuffer buf  = nullptr;
-      TSMLoc hdr_loc = nullptr;
-      if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
-        int const status_code = static_cast<int>(TSHttpHdrStatusGet(buf, hdr_loc));
-        TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
-
-        if (status_code < 200) {
-          create_stat_name(stat_name, remap, "status_other");
-        } else if (status_code <= 299) {
-          create_stat_name(stat_name, remap, "status_2xx");
-        } else if (status_code <= 399) {
-          create_stat_name(stat_name, remap, "status_3xx");
-        } else if (status_code <= 499) {
-          create_stat_name(stat_name, remap, "status_4xx");
-        } else if (status_code <= 599) {
-          create_stat_name(stat_name, remap, "status_5xx");
-        } else {
-          create_stat_name(stat_name, remap, "status_other");
-        }
-
-        stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
-      } else {
-        create_stat_name(stat_name, remap, "status_unknown");
-        stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
-      }
-
-      if (nullptr != effective_hostname) {
-        TSfree(effective_hostname);
-      }
-    } else if (nullptr != hostname) {
-      TSfree(hostname);
+    std::string_view hostsv;
+    if (!hostname.empty()) {
+      hostsv = hostname;
+    } else {
+      hostsv = unknown;
     }
+
+    uint64_t in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
+    in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
+
+    ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
+
+    create_stat_name(stat_name, hostsv, "in_bytes");
+    stat_add(stat_name.data(), static_cast<TSMgmtInt>(in_bytes), config->persist_type, config->stat_creation_mutex);
+
+    uint64_t out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
+    out_bytes += TSHttpTxnClientRespBodyBytesGet(txn);
+
+    create_stat_name(stat_name, hostsv, "out_bytes");
+    stat_add(stat_name.data(), static_cast<TSMgmtInt>(out_bytes), config->persist_type, config->stat_creation_mutex);
+
+    TSMBuffer buf  = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
+      int const status_code = static_cast<int>(TSHttpHdrStatusGet(buf, hdr_loc));
+      TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
+
+      if (status_code < 200) {
+        create_stat_name(stat_name, hostsv, "status_other");
+      } else if (status_code <= 299) {
+        create_stat_name(stat_name, hostsv, "status_2xx");
+      } else if (status_code <= 399) {
+        create_stat_name(stat_name, hostsv, "status_3xx");
+      } else if (status_code <= 499) {
+        create_stat_name(stat_name, hostsv, "status_4xx");
+      } else if (status_code <= 599) {
+        create_stat_name(stat_name, hostsv, "status_5xx");
+      } else {
+        create_stat_name(stat_name, hostsv, "status_other");
+      }
+
+      stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
+    } else {
+      create_stat_name(stat_name, hostsv, "status_unknown");
+      stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
+    }
+  } else {
+    TSDebug(DEBUG_TAG, "skipping unsuccessfully remapped transaction");
   }
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -240,8 +222,6 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont pre_remap_cont, post_remap_cont, global_cont;
-
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
@@ -255,16 +235,16 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   auto config                 = new config_t;
-  config->post_remap_host     = false;
-  config->persist_type        = TS_STAT_NON_PERSISTENT;
   config->stat_creation_mutex = TSMutexCreate();
+  config->uri_type            = PRISTINE;
+  config->persist_type        = TS_STAT_NON_PERSISTENT;
 
   if (argc > 1) {
     // Argument parser
     for (int ii = 0; ii < argc; ++ii) {
       std::string_view const arg(argv[ii]);
       if (arg == "-P" || arg == "--post-remap-host") {
-        config->post_remap_host = true;
+        config->uri_type = REMAP;
         TSDebug(DEBUG_TAG, "Using post remap hostname");
       } else if (arg == "-p" || arg == "--persistent") {
         config->persist_type = TS_STAT_PERSISTENT;
@@ -275,17 +255,13 @@ TSPluginInit(int argc, const char *argv[])
 
   TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "txn data", &(config->txn_slot));
 
-  if (!config->post_remap_host) {
-    pre_remap_cont = TSContCreate(handle_read_req_hdr, nullptr);
-    TSContDataSet(pre_remap_cont, static_cast<void *>(config));
-    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, pre_remap_cont);
-  }
-
-  post_remap_cont = TSContCreate(handle_post_remap, nullptr);
+  // this is to mark the transaction as successfully remapped
+  TSCont const post_remap_cont = TSContCreate(handle_post_remap, nullptr);
   TSContDataSet(post_remap_cont, static_cast<void *>(config));
   TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, post_remap_cont);
 
-  global_cont = TSContCreate(handle_txn_close, nullptr);
+  // collects stats for successful remaps
+  TSCont const global_cont = TSContCreate(handle_txn_close, nullptr);
   TSContDataSet(global_cont, static_cast<void *>(config));
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, global_cont);
 

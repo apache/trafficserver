@@ -1,0 +1,7 @@
+``
+> GET /esi_etag.php HTTP/1.1
+``
+< HTTP/1.1 200 OK
+``
+< Cache-Control: max-age=0, private
+``

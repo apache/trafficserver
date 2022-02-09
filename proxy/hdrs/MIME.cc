@@ -164,6 +164,7 @@ const char *MIME_VALUE_CLOSE;
 const char *MIME_VALUE_COMPRESS;
 const char *MIME_VALUE_DEFLATE;
 const char *MIME_VALUE_GZIP;
+const char *MIME_VALUE_BROTLI;
 const char *MIME_VALUE_IDENTITY;
 const char *MIME_VALUE_KEEP_ALIVE;
 const char *MIME_VALUE_MAX_AGE;
@@ -919,6 +920,7 @@ mime_init()
     MIME_VALUE_COMPRESS             = hdrtoken_string_to_wks("compress");
     MIME_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
     MIME_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
+    MIME_VALUE_BROTLI               = hdrtoken_string_to_wks("br");
     MIME_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
     MIME_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
     MIME_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");
@@ -1689,6 +1691,19 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
   MIME_HDR_SANITY_CHECK(mh);
 }
 
+auto
+MIMEHdrImpl::find(MIMEField const *field) -> iterator
+{
+  for (MIMEFieldBlockImpl *fblock = &m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    if (fblock->contains(field)) {
+      return {fblock, unsigned(field - fblock->m_field_slots)};
+    }
+  }
+  return {};
+}
+
+// This function needs to be removed - use of it indicates poorly implemented code.
+// That code should be updated to use the field iterators, which are much more performant.
 int
 mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 {
@@ -2282,20 +2297,15 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
     if (b) {
       if ('[' == *b) {
         auto idx = b.find(']');
-        if (idx <= b.size() && b[idx + 1] == ':') {
+        if (idx < b.size() - 1 && b[idx + 1] == ':') {
           host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        auto x = b.split_prefix_at(':');
-        if (x) {
-          host = x;
-          port = b;
-        } else {
-          host = b;
-        }
+        host = b.take_prefix_at(':');
+        port = b;
       }
 
       if (host) {
@@ -2579,6 +2589,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         return PARSE_RESULT_ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
+      raw_print_field = false;
+    } else if (parsed.suffix(2) != "\r\n") {
       raw_print_field = false;
     }
 

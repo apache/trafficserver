@@ -131,7 +131,7 @@ if os.environ.get('READTHEDOCS') == 'True':
     print("done")
 else:
     # On RedHat-based distributions, install the python-sphinx_rtd_theme package
-    # to get an end result tht looks more like readthedoc.org.
+    # to get an end result that looks more like readthedoc.org.
     try:
         import sphinx_rtd_theme
         html_theme = 'sphinx_rtd_theme'

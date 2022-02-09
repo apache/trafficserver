@@ -22,9 +22,9 @@ Test.Summary = '''
 Test ATS TLSv1.3 0-RTT support
 '''
 
+# Checking only OpenSSL version allows you to run this test with BoringSSL (and it should pass).
 Test.SkipUnless(
     Condition.HasOpenSSLVersion('1.1.1'),
-    Condition.IsOpenSSL(),
 )
 
 ts = Test.MakeATSProcess('ts', enable_tls=True)

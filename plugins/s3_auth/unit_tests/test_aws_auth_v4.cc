@@ -172,74 +172,103 @@ TEST_CASE("base16Encode(): base16 encode RFC4648 test vectors", "[utility]")
 
 /* trimWhiteSpaces() ******************************************************************************************************** */
 
-TEST_CASE("trimWhiteSpaces(): trim invalid arguments, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim invalid arguments, check string", "[utility]")
 {
   const char *in = nullptr;
   size_t inLen   = 0;
-  size_t outLen  = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, outLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in == start);
+  CHECK_FALSE(trimmed.compare(""));
+  CHECK(inLen == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpaces(): trim empty input, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim empty input, check string", "[utility]")
 {
   const char *in = "";
   size_t inLen   = 0;
-  size_t outLen  = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, outLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in == start);
+  CHECK_FALSE(trimmed.compare(""));
+  CHECK(inLen == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpaces(): trim nothing to trim, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim nothing to trim, check string", "[utility]")
 {
   const char in[] = "Important Message";
   size_t inLen    = strlen(in);
-  size_t newLen   = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, newLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in == start);
-  CHECK(inLen == newLen);
+  CHECK_FALSE(trimmed.compare("Important Message"));
+  CHECK(inLen == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpaces(): trim beginning, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim beginning, check string", "[utility]")
 {
   const char in[] = " \t\nImportant Message";
   size_t inLen    = strlen(in);
-  size_t newLen   = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, newLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in + 3 == start);
-  CHECK(inLen - 3 == newLen);
+  CHECK_FALSE(trimmed.compare("Important Message"));
+  CHECK(inLen - 3 == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpaces(): trim end, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim end, check string", "[utility]")
 {
   const char in[] = "Important Message \t\n";
   size_t inLen    = strlen(in);
-  size_t newLen   = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, newLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in == start);
-  CHECK(inLen - 3 == newLen);
+  CHECK_FALSE(trimmed.compare("Important Message"));
+  CHECK(inLen - 3 == trimmed.length());
 }
 
-TEST_CASE("trimWhiteSpaces(): trim both ends, check pointers", "[utility]")
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends, check string", "[utility]")
 {
   const char in[] = "\v\t\n Important Message \t\n";
   size_t inLen    = strlen(in);
-  size_t newLen   = 0;
 
-  const char *start = trimWhiteSpaces(in, inLen, newLen);
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
 
-  CHECK(in + 4 == start);
-  CHECK(inLen - 7 == newLen);
+  CHECK_FALSE(trimmed.compare("Important Message"));
+  CHECK(inLen - 7 == trimmed.length());
+}
+
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): trim both ends and squeeze middle spaces, check string", "[utility]")
+{
+  const char in[] = "\v\t\n Important     Message \t\n";
+  size_t inLen    = strlen(in);
+
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
+
+  CHECK_FALSE(trimmed.compare("Important Message"));
+  CHECK(inLen - 11 == trimmed.length());
+}
+
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle spaces multiple groups, check string", "[utility]")
+{
+  const char in[] = "Very   Important     Message";
+  size_t inLen    = strlen(in);
+
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
+
+  CHECK_FALSE(trimmed.compare("Very Important Message"));
+  CHECK(inLen - 6 == trimmed.length());
+}
+
+TEST_CASE("trimWhiteSpacesAndSqueezeInnerSpaces(): squeeze middle whitespaces, check string", "[utility]")
+{
+  const char in[] = "Very \t\nImportant \v\f\rMessage";
+  size_t inLen    = strlen(in);
+
+  const std::string trimmed = trimWhiteSpacesAndSqueezeInnerSpaces(in, inLen);
+
+  CHECK_FALSE(trimmed.compare("Very Important Message"));
+  CHECK(inLen - 5 == trimmed.length());
 }
 
 TEST_CASE("trimWhiteSpaces(): trim both, check string", "[utility]")

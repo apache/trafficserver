@@ -25,6 +25,7 @@
 
 #include "tscore/hugepages.h"
 #include "tscore/Regression.h"
+#include "tscore/Random.h"
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
@@ -400,7 +401,7 @@ dir_clear_range(off_t start, off_t end, Vol *vol)
 {
   for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
-    if (!dir_token(e) && dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
+    if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
       CACHE_DEC_DIR_USED(vol->mutex);
       dir_set_offset(e, 0); // delete
     }
@@ -1400,8 +1401,7 @@ regress_rand_CacheKey(const CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
-  // coverity[dont_call]
-  int l    = (static_cast<int>(dir_bucket_length(b, s, d) * drand48()));
+  int l    = (static_cast<int>(dir_bucket_length(b, s, d) * ts::Random::drandom()));
   Dir *e   = b;
   Dir *seg = d->dir_segment(s);
   for (int i = 0; i < l; i++) {

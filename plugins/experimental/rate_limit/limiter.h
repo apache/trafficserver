@@ -31,6 +31,39 @@
 constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{200}; // Examine the queue every 200ms
 using QueueTime                 = std::chrono::time_point<std::chrono::system_clock>;
 
+enum {
+  RATE_LIMITER_TYPE_SNI = 0,
+  RATE_LIMITER_TYPE_REMAP,
+
+  RATE_LIMITER_TYPE_MAX
+};
+
+// order must align with the above
+static const char *types[] = {
+  "sni",
+  "remap",
+};
+
+// no metric for requests we accept; accepted requests should be counted under their usual metrics
+enum {
+  RATE_LIMITER_METRIC_QUEUED = 0,
+  RATE_LIMITER_METRIC_REJECTED,
+  RATE_LIMITER_METRIC_EXPIRED,
+  RATE_LIMITER_METRIC_RESUMED,
+
+  RATE_LIMITER_METRIC_MAX
+};
+
+// order must align with the above
+static const char *suffixes[] = {
+  "queued",
+  "rejected",
+  "expired",
+  "resumed",
+};
+
+static const char *RATE_LIMITER_METRIC_PREFIX = "plugin.rate_limiter";
+
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all limiters
 //
@@ -139,6 +172,50 @@ public:
     }
   }
 
+  void
+  initializeMetrics(uint type)
+  {
+    TSReleaseAssert(type < RATE_LIMITER_TYPE_MAX);
+    memset(_metrics, 0, sizeof(_metrics));
+
+    std::string metric_prefix = prefix;
+    metric_prefix.append("." + std::string(types[type]));
+
+    if (!tag.empty()) {
+      metric_prefix.append("." + tag);
+    } else if (!description.empty()) {
+      metric_prefix.append("." + description);
+    }
+
+    for (int i = 0; i < RATE_LIMITER_METRIC_MAX; i++) {
+      size_t const metricsz = metric_prefix.length() + strlen(suffixes[i]) + 2; // padding for dot+terminator
+      char *const metric    = (char *)TSmalloc(metricsz);
+      snprintf(metric, metricsz, "%s.%s", metric_prefix.data(), suffixes[i]);
+
+      _metrics[i] = TS_ERROR;
+
+      if (TSStatFindName(metric, &_metrics[i]) == TS_ERROR) {
+        _metrics[i] = TSStatCreate(metric, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+      }
+
+      if (_metrics[i] != TS_ERROR) {
+        TSDebug(PLUGIN_NAME, "established metric '%s' as ID %d", metric, _metrics[i]);
+      } else {
+        TSError("failed to create metric '%s'", metric);
+      }
+
+      TSfree(metric);
+    }
+  }
+
+  void
+  incrementMetric(uint metric)
+  {
+    if (_metrics[metric] != TS_ERROR) {
+      TSStatIntIncrement(_metrics[metric], 1);
+    }
+  }
+
   // Initialize a new instance of this rate limiter
   bool initialize(int argc, const char *argv[]);
 
@@ -147,6 +224,8 @@ public:
   unsigned max_queue                = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
   std::chrono::milliseconds max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
   std::string description           = "";
+  std::string prefix                = RATE_LIMITER_METRIC_PREFIX; // metric prefix, i.e.: plugin.rate_limiter
+  std::string tag                   = "";                         // optional tag to append to the prefix (prefix.tag)
 
 private:
   std::atomic<unsigned> _active = 0; // Current active number of txns. This has to always stay <= limit above
@@ -154,4 +233,6 @@ private:
 
   TSMutex _queue_lock, _active_lock; // Resource locks
   std::deque<QueueItem> _queue;      // Queue for the pending TXN's. ToDo: Should also move (see below)
+
+  int _metrics[RATE_LIMITER_METRIC_MAX];
 };

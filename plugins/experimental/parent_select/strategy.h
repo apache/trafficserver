@@ -38,6 +38,15 @@
 
 constexpr const char *PL_NH_DEBUG_TAG = "plugin_nexthop";
 
+// ring mode strings
+extern const std::string_view alternate_rings;
+extern const std::string_view exhaust_rings;
+extern const std::string_view peering_rings;
+
+// health check strings
+extern const std::string_view active_health_check;
+extern const std::string_view passive_health_check;
+
 #define PL_NH_Debug(tag, fmt, ...) TSDebug(tag, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #define PL_NH_Error(fmt, ...) TSError("(%s) [%s:%d]: " fmt, PLUGIN_NAME, __FILE__, __LINE__, ##__VA_ARGS__)
 #define PL_NH_Note(fmt, ...) TSDebug(PL_NH_DEBUG_TAG, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
@@ -59,7 +68,7 @@ enum PLNHPolicyType {
 
 enum PLNHSchemeType { PL_NH_SCHEME_NONE = 0, PL_NH_SCHEME_HTTP, PL_NH_SCHEME_HTTPS };
 
-enum PLNHRingMode { PL_NH_ALTERNATE_RING = 0, PL_NH_EXHAUST_RING };
+enum PLNHRingMode { PL_NH_ALTERNATE_RING = 0, PL_NH_EXHAUST_RING, PL_NH_PEERING_RING };
 
 // response codes container
 struct PLResponseCodes {
@@ -88,21 +97,22 @@ struct PLHealthChecks {
 };
 
 struct PLNHProtocol {
-  PLNHSchemeType scheme;
-  uint32_t port;
+  PLNHSchemeType scheme = PL_NH_SCHEME_NONE;
+  uint32_t port         = 0;
   std::string health_check_url;
 };
 
 struct PLHostRecord : ATSConsistentHashNode {
   std::mutex _mutex;
   std::string hostname;
-  time_t failedAt;
-  uint32_t failCount;
-  time_t upAt;
+  std::atomic<time_t> failedAt;
+  std::atomic<uint32_t> failCount;
+  std::atomic<time_t> upAt;
   float weight;
   std::string hash_string;
   int host_index;
   int group_index;
+  bool self = false;
   std::vector<std::shared_ptr<PLNHProtocol>> protocols;
 
   // construct without locking the _mutex.
@@ -123,15 +133,16 @@ struct PLHostRecord : ATSConsistentHashNode {
   PLHostRecord(const PLHostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    failCount   = o.failCount;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
-    host_index  = -1;
-    group_index = -1;
-    available   = true;
+    host_index  = o.host_index;
+    group_index = o.group_index;
+    available   = o.available.load();
     protocols   = o.protocols;
+    self        = o.self;
   }
 
   // assign without copying the _mutex.
@@ -139,14 +150,16 @@ struct PLHostRecord : ATSConsistentHashNode {
   operator=(const PLHostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
     host_index  = o.host_index;
     group_index = o.group_index;
     available   = o.available.load();
     protocols   = o.protocols;
+    self        = o.self;
     return *this;
   }
 
@@ -209,7 +222,7 @@ public:
   virtual const char *name()                                                                        = 0;
   virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                     in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                    bool *out_retry, time_t now = 0)                                                = 0;
+                    bool *out_retry, bool *out_no_cache, time_t now = 0)                            = 0;
   virtual void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
                     const PLNHCmd status, const time_t now = 0)                                     = 0;
   virtual bool nextHopExists(TSHttpTxn txnp)                                                        = 0;
@@ -234,9 +247,9 @@ public:
 
   virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                     in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                    bool *out_retry, time_t now = 0)            = 0;
+                    bool *out_retry, bool *out_no_cache, time_t now = 0) = 0;
   virtual void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
-                    const PLNHCmd status, const time_t now = 0) = 0;
+                    const PLNHCmd status, const time_t now = 0)          = 0;
   virtual bool nextHopExists(TSHttpTxn txnp);
   virtual bool codeIsFailure(TSHttpStatus response_code);
   virtual bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code);
@@ -256,16 +269,20 @@ protected:
   bool go_direct          = true;
   bool parent_is_proxy    = true;
   bool ignore_self_detect = false;
+  bool cache_peer_result  = true;
   PLNHSchemeType scheme   = PL_NH_SCHEME_NONE;
   PLNHRingMode ring_mode  = PL_NH_ALTERNATE_RING;
-  PLResponseCodes resp_codes;
+  PLResponseCodes resp_codes;     // simple retry codes
+  PLResponseCodes markdown_codes; // unavailable server retry and markdown codes
+
   PLHealthChecks health_checks;
   PLNextHopHealthStatus passive_health;
   std::vector<std::vector<std::shared_ptr<PLHostRecord>>> host_groups;
-  uint32_t max_simple_retries = 1;
-  uint32_t groups             = 0;
-  uint32_t grp_index          = 0;
-  uint32_t hst_index          = 0;
-  uint32_t num_parents        = 0;
-  uint32_t distance           = 0; // index into the strategies list.
+  uint32_t max_simple_retries      = 1;
+  uint32_t max_unavailable_retries = 1;
+  uint32_t groups                  = 0;
+  uint32_t grp_index               = 0;
+  uint32_t hst_index               = 0;
+  uint32_t num_parents             = 0;
+  uint32_t distance                = 0; // index into the strategies list.
 };

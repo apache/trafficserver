@@ -168,32 +168,40 @@ canonicalEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief trim the white-space character from the beginning and the end of the string ("in-place", just moving pointers around)
+ * @brief Trim white spaces from beginning and end. Squeeze consecutive spaces from middle.
+ *
+ * @see AWS spec: https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
  *
  * @param in ptr to an input string
  * @param inLen input character count
- * @param newLen trimmed string character count.
  * @return pointer to the trimmed string.
  */
-const char *
-trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen)
+String
+trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen)
 {
   if (nullptr == in || inLen == 0) {
-    return in;
+    return "";
   }
 
-  const char *first = in;
-  while (size_t(first - in) < inLen && isspace(*first)) {
-    first++;
-  }
+  String in_str = trimWhiteSpaces(String(in, inLen));
+  String out_str;
+  out_str.reserve(in_str.size());
+  size_t n    = 0;
+  char prev_c = '\0';
 
-  const char *last = in + inLen - 1;
-  while (last > in && isspace(*last)) {
-    last--;
+  for (auto &c : in_str) {
+    if (!isspace(c)) {
+      out_str += c;
+      ++n;
+    } else if (isspace(c) && !isspace(prev_c)) {
+      out_str += ' ';
+      ++n;
+    }
+    prev_c = c;
   }
+  out_str.resize(n);
 
-  newLen = last - first + 1;
-  return first;
+  return out_str;
 }
 
 /**
@@ -381,14 +389,13 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
       }
     }
 
-    size_t trimValueLen   = 0;
-    const char *trimValue = trimWhiteSpaces(value, valueLen, trimValueLen);
+    std::string trimValue = trimWhiteSpacesAndSqueezeInnerSpaces(value, valueLen);
 
     signedHeadersSet.insert(lowercaseName);
     if (headersMap.find(lowercaseName) == headersMap.end()) {
-      headersMap[lowercaseName] = String(trimValue, trimValueLen);
+      headersMap[lowercaseName] = trimValue;
     } else {
-      headersMap[lowercaseName].append(",").append(String(trimValue, trimValueLen));
+      headersMap[lowercaseName].append(",").append(trimValue);
     }
   }
 

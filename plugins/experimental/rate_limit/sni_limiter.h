@@ -35,6 +35,8 @@ public:
     limit     = src.limit;
     max_queue = src.max_queue;
     max_age   = src.max_age;
+    prefix    = src.prefix;
+    tag       = src.tag;
   }
 
   bool initialize(int argc, const char *argv[]);

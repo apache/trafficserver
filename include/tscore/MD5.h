@@ -1,5 +1,7 @@
 /** @file
 
+  MD5 support class.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -21,21 +23,34 @@
 
 #pragma once
 
-#include "tscore/Hash.h"
+#include "tscore/ink_defs.h"
+#include "tscore/CryptoHash.h"
 #include <openssl/evp.h>
 
-struct ATSHashMD5 : ATSHash {
-  ATSHashMD5();
-  void update(const void *data, size_t len) override;
-  void final() override;
-  const void *get() const override;
-  size_t size() const override;
-  void clear() override;
-  ~ATSHashMD5() override;
+class MD5Context : public ats::CryptoContextBase
+{
+protected:
+  EVP_MD_CTX *_ctx;
 
-private:
-  EVP_MD_CTX *ctx;
-  unsigned char md_value[EVP_MAX_MD_SIZE];
-  unsigned int md_len = 0;
-  bool finalized      = false;
+public:
+  MD5Context()
+  {
+    _ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(_ctx, EVP_md5(), nullptr);
+  }
+  ~MD5Context() { EVP_MD_CTX_free(_ctx); }
+  /// Update the hash with @a data of @a length bytes.
+  bool
+  update(void const *data, int length) override
+  {
+    return EVP_DigestUpdate(_ctx, data, length);
+  }
+  /// Finalize and extract the @a hash.
+  bool
+  finalize(CryptoHash &hash) override
+  {
+    return EVP_DigestFinal_ex(_ctx, hash.u8, nullptr);
+  }
 };
+
+typedef CryptoHash INK_MD5;

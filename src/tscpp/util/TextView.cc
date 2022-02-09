@@ -29,47 +29,6 @@
 
 static_assert(size_t(-1) == std::string_view::npos, "TextView assumes -1 is the same as npos");
 
-int
-memcmp(std::string_view const &lhs, std::string_view const &rhs)
-{
-  int zret = 0;
-  size_t n = rhs.size();
-
-  // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
-  if (lhs.size() < rhs.size()) {
-    zret = 1;
-    n    = lhs.size();
-  } else if (lhs.size() > rhs.size()) {
-    zret = -1;
-  } else if (lhs.data() == rhs.data()) { // same memory, obviously equal.
-    return 0;
-  }
-
-  int r = ::memcmp(lhs.data(), rhs.data(), n);
-  return r ? r : zret;
-}
-
-int
-strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
-{
-  int zret = 0;
-  size_t n = rhs.size();
-
-  // Seems a bit ugly but size comparisons must be done anyway to get the @c strncasecmp args.
-  if (lhs.size() < rhs.size()) {
-    zret = 1;
-    n    = lhs.size();
-  } else if (lhs.size() > rhs.size()) {
-    zret = -1;
-  } else if (lhs.data() == rhs.data()) { // the same memory, obviously equal.
-    return 0;
-  }
-
-  int r = ::strncasecmp(lhs.data(), rhs.data(), n);
-
-  return r ? r : zret;
-}
-
 const int8_t ts::svtoi_convert[256] = {
   /* [can't do this nicely because clang format won't allow extended comments]
    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F

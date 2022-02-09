@@ -25,8 +25,6 @@ $GEN 0 > incfile0.txt
 $GEN 100 > incfile1.txt
 $GEN 50000 > incfile2.txt
 
-# Generate docs for SDKTest test cases
-
 # docs of size 0, 10k, 20k, 30k, ... 90k
 for i in 0 1 2 3 4 5 6 7 8 9
 do

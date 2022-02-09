@@ -56,12 +56,13 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_assert.h"
-#include "tscore/INK_MD5.h"
+#include "tscore/MD5.h"
 #include "tscore/ParseRules.h"
 #include "tscore/ink_time.h"
 #include "tscore/ink_args.h"
 #include "tscore/I_Version.h"
 #include "tscpp/util/TextView.h"
+#include "tscore/Random.h"
 
 /*
  FTP - Traffic Server Template
@@ -1040,8 +1041,7 @@ process_header(int sock, char *buffer, int offset)
     fd[sock].post_cl = atoi(post_cl + strlen("Content-Length: "));
     ink_assert(post_cl && post_request && fd[sock].post_cl);
   }
-  // coverity[dont_call]
-  if (drand48() > ims_rate) {
+  if (ts::Random::drandom() > ims_rate) {
     ims = nullptr;
   }
   if (range) {
@@ -1146,10 +1146,8 @@ parse_header(int sock, int err)
         } else {
           fd[sock].keepalive--;
         }
-        // coverity[dont_call]
-        if (fd[sock].length && drand48() < server_abort_rate) {
-          // coverity[dont_call]
-          fd[sock].length    = (int)(drand48() * (fd[sock].length - 1));
+        if (fd[sock].length && ts::Random::drandom() < server_abort_rate) {
+          fd[sock].length    = (int)(ts::Random::drandom() * (fd[sock].length - 1));
           fd[sock].keepalive = 0;
         }
         poll_set(sock, nullptr, send_response);
@@ -1166,10 +1164,8 @@ parse_header(int sock, int err)
         } else {
           fd[sock].keepalive--;
         }
-        // coverity[dont_call]
-        if (fd[sock].length && drand48() < server_abort_rate) {
-          // coverity[dont_call]
-          fd[sock].length    = (int)(drand48() * (fd[sock].length - 1));
+        if (fd[sock].length && ts::Random::drandom() < server_abort_rate) {
+          fd[sock].length    = (int)(ts::Random::drandom() * (fd[sock].length - 1));
           fd[sock].keepalive = 0;
         }
         poll_set(sock, nullptr, send_response);
@@ -1462,8 +1458,7 @@ read_ftp_request(int sock)
     } else if (STREQ(buffer, "MDTM")) {
       double err_rand = 1.0;
       if (ftp_mdtm_err_rate != 0.0) {
-        // coverity[dont_call]
-        err_rand = drand48();
+        err_rand = ts::Random::drandom();
       }
       if (err_rand < ftp_mdtm_err_rate) {
         fd[sock].length = sprintf(fd[sock].req_header, "550 mdtm file not found\r\n");
@@ -1843,10 +1838,8 @@ gen_bfc_dist(double f = 10.0)
   double rand2 = 0.0;
   bool f_given = f < 9.0;
   if (!f_given) {
-    // coverity[dont_call]
-    rand = drand48();
-    // coverity[dont_call]
-    rand2 = drand48();
+    rand  = ts::Random::drandom();
+    rand2 = ts::Random::drandom();
   } else {
     rand  = f;
     rand2 = (f * 13.0) - floor(f * 13.0);
@@ -1897,8 +1890,7 @@ gen_bfc_dist(double f = 10.0)
   // vary about the mean doc size for
   // that class/size
   if (!f_given) {
-    // coverity[dont_call]
-    size += (int)((-increment * 0.5) + (increment * drand48()));
+    size += (int)((-increment * 0.5) + (increment * ts::Random::drandom()));
   }
   if (verbose) {
     printf("gen_bfc_dist %d\n", size);
@@ -2452,11 +2444,9 @@ read_response(int sock)
         fd[sock].length -= lbody;
         ink_assert(fd[sock].length >= 0);
         fd[sock].req_pos = -1;
-        // coverity[dont_call]
-        if (fd[sock].length && drand48() < client_abort_rate) {
-          fd[sock].client_abort = 1;
-          // coverity[dont_call]
-          fd[sock].length        = (int)(drand48() * (fd[sock].length - 1));
+        if (fd[sock].length && ts::Random::drandom() < client_abort_rate) {
+          fd[sock].client_abort  = 1;
+          fd[sock].length        = (int)(ts::Random::drandom() * (fd[sock].length - 1));
           fd[sock].keepalive     = 0;
           fd[sock].drop_after_CL = 1;
         }
@@ -2881,10 +2871,8 @@ make_range_header(int sock, double dr, char *rbuf, int size_limit)
     return;
 
   tmp[0] = gen_bfc_dist(dr - 1.0);
-  // coverity[dont_call]
-  tmp[1] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1);
-  // coverity[dont_call]
-  tmp[2] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
+  tmp[1] = ((int)(ts::Random::drandom() * 1000000)) % (tmp[0] - 1 - 0 + 1);
+  tmp[2] = ((int)(ts::Random::drandom() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
 
   if (tmp[0] > 100) {
     if (tmp[0] <= tmp[2]) {
@@ -2910,10 +2898,8 @@ make_range_header(int sock, double dr, char *rbuf, int size_limit)
 static void
 make_random_url(int sock, double *dr, double *h)
 {
-  // coverity[dont_call]
-  *dr = drand48();
-  // coverity[dont_call]
-  *h = drand48();
+  *dr = ts::Random::drandom();
+  *h  = ts::Random::drandom();
 
   if (zipf == 0.0) {
     if (*h < hitrate) {
@@ -2954,8 +2940,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
               "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
       sprintf(fd[sock].req_header,
               ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
@@ -2972,8 +2957,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
                     "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     break;
   case 1:
@@ -2990,8 +2974,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
               "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
       sprintf(fd[sock].req_header,
               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
@@ -3003,8 +2986,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
               "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     post_length = fd[sock].response_length;
     break;
@@ -3025,8 +3007,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
               "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
       sprintf(fd[sock].req_header,
               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
@@ -3038,8 +3019,7 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
               "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              // coverity[dont_call]
-              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     post_length = post_size;
     break;
@@ -3060,9 +3040,8 @@ make_host1_request(int sock, double dr, const char *evo_str, const char *extensi
           "%s"
           "\r\n",
           dr, fd[sock].response_length, evo_str, extension, local_host, server_port,
-          fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-          // coverity[dont_call]
-          reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+          fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+          eheaders, cookie);
   return 0;
 }
 
@@ -3078,8 +3057,7 @@ make_host2_request(int sock, double dr, const char *evo_str, const char *extensi
           "%s"
           "\r\n",
           dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-          // coverity[dont_call]
-          reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+          reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
   return 0;
 }
 
@@ -3116,9 +3094,8 @@ build_request(int sock)
     }
   }
   char cookie[256];
-  *cookie = 0;
-  // coverity[dont_call]
-  fd[sock].nalternate = (int)(alternates * drand48());
+  *cookie             = 0;
+  fd[sock].nalternate = (int)(alternates * ts::Random::drandom());
   if (alternates) {
     if (!vary_user_agent) {
       sprintf(cookie, "Cookie: jtest-cookie-%d\r\n", fd[sock].nalternate);
@@ -3577,10 +3554,8 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             "Accept: */*\r\n"
             "%s"
             "\r\n",
-            curl,
-            // coverity[dont_call]
-            reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-            eheaders);
+            curl, reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "", eheaders);
   } else {
     sprintf(fd[sock].req_header,
             "GET /%s%s%s%s%s HTTP/1.0\r\n"
@@ -3591,9 +3566,8 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             "%s"
             "\r\n",
             path, xquer ? "?" : "", quer, xpar ? ";" : "", para, host,
-            // coverity[dont_call]
-            reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-            eheaders);
+            reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+            fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", eheaders);
   }
 
   if (verbose) {
@@ -3659,11 +3633,9 @@ main(int argc __attribute__((unused)), const char *argv[])
   process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
 
   if (!drand_seed) {
-    // coverity[dont_call]
-    srand48((long)time(nullptr));
+    ts::Random::seed((long)time(nullptr));
   } else {
-    // coverity[dont_call]
-    srand48((long)drand_seed);
+    ts::Random::seed((long)drand_seed);
   }
   if (zipf != 0.0) {
     build_zipf();

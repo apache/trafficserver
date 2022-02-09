@@ -31,7 +31,7 @@
 #include "tscpp/util/MemSpan.h"
 #include "tscore/ink_config.h"
 #if TS_ENABLE_FIPS == 0
-#include "tscore/INK_MD5.h"
+#include "tscore/MD5.h"
 #endif
 #include "tscore/CryptoHash.h"
 

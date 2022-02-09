@@ -54,19 +54,24 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
           TSVConnReenableEx(vc, TS_EVENT_ERROR);
           TSDebug(PLUGIN_NAME, "Rejecting connection, we're at capacity and queue is full");
           TSUserArgSet(vc, gVCIdx, nullptr);
+          limiter->incrementMetric(RATE_LIMITER_METRIC_REJECTED);
 
           return TS_ERROR;
         } else {
           TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
           limiter->push(vc, contp);
           TSDebug(PLUGIN_NAME, "Queueing the VC, we are at capacity");
+          limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
         }
       } else {
         // Not at limit on the handshake, we can re-enable
         TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
         TSVConnReenable(vc);
       }
+    } else {
+      TSVConnReenable(vc);
     }
+
     break;
   }
 
@@ -100,6 +105,8 @@ SniRateLimiter::initialize(int argc, const char *argv[])
     {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
     {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
     {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
+    {const_cast<char *>("prefix"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("tag"), required_argument, nullptr, 't'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
@@ -116,6 +123,12 @@ SniRateLimiter::initialize(int argc, const char *argv[])
       break;
     case 'm':
       this->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
+      break;
+    case 'p':
+      this->prefix = std::string(optarg);
+      break;
+    case 't':
+      this->tag = std::string(optarg);
       break;
     }
     if (opt == -1) {

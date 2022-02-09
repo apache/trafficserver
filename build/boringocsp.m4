@@ -30,7 +30,7 @@ AC_ARG_WITH(boringocsp, [AS_HELP_STRING([--with-boringocsp=DIR], [use a specific
       *":"*)
         boringocsp_include="`echo $withval |sed -e 's/:.*$//'`"
         boringocsp_ldflags="`echo $withval |sed -e 's/^.*://'`"
-        AC_MSG_CHECKING(checking for boringocsp includes in $boringocsp_include libs in $boringocsp_ldflags)
+        AC_MSG_CHECKING(for boringocsp includes in $boringocsp_include libs in $boringocsp_ldflags)
         ;;
       *)
         boringocsp_include="$withval"
@@ -42,7 +42,7 @@ AC_ARG_WITH(boringocsp, [AS_HELP_STRING([--with-boringocsp=DIR], [use a specific
     fi
   fi
 
-  if test -d $boringocsp_include && test -d $boringocsp_ldflags && test -f $boringocsp_include/ocsp.h; then
+  if test -d $boringocsp_include && test -d $boringocsp_ldflags && test -f $boringocsp_include/boringocsp/ocsp.h; then
     AC_MSG_RESULT([ok])
   else
     AC_MSG_RESULT([not found])

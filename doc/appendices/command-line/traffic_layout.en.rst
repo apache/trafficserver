@@ -36,8 +36,8 @@ Environment
 Description
 ===========
 
-Document for the :program:`traffic_layout` about the ``runroot``. This feature is for the setup of traffic server runroot.
-It will create a runtime sandbox for any program of traffic server to run under.
+Document for the :program:`traffic_layout` about the ``runroot``. This feature is for the setup of |TS| runroot.
+It will create a runtime sandbox for any program of |TS| to run under.
 For details about runroot for programs, please refer to ``developer-guide/layout/runroot.en``.
 
 Usage
@@ -127,7 +127,7 @@ Example: ::
    If a custom layout is used and system files are included in some directories, ``--fix`` option might potentially have unexpected behaviors.
    For example, if sysconfdir is defined as ``/etc`` instead of ``/etc/trafficserver`` in ``runroot.yaml``,
    ``--fix`` may perform permission changes on the system configuration files. With normally created runroot with default layout,
-   there is no such issue since traffic server related files are filtered.
+   there is no such issue since |TS| related files are filtered.
 
 Options
 =======

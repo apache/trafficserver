@@ -885,6 +885,9 @@ typedef enum {
   TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX,
   TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK,
   TS_CONFIG_NET_SOCK_NOTSENT_LOWAT,
+  TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE,
+  TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS,
+  TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -1300,6 +1303,7 @@ extern tsapi const char *TS_HTTP_VALUE_CLOSE;
 extern tsapi const char *TS_HTTP_VALUE_COMPRESS;
 extern tsapi const char *TS_HTTP_VALUE_DEFLATE;
 extern tsapi const char *TS_HTTP_VALUE_GZIP;
+extern tsapi const char *TS_HTTP_VALUE_BROTLI;
 extern tsapi const char *TS_HTTP_VALUE_IDENTITY;
 extern tsapi const char *TS_HTTP_VALUE_KEEP_ALIVE;
 extern tsapi const char *TS_HTTP_VALUE_MAX_AGE;
@@ -1323,6 +1327,7 @@ extern tsapi int TS_HTTP_LEN_CLOSE;
 extern tsapi int TS_HTTP_LEN_COMPRESS;
 extern tsapi int TS_HTTP_LEN_DEFLATE;
 extern tsapi int TS_HTTP_LEN_GZIP;
+extern tsapi int TS_HTTP_LEN_BROTLI;
 extern tsapi int TS_HTTP_LEN_IDENTITY;
 extern tsapi int TS_HTTP_LEN_KEEP_ALIVE;
 extern tsapi int TS_HTTP_LEN_MAX_AGE;

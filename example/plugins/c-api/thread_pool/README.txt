@@ -15,9 +15,6 @@ List of files:
  - include/gen.c : utility to generate text files of various size
  - include/gen_inc.sh : script to generate include files for testing
 
- - test/SDKTest/psi_server.c : SDKTest server plugins to test psi
- - test/SDKTest/SDKtest_server.config : SDKTest config file
-
 
 Description
 ===========
@@ -114,19 +111,3 @@ Plugin Testing
  > cd include
  > make
  > gen_inc.sh
-
- Load
- ----
- SDKTest can be used to test this plugin. SDKTest allows to simulate:
-  - synthetic clients sending requests
-  - a synthetic origin server
-
- The synthetic origin server has to be customized in order to send back
- responses that contains the specific 'X-Psi' header.
- This is done through a SDKTest server plugin.
-
- The rate of responses with X-Psi header is configurable thru a SDKTest config file.
-
- A SDKTest server plugin as well as a SDKTest configuration file
- are provided in the directory thread_pool/test/SDKTest.
- Refer to the SDKTest manual for detailed setup instructions.

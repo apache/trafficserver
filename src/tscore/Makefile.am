@@ -67,7 +67,6 @@ libtscore_la_SOURCES = \
 	Extendible.cc \
 	Hash.cc \
 	HashFNV.cc \
-	HashMD5.cc \
 	HashSip.cc \
 	HostLookup.cc \
 	hugepages.cc \
@@ -75,7 +74,6 @@ libtscore_la_SOURCES = \
 	ink_assert.cc \
 	ink_base64.cc \
 	ink_cap.cc \
-	ink_code.cc \
 	ink_defs.cc \
 	InkErrno.cc \
 	ink_error.cc \
@@ -174,6 +172,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
+	unit_tests/test_ink_memory.cc \
 	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
@@ -182,6 +181,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_ParseRules.cc \
+	unit_tests/test_PluginUserArgs.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \

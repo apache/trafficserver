@@ -313,17 +313,15 @@ dnl
 AC_DEFUN([TS_CHECK_EARLY_DATA], [
   _set_ciphersuites_saved_LIBS=$LIBS
 
+  has_tls_early_data=0
+  early_data_check=no
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h)
   AC_CHECK_FUNCS(
-    SSL_set_max_early_data,
+    SSL_set_max_early_data SSL_read_early_data SSL_write_early_data SSL_in_early_data,
     [
       has_tls_early_data=1
       early_data_check=yes
-    ],
-    [
-      has_tls_early_data=0
-      early_data_check=no
     ]
   )
 
@@ -385,6 +383,7 @@ AC_DEFUN([TS_CHECK_SESSION_TICKET], [
 dnl SSL_set1_verify_cert_store macro is for OpenSSL 1.1.1
 dnl SSL_set1_verify_cert_store function is for BoringSSL
 AC_DEFUN([TS_CHECK_VERIFY_CERT_STORE], [
+  _saved_LIBS=$LIBS
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h)
@@ -415,6 +414,8 @@ AC_DEFUN([TS_CHECK_VERIFY_CERT_STORE], [
     ],
     []
   )
+
+  LIBS=$_saved_LIBS
 
   AC_MSG_CHECKING([for setting verify cert store APIs])
   AC_MSG_RESULT([$verify_cert_store_check])

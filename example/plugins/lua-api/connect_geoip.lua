@@ -14,17 +14,23 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-
 -- This example depends on "luajit-geoip".
--- It illustrates how to connect to GeoIP and use it to look up country of an IP address.
+-- It illustrates how to connect to GeoIP and uses it to look up country of an IP address.
 -- It can be used in plugin.config with the lua plugin.
 
 -- Setup Instructions
--- 1) install GeoIP - 1.6.12
--- 2) install GeoIP legacy country database - https://dev.maxmind.com/geoip/legacy/install/country/
--- 3) install luajit-geoip (https://github.com/leafo/luajit-geoip)
---    or just copy geoip/init.lua from the repo to /usr/local/share/lua/5.1/geoip/init.lua
--- 4) You may need to make change so luajit-geoip does ffi.load() on /usr/local/lib/libGeoIP.so
+-- 1. install legacy GeoIP library 1.6.12 (https://github.com/maxmind/geoip-api-c)
+--   a. wget https://github.com/maxmind/geoip-api-c/releases/download/v1.6.12/GeoIP-1.6.12.tar.gz
+--   b. tar zxvf GeoIP-1.6.12.tar.gz
+--   c. cd GeoIP-1.6.12
+--   d. ./configure; make; make install
+-- 2. Find and install GeoIP legacy country database to /usr/local/share/GeoIP/GeoIP.dat
+-- 3. install luajit-geoip v2.1.0 (https://github.com/leafo/luajit-geoip)
+--   a. wget https://github.com/leafo/luajit-geoip/archive/refs/tags/v2.1.0.tar.gz
+--   b. tar zxvf v2.1.0.tar.gz
+--   c. mkdir -p /usr/local/share/lua/5.1/geoip
+--   d. cp luajit-geoip-2.1.0/geoip.lua /usr/local/share/lua/5.1/geoip.lua
+--   e. cp luajit-geoip-2.1.0/geoip/*.lua /usr/local/share/lua/5.1/geoip/
 
 ts.add_package_path('/usr/local/share/lua/5.1/?.lua')
 

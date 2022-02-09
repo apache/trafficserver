@@ -1,0 +1,109 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /malformed/chunk/header
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 1 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header sizes are in hex, so a size of `z` is malformed.
+        data: z%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /large/chunk/size/header
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 2 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Super large chunk header, larger than will fit in an int.
+        data: 111111113%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
+  #
+  # Now repeat the above two malformed chunk header tests, but on the server
+  # side.
+  #
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /response/malformed/chunk/size
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header sizes are in hex, so a size of `z` is malformed.
+        data: z%0D%0Adef%0D%0A0%0D%0A%0D%0A
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /response/large/chunk/size
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Super large chunk header, larger than will fit in an int.
+        data: 111111113%0D%0Adef%0D%0A0%0D%0A%0D%0A

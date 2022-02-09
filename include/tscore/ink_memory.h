@@ -26,6 +26,7 @@
 #include <cstring>
 #include <strings.h>
 #include <cinttypes>
+#include <limits>
 #include <string>
 #include <string_view>
 
@@ -49,10 +50,10 @@
 
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
-#else
-#if HAVE_MALLOC_H
+#elif TS_HAS_MIMALLOC
+#include <mimalloc.h>
+#elif HAVE_MALLOC_H
 #include <malloc.h>
-#endif // ! HAVE_MALLOC_H
 #endif // ! TS_HAS_JEMALLOC
 
 #ifndef MADV_NORMAL
@@ -98,7 +99,6 @@ void *ats_realloc(void *ptr, size_t size);
 void *ats_memalign(size_t alignment, size_t size);
 void ats_free(void *ptr);
 void *ats_free_null(void *ptr);
-int ats_mallopt(int param, int value);
 
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
@@ -203,6 +203,24 @@ inline void
 ink_zero(T &t)
 {
   memset(static_cast<void *>(&t), 0, sizeof(t));
+}
+
+/** Verify that we can safely shift value num_places places left.
+ *
+ * This checks that the shift will not cause the variable to overflow and that
+ * the value will not become negative.
+ *
+ * @param[in] value The value against which to check whether the shift is safe.
+ *
+ * @param[in] num_places The number of places to check that shifting left is safe.
+ *
+ */
+template <typename T>
+inline constexpr bool
+can_safely_shift_left(T value, int num_places)
+{
+  constexpr auto max_value = std::numeric_limits<T>::max();
+  return value >= 0 && value <= (max_value >> num_places);
 }
 
 /** Scoped resources.

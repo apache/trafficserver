@@ -498,45 +498,16 @@ int
 MC::binary_get_event(int event, void *data)
 {
   ink_assert(!"EVENT_ITEM_GOT is incorrect here");
-  if (event != TSMEMCACHE_EVENT_GOT_ITEM) {
-    CHECK_READ_AVAIL(binary_header.request.keylen, &MC::binary_get);
-    key         = binary_get_key(this);
-    header.nkey = binary_header.request.keylen;
-    return get_item();
-  } else if (event == CACHE_EVENT_OPEN_READ_FAILED) {
-    if (f.noreply) {
-      return read_from_client();
-    }
-    if (binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETK) {
-      add_binary_header(PROTOCOL_BINARY_RESPONSE_KEY_ENOENT, 0, header.nkey, header.nkey);
-      wbuf->write(key, header.nkey);
-      return write_then_read_from_client();
-    } else {
-      return write_binary_error(PROTOCOL_BINARY_RESPONSE_KEY_ENOENT, 0);
-    }
-  } else if (event == CACHE_EVENT_OPEN_READ) {
-    protocol_binary_response_get *rsp = &res.get;
-    uint16_t keylen                   = 0;
-    uint32_t bodylen                  = sizeof(rsp->message.body) + (rcache_header->nbytes - 2);
-    bool getk =
-      (binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETK || binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETKQ);
-    if (getk) {
-      bodylen += header.nkey;
-      keylen = header.nkey;
-    }
-    add_binary_header(0, sizeof(rsp->message.body), keylen, bodylen);
-    rsp->message.header.response.cas = ink_hton64(rcache_header->cas);
-    rsp->message.body.flags          = htonl(rcache_header->flags);
-    wbuf->write(&rsp->message.body, sizeof(rsp->message.body));
-    if (getk) {
-      wbuf->write(key, header.nkey);
-    }
-    crvio = crvc->do_io_read(this, rcache_header->nbytes, wbuf);
-    return stream_then_read_from_client(rcache_header->nbytes);
-  } else {
+
+  if (event == TSMEMCACHE_EVENT_GOT_ITEM) {
     return unexpected_event();
   }
-  return 0;
+
+  CHECK_READ_AVAIL(binary_header.request.keylen, &MC::binary_get);
+  key         = binary_get_key(this);
+  header.nkey = binary_header.request.keylen;
+
+  return get_item();
 }
 
 int
@@ -1197,6 +1168,9 @@ MC::ascii_delete(char *s, char *e)
       return ASCII_CLIENT_ERROR("bad command line");
     }
     SKIP_SPACE;
+  }
+  if (*s == '0') {
+    s++;
   }
   if (*s == '\r') {
     s++;

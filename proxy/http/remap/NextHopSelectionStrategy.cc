@@ -43,17 +43,10 @@ constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_R
 
 NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy)
 {
-  int _max_retriers = 0;
-  strategy_name     = name;
-  policy_type       = policy;
-  NH_GetConfig(_max_retriers, "proxy.config.http.parent_proxy.max_trans_retries");
+  strategy_name = name;
+  policy_type   = policy;
 
-  // config settings may not be available when running unit tests.
-  // so use the max_retriers default setting.
-  if (_max_retriers > 0) {
-    max_retriers = _max_retriers;
-  }
-  NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s, max_retriers: %d", policy_strings[policy], max_retriers);
+  NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s", policy_strings[policy]);
 }
 
 //
@@ -218,7 +211,7 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
             std::vector<std::shared_ptr<HostRecord>> hosts_inner;
 
             for (unsigned int hst = 0; hst < hosts_list.size(); ++hst) {
-              std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
+              std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecordCfg>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if ((self_host == host_rec->hostname) || mach->is_self(host_rec->hostname.c_str())) {
@@ -316,17 +309,11 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
   return PARENT_RETRY_NONE;
 }
 
-void
-NextHopSelectionStrategy::retryComplete(TSHttpTxn txnp, const char *hostname, const int port)
-{
-  return passive_health.retryComplete(txnp, hostname, port);
-}
-
 namespace YAML
 {
-template <> struct convert<HostRecord> {
+template <> struct convert<HostRecordCfg> {
   static bool
-  decode(const Node &node, HostRecord &nh)
+  decode(const Node &node, HostRecordCfg &nh)
   {
     ts::Yaml::Map map{node};
     ts::Yaml::Map *mmap{&map};

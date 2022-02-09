@@ -71,19 +71,6 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
   ink_assert(false);
 }
 
-#include "Log.h"
-void
-Log::trace_in(sockaddr const *, unsigned short, char const *, ...)
-{
-  ink_assert(false);
-}
-
-void
-Log::trace_out(sockaddr const *, unsigned short, char const *, ...)
-{
-  ink_assert(false);
-}
-
 #include "InkAPIInternal.h"
 int
 APIHook::invoke(int, void *) const

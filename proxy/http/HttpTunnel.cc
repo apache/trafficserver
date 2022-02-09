@@ -36,6 +36,7 @@
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 #include "tscore/ParseRules.h"
+#include "tscore/ink_memory.h"
 
 static const int min_block_transfer_bytes = 256;
 static const char *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
@@ -134,8 +135,16 @@ ChunkedHandler::read_size()
       if (state == CHUNK_READ_SIZE) {
         // The http spec says the chunked size is always in hex
         if (ParseRules::is_hex(*tmp)) {
+          // Make sure we will not overflow running_sum with our shift.
+          if (!can_safely_shift_left(running_sum, 4)) {
+            // We have no more space in our variable for the shift.
+            state = CHUNK_READ_ERROR;
+            done  = true;
+            break;
+          }
           num_digits++;
-          running_sum *= 16;
+          // Shift over one hex value.
+          running_sum <<= 4;
 
           if (ParseRules::is_digit(*tmp)) {
             running_sum += *tmp - '0';

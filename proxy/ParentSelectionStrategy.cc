@@ -123,7 +123,6 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   pRec->failedAt = static_cast<time_t>(0);
   int old_count  = pRec->failCount.exchange(0, std::memory_order_relaxed);
   // a retry succeeded, just reset retriers
-  pRec->retriers.clear();
 
   if (old_count > 0) {
     Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);

@@ -1108,7 +1108,7 @@ update_codes(OriginStats *stat, int code, int size)
     update_counter(stat->codes.c_4xx, size);
   } else if (code >= 300) {
     update_counter(stat->codes.c_3xx, size);
-  } else if (code >= 200) {
+  } else /* (code >= 200) */ {
     update_counter(stat->codes.c_2xx, size);
   }
 }

@@ -58,8 +58,13 @@ int
 TLSSNISupport::perform_sni_action()
 {
   const char *servername = this->_get_sni_server_name();
+  if (!servername) {
+    Debug("ssl_sni", "No servername provided");
+    return SSL_TLSEXT_ERR_OK;
+  }
+
   SNIConfig::scoped_config params;
-  if (const auto &actions = params->get(servername); !actions.first) {
+  if (const auto &actions = params->get({servername, std::strlen(servername)}); !actions.first) {
     Debug("ssl_sni", "%s not available in the map", servername);
   } else {
     for (auto &&item : *actions.first) {

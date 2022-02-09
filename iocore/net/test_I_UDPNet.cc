@@ -31,13 +31,8 @@
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_UDPNet.h"
-#if defined(darwin)
-#include "P_UDPConnection.h"
-#include "P_UDPPacket.h"
-#else
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
-#endif
 
 #include "diags.i"
 

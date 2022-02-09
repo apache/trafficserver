@@ -53,6 +53,8 @@ typedef uint16_t ssl_curve_id;
 // Return the SSL Curve ID associated to the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
 
+SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
+
 enum class SSLCertContextType;
 
 struct SSLLoadingContext {
@@ -179,8 +181,7 @@ public:
   virtual SSL_CTX *default_server_ssl_ctx();
 
   virtual std::vector<SSLLoadingContext> init_server_ssl_ctx(CertLoadData const &data,
-                                                             const SSLMultiCertConfigParams *sslMultCertSettings,
-                                                             std::set<std::string> &names);
+                                                             const SSLMultiCertConfigParams *sslMultCertSettings);
 
   static bool load_certs(SSL_CTX *ctx, const std::vector<std::string> &cert_names_list,
                          const std::vector<std::string> &key_names_list, CertLoadData const &data, const SSLConfigParams *params,
@@ -224,6 +225,8 @@ private:
   virtual bool _set_npn_callback(SSL_CTX *ctx);
   virtual bool _set_alpn_callback(SSL_CTX *ctx);
   virtual bool _set_keylog_callback(SSL_CTX *ctx);
+  virtual bool _enable_ktls(SSL_CTX *ctx);
+  virtual bool _enable_early_data(SSL_CTX *ctx);
 };
 
 // Create a new SSL server context fully configured (cert and keys are optional).

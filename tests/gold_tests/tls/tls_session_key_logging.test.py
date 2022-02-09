@@ -28,7 +28,6 @@ Test TLS secrets logging.
 class TlsKeyloggingTest:
 
     replay_file = "tls_session_key_logging.replay.yaml"
-    keylog_file = os.path.join(Test.RunDirectory, "tls_secrets.txt")
 
     server_counter = 0
     ts_counter = 0
@@ -48,6 +47,7 @@ class TlsKeyloggingTest:
         ts_name = f"ts_{TlsKeyloggingTest.ts_counter}"
         TlsKeyloggingTest.ts_counter += 1
         self.ts = Test.MakeATSProcess(ts_name, enable_tls=True, enable_cache=False)
+
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.records_config.update({
             "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
@@ -63,21 +63,24 @@ class TlsKeyloggingTest:
         self.ts.Disk.remap_config.AddLine(
             f'map / https://127.0.0.1:{self.server.Variables.https_port}'
         )
+
+        keylog_file = os.path.join(self.ts.Variables.LOGDIR, "tls_secrets.txt")
+
         if enable_secrets_logging:
             self.ts.Disk.records_config.update({
-                'proxy.config.ssl.keylog_file': TlsKeyloggingTest.keylog_file,
+                'proxy.config.ssl.keylog_file': keylog_file,
             })
 
             self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                f"Opened {TlsKeyloggingTest.keylog_file} for TLS key logging",
+                f"Opened {keylog_file} for TLS key logging",
                 "Verify the user was notified of TLS secrets logging.")
-            self.ts.Disk.File(TlsKeyloggingTest.keylog_file, id="keylog", exists=True)
+            self.ts.Disk.File(keylog_file, id="keylog", exists=True)
             # It would be nice to verify the content of certain lines in the
             # keylog file, but the content is dependent upon the particular TLS
             # protocol version. Thus I'm hesitant to add ContainsExpression
             # checks here which will be fragile and eventually become outdated.
         else:
-            self.ts.Disk.File(TlsKeyloggingTest.keylog_file, exists=False)
+            self.ts.Disk.File(keylog_file, exists=False)
 
     def run(self):
         tr = Test.AddTestRun()

@@ -113,6 +113,12 @@ static int ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L)
 static int ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L);
 static int ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L);
 
+static void ts_lua_inject_http_req_transform_api(lua_State *L);
+static int ts_lua_http_req_transform_get_downstream_bytes(lua_State *L);
+static int ts_lua_http_req_transform_get_downstream_watermark_bytes(lua_State *L);
+static int ts_lua_http_req_transform_set_downstream_watermark_bytes(lua_State *L);
+static int ts_lua_http_req_transform_set_upstream_bytes(lua_State *L);
+
 void
 ts_lua_inject_http_api(lua_State *L)
 {
@@ -196,6 +202,11 @@ ts_lua_inject_http_transform_api(lua_State *L)
   lua_newtable(L);
   ts_lua_inject_http_resp_transform_api(L);
   lua_setfield(L, -2, "resp_transform");
+
+  /*  ts.http.req_transform api */
+  lua_newtable(L);
+  ts_lua_inject_http_req_transform_api(L);
+  lua_setfield(L, -2, "req_transform");
 }
 
 static void
@@ -212,6 +223,22 @@ ts_lua_inject_http_resp_transform_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_resp_transform_set_downstream_bytes);
   lua_setfield(L, -2, "set_downstream_bytes");
+}
+
+static void
+ts_lua_inject_http_req_transform_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_http_req_transform_get_downstream_bytes);
+  lua_setfield(L, -2, "get_downstream_bytes");
+
+  lua_pushcfunction(L, ts_lua_http_req_transform_get_downstream_watermark_bytes);
+  lua_setfield(L, -2, "get_downstream_watermark_bytes");
+
+  lua_pushcfunction(L, ts_lua_http_req_transform_set_downstream_watermark_bytes);
+  lua_setfield(L, -2, "set_downstream_watermark_bytes");
+
+  lua_pushcfunction(L, ts_lua_http_req_transform_set_upstream_bytes);
+  lua_setfield(L, -2, "set_upstream_bytes");
 }
 
 static void
@@ -1009,4 +1036,31 @@ ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L)
   transform_ctx->downstream_bytes = n;
 
   return 0;
+}
+
+// Request transform are similar to response transform. It works against the transform context available.
+// We can get the downstream bytes and set the upstream bytes.
+// We can also get and set the downstream watermark as well.
+static int
+ts_lua_http_req_transform_get_downstream_bytes(lua_State *L)
+{
+  return ts_lua_http_resp_transform_get_upstream_bytes(L);
+}
+
+static int
+ts_lua_http_req_transform_get_downstream_watermark_bytes(lua_State *L)
+{
+  return ts_lua_http_resp_transform_get_upstream_watermark_bytes(L);
+}
+
+static int
+ts_lua_http_req_transform_set_downstream_watermark_bytes(lua_State *L)
+{
+  return ts_lua_http_resp_transform_set_upstream_watermark_bytes(L);
+}
+
+static int
+ts_lua_http_req_transform_set_upstream_bytes(lua_State *L)
+{
+  return ts_lua_http_resp_transform_set_downstream_bytes(L);
 }

@@ -24,7 +24,6 @@
 #include "P_Net.h"
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
-#include "Log.h"
 
 #include <termios.h>
 
@@ -678,7 +677,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
     if (nh) {
       nh->free_netevent(this);
     } else {
-      free(t);
+      this->free(t);
     }
   }
 }
@@ -1238,7 +1237,11 @@ fail:
   if (fd != NO_FD) {
     con.fd = NO_FD;
   }
-  nh->free_netevent(this);
+  if (nullptr != nh) {
+    nh->free_netevent(this);
+  } else {
+    this->free(t);
+  }
   return CONNECT_FAILURE;
 }
 
