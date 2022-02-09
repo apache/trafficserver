@@ -36,5 +36,3 @@ tr = Test.AddTestRun("Verify range request is transformed from a 200 response")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client0", replay_file, http_ports=[ts.Variables.port])
-
-
