@@ -169,16 +169,9 @@ struct DNSHandler : public Continuation {
   DNSConnection udpcon[MAX_NAMED];
   Queue<DNSEntry> entries;
   Queue<DNSConnection> triggered;
-  int in_flight    = 0;
-  int name_server  = 0;
-  int in_write_dns = 0;
-  /// Rate limiter for down nameserver retries.
-  /// Don't schedule another if there is already one in flight.
-  std::atomic<bool> nameserver_retry_in_flight_p{false};
-  /// Marker for event cookie to indicate it's a nameserver retry event.
-  /// @note Can't be @c constexpr because of the cast.
-  static inline void *const RETRY_COOKIE{reinterpret_cast<void *>(0x2)};
-
+  int in_flight          = 0;
+  int name_server        = 0;
+  int in_write_dns       = 0;
   HostEnt *hostent_cache = nullptr;
 
   int ns_down[MAX_NAMED];
@@ -219,16 +212,16 @@ struct DNSHandler : public Continuation {
             (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
       Debug("dns", "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
     }
-    return ns_down[i] || (crossed_failover_number[i] &&
-                          ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
+    return (crossed_failover_number[i] &&
+            ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
   }
 
   bool
   failover_soon(int i)
   {
-    return ns_down[i] || (crossed_failover_number[i] &&
-                          ((Thread::get_hrtime() - crossed_failover_number[i]) >
-                           (HRTIME_SECONDS(dns_failover_try_period + failover_soon_number[i] * FAILOVER_SOON_RETRY))));
+    return (crossed_failover_number[i] &&
+            ((Thread::get_hrtime() - crossed_failover_number[i]) >
+             (HRTIME_SECONDS(dns_failover_try_period + failover_soon_number[i] * FAILOVER_SOON_RETRY))));
   }
 
   void recv_dns(int event, Event *e);
