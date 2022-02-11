@@ -223,9 +223,9 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 void
 logSliceError(char const *const message, Data const *const data, HttpHeader const &header_resp)
 {
-  Config *const config = data->m_config;
+  Config *const conf = data->m_config;
 
-  bool const logToError = config->canLogError();
+  bool const logToError = conf->canLogError();
 
   // always write block stitch errors while in debug mode
   if (!logToError && !TSIsDebugTagSet(PLUGIN_NAME)) {
@@ -259,7 +259,7 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   // raw range request
   char rangestr[1024];
   int rangelen = sizeof(rangestr);
-  header_req.valueForKey(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), rangestr, &rangelen);
+  header_req.valueForKey(conf->m_skip_header.data(), conf->m_skip_header.size(), rangestr, &rangelen);
 
   // Normalized range request
   ContentRange const crange(data->m_req_range.m_beg, data->m_req_range.m_end, data->m_contentlen);
@@ -268,8 +268,8 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   crange.toStringClosed(normstr, &normlen);
 
   // block range request
-  int64_t const blockbeg = data->m_blocknum * data->m_config->m_blockbytes;
-  int64_t const blockend = std::min(blockbeg + data->m_config->m_blockbytes, data->m_contentlen);
+  int64_t const blockbeg = data->m_blocknum * conf->m_blockbytes;
+  int64_t const blockend = std::min(blockbeg + conf->m_blockbytes, data->m_contentlen);
 
   // Block response data
   TSHttpStatus const statusgot = header_resp.status();
@@ -416,8 +416,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 
       // add special CRR IMS header to the request
       HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
-      if (!headerreq.setKeyTime(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size(), dateims)) {
-        ERROR_LOG("Failed setting '%.*s'", (int)X_CRR_IMS_HEADER.size(), X_CRR_IMS_HEADER.data());
+      Config const *const conf = data->m_config;
+      if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
+        ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
         return false;
       }
 
@@ -438,8 +439,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 
       // add special CRR IMS header to the request
       HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
-      if (!headerreq.setKeyTime(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size(), dateims)) {
-        ERROR_LOG("Failed setting '%.*s'", (int)X_CRR_IMS_HEADER.size(), X_CRR_IMS_HEADER.data());
+      Config const *const conf = data->m_config;
+      if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
+        ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
         return false;
       }
 

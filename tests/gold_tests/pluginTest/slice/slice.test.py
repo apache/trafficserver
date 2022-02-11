@@ -82,9 +82,13 @@ curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.f
 
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLines([
-    'map http://preload/ http://127.0.0.1:{}'.format(server.Variables.Port),
-    'map http://slice/ http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
+    f'map http://preload/ http://127.0.0.1:{server.Variables.Port}',
+    f'map http://slice_only/ http://127.0.0.1:{server.Variables.Port}',
+    f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
+    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
+    f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}' +
+    f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' +
+    ' @pparam=--skip-header=SkipSlice',
 ])
 
 ts.Disk.records_config.update({
@@ -179,4 +183,15 @@ end = beg + block_bytes
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end)
 ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
+tr.StillRunningAfter = ts
+
+# 9 Test - First complete slice using override header
+# if this fails it will infinite loop
+tr = Test.AddTestRun("Fetch first slice range")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slicehdr/path' + ' -r 0-6'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_first.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-6/18", "mismatch byte content response")
 tr.StillRunningAfter = ts

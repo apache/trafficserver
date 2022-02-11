@@ -36,8 +36,6 @@
 
 #include <string>
 
-static char const *const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
-
 /**
   Designed to be a cheap throwaway struct which allows a
   consumer to make various calls to manipulate headers.
