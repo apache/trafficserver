@@ -1,6 +1,9 @@
 Changes with Apache Traffic Server 9.1.2
   #7831 - Fix stall on sending response for request with trailer header
+  #7884 - Test bad request behavior
   #7957 - Fix the scheme of h2 0rtt tests
+  #8012 - Add option to mostly strictly check URL characters
+  #8032 - Stablize trace curl test in good_request_after_bad
   #8433 - Fix null-pointer-subtraction warning
   #8434 - Fix deprecated-copy warning
   #8436 - Fix SSLAddressLookup Test
@@ -25,3 +28,4 @@ Changes with Apache Traffic Server 9.1.2
   #8574 - Docs: Fix default value of proxy.config.ssl.handshake_timeout_in
   #8599 - Docs: Slack instead of irc
   #8625 - Rate Limit Plugin: Re-enable VConnection when SNI is empty
+  #8632 - Default proxy.config.http.strict_uri_parsing to "2"
