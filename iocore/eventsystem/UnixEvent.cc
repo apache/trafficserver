@@ -29,6 +29,8 @@
 *****************************************************************************/
 #include "P_EventSystem.h"
 
+#include "tscore/ink_stack_trace.h"
+
 ClassAllocator<Event> eventAllocator("eventAllocator", 256);
 
 void
@@ -104,3 +106,19 @@ Event::schedule_every(ink_hrtime aperiod, int acallback_event)
     ethread->EventQueueExternal.enqueue_local(this);
   }
 }
+
+#ifdef ENABLE_EVENT_TRACKER
+
+void
+Event::set_location()
+{
+  _location = ink_backtrace(3);
+}
+
+const void *
+Event::get_location() const
+{
+  return _location;
+}
+
+#endif
