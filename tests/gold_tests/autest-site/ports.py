@@ -23,8 +23,10 @@ import platform
 
 import hosts.output as host
 
-from ordered_set_queue import OrderedSetQueue
-
+try:
+    import queue as Queue
+except ImportError:
+    import Queue
 
 g_ports = None  # ports we can use
 
@@ -124,7 +126,7 @@ def _setup_port_queue(amount=1000):
         host.WriteDebug(
             '_setup_port_queue',
             "Populating the port queue.")
-        g_ports = OrderedSetQueue()
+        g_ports = Queue.Queue()
     else:
         # The queue has already been populated.
         host.WriteDebug(
