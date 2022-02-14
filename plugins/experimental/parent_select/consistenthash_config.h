@@ -24,7 +24,8 @@
 
 class TSNextHopSelectionStrategy;
 
-typedef std::map<std::string, std::unique_ptr<TSNextHopSelectionStrategy>, std::less<>> strategies_map;
+typedef std::map<std::string, std::shared_ptr<TSNextHopSelectionStrategy>, std::less<>> strategies_map;
 
+void clearStrategiesCache(void);
 strategies_map createStrategiesFromFile(const char *file);
 TSNextHopSelectionStrategy *createStrategy(const std::string &name, const YAML::Node &node);
