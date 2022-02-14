@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <string_view>
 #include <variant>
+#include <array>
 
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"
