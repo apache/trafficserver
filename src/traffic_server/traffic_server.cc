@@ -1563,6 +1563,9 @@ static void
 run_RegressionTest()
 {
   if (regression_level) {
+    // Call this so that Diags.cc will send diagnostic output to stderr.
+    tell_diags_regression_testing_is_on();
+
     eventProcessor.schedule_every(new RegressionCont(), HRTIME_SECONDS(1));
   }
 }

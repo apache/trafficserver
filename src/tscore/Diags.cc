@@ -44,7 +44,7 @@
 #include "tscore/ink_time.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_thread.h"
-#include "tscore/BufferWriter.h"
+#include "tscore/Regression.h"
 #include "tscore/Diags.h"
 
 int diags_on_for_plugins         = 0;
@@ -52,6 +52,14 @@ int DiagsConfigState::enabled[2] = {0, 0};
 
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = nullptr;
+
+static bool regression_testing_on = false;
+
+void
+tell_diags_regression_testing_is_on()
+{
+  regression_testing_on = true;
+}
 
 static bool
 location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
@@ -266,7 +274,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-  if (config.outputs[diags_level].to_stderr) {
+  if (config.outputs[diags_level].to_stderr || regression_testing_on) {
     if (stderr_log && stderr_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
