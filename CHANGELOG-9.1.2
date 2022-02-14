@@ -4,6 +4,7 @@ Changes with Apache Traffic Server 9.1.2
   #7957 - Fix the scheme of h2 0rtt tests
   #8012 - Add option to mostly strictly check URL characters
   #8032 - Stablize trace curl test in good_request_after_bad
+  #8207 - Remove some const casting
   #8433 - Fix null-pointer-subtraction warning
   #8434 - Fix deprecated-copy warning
   #8436 - Fix SSLAddressLookup Test
@@ -24,8 +25,11 @@ Changes with Apache Traffic Server 9.1.2
   #8548 - Traffic Dump: Use the correct transaction user index
   #8549 - Relax key validation of sni.yaml
   #8551 - combo_handler: Initialize User Arg Index in TSRemapInit
+  #8556 - Fixes macOS arm64 builds (again)
   #8559 - Clear random header value by AIO read error
   #8574 - Docs: Fix default value of proxy.config.ssl.handshake_timeout_in
   #8599 - Docs: Slack instead of irc
   #8625 - Rate Limit Plugin: Re-enable VConnection when SNI is empty
   #8632 - Default proxy.config.http.strict_uri_parsing to "2"
+  #8662 - Send diags output to stderr when running regression tests.
+  #8668 - backport of 9.2.x autest port selection fixes.
