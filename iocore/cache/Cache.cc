@@ -1437,7 +1437,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 {
   uint32_t got_len         = 0;
   uint32_t max_sync_serial = header->sync_serial;
-  char *s, *e;
+  char *s, *e = nullptr;
   if (event == EVENT_IMMEDIATE) {
     if (header->sync_serial == 0) {
       io.aiocb.aio_buf = nullptr;

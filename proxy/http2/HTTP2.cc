@@ -606,7 +606,7 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
 
     // :path
     if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr) {
-      int value_len;
+      int value_len     = 0;
       const char *value = headers->path_get(&value_len);
 
       ts::LocalBuffer<char> buf(value_len + 1);
