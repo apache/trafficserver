@@ -184,6 +184,7 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
     if (is_ssl_session_timed_out(shared_sess.get())) {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
       origin_sess_cache->remove_session(lookup_key);
+      shared_sess.reset();
     } else {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_hit);
       this->_setSSLSessionCacheHit(true);
