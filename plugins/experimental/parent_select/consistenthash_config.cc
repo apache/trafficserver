@@ -20,6 +20,7 @@
 #include "strategy.h"
 #include "consistenthash.h"
 #include "util.h"
+#include "time.h"
 
 #include <cinttypes>
 #include <string>
@@ -43,6 +44,19 @@
 #include "ts/parentselectdefs.h"
 
 #include "consistenthash_config.h"
+
+namespace
+{
+std::mutex strategies_cache_mutex;
+std::map<std::string, strategies_map> strategies_cache;
+} // namespace
+
+void
+clearStrategiesCache(void)
+{
+  std::lock_guard<std::mutex> guard(strategies_cache_mutex);
+  strategies_cache.clear();
+}
 
 void loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once);
 
@@ -69,7 +83,15 @@ createStrategiesFromFile(const char *file)
 {
   TSDebug(PLUGIN_NAME, "createStrategiesFromFile plugin createStrategiesFromFile file '%s'", file);
 
-  //  return strategies_map(); // debug
+  {
+    std::lock_guard<std::mutex> guard(strategies_cache_mutex);
+    auto it = strategies_cache.find(file);
+    if (it != strategies_cache.end()) {
+      TSDebug(PLUGIN_NAME, "createStrategiesFromFile file '%s' in cache from previous remap, using cache", file);
+      return it->second;
+    }
+  }
+  TSDebug(PLUGIN_NAME, "createStrategiesFromFile file '%s' not in cache, loading file", file);
 
   YAML::Node config;
   YAML::Node strategies;
@@ -133,6 +155,12 @@ createStrategiesFromFile(const char *file)
       TSDebug(PLUGIN_NAME, "createStrategiesFromFile filename %s got strategy %s emplaced.", basename, name.c_str());
     }
     TSDebug(PLUGIN_NAME, "createStrategiesFromFile filename %s returning strategies created.", basename);
+
+    {
+      std::lock_guard<std::mutex> guard(strategies_cache_mutex);
+      strategies_cache[file] = strategiesMap;
+    }
+
     return strategiesMap;
   } catch (std::exception &ex) {
     TSError("[%s] creating strategies from file %s threw '%s'.", PLUGIN_NAME, file, ex.what());
