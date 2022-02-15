@@ -8684,9 +8684,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    OutboundConnTrack::CONFIG_VAR_MIN,
    OutboundConnTrack::CONFIG_VAR_MAX,
    OutboundConnTrack::CONFIG_VAR_MATCH,
-#if TS_VERSION_MAJOR < 10
-   "proxy.config.ssl.client.verify.server",
-#endif
    "proxy.config.ssl.client.verify.server.policy",
    "proxy.config.ssl.client.verify.server.properties",
    "proxy.config.ssl.client.sni_policy",
@@ -8723,14 +8720,6 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
   *pstatus = REGRESSION_TEST_INPROGRESS;
   for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i) {
     std::string_view conf{SDK_Overridable_Configs[i]};
-#if TS_VERSION_MAJOR < 10
-    if (conf == "proxy.config.ssl.client.verify.server") {
-      // TODO: remove this in 10.x. Kept here because we keep the
-      // `TS_CONFIG_SSL_CLIENT_VERIFY_SERVER` in 9.x to preserve ABI
-      // compatibility in the 9.x releases.
-      continue;
-    }
-#endif
 
     if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), -1, &key, &type)) {
       if (key != i) {
