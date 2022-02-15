@@ -4733,6 +4733,13 @@ HttpSM::do_range_setup_if_necessary()
                                                                                      &field_content_type_len);
             content_length = t_state.cache_info.object_read->object_size_get();
           } else {
+            // We don't want to transform a range request if the server response has a content encoding.
+            if (t_state.hdr_info.server_response.presence(MIME_PRESENCE_CONTENT_ENCODING)) {
+              Debug("http_trans", "Cannot setup range transform for server response with content encoding");
+              t_state.range_setup = HttpTransact::RANGE_NONE;
+              return;
+            }
+
             // Since we are transforming the range from the server, we want to cache the original response
             t_state.api_info.cache_untransformed = true;
             content_type =
