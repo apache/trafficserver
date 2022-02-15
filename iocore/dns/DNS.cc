@@ -524,12 +524,12 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
     }
     return false;
   } else {
+    ns_down[icon] = 0;
     if (cur_con.eio.start(pd, &cur_con, EVENTIO_READ) < 0) {
       Error("[iocore_dns] open_con: Failed to add %d server to epoll list\n", icon);
     } else {
-      cur_con.num   = icon;
-      ns_down[icon] = 0;
-      Debug("dns", "opening connection %s on fd %d SUCCEEDED for %d", ip_text, cur_con.fd, icon);
+      cur_con.num = icon;
+      Debug("dns", "opening connection %s SUCCEEDED for %d", ip_text, icon);
     }
     ret = true;
   }
@@ -729,15 +729,6 @@ void
 DNSHandler::failover()
 {
   Debug("dns", "failover: initiating failover attempt, current name_server=%d", name_server);
-  if (!ns_down[name_server]) {
-    ip_text_buffer buff;
-    // mark this nameserver as down
-    Debug("dns", "failover: Marking nameserver %d as down", name_server);
-    ns_down[name_server] = 1;
-    Warning("connection to DNS server %s lost, marking as down",
-            ats_ip_ntop(&m_res->nsaddr_list[name_server].sa, buff, sizeof(buff)));
-  }
-
   // no hope, if we have only one server
   if (m_res->nscount > 1) {
     ip_text_buffer buff1, buff2;
@@ -775,8 +766,6 @@ DNSHandler::failover()
     ip_text_buffer buff;
     Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   }
-  // Make sure retries are done even if no more requests.
-  this_ethread()->schedule_in(this, DNS_PRIMARY_RETRY_PERIOD);
 }
 
 /** Mark one of the nameservers as down. */
@@ -790,8 +779,6 @@ DNSHandler::rr_failure(int ndx)
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
     Warning("connection to DNS server %s lost, marking as down", ats_ip_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff)));
-    // Make sure retries are done even if no more requests.
-    this_ethread()->schedule_in(this, DNS_PRIMARY_RETRY_PERIOD);
   }
 
   int nscount = m_res->nscount;
@@ -984,11 +971,6 @@ DNSHandler::check_and_reset_tcp_conn()
 int
 DNSHandler::mainEvent(int event, Event *e)
 {
-  // If this was a scheduled retry event, clear the associated flag.
-  if (e && e->cookie == RETRY_COOKIE) {
-    this->nameserver_retry_in_flight_p = false;
-  }
-
   recv_dns(event, e);
   if (dns_ns_rr) {
     if (DNS_CONN_MODE::TCP_RETRY == dns_conn_mode) {
@@ -1033,6 +1015,10 @@ DNSHandler::mainEvent(int event, Event *e)
 
   if (entries.head) {
     write_dns(this);
+  }
+
+  if (std::any_of(ns_down, ns_down + n_con, [](int f) { return f != 0; })) {
+    this_ethread()->schedule_at(this, DNS_PRIMARY_RETRY_PERIOD);
   }
 
   return EVENT_CONT;

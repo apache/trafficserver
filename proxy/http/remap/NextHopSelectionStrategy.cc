@@ -278,7 +278,10 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
     for (auto &hh : host_groups[gg]) {
       HostRecord *p = hh.get();
       if (p->available.load()) {
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %s", sm_id, p->hostname.c_str());
+        NH_Debug(NH_DEBUG_TAG,
+                 "[%" PRIu64 "] found available next hop %s (this is NOT necessarily the parent which will be selected, just the "
+                 "first available parent found)",
+                 sm_id, p->hostname.c_str());
         return true;
       }
     }

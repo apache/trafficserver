@@ -175,6 +175,13 @@ AC_ARG_ENABLE([all-asserts],
 )
 AC_MSG_RESULT([$enable_all_asserts])
 
+AC_MSG_CHECKING([whether to enable event tracker])
+AC_ARG_ENABLE([event-tracker],
+  [AS_HELP_STRING([--enable-event-tracker],[turn on event tracker])],
+  [],
+  [enable_event_tracker=no]
+)
+AC_MSG_RESULT([$enable_event_tracker])
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
@@ -986,8 +993,13 @@ fi
 if test "x${enable_mime_sanity_check}" = "xyes"; then
   TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
 fi
+
 if test "x${enable_all_asserts}" = "xyes"; then
   TS_ADDTO(AM_CPPFLAGS, [-DENABLE_ALL_ASSERTS])
+fi
+
+if test "x${enable_event_tracker}" = "xyes"; then
+  TS_ADDTO(AM_CPPFLAGS, [-DENABLE_EVENT_TRACKER])
 fi
 
 # Flags for ASAN

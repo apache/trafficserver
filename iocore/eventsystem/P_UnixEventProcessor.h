@@ -135,6 +135,11 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
 #ifdef ENABLE_TIME_TRACE
   e->start_time = Thread::get_hrtime();
 #endif
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0), et);
@@ -147,6 +152,11 @@ EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int 
 
   ink_assert(t > 0);
   ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, t, 0), et);
@@ -158,6 +168,11 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
   Event *e = eventAllocator.alloc();
 
   ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
@@ -170,6 +185,11 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
 
   ink_assert(t != 0);
   ink_assert(et < MAX_EVENT_TYPES);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   if (t < 0) {

@@ -222,7 +222,7 @@ main(int argc, char *argv[])
 {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
-  int sfd, s;
+  int sfd = -1, s;
 
   if (argc < 4) {
     fprintf(stderr, "Usage: %s host thread-count header-count [port]\n", argv[0]);

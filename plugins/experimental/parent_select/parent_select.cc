@@ -87,7 +87,7 @@ handle_send_request(TSHttpTxn txnp, StrategyTxn *strategyTxn)
   strategy->next(txnp, strategyTxn->txn, ra.hostname, ra.hostname_len, ra.port, &ra.hostname, &ra.hostname_len, &ra.port,
                  &ra.is_retry, &ra.no_cache);
 
-  ra.nextHopExists = strategy->nextHopExists(txnp);
+  ra.nextHopExists = ra.hostname_len != 0;
   ra.fail = !ra.nextHopExists; // failed is whether to fail and return to the client. failed=false means to retry the parent we set
                                // in the response_action
 
@@ -256,7 +256,7 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
 
   ra.fail = ra.hostname == nullptr; // failed is whether to immediately fail and return the client a 502. In this case: whether or
                                     // not we found another parent.
-  ra.nextHopExists       = strategy->nextHopExists(txnp);
+  ra.nextHopExists       = ra.hostname_len != 0;
   ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count, STATUS_CONNECTION_FAILURE);
   ra.goDirect            = strategy->goDirect();
   ra.parentIsProxy       = strategy->parentIsProxy();
@@ -376,18 +376,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   TSDebug(PLUGIN_NAME, "'%s' '%s' successfully created strategies in file %s num %d", remap_from, remap_to, config_file_path,
           int(file_strategies.size()));
 
-  std::unique_ptr<TSNextHopSelectionStrategy> new_strategy;
-
-  for (auto &[name, strategy] : file_strategies) {
-    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy file had strategy named '%s'", remap_from, remap_to, name.c_str());
-    if (strncmp(strategy_name, name.c_str(), strlen(strategy_name)) != 0) {
-      continue;
-    }
-    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance using '%s'", remap_from, remap_to, name.c_str());
-    new_strategy = std::move(strategy);
-  }
-
-  if (new_strategy.get() == nullptr) {
+  auto new_strategy = file_strategies.find(strategy_name);
+  if (new_strategy == file_strategies.end()) {
     TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy '%s' not found in file '%s'", remap_from, remap_to, strategy_name,
             config_file_path);
     return TS_ERROR;
@@ -395,7 +385,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
 
   TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance successfully loaded strategy '%s' from '%s'.", remap_from, remap_to,
           strategy_name, config_file_path);
-  *ih = static_cast<void *>(new_strategy.release());
+
+  // created a raw pointer _to_ a shared_ptr, because ih needs a raw pointer.
+  // The raw pointer in ih will be deleted in TSRemapDeleteInstance,
+  // which will destruct the shared_ptr,
+  // destroying the strategy if this is the last remap rule using it.
+  *ih = static_cast<void *>(new std::shared_ptr<TSNextHopSelectionStrategy>(new_strategy->second));
 
   // Associate our config file with remap.config to be able to initiate reloads
   TSMgmtString result;
@@ -411,7 +406,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   TSDebug(PLUGIN_NAME, "TSRemapDoRemap calling");
 
-  auto strategy = static_cast<TSNextHopSelectionStrategy *>(ih);
+  auto strategy_ptr = static_cast<std::shared_ptr<TSNextHopSelectionStrategy> *>(ih);
+  auto strategy     = strategy_ptr->get();
 
   TSDebug(PLUGIN_NAME, "TSRemapDoRemap got strategy '%s'", strategy->name());
 
@@ -468,6 +464,14 @@ extern "C" tsapi void
 TSRemapDeleteInstance(void *ih)
 {
   TSDebug(PLUGIN_NAME, "TSRemapDeleteInstance calling");
-  auto strategy = static_cast<TSNextHopSelectionStrategy *>(ih);
-  delete strategy;
+  auto strategy_ptr = static_cast<std::shared_ptr<TSNextHopSelectionStrategy> *>(ih);
+  delete strategy_ptr;
+  TSDebug(PLUGIN_NAME, "TSRemapDeleteInstance deleted strategy pointer");
+}
+
+void
+TSRemapPreConfigReload(void)
+{
+  TSDebug(PLUGIN_NAME, "TSRemapPreConfigReload clearing strategies cache");
+  clearStrategiesCache();
 }
