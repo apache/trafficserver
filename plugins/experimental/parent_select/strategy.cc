@@ -265,8 +265,10 @@ PLNextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
     for (auto &hh : host_groups[gg]) {
       PLHostRecord *p = hh.get();
       if (p->available) {
-        PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %.*s", sm_id, int(p->hostname.size()),
-                    p->hostname.c_str());
+        PL_NH_Debug(PL_NH_DEBUG_TAG,
+                    "[%" PRIu64 "] found available next hop %.*s (this is NOT necessarily the parent which will be selected, just "
+                    "the first available parent found)",
+                    sm_id, int(p->hostname.size()), p->hostname.c_str());
         return true;
       }
     }
