@@ -93,7 +93,7 @@ function main() {
       --aggressive \
       --aggressive \
       --recursive \
-      plugins/experimental/metalink/test
+      ${DIR}/plugins/experimental/metalink/test
   echo "autopep8 completed."
   rm -rf ${tmp_dir}
   deactivate
