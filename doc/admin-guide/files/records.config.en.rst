@@ -4286,6 +4286,13 @@ HTTP/2 Configuration
    frames. Write operation will be triggered at least once every this configured
    number of millisecond regardless of pending data size.
 
+.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT -1
+   :reloadable:
+   :units: bytes
+
+   Specifies the high water mark for all HTTP/2 frames on an outoging connection.
+   Default is -1 to preserve existing water marking behavior.
+
 HTTP/3 Configuration
 ====================
 
