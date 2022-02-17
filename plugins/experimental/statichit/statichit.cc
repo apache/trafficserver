@@ -55,8 +55,6 @@ constexpr char PLUGIN[] = "statichit";
   VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
          TSVIOVConnGet(vio), ##__VA_ARGS__)
 
-static TSCont TxnHook;
-
 static int StatCountBytes     = -1;
 static int StatCountResponses = -1;
 
@@ -69,7 +67,7 @@ struct StaticHitConfig {
   {
   }
 
-  ~StaticHitConfig() {}
+  ~StaticHitConfig() { TSContDestroy(cont); }
 
   std::string filePath;
   std::string mimeType;
@@ -79,6 +77,8 @@ struct StaticHitConfig {
   int maxAge      = 0;
 
   bool disableExact = false;
+
+  TSCont cont;
 };
 
 struct StaticHitRequest;
@@ -550,8 +550,6 @@ done:
 TSReturnCode
 TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbuf_size */)
 {
-  TxnHook = TSContCreate(StaticHitTxnHook, nullptr);
-
   if (TSStatFindName("statichit.response_bytes", &StatCountBytes) == TS_ERROR) {
     StatCountBytes = TSStatCreate("statichit.response_bytes", TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
   }
@@ -595,9 +593,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSHttpTxnConfigIntSet(rh, TS_CONFIG_HTTP_CACHE_HTTP, 0);
     StaticHitSetupIntercept(static_cast<StaticHitConfig *>(ih), rh);
   } else {
-    TSHttpTxnHookAdd(rh, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
+    TSHttpTxnHookAdd(rh, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, static_cast<StaticHitConfig *>(ih)->cont);
   }
-  TSContDataSet(TxnHook, ih);
 
   return TSREMAP_NO_REMAP; // This plugin never rewrites anything.
 }
@@ -672,6 +669,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (successCode > 0) {
     tc->successCode = successCode;
   }
+
+  // Finally, create the continuation to use for this remap rule, tracking the config as cont data.
+  tc->cont = TSContCreate(StaticHitTxnHook, nullptr);
+  TSContDataSet(tc->cont, tc);
 
   *ih = static_cast<void *>(tc);
 
