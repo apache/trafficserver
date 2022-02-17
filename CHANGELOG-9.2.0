@@ -124,7 +124,6 @@ Changes with Apache Traffic Server 9.2.0
   #7879 - Cleanup: Get rid of HTTP2_SESSION_EVENT_RECV
   #7882 - Add an HTTP/2 304 "Not Modified" AuTest.
   #7883 - Origin session cache mem leak fix
-  #7884 - Test bad request behavior
   #7897 - Adds a new peering ring mode to next hop selection strategies.
   #7899 - add MISS capability to the regex_revalidate plugin
   #7917 - Update docs languages file to add 9.1.x for en and ja
@@ -167,7 +166,6 @@ Changes with Apache Traffic Server 9.2.0
   #8007 - Cleanup SSLUtils
   #8009 - Remove unnecessary old code for QUIC
   #8010 - Merge quic-latest into master
-  #8012 - Add option to mostly strictly check URL characters
   #8014 - Dual cert support for BoringSSL
   #8015 - Update documentation of the url log fields
   #8019 - Micro benchmark tool for global freelist
@@ -176,7 +174,6 @@ Changes with Apache Traffic Server 9.2.0
   #8026 - tls_bad_alpn: Add an openssl version skip check
   #8029 - Make it slightly harder to dump private keys to logs
   #8030 - Fix server cert reload
-  #8032 - Stablize trace curl test in good_request_after_bad
   #8033 - Treat Sphinx doc build warnings as errors.
   #8034 - crr plugin: change global hook to POST_REMAP, optimize cachekey creation logic
   #8036 - When loading async SSL configuration file fails, log SSL error
@@ -223,6 +220,7 @@ Changes with Apache Traffic Server 9.2.0
   #8169 - Remove used url_copy_onto_as_server_url
   #8177 - Fix typo in documentation
   #8178 - Abstract adding Connection: close header to avoid triggering H2 draining logic
+  #8179 - Add a new --enable-event-tracker configure option
   #8181 - Various maxmind_acl fixes
   #8187 - Ran clang-tidy over the master branch
   #8188 - lua: add ts.is_debug_tag_set function
@@ -231,7 +229,6 @@ Changes with Apache Traffic Server 9.2.0
   #8194 - Remove global g_rec_config_contents_llq
   #8201 - Fix H2 logic when setting EOS flag on DATA frame
   #8204 - transaction data sink: only stream body bytes
-  #8207 - Remove some const casting
   #8208 - Make sni.yaml errors cause an unrecoverable TS crash.
   #8214 - Fix client ip debug logging for the entire transaction
   #8215 - Fix heap-use-after-free of ts-lua plugin
@@ -318,10 +315,8 @@ Changes with Apache Traffic Server 9.2.0
   #8374 - 9.2.x autest fixes
   #8375 - Add a set-http-cntl operator for header_rewrite
   #8381 - Fix a potential H2 stall
-  #8388 - body factory does not respect runroot
   #8392 - Update the feature lists available for autest
   #8405 - Update CacheWrite.cc
-  #8406 - Fix map_with_recv_port URL remapping type.
   #8408 - Doc: fix typos in Strategy documentation
   #8409 - Add stats for concurrent stream limits exceeded
   #8411 - Add set-body to header rewrite
@@ -366,15 +361,18 @@ Changes with Apache Traffic Server 9.2.0
   #8537 - docs: fix fedora install notes and spelling issues
   #8540 - Enable conf_remap_float test and remove special case for local config file
   #8541 - Eliminate unused code in LogObject.
+  #8543 - doc: Convert miscased Traffic Server references to |TS| macro
   #8550 - TSUserArg: add value type checking
-  #8556 - Fixes macOS arm64 builds (again)
   #8568 - Update descriptions of sni.yaml.default
   #8578 - Add SSLSessionDup for older OpenSSL and BoringSSL
+  #8580 - Ports #7897 from core strategies to parent_select plugin.
   #8585 - Clean up of next hop HostRecord class.
   #8586 - Eliminate erroneous self-loop error on transparent mode
   #8589 - SNIConfig: tunnel_route -  Change the way we extract matched subgroups from the servename
+  #8590 -     Port #7925 and #8365 from core strategies to parent_select plugin
   #8593 - Fix transparent mode documentation
   #8594 - Propagate accept options to HTTP/2
+  #8595 - Adds two overridable config variables to control parent mark downs.
   #8600 - Prevent calling SSL_set_session in the middle of handshake
   #8603 - LogFilter: fix NULL termination check
   #8606 - Fixed a scoping bug that leads to "sticky" parent weights
@@ -383,3 +381,14 @@ Changes with Apache Traffic Server 9.2.0
   #8611 - Removes hard dependency on having perl installed to build
   #8613 - fix for collapsed forwarding ink_abort for CacheHitFresh fail
   #8626 - Fix 32bit build failure on Odroid Xu-4
+  #8636 - In TsSharedMutex.h, make error reporting thread-safe.
+  #8640 - Adding clangd language server files to .gitignore
+  #8645 - Make TsSharedMutex.h compile on MacOS.
+  #8649 - Fix plugin parent_select missing hostname len
+  #8650 - Fix strategies to initialize scheme
+  #8651 - Add parent_select plugin strategy caching
+  #8656 - Cleanup strategy debug logs
+  #8661 - Making 9.2.x backwards compatible with 9.1.x
+  #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
+  #8667 - TLS Session Resumption: fix timed out session
+  #8673 - Fix to allow running autopep8 from outside top_srcdir
