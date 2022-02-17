@@ -1469,8 +1469,11 @@ TS_CHECK_BORINGOCSP
 
 # Check for optional hiredis library
 TS_CHECK_HIREDIS
-
 AM_CONDITIONAL([BUILD_SSL_SESSION_REUSE_PLUGIN], [test ! -z "${LIB_HIREDIS}" -a "x${has_hiredis}" = "x1" ])
+
+# Check for optional nuraft library
+TS_CHECK_NURAFT
+AM_CONDITIONAL([BUILD_STEK_SHARE_PLUGIN], [test x"$has_nuraft" = x"yes"])
 
 # Check for backtrace() support
 has_backtrace=0
@@ -2330,13 +2333,15 @@ AC_MSG_NOTICE([Build option summary:
     CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
     LDFLAGS:            $LDFLAGS
-    AM@&t@_CFLAGS:          $AM_CFLAGS
-    AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
-    AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
-    AM@&t@_LDFLAGS:         $AM_LDFLAGS
+    AM@&t@_CFLAGS:      $AM_CFLAGS
+    AM@&t@_CXXFLAGS:    $AM_CXXFLAGS
+    AM@&t@_CPPFLAGS:    $AM_CPPFLAGS
+    AM@&t@_LDFLAGS:     $AM_LDFLAGS
     TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
     YAMLCPP_LDFLAGS:    $YAMLCPP_LDFLAGS
     YAMLCPP_INCLUDES:   $YAMLCPP_INCLUDES
+    NURAFT_LDFLAGS:     $NURAFT_LDFLAGS
+    NURAFT_INCLUDES:    $NURAFT_INCLUDES
 ])
