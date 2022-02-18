@@ -27,6 +27,7 @@
 #include <openssl/ssl.h>
 
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 
 /** A class for handling TLS secrets logging. */
