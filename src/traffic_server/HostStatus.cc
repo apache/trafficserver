@@ -20,85 +20,32 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include <fstream>
 #include "HostStatus.h"
 #include "ProcessManager.h"
 
 #include "tscore/BufferWriter.h"
 #include "rpc/jsonrpc/JsonRPC.h"
+#include "shared/rpc/RPCRequests.h"
 
+namespace
+{
+const std::string STATUS_LIST_KEY{"statusList"};
+const std::string ERROR_LIST_KEY{"errorList"};
+const std::string HOST_NAME_KEY{"hostname"};
+const std::string STATUS_KEY{"status"};
+
+struct HostCmdInfo {
+  TSHostStatus type{TSHostStatus::TS_HOST_STATUS_INIT};
+  unsigned int reasonType{0};
+  std::vector<std::string> hosts;
+  int time{0};
+};
+
+} // namespace
+
+ts::Rv<YAML::Node> server_get_status(std::string_view const &id, YAML::Node const &params);
 ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
-
-inline void
-getStatName(std::string &stat_name, const std::string_view name)
-{
-  stat_name.clear();
-  stat_name.append(stat_prefix).append(name);
-}
-
-static void
-mgmt_host_status_up_callback(ts::MemSpan<void> span)
-{
-  MgmtInt op;
-  MgmtMarshallString name;
-  MgmtMarshallInt down_time;
-  MgmtMarshallString reason_str;
-  std::string stat_name;
-  char buf[1024]                         = {0};
-  char *data                             = static_cast<char *>(span.data());
-  auto len                               = span.size();
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-  Debug("host_statuses", "%s:%s:%d - data: %s, len: %ld\n", __FILE__, __func__, __LINE__, data, len);
-
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason_str, &down_time) == -1) {
-    Error("Plugin message - RPC parsing error - message discarded.");
-  }
-  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason_str: %s", static_cast<long>(op), name,
-        static_cast<int>(down_time), reason_str);
-
-  unsigned int reason = Reason::getReason(reason_str);
-
-  getStatName(stat_name, name);
-  if (data != nullptr) {
-    Debug("host_statuses", "marking up server %s", data);
-    HostStatus &hs = HostStatus::instance();
-    if (hs.getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
-      hs.createHostStat(name);
-    }
-    hs.setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, down_time, reason);
-  }
-}
-
-static void
-mgmt_host_status_down_callback(ts::MemSpan<void> span)
-{
-  MgmtInt op;
-  MgmtMarshallString name;
-  MgmtMarshallInt down_time;
-  MgmtMarshallString reason_str;
-  std::string stat_name;
-  char *data                             = static_cast<char *>(span.data());
-  char buf[1024]                         = {0};
-  auto len                               = span.size();
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-  Debug("host_statuses", "%s:%s:%d - data: %s, len: %ld\n", __FILE__, __func__, __LINE__, data, len);
-
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason_str, &down_time) == -1) {
-    Error("Plugin message - RPC parsing error - message discarded.");
-  }
-  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason_str: %s", static_cast<long>(op), name,
-        static_cast<int>(down_time), reason_str);
-
-  unsigned int reason = Reason::getReason(reason_str);
-
-  if (data != nullptr) {
-    Debug("host_statuses", "marking down server %s", name);
-    HostStatus &hs = HostStatus::instance();
-    if (hs.getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
-      hs.createHostStat(name);
-    }
-    hs.setHostStatus(name, TSHostStatus::TS_HOST_STATUS_DOWN, down_time, reason);
-  }
-}
 
 HostStatRec::HostStatRec()
   : status(TS_HOST_STATUS_UP),
@@ -187,33 +134,13 @@ HostStatRec::HostStatRec(std::string str)
   }
 }
 
-static void
-handle_record_read(const RecRecord *rec, void *edata)
-{
-  HostStatus &hs = HostStatus::instance();
-  std::string hostname;
-
-  if (rec) {
-    Debug("host_statuses", "name: %s", rec->name);
-
-    // parse the hostname from the stat name
-    char *s = const_cast<char *>(rec->name);
-    // 1st move the pointer past the stat prefix.
-    s += stat_prefix.length();
-    hostname = s;
-    hs.createHostStat(hostname.c_str(), rec->data.rec_string);
-    HostStatRec h(rec->data.rec_string);
-    hs.loadRecord(hostname, h);
-  }
-}
-
 HostStatus::HostStatus()
 {
   ink_rwlock_init(&host_status_rwlock);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
 
+  // register JSON-RPC methods.
   rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_host_get_status", &server_get_status, &rpc::core_ats_rpc_service_provider_handle);
 }
 
 HostStatus::~HostStatus()
@@ -225,14 +152,30 @@ HostStatus::~HostStatus()
   ink_rwlock_destroy(&host_status_rwlock);
 }
 
+// loads host status persistent store file
 void
-HostStatus::loadHostStatusFromStats()
+HostStatus::loadFromPersistentStore()
 {
-  if (RecLookupMatchingRecords(RECT_PROCESS, stat_prefix.c_str(), handle_record_read, nullptr) != REC_ERR_OKAY) {
-    Error("[HostStatus] - While loading HostStatus stats, there was an Error reading HostStatus stats.");
+  YAML::Node records;
+  std::string fileStore = getHostStatusPersistentFilePath();
+  if (access(fileStore.c_str(), R_OK) == 0) {
+    try {
+      records               = YAML::LoadFile(fileStore.c_str());
+      YAML::Node statusList = records["statuses"];
+      for (YAML::const_iterator it = statusList.begin(); it != statusList.end(); ++it) {
+        const YAML::Node &host = *it;
+        std::string hostName   = host[HOST_NAME_KEY].as<std::string>();
+        std::string status     = host[STATUS_KEY].as<std::string>();
+        HostStatRec h(status);
+        loadRecord(hostName, h);
+      }
+    } catch (std::exception const &ex) {
+      Warning("Error loading and decoding %s : %s", fileStore.c_str(), ex.what());
+    }
   }
 }
 
+// loads in host status record.
 void
 HostStatus::loadRecord(std::string_view name, HostStatRec &h)
 {
@@ -240,32 +183,20 @@ HostStatus::loadRecord(std::string_view name, HostStatRec &h)
   Debug("host_statuses", "loading host status record for %.*s", int(name.size()), name.data());
   ink_rwlock_wrlock(&host_status_rwlock);
   {
-    if (auto it = hosts_statuses.find(std::string(name)); it != hosts_statuses.end()) {
-      host_stat = it->second;
-    } else {
+    auto it = hosts_statuses.find(std::string(name));
+    if (it == hosts_statuses.end()) {
       host_stat  = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
       *host_stat = h;
       hosts_statuses.emplace(name, host_stat);
     }
   }
   ink_rwlock_unlock(&host_status_rwlock);
-
-  *host_stat = h;
 }
 
 void
 HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
 {
   std::string stat_name;
-  char buf[1024] = {0};
-
-  getStatName(stat_name, name);
-
-  if (getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
-    createHostStat(name);
-  }
-
-  RecErrT result = getHostStat(stat_name, buf, 1024);
 
   // update / insert status.
   // using the hash table pointer to store the TSHostStatus value.
@@ -346,21 +277,6 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
   }
   ink_rwlock_unlock(&host_status_rwlock);
 
-  // update the stats
-  if (result == REC_ERR_OKAY) {
-    std::stringstream status_rec;
-    status_rec << *host_stat;
-    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true);
-    if (status == TSHostStatus::TS_HOST_STATUS_UP) {
-      Debug("host_statuses", "set status up for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status,
-            stat_name.c_str());
-    } else {
-      Debug("host_statuses", "set status down for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status,
-            stat_name.c_str());
-    }
-  }
-  Debug("host_statuses", "name: %.*s, status: %d", int(name.size()), name.data(), status);
-
   // log it.
   if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
     Note("Host %.*s has been marked down, down_time: %d - %s.", int(name.size()), name.data(), down_time,
@@ -370,6 +286,29 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
   }
 }
 
+// retrieve all host statuses.
+void
+HostStatus::getAllHostStatuses(std::vector<HostStatuses> &hosts)
+{
+  if (hosts_statuses.empty()) {
+    return;
+  }
+
+  ink_rwlock_rdlock(&host_status_rwlock);
+  {
+    for (std::pair<std::string, HostStatRec *> hsts : hosts_statuses) {
+      std::stringstream ss;
+      HostStatuses h;
+      h.hostname = hsts.first;
+      ss << *hsts.second;
+      h.status = ss.str();
+      hosts.push_back(h);
+    }
+  }
+  ink_rwlock_unlock(&host_status_rwlock);
+}
+
+// retrieve the named host status.
 HostStatRec *
 HostStatus::getHostStatus(const std::string_view name)
 {
@@ -430,44 +369,6 @@ HostStatus::getHostStatus(const std::string_view name)
   return _status;
 }
 
-void
-HostStatus::createHostStat(const std::string_view name, const char *data)
-{
-  char buf[1024] = {0};
-  HostStatRec r;
-
-  std::string stat_name;
-  std::stringstream status_rec;
-  if (data != nullptr) {
-    HostStatRec h(data);
-    r = h;
-  }
-  status_rec << r;
-  getStatName(stat_name, name);
-
-  if (getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
-    RecRegisterStatString(RECT_PROCESS, stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), RECP_PERSISTENT);
-    Debug("host_statuses", "stat name: %s, data: %s", stat_name.c_str(), status_rec.str().c_str());
-  }
-}
-
-RecErrT
-HostStatus::getHostStat(std::string &stat_name, char *buf, unsigned int buf_len)
-{
-  return RecGetRecordString(stat_name.c_str(), buf, buf_len, true);
-}
-
-namespace
-{
-struct HostCmdInfo {
-  TSHostStatus type{TSHostStatus::TS_HOST_STATUS_INIT};
-  unsigned int reasonType{0};
-  std::vector<std::string> hosts;
-  int time{0};
-};
-
-} // namespace
-
 namespace YAML
 {
 template <> struct convert<HostCmdInfo> {
@@ -515,11 +416,65 @@ template <> struct convert<HostCmdInfo> {
 };
 } // namespace YAML
 
+// JSON-RPC method to retrieve host status information.
 ts::Rv<YAML::Node>
-server_set_status(std::string_view const &id, YAML::Node const &params)
+server_get_status(std::string_view const &id, YAML::Node const &params)
 {
   namespace err = rpc::handlers::errors;
   ts::Rv<YAML::Node> resp;
+  YAML::Node statusList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
+
+  try {
+    if (!params.IsNull() && params.size() > 0) { // returns host statuses for just the ones asked for.
+      for (YAML::const_iterator it = params.begin(); it != params.end(); ++it) {
+        YAML::Node host{YAML::NodeType::Map};
+        auto name             = it->as<std::string>();
+        HostStatRec *host_rec = nullptr;
+        HostStatus &hs        = HostStatus::instance();
+        host_rec              = hs.getHostStatus(name);
+        if (host_rec == nullptr) {
+          Debug("host_statuses", "no record for %s was found", name.c_str());
+          errorList.push_back("no record for " + name + " was found");
+          continue;
+        } else {
+          std::stringstream s;
+          s << *host_rec;
+          host[HOST_NAME_KEY] = name;
+          host[STATUS_KEY]    = s.str();
+          statusList.push_back(host);
+          Debug("host_statuses", "hostname: %s, status: %s", name.c_str(), s.str().c_str());
+        }
+      }
+    } else { // return all host statuses.
+      std::vector<HostStatuses> hostInfo;
+      HostStatus &hs = HostStatus::instance();
+      hs.getAllHostStatuses(hostInfo);
+      for (auto &h : hostInfo) {
+        YAML::Node host{YAML::NodeType::Map};
+        host[HOST_NAME_KEY] = h.hostname;
+        host[STATUS_KEY]    = h.status;
+        statusList.push_back(host);
+      }
+    }
+  } catch (std::exception const &ex) {
+    Debug("host_statuses", "Got an error decoding the parameters: %s", ex.what());
+    errorList.push_back("Error decoding parameters : " + std::string(ex.what()));
+  }
+
+  resp.result()[STATUS_LIST_KEY] = statusList;
+  resp.result()[ERROR_LIST_KEY]  = errorList;
+
+  return resp;
+}
+
+// JSON-RPC method to mark up or down a host.
+ts::Rv<YAML::Node>
+server_set_status(std::string_view const &id, YAML::Node const &params)
+{
+  Debug("host_statuses", "id=%s", id.data());
+  namespace err = rpc::handlers::errors;
+  ts::Rv<YAML::Node> resp;
+
   try {
     if (!params.IsNull()) {
       auto cmdInfo = params.as<HostCmdInfo>();
@@ -527,10 +482,6 @@ server_set_status(std::string_view const &id, YAML::Node const &params)
       for (auto const &name : cmdInfo.hosts) {
         HostStatus &hs       = HostStatus::instance();
         std::string statName = stat_prefix + name;
-        char buf[1024]       = {0};
-        if (hs.getHostStat(statName, buf, 1024) == REC_ERR_FAIL) {
-          hs.createHostStat(name.c_str());
-        }
         Debug("host_statuses", "marking server %s : %s", name.c_str(),
               (cmdInfo.type == TSHostStatus::TS_HOST_STATUS_UP ? "up" : "down"));
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
@@ -538,9 +489,43 @@ server_set_status(std::string_view const &id, YAML::Node const &params)
     } else {
       resp.errata().push(err::make_errata(err::Codes::SERVER, "Invalid input parameters, null"));
     }
+
+    // schedule a write to the persistent store.
+    Debug("host_statuses", "updating persistent store");
+    eventProcessor.schedule_imm(new HostStatusSync, ET_TASK);
   } catch (std::exception const &ex) {
     Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
     resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during host status set: {}", ex.what()));
   }
   return resp;
+}
+
+// method to write host status records to the persistent store.
+void
+HostStatusSync::sync_task()
+{
+  YAML::Node records{YAML::NodeType::Map};
+
+  YAML::Node statusList{YAML::NodeType::Sequence};
+  std::vector<HostStatuses> statuses;
+  HostStatus &hs = HostStatus::instance();
+  hs.getAllHostStatuses(statuses);
+
+  for (auto &&h : statuses) {
+    YAML::Node host{YAML::NodeType::Map};
+    host[HOST_NAME_KEY] = h.hostname;
+    host[STATUS_KEY]    = h.status;
+    statusList.push_back(host);
+  }
+  records["statuses"] = statusList;
+
+  std::ofstream fout;
+  fout.open(hostRecordsFile.c_str(), std::ofstream::out | std::ofstream::trunc);
+  if (fout) {
+    fout << records;
+    fout << '\n';
+    fout.close();
+  } else {
+    Warning("failed to open %s for writing", hostRecordsFile.c_str());
+  }
 }

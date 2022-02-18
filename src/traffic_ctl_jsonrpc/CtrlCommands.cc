@@ -312,11 +312,8 @@ void
 HostCommand::status_get()
 {
   auto const &data = _arguments.get("status");
-  HostGetStatusRequest request;
-  for (auto it : data) {
-    std::string name = std::string{HostGetStatusRequest::STATUS_PREFIX} + "." + it;
-    request.emplace_rec(name, shared::rpc::NOT_REGEX, shared::rpc::METRIC_REC_TYPES);
-  }
+  HostGetStatusRequest request{{std::begin(data), std::end(data)}};
+
   auto response = invoke_rpc(request);
 
   _printer->write_output(response);

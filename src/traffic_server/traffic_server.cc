@@ -2162,7 +2162,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
-    HostStatus::instance().loadHostStatusFromStats();
+    HostStatus::instance().loadFromPersistentStore();
     netProcessor.init_socks();
     ParentConfig::startup();
     SplitDNSConfig::startup();
