@@ -33,7 +33,7 @@ github:
         strict: false
         contexts:
           - AuTest
-          - CentOS
+          - Rocky
           - Clang-Analyzer
           - Clang-Format
           - Debian
