@@ -29,6 +29,7 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
+#include "P_TLSKeyLogger.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"
