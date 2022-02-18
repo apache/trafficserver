@@ -148,6 +148,7 @@ test_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
+  $(top_builddir)/iocore/net/TLSKeyLogger.o \
   @HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_event_main_SOURCES = \
