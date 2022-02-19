@@ -46,11 +46,9 @@ QUICVersionNegotiator::negotiate(const QUICPacket &packet)
   case QUICPacketType::VERSION_NEGOTIATION: {
     const QUICVersionNegotiationPacketR &vn_packet = static_cast<const QUICVersionNegotiationPacketR &>(packet);
     uint16_t n_supported_version                   = vn_packet.nversions();
-    uint16_t len                                   = 0;
 
     for (int i = 0; i < n_supported_version; ++i) {
       QUICVersion version = vn_packet.supported_version(i);
-      len += sizeof(QUICVersion);
 
       if (QUICTypeUtil::is_supported_version(version)) {
         this->_status             = QUICVersionNegotiationStatus::NEGOTIATED;

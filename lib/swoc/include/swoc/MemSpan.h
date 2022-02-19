@@ -277,6 +277,9 @@ public:
   /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
 
+  /// Copy assignment operator.
+  constexpr self_type& operator=(self_type const &that) = default;
+
   /** Cross type copy constructor.
    *
    * @tparam U Type for source span.
