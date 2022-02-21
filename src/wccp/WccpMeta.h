@@ -54,7 +54,11 @@ template <bool VALUE> struct TEST_IF_TRUE : public TEST_RESULT<TEST_BOOL<VALUE>>
 };
 
 // Helper for assigning a value to all instances in a container.
-template <typename T, typename R, typename A1> struct TsAssignMember : public std::binary_function<T, A1, R> {
+template <typename T, typename R, typename A1> struct TsAssignMember {
+  using first_argument_type  = T;
+  using second_argument_type = A1;
+  using result_type          = R;
+
   R T::*_m;
   A1 _arg1;
   TsAssignMember(R T::*m, A1 const &arg1) : _m(m), _arg1(arg1) {}

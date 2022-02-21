@@ -43,7 +43,7 @@ IP6Addr const IP6Addr::MAX{std::numeric_limits<uint64_t>::max(), std::numeric_li
 
 // The Intel compiler won't let me directly use @c nullptr to construct a reference, so I need
 // to fake it out by using this psuedo-nullptr.
-void *const pseudo_nullptr = 0;
+void *const detail::pseudo_nullptr = nullptr;
 
 bool
 IPEndpoint::assign(sockaddr *dst, sockaddr const *src) {
@@ -289,7 +289,7 @@ IP4Addr::operator=(sockaddr_in const *sa) -> self_type & {
 }
 
 sockaddr_in *
-IP4Addr::fill(sockaddr_in *sa, in_port_t port) const {
+IP4Addr::copy_to(sockaddr_in *sa, in_port_t port) const {
   sa->sin_addr.s_addr = this->network_order();
   sa->sin_port        = port;
   return sa;
@@ -491,9 +491,9 @@ IPAddr::operator<(self_type const &that) const {
     case AF_INET:
       return _addr._ip4 < that._addr._ip4;
     case AF_INET6:
-      return false;
-    default:
       return true;
+    default:
+      return false;
     }
   } else if (AF_INET6 == _family) {
     switch (that._family) {
@@ -502,10 +502,10 @@ IPAddr::operator<(self_type const &that) const {
     case AF_INET6:
       return _addr._ip6 < that._addr._ip6;
     default:
-      return true;
+      return false;
     }
   }
-  return false;
+  return that.is_valid();
 }
 
 int
@@ -529,7 +529,7 @@ IPAddr::cmp(self_type const &that) const {
       return 1;
     }
   }
-  return 0;
+  return that.is_valid() ? -1 : 0;
 }
 
 IPAddr::self_type &
@@ -552,84 +552,9 @@ IPAddr::operator|=(IPMask const &mask) {
   return *this;
 }
 
-#if 0
-bool
-operator==(IPAddr const &lhs, sockaddr const *rhs)
-{
-  bool zret = false;
-  if (lhs._family == rhs->sa_family) {
-    if (AF_INET == lhs._family) {
-      zret = lhs._addr._ip4 == ats_ip4_addr_cast(rhs);
-    } else if (AF_INET6 == lhs._family) {
-      zret = 0 == memcmp(&lhs._addr._ip6, &ats_ip6_addr_cast(rhs), sizeof(in6_addr));
-    } else { // map all non-IP to the same thing.
-      zret = true;
-    }
-  } // else different families, not equal.
-  return zret;
-}
-
-/** Compare two IP addresses.
-    This is useful for IPv4, IPv6, and the unspecified address type.
-    If the addresses are of different types they are ordered
-
-    Non-IP < IPv4 < IPv6
-
-     - all non-IP addresses are the same ( including @c AF_UNSPEC )
-     - IPv4 addresses are compared numerically (host order)
-     - IPv6 addresses are compared byte wise in network order (MSB to LSB)
-
-    @return
-      - -1 if @a lhs is less than @a rhs.
-      - 0 if @a lhs is identical to @a rhs.
-      - 1 if @a lhs is greater than @a rhs.
-*/
-int
-IPAddr::cmp(self_type const &that) const
-{
-  int zret       = 0;
-  uint16_t rtype = that._family;
-  uint16_t ltype = _family;
-
-  // We lump all non-IP addresses into a single equivalence class
-  // that is less than an IP address. This includes AF_UNSPEC.
-  if (AF_INET == ltype) {
-    if (AF_INET == rtype) {
-      in_addr_t la = ntohl(_addr._ip4);
-      in_addr_t ra = ntohl(that._addr._ip4);
-      if (la < ra) {
-        zret = -1;
-      } else if (la > ra) {
-        zret = 1;
-      } else {
-        zret = 0;
-      }
-    } else if (AF_INET6 == rtype) { // IPv4 < IPv6
-      zret = -1;
-    } else { // IP > not IP
-      zret = 1;
-    }
-  } else if (AF_INET6 == ltype) {
-    if (AF_INET6 == rtype) {
-      zret = memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE);
-    } else {
-      zret = 1; // IPv6 greater than any other type.
-    }
-  } else if (AF_INET == rtype || AF_INET6 == rtype) {
-    // ltype is non-IP so it's less than either IP type.
-    zret = -1;
-  } else { // Both types are non-IP so they're equal.
-    zret = 0;
-  }
-
-  return zret;
-}
-
-#endif
-
 bool
 IPAddr::is_multicast() const {
-  return (AF_INET == _family && 0xe == (_addr._octet[0] >> 4)) || (AF_INET6 == _family && _addr._ip6.is_multicast());
+  return (AF_INET == _family && _addr._ip4.is_multicast()) || (AF_INET6 == _family && _addr._ip6.is_multicast());
 }
 
 IPEndpoint::IPEndpoint(string_view const &text) {
@@ -678,7 +603,7 @@ IPMask::mask_for(IP4Addr const &addr) {
   raw_type cidr = 0;
   if (auto q = (n & IP6Addr::QUAD_MASK); q != 0) {
     cidr = IP6Addr::QUAD_WIDTH + self_type::mask_for_quad(q);
-  } else if (auto q = ((n >> IP6Addr::QUAD_WIDTH) & IP6Addr::QUAD_MASK); q != 0) {
+  } else if (q = ((n >> IP6Addr::QUAD_WIDTH) & IP6Addr::QUAD_MASK); q != 0) {
     cidr = self_type::mask_for_quad(q);
   }
   return self_type(cidr);
@@ -755,15 +680,14 @@ IP6Net::load(TextView text) {
 
 bool
 IPNet::load(TextView text) {
-  auto mask_text = text.split_suffix_at('/');
-  if (!mask_text.empty()) {
+  if ( auto mask_text = text.split_suffix_at('/') ; !mask_text.empty() ) {
     IPMask mask;
     if (mask.load(mask_text)) {
-      if (IP6Addr addr; addr.load(text)) { // load the address
-        this->assign(addr, mask);
+      if (IP6Addr a6; a6.load(text)) { // load the address
+        this->assign(a6, mask);
         return true;
-      } else if (IP4Addr addr; addr.load(text)) {
-        this->assign(addr, mask);
+      } else if (IP4Addr a4; a4.load(text)) {
+        this->assign(a4, mask);
         return true;
       }
     }
@@ -854,6 +778,12 @@ IP4Range::NetSource::operator++() -> self_type & {
     }
   }
   return *this;
+}
+
+auto IP4Range::NetSource::operator++(int) -> self_type {
+  auto zret { *this };
+  ++*this;
+  return zret;
 }
 
 void
@@ -950,8 +880,7 @@ IPRange::IPRange(IPAddr const &min, IPAddr const &max) {
 bool
 IPRange::load(std::string_view const &text) {
   static const string_view CHARS{".:"};
-  auto idx = text.find_first_of(CHARS);
-  if (idx != text.npos) {
+  if ( auto idx = text.find_first_of(CHARS) ; idx != text.npos ) {
     if (text[idx] == '.') {
       if (_range._ip4.load(text)) {
         _family = AF_INET;
@@ -1017,6 +946,20 @@ IPRange::network_mask() const {
     break;
   }
   return {};
+}
+
+bool
+IPRange::operator==(self_type const &that) const {
+  if (_family != that._family) {
+    return false;
+  }
+  if (this->is_ip4()) {
+    return _range._ip4 == that._range._ip4;
+  }
+  if (this->is_ip6()) {
+    return _range._ip6 == that._range._ip6;
+  }
+  return true;
 }
 
 IPMask
