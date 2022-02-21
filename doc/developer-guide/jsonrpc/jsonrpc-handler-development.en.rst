@@ -202,7 +202,7 @@ RPC method registration and implementation examples
         #include <ts/ts.h>
 
         namespace {
-            static const std::string MY_YAML_VERSION{"0.6.3"};
+            static const std::string MY_YAML_VERSION{"0.7.0"};
         }
 
         void
@@ -231,7 +231,7 @@ RPC method registration and implementation examples
         {
             ...
             // Check-in to make sure we are compliant with the YAML version in TS.
-            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.6.3");
+            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.7.0");
             if (rpcRegistrationInfo == nullptr) {
                 TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
             }
@@ -250,7 +250,7 @@ RPC method registration and implementation examples
         #include <ts/ts.h>
 
         namespace {
-            static const std::string MY_YAML_VERSION{"0.6.3"};
+            static const std::string MY_YAML_VERSION{"0.7.0"};
         }
 
         int
@@ -286,7 +286,7 @@ RPC method registration and implementation examples
         {
             // ...
             // Check-in to make sure we are compliant with the YAML version in TS.
-            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.6.3");
+            TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister("My plugin's info", "0.7.0");
             if (rpcRegistrationInfo == nullptr) {
                 TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
             }

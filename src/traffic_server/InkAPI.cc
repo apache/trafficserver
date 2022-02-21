@@ -10356,13 +10356,8 @@ TSRPCRegister(const char *provider_name, const char *yaml_version)
 
   // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
   // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
-  // version is ok.
-
-  // IMPORTANT: YAML library version should be available to query from here. This could
-  // be an issue if the user specify their own library and it's a different version
-  // This should be discussed, can we guarantee not changing the YAML version in minor
-  // releases can only change it in major versions.
-  if (std::string_view{yaml_version} != "0.6.3") {
+  // version is the same.
+  if (std::string_view{yaml_version} != YAMLCPP_LIB_VERSION) {
     return nullptr;
   }
 
