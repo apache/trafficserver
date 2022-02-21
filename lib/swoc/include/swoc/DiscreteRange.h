@@ -319,7 +319,11 @@ public:
       The first pair of elements that are not equal determine the ordering
       of the overall tuples.
    */
-  struct lexicographic_order : public std::binary_function<self_type, self_type, bool> {
+  struct lexicographic_order {
+    using first_argument_type = self_type;
+    using second_argument_type = self_type;
+    using result_type = bool;
+
     //! Functor operator.
     bool operator()(self_type const &lhs, self_type const &rhs) const;
   };
