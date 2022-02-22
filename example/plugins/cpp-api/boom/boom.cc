@@ -98,13 +98,16 @@ GlobalPlugin *plugin;
 // Functor that decides whether the HTTP error can be rewritten or not.
 // Rewritable codes are: 2xx, 3xx, 4xx, 5xx and 6xx.
 // 1xx is NOT rewritable!
-class IsRewritableCode : public std::unary_function<std::string, bool>
+class IsRewritableCode
 { // could probably be replaced with mem_ptr_fun()..
 private:
   int current_code_;
   std::string current_code_string_;
 
 public:
+  using argument_type = std::string;
+  using result_type   = bool;
+
   explicit IsRewritableCode(int current_code) : current_code_(current_code)
   {
     std::ostringstream oss;
