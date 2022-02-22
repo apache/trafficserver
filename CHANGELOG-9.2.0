@@ -393,7 +393,6 @@ Changes with Apache Traffic Server 9.2.0
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
   #8667 - TLS Session Resumption: fix timed out session
   #8673 - Fix to allow running autopep8 from outside top_srcdir
-  #8675 - Make sure each remap rule gets its own continuation
   #8680 - Fix missing unique_lock definition.
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
