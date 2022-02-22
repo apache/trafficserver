@@ -20,7 +20,7 @@ Test reloading ssl_multicert.config with errors and keeping around the old ssl c
 
 sni_domain = 'example.com'
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server3")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -95,7 +95,7 @@ tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_doma
 # Also, not explicitly setting proxy.config.ssl.server.multicert.exit_on_load_fail
 # to catch if the current default (1) changes in the future
 
-ts2 = Test.MakeATSProcess("ts2", command="traffic_manager", select_ports=True, enable_tls=True)
+ts2 = Test.MakeATSProcess("ts2", command="traffic_server", select_ports=True, enable_tls=True)
 ts2.Disk.ssl_multicert_config.AddLines([
     'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
 ])
@@ -105,7 +105,7 @@ tr4.Processes.Default.Command = 'echo Waiting'
 tr4.Processes.Default.ReturnCode = 0
 tr4.Processes.Default.StartBefore(ts2)
 
-ts2.ReturnCode = 2
+ts2.ReturnCode = 70  # ink_fatal will exit with EX_SOFTWARE.
 ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
 ts2.Streams.All = Testers.ExcludesExpression(
     'Traffic Server is fully initialized',
