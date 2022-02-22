@@ -17,6 +17,7 @@ Changes with Apache Traffic Server 9.1.2
   #8493 - clang 13: Removed unused variable
   #8494 - clang 13: Added default assignment operator
   #8502 - build: fix detection of boringocsp
+  #8505 - url_sig: fix bad cast to pointer of different type
   #8512 - AuTest: address various permissions issues
   #8513 - For test async_engine, export all symbols
   #8515 - Prevent bad ssl_multicert.config load from being swapped in
@@ -34,3 +35,4 @@ Changes with Apache Traffic Server 9.1.2
   #8632 - Default proxy.config.http.strict_uri_parsing to "2"
   #8662 - Send diags output to stderr when running regression tests.
   #8668 - backport of 9.2.x autest port selection fixes.
+  #8675 - Make sure each remap rule gets its own continuation
