@@ -45,7 +45,7 @@ struct YamlSNIConfig {
     client_cert
 
   };
-  enum class Level { NONE = 0, MODERATE, STRICT };
+  enum class Level { NONE = 0, MODERATE, STRICT, UNSET };
   enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
 
   YamlSNIConfig() {}
@@ -55,7 +55,7 @@ struct YamlSNIConfig {
     bool disable_h2             = false;
     uint8_t verify_client_level = 0;
     std::string tunnel_destination;
-    uint8_t verify_origin_server = 0;
+    uint8_t verify_origin_server = static_cast<uint8_t>(Level::UNSET);
     std::string client_cert;
     std::string ip_allow;
     bool protocol_unset = true;
