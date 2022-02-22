@@ -231,7 +231,11 @@ struct CharIndexBlock {
 class CharIndex
 {
 public:
-  struct iterator : public std::iterator<std::forward_iterator_tag, HostBranch, int> {
+  struct iterator {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type        = HostBranch;
+    using difference_type   = int;
+
     using self_type = iterator;
 
     struct State {
