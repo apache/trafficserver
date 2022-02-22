@@ -71,6 +71,7 @@ test_CPPFLAGS = \
 
 test_LDADD = \
   $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/iocore/net/TLSKeyLogger.o \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \

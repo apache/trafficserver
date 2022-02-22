@@ -157,6 +157,7 @@ libinknet_a_SOURCES = \
 	P_SSLUtils.h \
 	P_SSLClientCoordinator.h \
 	P_SSLClientUtils.h \
+	P_TLSKeyLogger.h \
 	P_OCSPStapling.h \
 	P_UDPConnection.h \
 	P_UDPIOEvent.h \
@@ -191,6 +192,7 @@ libinknet_a_SOURCES = \
 	SSLUtils.cc \
 	OCSPStapling.cc \
 	TLSBasicSupport.cc \
+	TLSKeyLogger.cc \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
 	UDPIOEvent.cc \
