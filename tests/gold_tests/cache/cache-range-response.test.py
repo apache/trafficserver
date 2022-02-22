@@ -30,7 +30,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.cache.range.write': 1,
 })
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
+    f'map / http://127.0.0.1:{server.Variables.http_port}'
 )
 tr = Test.AddTestRun("Verify range request is transformed from a 200 response")
 tr.Processes.Default.StartBefore(server)
