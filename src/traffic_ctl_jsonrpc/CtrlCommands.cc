@@ -379,6 +379,12 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
     _invoked_func = [&]() { from_file_request(); };
   } else if (_arguments.get("input")) {
     _invoked_func = [&]() { read_from_input(); };
+  } else if (_arguments.get("invoke")) {
+    _invoked_func = [&]() { invoke_method(); };
+    if (printOpts._format == BasePrinter::Options::Format::LEGACY) {
+      // overwrite this and let it drop json instead.
+      printOpts._format = BasePrinter::Options::Format::DATA_ALL;
+    }
   }
 
   _printer = std::make_unique<GenericPrinter>(printOpts);
@@ -455,6 +461,25 @@ DirectRPCCommand::read_from_input()
     _printer->write_output(ts::bwprint(text, "\n<-- {}\n", response));
   } catch (std::exception const &ex) {
     _printer->write_output(ts::bwprint(text, "Error found: {}\n", ex.what()));
+  }
+}
+
+void
+DirectRPCCommand::invoke_method()
+{
+  shared::rpc::ClientRequest request;
+  if (auto method = _arguments.get("invoke"); method) {
+    request.method = method.value();
+    // We build up the parameter content if passed.
+    if (auto params = _arguments.get("params"); params) {
+      std::ostringstream ss;
+      for (auto &&param : _arguments.get("params")) {
+        ss << param;
+        ss << '\n';
+      }
+      request.params = YAML::Load(ss.str()); // let if fail if this is bad.
+    }
+    _printer->write_output(invoke_rpc(request));
   }
 }
 

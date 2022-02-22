@@ -132,7 +132,6 @@ Please find the `jsonrpc 2.0 request` schema for reference ( `mgmt2/rpc/schema/j
 * Optional parameters:
 
 
-
    * ``params``:
 
       A Structured value that holds the parameter values to be used during the invocation of the method. This member

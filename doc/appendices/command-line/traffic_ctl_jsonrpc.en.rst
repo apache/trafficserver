@@ -538,6 +538,42 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
          }
       }
 
+
+.. option:: invoke
+
+   Invoke a remote call by using the method name as parameter. This could be a handy option if you are developing a new handler or you
+   just don't want to expose the method in :program:`traffic_ctl`, for instance when implementing a custom handler inside a proprietary plugin.
+
+   .. option:: --params, -p
+
+      Parameters to be passed in the request, YAML or JSON format are accepted. If JSON is passed as param it should not
+      be mixed with YAML. It's important that you follow the :ref:`jsonrpc-protocol` specs. If the passed param does not
+      follows the specs the server will reject the request.
+
+.. _rpc_invoke_example_1:
+
+   Example 1:
+
+   Call a jsonrpc method with no parameter.
+
+   .. code-block::
+
+      $ traffic_ctl rpc invoke some_jsonrpc_handler
+      --> {"id": "0dbab88d-b78f-4ebf-8aa3-f100031711a5", "jsonrpc": "2.0", "method": "some_jsonrpc_handler"}
+      <-- { response }
+
+.. _rpc_invoke_example_2:
+
+   Example 2:
+
+   Call a jsonrpc method with parameters.
+
+   .. code-block::
+
+      $ traffic_ctl rpc invoke reload_files_from_folder --params 'filenames: ["file1", "file2"]' 'folder: "/path/to/folder"'
+      --> {"id": "9ac68652-5133-4d5f-8260-421baca4c67f", "jsonrpc": "2.0", "method": "reload_files_from_folder", "params": {"filenames": ["file1", "file2"], "folder": "/path/to/folder"}}
+      <-- { response }
+
 Examples
 ========
 

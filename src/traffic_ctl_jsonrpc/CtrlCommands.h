@@ -163,6 +163,7 @@ private:
   void from_file_request();
   void get_rpc_api();
   void read_from_input();
+  void invoke_method();
   /// run a YAML validation on the input.
   bool validate_input(std::string const &in) const;
 };
