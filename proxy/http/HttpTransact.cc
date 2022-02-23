@@ -1769,11 +1769,21 @@ HttpTransact::HandleApiErrorJump(State *s)
   return;
 }
 
-// PPDNSLookupAPICall does an API callout, then calls PPDNSLookup
+// PPDNSLookupAPICall does an API callout if a plugin set the response_action,
+// then calls PPDNSLookup.
+// This is to preserve plugin hook calling behavior pre-9, which didn't call
+// the TS_HTTP_OS_DNS_HOOK on PPDNSLookup.
+// Since response_action is new in 9, only new plugins intentionally setting
+// it will have the new behavior of TS_HTTP_OS_DNS_HOOK firing on PPDNSLookup.
 void
 HttpTransact::PPDNSLookupAPICall(State *s)
 {
-  TRANSACT_RETURN(SM_ACTION_API_OS_DNS, PPDNSLookup);
+  TxnDebug("http_trans", "[HttpTransact::PPDNSLookupAPICall] response_action.handled %d", s->response_action.handled);
+  if (!s->response_action.handled) {
+    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+  } else {
+    TRANSACT_RETURN(SM_ACTION_API_OS_DNS, PPDNSLookup);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1814,11 +1824,7 @@ HttpTransact::PPDNSLookup(State *s)
 
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
-        if (!s->response_action.handled) {
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-        } else {
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
-        }
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
       } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
         CallOSDNSLookup(s);
@@ -2259,7 +2265,7 @@ HttpTransact::LookupSkipOpenServer(State *s)
   find_server_and_update_current_info(s);
 
   if (s->current.request_to == PARENT_PROXY) {
-    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
   } else if (s->parent_result.result == PARENT_FAIL) {
     handle_parent_died(s);
     return;
@@ -2966,7 +2972,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
             ink_assert(s->pending_work == nullptr);
             s->pending_work = issue_revalidate;
 
-            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
           } else if (s->current.request_to == ORIGIN_SERVER) {
             return CallOSDNSLookup(s);
           } else {
@@ -3393,7 +3399,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
         return CallOSDNSLookup(s);
       }
       if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookup);
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookupAPICall);
       } else {
         handle_parent_died(s);
         return;
@@ -3762,7 +3768,7 @@ HttpTransact::handle_response_from_parent(State *s)
   switch (next_lookup) {
   case PARENT_PROXY:
     ink_assert(s->current.request_to == PARENT_PROXY);
-    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
     break;
   case ORIGIN_SERVER:
     // Next lookup is Origin Server, try DNS for Origin Server
