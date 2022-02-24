@@ -47,11 +47,14 @@ using parent_select_mode_t = enum parent_select_mode {
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };
 
+constexpr std::string_view DefaultImsHeader = {"X-Crr-Ims"};
+
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
   bool consider_ims_header{false};
   bool modify_cache_key{true};
   bool verify_cacheability{false};
+  std::string ims_header;
 };
 
 struct txndata {
@@ -60,9 +63,6 @@ struct txndata {
   time_t ims_time{0};
   bool verify_cacheability{false};
 };
-
-// Header for optional revalidation
-constexpr std::string_view X_IMS_HEADER = {"X-Crr-Ims"};
 
 // pluginconfig struct (global plugin only)
 pluginconfig *gPluginConfig = {nullptr};
@@ -99,9 +99,10 @@ create_pluginconfig(int argc, char *const argv[])
   }
 
   static const struct option longopts[] = {
-    {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
     {const_cast<char *>("consider-ims"), no_argument, nullptr, 'c'},
+    {const_cast<char *>("ims-header"), required_argument, nullptr, 'i'},
     {const_cast<char *>("no-modify-cachekey"), no_argument, nullptr, 'n'},
+    {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
     {const_cast<char *>("verify-cacheability"), no_argument, nullptr, 'v'},
     {nullptr, 0, nullptr, 0},
   };
@@ -111,23 +112,28 @@ create_pluginconfig(int argc, char *const argv[])
   --argv;
 
   for (;;) {
-    int const opt = getopt_long(argc, argv, "", longopts, nullptr);
+    int const opt = getopt_long(argc, argv, "i:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
 
     switch (opt) {
-    case 'p': {
-      DEBUG_LOG("Plugin modifies parent selection key");
-      pc->ps_mode = PS_CACHEKEY_URL;
-    } break;
     case 'c': {
-      DEBUG_LOG("Plugin considers the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
+      DEBUG_LOG("Plugin considers the ims header");
+      pc->consider_ims_header = true;
+    } break;
+    case 'i': {
+      DEBUG_LOG("Plugin uses custom ims header: %s", optarg);
+      pc->ims_header.assign(optarg);
       pc->consider_ims_header = true;
     } break;
     case 'n': {
       DEBUG_LOG("Plugin doesn't modify cache key");
       pc->modify_cache_key = false;
+    } break;
+    case 'p': {
+      DEBUG_LOG("Plugin modifies parent selection key");
+      pc->ps_mode = PS_CACHEKEY_URL;
     } break;
     case 'v': {
       DEBUG_LOG("Plugin verifies whether the object in the transaction is cacheable");
@@ -142,6 +148,11 @@ create_pluginconfig(int argc, char *const argv[])
   if (optind < argc && 0 == strcmp("ps_mode:cache_key_url", argv[optind])) {
     DEBUG_LOG("Plugin modifies parent selection key (deprecated)");
     pc->ps_mode = PS_CACHEKEY_URL;
+  }
+
+  if (pc->consider_ims_header && pc->ims_header.empty()) {
+    pc->ims_header = DefaultImsHeader;
+    DEBUG_LOG("Plugin uses default ims header: %s", pc->ims_header.c_str());
   }
 
   return pc;
@@ -244,12 +255,12 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             }
           }
 
-          // optionally consider an X-CRR-IMS header
+          // optionally consider an ims header
           if (pc->consider_ims_header) {
-            TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, X_IMS_HEADER.data(), X_IMS_HEADER.size());
+            TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, pc->ims_header.data(), pc->ims_header.size());
             if (TS_NULL_MLOC != imsloc) {
               time_t const itime = TSMimeHdrFieldValueDateGet(hdr_buf, hdr_loc, imsloc);
-              DEBUG_LOG("Servicing the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
+              DEBUG_LOG("Servicing the '%s' header", pc->ims_header.c_str());
               TSHandleMLocRelease(hdr_buf, hdr_loc, imsloc);
               if (0 < itime) {
                 txn_state->ims_time = itime;
@@ -303,7 +314,7 @@ handle_send_origin_request(TSCont contp, TSHttpTxn txnp, txndata *const txn_stat
   }
 
   if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &hdr_buf, &hdr_loc) && !rv.empty()) {
-    if (set_header(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.length())) {
+    if (set_header(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.size())) {
       DEBUG_LOG("Added range header: %s", rv.c_str());
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
@@ -345,7 +356,7 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
       TSMLoc req_loc    = TS_NULL_MLOC;
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
         DEBUG_LOG("Adding range header: %s", rv.c_str());
-        if (!set_header(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.length())) {
+        if (!set_header(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rv.data(), rv.size())) {
           DEBUG_LOG("set_header() failed.");
         }
         TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);

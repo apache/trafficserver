@@ -139,14 +139,16 @@ request_block(TSCont contp, Data *const data)
   case BlockState::Pending:
     data->m_blockstate = BlockState::Active;
     break;
-  case BlockState::PendingInt:
-    data->m_blockstate = BlockState::ActiveInt;
-    header.removeKey(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size());
-    break;
-  case BlockState::PendingRef:
-    data->m_blockstate = BlockState::ActiveRef;
-    header.removeKey(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size());
-    break;
+  case BlockState::PendingInt: {
+    data->m_blockstate       = BlockState::ActiveInt;
+    Config const *const conf = data->m_config;
+    header.removeKey(conf->m_crr_ims_header.c_str(), conf->m_crr_ims_header.size());
+  } break;
+  case BlockState::PendingRef: {
+    data->m_blockstate       = BlockState::ActiveRef;
+    Config const *const conf = data->m_config;
+    header.removeKey(conf->m_crr_ims_header.c_str(), conf->m_crr_ims_header.size());
+  } break;
   default:
     ERROR_LOG("Invalid blockstate");
     return false;

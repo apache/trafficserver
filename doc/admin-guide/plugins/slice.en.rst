@@ -120,6 +120,19 @@ The slice plugin supports the following options::
         cache miss latency.
         -f for short
 
+    --skip-header=<header name> (default: X-Slicer-Info)
+        Header name used by the slice plugin after the loopback
+        to indicate that the slice plugin should be skipped.
+        -s for short
+
+    --crr-ims-header=<header name> (default: X-Crr-Ims)
+        Header name used by the slice plugin to tell the
+        `cache_range_requests` plugin that a request should
+        be marked as STALE.  Used for self healing.
+        This must match the `--ims-header` option used by the
+        `cache_range_requests` plugin.
+        -i for short
+
 Examples::
 
     @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so
