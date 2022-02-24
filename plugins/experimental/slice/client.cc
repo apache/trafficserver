@@ -57,12 +57,13 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     Range rangebe;
 
     char rangestr[1024];
-    int rangelen        = sizeof(rangestr);
-    bool const hasRange = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
+    int rangelen             = sizeof(rangestr);
+    bool const hasRange      = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
                                              0); // <-- first range only
+    Config const *const conf = data->m_config;
     if (hasRange) {
       // write parsed header into slicer meta tag
-      header.setKeyVal(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), rangestr, rangelen);
+      header.setKeyVal(conf->m_skip_header.c_str(), conf->m_skip_header.size(), rangestr, rangelen);
       bool const isRangeGood = rangebe.fromStringClosed(rangestr);
 
       if (isRangeGood) {
@@ -74,21 +75,21 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
         data->m_statustype = TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
 
         // First block will give Content-Length
-        rangebe = Range(0, data->m_config->m_blockbytes);
+        rangebe = Range(0, conf->m_blockbytes);
       }
     } else {
       DEBUG_LOG("%p Full content request", data);
       static char const *const valstr = "-";
       static size_t const vallen      = strlen(valstr);
-      header.setKeyVal(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), valstr, vallen);
+      header.setKeyVal(conf->m_skip_header.data(), conf->m_skip_header.size(), valstr, vallen);
       data->m_statustype = TS_HTTP_STATUS_OK;
       rangebe            = Range(0, Range::maxval);
     }
 
-    if (Config::RefType::First == data->m_config->m_reftype) {
+    if (Config::RefType::First == conf->m_reftype) {
       data->m_blocknum = 0;
     } else {
-      data->m_blocknum = rangebe.firstBlockFor(data->m_config->m_blockbytes);
+      data->m_blocknum = rangebe.firstBlockFor(conf->m_blockbytes);
     }
 
     data->m_req_range = rangebe;
