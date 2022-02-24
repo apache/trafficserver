@@ -354,8 +354,13 @@ send_server_request(TSHttpTxn const txnp, TxnData *const txn_data)
   }
 
   if (txn_data->this_trace.empty()) {
-    LOG_DEBUG("Unable to deal with incoming money trace header, passing through");
-    txn_data->this_trace = txn_data->client_trace;
+    if (conf->create_if_none) {
+      LOG_DEBUG("Unable to deal with client trace '%s', creating new", txn_data->client_trace.c_str());
+      txn_data->this_trace = create_trace(txnp);
+    } else {
+      LOG_DEBUG("Unable to deal with client trace '%s', passing through!", txn_data->client_trace.c_str());
+      txn_data->this_trace = txn_data->client_trace;
+    }
   }
 
   TSMBuffer bufp = nullptr;
@@ -477,8 +482,13 @@ check_request_header(TSHttpTxn const txnp, Config const *const conf, PluginType 
         txn_data->this_trace = next_trace(txn_data->client_trace, txnp);
 
         if (txn_data->this_trace.empty()) {
-          LOG_DEBUG("Unable to deal with incoming money trace header, passing through");
-          txn_data->this_trace = txn_data->client_trace;
+          if (conf->create_if_none) {
+            LOG_DEBUG("Unable to deal with client trace '%s', creating new", txn_data->client_trace.c_str());
+            txn_data->this_trace = create_trace(txnp);
+          } else {
+            LOG_DEBUG("Unable to deal with client trace '%s', passing through!", txn_data->client_trace.c_str());
+            txn_data->this_trace = txn_data->client_trace;
+          }
         }
       }
       if (!txn_data->this_trace.empty()) {

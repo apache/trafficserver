@@ -129,10 +129,14 @@ entry with pregen-header=@MoneyTrace might look like:
 Robustness
 ==========
 
-This plugin tries to be robust in its parsing.
-At a minimum the value must start with `trace-id=` with there being
-some non empty value.  If this is not true then the header is passed
-through to the next level.
-If `span-id=` is found in the header value that will be used as
-the parent-id for an upstream request.  Otherwise '0' will be its
-value.
+This plugin tries to be robust in its parsing.  At a minimum the value
+must start with `trace-id=` set to a none empty value.
+
+If `span-id=` is found in the header value that will be used as the
+parent-id for an upstream request.  Otherwise '0' will be its value.
+
+If the incoming money trace header is invalid, it is handled based
+on the --create-if-none setting.  If create-if-none is set a new
+money trace header will be generated and used.  Otherwise the
+incoming client header value will be passed through.
+

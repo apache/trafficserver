@@ -209,6 +209,15 @@ for trace in trace_strings:
     tr.StillRunningAfter = ts
     tr.StillRunningAfter = server
 
+# 11 Test
+for trace in trace_strings:
+    tr = Test.AddTestRun(trace)
+    ps = tr.Processes.Default
+    ps.Command = curl_and_args + ' http://cpregen/path -H "X-MoneyTrace: ' + trace + '"'
+    ps.ReturnCode = 0
+    tr.StillRunningAfter = ts
+    tr.StillRunningAfter = server
+
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 # 11 Test
 tr = Test.AddTestRun()
