@@ -213,7 +213,7 @@ struct SSLTicketParams : public ConfigInfo {
   time_t load_time                              = 0;
   char *ticket_key_filename;
   bool LoadTicket(bool &nochange);
-  void LoadTicketData(char *ticket_data, int ticket_data_len);
+  bool LoadTicketData(char *ticket_data, int ticket_data_len);
   void cleanup();
 
   ~SSLTicketParams() override { cleanup(); }

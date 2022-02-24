@@ -655,7 +655,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   return true;
 }
 
-void
+bool
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
@@ -666,7 +666,12 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
     default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
   }
   load_time = time(nullptr);
+
+  if (default_global_keyblock == nullptr) {
+    return false;
+  }
 #endif
+  return true;
 }
 
 void
@@ -707,7 +712,10 @@ SSLTicketKeyConfig::reconfigure_data(char *ticket_data, int ticket_data_len)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
   if (ticketKey) {
-    ticketKey->LoadTicketData(ticket_data, ticket_data_len);
+    if (ticketKey->LoadTicketData(ticket_data, ticket_data_len) == false) {
+      delete ticketKey;
+      return false;
+    }
   }
   configid = configProcessor.set(configid, ticketKey);
   return true;
