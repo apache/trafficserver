@@ -35,9 +35,11 @@ TEST_CASE("TextView Constructor", "[libts][TextView]")
   static std::string base = "Evil Dave Rulez!";
   ts::TextView tv(base);
   ts::TextView a{"Evil Dave Rulez"};
+  static_cast<void>(a); // Suppress unused variable warning.
   ts::TextView b{base.data(), base.size()};
   ts::TextView c{std::string_view(base)};
   constexpr ts::TextView d{"Grigor!"sv};
+  static_cast<void>(d); // Suppress unused variable warning.
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
@@ -100,6 +102,7 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   left             = tv3;
   right            = left.split_suffix_at(";:,");
   ts::TextView pre{tv3}, post{pre.split_suffix_at(7)};
+  static_cast<void>(post); // Suppress unused variable warning.
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");

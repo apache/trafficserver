@@ -71,7 +71,7 @@ ssl_has_proxy_v1(NetVConnection *sslvc, char *buffer, int64_t *bytes_r)
 bool
 http_has_proxy_v1(IOBufferReader *reader, NetVConnection *netvc)
 {
-  char buf[PROXY_V1_CONNECTION_HEADER_LEN_MAX + 1];
+  char buf[PROXY_V1_CONNECTION_HEADER_LEN_MAX + 1] = {0};
   ts::TextView tv;
 
   tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));

@@ -47,7 +47,7 @@ TEST_CASE("content_range to/from string - valid", "[AWS][slice][utility]")
   bool const strstat(exprange.toStringClosed(gotbuf, &gotlen));
 
   CHECK(strstat);
-  CHECK(gotlen == expstr.size());
+  CHECK(gotlen == static_cast<int>(expstr.size()));
   CHECK(expstr == std::string(gotbuf));
 
   ContentRange gotrange;

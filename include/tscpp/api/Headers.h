@@ -109,12 +109,15 @@ class HeaderField;
 /**
  * @brief A header field value iterator iterates through all header fields.
  */
-class header_field_value_iterator : public std::iterator<std::forward_iterator_tag, int>
+class header_field_value_iterator
 {
 private:
   HeaderFieldValueIteratorState *state_;
 
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type        = int;
+
   /**
    * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
    * @param bufp the TSMBuffer associated with the headers
@@ -169,13 +172,16 @@ public:
 /**
  * @brief A header field iterator is an iterator that dereferences to a HeaderField.
  */
-class header_field_iterator : public std::iterator<std::forward_iterator_tag, int>
+class header_field_iterator
 {
 private:
   HeaderFieldIteratorState *state_;
   header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc);
 
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type        = int;
+
   ~header_field_iterator();
 
   /**

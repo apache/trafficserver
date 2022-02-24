@@ -23,6 +23,7 @@ GREEN='\033[1;32m'
 NC='\033[0m' # No Color
 if [ ! -f ./env-test/bin/autest ]; then\
         echo -e "${RED}AuTest is not installed! Bootstrapping system...${NC}";\
+		sudo python -m pip install distro;\
 		./bootstrap.py;\
         echo -e "${GREEN}Done!${NC}";\
 	fi

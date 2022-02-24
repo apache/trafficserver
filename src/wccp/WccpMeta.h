@@ -54,7 +54,11 @@ template <bool VALUE> struct TEST_IF_TRUE : public TEST_RESULT<TEST_BOOL<VALUE>>
 };
 
 // Helper for assigning a value to all instances in a container.
-template <typename T, typename R, typename A1> struct TsAssignMember : public std::binary_function<T, A1, R> {
+template <typename T, typename R, typename A1> struct TsAssignMember {
+  using first_argument_type  = T;
+  using second_argument_type = A1;
+  using result_type          = R;
+
   R T::*_m;
   A1 _arg1;
   TsAssignMember(R T::*m, A1 const &arg1) : _m(m), _arg1(arg1) {}
@@ -178,7 +182,10 @@ template <
   typename V, ///< Value type.
   typename T, ///< Object type
   typename F ///< Extractor type.
-> struct MinimaFunctor :  public std::unary_function<T, void> {
+> struct MinimaFunctor {
+  using argument_type = T;
+  using result_type   = void;
+
   V& m_result; ///< Result value.
   F m_extractor; ///< Extraction functor.
   /// Constructor.
@@ -196,7 +203,10 @@ template <
   typename R, ///< Return type.
   typename T, ///< Object type.
   typename ARG1 ///< Bound argument type.
-> struct BinderConstMethodArg1ToNullary : std::unary_function<T, R> {
+> struct BinderConstMethodArg1ToNullary {
+  using argument_type = T;
+  using result_type   = R;
+
   typedef R (T::*F)(ARG1) const; /// Method type.
   F m_method; ///< The actual method.
   ARG1 m_arg1; ///< Bound argument.

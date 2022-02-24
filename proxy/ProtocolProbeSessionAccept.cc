@@ -31,7 +31,7 @@
 static bool
 proto_is_http2(IOBufferReader *reader)
 {
-  char buf[HTTP2_CONNECTION_PREFACE_LEN];
+  char buf[HTTP2_CONNECTION_PREFACE_LEN] = {0};
   char *end;
   ptrdiff_t nbytes;
 

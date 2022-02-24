@@ -334,9 +334,13 @@ public:
   static void finalize(T *t);
 
   /// Strict weak order for STL containers.
-  class Order : public std::binary_function<IntrusivePtr<T>, IntrusivePtr<T>, bool>
+  class Order
   {
   public:
+    using first_argument_type  = IntrusivePtr<T>;
+    using second_argument_type = IntrusivePtr<T>;
+    using result_type          = bool;
+
     /// Default constructor.
     Order() {}
     /// Compare by raw pointer.
