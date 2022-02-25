@@ -39,13 +39,13 @@ TEST_CASE("Http2Frame", "[http2][Http2Frame]")
     uint8_t hdr_block_len = sizeof(hdr_block);
 
     Http2PushPromiseFrame frame(id, flags, pp, hdr_block, hdr_block_len);
-    uint64_t written = frame.write_to(miob);
+    int64_t written = frame.write_to(miob);
 
-    CHECK(written == HTTP2_FRAME_HEADER_LEN + sizeof(Http2StreamId) + hdr_block_len);
+    CHECK(written == static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN + sizeof(Http2StreamId) + hdr_block_len));
     CHECK(written == miob_r->read_avail());
 
     uint8_t buf[32] = {0};
-    uint64_t read   = miob_r->read(buf, written);
+    int64_t read    = miob_r->read(buf, written);
     CHECK(read == written);
 
     uint8_t expected[] = {
