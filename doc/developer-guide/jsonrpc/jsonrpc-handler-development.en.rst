@@ -366,9 +366,9 @@ please check the ``CustomJSONRPCResponse`` tester for more information.
 AddJsonRPCClientRequest
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This function will generate a json response as an output, internally it ses :program:`traffic_ctl file --format json` as client.
-The output can be used and compared with a gold file. This also provides schema validation for the entire JSONRPC protocol as well as
-the ``param`` field against a specific schema file. You can specify ``schema_file_name`` with a valid json schema file to validate
+This function will generate a json response as an output, internally it uses :program:`traffic_ctl rpc file --format json` as client.
+The output can be used and compared with a gold file. This also provides an optional schema validation for the entire JSONRPC protocol
+as well as the ``param`` field against a specific schema file. You can specify ``schema_file_name`` with a valid json schema file to validate
 the entire JSONRPC 2.0 request(except the content of the ``params`` field). You can also set ``params_field_schema_file_name`` with a
 valid json schema file to validate only the ``params`` field.
 

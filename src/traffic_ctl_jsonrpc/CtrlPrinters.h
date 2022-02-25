@@ -38,18 +38,16 @@ class BasePrinter
 public:
   /// This enum maps the --format flag coming from traffic_ctl. (also --records is included here, see comments down below.)
   struct Options {
-    enum class Format {
+    enum class OutputFormat {
       LEGACY = 0, // Legacy format, mimics the old traffic_ctl output
       PRETTY,     // Enhanced printing messages. (in case you would like to generate them)
       JSON,       // Json formatting
       RECORDS,    // only valid for configs, but it's handy to have it here.
-      DATA_REQ,   // Print json request + default format
-      DATA_RESP,  // Print json response + default format
-      DATA_ALL    // Print json request and response + default format
+      RPC         // Print JSONRPC request and response + default output.
     };
     Options() = default;
-    Options(Format fmt) : _format(fmt) {}
-    Format _format{Format::LEGACY}; //!< selected(passed) format.
+    Options(OutputFormat fmt) : _format(fmt) {}
+    OutputFormat _format{OutputFormat::LEGACY}; //!< selected(passed) format.
   };
 
   /// Printer constructor. Needs the format as it will be used by derived classes.
@@ -81,10 +79,9 @@ public:
   virtual void write_output(std::string_view output) const;
   virtual void write_debug(std::string_view output) const;
 
-  /// Format getters.
-  Options::Format get_format() const;
-  bool print_req_msg() const;
-  bool print_resp_msg() const;
+  /// OutputFormat getters.
+  Options::OutputFormat get_format() const;
+  bool print_rpc_message() const;
   bool is_json_format() const;
   bool is_legacy_format() const;
   bool is_records_format() const;
@@ -95,44 +92,38 @@ protected:
   Options _printOpt;
 };
 
-inline BasePrinter::Options::Format
+inline BasePrinter::Options::OutputFormat
 BasePrinter::get_format() const
 {
   return _printOpt._format;
 }
 
 inline bool
-BasePrinter::print_req_msg() const
+BasePrinter::print_rpc_message() const
 {
-  return get_format() == Options::Format::DATA_ALL || get_format() == Options::Format::DATA_REQ;
-}
-
-inline bool
-BasePrinter::print_resp_msg() const
-{
-  return get_format() == Options::Format::DATA_ALL || get_format() == Options::Format::DATA_RESP;
+  return get_format() == Options::OutputFormat::RPC;
 }
 
 inline bool
 BasePrinter::is_json_format() const
 {
-  return get_format() == Options::Format::JSON;
+  return get_format() == Options::OutputFormat::JSON;
 }
 
 inline bool
 BasePrinter::is_legacy_format() const
 {
-  return get_format() == Options::Format::LEGACY;
+  return get_format() == Options::OutputFormat::LEGACY;
 }
 inline bool
 BasePrinter::is_records_format() const
 {
-  return get_format() == Options::Format::RECORDS;
+  return get_format() == Options::OutputFormat::RECORDS;
 }
 inline bool
 BasePrinter::is_pretty_format() const
 {
-  return get_format() == Options::Format::PRETTY;
+  return get_format() == Options::OutputFormat::PRETTY;
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 class GenericPrinter : public BasePrinter

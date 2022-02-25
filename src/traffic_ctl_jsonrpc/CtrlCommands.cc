@@ -29,25 +29,23 @@ namespace
 /// We use yamlcpp as codec implementation.
 using Codec = yamlcpp_json_emitter;
 
-const std::unordered_map<std::string_view, BasePrinter::Options::Format> _Fmt_str_to_enum = {
-  {"pretty", BasePrinter::Options::Format::PRETTY},  {"legacy", BasePrinter::Options::Format::LEGACY},
-  {"json", BasePrinter::Options::Format::JSON},      {"req", BasePrinter::Options::Format::DATA_REQ},
-  {"resp", BasePrinter::Options::Format::DATA_RESP}, {"all", BasePrinter::Options::Format::DATA_ALL}};
+const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
+  {"pretty", BasePrinter::Options::OutputFormat::PRETTY},
+  {"legacy", BasePrinter::Options::OutputFormat::LEGACY},
+  {"json", BasePrinter::Options::OutputFormat::JSON},
+  {"rpc", BasePrinter::Options::OutputFormat::RPC}};
 
-BasePrinter::Options::Format
+BasePrinter::Options::OutputFormat
 parse_format(ts::Arguments &args)
 {
   if (args.get("records")) {
-    return BasePrinter::Options::Format::RECORDS;
+    return BasePrinter::Options::OutputFormat::RECORDS;
   }
 
-  BasePrinter::Options::Format val{BasePrinter::Options::Format::LEGACY};
+  BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::LEGACY};
 
   if (auto data = args.get("format"); data) {
     ts::TextView fmt{data.value()};
-    if ("data" == fmt.prefix(':')) {
-      fmt.take_prefix_at(':');
-    }
     if (auto search = _Fmt_str_to_enum.find(fmt); search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
     }
@@ -76,14 +74,14 @@ CtrlCommand::execute()
 std::string
 CtrlCommand::invoke_rpc(std::string const &request)
 {
-  if (_printer->print_req_msg()) {
+  if (_printer->print_rpc_message()) {
     std::string text;
     ts::bwprint(text, "--> {}", request);
     _printer->write_debug(std::string_view{text});
   }
   if (auto resp = _rpcClient.invoke(request); !resp.empty()) {
     // all good.
-    if (_printer->print_resp_msg()) {
+    if (_printer->print_rpc_message()) {
       std::string text;
       ts::bwprint(text, "<-- {}", resp);
       _printer->write_debug(std::string_view{text});
@@ -381,9 +379,9 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
     _invoked_func = [&]() { read_from_input(); };
   } else if (_arguments.get("invoke")) {
     _invoked_func = [&]() { invoke_method(); };
-    if (printOpts._format == BasePrinter::Options::Format::LEGACY) {
+    if (printOpts._format == BasePrinter::Options::OutputFormat::LEGACY) {
       // overwrite this and let it drop json instead.
-      printOpts._format = BasePrinter::Options::Format::DATA_ALL;
+      printOpts._format = BasePrinter::Options::OutputFormat::RPC;
     }
   }
 
