@@ -105,6 +105,10 @@ def isFedora():
     return get_distro()[0].startswith("Fedora")
 
 
+def isRocky():
+    return get_distro()[0].startswith("Rocky")
+
+
 def isCentOS():
     return get_distro()[0].startswith("CentOS")
 
@@ -114,6 +118,8 @@ def distro():
         return "Fedora"
     if isCentOS():
         return "CentOS"
+    if isRocky():
+        return "Rocky"
     if get_distro()[0].startswith("Red Hat"):
         return "RHEL"
     if get_distro()[0].startswith("Ubuntu"):
@@ -121,8 +127,10 @@ def distro():
 
 
 def isRedHatBased():
-    return get_distro()[0].startswith("Red Hat") or get_distro()[0].startswith(
-        "Fedora") or get_distro()[0].startswith("CentOS")
+    return (get_distro()[0].startswith("Red Hat") or
+            get_distro()[0].startswith("Fedora") or
+            get_distro()[0].startswith("CentOS") or
+            get_distro()[0].startswith("Rocky"))
 
 
 def isInstalled(prog):
@@ -229,7 +237,7 @@ def main():
     cmds = []
 
     if dist:
-        if distro() == 'CentOS' and distro_version() > 7:
+        if (distro() == 'CentOS' or distro() == 'Rocky') and distro_version() > 7:
             # if centos 8 we must set crypto to legacy to allow tlsv1.0 tests
             cmds += ["sudo update-crypto-policies --set LEGACY"]
             cmds += gen_package_cmds(distro_packages['CentOS-8'])
