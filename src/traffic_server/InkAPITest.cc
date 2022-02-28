@@ -83,6 +83,8 @@
 #define ERROR_BODY "TESTING ERROR PAGE"
 #define TRANSFORM_APPEND_STRING "This is a transformed response"
 
+extern int dns_failover_period;
+
 //////////////////////////////////////////////////////////////////////////////
 // STRUCTURES
 //////////////////////////////////////////////////////////////////////////////
@@ -8527,6 +8529,11 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
+  // These tests don't actually require DNS resolution, but if there are issues
+  // connecting to the DNS server then the test will fail due to error events
+  // from the communication arising. We avoid this by simply extending the DNS
+  // failover period to a very large value.
+  dns_failover_period = 1000;
 
   TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerIntercept");
 
