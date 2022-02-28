@@ -561,6 +561,7 @@ PluginVC::process_write_side()
   }
 
   update_inactive_time();
+  other_side->update_inactive_time();
 
   write_state.vio.reenable();
 }
@@ -588,7 +589,7 @@ PluginVC::process_read_side()
     return;
   }
 
-  if (!other_side->closed) {
+  if (!other_side->closed && !other_side->write_state.shutdown) {
     if (other_side->write_state.vio.op != VIO::WRITE || other_side->write_state.shutdown) {
       // Just return, no touch on `other_side->need_write_process`.
       return;
@@ -606,7 +607,6 @@ PluginVC::process_read_side()
       other_side->setup_event_cb(PVC_LOCK_RETRY_TIME, &other_side->core_lock_retry_event);
       return;
     }
-    other_side->write_state.vio.reenable();
     other_side->process_write_side();
   } else {
     Debug("pvc", "[%u] %s: write_state of other side is not available", core_obj->id, PVC_TYPE);
