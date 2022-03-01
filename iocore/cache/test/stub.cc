@@ -21,10 +21,16 @@
   limitations under the License.
  */
 
+#include <string_view>
+
 #include "HttpSessionManager.h"
 #include "HttpBodyFactory.h"
 #include "DiagsConfig.h"
 #include "ts/InkAPIPrivateIOCore.h"
+
+#include "tscore/I_Version.h"
+
+AppVersionInfo appVersionInfo;
 
 void
 initialize_thread_for_http_sessions(EThread *, int)
@@ -67,6 +73,11 @@ HttpHookState::HttpHookState() {}
 
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
+{
+}
+
+void
+api_init()
 {
 }
 
@@ -157,18 +168,19 @@ ts::svtoi(TextView src, TextView *out, int base)
 }
 
 void
-HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
+HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
+                          const unsigned int reason)
 {
 }
 
 HostStatRec *
-HostStatus::getHostStatus(const char *name)
+HostStatus::getHostStatus(const std::string_view name)
 {
   return nullptr;
 }
 
 void
-HostStatus::createHostStat(const char *name, const char *data)
+HostStatus::createHostStat(const std::string_view name, const char *data)
 {
 }
 
