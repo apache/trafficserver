@@ -28,8 +28,6 @@
  * authentication scheme does not require them.  This implementation is
  * intended for web-related use, and line breaks are not implemented.
  *
- * These routines return char*'s to malloc-ed strings.  The caller is
- * responsible for freeing the strings.
  */
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
