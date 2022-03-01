@@ -42,7 +42,7 @@ struct JSONRPCRequest {
   virtual std::string
   get_method() const
   {
-    return "method";
+    return this->method;
   }
 };
 

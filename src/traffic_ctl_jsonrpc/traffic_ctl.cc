@@ -160,7 +160,11 @@ main(int argc, const char **argv)
                 "No json/yaml parse validation will take place, the raw content will be directly send to the server.", "", 0, "",
                 "raw")
     .add_example_usage("traffic_ctl rpc input ");
-
+  direct_rpc_command
+    .add_command("invoke", "Call a method by using the method name as input parameter", "", MORE_THAN_ONE_ARG_N,
+                 [&]() { command->execute(); })
+    .add_option("--params", "-p", "Parameters to be passed in the request, YAML or JSON format", "", MORE_THAN_ONE_ARG_N, "", "")
+    .add_example_usage("traffic_ctl rpc invoke foo_bar -p \"numbers: [1, 2, 3]\"");
   try {
     auto args = parser.parse(argv);
     argparser_runroot_handler(args.get("run-root").value(), argv[0]);

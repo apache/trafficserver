@@ -221,17 +221,6 @@ struct ShowRegisterHandlersRequest : shared::rpc::ClientRequest {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
-// We expect the method to be passed, this request is used to create dynamic requests by using (traffic_ctl rpc invoke "func_name")
-struct CustomizableRequest : shared::rpc::ClientRequest {
-  using super = shared::rpc::ClientRequest;
-  CustomizableRequest(std::string const &methodName) { super::method = methodName; }
-  std::string
-  get_method() const
-  {
-    return super::method;
-  }
-};
-//------------------------------------------------------------------------------------------------------------------------------------
 ///
 /// @brief Config status request mapping class.
 ///
