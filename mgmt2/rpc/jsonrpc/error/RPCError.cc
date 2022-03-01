@@ -21,7 +21,7 @@
 #include "RPCError.h"
 
 #include <string>
-#include <system_error> // TODO: remove
+#include <system_error>
 
 namespace
 { // anonymous namespace
@@ -66,7 +66,7 @@ RPCErrorCategory::message(int ev) const
     return {"Missing method field"};
   // params
   case RPCErrorCode::InvalidParamType:
-    return {"Invalid params type, should be a structure"};
+    return {"Invalid params type. A Structured value is expected"};
   // id
   case RPCErrorCode::InvalidIdType:
     return {"Invalid id type"};

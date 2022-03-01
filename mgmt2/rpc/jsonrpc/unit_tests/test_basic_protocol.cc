@@ -302,7 +302,7 @@ TEST_CASE("Invalid parameters base on the jsonrpc 2.0 protocol", "[protocol]")
 
       REQUIRE(resp);
       const std::string_view expected =
-        R"({"jsonrpc": "2.0", "error": {"code": 6, "message": "Invalid params type, should be a structure"}, "id": "13"})";
+        R"({"jsonrpc": "2.0", "error": {"code": 6, "message": "Invalid params type. A Structured value is expected"}, "id": "13"})";
       REQUIRE(*resp == expected);
     }
   }
