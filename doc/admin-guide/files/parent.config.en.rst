@@ -222,6 +222,7 @@ The following list shows the possible actions and their allowed values.
       parent is marked down and a new parent is selected to retry the request.  The number of
       retries is controlled by ``max_unavailable_server_retries`` which is set to 1 by default.
     - ``both`` - This enables both ``simple_retry`` and ``unavailable_server_retry`` as described above.
+    - If not set, by default all response codes will be considered a success, and parents will not be retried based on any HTTP response code.
 
 .. _parent-config-format-simple-server-retry-responses:
 
@@ -264,7 +265,7 @@ The following list shows the possible actions and their allowed values.
     -  ``strict`` - Traffic Server machines serve requests strictly in
        turn. For example: machine ``proxy1`` serves the first request,
        ``proxy2`` serves the second request, and so on.
-    -  ``false`` - Round robin selection does not occur.
+    -  ``false`` - The default. Round robin selection does not occur.
     -  ``consistent_hash`` - consistent hash of the url so that one parent
        is chosen for a given url. If a parent is down, the traffic that
        would go to the down parent is rehashed amongst the remaining parents.
@@ -284,7 +285,7 @@ The following list shows the possible actions and their allowed values.
 ``go_direct``
     One of the following values:
 
-    -  ``true`` - requests bypass parent hierarchies and go directly to
+    -  ``true`` - The default. Requests bypass parent hierarchies and go directly to
        the origin server.
 
     -  ``false`` - requests do not bypass parent hierarchies.
@@ -294,7 +295,7 @@ The following list shows the possible actions and their allowed values.
 ``qstring``
     One of the following values:
 
-    -  ``consider`` - Use the query string when finding a parent.
+    -  ``consider`` - The default. Use the query string when finding a parent.
 
     -  ``ignore`` - Do not consider the query string when finding a parent. This
        is especially useful when using the ``consistent_hash`` selection strategy,
