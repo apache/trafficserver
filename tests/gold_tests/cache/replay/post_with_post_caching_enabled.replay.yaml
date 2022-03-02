@@ -128,7 +128,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 100ms
+      delay: 500ms
 
     # The request should be served out of cache, so this 403 should not be
     # received.
