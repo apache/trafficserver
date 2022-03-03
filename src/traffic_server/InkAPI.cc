@@ -9922,10 +9922,10 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
   return TS_ERROR;
 }
 
-tsapi void
+tsapi TSReturnCode
 TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
 {
-  SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen);
+  return SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
