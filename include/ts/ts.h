@@ -1312,7 +1312,7 @@ tsapi TSReturnCode TSSslSecretUpdate(const char *secret_name, int secret_name_le
 /* Create a new SSL context based on the settings in records.config */
 tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
-tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
+tsapi TSReturnCode TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
 TSAcceptor TSAcceptorGet(TSVConn sslp);
 TSAcceptor TSAcceptorGetbyID(int ID);
 int TSAcceptorCount();
