@@ -6,11 +6,12 @@
  */
 
 #pragma once
+#include <array>
 #include <climits>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #include <string_view>
 #include <variant>
-#include <array>
 
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"
