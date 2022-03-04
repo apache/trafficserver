@@ -114,37 +114,37 @@ chrono_cast(timespec const &ts) {
 // Under -O2 these are completely elided.
 template <typename S>
 auto
-a_time(S const &s) -> decltype(S::st_atim) {
+a_time(S const &s, meta::CaseTag<0>) -> decltype(S::st_atim) {
   return s.st_atim;
 }
 
 template <typename S>
 auto
-a_time(S const &s) -> decltype(S::st_atimespec) {
+a_time(S const &s, meta::CaseTag<1>) -> decltype(S::st_atimespec) {
   return s.st_atimespec;
 }
 
 template <typename S>
 auto
-m_time(S const &s) -> decltype(S::st_mtim) {
+m_time(S const &s, meta::CaseTag<0>) -> decltype(S::st_mtim) {
   return s.st_mtim;
 }
 
 template <typename S>
 auto
-m_time(S const &s) -> decltype(S::st_mtimespec) {
+m_time(S const &s, meta::CaseTag<1>) -> decltype(S::st_mtimespec) {
   return s.st_mtimespec;
 }
 
 template <typename S>
 auto
-c_time(S const &s) -> decltype(S::st_ctim) {
+c_time(S const &s, meta::CaseTag<0>) -> decltype(S::st_ctim) {
   return s.st_ctim;
 }
 
 template <typename S>
 auto
-c_time(S const &s) -> decltype(S::st_ctimespec) {
+c_time(S const &s, meta::CaseTag<1>) -> decltype(S::st_ctimespec) {
   return s.st_ctimespec;
 }
 
@@ -152,17 +152,17 @@ c_time(S const &s) -> decltype(S::st_ctimespec) {
 
 std::chrono::system_clock::time_point
 modify_time(file_status const &fs) {
-  return chrono_cast(m_time(fs._stat));
+  return chrono_cast(m_time(fs._stat, meta::CaseArg));
 }
 
 std::chrono::system_clock::time_point
 access_time(file_status const &fs) {
-  return chrono_cast(a_time(fs._stat));
+  return chrono_cast(a_time(fs._stat, meta::CaseArg));
 }
 
 std::chrono::system_clock::time_point
 status_time(file_status const &fs) {
-  return chrono_cast(c_time(fs._stat));
+  return chrono_cast(c_time(fs._stat, meta::CaseArg));
 }
 
 bool

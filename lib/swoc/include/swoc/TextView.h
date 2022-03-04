@@ -79,6 +79,22 @@ public:
    */
   constexpr TextView(char const *first, char const *last) noexcept;
 
+  /** Construct from any character container following STL standards.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to @c char @c const @c * and @c size_t respectively.
+   */
+  template < typename C
+    , typename = std::enable_if_t<
+        std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
+        std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+        , void
+      >
+  > constexpr TextView(C const& c);
+
   /** Construct from literal string or array.
 
       All elements of the array are included in the view unless the last element is nul, in which case it is elided.
@@ -163,6 +179,24 @@ public:
 
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
+
+  /** Assign from any character container following STL standards.
+   *
+   * @tparam C Container type.
+   * @param c container
+   *
+   * The container type must have the methods @c data and @c size which must return values convertible
+   * to @c char @c const @c * and @c size_t respectively.
+   */
+  template < typename C
+            , typename = std::enable_if_t<
+                std::is_convertible_v<decltype(std::declval<C>().data()), char const*> &&
+                std::is_convertible_v<decltype(std::declval<C>().size()), size_t>
+                , void
+              >
+            > constexpr self_type & assign(C const& c) {
+    return this->assign(c.data(), c.size());
+  }
 
   /** Dereference operator.
 
@@ -923,6 +957,7 @@ inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullpt
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
 template <size_t N> constexpr TextView::TextView(const char (&s)[N]) noexcept : super_type(s, s[N - 1] ? N : N - 1) {}
+template <typename C, typename> constexpr TextView::TextView(C const &c) : super_type(c.data(), c.size()) {}
 
 inline void
 TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set) {

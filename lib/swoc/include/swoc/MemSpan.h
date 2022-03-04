@@ -277,8 +277,8 @@ public:
   /// Copy constructor.
   constexpr MemSpan(self_type const &that) = default;
 
-  /// Copy assignment operator.
-  constexpr self_type& operator=(self_type const &that) = default;
+  /// Copy assignment
+  constexpr self_type & operator = (self_type const& that) = default;
 
   /** Cross type copy constructor.
    *
@@ -364,21 +364,21 @@ public:
    */
   template <typename U> MemSpan<U> rebind() const;
 
-  /// Set the span.
-  /// This is faster but equivalent to constructing a new span with the same
-  /// arguments and assigning it.
-  /// @return @c this.
-  self_type &assign(value_type *ptr, ///< Buffer start.
-                    size_t n         ///< # of bytes
-  );
+  /** Update the span.
+   *
+   * @param ptr Start of span memory.
+   * @param n Number of elements in the span.
+   * @return @a this
+   */
+  self_type &assign(value_type *ptr, size_t n);
 
-  /// Set the span.
-  /// This is faster but equivalent to constructing a new span with the same
-  /// arguments and assigning it.
-  /// @return @c this.
-  self_type &assign(value_type *first,     ///< First valid element.
-                    value_type const *last ///< First invalid element.
-  );
+  /** Update the span.
+   *
+   * @param first First element in the span.
+   * @param last One past the last element in the span.
+   * @return @a this
+   */
+  self_type &assign(value_type *first, value_type const *last);
 
   /// Clear the span (become an empty span).
   self_type &clear();
@@ -416,12 +416,13 @@ public:
 
   /** Return a sub span of @a this span.
    *
-   * @param offset Offset (index) of first element in subspan.
-   * @param count Number of elements in the subspan.
-   * @return A subspan starting at @a offset for @a count elements.
+   * @param offset Offset (index) of first element.
+   * @param count Number of elements.
+   * @return The span starting at @a offset for @a count elements in @a this.
    *
-   * The result is clipped by @a this - if @a offset is out of range an empty span is returned.
-   * Otherwise @c count is clipped by the number of elements available in @a this.
+   * The result is clipped by @a this - if @a offset is out of range an empty span is returned. Otherwise @c count is clipped by the
+   * number of elements available in @a this. In effect the intersection of the span described by ( @a offset , @a count ) and @a
+   * this span is returned, which may be the empty span.
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
 
