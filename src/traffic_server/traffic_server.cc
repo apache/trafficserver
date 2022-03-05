@@ -33,6 +33,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
+#include "tscore/ink_hw.h"
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_stack_trace.h"
 #include "tscore/ink_syslog.h"
