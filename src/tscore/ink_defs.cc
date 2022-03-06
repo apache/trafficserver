@@ -41,32 +41,6 @@
 int off = 0;
 int on  = 1;
 
-#if TS_USE_HWLOC
-
-#include <hwloc.h>
-
-// Little helper to initialize the hwloc topology, once.
-static hwloc_topology_t
-setup_hwloc()
-{
-  hwloc_topology_t topology;
-
-  hwloc_topology_init(&topology);
-  hwloc_topology_load(topology);
-
-  return topology;
-}
-
-// Get the topology
-hwloc_topology_t
-ink_get_topology()
-{
-  static hwloc_topology_t topology = setup_hwloc();
-  return topology;
-}
-
-#endif
-
 int
 ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 {
@@ -114,28 +88,6 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
   return 0;
 #else
   return -1;
-#endif
-}
-
-int
-ink_number_of_processors()
-{
-#if TS_USE_HWLOC
-#if HAVE_HWLOC_OBJ_PU
-  return hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
-#else
-  return hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
-#endif
-#elif defined(freebsd)
-  int mib[2], n;
-  mib[0]     = CTL_HW;
-  mib[1]     = HW_NCPU;
-  size_t len = sizeof(n);
-  if (sysctl(mib, 2, &n, &len, nullptr, 0) == -1)
-    return 1;
-  return n;
-#else
-  return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
 #endif
 }
 

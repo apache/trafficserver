@@ -79,6 +79,7 @@ libtscore_la_SOURCES = \
 	ink_error.cc \
 	ink_file.cc \
 	ink_hrtime.cc \
+	ink_hw.cc \
 	ink_inet.cc \
 	ink_memory.cc \
 	ink_mutex.cc \

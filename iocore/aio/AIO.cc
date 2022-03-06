@@ -25,7 +25,8 @@
  * Async Disk IO operations.
  */
 
-#include <tscore/TSSystemState.h>
+#include "tscore/TSSystemState.h"
+#include "tscore/ink_hw.h"
 
 #include "P_AIO.h"
 
