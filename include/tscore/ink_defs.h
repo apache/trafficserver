@@ -100,10 +100,6 @@ countof(const T (&)[N])
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
-#if TS_USE_HWLOC
-#include <hwloc.h>
-#endif
-
 #if defined(MAP_NORESERVE)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #else
@@ -119,7 +115,6 @@ extern int on;
 /* Functions
  */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
-int ink_number_of_processors();
 int ink_login_name_max();
 
 #ifdef __cplusplus
@@ -135,9 +130,4 @@ ROUNDUP(ArithmeticV value, ArithmeticM m)
   }
   return value;
 }
-#endif
-
-#if TS_USE_HWLOC
-// Get the hardware topology
-hwloc_topology_t ink_get_topology();
 #endif

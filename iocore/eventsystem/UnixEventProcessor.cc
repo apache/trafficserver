@@ -30,6 +30,7 @@
 #include <hwloc.h>
 #endif
 #include "tscore/ink_defs.h"
+#include "tscore/ink_hw.h"
 #include "tscore/hugepages.h"
 
 /// Global singleton.

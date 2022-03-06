@@ -22,6 +22,9 @@
  */
 
 #include "P_Net.h"
+
+#include "tscore/ink_hw.h"
+
 #include <netdb.h>
 
 #include "diags.i"

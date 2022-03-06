@@ -30,6 +30,10 @@
 #include "RecordsConfig.h"
 #include "info.h"
 
+#if TS_USE_HWLOC
+#include <hwloc.h>
+#endif
+
 #if HAVE_ZLIB_H
 #include <zlib.h>
 #endif
