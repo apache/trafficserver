@@ -30,66 +30,10 @@
 
 #include "tscore/ink_platform.h"
 
-#if defined(linux) || defined(freebsd) || defined(darwin)
-#include <sys/types.h>
-#include <sys/param.h>
-#endif
-#if defined(linux)
-#include <sys/utsname.h>
-#endif
+#include <unistd.h>
 
 int off = 0;
 int on  = 1;
-
-int
-ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
-{
-  *name    = 0;
-  *release = 0;
-#if defined(freebsd) || defined(darwin)
-  int mib[2];
-  size_t len = namelen;
-  mib[0]     = CTL_KERN;
-  mib[1]     = KERN_OSTYPE;
-
-  if (sysctl(mib, 2, name, &len, nullptr, 0) == -1)
-    return -1;
-
-  len    = releaselen;
-  mib[0] = CTL_KERN;
-  mib[1] = KERN_OSRELEASE;
-
-  if (sysctl(mib, 2, release, &len, nullptr, 0) == -1)
-    return -1;
-
-  return 0;
-#elif defined(linux)
-  struct utsname buf;
-  int n;
-
-  if (uname(&buf)) {
-    return -1;
-  }
-
-  n = strlen(buf.sysname);
-  if (namelen <= n) {
-    n = namelen - 1;
-  }
-  memcpy(name, buf.sysname, n);
-  name[n] = 0;
-
-  n = strlen(buf.release);
-  if (releaselen <= n) {
-    n = releaselen - 1;
-  }
-  memcpy(release, buf.release, n);
-  release[n] = 0;
-
-  return 0;
-#else
-  return -1;
-#endif
-}
 
 int
 ink_login_name_max()
