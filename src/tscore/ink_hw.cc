@@ -45,6 +45,7 @@ ink_get_topology()
   static hwloc_topology_t topology = setup_hwloc();
   return topology;
 }
+#endif
 
 int
 ink_number_of_processors()
@@ -67,4 +68,3 @@ ink_number_of_processors()
   return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
 #endif
 }
-#endif
