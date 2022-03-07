@@ -998,6 +998,8 @@ if test "x${enable_asan}" = "xyes"; then
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+  TS_ADDTO(CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+  TS_ADDTO(CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
 elif test "x${enable_asan}" = "xstatic"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
     AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
@@ -1030,6 +1032,8 @@ if test "x${enable_lsan}" = "xyes"; then
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+  TS_ADDTO(CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+  TS_ADDTO(CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
 elif test "x${enable_lsan}" = "xstatic"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
     AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
@@ -1063,6 +1067,8 @@ fi
 if test "x${enable_tsan}" = "xyes"; then
   TS_ADDTO(AM_CFLAGS, [-fsanitize=thread])
   TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread])
+  TS_ADDTO(CFLAGS, [-fsanitize=thread])
+  TS_ADDTO(CXXFLAGS, [-fsanitize=thread])
 elif test "x${enable_tsan}" = "xstatic"; then
   AC_CHECK_LIB(tsan, _init, [tsan_have_libs=yes], [tsan_have_libs=no])
   if test "x${tsan_have_libs}" == "xno"; then
