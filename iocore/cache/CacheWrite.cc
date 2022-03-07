@@ -288,6 +288,13 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 EvacuationBlock *
 Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 {
+  auto bucket = dir_evac_bucket(evac_dir);
+  if (!evac_bucket_valid(bucket)) {
+    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %lld(%d), %d, %d", bucket, evacuate_size,
+           (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    return nullptr;
+  }
+
   // build an evacuation block for the object
   EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
   // if we have already started evacuating this document, its too late
@@ -300,7 +307,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
     b      = new_EvacuationBlock(mutex->thread_holding);
     b->dir = *evac_dir;
     DDebug("cache_evac", "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
-    evacuate[dir_evac_bucket(evac_dir)].push(b);
+    evacuate[bucket].push(b);
   }
   b->f.pinned        = pinned;
   b->f.evacuate_head = 1;
