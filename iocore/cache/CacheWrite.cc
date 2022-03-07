@@ -290,7 +290,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
-    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %lld(%d), %d, %d", bucket, evacuate_size,
+    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %ld(%d), %d, %d", bucket, evacuate_size,
            (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     return nullptr;
   }
