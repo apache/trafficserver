@@ -21,7 +21,6 @@ Test money_trace remap
 # Test description:
 
 Test.SkipUnless(
-    #    Condition.PluginExists('xdebug.so'),
     Condition.PluginExists('money_trace.so'),
 )
 Test.ContinueOnFail = False
@@ -69,11 +68,9 @@ ts.Disk.remap_config.AddLines([
     f"map http://passthru/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--passthru=true",
 ])
 
-# ts.Disk.plugin_config.AddLine("xdebug.so")
-
 # minimal configuration
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'money_trace',
 })
 
@@ -92,7 +89,7 @@ logging:
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'remap.log'),
                exists=True, content='gold/remap-log.gold')
 
-curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"  # -H 'X-Debug: Probe' "
+curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"
 
 # 0 Test
 tr = Test.AddTestRun("no plugin test")
@@ -226,4 +223,3 @@ ps.Command = (
     os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
     os.path.join(ts.Variables.LOGDIR, 'remap.log')
 )
-#ps.ReturnCode = 0
