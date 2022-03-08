@@ -41,7 +41,8 @@ struct Config {
   RegexType m_regex_type{None};
   pcre *m_regex{nullptr};
   pcre_extra *m_regex_extra{nullptr};
-  int m_paceerrsecs{0}; // -1 disable logging, 0 no pacing, max 60s
+  int m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
+  int m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
   RefType m_reftype{First}; // reference slice is relative to request
 
