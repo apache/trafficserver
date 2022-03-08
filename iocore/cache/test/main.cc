@@ -24,8 +24,22 @@
 #define CATCH_CONFIG_MAIN
 #include "main.h"
 
+#include <unistd.h>
+#include <filesystem>
+
 #define THREADS 1
 #define DIAGS_LOG_FILE "diags.log"
+
+// Create a new temp directory and return it
+std::string
+temp_prefix()
+{
+  char buffer[PATH_MAX];
+  snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", getenv("TMPDIR") ?: "/tmp");
+  auto prefix = std::filesystem::path(mkdtemp(buffer));
+  std::filesystem::create_directories(prefix / "var" / "trafficserver");
+  return prefix.string();
+}
 
 void
 test_done()
@@ -48,7 +62,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags->show_location                      = SHOW_LOCATION_DEBUG;
 
     mime_init();
-    Layout::create();
+    Layout::create(temp_prefix());
     RecProcessInit(RECM_STAND_ALONE);
     LibRecordsConfigInit();
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
@@ -66,8 +80,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/iocore/cache/test";
     Layout::get()->sysconfdir = src_dir;
-    Layout::get()->prefix     = src_dir;
-    ::remove("./test/var/trafficserver/cache.db");
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
