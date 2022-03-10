@@ -108,6 +108,7 @@ Changes with Apache Traffic Server 9.2.0
   #7836 - build_h3_tools: use OpenSSL_1_1_1k+quic
   #7837 - Update NextHop strategies so that unavailable server retry codes are configurable.
   #7841 - Unifdef test code for MMH and moved it into its own test file
+  #7843 - DNS: Fix lack of nameserver failover in low use circumstances.
   #7844 - Clean up lua plugin doc for overridable configurations
   #7847 - Fixed double declaration types for log buffer tracking
   #7848 - Remove bucket search from IntrusiveHashMap::erase
@@ -334,6 +335,7 @@ Changes with Apache Traffic Server 9.2.0
   #8439 - Fix Multiplexer POST Body Handling
   #8440 - Update the Multiplexer Docs for Multplexed HTTPS Connections
   #8441 - bigobj: use automake to build test utilities
+  #8445 - Include CPPFLAGS when building CompileParseRules
   #8449 - Add AuTest for HTTP CONNECT
   #8450 - Document proxy.config.memory.max_usage
   #8453 - Ignore ECONNABORTED on blocking accept
@@ -365,6 +367,9 @@ Changes with Apache Traffic Server 9.2.0
   #8543 - doc: Convert miscased Traffic Server references to |TS| macro
   #8550 - TSUserArg: add value type checking
   #8568 - Update descriptions of sni.yaml.default
+  #8570 - Port #6816 from core strategy to plugin
+  #8571 - Port #7749 from core strategy to plugin
+  #8573 - Port #7837 from core strategy to plugin
   #8578 - Add SSLSessionDup for older OpenSSL and BoringSSL
   #8580 - Ports #7897 from core strategies to parent_select plugin.
   #8585 - Clean up of next hop HostRecord class.
@@ -393,6 +398,14 @@ Changes with Apache Traffic Server 9.2.0
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
   #8667 - TLS Session Resumption: fix timed out session
   #8673 - Fix to allow running autopep8 from outside top_srcdir
+  #8677 - Update iocore/cache/test to fix the build
   #8680 - Fix missing unique_lock definition.
+  #8688 - update FREELIST macros for AArch64
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
+  #8692 - Add docs for parent.config defaults
+  #8705 - Add back "DNS: Fix lack of nameserver failover in low use circumstances."
+  #8706 - Provide libquic.a definition to VIO::VIO()
+  #8707 - cache-request-method autest: Extending IO delay
+  #8711 - Move hwloc-based functions into it's own header/compilation unit
+  #8715 - Fixes build when hwloc is not installed
