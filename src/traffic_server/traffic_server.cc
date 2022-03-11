@@ -768,18 +768,6 @@ CB_After_Cache_Init()
   start = ink_atomic_swap(&delay_listen_for_cache, -1);
   emit_fully_initialized_message();
 
-#if TS_ENABLE_FIPS == 0
-  // Check for cache BC after the cache is initialized and before listen, if possible.
-  if (cacheProcessor.min_stripe_version._major < CACHE_DB_MAJOR_VERSION) {
-    // Versions before 23 need the MMH hash.
-    if (cacheProcessor.min_stripe_version._major < 23) {
-      Debug("cache_bc", "Pre 4.0 stripe (cache version %d.%d) found, forcing MMH hash for cache URLs",
-            cacheProcessor.min_stripe_version._major, cacheProcessor.min_stripe_version._minor);
-      URLHashContext::Setting = URLHashContext::MMH;
-    }
-  }
-#endif
-
   if (1 == start) {
     // The delay_listen_for_cache value was 1, therefore the main function
     // delayed the call to start_HttpProxyServer until we got here. We must

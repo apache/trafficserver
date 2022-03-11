@@ -170,6 +170,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
+	unit_tests/test_CryptoHash.cc \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \

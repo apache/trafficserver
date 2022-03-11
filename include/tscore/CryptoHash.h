@@ -23,6 +23,7 @@
 #pragma once
 
 #include "tscore/BufferWriter.h"
+#include <openssl/evp.h>
 #include <string_view>
 
 /// Apache Traffic Server commons.
@@ -132,6 +133,9 @@ public:
   /// @note This is just as fast as the previous style, as a new context must be initialized
   /// every time this is done.
   bool hash_immediate(CryptoHash &hash, void const *data, int length);
+
+protected:
+  EVP_MD_CTX *_ctx = nullptr;
 };
 
 inline bool
@@ -159,29 +163,31 @@ public:
     UNSPECIFIED,
 #if TS_ENABLE_FIPS == 0
     MD5,
-    MMH,
 #endif
     SHA256,
   }; ///< What type of hash we really are.
   static HashType Setting;
 
-  /// Size of storage for placement @c new of hashing context.
-  static size_t const OBJ_SIZE = 256;
+  ~CryptoContext()
+  {
+    delete _base;
+    _base = nullptr;
+  }
 
-protected:
-  char _obj[OBJ_SIZE]; ///< Raw storage for instantiated context.
+private:
+  CryptoContextBase *_base = nullptr;
 };
 
 inline bool
 CryptoContext::update(void const *data, int length)
 {
-  return reinterpret_cast<CryptoContextBase *>(_obj)->update(data, length);
+  return _base->update(data, length);
 }
 
 inline bool
 CryptoContext::finalize(CryptoHash &hash)
 {
-  return reinterpret_cast<CryptoContextBase *>(_obj)->finalize(hash);
+  return _base->finalize(hash);
 }
 
 ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash);

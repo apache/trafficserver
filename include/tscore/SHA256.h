@@ -29,26 +29,23 @@
 
 class SHA256Context : public ats::CryptoContextBase
 {
-protected:
-  EVP_MD_CTX *ctx;
-
 public:
   SHA256Context()
   {
-    ctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+    _ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(_ctx, EVP_sha256(), nullptr);
   }
-  ~SHA256Context() { EVP_MD_CTX_free(ctx); }
+  ~SHA256Context() { EVP_MD_CTX_free(_ctx); }
   /// Update the hash with @a data of @a length bytes.
   bool
   update(void const *data, int length) override
   {
-    return EVP_DigestUpdate(ctx, data, length);
+    return EVP_DigestUpdate(_ctx, data, length);
   }
   /// Finalize and extract the @a hash.
   bool
   finalize(CryptoHash &hash) override
   {
-    return EVP_DigestFinal_ex(ctx, hash.u8, nullptr);
+    return EVP_DigestFinal_ex(_ctx, hash.u8, nullptr);
   }
 };
