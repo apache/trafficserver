@@ -91,7 +91,6 @@ BgBlockFetch::fetch(Data *const data)
   _bg_stream.setupConnection(upvc);
   _bg_stream.setupVioWrite(_cont, hlen);
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, _bg_stream.m_write.m_iobuf);
-  TSVIOReenable(_bg_stream.m_write.m_vio);
 
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
     std::string const headerstr(header.toString());
@@ -115,6 +114,7 @@ BgBlockFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSVConnShutdown(bg->_bg_stream.m_vc, 0, 1);
+    bg->_bg_stream.close();
     delete bg;
     break;
   default:

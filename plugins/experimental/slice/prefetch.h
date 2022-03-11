@@ -44,7 +44,7 @@ struct BgBlockFetch {
   Stage _bg_stream;
 
   int _blocknum;
-  TSCont _cont;
+  TSCont _cont = nullptr;
 
   ~BgBlockFetch()
   {

@@ -126,6 +126,13 @@ The slice plugin supports the following options::
         `cache_range_requests` plugin.
         -i for short
 
+    --prefetch-count=<int> (optional)
+        Default is 0
+        Prefetches successive 'n' slice block requests in the background
+        and cached. Especially for large objects, prefetching can improve
+        cache miss latency.
+        -f for short
+
 Examples::
 
     @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so
