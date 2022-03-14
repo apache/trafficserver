@@ -23,6 +23,7 @@ AM_CPPFLAGS += \
 
 TESTS = $(check_PROGRAMS)
 
+noinst_PROGRAMS = benchmark_ProxyAllocator
 noinst_LIBRARIES = libinkevent.a
 
 libinkevent_a_SOURCES = \
@@ -113,6 +114,11 @@ test_IOBuffer_LDADD = $(test_LD_ADD)
 test_MIOBufferWriter_SOURCES = unit_tests/test_MIOBufferWriter.cc
 test_MIOBufferWriter_CPPFLAGS = $(test_CPP_FLAGS)
 test_MIOBufferWriter_LDFLAGS = $(test_LD_FLAGS)
+
+benchmark_ProxyAllocator_SOURCES = unit_tests/benchmark_ProxyAllocator.cc
+benchmark_ProxyAllocator_CPPFLAGS = $(test_CPP_FLAGS)
+benchmark_ProxyAllocator_LDFLAGS = $(test_LD_FLAGS)
+benchmark_ProxyAllocator_LDADD = $(test_LD_ADD)
 
 include $(top_srcdir)/build/tidy.mk
 
