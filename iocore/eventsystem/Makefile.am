@@ -23,7 +23,6 @@ AM_CPPFLAGS += \
 
 TESTS = $(check_PROGRAMS)
 
-noinst_PROGRAMS = benchmark_ProxyAllocator
 noinst_LIBRARIES = libinkevent.a
 
 libinkevent_a_SOURCES = \
@@ -73,7 +72,8 @@ libinkevent_a_SOURCES = \
 
 check_PROGRAMS = test_IOBuffer \
 	test_EventSystem \
-	test_MIOBufferWriter
+	test_MIOBufferWriter \
+	benchmark_ProxyAllocator
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
