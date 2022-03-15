@@ -23,9 +23,9 @@
 
 #define CATCH_CONFIG_MAIN
 #include "main.h"
+#include "tscore/ts_file.h"
 
 #include <unistd.h>
-#include <filesystem>
 
 #define THREADS 1
 #define DIAGS_LOG_FILE "diags.log"
@@ -35,9 +35,19 @@ std::string
 temp_prefix()
 {
   char buffer[PATH_MAX];
-  snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", getenv("TMPDIR") ?: "/tmp");
-  auto prefix = std::filesystem::path(mkdtemp(buffer));
-  std::filesystem::create_directories(prefix / "var" / "trafficserver");
+  std::error_code err;
+  const char *tmpdir = getenv("TMPDIR");
+  if (tmpdir == nullptr) {
+    tmpdir = "/tmp";
+  }
+  snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", tmpdir);
+  auto prefix = ts::file::path(mkdtemp(buffer));
+  bool result = ts::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
+  if (!result) {
+    Debug("cache test", "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+  }
+  ink_assert(result);
+
   return prefix.string();
 }
 
