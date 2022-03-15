@@ -288,6 +288,13 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 EvacuationBlock *
 Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 {
+  auto bucket = dir_evac_bucket(evac_dir);
+  if (!evac_bucket_valid(bucket)) {
+    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %ld(%d), %d, %d", bucket, evacuate_size,
+           (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    return nullptr;
+  }
+
   // build an evacuation block for the object
   EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
   // if we have already started evacuating this document, its too late
@@ -300,7 +307,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
     b      = new_EvacuationBlock(mutex->thread_holding);
     b->dir = *evac_dir;
     DDebug("cache_evac", "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
-    evacuate[dir_evac_bucket(evac_dir)].push(b);
+    evacuate[bucket].push(b);
   }
   b->f.pinned        = pinned;
   b->f.evacuate_head = 1;
@@ -500,7 +507,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          (int)dir_phase(&overwrite_dir), (int)dir_offset(&dir), (int)dir_phase(&dir));
   int i = dir_evac_bucket(&overwrite_dir);
   // nasty beeping race condition, need to have the EvacuationBlock here
-  EvacuationBlock *b = vol->evacuate[i].head;
+  EvacuationBlock *b = vol->evac_bucket_valid(i) ? vol->evacuate[i].head : nullptr;
   for (; b; b = b->link.next) {
     if (dir_offset(&b->dir) == dir_offset(&overwrite_dir)) {
       // If the document is single fragment (although not tied to the vector),
@@ -651,6 +658,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   Doc *doc = reinterpret_cast<Doc *>(doc_evacuator->buf->data());
   CacheKey next_key;
   EvacuationBlock *b = nullptr;
+  auto bucket        = dir_evac_bucket(&doc_evacuator->overwrite_dir);
   if (doc->magic != DOC_MAGIC) {
     Debug("cache_evac", "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
           (int)dir_offset(&doc_evacuator->overwrite_dir));
@@ -660,7 +668,9 @@ Vol::evacuateDocReadDone(int event, Event *e)
   DDebug("cache_evac", "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
          (int)dir_offset(&doc_evacuator->overwrite_dir));
 
-  b = evacuate[dir_evac_bucket(&doc_evacuator->overwrite_dir)].head;
+  if (evac_bucket_valid(bucket)) {
+    b = evacuate[bucket].head;
+  }
   while (b) {
     if (dir_offset(&b->dir) == dir_offset(&doc_evacuator->overwrite_dir)) {
       break;
@@ -928,7 +938,7 @@ agg_copy(char *p, CacheVC *vc)
 inline void
 Vol::evacuate_cleanup_blocks(int i)
 {
-  EvacuationBlock *b = evacuate[i].head;
+  EvacuationBlock *b = evac_bucket_valid(i) ? evacuate[i].head : nullptr;
   while (b) {
     if (b->f.done && ((header->phase != dir_phase(&b->dir) && header->write_pos > this->vol_offset(&b->dir)) ||
                       (header->phase == dir_phase(&b->dir) && header->write_pos <= this->vol_offset(&b->dir)))) {
