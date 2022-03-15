@@ -2038,14 +2038,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
 
-  (void)parsePluginConfig();
-
-  // Init plugins as soon as logging is ready.
-  (void)plugin_init(); // plugin.config
-
   // "Task" processor, possibly with its own set of task threads
   tasksProcessor.register_event_type();
-  eventProcessor.thread_group[ET_TASK]._afterStartCallback = task_threads_started_callback;
   tasksProcessor.start(num_task_threads, stacksize);
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
@@ -2106,6 +2100,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // initialize logging (after event and net processor)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 
+    (void)parsePluginConfig();
+
+    // Init plugins as soon as logging is ready.
+    (void)plugin_init(); // plugin.config
+    task_threads_started_callback();
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
