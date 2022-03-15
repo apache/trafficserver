@@ -1679,7 +1679,7 @@ Proxy User Variables
        information.
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
-   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header`.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
