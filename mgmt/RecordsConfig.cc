@@ -896,7 +896,7 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.dns.lookup_timeout", RECD_INT, "20", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.dns.retries", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-9]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.dns.retries", RECD_INT, "5", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-9]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.dns.search_default_domains", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
