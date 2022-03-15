@@ -885,7 +885,7 @@ http_parser_clear(HTTPParser *parser)
 
 ParseResult
 http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                      bool must_copy_strings, bool eof, bool strict_uri_parsing)
+                      bool must_copy_strings, bool eof, int strict_uri_parsing)
 {
   if (parser->m_parsing_http) {
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;

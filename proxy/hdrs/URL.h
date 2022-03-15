@@ -198,14 +198,13 @@ void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, b
 void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
 ParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
-                      bool strict_uri_parsing = false);
+                      int strict_uri_parsing = false);
 ParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
                                                   bool copy_strings);
 ParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 ParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
                                                        bool copy_strings);
-
 char *url_unescapify(Arena *arena, const char *str, int length);
 
 void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state);
