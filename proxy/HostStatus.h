@@ -175,8 +175,6 @@ struct HostStatRec {
   }
 };
 
-struct HostStatusSync;
-typedef int (HostStatusSync::*HostStatusSyncHandler)(int, void *);
 struct HostStatusSync : public Continuation {
   std::string hostRecordsFile;
 
@@ -193,7 +191,7 @@ public:
   {
     getHostStatusPersistentFilePath();
 
-    SET_HANDLER((HostStatusSyncHandler)&HostStatusSync::mainEvent);
+    SET_HANDLER(&HostStatusSync::mainEvent);
   }
 
   int

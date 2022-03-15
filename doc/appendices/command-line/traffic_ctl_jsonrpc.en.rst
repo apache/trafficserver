@@ -365,8 +365,7 @@ records may be viewed using the :program:`traffic_ctl host status` command.
    :ref:`admin_lookup_records`
 
    Get the current status of the specified hosts with respect to their use as targets for parent
-   selection. This returns the same information as the per host record. If the HOSTNAME arguments
-   are omitted, all host records available are returned.
+   selection. If the HOSTNAME arguments are omitted, all host records available are returned.
 
 .. option:: down HOSTNAME [HOSTNAME ...]
 

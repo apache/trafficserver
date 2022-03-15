@@ -44,8 +44,8 @@ struct HostCmdInfo {
 
 } // namespace
 
-ts::Rv<YAML::Node> server_get_status(std::string_view const &id, YAML::Node const &params);
-ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
+ts::Rv<YAML::Node> server_get_status(std::string_view const id, YAML::Node const &params);
+ts::Rv<YAML::Node> server_set_status(std::string_view const id, YAML::Node const &params);
 
 HostStatRec::HostStatRec()
   : status(TS_HOST_STATUS_UP),
@@ -418,7 +418,7 @@ template <> struct convert<HostCmdInfo> {
 
 // JSON-RPC method to retrieve host status information.
 ts::Rv<YAML::Node>
-server_get_status(std::string_view const &id, YAML::Node const &params)
+server_get_status(std::string_view const id, YAML::Node const &params)
 {
   namespace err = rpc::handlers::errors;
   ts::Rv<YAML::Node> resp;
@@ -469,7 +469,7 @@ server_get_status(std::string_view const &id, YAML::Node const &params)
 
 // JSON-RPC method to mark up or down a host.
 ts::Rv<YAML::Node>
-server_set_status(std::string_view const &id, YAML::Node const &params)
+server_set_status(std::string_view const id, YAML::Node const &params)
 {
   Debug("host_statuses", "id=%s", id.data());
   namespace err = rpc::handlers::errors;
