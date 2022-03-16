@@ -48,6 +48,7 @@ struct certinfo {
   OCSP_CERTID *cid;      // Certificate ID for OCSP requests or nullptr if ID cannot be determined
   char *uri;             // Responder details
   char *certname;
+  char *user_agent;
   ink_mutex stapling_mutex;
   unsigned char resp_der[MAX_STAPLING_DER];
   unsigned int resp_derlen;
@@ -72,14 +73,18 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
   }
 
   for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-    if (iter->second->uri) {
-      OPENSSL_free(iter->second->uri);
+    certinfo *cinf = iter->second;
+    if (cinf->uri) {
+      OPENSSL_free(cinf->uri);
     }
-    if (iter->second->certname) {
-      ats_free(iter->second->certname);
+    if (cinf->certname) {
+      ats_free(cinf->certname);
     }
-    ink_mutex_destroy(&iter->second->stapling_mutex);
-    OPENSSL_free(iter->second);
+    if (cinf->user_agent) {
+      ats_free(cinf->user_agent);
+    }
+    ink_mutex_destroy(&cinf->stapling_mutex);
+    OPENSSL_free(cinf);
   }
   delete map;
 }
@@ -211,9 +216,12 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   }
 
   // Initialize certinfo
-  cinf->cid         = nullptr;
-  cinf->uri         = nullptr;
-  cinf->certname    = ats_strdup(certname);
+  cinf->cid      = nullptr;
+  cinf->uri      = nullptr;
+  cinf->certname = ats_strdup(certname);
+  if (SSLConfigParams::ssl_ocsp_user_agent != nullptr) {
+    cinf->user_agent = ats_strdup(SSLConfigParams::ssl_ocsp_user_agent);
+  }
   cinf->resp_derlen = 0;
   ink_mutex_init(&cinf->stapling_mutex);
   cinf->is_prefetched = rsp_file ? true : false;
@@ -289,6 +297,10 @@ err:
 
   if (cinf->certname) {
     ats_free(cinf->certname);
+  }
+
+  if (cinf->user_agent) {
+    ats_free(cinf->user_agent);
   }
 
   if (cinf) {
@@ -368,7 +380,7 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
 }
 
 static OCSP_RESPONSE *
-query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeout)
+query_responder(BIO *b, const char *host, const char *path, const char *user_agent, OCSP_REQUEST *req, int req_timeout)
 {
   ink_hrtime start, end;
   OCSP_RESPONSE *resp = nullptr;
@@ -380,6 +392,9 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 
   ctx = OCSP_sendreq_new(b, path, nullptr, -1);
   OCSP_REQ_CTX_add1_header(ctx, "Host", host);
+  if (user_agent != nullptr) {
+    OCSP_REQ_CTX_add1_header(ctx, "User-Agent", user_agent);
+  }
   OCSP_REQ_CTX_set1_req(ctx, req);
 
   do {
@@ -399,7 +414,7 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 }
 
 static OCSP_RESPONSE *
-process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req_timeout)
+process_responder(OCSP_REQUEST *req, const char *host, const char *path, const char *port, const char *user_agent, int req_timeout)
 {
   BIO *cbio           = nullptr;
   OCSP_RESPONSE *resp = nullptr;
@@ -416,7 +431,7 @@ process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req
     Debug("ssl_ocsp", "process_responder: failed to connect to OCSP server; host=%s port=%s path=%s", host, port, path);
     goto end;
   }
-  resp = query_responder(cbio, host, path, req, req_timeout);
+  resp = query_responder(cbio, host, path, user_agent, req, req_timeout);
 
 end:
   if (cbio) {
@@ -456,7 +471,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     goto err;
   }
 
-  *prsp = process_responder(req, host, path, port, SSLConfigParams::ssl_ocsp_request_timeout);
+  *prsp = process_responder(req, host, path, port, cinf->user_agent, SSLConfigParams::ssl_ocsp_request_timeout);
   if (*prsp == nullptr) {
     goto done;
   }
