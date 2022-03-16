@@ -67,6 +67,7 @@ bool SSLConfigParams::ssl_ocsp_enabled                      = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
 int SSLConfigParams::ssl_ocsp_update_period                 = 60;
+char *SSLConfigParams::ssl_ocsp_user_agent                  = nullptr;
 int SSLConfigParams::ssl_handshake_timeout_in               = 0;
 int SSLConfigParams::origin_session_cache                   = 1;
 size_t SSLConfigParams::origin_session_cache_size           = 10240;
@@ -362,6 +363,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
   set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   ats_free(ssl_ocsp_response_path);
+  REC_ReadConfigStringAlloc(ssl_ocsp_user_agent, "proxy.config.http.request_via_str");
 
   REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
 
