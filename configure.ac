@@ -1446,6 +1446,12 @@ AM_CONDITIONAL([BUILD_YAML_CPP], [test x"$has_yaml_cpp" = x"no"])
 TS_CHECK_YAML_HEADERS_EXPORT
 AM_CONDITIONAL([EXPORT_YAML_HEADERS], [test x"$enable_yaml_headers" = x"yes"])
 
+TS_CHECK_LIBSWOC
+AM_CONDITIONAL([BUILD_SWOC], [test x"$has_libswoc" = x"no"])
+
+TS_CHECK_SWOC_HEADERS_EXPORT
+AM_CONDITIONAL([EXPORT_SWOC_HEADER], [test x"$enable_swoc_headers" = x"yes"])
+
 # Check for optional boringocsp library
 TS_CHECK_BORINGOCSP
 
