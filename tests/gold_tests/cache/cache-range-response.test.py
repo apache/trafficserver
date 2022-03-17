@@ -28,6 +28,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http.*|cache.*',
     'proxy.config.http.cache.range.write': 1,
+    'proxy.config.http.cache.when_to_revalidate': 4,
 })
 ts.Disk.remap_config.AddLine(
     f'map / http://127.0.0.1:{server.Variables.http_port}'
