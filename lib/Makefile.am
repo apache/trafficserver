@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records fastlz swoc
+SUBDIRS = . records fastlz
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
@@ -27,6 +27,10 @@ LOCAL =
 
 if BUILD_YAML_CPP
 LOCAL += yamlcpp
+endif
+
+if BUILD_SWOC
+LOCAL += swoc
 endif
 
 all-local:	$(LOCAL)
