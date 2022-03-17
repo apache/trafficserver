@@ -4713,7 +4713,12 @@ HttpSM::do_range_setup_if_necessary()
           t_state.range_setup      = HttpTransact::RANGE_NOT_SATISFIABLE;
         }
       } else {
-        if (cache_sm.cache_read_vc && cache_sm.cache_read_vc->is_pread_capable()) {
+        // if revalidating and cache is stale we want to transform
+        if (t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE &&
+            t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
+          Debug("http_range", "Serving transform after stale cache re-serve");
+          do_transform = true;
+        } else if (cache_sm.cache_read_vc && cache_sm.cache_read_vc->is_pread_capable()) {
           // If only one range entry and pread is capable, no need transform range
           t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
         } else {
@@ -4728,7 +4733,7 @@ HttpSM::do_range_setup_if_necessary()
           const char *content_type   = nullptr;
           int64_t content_length     = 0;
 
-          if (t_state.cache_info.object_read) {
+          if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
             content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
                                                                                      &field_content_type_len);
             content_length = t_state.cache_info.object_read->object_size_get();
