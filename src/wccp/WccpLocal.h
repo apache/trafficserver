@@ -1700,13 +1700,13 @@ public:
   /// Force virtual destructor.
   virtual ~AltHashAssignComp() {}
   /// Fill out the component from an @c Assignment.
-  virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
-                     detail::Assignment const &assign ///< Assignment data.
-  );
+  self &fill(MsgBuffer &buffer,               ///< Target storage.
+             detail::Assignment const &assign ///< Assignment data.
+             ) override;
 
   /// Validate an existing structure.
   /// @return Parse result.
-  virtual int parse(MsgBuffer &buffer);
+  int parse(MsgBuffer &buffer) override;
 
   /// Compute the total size of the component.
   static size_t calcSize(int n_routers, ///< Number of routers in view.
@@ -1733,13 +1733,13 @@ public:
   /// Force virtual destructor.
   virtual ~AltMaskAssignComp() {}
   /// Fill out the component from an @c Assignment.
-  virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
-                     detail::Assignment const &assign ///< Assignment data.
-  );
+  self &fill(MsgBuffer &buffer,               ///< Target storage.
+             detail::Assignment const &assign ///< Assignment data.
+             ) override;
 
   /// Validate an existing structure.
   /// @return Parse result.
-  virtual int parse(MsgBuffer &buffer);
+  int parse(MsgBuffer &buffer) override;
 
 protected:
   MaskAssignElt *m_mask_elt; ///< Address of the mask assign element.
@@ -2485,18 +2485,17 @@ public:
   ts::Errata loadServicesFromFile(const char *path ///< Path to file.
   );
 
-  /// Override.
-  int open(uint32_t addr);
+  int open(uint32_t addr) override;
 
   /// Time until next scheduled event.
   time_t waitTime() const;
 
   /// Check for configuration.
-  bool isConfigured() const;
+  bool isConfigured() const override;
 
   /// Perform all scheduled housekeeping functions.
   /// @return 0 for success, -errno on error.
-  virtual int housekeeping();
+  int housekeeping() override;
 
   /** Check cache assignment reported by a router against internal assign.
       @return @c true if they are the same, @c false otherwise.
@@ -2520,13 +2519,13 @@ protected:
                               GroupData &group        ///< Group with data for message.
   );
   /// Process HERE_I_AM message.
-  virtual ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
-                                   ts::Buffer const &data  ///< Buffer with message data.
-  );
+  ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
+                           ts::Buffer const &data  ///< Buffer with message data.
+                           ) override;
   /// Process REMOVAL_QUERY message.
-  virtual ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
-                                        ts::Buffer const &data  ///< Message data.
-  );
+  ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
+                                ts::Buffer const &data  ///< Message data.
+                                ) override;
 
   /// Map Service Group ID to Service Group Data.
   typedef std::map<uint8_t, GroupData> GroupMap;
@@ -2632,15 +2631,15 @@ public:
   typedef detail::router::RouterBag RouterBag;
 
   /// Process HERE_I_AM message.
-  virtual ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
-                                   ts::Buffer const &data  ///< Buffer with message data.
-  );
+  ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
+                           ts::Buffer const &data  ///< Buffer with message data.
+                           ) override;
   /// Perform all scheduled housekeeping functions.
-  int housekeeping();
+  int housekeeping() override;
   /// Send pending I_SEE_YOU messages.
   int xmitISeeYou();
   /// Check for configuration.
-  bool isConfigured() const;
+  bool isConfigured() const override;
 
 protected:
   /** Find or create a service group record.

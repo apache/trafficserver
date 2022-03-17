@@ -169,13 +169,13 @@ class TSStatSystem : public StatSystem
 {
 public:
   void
-  create(int handle)
+  create(int handle) override
   {
     g_stat_indices[handle] = TSStatCreate(Stats::STAT_NAMES[handle], TS_RECORDDATATYPE_INT, TS_STAT_PERSISTENT, TS_STAT_SYNC_COUNT);
   }
 
   void
-  increment(int handle, int step = 1)
+  increment(int handle, int step = 1) override
   {
     TSStatIntIncrement(g_stat_indices[handle], step);
   }
