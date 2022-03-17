@@ -507,6 +507,13 @@ PluginVC::process_write_side()
     return;
   }
 
+  // Check the state of the other side read buffer as well as ntodo
+  int64_t other_ntodo = other_side->read_state.vio.ntodo();
+  if (other_ntodo == 0) {
+    return;
+  }
+  act_on = std::min(act_on, other_ntodo);
+
   // Other side read_state is open
   //  obtain the proper mutexes on other side
   EThread *my_ethread = mutex->thread_holding;
@@ -525,7 +532,7 @@ PluginVC::process_write_side()
   // Bytes available, setting up other side read state writer
   MIOBuffer *output_buffer = other_side->read_state.vio.get_writer();
   int64_t water_mark       = output_buffer->water_mark;
-  water_mark               = std::max(water_mark, static_cast<int64_t>(core_obj->buffer_size));
+  water_mark               = std::max<int64_t>(water_mark, core_obj->buffer_size);
   int64_t buf_space        = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side from other side no buffer space", core_obj->id, PVC_TYPE);
