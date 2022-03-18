@@ -43,7 +43,7 @@ struct GetAllRecordsRequest : shared::rpc::RecordLookupRequest {
 ///
 struct ConfigReloadRequest : shared::rpc::ClientRequest {
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_config_reload";
   }
@@ -54,7 +54,7 @@ struct ConfigReloadRequest : shared::rpc::ClientRequest {
 ///
 struct ConfigShowFileRegistryRequest : shared::rpc::ClientRequest {
   std::string
-  get_method() const
+  get_method() const override
   {
     return "filemanager.get_files_registry";
   }
@@ -65,7 +65,7 @@ struct ConfigShowFileRegistryRequest : shared::rpc::ClientRequest {
 ///
 struct ClearAllMetricRequest : shared::rpc::ClientRequest {
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_clear_all_metrics_records";
   }
@@ -81,7 +81,7 @@ struct ClearMetricRequest : shared::rpc::ClientRequest {
   };
   ClearMetricRequest(Params p) { super::params = p; }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_clear_metrics_records";
   }
@@ -95,7 +95,7 @@ struct ConfigSetRecordRequest : shared::rpc::ClientRequest {
   using super = shared::rpc::ClientRequest;
   ConfigSetRecordRequest(Params d) { super::params.push_back(d); }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_config_set_records";
   }
@@ -123,7 +123,7 @@ struct HostSetStatusRequest : shared::rpc::ClientRequest {
 
   HostSetStatusRequest(Params p) { super::params = p; }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_host_set_status";
   }
@@ -143,7 +143,7 @@ struct BasicPluginMessageRequest : shared::rpc::ClientRequest {
   };
   BasicPluginMessageRequest(Params p) { super::params = p; }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_plugin_send_basic_msg";
   }
@@ -160,7 +160,7 @@ struct ServerStartDrainRequest : shared::rpc::ClientRequest {
     super::params = p;
   }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_server_start_drain";
   }
@@ -169,7 +169,7 @@ struct ServerStartDrainRequest : shared::rpc::ClientRequest {
 struct ServerStopDrainRequest : shared::rpc::ClientRequest {
   using super = ServerStopDrainRequest;
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_server_start_drain";
   }
@@ -182,7 +182,7 @@ struct SetStorageDeviceOfflineRequest : shared::rpc::ClientRequest {
   };
   SetStorageDeviceOfflineRequest(Params p) { super::params = p; }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_storage_set_device_offline";
   }
@@ -196,7 +196,7 @@ struct GetStorageDeviceStatusRequest : shared::rpc::ClientRequest {
   };
   GetStorageDeviceStatusRequest(Params p) { super::params = p; }
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_storage_get_device_status";
   }
@@ -215,7 +215,7 @@ struct DeviceStatusInfoResponse {
 struct ShowRegisterHandlersRequest : shared::rpc::ClientRequest {
   using super = shared::rpc::ClientRequest;
   std::string
-  get_method() const
+  get_method() const override
   {
     return "show_registered_handlers";
   }
