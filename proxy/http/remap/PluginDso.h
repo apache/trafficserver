@@ -87,8 +87,8 @@ public:
   virtual bool init(std::string &error)                             = 0;
   virtual void done()                                               = 0;
 
-  void acquire();
-  void release();
+  void acquire() override;
+  void release() override;
 
   void incInstanceCount();
   void decInstanceCount();
