@@ -401,11 +401,19 @@ template <> struct convert<PLNHProtocol> {
       } else if (node["scheme"].Scalar() == "https") {
         nh.scheme = PL_NH_SCHEME_HTTPS;
       } else {
-        nh.scheme = PL_NH_SCHEME_NONE;
+        throw YAML::ParserException(node["scheme"].Mark(), "no valid scheme defined, valid schemes are http or https");
       }
+    } else {
+      throw YAML::ParserException(node["scheme"].Mark(), "no scheme defined, valid schemes are http or https");
     }
     if (node["port"]) {
       nh.port = node["port"].as<int>();
+      if (nh.port <= 0 || nh.port > 65535) {
+        throw YAML::ParserException(node["port"].Mark(), "port number must be in (inclusive) range 1 - 65,536");
+      }
+    } else {
+      throw YAML::ParserException(node["port"].Mark(),
+                                  "no port is defined, a port number must be defined within (inclusive) range 1 - 65,536");
     }
     if (node["health_check_url"]) {
       nh.health_check_url = node["health_check_url"].Scalar();
