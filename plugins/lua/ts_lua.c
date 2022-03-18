@@ -72,8 +72,8 @@ static char const *const ts_lua_g_stat_strs[] = {
 typedef struct {
   ts_lua_main_ctx *main_ctx_array;
 
-  int gc_kb;   // last collected gc in kb
-  int threads; // last collected number active threads
+  TSMgmtInt gc_kb;   // last collected gc in kb
+  TSMgmtInt threads; // last collected number active threads
 
   int stat_inds[TS_LUA_IND_SIZE]; // stats indices
 
@@ -183,8 +183,8 @@ collectStats(ts_lua_plugin_stats *const plugin_stats)
       ts_lua_ctx_stats *const stats = main_ctx->stats;
 
       TSMutexLock(stats->mutexp);
-      gc_kb_total += (TSMgmtInt)stats->gc_kb;
-      threads_total += (TSMgmtInt)stats->threads;
+      gc_kb_total += stats->gc_kb;
+      threads_total += stats->threads;
       TSMutexUnlock(stats->mutexp);
     }
   }
