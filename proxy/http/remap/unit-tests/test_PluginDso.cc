@@ -69,20 +69,20 @@ public:
   }
 
   virtual void
-  indicatePreReload()
+  indicatePreReload() override
   {
   }
   virtual void
-  indicatePostReload(TSRemapReloadStatus reloadStatus)
+  indicatePostReload(TSRemapReloadStatus reloadStatus) override
   {
   }
   virtual bool
-  init(std::string &error)
+  init(std::string &error) override
   {
     return true;
   }
   virtual void
-  done()
+  done() override
   {
   }
 };
