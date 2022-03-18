@@ -1224,14 +1224,16 @@ HttpTransactCache::CalcVariability(const OverridableHttpConfigParams *http_confi
   HTTP_STATUS_PRECONDITION_FAILED is returned if one fails; otherwise,
   the response's status code is returned.
 
-  If the request is a RANGE request with If-range,
-  HTTP_STATUS_RANGE_NOT_SATISFIABLE is returned if the If-range condition
-  is not satisfied (or fails); that means the document is changed and
-  the whole document should be returned with 200 status code. Otherwise,
-  the response's status code is returned.
+  If the request is a RANGE request with If-range, the response's
+  status code is returned. This is because in the case of If-range
+  headers, it's not so useful to perform checks on it at the same time
+  as other conditional headers. Upon encountering an invalid If-range
+  header, the server must ignore the RANGE and If-range headers
+  entirely. As such, it's more appropriate to validate If-range
+  headers when processing RANGE headers. On other occasions, it's
+  easier to treat If-range requests as plain non-conditional ones.
 
-  @return status code: HTTP_STATUS_NOT_MODIFIED,
-    HTTP_STATUS_PRECONDITION_FAILED, or HTTP_STATUS_RANGE_NOT_SATISFIABLE.
+  @return status code: HTTP_STATUS_NOT_MODIFIED or HTTP_STATUS_PRECONDITION_FAILED
 
 */
 HTTPStatus
@@ -1244,7 +1246,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
   ink_assert(response->status_get() != HTTP_STATUS_RANGE_NOT_SATISFIABLE);
 
   if (!(request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_NONE_MATCH | MIME_PRESENCE_IF_UNMODIFIED_SINCE |
-                          MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_RANGE))) {
+                          MIME_PRESENCE_IF_MATCH))) {
     return response->status_get();
   }
 
@@ -1357,47 +1359,49 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
     return response_code;
   }
 
-  // Handling If-Range header:
-  // As Range && If-Range don't occur often, we want to put the
-  // If-Range code in the end
-  if (request->presence(MIME_PRESENCE_RANGE) && request->presence(MIME_PRESENCE_IF_RANGE)) {
-    int raw_len, comma_sep_list_len;
+  return response->status_get();
+}
 
-    const char *if_value = request->value_get(MIME_FIELD_IF_RANGE, MIME_LEN_IF_RANGE, &comma_sep_list_len);
+/**
+  Validates the contents of If-range headers in client requests.
 
-    // this is an ETag, similar to If-Match
-    if (!if_value || if_value[0] == '"' || (comma_sep_list_len > 1 && if_value[1] == '/')) {
-      if (!if_value) {
-        if_value           = "";
-        comma_sep_list_len = 0;
-      }
+  @return Whether the condition specified by If-range is met, if there is any.
+    If there's no If-range header, then true.
 
-      const char *raw_etags = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_len);
-
-      if (!raw_etags) {
-        raw_etags = "";
-        raw_len   = 0;
-      }
-
-      if (do_strings_match_strongly(raw_etags, raw_len, if_value, comma_sep_list_len)) {
-        return response->status_get();
-      } else {
-        return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
-      }
-    }
-    // this a Date, similar to If-Unmodified-Since but must be an exact match
-    else {
-      // lm_value is zero if Last-modified not exists
-      ink_time_t lm_value = response->get_last_modified();
-
-      // condition fails if Last-modified not exists
-      if ((request->get_if_range_date() != lm_value) || (lm_value == 0)) {
-        return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
-      } else {
-        return response->status_get();
-      }
-    }
+*/
+bool
+HttpTransactCache::validate_ifrange_header_if_any(HTTPHdr *request, HTTPHdr *response)
+{
+  if (!(request->presence(MIME_PRESENCE_RANGE) && request->presence(MIME_PRESENCE_IF_RANGE))) {
+    return true;
   }
 
-  return response->status_get();
+  int raw_len, comma_sep_list_len;
+
+  const char *if_value = request->value_get(MIME_FIELD_IF_RANGE, MIME_LEN_IF_RANGE, &comma_sep_list_len);
+
+  // this is an ETag, similar to If-Match
+  if (!if_value || if_value[0] == '"' || (comma_sep_list_len > 1 && if_value[1] == '/')) {
+    if (!if_value) {
+      if_value           = "";
+      comma_sep_list_len = 0;
+    }
+
+    const char *raw_etags = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_len);
+
+    if (!raw_etags) {
+      raw_etags = "";
+      raw_len   = 0;
+    }
+
+    return do_strings_match_strongly(raw_etags, raw_len, if_value, comma_sep_list_len);
+  }
+
+  // this a Date, similar to If-Unmodified-Since but must be an exact match
+
+  // lm_value is zero if Last-modified not exists
+  ink_time_t lm_value = response->get_last_modified();
+
+  // condition fails if Last-modified not exists
+  return (request->get_if_range_date() == lm_value) && (lm_value != 0);
 }
