@@ -52,7 +52,7 @@ sessions:
           headers:
             fields:
               - [ Host, example.com ]
-              - [ uuid, 1 ]
+              - [ uuid, 2 ]
               - [ Range, bytes=0-5 ]
         server-response:
           status: 500
@@ -74,7 +74,7 @@ sessions:
           headers:
             fields:
               - [ Host, example.com ]
-              - [ uuid, 1 ]
+              - [ uuid, 3 ]
         server-response:
           status: 500
           reason: OK
@@ -95,7 +95,7 @@ sessions:
           headers:
             fields:
               - [ Host, example.com ]
-              - [ uuid, 2 ]
+              - [ uuid, 4 ]
               - [ Range, bytes=0-10 ]
               - [ If-Modified-Since, "Wed, 16 Mar 2022 22:52:09 GMT"]
         server-response:
@@ -110,3 +110,4 @@ sessions:
           headers:
             fields:
               - [ Content-Range, { value: "bytes 0-10/100", as: equal}]
+              - [ Via, { value: "uIcSsSfUpSeN:t cCSp sS", as: contains }]
