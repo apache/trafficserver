@@ -33,7 +33,7 @@ public:
   QUICNextProtocolAccept();
   ~QUICNextProtocolAccept();
 
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
 
   // Register handler as an endpoint for the specified protocol. Neither
   // handler nor protocol are copied, so the caller must guarantee their
@@ -50,7 +50,7 @@ public:
   QUICNextProtocolAccept &operator=(const QUICNextProtocolAccept &) = delete; // disabled
 
 private:
-  int mainEvent(int event, void *netvc);
+  int mainEvent(int event, void *netvc) override;
 
   SSLNextProtocolSet protoset;
   SessionProtocolSet protoenabled;

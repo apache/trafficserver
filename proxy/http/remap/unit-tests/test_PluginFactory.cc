@@ -78,7 +78,7 @@ public:
 
 protected:
   const char *
-  getUuid()
+  getUuid() override
   {
     return _tempComponent.c_str();
   }

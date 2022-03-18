@@ -130,7 +130,7 @@ struct CacheTestSM : public RegressionSM {
 #define CACHE_SM(_t, _sm, _f)                                               \
   struct CacheTestSM__##_sm : public CacheTestSM {                          \
     void                                                                    \
-    make_request_internal() _f                                              \
+    make_request_internal() override _f                                     \
                                                                             \
       CacheTestSM__##_sm(RegressionTest *t)                                 \
       : CacheTestSM(t, #_sm)                                                \
@@ -139,7 +139,7 @@ struct CacheTestSM : public RegressionSM {
                                                                             \
     CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) {} \
     RegressionSM *                                                          \
-    clone()                                                                 \
+    clone() override                                                        \
     {                                                                       \
       return new CacheTestSM__##_sm(*this);                                 \
     }                                                                       \
