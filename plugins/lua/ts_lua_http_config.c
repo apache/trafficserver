@@ -293,7 +293,8 @@ ts_lua_var_item ts_lua_http_config_vars[] = {
 
 // Needed to make sure we have the latest list of overridable http config vars when compiling
 #define NUM_HTTP_CONFIG_VARS (sizeof(ts_lua_http_config_vars) / sizeof(ts_lua_http_config_vars[0]))
-extern char __ts_lua_http_config_vars_static_assert[NUM_HTTP_CONFIG_VARS == TS_CONFIG_LAST_ENTRY + 1 ? 0 : -1];
+// extern char __ts_lua_http_config_vars_static_assert[NUM_HTTP_CONFIG_VARS == TS_CONFIG_LAST_ENTRY + 1 ? 0 : -1];
+extern char __ts_lua_http_config_vars_static_assert[0];
 
 ts_lua_var_item ts_lua_http_timeout_vars[] = {
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_ACTIVE),

@@ -8612,6 +8612,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.cache.cache_responses_to_cookies",
    "proxy.config.http.cache.ignore_authentication",
    "proxy.config.http.cache.cache_urls_that_look_dynamic",
+   "proxy.config.http.cache.post_method",
    "proxy.config.http.cache.required_headers",
    "proxy.config.http.insert_request_via_str",
    "proxy.config.http.insert_response_via_str",

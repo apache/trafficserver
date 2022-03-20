@@ -554,6 +554,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_responses_to_cookies     = 1;
   MgmtByte cache_ignore_auth              = 0;
   MgmtByte cache_urls_that_look_dynamic   = 1;
+  MgmtByte cache_post_method              = 0;
   MgmtByte cache_required_headers         = 2;
   MgmtByte cache_range_lookup             = 1;
   MgmtByte cache_range_write              = 0;
@@ -816,8 +817,6 @@ public:
   MgmtByte use_client_source_port   = 0;
 
   MgmtByte enable_http_stats = 1; // Can be "slow"
-
-  MgmtByte cache_post_method = 0;
 
   MgmtByte push_method_enabled = 0;
 

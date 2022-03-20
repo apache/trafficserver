@@ -8758,6 +8758,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_urls_that_look_dynamic, conv);
     break;
+  case TS_CONFIG_HTTP_CACHE_POST_METHOD:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_post_method, conv);
+    break;
   case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_required_headers, conv);
     break;
