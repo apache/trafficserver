@@ -325,11 +325,10 @@ traffic_ctl host
 ----------------
 .. program:: traffic_ctl host
 
-A stat to track status is created for each host. The name is the host fqdn with a prefix of
-"proxy.process.host_status". The value of the stat is a string which is the serialized
-representation of the status. This contains the overall status and the status for each reason.  The
-stats may be viewed using the :program:`traffic_ctl metric` command or through the `stats_over_http`
-endpoint.
+A record to track status is created for each host. The name is the host fqdn.  The value of the
+record when retrieved, is a serialized string representation of the status.
+This contains the overall status and the status for each reason.  The
+records may be viewed using the :program:`traffic_ctl host status` command.
 
 .. option:: --time count
 
@@ -366,7 +365,7 @@ endpoint.
    :ref:`admin_lookup_records`
 
    Get the current status of the specified hosts with respect to their use as targets for parent
-   selection. This returns the same information as the per host stat.
+   selection. If the HOSTNAME arguments are omitted, all host records available are returned.
 
 .. option:: down HOSTNAME [HOSTNAME ...]
 

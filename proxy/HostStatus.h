@@ -33,6 +33,8 @@
 #include <ctime>
 #include <string>
 #include <sstream>
+#include "tscore/Filenames.h"
+#include "tscore/I_Layout.h"
 #include "tscore/ink_rwlock.h"
 #include "records/P_RecProcess.h"
 
@@ -87,6 +89,11 @@ struct Reason {
     // default is MANUAL
     return MANUAL;
   }
+};
+
+struct HostStatuses {
+  std::string hostname;
+  std::string status;
 };
 
 // host status POD
@@ -168,6 +175,33 @@ struct HostStatRec {
   }
 };
 
+struct HostStatusSync : public Continuation {
+  std::string hostRecordsFile;
+
+  void sync_task();
+  void
+  getHostStatusPersistentFilePath()
+  {
+    std::string rundir(RecConfigReadRuntimeDir());
+    hostRecordsFile = Layout::relative_to(rundir, ts::filename::HOST_RECORDS);
+  }
+
+public:
+  HostStatusSync()
+  {
+    getHostStatusPersistentFilePath();
+
+    SET_HANDLER(&HostStatusSync::mainEvent);
+  }
+
+  int
+  mainEvent(int event, Event *e)
+  {
+    sync_task();
+    return EVENT_DONE;
+  }
+};
+
 /**
  * Singleton placeholder for next hop status.
  */
@@ -182,11 +216,16 @@ struct HostStatus {
   }
   void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
                      const unsigned int reason);
-  HostStatRec *getHostStatus(const std::string_view name);
-  void createHostStat(const std::string_view name, const char *data = nullptr);
-  void loadHostStatusFromStats();
+  void loadFromPersistentStore();
   void loadRecord(std::string_view name, HostStatRec &h);
-  RecErrT getHostStat(std::string &stat_name, char *buf, unsigned int buf_len);
+  HostStatRec *getHostStatus(const std::string_view name);
+  void getAllHostStatuses(std::vector<HostStatuses> &hosts);
+  std::string
+  getHostStatusPersistentFilePath()
+  {
+    std::string rundir(RecConfigReadRuntimeDir());
+    return Layout::relative_to(rundir, ts::filename::HOST_RECORDS);
+  }
 
 private:
   HostStatus();

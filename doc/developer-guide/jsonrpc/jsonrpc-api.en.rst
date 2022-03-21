@@ -1106,9 +1106,9 @@ admin_host_set_status
 Description
 ~~~~~~~~~~~
 
-A stat to track status is created for each host. The name is the host fqdn with a prefix of `proxy.process.host_status`. The value of
-the stat is a string which is the serialized representation of the status. This contains the overall status and the status for each reason.
-The stats may be viewed using the `admin_lookup_records`_ rpc api or through the ``stats_over_http`` endpoint.
+A record to track status is created for each host. The name is the host fqdn.
+This record contains the overall status and the status for each reason.
+The records may be viewed using the `admin_host_get_status` rpc api.
 
 Parameters
 ~~~~~~~~~~
@@ -1204,11 +1204,8 @@ Response:
 Getting the host status
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Get the current status of the specified hosts with respect to their use as targets for parent selection. This returns the same
-information as the per host stat.
-
-Although there is no specialized API that you can call to get a status from a particular host you can work away by pulling the right records.
-For instance, the ``host1``  that we just set up can be easily fetch for a status:
+Get the current status of the specified hosts with respect to their use as targets for parent selection. This returns the serialized
+information for the host.
 
 Request:
 
@@ -1218,11 +1215,10 @@ Request:
    {
       "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
       "jsonrpc": "2.0",
-      "method": "admin_lookup_records",
-      "params": [{
-            "record_name": "proxy.process.host_status.host1"
-         }
-      ]
+      "method": "admin_host_get_status",
+      "params": [
+            "host1.mycdn.net"
+       ]
    }
 
 Response:
@@ -1234,23 +1230,11 @@ Response:
       "jsonrpc": "2.0",
       "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
       "result": {
-         "recordList": [{
-            "record": {
-               "record_name": "proxy.process.host_status.host1",
-               "record_type": "3",
-               "version": "0",
-               "raw_stat_block": "0",
-               "order": "1134",
-               "stat_meta": {
-                  "persist_type": "1"
-               },
-               "record_class": "2",
-               "overridable": "false",
-               "data_type": "STRING",
-               "current_value": "HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0",
-               "default_value": "HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0"
+         "statusList": [{
+            "hostname": "host1.mycdn.net",
+            "status": "HOST_STATUS_DOWN,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:DOWN:1646248306"
             }
-         }]
+         ]
          ,"errorList":[]
       }
    }

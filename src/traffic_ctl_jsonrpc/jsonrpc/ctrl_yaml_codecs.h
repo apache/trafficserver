@@ -157,5 +157,23 @@ template <> struct convert<ConfigSetRecordResponse> {
     return true;
   }
 };
-//------------------------------------------------------------------------------------------------------------------------------------
+
+template <> struct convert<HostStatusLookUpResponse> {
+  static bool
+  decode(Node const &node, HostStatusLookUpResponse &info)
+  {
+    YAML::Node statusList = node["statusList"];
+    YAML::Node errorList  = node["errorList"];
+    for (auto &&item : statusList) {
+      HostStatusLookUpResponse::HostStatusInfo hi;
+      hi.hostName = item["hostname"].Scalar();
+      hi.status   = item["status"].Scalar();
+      info.statusList.push_back(hi);
+    }
+    for (auto &&item : errorList) {
+      info.errorList.push_back(item.Scalar());
+    }
+    return true;
+  }
+};
 } // namespace YAML
