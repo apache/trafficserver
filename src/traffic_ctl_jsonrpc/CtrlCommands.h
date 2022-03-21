@@ -86,7 +86,7 @@ public:
   /// @brief RecordCommand constructor.
   RecordCommand(ts::Arguments args);
   /// @brief We will override this function as we want to call execute_subcommand() in the derived class.
-  void execute();
+  void execute() override;
 
 protected:
   /// @brief Handy enum to hold which kind of records we are requesting.
@@ -118,7 +118,7 @@ class ConfigCommand : public RecordCommand
 
 public:
   ConfigCommand(ts::Arguments args);
-  void execute_subcommand();
+  void execute_subcommand() override;
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class MetricCommand : public RecordCommand
@@ -131,7 +131,7 @@ class MetricCommand : public RecordCommand
 
 public:
   MetricCommand(ts::Arguments args);
-  void execute_subcommand();
+  void execute_subcommand() override;
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class HostCommand : public CtrlCommand

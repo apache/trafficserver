@@ -874,7 +874,7 @@ case $host_os_def in
       common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation -Wno-cast-function-type -Wno-stringop-overflow"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof -Wno-noexcept-type"
+      cxx_opt="-Wno-invalid-offsetof -Wno-noexcept-type -Wsuggest-override"
       # Special options for flex generated .c files
       flex_cflags="-Wno-unused-parameter"
     ])
@@ -915,7 +915,7 @@ case $host_os_def in
       common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
+      cxx_opt="-Wno-invalid-offsetof -Wsuggest-override"
     ])
 
     AS_IF([test -d /usr/local/lib], [

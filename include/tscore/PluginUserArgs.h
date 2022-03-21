@@ -86,7 +86,7 @@ template <TSUserArgType I> class PluginUserArgs : public virtual PluginUserArgsM
 {
 public:
   void *
-  get_user_arg(size_t ix) const
+  get_user_arg(size_t ix) const override
   {
     ink_release_assert(SanityCheckUserIndex(I, ix));
     ix -= get_user_arg_offset(I);
@@ -95,7 +95,7 @@ public:
   };
 
   void
-  set_user_arg(size_t ix, void *arg)
+  set_user_arg(size_t ix, void *arg) override
   {
     ink_release_assert(SanityCheckUserIndex(I, ix));
     ix -= get_user_arg_offset(I);

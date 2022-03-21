@@ -46,25 +46,25 @@ std::string_view negotiated_application_name_sv = "h3-29"sv;
 class MockQUICLDConfig : public QUICLDConfig
 {
   uint32_t
-  packet_threshold() const
+  packet_threshold() const override
   {
     return 3;
   }
 
   float
-  time_threshold() const
+  time_threshold() const override
   {
     return 1.25;
   }
 
   ink_hrtime
-  granularity() const
+  granularity() const override
   {
     return HRTIME_MSECONDS(1);
   }
 
   ink_hrtime
-  initial_rtt() const
+  initial_rtt() const override
   {
     return HRTIME_MSECONDS(100);
   }
@@ -79,25 +79,25 @@ class MockQUICCCConfig : public QUICCCConfig
   }
 
   uint32_t
-  initial_window() const
+  initial_window() const override
   {
     return 10;
   }
 
   uint32_t
-  minimum_window() const
+  minimum_window() const override
   {
     return 2;
   }
 
   float
-  loss_reduction_factor() const
+  loss_reduction_factor() const override
   {
     return 0.5;
   }
 
   uint32_t
-  persistent_congestion_threshold() const
+  persistent_congestion_threshold() const override
   {
     return 2;
   }
@@ -108,22 +108,22 @@ class MockQUICPathManager : public QUICPathManager
 public:
   virtual ~MockQUICPathManager() {}
   virtual const QUICPath &
-  get_current_path()
+  get_current_path() override
   {
     return _path;
   }
   virtual const QUICPath &
-  get_verified_path()
+  get_verified_path() override
   {
     return _path;
   }
   virtual void
-  open_new_path(const QUICPath &path, ink_hrtime timeout_in)
+  open_new_path(const QUICPath &path, ink_hrtime timeout_in) override
   {
     return;
   }
   virtual void
-  set_trusted_path(const QUICPath &path)
+  set_trusted_path(const QUICPath &path) override
   {
     return;
   }
@@ -288,58 +288,58 @@ class MockNetVConnection : public NetVConnection
 public:
   MockNetVConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : NetVConnection() { netvc_context = context; }
   VIO *
-  do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+  do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override
   {
     return nullptr;
   };
   VIO *
-  do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false)
+  do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override
   {
     return nullptr;
   };
-  void do_io_close(int lerrno = -1){};
-  void do_io_shutdown(ShutdownHowTo_t howto){};
-  void reenable(VIO *vio){};
-  void reenable_re(VIO *vio){};
-  void set_active_timeout(ink_hrtime timeout_in){};
-  void set_inactivity_timeout(ink_hrtime timeout_in){};
-  void cancel_active_timeout(){};
-  void cancel_inactivity_timeout(){};
-  void add_to_keep_alive_queue(){};
-  void remove_from_keep_alive_queue(){};
+  void do_io_close(int lerrno = -1) override{};
+  void do_io_shutdown(ShutdownHowTo_t howto) override{};
+  void reenable(VIO *vio) override{};
+  void reenable_re(VIO *vio) override{};
+  void set_active_timeout(ink_hrtime timeout_in) override{};
+  void set_inactivity_timeout(ink_hrtime timeout_in) override{};
+  void cancel_active_timeout() override{};
+  void cancel_inactivity_timeout() override{};
+  void add_to_keep_alive_queue() override{};
+  void remove_from_keep_alive_queue() override{};
   bool
-  add_to_active_queue()
+  add_to_active_queue() override
   {
     return true;
   };
   ink_hrtime
-  get_active_timeout()
+  get_active_timeout() override
   {
     return 0;
   }
   ink_hrtime
-  get_inactivity_timeout()
+  get_inactivity_timeout() override
   {
     return 0;
   }
   void
-  apply_options()
+  apply_options() override
   {
   }
   SOCKET
-  get_socket() { return 0; }
+  get_socket() override { return 0; }
   int
   set_tcp_init_cwnd(int init_cwnd)
   {
     return 0;
   }
   int
-  set_tcp_congestion_control(int side)
+  set_tcp_congestion_control(int side) override
   {
     return 0;
   }
-  void set_local_addr(){};
-  void set_remote_addr(){};
+  void set_local_addr() override{};
+  void set_remote_addr() override{};
 
   NetVConnectionContext_t
   get_context() const

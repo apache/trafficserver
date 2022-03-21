@@ -133,7 +133,7 @@ struct RecordLookupRequest : ClientRequest {
     std::vector<int> recTypes;
   };
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_lookup_records";
   }
