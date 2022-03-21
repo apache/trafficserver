@@ -1,0 +1,23 @@
+cqh: - - - pqh: - - psh: - -
+cqh: - - - pqh: - - psh: - -
+cqh: trace-id=basic;parent-id=foo;span-id=bar - - pqh: trace-id=basic;parent-id=bar;span-id=2 - psh: trace-id=basic;parent-id=foo;span-id=bar -
+cqh: - trace-id=header;parent-id=foo;span-id=bar - pqh: - trace-id=header;parent-id=bar;span-id=3 psh: - trace-id=header;parent-id=foo;span-id=bar
+cqh: - - - pqh: - - psh: - -
+cqh: trace-id=pregen;parent-id=foo;span-id=bar - trace-id=pregen;parent-id=bar;span-id=5 pqh: trace-id=pregen;parent-id=bar;span-id=5 - psh: trace-id=pregen;parent-id=foo;span-id=bar -
+cqh: - trace-id=pgh;parent-id=foo;span-id=bar trace-id=pgh;parent-id=bar;span-id=6 pqh: - trace-id=pgh;parent-id=bar;span-id=6 psh: - trace-id=pgh;parent-id=foo;span-id=bar
+cqh: - - - pqh: trace-id=``;parent-id=0;span-id=7 - psh: - -
+cqh: - - - pqh: - trace-id=``;parent-id=0;span-id=8 psh: - -
+cqh: - - trace-id=``;parent-id=0;span-id=9 pqh: trace-id=``;parent-id=0;span-id=9 - psh: - -
+cqh: trace-id=passthru;parent-id=foo;span-id=bar - - pqh: trace-id=passthru;parent-id=foo;span-id=bar - psh: trace-id=passthru;parent-id=foo;span-id=bar -
+cqh: trace-id=spaces; parent-id=foo; span-id=bar - trace-id=spaces;parent-id=bar;span-id=11 pqh: trace-id=spaces;parent-id=bar;span-id=11 - psh: trace-id=spaces; parent-id=foo; span-id=bar -
+cqh: trace-id=noparent;span-id=8215111;span-name=this is some description - trace-id=noparent;parent-id=8215111;span-id=12 pqh: trace-id=noparent;parent-id=8215111;span-id=12 - psh: trace-id=noparent;span-id=8215111;span-name=this is some description -
+cqh: trace-id=badspan;span-id= - trace-id=badspan;parent-id=0;span-id=13 pqh: trace-id=badspan;parent-id=0;span-id=13 - psh: trace-id=badspan;span-id= -
+cqh: trace-id=traceonly - trace-id=traceonly;parent-id=0;span-id=14 pqh: trace-id=traceonly;parent-id=0;span-id=14 - psh: trace-id=traceonly -
+cqh: trace-id=traceonlysemi; - trace-id=traceonlysemi;parent-id=0;span-id=15 pqh: trace-id=traceonlysemi;parent-id=0;span-id=15 - psh: trace-id=traceonlysemi; -
+cqh: not a trace header - not a trace header pqh: not a trace header - psh: not a trace header -
+cqh: trace-id=spaces; parent-id=foo; span-id=bar - trace-id=spaces;parent-id=bar;span-id=17 pqh: trace-id=spaces;parent-id=bar;span-id=17 - psh: trace-id=spaces; parent-id=foo; span-id=bar -
+cqh: trace-id=noparent;span-id=8215111;span-name=this is some description - trace-id=noparent;parent-id=8215111;span-id=18 pqh: trace-id=noparent;parent-id=8215111;span-id=18 - psh: trace-id=noparent;span-id=8215111;span-name=this is some description -
+cqh: trace-id=badspan;span-id= - trace-id=badspan;parent-id=0;span-id=19 pqh: trace-id=badspan;parent-id=0;span-id=19 - psh: trace-id=badspan;span-id= -
+cqh: trace-id=traceonly - trace-id=traceonly;parent-id=0;span-id=20 pqh: trace-id=traceonly;parent-id=0;span-id=20 - psh: trace-id=traceonly -
+cqh: trace-id=traceonlysemi; - trace-id=traceonlysemi;parent-id=0;span-id=21 pqh: trace-id=traceonlysemi;parent-id=0;span-id=21 - psh: trace-id=traceonlysemi; -
+cqh: not a trace header - trace-id=``;parent-id=0;span-id=22 pqh: trace-id=``;parent-id=0;span-id=22 - psh: not a trace header -

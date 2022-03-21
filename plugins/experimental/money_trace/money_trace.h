@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <random>
-#include <ctime>
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -35,32 +33,3 @@
   do {                                                                          \
     TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
-
-#define MIME_FIELD_MONEY_TRACE "X-MoneyTrace"
-#define MIME_LEN_MONEY_TRACE 12
-
-struct MT {
-  std::minstd_rand0 generator;
-
-  MT() { generator.seed(time(nullptr)); }
-  long
-  spanId()
-  {
-    long v = generator();
-    return (v * v);
-  }
-  const char *moneyTraceHdr(const char *mt_request_hdr);
-};
-
-struct txndata {
-  char *client_request_mt_header;
-  char *new_span_mt_header;
-};
-
-static struct txndata *allocTransactionData();
-static void freeTransactionData(struct txndata *txn_data);
-static void mt_cache_lookup_check(TSCont contp, TSHttpTxn txnp, struct txndata *txn_data);
-static void mt_check_request_header(TSHttpTxn txnp);
-static void mt_send_client_response(TSHttpTxn txnp, struct txndata *txn_data);
-static void mt_send_server_request(TSHttpTxn txnp, struct txndata *txn_data);
-static int transaction_handler(TSCont contp, TSEvent event, void *edata);
