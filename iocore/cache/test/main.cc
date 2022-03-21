@@ -23,9 +23,33 @@
 
 #define CATCH_CONFIG_MAIN
 #include "main.h"
+#include "tscore/ts_file.h"
+
+#include <unistd.h>
 
 #define THREADS 1
 #define DIAGS_LOG_FILE "diags.log"
+
+// Create a new temp directory and return it
+std::string
+temp_prefix()
+{
+  char buffer[PATH_MAX];
+  std::error_code err;
+  const char *tmpdir = getenv("TMPDIR");
+  if (tmpdir == nullptr) {
+    tmpdir = "/tmp";
+  }
+  snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", tmpdir);
+  auto prefix = ts::file::path(mkdtemp(buffer));
+  bool result = ts::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
+  if (!result) {
+    Debug("cache test", "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+  }
+  ink_assert(result);
+
+  return prefix.string();
+}
 
 void
 test_done()
@@ -48,7 +72,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags->show_location                      = SHOW_LOCATION_DEBUG;
 
     mime_init();
-    Layout::create();
+    Layout::create(temp_prefix());
     RecProcessInit(RECM_STAND_ALONE);
     LibRecordsConfigInit();
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
@@ -66,8 +90,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/iocore/cache/test";
     Layout::get()->sysconfdir = src_dir;
-    Layout::get()->prefix     = src_dir;
-    ::remove("./test/var/trafficserver/cache.db");
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
