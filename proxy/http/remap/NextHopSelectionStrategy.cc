@@ -393,13 +393,19 @@ template <> struct convert<NHProtocol> {
       } else if (map["scheme"].Scalar() == "https") {
         nh.scheme = NH_SCHEME_HTTPS;
       } else {
-        nh.scheme = NH_SCHEME_NONE;
+        throw YAML::ParserException(map["scheme"].Mark(), "no valid scheme defined, valid schemes are http or https");
       }
+    } else {
+      throw YAML::ParserException(map["scheme"].Mark(), "no scheme defined, valid schemes are http or https");
     }
     if (map["port"]) {
       nh.port = map["port"].as<int>();
-      if ((nh.port <= 0) || (nh.port > 65535)) {
-        throw YAML::ParserException(map["port"].Mark(), "port number must be in (inclusive) range 0 - 65,536");
+      if (nh.port <= 0 || nh.port > 65535) {
+        throw YAML::ParserException(map["port"].Mark(), "port number must be in (inclusive) range 1 - 65,536");
+      }
+    } else {
+      if (nh.port == 0) {
+        throw YAML::ParserException(map["port"].Mark(), "no port defined must be in (inclusive) range 1 - 65,536");
       }
     }
     if (map["health_check_url"]) {
