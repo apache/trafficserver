@@ -1,0 +1,113 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+---
+meta:
+  version: "1.0"
+
+sessions:
+  - transactions:
+      # Populate the cache with a response to a GET request.
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /some/path
+          headers:
+            fields:
+              - [ Host, example.com ]
+              - [ uuid, 1 ]
+              - [ Range, bytes=0-10 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [ Content-Length, 16 ]
+              - [ Cache-Control, max-age=300 ]
+              - [ X-Response, first_get_response ]
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [ X-Response, { value: first_get_response, as: equal} ]
+              - [ Content-Range, { value: "bytes 0-10/16", as: equal}]
+      # Subsequent range request served from cache
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /some/path
+          headers:
+            fields:
+              - [ Host, example.com ]
+              - [ uuid, 2 ]
+              - [ Range, bytes=0-5 ]
+        server-response:
+          status: 500
+          reason: OK
+          headers:
+            fields:
+              - [ X-Response, internal_server_error ]
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [ X-Response, { value: first_get_response, as: equal} ]
+              - [ Content-Range, { value: "bytes 0-5/16", as: equal}]
+      # Should get full response from cache without a range header
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /some/path
+          headers:
+            fields:
+              - [ Host, example.com ]
+              - [ uuid, 3 ]
+        server-response:
+          status: 500
+          reason: OK
+          headers:
+            fields:
+              - [ X-Response, internal_server_error ]
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [ X-Response, { value: first_get_response, as: equal} ]
+              - [ Content-Length, { value: "16", as: equal}]
+      # Revalidate and replace cache still returns 206
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /some/path
+          headers:
+            fields:
+              - [ Host, example.com ]
+              - [ uuid, 4 ]
+              - [ Range, bytes=0-10 ]
+              - [ If-Modified-Since, "Wed, 16 Mar 2022 22:52:09 GMT"]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [ Content-Length, 100 ]
+              - [ Cache-Control, max-age=300 ]
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [ Content-Range, { value: "bytes 0-10/100", as: equal}]
+              - [ Via, { value: "uIcSsSfUpSeN:t cCSp sS", as: contains }]

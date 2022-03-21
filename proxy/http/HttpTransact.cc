@@ -4570,6 +4570,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       } else {
         ink_assert(s->cache_info.object_read != nullptr);
         s->cache_info.action = CACHE_DO_REPLACE;
+
+        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+          s->state_machine->do_range_setup_if_necessary();
+        }
       }
 
     } else if (s->cache_info.action == CACHE_DO_WRITE) {
@@ -4579,6 +4583,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else {
         s->cache_info.action = CACHE_DO_WRITE;
+        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+          s->state_machine->do_range_setup_if_necessary();
+        }
       }
 
     } else if (s->cache_info.action == CACHE_DO_DELETE) {
