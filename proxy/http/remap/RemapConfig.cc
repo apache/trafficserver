@@ -899,11 +899,10 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   return true;
 
 lFail:
-  if (reg_map->to_url_host_template) {
-    ats_free(reg_map->to_url_host_template);
-    reg_map->to_url_host_template     = nullptr;
-    reg_map->to_url_host_template_len = 0;
-  }
+  ats_free(reg_map->to_url_host_template);
+  reg_map->to_url_host_template     = nullptr;
+  reg_map->to_url_host_template_len = 0;
+
   return false;
 }
 

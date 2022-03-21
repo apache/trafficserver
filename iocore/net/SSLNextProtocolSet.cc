@@ -49,10 +49,8 @@ SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, 
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
   unsigned char *advertised;
 
-  if (*npn) {
-    ats_free(*npn);
-    *npn = nullptr;
-  }
+  ats_free(*npn);
+  *npn = nullptr;
   *len = 0;
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
