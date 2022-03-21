@@ -57,11 +57,10 @@ ALPNSupport::unbind(SSL *ssl)
 void
 ALPNSupport::clear()
 {
-  if (npn) {
-    ats_free(npn);
-    npn   = nullptr;
-    npnsz = 0;
-  }
+  ats_free(npn);
+  npn   = nullptr;
+  npnsz = 0;
+
   npnSet      = nullptr;
   npnEndpoint = nullptr;
 }

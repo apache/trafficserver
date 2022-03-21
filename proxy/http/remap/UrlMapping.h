@@ -64,10 +64,8 @@ public:
   ~redirect_tag_str()
   {
     type = 0;
-    if (chunk_str) {
-      ats_free(chunk_str);
-      chunk_str = nullptr;
-    }
+    ats_free(chunk_str);
+    chunk_str = nullptr;
   }
 
   redirect_tag_str *next = nullptr;

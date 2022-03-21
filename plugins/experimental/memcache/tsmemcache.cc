@@ -179,9 +179,9 @@ MC::die()
   if (cbuf) {
     free_MIOBuffer(cbuf);
   }
-  if (tbuf) {
-    ats_free(tbuf);
-  }
+
+  ats_free(tbuf);
+
   mutex = NULL;
   theMCAllocator.free(this);
   return EVENT_DONE;
@@ -351,9 +351,9 @@ MC::read_from_client()
     cbuf->clear();
   }
   ink_assert(!crvc && !cwvc);
-  if (tbuf) {
-    ats_free(tbuf);
-  }
+
+  ats_free(tbuf);
+
   return TS_SET_CALL(&MC::read_from_client_event, VC_EVENT_READ_READY, rvio);
 }
 
