@@ -42,7 +42,7 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
   char *obuf                   = outBuffer;
   char in_tail[4];
 
-  if (outBufSize < ATS_BASE64_ENCODE_DSTLEN(inBufferSize)) {
+  if (outBufSize < ats_base64_encode_dstlen(inBufferSize)) {
     return false;
   }
 
@@ -128,7 +128,7 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
   int inputBytesDecoded = 0;
 
   // Make sure there is sufficient space in the output buffer
-  if (outBufSize < ATS_BASE64_DECODE_DSTLEN(inBufferSize)) {
+  if (outBufSize < ats_base64_decode_dstlen(inBufferSize)) {
     return false;
   }
 
