@@ -2278,10 +2278,11 @@ Cache Control
    :overridable:
 
    When enabled (``1``), |TS| will attempt to write (lock) the URL
-   to cache. This is rarely useful (at the moment), since it'll only be able
-   to write to cache if the origin has ignored the ``Range:`` header. For a use
-   case where you know the origin will respond with a full (``200``) response,
-   you can turn this on to allow it to be cached.
+   to cache for a request specifying a range. This is useful when the origin server
+   might ignore a range request and respond with a full (``200``) response.
+   Additionally, this setting will attempt to transform a 200 response from the origin
+   server to a partial (``206``) response, honoring the requested range, while
+   caching the full response.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
