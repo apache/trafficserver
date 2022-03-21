@@ -48,6 +48,7 @@ public:
                            int enc);
 #endif
   bool getSSLSessionCacheHit() const;
+  bool getSSLOriginSessionCacheHit() const;
   ssl_curve_id getSSLCurveNID() const;
 
   SSL_SESSION *getSession(SSL *ssl, const unsigned char *id, int len, int *copy);
@@ -60,8 +61,9 @@ protected:
 private:
   static int _ex_data_index;
 
-  bool _sslSessionCacheHit = false;
-  int _sslCurveNID         = NID_undef;
+  bool _sslSessionCacheHit       = false;
+  bool _sslOriginSessionCacheHit = false;
+  int _sslCurveNID               = NID_undef;
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
@@ -76,5 +78,6 @@ private:
 #endif
 
   void _setSSLSessionCacheHit(bool state);
+  void _setSSLOriginSessionCacheHit(bool state);
   void _setSSLCurveNID(ssl_curve_id curve_nid);
 };

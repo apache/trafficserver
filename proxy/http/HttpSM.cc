@@ -6308,6 +6308,10 @@ HttpSM::attach_server_session()
     server_connection_is_ssl = true;
   }
 
+  if (auto tsrs = dynamic_cast<TLSSessionResumptionSupport *>(server_vc)) {
+    server_ssl_reused = tsrs->getSSLOriginSessionCacheHit();
+  }
+
   server_protocol = server_txn->get_protocol_string();
 
   // Initiate a read on the session so that the SM and not

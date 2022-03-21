@@ -122,6 +122,12 @@ TLSSessionResumptionSupport::getSSLSessionCacheHit() const
   return this->_sslSessionCacheHit;
 }
 
+bool
+TLSSessionResumptionSupport::getSSLOriginSessionCacheHit() const
+{
+  return this->_sslOriginSessionCacheHit;
+}
+
 ssl_curve_id
 TLSSessionResumptionSupport::getSSLCurveNID() const
 {
@@ -187,7 +193,7 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
       shared_sess.reset();
     } else {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_hit);
-      this->_setSSLSessionCacheHit(true);
+      this->_setSSLOriginSessionCacheHit(true);
       this->_setSSLCurveNID(curve);
     }
   } else {
@@ -302,6 +308,12 @@ void
 TLSSessionResumptionSupport::_setSSLSessionCacheHit(bool state)
 {
   this->_sslSessionCacheHit = state;
+}
+
+void
+TLSSessionResumptionSupport::_setSSLOriginSessionCacheHit(bool state)
+{
+  this->_sslOriginSessionCacheHit = state;
 }
 
 void

@@ -2475,6 +2475,15 @@ LogAccess::marshal_proxy_req_is_ssl(char *buf)
   return INK_MIN_ALIGN;
 }
 
+int
+LogAccess::marshal_proxy_req_ssl_reused(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->server_ssl_reused ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

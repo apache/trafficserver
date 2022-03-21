@@ -747,6 +747,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqssl", field);
 
+  field = new LogField("proxy_req_ssl_reused", "pqssr", LogField::dINT, &LogAccess::marshal_proxy_req_ssl_reused,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pqssr", field);
+
   field = new LogField("proxy_request_all_header_fields", "pqah", LogField::STRING, &LogAccess::marshal_proxy_req_all_header_fields,
                        &LogUtils::unmarshalMimeHdr);
   global_field_list.add(field, false);

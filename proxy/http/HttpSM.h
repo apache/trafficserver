@@ -542,6 +542,7 @@ public:
   bool client_ssl_reused              = false;
   bool client_connection_is_ssl       = false;
   bool is_internal                    = false;
+  bool server_ssl_reused              = false;
   bool server_connection_is_ssl       = false;
   bool is_waiting_for_full_body       = false;
   bool is_using_post_buffer           = false;

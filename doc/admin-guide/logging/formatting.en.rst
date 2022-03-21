@@ -637,6 +637,9 @@ cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
+pqssr  Proxy Request  SSL session ticket reused status from |TS| to the origin;
+                      indicates if the current request hit the SSL session ticket
+                      and avoided a full SSL handshake.
 pscert Proxy Request  1 if origin requested certificate from |TS| during TLS
                       handshake but no client certificate was defined. 2 if origin
                       requested certificate from |TS| during TLS handshake and a
