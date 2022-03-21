@@ -83,10 +83,11 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #endif
 
-#define THREAD_FREE(_p, _a, _t)                                                                    \
+#define THREAD_FREE(_p, _a, _tin)                                                                  \
   do {                                                                                             \
     ::_a.destroy_if_enabled(_p);                                                                   \
     if (!cmd_disable_pfreelist) {                                                                  \
+      Thread *_t      = (_tin);                                                                    \
       *(char **)_p    = (char *)_t->_a.freelist;                                                   \
       _t->_a.freelist = _p;                                                                        \
       _t->_a.allocated++;                                                                          \
