@@ -189,6 +189,7 @@ public:
   int marshal_proxy_host_name(char *);             // STR
   int marshal_proxy_host_ip(char *);               // STR
   int marshal_proxy_req_is_ssl(char *);            // INT
+  int marshal_proxy_req_ssl_reused(char *);        // INT
   int marshal_proxy_req_all_header_fields(char *); // STR
 
   //
