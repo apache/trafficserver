@@ -898,9 +898,9 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
     // Note: do not modify 'record->config_meta.update_required'
     r->config_meta.update_type = update_type;
     r->config_meta.check_type  = check_type;
-    if (r->config_meta.check_expr) {
-      ats_free(r->config_meta.check_expr);
-    }
+
+    ats_free(r->config_meta.check_expr);
+
     r->config_meta.check_expr     = ats_strdup(check_expr);
     r->config_meta.update_cb_list = nullptr;
     r->config_meta.access_type    = access_type;

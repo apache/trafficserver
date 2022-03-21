@@ -7281,11 +7281,9 @@ HttpSM::kill_this()
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
 
-    if (redirect_url != nullptr) {
-      ats_free((void *)redirect_url);
-      redirect_url     = nullptr;
-      redirect_url_len = 0;
-    }
+    ats_free(redirect_url);
+    redirect_url     = nullptr;
+    redirect_url_len = 0;
 
 #ifdef USE_HTTP_DEBUG_LISTS
     ink_mutex_acquire(&debug_sm_list_mutex);

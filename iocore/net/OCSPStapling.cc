@@ -75,9 +75,8 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     if (iter->second->uri) {
       OPENSSL_free(iter->second->uri);
     }
-    if (iter->second->certname) {
-      ats_free(iter->second->certname);
-    }
+    ats_free(cinf->certname);
+
     ink_mutex_destroy(&iter->second->stapling_mutex);
     OPENSSL_free(iter->second);
   }
@@ -287,9 +286,7 @@ err:
     OCSP_CERTID_free(cinf->cid);
   }
 
-  if (cinf->certname) {
-    ats_free(cinf->certname);
-  }
+  ats_free(cinf->certname);
 
   if (cinf) {
     OPENSSL_free(cinf);
