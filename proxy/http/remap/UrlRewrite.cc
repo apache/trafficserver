@@ -957,9 +957,7 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
   RegexMapping *list_iter;
   while ((list_iter = mappings.pop()) != nullptr) {
     delete list_iter->url_map;
-    if (list_iter->to_url_host_template) {
-      ats_free(list_iter->to_url_host_template);
-    }
+    ats_free(list_iter->to_url_host_template);
     delete list_iter;
   }
   mappings.clear();

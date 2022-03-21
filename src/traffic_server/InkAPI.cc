@@ -850,12 +850,10 @@ FileImpl::fclose()
     m_mode = CLOSED;
   }
 
-  if (m_buf) {
-    ats_free(m_buf);
-    m_buf     = nullptr;
-    m_bufsize = 0;
-    m_bufpos  = 0;
-  }
+  ats_free(m_buf);
+  m_buf     = nullptr;
+  m_bufsize = 0;
+  m_bufpos  = 0;
 }
 
 ssize_t
@@ -8190,11 +8188,9 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
 
   HttpSM *sm = (HttpSM *)txnp;
 
-  if (sm->redirect_url != nullptr) {
-    ats_free(sm->redirect_url);
-    sm->redirect_url     = nullptr;
-    sm->redirect_url_len = 0;
-  }
+  ats_free(sm->redirect_url);
+  sm->redirect_url     = nullptr;
+  sm->redirect_url_len = 0;
 
   sm->redirect_url       = (char *)url;
   sm->redirect_url_len   = url_len;

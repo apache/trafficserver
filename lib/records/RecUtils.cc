@@ -129,9 +129,7 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
                ((data_dst->rec_string == nullptr) && (data_src->rec_string != nullptr))) {
-      if (data_dst->rec_string) {
-        ats_free(data_dst->rec_string);
-      }
+      ats_free(data_dst->rec_string);
 
       data_dst->rec_string = ats_strdup(data_src->rec_string);
       rec_set              = true;

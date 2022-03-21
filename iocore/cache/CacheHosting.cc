@@ -490,18 +490,14 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             const char *errptr = "A volume number expected";
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file,
                              line_info->line_num, errptr);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
         }
         if ((*s < '0') || (*s > '9')) {
           RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]",
                            config_file, line_info->line_num, *s);
-          if (val != nullptr) {
-            ats_free(val);
-          }
+          ats_free(val);
           return -1;
         }
         s++;
@@ -537,9 +533,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           if (!is_vol_present) {
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad volume number [%d]",
                              "[CacheHosting]", config_file, line_info->line_num, volume_number);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
           if (c == '\0') {

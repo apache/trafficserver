@@ -67,10 +67,9 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   _tunnel_type    = type;
   _tunnel_prewarm = prewarm;
 
+  ats_free(_tunnel_host);
+
   auto pos = destination.find(":");
-  if (nullptr != _tunnel_host) {
-    ats_free(_tunnel_host);
-  }
   if (pos != std::string::npos) {
     _tunnel_port = std::stoi(destination.substr(pos + 1).data());
     _tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
