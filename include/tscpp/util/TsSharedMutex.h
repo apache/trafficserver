@@ -25,7 +25,7 @@
 #pragma once
 
 #include <pthread.h>
-#include <string.h>
+#include <tscpp/util/Strerror.h>
 
 #if __has_include(<ts/ts.h>)
 #include <ts/ts.h>
@@ -54,49 +54,6 @@
 
 namespace ts
 {
-class Strerror
-{
-public:
-  Strerror(int err_num)
-  {
-    // Handle either GNU or XSI version of strerror_r().
-    //
-    if (!_success(strerror_r(err_num, _buf, 256))) {
-      _c_str = "strerror_r() call failed";
-    } else {
-      _buf[255] = '\0';
-      _c_str    = _buf;
-    }
-
-    // Make sure there are no unused function warnings.
-    //
-    static_cast<void>(_success(0));
-    static_cast<void>(_success(nullptr));
-  }
-
-  char const *
-  c_str() const
-  {
-    return (_c_str);
-  }
-
-private:
-  char _buf[256];
-  char const *_c_str;
-
-  bool
-  _success(int retval)
-  {
-    return retval == 0;
-  }
-
-  bool
-  _success(char *retval)
-  {
-    return retval != nullptr;
-  }
-};
-
 // A class with the same interface as std::shared_mutex, but which is not prone to writer starvation.
 //
 class shared_mutex
