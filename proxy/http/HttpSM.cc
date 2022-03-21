@@ -5748,8 +5748,8 @@ HttpSM::handle_http_server_open()
         vc->apply_options();
       }
     }
+    server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
   }
-  server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
 
   int method = t_state.hdr_info.server_request.method_get_wksidx();
   if (method != HTTP_WKSIDX_TRACE &&
