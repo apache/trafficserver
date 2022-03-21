@@ -570,7 +570,9 @@ PluginVC::process_write_side()
   update_inactive_time();
   other_side->update_inactive_time();
 
-  write_state.vio.reenable();
+  if (!closed) {
+    write_state.vio.reenable();
+  }
 }
 
 // void PluginVC::process_read_side()
