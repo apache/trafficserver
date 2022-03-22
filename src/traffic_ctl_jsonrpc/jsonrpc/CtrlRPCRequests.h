@@ -145,7 +145,7 @@ struct HostGetStatusRequest : shared::rpc::ClientRequest {
   HostGetStatusRequest(Params p) { super::params = std::move(p); }
 
   std::string
-  get_method() const
+  get_method() const override
   {
     return "admin_host_get_status";
   }
