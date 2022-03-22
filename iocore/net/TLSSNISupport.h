@@ -23,6 +23,7 @@
  */
 #pragma once
 
+#include <optional>
 #include <string_view>
 #include <memory>
 #include <openssl/ssl.h>
@@ -48,6 +49,10 @@ public:
 #endif
 #endif
   void on_servername(SSL *ssl, int *al, void *arg);
+
+  struct HintsFromSNI {
+    std::optional<uint32_t> http2_buffer_water_mark;
+  } hints_from_sni;
 
 protected:
   virtual void _fire_ssl_servername_event() = 0;
