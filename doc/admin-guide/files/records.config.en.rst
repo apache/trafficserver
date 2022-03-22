@@ -4065,15 +4065,13 @@ OCSP Stapling Configuration
 
    Number of seconds before an OCSP response expires in the stapling cache.
 
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
+   :units: seconds
 
    Timeout (in seconds) for queries to OCSP responders.
 
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.update_period INT 60
+   :units: seconds
 
    Update period (in seconds) for stapling caches.
 
@@ -4117,11 +4115,13 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
+   :units: bytes
 
    The initial window size for inbound connections.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:
+   :units: bytes
 
    Indicates the size of the largest frame payload that the sender is willing
    to receive.
@@ -4154,6 +4154,7 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.active_timeout_in INT 0
    :reloadable:
+   :units: seconds
 
    This is the active timeout of the http2 connection. It is set when the connection is opened
    and keeps ticking regardless of activity level.
@@ -4162,6 +4163,7 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
    :reloadable:
+   :units: seconds
 
    Specifies how long |TS| keeps connections to clients open if no
    activity is received on the connection. Lowering this timeout can ease
@@ -4170,6 +4172,7 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
    :reloadable:
+   :units: seconds
 
    Specifies how long |TS| keeps connections to clients open if a
    transaction stalls. Lowering this timeout can ease pressure on the proxy if
@@ -4250,6 +4253,7 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.write_buffer_block_size INT 262144
    :reloadable:
+   :units: bytes
 
    Specifies the size of a buffer block that is used for buffering outgoing
    HTTP/2 frames. The size will be rounded up based on power of 2.
