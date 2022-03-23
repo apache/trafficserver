@@ -28,8 +28,6 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:macro:: TS_SSL_MAX_SSL_SESSION_ID_LENGTH
-
 .. type:: TSSslSessionID
 
    .. member:: size_t len
