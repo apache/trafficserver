@@ -1793,6 +1793,11 @@ TS_CHECK_JEMALLOC
 TS_CHECK_MIMALLOC
 
 #
+# Check xxxHash
+TS_CHECK_XXHASH
+AM_CONDITIONAL([HAS_XXHASH], [ test "x${has_xxhash}" = "x1" ])
+
+#
 # Check for libreadline/libedit
 AX_LIB_READLINE
 

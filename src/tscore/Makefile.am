@@ -52,6 +52,12 @@ libtscore_la_LIBADD = \
 	@YAMLCPP_LIBS@ \
 	-lc
 
+if HAS_XXHASH
+AM_CPPFLAGS += @XXHASH_INCLUDES@
+libtscore_la_LDFLAGS += @XXHASH_LDFLAGS@
+libtscore_la_LIBADD += @XXHASH_LIBS@
+endif
+
 libtscore_la_SOURCES = \
 	AcidPtr.cc \
 	Arena.cc \

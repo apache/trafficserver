@@ -118,7 +118,13 @@ public:
 private:
 };
 
+#if TS_HAS_XXHASH
+#include "tscore/xxHash.h"
+
+using URLHashContext = xxHashContext;
+#else
 using URLHashContext = CryptoContext;
+#endif
 
 extern const char *URL_SCHEME_FILE;
 extern const char *URL_SCHEME_FTP;

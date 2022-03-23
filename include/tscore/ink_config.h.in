@@ -54,6 +54,8 @@
 #define TS_HAS_TCMALLOC @has_tcmalloc@
 #define TS_HAS_MIMALLOC @mimalloch@
 
+#define TS_HAS_XXHASH @has_xxhash@
+
 /* Features */
 #define TS_HAS_IN6_IS_ADDR_UNSPECIFIED @has_in6_is_addr_unspecified@
 #define TS_HAS_BACKTRACE @has_backtrace@

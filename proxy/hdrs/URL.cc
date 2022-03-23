@@ -1727,8 +1727,9 @@ memcpy_tolower(char *d, const char *s, int n)
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
-static inline void
-url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache_generation_t generation)
+template <class T>
+void
+url_CryptoHash_get_fast(const URLImpl *url, T &ctx, CryptoHash *hash, cache_generation_t generation)
 {
   char buffer[BUFSIZE];
   char *p;
@@ -1766,8 +1767,9 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   ctx.finalize(*hash);
 }
 
-static inline void
-url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, cache_generation_t generation)
+template <class T>
+void
+url_CryptoHash_get_general(const URLImpl *url, T &ctx, CryptoHash &hash, cache_generation_t generation)
 {
   char buffer[BUFSIZE];
   char *p, *e;
