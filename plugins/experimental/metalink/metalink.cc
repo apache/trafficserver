@@ -693,7 +693,7 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   const char *value;
   int length;
 
-  char digest[33]; /* ATS_BASE64_DECODE_DSTLEN() */
+  char digest[33]; /* ats_base64_decode_dstlen() */
 
   SendData *data = static_cast<SendData *>(TSContDataGet(contp));
   TSContDestroy(contp);
