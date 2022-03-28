@@ -38,7 +38,7 @@ struct CacheHostRecord {
   int Init(CacheType typ);
   int Init(matcher_line *line_info, CacheType typ);
 
-  void UpdateMatch(CacheHostResult *r, char *rd);
+  void UpdateMatch(CacheHostResult *r);
   void Print() const;
 
   ~CacheHostRecord()
