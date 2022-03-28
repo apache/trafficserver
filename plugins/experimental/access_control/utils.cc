@@ -296,7 +296,7 @@ cryptoMessageDigestEqual(const char *md1, size_t md1Len, const char *md2, size_t
 size_t
 cryptoBase64EncodedSize(size_t decodedSize)
 {
-  return ATS_BASE64_ENCODE_DSTLEN(decodedSize);
+  return ats_base64_encode_dstlen(decodedSize);
 }
 
 /**
@@ -308,7 +308,7 @@ cryptoBase64EncodedSize(size_t decodedSize)
 size_t
 cryptoBase64DecodeSize(const char *encoded, size_t encodedLen)
 {
-  return ATS_BASE64_DECODE_DSTLEN(encodedLen);
+  return ats_base64_decode_dstlen(encodedLen);
 }
 
 /**
