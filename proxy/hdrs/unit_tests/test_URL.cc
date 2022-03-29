@@ -53,6 +53,27 @@ TEST_CASE("ValidateURL", "[proxy][validurl]")
   }
 }
 
+TEST_CASE("Validate Scheme", "[proxy][validscheme]")
+{
+  static const struct {
+    std::string_view text;
+    bool valid;
+  } scheme_test_cases[] = {{"http", true},      {"https", true},      {"example", true},    {"example.", true},
+                           {"example++", true}, {"example--.", true}, {"++example", false}, {"--example", false},
+                           {".example", false}, {"example://", false}};
+
+  for (auto i : scheme_test_cases) {
+    // it's pretty hard to debug with
+    //     CHECK(validate_scheme(i.text) == i.valid);
+
+    std::string_view text = i.text;
+    if (validate_scheme(text) != i.valid) {
+      std::printf("Validation of scheme: \"%s\", expected %s, but not\n", text.data(), (i.valid ? "true" : "false"));
+      CHECK(false);
+    }
+  }
+}
+
 namespace UrlImpl
 {
 bool url_is_strictly_compliant(const char *start, const char *end);

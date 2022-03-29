@@ -430,8 +430,17 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       int scheme_len;
       const char *scheme = field->value_get(&scheme_len);
+      const char *scheme_wks;
 
-      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len);
+      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
+
+      if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+        // unkown scheme, validate the scheme
+        if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
+          return PARSE_RESULT_ERROR;
+        }
+      }
+
       url_scheme_set(headers->m_heap, headers->m_http->u.req.m_url_impl, scheme, scheme_wks_idx, scheme_len, true);
 
       headers->field_delete(field);
