@@ -394,6 +394,7 @@ Changes with Apache Traffic Server 9.2.0
   #8650 - Fix strategies to initialize scheme
   #8651 - Add parent_select plugin strategy caching
   #8656 - Cleanup strategy debug logs
+  #8657 - Support transforming range requests when origin returns full resource.
   #8661 - Making 9.2.x backwards compatible with 9.1.x
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
   #8667 - TLS Session Resumption: fix timed out session
@@ -404,8 +405,20 @@ Changes with Apache Traffic Server 9.2.0
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
   #8692 - Add docs for parent.config defaults
+  #8700 - Change api TSSslTicketKeyUpdate to return TSReturnCode
   #8705 - Add back "DNS: Fix lack of nameserver failover in low use circumstances."
   #8706 - Provide libquic.a definition to VIO::VIO()
   #8707 - cache-request-method autest: Extending IO delay
   #8711 - Move hwloc-based functions into it's own header/compilation unit
   #8715 - Fixes build when hwloc is not installed
+  #8718 - Enable all iocore/cache tests
+  #8722 - Adds user-agent to OCSP requests
+  #8725 - Update THREAD_FREE macro to only evaluate the _t parameter once.
+  #8729 - Address issues with python 3.10
+  #8736 - [ink_base64] Fix buffer size computation
+  #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
+  #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
+  #8752 - docs: add some obvious units to some http2 overridables
+  #8753 - Update to proxy-verifier-v2.3.1
+  #8763 - Fix error handling in SSL cert/key load failures
+  #8765 - Fixing the httpbin AuTests by pinning Werkzeug
