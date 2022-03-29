@@ -422,3 +422,4 @@ Changes with Apache Traffic Server 9.2.0
   #8753 - Update to proxy-verifier-v2.3.1
   #8763 - Fix error handling in SSL cert/key load failures
   #8765 - Fixing the httpbin AuTests by pinning Werkzeug
+  #8770 - Remove null check before ats_free calls (#8744)
