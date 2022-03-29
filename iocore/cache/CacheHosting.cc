@@ -112,9 +112,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
     return;
   }
 
-  char *data = static_cast<char *>(ats_malloc(rlen + 1));
-  memcpy(data, rdata, rlen);
-  *(data + rlen) = '\0';
+  std::string_view data{rdata, static_cast<size_t>(rlen)};
   HostLookupState s;
 
   r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
@@ -122,11 +120,10 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
   while (r == true) {
     ink_assert(opaque_ptr != nullptr);
     data_ptr = static_cast<CacheHostRecord *>(opaque_ptr);
-    data_ptr->UpdateMatch(result, data);
+    data_ptr->UpdateMatch(result);
 
     r = host_lookup->MatchNext(&s, &opaque_ptr);
   }
-  ats_free(data);
 }
 
 //
@@ -577,7 +574,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 }
 
 void
-CacheHostRecord::UpdateMatch(CacheHostResult *r, char * /* rd ATS_UNUSED */)
+CacheHostRecord::UpdateMatch(CacheHostResult *r)
 {
   r->record = this;
 }
