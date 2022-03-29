@@ -1714,6 +1714,19 @@ AS_IF([test "x$enable_linux_io_uring" = "xyes"], [
 AC_MSG_RESULT([$enable_linux_io_uring])
 TS_ARG_ENABLE_VAR([use], [linux_io_uring])
 
+AC_MSG_CHECKING([enable Intel Persistent Memory])
+AC_ARG_ENABLE([ipm],
+  [AS_HELP_STRING([--enable-ipm=${USER}], [WARNING this is experimental Intel Persitent Memory @<:@default=no@:>@])],
+  AS_IF( test ${enable_ipm} != "no" , [
+    test ${enable_ipm} == "yes" && enable_ipm=ats #username
+    AC_SUBST(user_ipm, $enable_ipm)
+    AC_CONFIG_FILES( [rc/trafficserver.rules] , [ln -sf $PWD/rc/trafficserver.rules /usr/lib/udev/rules.d/ ] ) ]
+    enable_mmap=yes
+  )
+)
+AC_MSG_RESULT([$enable_ipm])
+TS_ARG_ENABLE_VAR([use], [ipm])
+
 AC_MSG_CHECKING([enable mmap instead read/write])
 AC_ARG_ENABLE([mmap],
   [AS_HELP_STRING([--enable-mmap], [WARNING this is experimental mmap instead read and write support @<:@default=no@:>@])],

@@ -642,7 +642,9 @@ CacheProcessor::start_internal(int flags)
     if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
       fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
     }
-
+    if (-1 == fd) {
+      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS);
+    }
     if (fd >= 0) {
       bool diskok = true;
       if (!sd->file_pathname) {

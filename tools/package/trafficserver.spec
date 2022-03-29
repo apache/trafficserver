@@ -104,6 +104,8 @@ cp rc/trafficserver.service %{buildroot}/lib/systemd/system
 mkdir -p %{buildroot}/etc/init.d
 mv %{buildroot}%{_bindir}/trafficserver %{buildroot}/etc/init.d
 %endif
+mkdir -p %{buildroot}/usr/lib/udev/rules.d
+cp rc/trafficserver.rules %{buildroot}/usr/lib/udev/rules.d
 
 # Remove libtool archives and static libs
 find %{buildroot} -type f -name "*.la" -delete
@@ -164,6 +166,7 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 %else
 %config(noreplace) /etc/init.d/trafficserver
 %endif
+/usr/lib/udev/rules.d/trafficserver.rules
 
 # Change the default file and directory permissions
 %attr(0755, ats, ats) %dir /etc/trafficserver

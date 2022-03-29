@@ -1,0 +1,38 @@
+#!/bin/bash -e
+
+#  Copyright (C) 2022 Intel Corporation
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions
+#  and limitations under the License.
+#
+#  SPDX-License-Identifier: Apache-2.0
+
+# Use: watch tools/ipm-performance
+
+trap 'echo " $? ERROR $BASH_COMMAND" >&2' err
+touch old
+while true ; do
+  exec 3<old
+  exec 4< <(rm old ; ipmctl show -dimm -performance | tee old )
+  while true ; do
+    IFS="=" read -a A<&4 || break
+    IFS="=" read -a B<&3 || break
+    if [ ${A[0]} = ${B[0]} ] ; then
+      AA="${A[1]//-/}"
+      BB="${B[1]//-/}"
+      echo -e "${A[0]}\t${A[1]}\t${B[1]}\t$((AA-BB))" || :
+    else
+      echo -e "#${A[0]}\t${B[0]}"
+    fi
+  done | column -t
+  break
+done

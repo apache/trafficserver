@@ -484,8 +484,13 @@ Span::init(const char *path, int64_t size)
   // reliability.
 
   switch (sbuf.st_mode & S_IFMT) {
-  case S_IFBLK:
   case S_IFCHR:
+    this->disk_id[0]    = sbuf.st_rdev;
+    this->disk_id[1]    = sbuf.st_ino;
+    this->file_pathname = true;
+    this->blocks        = size / STORE_BLOCK_SIZE;
+    break;
+  case S_IFBLK:
 
 #if defined(linux)
     if (major(sbuf.st_rdev) == RAW_MAJOR && minor(sbuf.st_rdev) == 0) {

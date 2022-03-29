@@ -1,0 +1,2 @@
+ACTION=="add", SUBSYSTEM=="dax", DRIVER=="device_dax", OWNER="@user_ipm@", RUN+="daxctl reconfigure-device %k --mode=devdax"
+ACTION=="add", SUBSYSTEM=="nd", DRIVER=="nd_region", OWNER="@user_ipm@", RUN+="/usr/bin/ndctl create-namespace --mode=devdax --map=mem --region=%k --name=trafficserver%n"
