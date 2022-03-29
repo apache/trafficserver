@@ -130,9 +130,8 @@ Http2Stream::~Http2Stream()
   read_vio.mutex.clear();
   write_vio.mutex.clear();
 
-  if (header_blocks) {
-    ats_free(header_blocks);
-  }
+  ats_free(header_blocks);
+
   _clear_timers();
   clear_io_events();
   http_parser_clear(&http_parser);

@@ -102,9 +102,9 @@ build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostnam
   }
   sm->t_state.request_data.hdr = new HTTPHdr();
   sm->t_state.request_data.hdr->create(HTTP_TYPE_REQUEST, myHeap);
-  if (sm->t_state.request_data.hostname_str != nullptr) {
-    ats_free(sm->t_state.request_data.hostname_str);
-  }
+
+  ats_free(sm->t_state.request_data.hostname_str);
+
   sm->t_state.request_data.hostname_str = ats_strdup(os_hostname);
   sm->t_state.request_data.xact_start   = time(nullptr);
   ink_zero(sm->t_state.request_data.src_ip);

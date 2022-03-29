@@ -77,12 +77,10 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     if (cinf->uri) {
       OPENSSL_free(cinf->uri);
     }
-    if (cinf->certname) {
-      ats_free(cinf->certname);
-    }
-    if (cinf->user_agent) {
-      ats_free(cinf->user_agent);
-    }
+
+    ats_free(cinf->certname);
+    ats_free(cinf->user_agent);
+
     ink_mutex_destroy(&cinf->stapling_mutex);
     OPENSSL_free(cinf);
   }
@@ -295,13 +293,8 @@ err:
     OCSP_CERTID_free(cinf->cid);
   }
 
-  if (cinf->certname) {
-    ats_free(cinf->certname);
-  }
-
-  if (cinf->user_agent) {
-    ats_free(cinf->user_agent);
-  }
+  ats_free(cinf->certname);
+  ats_free(cinf->user_agent);
 
   if (cinf) {
     OPENSSL_free(cinf);

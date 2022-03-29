@@ -1823,10 +1823,8 @@ QPACK::DynamicTableStorage::DynamicTableStorage(uint16_t size) : _head(size * 2 
 
 QPACK::DynamicTableStorage::~DynamicTableStorage()
 {
-  if (this->_data) {
-    ats_free(this->_data);
-    this->_data = nullptr;
-  }
+  ats_free(this->_data);
+  this->_data = nullptr;
 }
 
 void
