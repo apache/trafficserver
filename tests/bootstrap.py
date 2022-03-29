@@ -37,7 +37,13 @@ pip_packages = [
     "dnslib",
     "httpbin",
     "gunicorn",
-    "traffic-replay"  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+    "traffic-replay",  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+
+    # The latest version of Werkzeug (2.1.0) breaks httpbin because it removes
+    # deprecated function `BaseResponse` that httpbin directly or indirectly
+    # depends upon. Pinning Wekrzeug for now until httpbin or its dependencies
+    # is updated for the changed API.
+    "Werkzeug==2.0.3"
 ]
 
 
