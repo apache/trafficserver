@@ -280,7 +280,6 @@ html_static_path = ['static']
 # content wrapping.
 html_context = {
     'css_files': [
-        '_static/css/theme.css',
         '_static/override.css'
     ]
 }
