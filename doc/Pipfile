@@ -32,6 +32,10 @@ verify_ssl = true
 # unpin sphinx by setting the following to "*".
 sphinx = "==3.*"
 
+# Sphinx 3.x builds break with the latest jinja2. This jinja2 pin can be
+# removed when we move to Sphinx 4.x.
+jinja2 = "<3.1"
+
 sphinx-rtd-theme = "*"
 sphinxcontrib-plantuml = "*"
 # i18n
