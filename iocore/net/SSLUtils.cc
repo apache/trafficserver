@@ -1389,7 +1389,6 @@ fail:
   ink_assert(ctx != nullptr);
   SSLMultiCertConfigLoader::clear_pw_references(ctx);
   SSL_CTX_free(ctx);
-  ret.emplace_back(SSLLoadingContext(ctx, ctx_type));
 
   return ret;
 }
