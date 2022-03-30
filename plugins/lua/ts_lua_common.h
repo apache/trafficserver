@@ -96,6 +96,8 @@ typedef struct {
 
   int remap;
   int states;
+  int ljgc;
+  int ref_count;
 
   int init_func;
 } ts_lua_instance_conf;
