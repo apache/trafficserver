@@ -136,7 +136,29 @@ adding a configuration option to records.config.
 
     CONFIG proxy.config.plugin.lua.max_states INT 64
 
-Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not reloadable since it must be applied when all the lua states are first initialized.
+Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not
+reloadable since it must be applied when all the lua states are first initialized.
+
+For remap instances, the LuaJIT garbage collector can be set to be called automatically whenever a remap instance is created
+or deleted. This happens when the remap.config file has been modified, and the configuration has been reloaded.  This does
+not apply to global plugin instances since these exist for the life-time of the ATS process, i.e., they are not reloadable or
+reconfigurable by modifying plugin.config while ATS is running.
+
+By default, the LuaJIT garbage collector will run on its own according to its own internal criteria.  However, in some cases,
+the garbage collector should be run in a guaranteed fashion.
+
+For example, in Linux, total Lua memory may be limited to 2GB depending on the LuaJIT version. It may be required to release
+memory on demand in order to prevent out of memory errors when running close to the memory limit. Note that the memory usage
+is doubled during configuration reloads since the ATS must hold both the current and new configurations during the
+transition. If garbage collection occurs does not occur immediately, memory usage may exceed this double usage.
+
+On demand garbage collection can be enabled by adding the following to each remap line. A value of '1' means
+enabled. The default value of '0' means disabled.
+
+::
+
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--ljgc=1
+
 
 Profiling
 =========
