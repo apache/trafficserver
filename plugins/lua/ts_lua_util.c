@@ -319,6 +319,13 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
 
+    if (conf->ljgc > 0) {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      lua_gc(L, LUA_GCCOLLECT, 0);
+    } else {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+    }
+
     TSMutexUnlock(arr[i].mutexp);
   }
 
@@ -353,11 +360,26 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
     }
 
     lua_pushlightuserdata(L, conf);
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
-    lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = L[GLOBAL] */
+
+    if (conf->ref_count > 1) {
+      TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , NOT clearing registry...", conf->ref_count);
+      lua_pushvalue(L, LUA_GLOBALSINDEX);
+      lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = L[GLOBAL] */
+    } else {
+      TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , clearing registry...", conf->ref_count);
+      lua_pushnil(L);
+      lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = nil */
+    }
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY  */
+
+    if (conf->ljgc > 0) {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      lua_gc(L, LUA_GCCOLLECT, 0);
+    } else {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+    }
 
     TSMutexUnlock(arr[i].mutexp);
   }
@@ -419,6 +441,13 @@ ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
+
+    if (conf->ljgc > 0) {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, running LuaJIT Garbage Collector...", conf->ljgc);
+      lua_gc(L, LUA_GCCOLLECT, 0);
+    } else {
+      TSDebug(TS_LUA_DEBUG_TAG, "ljgc = %d, NOT running LuaJIT Garbage Collector...", conf->ljgc);
+    }
 
     TSMutexUnlock(arr[i].mutexp);
   }
