@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "I_HostDB.h"
@@ -570,12 +572,63 @@ public:
     ConnectionAttributes *server                 = nullptr;
     ink_time_t now                               = 0;
     ServerState_t state                          = STATE_UNDEFINED;
-    unsigned attempts                            = 0;
-    unsigned simple_retry_attempts               = 0;
-    unsigned unavailable_server_retry_attempts   = 0;
-    ParentRetry_t retry_type                     = PARENT_RETRY_NONE;
+    class Attempts
+    {
+    public:
+      // Must only be constructed within a CurrenntInfo instance within a State Instance.
+      Attempts(State const *state_i_am_in);
+      Attempts(Attempts const &) = delete;
 
-    _CurrentInfo() {}
+      unsigned
+      get() const
+      {
+        return _v;
+      }
+
+      void
+      maximize()
+      {
+        ink_assert(_v <= configured_connect_attempts_max_retries());
+        if (_v < configured_connect_attempts_max_retries()) {
+          ink_assert(0 == _saved_v);
+          _saved_v = _v;
+          _v       = configured_connect_attempts_max_retries();
+        }
+      }
+
+      void
+      clear()
+      {
+        _v       = 0;
+        _saved_v = 0;
+      }
+
+      void
+      increment()
+      {
+        ++_v;
+        ink_assert(_v <= configured_connect_attempts_max_retries());
+      }
+
+      unsigned
+      saved() const
+      {
+        return _saved_v ? _saved_v : _v;
+      }
+
+    private:
+      unsigned _v{0}, _saved_v{0};
+
+      MgmtInt configured_connect_attempts_max_retries() const;
+    };
+    Attempts attempts;
+    unsigned simple_retry_attempts             = 0;
+    unsigned unavailable_server_retry_attempts = 0;
+    ParentRetry_t retry_type                   = PARENT_RETRY_NONE;
+
+    _CurrentInfo(State const *state_i_am_in) : attempts(state_i_am_in) {}
+    _CurrentInfo(_CurrentInfo const &) = delete;
+
   } CurrentInfo;
 
   // Conversion handling for DNS host resolution type.
@@ -776,7 +829,7 @@ public:
     }
 
     // Constructor
-    State()
+    State() : current(this)
     {
       int i;
       char *via_ptr = via_string;
@@ -875,6 +928,12 @@ public:
         this->cause_of_death_errno = e;
       }
       Debug("http", "Setting upstream connection failure %d to %d", e, this->current.server->connect_result);
+    }
+
+    MgmtInt
+    configured_connect_attempts_max_retries() const
+    {
+      return txn_conf->connect_attempts_max_retries;
     }
 
   private:
@@ -1033,6 +1092,19 @@ public:
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
 };
+
+inline MgmtInt
+HttpTransact::CurrentInfo::Attempts::configured_connect_attempts_max_retries() const
+{
+  return reinterpret_cast<const HttpTransact::State *>(reinterpret_cast<const char *>(this) -
+                                                       offsetof(HttpTransact::State, current.attempts))
+    ->configured_connect_attempts_max_retries();
+}
+
+inline HttpTransact::CurrentInfo::Attempts::Attempts(HttpTransact::State const *state_i_am_in)
+{
+  ink_assert(this == &(state_i_am_in->current.attempts));
+}
 
 typedef void (*TransactEntryFunc_t)(HttpTransact::State *s);
 
