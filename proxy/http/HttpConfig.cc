@@ -495,6 +495,12 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.extension_method_requests", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_extension_method_requests_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.http_proxy_loop_detected", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_proxy_loop_detected_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.http_proxy_mh_loop_detected", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_proxy_mh_loop_detected_stat, RecRawStatSyncCount);
+
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.broken_server_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_broken_server_connections_stat, RecRawStatSyncCount);
 

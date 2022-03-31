@@ -112,6 +112,8 @@ enum {
   http_purge_requests_stat,
   http_connect_requests_stat,
   http_extension_method_requests_stat,
+  http_proxy_loop_detected_stat,
+  http_proxy_mh_loop_detected_stat,
 
   http_completed_requests_stat,
   http_broken_server_connections_stat,
