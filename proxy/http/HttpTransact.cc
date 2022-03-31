@@ -6723,6 +6723,7 @@ HttpTransact::will_this_request_self_loop(State *s)
           break;
         }
         SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+        HTTP_INCREMENT_DYN_STAT(http_proxy_loop_detected_stat);
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
         return true;
       }
@@ -6756,6 +6757,7 @@ HttpTransact::will_this_request_self_loop(State *s)
     if (count > max_proxy_cycles) {
       TxnDebug("http_transact", "count = %d > max_proxy_cycles = %d : detected loop", count, max_proxy_cycles);
       SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+      HTTP_INCREMENT_DYN_STAT(http_proxy_mh_loop_detected_stat);
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
       return true;
     } else {
