@@ -1783,6 +1783,31 @@ AS_IF([test "x$geo_provider" = "xauto"], [
 AC_SUBST(use_hrw_geoip)
 AC_SUBST(use_hrw_maxminddb)
 
+# Checking if opentelemetry OTLP is available
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([opentelemetry/trace/provider.h], [
+  AC_CHECK_LIB([curl], [curl_version], [
+    AC_CHECK_LIB([protobuf], [main], [
+      AC_CHECK_LIB([opentelemetry_exporter_otlp_http], [main], [
+        AC_SUBST([OTEL_LIBS], [" -lprotobuf -L/usr/local/lib -Wl,-R/usr/local/lib -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable -lopentelemetry_proto -lopentelemetry_trace -lopentelemetry_resources -lopentelemetry_version -lopentelemetry_common -lhttp_client_curl -lcurl -lprotobuf -L/usr/local/lib -Wl,-R/usr/local/lib "])
+        AC_SUBST(has_otel, 1)
+      ], [
+        AC_SUBST([OTEL_LIBS], [""])
+        AC_SUBST(has_otel, 0)
+      ])
+    ], [
+      AC_SUBST([OTEL_LIBS], [""])
+      AC_SUBST(has_otel, 0)
+    ])
+  ], [
+    AC_SUBST([OTEL_LIBS], [""])
+    AC_SUBST(has_otel, 0)
+  ])
+])
+
+AM_CONDITIONAL([HAS_OTEL], [test "x${has_otel}" = "x1" ])
+AC_LANG_POP([C++])
+
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
