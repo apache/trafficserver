@@ -79,6 +79,7 @@ libtscore_la_SOURCES = \
 	ink_error.cc \
 	ink_file.cc \
 	ink_hrtime.cc \
+	ink_hw.cc \
 	ink_inet.cc \
 	ink_memory.cc \
 	ink_mutex.cc \
@@ -169,6 +170,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
+	unit_tests/test_CryptoHash.cc \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \

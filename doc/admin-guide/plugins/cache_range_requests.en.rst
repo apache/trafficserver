@@ -118,6 +118,8 @@ X-Crr-Ims header support
 
 .. option:: --consider-ims
 .. option:: -c
+.. option:: --ims-header=[header name] (default: X-Crr-Ims)
+.. option:: -i
 
 To support slice plugin self healing an option to force revalidation
 after cache lookup complete was added.  This option is triggered by a
@@ -136,6 +138,11 @@ request along with this X-Crr-Ims header is passed up to the parent.
 In order for this to properly work in a CDN each cache in the
 chain *SHOULD* also contain a remap rule with the
 :program:`cache_range_requests` plugin with this option set.
+
+When used with the :program:`slice` plugin its `--crr-ims-header`
+option must have the same value (or not be defined) in order to work.
+
+Presence of the `--ims-header` automatically sets the `--consider-ims` option.
 
 Don't modify the Cache Key
 --------------------------

@@ -112,9 +112,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
     return;
   }
 
-  char *data = static_cast<char *>(ats_malloc(rlen + 1));
-  memcpy(data, rdata, rlen);
-  *(data + rlen) = '\0';
+  std::string_view data{rdata, static_cast<size_t>(rlen)};
   HostLookupState s;
 
   r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
@@ -122,11 +120,10 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
   while (r == true) {
     ink_assert(opaque_ptr != nullptr);
     data_ptr = static_cast<CacheHostRecord *>(opaque_ptr);
-    data_ptr->UpdateMatch(result, data);
+    data_ptr->UpdateMatch(result);
 
     r = host_lookup->MatchNext(&s, &opaque_ptr);
   }
-  ats_free(data);
 }
 
 //
@@ -490,18 +487,14 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             const char *errptr = "A volume number expected";
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file,
                              line_info->line_num, errptr);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
         }
         if ((*s < '0') || (*s > '9')) {
           RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]",
                            config_file, line_info->line_num, *s);
-          if (val != nullptr) {
-            ats_free(val);
-          }
+          ats_free(val);
           return -1;
         }
         s++;
@@ -537,9 +530,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           if (!is_vol_present) {
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad volume number [%d]",
                              "[CacheHosting]", config_file, line_info->line_num, volume_number);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
           if (c == '\0') {
@@ -583,7 +574,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 }
 
 void
-CacheHostRecord::UpdateMatch(CacheHostResult *r, char * /* rd ATS_UNUSED */)
+CacheHostRecord::UpdateMatch(CacheHostResult *r)
 {
   r->record = this;
 }

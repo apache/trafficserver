@@ -29,9 +29,6 @@
 
 class MD5Context : public ats::CryptoContextBase
 {
-protected:
-  EVP_MD_CTX *_ctx;
-
 public:
   MD5Context()
   {

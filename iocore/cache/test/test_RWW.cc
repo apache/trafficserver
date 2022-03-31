@@ -275,7 +275,7 @@ public:
     case VC_EVENT_ERROR:
     case VC_EVENT_EOS:
       if (this->_size == LARGE_FILE) {
-        REQUIRE(base->vio->ndone >= 1 * 1024 * 1024 - sizeof(Doc));
+        REQUIRE(base->vio->ndone >= int64_t(1 * 1024 * 1024 - sizeof(Doc)));
       } else {
         REQUIRE(base->vio->ndone == 0);
       }

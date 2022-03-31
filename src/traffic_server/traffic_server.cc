@@ -33,6 +33,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
+#include "tscore/ink_hw.h"
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_stack_trace.h"
 #include "tscore/ink_syslog.h"
@@ -845,18 +846,6 @@ CB_After_Cache_Init()
 
   start = ink_atomic_swap(&delay_listen_for_cache, -1);
   emit_fully_initialized_message();
-
-#if TS_ENABLE_FIPS == 0
-  // Check for cache BC after the cache is initialized and before listen, if possible.
-  if (cacheProcessor.min_stripe_version._major < CACHE_DB_MAJOR_VERSION) {
-    // Versions before 23 need the MMH hash.
-    if (cacheProcessor.min_stripe_version._major < 23) {
-      Debug("cache_bc", "Pre 4.0 stripe (cache version %d.%d) found, forcing MMH hash for cache URLs",
-            cacheProcessor.min_stripe_version._major, cacheProcessor.min_stripe_version._minor);
-      URLHashContext::Setting = URLHashContext::MMH;
-    }
-  }
-#endif
 
   if (1 == start) {
     // The delay_listen_for_cache value was 1, therefore the main function

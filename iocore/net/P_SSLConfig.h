@@ -124,6 +124,7 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_ocsp_update_period;
   static int ssl_handshake_timeout_in;
   char *ssl_ocsp_response_path_only;
+  static char *ssl_ocsp_user_agent;
 
   static int origin_session_cache;
   static size_t origin_session_cache_size;
@@ -213,7 +214,7 @@ struct SSLTicketParams : public ConfigInfo {
   time_t load_time                              = 0;
   char *ticket_key_filename;
   bool LoadTicket(bool &nochange);
-  void LoadTicketData(char *ticket_data, int ticket_data_len);
+  bool LoadTicketData(char *ticket_data, int ticket_data_len);
   void cleanup();
 
   ~SSLTicketParams() override { cleanup(); }

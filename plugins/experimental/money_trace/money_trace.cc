@@ -17,169 +17,320 @@
  * under the License.
  */
 
-#include <iostream>
-#include <sstream>
-#include <cstdio>
-#include <cstring>
+#include "tscore/BufferWriter.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+#include <getopt.h>
+#include <string_view>
+#include <string>
+
 #include "money_trace.h"
 
-/**
- * Allocate transaction data structure.
- */
-static struct txndata *
-allocTransactionData()
+namespace
 {
-  LOG_DEBUG("allocating transaction state data.");
-  struct txndata *txn_data           = static_cast<struct txndata *>(TSmalloc(sizeof(struct txndata)));
-  txn_data->client_request_mt_header = nullptr;
-  txn_data->new_span_mt_header       = nullptr;
-  return txn_data;
-}
+std::string_view const DefaultMimeHeader = "X-MoneyTrace";
+enum PluginType { REMAP, GLOBAL };
 
-/**
- * free any previously allocated transaction data.
- */
-static void
-freeTransactionData(struct txndata *txn_data)
+struct Config {
+  std::string header;             // override header
+  std::string pregen_header;      // generate request header during remap
+  std::string global_skip_header; // skip global plugin
+  bool create_if_none = false;
+  bool passthru       = false; // transparen mode: pass any headers through
+};
+
+Config *
+config_from_args(int const argc, char const *argv[], PluginType const ptype)
 {
-  LOG_DEBUG("de-allocating transaction state data.");
+  Config *const conf = new Config;
 
-  if (txn_data != nullptr) {
-    LOG_DEBUG("freeing transaction data.");
-    TSfree(txn_data->client_request_mt_header);
-    TSfree(txn_data->new_span_mt_header);
-    TSfree(txn_data);
-  }
-}
+  static const struct option longopt[] = {
+    {const_cast<char *>("passthru"), required_argument, nullptr, 'a'},
+    {const_cast<char *>("create-if-none"), required_argument, nullptr, 'c'},
+    {const_cast<char *>("global-skip-header"), required_argument, nullptr, 'g'},
+    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
+    {const_cast<char *>("pregen-header"), required_argument, nullptr, 'p'},
+    {nullptr, 0, nullptr, 0},
+  };
 
-/**
- * The TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE event callback.
- *
- * If there is a cache hit only schedule a TS_HTTP_SEND_RESPONSE_HDR_HOOK
- * continuation to send back the money trace header in the response to the
- * client.
- *
- * If there is a cache miss, a new money trace header is created and a
- * TS_HTTP_SEND_REQUES_HDR_HOOK continuation is scheduled to add the
- * new money trace header to the parent request.
- */
-static void
-mt_cache_lookup_check(TSCont contp, TSHttpTxn txnp, struct txndata *txn_data)
-{
-  MT generator;
-  int cache_result = 0;
-  char *new_mt_header;
+  // getopt assumes args start at '1' so this hack is needed
+  do {
+    int const opt = getopt_long(argc, (char *const *)argv, "a:c:h:l:p:", longopt, nullptr);
 
-  if (TS_SUCCESS != TSHttpTxnCacheLookupStatusGet(txnp, &cache_result)) {
-    LOG_ERROR("Unable to get cache status.");
-  } else {
-    switch (cache_result) {
-    case TS_CACHE_LOOKUP_MISS:
-    case TS_CACHE_LOOKUP_SKIPPED:
-      new_mt_header = const_cast<char *>(generator.moneyTraceHdr(txn_data->client_request_mt_header));
-      if (new_mt_header != nullptr) {
-        LOG_DEBUG("cache miss, built a new money trace header: %s.", new_mt_header);
-        txn_data->new_span_mt_header = new_mt_header;
-      } else {
-        LOG_DEBUG("failed to build a new money trace header.");
-      }
-      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
-
-      // fall through to the default as we always need to send the original
-      // money trace header received from the client back to the client in the
-      // response
-      // fallthrough
-
-    default:
-      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+    if (-1 == opt) {
       break;
     }
+
+    LOG_DEBUG("Opt: %c", opt);
+
+    switch (opt) {
+    case 'a':
+      if ("true" == std::string_view{optarg}) {
+        LOG_DEBUG("Plugin acts as passthrough");
+        conf->passthru = true;
+      }
+      break;
+    case 'c':
+      if ("true" == std::string_view{optarg}) {
+        LOG_DEBUG("Plugin will create header if missing");
+        conf->create_if_none = true;
+      }
+      break;
+    case 'g':
+      LOG_DEBUG("Using global-skip-header: '%s'", optarg);
+      conf->global_skip_header.assign(optarg);
+      break;
+    case 'h':
+      LOG_DEBUG("Using custom header: '%s'", optarg);
+      conf->header.assign(optarg);
+      break;
+    case 'p':
+      LOG_DEBUG("Using pregen_header '%s'", optarg);
+      conf->pregen_header.assign(optarg);
+      break;
+    default:
+      break;
+    }
+  } while (true);
+
+  if (conf->header.empty()) {
+    conf->header.assign(DefaultMimeHeader);
+    LOG_DEBUG("Using default header name: '%.*s'", (int)DefaultMimeHeader.length(), DefaultMimeHeader.data());
   }
+
+  if (conf->passthru && conf->create_if_none) {
+    LOG_ERROR("passthru conflicts with create-if-none, disabling create-if-none!");
+    conf->create_if_none = false;
+  }
+
+  if (REMAP == ptype && !conf->global_skip_header.empty()) {
+    LOG_ERROR("--global-skip-header inappropriate for remap plugin, removing option!");
+    conf->global_skip_header.clear();
+  }
+
+  return conf;
 }
 
-/**
- * remap entry point, called to check for the existence of a money trace
- * header.  If there is one, schedule the continuation to call back and
- * process on TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK and TS_HTTP_TXN_CLOSE_HOOK.
- */
-static void
-mt_check_request_header(TSHttpTxn txnp)
-{
-  int length               = 0;
-  struct txndata *txn_data = nullptr;
-  TSMBuffer bufp;
-  TSMLoc hdr_loc = nullptr, field_loc = nullptr;
-  TSCont contp;
+struct TxnData {
+  std::string client_trace;
+  std::string this_trace;
+  Config const *config = nullptr;
+};
 
-  // check for a money trace header.  If there is one, schedule appropriate continuations.
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_MONEY_TRACE, MIME_LEN_MONEY_TRACE);
-    if (TS_NULL_MLOC != field_loc) {
-      const char *hdr_value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &length);
-      if (!hdr_value || length <= 0) {
-        LOG_DEBUG("ignoring, corrupt money trace header.");
+std::string_view const traceid{"trace-id="};
+std::string_view const parentid{"parent-id="};
+std::string_view const spanid{"span-id="};
+std::string_view const zerospan{"0"};
+char const sep{';'};
+
+std::string
+next_trace(std::string_view const request_hdr, TSHttpTxn const txnp)
+{
+  std::string nexttrace;
+
+  LOG_DEBUG("next_trace with '%.*s'", (int)request_hdr.length(), request_hdr.data());
+
+  std::string_view view = request_hdr;
+
+  // trace-id must be first
+  if (0 != view.rfind(traceid, 0)) {
+    LOG_DEBUG("Expected to find prefix '%.*s' in '%.*s'", (int)traceid.length(), traceid.data(), (int)view.length(), view.data());
+    return nexttrace;
+  }
+
+  view = view.substr(traceid.length());
+
+  // look for separator
+  size_t seppos = view.find_first_of(sep);
+  if (0 == seppos) {
+    LOG_DEBUG("Trace is empty for '%.*s'", (int)request_hdr.length(), request_hdr.data());
+    return nexttrace;
+  }
+
+  std::string_view trace = view.substr(0, seppos);
+
+  if (std::string_view::npos == seppos) {
+    LOG_DEBUG("Expected to find separator '%c' in %.*s", sep, (int)request_hdr.length(), request_hdr.data());
+    view = std::string_view{};
+  }
+
+  std::string_view span;
+
+  // scan remaining tokens
+  while (!view.empty() && span.empty()) {
+    // skip any leading whitespace
+    while (!view.empty() && ' ' == view.front()) {
+      view = view.substr(1);
+    }
+
+    // check for span-id field
+    if (0 == view.rfind(spanid, 0)) {
+      span   = view.substr(spanid.length());
+      seppos = span.find_first_of(sep);
+      span   = span.substr(0, seppos);
+
+      // remove any trailing white space
+      while (!span.empty() && ' ' == span.back()) {
+        span = span.substr(0, span.length() - 1);
+      }
+    } else {
+      LOG_DEBUG("Non '%.*s' found in '%.*s'", (int)spanid.length(), spanid.data(), (int)view.length(), view.data());
+    }
+
+    if (span.empty()) {
+      seppos = view.find_first_of(sep);
+
+      // move forward past sep
+      if (std::string_view::npos != seppos) {
+        view = view.substr(seppos + 1);
+        LOG_DEBUG("Trimming view to '%.*s'", (int)view.length(), view.data());
       } else {
-        if (nullptr == (contp = TSContCreate(transaction_handler, nullptr))) {
-          LOG_ERROR("failed to create the transaction handler continuation");
-        } else {
-          txn_data                                   = allocTransactionData();
-          txn_data->client_request_mt_header         = TSstrndup(hdr_value, length);
-          txn_data->client_request_mt_header[length] = '\0'; // workaround for bug in core.
-          LOG_DEBUG("found money trace header: %s, length: %d", txn_data->client_request_mt_header, length);
-          TSContDataSet(contp, txn_data);
-          TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
-          TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
-        }
+        view = std::string_view{};
+      }
+    }
+  }
+
+  if (span.empty()) {
+    LOG_DEBUG("No span found, using default '%.*s'", (int)zerospan.length(), zerospan.data());
+    span = zerospan;
+  }
+
+  // span becomes new parent
+  ts::LocalBufferWriter<8192> bwriter;
+
+  bwriter.write(traceid);
+  bwriter.write(trace);
+  bwriter.write(sep);
+  bwriter.write(parentid);
+  bwriter.write(span);
+  bwriter.write(sep);
+  bwriter.write(spanid);
+  bwriter.print("{}", TSHttpTxnIdGet(txnp));
+
+  nexttrace.assign(bwriter.view());
+
+  return nexttrace;
+}
+
+std::string
+create_trace(TSHttpTxn const txnp)
+{
+  std::string header;
+
+  constexpr char new_parent{'0'};
+
+  TSUuid const uuid = TSUuidCreate();
+  if (nullptr != uuid) {
+    if (TS_SUCCESS == TSUuidInitialize(uuid, TS_UUID_V4)) {
+      char const *const uuidstr = TSUuidStringGet(uuid);
+      if (nullptr != uuidstr) {
+        ts::LocalBufferWriter<8192> bwriter;
+
+        bwriter.write(traceid);
+        bwriter.write(uuidstr);
+        bwriter.write(sep);
+        bwriter.write(parentid);
+        bwriter.write(new_parent);
+        bwriter.write(sep);
+        bwriter.write(spanid);
+        bwriter.print("{}", TSHttpTxnIdGet(txnp));
+
+        header.assign(bwriter.view());
+      } else {
+        LOG_ERROR("Error getting uuid string");
       }
     } else {
-      LOG_DEBUG("no money trace header was found in the request.");
+      LOG_ERROR("Error initializing uuid");
     }
+
+    TSUuidDestroy(uuid);
   } else {
-    LOG_DEBUG("failed to retrieve the client request.");
+    LOG_ERROR("Error calling TSUuidCreate");
   }
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+
+  return header;
 }
 
 /**
- * The TS_EVENT_HTTP_SEND_RESPONSE_HDR callback.
- *
- * Adds the money trace header received in the client request to the
- * client response headers.
+ * Creates header if necessary, sets given value.
  */
-static void
-mt_send_client_response(TSHttpTxn txnp, struct txndata *txn_data)
+bool
+set_header(TSMBuffer const bufp, TSMLoc const hdr_loc, std::string const &hdr, std::string const &val)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc = nullptr, field_loc = nullptr;
+  bool isset = false;
 
-  if (txn_data->client_request_mt_header == nullptr) {
-    LOG_DEBUG("no client request header to return.");
-    return;
-  }
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, hdr.data(), hdr.length());
 
-  // send back the money trace header received in the request
-  // back in the response to the client.
-  if (TS_SUCCESS != TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
-    LOG_DEBUG("could not get the server response headers.");
-    return;
-  } else {
-    if (TS_SUCCESS ==
-        TSMimeHdrFieldCreateNamed(bufp, hdr_loc, MIME_FIELD_MONEY_TRACE, strlen(MIME_FIELD_MONEY_TRACE), &field_loc)) {
-      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, txn_data->client_request_mt_header,
-                                                     strlen(txn_data->client_request_mt_header))) {
-        LOG_DEBUG("response header added: %s: %s", MIME_FIELD_MONEY_TRACE, txn_data->client_request_mt_header);
+  if (TS_NULL_MLOC == field_loc) {
+    // No existing header, so create one
+    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, hdr.data(), hdr.length(), &field_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, val.data(), val.length())) {
         TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+        LOG_DEBUG("header/value added: '%s' '%s'", hdr.c_str(), val.c_str());
+        isset = true;
+      } else {
+        LOG_DEBUG("unable to set: '%s' to '%s'", hdr.c_str(), val.c_str());
       }
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     } else {
-      LOG_DEBUG("failed to create money trace response header.");
+      LOG_DEBUG("unable to create: '%s'", hdr.c_str());
+    }
+  } else {
+    bool first = true;
+    while (field_loc) {
+      TSMLoc const tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
+      if (first) {
+        first = false;
+        if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, val.data(), val.length())) {
+          LOG_DEBUG("header/value set: '%s' '%s'", hdr.c_str(), val.c_str());
+          isset = true;
+        } else {
+          LOG_DEBUG("unable to set: '%s' to '%s'", hdr.c_str(), val.c_str());
+        }
+      } else {
+        TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      field_loc = tmp;
     }
   }
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
-  return;
+  return isset;
+}
+
+/**
+ * The TS_EVENT_HTTP_POST_REMAP callback.
+ *
+ * If global_skip_header is set the global plugin
+ * will check for it here.
+ */
+void
+global_skip_check(TSCont const contp, TSHttpTxn const txnp, TxnData *const txn_data)
+{
+  Config const *const conf = txn_data->config;
+  if (conf->global_skip_header.empty()) {
+    LOG_ERROR("Called in error, no global skip header defined!");
+    return;
+  }
+
+  // Check for a money trace header.  Route accordingly.
+  TSMBuffer bufp = nullptr;
+  TSMLoc hdr_loc = TS_NULL_MLOC;
+  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSMLoc const field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, conf->global_skip_header.c_str(), conf->global_skip_header.length());
+    if (TS_NULL_MLOC != field_loc) {
+      LOG_DEBUG("global_skip_header found, disabling for the rest of this transaction");
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    } else { // schedule continuations
+      if (conf->create_if_none || !txn_data->client_trace.empty()) {
+        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
+      }
+      if (!txn_data->client_trace.empty()) {
+        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+      }
+    }
+  }
 }
 
 /**
@@ -188,33 +339,204 @@ mt_send_client_response(TSHttpTxn txnp, struct txndata *txn_data)
  * When a parent request is made, this function adds the new
  * money trace header to the parent request headers.
  */
-static void
-mt_send_server_request(TSHttpTxn txnp, struct txndata *txn_data)
+void
+send_server_request(TSHttpTxn const txnp, TxnData *const txn_data)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc = nullptr, field_loc = nullptr;
+  Config const *const conf = txn_data->config;
+  if (txn_data->this_trace.empty()) {
+    if (conf->passthru) {
+      txn_data->this_trace = txn_data->client_trace;
+    } else if (!txn_data->client_trace.empty()) {
+      txn_data->this_trace = next_trace(txn_data->client_trace, txnp);
+    } else if (conf->create_if_none) {
+      txn_data->this_trace = create_trace(txnp);
+    }
+  }
 
-  if (txn_data->new_span_mt_header == nullptr) {
-    LOG_DEBUG("there is no new mt request header to send.");
+  if (txn_data->this_trace.empty()) {
+    if (conf->create_if_none) {
+      LOG_DEBUG("Unable to deal with client trace '%s', creating new", txn_data->client_trace.c_str());
+      txn_data->this_trace = create_trace(txnp);
+    } else {
+      LOG_DEBUG("Unable to deal with client trace '%s', passing through!", txn_data->client_trace.c_str());
+      txn_data->this_trace = txn_data->client_trace;
+    }
+  }
+
+  TSMBuffer bufp = nullptr;
+  TSMLoc hdr_loc = TS_NULL_MLOC;
+  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc)) {
+    if (!set_header(bufp, hdr_loc, txn_data->config->header, txn_data->this_trace)) {
+      LOG_ERROR("Unable to set the server request trace header '%s'", txn_data->this_trace.c_str());
+    }
+  } else {
+    LOG_ERROR("Unable to get the txn server request");
+  }
+}
+
+/**
+ * The TS_EVENT_HTTP_SEND_RESPONSE_HDR callback.
+ *
+ * Adds the money trace header received in the client request to the
+ * client response headers.
+ */
+void
+send_client_response(TSHttpTxn const txnp, TxnData *const txn_data)
+{
+  LOG_DEBUG("send_client_response");
+
+  if (txn_data->client_trace.empty()) {
+    LOG_DEBUG("no client trace data to return.");
     return;
   }
 
-  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc)) {
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_MONEY_TRACE, MIME_LEN_MONEY_TRACE);
+  // send back the original money trace header received in the
+  // client request back in the response to the client.
+  TSMBuffer bufp = nullptr;
+  TSMLoc hdr_loc = TS_NULL_MLOC;
+  if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+    if (!set_header(bufp, hdr_loc, txn_data->config->header, txn_data->client_trace)) {
+      LOG_ERROR("Unable to set the client response trace header.");
+    }
+  } else {
+    LOG_DEBUG("Unable to get the txn client response");
+  }
+}
+
+/**
+ * Transaction event handler.
+ */
+int
+transaction_handler(TSCont const contp, TSEvent const event, void *const edata)
+{
+  TSHttpTxn const txnp    = static_cast<TSHttpTxn>(edata);
+  TxnData *const txn_data = static_cast<TxnData *>(TSContDataGet(contp));
+
+  switch (event) {
+  case TS_EVENT_HTTP_POST_REMAP:
+    LOG_DEBUG("global plugin checking for skip header");
+    global_skip_check(contp, txnp, txn_data);
+    break;
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    LOG_DEBUG("updating send request headers.");
+    send_server_request(txnp, txn_data);
+    break;
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    LOG_DEBUG("updating send response headers.");
+    send_client_response(txnp, txn_data);
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    LOG_DEBUG("handling transaction close.");
+    delete txn_data;
+    TSContDestroy(contp);
+    break;
+  default:
+    TSAssert(!"Unexpected event");
+    break;
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+
+  return TS_SUCCESS;
+}
+
+/**
+ * Check for the existence of a money trace header.
+ * If there is one, schedule the continuation to call back and
+ * process on send request or send response.
+ * Global plugin may need to schedule a hook to check for skip header.
+ */
+void
+check_request_header(TSHttpTxn const txnp, Config const *const conf, PluginType const ptype)
+{
+  TxnData *txn_data = nullptr;
+
+  // Check for a money trace header.  Route accordingly.
+  TSMBuffer bufp = nullptr;
+  TSMLoc hdr_loc = TS_NULL_MLOC;
+  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSMLoc const field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, conf->header.c_str(), conf->header.length());
     if (TS_NULL_MLOC != field_loc) {
-      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, txn_data->new_span_mt_header,
-                                                     strlen(txn_data->new_span_mt_header))) {
-        LOG_DEBUG("server request header updated: %s: %s", MIME_FIELD_MONEY_TRACE, txn_data->new_span_mt_header);
+      int length            = 0;
+      const char *hdr_value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &length);
+      if (!hdr_value || length <= 0) {
+        LOG_DEBUG("ignoring, corrupt trace header.");
+      } else {
+        txn_data         = new TxnData;
+        txn_data->config = conf;
+        txn_data->client_trace.assign(hdr_value, length);
+        LOG_DEBUG("found monetrace header: '%.*s', length: %d", length, hdr_value, length);
+      }
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    } else if (!conf->passthru && conf->create_if_none) {
+      txn_data             = new TxnData;
+      txn_data->config     = conf;
+      txn_data->this_trace = create_trace(txnp);
+      LOG_DEBUG("created trace header: '%s'", txn_data->this_trace.c_str());
+    } else {
+      LOG_DEBUG("no trace header handling for this request.");
+    }
+
+    // Check for pregen_header
+    if (nullptr != txn_data && !conf->pregen_header.empty()) {
+      if (txn_data->this_trace.empty()) {
+        txn_data->this_trace = next_trace(txn_data->client_trace, txnp);
+
+        if (txn_data->this_trace.empty()) {
+          if (conf->create_if_none) {
+            LOG_DEBUG("Unable to deal with client trace '%s', creating new", txn_data->client_trace.c_str());
+            txn_data->this_trace = create_trace(txnp);
+          } else {
+            LOG_DEBUG("Unable to deal with client trace '%s', passing through!", txn_data->client_trace.c_str());
+            txn_data->this_trace = txn_data->client_trace;
+          }
+        }
+      }
+      if (!txn_data->this_trace.empty()) {
+        if (!set_header(bufp, hdr_loc, conf->pregen_header, txn_data->this_trace)) {
+          LOG_ERROR("Unable to set the client request pregen trace header.");
+        }
+      }
+    }
+  } else {
+    LOG_DEBUG("unable to get the request request");
+  }
+
+  // Schedule appropriate continuations
+  if (nullptr != txn_data) {
+    TSCont const contp = TSContCreate(transaction_handler, nullptr);
+    if (nullptr != contp) {
+      TSContDataSet(contp, txn_data);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
+
+      // global plugin may need to check for skip header
+      if (GLOBAL == ptype && !conf->global_skip_header.empty()) {
+        TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, contp);
+      } else {
+        if (conf->create_if_none || !txn_data->client_trace.empty()) {
+          TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
+        }
+        if (!txn_data->client_trace.empty()) {
+          TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+        }
       }
     } else {
-      LOG_DEBUG("unable to retrieve the money trace header location from the server request headers.");
-      return;
+      LOG_ERROR("failed to create the transaction handler continuation");
+      delete txn_data;
     }
   }
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-
-  return;
 }
+
+int
+global_request_header_hook(TSCont const contp, TSEvent const event, void *const edata)
+{
+  TSHttpTxn const txnp     = static_cast<TSHttpTxn>(edata);
+  Config const *const conf = static_cast<Config *>(TSContDataGet(contp));
+  check_request_header(txnp, conf, GLOBAL);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+} // namespace
 
 /**
  * Remap initialization.
@@ -233,7 +555,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  LOG_DEBUG("cache_range_requests remap is successfully initialized.");
+  LOG_DEBUG("money_trace remap is successfully initialized.");
 
   return TS_SUCCESS;
 }
@@ -244,6 +566,11 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /*errbuf */, int /* errbuf_size */)
 {
+  // second arg poses as the program name
+  --argc;
+  ++argv;
+  Config *const conf = config_from_args(argc, const_cast<char const **>(argv), REMAP);
+  *ih                = static_cast<void *>(conf);
   return TS_SUCCESS;
 }
 
@@ -253,7 +580,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /*errbuf */, int /*
 void
 TSRemapDeleteInstance(void *ih)
 {
-  LOG_DEBUG("no op");
+  Config *const conf = static_cast<Config *>(ih);
+  delete conf;
 }
 
 /**
@@ -262,97 +590,34 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
-  mt_check_request_header(txnp);
+  Config const *const conf = static_cast<Config *>(ih);
+  check_request_header(txnp, conf, REMAP);
   return TSREMAP_NO_REMAP;
 }
 
 /**
- * Transaction event handler.
+ * global plugin initialization
  */
-static int
-transaction_handler(TSCont contp, TSEvent event, void *edata)
+void
+TSPluginInit(int argc, char const *argv[])
 {
-  TSHttpTxn txnp           = static_cast<TSHttpTxn>(edata);
-  struct txndata *txn_data = static_cast<struct txndata *>(TSContDataGet(contp));
+  LOG_DEBUG("Starting global plugin init");
 
-  switch (event) {
-  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    LOG_DEBUG("transaction cache lookup complete.");
-    mt_cache_lookup_check(contp, txnp, txn_data);
-    break;
-  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
-    LOG_DEBUG("updating send request headers.");
-    mt_send_server_request(txnp, txn_data);
-    break;
-  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    LOG_DEBUG("updating send response headers.");
-    mt_send_client_response(txnp, txn_data);
-    break;
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    LOG_DEBUG("handling transaction close.");
-    freeTransactionData(txn_data);
-    TSContDestroy(contp);
-    break;
-  default:
-    TSAssert(!"Unexpected event");
-    break;
-  }
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  TSPluginRegistrationInfo info;
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
-  return TS_SUCCESS;
-}
-
-const char *
-MT::moneyTraceHdr(const char *mt_request_hdr)
-{
-  char copy[8192] = {'\0'};
-  char *toks[3], *p = nullptr, *saveptr = nullptr;
-  std::ostringstream temp_str;
-  std::string mt_header_str;
-  int numtoks = 0;
-
-  if (mt_request_hdr == nullptr) {
-    LOG_DEBUG("an empty header was passed in.");
-    return nullptr;
-  } else {
-    strncpy(copy, mt_request_hdr, 8191);
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
+    LOG_ERROR("Plugin registration failed");
+    return;
   }
 
-  // parse the money header.
-  p = strtok_r(copy, ";", &saveptr);
-  if (p != nullptr) {
-    toks[numtoks++] = p;
-    // copy the traceid
-  } else {
-    LOG_DEBUG("failed to parse the money_trace_header: %s", mt_request_hdr);
-    return nullptr;
-  }
-  do {
-    p = strtok_r(nullptr, ";", &saveptr);
-    if (p != nullptr) {
-      toks[numtoks++] = p;
-    }
-  } while (p != nullptr && numtoks < 3);
+  Config const *const conf = config_from_args(argc, argv, GLOBAL);
 
-  if (numtoks != 3 || toks[0] == nullptr || toks[1] == nullptr || toks[2] == nullptr) {
-    LOG_DEBUG("failed to parse the money_trace_header: %s", mt_request_hdr);
-    return nullptr;
-  }
+  TSCont const contp = TSContCreate(global_request_header_hook, nullptr);
+  TSContDataSet(contp, (void *)conf);
 
-  if (strncmp(toks[0], "trace-id", strlen("trace-id")) == 0 && strncmp(toks[2], "span-id", strlen("span-id")) == 0 &&
-      (p = strchr(toks[2], '=')) != nullptr) {
-    p++;
-    if (strncmp("0x", p, 2) == 0) {
-      temp_str << toks[0] << ";parent-id=" << p << ";span-id=0x" << std::hex << spanId() << std::ends;
-    } else {
-      temp_str << toks[0] << ";parent-id=" << p << ";span-id=" << spanId() << std::ends;
-    }
-  } else {
-    LOG_DEBUG("invalid money_trace_header: %s", mt_request_hdr);
-    return nullptr;
-  }
-
-  mt_header_str = temp_str.str();
-
-  return TSstrndup(mt_header_str.c_str(), mt_header_str.length());
+  // This fires before any remap hooks.
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
 }

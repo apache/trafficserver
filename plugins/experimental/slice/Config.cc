@@ -26,6 +26,12 @@
 
 #include "ts/experimental.h"
 
+namespace
+{
+constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};
+constexpr std::string_view DefaultCrrImsHeader    = {"X-Crr-Ims"};
+} // namespace
+
 Config::~Config()
 {
   if (nullptr != m_regex_extra) {
@@ -108,12 +114,14 @@ Config::fromArgs(int const argc, char const *const argv[])
   // standard parsing
   constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
+    {const_cast<char *>("crr-ims-header"), required_argument, nullptr, 'c'},
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
     {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
     {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
     {const_cast<char *>("ref-relative"), no_argument, nullptr, 'l'},
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
+    {const_cast<char *>("skip-header"), required_argument, nullptr, 's'},
     {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
     {nullptr, 0, nullptr, 0},
   };
@@ -121,7 +129,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:de:i:lp:r:t:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lp:r:s:t:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -137,6 +145,10 @@ Config::fromArgs(int const argc, char const *const argv[])
       } else {
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
+    } break;
+    case 'c': {
+      m_crr_ims_header.assign(optarg);
+      DEBUG_LOG("Using override crr ims header %s", optarg);
     } break;
     case 'd': {
       m_paceerrsecs = -1;
@@ -193,6 +205,10 @@ Config::fromArgs(int const argc, char const *const argv[])
       m_remaphost = optarg;
       DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
     } break;
+    case 's': {
+      m_skip_header.assign(optarg);
+      DEBUG_LOG("Using slice skip header %s", optarg);
+    } break;
     case 't': {
       if (0 == blockbytes) {
         int64_t const bytesread = bytesFrom(optarg);
@@ -224,6 +240,14 @@ Config::fromArgs(int const argc, char const *const argv[])
     DEBUG_LOG("Block stitching error logs enabled");
   } else {
     DEBUG_LOG("Block stitching error logs at most every %d sec(s)", m_paceerrsecs);
+  }
+  if (m_crr_ims_header.empty()) {
+    m_crr_ims_header = DefaultCrrImsHeader;
+    DEBUG_LOG("Using default crr ims header %s", m_crr_ims_header.c_str());
+  }
+  if (m_skip_header.empty()) {
+    m_skip_header = DefaultSliceSkipHeader;
+    DEBUG_LOG("Using default slice skip header %s", m_skip_header.c_str());
   }
 
   return true;

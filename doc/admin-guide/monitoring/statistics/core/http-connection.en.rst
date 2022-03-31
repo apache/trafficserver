@@ -149,6 +149,16 @@ HTTP Connection
 
    Tracks the number of client requests that did not have a request sent to the origin server because the origin server was marked dead.
 
+.. ts:stat:: global proxy.process.http.http_proxy_loop_detected integer
+   :type: counter
+
+   Counts the number of times a proxy loop was detected
+
+.. ts:stat:: global proxy.process.http.http_proxy_mh_loop_detected integer
+   :type: counter
+
+   Counts the number of times a multi-hop proxy loop was detected
+
 HTTP/2
 ------
 

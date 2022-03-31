@@ -105,6 +105,7 @@ test_LDADD = \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
@@ -116,7 +117,6 @@ test_LDADD = \
 	@YAMLCPP_LIBS@ \
 	-lm
 
-if EXPENSIVE_TESTS
 check_PROGRAMS = \
   test_Cache \
   test_RWW \
@@ -129,7 +129,6 @@ check_PROGRAMS = \
   test_Update_L_to_S \
   test_Update_S_to_L \
   test_Update_header
-endif
 
 test_main_SOURCES = \
   ./test/main.cc \

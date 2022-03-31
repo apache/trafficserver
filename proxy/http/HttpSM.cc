@@ -4593,15 +4593,19 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     ranges[nr]._end   = end;
     ++nr;
 
-    if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer == 2) {
-      // write in progress, check if request range not in cache yet
-      HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
-      int frag_offset_cnt                   = t_state.cache_info.object_read->get_frag_offset_count();
+    if (cache_sm.cache_read_vc) {
+      if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer == 2) {
+        // write in progress, check if request range not in cache yet
+        HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
+        int frag_offset_cnt                   = t_state.cache_info.object_read->get_frag_offset_count();
 
-      if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < static_cast<uint64_t>(end))) {
-        Debug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d" PRId64, end, frag_offset_cnt);
-        t_state.range_in_cache = false;
+        if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < static_cast<uint64_t>(end))) {
+          Debug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d" PRId64, end, frag_offset_cnt);
+          t_state.range_in_cache = false;
+        }
       }
+    } else {
+      t_state.range_in_cache = false;
     }
   }
 
@@ -4655,10 +4659,16 @@ HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 void
 HttpSM::do_range_parse(MIMEField *range_field)
 {
-  int num_chars_for_ct = 0;
-  t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+  int num_chars_for_ct   = 0;
+  int64_t content_length = 0;
 
-  int64_t content_length   = t_state.cache_info.object_read->object_size_get();
+  if (t_state.cache_info.object_read != nullptr) {
+    t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+    content_length = t_state.cache_info.object_read->object_size_get();
+  } else {
+    content_length = t_state.hdr_info.server_response.get_content_length();
+    t_state.hdr_info.server_response.value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+  }
   int64_t num_chars_for_cl = num_chars_for_int(content_length);
 
   parse_range_and_compare(range_field, content_length);
@@ -4673,8 +4683,6 @@ HttpSM::do_range_setup_if_necessary()
 {
   MIMEField *field;
 
-  ink_assert(t_state.cache_info.object_read != nullptr);
-
   field = t_state.hdr_info.client_request.field_find(MIME_FIELD_RANGE, MIME_LEN_RANGE);
   ink_assert(field != nullptr);
 
@@ -4686,7 +4694,7 @@ HttpSM::do_range_setup_if_necessary()
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
       bool do_transform = false;
 
-      if (!t_state.range_in_cache) {
+      if (!t_state.range_in_cache && t_state.cache_info.object_read) {
         Debug("http_range", "range can't be satisfied from cache, force origin request");
         t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
         return;
@@ -4704,7 +4712,12 @@ HttpSM::do_range_setup_if_necessary()
           t_state.range_setup      = HttpTransact::RANGE_NOT_SATISFIABLE;
         }
       } else {
-        if (cache_sm.cache_read_vc->is_pread_capable()) {
+        // if revalidating and cache is stale we want to transform
+        if (t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE &&
+            t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
+          Debug("http_range", "Serving transform after stale cache re-serve");
+          do_transform = true;
+        } else if (cache_sm.cache_read_vc && cache_sm.cache_read_vc->is_pread_capable()) {
           // If only one range entry and pread is capable, no need transform range
           t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
         } else {
@@ -4716,15 +4729,34 @@ HttpSM::do_range_setup_if_necessary()
       if (do_transform) {
         if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == nullptr) {
           int field_content_type_len = -1;
-          const char *content_type   = t_state.cache_info.object_read->response_get()->value_get(
-            MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+          const char *content_type   = nullptr;
+          int64_t content_length     = 0;
+
+          if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
+            content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
+                                                                                     &field_content_type_len);
+            content_length = t_state.cache_info.object_read->object_size_get();
+          } else {
+            // We don't want to transform a range request if the server response has a content encoding.
+            if (t_state.hdr_info.server_response.presence(MIME_PRESENCE_CONTENT_ENCODING)) {
+              Debug("http_trans", "Cannot setup range transform for server response with content encoding");
+              t_state.range_setup = HttpTransact::RANGE_NONE;
+              return;
+            }
+
+            // Since we are transforming the range from the server, we want to cache the original response
+            t_state.api_info.cache_untransformed = true;
+            content_type =
+              t_state.hdr_info.server_response.value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+            content_length = t_state.hdr_info.server_response.get_content_length();
+          }
 
           Debug("http_trans", "Unable to accelerate range request, fallback to transform");
 
           // create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
-          INKVConnInternal *range_trans = transformProcessor.range_transform(
-            mutex.get(), t_state.ranges, t_state.num_range_fields, &t_state.hdr_info.transform_response, content_type,
-            field_content_type_len, t_state.cache_info.object_read->object_size_get());
+          INKVConnInternal *range_trans = transformProcessor.range_transform(mutex.get(), t_state.ranges, t_state.num_range_fields,
+                                                                             &t_state.hdr_info.transform_response, content_type,
+                                                                             field_content_type_len, content_length);
           api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
         } else {
           // ToDo: Do we do something here? The theory is that multiple transforms do not behave well with
@@ -5724,8 +5756,8 @@ HttpSM::handle_http_server_open()
         vc->apply_options();
       }
     }
+    server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
   }
-  server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
 
   int method = t_state.hdr_info.server_request.method_get_wksidx();
   if (method != HTTP_WKSIDX_TRACE &&
@@ -6063,7 +6095,8 @@ HttpSM::perform_transform_cache_write_action()
           HttpDebugNames::get_cache_action_name(t_state.cache_info.action));
 
   if (t_state.range_setup) {
-    return;
+    SMDebug("http", "[%" PRId64 "] perform_transform_cache_write_action %s (with range setup)", sm_id,
+            HttpDebugNames::get_cache_action_name(t_state.cache_info.action));
   }
 
   switch (t_state.cache_info.transform_action) {
@@ -6074,10 +6107,12 @@ HttpSM::perform_transform_cache_write_action()
   }
 
   case HttpTransact::CACHE_DO_WRITE: {
-    transform_cache_sm.close_read();
-    t_state.cache_info.transform_write_status = HttpTransact::CACHE_WRITE_IN_PROGRESS;
-    setup_cache_write_transfer(&transform_cache_sm, transform_info.entry->vc, &t_state.cache_info.transform_store,
-                               client_response_hdr_bytes, "cache write t");
+    if (t_state.api_info.cache_untransformed == false) {
+      transform_cache_sm.close_read();
+      t_state.cache_info.transform_write_status = HttpTransact::CACHE_WRITE_IN_PROGRESS;
+      setup_cache_write_transfer(&transform_cache_sm, transform_info.entry->vc, &t_state.cache_info.transform_store,
+                                 client_response_hdr_bytes, "cache write t");
+    }
     break;
   }
 
@@ -6248,6 +6283,10 @@ HttpSM::attach_server_session()
   TLSBasicSupport *tbs = dynamic_cast<TLSBasicSupport *>(server_vc);
   if (tbs) {
     server_connection_is_ssl = true;
+  }
+
+  if (auto tsrs = dynamic_cast<TLSSessionResumptionSupport *>(server_vc)) {
+    server_ssl_reused = tsrs->getSSLOriginSessionCacheHit();
   }
 
   server_protocol = server_txn->get_protocol_string();
@@ -7232,11 +7271,9 @@ HttpSM::kill_this()
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
 
-    if (redirect_url != nullptr) {
-      ats_free((void *)redirect_url);
-      redirect_url     = nullptr;
-      redirect_url_len = 0;
-    }
+    ats_free(redirect_url);
+    redirect_url     = nullptr;
+    redirect_url_len = 0;
 
 #ifdef USE_HTTP_DEBUG_LISTS
     ink_mutex_acquire(&debug_sm_list_mutex);

@@ -32,8 +32,6 @@
 #define PLUGIN_NAME "slice"
 #endif
 
-constexpr std::string_view X_CRR_IMS_HEADER = {"X-Crr-Ims"};
-
 #if !defined(UNITTEST)
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)

@@ -67,6 +67,7 @@ bool SSLConfigParams::ssl_ocsp_enabled                      = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
 int SSLConfigParams::ssl_ocsp_update_period                 = 60;
+char *SSLConfigParams::ssl_ocsp_user_agent                  = nullptr;
 int SSLConfigParams::ssl_handshake_timeout_in               = 0;
 int SSLConfigParams::origin_session_cache                   = 1;
 size_t SSLConfigParams::origin_session_cache_size           = 10240;
@@ -363,6 +364,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
   set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   ats_free(ssl_ocsp_response_path);
+  REC_ReadConfigStringAlloc(ssl_ocsp_user_agent, "proxy.config.http.request_via_str");
 
   REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
 
@@ -655,7 +657,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   return true;
 }
 
-void
+bool
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
@@ -666,7 +668,12 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
     default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
   }
   load_time = time(nullptr);
+
+  if (default_global_keyblock == nullptr) {
+    return false;
+  }
 #endif
+  return true;
 }
 
 void
@@ -707,7 +714,10 @@ SSLTicketKeyConfig::reconfigure_data(char *ticket_data, int ticket_data_len)
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
   if (ticketKey) {
-    ticketKey->LoadTicketData(ticket_data, ticket_data_len);
+    if (ticketKey->LoadTicketData(ticket_data, ticket_data_len) == false) {
+      delete ticketKey;
+      return false;
+    }
   }
   configid = configProcessor.set(configid, ticketKey);
   return true;

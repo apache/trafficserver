@@ -139,10 +139,10 @@ union head_p {
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
   (_x).s.pointer = _p;                           \
   (_x).s.version = _v
-#elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__aarch64__) || defined(__mips64)
+#elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__mips64)
 /* Layout of FREELIST_POINTER
  *
- *  0 ~ 47 bits : 48 bits, Virtual Address (47 bits for AMD64 and 48 bits for AArch64)
+ *  0 ~ 47 bits : 48 bits, Virtual Address
  * 48 ~ 62 bits : 15 bits, Freelist Version
  *      63 bits :  1 bits, The type of Virtual Address (0 = user space, 1 = kernel space)
  */
@@ -158,11 +158,30 @@ union head_p {
 #else
 /* the shift is `logical' */
 #define FREELIST_POINTER(_x) \
-  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | (((~((((intptr_t)(_x).data) >> 63) - 1)) >> 48) << 48)))
+  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 48)))
 #endif
 
 #define FREELIST_VERSION(_x) ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
+#elif defined(__aarch64__)
+/* Layout of FREELIST_POINTER
+ *
+ *  0 ~ 51 bits : 52 bits, Virtual Address
+ * 52 ~ 62 bits : 11 bits, Freelist Version
+ *      63 bits :  1 bits, The type of Virtual Address (0 = user space, 1 = kernel space)
+ */
+#if ((~0 >> 1) < 0)
+/* the shift is `arithmetic' */
+#define FREELIST_POINTER(_x) \
+  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 52))) // sign extend
+#else
+/* the shift is `logical' */
+#define FREELIST_POINTER(_x) \
+  ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 52)))
+#endif
+
+#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v)&0x7FFLL) << 52))
 #else
 #error "unsupported processor"
 #endif

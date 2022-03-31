@@ -24,6 +24,7 @@
 
 #include "catch.hpp"
 
+#include "tscore/ink_hw.h"
 #include "tscore/ink_thread.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_queue.h"

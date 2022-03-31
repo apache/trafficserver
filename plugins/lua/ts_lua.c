@@ -73,8 +73,8 @@ static char const *const ts_lua_g_stat_strs[] = {
 typedef struct {
   ts_lua_main_ctx *main_ctx_array;
 
-  int gc_kb;   // last collected gc in kb
-  int threads; // last collected number active threads
+  TSMgmtInt gc_kb;   // last collected gc in kb
+  TSMgmtInt threads; // last collected number active threads
 
   int stat_inds[TS_LUA_IND_SIZE]; // stats indices
 
@@ -184,8 +184,8 @@ collectStats(ts_lua_plugin_stats *const plugin_stats)
       ts_lua_ctx_stats *const stats = main_ctx->stats;
 
       TSMutexLock(stats->mutexp);
-      gc_kb_total += (TSMgmtInt)stats->gc_kb;
-      threads_total += (TSMgmtInt)stats->threads;
+      gc_kb_total += stats->gc_kb;
+      threads_total += stats->threads;
       TSMutexUnlock(stats->mutexp);
     }
   }
@@ -343,9 +343,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char *inline_script                  = "";
   int fn                               = 0;
   int states                           = ts_lua_max_state_count;
+  int ljgc                             = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
     {"inline", required_argument, 0, 'i'},
+    {"ljgc", required_argument, 0, 'g'},
     {0, 0, 0, 0},
   };
 
@@ -364,6 +366,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       break;
     case 'i':
       inline_script = optarg;
+      break;
+    case 'g':
+      ljgc = atoi(optarg);
+      break;
     }
 
     if (opt == -1) {
@@ -424,6 +430,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     conf->states    = states;
     conf->remap     = 1;
     conf->init_func = 0;
+    conf->ref_count = 1;
+    conf->ljgc      = ljgc;
+
+    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , creating new instance...", conf->ref_count);
 
     if (fn) {
       snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", script);
@@ -446,6 +456,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       ts_lua_script_register(ts_lua_main_ctx_array[0].lua, conf->script, conf);
       TSMutexUnlock(ts_lua_main_ctx_array[0].mutexp);
     }
+  } else {
+    conf->ref_count++;
+    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , reference existing instance...", conf->ref_count);
   }
 
   *ih = conf;
@@ -459,9 +472,13 @@ TSRemapDeleteInstance(void *ih)
   int states = ((ts_lua_instance_conf *)ih)->states;
   ts_lua_del_module((ts_lua_instance_conf *)ih, ts_lua_main_ctx_array, states);
   ts_lua_del_instance(ih);
-  // because we now reuse ts_lua_instance_conf / ih for remap rules sharing the same lua script
-  // we cannot safely free it in this function during the configuration reloads
-  // we therefore are leaking memory on configuration reloads
+  ((ts_lua_instance_conf *)ih)->ref_count--;
+  if (((ts_lua_instance_conf *)ih)->ref_count == 0) {
+    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
+    TSfree(ih);
+  } else {
+    TSDebug(TS_LUA_DEBUG_TAG, "Reference Count = %d , not freeing...", ((ts_lua_instance_conf *)ih)->ref_count);
+  }
   return;
 }
 
