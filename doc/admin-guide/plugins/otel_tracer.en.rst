@@ -14,7 +14,7 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
-.. _admin-plugins-money-trace:
+.. _admin-plugins-otel-tracer:
 
 
 OpenTelemetry Tracer Plugin
@@ -112,5 +112,3 @@ This is the service name that will be sent as part of the information to the OTL
 * ``-r=[sampling rate]`` (default: ``1.0``)
 
 The value can be between 0.0 to 1.0. It controls the sampling rate of the trace information.
-
-

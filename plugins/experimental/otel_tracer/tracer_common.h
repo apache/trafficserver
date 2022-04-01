@@ -49,24 +49,24 @@ namespace context  = opentelemetry::context;
 namespace otlp     = opentelemetry::exporter::otlp;
 namespace
 {
-template <typename T>
-class HttpTextMapCarrier : public context::propagation::TextMapCarrier
+template <typename T> class HttpTextMapCarrier : public context::propagation::TextMapCarrier
 {
 public:
   HttpTextMapCarrier<T>(T &headers) : headers_(headers) {}
   HttpTextMapCarrier() = default;
-  virtual nostd::string_view Get(nostd::string_view key) const noexcept override
+  virtual nostd::string_view
+  Get(nostd::string_view key) const noexcept override
   {
     std::string key_to_compare = key.data();
-    auto it = headers_.find(key_to_compare);
-    if (it != headers_.end())
-    {
+    auto it                    = headers_.find(key_to_compare);
+    if (it != headers_.end()) {
       return it->second;
     }
     return "";
   }
 
-  virtual void Set(nostd::string_view key, nostd::string_view value) noexcept override
+  virtual void
+  Set(nostd::string_view key, nostd::string_view value) noexcept override
   {
     headers_.insert(std::pair<std::string, std::string>(std::string(key), std::string(value)));
   }
@@ -74,17 +74,15 @@ public:
   T headers_;
 };
 
-
 // this object is created using placement new therefore all destructors needs
 // to be called explictly inside Destruct method
-struct ExtraRequestData
-{
+struct ExtraRequestData {
   nostd::shared_ptr<trace::Span> span;
 
-  static int Destruct(ExtraRequestData *This)
+  static int
+  Destruct(ExtraRequestData *This)
   {
-    if (This->span)
-    {
+    if (This->span) {
       This->span->End();
       This->span = nullptr;
     }
@@ -92,27 +90,28 @@ struct ExtraRequestData
   }
 };
 
-void InitTracer(std::string url, std::string service_name, double rate)
+void
+InitTracer(std::string url, std::string service_name, double rate)
 {
   otlp::OtlpHttpExporterOptions opts;
 
-  if(url != "") {
+  if (url != "") {
     opts.url = url;
   }
 
-  auto exporter  = std::unique_ptr<sdktrace::SpanExporter>(
-      new otlp::OtlpHttpExporter(opts));
-  auto processor = std::unique_ptr<sdktrace::SpanProcessor>(
-      new sdktrace::SimpleSpanProcessor(std::move(exporter)));
+  auto exporter  = std::unique_ptr<sdktrace::SpanExporter>(new otlp::OtlpHttpExporter(opts));
+  auto processor = std::unique_ptr<sdktrace::SpanProcessor>(new sdktrace::SimpleSpanProcessor(std::move(exporter)));
 
   std::vector<std::unique_ptr<sdktrace::SpanProcessor>> processors;
   processors.push_back(std::move(processor));
 
   // Set service name
-  opentelemetry::sdk::resource::ResourceAttributes attributes = {{"service.name", service_name},{"version", (uint32_t)1}};
-  auto resource = opentelemetry::sdk::resource::Resource::Create(attributes);
+  opentelemetry::sdk::resource::ResourceAttributes attributes = {{"service.name", service_name}, {"version", (uint32_t)1}};
+  auto resource                                               = opentelemetry::sdk::resource::Resource::Create(attributes);
 
-  auto context = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource, std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
+  auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
+                                                           std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
+                                                              std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
   auto provider = nostd::shared_ptr<trace::TracerProvider>(new sdktrace::TracerProvider(context));
 
   // Set the global trace provider
@@ -120,14 +119,14 @@ void InitTracer(std::string url, std::string service_name, double rate)
 
   // format: b3
   context::propagation::GlobalTextMapPropagator::SetGlobalPropagator(
-      nostd::shared_ptr<context::propagation::TextMapPropagator>(
-          new trace::propagation::B3PropagatorMultiHeader()));
+    nostd::shared_ptr<context::propagation::TextMapPropagator>(new trace::propagation::B3PropagatorMultiHeader()));
 }
 
-nostd::shared_ptr<trace::Tracer> get_tracer(std::string tracer_name)
+nostd::shared_ptr<trace::Tracer>
+get_tracer(std::string tracer_name)
 {
   auto provider = trace::Provider::GetTracerProvider();
   return provider->GetTracer(tracer_name, OPENTELEMETRY_SDK_VERSION);
 }
 
-}  // namespace
+} // namespace

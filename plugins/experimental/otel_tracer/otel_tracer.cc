@@ -40,7 +40,7 @@ close_txn(TSCont contp, TSEvent event, void *edata)
 
   ExtraRequestData *req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
 
-  TSHttpTxn txnp           = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_TXN_CLOSE) {
     TSError("[otel_tracer][%s] Unexpected event (%d)", __FUNCTION__, event);
     goto lReturn;
@@ -89,8 +89,7 @@ set_request_header(TSMBuffer buf, TSMLoc hdr_loc, const char *key, int key_len, 
       TSHandleMLocRelease(buf, hdr_loc, field_loc);
       field_loc = tmp;
     }
-  } else if (TSMimeHdrFieldCreateNamed(buf, hdr_loc, key, key_len, &field_loc) !=
-             TS_SUCCESS) {
+  } else if (TSMimeHdrFieldCreateNamed(buf, hdr_loc, key, key_len, &field_loc) != TS_SUCCESS) {
     TSError("[otel_tracer][%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
     return;
   } else {
@@ -137,21 +136,21 @@ read_request(TSHttpTxn txnp, TSCont contp)
   // method
   const char *method;
   int method_len;
-  method = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
+  method                 = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
   std::string method_str = "";
   method_str.assign(method, method_len);
 
   // TO-DO: add http flavor as attribute
-  //const char *h2_tag = TSHttpTxnClientProtocolStackContains(txnp, "h2");
-  //const char *h1_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.0");
-  //const char *h11_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.1");
+  // const char *h2_tag = TSHttpTxnClientProtocolStackContains(txnp, "h2");
+  // const char *h1_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.0");
+  // const char *h11_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.1");
 
   // target
-  char *target = nullptr;
-  int target_len = 0;
+  char *target           = nullptr;
+  int target_len         = 0;
   std::string target_str = "";
-  target = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
-  if(target) {
+  target                 = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
+  if (target) {
     target_str.assign(target, target_len);
     free(target);
   }
@@ -163,20 +162,20 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   const char *path;
-  int path_len = 0;
-  path = TSUrlPathGet(buf, url_loc, &path_len);
+  int path_len         = 0;
+  path                 = TSUrlPathGet(buf, url_loc, &path_len);
   std::string path_str = "";
   path_str.assign(path, path_len);
   path_str = "/" + path_str;
 
   const char *host;
-  int host_len = 0;
+  int host_len         = 0;
   std::string host_str = "";
-  host = TSUrlHostGet(buf, url_loc, &host_len);
+  host                 = TSUrlHostGet(buf, url_loc, &host_len);
   if (host_len == 0) {
     const char *key   = "Host";
     const char *l_key = "host";
-    int key_len = 4;
+    int key_len       = 4;
 
     host_str = read_request_header(buf, hdr_loc, key, key_len);
     if (host_str == "") {
@@ -187,8 +186,8 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   const char *scheme;
-  int scheme_len = 0;
-  scheme = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+  int scheme_len         = 0;
+  scheme                 = TSUrlSchemeGet(buf, url_loc, &scheme_len);
   std::string scheme_str = "";
   scheme_str.assign(scheme, scheme_len);
 
@@ -198,25 +197,25 @@ read_request(TSHttpTxn txnp, TSCont contp)
   TSHandleMLocRelease(buf, hdr_loc, url_loc);
 
   // user-agent
-  const char *ua_key   = "User-Agent";
-  int ua_key_len = 10;
+  const char *ua_key = "User-Agent";
+  int ua_key_len     = 10;
   std::string ua_str = read_request_header(buf, hdr_loc, ua_key, ua_key_len);
 
   // B3 headers
   const char *b3_key = "b3";
-  int b3_key_len = 2;
+  int b3_key_len     = 2;
   std::string b3_str = read_request_header(buf, hdr_loc, b3_key, b3_key_len);
 
   const char *b3_tid_key = "X-B3-TraceId";
-  int b3_tid_key_len = 12;
+  int b3_tid_key_len     = 12;
   std::string b3_tid_str = read_request_header(buf, hdr_loc, b3_tid_key, b3_tid_key_len);
 
   const char *b3_sid_key = "X-B3-SpanId";
-  int b3_sid_key_len = 11;
+  int b3_sid_key_len     = 11;
   std::string b3_sid_str = read_request_header(buf, hdr_loc, b3_sid_key, b3_sid_key_len);
 
   const char *b3_s_key = "X-B3-Sampled";
-  int b3_s_key_len = 12;
+  int b3_s_key_len     = 12;
   std::string b3_s_str = read_request_header(buf, hdr_loc, b3_s_key, b3_s_key_len);
 
   // TODO: add remote ip, port to attributes
@@ -225,7 +224,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
   trace::StartSpanOptions options;
-  options.kind          = trace::SpanKind::kServer;  // server
+  options.kind          = trace::SpanKind::kServer; // server
   std::string span_name = path_str;
 
   // create parent context
@@ -233,30 +232,30 @@ read_request(TSHttpTxn txnp, TSCont contp)
   if (b3_str != "") {
     parent_headers["b3"] = b3_str;
   }
-  if(b3_tid_str != "") {
+  if (b3_tid_str != "") {
     parent_headers["X-B3-TraceId"] = b3_tid_str;
   }
-  if(b3_sid_str != "") {
+  if (b3_sid_str != "") {
     parent_headers["X-B3-SpanId"] = b3_sid_str;
   }
-  if(b3_s_str != "") {
+  if (b3_s_str != "") {
     parent_headers["X-B3-Sampled"] = b3_s_str;
   }
   const HttpTextMapCarrier<std::map<std::string, std::string>> parent_carrier(parent_headers);
   auto parent_prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
   auto parent_current_ctx = context::RuntimeContext::GetCurrent();
   auto parent_new_context = parent_prop->Extract(parent_carrier, parent_current_ctx);
-  options.parent   = trace::GetSpan(parent_new_context)->GetContext();
+  options.parent          = trace::GetSpan(parent_new_context)->GetContext();
 
   auto span = get_tracer("ats")->StartSpan(span_name,
-                                {{"http.method", method_str},
-                                 {"http.url", target_str},
-                                 {"http.route", path_str},
-                                 {"http.host", host_str},
-                                 {"http.user_agent", ua_str},
-                                 {"net.host.port", port},
-                                 {"http.scheme", scheme_str}},
-                                options);
+                                           {{"http.method", method_str},
+                                            {"http.url", target_str},
+                                            {"http.route", path_str},
+                                            {"http.host", host_str},
+                                            {"http.user_agent", ua_str},
+                                            {"net.host.port", port},
+                                            {"http.scheme", scheme_str}},
+                                           options);
 
   auto scope = get_tracer("ats")->WithActiveSpan(span);
 
@@ -271,7 +270,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return;
   }
-  for (auto &p: carrier.headers_) {
+  for (auto &p : carrier.headers_) {
     TSDebug(PLUGIN_NAME, "[%s] adding header %s %s ", __FUNCTION__, p.first.c_str(), p.second.c_str());
     set_request_header(buf, hdr_loc, p.first.c_str(), p.first.size(), p.second.c_str(), p.second.size());
   }
@@ -286,7 +285,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, close_txn_contp);
   ExtraRequestData *req_data = new ExtraRequestData;
-  req_data->span = span;
+  req_data->span             = span;
   TSContDataSet(close_txn_contp, req_data);
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -317,9 +316,9 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "kichan@yahooinc.com";
 
   // Get parameter: service name, sampling rate,
-  std::string url = "";
+  std::string url          = "";
   std::string service_name = "otel_tracer";
-  double rate = 1.0;
+  double rate              = 1.0;
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
