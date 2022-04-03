@@ -312,8 +312,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;
-  info.vendor_name   = "Yahoo";
-  info.support_email = "kichan@yahooinc.com";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   // Get parameter: service name, sampling rate,
   std::string url          = "";
