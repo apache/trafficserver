@@ -1,0 +1,16 @@
+server_id: 1
+address: 127.0.0.1
+port: 10001
+asio_thread_pool_size: 4
+heart_beat_interval: 100
+election_timeout_lower_bound: 200
+election_timeout_upper_bound: 400
+reserved_log_items: 5
+snapshot_distance: 5
+client_req_timeout: 3000 # this is in milliseconds
+key_update_interval: 3600 # this is in seconds
+server_list_file: /abs/path/to/server_list.yaml
+root_cert_file: /abs/path/to/ca.pem
+server_cert_file: /abs/path/to/server.pem
+server_key_file: /abs/path/to/server.key
+cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=localhost
