@@ -79,7 +79,8 @@ test_proxy_hdrs_CPPFLAGS = $(AM_CPPFLAGS) \
 
 test_proxy_hdrs_SOURCES = \
 	unit_tests/unit_test_main.cc \
-	unit_tests/test_URL.cc
+	unit_tests/test_URL.cc \
+	unit_tests/test_Hdrs.cc
 
 test_proxy_hdrs_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
