@@ -340,6 +340,7 @@ Changes with Apache Traffic Server 9.2.0
   #8449 - Add AuTest for HTTP CONNECT
   #8450 - Document proxy.config.memory.max_usage
   #8453 - Ignore ECONNABORTED on blocking accept
+  #8459 - Adds an IP reputation system to the SNI rate limiter
   #8462 - ssl_verify_test: clang-analyzer fix to account for null sni_name
   #8469 - Make factory.response_suppression_mode an overridable config
   #8473 - Serve stale content from child if parent returns invalid/marked down
