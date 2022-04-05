@@ -52,6 +52,7 @@ meta:
 
 sessions:
 - transactions:
+  # These first two requests just store the two alternats for this url
   - all: { headers: { fields: [[ uuid, 1 ]]}}
     <<: *request_for_en_US
 
@@ -62,7 +63,7 @@ sessions:
         fields:
         - [ Content-Length, 16 ]
         - [ Cache-Control, max-age=4 ]
-        - [ Content-Language, en-US ]
+        - [ Content-Language, en_US ]
         - [ Vary, Accept-Language ]
 
 
@@ -78,12 +79,13 @@ sessions:
         fields:
         - [ Content-Length, 20 ]
         - [ Cache-Control, max-age=4 ]
-        - [ Content-Language, es-US ]
+        - [ Content-Language, es_US ]
         - [ Vary, Accept-Language ]
 
     proxy-response:
       status: 200
 
+  # This request serves as a way to introduce a 5 second delay so we can replace the cache objects
   - all: { headers: { fields: [[ uuid, 3 ]]}}
     client-request:
       method: "GET"
@@ -106,6 +108,7 @@ sessions:
     proxy-response:
       status: 200
 
+  # Replace the es_US alternate (this works fine)
   - all: { headers: { fields: [[ uuid, 4 ]]}}
     <<: *request_for_es_US
 
@@ -116,12 +119,13 @@ sessions:
         fields:
         - [ Content-Length, 0 ]
         - [ Cache-Control, max-age=10 ]
-        - [ Content-Language, es-US ]
+        - [ Content-Language, es_US ]
         - [ Vary, Accept-Language ]
 
     proxy-response:
       status: 404
 
+  # Replace the en_US alternate (this request breaks the cache)
   - all: { headers: { fields: [[ uuid, 5 ]]}}
     <<: *request_for_en_US
 
@@ -132,12 +136,13 @@ sessions:
         fields:
         - [ Content-Length, 0 ]
         - [ Cache-Control, max-age=10 ]
-        - [ Content-Language, en-US ]
+        - [ Content-Language, en_US ]
         - [ Vary, Accept-Language ]
 
     proxy-response:
       status: 404
 
+  # Expect a CL 0 response, but the server returns a chunked encoded, 16 byte response
   - all: { headers: { fields: [[ uuid, 6 ]]}}
     <<: *request_for_en_US
 
