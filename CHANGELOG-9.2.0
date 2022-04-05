@@ -318,6 +318,7 @@ Changes with Apache Traffic Server 9.2.0
   #8375 - Add a set-http-cntl operator for header_rewrite
   #8381 - Fix a potential H2 stall
   #8392 - Update the feature lists available for autest
+  #8395 - Added metrics to the rate limit plugin and document the new options
   #8405 - Update CacheWrite.cc
   #8408 - Doc: fix typos in Strategy documentation
   #8409 - Add stats for concurrent stream limits exceeded
@@ -413,13 +414,19 @@ Changes with Apache Traffic Server 9.2.0
   #8715 - Fixes build when hwloc is not installed
   #8718 - Enable all iocore/cache tests
   #8722 - Adds user-agent to OCSP requests
+  #8723 - Adding prefetch feature to slice plugin
   #8725 - Update THREAD_FREE macro to only evaluate the _t parameter once.
   #8729 - Address issues with python 3.10
   #8736 - [ink_base64] Fix buffer size computation
   #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
   #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
+  #8751 - STEK share plugin using Raft
   #8752 - docs: add some obvious units to some http2 overridables
   #8753 - Update to proxy-verifier-v2.3.1
+  #8758 - Check return values of openssl api calls
   #8763 - Fix error handling in SSL cert/key load failures
+  #8764 - Lua plugin memory leak on remap configuration reloads
   #8765 - Fixing the httpbin AuTests by pinning Werkzeug
   #8770 - Remove null check before ats_free calls (#8744)
+  #8772 - Add metrics for loop detection.
+  #8773 - Pin Jinja2 for doc builds
