@@ -18,6 +18,7 @@
 #pragma once
 
 #include "limiter.h"
+#include "ip_reputation.h"
 #include "ts/ts.h"
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
@@ -40,4 +41,25 @@ public:
   }
 
   bool initialize(int argc, const char *argv[]);
+
+  // ToDo: this ought to go into some better global IP reputation pool / settings. Waiting for YAML...
+  IpReputation::SieveLru iprep;
+  uint32_t iprep_permablock_count     = 0; // "Hits" limit for blocking permanently
+  uint32_t iprep_permablock_threshold = 0; // Pressure threshold for permanent block
+
+  // Calculate the pressure, which is either a negative number (ignore), or a number 0-<buckets>.
+  // 0 == block only perma-blocks.
+  int32_t
+  pressure() const
+  {
+    return ((active() - 1) / static_cast<float>(limit) * 100) - (99 - _iprep_num_buckets);
+  }
+
+private:
+  // ToDo: These should be moved to global configurations to have one shared IP Reputation.
+  // today the configuration of this is so klunky, that there is no easy way to make it "global".
+  std::chrono::seconds _iprep_max_age       = std::chrono::seconds::zero(); // Max age in the SieveLRUs for regular buckets
+  std::chrono::seconds _iprep_perma_max_age = std::chrono::seconds::zero(); // Max age in the SieveLRUs for perma-block buckets
+  uint32_t _iprep_num_buckets               = 10;                           // Number of buckets. ToDo: leave this at 10 always
+  uint32_t _iprep_size                      = 15;                           // Size of the biggest bucket; 15 == 2^15 == 32768
 };

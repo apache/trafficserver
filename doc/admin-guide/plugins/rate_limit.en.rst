@@ -30,6 +30,17 @@ The limit counters and queues are per remap rule only, i.e. there is
 (currently) no way to group transaction limits from different remap rules
 into a single rate limiter.
 
+.. Note::
+    This is still work in progress, in particularly the configuration and
+    the IP reputation system needs some work. In particular:
+
+    * We need a proper YAML configuration overall, allowing us to configure
+      better per service controls as well as sharing resources between remap
+      rules or SNI.
+    * We need reloadable configurations.
+    * The IP reputation currently only works with the global plugin settings.
+    * There is no support for adding allow listed IPs to the IP reputation.
+
 Remap Plugin
 ------------
 
@@ -96,7 +107,10 @@ Global Plugin
 -------------
 
 As a global plugin, the rate limiting currently applies only for TLS enabled
-connections, based on the SNI from the TLS handshake. The basic use is as::
+connections, based on the SNI from the TLS handshake. As a global plugin we
+also have the support of an IP reputation system, see below for configurations.
+
+The basic use is as::
 
     rate_limit.so SNI=www1.example.com,www2.example.com --limit=2 --queue=2 --maxage=10000
 
@@ -144,6 +158,37 @@ The following options are available:
    the plugin will use the FQDN of the SNI associated with each rate limiter instance
    created during plugin initialization.
 
+.. option:: --iprep_buckets
+   The number of LRU buckets to use for the IP reputation. A good number here
+   is 10, but can be configured. The reason for the different buckets is to
+   account for a pseudo-sorted list of IPs on the frequency seen. Too few buckets
+   will not be enough to keep such a sorting, rendering the algorithm useless. To
+   function in our setup, the number of buckets must be less than ``100``.
+
+.. option:: --iprep_bucketsize
+   This is the size of the largest LRU bucket (the `entry bucket`), `15` is a good
+   value. This is a power of 2, so `15` means the largest LRU can hold `32768` entries.
+   Note that this option must be bigger then the `--iprep_buckets` setting, for the
+   bucket halfing to function.
+
+.. option:: --iprep_maxage
+   This is used for aging out entries out of the LRU, the default is `0` which means
+   no aging happens. Even with no aging, entries will eventually fall out of buckets
+   because of the LRU mechanism that kicks in. The aging is here to make sure a spike
+   in traffic from an IP doesn't keep the entry for too long in the LRUs.
+
+.. option:: --iprep_permablock_limit
+   The minimum number of hits an IP must reach to get moved to the permanent bucket.
+   In this bucket, entries will stay for 2x
+
+.. option:: --iprep_permablock_pressure
+   This option specifies from which bucket an IP is allowed to move from into the
+   perma block bucket. A good value here is likely `0` or `1`, which is very conservative.
+
+.. option:: --iprep_permablock_maxage
+   Similar to `--iprep_maxage` above, but only applies to the long term (`perma-block`)
+   bucket. Default is `0`, which means no aging to this bucket is applied.
+
 Metrics
 -------
 Metric names are generated either using defaults or user-supplied values. In either
@@ -188,6 +233,21 @@ A user can specify their own prefixes and tags, but not types or metrics.
    ``expired``    Queued connection is too old to be resumed and is rejected.
    ``resumed``    Queued connection is resumed.
    ============== ===================================================================
+
+IP Reputation
+-------------
+
+The goal of the IP reputation system is to simply try to identify IPs which are more
+likely to be abusive than others. It's not a perfect system, and it relies heavily on
+the notion of pressure. The Sieve LRUs are always filled, so you have to make sure that
+you only start using them when the system thinks it's under pressure.
+
+The Sieve LRU is a chained set of (configurable) LRUs, each with smaller and smaller
+capacity. This essentially adds a notion of partially sorted elements; All IPs in
+LRU <n> generally are more active than the IPs in LRU <n+1>. LRU is specially marked
+for longer term blocking, only the most abusive elements would end up here.
+
+.. figure:: /static/images/sdk/SieveLRU.png
 
 Examples
 --------
