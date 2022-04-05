@@ -115,6 +115,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
     {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
+    {const_cast<char *>("prefetch-count"), required_argument, nullptr, 'f'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -205,6 +206,9 @@ Config::fromArgs(int const argc, char const *const argv[])
       } else {
         DEBUG_LOG("Skipping blockbytes-test in favor of blockbytes");
       }
+    } break;
+    case 'f': {
+      m_prefetchcount = atoi(optarg);
     } break;
     default:
       break;

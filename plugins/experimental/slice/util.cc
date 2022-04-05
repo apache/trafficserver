@@ -17,6 +17,7 @@
  */
 
 #include "util.h"
+#include "prefetch.h"
 
 #include "Config.h"
 #include "Data.h"
@@ -110,6 +111,19 @@ request_block(TSCont contp, Data *const data)
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }
 
+  // if prefetch config set, schedule next block requests in background
+  for (int i = 0; i < data->m_config->m_prefetchcount; i++) {
+    int nextblocknum = data->m_blocknum + i + 1;
+    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, nextblocknum) && !data->m_fetchstates[nextblocknum]) {
+      if (BgBlockFetch::schedule(data, nextblocknum)) {
+        DEBUG_LOG("Background fetch requested");
+      } else {
+        DEBUG_LOG("Background fetch not requested");
+      }
+    } else {
+      break;
+    }
+  }
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp, INT64_MAX);
 
