@@ -22,7 +22,7 @@
 static int ts_lua_http_intercept(lua_State *L);
 static int ts_lua_http_server_intercept(lua_State *L);
 static int ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata);
-static void ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSVConn conn);
+static void ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSCont contp, TSVConn conn);
 static void ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx *ictx);
 static void ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx *ictx);
 static int ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata);
@@ -144,7 +144,7 @@ ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_NET_ACCEPT:
-    ts_lua_http_intercept_process(ictx, (TSVConn)edata);
+    ts_lua_http_intercept_process(ictx, contp, (TSVConn)edata);
     break;
 
   default:
@@ -156,10 +156,9 @@ ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSVConn conn)
+ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSCont contp, TSVConn conn)
 {
   int n;
-  TSCont contp;
   lua_State *L;
   TSMutex mtxp;
   ts_lua_cont_info *ci;
@@ -167,11 +166,9 @@ ts_lua_http_intercept_process(ts_lua_http_intercept_ctx *ictx, TSVConn conn)
   ci   = &ictx->cinfo;
   mtxp = ictx->cinfo.routine.mctx->mutexp;
 
-  contp = TSContCreate(ts_lua_http_intercept_handler, TSMutexCreate());
-  TSContDataSet(contp, ictx);
-
-  ci->contp = contp;
   ci->mutex = TSContMutexGet(contp);
+  ci->contp = TSContCreate(ts_lua_http_intercept_handler, TSContMutexGet(contp));
+  TSContDataSet(ci->contp, ictx);
 
   ictx->net_vc = conn;
 
