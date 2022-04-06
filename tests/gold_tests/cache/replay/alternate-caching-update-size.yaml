@@ -62,7 +62,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 16 ]
-        - [ Cache-Control, max-age=4 ]
+        - [ Cache-Control, max-age=1 ]
         - [ Content-Language, en_US ]
         - [ Vary, Accept-Language ]
 
@@ -78,7 +78,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 20 ]
-        - [ Cache-Control, max-age=4 ]
+        - [ Cache-Control, max-age=1 ]
         - [ Content-Language, es_US ]
         - [ Vary, Accept-Language ]
 
@@ -97,14 +97,13 @@ sessions:
         - [ Host, example.com ]
         - [ Accept, "*/*" ]
         - [ Accept-Language, es_US ]
-      delay: 5s
+      delay: 2s
     server-response:
       status: 500
       reason: NOT USED
       headers:
         fields:
         - [ Content-Length, 20 ]
-        - [ Cache-Control, max-age=10 ]
     proxy-response:
       status: 200
 
@@ -135,7 +134,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
-        - [ Cache-Control, max-age=10 ]
+        - [ Cache-Control, max-age=1 ]
         - [ Content-Language, en_US ]
         - [ Vary, Accept-Language ]
 
@@ -152,7 +151,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
-        - [ Cache-Control, max-age=10 ]
+        - [ Cache-Control, max-age=1 ]
 
     proxy-response:
       status: 404
