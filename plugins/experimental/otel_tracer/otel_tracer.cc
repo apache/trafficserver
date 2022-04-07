@@ -20,6 +20,7 @@
 #include <iostream>
 #include <vector>
 #include <string_view>
+#include <sstream>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -238,8 +239,13 @@ read_request(TSHttpTxn txnp, TSCont contp)
     parent_headers[std::string{b3_s_key}] = b3_s_str;
   }
 
+  // txn id
+  std::ostringstream id_stream;
+  id_stream << TSHttpTxnIdGet(txnp);
+
   auto span = get_tracer("ats")->StartSpan(
-    get_span_name(path_str), get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str),
+    get_span_name(path_str),
+    get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str, id_stream.str()),
     get_span_options(parent_headers));
 
   auto scope = get_tracer("ats")->WithActiveSpan(span);

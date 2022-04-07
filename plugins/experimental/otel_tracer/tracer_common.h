@@ -57,6 +57,7 @@ constexpr const char *attrHttpHost       = {"http.host"};
 constexpr const char *attrHttpUserAgent  = {"http.user_agent"};
 constexpr const char *attrNetHostPort    = {"net.host.port"};
 constexpr const char *attrHttpScheme     = {"http.scheme"};
+constexpr const char *attrHttpTxnId      = {"http.txn_id"};
 
 template <typename T> class HttpTextMapCarrier : public context::propagation::TextMapCarrier
 {
@@ -159,7 +160,7 @@ get_span_name(std::string_view path_str)
 
 std::map<nostd::string_view, opentelemetry::common::AttributeValue>
 get_span_attributes(std::string_view method_str, std::string_view target_str, std::string_view path_str, std::string_view host_str,
-                    std::string_view ua_str, int port, std::string_view scheme_str)
+                    std::string_view ua_str, int port, std::string_view scheme_str, std::string_view txn_id_str)
 {
   std::map<nostd::string_view, opentelemetry::common::AttributeValue> attributes;
   attributes[attrHttpMethod]    = nostd::string_view(method_str.data(), method_str.length());
@@ -169,6 +170,7 @@ get_span_attributes(std::string_view method_str, std::string_view target_str, st
   attributes[attrHttpUserAgent] = nostd::string_view(ua_str.data(), ua_str.length());
   attributes[attrNetHostPort]   = port;
   attributes[attrHttpScheme]    = nostd::string_view(scheme_str.data(), scheme_str.length());
+  attributes[attrHttpTxnId]     = nostd::string_view(txn_id_str.data(), txn_id_str.length());
 
   return attributes;
 }
