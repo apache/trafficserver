@@ -132,7 +132,7 @@ InitTracer(std::string url, std::string service_name, double rate)
 
   auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
                                                            std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
-                                                              std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
+                                                             std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
   auto provider = nostd::shared_ptr<trace::TracerProvider>(new sdktrace::TracerProvider(context));
 
   // Set the global trace provider
