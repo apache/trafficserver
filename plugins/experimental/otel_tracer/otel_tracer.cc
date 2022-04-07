@@ -19,6 +19,7 @@
 #include <string.h>
 #include <iostream>
 #include <vector>
+#include <string_view>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -26,10 +27,15 @@
 
 #define PLUGIN_NAME "otel_tracer"
 
+constexpr std::string_view ua_key     = {"User-Agent"};
+constexpr std::string_view host_key   = {"Host"};
+constexpr std::string_view l_host_key = {"host"};
+constexpr std::string_view b3_key     = {"b3"};
+constexpr std::string_view b3_tid_key = {"X-B3-TraceId"};
+constexpr std::string_view b3_sid_key = {"X-B3-SpanId"};
+constexpr std::string_view b3_s_key   = {"X-B3-Sampled"};
+
 #include "tracer_common.h"
-namespace trace    = opentelemetry::trace;
-namespace nostd    = opentelemetry::nostd;
-namespace sdktrace = opentelemetry::sdk::trace;
 
 static int
 close_txn(TSCont contp, TSEvent event, void *edata)
@@ -38,7 +44,7 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
-  ExtraRequestData *req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
+  auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
 
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_TXN_CLOSE) {
@@ -48,9 +54,9 @@ close_txn(TSCont contp, TSEvent event, void *edata)
 
   if (TSHttpTxnClientRespGet(txnp, &buf, &hdr_loc) == TS_SUCCESS) {
     int status = TSHttpHdrStatusGet(buf, hdr_loc);
-    req_data->span->SetAttribute("http.status_code", status);
+    req_data->SetSpanStatus(req_data, status);
     if (status > 499) {
-      req_data->span->SetStatus(trace::StatusCode::kError);
+      req_data->SetSpanError(req_data);
     }
 
     TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
@@ -71,15 +77,12 @@ lReturn:
 static void
 set_request_header(TSMBuffer buf, TSMLoc hdr_loc, const char *key, int key_len, const char *val, int val_len)
 {
-  TSMLoc field_loc, tmp;
-  int first;
-
-  field_loc = TSMimeHdrFieldFind(buf, hdr_loc, key, key_len);
+  TSMLoc field_loc = TSMimeHdrFieldFind(buf, hdr_loc, key, key_len);
 
   if (field_loc != TS_NULL_MLOC) {
-    first = 1;
+    int first = 1;
     while (field_loc != TS_NULL_MLOC) {
-      tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field_loc);
+      TSMLoc tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field_loc);
       if (first) {
         first = 0;
         TSMimeHdrFieldValueStringSet(buf, hdr_loc, field_loc, -1, val, val_len);
@@ -104,23 +107,6 @@ set_request_header(TSMBuffer buf, TSMLoc hdr_loc, const char *key, int key_len, 
   return;
 }
 
-static std::string
-read_request_header(TSMBuffer buf, TSMLoc hdr_loc, const char *key, int key_len)
-{
-  std::string retval = "";
-  const char *field;
-  int field_len;
-  TSMLoc field_loc;
-  field_loc = TSMimeHdrFieldFind(buf, hdr_loc, key, key_len);
-  if (field_loc) {
-    field = TSMimeHdrFieldValueStringGet(buf, hdr_loc, field_loc, -1, &field_len);
-    retval.assign(field, field_len);
-    TSHandleMLocRelease(buf, hdr_loc, field_loc);
-  }
-
-  return retval;
-}
-
 static void
 read_request(TSHttpTxn txnp, TSCont contp)
 {
@@ -133,12 +119,54 @@ read_request(TSHttpTxn txnp, TSCont contp)
     return;
   }
 
+  // path, host, port, scheme
+  TSMLoc url_loc = nullptr;
+  if (TSHttpHdrUrlGet(buf, hdr_loc, &url_loc) != TS_SUCCESS) {
+    TSError("[otel_tracer][%s] cannot retrieve client request url", __FUNCTION__);
+    TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return;
+  }
+
+  std::string path_str = "/";
+  const char *path     = nullptr;
+  int path_len         = 0;
+  path                 = TSUrlPathGet(buf, url_loc, &path_len);
+  path_str.append(std::string_view(path, path_len));
+
+  TSMLoc host_field_loc   = nullptr;
+  TSMLoc l_host_field_loc = nullptr;
+  const char *host        = nullptr;
+  int host_len            = 0;
+  host                    = TSUrlHostGet(buf, url_loc, &host_len);
+  if (host_len == 0) {
+    host_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, host_key.data(), host_key.length());
+    if (host_field_loc) {
+      host = TSMimeHdrFieldValueStringGet(buf, hdr_loc, host_field_loc, -1, &host_len);
+    }
+
+    if (host_len == 0) {
+      l_host_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, l_host_key.data(), l_host_key.length());
+      if (l_host_field_loc) {
+        host = TSMimeHdrFieldValueStringGet(buf, hdr_loc, l_host_field_loc, -1, &host_len);
+      }
+    }
+  }
+  std::string_view host_str(host, host_len);
+
+  const char *scheme = nullptr;
+  int scheme_len     = 0;
+  scheme             = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+  std::string_view scheme_str(scheme, scheme_len);
+
+  int port;
+  port = TSUrlPortGet(buf, url_loc);
+
   // method
-  const char *method;
-  int method_len;
-  method                 = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
-  std::string method_str = "";
-  method_str.assign(method, method_len);
+  const char *method = nullptr;
+  int method_len     = 0;
+  method             = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
+  std::string_view method_str(method, method_len);
 
   // TO-DO: add http flavor as attribute
   // const char *h2_tag = TSHttpTxnClientProtocolStackContains(txnp, "h2");
@@ -146,147 +174,122 @@ read_request(TSHttpTxn txnp, TSCont contp)
   // const char *h11_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.1");
 
   // target
-  char *target           = nullptr;
-  int target_len         = 0;
-  std::string target_str = "";
-  target                 = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
-  if (target) {
-    target_str.assign(target, target_len);
-    free(target);
-  }
-
-  // path, host, port, scheme
-  TSMLoc url_loc;
-  if (TSHttpHdrUrlGet(buf, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[otel_tracer][%s] cannot retrieve client request url", __FUNCTION__);
-  }
-
-  const char *path;
-  int path_len         = 0;
-  path                 = TSUrlPathGet(buf, url_loc, &path_len);
-  std::string path_str = "";
-  path_str.assign(path, path_len);
-  path_str = "/" + path_str;
-
-  const char *host;
-  int host_len         = 0;
-  std::string host_str = "";
-  host                 = TSUrlHostGet(buf, url_loc, &host_len);
-  if (host_len == 0) {
-    const char *key   = "Host";
-    const char *l_key = "host";
-    int key_len       = 4;
-
-    host_str = read_request_header(buf, hdr_loc, key, key_len);
-    if (host_str == "") {
-      host_str = read_request_header(buf, hdr_loc, l_key, key_len);
-    }
-  } else {
-    host_str.assign(host, host_len);
-  }
-
-  const char *scheme;
-  int scheme_len         = 0;
-  scheme                 = TSUrlSchemeGet(buf, url_loc, &scheme_len);
-  std::string scheme_str = "";
-  scheme_str.assign(scheme, scheme_len);
-
-  int port;
-  port = TSUrlPortGet(buf, url_loc);
-
-  TSHandleMLocRelease(buf, hdr_loc, url_loc);
+  char *target   = nullptr;
+  int target_len = 0;
+  target         = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
+  std::string_view target_str(target, target_len);
 
   // user-agent
-  const char *ua_key = "User-Agent";
-  int ua_key_len     = 10;
-  std::string ua_str = read_request_header(buf, hdr_loc, ua_key, ua_key_len);
+  TSMLoc ua_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, ua_key.data(), ua_key.length());
+  const char *ua      = nullptr;
+  int ua_len          = 0;
+  if (ua_field_loc) {
+    ua = TSMimeHdrFieldValueStringGet(buf, hdr_loc, ua_field_loc, -1, &ua_len);
+  }
+  std::string_view ua_str(ua, ua_len);
 
   // B3 headers
-  const char *b3_key = "b3";
-  int b3_key_len     = 2;
-  std::string b3_str = read_request_header(buf, hdr_loc, b3_key, b3_key_len);
+  TSMLoc b3_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_key.data(), b3_key.length());
+  const char *b3      = nullptr;
+  int b3_len          = 0;
+  if (b3_field_loc) {
+    b3 = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_field_loc, -1, &b3_len);
+  }
+  std::string_view b3_str(b3, b3_len);
 
-  const char *b3_tid_key = "X-B3-TraceId";
-  int b3_tid_key_len     = 12;
-  std::string b3_tid_str = read_request_header(buf, hdr_loc, b3_tid_key, b3_tid_key_len);
+  TSMLoc b3_tid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_tid_key.data(), b3_tid_key.length());
+  const char *b3_tid      = nullptr;
+  int b3_tid_len          = 0;
+  if (b3_tid_field_loc) {
+    b3_tid = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_tid_field_loc, -1, &b3_tid_len);
+  }
+  std::string_view b3_tid_str(b3_tid, b3_tid_len);
 
-  const char *b3_sid_key = "X-B3-SpanId";
-  int b3_sid_key_len     = 11;
-  std::string b3_sid_str = read_request_header(buf, hdr_loc, b3_sid_key, b3_sid_key_len);
+  TSMLoc b3_sid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_sid_key.data(), b3_sid_key.length());
+  const char *b3_sid      = nullptr;
+  int b3_sid_len          = 0;
+  if (b3_sid_field_loc) {
+    b3_sid = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_sid_field_loc, -1, &b3_sid_len);
+  }
+  std::string_view b3_sid_str(b3_sid, b3_sid_len);
 
-  const char *b3_s_key = "X-B3-Sampled";
-  int b3_s_key_len     = 12;
-  std::string b3_s_str = read_request_header(buf, hdr_loc, b3_s_key, b3_s_key_len);
+  TSMLoc b3_s_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_s_key.data(), b3_s_key.length());
+  const char *b3_s      = nullptr;
+  int b3_s_len          = 0;
+  if (b3_s_field_loc) {
+    b3_s = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_s_field_loc, -1, &b3_s_len);
+  }
+  std::string_view b3_s_str(b3_s, b3_s_len);
 
   // TODO: add remote ip, port to attributes
 
-  // done with client request
-  TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
-
-  trace::StartSpanOptions options;
-  options.kind          = trace::SpanKind::kServer; // server
-  std::string span_name = path_str;
-
   // create parent context
   std::map<std::string, std::string> parent_headers;
-  if (b3_str != "") {
-    parent_headers["b3"] = b3_str;
+  if (b3_len != 0) {
+    parent_headers[std::string{b3_key}] = b3_str;
   }
-  if (b3_tid_str != "") {
-    parent_headers["X-B3-TraceId"] = b3_tid_str;
+  if (b3_tid_len != 0) {
+    parent_headers[std::string{b3_tid_key}] = b3_tid_str;
   }
-  if (b3_sid_str != "") {
-    parent_headers["X-B3-SpanId"] = b3_sid_str;
+  if (b3_sid_len != 0) {
+    parent_headers[std::string{b3_sid_key}] = b3_sid_str;
   }
-  if (b3_s_str != "") {
-    parent_headers["X-B3-Sampled"] = b3_s_str;
+  if (b3_s_len != 0) {
+    parent_headers[std::string{b3_s_key}] = b3_s_str;
   }
-  const HttpTextMapCarrier<std::map<std::string, std::string>> parent_carrier(parent_headers);
-  auto parent_prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-  auto parent_current_ctx = context::RuntimeContext::GetCurrent();
-  auto parent_new_context = parent_prop->Extract(parent_carrier, parent_current_ctx);
-  options.parent          = trace::GetSpan(parent_new_context)->GetContext();
 
-  auto span = get_tracer("ats")->StartSpan(span_name,
-                                           {{"http.method", method_str},
-                                            {"http.url", target_str},
-                                            {"http.route", path_str},
-                                            {"http.host", host_str},
-                                            {"http.user_agent", ua_str},
-                                            {"net.host.port", port},
-                                            {"http.scheme", scheme_str}},
-                                           options);
+  auto span = get_tracer("ats")->StartSpan(
+    get_span_name(path_str), get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str),
+    get_span_options(parent_headers));
 
   auto scope = get_tracer("ats")->WithActiveSpan(span);
 
-  auto current_ctx = opentelemetry::context::RuntimeContext::GetCurrent();
-  HttpTextMapCarrier<opentelemetry::ext::http::client::Headers> carrier;
-  auto prop = opentelemetry::context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-  prop->Inject(carrier, current_ctx);
-
+  std::map<std::string, std::string> trace_headers = get_trace_headers();
   // insert headers to request
-  if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
-    TSError("[otel_tracer][%s] cannot retrieve client request", __FUNCTION__);
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-    return;
-  }
-  for (auto &p : carrier.headers_) {
-    TSDebug(PLUGIN_NAME, "[%s] adding header %s %s ", __FUNCTION__, p.first.c_str(), p.second.c_str());
+  for (auto &p : trace_headers) {
     set_request_header(buf, hdr_loc, p.first.c_str(), p.first.size(), p.second.c_str(), p.second.size());
   }
-  // done with client request for setting request header
-  TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
   // pass the span
   TSCont close_txn_contp = TSContCreate(close_txn, nullptr);
   if (!close_txn_contp) {
     TSError("[otel_tracer][%s] Could not create continuation", __FUNCTION__);
-    return;
+  } else {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, close_txn_contp);
+    ExtraRequestData *req_data = new ExtraRequestData;
+    req_data->span             = span;
+    TSContDataSet(close_txn_contp, req_data);
   }
-  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, close_txn_contp);
-  ExtraRequestData *req_data = new ExtraRequestData;
-  req_data->span             = span;
-  TSContDataSet(close_txn_contp, req_data);
+
+  // clean up
+  if (target) {
+    TSfree(target);
+  }
+  if (host_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, host_field_loc);
+  }
+  if (l_host_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, l_host_field_loc);
+  }
+  if (ua_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, ua_field_loc);
+  }
+  if (b3_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, b3_field_loc);
+  }
+  if (b3_tid_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, b3_tid_field_loc);
+  }
+  if (b3_sid_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, b3_sid_field_loc);
+  }
+  if (b3_s_field_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, b3_s_field_loc);
+  }
+  if (url_loc) {
+    TSHandleMLocRelease(buf, hdr_loc, url_loc);
+  }
+  TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }

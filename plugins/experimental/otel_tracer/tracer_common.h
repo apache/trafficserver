@@ -49,6 +49,15 @@ namespace context  = opentelemetry::context;
 namespace otlp     = opentelemetry::exporter::otlp;
 namespace
 {
+constexpr const char *attrHttpStatusCode = {"http.status_code"};
+constexpr const char *attrHttpMethod     = {"http.method"};
+constexpr const char *attrHttpUrl        = {"http.url"};
+constexpr const char *attrHttpRoute      = {"http.route"};
+constexpr const char *attrHttpHost       = {"http.host"};
+constexpr const char *attrHttpUserAgent  = {"http.user_agent"};
+constexpr const char *attrNetHostPort    = {"net.host.port"};
+constexpr const char *attrHttpScheme     = {"http.scheme"};
+
 template <typename T> class HttpTextMapCarrier : public context::propagation::TextMapCarrier
 {
 public:
@@ -78,6 +87,18 @@ public:
 // to be called explictly inside Destruct method
 struct ExtraRequestData {
   nostd::shared_ptr<trace::Span> span;
+
+  static void
+  SetSpanStatus(ExtraRequestData *This, int status)
+  {
+    This->span->SetAttribute(attrHttpStatusCode, status);
+  }
+
+  static void
+  SetSpanError(ExtraRequestData *This)
+  {
+    This->span->SetStatus(trace::StatusCode::kError);
+  }
 
   static int
   Destruct(ExtraRequestData *This)
@@ -111,7 +132,7 @@ InitTracer(std::string url, std::string service_name, double rate)
 
   auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
                                                            std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
-                                                             std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
+                                                              std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
   auto provider = nostd::shared_ptr<trace::TracerProvider>(new sdktrace::TracerProvider(context));
 
   // Set the global trace provider
@@ -127,6 +148,56 @@ get_tracer(std::string tracer_name)
 {
   auto provider = trace::Provider::GetTracerProvider();
   return provider->GetTracer(tracer_name, OPENTELEMETRY_SDK_VERSION);
+}
+
+nostd::string_view
+get_span_name(std::string_view path_str)
+{
+  nostd::string_view span_name(path_str.data(), path_str.length());
+  return span_name;
+}
+
+std::map<nostd::string_view, opentelemetry::common::AttributeValue>
+get_span_attributes(std::string_view method_str, std::string_view target_str, std::string_view path_str, std::string_view host_str,
+                    std::string_view ua_str, int port, std::string_view scheme_str)
+{
+  std::map<nostd::string_view, opentelemetry::common::AttributeValue> attributes;
+  attributes[attrHttpMethod]    = nostd::string_view(method_str.data(), method_str.length());
+  attributes[attrHttpUrl]       = nostd::string_view(target_str.data(), target_str.length());
+  attributes[attrHttpRoute]     = nostd::string_view(path_str.data(), path_str.length());
+  attributes[attrHttpHost]      = nostd::string_view(host_str.data(), host_str.length());
+  attributes[attrHttpUserAgent] = nostd::string_view(ua_str.data(), ua_str.length());
+  attributes[attrNetHostPort]   = port;
+  attributes[attrHttpScheme]    = nostd::string_view(scheme_str.data(), scheme_str.length());
+
+  return attributes;
+}
+
+trace::StartSpanOptions
+get_span_options(std::map<std::string, std::string> parent_headers)
+{
+  trace::StartSpanOptions options;
+
+  options.kind = trace::SpanKind::kServer; // server
+
+  const HttpTextMapCarrier<std::map<std::string, std::string>> parent_carrier(parent_headers);
+  auto parent_prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
+  auto parent_current_ctx = context::RuntimeContext::GetCurrent();
+  auto parent_new_context = parent_prop->Extract(parent_carrier, parent_current_ctx);
+  options.parent          = trace::GetSpan(parent_new_context)->GetContext();
+
+  return options;
+}
+
+std::map<std::string, std::string>
+get_trace_headers()
+{
+  auto current_ctx = opentelemetry::context::RuntimeContext::GetCurrent();
+  HttpTextMapCarrier<std::map<std::string, std::string>> carrier;
+  auto prop = opentelemetry::context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
+  prop->Inject(carrier, current_ctx);
+
+  return carrier.headers_;
 }
 
 } // namespace
