@@ -915,13 +915,13 @@ HttpTransact::OriginDead(State *s)
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
   std::string_view host_name{host_name_ptr, size_t(host_len)};
-  Log::error("%s", lbw()
-                     .clip(1)
-                     .print("CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr, host_name,
-                            ts::bwf::FirstOf(url_str, "<none>"))
-                     .extend(1)
-                     .write('\0')
-                     .data());
+  Error("%s", lbw()
+                .clip(1)
+                .print("CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr, host_name,
+                       ts::bwf::FirstOf(url_str, "<none>"))
+                .extend(1)
+                .write('\0')
+                .data());
   s->arena.str_free(url_str);
 
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
@@ -1900,8 +1900,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
     char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-    Log::error("%s",
-               lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
+    Error("%s", lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
   }
 
   return;
@@ -1972,9 +1971,8 @@ HttpTransact::OSDNSLookup(State *s)
       // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
       build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-      Log::error("%s",
-                 lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
-      // s->cache_info.action = CACHE_DO_NO_ACTION;
+      Error("%s",
+            lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
@@ -2109,7 +2107,7 @@ HttpTransact::OSDNSLookup(State *s)
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
       } else {
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
-        Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
+        Error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
     }
@@ -3933,16 +3931,16 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
       host_name_ptr = s->unmapped_url.host_get(&host_len);
     }
     std::string_view host_name{host_name_ptr, size_t(host_len)};
-    Log::error("%s", lbw()
-                       .clip(1)
-                       .print("CONNECT: attempt fail [{}] to {} for host='{}' "
-                              "connection_result={::s} error={::s} attempts={} url='{}'",
-                              HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
-                              ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
-                              s->current.attempts, ts::bwf::FirstOf(url_str, "<none>"))
-                       .extend(1)
-                       .write('\0')
-                       .data());
+    Error("%s", lbw()
+                  .clip(1)
+                  .print("CONNECT: attempt fail [{}] to {} for host='{}' "
+                         "connection_result={::s} error={::s} attempts={} url='{}'",
+                         HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                         ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
+                         s->current.attempts, ts::bwf::FirstOf(url_str, "<none>"))
+                  .extend(1)
+                  .write('\0')
+                  .data());
 
     s->arena.str_free(url_str);
   }

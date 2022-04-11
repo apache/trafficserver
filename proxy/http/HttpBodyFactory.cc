@@ -83,7 +83,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   ///////////////////////////////////////////////
   if (is_response_suppressed(context)) {
     if (enable_logging) {
-      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
+      Error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
     }
     return nullptr;
   }
@@ -156,9 +156,9 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   ///////////////////////////////////
   if (buffer && (*resulting_buffer_length > max_buffer_length)) {
     if (enable_logging) {
-      Log::error(("BODY_FACTORY: template '%s/%s' consumed %" PRId64 " bytes, "
-                  "exceeding %" PRId64 " byte limit, using internal default"),
-                 set, type, *resulting_buffer_length, max_buffer_length);
+      Error(("BODY_FACTORY: template '%s/%s' consumed %" PRId64 " bytes, "
+             "exceeding %" PRId64 " byte limit, using internal default"),
+            set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;
     buffer                   = static_cast<char *>(ats_free_null(buffer));
@@ -175,18 +175,18 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
 
     if (enable_logging) {
       if (found_requested_template) { // got exact template
-        Log::error(("BODY_FACTORY: using custom template "
-                    "'%s/%s' for url '%s' (language '%s', charset '%s')"),
-                   set, type, url, lang_ptr, charset_ptr);
+        Error(("BODY_FACTORY: using custom template "
+               "'%s/%s' for url '%s' (language '%s', charset '%s')"),
+              set, type, url, lang_ptr, charset_ptr);
       } else { // got default template
-        Log::error(("BODY_FACTORY: can't find custom template "
-                    "'%s/%s', using '%s/%s' for url '%s' (language '%s', charset '%s')"),
-                   set, type, set, "default", url, lang_ptr, charset_ptr);
+        Error(("BODY_FACTORY: can't find custom template "
+               "'%s/%s', using '%s/%s' for url '%s' (language '%s', charset '%s')"),
+              set, type, set, "default", url, lang_ptr, charset_ptr);
       }
     }
   } else { // no template
     if (enable_logging) {
-      Log::error(("BODY_FACTORY: can't find templates '%s' or '%s' for url `%s'"), type, "default", url);
+      Error(("BODY_FACTORY: can't find templates '%s' or '%s' for url `%s'"), type, "default", url);
     }
   }
   unlock();

@@ -1277,7 +1277,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       //  sending a request message body.  Change the event
       //  to an error and fall through
       event = VC_EVENT_ERROR;
-      Log::error("Request transformation failed to set content length");
+      Error("Request transformation failed to set content length");
     }
   // FALLTHROUGH
   default:
@@ -4175,13 +4175,13 @@ HttpSM::check_sni_host()
             SMDebug("ssl_sni", "[HttpSM::check_sni_host] No SNI for TLS request with hostname %.*s action=%s", host_len, host_name,
                     action_value);
             if (host_sni_policy == 2) {
-              Log::error("%s", lbw()
-                                 .clip(1)
-                                 .print("No SNI for TLS request: connecting to {} for host='{}', returning a 403",
-                                        t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)})
-                                 .extend(1)
-                                 .write('\0')
-                                 .data());
+              Error("%s", lbw()
+                            .clip(1)
+                            .print("No SNI for TLS request: connecting to {} for host='{}', returning a 403",
+                                   t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)})
+                            .extend(1)
+                            .write('\0')
+                            .data());
               this->t_state.client_connection_enabled = false;
             }
           } else if (strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
@@ -4189,14 +4189,14 @@ HttpSM::check_sni_host()
             SMDebug("ssl_sni", "[HttpSM::check_sni_host] SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len,
                     host_name, action_value);
             if (host_sni_policy == 2) {
-              Log::error("%s", lbw()
-                                 .clip(1)
-                                 .print("SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
-                                        t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)},
-                                        sni_value)
-                                 .extend(1)
-                                 .write('\0')
-                                 .data());
+              Error("%s",
+                    lbw()
+                      .clip(1)
+                      .print("SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
+                             t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)}, sni_value)
+                      .extend(1)
+                      .write('\0')
+                      .data());
               this->t_state.client_connection_enabled = false;
             }
           } else {
@@ -5567,14 +5567,14 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
         int host_len;
         const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
         std::string_view host_name{host_name_ptr, size_t(host_len)};
-        Log::error("%s", lbw()
-                           .clip(1)
-                           .print("CONNECT: {::s} connecting to {} for host='{}' url='{}' marking down",
-                                  ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
-                                  host_name, ts::bwf::FirstOf(url_str, "<none>"))
-                           .extend(1)
-                           .write('\0')
-                           .data());
+        Error("%s", lbw()
+                      .clip(1)
+                      .print("CONNECT: {::s} connecting to {} for host='{}' url='{}' marking down",
+                             ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
+                             ts::bwf::FirstOf(url_str, "<none>"))
+                      .extend(1)
+                      .write('\0')
+                      .data());
 
         if (url_str) {
           t_state.arena.str_free(url_str);
@@ -7262,7 +7262,7 @@ HttpSM::kill_this()
         SMDebug("http", "[update_stats] Logging system indicates FULL.");
       }
       if (ret & Log::FAIL) {
-        Log::error("failed to log transaction for at least one log object");
+        Error("failed to log transaction for at least one log object");
       }
     }
 
@@ -8020,7 +8020,7 @@ HttpSM::do_redirect()
           SMDebug("http", "[update_stats] Logging system indicates FULL.");
         }
         if (ret & Log::FAIL) {
-          Log::error("failed to log transaction for at least one log object");
+          Error("failed to log transaction for at least one log object");
         }
       }
 
