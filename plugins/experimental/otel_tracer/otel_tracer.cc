@@ -268,31 +268,31 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   // clean up
-  if (target) {
+  if (target != nullptr) {
     TSfree(target);
   }
-  if (host_field_loc) {
+  if (host_field_loc != nullptr && host_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, host_field_loc);
   }
-  if (l_host_field_loc) {
+  if (l_host_field_loc != nullptr && l_host_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, l_host_field_loc);
   }
-  if (ua_field_loc) {
+  if (ua_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, ua_field_loc);
   }
-  if (b3_field_loc) {
+  if (b3_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, b3_field_loc);
   }
-  if (b3_tid_field_loc) {
+  if (b3_tid_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, b3_tid_field_loc);
   }
-  if (b3_sid_field_loc) {
+  if (b3_sid_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, b3_sid_field_loc);
   }
-  if (b3_s_field_loc) {
+  if (b3_s_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, b3_s_field_loc);
   }
-  if (url_loc) {
+  if (url_loc != nullptr) {
     TSHandleMLocRelease(buf, hdr_loc, url_loc);
   }
   TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
