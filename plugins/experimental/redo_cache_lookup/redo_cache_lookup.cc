@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <regex>
+#include <cstring>
 #include <set>
 #include <sstream>
 #include <getopt.h>
