@@ -271,10 +271,10 @@ read_request(TSHttpTxn txnp, TSCont contp)
   if (target != nullptr) {
     TSfree(target);
   }
-  if (host_field_loc != nullptr && host_field_loc != TS_NULL_MLOC) {
+  if (host_field_loc != nullptr) {
     TSHandleMLocRelease(buf, hdr_loc, host_field_loc);
   }
-  if (l_host_field_loc != nullptr && l_host_field_loc != TS_NULL_MLOC) {
+  if (l_host_field_loc != nullptr) {
     TSHandleMLocRelease(buf, hdr_loc, l_host_field_loc);
   }
   if (ua_field_loc != TS_NULL_MLOC) {
