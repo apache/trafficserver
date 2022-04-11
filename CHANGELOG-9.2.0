@@ -347,6 +347,7 @@ Changes with Apache Traffic Server 9.2.0
   #8477 - Define TS_HTTP_VALUE_BROTLI and TS_HTTP_LEN_BROTLI
   #8482 - Update control mechanism changes in lua plugin documentation
   #8483 - ssl_secret debug printing: print only the first 50 bytes
+  #8484 - Serve stale content when DNS lookup fails
   #8485 - Adding a forward proxy AuTest.
   #8489 - Better TLS Secrets Truncation.
   #8491 - Fix wording for jemalloc autoconf
@@ -403,6 +404,7 @@ Changes with Apache Traffic Server 9.2.0
   #8673 - Fix to allow running autopep8 from outside top_srcdir
   #8677 - Update iocore/cache/test to fix the build
   #8680 - Fix missing unique_lock definition.
+  #8687 - Reuse TSMutex for ts_lua_http_intercept_handler
   #8688 - update FREELIST macros for AArch64
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
@@ -431,3 +433,5 @@ Changes with Apache Traffic Server 9.2.0
   #8770 - Remove null check before ats_free calls (#8744)
   #8772 - Add metrics for loop detection.
   #8773 - Pin Jinja2 for doc builds
+  #8784 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
+  #8786 - include <cstring> for access to C-string operations
