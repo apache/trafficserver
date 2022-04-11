@@ -3680,7 +3680,7 @@ HttpTransact::handle_response_from_parent(State *s)
     break;
   case ResolveInfo::HOST_NONE:
     // Check if content can be served from cache
-    s->current.request_to = PARENT_PROXY;
+    s->current.request_to = ResolveInfo::PARENT_PROXY;
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3925,10 +3925,10 @@ HttpTransact::handle_server_connection_not_open(State *s)
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
     switch (s->current.request_to) {
-    case PARENT_PROXY:
+    case ResolveInfo::PARENT_PROXY:
       handle_parent_died(s);
       break;
-    case ORIGIN_SERVER:
+    case ResolveInfo::ORIGIN_SERVER:
       handle_server_died(s);
       break;
     default:
