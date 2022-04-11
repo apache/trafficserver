@@ -1060,7 +1060,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         // actual DNS query. If the request rate is high enough this can cause a persistent queue where the
         // DNS query is never sent and all requests timeout, even if it was a transient error.
         // See issue #8417.
-        remove_trigger_pending_dns();
+        remove_and_trigger_pending_dns();
       } else {
         // "local" signal to give up, usually due this being one of those "other" queries.
         // That generally means @a this has already been removed from the queue, but just in case...
