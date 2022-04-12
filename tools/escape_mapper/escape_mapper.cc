@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <iomanip>
+#include <iostream>
+#include <string_view>
 
 void
 add_mapping(unsigned char *table, char c)
@@ -39,7 +40,7 @@ main(int argc, char *argv[])
 {
   // only support a single arg that contains all the chars we wish to escapify
   if (argc > 1 && argc != 2) {
-    printf("Provide a single argument with a list of characters to add to the default encoding table\n");
+    std::cerr << "Provide a single argument with a list of characters to add to the default encoding table." << std::endl;
     return (1);
   }
 
@@ -48,33 +49,37 @@ main(int argc, char *argv[])
     ' ', '"', '#', '%', '<', '>', '[', ']', '\\', '^', '`', '{', '|', '}', '~', 0x7F,
   };
 
-  unsigned char escape_codes[32];
-  memset(&escape_codes[0], 0, sizeof(escape_codes));
+  unsigned char escape_codes[32] = {0};
 
   // indexes 0-3 are marked as "control"
   for (int i = 0; i < 4; i++) {
     escape_codes[i] = 0xFF;
   }
 
-  for (unsigned long i = 0; i < sizeof(to_escape) / sizeof(to_escape[0]); i++) {
-    add_mapping(&escape_codes[0], to_escape[i]);
+  // add_mapping performs a logical or on the entries, so the above 0xFF values
+  // will persist.
+  for (auto char_to_escape : to_escape) {
+    add_mapping(&escape_codes[0], char_to_escape);
   }
 
   // add the chars specified in argv
   if (argc > 1) {
-    for (unsigned long i = 0; i < strlen(argv[1]); i++) {
-      printf("Adding %c to escape mapping table\n", argv[1][i]);
-      add_mapping(&escape_codes[0], argv[1][i]);
+    std::string_view escape_characters{argv[1]};
+    for (auto const char_to_escape : escape_characters) {
+      std::cout << "Adding '" << char_to_escape << "' to escape mapping table." << std::endl;
+      add_mapping(&escape_codes[0], char_to_escape);
     }
-
-    printf("\n");
+    std::cout << std::endl;
   }
 
-  printf("%s Escape Mapping Table:\n", (argc > 1) ? "New" : "Default");
+  std::string_view qualification{((argc > 1) ? "New" : "Default")};
+  std::cout << qualification << " Escape Mapping Table:" << std::endl;
 
   for (unsigned long i = 0; i < sizeof(escape_codes) / sizeof(escape_codes[0]); i++) {
-    printf("  %2lu: %#04x\n", i, escape_codes[i]);
+    std::cout << std::dec << std::setfill(' ') << std::setw(4) << i << ": 0x";
+    auto const escape_code = static_cast<int>(escape_codes[i]);
+    std::cout << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << escape_code << std::endl;
   }
 
-  return (0);
+  return 0;
 }

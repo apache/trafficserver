@@ -60,7 +60,7 @@ else
 noinst_PROGRAMS += escape_mapper/escape_mapper
 endif
 
-escape_mapper_escape_mapper_SOURCES = escape_mapper/escape_mapper.c
+escape_mapper_escape_mapper_SOURCES = escape_mapper/escape_mapper.cc
 
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA)
 	@sed "s/ -fPIE//" tsxs > tsxs.new
