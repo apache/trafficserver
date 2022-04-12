@@ -103,7 +103,7 @@ libtscore_la_SOURCES = \
 	ink_uuid.cc \
 	IpMap.cc \
 	IpMapConf.cc \
-	JeAllocator.cc \
+	JeMiAllocator.cc \
 	Layout.cc \
 	llqueue.cc \
 	lockfile.cc \
