@@ -187,6 +187,7 @@ struct ParentResult {
   // For outside consumption
   ParentResultType result;
   const char *hostname;
+  const char *url;
   int port;
   bool retry;
   bool chash_init[MAX_GROUP_RINGS] = {false};
