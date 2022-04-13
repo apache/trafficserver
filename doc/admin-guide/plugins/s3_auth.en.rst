@@ -44,7 +44,7 @@ Alternatively, you can store the access key and secret in an external configurat
 
    # remap.config
 
-   ...  @plugin=s3_auth.so @pparam=--config @pparam=s3_auth_v2.config
+   ...  @plugin=s3_auth.so @pparam=--config @pparam=s3_auth_v2.config @pparam=--watch-config @pparam=--ttl=5
 
 
 Where ``s3.config`` could look like::
@@ -94,6 +94,8 @@ The ``s3_auth_v4.config`` config file could look like this::
     v4-include-headers=<comma-separated-list-of-headers-to-be-signed>
     v4-exclude-headers=<comma-separated-list-of-headers-not-to-be-signed>
     v4-region-map=region_map.config
+    watch-config
+    ttl=20
 
 Where the ``region_map.config`` defines the entry-point hostname to region mapping i.e.::
 
@@ -122,6 +124,10 @@ The ``Via`` and ``X-Forwarded-For`` headers are *always* excluded from the signa
 If ``--v4-include-headers`` is not specified all headers except those specified in ``--v4-exclude-headers`` will be signed.
 
 If ``--v4-include-headers`` is specified only the headers specified will be signed except those specified in ``--v4-exclude-headers``
+
+If ``--watch-config`` is specified, the plugin will reload the config file set in ``--config`` when it changes
+
+If ``--ttl`` is specified, the plugin will cache configs for the specified number of seconds.  During the ttl period, manual config reloads and ``--watch-config`` will not cause the config to be updated.  The default is 60 seconds.  Setting ttl to zero causes all reloads to read from the config file.  This option is useful if the config file is fetched from a service, and you wish to limit the fetch rate.
 
 
 AWS Authentication version 2

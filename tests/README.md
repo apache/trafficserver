@@ -321,6 +321,7 @@ ts.Disk.remap_config.AddLine(
  * TS_HAS_128BIT_CAS
  * TS_HAS_TESTS
  * TS_HAS_WCCP
+ * TS_USE_INOTIFY
 
 ### Example
 ```python

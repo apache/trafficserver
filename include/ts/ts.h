@@ -2720,6 +2720,23 @@ tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHo
 tsapi bool TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl);
 tsapi TSReturnCode TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType ctrl, bool data);
 
+/*
+ * Get notified for file system events
+ *
+ * Currently, this only works in Linux using inotify.
+ *
+ * TODO: Fix multiple plugins watching the same path.
+ *
+ * The edata (a.k.a. cookie) field of the continuation handler will contain information
+ * depending on the type of file event.  edata is always a pointer to a TSFileWatchData.
+ * If the event is TS_EVENT_FILE_CREATED, name is a pointer to a null-terminated string
+ * containing the file name.  Otherwise, name is a nullptr.  wd is the watch descriptor
+ * for the event.
+ *
+ */
+tsapi TSWatchDescriptor TSFileEventRegister(const char *filename, TSFileWatchKind kind, TSCont contp);
+tsapi void TSFileEventUnRegister(TSWatchDescriptor wd);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

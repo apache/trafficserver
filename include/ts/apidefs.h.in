@@ -554,6 +554,11 @@ typedef enum {
   TS_EVENT_SSL_CLIENT_HELLO  = 60207,
   TS_EVENT_SSL_SECRET        = 60208,
 
+  TS_EVENT_FILE_CREATED = 60300,
+  TS_EVENT_FILE_UPDATED = 60301,
+  TS_EVENT_FILE_DELETED = 60302,
+  TS_EVENT_FILE_IGNORED = 60303,
+
   TS_EVENT_MGMT_UPDATE = 60300
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
@@ -1453,6 +1458,13 @@ namespace ts
   static const int NO_FD = -1; ///< No or invalid file descriptor.
 }
 #endif
+
+typedef int TSWatchDescriptor;
+typedef enum { TS_WATCH_CREATE, TS_WATCH_DELETE, TS_WATCH_MODIFY } TSFileWatchKind;
+typedef struct {
+  TSWatchDescriptor wd;
+  const char *name;
+} TSFileWatchData;
 
 #ifdef __cplusplus
 }
