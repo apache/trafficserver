@@ -46,6 +46,8 @@
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 
+namespace fs = ts::file;
+
 namespace rpc
 {
 bool
@@ -133,6 +135,20 @@ DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 }
 namespace
 {
+/* Create and return a path to a temporary sandbox directory. */
+fs::path
+getTemporaryDir()
+{
+  std::error_code ec;
+  fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
+  tmpDir /= "sandbox_XXXXXX";
+
+  char dirNameTemplate[tmpDir.string().length() + 1];
+  sprintf(dirNameTemplate, "%s", tmpDir.c_str());
+
+  return fs::path(mkdtemp(dirNameTemplate));
+}
+
 // Handy class to avoid manually disconecting the socket.
 // TODO: should it also connect?
 struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
@@ -501,9 +517,7 @@ TEST_CASE("Test configuration parsing. UDS values", "[string]")
 
 TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
 {
-  namespace fs = ts::file;
-
-  fs::path sandboxDir = fs::temp_directory_path();
+  fs::path sandboxDir = getTemporaryDir();
   fs::path configPath = sandboxDir / "jsonrpc.yaml";
 
   // define here to later compare.
