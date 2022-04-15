@@ -67,8 +67,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
       new_fail_count = pRec->failCount = 1;
     }
 
-    Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
-
+    Note("Parent %s marked as down %s:%d for request %s", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port,
+         result->url);
   } else {
     int old_count = 0;
     now           = time(nullptr);
@@ -88,8 +88,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
   }
 
   if (new_fail_count > 0 && new_fail_count >= static_cast<int>(fail_threshold)) {
-    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count, fail_threshold,
-         pRec->hostname, pRec->port);
+    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down with request: %s", new_fail_count,
+         fail_threshold, pRec->hostname, pRec->port, result->url);
     pRec->available = false;
     Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port,
           pRec->available.load());
@@ -125,6 +125,6 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   // a retry succeeded, just reset retriers
 
   if (old_count > 0) {
-    Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);
+    Note("http parent proxy %s:%d restored with request %s", pRec->hostname, pRec->port, result->url);
   }
 }

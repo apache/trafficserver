@@ -14,12 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/rate_limit/rate_limit.la
+# Only build if NURAFT_LIBS is set to a non-empty value
+pkglib_LTLIBRARIES += experimental/stek_share/stek_share.la
 
-experimental_rate_limit_rate_limit_la_SOURCES = \
-  experimental/rate_limit/rate_limit.cc \
-  experimental/rate_limit/txn_limiter.cc \
-  experimental/rate_limit/sni_limiter.cc \
-  experimental/rate_limit/sni_selector.cc \
-  experimental/rate_limit/ip_reputation.cc \
-  experimental/rate_limit/utilities.cc
+experimental_stek_share_stek_share_la_SOURCES = \
+  experimental/stek_share/common.cc \
+	experimental/stek_share/common.h \
+	experimental/stek_share/log_store.cc \
+	experimental/stek_share/log_store.h \
+	experimental/stek_share/state_machine.h \
+	experimental/stek_share/state_manager.h \
+	experimental/stek_share/stek_share.cc \
+	experimental/stek_share/stek_share.h \
+	experimental/stek_share/stek_utils.cc \
+	experimental/stek_share/stek_utils.h
+
+experimental_stek_share_stek_share_la_LDFLAGS = $(AM_LDFLAGS) @YAMLCPP_LDFLAGS@
+
+AM_CPPFLAGS += @NURAFT_INCLUDES@ @YAMLCPP_INCLUDES@
+
+experimental_stek_share_stek_share_la_LIBADD = @NURAFT_LIBS@ @YAMLCPP_LIBS@

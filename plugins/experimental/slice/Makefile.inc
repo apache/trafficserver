@@ -28,6 +28,8 @@ experimental_slice_slice_la_SOURCES = \
   experimental/slice/HttpHeader.h \
   experimental/slice/intercept.cc \
   experimental/slice/intercept.h \
+  experimental/slice/prefetch.cc \
+  experimental/slice/prefetch.h \
   experimental/slice/Range.cc \
   experimental/slice/Range.h \
   experimental/slice/response.cc \

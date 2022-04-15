@@ -86,6 +86,10 @@ SniSelector::insert(std::string_view sni, SniRateLimiter *limiter)
 SniRateLimiter *
 SniSelector::find(std::string_view sni)
 {
+  if (sni.empty()) { // Likely shouldn't happen, but we can shortcircuit
+    return nullptr;
+  }
+
   auto limiter = _limiters.find(sni);
 
   if (limiter != _limiters.end()) {
@@ -105,16 +109,17 @@ SniSelector::factory(const char *sni_list, int argc, const char *argv[])
   char *saveptr;
   char *sni   = strdup(sni_list); // We make a copy of the sni list, to not touch the original string
   char *token = strtok_r(sni, ",", &saveptr);
-  SniRateLimiter def_limiter;
 
-  def_limiter.initialize(argc, argv); // Creates the template limiter
-  _needs_queue_cont = (def_limiter.max_queue > 0);
-
+  // Todo: We are repeating initializing here with the same configurations, but once we move this to
+  // YAML, and refactor this, it'll be better. And this is not particularly expensive.
   while (nullptr != token) {
-    SniRateLimiter *limiter = new SniRateLimiter(def_limiter); // Make a shallow copy
+    SniRateLimiter *limiter = new SniRateLimiter();
     TSReleaseAssert(limiter);
 
+    limiter->initialize(argc, argv);
     limiter->description = token;
+
+    _needs_queue_cont = (limiter->max_queue > 0);
 
     insert(std::string_view(limiter->description), limiter);
     token = strtok_r(nullptr, ",", &saveptr);

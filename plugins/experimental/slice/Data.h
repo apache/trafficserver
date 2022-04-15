@@ -25,6 +25,7 @@
 #include "Stage.h"
 
 #include <netinet/in.h>
+#include <unordered_map>
 
 struct Config;
 
@@ -91,6 +92,8 @@ struct Data {
 
   Stage m_upstream;
   Stage m_dnstream;
+
+  std::unordered_map<int, bool> m_fetchstates;
 
   HdrMgr m_req_hdrmgr;  // manager for server request
   HdrMgr m_resp_hdrmgr; // manager for client response

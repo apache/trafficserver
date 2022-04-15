@@ -34,7 +34,7 @@ AC_ARG_WITH(hiredis, [AS_HELP_STRING([--with-hiredis=DIR],[use a specific hiredi
 
 case "$hiredis_base_dir" in
 *":"*)
-  hidredis_include="`echo $hiredis_base_dir |sed -e 's/:.*$//'`"
+  hiredis_include="`echo $hiredis_base_dir |sed -e 's/:.*$//'`"
   hiredis_ldflags="`echo $hiredis_base_dir |sed -e 's/^.*://'`"
   AC_MSG_CHECKING(for hiredis includes in $hiredis_include libs in $hiredis_ldflags )
   ;;

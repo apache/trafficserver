@@ -172,6 +172,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Slice <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
+   STEK Share <stek_share.en>
    System Statistics <system_stats.en>
    Traffic Dump <traffic_dump.en>
    WebP Transform <webp_transform.en>
@@ -264,6 +265,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`SSL Headers <sslheaders.en>`
    Populate request headers with SSL session information.
+
+:doc:`STEK Share <stek_share.en>`
+    Coordinates STEK (Session Ticket Encryption Key) between ATS instances running in a group.
 
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
