@@ -1174,9 +1174,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     }
   } // end of added logic for partial copy of POST
 
-  Debug("http_redirect", "[%" PRId64 "] [HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d, state: %d",
-        sm->sm_id, p->alive == true, sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event,
-        p->chunked_handler.state);
+  Debug("http_redirect", "[%" PRId64 "] enable_redirection: [%d %d %d] event: %d, state: %d", sm->sm_id, p->alive == true,
+        sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event, p->chunked_handler.state);
 
   switch (event) {
   case VC_EVENT_READ_READY:
