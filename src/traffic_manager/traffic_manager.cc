@@ -978,6 +978,8 @@ SignalHandler(int sig)
   case SIGXCPU:
   case SIGXFSZ:
     abort();
+  case SIGTERM:
+    ::exit(0);
   default:
     fprintf(stderr, "[TrafficManager] ==> signal #%d\n", sig);
     mgmt_log("[TrafficManager] ==> signal #%d\n", sig);
