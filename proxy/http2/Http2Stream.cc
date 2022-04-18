@@ -25,7 +25,8 @@
 
 #include "HTTP2.h"
 #include "Http2ClientSession.h"
-#include "../http/HttpSM.h"
+#include "HttpDebugNames.h"
+#include "HttpSM.h"
 
 #include <numeric>
 
@@ -279,6 +280,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
 bool
 Http2Stream::change_state(uint8_t type, uint8_t flags)
 {
+  auto const initial_state = _state;
   switch (_state) {
   case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
     if (type == HTTP2_FRAME_TYPE_HEADERS) {
@@ -373,7 +375,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     return false;
   }
 
-  Http2StreamDebug("%s", Http2DebugNames::get_state_name(_state));
+  Http2StreamDebug("%s -> %s", Http2DebugNames::get_state_name(initial_state), Http2DebugNames::get_state_name(_state));
 
   return true;
 }
