@@ -45,15 +45,15 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
-  if (event != TS_EVENT_HTTP_TXN_CLOSE) {
-    TSError("[otel_tracer][%s] Unexpected event (%d)", __FUNCTION__, event);
-    goto lReturn;
-  }
-
   TSDebug(PLUGIN_NAME, "[%s] Retrieving status code to add to span attributes", __FUNCTION__);
   auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
 
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+
+  if (event != TS_EVENT_HTTP_TXN_CLOSE) {
+    TSError("[otel_tracer][%s] Unexpected event (%d)", __FUNCTION__, event);
+    goto lReturn;
+  }
 
   if (TSHttpTxnClientRespGet(txnp, &buf, &hdr_loc) == TS_SUCCESS) {
     int status = TSHttpHdrStatusGet(buf, hdr_loc);
