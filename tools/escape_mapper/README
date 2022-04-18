@@ -1,0 +1,14 @@
+The `escape_mapper` tool is a simple utility that allows one to view
+the existing table used for URL escaping, found in LogUtils, specifically
+the escapify_url_common function. This function allows one to specify
+an alternate table that contains more characters to escape than the
+RFC-compliant default.
+
+WARNING: the default encoded characters list is currently hardcoded.
+
+This tool operates in two basic modes:
+  1) print out the default mappings
+  2) print out the new mapping based on the provided argument
+
+Only one argument is supported to generate a new mapping table, for example:
+	./escape_mapper '&,+/='
