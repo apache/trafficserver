@@ -115,6 +115,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     result->rec          = extApiRecord;
     result->start_parent = 0;
     result->last_parent  = 0;
+    result->url          = rdata->get_host();
 
     Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
     return;
@@ -124,7 +125,8 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   result->reset();
 
   tablePtr->Match(rdata, result);
-  rec = result->rec;
+  rec         = result->rec;
+  result->url = rdata->get_host();
 
   if (rec == nullptr) {
     // No parents were found
@@ -143,23 +145,21 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     selectParent(true, result, rdata, fail_threshold, retry_time);
   }
 
-  const char *host = rdata->get_host();
-
   switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Result for %s was %s", result->url, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Result for %s was %s", result->url, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "PARENT_SPECIFIED");
-    Debug("parent_select", "Result for %s was parent %s:%d", host, result->hostname, result->port);
+    Debug("parent_select", "Result for %s was parent %s:%d", result->url, result->hostname, result->port);
     break;
   default:
     // Handled here:

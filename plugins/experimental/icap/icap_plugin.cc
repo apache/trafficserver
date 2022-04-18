@@ -26,6 +26,7 @@
 */
 
 #include <string>
+#include <cstring>
 #include <regex>
 
 #include <netinet/in.h>
