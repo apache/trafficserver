@@ -43,7 +43,6 @@ NetProcessor::AcceptOptions::reset()
   etype                 = ET_NET;
   localhost_only        = false;
   frequent_accept       = true;
-  backdoor              = false;
   recv_bufsize          = 0;
   send_bufsize          = 0;
   sockopt_flags         = 0;
