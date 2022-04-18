@@ -45,13 +45,15 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
-  auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
-
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_TXN_CLOSE) {
     TSError("[otel_tracer][%s] Unexpected event (%d)", __FUNCTION__, event);
     goto lReturn;
   }
+
+  TSDebug(PLUGIN_NAME, "[%s] Retrieving status code to add to span attributes", __FUNCTION__);
+  auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
+
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   if (TSHttpTxnClientRespGet(txnp, &buf, &hdr_loc) == TS_SUCCESS) {
     int status = TSHttpHdrStatusGet(buf, hdr_loc);
@@ -66,6 +68,7 @@ close_txn(TSCont contp, TSEvent event, void *edata)
   retval = 1;
 
 lReturn:
+  TSDebug(PLUGIN_NAME, "[%s] Cleaning up after close hook handler", __FUNCTION__);
   req_data->Destruct(req_data);
   delete req_data;
 
@@ -114,6 +117,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   TSMBuffer buf;
   TSMLoc hdr_loc;
 
+  TSDebug(PLUGIN_NAME, "[%s] Reading information from request", __FUNCTION__);
   if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
     TSError("[otel_tracer][%s] cannot retrieve client request", __FUNCTION__);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -135,20 +139,20 @@ read_request(TSHttpTxn txnp, TSCont contp)
   path                 = TSUrlPathGet(buf, url_loc, &path_len);
   path_str.append(std::string_view(path, path_len));
 
-  TSMLoc host_field_loc   = nullptr;
-  TSMLoc l_host_field_loc = nullptr;
+  TSMLoc host_field_loc   = TS_NULL_MLOC;
+  TSMLoc l_host_field_loc = TS_NULL_MLOC;
   const char *host        = nullptr;
   int host_len            = 0;
   host                    = TSUrlHostGet(buf, url_loc, &host_len);
   if (host_len == 0) {
     host_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, host_key.data(), host_key.length());
-    if (host_field_loc) {
+    if (host_field_loc != TS_NULL_MLOC) {
       host = TSMimeHdrFieldValueStringGet(buf, hdr_loc, host_field_loc, -1, &host_len);
     }
 
     if (host_len == 0) {
       l_host_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, l_host_key.data(), l_host_key.length());
-      if (l_host_field_loc) {
+      if (l_host_field_loc != TS_NULL_MLOC) {
         host = TSMimeHdrFieldValueStringGet(buf, hdr_loc, l_host_field_loc, -1, &host_len);
       }
     }
@@ -225,6 +229,7 @@ read_request(TSHttpTxn txnp, TSCont contp)
   // TODO: add remote ip, port to attributes
 
   // create parent context
+  TSDebug(PLUGIN_NAME, "[%s] Creating parent context from incoming request headers", __FUNCTION__);
   std::map<std::string, std::string> parent_headers;
   if (b3_len != 0) {
     parent_headers[std::string{b3_key}] = b3_str;
@@ -239,24 +244,23 @@ read_request(TSHttpTxn txnp, TSCont contp)
     parent_headers[std::string{b3_s_key}] = b3_s_str;
   }
 
-  // txn id
-  std::ostringstream id_stream;
-  id_stream << TSHttpTxnIdGet(txnp);
-
+  // create trace span and activate
+  TSDebug(PLUGIN_NAME, "[%s] Create span with a name, attributes, parent context and activate it", __FUNCTION__);
   auto span = get_tracer("ats")->StartSpan(
-    get_span_name(path_str),
-    get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str, id_stream.str()),
+    get_span_name(path_str), get_span_attributes(method_str, target_str, path_str, host_str, ua_str, port, scheme_str),
     get_span_options(parent_headers));
 
   auto scope = get_tracer("ats")->WithActiveSpan(span);
 
   std::map<std::string, std::string> trace_headers = get_trace_headers();
   // insert headers to request
+  TSDebug(PLUGIN_NAME, "[%s] Insert trace headers to upstream request", __FUNCTION__);
   for (auto &p : trace_headers) {
     set_request_header(buf, hdr_loc, p.first.c_str(), p.first.size(), p.second.c_str(), p.second.size());
   }
 
   // pass the span
+  TSDebug(PLUGIN_NAME, "[%s] Add close hook to add status code to span attribute", __FUNCTION__);
   TSCont close_txn_contp = TSContCreate(close_txn, nullptr);
   if (!close_txn_contp) {
     TSError("[otel_tracer][%s] Could not create continuation", __FUNCTION__);
@@ -268,13 +272,14 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
 
   // clean up
+  TSDebug(PLUGIN_NAME, "[%s] Cleanig up", __FUNCTION__);
   if (target != nullptr) {
     TSfree(target);
   }
-  if (host_field_loc != nullptr) {
+  if (host_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, host_field_loc);
   }
-  if (l_host_field_loc != nullptr) {
+  if (l_host_field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(buf, hdr_loc, l_host_field_loc);
   }
   if (ua_field_loc != TS_NULL_MLOC) {
@@ -368,5 +373,6 @@ error:
   TSError("[%s] Plugin not initialized", PLUGIN_NAME);
 
 done:
+  TSDebug(PLUGIN_NAME, "Plugin initialized");
   return;
 }
