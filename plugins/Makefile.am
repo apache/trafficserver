@@ -79,6 +79,10 @@ if HAS_MAXMINDDB
 include experimental/maxmind_acl/Makefile.inc
 endif
 
+if HAS_OTEL
+include experimental/otel_tracer/Makefile.inc
+endif
+
 include experimental/memcache/Makefile.inc
 include experimental/memory_profile/Makefile.inc
 include experimental/metalink/Makefile.inc
