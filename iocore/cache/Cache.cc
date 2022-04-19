@@ -454,6 +454,7 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
   if (field && !field->value_get_int64()) {
     f.allow_empty_doc = 1;
+    ainfo->object_size_set(0);
   } else {
     f.allow_empty_doc = 0;
   }
