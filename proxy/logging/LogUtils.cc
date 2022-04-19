@@ -296,6 +296,8 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   // historically this is what the traffic_server has done.
   // Note that we leave codes beyond 127 unmodified.
   //
+  // NOTE: any updates to this table should result in an update to:
+  // tools/escape_mapper/escape_mapper.cc.
   static const unsigned char codes_to_escape[32] = {
     0xFF, 0xFF, 0xFF,
     0xFF,             // control

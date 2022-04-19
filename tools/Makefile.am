@@ -54,6 +54,14 @@ http_load_http_load_SOURCES = \
 
 endif
 
+if BUILD_TEST_TOOLS
+bin_PROGRAMS += escape_mapper/escape_mapper
+else
+noinst_PROGRAMS += escape_mapper/escape_mapper
+endif
+
+escape_mapper_escape_mapper_SOURCES = escape_mapper/escape_mapper.cc
+
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA)
 	@sed "s/ -fPIE//" tsxs > tsxs.new
 	@mv -f tsxs.new tsxs
