@@ -39,11 +39,11 @@ void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc,
 // Return a static string name for a SSL_ERROR constant.
 const char *SSLErrorName(int ssl_error);
 
-// Log a SSL network buffer.  tag__ must be a C-string literal debug tag.
-#define SSLDebugBufferPrint(tag__, buffer__, buffer_len__, message__) \
-  do {                                                                \
-    if (is_debug_tag_set(tag__))                                      \
-      SSLDebugBufferPrint_(buffer__, buffer_len__, message__);        \
+// Log a SSL network buffer.  TAG must be a C-string literal debug tag.
+#define SSLDebugBufferPrint(TAG, BUFFER, BUFFER_LEN, MESSAGE) \
+  do {                                                        \
+    if (is_debug_tag_set(TAG))                                \
+      SSLDebugBufferPrint_(BUFFER, BUFFER_LEN, MESSAGE);      \
   } while (0)
 
 void SSLDebugBufferPrint_(const char *buffer, unsigned buflen, const char *message);
