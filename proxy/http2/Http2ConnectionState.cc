@@ -384,6 +384,12 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       }
     }
 
+    // Check Content-Length & payload length when END_STREAM flag is true
+    if (stream->recv_end_stream && !stream->payload_length_is_valid()) {
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                        "recv data bad payload length");
+    }
+
     // Set up the State Machine
     if (!empty_request) {
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
@@ -940,6 +946,12 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "continuation malformed request");
       }
+    }
+
+    // Check Content-Length & payload length when END_STREAM flag is true
+    if (stream->recv_end_stream && !stream->payload_length_is_valid()) {
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                        "recv data bad payload length");
     }
 
     // Set up the State Machine
