@@ -436,6 +436,7 @@ Changes with Apache Traffic Server 9.2.0
   #8770 - Remove null check before ats_free calls (#8744)
   #8772 - Add metrics for loop detection.
   #8773 - Pin Jinja2 for doc builds
+  #8778 - OpenTelemetry Tracer plugin for ATS
   #8783 - Adds a simple tool to generate new escape tables
   #8784 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
   #8786 - include <cstring> for access to C-string operations
