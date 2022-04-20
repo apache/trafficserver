@@ -60,6 +60,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
+   HTTP Stats <http_stats.en>
    Lua <lua.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
@@ -112,6 +113,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Health Checks <healthchecks.en>`
     Define service health check links.
+
+:doc:`HTTP Stats <http_stats.en>`
+    A remap-based plugin that provides an HTTP interface to all |TS| statistics.
 
 :doc:`Lua <lua.en>`
    Allows plugins to be written in Lua instead of C code.
