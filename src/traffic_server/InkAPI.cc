@@ -8922,6 +8922,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
     ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retries, conv);
     break;
+  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retry_timeout, conv);
+    break;
   case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
     ret = _memberp_to_generic(&overridableHttpConfig->redirect_use_orig_cache_key, conv);
     break;

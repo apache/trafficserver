@@ -2540,6 +2540,15 @@ Dynamic Content & Content Negotiation
     The number of times to attempt a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
+    set to ``5`` or :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retry_timeout INT 0
+   :reloadable:
+   :overridable:
+
+    A timeout for attempting a cache open write upon failure to get a write lock.
+
+    This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
     set to ``5``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
