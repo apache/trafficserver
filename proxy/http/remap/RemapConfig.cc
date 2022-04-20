@@ -944,9 +944,15 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   std::error_code ec;
   std::string content{ts::file::load(ts::file::path{path}, ec)};
-  if (ec.value()) {
-    Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
-    return false;
+  if (ec) {
+    switch (ec.value()) {
+    case ENOENT:
+      Warning("Can't open remapping configuration file %s - %s", path, strerror(ec.value()));
+      break;
+    default:
+      Error("Failed load remapping configuration file %s - %s", path, strerror(ec.value()));
+      return false;
+    }
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");

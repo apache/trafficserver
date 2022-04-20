@@ -698,11 +698,9 @@ UrlRewrite::BuildTable(const char *path)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-  int zret = 0;
-
   if (!remap_parse_config(path, this)) {
     // XXX handle file reload error
-    zret = 3;
+    return 3;
   }
 
   // Destroy unused tables
@@ -730,7 +728,7 @@ UrlRewrite::BuildTable(const char *path)
     forward_mappings_with_recv_port.hash_lookup.reset(nullptr);
   }
 
-  return zret;
+  return 0;
 }
 
 /**

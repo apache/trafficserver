@@ -67,10 +67,9 @@ init_reverse_proxy()
 
   Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
-    Warning("%s failed to load", ts::filename::REMAP);
-  } else {
-    Note("%s finished loading", ts::filename::REMAP);
+    Fatal("%s failed to load", ts::filename::REMAP);
   }
+  Note("%s finished loading", ts::filename::REMAP);
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
