@@ -67,7 +67,7 @@ init_reverse_proxy()
 
   Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
-    Warning("%s failed to load", ts::filename::REMAP);
+    Emergency("%s failed to load", ts::filename::REMAP);
   } else {
     Note("%s finished loading", ts::filename::REMAP);
   }

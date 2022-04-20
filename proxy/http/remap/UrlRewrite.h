@@ -108,6 +108,14 @@ public:
     return _valid;
   };
 
+  /// @return  Number of rules defined.
+  int
+  rule_count() const
+  {
+    return num_rules_forward + num_rules_reverse + num_rules_redirect_permanent + num_rules_redirect_temporary +
+           num_rules_forward_with_recv_port;
+  }
+
   static constexpr int MAX_REGEX_SUBS = 10;
 
   struct RegexMapping {

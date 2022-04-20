@@ -44,7 +44,11 @@ Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
 redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
-:option:`traffic_ctl config reload` to apply the changes.
+:option:`traffic_ctl config reload` to apply the changes. The current configuration is replaced
+with the new configuration only if there are no errors in the file. Any syntax error will prevent
+an update. Even if syntactically correct the file is considered valid only if it has at least :ts:cv:`proxy.config.url_remap.min_rules_required`
+rules in it. This defaults to 0, but can be set higher if it is desirable to prevent loading an
+empty or missing file.
 
 Format
 ======
