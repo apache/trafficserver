@@ -402,6 +402,7 @@ Changes with Apache Traffic Server 9.2.0
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
   #8667 - TLS Session Resumption: fix timed out session
   #8673 - Fix to allow running autopep8 from outside top_srcdir
+  #8676 - Fix plugin parent_select failover
   #8677 - Update iocore/cache/test to fix the build
   #8680 - Fix missing unique_lock definition.
   #8687 - Reuse TSMutex for ts_lua_http_intercept_handler
@@ -415,6 +416,7 @@ Changes with Apache Traffic Server 9.2.0
   #8707 - cache-request-method autest: Extending IO delay
   #8711 - Move hwloc-based functions into it's own header/compilation unit
   #8715 - Fixes build when hwloc is not installed
+  #8716 - Check bounds before accessing Vol::evacuate array
   #8718 - Enable all iocore/cache tests
   #8722 - Adds user-agent to OCSP requests
   #8723 - Adding prefetch feature to slice plugin
@@ -427,11 +429,16 @@ Changes with Apache Traffic Server 9.2.0
   #8752 - docs: add some obvious units to some http2 overridables
   #8753 - Update to proxy-verifier-v2.3.1
   #8758 - Check return values of openssl api calls
+  #8762 - Avoid allocation when matching hosts for vol lookup
   #8763 - Fix error handling in SSL cert/key load failures
   #8764 - Lua plugin memory leak on remap configuration reloads
   #8765 - Fixing the httpbin AuTests by pinning Werkzeug
   #8770 - Remove null check before ats_free calls (#8744)
   #8772 - Add metrics for loop detection.
   #8773 - Pin Jinja2 for doc builds
+  #8783 - Adds a simple tool to generate new escape tables
   #8784 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
   #8786 - include <cstring> for access to C-string operations
+  #8788 - HttpSM, HttpTunnel, and Http2Stream debug logging updates
+  #8797 - Adds new plugin, http_stats
+  #8798 - Create clean exit path for traffic_manager on SIGTERM
