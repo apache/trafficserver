@@ -376,9 +376,17 @@ protected:
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
-  /// Set if plugin client / user agents are active.
-  /// Need primarily for cleanup.
-  bool has_active_plugin_agents = false;
+  /** A flag to keep track of whether there are active request plugin agents.
+   *
+   * This is used to guide plugin agent cleanup.
+   */
+  bool has_active_request_plugin_agents = false;
+
+  /** A flag to keep track of whether there are active response plugin agents.
+   *
+   * This is used to guide plugin agent cleanup.
+   */
+  bool has_active_response_plugin_agents = false;
 
   HttpCacheSM cache_sm;
   HttpCacheSM transform_cache_sm;
@@ -503,14 +511,23 @@ protected:
   HttpTunnelProducer *setup_cache_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
 
-  /** Configure consumers for transform plugins.
+  /** Configure consumers for client response transform plugins.
    *
    * @param[in] p The Tunnel's producer for whom transform plugins' consumers
    *   will be configured.
    * @param[in] num_header_bytes The number of header bytes in the stream.
    *   These will be skipped and not passed to the consumers of the data sink.
    */
-  void setup_plugin_agents(HttpTunnelProducer *p, int num_header_bytes);
+  void setup_client_response_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
+
+  /** Configure consumers for client request transform plugins.
+   *
+   * @param[in] p The Tunnel's producer for whom transform plugins' consumers
+   *   will be configured.
+   * @param[in] num_header_bytes The number of header bytes in the stream.
+   *   These will be skipped and not passed to the consumers of the data sink.
+   */
+  void setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
 
   HttpTransact::StateMachineAction_t last_action     = HttpTransact::SM_ACTION_UNDEFINED;
   int (HttpSM::*m_last_state)(int event, void *data) = nullptr;

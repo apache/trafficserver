@@ -1,6 +1,6 @@
 /** @file
 
-  Example plugin for using TS_HTTP_RESPONSE_CLIENT_HOOK.
+  Example plugin for using the TS_HTTP_REQUEST_CLIENT_HOOK and TS_HTTP_RESPONSE_CLIENT_HOOK hooks.
 
   This example is used to maintain the transaction and thence the connection to the origin server for the full
   transaction, even if the user agent aborts. This is useful in cases where there are other reasons to complete
@@ -37,8 +37,11 @@ namespace
 {
 constexpr char const *PLUGIN_NAME = "txn_data_sink";
 
-/** Activate the data sink if this header field is present in the request. */
-std::string_view FLAG_HEADER_FIELD = "TS-Agent";
+/** The flag for activating response body data sink for a transaction. */
+std::string_view FLAG_DUMP_RESPONSE_BODY = "X-Dump-Response";
+
+/** The flag for activating request body data sink for a transaction. */
+std::string_view FLAG_DUMP_REQUEST_BODY = "X-Dump-Request";
 
 /** The sink data for a transaction. */
 struct SinkData {
@@ -49,14 +52,36 @@ struct SinkData {
    * interact with the body as a stream rather than buffering the entire body
    * for each transaction.
    */
-  std::string body_bytes;
+  std::string response_body_bytes;
+
+  /** The bytes for the request body streamed in from the sink.
+   *
+   * @note This example plugin buffers the body which is useful for the
+   * associated Autest. In most production scenarios the user will want to
+   * interact with the body as a stream rather than buffering the entire body
+   * for each transaction.
+   */
+  std::string request_body_bytes;
 };
 
-// This serves to consume all the data that arrives. If it's not consumed the tunnel gets stalled
-// and the transaction doesn't complete. Other things could be done with the data, accessible via
-// the IO buffer @a reader, such as writing it to disk to make an externally accessible copy.
+/** A flag to request that response body bytes be sinked. */
+constexpr bool SINK_RESPONSE_BODY = true;
+
+/** A flag to request that request body bytes be sinked. */
+constexpr bool SINK_REQUEST_BODY = false;
+
+/** This serves to consume all the data that arrives in the VIO.
+ *
+ * Note that if any data is not consumed then the tunnel gets stalled and the
+ * transaction doesn't complete. Various things can be done with the data,
+ * accessible via the IO buffer @a reader, such as writing it to disk in order
+ * to make an externally accessible copy.
+ *
+ * @param[in] sync_response_body: Indicates whether response body bytes should
+ * be consumed.
+ */
 int
-client_reader(TSCont contp, TSEvent event, void *edata)
+body_reader_helper(TSCont contp, TSEvent event, bool sync_response_body)
 {
   SinkData *data = static_cast<SinkData *>(TSContDataGet(contp));
 
@@ -74,6 +99,8 @@ client_reader(TSCont contp, TSEvent event, void *edata)
     TSContDataSet(contp, data);
   }
 
+  std::string &body_bytes = sync_response_body ? data->response_body_bytes : data->request_body_bytes;
+
   switch (event) {
   case TS_EVENT_ERROR:
     TSDebug(PLUGIN_NAME, "Error event");
@@ -90,9 +117,9 @@ client_reader(TSCont contp, TSEvent event, void *edata)
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
       size_t const n          = TSIOBufferReaderAvail(reader);
       if (n > 0) {
-        auto const offset = data->body_bytes.size();
-        data->body_bytes.resize(offset + n);
-        TSIOBufferReaderCopy(reader, data->body_bytes.data() + offset, n);
+        auto const offset = body_bytes.size();
+        body_bytes.resize(offset + n);
+        TSIOBufferReaderCopy(reader, body_bytes.data() + offset, n);
 
         TSIOBufferReaderConsume(reader, n);
         TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
@@ -102,11 +129,11 @@ client_reader(TSCont contp, TSEvent event, void *edata)
         // Signal that we can accept more data.
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
       } else {
-        TSDebug(PLUGIN_NAME, "Consumed the following body: \"%.*s\"", (int)data->body_bytes.size(), data->body_bytes.data());
+        TSDebug(PLUGIN_NAME, "Consumed the following body: \"%.*s\"", static_cast<int>(body_bytes.size()), body_bytes.data());
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
       }
     } else { // The buffer is gone so we're done.
-      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %zd bytes", data->body_bytes.size());
+      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %zd bytes", body_bytes.size());
     }
     break;
   default:
@@ -117,43 +144,90 @@ client_reader(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+/** The handler for transaction data sink for response bodies. */
 int
-enable_agent_check(TSHttpTxn txnp)
+response_body_reader(TSCont contp, TSEvent event, void *edata)
 {
-  TSMBuffer req_buf;
-  TSMLoc req_loc;
-  int zret = 0;
+  return body_reader_helper(contp, event, SINK_RESPONSE_BODY);
+}
 
-  // Enable the sink agent if the header is present.
+/** The handler for transaction data sink for request bodies. */
+int
+request_body_reader(TSCont contp, TSEvent event, void *edata)
+{
+  return body_reader_helper(contp, event, SINK_REQUEST_BODY);
+}
+
+/** A helper function for common logic between request_sink_requested and
+ * response_sink_requested. */
+bool
+sink_requested_helper(TSHttpTxn txnp, std::string_view header)
+{
+  TSMLoc field      = nullptr;
+  TSMBuffer req_buf = nullptr;
+  TSMLoc req_loc    = nullptr;
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-    TSMLoc agent_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_HEADER_FIELD.data(), FLAG_HEADER_FIELD.length());
-    zret               = nullptr == agent_field ? 0 : 1;
+    field = TSMimeHdrFieldFind(req_buf, req_loc, header.data(), header.length());
   }
 
-  return zret;
+  return field != nullptr;
 }
 
-void
-client_add(TSHttpTxn txnp)
+/** Determine whether the headers enable request body sink.
+ *
+ * Inspect the given request headers for the flag that enables request body
+ * sink.
+ *
+ * @param[in] txnp The transaction with the request headers to search for the
+ * header that enables request body sink.
+ *
+ * @return True if the headers enable request body sink, false otherwise.
+ */
+bool
+request_sink_requested(TSHttpTxn txnp)
 {
-  // We use @c TSTransformCreate because ATS sees this the same as a transform, but with only
-  // the input side hooked up and not the output side. Data flows from ATS in to the reader
-  // but not back out to ATS. From the plugin point of view the input data is provided exactly
-  // as it is with a transform.
-  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, TSTransformCreate(client_reader, txnp));
+  return sink_requested_helper(txnp, FLAG_DUMP_REQUEST_BODY);
 }
 
+/** Determine whether the headers enable response body sink.
+ *
+ * Inspect the given response headers for the flag that enables response body
+ * sink.
+ *
+ * @param[in] txnp The transaction with the response headers to search for the
+ * header that enables response body sink.
+ *
+ * @return True if the headers enable response body sink, false otherwise.
+ */
+bool
+response_sink_requested(TSHttpTxn txnp)
+{
+  return sink_requested_helper(txnp, FLAG_DUMP_RESPONSE_BODY);
+}
+
+/** Implements the handler for inspecting the request header bytes and enabling
+ * transaction data sink if X-Dump-Request or X-Dump-Response flags are used.
+ */
 int
 main_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-  TSDebug(PLUGIN_NAME, "Checking transaction");
+  TSDebug(PLUGIN_NAME, "Checking transaction for any flags to enable transaction data sink.");
   switch (event) {
-  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    if (enable_agent_check(txnp)) {
-      TSDebug(PLUGIN_NAME, "Adding data sink to transaction");
-      client_add(txnp);
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    /// We use @c TSTransformCreate because ATS sees this the same as a
+    /// transform, but with only the input side hooked up and not the output
+    /// side. Data flows from ATS in to the reader but not back out to ATS.
+    /// From the plugin point of view the input data is provided exactly as it
+    /// is with a transform.
+    if (response_sink_requested(txnp)) {
+      TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, TSTransformCreate(response_body_reader, txnp));
+      TSDebug(PLUGIN_NAME, "Adding response data sink to transaction");
+    }
+    if (request_sink_requested(txnp)) {
+      TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_CLIENT_HOOK, TSTransformCreate(request_body_reader, txnp));
+      TSDebug(PLUGIN_NAME, "Adding request data sink to transaction");
     }
     break;
   default:
@@ -179,6 +253,6 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(main_hook, nullptr));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(main_hook, nullptr));
   return;
 }
