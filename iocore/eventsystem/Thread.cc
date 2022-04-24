@@ -47,7 +47,9 @@ Thread::Thread()
 Thread::~Thread()
 {
   ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
-  this_thread_ptr = nullptr;
+  if (this_thread_ptr == this) {
+    this_thread_ptr = nullptr;
+  }
 
   mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
   MUTEX_UNTAKE_LOCK(mutex, static_cast<EThread *>(this));

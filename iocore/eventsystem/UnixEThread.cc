@@ -115,7 +115,9 @@ EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 EThread::~EThread()
 {
   ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
-  this_ethread_ptr = nullptr;
+  if (this_ethread_ptr == this) {
+    this_ethread_ptr = nullptr;
+  }
 }
 
 bool
