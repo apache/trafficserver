@@ -35,16 +35,7 @@
 ///////////////////////////////////////////////
 
 ink_hrtime Thread::cur_time = ink_get_hrtime_internal();
-ink_thread_key Thread::thread_data_key;
-
-namespace
-{
-static bool initialized ATS_UNUSED = ([]() -> bool {
-  // File scope initialization goes here.
-  ink_thread_key_create(&Thread::thread_data_key, nullptr);
-  return true;
-})();
-}
+thread_local Thread *Thread::this_thread_ptr;
 
 Thread::Thread()
 {
@@ -56,12 +47,7 @@ Thread::Thread()
 Thread::~Thread()
 {
   ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
-
-  if (ink_thread_getspecific(Thread::thread_data_key) == this) {
-    // Clear pointer to this object stored in thread-specific data by set_specific.
-    //
-    ink_thread_setspecific(Thread::thread_data_key, nullptr);
-  }
+  this_thread_ptr = nullptr;
 
   mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
   MUTEX_UNTAKE_LOCK(mutex, static_cast<EThread *>(this));
