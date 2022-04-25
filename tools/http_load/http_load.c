@@ -438,7 +438,7 @@ main(int argc, char **argv)
       } else {
         extra_headers = malloc_check(65536);
         strncpy(extra_headers, argv[++argn], 65536 - 1);
-        extra_headers[65536] = '\0';
+        extra_headers[65535] = '\0';
       }
     } else if (strncmp(argv[argn], "-http_version", strlen(argv[argn])) == 0 && argn + 1 < argc) {
       http_version = argv[++argn];
