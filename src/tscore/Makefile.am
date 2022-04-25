@@ -61,6 +61,7 @@ libtscore_la_SOURCES = \
 	ConsistentHash.cc \
 	ContFlags.cc \
 	CryptoHash.cc \
+	DbgCtl.cc \
 	Diags.cc \
 	Errata.cc \
 	EventNotify.cc \

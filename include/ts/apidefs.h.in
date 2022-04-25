@@ -1071,6 +1071,11 @@ typedef struct TSHttpConnectOptions_s {
   TSIOBufferWaterMark buffer_water_mark;
 } TSHttpConnectOptions;
 
+typedef struct TSDbgCtl_s {
+  char volatile on; // Flag
+  char const *tag;
+} TSDbgCtl;
+
 /* --------------------------------------------------------------------------
    Init */
 
