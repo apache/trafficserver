@@ -49,6 +49,7 @@ ts_parent.Disk.remap_config.AddLine(
 ts_parent.Disk.remap_config.AddLine(
     f'map {server_name} {server_name}'
 )
+ts_parent.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: DNS Error: looking up", "Should contain DNS error")
 
 # Object to push to proxies
 stale_5 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
@@ -58,12 +59,12 @@ stale_10 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-L
 # Testing scenarios
 child_curl_request = (
     # Test child serving stale with failed DNS OS lookup
-    f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
-    f'curl -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
+    f'curl -s -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
+    f'curl -s -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
     f'sleep 7; curl -s -v http://localhost:{ts_child.Variables.port};'
     f'sleep 15; curl -s -v http://localhost:{ts_child.Variables.port};'
     # Test parent serving stale with failed DNS OS lookup
-    f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
+    f'curl -s -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
     f'sleep 7; curl -s -v http://localhost:{ts_parent.Variables.port};'
     f'sleep 15; curl -s -v http://localhost:{ts_parent.Variables.port};'
 )

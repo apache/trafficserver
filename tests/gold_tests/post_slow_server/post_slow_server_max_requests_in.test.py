@@ -52,6 +52,9 @@ class PostAndMaxRequestsInTest:
             f"map / https://127.0.0.1:{Test.Variables.server_port}/",
         ])
 
+        self.ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: CONNECT: attempt fail",
+                                                                    "Should contain connect attempt fail")
+
     def __testCase0(self):
         """
         - POST request

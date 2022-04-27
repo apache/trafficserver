@@ -168,14 +168,12 @@ class LogFilenamesTest:
             f"{manager_path} should contain traffic_manager log messages")
 
         diags_path = self.ts.Disk.diags_log.AbsPath
-        self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        self.ts.Disk.diags_log.Content = Testers.ContainsExpression(
             "Traffic Server is fully initialized",
             f"{diags_path} should contain traffic_server diag messages")
-
-        error_log_path = self.ts.Disk.error_log.AbsPath
-        self.ts.Disk.error_log.Content += Testers.ContainsExpression(
-            "CONNECT: attempt fail",
-            f"{error_log_path} should contain connection error messages")
+        self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            "ERROR: CONNECT: attempt fail",
+            f"{diags_path} should contain connection error messages")
 
         custom_log_path = self.ts.Disk.custom_log.AbsPath
         self.ts.Disk.custom_log.Content += Testers.ContainsExpression(

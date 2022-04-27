@@ -32,6 +32,8 @@ ts.Disk.remap_config.AddLine(
     'map http://{host} http://{ip}:{uport}'.format(host=HOST, ip='127.0.0.1', uport=server.Variables.Port)
 )
 
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: CONNECT: attempt fail", "Should contain connect attempt fail")
+
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
 
 data_file = Test.Disk.File("www.connectfail502.test-get.txt", id="datafile")

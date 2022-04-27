@@ -133,6 +133,7 @@ class TtlDnsTest:
         else:
             # No: expect a 5xx response because the server name could not be
             # resolved.
+            self.ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: DNS Error: looking up", "Should contain DNS error")
             replay_file = TtlDnsTest.server_error_replay
         process_number = TtlDnsTest.get_unique_process_counter()
         tr.AddVerifierClientProcess(

@@ -51,6 +51,8 @@ ts.Disk.remap_config.AddLine(
     "regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port)
 )
 
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: DNS Error: looking up", "Should contain DNS error")
+
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(Test.Processes.server)

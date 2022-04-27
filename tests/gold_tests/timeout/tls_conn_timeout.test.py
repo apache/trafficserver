@@ -56,6 +56,8 @@ ts.Disk.remap_config.AddLine('map /ttfb_blocked https://127.0.0.1:{0}'.format(Te
 ts.Disk.remap_config.AddLine('map /get_connect_blocked https://127.0.0.1:{0}'.format(Test.Variables.get_block_connect_port))
 ts.Disk.remap_config.AddLine('map /get_ttfb_blocked https://127.0.0.1:{0}'.format(Test.Variables.get_block_ttfb_port))
 
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: CONNECT: attempt fail", "Should contain connect attempt fail")
+
 # Commenting out the per test case timeouts.  In the CI, there is too big of a risk that we hit those timeouts.  Had hoped to use
 # The test case timeouts to differentiate between a good origin timeout and a too long origin timeout
 

@@ -87,6 +87,8 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: CONNECT: attempt fail", "Should contain connect attempt fail")
+
 # Should succeed
 tr = Test.AddTestRun("Use correct ca bundle for server 1")
 tr.Processes.Default.Command = 'curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)

@@ -123,6 +123,8 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
             'proxy.config.http.connect_attempts_timeout': 5,
             'proxy.config.http.connect_attempts_max_retries': 0,
         })
+        trafficservers[config].Disk.diags_log.Content = Testers.ContainsExpression("ERROR: DNS Error: looking up",
+                                                                                   "Should contain DNS error")
         tr.Processes.Default.StartBefore(trafficservers[config])
     else:
         tr.StillRunningAfter = trafficservers[config]

@@ -171,21 +171,12 @@ tr.Processes.Default.Command = "curl -v --tls-max 1.2 -k --cert ./signed-foo.pem
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
-# Wait for the error.log to appaer.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'error.log')
-)
-
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI/hostname mismatch sni=ellen host=fran",
                                                         "Should not have warning on mismatch with non-policy host")
-
-test_run.Processes.Default.ReturnCode = 0
-ts.Disk.error_log.Content += Testers.ContainsExpression(
-    "SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
-    "error.log should contain information about the 403 response.")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "ERROR: SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
+    "Should contain information about the 403 response")
