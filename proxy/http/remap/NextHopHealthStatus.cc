@@ -119,22 +119,21 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
             new_fail_count = h->failCount = 1;
           }
         } else if (result.retry == true) {
-          h->failedAt = _now;
+          h->failedAt    = _now;
+          new_fail_count = h->failCount = 1;
         }
       } // end lock guard
       NH_Note("[%" PRId64 "] NextHop %s marked as down %s", sm_id, (result.retry) ? "retry" : "initially", h->hostname.c_str());
     } else {
-      int old_count = 0;
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
       { // lock guard
         std::lock_guard<std::mutex> lock(h->_mutex);
         if ((h->failedAt + retry_time) < static_cast<unsigned>(_now)) {
-          h->failCount = 1;
-          h->failedAt  = _now;
+          new_fail_count = h->failCount = 1;
+          h->failedAt                   = _now;
         } else {
-          old_count = h->failCount = 1;
+          new_fail_count = h->failCount += 1;
         }
-        new_fail_count = old_count + 1;
       } // end of lock_guard
       NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] Parent fail count increased to %d for %s", sm_id, new_fail_count, h->hostname.c_str());
     }
