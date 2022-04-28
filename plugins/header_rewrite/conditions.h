@@ -577,11 +577,15 @@ public:
   void operator=(const ConditionTcpInfo &) = delete;
 
   void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
+
+private:
+  TcpQualifiers _tcp_qual = TCP_QUAL_CLIENT;
 };
 
 // Cache Lookup Results

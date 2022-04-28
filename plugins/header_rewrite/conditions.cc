@@ -1220,6 +1220,9 @@ ConditionTcpInfo::initialize_hooks()
   add_allowed_hook(TS_HTTP_TXN_START_HOOK);
   add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
 }
 
 bool
@@ -1236,6 +1239,22 @@ ConditionTcpInfo::eval(const Resources &res)
 }
 
 void
+ConditionTcpInfo::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{TCP-INFO:%s} qualifier", q.c_str());
+
+  if (q == "CLIENT") {
+    _tcp_qual = TCP_QUAL_CLIENT;
+  } else if (q == "SERVER") {
+    _tcp_qual = TCP_QUAL_SERVER;
+  } else {
+    TSError("[%s] Unknown TCP-INFO() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
+
+void
 ConditionTcpInfo::append_value(std::string &s, Resources const &res)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
@@ -1247,26 +1266,31 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   int fd;
   struct tcp_info info;
   socklen_t tcp_info_len = sizeof(info);
-  tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  switch (_tcp_qual) {
+  case TCP_QUAL_CLIENT:
+    tsSsn = TSHttpTxnClientFdGet(res.txnp, &fd);
+    break;
+  case TCP_QUAL_SERVER:
+    tsSsn = TSHttpTxnServerFdGet(res.txnp, &fd);
+    break;
+  }
   if (tsSsn != TS_SUCCESS || fd <= 0) {
-    TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
+    TSDebug(PLUGIN_NAME, "error getting the socket fd from ssn");
   }
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
     TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
   }
 
-  if (tsSsn == TS_SUCCESS) {
-    if (tcp_info_len > 0) {
-      char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
+  if (tsSsn == TS_SUCCESS && tcp_info_len > 0) {
+    char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
 #if !defined(freebsd) || defined(__GLIBC__)
-      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
-               info.tcpi_snd_cwnd, info.tcpi_retrans);
+    snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd,
+             info.tcpi_retrans);
 #else
-      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
-               info.tcpi_snd_cwnd, info.__tcpi_retrans);
+    snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd,
+             info.__tcpi_retrans);
 #endif
-      s += buf;
-    }
+    s += buf;
   }
 #else
   s += "-";

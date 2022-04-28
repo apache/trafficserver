@@ -93,6 +93,12 @@ enum NetworkSessionQualifiers {
   NET_QUAL_STACK,       ///< Full protocol stack.
 };
 
+// TCP Info
+enum TcpQualifiers {
+  TCP_QUAL_CLIENT,
+  TCP_QUAL_SERVER,
+};
+
 class Statement
 {
 public:
