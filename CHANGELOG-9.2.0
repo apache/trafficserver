@@ -85,7 +85,6 @@ Changes with Apache Traffic Server 9.2.0
   #7777 - BWF: Add support for std::error_code.
   #7778 - DNS: Clean up argument passing to DNS queries.
   #7779 - Test: add nameserver to log-field test.
-  #7782 - Short circuit remap reload when a valid remap file is not specified
   #7786 - Enables cross-compiling
   #7787 - Fixes an issue where next hop unit tests crash when run on macOS.
   #7788 - Cleans up uninitialized warning in LogMessage.cc
