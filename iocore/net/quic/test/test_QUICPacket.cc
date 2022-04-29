@@ -249,7 +249,8 @@ TEST_CASE("Sending Packet", "[quic]")
     CHECK(packet.is_crypto_packet());
 
     packet.store(buf, &len);
-    CHECK(len == packet.size() - 16);
+    // See above packet.size() CHECK: packet.size must be greater than 16.
+    CHECK(len == static_cast<size_t>(packet.size() - 16));
     CHECK(memcmp(buf, expected, len - 16) == 0);
   }
 
