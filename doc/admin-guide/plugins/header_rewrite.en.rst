@@ -520,9 +520,23 @@ TCP-INFO
 ::
 
     cond %{<name>}
-        add-header @PropertyName "%{TCP-INFO}"
+        add-header @PropertyName "%{TCP-INFO:<part>}"
 
-This operation records TCP Info struct field values as an Internal remap as well as global header at the event hook specified by the condition. Supported hook conditions include TXN_START_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Global plugin and REMAP_PSEUDO_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Remap plugin. Conditions supported as request headers include TXN_START_HOOK and REMAP_PSEUDO_HOOK. The other conditions are supported as response headers. TCP Info fields currently recorded include rtt, rto, snd_cwnd and all_retrans. This operation is not supported on transactions originated within Traffic Server (for e.g using the |TS| :c:func:`TSHttpTxnIsInternal`)
+This operation records TCP Info struct field values as an Internal remap as well
+as global header at the event hook specified by the condition. Qualifiers can be
+used to specifiy TCP Info from either the client or server socket. Without any
+qualifiers specified, the client socket is defaulted. Supported hook
+conditions include SEND_RESPONSE_HEADER_HOOK, READ_REQUEST_HDR_HOOK,
+READ_RESPONSE_HDR_HOOK, SEND_REQUEST_HDR_HOOK, and TXN_CLOSE_HOOK. In addition,
+the Global plugin includes TXN_START_HOOK while the Remap plugin includes
+REMAP_PSEUDO_HOOK. Conditions supported as request headers include TXN_START_HOOK,
+REMAP_PSEUDO_HOOK, READ_REQUEST_HDR_HOOK and SEND_REQUEST_HDR_HOOK. The other
+conditions are supported as response headers. TCP Info fields currently recorded
+include rtt, rto, snd_cwnd and all_retrans. This operation is not supported on
+transactions originated within Traffic Server (for e.g using the |TS| :c:func:`TSHttpTxnIsInternal`)
+
+    %{TCP-INFO:CLIENT}    TCP Info values from client socket (default)
+    %{TCP-INFO:SERVER}    TCP Info values from server socket
 
 Condition Operands
 ------------------
