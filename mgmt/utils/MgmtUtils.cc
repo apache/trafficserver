@@ -228,7 +228,7 @@ mgmt_log(const char *message_format, ...)
   char extended_format[4096], message[4096];
 
   va_start(ap, message_format);
-  if (diags) {
+  if (diags()) {
     NoteV(message_format, ap);
   } else {
     if (use_syslog) {
@@ -254,7 +254,7 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-  if (diags) {
+  if (diags()) {
     ErrorV(message_format, ap);
     if (lerrno != 0) {
       Error("last system error %d: %s", lerrno, strerror(lerrno));
@@ -288,7 +288,7 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-  if (diags) {
+  if (diags()) {
     if (lerrno != 0) {
       Error("last system error %d: %s", lerrno, strerror(lerrno));
     }

@@ -8665,6 +8665,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.cache.open_write_fail_action",
    "proxy.config.http.number_of_redirections",
    "proxy.config.http.cache.max_open_write_retries",
+   "proxy.config.http.cache.max_open_write_retry_timeout",
    "proxy.config.http.redirect_use_orig_cache_key",
    "proxy.config.http.attach_server_session_to_client",
    "proxy.config.websocket.no_activity_timeout",

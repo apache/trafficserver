@@ -159,6 +159,19 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
   return VC_EVENT_CONT;
 }
 
+bool
+HttpCacheSM::write_retry_done() const
+{
+  MgmtInt const timeout_ms = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
+  if (0 < timeout_ms && 0 < open_write_start) {
+    ink_hrtime const elapsed = Thread::get_hrtime() - open_write_start;
+    MgmtInt const msecs      = ink_hrtime_to_msec(elapsed);
+    return timeout_ms < msecs;
+  } else {
+    return master_sm->t_state.txn_conf->max_cache_open_write_retries < open_write_tries;
+  }
+}
+
 int
 HttpCacheSM::state_cache_open_write(int event, void *data)
 {
@@ -180,14 +193,15 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     master_sm->handleEvent(event, &captive_action);
     break;
 
-  case CACHE_EVENT_OPEN_WRITE_FAILED:
+  case CACHE_EVENT_OPEN_WRITE_FAILED: {
     if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
       // fall back to open_read_tries
       // Note that when CACHE_WL_FAIL_ACTION_READ_RETRY is configured, max_cache_open_write_retries
       // is automatically ignored. Make sure to not disable max_cache_open_read_retries
       // with CACHE_WL_FAIL_ACTION_READ_RETRY as this results in proxy'ing to origin
       // without write retries in both a cache miss or a cache refresh scenario.
-      if (open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
+
+      if (write_retry_done()) {
         Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. read retry triggered",
               master_sm->sm_id, open_write_tries);
         if (master_sm->t_state.txn_conf->max_cache_open_read_retries <= 0) {
@@ -196,13 +210,19 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
                 " read retry, but, max_cache_open_read_retries is not enabled",
                 master_sm->sm_id);
         }
-        open_read_tries          = 0;
+        open_read_tries = 0;
+
         read_retry_on_write_fail = true;
         // make sure it doesn't loop indefinitely
-        open_write_tries = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
+        open_write_tries            = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
+        MgmtInt const retry_timeout = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
+        if (0 < retry_timeout) {
+          open_write_start = Thread::get_hrtime() - ink_hrtime_from_msec(retry_timeout);
+        }
       }
     }
-    if (read_retry_on_write_fail || open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
+
+    if (read_retry_on_write_fail || !write_retry_done()) {
       // Retry open write;
       open_write_cb = false;
       do_schedule_in();
@@ -217,7 +237,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       err_code      = reinterpret_cast<intptr_t>(data);
       master_sm->handleEvent(event, &captive_action);
     }
-    break;
+  } break;
 
   case EVENT_INTERVAL:
     if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
@@ -235,7 +255,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 
       // Retry the cache open write if the number retries is less
       // than or equal to the max number of open write retries
-      ink_assert(open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries);
+      ink_assert(!write_retry_done());
+
       open_write(&cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
                  static_cast<time_t>(
                    (master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
@@ -344,6 +365,9 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   // INKqa12119
   open_write_cb = false;
   open_write_tries++;
+  if (0 == open_write_start) {
+    open_write_start = Thread::get_hrtime();
+  }
   this->retry_write = retry;
 
   // We should be writing the same document we did
@@ -360,8 +384,8 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   //  a new write (could happen on a very busy document
   //  that must be revalidated every time)
   // Changed by YTS Team, yamsat Plugin
-  if (open_write_tries > master_sm->redirection_tries &&
-      open_write_tries > master_sm->t_state.txn_conf->max_cache_open_write_retries) {
+  // two criteria, either write retries over the amount OR timeout
+  if (open_write_tries > master_sm->redirection_tries && write_retry_done()) {
     err_code = -ECACHE_DOC_BUSY;
     master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, &captive_action);
     return ACTION_RESULT_DONE;

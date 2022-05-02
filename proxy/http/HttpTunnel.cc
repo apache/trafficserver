@@ -1174,7 +1174,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     }
   } // end of added logic for partial copy of POST
 
-  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d, state: %d", p->alive == true,
+  Debug("http_redirect", "[%" PRId64 "] enable_redirection: [%d %d %d] event: %d, state: %d", sm->sm_id, p->alive == true,
         sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event, p->chunked_handler.state);
 
   switch (event) {
@@ -1281,7 +1281,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 
     if (backlog >= flow_state.high_water) {
       if (is_debug_tag_set("http_tunnel")) {
-        Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+        Debug("http_tunnel", "[%" PRId64 "] Throttle   %p %" PRId64 " / %" PRId64, sm->sm_id, p, backlog, p->backlog());
       }
       p->throttle(); // p becomes srcp for future calls to this method
     } else {
@@ -1296,7 +1296,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
         }
         if (backlog < flow_state.low_water) {
           if (is_debug_tag_set("http_tunnel")) {
-            Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+            Debug("http_tunnel", "[%" PRId64 "] Unthrottle %p %" PRId64 " / %" PRId64, sm->sm_id, p, backlog, p->backlog());
           }
           srcp->unthrottle();
           if (srcp->read_vio) {

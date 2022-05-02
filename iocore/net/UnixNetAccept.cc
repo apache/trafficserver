@@ -320,7 +320,7 @@ NetAccept::do_blocking_accept(EThread *t)
       }
     }
     // check for throttle
-    if (!opt.backdoor && check_net_throttle(ACCEPT)) {
+    if (check_net_throttle(ACCEPT)) {
       check_throttle_warning(ACCEPT);
       // close the connection as we are in throttle state
       con.close();
@@ -437,7 +437,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     if (likely(fd >= 0)) {
       // check for throttle
-      if (!opt.backdoor && check_net_throttle(ACCEPT)) {
+      if (check_net_throttle(ACCEPT)) {
         // close the connection as we are in throttle state
         con.close();
         NET_SUM_DYN_STAT(net_connections_throttled_in_stat, 1);

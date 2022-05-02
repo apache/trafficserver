@@ -211,6 +211,8 @@ private:
   void do_schedule_in();
   Action *do_cache_open_read(const HttpCacheKey &);
 
+  bool write_retry_done() const;
+
   int state_cache_open_read(int event, void *data);
   int state_cache_open_write(int event, void *data);
 
@@ -225,8 +227,9 @@ private:
   time_t read_pin_in_cache                       = 0;
 
   // Open write parameters
-  bool retry_write     = true;
-  int open_write_tries = 0;
+  bool retry_write            = true;
+  int open_write_tries        = 0;
+  ink_hrtime open_write_start = 0; // overrides open_write_tries
 
   // Common parameters
   URL *lookup_url = nullptr;

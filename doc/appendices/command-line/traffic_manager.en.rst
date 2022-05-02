@@ -34,7 +34,6 @@ Description
 .. option:: --help
 .. option:: --nosyslog
 .. option:: --path FILE
-.. option:: --proxyBackDoor PORT
 .. option:: --proxyOff
 .. option:: --listenOff
 .. option:: --proxyPort PORT
