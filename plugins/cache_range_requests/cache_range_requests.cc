@@ -54,6 +54,7 @@ struct pluginconfig {
   bool consider_ims_header{false};
   bool modify_cache_key{true};
   bool verify_cacheability{false};
+  bool cache_complete_responses{false};
   std::string ims_header;
 };
 
@@ -62,6 +63,7 @@ struct txndata {
   TSHttpStatus origin_status{TS_HTTP_STATUS_PARTIAL_CONTENT};
   time_t ims_time{0};
   bool verify_cacheability{false};
+  bool cache_complete_responses{false};
 };
 
 // pluginconfig struct (global plugin only)
@@ -104,6 +106,7 @@ create_pluginconfig(int argc, char *const argv[])
     {const_cast<char *>("no-modify-cachekey"), no_argument, nullptr, 'n'},
     {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
     {const_cast<char *>("verify-cacheability"), no_argument, nullptr, 'v'},
+    {const_cast<char *>("cache-complete-responses"), no_argument, nullptr, 'r'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -138,6 +141,10 @@ create_pluginconfig(int argc, char *const argv[])
     case 'v': {
       DEBUG_LOG("Plugin verifies whether the object in the transaction is cacheable");
       pc->verify_cacheability = true;
+    } break;
+    case 'r': {
+      DEBUG_LOG("Plugin allows complete responses (200 OK) to be cached");
+      pc->cache_complete_responses = true;
     } break;
     default: {
     } break;
@@ -268,7 +275,8 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             }
           }
 
-          txn_state->verify_cacheability = pc->verify_cacheability;
+          txn_state->verify_cacheability      = pc->verify_cacheability;
+          txn_state->cache_complete_responses = pc->cache_complete_responses;
         }
 
         // remove the range request header.
@@ -382,22 +390,26 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
     if (TS_HTTP_STATUS_PARTIAL_CONTENT == status) {
       DEBUG_LOG("Got TS_HTTP_STATUS_PARTIAL_CONTENT.");
 
-      DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
-      TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
-
-      // check if transaction is cacheable
-      bool const cacheable = TSHttpTxnIsCacheable(txnp, nullptr, resp_buf);
-      DEBUG_LOG("range is cacheable: %d", cacheable);
-      DEBUG_LOG("verify cacheability: %d", txn_state->verify_cacheability);
-
-      if (txn_state->verify_cacheability && !cacheable) {
-        DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
-        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
+      if (!txn_state->verify_cacheability || (txn_state->verify_cacheability && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf))) {
+        // changing the status code from 206 to 200 forces the object into cache
+        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
+        DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
+      } else {
+        DEBUG_LOG("Range is not cacheable");
       }
     } else if (TS_HTTP_STATUS_OK == status) {
-      DEBUG_LOG("The origin does not support range requests, disabling cache write.");
-      if (TS_SUCCESS != TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true)) {
-        DEBUG_LOG("Unable to disable cache write for this transaction.");
+      bool cacheable = txn_state->cache_complete_responses;
+
+      if (cacheable && txn_state->verify_cacheability) {
+        DEBUG_LOG("Received a cacheable complete response from the origin; verifying cacheability");
+        cacheable = TSHttpTxnIsCacheable(txnp, nullptr, resp_buf);
+      }
+
+      // 200s are cached by default; only cache if configured to do so
+      if (!cacheable && TS_SUCCESS == TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true)) {
+        DEBUG_LOG("Cache write has been disabled for this transaction.");
+      } else {
+        DEBUG_LOG("Allowing object to be cached.");
       }
     }
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);

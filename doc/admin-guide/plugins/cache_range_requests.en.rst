@@ -185,6 +185,15 @@ status code is reset back to 206, which leads to the object not being cached.
 
 This option is useful when used with other plugins, such as Cache Promote.
 
+Cache Complete Responses
+------------------------
+
+.. option:: --cache-complete-responses
+.. option:: -r
+
+This option causes the plugin to cache complete responses (200 OK). By default,
+only 206 Partial Content responses are cached by this plugin; without this flag,
+any 200 OK observed will be marked as not cacheable.
 
 Configuration examples
 ======================
