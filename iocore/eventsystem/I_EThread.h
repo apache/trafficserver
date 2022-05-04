@@ -85,6 +85,7 @@ enum ThreadType {
 class EThread : public Thread
 {
 public:
+  static thread_local EThread *this_ethread_ptr;
   /** Handler for tail of event loop.
 
       The event loop should not spin. To avoid that a tail handler is called to block for a limited time.

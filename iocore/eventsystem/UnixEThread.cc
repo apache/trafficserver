@@ -52,31 +52,22 @@ int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 
 // To define a class inherits from Thread:
-//   1) Define an independent ink_thread_key
-//   2) Override Thread::set_specific()
-//   3) Define this_Xthread() which get thread specific data by the independent key
+//   1) Define an independent thread_local static member
+//   2) Override Thread::set_specific() and assign that member and call Thread::set_specific()
+//   3) Define this_Xthread() which get thread specific data
 //   4) Clear thread specific data at destructor function.
 //
 // The below comments are copied from I_Thread.h
 //
 // Additionally, the EThread class (derived from Thread) maintains its
-// own independent key. All (and only) the threads created in the Event
-// Subsystem are registered with this key.
-ink_thread_key ethread_key;
-
-namespace
-{
-static bool ethread_initialized ATS_UNUSED = ([]() -> bool {
-  // File scope initialization goes here.
-  ink_thread_key_create(&ethread_key, nullptr);
-  return true;
-})();
-}
+// own independent data. All (and only) the threads created in the Event
+// Subsystem have this data.
+thread_local EThread *EThread::this_ethread_ptr;
 
 void
 EThread::set_specific()
 {
-  ink_thread_setspecific(ethread_key, this);
+  this_ethread_ptr = this;
   Thread::set_specific();
 }
 
@@ -124,10 +115,8 @@ EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 EThread::~EThread()
 {
   ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
-
-  if (ink_thread_getspecific(ethread_key) == this) {
-    // Clear pointer to this object stored in thread-specific data by set_specific.
-    ink_thread_setspecific(ethread_key, nullptr);
+  if (this_ethread_ptr == this) {
+    this_ethread_ptr = nullptr;
   }
 }
 
