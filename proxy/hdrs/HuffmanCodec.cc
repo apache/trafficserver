@@ -165,14 +165,6 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       current       = current->left;
       includes_zero = true;
     }
-
-    if (current->leaf_node == true) {
-      *dst_end = current->ascii_code;
-      ++dst_end;
-      current               = HUFFMAN_TREE_ROOT;
-      byte_boundary_crossed = 0;
-      includes_zero         = false;
-    }
     if (shift) {
       --shift;
     } else {
@@ -180,6 +172,13 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       ++src;
       --src_len;
       ++byte_boundary_crossed;
+    }
+    if (current->leaf_node == true) {
+      *dst_end = current->ascii_code;
+      ++dst_end;
+      current               = HUFFMAN_TREE_ROOT;
+      byte_boundary_crossed = 0;
+      includes_zero         = false;
     }
     if (byte_boundary_crossed > 3) {
       return -1;
