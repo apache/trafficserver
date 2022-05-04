@@ -85,7 +85,7 @@ Object Cacheability
     response from the upstream host from 206 to 200. The default behavior is to
     perform this operation blindly without checking cacheability. Add the `-v`
     flag to cause the plugin to ensure the object is cacheable; when it is not,
-    the status code is not changed to 200 and the object will not be cached.
+    the 206 status code is restored and the object will not be cached.
 
     Global Plugin (plugin.config):
 
