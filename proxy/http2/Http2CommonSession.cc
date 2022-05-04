@@ -413,6 +413,12 @@ Http2CommonSession::write_avail()
   return this->write_buffer->write_avail();
 }
 
+bool
+Http2CommonSession::is_write_high_water() const
+{
+  return this->write_buffer->high_water();
+}
+
 void
 Http2CommonSession::write_reenable()
 {
