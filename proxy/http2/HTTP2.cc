@@ -812,6 +812,7 @@ uint32_t Http2::header_table_size_limit         = 65536;
 uint32_t Http2::write_buffer_block_size         = 262144;
 float Http2::write_size_threshold               = 0.5;
 uint32_t Http2::write_time_threshold            = 100;
+uint32_t Http2::buffer_water_mark               = 0;
 
 void
 Http2::init()
@@ -843,6 +844,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
   REC_EstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
   REC_EstablishStaticConfigInt32U(write_time_threshold, "proxy.config.http2.write_time_threshold");
+  REC_EstablishStaticConfigInt32U(buffer_water_mark, "proxy.config.http2.default_buffer_water_mark");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));

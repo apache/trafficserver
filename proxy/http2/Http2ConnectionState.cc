@@ -1655,12 +1655,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::ERROR;
   }
 
-  if (this->session->write_avail() == 0) {
-    Http2StreamDebug(this->session, stream->get_id(), "Not write avail");
-    this->session->flush();
-    return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
-  }
-
   // Select appropriate payload length
   if (resp_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
@@ -1677,6 +1671,12 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     }
   } else {
     payload_length = 0;
+  }
+
+  if (payload_length > 0 && this->session->is_write_high_water()) {
+    Http2StreamDebug(this->session, stream->get_id(), "Not write avail");
+    this->session->flush();
+    return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
 
   stream->update_sent_count(payload_length);
