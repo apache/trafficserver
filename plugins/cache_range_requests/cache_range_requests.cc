@@ -389,13 +389,13 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
     txn_state->origin_status  = status;
     if (TS_HTTP_STATUS_PARTIAL_CONTENT == status) {
       DEBUG_LOG("Got TS_HTTP_STATUS_PARTIAL_CONTENT.");
+      // changing the status code from 206 to 200 forces the object into cache
+      TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
+      DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
 
-      if (!txn_state->verify_cacheability || (txn_state->verify_cacheability && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf))) {
-        // changing the status code from 206 to 200 forces the object into cache
-        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_OK);
-        DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
-      } else {
-        DEBUG_LOG("Range is not cacheable");
+      if (txn_state->verify_cacheability && !TSHttpTxnIsCacheable(txnp, nullptr, resp_buf)) {
+        DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
+        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
       }
     } else if (TS_HTTP_STATUS_OK == status) {
       bool cacheable = txn_state->cache_complete_responses;
