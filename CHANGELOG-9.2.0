@@ -377,7 +377,7 @@ Changes with Apache Traffic Server 9.2.0
   #8585 - Clean up of next hop HostRecord class.
   #8586 - Eliminate erroneous self-loop error on transparent mode
   #8589 - SNIConfig: tunnel_route -  Change the way we extract matched subgroups from the servename
-  #8590 -     Port #7925 and #8365 from core strategies to parent_select plugin
+  #8590 - Port #7925 and #8365 from core strategies to parent_select plugin
   #8593 - Fix transparent mode documentation
   #8594 - Propagate accept options to HTTP/2
   #8595 - Adds two overridable config variables to control parent mark downs.
@@ -424,6 +424,7 @@ Changes with Apache Traffic Server 9.2.0
   #8736 - [ink_base64] Fix buffer size computation
   #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
   #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
+  #8747 - Add http2.default_buffer_water_mark config to tune latency
   #8751 - STEK share plugin using Raft
   #8752 - docs: add some obvious units to some http2 overridables
   #8753 - Update to proxy-verifier-v2.3.1
