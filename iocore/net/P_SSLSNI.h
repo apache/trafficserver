@@ -54,6 +54,12 @@ using actionVector = std::vector<std::unique_ptr<ActionItem>>;
 struct namedElement {
 public:
   namedElement() {}
+  ~namedElement()
+  {
+    if (match) {
+      pcre_free(match);
+    }
+  }
 
   void
   setGlobName(std::string name)
