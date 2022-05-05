@@ -219,8 +219,8 @@
     cachedir:      /var/cache+
 </Layout>
 
-#   Fedora/Redhat Linux TrafficServer path layout.
-<Layout Redhat>
+#   Fedora/CentOS/RHEL TrafficServer path layout.
+<Layout RedHat>
     prefix:        /usr
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
