@@ -1,0 +1,14 @@
+# jsonrpc.yaml
+#
+# Documentation:
+#   https://docs.trafficserver.apache.org/en/latest/admin-guide/files/jsonrpc.yaml.en.html
+#
+# This configuration file can be used to configure some specific values of
+# the jsonrpc endpoint.
+#
+# Example:
+
+# rpc:
+#   enabled: true
+#   unix:
+#      restricted_api: true

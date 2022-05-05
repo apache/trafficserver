@@ -40,7 +40,6 @@ Table of Contents:
    layer-4-routing.en
    performance/index.en
    files/index.en
-   jsonrpc/index.en
 
 Audience
 ========
