@@ -103,6 +103,7 @@ SSLConfigParams::reset()
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
       clientKeyPathOnly = clientCertPathOnly = nullptr;
+  ssl_ocsp_response_path_only                = nullptr;
   server_tls13_cipher_suites                 = nullptr;
   client_tls13_cipher_suites                 = nullptr;
   server_groups_list                         = nullptr;
@@ -140,6 +141,8 @@ SSLConfigParams::cleanup()
   cipherSuite             = static_cast<char *>(ats_free_null(cipherSuite));
   client_cipherSuite      = static_cast<char *>(ats_free_null(client_cipherSuite));
   dhparamsFile            = static_cast<char *>(ats_free_null(dhparamsFile));
+
+  ssl_ocsp_response_path_only = static_cast<char *>(ats_free_null(ssl_ocsp_response_path_only));
 
   server_tls13_cipher_suites = static_cast<char *>(ats_free_null(server_tls13_cipher_suites));
   client_tls13_cipher_suites = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
