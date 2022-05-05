@@ -194,7 +194,7 @@ static const RecordElement RecordsConfig[] =
   //#    L  diags.log
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.diags.debug.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.diags.debug.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.tags", RECD_STRING, "http|dns", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1393,6 +1393,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http2.write_size_threshold", RECD_FLOAT, "0.5",  RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.write_time_threshold", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http2.default_buffer_water_mark", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
 
   //############

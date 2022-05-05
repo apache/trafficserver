@@ -29,24 +29,20 @@
 #include "tscore/Regex.h"
 
 #ifdef PCRE_CONFIG_JIT
-struct RegexThreadKey {
-  RegexThreadKey() { ink_thread_key_create(&this->key, reinterpret_cast<void (*)(void *)>(&pcre_jit_stack_free)); }
-  ink_thread_key key;
-};
-
-static RegexThreadKey k;
-
 static pcre_jit_stack *
 get_jit_stack(void *data ATS_UNUSED)
 {
-  pcre_jit_stack *jit_stack;
+  thread_local struct JitStack {
+    JitStack()
+    {
+      jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
+    }
+    ~JitStack() { pcre_jit_stack_free(jit_stack); }
 
-  if ((jit_stack = static_cast<pcre_jit_stack *>(ink_thread_getspecific(k.key))) == nullptr) {
-    jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
-    ink_thread_setspecific(k.key, (void *)jit_stack);
-  }
+    pcre_jit_stack *jit_stack = nullptr;
+  } stack;
 
-  return jit_stack;
+  return stack.jit_stack;
 }
 #endif
 

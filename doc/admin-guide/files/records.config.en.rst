@@ -2540,6 +2540,15 @@ Dynamic Content & Content Negotiation
     The number of times to attempt a cache open write upon failure to get a write lock.
 
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
+    set to ``5`` or :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` is set to gt ``0``.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retry_timeout INT 0
+   :reloadable:
+   :overridable:
+
+    A timeout for attempting a cache open write upon failure to get a write lock.
+
+    This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
     set to ``5``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
@@ -3327,6 +3336,10 @@ Diagnostic Logging Configuration
 
    When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
 
+   When set to 3, enables logging for diagnostic messages whose log level is `diag` or `debug`, except those
+   output by deprecated functions such as `TSDebug()` and `TSDebugSpecific()`.  Using the value 3 will have less
+   of a negative impact on proxy throughput than using the value 1.
+
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
    if :ts:cv:`proxy.config.diags.debug.enabled` is set to 2, this value is tested against the source IP of the incoming connection.  If there is a match, all the diagnostic messages for that connection and the related outgoing connection will be logged.
@@ -3349,7 +3362,7 @@ Diagnostic Logging Configuration
    ssl           TLS termination and certificate processing
    ============  =====================================================
 
-   |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
+   |TS| plugins will typically log debug messages using the :c:func:`TSDbg`
    API, passing the plugin name as the debug tag.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.throttling_interval_msec INT 0
@@ -4272,6 +4285,13 @@ HTTP/2 Configuration
    Specifies the time threshold for triggering write operation for sending HTTP/2
    frames. Write operation will be triggered at least once every this configured
    number of millisecond regardless of pending data size.
+
+.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT -1
+   :reloadable:
+   :units: bytes
+
+   Specifies the high water mark for all HTTP/2 frames on an outoging connection.
+   Default is -1 to preserve existing water marking behavior.
 
 HTTP/3 Configuration
 ====================

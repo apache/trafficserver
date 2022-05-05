@@ -60,6 +60,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
+   HTTP Stats <http_stats.en>
    Lua <lua.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
@@ -113,6 +114,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Health Checks <healthchecks.en>`
     Define service health check links.
 
+:doc:`HTTP Stats <http_stats.en>`
+    A remap-based plugin that provides an HTTP interface to all |TS| statistics.
+
 :doc:`Lua <lua.en>`
    Allows plugins to be written in Lua instead of C code.
 
@@ -165,6 +169,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
+   OpenTelemetry Tracer <otel_tracer.en>
    Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
    URI Signing <uri_signing.en>
@@ -229,6 +234,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
+
+:doc:`OpenTelemetry Tracer <otel_tracer.en>`
+   Allows Trafficserver to participate in OpenTelemetry distributed tracing system
 
 :doc:`Prefetch <prefetch.en>`
    Pre-fetch objects based on the requested URL path pattern.

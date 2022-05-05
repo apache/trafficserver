@@ -41,6 +41,7 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "SourceLocation.h"
+#include "DbgCtl.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
@@ -85,10 +86,21 @@ enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCAT
 //   cleanup process state
 typedef void (*DiagsCleanupFunc)();
 
-struct DiagsConfigState {
-  // this is static to eliminate many loads from the critical path
-  static int enabled[2];                     // one debug, one action
+class DiagsConfigState
+{
+public:
+  static int
+  enabled(DiagsTagType dtt)
+  {
+    return _enabled[dtt];
+  }
+
+  static void enabled(DiagsTagType dtt, int new_value);
+
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
+
+private:
+  static int _enabled[2]; // one debug, one action
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -138,22 +150,51 @@ public:
     return this->debug_client_ip == test_ip;
   }
 
+  // It seems to make a big difference to performance (due to the caching of the enabled flag) to call this
+  // function first before doing anything else for debug output.  This includes entering blocks with static
+  // DbgCtl instances, or other static variables with non-const initialization.  Static variables with
+  // non-const initialization inside a function have a hidden flag that is checked every time the containing
+  // block is entered, to see if the variable has been initialized or not.
+  //
   bool
   on(DiagsTagType mode = DiagsTagType_Debug) const
   {
-    return ((config.enabled[mode] == 1) || (config.enabled[mode] == 2 && this->get_override()));
+    return (config.enabled(mode) & 1) || (config.enabled(mode) == 2 && this->get_override());
   }
 
   bool
+  on_for_TSDebug() const
+  {
+    return (config.enabled(DiagsTagType_Debug) == 1) || (config.enabled(DiagsTagType_Debug) == 2 && this->get_override());
+  }
+
+  // is_debug_tag_set() is the faster alternative to this for debug mode, when the tag is a literal C-string
+  // (or otherwise is a constexpr returning char const *).
+  //
+  bool
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
   {
-    return this->on(mode) && tag_activated(tag, mode);
+    return unlikely(this->on(mode)) && tag_activated(tag, mode);
+  }
+
+  bool
+  on_for_TSDebug(const char *tag) const
+  {
+    return unlikely(this->on_for_TSDebug()) && tag_activated(tag, DiagsTagType_Debug);
+  }
+
+  bool
+  on(DbgCtl const &ctl) const
+  {
+    return unlikely(this->on(DiagsTagType_Debug)) && ctl.ptr()->on;
   }
 
   /////////////////////////////////////
   // low-level tag inquiry functions //
   /////////////////////////////////////
 
+  // This does regex match against the tag.
+  //
   bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
   /////////////////////////////

@@ -1342,7 +1342,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       restore_info(r, old_r.get(), old_info, old_rr_data);
     }
     ink_assert(!r || !r->round_robin || !r->reverse_dns);
-    ink_assert(failed || !r->round_robin || r->app.rr.offset);
+    ink_assert(failed || ((r != nullptr) && (!r->round_robin || r->app.rr.offset)));
 
     if (!serve_stale) {
       hostDB.refcountcache->put(hash.hash.fold(), r, allocSize, r->expiry_time());

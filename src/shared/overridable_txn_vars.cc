@@ -110,6 +110,8 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.http.insert_squid_x_forwarded_for", {TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.connect_attempts_max_retries", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.max_open_write_retries", {TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.cache.max_open_write_retry_timeout",
+      {TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.forward.proxy_auth_to_parent", {TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.parent_proxy.mark_down_hostdb", {TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.negative_revalidating_enabled", {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED, TS_RECORDDATATYPE_INT}},

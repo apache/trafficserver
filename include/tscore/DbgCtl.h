@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  DbgCtl class header file.
 
   @section license License
 
@@ -21,29 +21,36 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-  Basic Threads
-
-
-
-****************************************************************************/
 #pragma once
 
-#include "I_Thread.h"
+#include <ts/ts.h>
 
-///////////////////////////////////////////////
-// Common Interface impl                     //
-///////////////////////////////////////////////
-
-TS_INLINE void
-Thread::set_specific()
+// For use with TSDbg().
+//
+class DbgCtl
 {
-  this_thread_ptr = this;
-}
+public:
+  // Tag is a debug tag.  Debug output associated with this control will be output when debug output
+  // is enabled globally, and the tag matches the configured debug tag regular expression.
+  //
+  DbgCtl(char const *tag) : _ptr(_get_ptr(tag)) {}
 
-TS_INLINE Thread *
-this_thread()
-{
-  return Thread::this_thread_ptr;
-}
+  TSDbgCtl const *
+  ptr() const
+  {
+    return _ptr;
+  }
+
+  // Call this when the compiled regex to enable tags may have changed.
+  //
+  static void update();
+
+private:
+  TSDbgCtl const *const _ptr;
+
+  static const TSDbgCtl *_get_ptr(char const *tag);
+
+  class _RegistryAccessor;
+
+  friend TSDbgCtl const *TSDbgCtlCreate(char const *tag);
+};

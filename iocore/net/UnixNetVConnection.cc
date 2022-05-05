@@ -441,7 +441,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   int signalled = 0;
 
   // signal write ready to allow user to fill the buffer
-  if (towrite != ntodo && buf.writer()->write_avail()) {
+  if (towrite != ntodo && !buf.writer()->high_water()) {
     if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
       return;
     }
@@ -519,7 +519,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     int e = 0;
-    if (!signalled) {
+    if (!signalled || (s->vio.ntodo() > 0 && !buf.writer()->high_water())) {
       e = VC_EVENT_WRITE_READY;
     } else if (wbe_event != vc->write_buffer_empty_event) {
       // @a signalled means we won't send an event, and the event values differing means we

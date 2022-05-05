@@ -1315,6 +1315,8 @@ HttpConfig::startup()
 
   // open write failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
+  HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_write_retry_timeout,
+                                    "proxy.config.http.cache.max_open_write_retry_timeout");
 
   HttpEstablishStaticConfigByte(c.oride.cache_http, "proxy.config.http.cache.http");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");

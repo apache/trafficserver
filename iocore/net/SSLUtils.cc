@@ -205,11 +205,14 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 
   SSLSessionID sid(id, len);
 
-  if (diags->tag_activated("ssl.session_cache")) {
-    char printable_buf[(len * 2) + 1];
+  if (diags()->on()) {
+    static DbgCtl dbg_ctl("ssl.session_cache.insert");
+    if (dbg_ctl.ptr()->on) {
+      char printable_buf[(len * 2) + 1];
 
-    sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
+      sid.toString(printable_buf, sizeof(printable_buf));
+      DbgPrint(dbg_ctl, "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
+    }
   }
 
   SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
@@ -245,10 +248,13 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
     hook = hook->m_link.next;
   }
 
-  if (diags->tag_activated("ssl.session_cache")) {
-    char printable_buf[(len * 2) + 1];
-    sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.remove", "ssl_rm_cached_session cached session '%s'", printable_buf);
+  if (diags()->on()) {
+    static DbgCtl dbg_ctl("ssl.session_cache.remove");
+    if (dbg_ctl.ptr()->on) {
+      char printable_buf[(len * 2) + 1];
+      sid.toString(printable_buf, sizeof(printable_buf));
+      DbgPrint(dbg_ctl, "ssl_rm_cached_session cached session '%s'", printable_buf);
+    }
   }
 
   session_cache->removeSession(sid);

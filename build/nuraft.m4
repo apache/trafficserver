@@ -24,7 +24,7 @@ dnl
 
 AC_DEFUN([TS_CHECK_NURAFT], [
 has_nuraft=no
-AC_ARG_WITH(nuraft, [AC_HELP_STRING([--with-nuraft=DIR], [use a specific nuraft library])],
+AC_ARG_WITH(nuraft, [AS_HELP_STRING([--with-nuraft=DIR], [use a specific nuraft library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     nuraft_base_dir="$withval"

@@ -103,6 +103,7 @@ public:
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 
   int64_t write_avail();
+  bool is_write_high_water() const;
 
   virtual ProxySession *get_proxy_session() = 0;
 
