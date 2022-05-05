@@ -156,14 +156,14 @@ SNIConfigParams::get(std::string_view servername) const
 int
 SNIConfigParams::Initialize()
 {
-  sni_filename = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.servername.filename"));
+  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
 
-  Note("%s loading ...", sni_filename);
+  Note("%s loading ...", sni_filename.c_str());
 
   struct stat sbuf;
-  if (stat(sni_filename, &sbuf) == -1 && errno == ENOENT) {
-    Note("%s failed to load", sni_filename);
-    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename);
+  if (stat(sni_filename.c_str(), &sbuf) == -1 && errno == ENOENT) {
+    Note("%s failed to load", sni_filename.c_str());
+    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename.c_str());
     return 1;
   }
 
@@ -173,16 +173,16 @@ SNIConfigParams::Initialize()
     std::stringstream errMsg;
     errMsg << zret;
     if (TSSystemState::is_initializing()) {
-      Emergency("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+      Emergency("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     } else {
-      Error("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+      Error("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     }
     return 1;
   }
   Y_sni = std::move(Y_sni_tmp);
 
   loadSNIConfig();
-  Note("%s finished loading", sni_filename);
+  Note("%s finished loading", sni_filename.c_str());
 
   return 0;
 }
