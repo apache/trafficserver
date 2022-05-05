@@ -96,7 +96,7 @@ struct YamlSNIConfig {
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };
 
-  ts::Errata loader(const char *cfgFilename);
+  ts::Errata loader(const std::string &cfgFilename);
 
   std::vector<YamlSNIConfig::Item> items;
 };
