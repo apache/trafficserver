@@ -59,7 +59,7 @@ struct pluginconfig {
 
 struct txndata {
   std::string range_value;
-  TSHttpStatus origin_status{TS_HTTP_STATUS_PARTIAL_CONTENT};
+  TSHttpStatus origin_status{TS_HTTP_STATUS_NONE};
   time_t ims_time{0};
   bool verify_cacheability{false};
 };
@@ -337,12 +337,33 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &resp_buf, &resp_loc)) {
     TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
     // a cached status will be 200 with expected parent response status of 206
-    if (TS_HTTP_STATUS_OK == status && TS_HTTP_STATUS_PARTIAL_CONTENT == txn_state->origin_status) {
-      DEBUG_LOG("Got TS_HTTP_STATUS_OK with origin TS_HTTP_STATUS_PARTIAL_CONTENT");
-      partial_content_reason = true;
+    if (TS_HTTP_STATUS_OK == status) {
+      if (txn_state->origin_status == TS_HTTP_STATUS_NONE ||
+          txn_state->origin_status == TS_HTTP_STATUS_NOT_MODIFIED) { // cache hit or revalidation
+        // status is always TS_HTTP_STATUS_NONE on cache hit; its value is only set during handle_server_read_response()
+        TSMLoc content_range_loc = TSMimeHdrFieldFind(resp_buf, resp_loc, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
 
-      DEBUG_LOG("Restoring response header to TS_HTTP_STATUS_PARTIAL_CONTENT.");
-      TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
+        if (content_range_loc) {
+          DEBUG_LOG("Got TS_HTTP_STATUS_OK on cache hit or revalidation and Content-Range header present in response");
+          partial_content_reason = true;
+          TSHandleMLocRelease(resp_buf, resp_loc, content_range_loc);
+        } else {
+          DEBUG_LOG("Got TS_HTTP_STATUS_OK on cache hit and Content-Range header is NOT present in response");
+        }
+      } else if (txn_state->origin_status ==
+                 TS_HTTP_STATUS_PARTIAL_CONTENT) { // only set on cache miss in handle_server_read_response()
+        DEBUG_LOG("Got TS_HTTP_STATUS_OK with origin TS_HTTP_STATUS_PARTIAL_CONTENT");
+        partial_content_reason = true;
+      } else {
+        DEBUG_LOG("Allowing TS_HTTP_STATUS_OK in response due to origin status code %d", txn_state->origin_status);
+      }
+
+      if (partial_content_reason) {
+        DEBUG_LOG("Restoring response header to TS_HTTP_STATUS_PARTIAL_CONTENT.");
+        TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
+      }
+    } else {
+      DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
     }
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
   }
