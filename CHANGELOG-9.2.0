@@ -443,3 +443,4 @@ Changes with Apache Traffic Server 9.2.0
   #8788 - HttpSM, HttpTunnel, and Http2Stream debug logging updates
   #8797 - Adds new plugin, http_stats
   #8798 - Create clean exit path for traffic_manager on SIGTERM
+  #8805 - remove pthread_*specific and replace with thread_local
