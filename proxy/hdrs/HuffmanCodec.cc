@@ -149,14 +149,16 @@ hpack_huffman_fin()
   }
 }
 
+#define MAX_HUFFMAN_CODE_LEN 30
+
 int64_t
 huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 {
-  char *dst_end             = dst_start;
-  uint8_t shift             = 7;
-  Node *current             = HUFFMAN_TREE_ROOT;
-  int byte_boundary_crossed = 0;
-  bool includes_zero        = false;
+  char *dst_end      = dst_start;
+  uint8_t shift      = 7;
+  Node *current      = HUFFMAN_TREE_ROOT;
+  bool includes_zero = false;
+  int nbits          = 0;
 
   while (src_len) {
     if (*src & (1 << shift)) {
@@ -165,28 +167,33 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       current       = current->left;
       includes_zero = true;
     }
+    ++nbits;
+
+    if (current->leaf_node == true) {
+      nbits    = 0;
+      *dst_end = current->ascii_code;
+      ++dst_end;
+      current       = HUFFMAN_TREE_ROOT;
+      includes_zero = false;
+    }
+
     if (shift) {
       --shift;
     } else {
       shift = 7;
       ++src;
       --src_len;
-      ++byte_boundary_crossed;
     }
-    if (current->leaf_node == true) {
-      *dst_end = current->ascii_code;
-      ++dst_end;
-      current               = HUFFMAN_TREE_ROOT;
-      byte_boundary_crossed = 0;
-      includes_zero         = false;
-    }
-    if (byte_boundary_crossed > 3) {
+
+    if (nbits > MAX_HUFFMAN_CODE_LEN) {
       return -1;
     }
   }
-  if (byte_boundary_crossed > 1) {
+
+  if (nbits > 7) {
     return -1;
   }
+
   if (includes_zero) {
     return -1;
   }
