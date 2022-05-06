@@ -585,7 +585,7 @@ protected:
   void initialize_hooks() override; // Return status only valid in certain hooks
 
 private:
-  TcpQualifiers _tcp_qual = TCP_QUAL_CLIENT;
+  TcpQualifiers _tcp_qual = TCP_QUAL_INBOUND;
 };
 
 // Cache Lookup Results

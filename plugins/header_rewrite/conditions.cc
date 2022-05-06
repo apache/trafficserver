@@ -1245,10 +1245,10 @@ ConditionTcpInfo::set_qualifier(const std::string &q)
 
   TSDebug(PLUGIN_NAME, "\tParsing %%{TCP-INFO:%s} qualifier", q.c_str());
 
-  if (q == "CLIENT") {
-    _tcp_qual = TCP_QUAL_CLIENT;
-  } else if (q == "SERVER") {
-    _tcp_qual = TCP_QUAL_SERVER;
+  if (q == "INBOUND") {
+    _tcp_qual = TCP_QUAL_INBOUND;
+  } else if (q == "OUTBOUND") {
+    _tcp_qual = TCP_QUAL_OUTBOUND;
   } else {
     TSError("[%s] Unknown TCP-INFO() qualifier: %s", PLUGIN_NAME, q.c_str());
   }
@@ -1267,10 +1267,10 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   struct tcp_info info;
   socklen_t tcp_info_len = sizeof(info);
   switch (_tcp_qual) {
-  case TCP_QUAL_CLIENT:
+  case TCP_QUAL_INBOUND:
     tsSsn = TSHttpTxnClientFdGet(res.txnp, &fd);
     break;
-  case TCP_QUAL_SERVER:
+  case TCP_QUAL_OUTBOUND:
     tsSsn = TSHttpTxnServerFdGet(res.txnp, &fd);
     break;
   }

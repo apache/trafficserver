@@ -95,8 +95,8 @@ enum NetworkSessionQualifiers {
 
 // TCP Info
 enum TcpQualifiers {
-  TCP_QUAL_CLIENT,
-  TCP_QUAL_SERVER,
+  TCP_QUAL_INBOUND,
+  TCP_QUAL_OUTBOUND,
 };
 
 class Statement

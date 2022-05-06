@@ -535,8 +535,8 @@ conditions are supported as response headers. TCP Info fields currently recorded
 include rtt, rto, snd_cwnd and all_retrans. This operation is not supported on
 transactions originated within Traffic Server (for e.g using the |TS| :c:func:`TSHttpTxnIsInternal`)
 
-    %{TCP-INFO:CLIENT}    TCP Info values from client socket (default)
-    %{TCP-INFO:SERVER}    TCP Info values from server socket
+    %{TCP-INFO:INBOUND}    TCP Info values from client socket (default)
+    %{TCP-INFO:OUTBOUND}    TCP Info values from server socket
 
 Condition Operands
 ------------------
