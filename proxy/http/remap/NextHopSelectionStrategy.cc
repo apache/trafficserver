@@ -60,6 +60,7 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
   bool self_host_used = false;
 
   try {
+    // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (n["scheme"]) {
       auto scheme_val = n["scheme"].Scalar();
       if (scheme_val == "http") {
@@ -67,9 +68,7 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
       } else if (scheme_val == "https") {
         scheme = NH_SCHEME_HTTPS;
       } else {
-        scheme = NH_SCHEME_NONE;
-        NH_Note("Invalid 'scheme' value, '%s', for the strategy named '%s', setting to NH_SCHEME_NONE", scheme_val.c_str(),
-                strategy_name.c_str());
+        NH_Note("Invalid scheme '%s' for strategy '%s', setting to NONE", scheme_val.c_str(), strategy_name.c_str());
       }
     }
 
@@ -387,16 +386,16 @@ template <> struct convert<NHProtocol> {
   {
     ts::Yaml::Map map{node};
 
+    // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (map["scheme"]) {
-      if (map["scheme"].Scalar() == "http") {
+      const auto scheme_val = map["scheme"].Scalar();
+      if (scheme_val == "http") {
         nh.scheme = NH_SCHEME_HTTP;
-      } else if (map["scheme"].Scalar() == "https") {
+      } else if (scheme_val == "https") {
         nh.scheme = NH_SCHEME_HTTPS;
       } else {
-        throw YAML::ParserException(map["scheme"].Mark(), "no valid scheme defined, valid schemes are http or https");
+        NH_Note("Invalid scheme '%s' for protocol, setting to NONE", scheme_val.c_str());
       }
-    } else {
-      throw YAML::ParserException(map["scheme"].Mark(), "no scheme defined, valid schemes are http or https");
     }
     if (map["port"]) {
       nh.port = map["port"].as<int>();
