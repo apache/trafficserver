@@ -404,6 +404,7 @@ Changes with Apache Traffic Server 9.2.0
   #8676 - Fix plugin parent_select failover
   #8677 - Update iocore/cache/test to fix the build
   #8680 - Fix missing unique_lock definition.
+  #8683 - Upgrade Catch to v2.13.8
   #8687 - Reuse TSMutex for ts_lua_http_intercept_handler
   #8688 - update FREELIST macros for AArch64
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
@@ -444,3 +445,7 @@ Changes with Apache Traffic Server 9.2.0
   #8797 - Adds new plugin, http_stats
   #8798 - Create clean exit path for traffic_manager on SIGTERM
   #8805 - remove pthread_*specific and replace with thread_local
+  #8815 - Fedora/RHEL path layout for config.layout
+  #8821 - Fixes leak of SNI config filename on load
+  #8822 - Fixes leak of ssl_ocsp_response_path_only on reload
+  #8829 - Fix a compile error
