@@ -3490,6 +3490,15 @@ URL Remap Rules
    Set this variable to ``1`` if you want to retain the client host
    header in a request during remapping.
 
+.. ts:cv:: CONFIG proxy.config.url_remap.min_rules_required INT 0
+   :reloadable:
+
+   The minimum number of rules :file:`remap.config` must have to be considered valid. An otherwise
+   valid configuration with fewer than this many rules is considered to be invalid as if it had a syntax
+   error. A value of zero allows :file:`remap.config` to be empty or absent.
+
+   This is dynamic to enable different requirements for startup and reloading.
+
 .. _records-config-ssl-termination:
 
 SSL Termination

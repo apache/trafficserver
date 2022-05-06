@@ -89,10 +89,17 @@ UrlRewrite::load()
   Debug("url_rewrite_regex", "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (0 == this->BuildTable(config_file_path)) {
-    _valid = true;
-    if (is_debug_tag_set("url_rewrite")) {
-      Print();
+  if (TS_SUCCESS == this->BuildTable(config_file_path)) {
+    int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
+    int required_rules;
+    REC_ReadConfigInteger(required_rules, "proxy.config.url_remap.min_rules_required");
+    if (n_rules >= required_rules) {
+      _valid = true;
+      if (is_debug_tag_set("url_rewrite")) {
+        Print();
+      }
+    } else {
+      Warning("%s %d rules defined but %d rules required, configuration is invalid.", modulePrefix, n_rules, required_rules);
     }
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
@@ -698,11 +705,8 @@ UrlRewrite::BuildTable(const char *path)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-  int zret = 0;
-
   if (!remap_parse_config(path, this)) {
-    // XXX handle file reload error
-    zret = 3;
+    return TS_ERROR;
   }
 
   // Destroy unused tables
@@ -730,7 +734,7 @@ UrlRewrite::BuildTable(const char *path)
     forward_mappings_with_recv_port.hash_lookup.reset(nullptr);
   }
 
-  return zret;
+  return TS_SUCCESS;
 }
 
 /**

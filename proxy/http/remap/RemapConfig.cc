@@ -944,6 +944,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   std::error_code ec;
   std::string content{ts::file::load(ts::file::path{path}, ec)};
+  if (ec.value() == ENOENT) { // a missing file is ok - treat as empty, no rules.
+    return true;
+  }
   if (ec.value()) {
     Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
     return false;
