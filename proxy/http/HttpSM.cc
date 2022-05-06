@@ -5073,7 +5073,7 @@ HttpSM::do_http_server_open(bool raw)
     }
 
     if (deny_request) {
-      if (is_debug_tag_set("ip-allow")) {
+      if (is_debug_tag_set("ip_allow")) {
         ip_text_buffer ipb;
         if (method != -1) {
           method_str     = hdrtoken_index_to_wks(method);
@@ -5083,7 +5083,7 @@ HttpSM::do_http_server_open(bool raw)
         }
         Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip, ipb, sizeof(ipb)),
                 acl.source_line());
-        SMDebug("ip-allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+        SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
                 ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
       }
       t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
