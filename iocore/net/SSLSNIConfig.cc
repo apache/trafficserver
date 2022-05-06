@@ -49,7 +49,7 @@ SNIConfigParams::getPropertyConfig(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
   for (auto &&item : next_hop_list) {
-    if (pcre_exec(item.match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+    if (pcre_exec(item.match.get(), nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
       // Found a match
       nps = &item.prop;
       break;
@@ -123,7 +123,8 @@ SNIConfigParams::get(std::string_view servername) const
     int length = servername.length();
     if (retval.match == nullptr && length == 0) {
       return {&retval.actions, {}};
-    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
+    } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
+               offset >= 0) {
       if (offset == 1) {
         // first pair identify the portion of the subject string matched by the entire pattern
         if (ovector[0] == 0 && ovector[1] == length) {
