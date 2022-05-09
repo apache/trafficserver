@@ -1783,7 +1783,7 @@ AC_CHECK_HEADERS([opentelemetry/trace/provider.h], [
   AC_CHECK_LIB([curl], [curl_version], [
     AC_CHECK_LIB([protobuf], [main], [
       AC_CHECK_LIB([opentelemetry_exporter_otlp_http], [main], [
-        AC_SUBST([OTEL_LIBS], [" -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable -lopentelemetry_proto -lopentelemetry_trace -lopentelemetry_resources -lopentelemetry_version -lopentelemetry_common -lhttp_client_curl -lcurl -lprotobuf "])
+        AC_SUBST([OTEL_LIBS], [" -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable -lopentelemetry_proto -lopentelemetry_trace -lopentelemetry_resources -lopentelemetry_version -lopentelemetry_common -lopentelemetry_http_client_curl -lcurl -lprotobuf "])
         AC_SUBST(has_otel, 1)
       ], [
         AC_SUBST([OTEL_LIBS], [""])
