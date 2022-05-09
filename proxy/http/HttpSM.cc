@@ -6046,6 +6046,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     break;
   }
 
+  this->setup_client_request_plugin_agents(p);
+
   // The user agent may support chunked (HTTP/1.1) or not (HTTP/2)
   // In either case, the server will support chunked (HTTP/1.1)
   if (chunked) {
@@ -6808,7 +6810,7 @@ HttpSM::setup_transfer_from_transform()
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel             = true;
 
-  this->setup_plugin_agents(p, client_response_hdr_bytes);
+  this->setup_client_response_plugin_agents(p, client_response_hdr_bytes);
 
   if (t_state.client_info.receive_chunked_response) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
@@ -6938,7 +6940,7 @@ HttpSM::setup_server_transfer()
   ua_entry->in_tunnel     = true;
   server_entry->in_tunnel = true;
 
-  this->setup_plugin_agents(p, client_response_hdr_bytes);
+  this->setup_client_response_plugin_agents(p, client_response_hdr_bytes);
 
   // If the incoming server response is chunked and the client does not
   // expect a chunked response, then dechunk it.  Otherwise, if the
@@ -7080,13 +7082,29 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 }
 
 void
-HttpSM::setup_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
+HttpSM::setup_client_response_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
 {
-  APIHook *agent           = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
-  has_active_plugin_agents = agent != nullptr;
+  APIHook *agent                    = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+  has_active_response_plugin_agents = agent != nullptr;
   while (agent) {
     INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent", num_header_bytes);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "response plugin agent",
+                        num_header_bytes);
+    // We don't put these in the SM VC table because the tunnel
+    // will clean them up in do_io_close().
+    agent = agent->next();
+  }
+}
+
+void
+HttpSM::setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
+{
+  APIHook *agent                   = txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK);
+  has_active_request_plugin_agents = agent != nullptr;
+  while (agent) {
+    INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "request plugin agent",
+                        num_header_bytes);
     // We don't put these in the SM VC table because the tunnel
     // will clean them up in do_io_close().
     agent = agent->next();
@@ -7112,12 +7130,26 @@ HttpSM::plugin_agents_cleanup()
   // If this is set then all of the plugin agent VCs were put in
   // the VC table and cleaned up there. This handles the case where
   // something went wrong early.
-  if (!has_active_plugin_agents) {
-    APIHook *agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
-    while (agent) {
-      INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-      contp->do_io_close();
-      agent = agent->next();
+  if (!has_active_response_plugin_agents) {
+    std::vector<APIHook *> agent_lists;
+    agent_lists.push_back(txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK));
+    for (auto &agent : agent_lists) {
+      while (agent) {
+        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+        contp->do_io_close();
+        agent = agent->next();
+      }
+    }
+  }
+  if (!has_active_request_plugin_agents) {
+    std::vector<APIHook *> agent_lists;
+    agent_lists.push_back(txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK));
+    for (auto &agent : agent_lists) {
+      while (agent) {
+        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+        contp->do_io_close();
+        agent = agent->next();
+      }
     }
   }
 }
