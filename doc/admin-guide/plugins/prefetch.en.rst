@@ -162,7 +162,13 @@ the following URLs will be requested to be prefetched ::
 
 Note ``--fetch-path-pattern`` is a PCRE regex/capture pattern and
 ``{$2+2}`` is a mechanism to calculate the next path by adding or
-subtracting integer numbers.
+subtracting integer numbers.  The operands will be treated as unsigned
+32-bit integers.  Invalid numbers are treated as zeroes, and numbers
+too large will be interpreted as 2\ :sup:`32`\ -1.  If subtraction results in
+a negative number, 0 is returned instead.  An output width may be
+specified with an integer followed by a colon, e.g. ``{8:$2+2}``,
+causing the resulting number to be padded with leading zeroes if it
+has fewer digits than the width.
 
 
 Overhead from **next object** prefetch
