@@ -248,15 +248,15 @@ IpAllow::PrintMap(const IpMap *map) const
       }
     }
   }
-  Debug("ip-allow", "%s", s.str().c_str());
+  Debug("ip_allow", "%s", s.str().c_str());
 }
 
 void
 IpAllow::Print() const
 {
-  Debug("ip-allow", "Printing src map");
+  Debug("ip_allow", "Printing src map");
   PrintMap(&_src_map);
-  Debug("ip-allow", "Printing dest map");
+  Debug("ip_allow", "Printing dest map");
   PrintMap(&_dst_map);
 }
 
@@ -293,7 +293,7 @@ IpAllow::BuildTable()
     for (auto &item : _dst_map) {
       item.setData(&_dst_acls[reinterpret_cast<size_t>(item.data())]);
     }
-    if (is_debug_tag_set("ip-allow")) {
+    if (is_debug_tag_set("ip_allow")) {
       Print();
     }
   } else {
@@ -314,7 +314,7 @@ IpAllow::YAMLLoadMethod(const YAML::Node &node, Record &rec)
     int method_idx = hdrtoken_tokenize(value.data(), value.size());
     if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
       rec._nonstandard_methods.push_back(value);
-      Debug("ip-allow", "Found nonstandard method '%s' at line %d", value.c_str(), node.Mark().line);
+      Debug("ip_allow", "Found nonstandard method '%s' at line %d", value.c_str(), node.Mark().line);
     } else { // valid method.
       rec._method_mask |= ACL::MethodIdxToMask(method_idx);
     }
@@ -548,7 +548,7 @@ IpAllow::ATSBuildTable(std::string const &content)
                 int method_idx = hdrtoken_tokenize(method_name.data(), method_name.size());
                 if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
                   nonstandard_methods.emplace_back(std::string(method_name.data(), method_name.size()));
-                  Debug("ip-allow", "%s",
+                  Debug("ip_allow", "%s",
                         bw_err.reset().print("Found nonstandard method '{}' on line {}\0", method_name, line_num).data());
                 } else { // valid method.
                   acl_method_mask |= ACL::MethodIdxToMask(method_idx);

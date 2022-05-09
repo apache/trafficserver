@@ -6611,7 +6611,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
       }
     }
     if (deny_request) {
-      if (is_debug_tag_set("ip-allow")) {
+      if (is_debug_tag_set("ip_allow")) {
         ip_text_buffer ipb;
         if (method != -1) {
           method_str     = hdrtoken_index_to_wks(method);
@@ -6619,7 +6619,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
         } else if (!method_str) {
           method_str = s->hdr_info.client_request.method_get(&method_str_len);
         }
-        TxnDebug("ip-allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+        TxnDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
                  ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
       }
       s->client_connection_enabled = false;
