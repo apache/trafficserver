@@ -24,4 +24,10 @@ prefetch_prefetch_la_SOURCES = \
   prefetch/pattern.cc \
   prefetch/fetch_policy.cc \
   prefetch/fetch_policy_simple.cc \
-  prefetch/fetch_policy_lru.cc
+  prefetch/fetch_policy_lru.cc \
+  prefetch/evaluate.cc
+
+check_PROGRAMS += prefetch/test_evaluate
+
+prefetch_test_evaluate_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPREFETCH_UNIT_TEST
+prefetch_test_evaluate_SOURCES = prefetch/test/test_evaluate.cc prefetch/evaluate.cc prefetch/common.cc
