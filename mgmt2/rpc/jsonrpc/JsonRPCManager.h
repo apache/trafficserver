@@ -144,9 +144,9 @@ private:
   /// signatures inside a @c std::variant
   class Dispatcher
   {
-    using response_type = std::pair<
-      std::optional<specs::RPCResponseInfo>,
-      std::error_code>; ///< The response type used internally, notifications won't fill in the optional response. @c ec will be set
+    /// The response type used internally, notifications won't fill in the optional response.  Internal response's @ ec will be set
+    /// in case of any error.
+    using response_type = std::optional<specs::RPCResponseInfo>;
 
     ///
     /// @brief Class that wraps the actual std::function<T>.

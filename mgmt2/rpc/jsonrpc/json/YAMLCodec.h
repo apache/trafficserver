@@ -216,33 +216,11 @@ class yamlcpp_json_encoder
 
   /// Convenience functions to call encode_error.
   static void
-  encode_error(std::error_code error, YAML::Emitter &json)
-  {
-    ts::Errata errata{};
-    encode_error(error, errata, json);
-  }
-  /// Convenience functions to call encode_error.
-  static void
   encode_error(ts::Errata const &errata, YAML::Emitter &json)
   {
     encode_error({error::RPCErrorCode::ExecutionError}, errata, json);
   }
 
-  static void
-  encode_error_from_callee(ts::Errata const &errata, YAML::Emitter &json)
-  {
-    if (!errata.isOK()) {
-      json << YAML::Key << "errors";
-      json << YAML::BeginSeq;
-      for (auto const &err : errata) {
-        json << YAML::BeginMap;
-        json << YAML::Key << "code" << YAML::Value << err.getCode();
-        json << YAML::Key << "message" << YAML::Value << err.text();
-        json << YAML::EndMap;
-      }
-      json << YAML::EndSeq;
-    }
-  }
   ///
   /// @brief Function to encode a single response(no batch) into an emitter.
   ///
@@ -257,9 +235,9 @@ class yamlcpp_json_encoder
 
     // Important! As per specs, errors have preference over the result, we ignore result if error was set.
 
-    if (resp.rpcError) {
+    if (resp.error.ec) {
       // internal library detected error: Decoding, etc.
-      encode_error(resp.rpcError, json);
+      encode_error(resp.error.ec, resp.error.data, json);
     }
     // Registered handler error: They have set the error on the response from the registered handler. This uses ExecutionError as
     // top error.
