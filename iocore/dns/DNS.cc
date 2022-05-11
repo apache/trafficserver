@@ -609,6 +609,11 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       n_con = 1;
     }
 
+    // Retrying the name servers is something done periodically over the
+    // lifetime of the handler. This ensures that we don't miss retrying if it
+    // is necessary.
+    this->_dns_retry_event = this_ethread()->schedule_every(this, DNS_PRIMARY_RETRY_PERIOD);
+
     return EVENT_CONT;
   } else {
     ink_assert(false); // I.e. this should never really happen
@@ -775,8 +780,6 @@ DNSHandler::failover()
     ip_text_buffer buff;
     Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   }
-  // Make sure retries are done even if no more requests.
-  this_ethread()->schedule_in(this, DNS_PRIMARY_RETRY_PERIOD);
 }
 
 /** Mark one of the nameservers as down. */
@@ -790,8 +793,6 @@ DNSHandler::rr_failure(int ndx)
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
     Warning("connection to DNS server %s lost, marking as down", ats_ip_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff)));
-    // Make sure retries are done even if no more requests.
-    this_ethread()->schedule_in(this, DNS_PRIMARY_RETRY_PERIOD);
   }
 
   int nscount = m_res->nscount;
@@ -984,11 +985,6 @@ DNSHandler::check_and_reset_tcp_conn()
 int
 DNSHandler::mainEvent(int event, Event *e)
 {
-  // If this was a scheduled retry event, clear the associated flag.
-  if (e && e->cookie == RETRY_COOKIE) {
-    this->nameserver_retry_in_flight_p = false;
-  }
-
   recv_dns(event, e);
   if (dns_ns_rr) {
     if (DNS_CONN_MODE::TCP_RETRY == dns_conn_mode) {
