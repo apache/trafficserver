@@ -1251,6 +1251,9 @@ TS_CHECK_CRYPTO
 # Check for OpenSSL Version
 TS_CHECK_CRYPTO_VERSION
 
+# Check for OpenSSL Version 3 and add compatiblity define if needed
+TS_CHECK_OPENSSL3
+
 # Check for openssl ASYNC jobs
 TS_CHECK_CRYPTO_ASYNC
 
