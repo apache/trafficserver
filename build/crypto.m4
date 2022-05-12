@@ -60,6 +60,25 @@ int main() {
 ])
 
 dnl
+dnl Check OpenSSL Version 3
+dnl
+AC_DEFUN([TS_CHECK_OPENSSL3], [
+  AC_MSG_CHECKING([for OpenSSL version 3])
+  AC_RUN_IFELSE([AC_LANG_SOURCE(
+  [
+#include <openssl/opensslv.h>
+int main() {
+  if (OPENSSL_VERSION_NUMBER > 0x3000000fL) {
+    return 0;
+  }
+  return 1;
+}
+  ])],
+  [AC_MSG_RESULT(yes) TS_ADDTO(CPPFLAGS, -DOPENSSL_API_COMPAT=10002)], [AC_MSG_RESULT(no)]
+  )
+])
+
+dnl
 dnl Since OpenSSL 1.1.0
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO_ASYNC], [
