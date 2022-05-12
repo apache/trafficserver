@@ -65,32 +65,6 @@ TEST_CASE("XPACK_Integer", "[xpack]")
   }
 }
 
-TEST_CASE("huffman_decode", "[decoding_errors]")
-{
-  SECTION("Decoding")
-  {
-    hpack_huffman_init();
-    Arena arena;
-
-    const static struct {
-      char *input;
-      int input_len;
-    } test_cases[] = {
-      {(char *)"\x00", 1},
-      {(char *)"\xff", 1},
-      {(char *)"\x1f\xff", 2},
-      {(char *)"\xff\x9f\xff\xff\xff", 5},
-    };
-
-    for (unsigned int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
-      int dst_len = 2 * test_cases[i].input_len;
-      char *dst   = arena.str_alloc(dst_len);
-      int len     = huffman_decode(dst, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
-      REQUIRE(len == -1);
-    }
-  }
-}
-
 TEST_CASE("XPACK_String", "[xpack]")
 {
   // Example: custom-key: custom-header
