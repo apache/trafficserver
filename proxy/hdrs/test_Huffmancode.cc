@@ -136,6 +136,12 @@ values_test()
 
     int bytes        = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
     char ascii_value = i / 2;
+
+    // EOS is treated as invalid so check for an error
+    if (value == 0x3fffffff) {
+      assert(bytes == -1);
+      continue;
+    }
     assert(dst_start[0] == ascii_value);
     assert(bytes == 1);
   }
@@ -178,10 +184,7 @@ decode_errors_test()
     char *input;
     int input_len;
   } test_cases[] = {
-    {(char *)"\x00", 1},
-    {(char *)"\xff", 1},
-    {(char *)"\x1f\xff", 2},
-    {(char *)"\xff\x9f\xff\xff\xff", 5},
+    {(char *)"\x00", 1}, {(char *)"\xff", 1}, {(char *)"\x1f\xff", 2}, {(char *)"\xff\xae", 2}, {(char *)"\xff\x9f\xff\xff\xff", 5},
   };
 
   for (unsigned int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
