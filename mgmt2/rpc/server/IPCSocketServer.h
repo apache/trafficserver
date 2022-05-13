@@ -46,6 +46,12 @@ namespace rpc::comm
 ///       Buffer size = 32k
 class IPCSocketServer : public BaseCommInterface
 {
+  // Error codes to track any unauthorized call to a rpc handler.
+  enum class UnauthorizedErrorCode {
+    PEER_CREDENTIALS_ERROR = 1, ///< Error while trying to read the peer credentials from the unix socket.
+    PERMISSION_DENIED      = 2  ///< Client's socket credential didn't wasn't sufficient to execute the method.
+  };
+
   ///
   /// @brief Connection abstraction class that deals with sending and receiving data from the connected peer.
   ///
@@ -129,6 +135,8 @@ private:
   void bind(std::error_code &ec);
   void listen(std::error_code &ec);
   void close();
+
+  void late_check_peer_credentials(int peedFd, rpc::HandlerOptions const &options, ts::Errata &errata) const;
 
   std::atomic_bool _running;
 

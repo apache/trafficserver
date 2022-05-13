@@ -39,6 +39,7 @@ const std::string RPC_SERVICE_PROVIDER_KEY{"provider"};
 const std::string RPC_SERVICE_SCHEMA_KEY{"schema"};
 const std::string RPC_SERVICE_METHODS_KEY{"methods"};
 const std::string RPC_SERVICE_NOTIFICATIONS_KEY{"notifications"};
+const std::string RPC_SERVICE_PRIVILEGED_KEY{"privileged"};
 const std::string RPC_SERVICE_N_A_STR{"N/A"};
 
 // jsonrpc log tag.
@@ -58,6 +59,16 @@ std::condition_variable g_rpcHandlingCompletion;
 ts::Rv<YAML::Node> g_rpcHandlerResponseData;
 bool g_rpcHandlerProccessingCompleted{false};
 
+// --- Helpers
+std::pair<ts::Errata, error::RPCErrorCode>
+check_for_blockers(Context const &ctx, HandlerOptions const &options)
+{
+  if (auto err = ctx.get_auth().check_for_permissions(options); !err.isOK()) {
+    return {err, error::RPCErrorCode::Unauthorized};
+  }
+  return {};
+}
+
 // --- Dispatcher
 JsonRPCManager::Dispatcher::Dispatcher()
 {
@@ -66,32 +77,36 @@ JsonRPCManager::Dispatcher::Dispatcher()
 void
 JsonRPCManager::Dispatcher::register_service_descriptor_handler()
 {
-  // TODO: revisit this.
   if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
         "show_registered_handlers",
         [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
           return show_registered_handlers(id, req);
         },
-        &core_ats_rpc_service_provider_handle)) {
+        &core_ats_rpc_service_provider_handle, {NON_RESTRICTED_API})) {
     Warning("Handler already registered.");
   }
 
   if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
         "get_service_descriptor",
         [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return get_service_descriptor(id, req); },
-        &core_ats_rpc_service_provider_handle)) {
+        &core_ats_rpc_service_provider_handle, {NON_RESTRICTED_API})) {
     Warning("Handler already registered.");
   }
 }
 
 JsonRPCManager::Dispatcher::response_type
-JsonRPCManager::Dispatcher::dispatch(specs::RPCRequestInfo const &request) const
+JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo const &request) const
 {
   std::error_code ec;
   auto const &handler = find_handler(request, ec);
 
   if (ec) {
     return specs::RPCResponseInfo{request.id, ec};
+  }
+
+  // We have got a valid handler, we will now check if the context holds any restriction for this handler to be called.
+  if (auto &&[errata, ec] = check_for_blockers(ctx, handler.get_options()); !errata.isOK()) {
+    return specs::RPCResponseInfo(request.id, ec, errata);
   }
 
   if (request.is_notification()) {
@@ -117,7 +132,7 @@ JsonRPCManager::Dispatcher::find_handler(specs::RPCRequestInfo const &request, s
     return no_handler;
   }
 
-  // we need to make sure we the request is valid against the internal handler.
+  // Handler's method type should match the requested method type.
   if ((request.is_method() && search->second.is_method()) || (request.is_notification() && !search->second.is_method())) {
     return search->second;
   }
@@ -183,7 +198,7 @@ JsonRPCManager::remove_handler(std::string const &name)
 }
 
 std::optional<std::string>
-JsonRPCManager::handle_call(std::string const &request)
+JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
 {
   Debug(logTagMsg, "--> JSONRPC request\n'%s'", request.c_str());
 
@@ -206,7 +221,7 @@ JsonRPCManager::handle_call(std::string const &request)
       if (!decode_error) {
         // request seems ok and ready to be dispatched. The dispatcher will tell us if the method exist and if so, it will dispatch
         // the call and gives us back the response.
-        const auto &encodedResponse = _dispatcher.dispatch(req);
+        const auto &encodedResponse = _dispatcher.dispatch(ctx, req);
 
         if (encodedResponse) {
           // if any error was detected during invocation or before, the response will have the error field set, so this will
@@ -318,7 +333,8 @@ JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, con
     } else {
       provider = RPC_SERVICE_N_A_STR;
     }
-    method[RPC_SERVICE_PROVIDER_KEY] = provider;
+    method[RPC_SERVICE_PROVIDER_KEY]   = provider;
+    method[RPC_SERVICE_PRIVILEGED_KEY] = handler.get_options().auth.restricted;
     YAML::Node schema{YAML::NodeType::Map}; // no schema for now, but we have a placeholder for it. Schema should provide
                                             // description and all the details about the call
     method[RPC_SERVICE_SCHEMA_KEY] = std::move(schema);

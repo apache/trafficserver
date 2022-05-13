@@ -17,31 +17,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#pragma once
+#include "Context.h"
 
-#include <system_error>
-
-#include <tscore/Errata.h>
-
-#include "rpc/config/JsonRPCConfig.h"
-
-namespace rpc::comm
+namespace rpc
 {
-struct BaseCommInterface {
-  virtual ~BaseCommInterface() {}
-  virtual bool configure(YAML::Node const &params) = 0;
-  virtual void run()                               = 0;
-  virtual std::error_code init()                   = 0;
-  virtual bool stop()                              = 0;
-  virtual std::string const &name() const          = 0;
-};
-
-enum class InternalError { MAX_TRANSIENT_ERRORS_HANDLED = 1, POLLIN_ERROR, PARTIAL_READ, FULL_BUFFER };
-std::error_code make_error_code(rpc::comm::InternalError e);
-
-} // namespace rpc::comm
-namespace std
+// --- Call Context impl
+ts::Errata
+Context::Auth::check_for_permissions(HandlerOptions const &options) const
 {
-template <> struct is_error_code_enum<rpc::comm::InternalError> : true_type {
+  ts::Errata out;
+  // check every registered callback and see if they have something to say. Then report back to the manager
+  for (auto &&check : _permissionCheckers) {
+    check(options, out);
+  }
+  return out;
 };
-} // namespace std
+} // namespace rpc

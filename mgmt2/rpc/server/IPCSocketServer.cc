@@ -36,7 +36,9 @@
 
 #include "tscore/Diags.h"
 #include "tscore/bwf_std_format.h"
+#include "tscore/ink_sock.h"
 #include "records/I_RecProcess.h"
+#include "utils/MgmtSocket.h"
 
 #include <ts/ts.h>
 
@@ -45,6 +47,8 @@
 
 namespace
 {
+constexpr auto logTag = "rpc.net";
+
 constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
 
 // Quick check for errors(base on the errno);
@@ -68,12 +72,11 @@ poll_on_socket(Func &&check_poll_return, std::chrono::milliseconds timeout, int 
   }
   return true;
 }
+
 } // namespace
 
 namespace rpc::comm
 {
-static constexpr auto logTag = "rpc.net";
-
 IPCSocketServer::~IPCSocketServer()
 {
   unlink(_conf.sockPathName.c_str());
@@ -110,6 +113,14 @@ IPCSocketServer::init()
   Debug(logTag, "Using %s as socket path.", _conf.sockPathName.c_str());
   _serverAddr.sun_family = AF_UNIX;
   std::strncpy(_serverAddr.sun_path, _conf.sockPathName.c_str(), sizeof(_serverAddr.sun_path) - 1);
+
+  if (safe_setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
+    return std::make_error_code(static_cast<std::errc>(errno));
+  }
+
+  if (safe_fcntl(_socket, F_SETFD, FD_CLOEXEC) < 0) {
+    return std::make_error_code(static_cast<std::errc>(errno));
+  }
 
   if (this->bind(ec); ec) {
     this->close();
@@ -172,7 +183,12 @@ IPCSocketServer::run()
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
         const auto json = std::string{bw.data(), bw.size()};
-        if (auto response = rpc::JsonRPCManager::instance().handle_call(json); response) {
+        // We need to make sure the handler can be executed base on our rules. Still to early to know which handler will be executed
+        // so we pass our checker for a late check.
+        rpc::Context ctx;
+        ctx.get_auth().add_late_permission_checker(
+          [&](rpc::HandlerOptions const &opt, ts::Errata &errata) -> void { return late_check_peer_credentials(fd, opt, errata); });
+        if (auto response = rpc::JsonRPCManager::instance().handle_call(ctx, json); response) {
           // seems a valid response.
           if (client.write(*response, ec); ec) {
             Debug(logTag, "Error sending the response: %s", ec.message().c_str());
@@ -260,7 +276,14 @@ IPCSocketServer::bind(std::error_code &ec)
     return;
   }
 
-  mode_t mode = _conf.restrictedAccessApi ? 00700 : 00777;
+  // If the socket is not administratively restricted, check whether we have platform
+  // support. Otherwise, default to making it restricted.
+  bool restricted{true};
+  if (!_conf.restrictedAccessApi) {
+    restricted = !mgmt_has_peereid();
+  }
+
+  mode_t mode = restricted ? 00700 : 00777;
   if (chmod(_conf.sockPathName.c_str(), mode) < 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
@@ -284,7 +307,26 @@ IPCSocketServer::close()
     _socket = -1;
   }
 }
-//// client
+
+void
+IPCSocketServer::late_check_peer_credentials(int peedFd, rpc::HandlerOptions const &options, ts::Errata &errata) const
+{
+  ts::LocalBufferWriter<256> w;
+  // For privileged calls, ensure we have caller credentials and that the caller is privileged.
+  if (mgmt_has_peereid() && options.auth.restricted) {
+    uid_t euid = -1;
+    gid_t egid = -1;
+    if (mgmt_get_peereid(peedFd, &euid, &egid) == -1) {
+      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR),
+                  w.print("Error getting peer credentials: {}\0", ts::bwf::Errno{}).data());
+    } else if (euid != 0 && euid != geteuid()) {
+      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PERMISSION_DENIED),
+                  w.print("Denied privileged API access for uid={} gid={}\0", euid, egid).data());
+    }
+  }
+}
+
+// ---------------- client --------------
 
 IPCSocketServer::Client::Client(int fd) : _fd{fd} {}
 IPCSocketServer::Client::~Client()
@@ -292,7 +334,6 @@ IPCSocketServer::Client::~Client()
   this->close();
 }
 
-// ---------------- client --------------
 bool
 IPCSocketServer::Client::poll_for_data(std::chrono::milliseconds timeout) const
 {

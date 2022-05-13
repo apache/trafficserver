@@ -37,19 +37,25 @@ struct JsonRpcUnitTest : rpc::JsonRPCManager {
   bool
   remove_handler(std::string const &name)
   {
-    return rpc::JsonRPCManager::remove_handler(name);
+    return base::remove_handler(name);
   }
   template <typename Func>
   bool
   add_notification_handler(const std::string &name, Func &&call)
   {
-    return base::add_notification_handler(name, std::forward<Func>(call), nullptr);
+    return base::add_notification_handler(name, std::forward<Func>(call), nullptr, {});
   }
   template <typename Func>
   bool
   add_method_handler(const std::string &name, Func &&call)
   {
-    return base::add_method_handler(name, std::forward<Func>(call), nullptr);
+    return base::add_method_handler(name, std::forward<Func>(call), nullptr, {});
+  }
+
+  std::optional<std::string>
+  handle_call(std::string const &jsonString)
+  {
+    return base::handle_call(rpc::Context{}, jsonString);
   }
 };
 
@@ -63,8 +69,6 @@ test_callback_ok_or_error(std::string_view const &id, YAML::Node const &params)
   if (YAML::Node n = params["return_error"]) {
     auto yesOrNo = n.as<std::string>();
     if (yesOrNo == "yes") {
-      // Can we just have a helper for this?
-      // resp.errata.push(static_cast<int>(TestErrors::ERR1), "Just an error message to add more meaning to the failure");
       resp.errata().push(ErratId, static_cast<int>(TestErrors::ERR1), "Just an error message to add more meaning to the failure");
     } else {
       resp.result()["ran"] = "ok";

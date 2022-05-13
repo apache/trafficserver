@@ -48,6 +48,10 @@ struct RPCResponseInfo {
   RPCResponseInfo(std::optional<std::string> const &id_) : id{id_} {}
   RPCResponseInfo(std::error_code const &ec_) : error{ec_, {}} {}
   RPCResponseInfo(std::optional<std::string> const &id_, std::error_code const &ec_) : error{ec_, {}}, id{id_} {}
+  RPCResponseInfo(std::optional<std::string> const &id_, std::error_code const &ec_, ts::Errata const &errata)
+    : error{ec_, errata}, id{id_}
+  {
+  }
   RPCResponseInfo() = default;
 
   RPCHandlerResponse callResult;

@@ -40,7 +40,8 @@ register_admin_jsonrpc_handlers()
 
   // Records
   using namespace rpc::handlers::records;
-  rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle,
+                          {rpc::NON_RESTRICTED_API});
   rpc::add_method_handler("admin_clear_all_metrics_records", &clear_all_metrics_records, &core_ats_rpc_service_provider_handle);
   rpc::add_method_handler("admin_clear_metrics_records", &clear_metrics_records, &core_ats_rpc_service_provider_handle);
 
@@ -58,6 +59,7 @@ register_admin_jsonrpc_handlers()
   // storage
   using namespace rpc::handlers::storage;
   rpc::add_method_handler("admin_storage_set_device_offline", &set_storage_offline, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_storage_get_device_status", &get_storage_status, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_storage_get_device_status", &get_storage_status, &core_ats_rpc_service_provider_handle,
+                          {rpc::NON_RESTRICTED_API});
 }
 } // namespace rpc::admin

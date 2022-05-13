@@ -45,7 +45,9 @@ libjsonrpc_protocol_COMMON = \
 	jsonrpc/error/RPCError.cc \
 	jsonrpc/error/RPCError.h \
 	jsonrpc/JsonRPCManager.cc \
-	jsonrpc/JsonRPCManager.h
+	jsonrpc/JsonRPCManager.h \
+	jsonrpc/Context.cc \
+	jsonrpc/Context.h
 
 libjsonrpc_protocol_la_SOURCES = \
 	$(libjsonrpc_protocol_COMMON)

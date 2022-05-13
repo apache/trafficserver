@@ -36,7 +36,7 @@ IPC Node
 ========
 
 You can directly connect to the Unix Domain Socket used for the |RPC| node, the location of the sockets
-will depend purely on how did you configure the server, please check :ref:`admnin-jsonrpc-configuration` for
+will depend purely on how did you configure the server, please check :ref:`admin-jsonrpc-configuration` for
 information regarding configuration.
 
 
@@ -57,3 +57,8 @@ Using traffic_ctl
 :program:`traffic_ctl` can also be used to directly send raw |RPC| messages to the server's node, :program:`traffic_ctl` provides
 several options to achieve this, please check ``traffic_ctl_rpc``.
 
+
+Error responses
+---------------
+
+The server will indicate in case of any error processing the call, check :ref:`jsonrpc-node-errors` for more details.
