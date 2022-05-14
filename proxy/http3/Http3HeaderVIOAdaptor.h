@@ -27,7 +27,7 @@
 
 #include "Http3FrameHandler.h"
 
-class Http3HeaderVIOAdaptor : public Http3FrameHandler, public Continuation
+class Http3HeaderVIOAdaptor : public Continuation, public Http3FrameHandler
 {
 public:
   Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id);

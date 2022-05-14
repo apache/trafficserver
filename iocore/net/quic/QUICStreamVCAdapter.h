@@ -25,7 +25,7 @@
 #include "QUICStreamAdapter.h"
 #include "I_IOBuffer.h"
 
-class QUICStreamVCAdapter : public QUICStreamAdapter, public VConnection
+class QUICStreamVCAdapter : public VConnection, public QUICStreamAdapter
 {
 public:
   class IOInfo;

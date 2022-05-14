@@ -205,7 +205,7 @@ flz_copy64(uint8_t *dest, const uint8_t *src, uint32_t count)
 {
   const uint8_t *p = (const uint8_t *)src;
   uint8_t *q       = (uint8_t *)dest;
-  int c;
+  unsigned int c;
   for (c = 0; c < count * 8; ++c) {
     *q++ = *p++;
   }
