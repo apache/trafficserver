@@ -41,21 +41,12 @@ constexpr std::string_view passive_health_check = "passive";
 constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_RR_STRICT",
                                           "NH_RR_IP",     "NH_RR_LATCHED", "NH_CONSISTENT_HASH"};
 
-NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy)
+NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy, ts::Yaml::Map &n)
+  : strategy_name(name), policy_type(policy)
 {
-  strategy_name = name;
-  policy_type   = policy;
-
+  NH_Debug(NH_DEBUG_TAG, "NextHopSelectionStrategy calling constructor");
   NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s", policy_strings[policy]);
-}
 
-//
-// parse out the data for this strategy.
-//
-bool
-NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
-{
-  NH_Debug(NH_DEBUG_TAG, "calling Init()");
   std::string self_host;
   bool self_host_used = false;
 
@@ -235,29 +226,26 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
       throw std::invalid_argument("self host (" + self_host + ") does not appear in the first (peer) group");
     }
   } catch (std::exception &ex) {
-    NH_Error("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(), ex.what());
-    return false;
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
   }
 
   if (ring_mode == NH_PEERING_RING) {
     if (groups == 1) {
       if (!go_direct) {
-        NH_Error("when ring mode is '%s', go_direct must be true when there is only one host group.", peering_rings.data());
-        return false;
+        throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
+                                    "' go_direct must be true when there is only one host group");
       }
     } else if (groups != 2) {
-      NH_Error("when ring mode is '%s', requires two host groups (peering group and an upstream group),"
-               " or just a single peering group with go_direct.",
-               peering_rings.data());
-      return false;
+      throw std::invalid_argument(
+        "ring mode '" + std::string(peering_rings) +
+        "' requires two host groups (peering group and an upstream group), or a single peering group with go_direct");
     }
     if (policy_type != NH_CONSISTENT_HASH) {
-      NH_Error("ring mode '%s', is only implemented for a 'consistent_hash' policy.", peering_rings.data());
-      return false;
+      throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
+                                  "' is only implemented for a 'consistent_hash' policy");
     }
   }
-
-  return true;
 }
 
 void

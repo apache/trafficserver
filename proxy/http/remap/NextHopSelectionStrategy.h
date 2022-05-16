@@ -193,10 +193,9 @@ private:
 class NextHopSelectionStrategy
 {
 public:
-  NextHopSelectionStrategy();
-  NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type);
+  NextHopSelectionStrategy() = delete;
+  NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type, ts::Yaml::Map &n);
   virtual ~NextHopSelectionStrategy(){};
-  bool Init(ts::Yaml::Map &n);
   virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
   void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0);
