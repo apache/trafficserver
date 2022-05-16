@@ -112,16 +112,19 @@ request_block(TSCont contp, Data *const data)
   }
 
   // if prefetch config set, schedule next block requests in background
-  for (int i = 0; i < data->m_config->m_prefetchcount; i++) {
-    int nextblocknum = data->m_blocknum + i + 1;
-    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, nextblocknum) && !data->m_fetchstates[nextblocknum]) {
-      if (BgBlockFetch::schedule(data, nextblocknum)) {
-        DEBUG_LOG("Background fetch requested");
-      } else {
-        DEBUG_LOG("Background fetch not requested");
+  if (data->m_prefetchable && data->m_config->m_prefetchcount > 0) {
+    int nextblocknum = 2;
+    if (data->m_blocknum > 1) {
+      nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
+    }
+    for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
+      if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, i)) {
+        if (BgBlockFetch::schedule(data, i)) {
+          DEBUG_LOG("Background fetch requested");
+        } else {
+          DEBUG_LOG("Background fetch not requested");
+        }
       }
-    } else {
-      break;
     }
   }
   // get ready for data back from the server

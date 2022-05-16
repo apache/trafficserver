@@ -50,7 +50,16 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_ERROR: {
     abort(contp, data);
   } break;
-
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
+    TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
+    int lookupStatus;
+    if (data->m_blocknum == 0 && TS_SUCCESS == TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus)) {
+      if (lookupStatus == TS_CACHE_LOOKUP_MISS || lookupStatus == TS_CACHE_LOOKUP_HIT_STALE) {
+        data->m_prefetchable = true;
+      }
+    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  } break;
   default: {
     // data from client -- only the initial header
     if (data->m_dnstream.m_read.isOpen() && edata == data->m_dnstream.m_read.m_vio) {

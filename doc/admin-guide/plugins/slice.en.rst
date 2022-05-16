@@ -129,8 +129,10 @@ The slice plugin supports the following options::
     --prefetch-count=<int> (optional)
         Default is 0
         Prefetches successive 'n' slice block requests in the background
-        and cached. Especially for large objects, prefetching can improve
-        cache miss latency.
+        and caches (with `cache_range_requests` plugin). If the first
+        block is a miss or hit-stale, it will prefetch. Otherwise,
+        prefetching is disabled. Especially for large objects,
+        prefetching can improve cache miss latency.
         -f for short
 
 Examples::

@@ -97,7 +97,6 @@ BgBlockFetch::fetch(Data *const data)
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }
 
-  data->m_fetchstates[_blocknum] = true;
   return true;
 }
 
