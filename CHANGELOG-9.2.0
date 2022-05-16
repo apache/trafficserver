@@ -326,6 +326,7 @@ Changes with Apache Traffic Server 9.2.0
   #8414 - rate_limit: convert to using TSVConnSslSniGet
   #8420 - Adding doc/README.md
   #8421 - Rename IpEndpoint member functions named port() to network_order_port().
+  #8423 - Promote PendingAction for general use.
   #8424 - Remove operatorbody class, its not needed at this time
   #8427 - Make sure the include files are built first
   #8428 - Refactors and promotes the Txn Control mechanism with Get() and Set()
@@ -397,6 +398,7 @@ Changes with Apache Traffic Server 9.2.0
   #8651 - Add parent_select plugin strategy caching
   #8656 - Cleanup strategy debug logs
   #8657 - Support transforming range requests when origin returns full resource.
+  #8660 - Fix overflow conditions in prefetch plugin
   #8661 - Making 9.2.x backwards compatible with 9.1.x
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
   #8667 - TLS Session Resumption: fix timed out session
@@ -438,6 +440,7 @@ Changes with Apache Traffic Server 9.2.0
   #8772 - Add metrics for loop detection.
   #8773 - Pin Jinja2 for doc builds
   #8778 - OpenTelemetry Tracer plugin for ATS
+  #8779 - Add autest to cover updates to cache with alternates
   #8783 - Adds a simple tool to generate new escape tables
   #8784 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
   #8786 - include <cstring> for access to C-string operations
@@ -448,4 +451,9 @@ Changes with Apache Traffic Server 9.2.0
   #8815 - Fedora/RHEL path layout for config.layout
   #8821 - Fixes leak of SNI config filename on load
   #8822 - Fixes leak of ssl_ocsp_response_path_only on reload
+  #8827 - Fixes leak in SNIAction name globbing
   #8829 - Fix a compile error
+  #8831 - Fix parent_select optional scheme
+  #8834 - Handle opentelemetry-cpp v1.3.0 upgrade for otel_tracer plugin
+  #8835 - Remove incorrect comment from base64 functions
+  #8846 - Add `#pragma once` for PendingAction.h
