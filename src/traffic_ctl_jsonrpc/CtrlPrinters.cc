@@ -59,9 +59,10 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
     return;
   }
 
-  if (response.is_error() && this->is_pretty_format()) {
-    // we print the error in this case. Already formatted.
-    std::cout << response.error.as<shared::rpc::JSONRPCError>();
+  if (response.is_error()) {
+    // If an error is present, then as per the specs we can ignore the jsonrpc.result field, so we print the error and we are done
+    // here!
+    std::cout << response.error.as<shared::rpc::JSONRPCError>(); // Already formatted.
     return;
   }
 
