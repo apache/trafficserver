@@ -24,6 +24,7 @@
 #pragma once
 
 #include "I_EventSystem.h"
+#include "tscore/PendingAction.h"
 
 #define MAX_NAMED 32
 #define DEFAULT_DNS_RETRIES 5
@@ -172,12 +173,6 @@ struct DNSHandler : public Continuation {
   int in_flight    = 0;
   int name_server  = 0;
   int in_write_dns = 0;
-  /// Rate limiter for down nameserver retries.
-  /// Don't schedule another if there is already one in flight.
-  std::atomic<bool> nameserver_retry_in_flight_p{false};
-  /// Marker for event cookie to indicate it's a nameserver retry event.
-  /// @note Can't be @c constexpr because of the cast.
-  static inline void *const RETRY_COOKIE{reinterpret_cast<void *>(0x2)};
 
   HostEnt *hostent_cache = nullptr;
 
@@ -272,6 +267,10 @@ private:
   // Check tcp connection for TCP_RETRY mode
   void check_and_reset_tcp_conn();
   bool reset_tcp_conn(int ndx);
+
+  /** The event used for the periodic retry of connectivity to any down name
+   * servers. */
+  PendingAction _dns_retry_event;
 };
 
 /* --------------------------------------------------------------
