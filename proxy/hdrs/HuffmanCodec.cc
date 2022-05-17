@@ -149,46 +149,61 @@ hpack_huffman_fin()
   }
 }
 
+#define MAX_HUFFMAN_CODE_LEN 30
+#define EOS 0x3fffffff
+
 int64_t
 huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 {
-  char *dst_end             = dst_start;
-  uint8_t shift             = 7;
-  Node *current             = HUFFMAN_TREE_ROOT;
-  int byte_boundary_crossed = 0;
-  bool includes_zero        = false;
+  char *dst_end      = dst_start;
+  uint8_t shift      = 7;
+  Node *current      = HUFFMAN_TREE_ROOT;
+  int nbits          = 0;
+  uint32_t curr_bits = 0;
 
   while (src_len) {
+    if (nbits > 0) {
+      curr_bits <<= 1;
+    }
     if (*src & (1 << shift)) {
+      curr_bits |= 1;
       current = current->right;
     } else {
-      current       = current->left;
-      includes_zero = true;
+      current = current->left;
     }
+    ++nbits;
 
     if (current->leaf_node == true) {
-      *dst_end = current->ascii_code;
+      if (curr_bits == EOS) {
+        return -1;
+      }
+      nbits     = 0;
+      curr_bits = 0;
+      *dst_end  = current->ascii_code;
       ++dst_end;
-      current               = HUFFMAN_TREE_ROOT;
-      byte_boundary_crossed = 0;
-      includes_zero         = false;
+      current = HUFFMAN_TREE_ROOT;
     }
+
     if (shift) {
       --shift;
     } else {
       shift = 7;
       ++src;
       --src_len;
-      ++byte_boundary_crossed;
     }
-    if (byte_boundary_crossed > 3) {
+
+    if (nbits > MAX_HUFFMAN_CODE_LEN) {
       return -1;
     }
   }
-  if (byte_boundary_crossed > 1) {
+
+  if (nbits > 7) {
     return -1;
   }
-  if (includes_zero) {
+
+  // Padding bits must be a prefix of EOS
+  uint8_t mask = (1 << nbits) - 1;
+  if ((mask & curr_bits) != mask) {
     return -1;
   }
 
