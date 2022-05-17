@@ -51,7 +51,10 @@
 namespace
 {
 char const Dns_error_body[] = "connect#dns_failed";
-}
+
+/// Buffer for some error logs.
+thread_local std::string error_bw_buffer;
+} // namespace
 
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
@@ -94,9 +97,6 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
   SpecificDebug((s->state_machine->debug_on), tag, "[%" PRId64 "] " fmt, s->state_machine->sm_id, ##__VA_ARGS__)
 
 extern HttpBodyFactory *body_factory;
-
-// Handy typedef for short (single line) message generation.
-using lbw = ts::LocalBufferWriter<256>;
 
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
@@ -908,13 +908,9 @@ HttpTransact::OriginDead(State *s)
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
   std::string_view host_name{host_name_ptr, size_t(host_len)};
-  Log::error("%s", lbw()
-                     .clip(1)
-                     .print("CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr, host_name,
-                            ts::bwf::FirstOf(url_str, "<none>"))
-                     .extend(1)
-                     .write('\0')
-                     .data());
+  ts::bwprint(error_bw_buffer, "CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
+              host_name, ts::bwf::FirstOf(url_str, "<none>"));
+  Log::error("%s", error_bw_buffer.c_str());
   s->arena.str_free(url_str);
 
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
@@ -1891,8 +1887,8 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
     char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-    Log::error("%s",
-               lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
+    ts::bwprint(error_bw_buffer, "DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>"));
+    Log::error("%s", error_bw_buffer.c_str());
   }
 
   return;
@@ -1963,8 +1959,8 @@ HttpTransact::OSDNSLookup(State *s)
       // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
       build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-      Log::error("%s",
-                 lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
+      ts::bwprint(error_bw_buffer, "DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>"));
+      Log::error("%s", error_bw_buffer.c_str());
       // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
@@ -3906,16 +3902,13 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
       host_name_ptr = s->unmapped_url.host_get(&host_len);
     }
     std::string_view host_name{host_name_ptr, size_t(host_len)};
-    Log::error("%s", lbw()
-                       .clip(1)
-                       .print("CONNECT: attempt fail [{}] to {} for host='{}' "
-                              "connection_result={::s} error={::s} attempts={} url='{}'",
-                              HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
-                              ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
-                              s->current.attempts, ts::bwf::FirstOf(url_str, "<none>"))
-                       .extend(1)
-                       .write('\0')
-                       .data());
+    ts::bwprint(error_bw_buffer,
+                "CONNECT: attempt fail [{}] to {} for host='{}' "
+                "connection_result={::s} error={::s} attempts={} url='{}'",
+                HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno), s->current.attempts,
+                ts::bwf::FirstOf(url_str, "<none>"));
+    Log::error("%s", error_bw_buffer.c_str());
 
     s->arena.str_free(url_str);
   }
