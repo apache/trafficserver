@@ -203,24 +203,10 @@ operator<<(std::ostream &os, const RecordLookUpResponse::RecordError &re)
 inline std::ostream &
 operator<<(std::ostream &os, const JSONRPCError &err)
 {
-  os << "Error found.\n";
-  os << "code: " << err.code << '\n';
-  os << "message: " << err.message << '\n';
-  if (err.data.size() > 0) {
-    os << "---\nAdditional error information found:\n";
-    auto my_print = [&](auto const &e) {
-      os << "+ code: " << e.first << '\n';
-      os << "+ message: " << e.second << '\n';
-    };
-
-    auto iter = std::begin(err.data);
-
-    my_print(*iter);
-    ++iter;
-    for (; iter != std::end(err.data); ++iter) {
-      os << "---\n";
-      my_print(*iter);
-    }
+  os << "Server Error found:\n";
+  os << "[" << err.code << "] " << err.message << '\n';
+  for (auto &&[code, message] : err.data) {
+    os << "- [" << code << "] " << message << '\n';
   }
 
   return os;
