@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-noinst_PROGRAMS = mkdfa CompileParseRules
+noinst_PROGRAMS = CompileParseRules
 check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore
 
 if EXPENSIVE_TESTS
@@ -139,8 +139,6 @@ $(srcdir)/ParseRules.cc: ParseRulesCType
 
 ParseRulesCType: CompileParseRules
 	LSAN_OPTIONS='detect_leaks=0' ./CompileParseRules
-
-mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
 test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
