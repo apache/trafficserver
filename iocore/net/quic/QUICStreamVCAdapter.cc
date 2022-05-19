@@ -24,7 +24,7 @@
 #include "I_VConnection.h"
 #include "QUICStreamVCAdapter.h"
 
-QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : QUICStreamAdapter(stream), VConnection(new_ProxyMutex())
+QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : VConnection(new_ProxyMutex()), QUICStreamAdapter(stream)
 {
   SET_HANDLER(&QUICStreamVCAdapter::state_stream_open);
 }

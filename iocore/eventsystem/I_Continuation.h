@@ -71,6 +71,14 @@ constexpr ContinuationHandler
 continuation_handler_void_ptr(int (C::*fp)(int, T *))
 {
   auto fp2 = reinterpret_cast<int (C::*)(int, void *)>(fp);
+
+  // We keep this a static_cast for added static type analysis from the
+  // compiler. If a compiler warning is generated for the following line of
+  // code of the type "-Werror=shift-negative-value", then this may be an issue
+  // with multiple inheritance of the C templated type. Make sure that for type
+  // C the Continuation parent is listed first (either directly or indirectly
+  // via the inheritance tree) before any other parent in the multiple class
+  // heirarchy of C.
   return static_cast<ContinuationHandler>(fp2);
 }
 
