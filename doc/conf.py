@@ -38,6 +38,10 @@ import sys
 import os
 from datetime import date
 from sphinx import version_info
+# Import man_pages from manpages.py to get the list of manpages to generate in
+# separate files. Default is to put everything in apachetrafficserver.1
+# For these reasons, despite what linting tools might say, this import is required.
+from manpages import man_pages
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
