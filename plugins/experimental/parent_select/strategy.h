@@ -240,10 +240,9 @@ public:
 class PLNextHopSelectionStrategy : public TSNextHopSelectionStrategy
 {
 public:
-  PLNextHopSelectionStrategy();
-  PLNextHopSelectionStrategy(const std::string_view &name);
+  PLNextHopSelectionStrategy() = delete;
+  PLNextHopSelectionStrategy(const std::string_view &name, const YAML::Node &n);
   virtual ~PLNextHopSelectionStrategy(){};
-  bool Init(const YAML::Node &n);
 
   virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
                     in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,

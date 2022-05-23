@@ -33,12 +33,10 @@ class NextHopRoundRobin : public NextHopSelectionStrategy
 
 public:
   NextHopRoundRobin() = delete;
-  NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
-  ~NextHopRoundRobin();
-  bool
-  Init(ts::Yaml::Map &n)
+  NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy, ts::Yaml::Map &n)
+    : NextHopSelectionStrategy(name, policy, n)
   {
-    return NextHopSelectionStrategy::Init(n);
   }
+  ~NextHopRoundRobin();
   void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
 };

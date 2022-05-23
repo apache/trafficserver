@@ -139,29 +139,25 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
     return;
   }
 
-  switch (policy_type) {
-  case NH_FIRST_LIVE:
-  case NH_RR_STRICT:
-  case NH_RR_IP:
-  case NH_RR_LATCHED:
-    strat_rr = std::make_shared<NextHopRoundRobin>(name, policy_type);
-    if (strat_rr->Init(node)) {
+  try {
+    switch (policy_type) {
+    case NH_FIRST_LIVE:
+    case NH_RR_STRICT:
+    case NH_RR_IP:
+    case NH_RR_LATCHED:
+      strat_rr = std::make_shared<NextHopRoundRobin>(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_rr));
-    } else {
-      strat.reset();
-    }
-    break;
-  case NH_CONSISTENT_HASH:
-    strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type);
-    if (strat_chash->Init(node)) {
+      break;
+    case NH_CONSISTENT_HASH:
+      strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_chash));
-    } else {
-      strat_chash.reset();
-    }
-    break;
-  default: // handles P_UNDEFINED, no strategy is added
-    break;
-  };
+      break;
+    default: // handles P_UNDEFINED, no strategy is added
+      break;
+    };
+  } catch (std::exception &ex) {
+    strat.reset();
+  }
 }
 
 std::shared_ptr<NextHopSelectionStrategy>
