@@ -39,7 +39,8 @@ from the :cpp:enumerator:`TS_LIFECYCLE_SSL_SECRET_HOOK`.
 TSSslSecretGet
 **************
 
-Get the data associated with a secret name specified in the config.
+Get the data associated with a secret name specified in the config.  **Note:** this function is deprecated, it is not
+thread safe.  It will be replaced with a thread-safe function in Release 10.
 
 Synopsis
 ========

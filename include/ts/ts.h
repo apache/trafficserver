@@ -1304,6 +1304,8 @@ tsapi TSReturnCode TSSslServerCertUpdate(const char *cert_path, const char *key_
 
 /* Update the transient secret table for SSL_CTX loading */
 tsapi TSReturnCode TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_len);
+/* NOTE:  TSSslSecretGet() is deprecated, it is not thread-safe.  It will be replaced with a thread-safe function
+** in Release 10 */
 tsapi TSReturnCode TSSslSecretGet(const char *secret_name, int secret_name_length, const char **secret_data_return,
                                   int *secret_data_len);
 
