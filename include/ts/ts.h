@@ -1304,8 +1304,10 @@ tsapi TSReturnCode TSSslServerCertUpdate(const char *cert_path, const char *key_
 
 /* Update the transient secret table for SSL_CTX loading */
 tsapi TSReturnCode TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_len);
-tsapi TSReturnCode TSSslSecretGet(const char *secret_name, int secret_name_length, const char **secret_data_return,
-                                  int *secret_data_len);
+
+/* Returns secret with given name as TSAllocatedVerLenData.  If there is no secret with the given name, data will
+** be null and size will be zero.  Calling code must free by calling TSfree(). */
+tsapi TSAllocatedVarLenData TSSslSecretGet(const char *secret_name, int secret_name_length);
 
 tsapi TSReturnCode TSSslSecretUpdate(const char *secret_name, int secret_name_length);
 

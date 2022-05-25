@@ -56,6 +56,18 @@ more widely. Those are described on this page.
 
 .. type:: TSAction
 
+.. type:: TSAllocatedVarLenData
+
+   Valiable lenght data stored in memory allocated with :func:`TSmalloc`.
+
+   .. member:: char * data 
+
+      Pointer to first byte of sequence of bytes containing data.  Must be freed by plugin with :func:`TSfree`.
+
+   .. member:: size_t size
+
+      Number of bytes in sequence pointed to by data.
+
 .. type:: TSCacheKey
 
 .. type:: TSConfig

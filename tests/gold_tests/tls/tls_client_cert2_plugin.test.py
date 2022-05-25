@@ -105,7 +105,7 @@ ts.Disk.sni_yaml.AddLines([
     '  client_cert: {0}/../signed-bar.pem'.format(ts.Variables.SSLDir),
     '  client_key: {0}/../signed-bar.key'.format(ts.Variables.SSLDir),
     '- fqdn: bob.*.com',
-    '  client_cert: {0}/../combo-signed-foo.pem'.format(ts.Variables.SSLDir),
+    '  client_cert: {0}/combo-signed-foo.pem'.format(ts.Variables.SSLDir),
     '- fqdn: "*bar.com"',
     '  client_cert: {0}/../signed2-bar.pem'.format(ts.Variables.SSLDir),
     '  client_key: {0}/../signed-bar.key'.format(ts.Variables.SSLDir),

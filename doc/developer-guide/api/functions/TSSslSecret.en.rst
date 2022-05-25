@@ -11,6 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
+
 .. include:: /common.defs
 
 .. default-domain:: c
@@ -48,12 +49,13 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSSslSecretGet(const char * secret_name, int secret_name_length, const char ** secret_data_return, int * secret_data_len)
+.. function:: TSAllocatedVarLenData TSSslSecretGet(const char * secret_name, int secret_name_length)
 
 Description
 ===========
 
-:func:`TSSslSecretGet` fetches the named secret from the current secret map. TS_ERROR is returned if there is no entry for the secret.
+:func:`TSSslSecretGet` fetches the named secret from the current secret map.  If there is no secret with the
+given name, the data pointer will be null, and the size will be zero.
 
 TSSslSecretUpdate
 *****************

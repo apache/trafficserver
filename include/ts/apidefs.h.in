@@ -1460,6 +1460,12 @@ namespace ts
 }
 #endif
 
+/* Variable-length buffer, with data returned by a TS API call.  Data must be freed by plugin with TSfree(). */
+typedef struct tsapi_allocated_var_len_data {
+  char *data;
+  size_t size;
+} TSAllocatedVarLenData;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

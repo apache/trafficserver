@@ -26,6 +26,8 @@
 
 #include <type_traits>
 #include <memory>
+#include <cstring>
+#include <new>
 
 #include <ts/ts.h>
 
@@ -99,6 +101,77 @@ struct TSIOBufferReaderDeleter {
   }
 };
 using TSIOBufferReaderUniqPtr = std::unique_ptr<std::remove_pointer_t<TSIOBufferReader>, TSIOBufferReaderDeleter>;
+
+// Guard for TSAllocatedVarLenData.
+//
+class TSAllocatedVarLenDataGuard
+{
+public:
+  TSAllocatedVarLenDataGuard()
+  {
+    _m.data = nullptr;
+    _m.size = 0;
+  }
+
+  TSAllocatedVarLenDataGuard(TSAllocatedVarLenData const &d) : _m(d) { TSAssert((nullptr == d.data) == (0 == d.size)); }
+
+  operator TSAllocatedVarLenData const &() const { return _m; }
+
+  TSAllocatedVarLenData const &
+  operator()() const
+  {
+    return _m;
+  }
+
+  TSAllocatedVarLenDataGuard(TSAllocatedVarLenDataGuard const &src)
+  {
+    TSAssert((nullptr == src._m.data) == (0 == src._m.size));
+
+    if (src._m.data && src._m.size) {
+      _m.data = static_cast<char *>(TSmalloc(src._m.size));
+      std::memcpy(_m.data, src._m.data, src._m.size);
+      _m.size = src._m.size;
+
+    } else {
+      _m.data = nullptr;
+      _m.size = 0;
+    }
+  }
+
+  TSAllocatedVarLenDataGuard &
+  operator=(TSAllocatedVarLenDataGuard const &src)
+  {
+    TSAssert((nullptr == src._m.data) == (0 == src._m.size));
+
+    this->~TSAllocatedVarLenDataGuard();
+    new (this) TSAllocatedVarLenDataGuard(src);
+    return *this;
+  }
+
+  TSAllocatedVarLenDataGuard(TSAllocatedVarLenDataGuard &&src)
+  {
+    TSAssert((nullptr == src._m.data) == (0 == src._m.size));
+
+    _m          = src;
+    src._m.data = nullptr;
+    src._m.size = 0;
+  }
+
+  TSAllocatedVarLenDataGuard &
+  operator=(TSAllocatedVarLenDataGuard &&src)
+  {
+    TSAssert((nullptr == src._m.data) == (0 == src._m.size));
+
+    this->~TSAllocatedVarLenDataGuard();
+    new (this) TSAllocatedVarLenDataGuard(std::move(src));
+    return *this;
+  }
+
+  ~TSAllocatedVarLenDataGuard() { TSfree(_m.data); }
+
+private:
+  TSAllocatedVarLenData _m;
+};
 
 class TxnAuxDataMgrBase
 {
