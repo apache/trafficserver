@@ -1919,7 +1919,7 @@ namespace detail
 
     /** Check for active assignment.
 
-        An assignment is active if it is is current. This means either it
+        An assignment is active if it is current. This means either it
         was successfully generated on the cache side, or a valid assignment
         was received on the router side and has not expired.
 
