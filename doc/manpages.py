@@ -19,11 +19,7 @@ import os
 man_pages = [
     # Add all files in the reference/api directory to the list of manual
     # pages
-    ('developer-guide/api/functions/' + filename[:-4],
-        filename.split('.', 1)[0],
-        filename.split('.', 1)[0] + ' API function', None, '3ts')
-        for filename in os.listdir('developer-guide/api/functions/')
-        if filename != 'index.en.rst' and filename.endswith('.rst')] + [
+    ('developer-guide/api/functions/' + filename[:-4], filename.split('.', 1)[0], filename.split('.', 1)[0] + ' API function', None, '3ts') for filename in os.listdir('developer-guide/api/functions/') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
 
     # Add all files in the appendices/command-line directory to the list
     # of manual pages
