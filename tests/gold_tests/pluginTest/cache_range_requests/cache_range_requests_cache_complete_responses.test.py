@@ -49,7 +49,7 @@ small_body = ''
 for i in range(small_body_len):
     small_body += 'x'
 
-slice_body_len = 4*1024*1024
+slice_body_len = 4 * 1024 * 1024
 slice_body = ''
 for i in range(slice_body_len):
     slice_body += 'x'
@@ -81,84 +81,84 @@ res_chk = {"headers":
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
 small_req = {"headers":
-            "GET /obj HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "UID: SMALL\r\n"
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+             "GET /obj HTTP/1.1\r\n" +
+             "Host: www.example.com\r\n" +
+             "Accept: */*\r\n" +
+             "UID: SMALL\r\n"
+             "\r\n",
+             "timestamp": "1469733493.993",
+             "body": ""
+             }
 
 small_resp = {"headers":
-            "HTTP/1.1 200 OK\r\n" +
-            "Cache-Control: max-age=1\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "772102f4-56f4bc1e6d417"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": small_body
-            }
+              "HTTP/1.1 200 OK\r\n" +
+              "Cache-Control: max-age=1\r\n" +
+              "Connection: close\r\n" +
+              'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+              "\r\n",
+              "timestamp": "1469733493.993",
+              "body": small_body
+              }
 
 small_reval_req = {"headers":
-            "GET /obj HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "UID: SMALL-INM\r\n"
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+                   "GET /obj HTTP/1.1\r\n" +
+                   "Host: www.example.com\r\n" +
+                   "Accept: */*\r\n" +
+                   "UID: SMALL-INM\r\n"
+                   "\r\n",
+                   "timestamp": "1469733493.993",
+                   "body": ""
+                   }
 
 small_reval_resp = {"headers":
-            "HTTP/1.1 304 Not Modified\r\n" +
-            "Cache-Control: max-age=10\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "772102f4-56f4bc1e6d417"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993"
-            }
+                    "HTTP/1.1 304 Not Modified\r\n" +
+                    "Cache-Control: max-age=10\r\n" +
+                    "Connection: close\r\n" +
+                    'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+                    "\r\n",
+                    "timestamp": "1469733493.993"
+                    }
 
 slice_req = {"headers":
-            "GET /slice HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Range: bytes=0-4194303\r\n" +
-            "Accept: */*\r\n" +
-            "UID: SLICE\r\n"
-            "\r\n",
-            "timestamp": "1469733493.993",
-            }
+             "GET /slice HTTP/1.1\r\n" +
+             "Host: www.example.com\r\n" +
+             "Range: bytes=0-4194303\r\n" +
+             "Accept: */*\r\n" +
+             "UID: SLICE\r\n"
+             "\r\n",
+             "timestamp": "1469733493.993",
+             }
 
 slice_resp = {"headers":
-            "HTTP/1.1 206 Partial Content\r\n" +
-            "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{}/{}\r\n".format(slice_body_len - 1, slice_body_len * 2) + "\r\n" +
-            "Content-Length: {}\r\n".format(slice_body_len) + "\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "872104f4-d6bcaa1e6f979"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": slice_body
-            }
+              "HTTP/1.1 206 Partial Content\r\n" +
+              "Cache-Control: max-age=1\r\n" +
+              "Content-Range: bytes 0-{}/{}\r\n".format(slice_body_len - 1, slice_body_len * 2) + "\r\n" +
+              "Content-Length: {}\r\n".format(slice_body_len) + "\r\n" +
+              "Connection: close\r\n" +
+              'Etag: "872104f4-d6bcaa1e6f979"\r\n' +
+              "\r\n",
+              "timestamp": "1469733493.993",
+              "body": slice_body
+              }
 
 slice_reval_req = {"headers":
-            "GET /slice HTTP/1.1\r\n" +
-            "Host: www.example.com\r\n" +
-            "Accept: */*\r\n" +
-            "UID: SLICE-INM\r\n"
-            "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-            }
+                   "GET /slice HTTP/1.1\r\n" +
+                   "Host: www.example.com\r\n" +
+                   "Accept: */*\r\n" +
+                   "UID: SLICE-INM\r\n"
+                   "\r\n",
+                   "timestamp": "1469733493.993",
+                   "body": ""
+                   }
 
 slice_reval_resp = {"headers":
-            "HTTP/1.1 304 Not Modified\r\n" +
-            "Cache-Control: max-age=10\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "872104f4-d6bcaa1e6f979"\r\n' +
-            "\r\n",
-            "timestamp": "1469733493.993"
-            }
+                    "HTTP/1.1 304 Not Modified\r\n" +
+                    "Cache-Control: max-age=10\r\n" +
+                    "Connection: close\r\n" +
+                    'Etag: "872104f4-d6bcaa1e6f979"\r\n' +
+                    "\r\n",
+                    "timestamp": "1469733493.993"
+                    }
 
 server.addResponse("sessionlog.json", small_req, small_resp)
 server.addResponse("sessionlog.json", small_reval_req, small_reval_resp)
@@ -185,7 +185,9 @@ ts.Disk.records_config.update({
 # base cURL command
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 
-# Test round 1: ensure we fetch and cache objects that are returned with a 200 OK and no Content-Range when the object is smaller than the slice block size
+# Test round 1: ensure we fetch and cache objects that are returned with a
+# 200 OK and no Content-Range when the object is smaller than the slice
+# block size
 
 # 0 Test - Fetch /obj with a Range header but less than 4MB
 tr = Test.AddTestRun("cache miss on /obj")
@@ -230,7 +232,8 @@ ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expect
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
 
-# Test round 2: repeat, but ensure we have 206s and matching Content-Range headers due to a base object that exceeds the slice block size
+# Test round 2: repeat, but ensure we have 206s and matching Content-Range
+# headers due to a base object that exceeds the slice block size
 
 # 4 Test - Fetch /slice with a Range header but less than 4MB
 tr = Test.AddTestRun("cache miss on /slice")
@@ -238,7 +241,9 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-5000'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-ps.Streams.stdout.Content = Testers.ContainsExpression("Content-Range: bytes 0-5000/8388608", "expected Content-Range: bytes 0-5000/8388608")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "Content-Range: bytes 0-5000/8388608",
+    "expected Content-Range: bytes 0-5000/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
 tr.StillRunningAfter = ts
 
@@ -248,7 +253,9 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 5001-5999'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-ps.Streams.stdout.Content = Testers.ContainsExpression("Content-Range: bytes 5001-5999/8388608", "expected Content-Range: bytes 5001-5999/8388608")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "Content-Range: bytes 5001-5999/8388608",
+    "expected Content-Range: bytes 5001-5999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
 tr.StillRunningAfter = ts
 
@@ -259,7 +266,9 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: SLICE-INM" http://example.com/slice -r 0-403'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-ps.Streams.stdout.Content = Testers.ContainsExpression("Content-Range: bytes 0-403/8388608", "expected Content-Range: bytes 0-403/8388608")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "Content-Range: bytes 0-403/8388608",
+    "expected Content-Range: bytes 0-403/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
 tr.StillRunningAfter = ts
 
@@ -269,6 +278,8 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-3999'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-ps.Streams.stdout.Content = Testers.ContainsExpression("Content-Range: bytes 0-3999/8388608", "expected Content-Range: bytes 0-3999/8388608")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "Content-Range: bytes 0-3999/8388608",
+    "expected Content-Range: bytes 0-3999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
