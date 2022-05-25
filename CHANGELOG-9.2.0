@@ -307,6 +307,7 @@ Changes with Apache Traffic Server 9.2.0
   #8358 - Locking around SSLSecret::secret_map access
   #8359 - Fix regex_remap plugin redirection.
   #8360 - Stabilize regex_revalidate Au test.
+  #8362 - remap_stats: convert to using TSHttpTxnPristineUrlGet and TSHttpTxnClienReqGet
   #8363 - Added support for promoting internal (plugin-initiated) requests.
   #8364 - Added support for verifying cacheability before attempting to force an object into cache.
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
@@ -449,6 +450,7 @@ Changes with Apache Traffic Server 9.2.0
   #8798 - Create clean exit path for traffic_manager on SIGTERM
   #8805 - remove pthread_*specific and replace with thread_local
   #8815 - Fedora/RHEL path layout for config.layout
+  #8817 - Fix `COMPRESSION_ERROR` on valid HPACK input
   #8821 - Fixes leak of SNI config filename on load
   #8822 - Fixes leak of ssl_ocsp_response_path_only on reload
   #8827 - Fixes leak in SNIAction name globbing
@@ -457,3 +459,7 @@ Changes with Apache Traffic Server 9.2.0
   #8834 - Handle opentelemetry-cpp v1.3.0 upgrade for otel_tracer plugin
   #8835 - Remove incorrect comment from base64 functions
   #8846 - Add `#pragma once` for PendingAction.h
+  #8847 - Restore down nameservers after they come back online
+  #8850 - Fix Rocky Linux 8 arm64 GCC Compiler Warnings
+  #8859 - Re-introduce import to get man_pages list available for sphinx.
+  #8861 - Add missing configuration files man pages
