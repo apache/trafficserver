@@ -31,7 +31,7 @@ cache_range_requests cache-complete-responses test
 #   - seed the cache with an object that is larger than the slice block size
 #   - issue requests with various ranges and validate responses are 206s
 # Both rounds test cache miss, cache hit, and refresh hit scenarios
-# Use the cachekey plugin to add the `Range` request header to the cache key 
+# Use the cachekey plugin to add the `Range` request header to the cache key
 # Request content through the slice and cache_range_requests plugin with a 4MB slice block size
 
 Test.SkipUnless(
