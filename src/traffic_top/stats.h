@@ -112,6 +112,7 @@ public:
     lookup_table.insert(make_pair("dns_entry", LookupItem("DNS Entry", "proxy.process.hostdb.cache.current_items", 1)));
     lookup_table.insert(make_pair("dns_hits", LookupItem("DNS Hits", "proxy.process.hostdb.total_hits", 2)));
     lookup_table.insert(make_pair("dns_lookups", LookupItem("DNS Lookups", "proxy.process.hostdb.total_lookups", 2)));
+    lookup_table.insert(make_pair("dns_serve_stale", LookupItem("DNS Serve Stale", "proxy.process.hostdb.total_serve_stale", 2)));
 
     // Incoming HTTP/1.1 and HTTP/2 connections - some metrics are HTTP version specific
     lookup_table.insert(make_pair("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", 2)));

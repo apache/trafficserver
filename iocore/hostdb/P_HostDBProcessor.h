@@ -136,9 +136,10 @@ struct HostEnt;
 // Stats
 enum HostDB_Stats {
   hostdb_total_lookups_stat,
-  hostdb_total_hits_stat,  // D == total hits
-  hostdb_ttl_stat,         // D average TTL
-  hostdb_ttl_expires_stat, // D == TTL Expires
+  hostdb_total_hits_stat,        // D == total hits
+  hostdb_total_serve_stale_stat, // D == total times we served a stale response
+  hostdb_ttl_stat,               // D average TTL
+  hostdb_ttl_expires_stat,       // D == TTL Expires
   hostdb_re_dns_on_reload_stat,
   hostdb_insert_duplicate_to_pending_dns_stat,
   HostDB_Stat_Count
