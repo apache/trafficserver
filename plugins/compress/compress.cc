@@ -759,7 +759,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     }
 
     if (hdr_value < host_configuration->minimum_content_length()) {
-      info("response is is smaller than minimum content length, not compressing");
+      info("response is smaller than minimum content length, not compressing");
       return 0;
     }
   }
