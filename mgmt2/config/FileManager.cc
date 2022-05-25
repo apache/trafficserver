@@ -91,12 +91,11 @@ FileManager::FileManager()
   this->registerCallback(&handle_file_reload);
 
   // Register the files registry jsonrpc endpoint
-  rpc::add_method_handler(
-    "filemanager.get_files_registry",
-    [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
-      return get_files_registry_rpc_endpoint(id, req);
-    },
-    &rpc::core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("filemanager.get_files_registry",
+                          [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
+                            return get_files_registry_rpc_endpoint(id, req);
+                          },
+                          &rpc::core_ats_rpc_service_provider_handle, {});
 }
 
 // FileManager::~FileManager

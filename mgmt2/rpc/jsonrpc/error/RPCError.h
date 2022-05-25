@@ -59,10 +59,13 @@ enum class RPCErrorCode {
   // execution errors
 
   // Internal rpc error when executing the method.
-  ExecutionError
+  //
+  ExecutionError, //!< Handler's general error.
+  Unauthorized    //!< In case we want to block the call based on privileges, access permissions, etc.
 };
 // TODO: force non 0 check
 std::error_code make_error_code(rpc::error::RPCErrorCode e);
+
 } // namespace rpc::error
 
 namespace std

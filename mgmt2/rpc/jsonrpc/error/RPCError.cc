@@ -74,6 +74,8 @@ RPCErrorCategory::message(int ev) const
     return {"Use of null as id is discouraged"};
   case RPCErrorCode::ExecutionError:
     return {"Error during execution"};
+  case RPCErrorCode::Unauthorized:
+    return {"Unauthorized action"};
   default:
     return "Rpc error " + std::to_string(ev);
   }

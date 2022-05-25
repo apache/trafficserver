@@ -55,6 +55,13 @@ test_remove_handler(std::string_view name)
 {
   return rpc::JsonRPCManager::instance().remove_handler(name);
 }
+
+template <typename Func>
+inline bool
+add_method_handler(const std::string &name, Func &&call)
+{
+  return rpc::JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), nullptr, {});
+}
 } // namespace rpc
 static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
 static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};

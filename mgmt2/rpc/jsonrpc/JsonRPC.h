@@ -24,7 +24,7 @@
 
 namespace rpc
 {
-/// Generic and global JSONRPC service provider info object. It's recommended to use this object when registring your new handler
+/// Generic and global JSONRPC service provider info object. It's recommended to use this object when registering your new handler
 /// into the rpc system IF the implementor wants the handler to be listed as ATS's handler.
 extern RPCRegistryInfo core_ats_rpc_service_provider_handle;
 // -----------------------------------------------------------------------------
@@ -33,17 +33,17 @@ extern RPCRegistryInfo core_ats_rpc_service_provider_handle;
 /// @see JsonRPCManager::add_method_handler for details
 template <typename Func>
 inline bool
-add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info = nullptr)
+add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt)
 {
-  return JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), info);
+  return JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), info, opt);
 }
 
 /// @see JsonRPCManager::add_notification_handler for details
 template <typename Func>
 inline bool
-add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info = nullptr)
+add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt)
 {
-  return JsonRPCManager::instance().add_notification_handler(name, std::forward<Func>(call), info);
+  return JsonRPCManager::instance().add_notification_handler(name, std::forward<Func>(call), info, opt);
 }
 
 } // namespace rpc

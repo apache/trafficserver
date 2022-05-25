@@ -172,7 +172,8 @@ IPCSocketServer::run()
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
         const auto json = std::string{bw.data(), bw.size()};
-        if (auto response = rpc::JsonRPCManager::instance().handle_call(json); response) {
+        rpc::Context ctx; // Further use.
+        if (auto response = rpc::JsonRPCManager::instance().handle_call(ctx, json); response) {
           // seems a valid response.
           if (client.write(*response, ec); ec) {
             Debug(logTag, "Error sending the response: %s", ec.message().c_str());
