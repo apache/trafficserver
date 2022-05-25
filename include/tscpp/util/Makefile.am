@@ -21,6 +21,7 @@ library_includedir=$(includedir)/tscpp/util
 library_include_HEADERS = \
 	IntrusiveDList.h \
 	LocalBuffer.h \
+	ntsv.h \
 	PostScript.h \
 	Strerror.h \
 	string_view_util.h \

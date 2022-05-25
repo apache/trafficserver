@@ -24,6 +24,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
+#include "tscpp/util/ntsv.h"
 #include <cctype>
 #include <cstring>
 #include "HttpConfig.h"
@@ -79,7 +80,7 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
+  Debug("http_config", "enum element %s", ts::nt{key}.v());
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
     if (key.compare(list[i]._key) == 0) {
@@ -280,7 +281,7 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
         c->oride.insert_forwarded = bs;
         valid_p                   = true;
       } else {
-        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+        Error("HTTP %s", ts::nt{error}.v());
       }
     }
   }
@@ -1088,9 +1089,9 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
       ts::TextView span, token{status_list.take_prefix_if(is_sep)};
       auto n = ts::svtoi(token, &span);
       if (span.size() != token.size()) {
-        Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
+        Error("Invalid status code '%s' for negative caching: not a number", ts::nt{token}.v());
       } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
-        Error("Invalid status code '%.*s' for negative caching: out of range", static_cast<int>(token.size()), token.data());
+        Error("Invalid status code '%s' for negative caching: out of range", ts::nt{token}.v());
       } else {
         set[n] = true;
       }
@@ -1213,7 +1214,7 @@ HttpConfig::startup()
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
-        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+        Error("HTTP %s", ts::nt{error}.v());
       }
     }
   }
@@ -1863,10 +1864,10 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     Action a = action_map.find(ruleTokens[1]) != action_map.end() ? action_map[ruleTokens[1]] : Action::INVALID;
 
     if (AddressClass::INVALID == c) {
-      Error("parse_redirect_actions: '%.*s' is not a valid address class", static_cast<int>(c_input.size()), c_input.data());
+      Error("parse_redirect_actions: '%s' is not a valid address class", ts::nt{c_input}.v());
       return nullptr;
     } else if (Action::INVALID == a) {
-      Error("parse_redirect_actions: '%.*s' is not a valid action", static_cast<int>(a_input.size()), a_input.data());
+      Error("parse_redirect_actions: '%s' is not a valid action", ts::nt{a_input}.v());
       return nullptr;
     }
     configMapping[c] = a;

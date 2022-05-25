@@ -51,6 +51,7 @@
 
 #include "tscore/I_Layout.h"
 #include "tscore/bwf_std_format.h"
+#include "tscpp/util/ntsv.h"
 #include "ts/sdt.h"
 
 #include <openssl/ossl_typ.h>
@@ -5000,7 +5001,7 @@ HttpSM::do_http_server_open(bool raw)
 {
   int ip_family = t_state.current.server->dst_addr.sa.sa_family;
   auto fam_name = ats_ip_family_name(ip_family);
-  SMDebug("http_track", "entered inside do_http_server_open ][%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
+  SMDebug("http_track", "entered inside do_http_server_open ][%s]", ts::nt{fam_name}.v());
 
   NetVConnection *vc = ua_txn->get_netvc();
   ink_release_assert(vc && vc->thread == this_ethread());

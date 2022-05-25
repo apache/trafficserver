@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "tscpp/util/ntsv.h"
 #include "HttpSessionManager.h"
 #include "../ProxySession.h"
 #include "HttpSM.h"
@@ -107,8 +108,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_sni       = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
-    Debug("http_ss", "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
-          session_sni);
+    Debug("http_ss", "validate_sni proposed_sni=%s, sni=%s", ts::nt{proposed_sni}.v(), session_sni);
     if (!session_sni || proposed_sni.length() == 0) {
       retval = session_sni == nullptr && proposed_sni.length() == 0;
     } else {
@@ -128,8 +128,7 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_cert       = netvc->options.ssl_client_cert_name;
     std::string_view proposed_cert = sm->get_outbound_cert();
-    Debug("http_ss", "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
-          session_cert);
+    Debug("http_ss", "validate_cert proposed_cert=%s, cert=%s", ts::nt{proposed_cert}.v(), session_cert);
     if (!session_cert || proposed_cert.length() == 0) {
       retval = session_cert == nullptr && proposed_cert.length() == 0;
     } else {

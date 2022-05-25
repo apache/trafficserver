@@ -29,6 +29,8 @@
 
 #include <memory>
 
+#include "tscpp/util/ntsv.h"
+
 #include "HttpSM.h"
 #include "nexthop_test_stubs.h"
 
@@ -216,7 +218,7 @@ HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsi
   this->hosts_statuses[std::string(host)]->status          = status;
   this->hosts_statuses[std::string(host)]->reasons         = reason;
   this->hosts_statuses[std::string(host)]->local_down_time = down_time;
-  NH_Debug("next_hop", "setting host status for '%.*s' to %s", host.size(), host.data(), HostStatusNames[status]);
+  NH_Debug("next_hop", "setting host status for '%s' to %s", ts::nt{host}.v(), HostStatusNames[status]);
 }
 
 #include "I_UDPConnection.h"

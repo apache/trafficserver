@@ -28,6 +28,7 @@
 #include "P_SSLSNI.h"
 
 #include "tscpp/util/PostScript.h"
+#include "tscpp/util/ntsv.h"
 
 #include <algorithm>
 
@@ -143,8 +144,8 @@ PreWarmSM::retry()
   _retry_event     = ethread->schedule_in_local(this, delay, EVENT_IMMEDIATE);
 
   if (_retry_counter % 10 == 0) {
-    Warning("retry pre-warming dst=%.*s:%d type=%d alpn=%d retry=%" PRIu32, (int)_dst->host.size(), _dst->host.data(), _dst->port,
-            (int)_dst->type, _dst->alpn_index, _retry_counter);
+    Warning("retry pre-warming dst=%s:%d type=%d alpn=%d retry=%" PRIu32, ts::nt{_dst->host}.v(), _dst->port, (int)_dst->type,
+            _dst->alpn_index, _retry_counter);
   }
 }
 
@@ -222,8 +223,8 @@ PreWarmSM::state_init(int event, void *data)
     _timeout.set_active_timeout(_conf->connect_timeout);
     _milestones.mark(Milestone::INIT);
 
-    PreWarmSMDebug("pre-warming a netvc dst=%.*s:%d type=%d alpn=%d retry=%" PRIu32, (int)_dst->host.size(), _dst->host.data(),
-                   _dst->port, (int)_dst->type, _dst->alpn_index, _retry_counter);
+    PreWarmSMDebug("pre-warming a netvc dst=%s:%d type=%d alpn=%d retry=%" PRIu32, ts::nt{_dst->host}.v(), _dst->port,
+                   (int)_dst->type, _dst->alpn_index, _retry_counter);
 
     if (_conf->srv_enabled) {
       char target[MAXDNAME];
@@ -243,7 +244,7 @@ PreWarmSM::state_init(int event, void *data)
         _pending_action = srv_lookup_action_handle;
       }
     } else {
-      PreWarmSMVDebug("lookup A/AAAA by %.*s", (int)_dst->host.size(), _dst->host.data());
+      PreWarmSMVDebug("lookup A/AAAA by %s", ts::nt{_dst->host}.v());
 
       Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(
         this, static_cast<cb_process_result_pfn>(&PreWarmSM::process_hostdb_info), _dst->host.data(), _dst->host.size());
@@ -694,8 +695,8 @@ PreWarmQueue::state_running(int event, void *data)
       _prewarm_on_event_interval(dst, info);
 
       // set prewarmManager.stats
-      Debug("v_prewarm_q", "dst=%.*s:%d type=%d alpn=%d miss=%d hit=%d init=%d open=%d", (int)dst->host.size(), dst->host.data(),
-            dst->port, (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
+      Debug("v_prewarm_q", "dst=%s:%d type=%d alpn=%d miss=%d hit=%d init=%d open=%d", ts::nt{dst->host}.v(), dst->port,
+            (int)dst->type, dst->alpn_index, info.stat.miss, info.stat.hit, (int)info.init_list->size(),
             (int)info.open_list->size());
 
       prewarmManager.stats.set_sum(info.stats_ids->at(static_cast<int>(PreWarm::Stat::INIT_LIST_SIZE)), info.init_list->size());
@@ -1138,12 +1139,11 @@ PreWarmManager::_register_stats(const PreWarm::ParsedSNIConf &parsed_conf)
       if (dst->alpn_index != SessionProtocolNameRegistry::INVALID) {
         std::string_view alpn_name = alpn_name_for_stat(dst->alpn_index);
 
-        snprintf(name, sizeof(name), "%s.%.*s:%d.tls.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, alpn_name.data(), STAT_ENTRIES[j].name.data());
+        snprintf(name, sizeof(name), "%s.%s:%d.tls.%s.%s", STAT_NAME_PREFIX.data(), ts::nt{dst->host}.v(), dst->port,
+                 alpn_name.data(), STAT_ENTRIES[j].name.data());
       } else {
-        snprintf(name, sizeof(name), "%s.%.*s:%d.%s.%s", STAT_NAME_PREFIX.data(), static_cast<int>(dst->host.size()),
-                 dst->host.data(), dst->port, (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp",
-                 STAT_ENTRIES[j].name.data());
+        snprintf(name, sizeof(name), "%s.%s:%d.%s.%s", STAT_NAME_PREFIX.data(), ts::nt{dst->host}.v(), dst->port,
+                 (dst->type == SNIRoutingType::PARTIAL_BLIND) ? "tls" : "tcp", STAT_ENTRIES[j].name.data());
       }
 
       int stats_id = stats.find(name);

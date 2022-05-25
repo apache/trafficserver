@@ -36,6 +36,7 @@
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
 #include "tscore/bwf_std_format.h"
+#include "tscpp/util/ntsv.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -6688,7 +6689,7 @@ HttpTransact::will_this_request_self_loop(State *s)
         while ((count <= max_proxy_cycles) && (std::string_view::npos != (offset = current.find(uuid)))) {
           current.remove_prefix(offset + TS_UUID_STRING_LEN);
           count++;
-          TxnDebug("http_transact", "count = %d current = %.*s", count, static_cast<int>(current.length()), current.data());
+          TxnDebug("http_transact", "count = %d current = %s", count, ts::nt{current}.v());
         }
       }
 

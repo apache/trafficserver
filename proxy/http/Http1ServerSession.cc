@@ -32,6 +32,7 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/Allocator.h"
+#include "tscpp/util/ntsv.h"
 #include "Http1ServerSession.h"
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
@@ -118,7 +119,7 @@ Http1ServerSession::do_io_close(int alerrno)
     this->release_outbound_connection_tracking();
 
     if (debug_p) {
-      Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
+      Debug("http_ss", "%s", ts::nt{w}.v());
     }
 
     if (_vc) {
