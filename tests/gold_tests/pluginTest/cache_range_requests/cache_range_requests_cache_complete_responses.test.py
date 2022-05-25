@@ -420,7 +420,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
 
-# 9 Test - Fetch /naieve/obj with a *different* Range header; note the cache key changes and is a miss for the same object
+# 12 Test - Fetch /naieve/obj with a *different* Range header; note the cache key changes and is a miss for the same object
 tr = Test.AddTestRun("cache miss on /naieve/obj")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777'
@@ -433,7 +433,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected cache key with bytes 444-777")
 tr.StillRunningAfter = ts
 
-# 10 Test - Fetch /naieve/obj with the prior Range header; now a cache hit but we've effectively cached /naieve/obj twice
+# 13 Test - Fetch /naieve/obj with the prior Range header; now a cache hit but we've effectively cached /naieve/obj twice
 # this is why a Range normalization strategy should _always_ be employed when using `--cache-complete-responses`
 tr = Test.AddTestRun("cache miss on /naieve/obj")
 ps = tr.Processes.Default
@@ -447,7 +447,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected cache key with bytes 444-777")
 tr.StillRunningAfter = ts
 
-# 11 Test - Fetch /naieve/obj with the original Range header (0-5000); still a cache hit
+# 14 Test - Fetch /naieve/obj with the original Range header (0-5000); still a cache hit
 tr = Test.AddTestRun("cache hit on /naieve/obj after requesting with a different Range")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000'
