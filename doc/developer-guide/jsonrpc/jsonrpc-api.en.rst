@@ -960,7 +960,7 @@ Request:
 
 Response:
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or a proper rpc error, check :ref:`jsonrpc-node-errors` for mode details.
 
 
 Validation:
@@ -1070,7 +1070,7 @@ Parameters
 Result
 ~~~~~~
 
-This api will only inform for errors during the metric update. Errors will be tracked down in the :cpp:class:`RPCErrorCode` field.
+This api will only inform for errors during the metric update. Errors will be tracked down in the `error` field.
 
 .. note::
 
@@ -1095,7 +1095,7 @@ Request:
 
 Response:
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
 
 
 .. _admin_host_set_status:
@@ -1164,7 +1164,7 @@ marking this reason as "down" in that case.
 Result
 ~~~~~~
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
 
 
 Examples
@@ -1260,7 +1260,7 @@ Parameters
 Result
 ~~~~~~
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
 
 
 Examples
@@ -1302,7 +1302,7 @@ Field                   Type          Description
 Result
 ~~~~~~
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
 
 .. note::
 
@@ -1380,7 +1380,7 @@ Field                   Type          Description
 Result
 ~~~~~~
 
-The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
+The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
 
 Examples
 ~~~~~~~~
@@ -1781,3 +1781,8 @@ Response:
          ]
       }
    }
+
+See also
+========
+
+:ref:`jsonrpc-node-errors`
