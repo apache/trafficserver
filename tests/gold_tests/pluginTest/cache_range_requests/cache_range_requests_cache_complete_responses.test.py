@@ -23,16 +23,20 @@ cache_range_requests cache-complete-responses test
 '''
 
 # Test description:
-# Two rounds of testing:
+# Three rounds of testing:
 #  Round 1:
 #   - seed the cache with an object that is smaller than the slice block size
 #   - issue requests with various ranges and validate responses are 200s
 #  Round 2:
 #   - seed the cache with an object that is larger than the slice block size
 #   - issue requests with various ranges and validate responses are 206s
-# Both rounds test cache miss, cache hit, and refresh hit scenarios
-# Use the cachekey plugin to add the `Range` request header to the cache key
-# Request content through the slice and cache_range_requests plugin with a 4MB slice block size
+# The first two rounds test cache miss, cache hit, and refresh hit scenarios
+#   - uses the cachekey plugin to add the `Range` request header to the cache key
+#   - requests content through the slice and cache_range_requests plugin with a 4MB slice block size
+#   - demonstrates how one might normalize the `Range` header to avoid cache pollution
+# The third round tests cache miss and hit scenarios without any other plugins
+#   - tests cache misses, then hits, using the same object but two different ranges
+#   - demonstrates why normalization of the `Range` header is required to prevent pollution
 
 Test.SkipUnless(
     Condition.PluginExists('cachekey.so'),
@@ -160,12 +164,62 @@ slice_reval_resp = {"headers":
                     "timestamp": "1469733493.993"
                     }
 
+naieve_req = {"headers":
+              "GET /naieve/obj HTTP/1.1\r\n" +
+              "Host: www.example.com\r\n" +
+              "Accept: */*\r\n" +
+              "UID: NAIEVE\r\n"
+              "\r\n",
+              "timestamp": "1469733493.993",
+              "body": ""
+              }
+
+naieve_resp = {"headers":
+               "HTTP/1.1 200 OK\r\n" +
+               "Cache-Control: max-age=1\r\n" +
+               "Connection: close\r\n" +
+               'Etag: "cad04ff4-56f4bc197ceda"\r\n' +
+               "\r\n",
+               "timestamp": "1469733493.993",
+               "body": small_body
+               }
+
+naieve_reval_req = {"headers":
+                    "GET /naieve/obj HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "Accept: */*\r\n" +
+                    "UID: NAIEVE-INM\r\n"
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
+
+naieve_reval_resp = {"headers":
+                     "HTTP/1.1 304 Not Modified\r\n" +
+                     "Cache-Control: max-age=10\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "cad04ff4-56f4bc197ceda"\r\n' +
+                     "\r\n",
+                     "timestamp": "1469733493.993"
+                     }
+
+
 server.addResponse("sessionlog.json", small_req, small_resp)
 server.addResponse("sessionlog.json", small_reval_req, small_reval_resp)
 server.addResponse("sessionlog.json", slice_req, slice_resp)
 server.addResponse("sessionlog.json", slice_reval_req, slice_reval_resp)
+server.addResponse("sessionlog.json", naieve_req, naieve_resp)
+server.addResponse("sessionlog.json", naieve_reval_req, naieve_reval_resp)
 
-# remap with slice, cachekey, and the cache range requests plugin
+# remap with the cache range requests plugin only
+# this is a "naieve" configuration due to the lack of range normalization performed at remap time by slice
+# this config should only be used if ranges have been reliably normalized by the requestor (either the client itself or a cache)
+ts.Disk.remap_config.AddLines([
+    f'map http://example.com/naieve http://127.0.0.1:{server.Variables.Port}/naieve \\' +
+    ' @plugin=cache_range_requests.so @pparam=--cache-complete-responses',
+])
+
+# remap with slice, cachekey, and the cache range requests plugin to ensure range normalization and cache keys are correct
 ts.Disk.remap_config.AddLines([
     f'map http://example.com http://127.0.0.1:{server.Variables.Port} \\' +
     ' @plugin=slice.so @pparam=--blockbytes=4m \\',
@@ -183,7 +237,7 @@ ts.Disk.records_config.update({
 })
 
 # base cURL command
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
+curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache, x-cache-key"'.format(ts.Variables.port)
 
 # Test round 1: ensure we fetch and cache objects that are returned with a
 # 200 OK and no Content-Range when the object is smaller than the slice
@@ -199,6 +253,9 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 1 Test - Fetch /obj with a different range but less than 4MB
@@ -209,6 +266,9 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 2 Test - Revalidate /obj with a different range but less than 4MB
@@ -220,6 +280,9 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 3 Test - Fetch /obj with a different range but less than 4MB
@@ -230,6 +293,9 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # Test round 2: repeat, but ensure we have 206s and matching Content-Range
@@ -245,6 +311,9 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "Content-Range: bytes 0-5000/8388608",
     "expected Content-Range: bytes 0-5000/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 5 Test - Fetch /slice with a different range but less than 4MB
@@ -257,6 +326,9 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "Content-Range: bytes 5001-5999/8388608",
     "expected Content-Range: bytes 5001-5999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 6 Test - Revalidate /slice with a different range but less than 4MB
@@ -270,6 +342,9 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "Content-Range: bytes 0-403/8388608",
     "expected Content-Range: bytes 0-403/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
 # 7 Test - Fetch /slice with a different range but less than 4MB
@@ -282,4 +357,105 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "Content-Range: bytes 0-3999/8388608",
     "expected Content-Range: bytes 0-3999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "expected cache key with bytes 0-4194303")
+tr.StillRunningAfter = ts
+
+# Test round 3: test behavior of the cache range requests plugin when caching complete ranges *without* the slice and cachekey plugins
+# this tests the "naieve" case that requires range normalization to be
+# performed by the requestor and demonstrates how the cache can be
+# polluted without normalization
+
+# 8 Test - Fetch /naieve/obj with a Range header
+tr = Test.AddTestRun("cache miss on /naieve/obj")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "expected cache key with bytes 0-5000")
+tr.StillRunningAfter = ts
+
+# 9 Test - Fetch /naieve/obj with the same Range header
+tr = Test.AddTestRun("cache hit-fresh on /naieve/obj")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "expected cache key with bytes 0-5000")
+tr.StillRunningAfter = ts
+
+# 10 Test - Revalidate /naieve/obj with the same Range header
+tr = Test.AddTestRun("cache hit-stale on /naieve/obj")
+tr.DelayStart = 2
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE-INM" http://example.com/naieve/obj -r 0-5000'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "expected cache key with bytes 0-5000")
+tr.StillRunningAfter = ts
+
+# 11 Test - Fetch /naieve/obj with the same Range header
+tr = Test.AddTestRun("cache hit on /naieve/obj post revalidation")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "expected cache key with bytes 0-5000")
+tr.StillRunningAfter = ts
+
+# 9 Test - Fetch /naieve/obj with a *different* Range header; note the cache key changes and is a miss for the same object
+tr = Test.AddTestRun("cache miss on /naieve/obj")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=444-777",
+    "expected cache key with bytes 444-777")
+tr.StillRunningAfter = ts
+
+# 10 Test - Fetch /naieve/obj with the prior Range header; now a cache hit but we've effectively cached /naieve/obj twice
+# this is why a Range normalization strategy should _always_ be employed when using `--cache-complete-responses`
+tr = Test.AddTestRun("cache miss on /naieve/obj")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit-fresh")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=444-777",
+    "expected cache key with bytes 444-777")
+tr.StillRunningAfter = ts
+
+# 11 Test - Fetch /naieve/obj with the original Range header (0-5000); still a cache hit
+tr = Test.AddTestRun("cache hit on /naieve/obj after requesting with a different Range")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
