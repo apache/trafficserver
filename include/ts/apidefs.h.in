@@ -1485,6 +1485,9 @@ namespace ts
 /// object to perform certain validation.
 ///
 typedef struct TSRPCHandlerOptions_s {
+  struct Auth {
+    int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
+  } auth;
 } TSRPCHandlerOptions;
 
 #ifdef __cplusplus

@@ -139,8 +139,10 @@ HostStatus::HostStatus()
   ink_rwlock_init(&host_status_rwlock);
 
   // register JSON-RPC methods.
-  rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle, {});
-  rpc::add_method_handler("admin_host_get_status", &server_get_status, &rpc::core_ats_rpc_service_provider_handle, {});
+  rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_host_get_status", &server_get_status, &rpc::core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
 }
 
 HostStatus::~HostStatus()

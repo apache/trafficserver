@@ -101,8 +101,15 @@ Field Name                            Description
                                       this may have impacts in :program:`traffic_ctl`)
 ``backlog``                           Check https://man7.org/linux/man-pages/man2/listen.2.html
 ``max_retry_on_transient_errors``     Number of times the implementation is allowed to retry when a transient error is encountered.
-``restricted_api``                    If restricted, the Unix Domain Socket will be created with `0700` permissions, otherwise `0777`.
+``restricted_api``                    This setting specifies whether the jsonrpc node access should be restricted to root processes.
+                                      If this is set to ``false``, then on platforms that support passing process credentials, non-root
+                                      processes will be allowed to make read-only JSONRPC calls. Any calls that modify server state
+                                      (eg. setting a configuration variable) will still be restricted to root processes. If set to ``true``
+                                      then only root processes will be allowed to perform any api call.
+                                      If restricted, the Unix Domain Socket will be created with `0700` permissions, otherwise `0777`.
                                       ``true`` by default.
+                                      In case of an unauthorized call is made, a corresponding rpc error will be returned, you can
+                                      check :ref:`jsonrpc-node-errors-unauthorized-action` for details about the errors.
 ===================================== =========================================================================================
 
 

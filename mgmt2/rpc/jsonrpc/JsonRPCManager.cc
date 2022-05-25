@@ -39,6 +39,7 @@ const std::string RPC_SERVICE_PROVIDER_KEY{"provider"};
 const std::string RPC_SERVICE_SCHEMA_KEY{"schema"};
 const std::string RPC_SERVICE_METHODS_KEY{"methods"};
 const std::string RPC_SERVICE_NOTIFICATIONS_KEY{"notifications"};
+const std::string RPC_SERVICE_PRIVILEGED_KEY{"privileged"};
 const std::string RPC_SERVICE_N_A_STR{"N/A"};
 
 // jsonrpc log tag.
@@ -81,14 +82,14 @@ JsonRPCManager::Dispatcher::register_service_descriptor_handler()
         [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
           return show_registered_handlers(id, req);
         },
-        &core_ats_rpc_service_provider_handle, {})) {
+        &core_ats_rpc_service_provider_handle, {{NON_RESTRICTED_API}})) {
     Warning("Handler already registered.");
   }
 
   if (!this->add_handler<Dispatcher::Method, MethodHandlerSignature>(
         "get_service_descriptor",
         [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> { return get_service_descriptor(id, req); },
-        &core_ats_rpc_service_provider_handle, {})) {
+        &core_ats_rpc_service_provider_handle, {{NON_RESTRICTED_API}})) {
     Warning("Handler already registered.");
   }
 }
@@ -332,7 +333,8 @@ JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, con
     } else {
       provider = RPC_SERVICE_N_A_STR;
     }
-    method[RPC_SERVICE_PROVIDER_KEY] = provider;
+    method[RPC_SERVICE_PROVIDER_KEY]   = provider;
+    method[RPC_SERVICE_PRIVILEGED_KEY] = handler.get_options().auth.restricted;
     YAML::Node schema{YAML::NodeType::Map}; // no schema for now, but we have a placeholder for it. Schema should provide
                                             // description and all the details about the call
     method[RPC_SERVICE_SCHEMA_KEY] = std::move(schema);

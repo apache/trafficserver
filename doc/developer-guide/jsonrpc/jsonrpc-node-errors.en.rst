@@ -110,5 +110,34 @@ Field           Message                                   Description
                                                           details about the error, in most cases are specified in the
                                                           ``data`` field.
 10              Unauthorized action                       The rpc method will not be invoked because the action is not
-                                                          permitted by some constraint or authorization issue.
+                                                          permitted by some constraint or authorization issue.Check
+                                                          :ref:`jsonrpc-node-errors-unauthorized-action` for mode details.
+=============== ========================================= =========================================================
+
+.. _jsonrpc-node-errors-unauthorized-action:
+
+Unauthorized action
+-------------------
+
+Under this error, the `data` field could be populated with the following errors, eventually more than one could be in set.
+
+.. code-block:: json
+
+   "data":[
+      {
+         "code":2,
+         "message":"Denied privileged API access for uid=XXX gid=XXX"
+      }
+   ]
+
+=============== ========================================= =========================================================
+Field           Message                                   Description
+=============== ========================================= =========================================================
+1               Error getting peer credentials: {}        Something happened while trying to get the peers credentials.
+                                                          The error string will show the error code(`errno`) returned by the
+                                                          server.
+2               Denied privileged API access for uid={}   Permission denied. Unix Socket credentials were checked and they haven't meet
+                gid={}                                    the required policy. The handler was configured as restricted
+                                                          and the socket credentials failed to validate. Check TBC for
+                                                          more information.
 =============== ========================================= =========================================================

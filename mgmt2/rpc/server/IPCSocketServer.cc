@@ -37,6 +37,8 @@
 #include "tscore/Diags.h"
 #include "tscore/bwf_std_format.h"
 #include "records/I_RecProcess.h"
+#include "tscore/ink_sock.h"
+#include "utils/MgmtSocket.h"
 
 #include <ts/ts.h>
 
@@ -46,6 +48,7 @@
 namespace
 {
 constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
+constexpr auto logTag = "rpc.net";
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();
@@ -72,8 +75,6 @@ poll_on_socket(Func &&check_poll_return, std::chrono::milliseconds timeout, int 
 
 namespace rpc::comm
 {
-static constexpr auto logTag = "rpc.net";
-
 IPCSocketServer::~IPCSocketServer()
 {
   unlink(_conf.sockPathName.c_str());
@@ -172,7 +173,11 @@ IPCSocketServer::run()
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
         const auto json = std::string{bw.data(), bw.size()};
-        rpc::Context ctx; // Further use.
+        rpc::Context ctx;
+        // we want to make sure the peer's credentials are ok.
+        ctx.get_auth().add_checker(
+          [&](TSRPCHandlerOptions const &opt, ts::Errata &errata) -> void { return late_check_peer_credentials(fd, opt, errata); });
+
         if (auto response = rpc::JsonRPCManager::instance().handle_call(ctx, json); response) {
           // seems a valid response.
           if (client.write(*response, ec); ec) {
@@ -261,7 +266,14 @@ IPCSocketServer::bind(std::error_code &ec)
     return;
   }
 
-  mode_t mode = _conf.restrictedAccessApi ? 00700 : 00777;
+  // If the socket is not administratively restricted, check whether we have platform
+  // support. Otherwise, default to making it restricted.
+  bool restricted{true};
+  if (!_conf.restrictedAccessApi) {
+    restricted = !mgmt_has_peereid();
+  }
+
+  mode_t mode = restricted ? 00700 : 00777;
   if (chmod(_conf.sockPathName.c_str(), mode) < 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
@@ -382,6 +394,25 @@ IPCSocketServer::Config::Config()
   lockPathName = Layout::relative_to(rundir, "jsonrpc20.lock");
   sockPathName = Layout::relative_to(rundir, "jsonrpc20.sock");
 }
+
+void
+IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, ts::Errata &errata) const
+{
+  ts::LocalBufferWriter<256> w;
+  // For privileged calls, ensure we have caller credentials and that the caller is privileged.
+  if (mgmt_has_peereid() && options.auth.restricted) {
+    uid_t euid = -1;
+    gid_t egid = -1;
+    if (mgmt_get_peereid(peedFd, &euid, &egid) == -1) {
+      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR),
+                  w.print("Error getting peer credentials: {}\0", ts::bwf::Errno{}).data());
+    } else if (euid != 0 && euid != geteuid()) {
+      errata.push(1, static_cast<int>(UnauthorizedErrorCode::PERMISSION_DENIED),
+                  w.print("Denied privileged API access for uid={} gid={}\0", euid, egid).data());
+    }
+  }
+}
+
 } // namespace rpc::comm
 
 namespace YAML

@@ -95,7 +95,7 @@ FileManager::FileManager()
                           [this](std::string_view const &id, const YAML::Node &req) -> ts::Rv<YAML::Node> {
                             return get_files_registry_rpc_endpoint(id, req);
                           },
-                          &rpc::core_ats_rpc_service_provider_handle, {});
+                          &rpc::core_ats_rpc_service_provider_handle, {{rpc::NON_RESTRICTED_API}});
 }
 
 // FileManager::~FileManager

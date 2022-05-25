@@ -29,6 +29,8 @@
 
 namespace rpc
 {
+const bool RESTRICTED_API{true};
+const bool NON_RESTRICTED_API{false};
 ///
 /// @brief RPC call context class.
 ///
