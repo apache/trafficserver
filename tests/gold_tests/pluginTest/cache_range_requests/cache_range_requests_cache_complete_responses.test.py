@@ -34,7 +34,7 @@ cache_range_requests cache-complete-responses test
 #   - uses the cachekey plugin to add the `Range` request header to the cache key
 #   - requests content through the slice and cache_range_requests plugin with a 4MB slice block size
 #   - demonstrates how one might normalize the `Range` header to avoid cache pollution
-# The third round tests cache miss and hit scenarios without any other plugins
+# The third round tests cache miss, hit, and refresh hit scenarios without any other plugins
 #   - tests cache misses, then hits, using the same object but two different ranges
 #   - demonstrates why normalization of the `Range` header is required to prevent pollution
 
@@ -435,7 +435,7 @@ tr.StillRunningAfter = ts
 
 # 13 Test - Fetch /naieve/obj with the prior Range header; now a cache hit but we've effectively cached /naieve/obj twice
 # this is why a Range normalization strategy should _always_ be employed when using `--cache-complete-responses`
-tr = Test.AddTestRun("cache miss on /naieve/obj")
+tr = Test.AddTestRun("cache hit on /naieve/obj")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777'
 ps.ReturnCode = 0
