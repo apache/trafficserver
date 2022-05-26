@@ -170,11 +170,7 @@ struct ServerStartDrainRequest : shared::rpc::ClientRequest {
   struct Params {
     bool waitForNewConnections{false};
   };
-  ServerStartDrainRequest(Params p)
-  {
-    super::method = "admin_server_start_drain";
-    super::params = p;
-  }
+  ServerStartDrainRequest(Params p) { super::params = p; }
   std::string
   get_method() const override
   {
@@ -187,7 +183,7 @@ struct ServerStopDrainRequest : shared::rpc::ClientRequest {
   std::string
   get_method() const override
   {
-    return "admin_server_start_drain";
+    return "admin_server_stop_drain";
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
