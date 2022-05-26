@@ -57,7 +57,7 @@ public:
     };
 
     if (nullptr == remap_id) {
-      TSError("[%s] no remap identifier specified for for stats, no stats will be used", PLUGIN_NAME);
+      TSError("[%s] no remap identifier specified for stats, no stats will be used", PLUGIN_NAME);
       return false;
     }
 

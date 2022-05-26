@@ -39,7 +39,7 @@ How it Works
 
 This plugin checks incoming requests for the "X-MoneyTrace" header.
 If the header is not present no further processing takes place.
-However if the header is present,  the plugin will check to to see if the
+However if the header is present,  the plugin will check to see if the
 request has been cached.  If so, the plugin will add the "X-Moneytrace"
 header from the incoming request to the cached response returned to the
 client as required by the money_trace protocol.  If the request has not

@@ -46,7 +46,7 @@ load_remap_file_func load_remap_file_cb = nullptr;
   Returns the length of the URL.
 
   Will replace the terminator with a '/' if this is a full URL and
-  there are no '/' in it after the the host.  This ensures that class
+  there are no '/' in it after the host.  This ensures that class
   URL parses the URL correctly.
 
 */

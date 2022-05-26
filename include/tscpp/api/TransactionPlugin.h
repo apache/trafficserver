@@ -94,7 +94,7 @@ public:
    *  callback, a default implementation will be used that will only resume the Transaction.
    *
    * \note For automatic destruction, you must either register dynamically allocated instances of
-   *  classes derived from this class with the the corresponding Transaction object (using
+   *  classes derived from this class with the corresponding Transaction object (using
    *  Transaction::addPlugin()), or register HOOK_TXN_CLOSE (but not both).
    *
    * @param HookType the type of hook you wish to register

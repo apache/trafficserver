@@ -490,7 +490,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
           break;
         }
       }
-      // try other rings per per the ring mode
+      // try other rings per the ring mode
       switch (ring_mode) {
       case PL_NH_ALTERNATE_RING:
         if (pRec && groups > 0) {

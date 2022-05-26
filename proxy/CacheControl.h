@@ -84,7 +84,7 @@ public:
   //    on which a parameter was set
   //   Used to tell if a parameter needs to
   //    be overridden by something that appeared
-  //    earlier in the the config file
+  //    earlier in the config file
   //
   int reval_line         = -1;
   int never_line         = -1;

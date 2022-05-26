@@ -83,7 +83,7 @@ namespace meta
   };
 
   /** This is the final case - it forces the super class hierarchy.
-   * After defining the cases using the indexed case arguments, this is used to to perform the call.
+   * After defining the cases using the indexed case arguments, this is used to perform the call.
    * To increase the hierarchy depth, change the template argument to a larger number.
    */
   static constexpr CaseTag<9> CaseArg{};
