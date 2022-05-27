@@ -79,7 +79,8 @@ X-CRR-IMS header support
     Consider using the header_rewrite plugin to protect the parent
 		from using this option as an attack vector against an origin.
 
-Object Cacheability:
+Object Cacheability
+
     Normally objects are forced into the cache by changing the status code in the
     response from the upstream host from 206 to 200. The default behavior is to
     perform this operation blindly without checking cacheability. Add the `-v`
@@ -95,3 +96,19 @@ Object Cacheability:
 
       <from-url> <to-url> @plugin=cache_range_requests.so @pparam=--verify-cacheability
       <from-url> <to-url> @plugin=cache_range_requests.so @pparam=-v
+
+Caching Complete Responses
+
+    To enable caching of complete responses, that is, a 200 OK instead of a 206 Partial
+    Content response, add the `-r` flag to the plugin parameters. By default, complete
+    responses are marked as uncacheable.
+
+    Global Plugin (plugin.config):
+
+      cache_range_requests.so --cache-complete-responses
+      cache_range_requests.so -r
+
+    Remap Plugin (remap.config):
+
+      <from-url> <to-url> @plugin=cache_range_requests.so @pparam=--cache-complete-responses
+      <from-url> <to-url> @plugin=cache_range_requests.so @pparam=-r
