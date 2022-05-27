@@ -254,7 +254,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -267,7 +267,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -281,7 +281,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -294,7 +294,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/obj",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -312,7 +312,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected Content-Range: bytes 0-5000/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -327,7 +327,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected Content-Range: bytes 5001-5999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -343,7 +343,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected Content-Range: bytes 0-403/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -358,7 +358,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
     "expected Content-Range: bytes 0-3999/8388608")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: /127.0.0.1/2005/Range:bytes=0-4194303/slice",
+    "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice",
     "expected cache key with bytes 0-4194303")
 tr.StillRunningAfter = ts
 
@@ -376,7 +376,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000",
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
 
@@ -389,7 +389,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000",
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
 
@@ -403,7 +403,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000",
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
 
@@ -416,7 +416,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000",
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
 
@@ -429,7 +429,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=444-777",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=444-777",
     "expected cache key with bytes 444-777")
 tr.StillRunningAfter = ts
 
@@ -443,7 +443,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit-fresh")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=444-777",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=444-777",
     "expected cache key with bytes 444-777")
 tr.StillRunningAfter = ts
 
@@ -456,6 +456,6 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "X-Cache-Key: http://127.0.0.1:2005/naieve/obj-bytes=0-5000",
+    "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000",
     "expected cache key with bytes 0-5000")
 tr.StillRunningAfter = ts
