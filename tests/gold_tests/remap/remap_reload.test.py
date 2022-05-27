@@ -56,28 +56,32 @@ tr_2.Disk.File(remap_cfg_path, typename="ats:config").AddLines([
     f"map http://alpha.ex http://alpha.ex:{pv_port}", f"map http://bravo.ex http://bravo.ex:{pv_port}"
 ])
 
-tr_3 = Test.AddTestRun("pause")
-tr_3.Processes.Default.Command = 'sleep 5'
 
-tr_4 = Test.AddTestRun("after first reload")
-tr_4.AddVerifierClientProcess("client_2", replay_file_2, http_ports=[tm.Variables.port])
+tr_3 = Test.AddTestRun("after first reload")
+await_config_reload = tr_3.Processes.Process('config_reload_failed', 'sleep 30')
+await_config_reload.Ready = When.FileContains(tm.Disk.diags_log.Name, "configuration is invalid")
+tr_3.AddVerifierClientProcess("client_2", replay_file_2, http_ports=[tm.Variables.port])
+tr_3.Processes.Default.StartBefore(await_config_reload)
 
-tr_5 = Test.AddTestRun("reload-succeed")
-tr_5.Processes.Default.Command = 'traffic_ctl config reload'
-tr_5.Processes.Default.Env = tm.Env
-tr_5.Disk.File(remap_cfg_path).WriteOn("")
-tr_5.Disk.File(remap_cfg_path,
+tr_4 = Test.AddTestRun("reload-succeed")
+tr_4.Processes.Default.Command = 'traffic_ctl config reload'
+tr_4.Processes.Default.Env = tm.Env
+tr_4.Disk.File(remap_cfg_path).WriteOn("")
+tr_4.Disk.File(remap_cfg_path,
                typename="ats:config").AddLines([f"map http://echo.ex http://echo.ex:{pv_port}",
                                                 f"map http://foxtrot.ex http://foxtrot.ex:{pv_port}",
                                                 f"map http://golf.ex http://golf.ex:{pv_port}",
                                                 f"map http://hotel.ex http://hotel.ex:{pv_port}",
                                                 f"map http://india.ex http://india.ex:{pv_port}"])
 
-tr_6 = Test.AddTestRun("pause")
-tr_6.Processes.Default.Command = 'sleep 5'
+tr_5 = Test.AddTestRun("post update charlie")
+await_config_reload = tr_5.Processes.Process('config_reload_succeeded', 'sleep 30')
+await_config_reload.Ready = When.FileContains(
+    tm.Disk.diags_log.Name,
+    "remap.config finished loading",
+    2)
+tr_5.Processes.Default.StartBefore(await_config_reload)
+tr_5.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])
 
-tr_7 = Test.AddTestRun("post update charlie")
-tr_7.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])
-
-tr_8 = Test.AddTestRun("post update golf")
-tr_8.AddVerifierClientProcess("client_4", replay_file_4, http_ports=[tm.Variables.port])
+tr_6 = Test.AddTestRun("post update golf")
+tr_6.AddVerifierClientProcess("client_4", replay_file_4, http_ports=[tm.Variables.port])
