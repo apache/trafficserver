@@ -2646,6 +2646,9 @@ tsapi TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
 //
 tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
 
+// Get some plugin details from the TSRemapPluginInfo
+tsapi void *TSRemapDLHandleGet(TSRemapPluginInfo plugin_info);
+
 // Override response behavior, and hard-set the state machine for whether to succeed or fail, and how.
 tsapi void TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action);
 

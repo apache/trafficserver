@@ -73,6 +73,11 @@ public:
   const fs::path &runtimePath() const;
   time_t modTime() const;
   void *dlOpenHandle() const;
+  void *
+  dlh() const
+  {
+    return _dlh;
+  }
 
   /* List used by the plugin factory */
   using self_type  = PluginDso; ///< Self reference type.
