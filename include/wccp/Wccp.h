@@ -177,7 +177,7 @@ public:
   self &setProtocol(uint8_t p); ///< Set protocol field to @a p.
 
   uint32_t getFlags() const;  ///< Get flags field.
-  self &setFlags(uint32_t f); ///< Set the flags flags in field to @a f.
+  self &setFlags(uint32_t f); ///< Set the flags in field to @a f.
   /// Set the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
   self &enableFlags(uint32_t f);

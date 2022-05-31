@@ -4664,7 +4664,7 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
 
   int ink_web_unescapify_string(...)
 
-  Takes a string that has has special characters turned to %AB format
+  Takes a string that has special characters turned to %AB format
   and converts them back to single special characters. See
   ink_web_escapify_string() above.
 

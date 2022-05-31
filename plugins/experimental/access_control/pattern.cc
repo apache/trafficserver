@@ -207,7 +207,7 @@ Pattern::process(const String &subject, StringVector &result)
 }
 
 /**
- * @brief PCRE matches a subject string against the the regex pattern.
+ * @brief PCRE matches a subject string against the regex pattern.
  * @param subject PCRE subject
  * @return true - matched, false - did not.
  */

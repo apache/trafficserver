@@ -74,7 +74,7 @@ CacheHostMatcher::PrintFunc(void *opaque_data)
 
 // void CacheHostMatcher::AllocateSpace(int num_entries)
 //
-//  Allocates the the HostLeaf and Data arrays
+//  Allocates the HostLeaf and Data arrays
 //
 void
 CacheHostMatcher::AllocateSpace(int num_entries)

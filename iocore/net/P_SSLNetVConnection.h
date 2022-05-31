@@ -323,7 +323,7 @@ public:
   const char *protocol_contains(std::string_view tag) const override;
 
   /**
-   * Populate the current object based on the socket information in in the
+   * Populate the current object based on the socket information in the
    * con parameter and the ssl object in the arg parameter
    * This is logic is invoked when the NetVC object is created in a new thread context
    */

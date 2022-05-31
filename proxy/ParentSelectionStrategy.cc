@@ -30,7 +30,7 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
   pRecord *pRec, *parents = result->rec->selection_strategy->getParents(result);
   int new_fail_count = 0;
 
-  //  Make sure that we are being called back with with a
+  //  Make sure that we are being called back with a
   //   result structure with a parent
   ink_assert(result->result == PARENT_SPECIFIED);
   if (result->result != PARENT_SPECIFIED) {
@@ -102,7 +102,7 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   pRecord *pRec, *parents = result->rec->selection_strategy->getParents(result);
   int num_parents = result->rec->selection_strategy->numParents(result);
 
-  //  Make sure that we are being called back with with a
+  //  Make sure that we are being called back with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
   ink_assert(result->result == PARENT_SPECIFIED);

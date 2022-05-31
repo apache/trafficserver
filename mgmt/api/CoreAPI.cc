@@ -856,7 +856,7 @@ EventIsActive(const char *event_name, bool *is_current)
  * only allow registering callbacks for general alarms.
  * Mimic remote side and have a separate structure (eg. hashtable) of
  * event callback functions for each type of event. The functions are also
- * stored in the the hashtable, not in the TM alarm processor model
+ * stored in the hashtable, not in the TM alarm processor model
  */
 TSMgmtError
 EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data)

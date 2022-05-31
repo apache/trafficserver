@@ -236,7 +236,7 @@ and sends it to the client.  If necessary it then skips over bytes in the
 first block and starts sending byte content, examining each block header
 and sends its bytes to the client until the client request is satisfied.
 
-Any extra bytes at the end of the last block are consumed by the the
+Any extra bytes at the end of the last block are consumed by the
 Slice plugin to allow cache_range_requests to finish the block fetch to
 ensure the block is cached.
 

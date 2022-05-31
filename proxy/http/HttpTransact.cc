@@ -1694,7 +1694,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   //   we see the scheme as http
   s->scheme = s->next_hop_scheme = URL_WKSIDX_HTTP;
 
-  // Set up a "fake" server server entry
+  // Set up a "fake" server entry
   update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, 0);
 
   // Also "fake" the info we'd normally get from
@@ -4107,9 +4107,8 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       s->api_server_response_ignore = true;
     }
     // s->cache_info.action = CACHE_PREPARE_TO_SERVE;
-    // xing xing in the tunneling case, need to check when the cache_read_vc is closed, make sure the cache_read_vc is closed
-    // right
-    // away
+    // xing in the tunneling case, need to check when the cache_read_vc is closed, make sure the cache_read_vc is closed
+    // right away
   }
 
   CacheVConnection *cw_vc = s->state_machine->get_cache_sm().cache_write_vc;
@@ -6653,7 +6652,7 @@ HttpTransact::will_this_request_self_loop(State *s)
 {
   // The self-loop detection for this ATS node will allow up to max_proxy_cycles
   // (each time it sees it returns to itself it is one cycle) before declaring a self-looping condition detected.
-  // If max_proxy_cycles is > 0 then then next-hop is disabled since --
+  // If max_proxy_cycles is > 0 then next-hop is disabled since --
   //   * if first cycle then it is alright okay
   //   * if not first cycle then will be detected by via string checking the next time that
   //     it enters the node

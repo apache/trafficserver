@@ -127,7 +127,7 @@ HostMatcher<Data, MatchResult>::PrintFunc(void *opaque_data)
 
 // void HostMatcher<Data,MatchResult>::AllocateSpace(int num_entries)
 //
-//  Allocates the the HostLeaf and Data arrays
+//  Allocates the HostLeaf and Data arrays
 //
 template <class Data, class MatchResult>
 void

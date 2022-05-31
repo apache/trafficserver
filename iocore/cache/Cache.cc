@@ -2901,7 +2901,7 @@ cplist_reconfigure()
            them equal */
         int64_t size_diff = (cp->disk_vols[disk_no]) ? largest_vol - cp->disk_vols[disk_no]->size : largest_vol;
         size_diff         = (size_diff < size_to_alloc) ? size_diff : size_to_alloc;
-        /* if size_diff == 0, then then the disks have volumes of the
+        /* if size_diff == 0, then the disks have volumes of the
            same sizes, so we don't need to balance the disks */
         if (size_diff == 0) {
           break;
@@ -3249,7 +3249,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCach
 }
 
 //----------------------------------------------------------------------------
-// Note: this should not be called from from the cluster processor, or bad
+// Note: this should not be called from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
 CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)

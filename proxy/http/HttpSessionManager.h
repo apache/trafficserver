@@ -95,7 +95,7 @@ public:
   */
   HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, PoolableSession *&server_session);
-  /** Release a session to to pool.
+  /** Release a session to the pool.
    */
   void releaseSession(PoolableSession *ss);
 

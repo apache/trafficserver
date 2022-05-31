@@ -1098,8 +1098,7 @@ Lrestart:
       Debug("cache_dir_sync", "sync started");
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
-         the serial serial causes the cache to recover more data
-         than necessary.
+         the serial number causes the cache to recover more data than necessary.
          The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
        */
       if (!vol->header->dirty) {

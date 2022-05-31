@@ -177,7 +177,7 @@ public:
 //   between HttpTransact & the parent selection code.  The following
 ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
-// used here to to set the number of ATSConsistentHashIter's
+// used here to set the number of ATSConsistentHashIter's
 // used in NextHopSelectionStrategy to limit the host group
 // size as well, group size is one to one with the number of rings
 constexpr const uint32_t MAX_GROUP_RINGS = 5;

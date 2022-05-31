@@ -83,7 +83,7 @@ public:
 
     //
     // If the url contains a query parameter redirect=1 we will send the
-    // user to to somewhere else. Obviously this is a silly example
+    // user to somewhere else. Obviously this is a silly example
     // since we should technically detect this long before the origin
     // request and prevent the origin request in the first place.
     //
