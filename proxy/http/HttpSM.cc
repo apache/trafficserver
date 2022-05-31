@@ -1322,7 +1322,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE:
-    // There are three reasons why the the tunnel could signal completed
+    // There are three reasons why the tunnel could signal completed
     //   1) there was error from the transform write
     //   2) there was an error from the data source
     //   3) the transform write completed before it sent
@@ -5072,7 +5072,7 @@ HttpSM::do_http_server_open(bool raw)
     }
 
     if (deny_request) {
-      if (is_debug_tag_set("ip-allow")) {
+      if (is_debug_tag_set("ip_allow")) {
         ip_text_buffer ipb;
         if (method != -1) {
           method_str     = hdrtoken_index_to_wks(method);
@@ -5082,7 +5082,7 @@ HttpSM::do_http_server_open(bool raw)
         }
         Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip, ipb, sizeof(ipb)),
                 acl.source_line());
-        SMDebug("ip-allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+        SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
                 ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
       }
       t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
@@ -8100,7 +8100,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
-      // of the the relative URI path as the host.
+      // of the relative URI path as the host.
       // Prepend a slash and parse again.
       char redirect_url_leading_slash[arg_redirect_len + 1];
       redirect_url_leading_slash[0] = '/';

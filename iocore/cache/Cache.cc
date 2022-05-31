@@ -454,6 +454,9 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
   if (field && !field->value_get_int64()) {
     f.allow_empty_doc = 1;
+    // Set the object size here to zero in case this is a cache replace where the new object
+    // length is zero but the old object was not.
+    ainfo->object_size_set(0);
   } else {
     f.allow_empty_doc = 0;
   }
@@ -2898,7 +2901,7 @@ cplist_reconfigure()
            them equal */
         int64_t size_diff = (cp->disk_vols[disk_no]) ? largest_vol - cp->disk_vols[disk_no]->size : largest_vol;
         size_diff         = (size_diff < size_to_alloc) ? size_diff : size_to_alloc;
-        /* if size_diff == 0, then then the disks have volumes of the
+        /* if size_diff == 0, then the disks have volumes of the
            same sizes, so we don't need to balance the disks */
         if (size_diff == 0) {
           break;
@@ -3246,7 +3249,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCach
 }
 
 //----------------------------------------------------------------------------
-// Note: this should not be called from from the cluster processor, or bad
+// Note: this should not be called from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
 CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)

@@ -69,7 +69,7 @@
  *   ip table - supports ip ranges.  A single ip address is treated as
  *       a range with the same beginning and end address.  The table is
  *       is divided up into a fixed number of  levels, indexed 8 bit
- *       boundaries, starting at the the high bit of the address.  Subsequent
+ *       boundaries, starting at the high bit of the address.  Subsequent
  *       levels are allocated only when needed.
  *
  ****************************************************************************/

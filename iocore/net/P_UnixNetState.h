@@ -30,7 +30,7 @@
 
    State information for a particular channel of a NetVConnection
    This information is private to the Net module.   It is only here
-   because of the the C++ compiler needs it to define NetVConnection.
+   because the C++ compiler needs it to define NetVConnection.
 
 
  ****************************************************************************/

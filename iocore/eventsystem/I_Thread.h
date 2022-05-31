@@ -112,7 +112,7 @@ public:
 
   virtual void set_specific() = 0;
 
-  static ink_thread_key thread_data_key;
+  static thread_local Thread *this_thread_ptr;
 
   // For THREAD_ALLOC
   ProxyAllocator eventAllocator;

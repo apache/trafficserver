@@ -999,7 +999,7 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
  * Removes the callback function from the remote side callback table.
  * After removing the callback function, needs to check which events now
  * no longer have any callbacks registered at all; sends an unregister callback
- * notification to TM so that TM knows that that event doesn't have any
+ * notification to TM so that TM knows that event doesn't have any
  * remote callbacks registered for it
  * Input: event_name - the event to unregister the callback from; if NULL,
  *                     unregisters the specified func from all events

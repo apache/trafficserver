@@ -226,7 +226,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         serving it to a client that can not handle it
   //      2) Transfer encoding is copied.  If the transfer encoding
   //         is changed for example by dechunking, the transfer encoding
-  //         should be modified when when the decision is made to dechunk it
+  //         should be modified when the decision is made to dechunk it
 
   for (auto &field : *new_hdr) {
     if (field.m_wks_idx == -1) {

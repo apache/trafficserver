@@ -290,7 +290,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
-    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %ld(%d), %d, %d", bucket, evacuate_size,
+    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
            (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     return nullptr;
   }
@@ -1682,7 +1682,7 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
   }
 }
 
-// main entry point for writing of of non-http documents
+// main entry point for writing of non-http documents
 Action *
 Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache,
                   const char *hostname, int host_len)

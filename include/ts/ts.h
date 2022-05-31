@@ -2188,10 +2188,39 @@ tsapi void TSDebug(const char *tag, const char *format_str, ...) TS_PRINTFLIKE(2
     @param ... Format arguments.
  */
 tsapi void TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...) TS_PRINTFLIKE(3, 4);
-extern int diags_on_for_plugins;
+extern int diags_on_for_plugins; /* Do not use directly. */
 #define TSDEBUG             \
   if (diags_on_for_plugins) \
   TSDebug
+
+extern char ts_new_debug_on_flag_; /* Do not use directly. */
+
+#define TSIsDbgCtlSet(ctlp__) (ts_new_debug_on_flag_ && ctlp__->on)
+
+/**
+    Output a debug line if the debug output control is turned on.
+
+    @param ctlp pointer to TSDbgCtl, returned by TSDbgCtlCreate().
+    @param ...  Format string and (optional) arguments.
+ */
+#define TSDbg(ctlp, ...)              \
+  do {                                \
+    if (TSIsDbgCtlSet(ctlp)) {        \
+      _TSDbg(ctlp->tag, __VA_ARGS__); \
+    }                                 \
+  } while (0)
+
+/**
+    Return a pointer for use with TSDbg().  For good performance,
+    this should be called in TSPluginInit() or TSRemapInit(), or in
+    static initialization in C++ (with the result stored in a
+    static pointer).
+
+    @param tag Debug tag for the control.
+ */
+tsapi TSDbgCtl const *TSDbgCtlCreate(char const *tag);
+
+void _TSDbg(const char *tag, const char *format_str, ...) TS_PRINTFLIKE(2, 3); /* Not for direct use. */
 
 /* --------------------------------------------------------------------------
    logging api */

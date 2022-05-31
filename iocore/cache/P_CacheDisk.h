@@ -46,7 +46,7 @@ struct CacheDisk;
 
 struct DiskVolBlock {
   uint64_t offset; // offset in bytes from the start of the disk
-  uint64_t len;    // length in in store blocks
+  uint64_t len;    // length in store blocks
   int number;
   unsigned int type : 3;
   unsigned int free : 1;

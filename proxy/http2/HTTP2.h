@@ -409,6 +409,7 @@ public:
   static uint32_t write_buffer_block_size;
   static float write_size_threshold;
   static uint32_t write_time_threshold;
+  static uint32_t buffer_water_mark;
 
   static void init();
 };

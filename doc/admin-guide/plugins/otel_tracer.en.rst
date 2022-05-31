@@ -82,9 +82,9 @@ opentelemetry-cpp
 ::
 
   cd
-  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.2.0.tar.gz
-  tar zxvf v1.2.0.tar.gz
-  cd opentelemetry-cpp-1.2.0
+  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.3.0.tar.gz
+  tar zxvf v1.3.0.tar.gz
+  cd opentelemetry-cpp-1.3.0
   mkdir build
   cd build
   cmake .. -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DWITH_JAEGER=OFF -DWITH_OTLP=ON -DWITH_OTLP_GRPC=OFF -DWITH_OTLP_HTTP=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON

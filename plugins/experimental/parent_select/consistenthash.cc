@@ -106,8 +106,6 @@ PLNextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &r
   }
 }
 
-PLNextHopConsistentHash::PLNextHopConsistentHash(const std::string_view name) : PLNextHopSelectionStrategy(name) {}
-
 PLNextHopConsistentHash::~PLNextHopConsistentHash()
 {
   PL_NH_Debug(PL_NH_DEBUG_TAG, "destructor called for strategy named: %s", strategy_name.c_str());
@@ -115,10 +113,10 @@ PLNextHopConsistentHash::~PLNextHopConsistentHash()
 
 #define PLUGIN_NAME "pparent_select"
 
-bool
-PLNextHopConsistentHash::Init(const YAML::Node &n)
+PLNextHopConsistentHash::PLNextHopConsistentHash(const std::string_view name, const YAML::Node &n)
+  : PLNextHopSelectionStrategy(name, n)
 {
-  TSDebug("pparent_select", "PLNextHopConsistentHash Init calling.");
+  TSDebug("pparent_select", "PLNextHopConsistentHash constructor calling.");
 
   ATSHash64Sip24 hash;
 
@@ -144,23 +142,9 @@ PLNextHopConsistentHash::Init(const YAML::Node &n)
       }
     }
   } catch (std::exception &ex) {
-    TSDebug(PLUGIN_NAME, "Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(),
-            ex.what());
-
-    PL_NH_Note("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(),
-               ex.what());
-    return false;
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
   }
-
-  TSDebug(PLUGIN_NAME, "PLNextHopConsistentHash::Init strat Init calling.");
-
-  bool result = PLNextHopSelectionStrategy::Init(n);
-  if (!result) {
-    TSDebug(PLUGIN_NAME, "PLNextHopConsistentHash::Init strat Init false.");
-    return false;
-  }
-
-  TSDebug(PLUGIN_NAME, "PLNextHopConsistentHash::Init strat Init called.");
 
   // load up the hash rings.
   for (uint32_t i = 0; i < groups; i++) {
@@ -187,22 +171,15 @@ PLNextHopConsistentHash::Init(const YAML::Node &n)
   if (ring_mode == PL_NH_PEERING_RING) {
     if (groups == 1) {
       if (!go_direct) {
-        PL_NH_Error("when ring mode is '%s', go_direct must be true when there is only one host group.", peering_rings.data());
-        return false;
+        throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
+                                    "' go_direct must be true when there is only one host group");
       }
     } else if (groups != 2) {
-      PL_NH_Error("when ring mode is '%s', requires two host groups (peering group and an upstream group),"
-                  " or just a single peering group with go_direct.",
-                  peering_rings.data());
-      return false;
+      throw std::invalid_argument(
+        "ring mode '" + std::string(peering_rings) +
+        "' requires two host groups (peering group and an upstream group), or a single peering group with go_direct");
     }
-    // if (policy_type != PL_NH_CONSISTENT_HASH) {
-    //   PL_NH_Error("ring mode '%s', is only implemented for a 'consistent_hash' policy.", peering_rings.data());
-    //   return false;
-    // }
   }
-
-  return true;
 }
 
 // returns a hash key calculated from the request and 'hash_key' configuration
@@ -513,7 +490,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
           break;
         }
       }
-      // try other rings per per the ring mode
+      // try other rings per the ring mode
       switch (ring_mode) {
       case PL_NH_ALTERNATE_RING:
         if (pRec && groups > 0) {

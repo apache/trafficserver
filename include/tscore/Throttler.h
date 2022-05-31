@@ -44,7 +44,7 @@
  *   returned false. The number of times the check has been called between
  *   these two times is provided in the suppressed_count output parameter.
  *
- *   2b. If is_throttled returns returns true, then not enough time has elapsed
+ *   2b. If is_throttled returns true, then not enough time has elapsed
  *   since the last time the operation returned true per the throttling
  *   interval. Thus the operation should be skipped or suppressed, depending
  *   upon the context.

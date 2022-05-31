@@ -31,9 +31,6 @@
  * authentication scheme does not require them.  This implementation is
  * intended for web-related use, and line breaks are not implemented.
  *
- * These routines return char*'s to malloc-ed strings.  The caller is
- * responsible for freeing the strings.
- *
  */
 // Encodes / Decodes into user supplied buffer.  Returns number of bytes decoded
 bool ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length);

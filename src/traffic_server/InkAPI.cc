@@ -24,15 +24,13 @@
 #include <cstdio>
 #include <atomic>
 #include <string_view>
-#include <tuple>
-#include <unordered_map>
-#include <string_view>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/PluginUserArgs.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
+#include "tscore/Diags.h"
 
 #include "InkAPIInternal.h"
 #include "Log.h"
@@ -7703,17 +7701,17 @@ ink_sanity_check_stat_structure(void *obj)
 int
 TSIsDebugTagSet(const char *t)
 {
-  return is_debug_tag_set(t);
+  return diags()->on_for_TSDebug(t);
 }
 
 void
 TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
-  if ((debug_flag && diags->on()) || is_debug_tag_set(tag)) {
+  if ((debug_flag && diags()->on_for_TSDebug()) || diags()->on_for_TSDebug(tag)) {
     va_list ap;
 
     va_start(ap, format_str);
-    diags->print_va(tag, DL_Diag, nullptr, format_str, ap);
+    diags()->print_va(tag, DL_Diag, nullptr, format_str, ap);
     va_end(ap);
   }
 }
@@ -7723,13 +7721,23 @@ TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 void
 TSDebug(const char *tag, const char *format_str, ...)
 {
-  if (is_debug_tag_set(tag)) {
+  if (diags()->on_for_TSDebug() && diags()->tag_activated(tag)) {
     va_list ap;
 
     va_start(ap, format_str);
-    diags->print_va(tag, DL_Diag, nullptr, format_str, ap);
+    diags()->print_va(tag, DL_Diag, nullptr, format_str, ap);
     va_end(ap);
   }
+}
+
+void
+_TSDbg(const char *tag, const char *format_str, ...)
+{
+  va_list ap;
+
+  va_start(ap, format_str);
+  diags()->print_va(tag, DL_Diag, nullptr, format_str, ap);
+  va_end(ap);
 }
 
 /**************************   Logging API   ****************************/
@@ -8789,6 +8797,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
     ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retries, conv);
+    break;
+  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->max_cache_open_write_retry_timeout, conv);
     break;
   case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
     ret = _memberp_to_generic(&overridableHttpConfig->redirect_use_orig_cache_key, conv);
@@ -10268,4 +10279,13 @@ TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return (TSIOBufferReader)sm->get_postbuf_clone_reader();
+}
+
+tsapi TSDbgCtl const *
+TSDbgCtlCreate(char const *tag)
+{
+  sdk_assert(tag != nullptr);
+  sdk_assert(*tag != '\0');
+
+  return DbgCtl::_get_ptr(tag);
 }

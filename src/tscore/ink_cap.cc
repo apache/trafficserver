@@ -46,7 +46,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 
 #define DEBUG_CREDENTIALS(tag)                                                                                               \
   do {                                                                                                                       \
-    if (is_debug_tag_set(tag)) {                                                                                             \
+    if (diags()->on(tag)) {                                                                                                  \
       uid_t uid = -1, euid = -1, suid = -1;                                                                                  \
       gid_t gid = -1, egid = -1, sgid = -1;                                                                                  \
       getresuid(&uid, &euid, &suid);                                                                                         \
@@ -60,7 +60,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 
 #define DEBUG_PRIVILEGES(tag)                                                                                    \
   do {                                                                                                           \
-    if (is_debug_tag_set(tag)) {                                                                                 \
+    if (diags()->on(tag)) {                                                                                      \
       cap_t caps      = cap_get_proc();                                                                          \
       char *caps_text = cap_to_text(caps, nullptr);                                                              \
       Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
@@ -74,7 +74,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 
 #define DEBUG_PRIVILEGES(tag)                                                                       \
   do {                                                                                              \
-    if (is_debug_tag_set(tag)) {                                                                    \
+    if (diags()->on(tag)) {                                                                         \
       Debug(tag, "caps='', core=%s, death signal=%d, thread=0x%llx", is_dumpable(), death_signal(), \
             (unsigned long long)pthread_self());                                                    \
     }                                                                                               \

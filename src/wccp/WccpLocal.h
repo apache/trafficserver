@@ -1095,7 +1095,7 @@ public:
   self &setProtocol(uint8_t p); ///< Set protocol field to @a p.
 
   uint32_t getFlags() const;  ///< Get flags field.
-  self &setFlags(uint32_t f); ///< Set the flags flags in field to @a f.
+  self &setFlags(uint32_t f); ///< Set the flags in field to @a f.
   /// Set the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
   self &enableFlags(uint32_t f);
@@ -1919,7 +1919,7 @@ namespace detail
 
     /** Check for active assignment.
 
-        An assignment is active if it is is current. This means either it
+        An assignment is active if it is current. This means either it
         was successfully generated on the cache side, or a valid assignment
         was received on the router side and has not expired.
 

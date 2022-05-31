@@ -47,7 +47,9 @@ TEST_CASE("CrypoHash", "[libts][CrypoHash]")
   // Compair to a known hash value
   if (CryptoContext::Setting == CryptoContext::SHA256) {
     REQUIRE(strlen(buffer) == sha256.size());
-    REQUIRE(memcmp(sha256.data(), buffer, sha256.size()) == 0);
+    if (strlen(buffer) == sha256.size()) {
+      REQUIRE(memcmp(sha256.data(), buffer, sha256.size()) == 0);
+    }
   } else {
     REQUIRE(strlen(buffer) == md5.size());
     REQUIRE(memcmp(md5.data(), buffer, md5.size()) == 0);

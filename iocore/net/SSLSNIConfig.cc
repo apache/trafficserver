@@ -49,7 +49,7 @@ SNIConfigParams::getPropertyConfig(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
   for (auto &&item : next_hop_list) {
-    if (pcre_exec(item.match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+    if (pcre_exec(item.match.get(), nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
       // Found a match
       nps = &item.prop;
       break;
@@ -123,7 +123,8 @@ SNIConfigParams::get(std::string_view servername) const
     int length = servername.length();
     if (retval.match == nullptr && length == 0) {
       return {&retval.actions, {}};
-    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
+    } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
+               offset >= 0) {
       if (offset == 1) {
         // first pair identify the portion of the subject string matched by the entire pattern
         if (ovector[0] == 0 && ovector[1] == length) {
@@ -156,14 +157,14 @@ SNIConfigParams::get(std::string_view servername) const
 int
 SNIConfigParams::Initialize()
 {
-  sni_filename = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.servername.filename"));
+  std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
 
-  Note("%s loading ...", sni_filename);
+  Note("%s loading ...", sni_filename.c_str());
 
   struct stat sbuf;
-  if (stat(sni_filename, &sbuf) == -1 && errno == ENOENT) {
-    Note("%s failed to load", sni_filename);
-    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename);
+  if (stat(sni_filename.c_str(), &sbuf) == -1 && errno == ENOENT) {
+    Note("%s failed to load", sni_filename.c_str());
+    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename.c_str());
     return 1;
   }
 
@@ -173,16 +174,16 @@ SNIConfigParams::Initialize()
     std::stringstream errMsg;
     errMsg << zret;
     if (TSSystemState::is_initializing()) {
-      Emergency("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+      Emergency("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     } else {
-      Error("%s failed to load: %s", sni_filename, errMsg.str().c_str());
+      Error("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     }
     return 1;
   }
   Y_sni = std::move(Y_sni_tmp);
 
   loadSNIConfig();
-  Note("%s finished loading", sni_filename);
+  Note("%s finished loading", sni_filename.c_str());
 
   return 0;
 }

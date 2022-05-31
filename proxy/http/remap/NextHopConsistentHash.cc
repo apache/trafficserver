@@ -83,8 +83,8 @@ NextHopConsistentHash::~NextHopConsistentHash()
   NH_Debug(NH_DEBUG_TAG, "destructor called for strategy named: %s", strategy_name.c_str());
 }
 
-bool
-NextHopConsistentHash::Init(ts::Yaml::Map &n)
+NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n)
+  : NextHopSelectionStrategy(name, policy, n)
 {
   ATSHash64Sip24 hash;
 
@@ -110,13 +110,8 @@ NextHopConsistentHash::Init(ts::Yaml::Map &n)
       }
     }
   } catch (std::exception &ex) {
-    NH_Note("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(), ex.what());
-    return false;
-  }
-
-  bool result = NextHopSelectionStrategy::Init(n);
-  if (!result) {
-    return false;
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
   }
 
   // load up the hash rings.
@@ -140,7 +135,6 @@ NextHopConsistentHash::Init(ts::Yaml::Map &n)
     hash.clear();
     rings.push_back(std::move(hash_ring));
   }
-  return true;
 }
 
 // returns a hash key calculated from the request and 'hash_key' configuration
@@ -381,7 +375,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
           break;
         }
       }
-      // try other rings per per the ring mode
+      // try other rings per the ring mode
       switch (ring_mode) {
       case NH_ALTERNATE_RING:
         if (pRec && groups > 0) {

@@ -21,6 +21,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#pragma once
+
 /** Hold a pending @c Action.
  *
  * This is modeled on smart pointer classes. This class wraps a pointer to

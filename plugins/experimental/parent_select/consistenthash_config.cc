@@ -66,14 +66,14 @@ TSNextHopSelectionStrategy *
 createStrategy(const std::string &name, const YAML::Node &node)
 {
   TSDebug(PLUGIN_NAME, "createStrategy %s calling.", name.c_str());
-  PLNextHopConsistentHash *st = new PLNextHopConsistentHash(name);
-  TSDebug(PLUGIN_NAME, "createStrategy %s newed %p.", name.c_str(), (void *)st);
-  if (!st->Init(node)) {
-    TSDebug(PLUGIN_NAME, "createStrategy %s init failed, returning nullptr.", name.c_str());
+  try {
+    PLNextHopConsistentHash *st = new PLNextHopConsistentHash(name, node);
+    TSDebug(PLUGIN_NAME, "createStrategy %s succeeded, returning object", name.c_str());
+    return st;
+  } catch (std::exception &ex) {
+    TSError("[%s] creating strategies '%s' threw '%s', returning nullptr", PLUGIN_NAME, name.c_str(), ex.what());
     return nullptr;
   }
-  TSDebug(PLUGIN_NAME, "createStrategy %s init succeeded, returning obj.", name.c_str());
-  return st;
 }
 
 // Caller takes ownership of the returned pointers in the map, and must call delete on them.
@@ -171,7 +171,7 @@ createStrategiesFromFile(const char *file)
 
 /*
  * loads the contents of a file into a std::stringstream document.  If the file has a '#include file'
- * directive, that 'file' is read into the document beginning at the the point where the
+ * directive, that 'file' is read into the document beginning at the point where the
  * '#include' was found. This allows the 'strategy' and 'hosts' yaml files to be separate.  The
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
  */

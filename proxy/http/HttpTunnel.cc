@@ -270,7 +270,7 @@ ChunkedHandler::read_trailer()
       } else if (ParseRules::is_lf(*tmp)) {
         // For a LF to signal we are done reading the
         //   trailer, the line must have either been blank
-        //   or must have have only had a CR on it
+        //   or must have only had a CR on it
         if (state == CHUNK_READ_TRAILER_CR || state == CHUNK_READ_TRAILER_BLANK) {
           state = CHUNK_READ_DONE;
           Debug("http_chunk", "completed read of trailers");
@@ -1139,7 +1139,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
     // If we were in PRECOMPLETE when this function was called
     // and we are doing chunking, then we just wrote the last
-    // chunk in the the function call above.  We are done with the
+    // chunk in the function call above.  We are done with the
     // tunnel.
     if (event == HTTP_TUNNEL_EVENT_PRECOMPLETE) {
       event = VC_EVENT_EOS;

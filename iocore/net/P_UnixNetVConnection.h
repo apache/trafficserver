@@ -252,7 +252,7 @@ public:
   int mainEvent(int event, Event *e);
   virtual int connectUp(EThread *t, int fd);
   /**
-   * Populate the current object based on the socket information in in the
+   * Populate the current object based on the socket information in the
    * con parameter.
    * This is logic is invoked when the NetVC object is created in a new thread context
    */
@@ -284,7 +284,7 @@ inline void
 UnixNetVConnection::set_remote_addr()
 {
   ats_ip_copy(&remote_addr, &con.addr);
-  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags()->test_override_ip(remote_addr));
   set_cont_flags(get_control_flags());
 }
 
@@ -292,7 +292,7 @@ inline void
 UnixNetVConnection::set_remote_addr(const sockaddr *new_sa)
 {
   ats_ip_copy(&remote_addr, new_sa);
-  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags()->test_override_ip(remote_addr));
   set_cont_flags(get_control_flags());
 }
 

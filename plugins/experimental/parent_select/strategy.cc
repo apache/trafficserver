@@ -55,22 +55,14 @@ const std::string_view peering_rings   = "peering_ring";
 const std::string_view active_health_check  = "active";
 const std::string_view passive_health_check = "passive";
 
-PLNextHopSelectionStrategy::PLNextHopSelectionStrategy(const std::string_view &name)
+PLNextHopSelectionStrategy::PLNextHopSelectionStrategy(const std::string_view &name, const YAML::Node &n) : strategy_name(name)
 {
-  strategy_name = name;
-}
-
-//
-// parse out the data for this strategy.
-//
-bool
-PLNextHopSelectionStrategy::Init(const YAML::Node &n)
-{
-  PL_NH_Debug(PL_NH_DEBUG_TAG, "calling Init()");
+  PL_NH_Debug(PL_NH_DEBUG_TAG, "PLNextHopSelectionStrategy constructor calling");
   std::string self_host;
   bool self_host_used = false;
 
   try {
+    // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (n["scheme"]) {
       auto scheme_val = n["scheme"].Scalar();
       if (scheme_val == "http") {
@@ -78,9 +70,7 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
       } else if (scheme_val == "https") {
         scheme = PL_NH_SCHEME_HTTPS;
       } else {
-        scheme = PL_NH_SCHEME_NONE;
-        PL_NH_Note("Invalid 'scheme' value, '%s', for the strategy named '%s', setting to PL_NH_SCHEME_NONE", scheme_val.c_str(),
-                   strategy_name.c_str());
+        PL_NH_Note("Invalid scheme '%s' for strategy '%s', setting to NONE", scheme_val.c_str(), strategy_name.c_str());
       }
     }
 
@@ -250,30 +240,9 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
       throw std::invalid_argument("self host (" + self_host + ") does not appear in the first (peer) group");
     }
   } catch (std::exception &ex) {
-    PL_NH_Note("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(),
-               ex.what());
-    return false;
+    throw std::invalid_argument("Error parsing strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
   }
-
-  if (ring_mode == PL_NH_PEERING_RING) {
-    if (groups == 1) {
-      if (!go_direct) {
-        PL_NH_Error("when ring mode is '%s', go_direct must be true when there is only one host group.", peering_rings.data());
-        return false;
-      }
-    } else if (groups != 2) {
-      PL_NH_Error("when ring mode is '%s', requires two host groups (peering group and an upstream group),"
-                  " or just a single peering group with go_direct.",
-                  peering_rings.data());
-      return false;
-    }
-    // if (policy_type != PL_NH_CONSISTENT_HASH) {
-    //   PL_NH_Error("ring mode '%s', is only implemented for a 'consistent_hash' policy.", peering_rings.data());
-    //   return false;
-    // }
-  }
-
-  return true;
 }
 
 bool
@@ -395,16 +364,16 @@ template <> struct convert<PLNHProtocol> {
   static bool
   decode(const Node &node, PLNHProtocol &nh)
   {
+    // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (node["scheme"]) {
-      if (node["scheme"].Scalar() == "http") {
+      const auto scheme_val = node["scheme"].Scalar();
+      if (scheme_val == "http") {
         nh.scheme = PL_NH_SCHEME_HTTP;
-      } else if (node["scheme"].Scalar() == "https") {
+      } else if (scheme_val == "https") {
         nh.scheme = PL_NH_SCHEME_HTTPS;
       } else {
-        throw YAML::ParserException(node["scheme"].Mark(), "no valid scheme defined, valid schemes are http or https");
+        PL_NH_Note("Invalid scheme '%s' for protocol, setting to NONE", scheme_val.c_str());
       }
-    } else {
-      throw YAML::ParserException(node["scheme"].Mark(), "no scheme defined, valid schemes are http or https");
     }
     if (node["port"]) {
       nh.port = node["port"].as<int>();

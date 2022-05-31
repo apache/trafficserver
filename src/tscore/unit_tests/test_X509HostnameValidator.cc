@@ -172,7 +172,7 @@ int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags            = new Diags("test_x509", nullptr, nullptr, blf);
+  DiagsPtr::set(new Diags("test_x509", nullptr, nullptr, blf));
   res_track_memory = 1;
 
   SSL_library_init();
