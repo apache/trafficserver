@@ -2814,6 +2814,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     obj = s->cache_info.object_read;
   }
 
+  if (obj == nullptr || !obj->valid()) {
+    HandleCacheOpenReadMiss(s);
+    return;
+  }
+
   // do we have to authenticate with the server before
   // sending back the cached response to the client?
   Authentication_t authentication_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, obj->response_get());
