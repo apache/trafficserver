@@ -502,7 +502,7 @@ PluginVC::process_write_side(bool other_side_call)
   if (act_on <= 0) {
     if (ntodo > 0) {
       // Notify the continuation that we are "disabling"
-      //  ourselves due to to nothing to write
+      //  ourselves due to nothing to write
       write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
     }
     return;
@@ -700,7 +700,7 @@ PluginVC::process_read_side(bool other_side_call)
 //   This function may only be called while holding
 //      this->mutex
 //
-//   Tries to close the and dealloc the the vc
+//   Tries to close the and dealloc the vc
 //
 void
 PluginVC::process_close()

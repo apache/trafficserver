@@ -375,7 +375,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
           break;
         }
       }
-      // try other rings per per the ring mode
+      // try other rings per the ring mode
       switch (ring_mode) {
       case NH_ALTERNATE_RING:
         if (pRec && groups > 0) {

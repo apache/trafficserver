@@ -1560,7 +1560,7 @@ LogAccess::marshal_client_req_http_method(char *buf)
   if (m_client_request) {
     str = const_cast<char *>(m_client_request->method_get(&alen));
 
-    // calculate the the padded length only if the actual length
+    // calculate the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
     // because marshal_mem should write the DEFAULT_STR to the
     // buffer if str is nil, and we need room for this.
@@ -1694,7 +1694,7 @@ LogAccess::marshal_client_req_url_scheme(char *buf)
     alen = strlen(str);
   }
 
-  // calculate the the padded length only if the actual length
+  // calculate the padded length only if the actual length
   // is not zero. We don't want the padded length to be zero
   // because marshal_mem should write the DEFAULT_STR to the
   // buffer if str is nil, and we need room for this.

@@ -196,7 +196,7 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 
   ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
 
-  // If the file is corrupt, ignore the the rest of the file.
+  // If the file is corrupt, ignore the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {
     Warning("Persistent statistics file records.stat is corrupted. Ignoring the rest of the file\n");
     return REC_ERR_FAIL;

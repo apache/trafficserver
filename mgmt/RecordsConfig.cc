@@ -624,7 +624,7 @@ static const RecordElement RecordsConfig[] =
   ,
   //       #  when_to_revalidate has 4 options:
   //       #
-  //       #  0 - default. use use cache directives or heuristic
+  //       #  0 - default. use cache directives or heuristic
   //       #  1 - stale if heuristic
   //       #  2 - always stale (always revalidate)
   //       #  3 - never stale

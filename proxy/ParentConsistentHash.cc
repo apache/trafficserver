@@ -368,7 +368,7 @@ ParentConsistentHash::markParentUp(ParentResult *result)
 {
   pRecord *pRec;
 
-  //  Make sure that we are being called back with with a
+  //  Make sure that we are being called back with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
   ink_assert(result->result == PARENT_SPECIFIED);

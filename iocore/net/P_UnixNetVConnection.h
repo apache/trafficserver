@@ -252,7 +252,7 @@ public:
   int mainEvent(int event, Event *e);
   virtual int connectUp(EThread *t, int fd);
   /**
-   * Populate the current object based on the socket information in in the
+   * Populate the current object based on the socket information in the
    * con parameter.
    * This is logic is invoked when the NetVC object is created in a new thread context
    */

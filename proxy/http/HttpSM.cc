@@ -1330,7 +1330,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE:
-    // There are three reasons why the the tunnel could signal completed
+    // There are three reasons why the tunnel could signal completed
     //   1) there was error from the transform write
     //   2) there was an error from the data source
     //   3) the transform write completed before it sent
@@ -8085,7 +8085,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
-      // of the the relative URI path as the host.
+      // of the relative URI path as the host.
       // Prepend a slash and parse again.
       char redirect_url_leading_slash[arg_redirect_len + 1];
       redirect_url_leading_slash[0] = '/';

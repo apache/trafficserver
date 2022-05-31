@@ -100,7 +100,7 @@ Then you would set :ts:cv:`proxy.config.ssl.CA.cert.filename` to client_CA_bundl
 
 Guidance for testing
 --------------------
-If you use curl to test your SNI-based Traffic Server configuration, you must make sure the the
+If you use curl to test your SNI-based Traffic Server configuration, you must make sure the
 SNI value is really set in the TLS Client Hello message.  If you use the |TS| name or address
 in the URL and explicitly set the host field (as shown below) to indicate the real domain, the
 SNI value will not be set to the host field value.  In the example below the SNI value will
