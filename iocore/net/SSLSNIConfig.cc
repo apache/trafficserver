@@ -87,6 +87,9 @@ SNIConfigParams::loadSNIConfig()
     if (!item.client_sni_policy.empty()) {
       ai->actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));
     }
+    if (item.http2_buffer_water_mark.has_value()) {
+      ai->actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
+    }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
