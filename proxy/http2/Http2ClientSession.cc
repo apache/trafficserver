@@ -26,6 +26,7 @@
 #include "tscore/ink_base64.h"
 #include "Http2CommonSessionInternal.h"
 #include "P_SSLNetVConnection.h"
+#include "TLSSNISupport.h"
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
@@ -116,9 +117,17 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_read_buffer_reader     = reader ? reader : this->read_buffer->alloc_reader();
 
   // This block size is the buffer size that we pass to SSLWriteBuffer
-  auto buffer_block_size_index   = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
-  this->write_buffer             = new_MIOBuffer(buffer_block_size_index);
-  this->write_buffer->water_mark = Http2::buffer_water_mark;
+  auto buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
+  this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
+
+  uint32_t buffer_water_mark;
+  TLSSNISupport *snis = dynamic_cast<TLSSNISupport *>(this->_vc);
+  if (snis && snis->hints_from_sni.http2_buffer_water_mark.has_value()) {
+    buffer_water_mark = snis->hints_from_sni.http2_buffer_water_mark.value();
+  } else {
+    buffer_water_mark = Http2::buffer_water_mark;
+  }
+  this->write_buffer->water_mark = buffer_water_mark;
 
   this->_write_buffer_reader  = this->write_buffer->alloc_reader();
   this->_write_size_threshold = index_to_buffer_size(buffer_block_size_index) * Http2::write_size_threshold;

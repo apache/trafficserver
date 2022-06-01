@@ -2047,7 +2047,7 @@ Security
    mismatch check is only performed if a relevant security policy for the SNI is set in :file:`sni.yaml`. The
    ``proxy.config.http.host_sni_policy`` :file:`records.config` value is used as the default value if either of these
    policies is set in the corresponding :file:`sni.yaml` file entry and the :file:`sni.yaml` entry does not override
-   this value via a :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
+   this value via a :ref:`host_sni_policy<override-host-sni-policy>` attribute.
 
 
 Cache Control
@@ -3832,7 +3832,7 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_policy<override-verify-server-policy>` attribute.
 
    You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
@@ -3849,7 +3849,7 @@ Client-Related Configuration
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties<override-verify-server-properties>` attribute.
 
    You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
 
@@ -4253,6 +4253,8 @@ HTTP/2 Configuration
 
    Specifies the high water mark for all HTTP/2 frames on an outoging connection.
    Default is -1 to preserve existing water marking behavior.
+
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`http2_buffer_water_mark <override-h2-properties>` attribute.
 
 HTTP/3 Configuration
 ====================

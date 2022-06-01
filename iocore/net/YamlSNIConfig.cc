@@ -143,6 +143,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_key,
                                                TS_client_sni_policy,
                                                TS_http2,
+                                               TS_http2_buffer_water_mark,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
                                                TS_valid_tls_versions_in,
@@ -172,6 +173,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
+    }
+    if (node[TS_http2_buffer_water_mark]) {
+      item.http2_buffer_water_mark = node[TS_http2_buffer_water_mark].as<int>();
     }
 
     // enum

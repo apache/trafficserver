@@ -98,6 +98,26 @@ private:
   bool enable_h2 = false;
 };
 
+class HTTP2BufferWaterMark : public ActionItem
+{
+public:
+  HTTP2BufferWaterMark(int value) : value(value) {}
+  ~HTTP2BufferWaterMark() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+    if (ssl_vc) {
+      ssl_vc->hints_from_sni.http2_buffer_water_mark = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
 class TunnelDestination : public ActionItem
 {
 public:
