@@ -25,7 +25,7 @@ replay_file_2 = "reload_2.replay.yaml"
 replay_file_3 = "reload_3.replay.yaml"
 replay_file_4 = "reload_4.replay.yaml"
 
-tm = Test.MakeATSProcess("tm", select_ports=True)
+tm = Test.MakeATSProcess("ts", select_ports=True)
 tm.Disk.diags_log.Content = Testers.ContainsExpression("remap.config failed to load", "Remap should fail to load")
 remap_cfg_path = os.path.join(tm.Variables.CONFIGDIR, 'remap.config')
 

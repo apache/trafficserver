@@ -30,7 +30,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", select_ports=True)
 
 ts.Disk.plugin_config.AddLine('remap_stats.so --post-remap-host')
 
