@@ -463,3 +463,6 @@ Changes with Apache Traffic Server 9.2.0
   #8850 - Fix Rocky Linux 8 arm64 GCC Compiler Warnings
   #8859 - Re-introduce import to get man_pages list available for sphinx.
   #8861 - Add missing configuration files man pages
+  #8868 - Update to Proxy Verifier v2.3.3
+  #8871 - Handle hit as miss when cach obj is invalid
+  #8875 - Expose setting some HTTP/2 tunables via sni.yaml (#8818)
