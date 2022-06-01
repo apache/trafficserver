@@ -10210,6 +10210,15 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }
 
+tsapi void *
+TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(plugin_info));
+  RemapPluginInfo *info = reinterpret_cast<RemapPluginInfo *>(plugin_info);
+
+  return info->dlh();
+}
+
 TSReturnCode
 TSHostnameIsSelf(const char *hostname, size_t hostname_len)
 {

@@ -134,6 +134,7 @@ RemapPluginInfo::init(std::string &error)
   ink_zero(ri);
   ri.size            = sizeof(ri);
   ri.tsremap_version = TSREMAP_VERSION;
+  ri.plugin_info     = reinterpret_cast<TSRemapPluginInfo>(this);
 
   setPluginContext();
 

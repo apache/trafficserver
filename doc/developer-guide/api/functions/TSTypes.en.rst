@@ -196,6 +196,16 @@ more widely. Those are described on this page.
       The API version of the C API. The lower 16 bits are the minor version, and the upper bits
       the major version.
 
+   .. member:: TSRemapPluginInfo plugin_info
+
+      An opaque object, which holds various details about the currently loaded and running
+      plugin. You can't access the details directly, but rather must call an acess function
+      such as :func:`TSRemapDLHandleGet`.
+
+.. type:: TSRemapPluginInfo
+
+   Opaque data passed to a remap plugin via :func:`TSRemapInit` in the `plugin_info` member above.
+
 .. type:: TSRemapRequestInfo
 
    Data passed to a remap plugin during the invocation of a remap rule.
