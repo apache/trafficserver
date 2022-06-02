@@ -52,7 +52,7 @@ enum LogFileFormat {
 class LogFormat : public RefCountObj
 {
 public:
-  LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0);
+  LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0, LogEscapeType escape_type = LOG_ESCAPE_NONE);
   LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec = 0);
   LogFormat(const LogFormat &rhs);
 
@@ -94,6 +94,11 @@ public:
   type() const
   {
     return m_format_type;
+  }
+  LogEscapeType
+  escape_type() const
+  {
+    return m_escape_type;
   }
   char *
   printf_str() const
@@ -158,6 +163,7 @@ private:
   bool m_aggregate;
   char *m_format_str;
   LogFormatType m_format_type;
+  LogEscapeType m_escape_type;
 
 public:
   LINK(LogFormat, link);

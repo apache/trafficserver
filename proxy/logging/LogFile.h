@@ -43,7 +43,7 @@ class LogFile : public LogBufferSink, public RefCountObj
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size = 4 * 9216,
-          size_t max_line_size = 9216, int pipe_buffer_size = 0);
+          size_t max_line_size = 9216, int pipe_buffer_size = 0, LogEscapeType escape_type = LOG_ESCAPE_NONE);
   LogFile(const LogFile &);
   ~LogFile() override;
 
@@ -83,6 +83,12 @@ public:
     return m_file_format;
   }
 
+  LogEscapeType
+  get_escape_type() const
+  {
+    return m_escape_type;
+  }
+
   const char *
   get_format_name() const
   {
@@ -120,6 +126,7 @@ public:
 
 private:
   char *m_name;
+  LogEscapeType m_escape_type;
 
 public:
   BaseLogFile *m_log; // BaseLogFile backs the actual file on disk

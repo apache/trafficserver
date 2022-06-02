@@ -643,6 +643,126 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   return -1;
 }
 
+static int
+escape_json(char *dest, const char *buf, int len)
+{
+  ink_assert(buf != nullptr);
+
+  int escaped_len = 0;
+
+  for (int i = 0; i < len; i++) {
+    char c = buf[i];
+    switch (c) {
+    case '"':
+    case '\\': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = c;
+      }
+      escaped_len += 2;
+      break;
+    }
+    case '\b': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = 'b';
+      }
+      escaped_len += 2;
+      break;
+    }
+    case '\f': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = 'f';
+      }
+      escaped_len += 2;
+      break;
+    }
+    case '\n': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = 'n';
+      }
+      escaped_len += 2;
+      break;
+    }
+    case '\r': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = 'r';
+      }
+      escaped_len += 2;
+      break;
+    }
+    case '\t': {
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = 't';
+      }
+      escaped_len += 2;
+      break;
+    }
+    default: {
+      if (c <= '\x1f') {
+        if (dest) {
+          *dest++ = '\\';
+          *dest++ = 'u';
+          *dest++ = '0';
+          *dest++ = '0';
+          *dest++ = '0' + (c >> 4);
+          int d   = c & 0x0f;
+          *dest++ = (d >= 10 ? 'a' + (d - 10) : '0' + d);
+        }
+        escaped_len += 6;
+      } else {
+        if (dest) {
+          *dest++ = c;
+        }
+        escaped_len++;
+      }
+      break;
+    }
+    }
+  }
+  return escaped_len;
+}
+
+int
+LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
+{
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
+
+  char *val_buf   = *buf;
+  int val_len     = static_cast<int>(::strlen(val_buf));
+  int escaped_len = escape_json(nullptr, val_buf, val_len);
+
+  *buf += LogAccess::strlen(val_buf); // this is how it was stored
+
+  if (slice && slice->m_enable) {
+    int offset, n;
+
+    n = slice->toStrOffset(val_len, &offset);
+    if (n <= 0) {
+      return 0;
+    }
+
+    if (n >= len) {
+      return -1;
+    }
+
+    escape_json(dest, (val_buf + offset), n);
+    return n;
+  }
+
+  if (escaped_len < len) {
+    escape_json(dest, val_buf, val_len);
+    return escaped_len;
+  }
+  return -1;
+}
+
 int
 LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
 {
@@ -801,6 +921,35 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
   p += res1;
   *p++     = ' ';
   int res2 = unmarshal_str(buf, p, len - res1 - 1, slice);
+  if (res2 < 0) {
+    return -1;
+  }
+  p += res2;
+  *p++     = ' ';
+  int res3 = unmarshal_http_version(buf, p, len - res1 - res2 - 2);
+  if (res3 < 0) {
+    return -1;
+  }
+  return res1 + res2 + res3 + 2;
+}
+
+int
+LogAccess::unmarshal_http_text_json(char **buf, char *dest, int len, LogSlice *slice)
+{
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
+
+  char *p = dest;
+
+  //    int res1 = unmarshal_http_method (buf, p, len);
+  int res1 = unmarshal_str_json(buf, p, len);
+  if (res1 < 0) {
+    return -1;
+  }
+  p += res1;
+  *p++     = ' ';
+  int res2 = unmarshal_str_json(buf, p, len - res1 - 1, slice);
   if (res2 < 0) {
     return -1;
   }
