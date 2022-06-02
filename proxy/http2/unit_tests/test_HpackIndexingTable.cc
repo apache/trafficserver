@@ -24,6 +24,8 @@
     limitations under the License.
  */
 
+#include <memory>
+
 #include "catch.hpp"
 
 #include "HPACK.h"
@@ -69,7 +71,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       HpackIndexingTable indexing_table(4096);
 
       for (const auto &i : indexed_test_case) {
-        ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+        std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
         headers->create(HTTP_TYPE_REQUEST);
         MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
         MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -222,7 +224,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         HpackIndexingTable indexing_table(4096);
 
         for (const auto &i : literal_test_case) {
-          ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+          std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
           headers->create(HTTP_TYPE_REQUEST);
           MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
           MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -347,7 +349,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     indexing_table.update_maximum_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
 
     for (unsigned int i = 0; i < sizeof(encoded_field_response_test_case) / sizeof(encoded_field_response_test_case[0]); i++) {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_RESPONSE);
 
       for (unsigned int j = 0; j < sizeof(raw_field_response_test_case[i]) / sizeof(raw_field_response_test_case[i][0]); j++) {
@@ -365,7 +367,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
       memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
       uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
-      int64_t len      = hpack_encode_header_block(indexing_table, buf, buf_len, headers);
+      int64_t len      = hpack_encode_header_block(indexing_table, buf, buf_len, headers.get());
 
       REQUIRE(len > 0);
       REQUIRE(len == encoded_field_response_test_case[i].encoded_field_len);
@@ -453,10 +455,10 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     HpackIndexingTable indexing_table(4096);
 
     for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_REQUEST);
 
-      hpack_decode_header_block(indexing_table, headers, encoded_field_request_test_case[i].encoded_field,
+      hpack_decode_header_block(indexing_table, headers.get(), encoded_field_request_test_case[i].encoded_field,
                                 encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
 
       for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
@@ -486,14 +488,15 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // add entries in dynamic table
     {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       // C.3.1.  First Request
       uint8_t data[] = {0x82, 0x86, 0x84, 0x41, 0x0f, 0x77, 0x77, 0x77, 0x2e, 0x65,
                         0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d};
 
-      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len =
+        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 4096);
       CHECK(indexing_table.size() == 57);
@@ -501,12 +504,13 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // clear all entries by setting a maximum size of 0
     {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x20};
 
-      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len =
+        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 0);
       CHECK(indexing_table.size() == 0);
@@ -514,12 +518,13 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // make the maximum size back to 4096
     {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x3f, 0xe1, 0x1f};
 
-      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len =
+        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
       CHECK(len == sizeof(data));
       CHECK(indexing_table.maximum_size() == 4096);
       CHECK(indexing_table.size() == 0);
@@ -527,12 +532,13 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     // error with exceeding the limit (MAX_TABLE_SIZE)
     {
-      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
       headers->create(HTTP_TYPE_REQUEST);
 
       uint8_t data[] = {0x3f, 0xe2, 0x1f};
 
-      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      int64_t len =
+        hpack_decode_header_block(indexing_table, headers.get(), data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
       CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
   }
