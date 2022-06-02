@@ -32,6 +32,7 @@
 #include "MIME.h"
 #include "tscore/Regex.h"
 #include "URL.h"
+#include <cstdio>
 
 /*
  You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering

@@ -47,6 +47,7 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <atomic>
+#include <algorithm>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K

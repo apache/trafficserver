@@ -25,6 +25,7 @@
 
 #include <strings.h>
 #include <cmath>
+#include <strings.h>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
