@@ -197,6 +197,8 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     this->read_vio.nbytes = bufindex;
     this->signal_read_event(VC_EVENT_READ_COMPLETE);
   } else {
+    // End of header but not end of stream, must have some body frames coming
+    this->has_body = true;
     this->signal_read_event(VC_EVENT_READ_READY);
   }
 }
@@ -1031,4 +1033,10 @@ Http2Stream::read_vio_read_avail()
   }
 
   return 0;
+}
+
+bool
+Http2Stream::has_request_body(int64_t content_length, bool is_chunked_set) const
+{
+  return has_body;
 }

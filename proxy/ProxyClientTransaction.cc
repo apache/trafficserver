@@ -127,3 +127,9 @@ ProxyClientTransaction::get_transaction_priority_dependence() const
 {
   return 0;
 }
+
+bool
+ProxyClientTransaction::has_request_body(int64_t request_content_length, bool is_chunked) const
+{
+  return request_content_length > 0 || is_chunked;
+}

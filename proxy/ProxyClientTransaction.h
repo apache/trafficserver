@@ -227,6 +227,9 @@ public:
   virtual int get_transaction_priority_dependence() const;
   virtual bool allow_half_open() const = 0;
 
+  // Returns true if there is a request body for this request
+  virtual bool has_request_body(int64_t content_length, bool is_chunked_set) const;
+
   virtual const char *
   get_protocol_string()
   {
