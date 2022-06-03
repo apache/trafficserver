@@ -429,7 +429,8 @@ public:
     int diags_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
     int diags_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
     int diags_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
-    diags()->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
+    diags()->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int,
+                                  diags_log_roll_size);
 
     if (diags()->should_roll_diagslog()) {
       Note("Rolled %s", diags_log_filename);
@@ -442,7 +443,7 @@ public:
       int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
       int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
       diags()->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
-                                   output_log_roll_size);
+                                     output_log_roll_size);
 
       if (diags()->should_roll_outputlog()) {
         Note("Rolled %s", traffic_out_name.c_str());
