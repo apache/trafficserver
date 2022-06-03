@@ -203,6 +203,7 @@ class IP4Addr {
 public:
   static constexpr size_t SIZE  = sizeof(in_addr_t);                                 ///< Size of IPv4 address in bytes.
   static constexpr size_t WIDTH = std::numeric_limits<unsigned char>::digits * SIZE; ///< # of bits in an address.
+
   static const self_type MIN;                                                        ///< Minimum value.
   static const self_type MAX;                                                        ///< Maximum value.
   static constexpr sa_family_t AF_value = AF_INET;                                   ///< Address family type.
@@ -350,8 +351,8 @@ protected:
  */
 class IP6Addr {
   using self_type = IP6Addr; ///< Self reference type.
-  friend class IP6Range;
 
+  friend class IP6Range;
   friend class IPMask;
 
 public:
@@ -361,34 +362,12 @@ public:
 
   using quad_type                 = uint16_t;                 ///< Size of one segment of an IPv6 address.
   static constexpr size_t N_QUADS = SIZE / sizeof(quad_type); ///< # of quads in an IPv6 address.
+  /// Number of bits per quad.
+  static constexpr size_t QUAD_WIDTH = std::numeric_limits<uint8_t>::digits * sizeof(quad_type);
 
   /// Direct access type for the address.
   /// Equivalent to the data type for data member @c s6_addr in @c in6_addr.
   using raw_type = std::array<uint8_t, SIZE>;
-
-  /// Direct access type for the address by quads (16 bits).
-  /// This corresponds to the elements of the text format of the address.
-  using quad_store_type = std::array<quad_type, N_QUADS>;
-
-  /// Number of bits per quad.
-  static constexpr size_t QUAD_WIDTH = std::numeric_limits<uint8_t>::digits * sizeof(quad_type);
-
-  /// A bit mask of all 1 bits the size of a quad.
-  static constexpr quad_type QUAD_MASK = ~quad_type{0};
-
-  /// Type used as a "word", the natural working unit of the address.
-  using word_type = uint64_t;
-
-  static constexpr size_t WORD_SIZE = sizeof(word_type);
-
-  /// Number of bits per word.
-  static constexpr size_t WORD_WIDTH = std::numeric_limits<uint8_t>::digits * WORD_SIZE;
-
-  /// Number of words used for basic address storage.
-  static constexpr size_t N_STORE = SIZE / WORD_SIZE;
-
-  /// Type used to store the address.
-  using word_store_type = std::array<word_type, N_STORE>;
 
   /// Minimum value of an address.
   static const self_type MIN;
@@ -531,6 +510,14 @@ public:
    */
   static void reorder(raw_type &dst, in6_addr const &src);
 
+  template < typename T > auto as_span() -> std::enable_if_t<swoc::meta::is_any_of_v<T, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>, swoc::MemSpan<T>> {
+    return swoc::MemSpan(_addr._store).template rebind<T>();
+  }
+
+  template < typename T > auto as_span() const -> std::enable_if_t<swoc::meta::is_any_of_v<typename std::remove_const_t<T>, std::byte, uint8_t, uint16_t, uint32_t, uint64_t>, swoc::MemSpan<T const>> {
+    return swoc::MemSpan<uint64_t const>(_addr._store).template rebind<T const>();
+  }
+
 protected:
   friend bool operator==(self_type const &, self_type const &);
 
@@ -539,6 +526,27 @@ protected:
   friend bool operator<(self_type const &, self_type const &);
 
   friend bool operator<=(self_type const &, self_type const &);
+
+  /// Direct access type for the address by quads (16 bits).
+  /// This corresponds to the elements of the text format of the address.
+  using quad_store_type = std::array<quad_type, N_QUADS>;
+
+  /// A bit mask of all 1 bits the size of a quad.
+  static constexpr quad_type QUAD_MASK = ~quad_type{0};
+
+  /// Type used as a "word", the natural working unit of the address.
+  using word_type = uint64_t;
+
+  static constexpr size_t WORD_SIZE = sizeof(word_type);
+
+  /// Number of bits per word.
+  static constexpr size_t WORD_WIDTH = std::numeric_limits<uint8_t>::digits * WORD_SIZE;
+
+  /// Number of words used for basic address storage.
+  static constexpr size_t N_STORE = SIZE / WORD_SIZE;
+
+  /// Type used to store the address.
+  using word_store_type = std::array<word_type, N_STORE>;
 
   /// Type for digging around inside the address, with the various forms of access.
   /// These are in sort of host order - @a _store elements are host order, but the
@@ -3339,3 +3347,29 @@ get(swoc::IPNet const &net) {
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
+
+namespace std {
+template <> struct hash<swoc::IP4Addr> {
+  uint32_t operator()(swoc::IP4Addr const &addr) const {
+    return addr.network_order();
+  }
+};
+
+template <> struct hash<swoc::IP6Addr> {
+  uint32_t operator()(swoc::IP6Addr const &addr) const {
+    // XOR the 64 chunks then XOR that down to 32 bits.
+    auto words = addr.as_span<uint64_t>();
+    union {
+      uint64_t w;
+      uint32_t n[2];
+    } x{words[0] ^ words[1]};
+    return x.n[0] ^ x.n[1];
+  }
+};
+
+template <> struct hash<swoc::IPAddr> {
+  uint32_t operator()(swoc::IPAddr const &addr) const {
+    return addr.is_ip4() ? hash<swoc::IP4Addr>()(addr.ip4()) : addr.is_ip6() ? hash<swoc::IP6Addr>()(addr.ip6()) : 0;
+  }
+};
+} // namespace std
