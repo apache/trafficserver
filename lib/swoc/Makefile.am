@@ -51,6 +51,7 @@ library_include_HEADERS = \
         include/swoc/swoc_meta.h \
         include/swoc/swoc_version.h\
         include/swoc/TextView.h \
+        include/swoc/Vectray.h \
         include/swoc/HashFNV.h
 
 clean-local:
