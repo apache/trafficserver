@@ -24,6 +24,7 @@
 #include "SSLStats.h"
 
 #include <cstring>
+#include <memory>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
 #define SSLSESSIONCACHE_STRINGIFY(x) SSLSESSIONCACHE_STRINGIFY0(x)
@@ -160,7 +161,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   // This could be moved to a function in charge of populating exdata
   exdata->curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
 
-  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
+  std::unique_ptr<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
 
   std::unique_lock w_lock(mutex, std::try_to_lock);
   if (!w_lock.owns_lock()) {
@@ -351,7 +352,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
   // Create the shared pointer to the session, with the custom deleter
   std::shared_ptr<SSL_SESSION> shared_sess(sess_ptr, SSLSessDeleter);
   ssl_curve_id curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
-  ats_scoped_obj<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
+  std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
   auto new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);

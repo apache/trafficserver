@@ -26,6 +26,9 @@
 
 
  ***************************************************************************/
+
+#include <memory>
+
 #include "tscore/ink_platform.h"
 
 #include "LogUtils.h"
@@ -69,7 +72,7 @@ LogFilter *
 LogFilter::parse(const char *name, Action action, const char *condition)
 {
   SimpleTokenizer tok(condition);
-  ats_scoped_obj<LogField> logfield;
+  std::unique_ptr<LogField> logfield;
 
   ink_release_assert(action != N_ACTIONS);
 
@@ -95,7 +98,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   }
 
   if (LogField *f = Log::global_field_list.find_by_symbol(field_str)) {
-    logfield = new LogField(*f);
+    logfield.reset(new LogField(*f));
   }
 
   if (!logfield) {
@@ -127,7 +130,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
         return nullptr;
       }
 
-      logfield = new LogField(fname, container);
+      logfield.reset(new LogField(fname, container));
       ink_assert(logfield != nullptr);
     }
   }
@@ -157,7 +160,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   switch (field_type) {
   case LogField::sINT:
-    filter = new LogFilterInt(name, logfield, action, oper, val_str);
+    filter = new LogFilterInt(name, logfield.get(), action, oper, val_str);
     break;
 
   case LogField::dINT:
@@ -165,11 +168,11 @@ LogFilter::parse(const char *name, Action action, const char *condition)
     return nullptr;
 
   case LogField::STRING:
-    filter = new LogFilterString(name, logfield, action, oper, val_str);
+    filter = new LogFilterString(name, logfield.get(), action, oper, val_str);
     break;
 
   case LogField::IP:
-    filter = new LogFilterIP(name, logfield, action, oper, val_str);
+    filter = new LogFilterIP(name, logfield.get(), action, oper, val_str);
     break;
 
   default:
