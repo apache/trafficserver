@@ -215,7 +215,7 @@ SslHdrParseOptions(int argc, const char **argv)
     {nullptr, 0, nullptr, 0},
   };
 
-  ats_scoped_obj<SslHdrInstance> hdr(new SslHdrInstance());
+  std::unique_ptr<SslHdrInstance> hdr(new SslHdrInstance());
 
   for (;;) {
     int opt;

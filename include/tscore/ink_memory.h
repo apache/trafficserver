@@ -236,7 +236,6 @@ can_safely_shift_left(T value, int num_places)
 
     @see ats_scoped_fd
     @see ats_scoped_mem
-    @see ats_scoped_obj
 
     For example, if you open a file descriptor and have to do other checks which result in having to call
     @c close in each @c if clause.
@@ -581,36 +580,6 @@ public:
   operator=(T *ptr)
   {
     super::operator=(ptr);
-    return *this;
-  }
-};
-
-/** Specialization of @c ats_scoped_resource for objects.
-    This handles a pointer to an object created by @c new and destroyed by @c delete.
-*/
-
-template <typename T /// Underlying (not pointer) type.
-          >
-class ats_scoped_obj : public ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T>>
-{
-public:
-  typedef ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T>> super; ///< Super type.
-  typedef ats_scoped_obj self;                                        ///< Self reference.
-
-  /// Default constructor - an empty container.
-  ats_scoped_obj() : super() {}
-  /// Construct with contained resource.
-  explicit ats_scoped_obj(T *obj) : super(obj) {}
-  self &
-  operator=(T *obj)
-  {
-    super::operator=(obj);
-    return *this;
-  }
-
-  T *
-  operator->() const
-  {
     return *this;
   }
 };
