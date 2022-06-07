@@ -23,13 +23,13 @@
 
 #include "Http3Config.h"
 
-int Http3Config::_config_id = 0;
+int ts::Http3Config::_config_id = 0;
 
 //
 // Http3ConfigParams
 //
 void
-Http3ConfigParams::initialize()
+ts::Http3ConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_header_table_size, "proxy.config.http3.header_table_size");
   REC_EstablishStaticConfigInt32U(this->_max_header_list_size, "proxy.config.http3.max_header_list_size");
@@ -39,31 +39,31 @@ Http3ConfigParams::initialize()
 }
 
 uint32_t
-Http3ConfigParams::header_table_size() const
+ts::Http3ConfigParams::header_table_size() const
 {
   return this->_header_table_size;
 }
 
 uint32_t
-Http3ConfigParams::max_header_list_size() const
+ts::Http3ConfigParams::max_header_list_size() const
 {
   return this->_max_header_list_size;
 }
 
 uint32_t
-Http3ConfigParams::qpack_blocked_streams() const
+ts::Http3ConfigParams::qpack_blocked_streams() const
 {
   return this->_qpack_blocked_streams;
 }
 
 uint32_t
-Http3ConfigParams::num_placeholders() const
+ts::Http3ConfigParams::num_placeholders() const
 {
   return this->_num_placeholders;
 }
 
 uint32_t
-Http3ConfigParams::max_settings() const
+ts::Http3ConfigParams::max_settings() const
 {
   return this->_max_settings;
 }
@@ -72,29 +72,29 @@ Http3ConfigParams::max_settings() const
 // Http3Config
 //
 void
-Http3Config::startup()
+ts::Http3Config::startup()
 {
   reconfigure();
 }
 
 void
-Http3Config::reconfigure()
+ts::Http3Config::reconfigure()
 {
   Http3ConfigParams *params;
   params = new Http3ConfigParams;
   // re-read configuration
   params->initialize();
-  Http3Config::_config_id = configProcessor.set(Http3Config::_config_id, params);
+  ts::Http3Config::_config_id = configProcessor.set(ts::Http3Config::_config_id, params);
 }
 
-Http3ConfigParams *
-Http3Config::acquire()
+ts::Http3ConfigParams *
+ts::Http3Config::acquire()
 {
-  return static_cast<Http3ConfigParams *>(configProcessor.get(Http3Config::_config_id));
+  return static_cast<ts::Http3ConfigParams *>(configProcessor.get(ts::Http3Config::_config_id));
 }
 
 void
-Http3Config::release(Http3ConfigParams *params)
+ts::Http3Config::release(Http3ConfigParams *params)
 {
-  configProcessor.release(Http3Config::_config_id, params);
+  configProcessor.release(ts::Http3Config::_config_id, params);
 }

@@ -396,7 +396,7 @@ Http3SettingsFramer::generate_frame()
 
   this->_is_sent = true;
 
-  Http3Config::scoped_config params;
+  ts::Http3Config::scoped_config params;
 
   Http3SettingsFrame *frame = http3SettingsFrameAllocator.alloc();
   new (frame) Http3SettingsFrame();

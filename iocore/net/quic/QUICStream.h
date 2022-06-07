@@ -44,7 +44,7 @@ class QUICStreamStateListener;
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
  */
-class QUICStream : public QUICFrameGenerator, public QUICFrameRetransmitter
+class QUICStream
 {
 public:
   QUICStream() {}
@@ -52,10 +52,20 @@ public:
   virtual ~QUICStream();
 
   QUICStreamId id() const;
+  const QUICConnectionInfoProvider *connection_info();
   QUICStreamDirection direction() const;
-  const QUICConnectionInfoProvider *connection_info() const;
   bool is_bidirectional() const;
-  QUICOffset final_offset() const;
+
+  virtual QUICOffset final_offset() const = 0;
+
+  virtual void stop_sending(QUICStreamErrorUPtr error) = 0;
+  virtual void reset(QUICStreamErrorUPtr error)        = 0;
+
+  /*
+   * QUICApplication need to call one of these functions when it process VC_EVENT_*
+   */
+  virtual void on_read() = 0;
+  virtual void on_eos()  = 0;
 
   /**
    * Set an adapter to read/write data from/to this stream
@@ -64,48 +74,12 @@ public:
    * to access data in the  way the applications wants.
    */
   void set_io_adapter(QUICStreamAdapter *adapter);
-
-  /*
-   * QUICApplication need to call one of these functions when it process VC_EVENT_*
-   */
-  virtual void on_read();
-  virtual void on_eos();
-
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
-  virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame);
-  virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
-  virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame);
-  virtual QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame);
-
-  QUICOffset reordered_bytes() const;
-  virtual QUICOffset largest_offset_received() const;
-  virtual QUICOffset largest_offset_sent() const;
-
-  virtual void stop_sending(QUICStreamErrorUPtr error);
-  virtual void reset(QUICStreamErrorUPtr error);
-
-  void set_state_listener(QUICStreamStateListener *listener);
-
-  LINK(QUICStream, link);
+  virtual void _on_adapter_updated(){};
 
 protected:
   QUICConnectionInfoProvider *_connection_info = nullptr;
   QUICStreamId _id                             = 0;
-  QUICOffset _send_offset                      = 0;
-  QUICOffset _reordered_bytes                  = 0;
-
-  QUICStreamAdapter *_adapter              = nullptr;
-  QUICStreamStateListener *_state_listener = nullptr;
-
-  virtual void _on_adapter_updated(){};
-
-  void _notify_state_change();
-
-  void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
-  void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
-  void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
-  void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
+  QUICStreamAdapter *_adapter                  = nullptr;
 };
 
 class QUICStreamStateListener

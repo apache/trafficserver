@@ -25,6 +25,8 @@
 
 #include "ProxyConfig.h"
 
+namespace ts
+{
 class Http3ConfigParams : public ConfigInfo
 {
 public:
@@ -60,3 +62,5 @@ public:
 private:
   static int _config_id;
 };
+
+} // namespace ts

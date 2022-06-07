@@ -29,7 +29,7 @@
 //
 QUICBidirectionalStream::QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                                                  uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-  : QUICStream(cinfo, sid),
+  : QUICStreamBase(cinfo, sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),

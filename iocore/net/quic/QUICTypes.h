@@ -51,8 +51,8 @@ using QUICFrameId      = uint64_t;
 // Note: Fix "Supported Version" field in test case of QUICPacketFactory_Create_VersionNegotiationPacket
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
+  0x00000001,
   0xff00001d,
-  0xff00001b,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSION1 = 0x1a2a3a4a;
 constexpr QUICVersion QUIC_EXERCISE_VERSION2 = 0x5a6a7a8a;

@@ -1437,6 +1437,16 @@ TS_CHECK_BROTLI
 # Check for optional luajit library
 TS_CHECK_LUAJIT
 
+# Check for optional quiche library
+TS_CHECK_QUICHE
+if test "${has_quiche}" = "1"; then
+enable_quic=yes
+## Doing these again for Quiche
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+TS_ARG_ENABLE_VAR([use], [quic])
+AC_SUBST(use_quic)
+fi
+
 #
 # Enable experimental/uri_signing plugin
 # This is here, instead of above, because it needs to know if PCRE is available.

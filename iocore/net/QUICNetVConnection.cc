@@ -453,7 +453,7 @@ QUICNetVConnection::start()
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
-  this->_stream_manager         = new QUICStreamManager(this->_context.get(), this->_application_map);
+  this->_stream_manager         = new QUICStreamManagerImpl(this->_context.get(), this->_application_map);
   this->_token_creator          = new QUICTokenCreator(this->_context.get());
 
   static constexpr int QUIC_STREAM_MANAGER_WEIGHT = QUICFrameGeneratorWeight::AFTER_DATA - 1;

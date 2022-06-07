@@ -492,9 +492,9 @@ Http3Transaction::_process_write_vio()
   bool all_done   = false;
   this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(), nwritten,
                                         all_done);
-  this->_info.write_vio->nbytes += nwritten;
+  this->_sent_bytes += nwritten;
   if (all_done) {
-    this->_info.write_vio->done();
+    this->_info.write_vio->nbytes = this->_sent_bytes;
   }
 
   return nwritten;

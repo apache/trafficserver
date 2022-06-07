@@ -1915,7 +1915,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
 #if TS_USE_QUIC == 1
-  Http3Config::startup();
+  ts::Http3Config::startup();
 #endif
 
   /* Set up the machine with the outbound address if that's set,

@@ -64,3 +64,7 @@ traffic_quic_traffic_quic_LDADD = \
 	@BORINGOCSP_LIBS@ \
 	@LIBPCRE@
 
+if USE_QUICHE
+traffic_quic_traffic_quic_LDADD += \
+  $(QUICHE_LIB)
+endif

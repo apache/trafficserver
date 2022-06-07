@@ -60,6 +60,26 @@ QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.
 
 QUICPollCont::~QUICPollCont() {}
 
+#if HAVE_QUICHE_H
+void
+QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
+{
+  UDPPacketInternal *p   = e->packet;
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
+
+  vc->read.triggered = 1;
+  vc->handle_received_packet(p);
+
+  // Push QUICNetVC into nethandler's enabled list
+  int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
+  if (!isin) {
+    nh->read_enable_list.push(vc);
+  }
+
+  // Note: We should free QUICPollEvent here since vc could be freed from other thread.
+  e->free();
+}
+#else
 void
 QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
@@ -118,6 +138,7 @@ QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
   // Note: We should free QUICPollEvent here since vc could be freed from other thread.
   e->free();
 }
+#endif
 
 //
 // QUICPollCont continuation which traverse the inQueue(ASLL)
@@ -128,7 +149,6 @@ int
 QUICPollCont::pollEvent(int, Event *)
 {
   ink_assert(this->mutex->thread_holding == this_thread());
-  uint8_t *buf;
   QUICPollEvent *e;
   NetHandler *nh = get_NetHandler(this->mutex->thread_holding);
 
@@ -147,6 +167,10 @@ QUICPollCont::pollEvent(int, Event *)
   }
 
   while ((e = result.pop())) {
+#if HAVE_QUICHE_H
+    this->_process_packet(e, nh);
+#else
+    uint8_t *buf;
     buf = reinterpret_cast<uint8_t *>(e->packet->getIOBlockChain()->buf());
     if (QUICInvariants::is_long_header(buf)) {
       // Long Header Packet with Connection ID, has a valid type value.
@@ -155,6 +179,7 @@ QUICPollCont::pollEvent(int, Event *)
       // Short Header Packet with Connection ID, has a valid type value.
       this->_process_short_header_packet(e, nh);
     }
+#endif
   }
 
   return EVENT_CONT;

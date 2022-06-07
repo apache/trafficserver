@@ -28,7 +28,7 @@
 // QUICSendStream
 //
 QUICSendStream::QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data)
-  : QUICStream(cinfo, sid), _remote_flow_controller(send_max_stream_data, _id), _state(nullptr, &this->_progress_sa)
+  : QUICStreamBase(cinfo, sid), _remote_flow_controller(send_max_stream_data, _id), _state(nullptr, &this->_progress_sa)
 {
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
                     this->_remote_flow_controller.current_limit());
@@ -241,7 +241,7 @@ QUICSendStream::reset(QUICStreamErrorUPtr error)
 //
 QUICReceiveStream::QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                                      uint64_t recv_max_stream_data)
-  : QUICStream(cinfo, sid),
+  : QUICStreamBase(cinfo, sid),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
     _state(this, nullptr)
