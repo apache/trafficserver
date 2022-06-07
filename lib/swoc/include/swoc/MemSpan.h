@@ -13,6 +13,7 @@
 #include <iosfwd>
 #include <iostream>
 #include <cstddef>
+#include <array>
 #include <string_view>
 #include <type_traits>
 #include <ratio>
@@ -32,6 +33,17 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
     avoid copying or allocation by allocating all needed memory at once and then working with it via
     instances of this class.
 
+    @note The issue of @c const correctness is tricky. Because this class is intended as a "smart"
+    pointer, its constancy does not carry over to its elements, just as a constant pointer doesn't
+    make its target constant. This makes it different than containers such as @c std::array or
+    @c std::vector. This means when creating an instance based on such containers the constancy of
+    the container affects the element type of the span. E.g.
+
+    - A @c std::array<T,N> maps to a @c MemSpan<T>
+    - A @c const @c std::array<T,N> maps to a @c MemSpan<const T>
+
+    For convenience a @c MemSpan<const T> can be constructed from a @c MemSpan<T> because this maintains
+    @c const correctness and models how a @c T @c const* can be constructed from a @c T* .
  */
 template <typename T> class MemSpan {
   using self_type = MemSpan; ///< Self reference type.
@@ -70,7 +82,47 @@ public:
    * @tparam N Number of elements in the array.
    * @param a The array.
    */
-  template <size_t N> MemSpan(T (&a)[N]);
+  template <auto N> MemSpan(T (&a)[N]);
+
+  /** Construct from constant @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   *
+   * @note Because the elements in a constant array are constant the span value type must be constant.
+   */
+  template < auto N, typename U
+           , typename META = std::enable_if_t<
+               std::conjunction_v<
+                 std::is_const<T>
+               , std::is_same<std::remove_const_t<U>, std::remove_const_t<T>>
+               >
+          >
+    > constexpr MemSpan(std::array<U, N> const& a);
+
+  /** Construct from a @c std::array.
+   *
+   * @tparam N Array size.
+   * @param a Array instance.
+   */
+  template <auto N> constexpr MemSpan(std::array<T, N> & a);
+
+  /** Construct a span of constant values from a span of non-constant.
+   *
+   * @tparam U Span types.
+   * @tparam META Metaprogramming type to control conversion existence.
+   * @param that Source span.
+   *
+   * This enables the standard conversion from non-const to const.
+   */
+  template < typename U
+           , typename META = std::enable_if_t<
+             std::conjunction_v<
+               std::is_const<T>
+               , std::is_same<U, std::remove_const_t<T>>
+   >>>
+   constexpr MemSpan(MemSpan<U> const& that) : _ptr(that.data()), _count(that.count()) {}
+
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -454,17 +506,23 @@ ptr_add(void *ptr, size_t count) {
   return static_cast<char *>(ptr) + count;
 }
 
-/** Functor to convert span types.
+/** Meta Function to check the type compatibility of two spans..
  *
  * @tparam T Source span type.
  * @tparam U Destination span type.
+ *
+ * The types are compatible if one is an integral multiple of the other, so the span divides evenly.
+ *
+ * @a U must not lose constancy compared to @a T.
  *
  * @internal More void handling. This can't go in @c MemSpan because template specialization is
  * invalid in class scope and this needs to be specialized for @c void.
  */
 template <typename T, typename U> struct is_span_compatible {
   /// @c true if the size of @a T is an integral multiple of the size of @a U or vice versa.
-  static constexpr bool value = std::ratio<sizeof(T), sizeof(U)>::num == 1 || std::ratio<sizeof(U), sizeof(T)>::num == 1;
+  static constexpr bool value =
+    (std::ratio<sizeof(T), sizeof(U)>::num == 1 || std::ratio<sizeof(U), sizeof(T)>::num == 1) &&
+    (std::is_const_v<U> || ! std::is_const_v<T>); // can't lose constancy.
   /** Compute the new size in units of @c sizeof(U).
    *
    * @param size Size in bytes.
@@ -489,7 +547,7 @@ is_span_compatible<T, U>::count(size_t size) {
 // Must specialize for rebinding to @c void because @c sizeof doesn't work. Rebinding from @c void
 // is handled by the @c MemSpan<void>::rebind specialization and doesn't use this mechanism.
 template <typename T> struct is_span_compatible<T, void> {
-  static constexpr bool value = true;
+  static constexpr bool value = ! std::is_const_v<T>;
   static size_t count(size_t size);
 };
 
@@ -595,9 +653,12 @@ template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr
 
 template <typename T> constexpr MemSpan<T>::MemSpan(T *first, T *last) : _ptr{first}, _count{detail::ptr_distance(first, last)} {}
 
-template <typename T> template <size_t N> MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
+template <typename T> template <auto N> MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
 
 template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
+
+template <typename T> template <auto N, typename U, typename META> constexpr MemSpan<T>::MemSpan(std::array<U,N> const& a) : _ptr{a.data()} , _count{a.size()} {}
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(std::array<T,N> & a) : _ptr{a.data()} , _count{a.size()} {}
 
 template <typename T>
 MemSpan<T> &
@@ -773,8 +834,9 @@ template <typename U>
 MemSpan<U>
 MemSpan<T>::rebind() const {
   static_assert(detail::is_span_compatible<T, U>::value,
-                "MemSpan only allows rebinding between types who sizes are integral multiples.");
-  return {static_cast<U *>(static_cast<void *>(_ptr)), detail::is_span_compatible<T, U>::count(this->size())};
+                "MemSpan only allows rebinding between types where the sizes are such that one is an integral multiple of the other.");
+  using VOID_PTR = std::conditional_t<std::is_const_v<U>, const void *, void*>;
+  return {static_cast<U *>(static_cast<VOID_PTR>(_ptr)), detail::is_span_compatible<T, U>::count(this->size())};
 }
 
 template <typename T>
@@ -918,6 +980,10 @@ inline std::string_view
 MemSpan<void>::view() const {
   return {static_cast<char const *>(_ptr), _size};
 }
+
+/// Deduction guide for constructing from a @c std::array.
+template<typename T, size_t N> MemSpan(std::array<T,N> &) -> MemSpan<T>;
+template<typename T, size_t N> MemSpan(std::array<T,N> const &) -> MemSpan<T const>;
 
 }} // namespace swoc::SWOC_VERSION_NS
 

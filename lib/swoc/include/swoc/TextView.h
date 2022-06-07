@@ -68,7 +68,7 @@ public:
    * If @a n is @c npos then @c ptr is presumed to be a C string and checked for length. If @c ptr
    * is @c nullptr the length is 0. Otherwise @c strlen is used to calculate the length.
    */
-  constexpr TextView(const char *ptr, size_t n) noexcept;
+  constexpr TextView(char const *ptr, size_t n) noexcept;
 
   /** Construct from a half open range [first, last).
    *
@@ -113,7 +113,7 @@ public:
    *
    * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
-  TextView(char *&src) : super_type(src) {}
+  TextView(char * & src) : super_type(src) {}
 
   /** Construct from a const C-string.
    *
@@ -121,7 +121,7 @@ public:
    *
    * @internal This is a reference because it is otherwise ambiguous with the array constructor.
    */
-  TextView(char const *&src) : super_type(src) {}
+  TextView(char const * & src) : super_type(src) {}
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -155,7 +155,7 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type &assign(char *&c_str);
+  self_type &assign(char * & c_str);
 
   /** Assign a view of the @a c_str
    *
@@ -164,7 +164,7 @@ public:
    *
    * @note @c c_str must be a null terminated string. The null byte is not included in the view.
    */
-  self_type &assign(char const *&c_str);
+  self_type &assign(char const * & c_str);
 
   /// Explicitly set the start @a ptr and size @a n of the view.
   self_type &assign(char const *ptr, size_t n);
@@ -179,6 +179,18 @@ public:
 
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
+
+  /** Assign literal string or array.
+
+   * All elements of the array are included in the view unless the last element is nul, in which case it is elided.
+   * If this is inappropriate then a constructor with an explicit size should be used.
+   *
+   * @code
+   *   tv.assign("A literal string");
+   * @endcode
+   * The last character in @a tv will be 'g'.
+  */
+  template <size_t N> self_type & assign(const char (&s)[N]) noexcept;
 
   /** Assign from any character container following STL standards.
    *
@@ -893,30 +905,30 @@ uintmax_t svtou(TextView src, TextView *parsed = nullptr, int base = 0);
  * @return The converted numeric value.
  *
  * This is a specialized function useful only where conversion performance is critical. It is used
- * inside @c svtoi for the common cases of 8, 10, and 16, therefore normally this isn't much more
+ * inside @c svtoi and @a svtou for the common cases of 8, 10, and 16, therefore normally this isn't much more
  * performant in those cases than just @c svtoi. Because of this only positive values are parsed.
  * If determining the radix from the text or signed value parsing is needed, used @c svtoi.
  *
- * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
- * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
- * @a src is updated in place by removing parsed characters. Parsing stops on the first invalid
- * digit, so any leading non-digit characters (e.g. whitespace) must already be removed. Overflow
- * is detected and the first digit that would overflow is not parsed, and the maximum value is
- * returned.
+ * @a src is updated in place to indicate what characters were parsed by removing them from the view
+ * Parsing stops on the first invalid digit, so any leading non-digit characters (e.g. whitespace)
+ * must already be removed. For overflow, all valid digits are consumed and the maximum value returned.
  */
-template <int N>
+template <int RADIX>
 uintmax_t
 svto_radix(swoc::TextView &src) {
-  static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
-  uintmax_t zret{0};
+  static_assert(0 < RADIX && RADIX <= 36, "Radix must be in the range 1..36");
+  static constexpr auto MAX = std::numeric_limits<uintmax_t>::max();
+  static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
+  uintmax_t zret = 0;
   int8_t v;
-  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < N) {
-    auto n = zret * N + v;
-    if (n < zret) { // overflow / wrap
-      return std::numeric_limits<uintmax_t>::max();
+  while (src.size() && (0 <= (v = swoc::svtoi_convert[uint8_t(*src)])) && v < RADIX) {
+    // Tweaked for performance - need to check range after @a RADIX multiply.
+    ++src; // Update view iff the character is parsed.
+    if (zret <= OVERFLOW_LIMIT && uintmax_t(v) <= MAX - (zret *= RADIX)) {
+      zret += v;
+    } else {
+      zret = MAX; // clamp to max - once set will always hit this case for subsequent input.
     }
-    zret = n;
-    ++src;
   }
   return zret;
 }
@@ -1006,8 +1018,8 @@ TextView::operator+=(size_t n) {
 }
 
 template <size_t N>
-inline TextView::self_type &
-TextView::operator=(const char (&s)[N]) {
+inline auto
+TextView::operator=(const char (&s)[N]) -> self_type & {
   return *this = self_type{s, s[N - 1] ? N : N - 1};
 }
 
@@ -1036,12 +1048,12 @@ TextView::operator=(const std::string &s) {
 }
 
 inline TextView &
-TextView::assign(char *&c_str) {
+TextView::assign(char * & c_str) {
   return this->assign(c_str, strlen(c_str));
 }
 
 inline TextView &
-TextView::assign(char const *&c_str) {
+TextView::assign(char const * & c_str) {
   return this->assign(c_str, strlen(c_str));
 }
 
@@ -1061,6 +1073,12 @@ inline TextView &
 TextView::assign(char const *b, char const *e) {
   *this = super_type(b, e - b);
   return *this;
+}
+
+template <size_t N>
+inline auto
+TextView::assign(char const (&s)[N]) noexcept -> self_type & {
+  return *this = self_type{s, s[N - 1] ? N : N - 1};
 }
 
 inline constexpr TextView

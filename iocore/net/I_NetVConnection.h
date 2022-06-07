@@ -228,8 +228,6 @@ struct NetVCOptions {
 
   bool tls_upstream = false;
 
-  /// Reset all values to defaults.
-
   /**
    * Set to DISABLED, PERFMISSIVE, or ENFORCED
    * Controls how the server certificate verification is handled
@@ -241,6 +239,8 @@ struct NetVCOptions {
    * Currently SIGNATURE and NAME
    */
   YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::NONE;
+
+  /// Reset all values to defaults.
   void reset();
 
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark = 0,

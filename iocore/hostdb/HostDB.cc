@@ -571,6 +571,7 @@ probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
 
   // If the record is stale, but we want to revalidate-- lets start that up
   if ((!ignore_timeout && r->is_ip_stale() && !r->reverse_dns) || (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
+    HOSTDB_INCREMENT_DYN_STAT(hostdb_total_serve_stale_stat);
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
       Debug("hostdb", "stale %u %u %u, using it and pending to refresh it", r->ip_interval(), r->ip_timestamp,
             r->ip_timeout_interval);
@@ -2090,6 +2091,9 @@ ink_hostdb_init(ts::ModuleVersion v)
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS, "proxy.process.hostdb.total_hits", RECD_INT, RECP_PERSISTENT,
                      (int)hostdb_total_hits_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(hostdb_rsb, RECT_PROCESS, "proxy.process.hostdb.total_serve_stale", RECD_INT, RECP_PERSISTENT,
+                     (int)hostdb_total_serve_stale_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS, "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_PERSISTENT, (int)hostdb_ttl_stat,
                      RecRawStatSyncAvg);
