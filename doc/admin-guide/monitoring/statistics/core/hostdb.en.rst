@@ -49,6 +49,15 @@ origin servers' hostnames prior to object revalidation or retrieval.
    satisfied by entries in the HostDB lookup cache, since statistics collection
    began.
 
+.. ts:stat:: global proxy.process.hostdb.total_serve_stale integer
+   :type: counter
+
+   Represents the total number of origin server name resolutions which were
+   satisfied by entries in the HostDB lookup cache while those entries were
+   stale, since statistics collection began. See
+   :ts:cv:`proxy.config.hostdb.serve_stale_for` for how this feature is
+   configured.
+
 .. ts:stat:: global proxy.process.hostdb.total_lookups integer
    :type: counter
 
