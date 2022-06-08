@@ -122,7 +122,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:de:i:lop:r:t:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:i:lp:r:t:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
