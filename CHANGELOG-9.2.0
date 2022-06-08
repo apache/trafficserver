@@ -313,7 +313,6 @@ Changes with Apache Traffic Server 9.2.0
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
   #8368 - TSSslSecretSet: Update SSL_CTX TLS Secrets
   #8372 - Add Au test for pqsi and pqsp log fields.
-  #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
   #8375 - Add a set-http-cntl operator for header_rewrite
   #8381 - Fix a potential H2 stall
@@ -346,16 +345,19 @@ Changes with Apache Traffic Server 9.2.0
   #8469 - Make factory.response_suppression_mode an overridable config
   #8473 - Serve stale content from child if parent returns invalid/marked down
   #8477 - Define TS_HTTP_VALUE_BROTLI and TS_HTTP_LEN_BROTLI
+  #8480 - Update HostDBContinuation timeout handling to clear pending queue.
   #8482 - Update control mechanism changes in lua plugin documentation
   #8483 - ssl_secret debug printing: print only the first 50 bytes
   #8484 - Serve stale content when DNS lookup fails
   #8485 - Adding a forward proxy AuTest.
+  #8488 - cache_range_requests plugin: don't require 206 Partial Content reason string
   #8489 - Better TLS Secrets Truncation.
   #8491 - Fix wording for jemalloc autoconf
   #8492 - When checking for SSL_set1_verify_cert_store, save/restore LIBS before manipulating LIBS
   #8497 - Block TS startup if configured body factory directory does not exist.
   #8498 - Use shared pointer to help with high memory utilization
   #8499 - tests: Adjust generated file paths to work within some restricted environments
+  #8501 - Improve option processing in cache promote
   #8506 - Add proxy.config.http2.stream_error_sampling_threshold
   #8507 - Add skipped log entries to troubleshooting FAQ in docs.
   #8508 - Makes proxy_serve_stale version independent
@@ -384,7 +386,6 @@ Changes with Apache Traffic Server 9.2.0
   #8594 - Propagate accept options to HTTP/2
   #8595 - Adds two overridable config variables to control parent mark downs.
   #8600 - Prevent calling SSL_set_session in the middle of handshake
-  #8603 - LogFilter: fix NULL termination check
   #8606 - Fixed a scoping bug that leads to "sticky" parent weights
   #8608 - Update to Proxy Verifier version v2.3.0
   #8609 - Don't use Http1ClientTransaction as an event handler
@@ -397,6 +398,7 @@ Changes with Apache Traffic Server 9.2.0
   #8649 - Fix plugin parent_select missing hostname len
   #8650 - Fix strategies to initialize scheme
   #8651 - Add parent_select plugin strategy caching
+  #8655 - money_trace: allow custom header, change span-id gen, opt to create if none
   #8656 - Cleanup strategy debug logs
   #8657 - Support transforming range requests when origin returns full resource.
   #8660 - Fix overflow conditions in prefetch plugin
@@ -450,19 +452,33 @@ Changes with Apache Traffic Server 9.2.0
   #8798 - Create clean exit path for traffic_manager on SIGTERM
   #8805 - remove pthread_*specific and replace with thread_local
   #8815 - Fedora/RHEL path layout for config.layout
+  #8816 - Add support for caching complete responses to the cache range requests plugin
   #8817 - Fix `COMPRESSION_ERROR` on valid HPACK input
   #8821 - Fixes leak of SNI config filename on load
   #8822 - Fixes leak of ssl_ocsp_response_path_only on reload
   #8827 - Fixes leak in SNIAction name globbing
+  #8828 - Fixes issues with the CRR plugin introduced in #8488
   #8829 - Fix a compile error
   #8831 - Fix parent_select optional scheme
+  #8832 - Make post-early-return Au test more robust.
   #8834 - Handle opentelemetry-cpp v1.3.0 upgrade for otel_tracer plugin
   #8835 - Remove incorrect comment from base64 functions
+  #8837 - Add compatibility define when building with OpenSSL3
+  #8838 - mkdfa.c is not being used and doesn't compile with gcc 12.1.1
   #8846 - Add `#pragma once` for PendingAction.h
   #8847 - Restore down nameservers after they come back online
   #8850 - Fix Rocky Linux 8 arm64 GCC Compiler Warnings
+  #8853 - Change parent_select Init func to constructor
+  #8855 - Allow for long Http* error.log lines
   #8859 - Re-introduce import to get man_pages list available for sphinx.
   #8861 - Add missing configuration files man pages
+  #8866 - Fix "is is" typos.
   #8868 - Update to Proxy Verifier v2.3.3
+  #8870 - Eliminate duplicate words.
   #8871 - Handle hit as miss when cach obj is invalid
+  #8873 - Add proxy.process.hostdb.total_serve_stale
   #8875 - Expose setting some HTTP/2 tunables via sni.yaml (#8818)
+  #8882 - Make ats_scoped_obj a synonym for std::unique_ptr .
+  #8884 - Upgrade to Proxy Verifier 2.4.0.
+  #8897 - Removed references to the throttle option from the slice plugin. (#8373)
+  #8898 - slice and cache_range_requests: allow header override (#8666)
