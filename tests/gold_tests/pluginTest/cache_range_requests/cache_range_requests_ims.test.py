@@ -88,10 +88,13 @@ res_full = {"headers":
 server.addResponse("sessionlog.json", req_full, res_full)
 
 # cache range requests plugin remap
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
+ts.Disk.remap_config.AddLines([
+    f'map http://ims http://127.0.0.1:{server.Variables.Port}' +
     ' @plugin=cache_range_requests.so @pparam=--consider-ims',
-)
+    f'map http://imsheader http://127.0.0.1:{server.Variables.Port}' +
+    ' @plugin=cache_range_requests.so @pparam=--consider-ims' +
+    ' @pparam=--ims-header=CrrIms',
+])
 
 # cache debug
 ts.Disk.plugin_config.AddLine('xdebug.so')
@@ -109,29 +112,40 @@ tr = Test.AddTestRun("0- range cache load")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://www.example.com/path -r 0-'
+ps.Command = curl_and_args + ' http://ims/path -r 0-'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
 
 
-# set up the IMS date field (go in the future) RFC 2616
-futuretime = time.time() + 100  # seconds
-futurestr = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(futuretime))
-
 # test inner range
 # 1 Test - Fetch range into cache
 tr = Test.AddTestRun("0- cache hit check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://www.example.com/path -r 0-'.format(futurestr)
+ps.Command = curl_and_args + ' http://ims/path -r 0-'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
 
+# set up the IMS date field (go in the future) RFC 2616
+futuretime = time.time() + 100  # seconds
+futurestr = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(futuretime))
+
 # 2 Test - Ensure X-CRR-IMS header results in hit-stale
 tr = Test.AddTestRun("0- range X-CRR-IMS check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://www.example.com/path -r 0- -H "X-CRR-IMS: {}"'.format(futurestr)
+ps.Command = curl_and_args + ' http://ims/path -r 0- -H "X-CRR-IMS: {}"'.format(futurestr)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
+tr.StillRunningAfter = ts
+
+futuretime += 10  # seconds
+futurestr = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(futuretime))
+
+# 3 Test - Ensure CrrIms header results in hit-stale
+tr = Test.AddTestRun("0- range CrrIms check, override header")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://imsheader/path -r 0- -H "CrrIms: {}"'.format(futurestr)
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts

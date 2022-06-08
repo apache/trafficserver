@@ -46,6 +46,9 @@ struct Config {
   enum RefType { First, Relative };
   RefType m_reftype{First}; // reference slice is relative to request
 
+  std::string m_skip_header;
+  std::string m_crr_ims_header;
+
   // Convert optarg to bytes
   static int64_t bytesFrom(char const *const valstr);
 
