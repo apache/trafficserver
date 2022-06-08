@@ -487,7 +487,8 @@ incoming/outgoing ports, and network interfaces used during transactions.
 ===== ============== ==========================================================
 Field Source         Description
 ===== ============== ==========================================================
-chi   Client         IP address of the client's host.
+chi   Client         IP address of the client's host. If :ref:`Proxy Protocol <proxy-protocol>`
+                     is used, this represents the IP address of the previous hop.
 chih  Client         IP address of the client's host, in hexadecimal.
 hii   Proxy          IP address for the proxy's incoming interface (to which
                      the client connected).

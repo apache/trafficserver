@@ -439,8 +439,7 @@ SSLNetVConnection::read_raw_data()
       // what we want now.
       void *payload = nullptr;
       if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
-        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured allowlist of trusted IPs - "
-                               "closing connection");
+        Debug("proxyprotocol", "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
         r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
         goto proxy_protocol_bypass;
       } else {
@@ -455,7 +454,6 @@ SSLNetVConnection::read_raw_data()
 
     if (this->has_proxy_protocol(buffer, &r)) {
       Debug("proxyprotocol", "ssl has proxy protocol header");
-      set_remote_addr(get_proxy_protocol_src_addr());
       if (is_debug_tag_set("proxyprotocol")) {
         IpEndpoint dst;
         dst.sa = *(this->get_proxy_protocol_dst_addr());
