@@ -643,85 +643,55 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   return -1;
 }
 
+static const char short_escapes[0x20] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 'b', 't', 'n', 0, 'f', 'r', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 static int
 escape_json(char *dest, const char *buf, int len)
 {
-  ink_assert(buf != nullptr);
-
   int escaped_len = 0;
 
   for (int i = 0; i < len; i++) {
     char c = buf[i];
-    switch (c) {
-    case '"':
-    case '\\': {
+    if (c == '\"' || c == '\\') {
       if (dest) {
         *dest++ = '\\';
         *dest++ = c;
       }
       escaped_len += 2;
-      break;
-    }
-    case '\b': {
+    } else if (c == '\x7f') {
       if (dest) {
         *dest++ = '\\';
-        *dest++ = 'b';
-      }
-      escaped_len += 2;
-      break;
-    }
-    case '\f': {
-      if (dest) {
-        *dest++ = '\\';
+        *dest++ = 'u';
+        *dest++ = '0';
+        *dest++ = '0';
+        *dest++ = '7';
         *dest++ = 'f';
       }
-      escaped_len += 2;
-      break;
-    }
-    case '\n': {
+      escaped_len += 6;
+    } else if (c >= '\x20') {
+      if (dest) {
+        *dest++ = c;
+      }
+      escaped_len++;
+    } else if (char b = short_escapes[c]; b != 0) {
       if (dest) {
         *dest++ = '\\';
-        *dest++ = 'n';
+        *dest++ = b;
       }
       escaped_len += 2;
-      break;
-    }
-    case '\r': {
+    } else {
       if (dest) {
         *dest++ = '\\';
-        *dest++ = 'r';
+        *dest++ = 'u';
+        *dest++ = '0';
+        *dest++ = '0';
+        *dest++ = '0' + (c >> 4);
+        int d   = c & 0x0f;
+        *dest++ = (d >= 10 ? 'a' + (d - 10) : '0' + d);
       }
-      escaped_len += 2;
-      break;
-    }
-    case '\t': {
-      if (dest) {
-        *dest++ = '\\';
-        *dest++ = 't';
-      }
-      escaped_len += 2;
-      break;
-    }
-    default: {
-      if (c <= '\x1f') {
-        if (dest) {
-          *dest++ = '\\';
-          *dest++ = 'u';
-          *dest++ = '0';
-          *dest++ = '0';
-          *dest++ = '0' + (c >> 4);
-          int d   = c & 0x0f;
-          *dest++ = (d >= 10 ? 'a' + (d - 10) : '0' + d);
-        }
-        escaped_len += 6;
-      } else {
-        if (dest) {
-          *dest++ = c;
-        }
-        escaped_len++;
-      }
-      break;
-    }
+      escaped_len += 6;
     }
   }
   return escaped_len;
