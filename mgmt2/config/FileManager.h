@@ -106,8 +106,6 @@ public:
       return isRequired;
     }
 
-    // FileManager *configFiles = nullptr; // Manager to notify on an update.
-
     // noncopyable
     ConfigManager(const ConfigManager &) = delete;
     ConfigManager &operator=(const ConfigManager &) = delete;
@@ -126,8 +124,10 @@ public:
 
   using CallbackType = std::function<ts::Errata(std::string const &, std::string const &)>;
 
-  FileManager();
   ~FileManager();
+  FileManager(const FileManager &obj) = delete;
+  FileManager &operator=(FileManager const &) = delete;
+
   void addFile(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                ConfigManager *parentConfig = nullptr);
 
@@ -156,6 +156,8 @@ public:
   }
 
 private:
+  FileManager();
+
   ink_mutex accessLock; // Protects bindings hashtable
   ConfigUpdateCbTable *_pluginCallbackList;
 
