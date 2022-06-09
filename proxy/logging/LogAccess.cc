@@ -706,12 +706,18 @@ escape_json(char *dest, const char *buf, int len)
     char ec = EscLookup::result(c);
     if (__builtin_expect(EscLookup::NO_ESCAPE == ec, 1)) {
       if (dest) {
+        if (escaped_len + 1 > len) {
+          break;
+        }
         *dest++ = c;
       }
       escaped_len++;
 
     } else if (EscLookup::LONG_ESCAPE == ec) {
       if (dest) {
+        if (escaped_len + 6 > len) {
+          break;
+        }
         *dest++ = '\\';
         *dest++ = 'u';
         *dest++ = '0';
@@ -723,6 +729,9 @@ escape_json(char *dest, const char *buf, int len)
 
     } else { // Short escape.
       if (dest) {
+        if (escaped_len + 2 > len) {
+          break;
+        }
         *dest++ = '\\';
         *dest++ = ec;
       }
@@ -735,6 +744,7 @@ escape_json(char *dest, const char *buf, int len)
 int
 LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
 {
+  Debug("log-escape", "unmarshal_str_json start, len=%d, slice=%p", len, slice);
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
@@ -748,7 +758,8 @@ LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
   if (slice && slice->m_enable) {
     int offset, n;
 
-    n = slice->toStrOffset(val_len, &offset);
+    n = slice->toStrOffset(escaped_len, &offset);
+    Debug("log-escape", "unmarshal_str_json start, n=%d, offset=%d", n, offset);
     if (n <= 0) {
       return 0;
     }
@@ -757,12 +768,11 @@ LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
       return -1;
     }
 
-    escape_json(dest, (val_buf + offset), n);
-    return n;
+    return escape_json(dest, (val_buf + offset), n);
   }
 
   if (escaped_len < len) {
-    escape_json(dest, val_buf, val_len);
+    escape_json(dest, val_buf, escaped_len);
     return escaped_len;
   }
   return -1;

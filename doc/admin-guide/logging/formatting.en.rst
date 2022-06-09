@@ -882,5 +882,7 @@ Some examples below ::
   '%<cqup[-10:]>' // the last 10 characters of <cqup>.
   '%<cqup[:-5]>'  // everything except the last 5 characters of <cqup>.
 
-Note the slicing is done before escaping log fields when ``escape`` in
-``format`` is set to ``json``.
+Note when ``escape`` in ``format`` is set to ``json``, the start is the
+position before escaping JSON strings, and escaped values are sliced at
+the length (= end - start). If slicing cuts in the middle of escaped
+characters, the whole character is removed.
