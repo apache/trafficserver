@@ -177,7 +177,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   form %<symbol>.
   -------------------------------------------------------------------------*/
 
-LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
+LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec, LogEscapeType escape_type)
   : m_interval_sec(0),
     m_interval_next(0),
     m_agg_marshal_space(nullptr),
@@ -189,7 +189,8 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
     m_field_count(0),
     m_printf_str(nullptr),
     m_aggregate(false),
-    m_format_str(nullptr)
+    m_format_str(nullptr),
+    m_escape_type(escape_type)
 {
   setup(name, format_str, interval_sec);
 
@@ -218,7 +219,8 @@ LogFormat::LogFormat(const LogFormat &rhs)
     m_printf_str(nullptr),
     m_aggregate(false),
     m_format_str(nullptr),
-    m_format_type(rhs.m_format_type)
+    m_format_type(rhs.m_format_type),
+    m_escape_type(rhs.m_escape_type)
 {
   if (m_valid) {
     if (m_format_type == LOG_FORMAT_TEXT) {

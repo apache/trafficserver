@@ -39,7 +39,8 @@ fairly simple: every format must contain a ``Format`` attribute, which is the
 string defining the contents of each line in the log, and may also contain an
 optional ``Interval`` attribute defining the log aggregation interval for
 any logs which use the format (see :ref:`admin-logging-type-summary` for more
-information).
+information). It may also contain an optional ``escape`` attribute defining the
+escape of log fields. Possible values for ``escape`` are ``json`` or ``none``.
 
 The return value from the ``format`` function is the log format object which
 may then be supplied to the appropriate ``log.*`` functions that define your
@@ -877,3 +878,8 @@ Some examples below ::
   '%<cqup[0:30]>' // the first 30 characters of <cqup>.
   '%<cqup[-10:]>' // the last 10 characters of <cqup>.
   '%<cqup[:-5]>'  // everything except the last 5 characters of <cqup>.
+
+Note when ``escape`` in ``format`` is set to ``json``, the start is the
+position before escaping JSON strings, and escaped values are sliced at
+the length (= end - start). If slicing cuts in the middle of escaped
+characters, the whole character is removed.

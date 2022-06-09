@@ -32,6 +32,8 @@
 #include "LogFieldAliasMap.h"
 #include "Milestones.h"
 
+enum LogEscapeType { LOG_ESCAPE_NONE, LOG_ESCAPE_JSON };
+
 class LogAccess;
 
 struct LogSlice {
@@ -133,7 +135,7 @@ public:
   unsigned marshal_len(LogAccess *lad);
   unsigned marshal(LogAccess *lad, char *buf);
   unsigned marshal_agg(char *buf);
-  unsigned unmarshal(char **buf, char *dest, int len);
+  unsigned unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type = LOG_ESCAPE_NONE);
   void display(FILE *fd = stdout);
   bool operator==(LogField &rhs);
   void updateField(LogAccess *lad, char *val, int len);

@@ -592,12 +592,19 @@ LogField::marshal_agg(char *buf)
   string that represents the ASCII value of the field.
   -------------------------------------------------------------------------*/
 unsigned
-LogField::unmarshal(char **buf, char *dest, int len)
+LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
 {
   if (!m_alias_map) {
     if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str) ||
         m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
       UnmarshalFuncWithSlice func = reinterpret_cast<UnmarshalFuncWithSlice>(m_unmarshal_func);
+      if (escape_type == LOG_ESCAPE_JSON) {
+        if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str)) {
+          func = reinterpret_cast<UnmarshalFuncWithSlice>(LogAccess::unmarshal_str_json);
+        } else if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
+          func = reinterpret_cast<UnmarshalFuncWithSlice>(LogAccess::unmarshal_http_text_json);
+        }
+      }
       return (*func)(buf, dest, len, &m_slice);
     }
     return (*m_unmarshal_func)(buf, dest, len);
