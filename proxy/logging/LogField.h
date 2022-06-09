@@ -82,6 +82,12 @@ public:
   typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   typedef void (LogAccess::*SetFunc)(char *buf, int len);
 
+  static UnmarshalFunc
+  castToUnmarshalFunc(UnmarshalFuncWithSlice func)
+  {
+    return reinterpret_cast<UnmarshalFunc>(func);
+  }
+
   enum Type {
     sINT = 0,
     dINT,

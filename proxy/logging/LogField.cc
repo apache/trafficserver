@@ -348,7 +348,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case ESSH:
   case ECSSH:
   case SCFG:
-    m_unmarshal_func = reinterpret_cast<UnmarshalFunc>(&(LogAccess::unmarshal_str));
+    m_unmarshal_func = castToUnmarshalFunc(&(LogAccess::unmarshal_str));
     break;
 
   case ICFG:
@@ -595,8 +595,8 @@ unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
   if (!m_alias_map) {
-    if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str) ||
-        m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
+    if (m_unmarshal_func == castToUnmarshalFunc(LogAccess::unmarshal_str) ||
+        m_unmarshal_func == castToUnmarshalFunc(LogAccess::unmarshal_http_text)) {
       UnmarshalFuncWithSlice func = reinterpret_cast<UnmarshalFuncWithSlice>(m_unmarshal_func);
       return (*func)(buf, dest, len, &m_slice);
     }
