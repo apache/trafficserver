@@ -678,14 +678,14 @@ EscLookup::_LUT::_LUT()
 
   // Short escapes.
   //
-  table['\b'] = 'b';
-  table['\t'] = 't';
-  table['\n'] = 'n';
-  table['\f'] = 'f';
-  table['\r'] = 'r';
-  table['\\'] = '\\';
-  table['\"'] = '"';
-  table['/']  = '/';
+  table[static_cast<int>('\b')] = 'b';
+  table[static_cast<int>('\t')] = 't';
+  table[static_cast<int>('\n')] = 'n';
+  table[static_cast<int>('\f')] = 'f';
+  table[static_cast<int>('\r')] = 'r';
+  table[static_cast<int>('\\')] = '\\';
+  table[static_cast<int>('\"')] = '"';
+  table[static_cast<int>('/')]  = '/';
 }
 
 char
