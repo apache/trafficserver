@@ -684,7 +684,7 @@ EscLookup::_LUT::_LUT()
   table['\f'] = 'f';
   table['\r'] = 'r';
   table['\\'] = '\\';
-  table['\"'] = '\\';
+  table['\"'] = '"';
 }
 
 char
