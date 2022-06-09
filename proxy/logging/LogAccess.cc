@@ -643,9 +643,57 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   return -1;
 }
 
-static const char short_escapes[0x20] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 'b', 't', 'n', 0, 'f', 'r', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+namespace
+{
+class EscLookup
+{
+public:
+  static const char NO_ESCAPE{'\0'};
+  static const char LONG_ESCAPE{'\x01'};
+
+  static char
+  result(char c)
+  {
+    return _lu.table[static_cast<unsigned char>(c)];
+  }
+
+private:
+  struct _LUT {
+    _LUT();
+
+    char table[1 << 8];
+  };
+
+  inline static _LUT const _lu;
 };
+
+EscLookup::_LUT::_LUT()
+{
+  for (unsigned i = 0; i < ' '; ++i) {
+    table[i] = LONG_ESCAPE;
+  }
+  for (unsigned i = '\x7f'; i < sizeof(table); ++i) {
+    table[i] = LONG_ESCAPE;
+  }
+
+  // Short escapes.
+  //
+  table['\b'] = 'b';
+  table['\t'] = 't';
+  table['\n'] = 'n';
+  table['\f'] = 'f';
+  table['\r'] = 'r';
+  table['\\'] = '\\';
+  table['\"'] = '\\';
+}
+
+char
+nibble(int nib)
+{
+  return nib >= 0xa ? 'a' + (nib - 0xa) : '0' + nib;
+}
+
+} // end anonymous namespace
 
 static int
 escape_json(char *dest, const char *buf, int len)
@@ -653,47 +701,33 @@ escape_json(char *dest, const char *buf, int len)
   int escaped_len = 0;
 
   for (int i = 0; i < len; i++) {
-    char c = buf[i];
-    if (c == '\"' || c == '\\') {
-      if (dest) {
-        *dest++ = '\\';
-        *dest++ = c;
-      }
-      escaped_len += 2;
-    } else if (c == '\x7f') {
-      if (dest) {
-        *dest++ = '\\';
-        *dest++ = 'u';
-        *dest++ = '0';
-        *dest++ = '0';
-        *dest++ = '7';
-        *dest++ = 'f';
-      }
-      escaped_len += 6;
-    } else if (c >= '\x20') {
+    char c  = buf[i];
+    char ec = EscLookup::result(c);
+    if (__builtin_expect(EscLookup::NO_ESCAPE == ec, 1)) {
       if (dest) {
         *dest++ = c;
       }
       escaped_len++;
-    } else if (char b = short_escapes[c]; b != 0) {
-      if (dest) {
-        *dest++ = '\\';
-        *dest++ = b;
-      }
-      escaped_len += 2;
-    } else {
+
+    } else if (EscLookup::LONG_ESCAPE == ec) {
       if (dest) {
         *dest++ = '\\';
         *dest++ = 'u';
         *dest++ = '0';
         *dest++ = '0';
-        *dest++ = '0' + (c >> 4);
-        int d   = c & 0x0f;
-        *dest++ = (d >= 10 ? 'a' + (d - 10) : '0' + d);
+        *dest++ = nibble(static_cast<unsigned char>(c) >> 4);
+        *dest++ = nibble(c & 0x0f);
       }
       escaped_len += 6;
+
+    } else { // Short escape.
+      if (dest) {
+        *dest++ = '\\';
+        *dest++ = ec;
+      }
+      escaped_len += 2;
     }
-  }
+  } // end for
   return escaped_len;
 }
 
