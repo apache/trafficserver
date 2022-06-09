@@ -685,6 +685,7 @@ EscLookup::_LUT::_LUT()
   table['\r'] = 'r';
   table['\\'] = '\\';
   table['\"'] = '"';
+  table['/']  = '/';
 }
 
 char
