@@ -947,7 +947,6 @@ LogAccess::unmarshal_http_text_json(char **buf, char *dest, int len, LogSlice *s
 
   char *p = dest;
 
-  //    int res1 = unmarshal_http_method (buf, p, len);
   int res1 = unmarshal_str_json(buf, p, len);
   if (res1 < 0) {
     return -1;
