@@ -37,22 +37,19 @@
 
 #include "ProxyConfig.h"
 #include "P_SNIActionPerformer.h"
-#include "tscore/MatcherUtils.h"
 #include "YamlSNIConfig.h"
 
 // Properties for the next hop server
 struct NextHopProperty {
-  std::string client_cert_file;                                                    // full path to client cert file for lookup
-  std::string client_key_file;                                                     // full path to client key file for lookup
-  YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
-  YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
-
-  NextHopProperty() {}
+  std::string client_cert_file;                                                      // full path to client cert file for lookup
+  std::string client_key_file;                                                       // full path to client key file for lookup
+  YamlSNIConfig::Policy verify_server_policy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
+  YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
 };
 
-using actionVector = std::vector<std::unique_ptr<ActionItem>>;
+using ActionVector = std::vector<std::unique_ptr<ActionItem>>;
 
-struct pcreFreer {
+struct PcreFreer {
   void
   operator()(void *p)
   {
@@ -60,85 +57,55 @@ struct pcreFreer {
   }
 };
 
-struct namedElement {
-public:
-  namedElement() {}
+struct NamedElement {
+  NamedElement() {}
 
-  namedElement &
-  operator=(namedElement &&other)
-  {
-    if (this != &other) {
-      match = std::move(other.match);
-    }
-    return *this;
-  }
-  namedElement(namedElement &&other) { *this = std::move(other); }
+  NamedElement(NamedElement &&other);
+  NamedElement &operator=(NamedElement &&other);
 
-  void
-  setGlobName(std::string name)
-  {
-    std::string::size_type pos = 0;
-    while ((pos = name.find('.', pos)) != std::string::npos) {
-      name.replace(pos, 1, "\\.");
-      pos += 2;
-    }
-    pos = 0;
-    while ((pos = name.find('*', pos)) != std::string::npos) {
-      name.replace(pos, 1, "(.{0,})");
-    }
-    Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
-    setRegexName(name);
-  }
+  void set_glob_name(std::string name);
+  void set_regex_name(const std::string &regex_name);
 
-  void
-  setRegexName(const std::string &regexName)
-  {
-    const char *err_ptr;
-    int err_offset = 0;
-    if (!regexName.empty()) {
-      match.reset(pcre_compile(regexName.c_str(), PCRE_ANCHORED | PCRE_CASELESS, &err_ptr, &err_offset, nullptr));
-    }
-  }
-
-  std::unique_ptr<pcre, pcreFreer> match;
+  std::unique_ptr<pcre, PcreFreer> match;
 };
 
-struct actionElement : public namedElement {
-public:
-  actionVector actions;
+struct ActionElement : public NamedElement {
+  ActionVector actions;
 };
 
-struct NextHopItem : public namedElement {
-public:
+struct NextHopItem : public NamedElement {
   NextHopProperty prop;
 };
 
-typedef std::vector<actionElement> SNIList;
-typedef std::vector<NextHopItem> NextHopPropertyList;
+using SNIList             = std::vector<ActionElement>;
+using NextHopPropertyList = std::vector<NextHopItem>;
 
 struct SNIConfigParams : public ConfigInfo {
+  SNIConfigParams() = default;
+  ~SNIConfigParams() override;
+
+  const NextHopProperty *get_property_config(const std::string &servername) const;
+  int initialize();
+  void load_sni_config();
+  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername) const;
+
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;
-  YamlSNIConfig Y_sni;
-  const NextHopProperty *getPropertyConfig(const std::string &servername) const;
-  SNIConfigParams();
-  ~SNIConfigParams() override;
-  void cleanup();
-  int Initialize();
-  void loadSNIConfig();
-  std::pair<const actionVector *, ActionItem::Context> get(std::string_view servername) const;
+  YamlSNIConfig yaml_sni;
 };
 
-struct SNIConfig {
+class SNIConfig
+{
+public:
+  using scoped_config = ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams>;
+
   static void startup();
   static void reconfigure();
   static SNIConfigParams *acquire();
   static void release(SNIConfigParams *params);
 
-  typedef ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams> scoped_config;
-
-  static bool TestClientAction(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
+  static bool test_client_action(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
 
 private:
-  static int configid;
+  static int _configid;
 };

@@ -1094,7 +1094,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
         serverKey = buff;
       }
-      auto nps                 = sniParam->getPropertyConfig(serverKey);
+      auto nps                 = sniParam->get_property_config(serverKey);
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX *clientCTX       = nullptr;
 
@@ -1129,16 +1129,16 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       if (options.verifyServerPolicy != YamlSNIConfig::Policy::UNSET) {
         // Stay with conf-override version as the highest priority
-      } else if (nps && nps->verifyServerPolicy != YamlSNIConfig::Policy::UNSET) {
-        options.verifyServerPolicy = nps->verifyServerPolicy;
+      } else if (nps && nps->verify_server_policy != YamlSNIConfig::Policy::UNSET) {
+        options.verifyServerPolicy = nps->verify_server_policy;
       } else {
         options.verifyServerPolicy = params->verifyServerPolicy;
       }
 
       if (options.verifyServerProperties != YamlSNIConfig::Property::UNSET) {
         // Stay with conf-override version as the highest priority
-      } else if (nps && nps->verifyServerProperties != YamlSNIConfig::Property::UNSET) {
-        options.verifyServerProperties = nps->verifyServerProperties;
+      } else if (nps && nps->verify_server_properties != YamlSNIConfig::Property::UNSET) {
+        options.verifyServerProperties = nps->verify_server_properties;
       } else {
         options.verifyServerProperties = params->verifyServerProperties;
       }
