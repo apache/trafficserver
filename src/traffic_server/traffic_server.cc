@@ -1464,16 +1464,10 @@ struct ShowStats : public Continuation {
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
     last_rb += d_rb;
-    NET_READ_DYN_SUM(net_calls_to_readfromnet_afterpoll_stat, sval);
-    int64_t d_r = sval - last_r;
-    last_r += d_r;
 
     NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
     int64_t d_wb = sval - last_wb;
     last_wb += d_wb;
-    NET_READ_DYN_SUM(net_calls_to_writetonet_afterpoll_stat, sval);
-    int64_t d_w = sval - last_w;
-    last_w += d_w;
 
     NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
     int64_t d_nrb = sval - last_nrb;
@@ -1493,9 +1487,8 @@ struct ShowStats : public Continuation {
     NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     int64_t d_p = cval - last_p;
     last_p += d_p;
-    printf("%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64
-           "\n",
-           d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
+    printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
+           d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;
     fprintf(fp, "immediate_events_time_dist\n");

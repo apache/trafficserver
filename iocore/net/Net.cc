@@ -84,11 +84,9 @@ register_net_stats()
     {"proxy.process.net.calls_to_read", net_calls_to_read_stat},
     {"proxy.process.net.calls_to_read_nodata", net_calls_to_read_nodata_stat},
     {"proxy.process.net.calls_to_readfromnet", net_calls_to_readfromnet_stat},
-    {"proxy.process.net.calls_to_readfromnet_afterpoll", net_calls_to_readfromnet_afterpoll_stat},
     {"proxy.process.net.calls_to_write", net_calls_to_write_stat},
     {"proxy.process.net.calls_to_write_nodata", net_calls_to_write_nodata_stat},
     {"proxy.process.net.calls_to_writetonet", net_calls_to_writetonet_stat},
-    {"proxy.process.net.calls_to_writetonet_afterpoll", net_calls_to_writetonet_afterpoll_stat},
     {"proxy.process.net.inactivity_cop_lock_acquire_failure", inactivity_cop_lock_acquire_failure_stat},
     {"proxy.process.net.net_handler_run", net_handler_run_stat},
     {"proxy.process.net.read_bytes", net_read_bytes_stat},
@@ -121,11 +119,9 @@ register_net_stats()
   NET_CLEAR_DYN_STAT(net_connections_currently_open_stat);
   NET_CLEAR_DYN_STAT(net_accepts_currently_open_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_afterpoll_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_read_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_read_nodata_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_writetonet_stat);
-  NET_CLEAR_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_write_stat);
   NET_CLEAR_DYN_STAT(net_calls_to_write_nodata_stat);
   NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);

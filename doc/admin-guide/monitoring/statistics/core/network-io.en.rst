@@ -25,10 +25,6 @@ Network I/O
 .. ts:stat:: global proxy.process.net.accepts_currently_open integer
    :type: counter
 
-.. ts:stat:: global proxy.process.net.calls_to_readfromnet_afterpoll integer
-   :type: counter
-   :ungathered:
-
 .. ts:stat:: global proxy.process.net.calls_to_readfromnet integer
    :type: counter
    :ungathered:
@@ -46,10 +42,6 @@ Network I/O
    :ungathered:
 
 .. ts:stat:: global proxy.process.net.calls_to_write_nodata integer
-   :type: counter
-   :ungathered:
-
-.. ts:stat:: global proxy.process.net.calls_to_writetonet_afterpoll integer
    :type: counter
    :ungathered:
 

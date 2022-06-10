@@ -350,7 +350,6 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ProxyMutex *mutex = thread->mutex.get();
 
   NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_stat);
-  NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
 
   write_to_net_io(nh, vc, thread);
 }
