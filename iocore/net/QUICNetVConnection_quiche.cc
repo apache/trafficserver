@@ -79,14 +79,12 @@ QUICNetVConnection::remove_connection_ids()
 void
 QUICNetVConnection::destroy(EThread *t)
 {
-  // QUICConDebug("Destroy connection");
-  /*  TODO: Uncomment these blocks after refactoring read / write process
-    if (from_accept_thread) {
-      quicNetVCAllocator.free(this);
-    } else {
-      THREAD_FREE(this, quicNetVCAllocator, t);
-    }
-  */
+  QUICConDebug("Destroy connection");
+  if (from_accept_thread) {
+    quicNetVCAllocator.free(this);
+  } else {
+    THREAD_FREE(this, quicNetVCAllocator, t);
+  }
 }
 
 void
@@ -97,29 +95,23 @@ QUICNetVConnection::set_local_addr()
 void
 QUICNetVConnection::free(EThread *t)
 {
-  /* TODO: Uncmment these blocks after refactoring read / write process
-    this->_udp_con        = nullptr;
-    this->_packet_handler = nullptr;
+  QUICConDebug("Free connection");
+  this->_packet_handler->close_connection(this);
 
-    _unschedule_packet_write_ready();
+  this->_udp_con        = nullptr;
+  this->_packet_handler = nullptr;
 
-    delete this->_handshake_handler;
-    delete this->_application_map;
-    delete this->_hs_protocol;
-    delete this->_loss_detector;
-    delete this->_frame_dispatcher;
-    delete this->_stream_manager;
-    delete this->_congestion_controller;
-    if (this->_alt_con_manager) {
-      delete this->_alt_con_manager;
-    }
+  quiche_conn_free(this->_quiche_con);
 
-    super::clear();
-  */
+  delete this->_application_map;
+  this->_application_map = nullptr;
+  delete this->_stream_manager;
+  this->_stream_manager = nullptr;
+
+  super::clear();
   this->_context->trigger(QUICContext::CallbackEvent::CONNECTION_CLOSE);
   ALPNSupport::clear();
   TLSBasicSupport::clear();
-  this->_packet_handler->close_connection(this);
 }
 
 void
@@ -145,7 +137,11 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
+  case EVENT_INTERVAL:
+    this->_handle_interval();
+    break;
   default:
+    QUICConDebug("Unhandleed event: %d", event);
     break;
   }
 
@@ -165,7 +161,18 @@ QUICNetVConnection::state_established(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
+  case EVENT_INTERVAL:
+    this->_handle_interval();
+    break;
+  case VC_EVENT_EOS:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    _unschedule_packet_write_ready();
+    this->closed = 1;
+    break;
   default:
+    QUICConDebug("Unhandleed event: %d", event);
     break;
   }
   return EVENT_DONE;
@@ -280,6 +287,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
+
+  this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
 
   return EVENT_DONE;
 }
@@ -407,7 +416,7 @@ QUICNetVConnection::negotiated_application_name() const
 bool
 QUICNetVConnection::is_closed() const
 {
-  return false;
+  return quiche_conn_is_closed(this->_quiche_con);
 }
 
 bool
@@ -536,6 +545,41 @@ QUICNetVConnection::_handle_write_ready()
       this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload);
     }
   } while (written > 0);
+}
+
+void
+QUICNetVConnection::_handle_interval()
+{
+  quiche_conn_on_timeout(this->_quiche_con);
+
+  if (quiche_conn_is_closed(this->_quiche_con)) {
+    this->_ctable->erase(this->_quic_connection_id, this);
+    this->_ctable->erase(this->_original_quic_connection_id, this);
+
+    if (quiche_conn_is_timed_out(this->_quiche_con)) {
+      this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
+      return;
+    }
+
+    bool is_app;
+    uint64_t error_code;
+    const uint8_t *reason;
+    size_t reason_len;
+    bool has_error = quiche_conn_peer_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len) ||
+                     quiche_conn_local_error(this->_quiche_con, &is_app, &error_code, &reason, &reason_len);
+    if (has_error && error_code != static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR)) {
+      QUICConDebug("is_app=%d error_code=%" PRId64 " reason=%.*s", is_app, error_code, static_cast<int>(reason_len), reason);
+      this->thread->schedule_imm(this, VC_EVENT_ERROR);
+      return;
+    }
+
+    // If it's not timeout nor error, it's probably eos
+    this->thread->schedule_imm(this, VC_EVENT_EOS);
+
+  } else {
+    // Just schedule timeout event again if the connection is still open
+    this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
+  }
 }
 
 int

@@ -166,6 +166,7 @@ private:
 
   void _handle_read_ready();
   void _handle_write_ready();
+  void _handle_interval();
 
   void _switch_to_established_state();
 
