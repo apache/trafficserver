@@ -49,12 +49,8 @@ public:
 
 private:
   const char *_debug_tag() const override;
-  virtual void _set_handshake_callbacks(SSL_CTX *ssl_ctx) override;
   virtual bool _setup_session_cache(SSL_CTX *ctx) override;
   virtual bool _set_cipher_suites_for_legacy_versions(SSL_CTX *ctx) override;
   virtual bool _set_info_callback(SSL_CTX *ctx) override;
   virtual bool _set_npn_callback(SSL_CTX *ctx) override;
-
-  static int ssl_cert_cb(SSL *ssl, void *arg);
-  static int ssl_sni_cb(SSL *ssl, int *ad, void *arg);
 };

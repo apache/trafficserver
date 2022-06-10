@@ -75,19 +75,11 @@ QUICNetProcessor::start(int, size_t stacksize)
   // QUICInitializeLibrary();
   QUICConfig::startup();
   QUICCertConfig::startup();
-  QUICCertConfig::scoped_config certs;
   QUICConfig::scoped_config params;
-  SSLCertContext *context = certs->get(0);
 
   quiche_enable_debug_logging(debug_log, NULL);
   this->_quiche_config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
   quiche_config_set_application_protos(this->_quiche_config, (uint8_t *)"\02h3\x05h3-29\x05hq-29\x05h3-27\x05hq-27", 27);
-  if (context->userconfig->cert != nullptr) {
-    quiche_config_load_cert_chain_from_pem_file(this->_quiche_config, context->userconfig->cert);
-  }
-  if (context->userconfig->key != nullptr) {
-    quiche_config_load_priv_key_from_pem_file(this->_quiche_config, context->userconfig->key);
-  }
 
   quiche_config_set_max_idle_timeout(this->_quiche_config, params->no_activity_timeout_in());
   quiche_config_set_max_recv_udp_payload_size(this->_quiche_config, params->get_max_recv_udp_payload_size_in());
