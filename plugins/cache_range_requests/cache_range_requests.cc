@@ -370,11 +370,9 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
         DEBUG_LOG("Restoring response header to TS_HTTP_STATUS_PARTIAL_CONTENT.");
         TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
       }
-
     } else {
       DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
     }
-
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
   }
 
