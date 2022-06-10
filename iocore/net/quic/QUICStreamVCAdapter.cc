@@ -73,7 +73,7 @@ QUICStreamVCAdapter::_read(size_t len)
     if (block->size()) {
       block->consume(reader->start_offset);
       block->_end = std::min(block->start() + len, block->_buf_end);
-      this->_write_vio.ndone += len;
+      this->_write_vio.ndone += block->size();
     }
     reader->consume(block->size());
   }
