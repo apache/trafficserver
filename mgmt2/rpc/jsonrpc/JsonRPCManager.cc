@@ -52,7 +52,7 @@ RPCRegistryInfo core_ats_rpc_service_provider_handle = {
 std::mutex g_rpcHandlingMutex;
 std::condition_variable g_rpcHandlingCompletion;
 ts::Rv<YAML::Node> g_rpcHandlerResponseData;
-bool g_rpcHandlerProccessingCompleted{false};
+bool g_rpcHandlerProcessingCompleted{false};
 
 // jsonrpc log tag.
 static constexpr auto logTag    = "rpc";
@@ -164,7 +164,7 @@ JsonRPCManager::Dispatcher::invoke_notification_handler(JsonRPCManager::Dispatch
 }
 
 bool
-JsonRPCManager::Dispatcher::remove_handler(std::string const &name)
+JsonRPCManager::Dispatcher::remove_handler(std::string_view name)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   auto foundIt = std::find_if(std::begin(_handlers), std::end(_handlers), [&](auto const &p) { return p.first == name; });
@@ -177,7 +177,7 @@ JsonRPCManager::Dispatcher::remove_handler(std::string const &name)
 }
 // --- JsonRPCManager
 bool
-JsonRPCManager::remove_handler(std::string const &name)
+JsonRPCManager::remove_handler(std::string_view name)
 {
   return _dispatcher.remove_handler(name);
 }
@@ -289,8 +289,8 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                     // cond var will give us green to proceed.
                                     handler.cb(*request.id, request.params);
                                     std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
-                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProccessingCompleted; });
-                                    g_rpcHandlerProccessingCompleted = false;
+                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
+                                    g_rpcHandlerProcessingCompleted = false;
                                     // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
                                     // error and non error cases.
                                     ret = g_rpcHandlerResponseData;

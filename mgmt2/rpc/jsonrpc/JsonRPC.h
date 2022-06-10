@@ -33,7 +33,7 @@ extern RPCRegistryInfo core_ats_rpc_service_provider_handle;
 /// @see JsonRPCManager::add_method_handler for details
 template <typename Func>
 inline bool
-add_method_handler(const std::string &name, Func &&call, const RPCRegistryInfo *info = nullptr)
+add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info = nullptr)
 {
   return JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), info);
 }
@@ -41,7 +41,7 @@ add_method_handler(const std::string &name, Func &&call, const RPCRegistryInfo *
 /// @see JsonRPCManager::add_notification_handler for details
 template <typename Func>
 inline bool
-add_notification_handler(const std::string &name, Func &&call, const RPCRegistryInfo *info = nullptr)
+add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info = nullptr)
 {
   return JsonRPCManager::instance().add_notification_handler(name, std::forward<Func>(call), info);
 }
