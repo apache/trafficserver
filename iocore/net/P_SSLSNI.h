@@ -116,7 +116,6 @@ typedef std::vector<actionElement> SNIList;
 typedef std::vector<NextHopItem> NextHopPropertyList;
 
 struct SNIConfigParams : public ConfigInfo {
-  char *sni_filename = nullptr;
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;
   YamlSNIConfig Y_sni;

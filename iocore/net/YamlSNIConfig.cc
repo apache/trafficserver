@@ -61,7 +61,7 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
 } // namespace
 
 ts::Errata
-YamlSNIConfig::loader(const char *cfgFilename)
+YamlSNIConfig::loader(const std::string &cfgFilename)
 {
   try {
     YAML::Node config = YAML::LoadFile(cfgFilename);
