@@ -61,7 +61,7 @@ ts.Disk.records_config.update({
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 config1 = config1.replace("$ALTPORT", str(server2.Variables.Port))
 
-ts.Disk.File(ts.Variables.CONFIGDIR + "/existsconfig.txt", exists=False, id="config1")
+ts.Disk.File(ts.Variables.CONFIGDIR + "/existsconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(

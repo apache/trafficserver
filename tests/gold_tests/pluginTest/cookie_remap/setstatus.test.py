@@ -37,7 +37,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
 })
 
-ts.Disk.File(ts.Variables.CONFIGDIR + "/statusconfig.txt", exists=False, id="config1")
+ts.Disk.File(ts.Variables.CONFIGDIR + "/statusconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
