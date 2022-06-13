@@ -201,7 +201,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         p.Disk.error_log = p.Streams.stderr
     else:
         tmpname = os.path.join(log_dir, fname)
-        p.Disk.File(tmpname, id='error_log', exists=False)
+        p.Disk.File(tmpname, id='error_log')
     # diags.log
     fname = log_data['diags']
     if fname == 'stdout':

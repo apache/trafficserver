@@ -76,7 +76,7 @@ ts.Disk.records_config.update({
 
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 
-ts.Disk.File(ts.Variables.CONFIGDIR + "/matrixconfig.txt", exists=False, id="config1")
+ts.Disk.File(ts.Variables.CONFIGDIR + "/matrixconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
