@@ -186,7 +186,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       return true;
     } else {
       DEBUG_LOG("slice passing GET request through to next plugin");
-      if (config->m_prefetchcount > 0 && config->m_first_block) {
+      if (config->m_prefetchcount > 0 && config->m_contp != nullptr && config->m_first_block) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->m_contp);
         config->m_first_block = false;
       }
