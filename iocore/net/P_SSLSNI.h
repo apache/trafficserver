@@ -32,6 +32,7 @@
 
 #include <vector>
 #include <strings.h>
+#include <memory>
 
 #include "ProxyConfig.h"
 #include "P_SNIActionPerformer.h"
@@ -50,9 +51,27 @@ struct NextHopProperty {
 
 using actionVector = std::vector<std::unique_ptr<ActionItem>>;
 
+struct pcreFreer {
+  void
+  operator()(void *p)
+  {
+    pcre_free(p);
+  }
+};
+
 struct namedElement {
 public:
   namedElement() {}
+
+  namedElement &
+  operator=(namedElement &&other)
+  {
+    if (this != &other) {
+      match = std::move(other.match);
+    }
+    return *this;
+  }
+  namedElement(namedElement &&other) { *this = std::move(other); }
 
   void
   setGlobName(std::string name)
@@ -76,13 +95,11 @@ public:
     const char *err_ptr;
     int err_offset = 0;
     if (!regexName.empty()) {
-      match = pcre_compile(regexName.c_str(), PCRE_ANCHORED, &err_ptr, &err_offset, nullptr);
-    } else {
-      match = nullptr;
+      match.reset(pcre_compile(regexName.c_str(), PCRE_ANCHORED, &err_ptr, &err_offset, nullptr));
     }
   }
 
-  pcre *match = nullptr;
+  std::unique_ptr<pcre, pcreFreer> match;
 };
 
 struct actionElement : public namedElement {
