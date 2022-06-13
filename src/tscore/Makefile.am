@@ -84,6 +84,7 @@ libtscore_la_SOURCES = \
 	ink_inet.cc \
 	ink_memory.cc \
 	ink_mutex.cc \
+	ink_mutex_sd.cc \
 	ink_queue.cc \
 	ink_queue_utils.cc \
 	ink_rand.cc \

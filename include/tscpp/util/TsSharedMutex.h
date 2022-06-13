@@ -25,6 +25,7 @@
 #pragma once
 
 #include <pthread.h>
+
 #include <tscpp/util/Strerror.h>
 
 #if __has_include(<ts/ts.h>)

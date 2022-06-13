@@ -592,7 +592,7 @@ ProxyMutex::free()
   print_lock_stats(1);
 #endif
 #endif
-  ink_mutex_destroy(&the_mutex);
+  ink_mutex_safer_destroy(&the_mutex);
   mutexAllocator.free(this);
 }
 

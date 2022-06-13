@@ -32,22 +32,31 @@
 
 ***********************************************************************/
 
-#include "tscore/ink_defs.h"
-#include "tscore/ink_error.h"
+#include <tscore/ink_defs.h>
+#include <tscore/ink_error.h>
+#include <tscpp/util/Strerror.h>
 
 #include <pthread.h>
 #include <cstdlib>
 typedef pthread_mutex_t ink_mutex;
 
 void ink_mutex_init(ink_mutex *m);
+
+// This will abort if the mutex is locked.  Has better performance than ink_mutex_safer_destroy().
+//
 void ink_mutex_destroy(ink_mutex *m);
+
+// In a relesae build, if the mutex is locked, this will log a warning, then wait up to 10 seconds for the mutex to be
+// unlocked by another thread.  In a debug build, the behavior is essentially the same as ink_mutex_destroy().
+//
+void ink_mutex_safer_destroy(ink_mutex *m);
 
 static inline void
 ink_mutex_acquire(ink_mutex *m)
 {
   int error = pthread_mutex_lock(m);
   if (unlikely(error != 0)) {
-    ink_abort("pthread_mutex_lock(%p) failed: %s (%d)", m, strerror(error), error);
+    ink_abort("pthread_mutex_lock(%p) failed: %s (%d)", m, ts::Strerror(error).c_str(), error);
   }
 }
 
@@ -56,7 +65,7 @@ ink_mutex_release(ink_mutex *m)
 {
   int error = pthread_mutex_unlock(m);
   if (unlikely(error != 0)) {
-    ink_abort("pthread_mutex_unlock(%p) failed: %s (%d)", m, strerror(error), error);
+    ink_abort("pthread_mutex_unlock(%p) failed: %s (%d)", m, ts::Strerror(error).c_str(), error);
   }
 }
 
