@@ -244,20 +244,20 @@ stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
   return s_len;
 }
 
-static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_JSON_GZIP[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_JSON_DEFLATE[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_JSON_BR[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV[] = "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_CSV_GZIP[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_CSV_DEFLATE[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_CSV_BR[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
+  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
 stats_add_resp_header(stats_state *my_state)
