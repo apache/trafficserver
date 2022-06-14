@@ -6343,7 +6343,8 @@ HttpSM::attach_server_session()
   if (ua_txn->has_request_body(t_state.hdr_info.request_content_length,
                                t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
     // See if we need to insert a chunked header
-    if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+    if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH) &&
+        !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
       // Stuff in a TE setting so we treat this as chunked, sort of.
       t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
       t_state.hdr_info.server_request.value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,
