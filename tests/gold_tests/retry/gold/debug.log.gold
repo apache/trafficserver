@@ -1,0 +1,84 @@
++++++++++ Incoming Request +++++++++
+-- State Machine Id: 0
+GET http:/// HTTP/1.1
+``
+
++++++++++ Proxy's Request +++++++++
+-- State Machine Id: 0
+GET / HTTP/1.1
+Host: 127.0.0.1
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 0
+GET / HTTP/1.1
+Host: 127.0.0.1
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 0
+GET / HTTP/1.1
+Host: 127.0.0.1
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 0
+GET / HTTP/1.1
+Host: 127.0.0.1
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 0
+GET / HTTP/1.1
+Host: 127.0.0.1
+``
+
++++++++++ Proxy's Response 2 +++++++++
+-- State Machine Id: 0
+HTTP/1.1 502``
+``
+
++++++++++ Incoming Request +++++++++
+-- State Machine Id: 1
+POST http:/// HTTP/1.1
+``
+Transfer-Encoding: chunked
+``
+
++++++++++ Proxy's Request +++++++++
+-- State Machine Id: 1
+POST / HTTP/1.1
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 1
+POST / HTTP/1.1
+``
+Transfer-Encoding: chunked
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 1
+POST / HTTP/1.1
+``
+Transfer-Encoding: chunked
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 1
+POST / HTTP/1.1
+``
+Transfer-Encoding: chunked
+``
+
++++++++++ Proxy's Request after hooks +++++++++
+-- State Machine Id: 1
+POST / HTTP/1.1
+``
+Transfer-Encoding: chunked
+``
+
++++++++++ Proxy's Response 2 +++++++++
+-- State Machine Id: 1
+HTTP/1.1 502``
+``
