@@ -52,7 +52,7 @@ RPCRegistryInfo core_ats_rpc_service_provider_handle = {
 std::mutex g_rpcHandlingMutex;
 std::condition_variable g_rpcHandlingCompletion;
 ts::Rv<YAML::Node> g_rpcHandlerResponseData;
-bool g_rpcHandlerProccessingCompleted{false};
+bool g_rpcHandlerProcessingCompleted{false};
 
 // jsonrpc log tag.
 static constexpr auto logTag    = "rpc";
@@ -289,8 +289,8 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                     // cond var will give us green to proceed.
                                     handler.cb(*request.id, request.params);
                                     std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
-                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProccessingCompleted; });
-                                    g_rpcHandlerProccessingCompleted = false;
+                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
+                                    g_rpcHandlerProcessingCompleted = false;
                                     // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
                                     // error and non error cases.
                                     ret = g_rpcHandlerResponseData;
