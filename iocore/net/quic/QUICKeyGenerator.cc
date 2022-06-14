@@ -49,7 +49,7 @@ void
 QUICKeyGenerator::generate(QUICVersion version, uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid)
 {
   const EVP_CIPHER *cipher = this->_get_cipher_for_initial();
-  const EVP_MD *md         = EVP_sha256();
+  const char *md         = "SHA256";
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
   QUICHKDF hkdf(md);

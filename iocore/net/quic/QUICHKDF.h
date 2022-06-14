@@ -28,7 +28,7 @@
 class QUICHKDF : public HKDF
 {
 public:
-  QUICHKDF(const EVP_MD *digest) : HKDF(digest) {}
+  QUICHKDF(const char *digest) : HKDF(digest) {}
   int expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len,
              uint16_t length);
 };

@@ -220,6 +220,42 @@ size_t
 cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out,
                        size_t outLen)
 {
+#ifdef OPENSSL_IS_OPENSSL3
+  EVP_MAC *mac = EVP_MAC_fetch(NULL, "HMAC", NULL);
+  EVP_MAC_CTX *ctx = NULL;
+  size_t len = 0;
+  OSSL_PARAM params[2];
+  char buffer[256];
+
+  if ((mac == NULL) ||
+      ((ctx = EVP_MAC_CTX_new(mac)) == NULL)) {
+    AccessControlError("failed to create MAC context: %s", cryptoErrStr(buffer, sizeof(buffer)));
+    return 0;
+  }
+
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", (char*)digestType, 0);
+  params[1] = OSSL_PARAM_construct_end();
+
+  if (!EVP_MAC_init(ctx, reinterpret_cast<const unsigned char *>(key), keyLen, params)) {
+    AccessControlError("failed to create EVP message digest context: %s", cryptoErrStr(buffer, sizeof(buffer)));
+    goto err;
+  }
+
+  if (!EVP_MAC_update(ctx, reinterpret_cast<const unsigned char *>(data), dataLen)) {
+    AccessControlError("failed to update the signing hash: %s", cryptoErrStr(buffer, sizeof(buffer)));
+    goto err;
+  }
+
+  if (!EVP_MAC_final(ctx, reinterpret_cast<unsigned char *>(out), &len, outLen)) {
+    AccessControlError("failed to finalize the signing hash: %s", cryptoErrStr(buffer, sizeof(buffer)));
+    goto err;
+  }
+
+err:
+  EVP_MAC_CTX_free(ctx);
+  EVP_MAC_free(mac);
+  return len;
+#else
 #ifndef HAVE_HMAC_CTX_NEW
   HMAC_CTX ctx[1];
 #else
@@ -262,6 +298,7 @@ err:
   HMAC_CTX_free(ctx);
 #endif
   return len;
+#endif
 }
 
 /**

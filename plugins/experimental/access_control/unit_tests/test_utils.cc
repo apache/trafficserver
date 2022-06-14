@@ -253,6 +253,13 @@ TEST_CASE("HMAC Digest: test various supported/unsupported types", "[MAC][access
   digests.push_back("ccf3230972bcf229fb3b16741495c74a72bbdd14");
 #endif
 
+#ifdef OPENSSL_IS_OPENSSL3 // MD4, RIPEMD160 are deprecated in OpenSSL 3
+  types.pop_front();
+  digests.pop_front();
+  types.pop_back();
+  digests.pop_back();
+#endif
+
   StringList::iterator digestIter = digests.begin();
   for (String digestType : types) {
     size_t outLen = cryptoMessageDigestGet(digestType.c_str(), data.c_str(), data.length(), key.c_str(), key.length(), out,
