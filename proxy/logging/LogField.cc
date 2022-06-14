@@ -244,6 +244,12 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 }
 
+LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithSlice unmarshal,
+                   SetFunc _setfunc)
+  : LogField(name, symbol, type, marshal, reinterpret_cast<UnmarshalFunc>(unmarshal), _setfunc)
+{
+}
+
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
                    const Ptr<LogFieldAliasMap> &map, SetFunc _setfunc)
   : m_name(ats_strdup(name)),

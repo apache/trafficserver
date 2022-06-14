@@ -125,6 +125,9 @@ public:
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal,
            SetFunc _setFunc = nullptr);
 
+  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithSlice unmarshal,
+           SetFunc _setFunc = nullptr);
+
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
            const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = nullptr);
 
