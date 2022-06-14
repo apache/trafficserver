@@ -24,7 +24,8 @@
 #include <openssl/hkdf.h>
 #include <openssl/digest.h>
 
-HKDF::HKDF(const char *digest) : _digest(digest) {
+HKDF::HKDF(const char *digest) : _digest(digest)
+{
   this->_digest_md = EVP_get_digestbyname(_digest);
 }
 HKDF::~HKDF() {}

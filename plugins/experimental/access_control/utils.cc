@@ -221,19 +221,18 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
                        size_t outLen)
 {
 #ifdef OPENSSL_IS_OPENSSL3
-  EVP_MAC *mac = EVP_MAC_fetch(NULL, "HMAC", NULL);
+  EVP_MAC *mac     = EVP_MAC_fetch(NULL, "HMAC", NULL);
   EVP_MAC_CTX *ctx = NULL;
-  size_t len = 0;
+  size_t len       = 0;
   OSSL_PARAM params[2];
   char buffer[256];
 
-  if ((mac == NULL) ||
-      ((ctx = EVP_MAC_CTX_new(mac)) == NULL)) {
+  if ((mac == NULL) || ((ctx = EVP_MAC_CTX_new(mac)) == NULL)) {
     AccessControlError("failed to create MAC context: %s", cryptoErrStr(buffer, sizeof(buffer)));
     return 0;
   }
 
-  params[0] = OSSL_PARAM_construct_utf8_string("digest", (char*)digestType, 0);
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", (char *)digestType, 0);
   params[1] = OSSL_PARAM_construct_end();
 
   if (!EVP_MAC_init(ctx, reinterpret_cast<const unsigned char *>(key), keyLen, params)) {
