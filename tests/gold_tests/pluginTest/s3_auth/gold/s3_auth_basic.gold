@@ -4,7 +4,7 @@
 > Host: www.example.com
 > User-Agent: curl/``
 > Accept: */*
->
+> 
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 200 OK
 < Date: ``
@@ -12,7 +12,7 @@
 < Transfer-Encoding: chunked
 < Connection: keep-alive
 < Server: ATS/9.2.0
-<
+< 
 { [5 bytes data]
 * Connection #0 to host 127.0.0.1 left intact
 *   Trying 127.0.0.1:61000...
@@ -21,7 +21,7 @@
 > Host: www.example.com
 > User-Agent: curl/``
 > Accept: */*
->
+> 
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 200 OK
 < Date: ``
@@ -29,6 +29,6 @@
 < Transfer-Encoding: chunked
 < Connection: keep-alive
 < Server: ATS/9.2.0
-<
+< 
 { [5 bytes data]
 * Connection #0 to host 127.0.0.1 left intact

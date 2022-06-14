@@ -1,5 +1,5 @@
 '''
-Test basic s3_auth function
+Test s3_auth config change watch function
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
