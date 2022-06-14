@@ -202,11 +202,22 @@ ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-# 9 - multiple cookies
+# 11 - multiple cookies
 tr = Test.AddTestRun("multiple cookies, expired then good")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+
+# 12 - Check missing iss from the payload
+tr = Test.AddTestRun("Missing iss field in the payload")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/403.gold"
+ts.Streams.stderr = Testers.ContainsExpression("Initial JWT Failure: iss is missing, must be present", "should fail the validation")
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
