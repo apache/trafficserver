@@ -106,6 +106,11 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
+  if (!jwt->iss) {
+    PluginDebug("Initial JWT Failure: iss is missing, must be present");
+    return false;
+  }
+
   if (jwt->cdniv != 1) { /* Only support the very first version! */
     PluginDebug("Initial JWT Failure: wrong version");
     return false;
