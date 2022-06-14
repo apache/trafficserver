@@ -1,7 +1,7 @@
 ``
 > GET /_stats HTTP/1.1
 ``
-< HTTP/1.1 200 Ok
+< HTTP/1.1 200 OK
 < Content-Type: text/json
 < Cache-Control: no-cache
 < Date:``
