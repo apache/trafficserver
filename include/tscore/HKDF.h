@@ -30,7 +30,7 @@
 #include <openssl/evp.h>
 #endif
 
-#ifdef OPENSSL_VERSION_NUMBER >= 0x3000000fL
+#ifdef OPENSSL_IS_OPENSSL3
 #include <openssl/core.h>
 #endif
 
@@ -45,7 +45,7 @@ public:
 
 protected:
   const char *_digest = nullptr;
-#ifdef OPENSSL_VERSION_NUMBER >= 0x3000000fL
+#ifdef OPENSSL_IS_OPENSSL3
   EVP_KDF_CTX *_kctx = nullptr;
   OSSL_PARAM params[5];
 #else
