@@ -204,8 +204,10 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
       PluginDebug("Cannot find key %s for issuer %s for %16p", kid, jwt->iss, jws);
       goto jwt_fail;
     }
-    if (!cjose_jws_verify(jws, jwk, NULL)) {
-      PluginDebug("Key %s for issuer %s for %16p does not validate.", kid, jwt->iss, jws);
+    cjose_err err;
+    memset(&err, 0, sizeof(cjose_err));
+    if (!cjose_jws_verify(jws, jwk, &err)) {
+      PluginDebug("Key %s for issuer %s for %16p does not validate: '%s'", kid, jwt->iss, jws, (err.message ? err.message : ""));
       goto jwt_fail;
     }
     TimerDebug("checking crypto signature for jwt");
@@ -213,8 +215,12 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     PluginDebug("Searching all keys for issuer %s for %16p", jwt->iss, jws);
     cjose_jwk_t **jwks;
     for (jwks = find_keys(cfg, jwt->iss); jwks && *jwks; ++jwks) {
-      if (cjose_jws_verify(jws, *jwks, NULL)) {
+      cjose_err err;
+      memset(&err, 0, sizeof(cjose_err));
+      if (cjose_jws_verify(jws, *jwks, &err)) {
         break;
+      } else {
+        PluginDebug("Key validation failed: '%s'", (err.message ? err.message : ""));
       }
     }
     TimerDebug("checking the crypto signature of all possible keys for jwt");
