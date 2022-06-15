@@ -30,16 +30,25 @@
 #include <openssl/evp.h>
 #endif
 
+#ifdef OPENSSL_IS_OPENSSL3
+#include <openssl/core.h>
+#endif
+
 class HKDF
 {
 public:
-  HKDF(const EVP_MD *digest);
+  HKDF(const char *digest);
   ~HKDF();
   int extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len);
   int expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
              uint16_t length);
 
 protected:
-  const EVP_MD *_digest = nullptr;
-  EVP_PKEY_CTX *_pctx   = nullptr;
+#ifdef OPENSSL_IS_OPENSSL3
+  EVP_KDF_CTX *_kctx = nullptr;
+  OSSL_PARAM params[5];
+#else
+  EVP_PKEY_CTX *_pctx      = nullptr;
+  const EVP_MD *_digest_md = nullptr;
+#endif
 };

@@ -74,7 +74,7 @@ int main() {
   return 1;
 }
   ])],
-  [AC_MSG_RESULT(yes) TS_ADDTO(CPPFLAGS, -DOPENSSL_API_COMPAT=10002)], [AC_MSG_RESULT(no)]
+  [AC_MSG_RESULT(yes) TS_ADDTO(CPPFLAGS, -DOPENSSL_API_COMPAT=10002 -DOPENSSL_IS_OPENSSL3) openssl_is_openssl3=1], [AC_MSG_RESULT(no)]
   )
 ])
 

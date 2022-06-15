@@ -54,7 +54,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha256());
+    HKDF hkdf("SHA256");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -104,7 +104,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha256());
+    HKDF hkdf("SHA256");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -140,7 +140,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha256());
+    HKDF hkdf("SHA256");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -178,7 +178,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha1());
+    HKDF hkdf("SHA1");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -226,7 +226,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha1());
+    HKDF hkdf("SHA1");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -261,7 +261,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha1());
+    HKDF hkdf("SHA1");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);
@@ -296,7 +296,7 @@ TEST_CASE("HKDF tests", "[hkdf]")
     uint8_t okm[256] = {0};
     size_t okm_len   = sizeof(okm);
 
-    HKDF hkdf(EVP_sha1());
+    HKDF hkdf("SHA1");
 
     // Extract
     CHECK(hkdf.extract(prk, &prk_len, salt, sizeof(salt), ikm, sizeof(ikm)) == 1);

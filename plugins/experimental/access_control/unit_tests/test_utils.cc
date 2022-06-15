@@ -21,6 +21,7 @@
  * @brief Unit tests for functions used in utils.cc
  */
 
+#include <openssl/opensslv.h>
 #include <catch.hpp> /* catch unit-test framework */
 #include "../utils.h"
 #include "../common.h"
@@ -251,6 +252,13 @@ TEST_CASE("HMAC Digest: test various supported/unsupported types", "[MAC][access
 #ifndef OPENSSL_IS_BORINGSSL // RIPEMD160 is not available on BoringSSL?
   types.push_back("RIPEMD160");
   digests.push_back("ccf3230972bcf229fb3b16741495c74a72bbdd14");
+#endif
+
+#ifdef OPENSSL_IS_OPENSSL3 // MD4, RIPEMD160 are deprecated in OpenSSL 3
+  types.pop_front();
+  digests.pop_front();
+  types.pop_back();
+  digests.pop_back();
 #endif
 
   StringList::iterator digestIter = digests.begin();
