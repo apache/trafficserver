@@ -45,7 +45,7 @@ QUICNetProcessor quic_NetProcessor;
 static void
 debug_log(const char *line, void *argp)
 {
-  Debug("quiche", "%s\n", line);
+  Debug("vv_quiche", "%s\n", line);
 }
 
 QUICNetProcessor::QUICNetProcessor() {}

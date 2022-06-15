@@ -467,7 +467,7 @@ Http3Transaction::_process_read_vio()
 
   uint64_t nread = 0;
   this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), *this->_info.read_vio->get_reader(), nread);
-  this->_info.read_vio.ndone += nread;
+  this->_info.read_vio->ndone += nread;
   return nread;
 }
 
