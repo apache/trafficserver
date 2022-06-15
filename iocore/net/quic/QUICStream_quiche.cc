@@ -62,8 +62,8 @@ QUICStreamImpl::receive_data(quiche_conn *quiche_con)
   ssize_t read_len = 0;
 
   while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin)) > 0) {
-    this->_received_bytes += read_len;
     this->_adapter->write(this->_received_bytes, buf, read_len, fin);
+    this->_received_bytes += read_len;
   }
 
   this->_adapter->encourge_read();
