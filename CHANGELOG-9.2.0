@@ -240,7 +240,6 @@ Changes with Apache Traffic Server 9.2.0
   #8227 - Fix the skipping logic for autest and docs
   #8228 - Doc: Fix TSUrlPercentEncode documentation. Invalid function in the example.
   #8229 - uri_signing: address memory leak with the internal jwt struct
-  #8231 - Upgrade Catch.hpp to v2.13.7
   #8232 - Updates yaml-cpp to 0.7.0
   #8233 - Add --with-mimalloc option to build
   #8234 - Add debug message when there is a header parse error for http/2
@@ -307,7 +306,6 @@ Changes with Apache Traffic Server 9.2.0
   #8358 - Locking around SSLSecret::secret_map access
   #8359 - Fix regex_remap plugin redirection.
   #8360 - Stabilize regex_revalidate Au test.
-  #8362 - remap_stats: convert to using TSHttpTxnPristineUrlGet and TSHttpTxnClienReqGet
   #8363 - Added support for promoting internal (plugin-initiated) requests.
   #8364 - Added support for verifying cacheability before attempting to force an object into cache.
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
@@ -326,6 +324,7 @@ Changes with Apache Traffic Server 9.2.0
   #8414 - rate_limit: convert to using TSVConnSslSniGet
   #8420 - Adding doc/README.md
   #8421 - Rename IpEndpoint member functions named port() to network_order_port().
+  #8422 - Add AuTest for stats-over-http plugin
   #8423 - Promote PendingAction for general use.
   #8424 - Remove operatorbody class, its not needed at this time
   #8427 - Make sure the include files are built first
@@ -333,7 +332,6 @@ Changes with Apache Traffic Server 9.2.0
   #8429 - Remove empty tests/unit_tests directory+makefile
   #8430 - tests: Add shbang to python scripts with a main
   #8435 - Fix unused-but-set-variable warnings
-  #8439 - Fix Multiplexer POST Body Handling
   #8440 - Update the Multiplexer Docs for Multplexed HTTPS Connections
   #8441 - bigobj: use automake to build test utilities
   #8445 - Include CPPFLAGS when building CompileParseRules
@@ -345,7 +343,6 @@ Changes with Apache Traffic Server 9.2.0
   #8469 - Make factory.response_suppression_mode an overridable config
   #8473 - Serve stale content from child if parent returns invalid/marked down
   #8477 - Define TS_HTTP_VALUE_BROTLI and TS_HTTP_LEN_BROTLI
-  #8480 - Update HostDBContinuation timeout handling to clear pending queue.
   #8482 - Update control mechanism changes in lua plugin documentation
   #8483 - ssl_secret debug printing: print only the first 50 bytes
   #8484 - Serve stale content when DNS lookup fails
@@ -387,9 +384,7 @@ Changes with Apache Traffic Server 9.2.0
   #8595 - Adds two overridable config variables to control parent mark downs.
   #8600 - Prevent calling SSL_set_session in the middle of handshake
   #8606 - Fixed a scoping bug that leads to "sticky" parent weights
-  #8608 - Update to Proxy Verifier version v2.3.0
   #8609 - Don't use Http1ClientTransaction as an event handler
-  #8611 - Removes hard dependency on having perl installed to build
   #8613 - fix for collapsed forwarding ink_abort for CacheHitFresh fail
   #8626 - Fix 32bit build failure on Odroid Xu-4
   #8636 - In TsSharedMutex.h, make error reporting thread-safe.
@@ -409,8 +404,6 @@ Changes with Apache Traffic Server 9.2.0
   #8676 - Fix plugin parent_select failover
   #8677 - Update iocore/cache/test to fix the build
   #8680 - Fix missing unique_lock definition.
-  #8683 - Upgrade Catch to v2.13.8
-  #8687 - Reuse TSMutex for ts_lua_http_intercept_handler
   #8688 - update FREELIST macros for AArch64
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
@@ -426,36 +419,31 @@ Changes with Apache Traffic Server 9.2.0
   #8722 - Adds user-agent to OCSP requests
   #8723 - Adding prefetch feature to slice plugin
   #8725 - Update THREAD_FREE macro to only evaluate the _t parameter once.
-  #8729 - Address issues with python 3.10
-  #8736 - [ink_base64] Fix buffer size computation
   #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
   #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
   #8747 - Add http2.default_buffer_water_mark config to tune latency
   #8751 - STEK share plugin using Raft
   #8752 - docs: add some obvious units to some http2 overridables
-  #8753 - Update to proxy-verifier-v2.3.1
   #8758 - Check return values of openssl api calls
   #8762 - Avoid allocation when matching hosts for vol lookup
   #8763 - Fix error handling in SSL cert/key load failures
-  #8764 - Lua plugin memory leak on remap configuration reloads
-  #8765 - Fixing the httpbin AuTests by pinning Werkzeug
   #8770 - Remove null check before ats_free calls (#8744)
   #8772 - Add metrics for loop detection.
-  #8773 - Pin Jinja2 for doc builds
   #8778 - OpenTelemetry Tracer plugin for ATS
   #8779 - Add autest to cover updates to cache with alternates
   #8783 - Adds a simple tool to generate new escape tables
   #8784 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
-  #8786 - include <cstring> for access to C-string operations
   #8788 - HttpSM, HttpTunnel, and Http2Stream debug logging updates
+  #8793 - Removes remaining vestiges to the backdoor port
   #8797 - Adds new plugin, http_stats
   #8798 - Create clean exit path for traffic_manager on SIGTERM
   #8805 - remove pthread_*specific and replace with thread_local
+  #8806 - Modifying array outside bounds
+  #8810 - Add Au test for prefetch plugin in simple mode.
   #8815 - Fedora/RHEL path layout for config.layout
   #8816 - Add support for caching complete responses to the cache range requests plugin
   #8817 - Fix `COMPRESSION_ERROR` on valid HPACK input
   #8821 - Fixes leak of SNI config filename on load
-  #8822 - Fixes leak of ssl_ocsp_response_path_only on reload
   #8827 - Fixes leak in SNIAction name globbing
   #8828 - Fixes issues with the CRR plugin introduced in #8488
   #8829 - Fix a compile error
@@ -473,12 +461,15 @@ Changes with Apache Traffic Server 9.2.0
   #8859 - Re-introduce import to get man_pages list available for sphinx.
   #8861 - Add missing configuration files man pages
   #8866 - Fix "is is" typos.
-  #8868 - Update to Proxy Verifier v2.3.3
   #8870 - Eliminate duplicate words.
   #8871 - Handle hit as miss when cach obj is invalid
   #8873 - Add proxy.process.hostdb.total_serve_stale
   #8875 - Expose setting some HTTP/2 tunables via sni.yaml (#8818)
   #8882 - Make ats_scoped_obj a synonym for std::unique_ptr .
   #8884 - Upgrade to Proxy Verifier 2.4.0.
+  #8886 - Add escape json for logging
+  #8892 - Cleanup SNIConfig
   #8897 - Removed references to the throttle option from the slice plugin. (#8373)
   #8898 - slice and cache_range_requests: allow header override (#8666)
+  #8902 - Fix plugin stats_over_http OK reason phrase
+  #8906 - Fix autest uses of File exists parameter
