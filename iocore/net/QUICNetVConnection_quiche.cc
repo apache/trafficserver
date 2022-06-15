@@ -322,6 +322,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
   uint8_t *buf         = reinterpret_cast<uint8_t *>(block->buf());
   uint64_t buf_len     = block->size();
 
+  net_activity(this, this_ethread());
   quiche_recv_info recv_info = {
     &packet->from.sa, static_cast<socklen_t>(packet->from.isIp4() ? sizeof(packet->from.sin) : sizeof(packet->from.sin6))};
 
@@ -543,6 +544,7 @@ QUICNetVConnection::_handle_write_ready()
     if (written > 0) {
       udp_payload->fill(written);
       this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload);
+      net_activity(this, this_ethread());
     }
   } while (written > 0);
 }
