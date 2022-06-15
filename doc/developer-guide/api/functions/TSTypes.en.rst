@@ -199,7 +199,7 @@ more widely. Those are described on this page.
    .. member:: TSRemapPluginInfo plugin_info
 
       An opaque object, which holds various details about the currently loaded and running
-      plugin. You can't access the details directly, but rather must call an acess function
+      plugin. You can't access the details directly, but rather must call an access function
       such as :func:`TSRemapDLHandleGet`.
 
 .. type:: TSRemapPluginInfo
