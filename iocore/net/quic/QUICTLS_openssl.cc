@@ -316,7 +316,7 @@ QUICTLS::_pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in)
   }
 }
 
-const EVP_MD *
+const char *
 QUICTLS::_get_handshake_digest() const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
@@ -324,9 +324,9 @@ QUICTLS::_get_handshake_digest() const
   case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
   case TLS1_3_CK_AES_128_CCM_SHA256:
   case TLS1_3_CK_AES_128_CCM_8_SHA256:
-    return EVP_sha256();
+    return "SHA256";
   case TLS1_3_CK_AES_256_GCM_SHA384:
-    return EVP_sha384();
+    return "SHA384";
   default:
     ink_assert(false);
     return nullptr;

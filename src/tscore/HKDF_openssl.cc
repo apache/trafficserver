@@ -23,8 +23,9 @@
 #include "tscore/HKDF.h"
 #include <openssl/kdf.h>
 
-HKDF::HKDF(const EVP_MD *digest) : _digest(digest)
+HKDF::HKDF(const char *digest)
 {
+  this->_digest_md = EVP_get_digestbyname(digest);
   // XXX We cannot reuse pctx now due to a bug in OpenSSL
   // this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
 }
@@ -51,7 +52,7 @@ HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_le
   if (EVP_PKEY_CTX_hkdf_mode(this->_pctx, EVP_PKEY_HKDEF_MODE_EXTRACT_ONLY) != 1) {
     return -2;
   }
-  if (EVP_PKEY_CTX_set_hkdf_md(this->_pctx, this->_digest) != 1) {
+  if (EVP_PKEY_CTX_set_hkdf_md(this->_pctx, this->_digest_md) != 1) {
     return -3;
   }
   if (EVP_PKEY_CTX_set1_hkdf_salt(this->_pctx, salt, salt_len) != 1) {
@@ -84,7 +85,7 @@ HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, 
   if (EVP_PKEY_CTX_hkdf_mode(this->_pctx, EVP_PKEY_HKDEF_MODE_EXPAND_ONLY) != 1) {
     return -2;
   }
-  if (EVP_PKEY_CTX_set_hkdf_md(this->_pctx, this->_digest) != 1) {
+  if (EVP_PKEY_CTX_set_hkdf_md(this->_pctx, this->_digest_md) != 1) {
     return -3;
   }
   if (EVP_PKEY_CTX_set1_hkdf_key(this->_pctx, prk, prk_len) != 1) {

@@ -22,14 +22,18 @@
  */
 #include "tscore/HKDF.h"
 #include <openssl/hkdf.h>
+#include <openssl/digest.h>
 
-HKDF::HKDF(const EVP_MD *digest) : _digest(digest) {}
+HKDF::HKDF(const char *digest)
+{
+  this->_digest_md = EVP_get_digestbyname(digest);
+}
 HKDF::~HKDF() {}
 
 int
 HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len)
 {
-  return HKDF_extract(dst, dst_len, this->_digest, ikm, ikm_len, salt, salt_len);
+  return HKDF_extract(dst, dst_len, this->_digest_md, ikm, ikm_len, salt, salt_len);
 }
 
 int
@@ -37,5 +41,5 @@ HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, 
              uint16_t length)
 {
   *dst_len = length;
-  return HKDF_expand(dst, length, this->_digest, prk, prk_len, info, info_len);
+  return HKDF_expand(dst, length, this->_digest_md, prk, prk_len, info, info_len);
 }

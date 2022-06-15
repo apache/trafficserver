@@ -90,7 +90,7 @@ public:
 private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
-  const EVP_MD *_get_handshake_digest() const;
+  const char *_get_handshake_digest() const;
 
   int _read_early_data();
   int _write_early_data();
