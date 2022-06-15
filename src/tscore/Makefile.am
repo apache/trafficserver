@@ -131,7 +131,11 @@ if HAS_HKDF
 if OPENSSL_IS_BORINGSSL
 HKDF_impl = HKDF_boringssl.cc
 else
+if OPENSSL_IS_OPENSSL3
+HKDF_impl = HKDF_openssl3.cc
+else
 HKDF_impl = HKDF_openssl.cc
+endif
 endif
 libtscore_la_SOURCES += \
   $(HKDF_impl)

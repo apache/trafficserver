@@ -49,7 +49,7 @@ void
 QUICKeyGenerator::generate(QUICVersion version, uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid)
 {
   const EVP_CIPHER *cipher = this->_get_cipher_for_initial();
-  const EVP_MD *md         = EVP_sha256();
+  const char *md           = "SHA256";
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
   QUICHKDF hkdf(md);
@@ -57,7 +57,7 @@ QUICKeyGenerator::generate(QUICVersion version, uint8_t *hp_key, uint8_t *pp_key
   switch (this->_ctx) {
   case Context::CLIENT:
     this->_generate_initial_secret(version, secret, &secret_len, hkdf, cid, LABEL_FOR_CLIENT_INITIAL_SECRET.data(),
-                                   LABEL_FOR_CLIENT_INITIAL_SECRET.length(), EVP_MD_size(md));
+                                   LABEL_FOR_CLIENT_INITIAL_SECRET.length(), EVP_MD_size(EVP_get_digestbyname(md)));
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[1024 + 1];
       QUICDebug::to_hex(print_buf, secret, secret_len);
@@ -67,7 +67,7 @@ QUICKeyGenerator::generate(QUICVersion version, uint8_t *hp_key, uint8_t *pp_key
     break;
   case Context::SERVER:
     this->_generate_initial_secret(version, secret, &secret_len, hkdf, cid, LABEL_FOR_SERVER_INITIAL_SECRET.data(),
-                                   LABEL_FOR_SERVER_INITIAL_SECRET.length(), EVP_MD_size(md));
+                                   LABEL_FOR_SERVER_INITIAL_SECRET.length(), EVP_MD_size(EVP_get_digestbyname(md)));
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[1024 + 1];
       QUICDebug::to_hex(print_buf, secret, secret_len);

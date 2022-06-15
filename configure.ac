@@ -1253,6 +1253,7 @@ TS_CHECK_CRYPTO_VERSION
 
 # Check for OpenSSL Version 3 and add compatiblity define if needed
 TS_CHECK_OPENSSL3
+AM_CONDITIONAL([OPENSSL_IS_OPENSSL3], [test -n "$openssl_is_openssl3"])
 
 # Check for openssl ASYNC jobs
 TS_CHECK_CRYPTO_ASYNC
