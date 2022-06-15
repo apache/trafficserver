@@ -25,12 +25,12 @@
 #include <cstring>
 #include <openssl/core_names.h>
 
-HKDF::HKDF(const char *digest) : _digest(digest)
+HKDF::HKDF(const char *digest)
 {
   EVP_KDF *kdf = EVP_KDF_fetch(NULL, "HKDF", NULL);
   this->_kctx  = EVP_KDF_CTX_new(kdf);
   EVP_KDF_free(kdf);
-  *params = OSSL_PARAM_construct_utf8_string(OSSL_KDF_PARAM_DIGEST, (char *)_digest, strlen(_digest));
+  *params = OSSL_PARAM_construct_utf8_string(OSSL_KDF_PARAM_DIGEST, (char *)digest, strlen(digest));
 }
 
 HKDF::~HKDF()

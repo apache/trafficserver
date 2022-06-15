@@ -23,9 +23,9 @@
 #include "tscore/HKDF.h"
 #include <openssl/kdf.h>
 
-HKDF::HKDF(const char *digest) : _digest(digest)
+HKDF::HKDF(const char *digest)
 {
-  this->_digest_md = EVP_get_digestbyname(_digest);
+  this->_digest_md = EVP_get_digestbyname(digest);
   // XXX We cannot reuse pctx now due to a bug in OpenSSL
   // this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
 }

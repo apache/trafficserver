@@ -44,7 +44,6 @@ public:
              uint16_t length);
 
 protected:
-  const char *_digest = nullptr;
 #ifdef OPENSSL_IS_OPENSSL3
   EVP_KDF_CTX *_kctx = nullptr;
   OSSL_PARAM params[5];
