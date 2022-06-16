@@ -139,6 +139,7 @@ EThread::process_event(Event *e, int calling_code)
     EventQueueExternal.enqueue_local(e);
   } else {
     if (e->cancelled) {
+      MUTEX_RELEASE(lock);
       free_event(e);
       return;
     }
