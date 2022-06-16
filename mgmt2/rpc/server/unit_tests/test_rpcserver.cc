@@ -51,7 +51,7 @@ namespace fs = ts::file;
 namespace rpc
 {
 bool
-test_remove_handler(std::string const &name)
+test_remove_handler(std::string_view name)
 {
   return rpc::JsonRPCManager::instance().remove_handler(name);
 }

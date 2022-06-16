@@ -76,7 +76,7 @@ public:
   /// @param info RPCRegistryInfo pointer.
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  template <typename Func> bool add_method_handler(const std::string &name, Func &&call, const RPCRegistryInfo *info);
+  template <typename Func> bool add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info);
 
   ///
   /// @brief Add new registered notification handler to the JSON RPC engine.
@@ -87,7 +87,7 @@ public:
   /// @param info RPCRegistryInfo pointer.
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  template <typename Func> bool add_notification_handler(const std::string &name, Func &&call, const RPCRegistryInfo *info);
+  template <typename Func> bool add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info);
 
   ///
   /// @brief This function handles the incoming jsonrpc request and dispatch the associated registered handler.
@@ -124,8 +124,8 @@ protected: // For unit test.
   /// @return true If all is good.
   /// @return false If we could not remove it.
   ///
-  bool remove_handler(std::string const &name);
-  friend bool test_remove_handler(std::string const &name);
+  bool remove_handler(std::string_view name);
+  friend bool test_remove_handler(std::string_view name);
 
 private:
   ///
@@ -166,7 +166,7 @@ private:
     /// Add a method handler to the internal container
     /// @return True if was successfully added, False otherwise.
     template <typename FunctionWrapperType, typename Handler>
-    bool add_handler(std::string const &name, Handler &&handler, const RPCRegistryInfo *info);
+    bool add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info);
 
     /// Find and call the request's callback. If any error occurs, the return type will have the specific error.
     /// For notifications the @c RPCResponseInfo will not be set as part of the response. @c response_type
@@ -177,7 +177,7 @@ private:
     ///         be false and the handler null.
     InternalHandler const &find_handler(specs::RPCRequestInfo const &request, std::error_code &ec) const;
     /// Removes a method handler. Unit test mainly.
-    bool remove_handler(std::string const &name);
+    bool remove_handler(std::string_view name);
 
     // JSONRPC API - here for now.
     ts::Rv<YAML::Node> show_registered_handlers(std::string_view const &, const YAML::Node &);
@@ -244,14 +244,14 @@ private:
 // ------------------------------ JsonRPCManager -------------------------------
 template <typename Handler>
 bool
-JsonRPCManager::add_method_handler(const std::string &name, Handler &&call, const RPCRegistryInfo *info)
+JsonRPCManager::add_method_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info)
 {
   return _dispatcher.add_handler<Dispatcher::Method, Handler>(name, std::forward<Handler>(call), info);
 }
 
 template <typename Handler>
 bool
-JsonRPCManager::add_notification_handler(const std::string &name, Handler &&call, const RPCRegistryInfo *info)
+JsonRPCManager::add_notification_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info)
 {
   return _dispatcher.add_handler<Dispatcher::Notification, Handler>(name, std::forward<Handler>(call), info);
 }
@@ -276,7 +276,7 @@ bool inline JsonRPCManager::Dispatcher::InternalHandler::operator!() const
 // ----------------------------- Dispatcher ------------------------------------
 template <typename FunctionWrapperType, typename Handler>
 bool
-JsonRPCManager::Dispatcher::add_handler(std::string const &name, Handler &&handler, const RPCRegistryInfo *info)
+JsonRPCManager::Dispatcher::add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   InternalHandler call{info};
