@@ -1037,6 +1037,7 @@ typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
+typedef struct tsapi_remap_plugin_info *TSRemapPluginInfo;
 
 typedef struct tsapi_fetchsm *TSFetchSM;
 
