@@ -222,6 +222,10 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     }
     TimerDebug("checking crypto signature for jwt");
   } else {
+    if (!jwt->iss) {
+      PluginDebug("iss missing for %16p", jws);
+      goto jwt_fail;
+    }
     PluginDebug("Searching all keys for issuer %s for %16p", jwt->iss, jws);
     cjose_jwk_t **jwks;
     for (jwks = find_keys(cfg, jwt->iss); jwks && *jwks; ++jwks) {
