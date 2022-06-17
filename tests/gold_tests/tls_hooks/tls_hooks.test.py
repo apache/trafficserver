@@ -62,11 +62,11 @@ tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
     "TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
 
-ts.Streams.stderr = "gold/ts-preaccept-1.gold"
+ts.Disk.traffic_out.Content = "gold/ts-preaccept-1.gold"
 
 # the preaccept may get triggered twice because the test framework creates a TCP connection before handing off to traffic_server
 preacceptstring = "Pre accept callback 0"
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring),
     "Pre accept message appears only once or twice",
     reflags=re.S | re.M)

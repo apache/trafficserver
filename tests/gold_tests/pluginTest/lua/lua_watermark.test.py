@@ -55,7 +55,7 @@ ts.Disk.records_config.update({
 })
 
 # Test for watermark debug output
-ts.Streams.All = Testers.ContainsExpression(r"WMbytes\(31337\)", "Upstream watermark should be properly set")
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(r"WMbytes\(31337\)", "Upstream watermark should be properly set")
 
 # Test if watermark upstream is set
 tr = Test.AddTestRun("Lua Watermark")

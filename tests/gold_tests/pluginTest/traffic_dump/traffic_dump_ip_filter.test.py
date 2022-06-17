@@ -75,7 +75,7 @@ ts1, ts1_replay_file = get_common_ats_process(
     "ts1",
     'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 -4 127.0.0.1',
     replay_exists=True)
-ts1.Streams.stderr += Testers.ContainsExpression(
+ts1.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Filtering to only dump connections with ip: 127.0.0.1",
     "Verify the IP filter status message.")
 tr.AddVerifierClientProcess(
@@ -103,7 +103,7 @@ ts2, ts2_replay_file = get_common_ats_process(
     "ts2",
     'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 -4 1.2.3.4',
     replay_exists=False)
-ts2.Streams.stderr += Testers.ContainsExpression(
+ts2.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Filtering to only dump connections with ip: 1.2.3.4",
     "Verify the IP filter status message.")
 tr.AddVerifierClientProcess(

@@ -155,8 +155,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)
 tr.Processes.Default.StartBefore(ts2)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
-ts2.Streams.All = Testers.ContainsExpression('new session to origin', '')
-ts2.Streams.All += Testers.ContainsExpression('reused session to origin', '')
+ts2.Disk.traffic_out.Content = Testers.ContainsExpression('new session to origin', '')
+ts2.Disk.traffic_out.Content += Testers.ContainsExpression('reused session to origin', '')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += ts1
 tr.StillRunningAfter += ts2
@@ -166,9 +166,9 @@ tr.Processes.Default.Command = 'curl https://127.0.0.1:{0}/remove_oldest -k && c
     ts2.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
-ts2.Streams.All = Testers.ContainsExpression('remove oldest session', '')
-ts2.Streams.All += Testers.ContainsExpression('new session to origin', '')
-ts2.Streams.All += Testers.ContainsExpression('reused session to origin', '')
+ts2.Disk.traffic_out.Content = Testers.ContainsExpression('remove oldest session', '')
+ts2.Disk.traffic_out.Content += Testers.ContainsExpression('new session to origin', '')
+ts2.Disk.traffic_out.Content += Testers.ContainsExpression('reused session to origin', '')
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun('disable origin session reuse, reuse should fail')
@@ -177,5 +177,5 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts3)
 tr.Processes.Default.StartBefore(ts4)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
-ts4.Streams.All = Testers.ContainsExpression('new session to origin', '')
-ts4.Streams.All += Testers.ExcludesExpression('reused session to origin', '')
+ts4.Disk.traffic_out.Content = Testers.ContainsExpression('new session to origin', '')
+ts4.Disk.traffic_out.Content += Testers.ExcludesExpression('reused session to origin', '')

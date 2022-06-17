@@ -82,13 +82,13 @@ class SessionMatchTest:
 
     def runAndExpectSharing(self):
         self._runTraffic()
-        self._ts.Streams.stderr = Testers.ContainsExpression(
+        self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
             "global pool search successful",
             "Verify that sessions got shared")
 
     def runAndExpectNoSharing(self):
         self._runTraffic()
-        self._ts.Streams.stderr = Testers.ExcludesExpression(
+        self._ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
             "global pool search successful",
             "Verify that sessions did not get shared")
 

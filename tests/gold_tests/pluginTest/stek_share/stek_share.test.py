@@ -222,11 +222,11 @@ tr1.Processes.Default.StartBefore(ts3)
 tr1.Processes.Default.StartBefore(ts4)
 tr1.Processes.Default.StartBefore(ts5)
 tr1.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
-ts1.Streams.All = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
-ts2.Streams.All = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
-ts3.Streams.All = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
-ts4.Streams.All = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
-ts5.Streams.All = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
+ts1.Disk.traffic_out.Content = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
+ts1.Disk.traffic_out.Content = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
+ts1.Disk.traffic_out.Content = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
+ts1.Disk.traffic_out.Content = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
+ts1.Disk.traffic_out.Content = Testers.ContainsExpression('Generate initial STEK succeeded', 'should succeed')
 tr1.StillRunningAfter = server
 tr1.StillRunningAfter += ts1
 tr1.StillRunningAfter += ts2

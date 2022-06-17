@@ -68,7 +68,7 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/header_rewrite-client.gold"
 tr.StillRunningAfter = server
-ts.Streams.All = "gold/header_rewrite-tag.gold"
+ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
 # Test TO-URL in a set-redirect operator.
 tr = Test.AddTestRun()
@@ -77,4 +77,4 @@ tr.Processes.Default.Command = 'curl --head 127.0.0.1:{0} -H "Host: no_path.com"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/set-redirect.gold"
 tr.StillRunningAfter = server
-ts.Streams.All = "gold/header_rewrite-tag.gold"
+ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"

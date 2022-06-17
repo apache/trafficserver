@@ -160,7 +160,7 @@ class MalformedChunkHeaderTest:
         self.ts.Disk.remap_config.AddLine(
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         )
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "user agent post chunk decoding error",
             "Verify that ATS detected a problem parsing a chunk.")
 

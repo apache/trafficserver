@@ -47,5 +47,5 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 ts.ReturnCode = 33
 ts.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
-ts.Streams.All = Testers.ExcludesExpression('failed to shutdown', 'should NOT contain "failed to shutdown"')
+ts.Disk.traffic_out.Content = Testers.ExcludesExpression('failed to shutdown', 'should NOT contain "failed to shutdown"')
 ts.Disk.diags_log.Content = Testers.IncludesExpression('testing emergency shutdown', 'should contain "testing emergency shutdown"')

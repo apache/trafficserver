@@ -1,3 +1,4 @@
 `` DIAG: (ssl_hook_test) Outbound close callback `` - event is good
 `` DIAG: (ssl_hook_test) Close callback 0 `` - event is good
 `` DIAG: (ssl_hook_test) Close callback 1 `` - event is good
+``
