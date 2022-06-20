@@ -29,8 +29,8 @@
 
 namespace rpc
 {
-const bool RESTRICTED_API{true};
-const bool NON_RESTRICTED_API{false};
+constexpr bool RESTRICTED_API{true};
+constexpr bool NON_RESTRICTED_API{false};
 ///
 /// @brief RPC call context class.
 ///
@@ -48,7 +48,7 @@ class Context
     /// @param options Registered handler options.
     /// @return ts::Errata The errata will be filled by each of the registered checkers, if there was any issue validating the
     ///                    call, then the errata reflects that.
-    ts::Errata any_blockers(TSRPCHandlerOptions const &options) const;
+    ts::Errata is_blocked(TSRPCHandlerOptions const &options) const;
 
     /// Add permission checkers.
     template <typename F>

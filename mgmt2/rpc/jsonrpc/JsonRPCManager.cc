@@ -63,7 +63,7 @@ bool g_rpcHandlerProcessingCompleted{false};
 std::pair<ts::Errata, error::RPCErrorCode>
 check_for_blockers(Context const &ctx, TSRPCHandlerOptions const &options)
 {
-  if (auto err = ctx.get_auth().any_blockers(options); !err.isOK()) {
+  if (auto err = ctx.get_auth().is_blocked(options); !err.isOK()) {
     return {err, error::RPCErrorCode::Unauthorized};
   }
   return {};
@@ -101,12 +101,17 @@ JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo c
   auto const &handler = find_handler(request, ec);
 
   if (ec) {
-    return specs::RPCResponseInfo{request.id, ec};
+    specs::RPCResponseInfo resp{request.id};
+    resp.error.ec = ec;
+    return resp;
   }
 
   // We have got a valid handler, we will now check if the context holds any restriction for this handler to be called.
   if (auto &&[errata, ec] = check_for_blockers(ctx, handler.get_options()); !errata.isOK()) {
-    return specs::RPCResponseInfo(request.id, ec, errata);
+    specs::RPCResponseInfo resp{request.id};
+    resp.error.ec   = ec;
+    resp.error.data = errata;
+    return resp;
   }
 
   if (request.is_notification()) {
@@ -210,7 +215,9 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
     // If any error happened within the request, they will be kept inside each
     // particular request, as they would need to be converted back in a proper error response.
     if (ec) {
-      return Encoder::encode(specs::RPCResponseInfo{ec});
+      specs::RPCResponseInfo resp;
+      resp.error.ec = ec;
+      return Encoder::encode(resp);
     }
 
     specs::RPCResponse response{msg.is_batch()};
@@ -221,17 +228,19 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
       if (!decode_error) {
         // request seems ok and ready to be dispatched. The dispatcher will tell us if the method exist and if so, it will dispatch
         // the call and gives us back the response.
-        const auto &encodedResponse = _dispatcher.dispatch(ctx, req);
+        auto encodedResponse = _dispatcher.dispatch(ctx, req);
 
         if (encodedResponse) {
           // if any error was detected during invocation or before, the response will have the error field set, so this will
           // internally be converted to the right response type.
-          response.add_message(*encodedResponse);
+          response.add_message(std::move(*encodedResponse));
         } // else it's a notification and no error.
 
       } else {
         // If the request was marked as an error(decode error), we still need to send the error back, so we save it.
-        response.add_message(specs::RPCResponseInfo{req.id, decode_error});
+        specs::RPCResponseInfo resp{req.id};
+        resp.error.ec = decode_error;
+        response.add_message(std::move(resp));
       }
     }
 
@@ -246,8 +255,9 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
   } catch (std::exception const &ex) {
     ec = error::RPCErrorCode::INTERNAL_ERROR;
   }
-
-  return {Encoder::encode(specs::RPCResponseInfo{ec})};
+  specs::RPCResponseInfo resp;
+  resp.error.ec = ec;
+  return {Encoder::encode(resp)};
 }
 
 // ---------------------------- InternalHandler ---------------------------------
@@ -265,13 +275,13 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                   [&ret, &request](Method const &handler) -> void {
                                     // Regular Method Handler call, No cond variable check here, this should have not be created by
                                     // a plugin.
-                                    ret = handler.cb(*request.id, request.params);
+                                    ret = handler.cb(request.id, request.params);
                                   },
                                   [&ret, &request](PluginMethod const &handler) -> void {
                                     // We call the method handler, we'll lock and wait till the condition_variable
                                     // gets set on the other side. The handler may return immediately with no response being set.
                                     // cond var will give us green to proceed.
-                                    handler.cb(*request.id, request.params);
+                                    handler.cb(request.id, request.params);
                                     std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
                                     g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
                                     g_rpcHandlerProcessingCompleted = false;
