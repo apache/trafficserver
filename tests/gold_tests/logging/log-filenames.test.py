@@ -67,7 +67,7 @@ class LogFilenamesTest:
         self._ts_name = f"ts{LogFilenamesTest.__ts_counter}"
         LogFilenamesTest.__ts_counter += 1
         self.ts = Test.MakeATSProcess(self._ts_name, command="traffic_manager",
-                                      log_data=log_data)
+                                      use_traffic_out=False, log_data=log_data)
         self.ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 0,
             'proxy.config.diags.debug.tags': 'log',

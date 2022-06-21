@@ -90,4 +90,4 @@ tr.Processes.Default.Streams.stdout = "gold/nghttp_1_stdout.gold"
 tr.StillRunningAfter = httpbin
 tr.StillRunningAfter = ts
 
-ts.Streams.stderr = "gold/nghttp_ts_stderr.gold"
+ts.Disk.traffic_out.Content = "gold/nghttp_ts_stderr.gold"

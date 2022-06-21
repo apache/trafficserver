@@ -56,7 +56,7 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
-ts.Streams.stderr = "gold/ts-close-out-close.gold"
+ts.Disk.traffic_out.Content = "gold/ts-close-out-close.gold"
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

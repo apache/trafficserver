@@ -45,5 +45,5 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'printf "Test TSContThreadAffinity API"'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
-ts.Streams.All = "gold/thread_affinity.gold"
-ts.Streams.All += Testers.ExcludesExpression('fail', 'should not contain "fail"')
+ts.Disk.traffic_out.Content = "gold/thread_affinity.gold"
+ts.Disk.traffic_out.Content += Testers.ExcludesExpression('fail', 'should not contain "fail"')

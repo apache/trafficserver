@@ -58,4 +58,4 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/header_rewrite-303.gold"
 tr.StillRunningAfter = server
 
-ts.Streams.All = "gold/header_rewrite-tag.gold"
+ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"

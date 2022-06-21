@@ -58,13 +58,13 @@ tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 
-ts.Streams.stderr = "gold/ts-cert-2.gold"
+ts.Disk.traffic_out.Content = "gold/ts-cert-2.gold"
 
 certstring0 = "Cert callback 0"
 certstring1 = "Cert callback 1"
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears only once", reflags=re.S | re.M)
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15

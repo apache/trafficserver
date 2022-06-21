@@ -20,7 +20,7 @@ while (( N > 0 ))
 do
     sleep 1
     rm -f lifecycle.out
-    grep -F ' ts_lua ' ts.stderr.txt | \
+    grep -F ' ts_lua ' ${PROXY_CONFIG_LOG_LOGFILE_DIR}/traffic.out | \
         sed -e 's/^.* ts_lua //' -e 's/ gc_kb:.*gc_kb_max:.*threads:.*threads_max:.*$//' > lifecycle.out
     if diff lifecycle.out ${AUTEST_TEST_DIR}/gold/lifecycle.gold > /dev/null
     then

@@ -107,7 +107,7 @@ tr4.Processes.Default.StartBefore(ts2)
 
 ts2.ReturnCode = 2
 ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
-ts2.Streams.All = Testers.ExcludesExpression(
+ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
     'Traffic Server is fully initialized',
     'process should fail when invalid certificate specified')
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('FATAL: failed to load SSL certificate file', 'check diags.log"')

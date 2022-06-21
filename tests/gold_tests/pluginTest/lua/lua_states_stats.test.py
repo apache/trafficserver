@@ -28,12 +28,7 @@ Test.ContinueOnFail = True
 # Define default ATS
 server = Test.MakeOriginServer("server")
 
-# It is necessary to redirect stderr to a file so it will be available for examination by a test run.
-ts = Test.MakeATSProcess(
-    "ts", command="traffic_manager 2> " + Test.RunDirectory + "/ts.stderr.txt", select_ports=True
-)
-# For unknown reasons, traffic_manager returns 2 instead of 0 on exit with stderr redirect here.
-ts.ReturnCode = 2
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 Test.testName = "Lua states and stats"
 

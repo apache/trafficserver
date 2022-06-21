@@ -45,5 +45,5 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'printf "Test TSContScheduleOnThread API"'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
-ts.Streams.All = "gold/schedule_on_thread.gold"
-ts.Streams.All += Testers.ExcludesExpression('fail', 'should not contain "fail"')
+ts.Disk.traffic_out.Content = "gold/schedule_on_thread.gold"
+ts.Disk.traffic_out.Content += Testers.ExcludesExpression('fail', 'should not contain "fail"')

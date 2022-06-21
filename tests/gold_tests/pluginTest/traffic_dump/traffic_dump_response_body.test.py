@@ -79,7 +79,7 @@ ts.Disk.File(ts_dump_2, exists=True)
 ts_dump_3 = os.path.join(replay_dir, "127", "0000000000000003")
 ts.Disk.File(ts_dump_3, exists=True)
 
-ts.Streams.stderr = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "Dumping body bytes: true",
     "Verify that dumping body bytes is enabled.")
 
