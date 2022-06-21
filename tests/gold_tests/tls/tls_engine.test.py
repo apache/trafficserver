@@ -99,4 +99,4 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"HTTP/(2|1\.1) 200", "Request succeeds")
 tr.StillRunningAfter = server
 
-ts.Streams.All += Testers.ContainsExpression("Send signal to ", "The Async engine triggers")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("Send signal to ", "The Async engine triggers")

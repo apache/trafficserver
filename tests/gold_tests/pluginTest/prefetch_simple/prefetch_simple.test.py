@@ -43,7 +43,7 @@ for i in range(4):
 
 dns = Test.MakeDNServer("dns")
 
-ts = Test.MakeATSProcess("ts", command="traffic_server 2> trace.log")
+ts = Test.MakeATSProcess("ts", use_traffic_out=False, command="traffic_server 2> trace.log")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns|prefetch',

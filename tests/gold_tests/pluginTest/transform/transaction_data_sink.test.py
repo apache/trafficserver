@@ -43,7 +43,7 @@ ts.Disk.plugin_config.AddLine('txn_data_sink.so')
 
 # Verify that the various aspects of the expected debug output for the
 # transaction are logged.
-ts.Streams.stderr = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     '"http1.1_response_body"',
     "The response body should be printed by the plugin.")
 

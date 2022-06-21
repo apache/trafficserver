@@ -40,7 +40,8 @@ default_log_data = {
 
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
                    enable_tls=False, enable_cache=True, enable_quic=False,
-                   block_for_debug=False, log_data=default_log_data):
+                   block_for_debug=False, log_data=default_log_data,
+                   use_traffic_out=True):
     #####################################
     # common locations
 
@@ -71,13 +72,28 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     storage_dir = os.path.join(ts_dir, 'storage')
     cache_dir = os.path.join(ts_dir, 'cache')
 
+    ts_args = ''
+    if use_traffic_out:
+        # Bind stdout/err to traffic.out. This allows tests to wait upon
+        # content from the traffic.out file, something that cannot be done on
+        # process stdout/stderr in AuTest.
+        traffic_out = os.path.join(log_dir, 'traffic.out')
+        ts_args += f' --bind_stderr {traffic_out}'
+        ts_args += f' --bind_stdout {traffic_out}'
+
     if block_for_debug:
-        if command.startswith('traffic_server'):
-            command += ' --block'
-        elif command.startswith('traffic_manager'):
-            if '--tsArgs' not in command:
-                command += ' --tsArgs'
-            command += ' --block'
+        ts_args += ' --block'
+
+    if 'traffic_manager' in command:
+        if '--tsArgs' in command:
+            # None of our tests do this, but if we eventually pass in --tsArgs
+            # at some point from a test, we'll need to figure out how to mix
+            # that with the arguments we're assembling for --tsArgs here.
+            host.WriteError('Do not know how to assemble --tsArgs.')
+        if ts_args:
+            command += f' --tsArgs "{ts_args}"'
+    elif 'traffic_server' in command:
+        command += ts_args
 
     # create process
     p = obj.Processes.Process(name, command)
@@ -220,7 +236,12 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         "Unrecognized configuration value",
         f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
 
-    if command == "traffic_manager":
+    # traffic.out
+    fname = "traffic.out"
+    tmpname = os.path.join(log_dir, fname)
+    p.Disk.File(tmpname, id='traffic_out')
+
+    if "traffic_manager" in command:
         fname = log_data['manager']
         if fname == 'stdout':
             p.Disk.manager_log = p.Streams.stdout
@@ -372,7 +393,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x
 
-    if command == "traffic_manager":
+    if 'traffic_manager' in command:
         p.ReturnCode = 2
     else:
         p.ReturnCode = 0

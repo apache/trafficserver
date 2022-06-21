@@ -75,15 +75,15 @@ logging:
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Created named pipe .*{}".format(pipe_name),
     "Verify that the named pipe was created")
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "no readers for pipe .*{}".format(pipe_name),
     "Verify that no readers for the pipe was detected.")
 
-ts.Streams.All += Testers.ExcludesExpression(
+ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
     "New buffer size for pipe".format(pipe_name),
     "Verify that the default pipe size was used.")
 
@@ -136,15 +136,15 @@ logging:
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Created named pipe .*{}".format(pipe_name),
     "Verify that the named pipe was created")
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "no readers for pipe .*{}".format(pipe_name),
     "Verify that no readers for the pipe was detected.")
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Previous buffer size for pipe .*{}".format(pipe_name),
     "Verify that the named pipe's size was adjusted")
 
@@ -156,7 +156,7 @@ ts.Streams.All += Testers.ContainsExpression(
 # requested, but it should be at least that big. We use the
 # pipe_buffer_is_larger_than.py helper script to verify that the pipe grew in
 # size.
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "New buffer size for pipe.*{}".format(pipe_name),
     "Verify that the named pipe's size was adjusted")
 buffer_verifier = "pipe_buffer_is_larger_than.py"

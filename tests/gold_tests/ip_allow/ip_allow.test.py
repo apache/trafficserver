@@ -131,10 +131,10 @@ ts.Disk.ip_allow_yaml.AddLines(
 '''.split("\n")
 )
 
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Line 1 denial for 'CONNECT' from 127.0.0.1",
     "The CONNECT request should be denied by ip_allow")
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Line 1 denial for 'PUSH' from 127.0.0.1",
     "The PUSH request should be denied by ip_allow")
 

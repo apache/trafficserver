@@ -58,10 +58,10 @@ tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 
-ts.Streams.stderr = "gold/ts-sni-1.gold"
+ts.Disk.traffic_out.Content = "gold/ts-sni-1.gold"
 
 snistring = "SNI callback 0"
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "SNI message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15

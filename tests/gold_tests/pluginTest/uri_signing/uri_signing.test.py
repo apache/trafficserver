@@ -211,6 +211,8 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
-ts.Streams.stderr = Testers.ContainsExpression("Initial JWT Failure: iss is missing, must be present", "should fail the validation")
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
+    "Initial JWT Failure: iss is missing, must be present",
+    "should fail the validation")
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
