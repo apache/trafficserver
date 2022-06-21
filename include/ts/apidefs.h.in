@@ -1479,6 +1479,18 @@ namespace ts
 }
 #endif
 
+///
+/// @brief JSON-RPC Handler options
+///
+/// This class holds information about how a handler will be managed and delivered when called. The JSON-RPC manager would use this
+/// object to perform certain validation.
+///
+typedef struct TSRPCHandlerOptions_s {
+  struct Auth {
+    int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
+  } auth;
+} TSRPCHandlerOptions;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

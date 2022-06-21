@@ -26,7 +26,7 @@ API Handler error codes
 ***********************
 
 High level handler error codes, each particular handler can be fit into one of the following categories.
-A good approach could be the following. This required coordination among all the errors, just for now, this soluction seems ok.
+A good approach could be the following. This required coordination among all the errors, just for now, this solution seems ok.
 
 .. code-block:: cpp
 

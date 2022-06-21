@@ -45,12 +45,18 @@ public:
 };
 
 struct RPCResponseInfo {
-  RPCResponseInfo(std::optional<std::string> const &id_) : id(id_) {}
+  RPCResponseInfo(std::string const &id_) : id{id_} {} // Convenient
   RPCResponseInfo() = default;
 
-  RPCHandlerResponse callResult;
-  std::error_code rpcError;
-  std::optional<std::string> id;
+  struct Error {
+    std::error_code ec;
+    ts::Errata data;
+  };
+
+  std::string id; //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
+                  //!< will not pass the validation)
+  Error error;    //!< Error code and details.
+  RPCHandlerResponse callResult; //!< the actual handler's response
 };
 
 ///
@@ -61,17 +67,18 @@ struct RPCResponseInfo {
 struct RPCRequestInfo {
   RPCRequestInfo() = default;
   RPCRequestInfo(std::string const &version, std::string const &mid) : jsonrpc(version), id(mid) {}
-  std::string jsonrpc;           //!<  JsonRPC version ( we only allow 2.0 ). @see yamlcpp_json_decoder
-  std::string method;            //!< incoming method name.
-  std::optional<std::string> id; //!< incoming request if (only used for method calls.)
-  YAML::Node params;             //!< incoming parameter structure.
+  std::string jsonrpc; //!<  JsonRPC version ( we only allow 2.0 ). @see yamlcpp_json_decoder
+  std::string method;  //!< incoming method name.
+  std::string id;    //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
+                     //!< will not pass the validation)
+  YAML::Node params; //!< incoming parameter structure.
 
   /// Convenience functions that checks for the type of request. If contains id then it should be handle as method call, otherwise
   /// will be a notification.
   bool
   is_notification() const
   {
-    return !id.has_value();
+    return id.empty();
   }
   bool
   is_method() const

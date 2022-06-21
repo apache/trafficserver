@@ -35,29 +35,40 @@ register_admin_jsonrpc_handlers()
 {
   // Config
   using namespace rpc::handlers::config;
-  rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
 
   // Records
   using namespace rpc::handlers::records;
-  rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_clear_all_metrics_records", &clear_all_metrics_records, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_clear_metrics_records", &clear_metrics_records, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
+  rpc::add_method_handler("admin_clear_all_metrics_records", &clear_all_metrics_records, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_clear_metrics_records", &clear_metrics_records, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
 
   // plugin
   using namespace rpc::handlers::plugins;
-  rpc::add_method_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
 
   // server
   using namespace rpc::handlers::server;
-  rpc::add_method_handler("admin_server_start_drain", &server_start_drain, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_server_stop_drain", &server_stop_drain, &core_ats_rpc_service_provider_handle);
-  rpc::add_notification_handler("admin_server_shutdown", &server_shutdown, &core_ats_rpc_service_provider_handle);
-  rpc::add_notification_handler("admin_server_restart", &server_shutdown, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_server_start_drain", &server_start_drain, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_server_stop_drain", &server_stop_drain, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_notification_handler("admin_server_shutdown", &server_shutdown, &core_ats_rpc_service_provider_handle,
+                                {{rpc::RESTRICTED_API}});
+  rpc::add_notification_handler("admin_server_restart", &server_shutdown, &core_ats_rpc_service_provider_handle,
+                                {{rpc::RESTRICTED_API}});
 
   // storage
   using namespace rpc::handlers::storage;
-  rpc::add_method_handler("admin_storage_set_device_offline", &set_storage_offline, &core_ats_rpc_service_provider_handle);
-  rpc::add_method_handler("admin_storage_get_device_status", &get_storage_status, &core_ats_rpc_service_provider_handle);
+  rpc::add_method_handler("admin_storage_set_device_offline", &set_storage_offline, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_storage_get_device_status", &get_storage_status, &core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
 }
 } // namespace rpc::admin

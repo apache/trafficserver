@@ -34,6 +34,7 @@
 #include "ts/apidefs.h"
 
 #include "Defs.h"
+#include "Context.h"
 
 namespace rpc
 {
@@ -44,9 +45,14 @@ namespace json_codecs
   class yamlcpp_json_encoder;
 } // namespace json_codecs
 
+///
+/// @brief This class keeps all relevant @c RPC provider's info.
+///
 struct RPCRegistryInfo {
-  std::string_view provider;
+  std::string_view provider; ///< Who's the rpc endpoint provider, could be ATS or a plugins. When requesting the service info from
+                             ///< the rpc node, this will be part of the service info.
 };
+
 ///
 /// @brief JSONRPC registration and JSONRPC invocation logic  https://www.jsonrpc.org/specification
 /// doc TBC
@@ -74,9 +80,11 @@ public:
   ///             'get_stats'...} .
   /// @param call The function handler.
   /// @param info RPCRegistryInfo pointer.
+  /// @param opt  Handler options, used to pass information about the registered handler.
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  template <typename Func> bool add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info);
+  template <typename Func>
+  bool add_method_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
 
   ///
   /// @brief Add new registered notification handler to the JSON RPC engine.
@@ -85,18 +93,21 @@ public:
   /// @param name Name to be exposed by the RPC Engine.
   /// @param call The callback function that needs handler.
   /// @param info RPCRegistryInfo pointer.
+  /// @param opt  Handler options, used to pass information about the registered handler.
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  template <typename Func> bool add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info);
+  template <typename Func>
+  bool add_notification_handler(std::string_view name, Func &&call, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
 
   ///
   /// @brief This function handles the incoming jsonrpc request and dispatch the associated registered handler.
   ///
+  /// @param ctx @c Context object used pass information between rpc layers.
   /// @param jsonString The incoming jsonrpc 2.0 message. \link https://www.jsonrpc.org/specification
   /// @return std::optional<std::string> For methods, a valid jsonrpc 2.0 json string will be passed back. Notifications will not
   ///         contain any json back.
   ///
-  std::optional<std::string> handle_call(std::string const &jsonString);
+  std::optional<std::string> handle_call(Context const &ctx, std::string const &jsonString);
 
   ///
   /// @brief Get the instance of the whole RPC engine.
@@ -144,9 +155,9 @@ private:
   /// signatures inside a @c std::variant
   class Dispatcher
   {
-    using response_type = std::pair<
-      std::optional<specs::RPCResponseInfo>,
-      std::error_code>; ///< The response type used internally, notifications won't fill in the optional response. @c ec will be set
+    /// The response type used internally, notifications won't fill in the optional response.  Internal response's @ ec will be set
+    /// in case of any error.
+    using response_type = std::optional<specs::RPCResponseInfo>;
 
     ///
     /// @brief Class that wraps the actual std::function<T>.
@@ -166,11 +177,11 @@ private:
     /// Add a method handler to the internal container
     /// @return True if was successfully added, False otherwise.
     template <typename FunctionWrapperType, typename Handler>
-    bool add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info);
+    bool add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt);
 
     /// Find and call the request's callback. If any error occurs, the return type will have the specific error.
     /// For notifications the @c RPCResponseInfo will not be set as part of the response. @c response_type
-    response_type dispatch(specs::RPCRequestInfo const &request) const;
+    response_type dispatch(Context const &ctx, specs::RPCRequestInfo const &request) const;
 
     /// Find a particular registered handler(method) by its associated name.
     /// @return A pair. The handler itself and a boolean flag indicating that the handler was found. If not found, second will
@@ -206,7 +217,7 @@ private:
     /// simplify the logic to insert and fetch callable objects from our container.
     struct InternalHandler {
       InternalHandler() = default;
-      InternalHandler(const RPCRegistryInfo *info) : _regInfo(info) {}
+      InternalHandler(const RPCRegistryInfo *info, TSRPCHandlerOptions const &opt) : _regInfo(info), _options(opt) {}
       /// Sets the handler.
       template <class T, class F> void set_callback(F &&t);
       explicit operator bool() const;
@@ -223,6 +234,13 @@ private:
         return _regInfo;
       }
 
+      /// Returns the configured options associated with this particular handler.
+      TSRPCHandlerOptions const &
+      get_options() const
+      {
+        return _options;
+      }
+
     private:
       // We need to keep this match with the order of types in the _func variant. This will help us to identify the holding type.
       enum class VariantTypeIndexId : std::size_t { NOTIFICATION = 1, METHOD = 2, METHOD_FROM_PLUGIN = 3 };
@@ -231,6 +249,7 @@ private:
       std::variant<std::monostate, Notification, Method, PluginMethod> _func;
       const RPCRegistryInfo *_regInfo; ///< Can hold internal information about the handler, this could be null as it is optional.
                                        ///< This pointer can eventually holds important information about the call.
+      TSRPCHandlerOptions _options;
     };
     // We will keep all the handlers wrapped inside the InternalHandler class, this will help us
     // to have a single container for all the types(method, notification & plugin method(cond var)).
@@ -244,19 +263,21 @@ private:
 // ------------------------------ JsonRPCManager -------------------------------
 template <typename Handler>
 bool
-JsonRPCManager::add_method_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info)
+JsonRPCManager::add_method_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info,
+                                   TSRPCHandlerOptions const &opt)
 {
-  return _dispatcher.add_handler<Dispatcher::Method, Handler>(name, std::forward<Handler>(call), info);
+  return _dispatcher.add_handler<Dispatcher::Method, Handler>(name, std::forward<Handler>(call), info, opt);
 }
 
 template <typename Handler>
 bool
-JsonRPCManager::add_notification_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info)
+JsonRPCManager::add_notification_handler(std::string_view name, Handler &&call, const RPCRegistryInfo *info,
+                                         TSRPCHandlerOptions const &opt)
 {
-  return _dispatcher.add_handler<Dispatcher::Notification, Handler>(name, std::forward<Handler>(call), info);
+  return _dispatcher.add_handler<Dispatcher::Notification, Handler>(name, std::forward<Handler>(call), info, opt);
 }
 
-// ----------------------------- InternalHandler ------------------------------------
+// ----------------------------- InternalHandler -------------------------------
 template <class T, class F>
 void
 JsonRPCManager::Dispatcher::InternalHandler::set_callback(F &&f)
@@ -276,10 +297,11 @@ bool inline JsonRPCManager::Dispatcher::InternalHandler::operator!() const
 // ----------------------------- Dispatcher ------------------------------------
 template <typename FunctionWrapperType, typename Handler>
 bool
-JsonRPCManager::Dispatcher::add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info)
+JsonRPCManager::Dispatcher::add_handler(std::string_view name, Handler &&handler, const RPCRegistryInfo *info,
+                                        TSRPCHandlerOptions const &opt)
 {
   std::lock_guard<std::mutex> lock(_mutex);
-  InternalHandler call{info};
+  InternalHandler call{info, opt};
   call.set_callback<FunctionWrapperType>(std::forward<Handler>(handler));
   return _handlers.emplace(name, std::move(call)).second;
 }

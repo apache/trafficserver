@@ -55,7 +55,7 @@ IPC
 
 The current server implementation runs on an IPC Socket(Unix Domain Socket). This server implements an iterative server style.
 The implementation runs on a dedicated ``TSThread`` and as their style express, this performs blocking calls to all the registered handlers.
-Configuration for this particular server style can be found in the admin section :ref:`admnin-jsonrpc-configuration`.
+Configuration for this particular server style can be found in the admin section :ref:`admin-jsonrpc-configuration`.
 
 
 Using the JSONRPC mechanism
@@ -464,61 +464,6 @@ Response:
       }
 
 
-.. _rpc-error-code:
-
-Internally we have defined an ``enum`` class that keeps track of the errors that the server will inform in most of the cases.
-Some of this errors are already defined by the `JSONRPC`_ specs and some (``>=1``) are defined by |TS|.
-
-.. class:: RPCErrorCode
-
-   Defines the API error codes that will be used in case of any RPC error.
-
-   .. enumerator:: INVALID_REQUEST  = -32600
-   .. enumerator:: METHOD_NOT_FOUND = -32601
-   .. enumerator:: INVALID_PARAMS   = -32602
-   .. enumerator:: INTERNAL_ERROR   = -32603
-   .. enumerator:: PARSE_ERROR      = -32700
-
-      `JSONRPC`_ defined errors.
-
-   .. enumerator:: InvalidVersion     = 1
-
-      The passed version is invalid. must be 2.0
-
-   .. enumerator:: InvalidVersionType = 2
-
-      The passed version field type is invalid. must be a ``string``
-
-   .. enumerator:: MissingVersion = 3
-
-      Version field is missing from the request. This field is mandatory.
-
-   .. enumerator:: InvalidMethodType = 4
-
-      The passed method field type is invalid. must be a ``string``
-
-   .. enumerator:: MissingMethod = 5
-
-      Method field is missing from the request. This field is mandatory.
-
-   .. enumerator:: InvalidParamType = 6
-
-      The passed parameter field type is not valid.
-
-   .. enumerator:: InvalidIdType = 7
-
-      The passed id field type is invalid.
-
-   .. enumerator:: NullId = 8
-
-      The passed if is ``null``
-
-   .. enumerator:: ExecutionError = 9
-
-      An error occurred during the execution of the RPC call. This error is used as a generic High level error. The details details about
-      the error, in most cases are specified in the ``data`` field.
-
-
 .. information:
 
    According to the |RPC| specs, if you get an error, the ``result`` field will not be set. |TS| will grant this.
@@ -535,5 +480,6 @@ Development Guide
 See also
 ========
 
-:ref:`admnin-jsonrpc-configuration`,
+:ref:`admin-jsonrpc-configuration`,
+:ref:`jsonrpc-node-errors`,
 :ref:`traffic_ctl_jsonrpc`

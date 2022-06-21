@@ -604,5 +604,5 @@ See also
 
 :manpage:`records.config(5)`,
 :manpage:`storage.config(5)`,
-:ref:`admnin-jsonrpc-configuration`,
+:ref:`admin-jsonrpc-configuration`,
 :ref:`jsonrpc-protocol`

@@ -170,21 +170,6 @@ public:
 class yamlcpp_json_encoder
 {
   ///
-  /// @brief Encode the ID if present.
-  /// If the id is not present which could be interpret as null(should not happen), it will not be set into the emitter, it will be
-  /// ignored. This is due the way that yamlcpp deals with the null, which instead of the literal null, it uses ~
-  static void
-  encode_id(const std::optional<std::string> &id, YAML::Emitter &json)
-  {
-    // workaround, we should find a better way, we should be able to use literal null if needed
-    if (id) {
-      json << YAML::Key << "id" << YAML::Value << *id;
-    }
-    // We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
-    // json << YAML::Null;
-  }
-
-  ///
   /// @brief Function to encode an error.
   /// Error could be from two sources, presence of @c std::error_code means a high level and the @c ts::Errata a callee . Both will
   /// be written into the passed @c out YAML::Emitter. This is mainly a convenience class for the other two encode_* functions.
@@ -216,33 +201,11 @@ class yamlcpp_json_encoder
 
   /// Convenience functions to call encode_error.
   static void
-  encode_error(std::error_code error, YAML::Emitter &json)
-  {
-    ts::Errata errata{};
-    encode_error(error, errata, json);
-  }
-  /// Convenience functions to call encode_error.
-  static void
   encode_error(ts::Errata const &errata, YAML::Emitter &json)
   {
     encode_error({error::RPCErrorCode::ExecutionError}, errata, json);
   }
 
-  static void
-  encode_error_from_callee(ts::Errata const &errata, YAML::Emitter &json)
-  {
-    if (!errata.isOK()) {
-      json << YAML::Key << "errors";
-      json << YAML::BeginSeq;
-      for (auto const &err : errata) {
-        json << YAML::BeginMap;
-        json << YAML::Key << "code" << YAML::Value << err.getCode();
-        json << YAML::Key << "message" << YAML::Value << err.text();
-        json << YAML::EndMap;
-      }
-      json << YAML::EndSeq;
-    }
-  }
   ///
   /// @brief Function to encode a single response(no batch) into an emitter.
   ///
@@ -257,9 +220,9 @@ class yamlcpp_json_encoder
 
     // Important! As per specs, errors have preference over the result, we ignore result if error was set.
 
-    if (resp.rpcError) {
+    if (resp.error.ec) {
       // internal library detected error: Decoding, etc.
-      encode_error(resp.rpcError, json);
+      encode_error(resp.error.ec, resp.error.data, json);
     }
     // Registered handler error: They have set the error on the response from the registered handler. This uses ExecutionError as
     // top error.
@@ -280,8 +243,13 @@ class yamlcpp_json_encoder
       }
     }
 
-    // insert the id.
-    encode_id(resp.id, json);
+    // ID. Only if present.
+    if (!resp.id.empty()) {
+      json << YAML::Key << "id" << YAML::Value << resp.id;
+    }
+    // else: We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
+    // json << YAML::Null;
+
     json << YAML::EndMap;
   }
 

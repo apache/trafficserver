@@ -208,7 +208,10 @@ There is code that was written in this way by design, ``RecordPrinter`` and ``Re
 that needs to query and print records without any major hassle.
 
 
+See also
+========
 
-:ref:`admnin-jsonrpc-configuration`,
+:ref:`admin-jsonrpc-configuration`,
 :ref:`traffic_ctl_jsonrpc`,
-:ref:`jsonrpc_development`
+:ref:`jsonrpc_development`,
+:ref:`jsonrpc-node-errors`

@@ -28,6 +28,7 @@ JSONRPC
    jsonrpc-architecture.en
    jsonrpc-api.en
    jsonrpc-node.en
+   jsonrpc-node-errors.en
    jsonrpc-handler-development.en
    jsonrpc-client-api.en
    traffic_ctl-development.en
