@@ -38,6 +38,7 @@
 #include <http/HttpConfig.h>
 
 using ts::TextView;
+using std::chrono::duration_cast;
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;
@@ -54,11 +55,12 @@ unsigned int hostdb_ip_stale_interval          = HOST_DB_IP_STALE;
 unsigned int hostdb_ip_timeout_interval        = HOST_DB_IP_TIMEOUT;
 unsigned int hostdb_ip_fail_timeout_interval   = HOST_DB_IP_FAIL_TIMEOUT;
 unsigned int hostdb_serve_stale_but_revalidate = 0;
-ts_seconds hostdb_hostfile_check_interval{std::chrono::hours(24)};
-// Epoch timestamp of the current hosts file check.
-ts_time hostdb_current_interval{TS_TIME_ZERO};
+static ts_seconds hostdb_hostfile_check_interval{std::chrono::hours(24)};
+// Epoch timestamp of the current hosts file check. This also functions as a
+// cached version of ts_clock::now().
+ts_time hostdb_current_timestamp{TS_TIME_ZERO};
 // Epoch timestamp of the last time we actually checked for a hosts file update.
-static ts_time hostdb_last_interval{TS_TIME_ZERO};
+static ts_time hostdb_last_timestamp{TS_TIME_ZERO};
 // Epoch timestamp when we updated the hosts file last.
 static ts_time hostdb_hostfile_update_timestamp{TS_TIME_ZERO};
 static char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
@@ -420,7 +422,7 @@ HostDBBackgroundTask::wait_event(int, void *)
 
   SET_HANDLER(&HostDBBackgroundTask::sync_event);
   if (next_sync > ts_milliseconds{100}) {
-    eventProcessor.schedule_in(this, std::chrono::duration_cast<std::chrono::nanoseconds>(next_sync).count(), ET_TASK);
+    eventProcessor.schedule_in(this, duration_cast<ts_nanoseconds>(next_sync).count(), ET_TASK);
   } else {
     eventProcessor.schedule_imm(this, ET_TASK);
   }
@@ -552,9 +554,10 @@ HostDBProcessor::start(int, size_t)
   REC_EstablishStaticConfigInt32U(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
 
   //
-  // Set up hostdb_current_interval
+  // Initialize hostdb_current_timestamp which is our cached version of
+  // ts_clock::now().
   //
-  hostdb_current_interval = ts_clock::now();
+  hostdb_current_timestamp = ts_clock::now();
 
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);
@@ -693,18 +696,18 @@ probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
   }
 
   // If the record is stale, but we want to revalidate-- lets start that up
-  if ((!ignore_timeout && record->is_ip_stale() && record->record_type != HostDBType::HOST) ||
+  if ((!ignore_timeout && record->is_ip_configured_stale() && record->record_type != HostDBType::HOST) ||
       (record->is_ip_timeout() && record->serve_stale_but_revalidate())) {
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
       Debug("hostdb", "%s",
-            ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_interval(),
+            ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
                         record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
               .c_str());
       return record;
     }
     Debug("hostdb", "%s",
-          ts::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_interval(),
-                      record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
+          ts::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
+                      record->ip_timeout_interval)
             .c_str());
     HostDBContinuation *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
@@ -961,7 +964,7 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
       ip_text_buffer b;
       Debug("hostdb", "failed for %s", hash.ip.toString(b, sizeof b));
     }
-    record->ip_timestamp        = hostdb_current_interval;
+    record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = ts_seconds(std::clamp(hostdb_ip_fail_timeout_interval, 1u, HOST_DB_MAX_TTL));
 
     if (is_srv()) {
@@ -996,7 +999,7 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     HOSTDB_SUM_DYN_STAT(hostdb_ttl_stat, answer_ttl.count());
 
     // update the TTL
-    record->ip_timestamp        = hostdb_current_interval;
+    record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = std::clamp(answer_ttl, ts_seconds(1), ts_seconds(HOST_DB_MAX_TTL));
 
     if (is_byname()) {
@@ -1205,9 +1208,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     if (!serve_stale) { // implies r != old_r
-      hostDB.refcountcache->put(
-        r->key, r.get(), r->_record_size,
-        (r->ip_timestamp + r->ip_timeout_interval + ts_seconds(hostdb_serve_stale_but_revalidate)).time_since_epoch().count());
+      auto const duration_till_revalidate = r->expiry_time().time_since_epoch();
+      auto const seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
+      hostDB.refcountcache->put(r->key, r.get(), r->_record_size, seconds_till_revalidate);
     } else {
       Warning("Fallback to serving stale record, skip re-update of hostdb for %.*s", int(query_name.size()), query_name.data());
     }
@@ -1510,22 +1513,22 @@ HostDBContinuation::do_dns()
 
 //
 // Background event
-// Just increment the current_interval.  Might do other stuff
-// here, like move records to the current position in the cluster.
-//
+// Increment the hostdb_current_timestamp which funcions as our cached version
+// of ts_clock::now().  Might do other stuff here, like move records to the
+// current position in the cluster.
 int
 HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   std::string dbg;
 
-  // No nothing if hosts file checking is not enabled.
+  hostdb_current_timestamp = ts_clock::now();
+
+  // Do nothing if hosts file checking is not enabled.
   if (hostdb_hostfile_check_interval.count() == 0) {
     return EVENT_CONT;
   }
 
-  hostdb_current_interval = ts_clock::now();
-
-  if ((hostdb_current_interval - hostdb_last_interval) > hostdb_hostfile_check_interval) {
+  if ((hostdb_current_timestamp - hostdb_last_timestamp) > hostdb_hostfile_check_interval) {
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 
@@ -1538,7 +1541,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
       hostdb_hostfile_path             = path;
       update_p                         = true;
     } else if (!hostdb_hostfile_path.empty()) {
-      hostdb_last_interval = hostdb_current_interval;
+      hostdb_last_timestamp = hostdb_current_timestamp;
       std::error_code ec;
       auto stat{ts::file::status(hostdb_hostfile_path, ec)};
       if (!ec) {
@@ -1687,7 +1690,7 @@ struct ShowHostDB : public ShowCont {
           CHECK_SHOW(show("<table border=1>\n"));
           CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", r->rr_count));
           CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Current", r->_rr_idx.load()));
-          CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Stale", r->is_ip_stale() ? "Yes" : "No"));
+          CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Stale", r->is_ip_configured_stale() ? "Yes" : "No"));
           CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Timed-Out", r->is_ip_timeout() ? "Yes" : "No"));
           CHECK_SHOW(show("</table>\n"));
         } else {
@@ -2108,7 +2111,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         }
       }
 
-      hostdb_hostfile_update_timestamp = hostdb_current_interval;
+      hostdb_hostfile_update_timestamp = hostdb_current_timestamp;
     }
   }
 
@@ -2276,10 +2279,10 @@ HostDBRecord::serve_stale_but_revalidate() const
 
   // ip_timeout_interval == DNS TTL
   // hostdb_serve_stale_but_revalidate == number of seconds
-  // ip_interval() is the number of seconds between now() and when the entry was inserted
-  if ((ip_timeout_interval + ts_seconds(hostdb_serve_stale_but_revalidate)) > ip_interval()) {
-    Debug_bw("hostdb", "serving stale entry {} | {} | {} as requested by config", ip_timeout_interval,
-             hostdb_serve_stale_but_revalidate, ip_interval());
+  // ip_age() is the number of seconds between now() and when the entry was inserted
+  if ((ip_timeout_interval + ts_seconds(hostdb_serve_stale_but_revalidate)) > ip_age()) {
+    Debug_bw("hostdb", "serving stale entry for {}, TTL: {}, serve_stale_for: {}, age: {} as requested by config", name(),
+             ip_timeout_interval, hostdb_serve_stale_but_revalidate, ip_age());
     return true;
   }
 

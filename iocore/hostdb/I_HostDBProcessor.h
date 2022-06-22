@@ -61,7 +61,17 @@ struct ResolveInfo;
 // disk representation to decrease # of seeks.
 //
 extern int hostdb_enable;
-extern ts_time hostdb_current_interval;
+/** Epoch timestamp of the current hosts file check.
+ *
+ * This also functions as a cached version of ts_clock::now(). Since it is
+ * updated in backgroundEvent which runs every second, it should be
+ * approximately accurate to a second.
+ */
+extern ts_time hostdb_current_timestamp;
+
+/** How long before any DNS response is consided stale, regardless of DNS TTL.
+ * This corresponds to proxy.config.hostdb.verify_after.
+ */
 extern unsigned int hostdb_ip_stale_interval;
 extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
@@ -325,10 +335,13 @@ public:
   /// Hash key.
   uint64_t key{0};
 
-  /// When the data was received.
+  /// When the DNS response was received.
   ts_time ip_timestamp;
 
-  /// Valid duration of the data.
+  /// Valid duration of the DNS response data.
+  /// In the code this functions as the TTL in HostDB calcuations, but may not
+  /// be the response's TTL based upon configuration such as
+  /// proxy.config.hostdb.ttl_mode.
   ts_seconds ip_timeout_interval;
 
   /** Atomically advance the round robin index.
@@ -414,18 +427,33 @@ public:
   /// @return The time point when the item expires.
   ts_time expiry_time() const;
 
-  ts_seconds ip_interval() const;
+  /// @return The age of the DNS response.
+  ts_seconds ip_age() const;
 
+  /// @return How long before the DNS response becomes stale (i.e., exceeds @a
+  /// ip_timeout_interval from the time of the response).
   ts_seconds ip_time_remaining() const;
 
-  bool is_ip_stale() const;
+  /// @return Whether the age of the DNS response exceeds @a the user's
+  /// configured proxy.config.hostdb.verify_after value.
+  bool is_ip_configured_stale() const;
 
+  /** Whether we have exceeded the DNS response's TTL (i.e., whether the DNS
+   * response is stale). */
   bool is_ip_timeout() const;
 
   bool is_ip_fail_timeout() const;
 
   void refresh_ip();
 
+  /** Whether the DNS response can still be used per
+   * proxy.config.hostdb.serve_stale_for configuration.
+   *
+   * @return False if serve_stale_for is not configured or if the DNS
+   * response's age is less than TTL + the serve_stale_for value. Note that
+   * this function will return true for DNS responses whose age is less than
+   * TTL (i.e., for responses that are not yet stale).
+   */
   bool serve_stale_but_revalidate() const;
 
   /// Deallocate @a this.
@@ -722,41 +750,44 @@ HostDBRecord::expiry_time() const
 }
 
 inline ts_seconds
-HostDBRecord::ip_interval() const
+HostDBRecord::ip_age() const
 {
   static constexpr ts_seconds ZERO{0};
   static constexpr ts_seconds MAX{0x7FFFFFFF};
-  return std::clamp(std::chrono::duration_cast<ts_seconds>((hostdb_current_interval - ip_timestamp)), ZERO, MAX);
+  return std::clamp(std::chrono::duration_cast<ts_seconds>(hostdb_current_timestamp - ip_timestamp), ZERO, MAX);
 }
 
 inline ts_seconds
 HostDBRecord::ip_time_remaining() const
 {
-  return ip_timeout_interval - this->ip_interval();
+  static constexpr ts_seconds ZERO{0};
+  static constexpr ts_seconds MAX{0x7FFFFFFF};
+  return std::clamp(std::chrono::duration_cast<ts_seconds>(ip_timeout_interval - this->ip_age()), ZERO, MAX);
 }
 
 inline bool
-HostDBRecord::is_ip_stale() const
+HostDBRecord::is_ip_configured_stale() const
 {
-  return ip_timeout_interval >= ts_seconds(2 * hostdb_ip_stale_interval) && ip_interval() >= ts_seconds(hostdb_ip_stale_interval);
+  return (
+    ((ip_timeout_interval >= ts_seconds(2 * hostdb_ip_stale_interval)) && (ip_age() >= ts_seconds(hostdb_ip_stale_interval))));
 }
 
 inline bool
 HostDBRecord::is_ip_timeout() const
 {
-  return ip_interval() >= ip_timeout_interval;
+  return ip_age() >= ip_timeout_interval;
 }
 
 inline bool
 HostDBRecord::is_ip_fail_timeout() const
 {
-  return ip_interval() >= ts_seconds(hostdb_ip_fail_timeout_interval);
+  return ip_age() >= ts_seconds(hostdb_ip_fail_timeout_interval);
 }
 
 inline void
 HostDBRecord::refresh_ip()
 {
-  ip_timestamp = hostdb_current_interval;
+  ip_timestamp = hostdb_current_timestamp;
 }
 
 inline ts::MemSpan<HostDBInfo>
