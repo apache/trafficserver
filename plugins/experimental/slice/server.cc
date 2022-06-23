@@ -217,6 +217,10 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
 
+  if (data->m_config->m_prefetchcount > 0 && header.cacheFilled()) {
+    data->m_prefetchable = true;
+  }
+
   return HeaderState::Good;
 }
 

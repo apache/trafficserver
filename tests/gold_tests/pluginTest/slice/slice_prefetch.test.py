@@ -29,6 +29,7 @@ Test.SkipUnless(
     Condition.PluginExists('slice.so'),
     Condition.PluginExists('cache_range_requests.so'),
     Condition.PluginExists('xdebug.so'),
+    Condition.PluginExists('header_rewrite.so'),
 )
 Test.ContinueOnFail = False
 
@@ -101,7 +102,9 @@ ts.Disk.remap_config.AddLines([
     ' @plugin=cache_range_requests.so',
 ])
 
+ts.Setup.CopyAs('add_via_hdr.config', Test.RunDirectory)
 ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine(f'header_rewrite.so {Test.RunDirectory}/add_via_hdr.config')
 ts.Disk.logging_yaml.AddLines([
     'logging:',
     '  formats:',
@@ -115,7 +118,7 @@ ts.Disk.logging_yaml.AddLines([
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug',
+    'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug|header_rewrite',
 })
 
 # 0 Test - Full object slice (miss) with only block 14-20 prefetched in background, block bytes= 7

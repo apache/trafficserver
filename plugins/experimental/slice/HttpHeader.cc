@@ -320,6 +320,34 @@ HttpHeader::toString() const
   return res;
 }
 
+bool
+HttpHeader::cacheFilled() const
+{
+  if (!isValid()) {
+    return false;
+  }
+
+  char viastr[8192];
+  int vialen = sizeof(viastr);
+  const char *errptr;
+  const char *cache_fill;
+  int erroffset, ovector[OVECTOR_SIZE], match_count;
+
+  // look for expected Via field
+  bool const hasVia(valueForKey(TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA, viastr, &vialen));
+  if (hasVia) {
+    pcre *m_regex = pcre_compile("\\[(.*?)f(.)(.*?):(.*?)\\]", 0, &errptr, &erroffset, nullptr);
+    if (m_regex != nullptr) {
+      match_count = pcre_exec(m_regex, nullptr, viastr, vialen, 0, PCRE_NOTEMPTY, ovector, OVECTOR_SIZE);
+      if (match_count == 5) {
+        pcre_get_substring(viastr, ovector, match_count, 2, &cache_fill);
+        return (!strcmp(cache_fill, "W") || !strcmp(cache_fill, "U"));
+      }
+    }
+  }
+  return false;
+}
+
 /////// HdrMgr
 
 TSParseResult

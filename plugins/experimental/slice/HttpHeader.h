@@ -36,6 +36,14 @@
 
 #include <string>
 
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
+#define OVECTOR_SIZE 30
+
 /**
   Designed to be a cheap throwaway struct which allows a
   consumer to make various calls to manipulate headers.
@@ -130,6 +138,9 @@ struct HttpHeader {
 
   // sets header value as a time_t
   bool setKeyTime(char const *const key, int const keylen, time_t const timeval);
+
+  // read "f cache-fill" status of Via Header
+  bool cacheFilled() const;
 
   /** dump header into provided char buffer
    */
