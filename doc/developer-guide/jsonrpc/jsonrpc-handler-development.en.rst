@@ -186,7 +186,7 @@ We recommend some ways to deal with this:
 
 This can be set in case you would like to let the server to respond with an |RPC| error, ``ExecutionError`` will be used to catch all the
 errors that are fired from within the function call, either by setting the proper errata or by throwing an exception.
-Please check the :ref:`jsonrpc-node-errors` and in particular ``ExecutionError = 9``. Also check :ref:`jsonrpc-handler-errors`
+Please check the :ref:`jsonrpc-node-errors` and in particular ``ExecutionError``. Also check :ref:`jsonrpc-handler-errors`
 
 .. important::
 

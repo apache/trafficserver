@@ -66,6 +66,9 @@ class yamlcpp_json_decoder
 
         try {
           request.id = id.as<std::string>();
+          if (request.id.empty()) {
+            return {request, error::RPCErrorCode::EmptyId};
+          }
         } catch (YAML::Exception const &) {
           return {request, error::RPCErrorCode::InvalidIdType};
         }
