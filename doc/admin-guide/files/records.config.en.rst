@@ -3743,6 +3743,29 @@ Client-Related Configuration
    if sni_policy = ``verify_with_name_source``, the sni will be the host header value and the name
    to check in the server certificate will be the remap header value.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.scheme_proto_mismatch_policy INT 2
+   :overridable:
+
+   This option controls how |TS| behaves when the client side connection
+   protocol and the client request's scheme do not match. For example, if
+   enforcement is enabled by setting this value to ``2`` and the client
+   connection is a cleartext HTTP connection but the scheme of the URL is
+   ``https://``, then |TS| will emit a warning and return an immediate 400 HTTP
+   response without proxying the request to the origin.
+
+   The default value is ``2``, meaning that |TS| will enforce that the protocol
+   matches the scheme.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disable verification that the protocol and scheme match.
+   ``1`` Check that the protocol and scheme match, but only emit a warning if
+         they do not.
+   ``2`` Check that the protocol and scheme match and, if they do not, emit a
+         warning and return an immediate HTTP 400 response.
+   ===== ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
    Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
