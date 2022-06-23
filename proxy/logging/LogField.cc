@@ -28,6 +28,7 @@
  representation of a logging field.
  ***************************************************************************/
 #include "tscore/ink_platform.h"
+#include "swoc/swoc_meta.h"
 
 #include "MIME.h"
 #include "LogUtils.h"
@@ -218,14 +219,19 @@ LogField::init_milestone_container()
 }
 
 // Generic field ctor
-LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
+LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, VarUnmarshalFuncSliceOnly unmarshal,
+                   SetFunc _setfunc)
   : m_name(ats_strdup(name)),
     m_symbol(ats_strdup(symbol)),
     m_type(type),
     m_container(NO_CONTAINER),
     m_marshal_func(marshal),
-    m_unmarshal_func(unmarshal),
-    m_unmarshal_func_map(nullptr),
+    m_unmarshal_func([](VarUnmarshalFuncSliceOnly const &f) -> VarUnmarshalFunc {
+      if (auto *ff = std::get_if<UnmarshalFunc>(&f); ff) {
+        return *ff;
+      }
+      return std::get<UnmarshalFuncWithSlice>(f);
+    }(unmarshal)),
     m_agg_op(NO_AGGREGATE),
     m_agg_cnt(0),
     m_agg_val(0),
@@ -244,12 +250,6 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 }
 
-LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithSlice unmarshal,
-                   SetFunc _setfunc)
-  : LogField(name, symbol, type, marshal, reinterpret_cast<UnmarshalFunc>(unmarshal), _setfunc)
-{
-}
-
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
                    const Ptr<LogFieldAliasMap> &map, SetFunc _setfunc)
   : m_name(ats_strdup(name)),
@@ -257,8 +257,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
     m_type(type),
     m_container(NO_CONTAINER),
     m_marshal_func(marshal),
-    m_unmarshal_func(nullptr),
-    m_unmarshal_func_map(unmarshal),
+    m_unmarshal_func(unmarshal),
     m_agg_op(NO_AGGREGATE),
     m_agg_cnt(0),
     m_agg_val(0),
@@ -325,7 +324,6 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
     m_container(container),
     m_marshal_func(nullptr),
     m_unmarshal_func(nullptr),
-    m_unmarshal_func_map(nullptr),
     m_agg_op(NO_AGGREGATE),
     m_agg_cnt(0),
     m_agg_val(0),
@@ -354,7 +352,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case ESSH:
   case ECSSH:
   case SCFG:
-    m_unmarshal_func = reinterpret_cast<UnmarshalFunc>(&(LogAccess::unmarshal_str));
+    m_unmarshal_func = &(LogAccess::unmarshal_str);
     break;
 
   case ICFG:
@@ -395,7 +393,6 @@ LogField::LogField(const LogField &rhs)
     m_container(rhs.m_container),
     m_marshal_func(rhs.m_marshal_func),
     m_unmarshal_func(rhs.m_unmarshal_func),
-    m_unmarshal_func_map(rhs.m_unmarshal_func_map),
     m_agg_op(rhs.m_agg_op),
     m_agg_cnt(0),
     m_agg_val(0),
@@ -600,23 +597,15 @@ LogField::marshal_agg(char *buf)
 unsigned
 LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
 {
-  if (!m_alias_map) {
-    if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str) ||
-        m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
-      UnmarshalFuncWithSlice func = reinterpret_cast<UnmarshalFuncWithSlice>(m_unmarshal_func);
-      if (escape_type == LOG_ESCAPE_JSON) {
-        if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str)) {
-          func = reinterpret_cast<UnmarshalFuncWithSlice>(LogAccess::unmarshal_str_json);
-        } else if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
-          func = reinterpret_cast<UnmarshalFuncWithSlice>(LogAccess::unmarshal_http_text_json);
-        }
-      }
-      return (*func)(buf, dest, len, &m_slice);
-    }
-    return (*m_unmarshal_func)(buf, dest, len);
-  } else {
-    return (*m_unmarshal_func_map)(buf, dest, len, m_alias_map);
-  }
+  return std::visit(
+    swoc::meta::vary{[&](UnmarshalFuncWithSlice f) -> unsigned { return (*f)(buf, dest, len, &m_slice, escape_type); },
+                     [&](UnmarshalFuncWithMap f) -> unsigned { return (*f)(buf, dest, len, m_alias_map); },
+                     [&](UnmarshalFunc f) -> unsigned { return (*f)(buf, dest, len); },
+                     [&](decltype(nullptr)) -> unsigned {
+                       ink_assert(false);
+                       return 0;
+                     }},
+    m_unmarshal_func);
 }
 
 /*-------------------------------------------------------------------------

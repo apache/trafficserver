@@ -599,50 +599,6 @@ LogAccess::marshal_proxy_req_all_header_fields(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-/*-------------------------------------------------------------------------
-  LogAccess::unmarshal_str
-
-  Retrieve the string from the location pointed at by the buffer and
-  advance the pointer past the string.  The local strlen function is used
-  to advance the pointer, thus matching the corresponding strlen that was
-  used to lay the string into the buffer.
-  -------------------------------------------------------------------------*/
-
-int
-LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
-{
-  ink_assert(buf != nullptr);
-  ink_assert(*buf != nullptr);
-  ink_assert(dest != nullptr);
-
-  char *val_buf = *buf;
-  int val_len   = static_cast<int>(::strlen(val_buf));
-
-  *buf += LogAccess::strlen(val_buf); // this is how it was stored
-
-  if (slice && slice->m_enable) {
-    int offset, n;
-
-    n = slice->toStrOffset(val_len, &offset);
-    if (n <= 0) {
-      return 0;
-    }
-
-    if (n >= len) {
-      return -1;
-    }
-
-    memcpy(dest, (val_buf + offset), n);
-    return n;
-  }
-
-  if (val_len < len) {
-    memcpy(dest, val_buf, val_len);
-    return val_len;
-  }
-  return -1;
-}
-
 namespace
 {
 class EscLookup
@@ -694,9 +650,7 @@ nibble(int nib)
   return nib >= 0xa ? 'a' + (nib - 0xa) : '0' + nib;
 }
 
-} // end anonymous namespace
-
-static int
+int
 escape_json(char *dest, const char *buf, int len)
 {
   int escaped_len = 0;
@@ -742,12 +696,9 @@ escape_json(char *dest, const char *buf, int len)
 }
 
 int
-LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
+unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
 {
   Debug("log-escape", "unmarshal_str_json start, len=%d, slice=%p", len, slice);
-  ink_assert(buf != nullptr);
-  ink_assert(*buf != nullptr);
-  ink_assert(dest != nullptr);
 
   char *val_buf   = *buf;
   int val_len     = static_cast<int>(::strlen(val_buf));
@@ -774,6 +725,56 @@ LogAccess::unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
   if (escaped_len < len) {
     escape_json(dest, val_buf, escaped_len);
     return escaped_len;
+  }
+  return -1;
+}
+
+} // end anonymous namespace
+
+/*-------------------------------------------------------------------------
+  LogAccess::unmarshal_str
+
+  Retrieve the string from the location pointed at by the buffer and
+  advance the pointer past the string.  The local strlen function is used
+  to advance the pointer, thus matching the corresponding strlen that was
+  used to lay the string into the buffer.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type)
+{
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
+
+  if (LOG_ESCAPE_JSON == escape_type) {
+    return unmarshal_str_json(buf, dest, len, slice);
+  }
+
+  char *val_buf = *buf;
+  int val_len   = static_cast<int>(::strlen(val_buf));
+
+  *buf += LogAccess::strlen(val_buf); // this is how it was stored
+
+  if (slice && slice->m_enable) {
+    int offset, n;
+
+    n = slice->toStrOffset(val_len, &offset);
+    if (n <= 0) {
+      return 0;
+    }
+
+    if (n >= len) {
+      return -1;
+    }
+
+    memcpy(dest, (val_buf + offset), n);
+    return n;
+  }
+
+  if (val_len < len) {
+    memcpy(dest, val_buf, val_len);
+    return val_len;
   }
   return -1;
 }
@@ -920,7 +921,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
+LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -929,41 +930,13 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
   char *p = dest;
 
   //    int res1 = unmarshal_http_method (buf, p, len);
-  int res1 = unmarshal_str(buf, p, len);
+  int res1 = unmarshal_str(buf, p, len, nullptr, escape_type);
   if (res1 < 0) {
     return -1;
   }
   p += res1;
   *p++     = ' ';
-  int res2 = unmarshal_str(buf, p, len - res1 - 1, slice);
-  if (res2 < 0) {
-    return -1;
-  }
-  p += res2;
-  *p++     = ' ';
-  int res3 = unmarshal_http_version(buf, p, len - res1 - res2 - 2);
-  if (res3 < 0) {
-    return -1;
-  }
-  return res1 + res2 + res3 + 2;
-}
-
-int
-LogAccess::unmarshal_http_text_json(char **buf, char *dest, int len, LogSlice *slice)
-{
-  ink_assert(buf != nullptr);
-  ink_assert(*buf != nullptr);
-  ink_assert(dest != nullptr);
-
-  char *p = dest;
-
-  int res1 = unmarshal_str_json(buf, p, len);
-  if (res1 < 0) {
-    return -1;
-  }
-  p += res1;
-  *p++     = ' ';
-  int res2 = unmarshal_str_json(buf, p, len - res1 - 1, slice);
+  int res2 = unmarshal_str(buf, p, len - res1 - 1, slice, escape_type);
   if (res2 < 0) {
     return -1;
   }

@@ -25,6 +25,7 @@
 
 #include <string_view>
 #include <string>
+#include <variant>
 
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
@@ -80,9 +81,12 @@ class LogField
 public:
   typedef int (LogAccess::*MarshalFunc)(char *buf);
   typedef int (*UnmarshalFunc)(char **buf, char *dest, int len);
-  typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice);
+  typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
   typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   typedef void (LogAccess::*SetFunc)(char *buf, int len);
+
+  using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
+  using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
 
   enum Type {
     sINT = 0,
@@ -122,10 +126,7 @@ public:
     N_AGGREGATES,
   };
 
-  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal,
-           SetFunc _setFunc = nullptr);
-
-  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithSlice unmarshal,
+  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, VarUnmarshalFuncSliceOnly unmarshal,
            SetFunc _setFunc = nullptr);
 
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
@@ -194,9 +195,8 @@ private:
   char *m_symbol;
   Type m_type;
   Container m_container;
-  MarshalFunc m_marshal_func;     // place data into buffer
-  UnmarshalFunc m_unmarshal_func; // create a string of the data
-  UnmarshalFuncWithMap m_unmarshal_func_map;
+  MarshalFunc m_marshal_func;        // place data into buffer
+  VarUnmarshalFunc m_unmarshal_func; // create a string of the data
   Aggregate m_agg_op;
   int64_t m_agg_cnt;
   int64_t m_agg_val;
