@@ -1,7 +1,7 @@
 Integrating ATS with ModSecurity V3 using LuaJIT and FFI
 ====
 
-Opensource WAF for [Apache Traffic Server](http://trafficserver.apache.org/).
+Open source WAF for [Apache Traffic Server](http://trafficserver.apache.org/).
 
 Requirement
 ====
@@ -30,7 +30,7 @@ Contents/Rules inside example.conf
 
 Working with CRS
 ====
- - Go to [here](https://github.com/SpiderLabs/owasp-modsecurity-crs) and get release v3.2.0
+ - Go [here](https://github.com/coreruleset/coreruleset) and download release v3.3.2
  - Uncompress the contents and copy `crs-setup.conf.example` to `/usr/local/var/modsecurity` and rename it to `crs-setup.conf`
  - Copy all files in `rules` directory to `/usr/local/var/modsecurity/rules`
  - Copy `owasp.conf` in this repository to `/usr/local/var/modsecurity`
