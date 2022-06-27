@@ -125,8 +125,6 @@ PluginDso::load(std::string &error)
 bool
 PluginDso::unload(std::string &error)
 {
-  /* clean errors */
-  error.clear();
   bool result = false;
 
   if (isLoaded()) {
@@ -158,7 +156,6 @@ PluginDso::getSymbol(const char *symbol, void *&address, std::string &error) con
 {
   /* Clear the errors */
   dlerror();
-  error.clear();
 
   address   = dlsym(_dlh, symbol);
   char *err = dlerror();
