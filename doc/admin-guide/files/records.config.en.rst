@@ -189,21 +189,15 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
 
-   The name of the executable that runs the :program:`traffic_server` process.
+ .. important::
 
-   If you want to set Environment Variables for :program:`traffic_server` process, use a wrapper script like below. ::
-
-     CONFIG proxy.config.proxy_binary STRING start_traffic_server.sh
-
-   ::
-
-     #!/bin/sh
-     export ASAN_OPTIONS=detect_leaks=1
-     /opt/ats/bin/traffic_server "$@"
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
-   The :ref:`command-line options <traffic_server>` for starting |TS|.
+   .. important::
+
+      This is now deprecated
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 

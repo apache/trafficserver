@@ -36,7 +36,7 @@ Synopsis
 Description
 ===========
 
-:program:`traffic_ctl` is used to display,manipulate and configure
+:program:`traffic_ctl` is used to display, manipulate and configure
 a running Traffic Server. :program:`traffic_ctl` includes a number
 of subcommands that control different aspects of Traffic Server:
 
