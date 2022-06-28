@@ -75,7 +75,7 @@ Standard errors
 ===============
 
 =============== ========================================= =========================================================
-Field           Message                                   Description
+Id              Message                                   Description
 =============== ========================================= =========================================================
 -32700          Parse error                               Invalid JSON was received by the server.
                                                           An error occurred on the server while parsing the JSON text.
@@ -93,7 +93,7 @@ Custom errors
 The following error list are defined by the server.
 
 =============== ========================================= =========================================================
-Field           Message                                   Description
+Id              Message                                   Description
 =============== ========================================= =========================================================
 1               Invalid version, 2.0 only                 The server only accepts version field equal to `2.0`.
 2               Invalid version type, should be a string  Version field should be a literal string.
@@ -112,6 +112,8 @@ Field           Message                                   Description
 10              Unauthorized action                       The rpc method will not be invoked because the action is not
                                                           permitted by some constraint or authorization issue.Check
                                                           :ref:`jsonrpc-node-errors-unauthorized-action` for mode details.
+11              Use of an empty string as id is           An empty string "" as an id will not be accepted by the server.
+                discouraged
 =============== ========================================= =========================================================
 
 .. _jsonrpc-node-errors-unauthorized-action:
@@ -131,7 +133,7 @@ Under this error, the `data` field could be populated with the following errors,
    ]
 
 =============== ========================================= =========================================================
-Field           Message                                   Description
+Id              Message                                   Description
 =============== ========================================= =========================================================
 1               Error getting peer credentials: {}        Something happened while trying to get the peers credentials.
                                                           The error string will show the error code(`errno`) returned by the

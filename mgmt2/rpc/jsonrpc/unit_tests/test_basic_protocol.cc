@@ -533,8 +533,9 @@ TEST_CASE("Basic tests from the jsonrpc 2.0 doc.")
     JsonRpcUnitTest rpc;
     const auto resp = rpc.handle_call(R"([1,2,3])");
     REQUIRE(resp);
-    std::string_view expected =
-      R"([{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}}, {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}}, {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}}])";
+    std::string expected = R"([{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})"
+                           R"(, {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}})"
+                           R"(, {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}}])";
     REQUIRE(*resp == expected);
   }
 
@@ -588,6 +589,21 @@ TEST_CASE("Call registered notification with ID", "[notification_and_id]")
       "call_me_with_id", [](const YAML::Node &params) -> void { throw std::runtime_error("Oops, I did it again"); }));
     const auto resp           = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "call_me_with_id", "id": "1"})");
     std::string_view expected = R"({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": "1"})";
+    REQUIRE(*resp == expected);
+  }
+}
+
+TEST_CASE("Call method with invalid ID", "[invalid_id]")
+{
+  JsonRpcUnitTest rpc;
+  SECTION("Basic test, invalid ids")
+  {
+    std::string req = R"([{"id": "", "jsonrpc": "2.0", "method": "will_not_pass_the_validation"},)"
+                      R"({"id": {}, "jsonrpc": "2.0", "method": "will_not_pass_the_validation"}])";
+    auto resp = rpc.handle_call(req);
+    std::string expected =
+      R"([{"jsonrpc": "2.0", "error": {"code": 11, "message": "Use of an empty string as id is discouraged"}}, )"
+      R"({"jsonrpc": "2.0", "error": {"code": 7, "message": "Invalid id type"}}])";
     REQUIRE(*resp == expected);
   }
 }

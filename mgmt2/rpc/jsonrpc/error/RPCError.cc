@@ -52,22 +52,18 @@ RPCErrorCategory::message(int ev) const
     return {"Internal error"};
   case RPCErrorCode::PARSE_ERROR:
     return {"Parse error"};
-  // version
   case RPCErrorCode::InvalidVersion:
     return {"Invalid version, 2.0 only"};
   case RPCErrorCode::InvalidVersionType:
     return {"Invalid version type, should be a string"};
   case RPCErrorCode::MissingVersion:
     return {"Missing version field"};
-  // method
   case RPCErrorCode::InvalidMethodType:
     return {"Invalid method type, should be a string"};
   case RPCErrorCode::MissingMethod:
     return {"Missing method field"};
-  // params
   case RPCErrorCode::InvalidParamType:
     return {"Invalid params type. A Structured value is expected"};
-  // id
   case RPCErrorCode::InvalidIdType:
     return {"Invalid id type"};
   case RPCErrorCode::NullId:
@@ -76,6 +72,8 @@ RPCErrorCategory::message(int ev) const
     return {"Error during execution"};
   case RPCErrorCode::Unauthorized:
     return {"Unauthorized action"};
+  case RPCErrorCode::EmptyId:
+    return {"Use of an empty string as id is discouraged"};
   default:
     return "Rpc error " + std::to_string(ev);
   }

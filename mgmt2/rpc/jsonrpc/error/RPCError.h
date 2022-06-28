@@ -39,29 +39,18 @@ enum class RPCErrorCode {
   INTERNAL_ERROR   = -32603,
   PARSE_ERROR      = -32700,
 
-  // Custom errors.
-
-  // version
-  InvalidVersion     = 1,
-  InvalidVersionType = 2,
-  MissingVersion,
-  // method
-  InvalidMethodType,
-  MissingMethod,
-
-  // params
-  InvalidParamType,
-
-  // id
-  InvalidIdType,
-  NullId = 8,
-
-  // execution errors
-
-  // Internal rpc error when executing the method.
-  //
-  ExecutionError, //!< Handler's general error.
-  Unauthorized    //!< In case we want to block the call based on privileges, access permissions, etc.
+  // Custom errors. A more grained error codes than the main above.
+  InvalidVersion = 1, //!< Version should be equal to "2.0".
+  InvalidVersionType, //!< Invalid string conversion.
+  MissingVersion,     //!< Missing version field.
+  InvalidMethodType,  //!< Should be a string.
+  MissingMethod,      //!< Method name missing.
+  InvalidParamType,   //!< Not a valid structured type.
+  InvalidIdType,      //!< Invalid string conversion.
+  NullId,             //!< null id.
+  ExecutionError,     //!< Handler's general error.
+  Unauthorized,       //!< In case we want to block the call based on privileges, access permissions, etc.
+  EmptyId             //!< Empty id("").
 };
 // TODO: force non 0 check
 std::error_code make_error_code(rpc::error::RPCErrorCode e);
