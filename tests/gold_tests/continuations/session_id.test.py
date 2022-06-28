@@ -106,4 +106,4 @@ def verify_session_count(output):
     return ""
 
 
-ts.Streams.All += Testers.FileContentCallback(verify_session_count, 'verify_session_count')
+ts.Disk.traffic_out.Content += Testers.FileContentCallback(verify_session_count, 'verify_session_count')

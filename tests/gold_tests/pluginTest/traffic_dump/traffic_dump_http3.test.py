@@ -101,13 +101,13 @@ logging:
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     "loading plugin.*traffic_dump.so",
     "Verify the traffic_dump plugin got loaded.")
-ts.Streams.stderr = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     f"Initialized with log directory: {ts_log_dir}",
     "Verify traffic_dump initialized with the configured directory.")
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size 1 bytes and disk limit 1000000000 bytes",
     "Verify traffic_dump initialized with the configured disk limit.")
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Finish a session with log file of.*bytes",
     "Verify traffic_dump sees the end of sessions and accounts for it.")
 

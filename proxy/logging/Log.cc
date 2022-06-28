@@ -342,17 +342,17 @@ Log::init_fields()
   field_symbol_hash.emplace("hiih", field);
   // interface ip end
   field = new LogField("client_auth_user_name", "caun", LogField::STRING, &LogAccess::marshal_client_auth_user_name,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("caun", field);
 
   field = new LogField("plugin_identity_id", "piid", LogField::sINT, &LogAccess::marshal_plugin_identity_id,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("piid", field);
 
   field = new LogField("plugin_identity_tag", "pitag", LogField::STRING, &LogAccess::marshal_plugin_identity_tag,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pitag", field);
 
@@ -386,51 +386,49 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqtt", field);
 
-  field = new LogField("client_req_text", "cqtx", LogField::STRING, &LogAccess::marshal_client_req_text,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_http_text));
+  field =
+    new LogField("client_req_text", "cqtx", LogField::STRING, &LogAccess::marshal_client_req_text, &LogAccess::unmarshal_http_text);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqtx", field);
 
   field = new LogField("client_req_http_method", "cqhm", LogField::STRING, &LogAccess::marshal_client_req_http_method,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqhm", field);
 
-  field = new LogField("client_req_url", "cqu", LogField::STRING, &LogAccess::marshal_client_req_url,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url);
+  field = new LogField("client_req_url", "cqu", LogField::STRING, &LogAccess::marshal_client_req_url, &LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_url);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqu", field);
 
   field = new LogField("client_req_url_canonical", "cquc", LogField::STRING, &LogAccess::marshal_client_req_url_canon,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_canon);
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_canon);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquc", field);
 
-  field = new LogField(
-    "client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
-    reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_unmapped_url_canon);
+  field =
+    new LogField("client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
+                 &LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_canon);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquuc", field);
 
   field = new LogField("client_req_unmapped_url_path", "cquup", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_path,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
-                       &LogAccess::set_client_req_unmapped_url_path);
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_path);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquup", field);
 
   field = new LogField("client_req_unmapped_url_host", "cquuh", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_host,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
-                       &LogAccess::set_client_req_unmapped_url_host);
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_host);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquuh", field);
 
   field = new LogField("client_req_url_scheme", "cqus", LogField::STRING, &LogAccess::marshal_client_req_url_scheme,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqus", field);
 
   field = new LogField("client_req_url_path", "cqup", LogField::STRING, &LogAccess::marshal_client_req_url_path,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_path);
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_path);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqup", field);
 
@@ -440,12 +438,12 @@ Log::init_fields()
   field_symbol_hash.emplace("cqhv", field);
 
   field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqpv", field);
 
   field = new LogField("server_req_protocol_version", "sqpv", LogField::dINT, &LogAccess::marshal_server_req_protocol_version,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sqpv", field);
 
@@ -460,27 +458,26 @@ Log::init_fields()
   field_symbol_hash.emplace("cqql", field);
 
   field = new LogField("cache_lookup_url_canonical", "cluc", LogField::STRING, &LogAccess::marshal_cache_lookup_url_canon,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cluc", field);
 
   field = new LogField("client_sni_server_name", "cssn", LogField::STRING, &LogAccess::marshal_client_sni_server_name,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cssn", field);
 
   field = new LogField("client_ssl_cert_provided", "cscert", LogField::STRING, &LogAccess::marshal_client_provided_cert,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cscert", field);
 
   field = new LogField("proxy_ssl_cert_provided", "pscert", LogField::STRING, &LogAccess::marshal_proxy_provided_cert,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pscert", field);
 
-  field = new LogField("process_uuid", "puuid", LogField::STRING, &LogAccess::marshal_process_uuid,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field = new LogField("process_uuid", "puuid", LogField::STRING, &LogAccess::marshal_process_uuid, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("puuid", field);
 
@@ -515,22 +512,22 @@ Log::init_fields()
   field_symbol_hash.emplace("cqmpt", field);
 
   field = new LogField("client_sec_protocol", "cqssv", LogField::STRING, &LogAccess::marshal_client_security_protocol,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssv", field);
 
   field = new LogField("client_cipher_suite", "cqssc", LogField::STRING, &LogAccess::marshal_client_security_cipher_suite,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssc", field);
 
-  field = new LogField("client_curve", "cqssu", LogField::STRING, &LogAccess::marshal_client_security_curve,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field =
+    new LogField("client_curve", "cqssu", LogField::STRING, &LogAccess::marshal_client_security_curve, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssu", field);
 
-  field = new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field =
+    new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssa", field);
 
@@ -547,18 +544,18 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("crid", field);
 
-  field = new LogField("client_req_uuid", "cruuid", LogField::STRING, &LogAccess::marshal_client_req_uuid,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field =
+    new LogField("client_req_uuid", "cruuid", LogField::STRING, &LogAccess::marshal_client_req_uuid, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cruuid", field);
 
   field = new LogField("client_rx_error_code", "crec", LogField::STRING, &LogAccess::marshal_client_rx_error_code,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("crec", field);
 
   field = new LogField("client_tx_error_code", "ctec", LogField::STRING, &LogAccess::marshal_client_tx_error_code,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctec", field);
 
@@ -569,12 +566,12 @@ Log::init_fields()
 
   // proxy -> client fields
   field = new LogField("proxy_resp_content_type", "psct", LogField::STRING, &LogAccess::marshal_proxy_resp_content_type,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("psct", field);
 
   field = new LogField("proxy_resp_reason_phrase", "prrp", LogField::STRING, &LogAccess::marshal_proxy_resp_reason_phrase,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("prrp", field);
 
@@ -728,8 +725,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("phr", field);
 
-  field = new LogField("proxy_host_name", "phn", LogField::STRING, &LogAccess::marshal_proxy_host_name,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field = new LogField("proxy_host_name", "phn", LogField::STRING, &LogAccess::marshal_proxy_host_name, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("phn", field);
 
@@ -763,8 +759,8 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("shi", field);
 
-  field = new LogField("server_host_name", "shn", LogField::STRING, &LogAccess::marshal_server_host_name,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field =
+    new LogField("server_host_name", "shn", LogField::STRING, &LogAccess::marshal_server_host_name, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("shn", field);
 
@@ -940,7 +936,7 @@ Log::init_fields()
   field_symbol_hash.emplace("ctpd", field);
 
   field = new LogField("proxy_protocol_version", "ppv", LogField::dINT, &LogAccess::marshal_proxy_protocol_version,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ppv", field);
 
@@ -955,12 +951,11 @@ Log::init_fields()
   field_symbol_hash.emplace("ppdip", field);
 
   field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+                       &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("vbn", field);
 
-  field = new LogField("version_string", "vs", LogField::STRING, &LogAccess::marshal_version_string,
-                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  field = new LogField("version_string", "vs", LogField::STRING, &LogAccess::marshal_version_string, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("vs", field);
 

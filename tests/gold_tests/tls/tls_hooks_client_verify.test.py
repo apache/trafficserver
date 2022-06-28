@@ -104,11 +104,11 @@ tr3.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./server.pem --key
 tr3.Processes.Default.ReturnCode = 35
 tr3.Processes.Default.Streams.all = Testers.ContainsExpression("error", "Curl attempt should have failed")
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Client verify callback 0 [\da-fx]+? - event is good good HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Client verify callback 1 [\da-fx]+? - event is good good HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Client verify callback 0 [\da-fx]+? - event is good error HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Client verify callback 1 [\da-fx]+? - event is good error HS", "verify callback happens 2 times")

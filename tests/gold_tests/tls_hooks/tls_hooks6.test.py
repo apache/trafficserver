@@ -58,16 +58,16 @@ tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 
-ts.Streams.stderr = "gold/ts-preaccept-2.gold"
+ts.Disk.traffic_out.Content = "gold/ts-preaccept-2.gold"
 
 # the preaccept may get triggered twice because the test framework creates a TCP connection before handing off to traffic_server
 preacceptstring0 = "Pre accept callback 0"
 preacceptstring1 = "Pre accept callback 1"
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring0),
     "Pre accept message appears only once or twice",
     reflags=re.S | re.M)
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring1),
     "Pre accept message appears only once or twice",
     reflags=re.S | re.M)

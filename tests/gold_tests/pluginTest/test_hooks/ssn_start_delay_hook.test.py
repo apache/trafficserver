@@ -57,4 +57,4 @@ tr.Processes.Default.Command = (
 tr.Processes.Default.ReturnCode = 0
 
 # Look at the debug output from the plugin
-ts.Streams.All = "ssn_delay.gold"
+ts.Disk.traffic_out.Content = "ssn_delay.gold"

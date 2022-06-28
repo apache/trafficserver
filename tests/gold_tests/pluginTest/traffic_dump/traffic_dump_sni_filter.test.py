@@ -79,11 +79,11 @@ ts.Disk.plugin_config.AddLine(
 )
 
 # Set up trafficserver expectations.
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"Filtering to only dump connections with SNI: {sni_filter}",
     "Verify filtering for the expected SNI.")
 
-ts.Streams.stderr += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Ignore HTTPS session with non-filtered SNI: dave",
     "Verify that the non-desired SNI session was filtered out.")
 

@@ -72,7 +72,7 @@ for i in range(num_upstream):
 num_peer = 8
 ts_peer = []
 for i in range(num_peer):
-    ts = Test.MakeATSProcess(f"ts_peer{i}", command=f"traffic_server 2> trace_peer{i}.log")
+    ts = Test.MakeATSProcess(f"ts_peer{i}", use_traffic_out=False, command=f"traffic_server 2> trace_peer{i}.log")
     ts_peer.append(ts)
 for i in range(num_peer):
     ts = ts_peer[i]

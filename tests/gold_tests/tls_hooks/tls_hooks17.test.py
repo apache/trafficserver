@@ -63,10 +63,10 @@ tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/client-hello-1.gold"
 
-ts.Streams.stderr = "gold/ts-client-hello-delayed-1.gold"
+ts.Disk.traffic_out.Content = "gold/ts-client-hello-delayed-1.gold"
 
 snistring = "Client Hello callback 0"
-ts.Streams.All = Testers.ContainsExpression(
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "Client Hello message appears only once", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15

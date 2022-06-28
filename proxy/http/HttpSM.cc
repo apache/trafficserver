@@ -4155,7 +4155,7 @@ HttpSM::check_sni_host()
       NetVConnection *netvc = ua_txn->get_netvc();
       if (netvc) {
         IpEndpoint ip = netvc->get_remote_endpoint();
-        if (SNIConfig::TestClientAction(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), ip, host_sni_policy) &&
+        if (SNIConfig::test_client_action(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), ip, host_sni_policy) &&
             host_sni_policy > 0) {
           // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
           // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
@@ -6300,7 +6300,8 @@ HttpSM::attach_server_session()
   if (ua_txn->has_request_body(t_state.hdr_info.request_content_length,
                                t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
     // See if we need to insert a chunked header
-    if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+    if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH) &&
+        !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
       // Stuff in a TE setting so we treat this as chunked, sort of.
       t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
       t_state.hdr_info.server_request.value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,

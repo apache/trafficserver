@@ -1015,7 +1015,7 @@ PreWarmManager::reconfigure()
   bool is_prewarm_enabled = prewarm_conf->enabled;
 
   SNIConfig::scoped_config sni_conf;
-  for (const auto &item : sni_conf->Y_sni.items) {
+  for (const auto &item : sni_conf->yaml_sni.items) {
     if (item.tunnel_prewarm == YamlSNIConfig::TunnelPreWarm::ENABLED) {
       is_prewarm_enabled = true;
       break;
@@ -1064,7 +1064,7 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
 {
   PreWarmConfig::scoped_config prewarm_conf;
 
-  for (const auto &item : sni_conf->Y_sni.items) {
+  for (const auto &item : sni_conf->yaml_sni.items) {
     if (item.tunnel_type != SNIRoutingType::FORWARD && item.tunnel_type != SNIRoutingType::PARTIAL_BLIND) {
       continue;
     }

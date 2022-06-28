@@ -36,16 +36,64 @@
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_memory.h"
-#include "tscpp/util/TextView.h"
 #include "tscore/I_Layout.h"
+
+#include "tscpp/util/TextView.h"
+
 #include <sstream>
 #include <utility>
 #include <pcre.h>
 
 static constexpr int OVECSIZE{30};
 
+////
+// NamedElement
+//
+NamedElement::NamedElement(NamedElement &&other)
+{
+  *this = std::move(other);
+}
+
+NamedElement &
+NamedElement::operator=(NamedElement &&other)
+{
+  if (this != &other) {
+    match = std::move(other.match);
+  }
+  return *this;
+}
+
+void
+NamedElement::set_glob_name(std::string name)
+{
+  std::string::size_type pos = 0;
+  while ((pos = name.find('.', pos)) != std::string::npos) {
+    name.replace(pos, 1, "\\.");
+    pos += 2;
+  }
+  pos = 0;
+  while ((pos = name.find('*', pos)) != std::string::npos) {
+    name.replace(pos, 1, "(.{0,})");
+  }
+  Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
+  set_regex_name(name);
+}
+
+void
+NamedElement::set_regex_name(const std::string &regex_name)
+{
+  const char *err_ptr;
+  int err_offset = 0;
+  if (!regex_name.empty()) {
+    match.reset(pcre_compile(regex_name.c_str(), PCRE_ANCHORED | PCRE_CASELESS, &err_ptr, &err_offset, nullptr));
+  }
+}
+
+////
+// SNIConfigParams
+//
 const NextHopProperty *
-SNIConfigParams::getPropertyConfig(const std::string &servername) const
+SNIConfigParams::get_property_config(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
   for (auto &&item : next_hop_list) {
@@ -59,11 +107,11 @@ SNIConfigParams::getPropertyConfig(const std::string &servername) const
 }
 
 void
-SNIConfigParams::loadSNIConfig()
+SNIConfigParams::load_sni_config()
 {
-  for (auto &item : Y_sni.items) {
+  for (auto &item : yaml_sni.items) {
     auto ai = sni_action_list.emplace(sni_action_list.end());
-    ai->setGlobName(item.fqdn);
+    ai->set_glob_name(item.fqdn);
     Debug("ssl", "name: %s", item.fqdn.data());
 
     // set SNI based actions to be called in the ssl_servername_only callback
@@ -107,17 +155,13 @@ SNIConfigParams::loadSNIConfig()
       params->getCTX(nps->prop.client_cert_file, nps->prop.client_key_file, params->clientCACertFilename, params->clientCACertPath);
     }
 
-    nps->setGlobName(item.fqdn);
-    nps->prop.verifyServerPolicy     = item.verify_server_policy;
-    nps->prop.verifyServerProperties = item.verify_server_properties;
+    nps->set_glob_name(item.fqdn);
+    nps->prop.verify_server_policy     = item.verify_server_policy;
+    nps->prop.verify_server_properties = item.verify_server_properties;
   } // end for
 }
 
-int SNIConfig::configid = 0;
-/*definition of member functions of SNIConfigParams*/
-SNIConfigParams::SNIConfigParams() {}
-
-std::pair<const actionVector *, ActionItem::Context>
+std::pair<const ActionVector *, ActionItem::Context>
 SNIConfigParams::get(std::string_view servername) const
 {
   int ovector[OVECSIZE];
@@ -158,7 +202,7 @@ SNIConfigParams::get(std::string_view servername) const
 }
 
 int
-SNIConfigParams::Initialize()
+SNIConfigParams::initialize()
 {
   std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
 
@@ -171,8 +215,8 @@ SNIConfigParams::Initialize()
     return 1;
   }
 
-  YamlSNIConfig Y_sni_tmp;
-  ts::Errata zret = Y_sni_tmp.loader(sni_filename);
+  YamlSNIConfig yaml_sni_tmp;
+  ts::Errata zret = yaml_sni_tmp.loader(sni_filename);
   if (!zret.isOK()) {
     std::stringstream errMsg;
     errMsg << zret;
@@ -183,9 +227,9 @@ SNIConfigParams::Initialize()
     }
     return 1;
   }
-  Y_sni = std::move(Y_sni_tmp);
+  yaml_sni = std::move(yaml_sni_tmp);
 
-  loadSNIConfig();
+  load_sni_config();
   Note("%s finished loading", sni_filename.c_str());
 
   return 0;
@@ -196,7 +240,11 @@ SNIConfigParams::~SNIConfigParams()
   // sni_action_list and next_hop_list should cleanup with the params object
 }
 
-/*definition of member functions of SNIConfig*/
+////
+// SNIConfig
+//
+int SNIConfig::_configid = 0;
+
 void
 SNIConfig::startup()
 {
@@ -209,8 +257,8 @@ SNIConfig::reconfigure()
   Debug("ssl", "Reload SNI file");
   SNIConfigParams *params = new SNIConfigParams;
 
-  params->Initialize();
-  configid = configProcessor.set(configid, params);
+  params->initialize();
+  _configid = configProcessor.set(_configid, params);
 
   prewarmManager.reconfigure();
 }
@@ -218,22 +266,21 @@ SNIConfig::reconfigure()
 SNIConfigParams *
 SNIConfig::acquire()
 {
-  return (SNIConfigParams *)configProcessor.get(configid);
+  return static_cast<SNIConfigParams *>(configProcessor.get(_configid));
 }
 
 void
 SNIConfig::release(SNIConfigParams *params)
 {
-  configProcessor.release(configid, params);
+  configProcessor.release(_configid, params);
 }
 
-// See if any of the client-side actions would trigger for this combination of servername and
-// client IP
+// See if any of the client-side actions would trigger for this combination of servername and client IP
 // host_sni_policy is an in/out parameter.  It starts with the global policy from the records.config
 // setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
 // contains a host_sni_policy entry
 bool
-SNIConfig::TestClientAction(const char *servername, const IpEndpoint &ep, int &host_sni_policy)
+SNIConfig::test_client_action(const char *servername, const IpEndpoint &ep, int &host_sni_policy)
 {
   bool retval = false;
   SNIConfig::scoped_config params;

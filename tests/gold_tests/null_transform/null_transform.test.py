@@ -67,4 +67,4 @@ tr.Processes.Default.Streams.stderr = "gold/null_transform-200.gold"
 tr.StillRunningAfter = server
 
 # Check Plugin Loading Information
-ts.Streams.All = "gold/null_transform-tag.gold"
+ts.Disk.traffic_out.Content = "gold/null_transform-tag.gold"

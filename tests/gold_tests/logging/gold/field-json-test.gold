@@ -1,0 +1,3 @@
+{"foo":"ab\td\/ef","foo-slice":"\td"}
+{"foo":"ab\u001fd\/ef","foo-slice":"\u001fd"}
+{"foo":"abc\u007fde","foo-slice":"c"}

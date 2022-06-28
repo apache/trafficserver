@@ -172,6 +172,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    OpenTelemetry Tracer <otel_tracer.en>
    Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
+   Remap Stats <remap_stats.en>
    URI Signing <uri_signing.en>
    Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
@@ -247,6 +248,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Rate Limit <rate_limit.en>`
    Simple transaction rate limiting.
+
+:doc:`Remap Stats <remap_stats.en>`
+   This global plugin adds remap stats to the stats.
 
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely

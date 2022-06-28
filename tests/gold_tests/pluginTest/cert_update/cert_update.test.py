@@ -93,7 +93,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = (
     '{0}/traffic_ctl plugin msg cert_update.server {1}/server2.pem'.format(ts.Variables.BINDIR, ts.Variables.SSLDir)
 )
-ts.Streams.all = "gold/update.gold"
+ts.Disk.traffic_out.Content = "gold/update.gold"
 ts.StillRunningAfter = server
 
 # Server-Cert-After
@@ -127,7 +127,7 @@ tr.Processes.Default.Command = (
     'mv {0}/client2.pem {0}/client1.pem && {1}/traffic_ctl plugin msg cert_update.client {0}/client1.pem'.format(
         ts.Variables.SSLDir, ts.Variables.BINDIR)
 )
-ts.Streams.all = "gold/update.gold"
+ts.Disk.traffic_out.Content = "gold/update.gold"
 ts.StillRunningAfter = server
 
 # Client-Cert-After

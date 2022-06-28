@@ -101,16 +101,16 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "bar.com should fail but continue")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("SNI=foo.com", "foo.com should not fail in any way")
 
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression(
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
-ts.Streams.All += Testers.ContainsExpression("Server verify callback SNI APIs match=true", "verify SNI names match")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("Server verify callback SNI APIs match=true", "verify SNI names match")

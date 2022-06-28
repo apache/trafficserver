@@ -445,7 +445,7 @@ LogBuffer::max_entry_bytes()
 int
 LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char *read_from, char *write_to, int write_to_len,
                                 long timestamp, long timestamp_usec, unsigned buffer_version, LogFieldList *alt_fieldlist,
-                                char *alt_printf_str)
+                                char *alt_printf_str, LogEscapeType escape_type)
 {
   if (fieldlist == nullptr || printf_str == nullptr) {
     return 0;
@@ -501,7 +501,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
       ++markCount;
       if (field != nullptr) {
         char *to = &write_to[bytes_written];
-        res      = field->unmarshal(&read_from, to, write_to_len - bytes_written);
+        res      = field->unmarshal(&read_from, to, write_to_len - bytes_written, escape_type);
 
         if (res < 0) {
           SiteThrottledNote("%s", buffer_size_exceeded_msg);
@@ -549,7 +549,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
   -------------------------------------------------------------------------*/
 int
 LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int buf_len, const char *symbol_str, char *printf_str,
-                    unsigned buffer_version, const char *alt_format)
+                    unsigned buffer_version, const char *alt_format, LogEscapeType escape_type)
 {
   ink_assert(entry != nullptr);
   ink_assert(type == LOG_FORMAT_CUSTOM || type == LOG_FORMAT_TEXT);
@@ -642,7 +642,7 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
   }
 
   int ret = resolve_custom_entry(fieldlist, printf_str, read_from, write_to, buf_len, entry->timestamp, entry->timestamp_usec,
-                                 buffer_version, alt_fieldlist, alt_printf_str);
+                                 buffer_version, alt_fieldlist, alt_printf_str, escape_type);
 
   delete alt_fieldlist;
   ats_free(alt_printf_str);

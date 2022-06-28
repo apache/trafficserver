@@ -599,6 +599,138 @@ LogAccess::marshal_proxy_req_all_header_fields(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+namespace
+{
+class EscLookup
+{
+public:
+  static const char NO_ESCAPE{'\0'};
+  static const char LONG_ESCAPE{'\x01'};
+
+  static char
+  result(char c)
+  {
+    return _lu.table[static_cast<unsigned char>(c)];
+  }
+
+private:
+  struct _LUT {
+    _LUT();
+
+    char table[1 << 8];
+  };
+
+  inline static _LUT const _lu;
+};
+
+EscLookup::_LUT::_LUT()
+{
+  for (unsigned i = 0; i < ' '; ++i) {
+    table[i] = LONG_ESCAPE;
+  }
+  for (unsigned i = '\x7f'; i < sizeof(table); ++i) {
+    table[i] = LONG_ESCAPE;
+  }
+
+  // Short escapes.
+  //
+  table[static_cast<int>('\b')] = 'b';
+  table[static_cast<int>('\t')] = 't';
+  table[static_cast<int>('\n')] = 'n';
+  table[static_cast<int>('\f')] = 'f';
+  table[static_cast<int>('\r')] = 'r';
+  table[static_cast<int>('\\')] = '\\';
+  table[static_cast<int>('\"')] = '"';
+  table[static_cast<int>('/')]  = '/';
+}
+
+char
+nibble(int nib)
+{
+  return nib >= 0xa ? 'a' + (nib - 0xa) : '0' + nib;
+}
+
+int
+escape_json(char *dest, const char *buf, int len)
+{
+  int escaped_len = 0;
+
+  for (int i = 0; i < len; i++) {
+    char c  = buf[i];
+    char ec = EscLookup::result(c);
+    if (__builtin_expect(EscLookup::NO_ESCAPE == ec, 1)) {
+      if (dest) {
+        if (escaped_len + 1 > len) {
+          break;
+        }
+        *dest++ = c;
+      }
+      escaped_len++;
+
+    } else if (EscLookup::LONG_ESCAPE == ec) {
+      if (dest) {
+        if (escaped_len + 6 > len) {
+          break;
+        }
+        *dest++ = '\\';
+        *dest++ = 'u';
+        *dest++ = '0';
+        *dest++ = '0';
+        *dest++ = nibble(static_cast<unsigned char>(c) >> 4);
+        *dest++ = nibble(c & 0x0f);
+      }
+      escaped_len += 6;
+
+    } else { // Short escape.
+      if (dest) {
+        if (escaped_len + 2 > len) {
+          break;
+        }
+        *dest++ = '\\';
+        *dest++ = ec;
+      }
+      escaped_len += 2;
+    }
+  } // end for
+  return escaped_len;
+}
+
+int
+unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
+{
+  Debug("log-escape", "unmarshal_str_json start, len=%d, slice=%p", len, slice);
+
+  char *val_buf   = *buf;
+  int val_len     = static_cast<int>(::strlen(val_buf));
+  int escaped_len = escape_json(nullptr, val_buf, val_len);
+
+  *buf += LogAccess::strlen(val_buf); // this is how it was stored
+
+  if (slice && slice->m_enable) {
+    int offset, n;
+
+    n = slice->toStrOffset(escaped_len, &offset);
+    Debug("log-escape", "unmarshal_str_json start, n=%d, offset=%d", n, offset);
+    if (n <= 0) {
+      return 0;
+    }
+
+    if (n >= len) {
+      return -1;
+    }
+
+    return escape_json(dest, (val_buf + offset), n);
+  }
+
+  if (escaped_len < len) {
+    escape_json(dest, val_buf, escaped_len);
+    return escaped_len;
+  }
+  return -1;
+}
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_str
 
@@ -609,11 +741,15 @@ LogAccess::marshal_proxy_req_all_header_fields(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
+LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
+
+  if (LOG_ESCAPE_JSON == escape_type) {
+    return unmarshal_str_json(buf, dest, len, slice);
+  }
 
   char *val_buf = *buf;
   int val_len   = static_cast<int>(::strlen(val_buf));
@@ -785,7 +921,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
+LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -794,13 +930,13 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
   char *p = dest;
 
   //    int res1 = unmarshal_http_method (buf, p, len);
-  int res1 = unmarshal_str(buf, p, len);
+  int res1 = unmarshal_str(buf, p, len, nullptr, escape_type);
   if (res1 < 0) {
     return -1;
   }
   p += res1;
   *p++     = ' ';
-  int res2 = unmarshal_str(buf, p, len - res1 - 1, slice);
+  int res2 = unmarshal_str(buf, p, len - res1 - 1, slice, escape_type);
   if (res2 < 0) {
     return -1;
   }

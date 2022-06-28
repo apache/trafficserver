@@ -58,27 +58,27 @@ class TransactionDataSyncTest:
 
         # All of the bodies that contained "not_dumped" were not configured to
         # be dumped. Therefore it is a bug if they show up in the logs.
-        self.ts.Streams.stderr += Testers.ExcludesExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             'body_not_dumped',
             "An unexpected body was dumped.")
 
         # Verify that each of the configured transaction bodies were dumped.
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'http1.1_cl_response_body_dumped',
             "The expected HTTP/1.1 Content-Length response body was dumped.")
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'http1.1_chunked_response_body_dumped',
             "The expected HTTP/1.1 chunked response body was dumped.")
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'http1.1_cl_request_body_dumped',
             "The expected HTTP/1.1 Content-Length request body was dumped.")
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'http1.1_chunked_request_body_dumped',
             "The expected HTTP/1.1 chunked request body was dumped.")
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             '"http2_response_body_dumped"',
             "The expected HTTP/2 response body was dumped.")
-        self.ts.Streams.stderr += Testers.ContainsExpression(
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'http2_request_body_dumped',
             "The expected HTTP/2 request body was dumped.")
 

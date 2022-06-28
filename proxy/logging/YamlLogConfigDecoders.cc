@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <memory>
 
-std::set<std::string> valid_log_format_keys = {"name", "format", "interval"};
+std::set<std::string> valid_log_format_keys = {"name", "format", "interval", "escape"};
 std::set<std::string> valid_log_filter_keys = {"name", "action", "condition"};
 
 namespace YAML
@@ -69,7 +69,21 @@ convert<std::unique_ptr<LogFormat>>::decode(const Node &node, std::unique_ptr<Lo
     interval = node["interval"].as<unsigned>();
   }
 
-  logFormat.reset(new LogFormat(name.c_str(), format.c_str(), interval));
+  // escape type
+  LogEscapeType escape_type = LOG_ESCAPE_NONE; // default value
+  if (node["escape"]) {
+    std::string escape = node["escape"].as<std::string>();
+    if (!strncasecmp(escape.c_str(), "json", 4)) {
+      escape_type = LOG_ESCAPE_JSON;
+    } else if (!strncasecmp(escape.c_str(), "none", 4)) {
+      escape_type = LOG_ESCAPE_NONE;
+    } else {
+      throw YAML::ParserException(node.Mark(), "invalid 'escape' argument '" + escape + "' for format name '" + name + "'");
+    }
+    Note("'escape' attribute for LogFormat object is; %s", escape.c_str());
+  }
+
+  logFormat.reset(new LogFormat(name.c_str(), format.c_str(), interval, escape_type));
 
   return true;
 }

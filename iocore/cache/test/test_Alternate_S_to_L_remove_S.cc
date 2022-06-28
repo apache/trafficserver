@@ -184,7 +184,7 @@ public:
       this->_wt = nullptr;
       // to make sure writer successfully write the final doc done. we need to schedule
       // to wait for some while. This time should be large than cache_config_mutex_retry_delay
-      this_ethread()->schedule_in(this->_rt, HRTIME_SECONDS(1));
+      this_ethread()->schedule_in(this->_rt, HRTIME_SECONDS(3));
       break;
     case CACHE_EVENT_OPEN_READ:
       base->do_io_read();
