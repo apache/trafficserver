@@ -33,9 +33,6 @@
 #include "P_RecUtils.h"
 #include "P_RecFile.h"
 
-#include "mgmtapi.h"
-#include "ProcessManager.h"
-
 // Marks whether the message handler has been initialized.
 static bool message_initialized_p = false;
 static bool g_started             = false;
@@ -53,20 +50,7 @@ static Event *sync_cont_event;
 bool
 i_am_the_record_owner(RecT rec_type)
 {
-  if (g_mode_type == RECM_CLIENT) {
-    switch (rec_type) {
-    case RECT_PROCESS:
-    case RECT_PLUGIN:
-      return true;
-    case RECT_CONFIG:
-    case RECT_NODE:
-    case RECT_LOCAL:
-      return false;
-    default:
-      ink_assert(!"Unexpected RecT type");
-      return false;
-    }
-  } else if (g_mode_type == RECM_STAND_ALONE) {
+  if (g_mode_type == RECM_STAND_ALONE) {
     switch (rec_type) {
     case RECT_CONFIG:
     case RECT_PROCESS:
@@ -115,24 +99,6 @@ RecProcess_set_remote_sync_interval_ms(int ms)
     Debug("statsproc", "Rescheduling remote syncer");
     sync_cont_event->schedule_every(HRTIME_MSECONDS(g_rec_remote_sync_interval_ms));
   }
-}
-
-//-------------------------------------------------------------------------
-// recv_message_cb__process
-//-------------------------------------------------------------------------
-static RecErrT
-recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
-{
-  RecErrT err;
-
-  if ((err = recv_message_cb(msg, msg_type, cookie)) == REC_ERR_OKAY) {
-    if (msg_type == RECG_PULL_ACK) {
-      g_force_req_notify.lock();
-      g_force_req_notify.signal();
-      g_force_req_notify.unlock();
-    }
-  }
-  return err;
 }
 
 //-------------------------------------------------------------------------
@@ -188,7 +154,6 @@ struct sync_cont : public Continuation {
   int
   sync(int /* event */, Event * /* e */)
   {
-    send_push_message();
     RecSyncStatsFile();
 
     Debug("statsproc", "sync_cont() processed");
@@ -224,10 +189,8 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
-
 //-------------------------------------------------------------------------
 // RecProcessInitMessage
 //-------------------------------------------------------------------------
@@ -241,17 +204,6 @@ RecProcessInitMessage(RecModeT mode_type)
   }
 
   RecMessageInit();
-  if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
-    return REC_ERR_FAIL;
-  }
-
-  if (mode_type == RECM_CLIENT) {
-    send_pull_message(RECG_PULL_REQ);
-    g_force_req_notify.lock();
-    g_force_req_notify.wait();
-    g_force_req_notify.unlock();
-  }
-
   initialized_p = true;
 
   return REC_ERR_OKAY;
@@ -281,42 +233,6 @@ RecProcessStart()
   sync_cont_event = eventProcessor.schedule_every(sc, HRTIME_MSECONDS(g_rec_remote_sync_interval_ms), ET_TASK);
 
   g_started = true;
-
-  return REC_ERR_OKAY;
-}
-
-void
-RecSignalManager(int id, const char *msg, size_t msgsize)
-{
-  ink_assert(pmgmt);
-  pmgmt->signalManager(id, msg, msgsize);
-}
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb const &_fn)
-{
-  return pmgmt->registerMgmtCallback(_signal, _fn);
-}
-
-//-------------------------------------------------------------------------
-// RecMessageSend
-//-------------------------------------------------------------------------
-
-int
-RecMessageSend(RecMessage *msg)
-{
-  int msg_size;
-
-  if (!message_initialized_p) {
-    return REC_ERR_OKAY;
-  }
-
-  // Make a copy of the record, but truncate it to the size actually used
-  if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
-    msg->o_end = msg->o_write;
-    msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, reinterpret_cast<char *>(msg), msg_size);
-  }
 
   return REC_ERR_OKAY;
 }

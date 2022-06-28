@@ -152,7 +152,7 @@ not be affected by future configuration changes made in
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
-   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_manager &
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_server &
    $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
@@ -207,7 +207,9 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
-   The name of the executable that runs the :program:`traffic_manager` process.
+   .. important::
+
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
    :units: bytes
@@ -217,8 +219,9 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
-   The script executed before the :program:`traffic_manager` process spawns
-   the :program:`traffic_server` process.
+   .. important::
+
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -231,7 +234,7 @@ System Variables
 
    This is used for log rolling configuration so |TS| knows the path of the
    output file that should be rolled. This configuration takes the name of the
-   file receiving :program:`traffic_server` and :program:`traffic_manager`
+   file receiving :program:`traffic_server`
    process output that is set via the ``--bind_stdout`` and ``--bind_stderr``
    :ref:`command-line options <traffic_server>`.
    :ts:cv:`proxy.config.output.logfile` is used only to identify the name of
@@ -389,8 +392,9 @@ Thread Variables
 .. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
    :reloadable:
 
-   This setting specifies the number of active client connections
-   for use by :option:`traffic_ctl server restart --drain`.
+   .. important::
+
+      Deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.restart.stop_listening INT 0
    :reloadable:
@@ -556,16 +560,14 @@ Network
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
 
-Local Manager
-=============
+Management
+==========
 
 .. ts:cv:: CONFIG proxy.node.config.manager_log_filename STRING manager.log
 
-   The name of the file to which :program:`traffic_manager` logs will be emitted.
+   .. important::
 
-   If this is set to ``stdout`` or ``stderr``, then all :program:`traffic_manager`
-   logging will go to the stdout or stderr stream, respectively.
-
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
@@ -591,31 +593,8 @@ Local Manager
 
 .. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 0
 
-   This setting specifies whether the management API should be restricted to
-   root processes. If this is set to ``0``, then on platforms that support
-   passing process credentials, non-root processes will be allowed to make
-   read-only management API calls. Any management API calls that modify server
-   state (eg. setting a configuration variable) will still be restricted to
-   root processes.
-
-   This setting is not reloadable, since it is must be applied when
-   :program:`traffic_manager` initializes.
-
-.. ts:cv:: CONFIG proxy.node.config.manager_exponential_sleep_ceiling INT 60
-
-   In case of :program:`traffic_manager` is unable to start :program:`traffic_server`,
-   this setting specifies the maximum amount of seconds that the :program:`traffic_manager`
-   process should wait until it tries again to restart :program:`traffic_server`.
-   In case of :program:`traffic_manager` failing to start :program:`traffic_server`, it will
-   retry exponentially until it reaches the ceiling time.
-
-.. ts:cv:: CONFIG proxy.node.config.manager_retry_cap INT 5
-
-   This setting specifies the number of times that :program:`traffic_manager` will retry
-   to restart :program:`traffic_server` once the  maximum ceiling time is reached.
-
-.. note::
-   If set to ``0``, no cap will take place.
+   This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
+   out about the new admin API mechanism.
 
 Alarm Configuration
 ===================
@@ -4654,7 +4633,7 @@ SOCKS Processor
 
    Enables (1) or disables (0) the SOCKS proxy option. As a SOCKS
    proxy, |TS| receives SOCKS traffic (usually on port
-   1080) and forwards all requests directly to the SOCKS server.
+   1)    and forwards all requests directly to the SOCKS server.
 
 .. ts:cv::  CONFIG proxy.config.socks.accept_port INT 1080
 

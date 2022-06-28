@@ -66,7 +66,6 @@ SLACKWARE="slackware"
 
 function killAll() {
     killall traffic_cop
-    killall traffic_manager
     killall traffic_server
 }
 

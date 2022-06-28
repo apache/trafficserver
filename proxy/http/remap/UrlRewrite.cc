@@ -58,7 +58,6 @@ UrlRewrite::load()
 
   config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
   if (!config_file_path) {
-    pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
     Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
     return false;
   }
@@ -66,7 +65,6 @@ UrlRewrite::load()
   this->ts_name = nullptr;
   REC_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
   if (this->ts_name == nullptr) {
-    pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.proxy_name");
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
     this->ts_name = ats_strdup("");
   }
@@ -74,7 +72,6 @@ UrlRewrite::load()
   this->http_default_redirect_url = nullptr;
   REC_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
   if (this->http_default_redirect_url == nullptr) {
-    pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.http.referer_default_redirect");
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }

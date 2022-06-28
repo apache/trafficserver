@@ -29,7 +29,6 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "ConfigManager.h"
 #include "records/P_RecCore.h"
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"

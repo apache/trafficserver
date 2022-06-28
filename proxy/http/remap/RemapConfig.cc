@@ -914,7 +914,6 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   const char *errStr;
 
   Tokenizer whiteTok(" \t");
-  bool alarm_already = false;
 
   // Vars to parse line in file
   char *tok_state, *cur_line, *cur_line_tmp;
@@ -1153,7 +1152,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             if (refinfo_error) {
               snprintf(errStrBuf, sizeof(errStrBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s", modulePrefix,
                        bti->paramv[j - 1], cln + 1, refinfo_error_buf);
-              SignalError(errStrBuf, alarm_already);
+              Error("%s", errStrBuf);
               delete ri;
               ri = nullptr;
             }
@@ -1335,7 +1334,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   MAP_ERROR:
 
     snprintf(errBuf, sizeof(errBuf), "%s failed to add remap rule at %s line %d: %s", modulePrefix, path, cln + 1, errStr);
-    SignalError(errBuf, alarm_already);
+    Error("%s", errBuf);
 
     delete reg_map;
     delete new_mapping;

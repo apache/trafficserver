@@ -116,7 +116,7 @@ you also can find this information in the `JSONRPC`_ link.
 Requests
 --------
 
-Please find the `jsonrpc 2.0 request` schema for reference ( `mgmt2/rpc/schema/jsonrpc_request_schema.json` ).
+Please find the `jsonrpc 2.0 request` schema for reference ( `mgmt/rpc/schema/jsonrpc_request_schema.json` ).
 
 * Mandatory fields.
 
@@ -209,7 +209,7 @@ Responses
 Although each individual API call will describe the response details and some specific errors, in this section we will describe a high
 level protocol response, some defined by the `JSONRPC`_ specs and some by |TS|
 
-Please find the `jsonrpc 2.0 response` schema for reference( `mgmt2/rpc/schema/jsonrpc_response_schema.json` ).
+Please find the `jsonrpc 2.0 response` schema for reference( `mgmt/rpc/schema/jsonrpc_response_schema.json` ).
 
 
 

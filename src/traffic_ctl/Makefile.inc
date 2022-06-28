@@ -20,34 +20,18 @@
 bin_PROGRAMS += traffic_ctl/traffic_ctl
 
 traffic_ctl_traffic_ctl_CPPFLAGS = \
-    $(AM_CPPFLAGS) \
-    $(iocore_include_dirs) \
-    -I$(abs_top_srcdir)/include \
-    -I$(abs_top_srcdir)/proxy/http \
-    -I$(abs_top_srcdir)/proxy/hdrs \
-    -I$(abs_top_srcdir)/lib \
-    -I$(abs_top_srcdir)/mgmt \
-    -I$(abs_top_srcdir)/mgmt/api/include \
-    -I$(abs_top_srcdir)/proxy \
-    $(TS_INCLUDES)
+	$(AM_CPPFLAGS) \
+	$(TS_INCLUDES) \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/include \
+	@YAMLCPP_INCLUDES@
 
 traffic_ctl_traffic_ctl_SOURCES = \
-	traffic_ctl/alarm.cc \
-	traffic_ctl/config.cc \
-	traffic_ctl/metric.cc \
-	traffic_ctl/plugin.cc \
-	traffic_ctl/server.cc \
-	traffic_ctl/storage.cc \
-	traffic_ctl/host.cc \
-	shared/overridable_txn_vars.cc \
-	traffic_ctl/traffic_ctl.cc
+	traffic_ctl/traffic_ctl.cc \
+	traffic_ctl/CtrlPrinters.cc \
+	traffic_ctl/CtrlCommands.cc \
+	shared/rpc/IPCSocketClient.cc
 
 traffic_ctl_traffic_ctl_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@HWLOC_LIBS@
+    $(top_builddir)/src/tscore/libtscore.la \
+    @HWLOC_LIBS@ @YAMLCPP_LIBS@

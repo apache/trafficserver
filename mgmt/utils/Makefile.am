@@ -37,8 +37,6 @@ check_PROGRAMS = test_mgmt_utils
 TESTS = $(check_PROGRAMS)
 
 libutils_COMMON = \
-	MgmtMarshall.cc \
-	MgmtMarshall.h \
 	MgmtSocket.cc \
 	MgmtSocket.h \
 	MgmtUtils.cc \
@@ -47,12 +45,10 @@ libutils_COMMON = \
 libutils_lm_la_SOURCES = \
 	$(libutils_COMMON) \
 	ExpandingArray.cc \
-	ExpandingArray.h \
-	MgmtLocalCleanup.cc
+	ExpandingArray.h
 
 libutils_p_la_SOURCES = \
-	$(libutils_COMMON) \
-	MgmtProcessCleanup.cc
+	$(libutils_COMMON)
 
 test_mgmt_utils_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 
@@ -61,8 +57,7 @@ test_mgmt_utils_LDFLAGS = \
 	@OPENSSL_LDFLAGS@
 
 test_mgmt_utils_SOURCES = \
-	unit_tests/unit_test_main.cc \
-	unit_tests/test_marshall.cc
+	unit_tests/unit_test_main.cc
 
 test_mgmt_utils_LDADD = \
 	libutils_p.la \

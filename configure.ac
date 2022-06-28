@@ -555,18 +555,6 @@ AC_MSG_RESULT([$enable_example_plugins])
 AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
 
 #
-# JSONRPC 2.0  build options.
-#
-AC_MSG_CHECKING([whether to build & install non jsonrpc traffic_ctl])
-AC_ARG_ENABLE([legacy-traffic_ctl],
-  [AS_HELP_STRING([--enable-legacy-traffic_ctl],[build and install legacy traffic_ctl. No jsonrpc will be supported through traffic_ctl])],
-  [],
-  [enable_legacy_tc=no]
-)
-AC_MSG_RESULT([$enable_legacy_tc])
-AM_CONDITIONAL([BUILD_LEGACY_TC], [ test "x${enable_legacy_tc}" = "xyes" ])
-
-#
 # Test tools. The test tools are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -2338,10 +2326,9 @@ AC_CONFIG_FILES([
   mgmt/api/Makefile
   mgmt/api/include/Makefile
   mgmt/utils/Makefile
+  mgmt/rpc/Makefile
+  mgmt/config/Makefile
   plugins/Makefile
-  mgmt2/Makefile
-  mgmt2/rpc/Makefile
-  mgmt2/config/Makefile
   proxy/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile

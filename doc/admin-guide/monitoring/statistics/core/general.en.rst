@@ -34,6 +34,8 @@ General
 .. ts:stat:: global proxy.node.config.restart_required.manager integer
    :type: flag
 
+   This metric is now deprecated. traffic_manager is no longer supported.
+
 .. ts:stat:: global proxy.node.config.restart_required.proxy integer
    :type: flag
 
@@ -55,8 +57,7 @@ General
    :type: gauge
    :units: seconds
 
-   Unix epoch-time value indicating the time at which the currently-running
-   :program:`traffic_manager` process was started.
+   This metric is now deprecated. traffic_manager is no longer supported.
 
 .. ts:stat:: global proxy.node.restarts.proxy.cache_ready_time integer
    :type: gauge
@@ -66,13 +67,6 @@ General
 .. ts:stat:: global proxy.node.restarts.proxy.start_time integer
 .. ts:stat:: global proxy.node.restarts.proxy.stop_time integer
 .. ts:stat:: global proxy.process.user_agent_total_bytes integer
-.. ts:stat:: global proxy.node.version.manager.build_date string
-.. ts:stat:: global proxy.node.version.manager.build_machine string
-.. ts:stat:: global proxy.node.version.manager.build_number integer
-.. ts:stat:: global proxy.node.version.manager.build_person string
-.. ts:stat:: global proxy.node.version.manager.build_time string
-.. ts:stat:: global proxy.node.version.manager.long string
-.. ts:stat:: global proxy.node.version.manager.short float
 .. ts:stat:: global proxy.process.http.tunnels integer
 .. ts:stat:: global proxy.process.update.fails integer
 .. ts:stat:: global proxy.process.update.no_actions integer

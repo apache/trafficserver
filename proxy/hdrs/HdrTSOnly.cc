@@ -28,11 +28,10 @@
    Description:
       IRIX compiler is rather annoying and likes to use symbols from inline
         code that is not called in the file.  Thus to make our libhdrs.a
-        library link with traffic_manager and test_header, we can't
-        include IOBuffer.h in any file where the corresponding object file
-        gets linked in for these two targets.  Thus HdrTSOnly.cc is where
-        we put the functions that only traffic_server uses since they
-        need to know about IOBuffers.
+        library link with test_header, we can't include IOBuffer.h in any
+        file where the corresponding object file gets linked in for these
+        two targets.  Thus HdrTSOnly.cc is where we put the functions that
+        only traffic_server uses since they need to know about IOBuffers.
 
 
  ****************************************************************************/

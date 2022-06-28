@@ -50,12 +50,6 @@ void mgmt_cleanup();
 struct in_addr *mgmt_sortipaddrs(int num, struct in_addr **list);
 bool mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu = nullptr);
 
-/* the following functions are all DEPRECATED.  The Diags
-   interface should be used exclusively in the future */
-void mgmt_log(const char *message_format, ...);
-void mgmt_elog(const int lerrno, const char *message_format, ...);
-void mgmt_fatal(const int lerrno, const char *message_format, ...) TS_NORETURN;
-
 void mgmt_sleep_sec(int);
 void mgmt_sleep_msec(int);
 

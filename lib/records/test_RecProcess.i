@@ -593,8 +593,6 @@ main(int argc, char **argv)
   eventProcessor.start(4);
   RecProcessStart();
 
-  RecSignalManager(1, "This is a signal, signaled by RecSignalManager");
-
   // See if we're sync'd okay
   RecDumpRecordsHt(RECT_NULL);
 

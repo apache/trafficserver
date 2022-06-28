@@ -24,7 +24,6 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/I_Version.h"
-#include "mgmtapi.h"
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -219,7 +218,7 @@ printViaHeader(std::string_view header)
 }
 
 // Check validity of via header and then decode it
-static TSMgmtError
+static bool
 decodeViaHeader(std::string_view text)
 {
   // Via header inside square brackets
@@ -228,7 +227,7 @@ decodeViaHeader(std::string_view text)
     text.remove_suffix(1);
   }
   if (text.empty()) {
-    return TS_ERR_FAIL;
+    return false;
   }
 
   printf("Via header is [%.*s], Length is %zu\n", int(text.size()), text.data(), text.size());
@@ -243,18 +242,18 @@ decodeViaHeader(std::string_view text)
   if (text.size() == 22 || text.size() == 6) {
     // Decode via header
     printViaHeader(text);
-    return TS_ERR_OKAY;
+    return true;
   }
   // Invalid header size, come out.
   printf("\nInvalid VIA header. VIA header length should be 6 or 22 characters\n");
   printf("Valid via header format is "
          "[u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>e<error-codes>:t<tunneling-info>c<"
          "cache type><cache-lookup-result>p<parent-proxy-conn-info>s<server-conn-info>]\n");
-  return TS_ERR_FAIL;
+  return false;
 }
 
 // Read user input from stdin
-static TSMgmtError
+static bool
 filterViaHeader()
 {
   const pcre *compiledReg;
@@ -273,7 +272,7 @@ filterViaHeader()
 
   if (compiledReg == nullptr) {
     printf("PCRE regex compilation failed with error %s at offset %d\n", err, errOffset);
-    return TS_ERR_FAIL;
+    return false;
   }
 
   // Read all lines from stdin
@@ -299,13 +298,13 @@ filterViaHeader()
       decodeViaHeader(match);
     }
   }
-  return TS_ERR_OKAY;
+  return true;
 }
 
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
-  TSMgmtError status;
+  bool opStatus;
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME, "traffic_via", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -321,12 +320,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   for (unsigned i = 0; i < n_file_arguments; ++i) {
     if (strcmp(file_arguments[i], "-") == 0) {
       // Filter arguments provided from stdin
-      status = filterViaHeader();
+      opStatus = filterViaHeader();
     } else {
-      status = decodeViaHeader(std::string_view{file_arguments[i], strlen(file_arguments[i])});
+      opStatus = decodeViaHeader(std::string_view{file_arguments[i], strlen(file_arguments[i])});
     }
 
-    if (status != TS_ERR_OKAY) {
+    if (!opStatus) {
       return 1;
     }
   }

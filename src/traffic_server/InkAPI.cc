@@ -8017,25 +8017,7 @@ TSMatcherLineValue(TSMatcherLine ml, int element)
 TSReturnCode
 TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
 {
-  TSMgmtInt result;
-  char *buffer;
-
-  // is this a valid integer?
-  if (TSMgmtIntGet(var_name, &result) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
-
-  // construct a buffer
-  int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
-
-  buffer = static_cast<char *>(alloca(buffer_size));
-  snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, MGMT_INT, value);
-
-  // tell manager to set the configuration; note that this is not
-  // transactional (e.g. we return control to the plugin before the
-  // value is committed to disk by the manager)
-  RecSignalManager(MGMT_SIGNAL_PLUGIN_SET_CONFIG, buffer);
-
+  Warning("This API is no longer supported.");
   return TS_SUCCESS;
 }
 

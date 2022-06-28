@@ -35,7 +35,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 # **testname is required**
 testName = "regex_revalidate_state"

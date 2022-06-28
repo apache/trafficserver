@@ -29,10 +29,10 @@ plugins to build large scale web applications.
           |-- quic/ ......... QUIC implementation
       |-- utils/ ............ Utilities
   |-- lib/ ..................
-      |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
+      |-- perl/ ............. Perl libraries for configurations
       |-- records/ .......... Library for config files
       |-- yamlcpp/ .......... Library for YAML of C++
-  |-- mgmt/ ................. Management server and tools
+  |-- mgmt/ ................. JSONRPC server/management and tools
   |-- plugins/ .............. Stable core plugins
       |-- experimental/ ..... Experimental core plugins
   |-- proxy/ ................ HTTP proxy logic
@@ -50,7 +50,6 @@ plugins to build large scale web applications.
       |-- traffic_layout/ ... Display information on the build and runtime directory structure
       |-- traffic_logcat/ ... Convert binary log file to plain text
       |-- traffic_logstats/ . Log parsing and metrics calculation utility
-      |-- traffic_manager/ .. The manager process for Traffic Server
       |-- traffic_server/ ... Main proxy server
       |-- traffic_top/ ...... Top like tool for viewing Traffic Server statistics
       |-- traffic_via/ ...... Tool for decoding the Traffic Server Via header codes

@@ -43,9 +43,7 @@ RecMessage *RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record);
 int RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
 int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
 
-int RecMessageSend(RecMessage *msg);
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);
-void RecMessageRecvThis(ts::MemSpan<void>);
 
 RecMessage *RecMessageReadFromDisk(const char *fpath);
 int RecMessageWriteToDisk(RecMessage *msg, const char *fpath);

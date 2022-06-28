@@ -29,6 +29,7 @@
 #include "tscore/ts_file.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/bwf_std_format.h"
+#include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 
 #include <utility>
 #include <vector>

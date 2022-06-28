@@ -308,12 +308,3 @@ TEST_CASE("verify priority enforcement", "[RolledLogDeleter]")
     verify_there_are_no_candidates(deleter);
   }
 }
-
-//
-// Stub
-//
-void
-RecSignalManager(int, const char *, unsigned long)
-{
-  ink_release_assert(false);
-}

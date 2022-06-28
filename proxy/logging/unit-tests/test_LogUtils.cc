@@ -125,12 +125,6 @@ _ink_assert(const char *a, const char *f, int line)
   std::exit(1);
 }
 
-void
-RecSignalManager(int, char const *, std::size_t)
-{
-  ink_release_assert(false);
-}
-
 TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_unrolled_filename]")
 {
   // Rolled log inputs.

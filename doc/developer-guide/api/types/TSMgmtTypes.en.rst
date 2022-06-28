@@ -23,6 +23,10 @@ TSMgmt
 Synopsis
 ========
 
+.. important::
+
+   This is now deprecated. All new RPC communication is now done by :ref:`jsonrpc-protocol`
+
 Macros used for RPC communications.
 
 Management Signals

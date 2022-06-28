@@ -150,7 +150,7 @@ Client/|TS| connections, you must do the following:
 
         CONFIG proxy.config.ssl.CA.cert.path STRING /opt/CA/certs/private-ca.pem
 
-#. Run the command :option:`traffic_ctl server restart` to restart |TS|.
+#. Restart Traffic Server.
 
 .. _traffic-server-and-origin-server-connections:
 
@@ -235,7 +235,7 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.CA.cert.path STRING /opt/ts/etc/ssl/certs/
         CONFIG proxy.config.ssl.client.CA.cert.filename STRING CAs.pem
 
-#. Run the command :option:`traffic_ctl server restart` to restart |TS|.
+#. Restart Traffic Server.
 
 :doc:`mtls.en`
 ==============

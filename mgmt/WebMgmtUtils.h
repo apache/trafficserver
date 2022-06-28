@@ -26,20 +26,6 @@
 #include "MgmtDefs.h"
 #include "records/P_RecCore.h"
 
-// class MgmtData - stores information from local manager
-//    variables in its native type
-//
-class MgmtData
-{
-public:
-  MgmtData();
-  ~MgmtData();
-  bool compareFromString(const char *str);
-  bool setFromName(const char *varName);
-  RecDataT type;
-  RecData data;
-};
-
 // Convert to byte units (GB, MB, KB)
 void bytesFromInt(RecInt bytes, char *bufVal);
 
@@ -52,14 +38,7 @@ void commaStrFromInt(RecInt bytes, char *bufVal);
 // Create percent string from float
 void percentStrFromFloat(RecFloat val, char *bufVal);
 
-// All types converted to/from strings where appropriate
-bool varStrFromName(const char *varName, char *bufVal, int bufLen);
-bool varSetFromStr(const char *varName, const char *value);
-
 // Converts where applicable to specified type
-bool varIntFromName(const char *varName, RecInt *value);
-bool varFloatFromName(const char *varName, RecFloat *value);
-bool varCounterFromName(const char *varName, RecCounter *value);
 bool varDataFromName(RecDataT varType, const char *varName, RecData *value);
 
 // No conversion done.  varName must represent a value of the appropriate
@@ -70,18 +49,6 @@ bool varSetCounter(const char *varName, RecCounter value, bool convert = false);
 bool varSetFloat(const char *varName, RecFloat value, bool convert = false);
 bool varSetData(RecDataT varType, const char *varName, RecData value);
 
-// Return the type of the variable named
-RecDataT varType(const char *varName);
-
 int convertHtmlToUnix(char *buffer);
 int substituteUnsafeChars(char *buffer);
 char *substituteForHTMLChars(const char *buffer);
-
-int setHostnameVar();
-void appendDefaultDomain(char *hostname, int bufLength);
-
-bool recordValidityCheck(const char *varName, const char *value);
-bool recordRegexCheck(const char *pattern, const char *value);
-bool recordRangeCheck(const char *pattern, const char *value);
-bool recordIPCheck(const char *pattern, const char *value);
-bool recordRestartCheck(const char *varName);

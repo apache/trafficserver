@@ -34,14 +34,14 @@ are available to plugins.
    same directory). These provide functionality that is used inside the |TS| core logic but has been
    demonstrated to be useful for plugins as well [#]_. The functions are in the library
    ``libtscpputil.so``, although many of the utilities are header only. This library is linked in to
-   the ``traffic_server`` and ``traffic_manager`` binaries and so linkage may not be needed for a plugin.
+   the ``traffic_server`` binary and so linkage may not be needed for a plugin.
 
    This library is independent of the C++ API and can be used with or without that library.
 
 "tscore"
    |TS| core header files. These can only be used inside |TS| itself because they either depend on internal
-   data structures either directly or operationally. This is linked in to the ``traffic_server`` and
-   ``traffic_manager`` binaries therefore has no explicit linkage when used in the core.
+   data structures either directly or operationally. This is linked in to the ``traffic_server`` binary therefore
+   has no explicit linkage when used in the core.
 
 Historical
 ==========

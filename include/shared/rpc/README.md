@@ -5,5 +5,5 @@ are looking to interact with it in a different C++ application, like traffic_ctl
 and traffic_top.
 All this definitions under the shared::rpc namespace are a client lightweight
 version of the ones used internally by the JSONRPC node server/handlers, they
-should not be mixed with the ones defined in `mgmt2/rpc/jsonrpc` which are for
+should not be mixed with the ones defined in `mgmt/rpc/jsonrpc` which are for
 internal use only.

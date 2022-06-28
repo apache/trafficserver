@@ -19,25 +19,6 @@
                     "ignoreFailures": true
                 }
             ]
-        },
-        {
-            "name": "(gdb) traffic_manager",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}/src/traffic_manager/.libs/traffic_manager",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
         }
     ]
 }

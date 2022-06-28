@@ -102,14 +102,6 @@
 #include <cctype>
 #endif
 
-#define SignalError(_buf, _already)                         \
-  {                                                         \
-    if (_already == false)                                  \
-      pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, _buf); \
-    _already = true;                                        \
-    Error("%s", _buf);                                      \
-  }
-
 class HostLookup;
 struct HttpApiInfo;
 struct matcher_line;
