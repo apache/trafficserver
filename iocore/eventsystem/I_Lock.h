@@ -592,6 +592,7 @@ ProxyMutex::free()
   print_lock_stats(1);
 #endif
 #endif
+  ink_release_assert(0 == nthread_holding);
   ink_mutex_destroy(&the_mutex);
   mutexAllocator.free(this);
 }

@@ -247,9 +247,6 @@ TSMutexCreate()
 {
   ProxyMutex *mutexp = new_ProxyMutex();
 
-  // TODO: Remove this when allocations can never fail.
-  sdk_assert(sdk_sanity_check_mutex((TSMutex)mutexp) == TS_SUCCESS);
-
   return (TSMutex)mutexp;
 }
 

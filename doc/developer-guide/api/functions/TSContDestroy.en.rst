@@ -32,3 +32,19 @@ Synopsis
 
 Description
 ===========
+
+Destroys a continuation created with :func:`TSContCreate`.  If :func:`TSContDestroy` is called
+in the continuation's handler function, and the contination has a mutex, it must be unlocked just
+before destroying the continuation.  Otherwise, |TS| will abort.  Example:
+
+.. code-block:: cpp
+
+    int handler(TSCont contp, TSEvent, void *)
+    {
+      TSMutex mtx = TSContMutexGet(contp);
+      if (mtx) {
+        TSMutexUnlock(mtx);
+      }
+      TSContDestroy(contp);
+      return 0;
+    }
