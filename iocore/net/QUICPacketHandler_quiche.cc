@@ -20,6 +20,7 @@
   limitations under the License.
  */
 
+#include "tscore/I_Layout.h"
 #include "tscore/ink_config.h"
 #include "P_Net.h"
 
@@ -257,6 +258,16 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     quiche_conn *quiche_con = quiche_accept(
       new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->from.sa,
       udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6), &this->_quiche_config);
+
+    if (params->qlog_dir() != nullptr) {
+      char qlog_filepath[PATH_MAX];
+      const uint8_t *quic_trace_id;
+      size_t quic_trace_id_len = 0;
+      quiche_conn_trace_id(quiche_con, &quic_trace_id, &quic_trace_id_len);
+      sprintf(qlog_filepath, "%s/%.*s.sqlog", Layout::get()->relative(params->qlog_dir()).c_str(),
+              static_cast<int>(quic_trace_id_len), quic_trace_id);
+      quiche_conn_set_qlog_path(quiche_con, qlog_filepath, "ats", "");
+    }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
     // TODO Extract OCID and RCID from the token
