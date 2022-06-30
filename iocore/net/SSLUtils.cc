@@ -1017,6 +1017,7 @@ SSLInitializeLibrary()
   TLSSessionResumptionSupport::initialize();
   TLSSNISupport::initialize();
   TLSEarlyDataSupport::initialize();
+  TLSTunnelSupport::initialize();
 
   open_ssl_initialized = true;
 }
