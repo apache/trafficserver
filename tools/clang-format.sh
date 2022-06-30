@@ -88,8 +88,15 @@ EOF
   else
       [ ${just_install} -eq 1 ] && return
       for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
-    echo $file
-    ${FORMAT} -i $file
+        # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
+        # so they do not need to be re-formatted by clang-format. Doing so
+        # results in make rebuilding all our files, so we skip formatting them
+        # here.
+        base_name=$(basename ${file})
+        [ ${base_name} = 'ink_autoconf.h.in' -o ${base_name} = 'ink_autoconf.h' ] && continue
+
+        echo $file
+        ${FORMAT} -i $file
       done
   fi
 }
