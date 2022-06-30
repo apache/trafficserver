@@ -47,6 +47,7 @@ public:
   virtual QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id) override;
   virtual QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id) override;
   virtual QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id) override;
+  virtual QUICConnectionErrorUPtr delete_stream(QUICStreamId &new_stream_id) override;
   virtual void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error) override;
 
   // QUICStreamStateListener

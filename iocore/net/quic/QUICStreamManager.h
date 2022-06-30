@@ -45,10 +45,11 @@ public:
 
   virtual uint32_t stream_count() const                   = 0;
   virtual QUICStream *find_stream(QUICStreamId stream_id) = 0;
-  ;
+
   virtual QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id)           = 0;
   virtual QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id)  = 0;
   virtual QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id) = 0;
+  virtual QUICConnectionErrorUPtr delete_stream(QUICStreamId &new_stream_id)      = 0;
   virtual void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error)    = 0;
 
   void set_default_application(QUICApplication *app);

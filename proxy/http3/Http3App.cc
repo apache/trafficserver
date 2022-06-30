@@ -137,11 +137,17 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE:
     if (is_bidirectional) {
       this->_handle_bidi_stream_on_write_ready(event, vio);
     } else {
       this->_handle_uni_stream_on_write_ready(event, vio);
+    }
+    break;
+  case VC_EVENT_WRITE_COMPLETE:
+    if (is_bidirectional) {
+      this->_handle_bidi_stream_on_write_complete(event, vio);
+    } else {
+      this->_handle_uni_stream_on_write_complete(event, vio);
     }
     break;
   case VC_EVENT_EOS:
@@ -282,6 +288,12 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, VIO *vio)
 }
 
 void
+Http3App::_handle_uni_stream_on_write_complete(int /* event */, VIO *vio)
+{
+  // QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
+}
+
+void
 Http3App::_handle_bidi_stream_on_eos(int /* event */, VIO *vio)
 {
   // TODO: handle eos
@@ -325,6 +337,22 @@ Http3App::_handle_bidi_stream_on_write_ready(int event, VIO *vio)
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->handleEvent(event);
   }
+}
+
+void
+Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
+{
+  QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
+
+  QUICStreamId stream_id = adapter->stream().id();
+  Http3Transaction *txn  = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
+  if (txn != nullptr) {
+    SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
+    txn->handleEvent(event);
+  }
+  // FIXME There may be data to read
+  this->_ssn->remove_transaction(txn);
+  this->_qc->stream_manager()->delete_stream(stream_id);
 }
 
 //
