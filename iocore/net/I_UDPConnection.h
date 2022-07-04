@@ -97,7 +97,7 @@ public:
      bindToThread() automatically so that the sockets can be passed to
      other Continuations.
   */
-  void bindToThread(Continuation *c);
+  void bindToThread(Continuation *c, EThread *t);
 
   virtual void UDPConnection_is_abstract() = 0;
 };

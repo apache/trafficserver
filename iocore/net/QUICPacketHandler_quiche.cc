@@ -126,7 +126,7 @@ int
 QUICPacketHandlerIn::acceptEvent(int event, void *data)
 {
   // NetVConnection *netvc;
-  ink_release_assert(event == NET_EVENT_DATAGRAM_OPEN || event == NET_EVENT_DATAGRAM_READ_READY ||
+  ink_release_assert(event == EVENT_IMMEDIATE || event == NET_EVENT_DATAGRAM_OPEN || event == NET_EVENT_DATAGRAM_READ_READY ||
                      event == NET_EVENT_DATAGRAM_ERROR);
   ink_release_assert((event == NET_EVENT_DATAGRAM_OPEN) ? (data != nullptr) : (1));
   ink_release_assert((event == NET_EVENT_DATAGRAM_READ_READY) ? (data != nullptr) : (1));
@@ -145,6 +145,11 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
       this->_recv_packet(event, packet_r);
     }
     return EVENT_CONT;
+  } else if (event == EVENT_IMMEDIATE) {
+    this->setThreadAffinity(this_ethread());
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    udpNet.UDPBind((Continuation *)this, &this->server.accept_addr.sa, -1, 1048576, 1048576);
+    return EVENT_CONT;
   }
 
   /////////////////
@@ -160,7 +165,17 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
 void
 QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 {
+  int i, n;
+
   SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
+
+  n = eventProcessor.thread_group[ET_UDP]._count;
+  for (i = 0; i < n; i++) {
+    NetAccept *a = (i < n - 1) ? clone() : this;
+    EThread *t   = eventProcessor.thread_group[ET_UDP]._thread[i];
+    a->mutex     = get_NetHandler(t)->mutex;
+    t->schedule_imm(a);
+  }
 }
 
 Continuation *

@@ -98,11 +98,9 @@ UnixUDPConnection::callbackHandler(int event, void *data)
 }
 
 void
-UDPConnection::bindToThread(Continuation *c)
+UDPConnection::bindToThread(Continuation *c, EThread *t)
 {
   UnixUDPConnection *uc = (UnixUDPConnection *)this;
-  // add to new connections queue for EThread.
-  EThread *t = eventProcessor.assign_thread(ET_UDP);
   ink_assert(t);
   ink_assert(get_UDPNetHandler(t));
   uc->ethread = t;

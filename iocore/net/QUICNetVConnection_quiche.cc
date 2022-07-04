@@ -140,6 +140,13 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   case EVENT_INTERVAL:
     this->_handle_interval();
     break;
+  case VC_EVENT_EOS:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    _unschedule_packet_write_ready();
+    this->closed = 1;
+    break;
   default:
     QUICConDebug("Unhandleed event: %d", event);
     break;
