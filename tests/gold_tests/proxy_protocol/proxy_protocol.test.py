@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 import sys
 
 Test.Summary = 'Test PROXY Protocol'
@@ -49,12 +50,24 @@ class ProxyProtocolTest:
         self.ts.Disk.records_config.update({
             "proxy.config.http.server_ports": f"{self.ts.Variables.port}:pp {self.ts.Variables.ssl_port}:ssl:pp",
             "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
-            "proxy.config.http.insert_forwarded": "for|proto",
+            "proxy.config.http.insert_forwarded": "for|by=ip|proto",
             "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
             "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "proxyprotocol",
         })
+
+        self.ts.Disk.logging_yaml.AddLines(
+            '''
+logging:
+  formats:
+    - name: access
+      format: '%<chi> %<pps>'
+
+  logs:
+    - filename: access
+      format: access
+'''.split("\n"))
 
     def addTestCase0(self):
         """
@@ -82,9 +95,36 @@ class ProxyProtocolTest:
         tr.StillRunningAfter = self.httpbin
         tr.StillRunningAfter = self.ts
 
+    def addTestCase2(self):
+        """
+        Test with netcat
+        """
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = f"echo 'PROXY TCP4 198.51.100.1 198.51.100.2 51137 80\r\nGET /get HTTP/1.1\r\nHost: 127.0.0.1:80\r\n' | nc localhost {self.ts.Variables.port}"
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/test_case_2_stdout.gold"
+        tr.StillRunningAfter = self.httpbin
+        tr.StillRunningAfter = self.ts
+
+    def addTestCase99(self):
+        """
+        check access log
+        """
+        Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/access.gold')
+
+        # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = (
+            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log')
+        )
+        tr.Processes.Default.ReturnCode = 0
+
     def run(self):
         self.addTestCase0()
         self.addTestCase1()
+        self.addTestCase2()
+        self.addTestCase99()
 
 
 ProxyProtocolTest().run()

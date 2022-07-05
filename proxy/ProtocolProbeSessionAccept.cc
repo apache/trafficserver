@@ -108,7 +108,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
         void *payload = nullptr;
         if (!pp_ipmap->contains(netvc->get_remote_addr(), &payload)) {
           Debug("proxyprotocol",
-                "ioCompletionEvent: proxy protocol src IP is NOT in the configured allowlist of trusted IPs - closing connection");
+                "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
           goto done;
         } else {
           char new_host[INET6_ADDRSTRLEN];
@@ -123,7 +123,6 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
       if (netvc->has_proxy_protocol(reader)) {
         Debug("proxyprotocol", "ioCompletionEvent: http has proxy protocol header");
-        netvc->set_remote_addr(netvc->get_proxy_protocol_src_addr());
       } else {
         Debug("proxyprotocol",
               "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - "

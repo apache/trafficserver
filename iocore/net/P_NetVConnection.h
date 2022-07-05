@@ -28,11 +28,7 @@ inline sockaddr const *
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
-    if (pp_info.version != ProxyProtocolVersion::UNDEFINED) {
-      set_remote_addr(get_proxy_protocol_src_addr());
-    } else {
-      set_remote_addr();
-    }
+    set_remote_addr();
     got_remote_addr = true;
   }
   return &remote_addr.sa;
