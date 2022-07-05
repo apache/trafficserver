@@ -4614,7 +4614,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     ranges[nr]._end   = end;
     ++nr;
 
-    if (cache_sm.cache_read_vc) {
+    if (cache_sm.cache_read_vc && t_state.cache_info.object_read) {
       if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer == 2) {
         // write in progress, check if request range not in cache yet
         HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
