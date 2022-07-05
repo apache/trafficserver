@@ -25,6 +25,15 @@ function main() {
   set -e # exit on error
   ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
 
+  # Check for the option to just install clang-format without running it.
+  just_install=0
+  if [ $1 = "--install" ] ; then
+    just_install=1
+    if [ $# -ne 1 ] ; then
+      echo "No other arguments should be used with --install."
+      exit 2
+    fi
+  fi
   DIR=${@:-.}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
   VERSION="clang-format version 10.0.0 (https://github.com/llvm/llvm-project.git d32170dbd5b0d54436537b6b75beaf44324e0c28)"
@@ -77,9 +86,17 @@ EOF
       echo "or alternatively, undefine the FORMAT environment variable"
       exit 1
   else
+      [ ${just_install} -eq 1 ] && return
       for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
-    echo $file
-    ${FORMAT} -i $file
+        # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
+        # so they do not need to be re-formatted by clang-format. Doing so
+        # results in make rebuilding all our files, so we skip formatting them
+        # here.
+        base_name=$(basename ${file})
+        [ ${base_name} = 'ink_autoconf.h.in' -o ${base_name} = 'ink_autoconf.h' ] && continue
+
+        echo $file
+        ${FORMAT} -i $file
       done
   fi
 }
