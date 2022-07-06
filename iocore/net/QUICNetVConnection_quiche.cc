@@ -96,10 +96,8 @@ void
 QUICNetVConnection::free(EThread *t)
 {
   QUICConDebug("Free connection");
-  this->_packet_handler->close_connection(this);
 
-  this->_udp_con        = nullptr;
-  this->_packet_handler = nullptr;
+  this->_udp_con = nullptr;
 
   quiche_conn_free(this->_quiche_con);
 
@@ -112,6 +110,9 @@ QUICNetVConnection::free(EThread *t)
   this->_context->trigger(QUICContext::CallbackEvent::CONNECTION_CLOSE);
   ALPNSupport::clear();
   TLSBasicSupport::clear();
+
+  this->_packet_handler->close_connection(this);
+  this->_packet_handler = nullptr;
 }
 
 void
