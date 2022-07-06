@@ -11,4 +11,4 @@
 # rpc:
 #   enabled: true
 #   unix:
-#      restricted_api: true
+#      restricted_api: false
