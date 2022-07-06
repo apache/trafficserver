@@ -98,10 +98,10 @@ class BodyBufferTest:
             'proxy.config.diags.debug.tags': 'request_buffer',
         })
 
-        self._ts.Streams.stderr = Testers.ContainsExpression(
+        self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
             rf"request_buffer_plugin gets the request body with length\[{self.content_length_size}\]",
             "Verify that the plugin parsed the content-length request body data.")
-        self._ts.Streams.stderr += Testers.ContainsExpression(
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             rf"request_buffer_plugin gets the request body with length\[{self.encoded_chunked_size}\]",
             "Verify that the plugin parsed the chunked request body.")
 
