@@ -47,8 +47,6 @@ struct file_info {
   Continuation *contp;
 };
 
-constexpr int MAX_WATCHES = 10000;
-
 class FileChangeManager
 {
 public:
