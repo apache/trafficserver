@@ -43,18 +43,24 @@ Options
 
 Flags and options are:
 
-``--post-remap-host``: Whether to use the post-remap host in the URL, instead of the pristine client URL.
-``-P``: shorthand for ``--post-remap-host``.
-``--persistent``: Whether to use persistent stats.
-``-p``: shorthand for ``--persistent``.
+.. option:: --post-remap-host, -P
+
+   Whether to use the post-remap host in the URL, instead of the pristine client URL.
+
+.. option:: --persistent, -p
+
+   Whether to use persistent stats.
 
 Options in the code:
-``MAX_STAT_LENGTH`` The maximum length of any stat name. Since stat names include the remap FQDN, this affects the maximum FQDN length that can be included in the stat.
+
+.. c:macro:: MAX_STAT_LENGTH
+
+   The maximum length of any stat name. Since stat names include the remap FQDN, this affects the maximum FQDN length that can be included in the stat.
 
 Stats
 =====
 
-The following stats are added to the Traffic Server statistics, for every remap rule.
+The following stats are added to the Traffic Server statistics, for every remap rule::
 
     plugin.remap_stats.<fqdn>.in_bytes
     plugin.remap_stats.<fqdn>.out_bytes
