@@ -374,10 +374,10 @@ Changes with Apache Traffic Server 9.2.0
   #8571 - Port #7749 from core strategy to plugin
   #8573 - Port #7837 from core strategy to plugin
   #8578 - Add SSLSessionDup for older OpenSSL and BoringSSL
+  #8579 - Fixes compacting spaces in S3 auth plugin
   #8580 - Ports #7897 from core strategies to parent_select plugin.
   #8585 - Clean up of next hop HostRecord class.
   #8586 - Eliminate erroneous self-loop error on transparent mode
-  #8589 - SNIConfig: tunnel_route -  Change the way we extract matched subgroups from the servename
   #8590 - Port #7925 and #8365 from core strategies to parent_select plugin
   #8593 - Fix transparent mode documentation
   #8594 - Propagate accept options to HTTP/2
@@ -387,9 +387,13 @@ Changes with Apache Traffic Server 9.2.0
   #8609 - Don't use Http1ClientTransaction as an event handler
   #8613 - fix for collapsed forwarding ink_abort for CacheHitFresh fail
   #8626 - Fix 32bit build failure on Odroid Xu-4
+  #8629 - Move ChangeLog and README.md to the lib/fastlz/
+  #8631 - Additional helper functions for request transform
   #8636 - In TsSharedMutex.h, make error reporting thread-safe.
+  #8638 - Trim white spaces before and after the equal sign
   #8640 - Adding clangd language server files to .gitignore
   #8645 - Make TsSharedMutex.h compile on MacOS.
+  #8646 - Update lua plugin examples
   #8649 - Fix plugin parent_select missing hostname len
   #8650 - Fix strategies to initialize scheme
   #8651 - Add parent_select plugin strategy caching
@@ -399,7 +403,9 @@ Changes with Apache Traffic Server 9.2.0
   #8660 - Fix overflow conditions in prefetch plugin
   #8661 - Making 9.2.x backwards compatible with 9.1.x
   #8663 - Revert "DNS: Fix lack of nameserver failover in low use circumstances…
+  #8665 - Fixed issues when compiling with -Og
   #8667 - TLS Session Resumption: fix timed out session
+  #8671 - Stop ATS when a global lua script fails to load
   #8673 - Fix to allow running autopep8 from outside top_srcdir
   #8676 - Fix plugin parent_select failover
   #8677 - Update iocore/cache/test to fix the build
@@ -413,14 +419,17 @@ Changes with Apache Traffic Server 9.2.0
   #8706 - Provide libquic.a definition to VIO::VIO()
   #8707 - cache-request-method autest: Extending IO delay
   #8711 - Move hwloc-based functions into it's own header/compilation unit
+  #8714 - Remove unused functions/definitions from ink_defs
   #8715 - Fixes build when hwloc is not installed
   #8716 - Check bounds before accessing Vol::evacuate array
   #8718 - Enable all iocore/cache tests
   #8722 - Adds user-agent to OCSP requests
   #8723 - Adding prefetch feature to slice plugin
+  #8724 - Change DNS retries to be a static (requires restart) config value
   #8725 - Update THREAD_FREE macro to only evaluate the _t parameter once.
   #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
   #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
+  #8745 - Add log format for whether origin TLS connection resumed an existing TLS session
   #8747 - Add http2.default_buffer_water_mark config to tune latency
   #8751 - STEK share plugin using Raft
   #8752 - docs: add some obvious units to some http2 overridables
@@ -473,3 +482,11 @@ Changes with Apache Traffic Server 9.2.0
   #8898 - slice and cache_range_requests: allow header override (#8666)
   #8902 - Fix plugin stats_over_http OK reason phrase
   #8906 - Fix autest uses of File exists parameter
+  #8924 - Update location for core rule set in modsecurity example
+  #8925 - Cleanup. Remove unnecessary use of a memory arena when logging.
+  #8926 - Allows errors from plugin initialization to bubble up
+  #8927 - Add docs for remap_stats plugin
+  #8928 - proxy_serve_stale: Test updates
+  #8931 - Fix clang-format installation with multiple threads
+  #8935 - Make clang-format not modify ink_autoconf.h.in and ink_autoconf.h
+  #8937 - Add nullptr check of HTTPInfo
