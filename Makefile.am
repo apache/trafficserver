@@ -111,6 +111,7 @@ endif
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
+.PHONY: autopep8
 autopep8:
 	@$(top_srcdir)/tools/autopep8.sh $(top_srcdir)
 
@@ -120,11 +121,24 @@ autopep8:
 #
 # If you make changes to directory structures, you must update this as well.
 #
-.PHONY:	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-	clang-format-plugins clang-format-proxy clang-format-tools perltidy
+CLANG_FORMAT_DIR_TARGETS = \
+	clang-format-src \
+	clang-format-example \
+	clang-format-iocore \
+	clang-format-lib \
+	clang-format-mgmt \
+	clang-format-plugins \
+	clang-format-proxy \
+	clang-format-tools
 
-clang-format: 	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
+.PHONY:	$(CLANG_FORMAT_DIR_TARGETS)
+
+$(top_srcdir)/.git/fmt:
+	@$(top_srcdir)/tools/clang-format.sh --install
+
+.PHONY:	clang-format
+clang-format: $(top_srcdir)/.git/fmt
+	$(MAKE) $(CLANG_FORMAT_DIR_TARGETS)
 
 clang-format-src:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/src
@@ -154,6 +168,12 @@ clang-format-tools:
 clang-format-tests:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tests
 
+# Run the various format targets. perltidy is not included because the user may
+# not have it installed.
+.PHONY: format
+format: clang-format autopep8
+
+.PHONY: perltidy
 perltidy:
 	perltidy -q -b -bext='/' `find . -name \*.pm -o -name \*.pl`
 
