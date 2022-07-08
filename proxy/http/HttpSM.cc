@@ -5474,10 +5474,10 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
             int host_len;
             const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
             std::string_view host_name{host_name_ptr, size_t(host_len)};
-            ts::bwprint(error_bw_buffer,"CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
-                                      ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,host_name,
-                                      ts::bwf::FirstOf(url_str, "<none>"));
-                               Log::error("%s", error_bw_buffer.c_str());
+            ts::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
+                        ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
+                        ts::bwf::FirstOf(url_str, "<none>"));
+            Log::error("%s", error_bw_buffer.c_str());
 
             if (url_str) {
               t_state.arena.str_free(url_str);

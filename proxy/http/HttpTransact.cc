@@ -1790,6 +1790,12 @@ HttpTransact::PPDNSLookup(State *s)
     markParentDown(s);
     // DNS lookup of parent failed, find next parent or o.s.
     if (find_server_and_update_current_info(s) == ResolveInfo::HOST_NONE) {
+      if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
+        s->source = SOURCE_CACHE;
+        TxnDebug("http_trans", "All parents are down, serving stale doc to client");
+        build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+        return;
+      }
       ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
       handle_parent_died(s);
       return;
