@@ -1,4 +1,4 @@
-# Makefile.am for traffic/iocore
+# Makefile.am for the traffic/iocore/fs hierarchy
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,4 +16,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = eventsystem net aio dns hostdb utils cache fs
+AM_CPPFLAGS += \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
+
+noinst_LIBRARIES = libinkfs.a
+
+libinkfs_a_SOURCES = \
+	FileChange.cc \
+	FileChange.h
+
+include $(top_srcdir)/build/tidy.mk
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

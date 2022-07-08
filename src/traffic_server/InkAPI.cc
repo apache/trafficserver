@@ -25,6 +25,10 @@
 #include <atomic>
 #include <string_view>
 
+#if defined(__linux__)
+#include <sys/inotify.h>
+#endif
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/PluginUserArgs.h"
@@ -74,6 +78,7 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
+#include "FileChange.h"
 
 #include "ts/ts.h"
 
@@ -10464,4 +10469,20 @@ TSDbgCtlCreate(char const *tag)
   sdk_assert(*tag != '\0');
 
   return DbgCtl::_get_ptr(tag);
+}
+
+tsapi TSWatchDescriptor
+TSFileEventRegister(const char *filename, TSFileWatchKind kind, TSCont contp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
+
+  Continuation *pCont = reinterpret_cast<Continuation *>(contp);
+  return fileChangeManager.add(ts::file::path{filename}, kind, pCont);
+}
+
+tsapi void
+TSFileEventUnRegister(TSWatchDescriptor wd)
+{
+  fileChangeManager.remove(wd);
 }

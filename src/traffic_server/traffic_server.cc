@@ -103,6 +103,7 @@ extern "C" int plock(int);
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"
+#include "FileChange.h"
 
 #if TS_USE_QUIC == 1
 #include "Http3.h"
@@ -2000,6 +2001,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     lock.unlock();
     proxyServerCheck.notify_one();
   }
+
+  // Spawn a thread to do file system change notification
+  fileChangeManager.init();
 
   // !! ET_NET threads start here !!
   // This means any spawn scheduling must be done before this point.

@@ -108,6 +108,7 @@ produce_features(bool json)
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
   print_feature("TS_USE_KQUEUE", TS_USE_KQUEUE, json);
   print_feature("TS_USE_PORT", TS_USE_PORT, json);
+  print_feature("TS_USE_INOTIFY", TS_USE_INOTIFY, json);
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);
   print_feature("TS_USE_TPROXY", TS_USE_TPROXY, json);
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
