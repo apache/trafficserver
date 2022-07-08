@@ -71,8 +71,18 @@ function main() {
   # Keep this list of Python extensions the same with the list of
   # extensions searched for in the tools/git/pre-commit hook.
   grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
+  # Prepend the filenames with "./" to make the modified file output consistent
+  # with the clang-format target output.
+  sed -i'.bak' 's:^:\./:' ${files_filtered}
+  rm -f ${files_filtered}.bak
 
-  echo "Running autopep8. This may take a minute."
+  # Efficiently retrieving modification timestamps in a platform
+  # independent way is challenging. We use find's -newer argument, which
+  # seems to be broadly supported. The following file is created and has a
+  # timestamp just before running clang-format. Any file with a timestamp
+  # after this we assume was modified by clang-format.
+  start_time_file=${tmp_dir}/format_start.$$
+  touch ${start_time_file}
   autopep8 \
       --ignore-local-config \
       -i \
@@ -82,8 +92,11 @@ function main() {
       --aggressive \
       --aggressive \
       $(cat ${files_filtered})
+  find $(cat ${files_filtered}) -newer ${start_time_file}
+
   # The above will not catch the Python files in the metalink tests because
   # they do not have extensions.
+  metalink_dir=${DIR}/plugins/experimental/metalink/test
   autopep8 \
       --ignore-local-config \
       -i \
@@ -93,8 +106,8 @@ function main() {
       --aggressive \
       --aggressive \
       --recursive \
-      ${DIR}/plugins/experimental/metalink/test
-  echo "autopep8 completed."
+      ${metalink_dir}
+  find ${metalink_dir} -newer ${start_time_file}
   rm -rf ${tmp_dir}
   deactivate
 }

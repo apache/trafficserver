@@ -87,7 +87,17 @@ EOF
       exit 1
   else
       [ ${just_install} -eq 1 ] && return
-      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
+
+      # Efficiently retrieving modification timestamps in a platform
+      # independent way is challenging. We use find's -newer argument, which
+      # seems to be broadly supported. The following file is created and has a
+      # timestamp just before running clang-format. Any file with a timestamp
+      # after this we assume was modified by clang-format.
+      start_time_file=$(mktemp -t clang-format-start-time.XXXXXXXXXX)
+      touch ${start_time_file}
+
+      target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in)
+      for file in ${target_files}; do
         # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
         # so they do not need to be re-formatted by clang-format. Doing so
         # results in make rebuilding all our files, so we skip formatting them
@@ -95,9 +105,11 @@ EOF
         base_name=$(basename ${file})
         [ ${base_name} = 'ink_autoconf.h.in' -o ${base_name} = 'ink_autoconf.h' ] && continue
 
-        echo $file
         ${FORMAT} -i $file
       done
+
+      find ${target_files} -newer ${start_time_file}
+      rm ${start_time_file}
   fi
 }
 
