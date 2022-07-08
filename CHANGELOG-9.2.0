@@ -482,6 +482,7 @@ Changes with Apache Traffic Server 9.2.0
   #8898 - slice and cache_range_requests: allow header override (#8666)
   #8902 - Fix plugin stats_over_http OK reason phrase
   #8906 - Fix autest uses of File exists parameter
+  #8909 - Move HKDF to OpenSSL 3 interfaces
   #8924 - Update location for core rule set in modsecurity example
   #8925 - Cleanup. Remove unnecessary use of a memory arena when logging.
   #8926 - Allows errors from plugin initialization to bubble up
