@@ -133,11 +133,12 @@ CLANG_FORMAT_DIR_TARGETS = \
 
 .PHONY:	$(CLANG_FORMAT_DIR_TARGETS)
 
-$(top_srcdir)/.git/fmt:
+CLANG_FORMAT_SENTINEL = $(top_srcdir)/.git/fmt/.clang-format-installed
+$(CLANG_FORMAT_SENTINEL):
 	@$(top_srcdir)/tools/clang-format.sh --install
 
 .PHONY:	clang-format
-clang-format: $(top_srcdir)/.git/fmt
+clang-format: $(CLANG_FORMAT_SENTINEL)
 	$(MAKE) $(CLANG_FORMAT_DIR_TARGETS)
 
 clang-format-src:
