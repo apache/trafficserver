@@ -82,6 +82,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/iocore/fs/libinkfs.a \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \

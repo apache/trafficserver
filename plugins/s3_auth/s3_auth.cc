@@ -42,11 +42,13 @@
 #include <thread>
 #include <mutex>
 #include <shared_mutex>
+#include <optional>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <tscpp/util/TsSharedMutex.h>
 #include "tscore/ink_config.h"
+#include "tscore/ts_file.h"
 
 #include "aws_auth_v4.h"
 
@@ -161,21 +163,22 @@ private:
     // never indicate config is fresh when it isn't.
     std::atomic<S3Config *> config;
     std::atomic<time_t> load_time;
+    std::atomic<int> ttl = 60;
 
     _ConfigData() {}
 
-    _ConfigData(S3Config *config_, time_t load_time_) : config(config_), load_time(load_time_) {}
+    _ConfigData(S3Config *config_, time_t load_time_, int ttl_) : config(config_), load_time(load_time_), ttl(ttl_) {}
 
     _ConfigData(_ConfigData &&lhs)
     {
       update_status = lhs.update_status.load();
       config        = lhs.config.load();
       load_time     = lhs.load_time.load();
+      ttl           = lhs.ttl.load();
     }
   };
 
   std::unordered_map<std::string, _ConfigData> _cache;
-  static const int _ttl = 60;
 };
 
 ConfigCache gConfCache;
@@ -185,6 +188,8 @@ ConfigCache gConfCache;
 //
 int event_handler(TSCont, TSEvent, void *); // Forward declaration
 int config_reloader(TSCont, TSEvent, void *);
+int config_dir_watch(TSCont, TSEvent, void *);
+int config_watch(TSCont, TSEvent, void *);
 
 class S3Config
 {
@@ -197,6 +202,12 @@ public:
 
       _conf_rld = TSContCreate(config_reloader, TSMutexCreate());
       TSContDataSet(_conf_rld, static_cast<void *>(this));
+
+      _dir_watch = TSContCreate(config_dir_watch, TSMutexCreate());
+      TSContDataSet(_dir_watch, static_cast<void *>(this));
+
+      _conf_watch = TSContCreate(config_watch, TSMutexCreate());
+      TSContDataSet(_conf_watch, static_cast<void *>(this));
     }
   }
 
@@ -302,6 +313,10 @@ public:
       TSfree(_conf_fname);
       _conf_fname = TSstrdup(src->_conf_fname);
     }
+
+    if (src->_watch_config) {
+      _watch_config = src->_watch_config;
+    }
   }
 
   // Getters
@@ -381,6 +396,18 @@ public:
   conf_fname() const
   {
     return _conf_fname;
+  }
+
+  bool
+  watch_config() const
+  {
+    return _watch_config;
+  }
+
+  int
+  ttl() const
+  {
+    return _ttl;
   }
 
   int
@@ -464,6 +491,18 @@ public:
   }
 
   void
+  set_watch_config()
+  {
+    _watch_config = true;
+  }
+
+  void
+  set_ttl(const char *s)
+  {
+    _ttl = strtol(s, nullptr, 10);
+  }
+
+  void
   reset_conf_reload_count()
   {
     _conf_reload_count = 0;
@@ -489,7 +528,70 @@ public:
     _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_NET);
   }
 
+  void
+  start_watch_config()
+  {
+    std::unique_lock lock(wd_mutex);
+    ts::file::path fname{makeConfigPath(_conf_fname)};
+    if (!_config_file_wd) {
+      _config_file_wd = TSFileEventRegister(fname.c_str(), TS_WATCH_MODIFY, _conf_watch);
+      if (_config_file_wd == -1) {
+        _config_file_wd.reset();
+        TSDebug(PLUGIN_NAME, "Waiting for config file to be created: %s", fname.c_str());
+      } else {
+        TSDebug(PLUGIN_NAME, "Watching config file: %s (%d)", fname.c_str(), _config_file_wd.value());
+      }
+    }
+
+    if (!_config_dir_wd) {
+      auto parent_dir = fname.parent_path();
+      _config_dir_wd  = TSFileEventRegister(parent_dir.c_str(), TS_WATCH_CREATE, _dir_watch);
+      if (_config_dir_wd == -1) {
+        _config_dir_wd.reset();
+        TSError("s3_auth: failed to watch config file directory: %s", parent_dir.c_str());
+      } else {
+        TSDebug(PLUGIN_NAME, "Watching config file directory: %s (%d)", parent_dir.c_str(), _config_file_wd.value());
+      }
+    }
+  }
+
+  void
+  stop_watch_config()
+  {
+    std::unique_lock lock(wd_mutex);
+    if (_config_file_wd) {
+      TSFileEventUnRegister(_config_file_wd.value());
+      _config_file_wd.reset();
+    }
+
+    if (_config_dir_wd) {
+      TSFileEventUnRegister(_config_dir_wd.value());
+      _config_dir_wd.reset();
+    }
+  }
+
+  void
+  config_file_watch_ignored(TSWatchDescriptor wd)
+  {
+    std::unique_lock lock(wd_mutex);
+    if (_config_file_wd == wd) {
+      TSFileEventUnRegister(_config_file_wd.value());
+      _config_file_wd.reset();
+    }
+  }
+
+  void
+  config_dir_watch_ignored(TSWatchDescriptor wd)
+  {
+    std::unique_lock lock(wd_mutex);
+    if (_config_dir_wd == wd) {
+      TSFileEventUnRegister(_config_dir_wd.value());
+      _config_dir_wd.reset();
+    }
+  }
+
   ts::shared_mutex reload_mutex;
+  ts::shared_mutex wd_mutex;
 
 private:
   char *_secret            = nullptr;
@@ -504,6 +606,8 @@ private:
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
   TSCont _conf_rld         = nullptr;
+  TSCont _conf_watch       = nullptr;
+  TSCont _dir_watch        = nullptr;
   TSAction _conf_rld_act   = nullptr;
   StringSet _v4includeHeaders;
   bool _v4includeHeaders_modified = false;
@@ -514,6 +618,10 @@ private:
   long _expiration          = 0;
   char *_conf_fname         = nullptr;
   int _conf_reload_count    = 0;
+  bool _watch_config        = false;
+  std::optional<TSWatchDescriptor> _config_file_wd;
+  std::optional<TSWatchDescriptor> _config_dir_wd;
+  int _ttl = 60;
 };
 
 bool
@@ -577,6 +685,10 @@ S3Config::parse_config(const std::string &config_fname)
         set_region_map(val_str.c_str());
       } else if (key_str == "expiration") {
         set_expiration(val_str.c_str());
+      } else if (key_str == "ttl") {
+        set_ttl(val_str.c_str());
+      } else if (key_str == "watch-config") {
+        set_watch_config();
       } else {
         // ToDo: warnings?
       }
@@ -611,7 +723,7 @@ ConfigCache::get(const char *fname)
 
   if (it != _cache.end()) {
     unsigned update_status = it->second.update_status;
-    if (tv.tv_sec > (it->second.load_time + _ttl)) {
+    if (tv.tv_sec > (it->second.load_time + it->second.ttl)) {
       if (!(update_status & 1) && it->second.update_status.compare_exchange_strong(update_status, update_status + 1)) {
         TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
         s3 = new S3Config(false); // false == this config does not get the continuation
@@ -624,10 +736,14 @@ ConfigCache::get(const char *fname)
           s3 = nullptr;
           TSAssert(!"Configuration parsing / caching failed");
         }
+        TSDebug(PLUGIN_NAME, "Updated rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(),
+                s3->virt_host() ? "yes" : "no", s3->version());
 
         delete it->second.config;
         it->second.config    = s3;
         it->second.load_time = tv.tv_sec;
+        it->second.ttl       = s3->ttl();
+        TSDebug(PLUGIN_NAME, "Config ttl updated to %d seconds", it->second.ttl.load());
 
         // Update is complete.
         ++it->second.update_status;
@@ -649,10 +765,12 @@ ConfigCache::get(const char *fname)
     // Create a new cached file.
     s3 = new S3Config(false); // false == this config does not get the continuation
 
-    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
+    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
     if (s3->parse_config(config_fname)) {
       s3->set_conf_fname(fname);
-      _cache.emplace(config_fname, _ConfigData(s3, tv.tv_sec));
+      _cache.emplace(config_fname, _ConfigData(s3, tv.tv_sec, s3->ttl()));
+      _cache[config_fname].ttl = s3->ttl();
+      TSDebug(PLUGIN_NAME, "Config ttl set to %d seconds", _cache[config_fname].ttl.load());
     } else {
       delete s3;
       s3 = nullptr;
@@ -1048,6 +1166,51 @@ cal_reload_delay(long time_diff)
 }
 
 int
+config_dir_watch(TSCont cont, TSEvent event, void *edata)
+{
+  TSDebug(PLUGIN_NAME, "config directory watch handler");
+  S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
+  TSAssert(edata != nullptr);
+  TSFileWatchData *fwd = reinterpret_cast<TSFileWatchData *>(edata);
+
+  if (event == TS_EVENT_FILE_IGNORED) {
+    TSDebug(PLUGIN_NAME, "Config directory lost.  No longer watching for config changes.");
+    // Lost the config file's directory.  We currently can't deal with this.  Just stop watching for file changes.
+    s3->config_dir_watch_ignored(fwd->wd);
+    return TS_SUCCESS;
+  }
+
+  TSAssert(event == TS_EVENT_FILE_CREATED);
+  TSDebug(PLUGIN_NAME, "File created: %s", fwd->name);
+  if (strncmp(s3->conf_fname(), fwd->name, strlen(s3->conf_fname())) == 0) {
+    TSDebug(PLUGIN_NAME, "config file created");
+    config_reloader(cont, event, edata);
+  }
+
+  return TS_SUCCESS;
+}
+
+int
+config_watch(TSCont cont, TSEvent event, void *edata)
+{
+  TSDebug(PLUGIN_NAME, "config watch handler");
+  TSAssert(edata != nullptr);
+  TSFileWatchData *fwd = reinterpret_cast<TSFileWatchData *>(edata);
+
+  S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
+  if (event == TS_EVENT_FILE_IGNORED) {
+    TSDebug(PLUGIN_NAME, "Config file watch lost.");
+    // Probably deleted.  Directory watch will see if it's re-created.
+    s3->config_file_watch_ignored(fwd->wd);
+    return TS_SUCCESS;
+  }
+
+  config_reloader(cont, event, edata);
+
+  return TS_SUCCESS;
+}
+
+int
 config_reloader(TSCont cont, TSEvent event, void *edata)
 {
   TSDebug(PLUGIN_NAME, "reloading configs");
@@ -1082,6 +1245,12 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
       }
       s3->schedule_conf_reload(60);
     }
+  }
+
+  if (s3->watch_config()) {
+    s3->start_watch_config();
+  } else {
+    s3->stop_watch_config();
   }
 
   return TS_SUCCESS;
@@ -1124,6 +1293,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("v4-exclude-headers"), required_argument, nullptr, 'e'},
     {const_cast<char *>("v4-region-map"), required_argument, nullptr, 'm'},
     {const_cast<char *>("session_token"), required_argument, nullptr, 't'},
+    {const_cast<char *>("watch-config"), no_argument, nullptr, 'w'},
+    {const_cast<char *>("ttl"), no_argument, nullptr, 'T'},
     {nullptr, no_argument, nullptr, '\0'},
   };
 
@@ -1171,6 +1342,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     case 'm':
       s3->set_region_map(optarg);
       break;
+    case 'w':
+      s3->set_watch_config();
+      break;
+    case 'T':
+      s3->set_ttl(optarg);
+      break;
     }
 
     if (opt == -1) {
@@ -1205,6 +1382,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       TSDebug(PLUGIN_NAME, "config expiration time is in the past, re-checking in 1 minute");
       s3->schedule_conf_reload(60);
     }
+  }
+
+  if (s3->watch_config()) {
+    s3->start_watch_config();
+  } else {
+    s3->stop_watch_config();
   }
 
   *ih = static_cast<void *>(s3);

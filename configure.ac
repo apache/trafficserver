@@ -1808,6 +1808,10 @@ AC_LANG_POP([C++])
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
+use_inotify=0
+AS_IF([test "x$ac_cv_func_inotify_init" = "xyes"], [use_inotify=1])
+AC_SUBST(use_inotify)
+
 #
 # Check for tcmalloc, jemalloc and mimalloc
 TS_CHECK_TCMALLOC
@@ -2252,7 +2256,8 @@ iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/hostdb \
 -I\$(abs_top_srcdir)/iocore/cache \
 -I\$(abs_top_srcdir)/iocore/utils \
--I\$(abs_top_srcdir)/iocore/dns"
+-I\$(abs_top_srcdir)/iocore/dns \
+-I\$(abs_top_srcdir)/iocore/fs"
 
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])
@@ -2300,6 +2305,7 @@ AC_CONFIG_FILES([
   iocore/cache/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile
+  iocore/fs/Makefile
   iocore/hostdb/Makefile
   iocore/net/Makefile
   iocore/net/quic/Makefile
