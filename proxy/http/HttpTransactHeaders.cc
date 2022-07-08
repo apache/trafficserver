@@ -960,18 +960,27 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
     ts::LocalBufferWriter<1024> hdr;
 
-    if (optSet[HttpForwarded::FOR] and ats_is_ip(&s->client_info.src_addr.sa)) {
+    IpEndpoint src_addr = s->client_info.src_addr;
+    if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_netvc()) {
+      const ProxyProtocol &pp = s->state_machine->ua_txn->get_netvc()->get_proxy_protocol_info();
+
+      if (pp.version != ProxyProtocolVersion::UNDEFINED) {
+        src_addr = pp.src_addr;
+      }
+    }
+
+    if (optSet[HttpForwarded::FOR] and ats_is_ip(&src_addr.sa)) {
       // NOTE:  The logic within this if statement assumes that hdr is empty at this point.
 
       hdr << "for=";
 
-      bool is_ipv6 = ats_is_ip6(&s->client_info.src_addr.sa);
+      bool is_ipv6 = ats_is_ip6(&src_addr.sa);
 
       if (is_ipv6) {
         hdr << "\"[";
       }
 
-      if (ats_ip_ntop(&s->client_info.src_addr.sa, hdr.auxBuffer(), hdr.remaining()) == nullptr) {
+      if (ats_ip_ntop(&src_addr.sa, hdr.auxBuffer(), hdr.remaining()) == nullptr) {
         Debug("http_trans", "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
         return;
       }

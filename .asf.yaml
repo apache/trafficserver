@@ -26,6 +26,13 @@ github:
     rebase: false
     # Disable merge button:
     merge: false
+  collaborators:
+    - mtorluemke
+    - c-taylor
+    - moonchen
+    - cmcfarlen
+    - serrislew
+    - etapia
   protected_branches:
     master:
       required_status_checks:

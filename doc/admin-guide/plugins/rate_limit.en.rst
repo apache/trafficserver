@@ -159,6 +159,7 @@ The following options are available:
    created during plugin initialization.
 
 .. option:: --iprep_buckets
+
    The number of LRU buckets to use for the IP reputation. A good number here
    is 10, but can be configured. The reason for the different buckets is to
    account for a pseudo-sorted list of IPs on the frequency seen. Too few buckets
@@ -166,26 +167,31 @@ The following options are available:
    function in our setup, the number of buckets must be less than ``100``.
 
 .. option:: --iprep_bucketsize
+
    This is the size of the largest LRU bucket (the `entry bucket`), `15` is a good
    value. This is a power of 2, so `15` means the largest LRU can hold `32768` entries.
    Note that this option must be bigger then the `--iprep_buckets` setting, for the
    bucket halfing to function.
 
 .. option:: --iprep_maxage
+
    This is used for aging out entries out of the LRU, the default is `0` which means
    no aging happens. Even with no aging, entries will eventually fall out of buckets
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
 
 .. option:: --iprep_permablock_limit
+
    The minimum number of hits an IP must reach to get moved to the permanent bucket.
    In this bucket, entries will stay for 2x
 
 .. option:: --iprep_permablock_pressure
+
    This option specifies from which bucket an IP is allowed to move from into the
    perma block bucket. A good value here is likely `0` or `1`, which is very conservative.
 
 .. option:: --iprep_permablock_maxage
+
    Similar to `--iprep_maxage` above, but only applies to the long term (`perma-block`)
    bucket. Default is `0`, which means no aging to this bucket is applied.
 
