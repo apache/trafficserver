@@ -125,6 +125,16 @@ QUICStreamManagerImpl::create_bidi_stream(QUICStreamId &new_stream_id)
   return error;
 }
 
+QUICConnectionErrorUPtr
+QUICStreamManagerImpl::delete_stream(QUICStreamId &stream_id)
+{
+  QUICStreamBase *stream = static_cast<QUICStreamBase *>(this->find_stream(stream_id));
+  stream_list.remove(stream);
+  delete stream;
+
+  return nullptr;
+}
+
 QUICStreamBase *
 QUICStreamManagerImpl::_find_stream(QUICStreamId id)
 {
