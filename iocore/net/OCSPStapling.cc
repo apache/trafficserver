@@ -254,13 +254,13 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
 #endif
   }
 
-  issuer = stapling_get_issuer(ctx, cert);
-  if (issuer == nullptr) {
+  issuer.reset(stapling_get_issuer(ctx, cert));
+  if (issuer.get() == nullptr) {
     Note("cannot get issuer certificate from %s", certname);
     goto err;
   }
 
-  cinf->cid = OCSP_cert_to_id(nullptr, cert, issuer);
+  cinf->cid = OCSP_cert_to_id(nullptr, cert, issuer.get());
   if (!cinf->cid) {
     goto err;
   }
