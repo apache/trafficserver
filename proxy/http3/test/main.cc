@@ -56,7 +56,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     Thread *main_thread = new EThread;
     main_thread->set_specific();
 
-    Http3Config::startup();
+    ts::Http3Config::startup();
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
