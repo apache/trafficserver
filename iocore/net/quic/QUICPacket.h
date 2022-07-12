@@ -354,7 +354,7 @@ public:
   Ptr<IOBufferBlock> header_block() const override;
   Ptr<IOBufferBlock> payload_block() const override;
 
-  const QUICVersion supported_version(uint8_t index) const;
+  QUICVersion supported_version(uint8_t index) const;
   int nversions() const;
 
 private:

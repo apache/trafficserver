@@ -939,13 +939,13 @@ QUICAckFrame::AckBlockSection::const_iterator::operator++()
   return this->_current_block;
 }
 
-const bool
+bool
 QUICAckFrame::AckBlockSection::const_iterator::operator!=(const const_iterator &ite) const
 {
   return this->_index != ite._index;
 }
 
-const bool
+bool
 QUICAckFrame::AckBlockSection::const_iterator::operator==(const const_iterator &ite) const
 {
   return this->_index == ite._index;
