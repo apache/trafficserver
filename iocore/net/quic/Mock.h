@@ -27,12 +27,14 @@
 
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
+#include "QUICStreamManager_native.h"
 #include "QUICLossDetector.h"
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPinger.h"
 #include "QUICPadder.h"
 #include "QUICEvents.h"
 #include "QUICPacketProtectionKeyInfo.h"
+#include "QUICPathManager.h"
 #include "QUICPinger.h"
 #include "QUICPadder.h"
 #include "QUICHandshakeProtocol.h"
@@ -238,10 +240,10 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   }
 };
 
-class MockQUICStreamManager : public QUICStreamManager
+class MockQUICStreamManager : public QUICStreamManagerImpl
 {
 public:
-  MockQUICStreamManager(QUICContext *context) : QUICStreamManager(context, nullptr) {}
+  MockQUICStreamManager(QUICContext *context) : QUICStreamManagerImpl(context, nullptr) {}
 
   // Override
   virtual QUICConnectionErrorUPtr
