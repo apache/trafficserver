@@ -36,6 +36,7 @@
 
 #include <map>
 #include <set>
+#include <memory>
 
 struct SSLConfigParams;
 class SSLNetVConnection;
@@ -168,45 +169,23 @@ namespace ssl
 {
 namespace detail
 {
-  struct SCOPED_X509_TRAITS {
-    typedef X509 *value_type;
-    static value_type
-    initValue()
+  struct X509Deleter {
+    void
+    operator()(X509 *p)
     {
-      return nullptr;
-    }
-    static bool
-    isValid(value_type x)
-    {
-      return x != nullptr;
-    }
-    static void
-    destroy(value_type x)
-    {
-      X509_free(x);
+      X509_free(p);
     }
   };
 
-  struct SCOPED_BIO_TRAITS {
-    typedef BIO *value_type;
-    static value_type
-    initValue()
+  struct BIODeleter {
+    void
+    operator()(BIO *p)
     {
-      return nullptr;
-    }
-    static bool
-    isValid(value_type x)
-    {
-      return x != nullptr;
-    }
-    static void
-    destroy(value_type x)
-    {
-      BIO_free(x);
+      BIO_free(p);
     }
   };
-  /* namespace ssl */ // namespace detail
-} /* namespace detail */
+
+} // namespace detail
 } // namespace ssl
 
 struct ats_wildcard_matcher {
@@ -228,5 +207,5 @@ private:
   DFA regex;
 };
 
-typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS> scoped_X509;
-typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS> scoped_BIO;
+using scoped_X509 = std::unique_ptr<X509, ssl::detail::X509Deleter>;
+using scoped_BIO  = std::unique_ptr<BIO, ssl::detail::BIODeleter>;

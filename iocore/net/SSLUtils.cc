@@ -171,7 +171,7 @@ static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 {
   scoped_BIO bio(BIO_new_file(chainfile, "r"));
-  return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
+  return SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get());
 }
 
 static SSL_SESSION *
@@ -2392,7 +2392,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     }
 
     // Load up any additional chain certificates
-    if (!SSL_CTX_add_extra_chain_cert_bio(ctx, bio)) {
+    if (!SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get())) {
       Debug("ssl", "couldn't add chain to %p", ctx);
     }
 
