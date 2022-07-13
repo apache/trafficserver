@@ -95,7 +95,7 @@ increment_stat(TSCacheLookupResult const result)
   }
 }
 
-static char const *const
+static const char *
 strForResult(TSCacheLookupResult const result)
 {
   switch (result) {

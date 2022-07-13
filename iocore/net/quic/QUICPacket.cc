@@ -1066,7 +1066,7 @@ QUICVersionNegotiationPacketR::payload_block() const
   return this->_payload_block;
 }
 
-const QUICVersion
+QUICVersion
 QUICVersionNegotiationPacketR::supported_version(uint8_t index) const
 {
   return QUICTypeUtil::read_QUICVersion(this->_versions + sizeof(QUICVersion) * index);
