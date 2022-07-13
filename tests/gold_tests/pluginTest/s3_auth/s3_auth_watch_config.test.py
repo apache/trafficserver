@@ -83,5 +83,5 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = "gold/s3_auth_basic.gold"
 tr.StillRunningAfter = server
 
-ts.Streams.stderr = "gold/traffic_server.gold"
+ts.Disk.traffic_out.Content = "gold/traffic_server.gold"
 ts.ReturnCode = 0
