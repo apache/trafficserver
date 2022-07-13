@@ -368,7 +368,9 @@ Changes with Apache Traffic Server 9.2.0
   #8540 - Enable conf_remap_float test and remove special case for local config file
   #8541 - Eliminate unused code in LogObject.
   #8543 - doc: Convert miscased Traffic Server references to |TS| macro
+  #8547 - Call je_dallocx with flags when needed
   #8550 - TSUserArg: add value type checking
+  #8563 - ESI processing when origin returns 304 response
   #8568 - Update descriptions of sni.yaml.default
   #8570 - Port #6816 from core strategy to plugin
   #8571 - Port #7749 from core strategy to plugin
@@ -378,14 +380,17 @@ Changes with Apache Traffic Server 9.2.0
   #8580 - Ports #7897 from core strategies to parent_select plugin.
   #8585 - Clean up of next hop HostRecord class.
   #8586 - Eliminate erroneous self-loop error on transparent mode
+  #8588 - LGTM: Remove function declaration in block (HdrHeap.cc)
   #8590 - Port #7925 and #8365 from core strategies to parent_select plugin
   #8593 - Fix transparent mode documentation
   #8594 - Propagate accept options to HTTP/2
   #8595 - Adds two overridable config variables to control parent mark downs.
   #8600 - Prevent calling SSL_set_session in the middle of handshake
   #8606 - Fixed a scoping bug that leads to "sticky" parent weights
+  #8607 - Clear lua plugin http context after each hook handler
   #8609 - Don't use Http1ClientTransaction as an event handler
   #8613 - fix for collapsed forwarding ink_abort for CacheHitFresh fail
+  #8618 - Add option to disable JIT in lua plugin
   #8626 - Fix 32bit build failure on Odroid Xu-4
   #8629 - Move ChangeLog and README.md to the lib/fastlz/
   #8631 - Additional helper functions for request transform
@@ -491,3 +496,7 @@ Changes with Apache Traffic Server 9.2.0
   #8931 - Fix clang-format installation with multiple threads
   #8935 - Make clang-format not modify ink_autoconf.h.in and ink_autoconf.h
   #8937 - Add nullptr check of HTTPInfo
+  #8942 - Fix doc formatting for plugin remap_stats
+  #8943 - Fix doc formatting for rate_limit plugin
+  #8944 - Make the autopep8 clang-format targets quieter
+  #8950 - .fit/fmt/.clang-format-installed prerequisite
