@@ -148,4 +148,11 @@ class BWFormat;
 
 class BufferWriter;
 
+/// Storage for debug messages.
+/// If @c bwprint is used with this, the storage is reused which minimizes allocations.
+/// E.g.
+/// @code
+
+inline thread_local std::string bw_dbg;
+
 } // namespace ts

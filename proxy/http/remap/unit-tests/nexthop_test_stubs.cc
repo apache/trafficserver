@@ -86,7 +86,6 @@ br_destroy(HttpSM &sm)
   }
   delete h->hdr;
   delete h->api_info;
-  ats_free(h->hostname_str);
 }
 
 void
@@ -102,10 +101,7 @@ build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostnam
   }
   sm->t_state.request_data.hdr = new HTTPHdr();
   sm->t_state.request_data.hdr->create(HTTP_TYPE_REQUEST, myHeap);
-
-  ats_free(sm->t_state.request_data.hostname_str);
-
-  sm->t_state.request_data.hostname_str = ats_strdup(os_hostname);
+  sm->t_state.request_data.hostname_str = sm->t_state.arena.str_store(os_hostname, strlen(os_hostname));
   sm->t_state.request_data.xact_start   = time(nullptr);
   ink_zero(sm->t_state.request_data.src_ip);
   ink_zero(sm->t_state.request_data.dest_ip);

@@ -517,12 +517,14 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   } else if (!edata) {
     lua_pushnil(L);
   } else {
-    TSHostLookupResult result   = (TSHostLookupResult)edata;
-    struct sockaddr const *addr = TSHostLookupResultAddrGet(result);
+    TSHostLookupResult record   = (TSHostLookupResult)edata;
+    struct sockaddr const *addr = TSHostLookupResultAddrGet(record);
     if (addr->sa_family == AF_INET) {
-      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)addr)->sin_addr, cip, sizeof(cip));
+      inet_ntop(AF_INET, &((struct sockaddr_in const *)addr)->sin_addr, cip, sizeof(cip));
+    } else if (addr->sa_family == AF_INET6) {
+      inet_ntop(AF_INET6, &((struct sockaddr_in6 const *)addr)->sin6_addr, cip, sizeof(cip));
     } else {
-      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)addr)->sin6_addr, cip, sizeof(cip));
+      cip[0] = 0;
     }
     lua_pushstring(L, cip);
   }

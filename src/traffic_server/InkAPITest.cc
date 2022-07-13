@@ -8512,14 +8512,14 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   /* ip and log do not matter as it is used for logging only */
   sockaddr_in addr;
   ats_ip4_set(&addr, 1, 1);
-  data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
+  data->vc = TSHttpConnectWithPluginId(ats_ip_sa_cast(&addr), "TSHttpConnectIntercept", 1);
   if (TSVConnClosedGet(data->vc)) {
     SDK_RPRINT(data->test, "TSHttpConnect", "TestCase 1", TC_FAIL, "Connect reported as closed immediately after open");
   }
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
-  TSContScheduleOnPool(cont_test, 25, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(cont_test, 100, TS_THREAD_POOL_NET);
 
   return;
 }
@@ -8558,12 +8558,12 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
   /* ip and log do not matter as it is used for logging only */
   sockaddr_in addr;
   ats_ip4_set(&addr, 2, 2);
-  data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
+  data->vc = TSHttpConnectWithPluginId(ats_ip_sa_cast(&addr), "TSHttpConnectServerIntercept", 1);
 
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
-  TSContScheduleOnPool(cont_test, 25, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(cont_test, 100, TS_THREAD_POOL_NET);
 
   return;
 }

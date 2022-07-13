@@ -79,7 +79,7 @@ struct SplitDNS : public ConfigInfo {
   SplitDNS();
   ~SplitDNS() override;
 
-  void *getDNSRecord(const char *hostname);
+  void *getDNSRecord(ts::TextView hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);
 
   DNS_table *m_DNSSrvrTable = nullptr;
@@ -116,46 +116,34 @@ SplitDNSConfig::isSplitDNSEnabled()
 class DNSRequestData : public RequestData
 {
 public:
-  DNSRequestData();
+  DNSRequestData() = default;
 
-  char *get_string() override;
-
+  char *
+  get_string() override
+  {
+    ink_release_assert(!"Do not get a writeable string from a DNS request");
+  };
   const char *get_host() override;
 
   sockaddr const *get_ip() override;        // unused required virtual method.
   sockaddr const *get_client_ip() override; // unused required virtual method.
 
-  const char *m_pHost = nullptr;
+  ts::TextView m_pHost;
 };
-
-/* --------------------------------------------------------------
-   DNSRequestData::get_string()
-   -------------------------------------------------------------- */
-TS_INLINE
-DNSRequestData::DNSRequestData() {}
-
-/* --------------------------------------------------------------
-   DNSRequestData::get_string()
-   -------------------------------------------------------------- */
-TS_INLINE char *
-DNSRequestData::get_string()
-{
-  return ats_strdup((char *)m_pHost);
-}
 
 /* --------------------------------------------------------------
    DNSRequestData::get_host()
    -------------------------------------------------------------- */
-TS_INLINE const char *
+inline const char *
 DNSRequestData::get_host()
 {
-  return m_pHost;
+  return m_pHost.data();
 }
 
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const *
+inline sockaddr const *
 DNSRequestData::get_ip()
 {
   return nullptr;
@@ -164,7 +152,7 @@ DNSRequestData::get_ip()
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const *
+inline sockaddr const *
 DNSRequestData::get_client_ip()
 {
   return nullptr;

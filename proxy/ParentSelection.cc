@@ -1068,21 +1068,21 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     params = new ParentConfigParams(ParentTable);                                                                          \
   } while (0)
 
-#define REINIT                             \
-  do {                                     \
-    if (request != NULL) {                 \
-      delete request->hdr;                 \
-      ats_free(request->hostname_str);     \
-      delete request->api_info;            \
-    }                                      \
-    delete request;                        \
-    delete result;                         \
-    request = new HttpRequestData();       \
-    result  = new ParentResult();          \
-    if (!result || !request) {             \
-      (void)printf("Allocation failed\n"); \
-      return;                              \
-    }                                      \
+#define REINIT                               \
+  do {                                       \
+    if (request != nullptr) {                \
+      delete request->hdr;                   \
+      /* ats_free(request->hostname_str); */ \
+      delete request->api_info;              \
+    }                                        \
+    delete request;                          \
+    delete result;                           \
+    request = new HttpRequestData();         \
+    result  = new ParentResult();            \
+    if (!result || !request) {               \
+      (void)printf("Allocation failed\n");   \
+      return;                                \
+    }                                        \
   } while (0)
 
 #define ST(x)                                    \
