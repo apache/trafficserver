@@ -47,7 +47,7 @@ class ProxyServeStaleTest:
             'proxy.config.http.cache.max_stale_age': 10,
             'proxy.config.http.parent_proxy.self_detect': 0,
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|parent_proxy',
+            'proxy.config.diags.debug.tags': 'cache|http|dns|hostdb|parent_proxy',
         })
         self.ts_child.Disk.parent_config.AddLine(
             f'dest_domain=. parent="{self.ts_parent_hostname}" round_robin=consistent_hash go_direct=false'

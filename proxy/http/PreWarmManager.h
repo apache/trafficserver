@@ -192,8 +192,8 @@ public:
   bool is_inactive_timeout_expired(ink_hrtime now);
 
   // HostDB inline completion functions
-  void process_hostdb_info(HostDBInfo *r);
-  void process_srv_info(HostDBInfo *r);
+  void process_hostdb_info(HostDBRecord *r);
+  void process_srv_info(HostDBRecord *r);
 
 private:
   enum class Milestone {

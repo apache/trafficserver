@@ -223,8 +223,8 @@ public:
         return &this->_current_block;
       };
       const QUICAckFrame::AckBlock &operator++();
-      const bool operator!=(const const_iterator &ite) const;
-      const bool operator==(const const_iterator &ite) const;
+      bool operator!=(const const_iterator &ite) const;
+      bool operator==(const const_iterator &ite) const;
 
     private:
       uint8_t _index                                         = 0;

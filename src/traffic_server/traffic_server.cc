@@ -275,11 +275,7 @@ struct AutoStopCont : public Continuation {
 class SignalContinuation : public Continuation
 {
 public:
-  SignalContinuation() : Continuation(new_ProxyMutex())
-  {
-    end = snap = nullptr;
-    SET_HANDLER(&SignalContinuation::periodic);
-  }
+  SignalContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SignalContinuation::periodic); }
 
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -290,19 +286,6 @@ public:
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
-
-      if (!end) {
-        end = static_cast<char *>(sbrk(0));
-      }
-
-      if (!snap) {
-        snap = static_cast<char *>(sbrk(0));
-      }
-
-      char *now = static_cast<char *>(sbrk(0));
-      Note("sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
-           (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
-      snap = now;
     }
 
     if (signal_received[SIGUSR2]) {
@@ -346,10 +329,6 @@ public:
 
     return EVENT_CONT;
   }
-
-private:
-  const char *end;
-  const char *snap;
 };
 
 class TrackerContinuation : public Continuation

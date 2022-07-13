@@ -53,6 +53,7 @@ using ts_hr_time  = ts_hr_clock::time_point;
 
 using ts_seconds      = std::chrono::seconds;
 using ts_milliseconds = std::chrono::milliseconds;
+using ts_nanoseconds  = std::chrono::nanoseconds;
 
 /// Equivalent of 0 for @c ts_time. This should be used as the default initializer.
 static constexpr ts_time TS_TIME_ZERO;
