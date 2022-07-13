@@ -51,7 +51,7 @@ parse_jwt(json_t *raw)
     return NULL;
   }
 
-  struct jwt *jwt = malloc(sizeof *jwt);
+  struct jwt *jwt = TSmalloc(sizeof *jwt);
   jwt->raw        = raw;
   jwt->iss        = json_string_value(json_object_get(raw, "iss"));
   jwt->sub        = json_string_value(json_object_get(raw, "sub"));
@@ -413,7 +413,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
 
   const char *fmt = "%s=%s; Path=%s";
   size_t s_ct;
-  s = malloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str, path_string)));
+  s = TSmalloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str, path_string)));
   snprintf(s, s_ct, fmt, package, jws_str, path_string);
   PluginDebug("Cookie returned from renew function: %s", s);
 fail_jws:

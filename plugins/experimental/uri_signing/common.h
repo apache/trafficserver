@@ -23,12 +23,15 @@
 #ifdef URI_SIGNING_UNIT_TEST
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
+
+void PrintToStdErr(const char *fmt, ...);
+void *test_uri_signing_malloc(size_t size);
 
 #define PluginDebug(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define PluginError(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define TSmalloc(x) malloc(x)
-#define TSfree(p) free(p)
-void PrintToStdErr(const char *fmt, ...);
+#define TSmalloc test_uri_signing_malloc
+#define TSfree free
 
 #else
 

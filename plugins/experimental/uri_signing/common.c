@@ -29,4 +29,15 @@ PrintToStdErr(const char *fmt, ...)
   va_end(args);
 }
 
+void *
+test_uri_signing_malloc(size_t size)
+{
+  void *res = malloc(size);
+  if (!res) {
+    PluginError("heap memory exhausted");
+    abort();
+  }
+  return res;
+}
+
 #endif

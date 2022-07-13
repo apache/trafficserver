@@ -157,7 +157,7 @@ CB_context_dump(TSCont, TSEvent, void *edata)
       int count = 0;
       TSSslClientContextsNamesGet(0, nullptr, &count);
       if (count > 0) {
-        char const **results = static_cast<char const **>(malloc(sizeof(const char *) * count));
+        char const **results = static_cast<char const **>(TSmalloc(sizeof(const char *) * count));
         TSSslClientContextsNamesGet(count, results, nullptr);
         for (int i = 0; i < count; i += 2) {
           dump_context(results[i], results[i + 1]);

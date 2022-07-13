@@ -248,7 +248,7 @@ Stripe::InitializeMeta()
   }
   if (!freelist) // freelist is not allocated yet
   {
-    freelist = static_cast<uint16_t *>(malloc(_segments * sizeof(uint16_t))); // segments has already been calculated
+    freelist = static_cast<uint16_t *>(ats_malloc(_segments * sizeof(uint16_t))); // segments has already been calculated
   }
   if (!dir) // for new spans, this will likely be nullptr as we don't need to read the stripe meta from disk
   {
@@ -986,7 +986,7 @@ Stripe::loadMeta()
   data.assign(stripe_buff2, n);
   meta = static_cast<StripeMeta *>(data.data());
   // copy freelist
-  freelist = static_cast<uint16_t *>(malloc(_segments * sizeof(uint16_t)));
+  freelist = static_cast<uint16_t *>(ats_malloc(_segments * sizeof(uint16_t)));
   for (int i = 0; i < _segments; i++) {
     freelist[i] = meta->freelist[i];
   }

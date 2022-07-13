@@ -96,7 +96,7 @@ struct config *
 config_new(size_t n)
 {
   PluginDebug("Creating new config object with size %ld", n);
-  struct config *cfg = malloc(sizeof *cfg);
+  struct config *cfg = TSmalloc(sizeof *cfg);
 
   cfg->issuers = calloc(1, sizeof *cfg->issuers);
   if (!hcreate_r(n * 2, cfg->issuers)) {

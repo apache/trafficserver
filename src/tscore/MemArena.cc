@@ -23,6 +23,7 @@
  */
 
 #include <algorithm>
+#include <new>
 
 #include "tscore/MemArena.h"
 #include "tscore/ink_memory.h"
@@ -63,7 +64,11 @@ MemArena::make_block(size_t n)
   // Easier to use malloc and override @c delete.
   auto free_space = n - sizeof(Block);
   _active_reserved += free_space;
-  return BlockPtr(new (::malloc(n)) Block(free_space));
+  void *space = ::malloc(n);
+  if (!space) {
+    throw std::bad_alloc();
+  }
+  return BlockPtr(new (space) Block(free_space));
 }
 
 MemSpan<void>

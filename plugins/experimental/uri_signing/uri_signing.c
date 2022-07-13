@@ -75,7 +75,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   } else {
     char const *const config_dir = TSConfigDirGet();
     size_t const config_file_ct  = snprintf(NULL, 0, "%s/%s", config_dir, fname);
-    config_file                  = malloc(config_file_ct + 1);
+    config_file                  = TSmalloc(config_file_ct + 1);
     (void)snprintf(config_file, config_file_ct + 1, "%s/%s", config_dir, fname);
   }
 

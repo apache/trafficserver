@@ -742,7 +742,7 @@ Span::loadDevice()
         if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
           int nspb      = span_hdr.num_diskvol_blks;
           span_hdr_size = round_up(sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor));
-          _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
+          _header.reset(new (ats_malloc(span_hdr_size)) ts::SpanHeader);
           if (span_hdr_size <= BUFF_SIZE) {
             memcpy(static_cast<void *>(_header.get()), buff, span_hdr_size);
           } else {

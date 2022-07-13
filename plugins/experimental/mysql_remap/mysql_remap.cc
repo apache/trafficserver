@@ -180,7 +180,7 @@ TSPluginInit(int argc, const char *argv[])
   const char *password;
   const char *db;
 
-  my_data *data = static_cast<my_data *>(malloc(1 * sizeof(my_data)));
+  my_data *data = static_cast<my_data *>(TSmalloc(1 * sizeof(my_data)));
 
   TSPluginRegistrationInfo info;
   bool reconnect = true;
@@ -231,7 +231,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  data->query = static_cast<char *>(TSmalloc(QSIZE * sizeof(char))); // TODO: malloc smarter sizes
+  data->query = static_cast<char *>(TSmalloc(QSIZE * sizeof(char))); // TODO?: malloc smarter sizes
 
   TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s", host, username, password, port, db);
   TSCont cont = TSContCreate(mysql_remap, TSMutexCreate());
