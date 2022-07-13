@@ -262,7 +262,6 @@ Condition Testing
         - TS_HAS_128BIT_CAS
         - TS_HAS_TESTS
         - TS_HAS_WCCP
-        - TS_USE_INOTIFY
 
 
 Examples:
