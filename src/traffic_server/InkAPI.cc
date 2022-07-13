@@ -28,10 +28,6 @@
 #include <unordered_map>
 #include <string_view>
 
-#if defined(__linux__)
-#include <sys/inotify.h>
-#endif
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/PluginUserArgs.h"
@@ -79,7 +75,6 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
-#include "FileChange.h"
 
 #include "ts/ts.h"
 
@@ -10433,20 +10428,4 @@ TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return (TSIOBufferReader)sm->get_postbuf_clone_reader();
-}
-
-tsapi TSWatchDescriptor
-TSFileEventRegister(const char *filename, TSFileWatchKind kind, TSCont contp)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
-
-  Continuation *pCont = reinterpret_cast<Continuation *>(contp);
-  return fileChangeManager.add(ts::file::path{filename}, kind, pCont);
-}
-
-tsapi void
-TSFileEventUnRegister(TSWatchDescriptor wd)
-{
-  fileChangeManager.remove(wd);
 }
