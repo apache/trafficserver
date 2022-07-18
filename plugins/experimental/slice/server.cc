@@ -217,7 +217,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
 
-  if (data->m_config->m_prefetchcount > 0 && header.cacheFilled()) {
+  if (data->m_config->m_prefetchcount > 0 && header.cacheFilled(data->m_config->m_via_regex)) {
     data->m_prefetchable = true;
   }
 

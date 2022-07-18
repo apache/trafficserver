@@ -140,7 +140,7 @@ struct HttpHeader {
   bool setKeyTime(char const *const key, int const keylen, time_t const timeval);
 
   // read "f cache-fill" status of Via Header
-  bool cacheFilled() const;
+  bool cacheFilled(pcre *regex_pat) const;
 
   /** dump header into provided char buffer
    */
