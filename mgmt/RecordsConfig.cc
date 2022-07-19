@@ -1134,6 +1134,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.certification_level", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.ssl.client.alpn_protocols", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.ssl.server.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.cert_chain.filename", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

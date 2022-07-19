@@ -3956,6 +3956,51 @@ Client-Related Configuration
 
    Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.alpn_protocols STRING ""
+   :overridable:
+
+   Sets the ALPN string that |TS| will send to the origin in the ClientHello of TLS handshakes.
+   Configuring this to an empty string (the default configuration) means that the ALPN extension
+   will not be sent as a part of the TLS ClientHello.
+
+   Configuring the ALPN string provides a mechanism to control origin-side HTTP protocol
+   negotiation. Configuring this requires an understanding of the ALPN TLS protocol extension. See
+   `RFC 7301 <https://www.rfc-editor.org/rfc/rfc7301.html>`_ for details about the ALPN protocol.
+   See the official `IANA ALPN protocol registration
+   <https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>`_
+   for the official list of ALPN protocol names. As a summary, the ALPN string is a comma-separated
+   (no spaces) list of protocol names that the TLS client (|TS| in this case) supports. On the TLS
+   server side (origin side in this case), the names are compared in order to the list of protocols
+   supported by the origin. The first match is used, thus the ALPN list should be listed in
+   decreasing order of preference. If no match is found, the TLS server is expected (per the RFC) to
+   fail the TLS handshake with a fatal "no_application_protocol" alert.
+
+   Currently, |TS| supports the following ALPN protocol names:
+
+    - ``http/1.0``
+    - ``http/1.1``
+
+   Here are some example configurations and the consequences of each:
+
+   ================================ ======================================================================
+   Value                            Description
+   ================================ ======================================================================
+   ``""``                           No ALPN extension is sent by |TS| in origin-side TLS handshakes.
+                                    |TS| will assume an HTTP/1.1 connection in this case.
+   ``"http/1.1"``                   Only HTTP/1.1 is advertized by |TS|. Thus, the origin will
+                                    either negotiate HTTP/1.1, or it will fail the handshake if that
+                                    is not supported by the origin.
+   ``"http/1.1,http/1.0"``          Both HTTP/1.1 and HTTP/1.0 are supported by |TS|, but HTTP/1.1
+                                    is preferred.
+   ``"h2,http/1.1,http/1.0"``       HTTP/2 is preferred by |TS| over HTTP/1.1 and HTTP/1.0. Thus, if the
+                                    origin supports HTTP/2, it will be used for the connection. If
+                                    not, it will fall back to HTTP/1.1 or, if that is not supported,
+                                    HTTP/1.0. (HTTP/2 to origin is currently not supported by |TS|.)
+   ``"h2"``                         |TS| only advertizes HTTP/2 support. Thus, the origin will
+                                    either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
+                                    is currently not supported by |TS|.)
+   ================================ ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
    Enables the use of OpenSSL async job during the TLS handshake.  Traffic

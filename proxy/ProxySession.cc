@@ -26,6 +26,8 @@
 #include "ProxySession.h"
 #include "P_SSLNetVConnection.h"
 
+std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
+
 ProxySession::ProxySession() : VConnection(nullptr) {}
 
 ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
@@ -312,4 +314,12 @@ bool
 ProxySession::support_sni() const
 {
   return _vc ? _vc->support_sni() : false;
+}
+
+PoolableSession *
+ProxySession::create_outbound_session(int protocol_index)
+{
+  auto iter = ProtocolSessionCreateMap.find(protocol_index);
+  ink_release_assert(iter != ProtocolSessionCreateMap.end());
+  return iter->second();
 }

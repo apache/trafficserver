@@ -18,15 +18,17 @@
    the License.
  */
 
+#include <array>
 #include <string>
 #include <string_view>
-#include <array>
+#include <vector>
 
 #include "catch.hpp"
 
 #include "tscore/BufferWriter.h"
 #include "records/I_RecHttp.h"
 #include "test_Diags.h"
+#include "tscore/ink_defs.h"
 
 using ts::TextView;
 
@@ -95,5 +97,126 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
     REQUIRE(ports[0].m_inbound_ip.isValid() == false);
     REQUIRE(view.find(":ssl") != TextView::npos);
     REQUIRE(view.find(":proto") == TextView::npos); // it's default, should not have this.
+  }
+}
+
+struct ConvertAlpnToWireFormatTestCase {
+  std::string description;
+  std::string alpn_input;
+  unsigned char expected_alpn_wire_format[MAX_ALPN_STRING] = {0};
+  int expected_alpn_wire_format_len                        = MAX_ALPN_STRING;
+  bool expected_return                                     = true;
+};
+
+// clang-format off
+std::vector<ConvertAlpnToWireFormatTestCase> convertAlpnToWireFormatTestCases = {
+  // --------------------------------------------------------------------------
+  // Malformed input.
+  // --------------------------------------------------------------------------
+  {
+    "Empty input protocol list",
+    "",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "Include an empty protocol in the list",
+    "http/1.1,,http/1.0",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "A protocol that exceeds the output buffer length (MAX_ALPN_STRING)",
+    "some_really_long_protocol_name_that_exceeds_the_output_buffer_length_that_is_MAX_ALPN_STRING",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "The sum of protocols exceeds the output buffer length (MAX_ALPN_STRING)",
+    "protocol_one,protocol_two,protocol_three",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "A protocol that exceeds the length described by a single byte (255)",
+    "some_really_long_protocol_name_that_exceeds_255_bytes_some_really_long_protocol_name_that_exceeds_255_bytes_some_really_long_protocol_name_that_exceeds_255_bytes_some_really_long_protocol_name_that_exceeds_255_bytes_some_really_long_protocol_name_that_exceeds_255_bytes",
+    { 0 },
+    0,
+    false
+  },
+  // --------------------------------------------------------------------------
+  // Unsupported protocols.
+  // --------------------------------------------------------------------------
+  {
+    "Unrecognized protocol: HTTP/6",
+    "h6",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "Single protocol: HTTP/0.9",
+    "http/0.9",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "Single protocol: HTTP/2 (currently unsupported)",
+    "h2",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "Single protocol: HTTP/3 (currently unsupported)",
+    "h3",
+    { 0 },
+    0,
+    false
+  },
+  {
+    "Both HTTP/1.1 and HTTP/2 (HTTP/2 is currently unsupported)",
+    "h2,http/1.1",
+    { 0 },
+    0,
+    false
+  },
+  // --------------------------------------------------------------------------
+  // Happy cases.
+  // --------------------------------------------------------------------------
+  {
+    "Single protocol: HTTP/1.1",
+    "http/1.1",
+    {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1'},
+    9,
+    true
+  },
+  {
+    "Multiple protocols: HTTP/0.9, HTTP/1.0, HTTP/1.1",
+    "http/1.1,http/1.0",
+    {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '0'},
+    18,
+    true
+  },
+};
+// clang-format on
+
+TEST_CASE("convert_alpn_to_wire_format", "[librecords][RecHttp]")
+{
+  for (auto const &test_case : convertAlpnToWireFormatTestCases) {
+    SECTION(test_case.description)
+    {
+      unsigned char alpn_wire_format[MAX_ALPN_STRING] = {0xab};
+      int alpn_wire_format_len                        = MAX_ALPN_STRING;
+      auto const result = convert_alpn_to_wire_format(test_case.alpn_input, alpn_wire_format, alpn_wire_format_len);
+      REQUIRE(result == test_case.expected_return);
+      REQUIRE(alpn_wire_format_len == test_case.expected_alpn_wire_format_len);
+      REQUIRE(memcmp(alpn_wire_format, test_case.expected_alpn_wire_format, test_case.expected_alpn_wire_format_len) == 0);
+    }
   }
 }
