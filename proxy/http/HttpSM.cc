@@ -7727,6 +7727,7 @@ HttpSM::set_next_state()
     if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
       handle_api_return();
     } else {
+      do_drain_request_body(t_state.hdr_info.client_response);
       t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
       do_api_callout();
     }
