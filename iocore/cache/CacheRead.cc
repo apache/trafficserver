@@ -721,13 +721,20 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             key.toHexStr(target_key_str));
     }
 
+    bool doc_corrupt     = false;
+    CacheHTTPInfo *ainfo = nullptr;
+    get_http_info(&ainfo);
+    MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+    if (field && field->value_get_int64() != doc->len)
+      doc_corrupt = true;
+
     // This shouldn't happen for HTTP assets but it does
     // occasionally in production. This is a temporary fix
     // to clean up broken objects until the root cause can
     // be found. It must be the case that either the fragment
     // offsets are incorrect or a fragment table isn't being
     // created when it should be.
-    if (frag_type == CACHE_FRAG_TYPE_HTTP && bytes < 0) {
+    if (frag_type == CACHE_FRAG_TYPE_HTTP && (bytes < 0 || doc_corrupt)) {
       char xt[CRYPTO_HEX_SIZE];
       char yt[CRYPTO_HEX_SIZE];
 
