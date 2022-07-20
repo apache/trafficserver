@@ -721,20 +721,13 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             key.toHexStr(target_key_str));
     }
 
-    bool doc_corrupt     = false;
-    CacheHTTPInfo *ainfo = nullptr;
-    get_http_info(&ainfo);
-    MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-    if (field && field->value_get_int64() != doc->len)
-      doc_corrupt = true;
-
     // This shouldn't happen for HTTP assets but it does
     // occasionally in production. This is a temporary fix
     // to clean up broken objects until the root cause can
     // be found. It must be the case that either the fragment
     // offsets are incorrect or a fragment table isn't being
     // created when it should be.
-    if (frag_type == CACHE_FRAG_TYPE_HTTP && (bytes < 0 || doc_corrupt)) {
+    if (frag_type == CACHE_FRAG_TYPE_HTTP && bytes < 0) {
       char xt[CRYPTO_HEX_SIZE];
       char yt[CRYPTO_HEX_SIZE];
 
@@ -1182,6 +1175,19 @@ CacheVC::openReadStartHead(int event, Event *e)
       } else {
         f.single_fragment = false;
       }
+
+      // Now that we have selected an alternate, validate that the content length and object size match
+      MIMEField *field = alternate.request_get()->field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      if (field) {
+        int64_t cl = field->value_get_int64();
+        if (cl != doc_len) {
+          Note("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %ld != %ld", key.slice32(0),
+               cl, doc_len);
+          err = ECACHE_BAD_META_DATA;
+          goto Ldone;
+        }
+      }
+
     } else {
       next_CacheKey(&key, &doc->key);
       f.single_fragment = doc->single_fragment();
