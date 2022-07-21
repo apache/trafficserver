@@ -270,9 +270,13 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     QUICConnectionId new_cid;
-    quiche_conn *quiche_con = quiche_accept(
-      new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->from.sa,
-      udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6), &this->_quiche_config);
+    quiche_conn *quiche_con =
+      quiche_accept(new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(),
+#ifdef HAVE_QUICHE_CONFIG_SET_ACTIVE_CONNECTION_ID_LIMIT
+                    &udp_packet->to.sa, udp_packet->to.isIp4() ? sizeof(udp_packet->to.sin) : sizeof(udp_packet->to.sin6),
+#endif
+                    &udp_packet->from.sa, udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6),
+                    &this->_quiche_config);
 
     if (params->qlog_dir() != nullptr) {
       char qlog_filepath[PATH_MAX];

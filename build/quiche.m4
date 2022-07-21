@@ -53,11 +53,13 @@ AC_ARG_WITH(quiche, [AS_HELP_STRING([--with-quiche=DIR],[use a specific quiche l
 if test "$has_quiche" != "0"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
+  saved_libs=$LIBS
   quiche_have_headers=0
   quiche_have_libs=0
   if test "$quiche_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${quiche_include}])
     TS_ADDTO(LDFLAGS, [-L${quiche_ldflags}])
+    TS_ADDTO(LIBS, [-lquiche])
     TS_ADDTO_RPATH(${quiche_ldflags})
   fi
 
@@ -68,10 +70,12 @@ if test "$has_quiche" != "0"; then
   if test "$quiche_have_headers" != "0"; then
     AC_SUBST([QUICHE_LIB], [-lquiche])
     AC_SUBST([QUICHE_CFLAGS], [-I${quiche_include}])
+    AC_CHECK_FUNCS([quiche_config_set_active_connection_id_limit])
   else
     has_quiche=0
     CPPFLAGS=$saved_cppflags
     LDFLAGS=$saved_ldflags
+    LIBS=$saved_libs
   fi
 fi
 ],
