@@ -114,6 +114,7 @@ enum {
   cache_read_success_stat,
   cache_read_failure_stat,
   cache_read_seek_fail_stat,
+  cache_read_invalid_stat,
   cache_write_active_stat,
   cache_write_success_stat,
   cache_write_failure_stat,

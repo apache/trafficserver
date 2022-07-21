@@ -3089,6 +3089,7 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("read.success", cache_read_success_stat);
   REG_INT("read.failure", cache_read_failure_stat);
   REG_INT("read.seek.failure", cache_read_seek_fail_stat);
+  REG_INT("read.invalid", cache_read_invalid_stat);
   REG_INT("write.active", cache_write_active_stat);
   REG_INT("write.success", cache_write_success_stat);
   REG_INT("write.failure", cache_write_failure_stat);

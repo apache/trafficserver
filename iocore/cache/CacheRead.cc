@@ -1177,12 +1177,13 @@ CacheVC::openReadStartHead(int event, Event *e)
       }
 
       // Now that we have selected an alternate, validate that the content length and object size match
-      MIMEField *field = alternate.request_get()->field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      MIMEField *field = alternate.response_get()->field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
       if (field) {
         int64_t cl = field->value_get_int64();
         if (cl != doc_len) {
-          Note("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %ld != %ld", key.slice32(0),
-               cl, doc_len);
+          Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %ld != %ld", key.slice32(0),
+                  cl, doc_len);
+          CACHE_INCREMENT_DYN_STAT(cache_read_invalid_stat);
           err = ECACHE_BAD_META_DATA;
           goto Ldone;
         }
