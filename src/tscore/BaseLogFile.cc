@@ -333,7 +333,8 @@ BaseLogFile::open_file(int perm)
   }
 
   // set m_bytes_written to force the rolling based on file size.
-  m_bytes_written = fseek(m_fp, 0, SEEK_CUR);
+  fseek(m_fp, 0, SEEK_END);
+  m_bytes_written = ftell(m_fp);
 
   log_log_trace("BaseLogFile %s is now open (fd=%d)\n", m_name.get(), fileno(m_fp));
   m_is_init = true;
