@@ -69,9 +69,12 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
+  int enable_gso;
+  REC_ReadConfigInteger(enable_gso, "proxy.config.udp.enable_gso");
+
   UDPNetHandler *nh = get_UDPNetHandler(thread);
 
-  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler;
+  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler(enable_gso);
   new (reinterpret_cast<ink_dummy_for_new *>(get_UDPPollCont(thread))) PollCont(thread->mutex);
   // The UDPNetHandler cannot be accessed across EThreads.
   // Because the UDPNetHandler should be called back immediately after UDPPollCont.
@@ -866,7 +869,16 @@ Lerror:
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue() {}
+#ifdef SOL_UDP
+UDPQueue::UDPQueue(bool enable_gso) : use_udp_gso(enable_gso) {}
+#else
+UDPQueue::UDPQueue(bool enable_gso)
+{
+  if (enable_gso) {
+    Warning("UDP GSO is unavailable");
+  }
+}
+#endif
 
 UDPQueue::~UDPQueue() {}
 
@@ -1289,7 +1301,7 @@ net_signal_hook_callback(EThread *thread)
 #endif
 }
 
-UDPNetHandler::UDPNetHandler()
+UDPNetHandler::UDPNetHandler(bool enable_gso) : udpOutQueue(enable_gso)
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;

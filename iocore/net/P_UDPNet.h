@@ -297,7 +297,7 @@ public:
   // Interface exported to the outside world
   void send(UDPPacket *p);
 
-  UDPQueue();
+  UDPQueue(bool enable_gso);
   ~UDPQueue();
 };
 
@@ -307,7 +307,7 @@ class UDPNetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
   // engine for outgoing packets
-  UDPQueue udpOutQueue{};
+  UDPQueue udpOutQueue;
 
   // New UDPConnections
   // to hold the newly created descriptors before scheduling them on the servicing buckets.
@@ -329,7 +329,7 @@ public:
   int waitForActivity(ink_hrtime timeout) override;
   void signalActivity() override;
 
-  UDPNetHandler();
+  UDPNetHandler(bool enable_gso);
 };
 
 struct PollCont;
