@@ -18,6 +18,7 @@
 
 #include "util.h"
 #include "prefetch.h"
+#include "HttpHeader.h"
 
 #include "Config.h"
 #include "Data.h"
@@ -84,6 +85,12 @@ request_block(TSCont contp, Data *const data)
   if (!rangestat) {
     ERROR_LOG("Error trying to set range request header %s", rangestr);
     return false;
+  }
+
+  header.removeKey(SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER));
+  if (data->m_blocknum == 0 && data->m_config->m_prefetchcount > 0) {
+    std::string valStr = "-";
+    header.setKeyVal(SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER), valStr.c_str(), valStr.length());
   }
 
   // create virtual connection back into ATS

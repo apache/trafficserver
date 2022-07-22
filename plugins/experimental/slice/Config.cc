@@ -44,9 +44,6 @@ Config::~Config()
   if (nullptr != m_regex) {
     pcre_free(m_regex);
   }
-  if (nullptr != m_via_regex) {
-    pcre_free(m_via_regex);
-  }
 }
 
 int64_t
@@ -227,9 +224,6 @@ Config::fromArgs(int const argc, char const *const argv[])
       }
     } break;
     case 'f': {
-      const char *errptr;
-      int erroffset;
-      m_via_regex     = pcre_compile("\\[(.*?)f(.)(.*?):(.*?)\\]", 0, &errptr, &erroffset, nullptr);
       m_prefetchcount = atoi(optarg);
     } break;
     default:

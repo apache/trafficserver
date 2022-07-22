@@ -48,6 +48,7 @@ using parent_select_mode_t = enum parent_select_mode {
 };
 
 constexpr std::string_view DefaultImsHeader = {"X-Crr-Ims"};
+static char const *const SLICE_CRR_HEADER   = {"Slice-Crr-Status"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
@@ -64,6 +65,8 @@ struct txndata {
   time_t ims_time{0};
   bool verify_cacheability{false};
   bool cache_complete_responses{false};
+  bool slice_response{false};
+  bool slice_request{false};
 };
 
 // pluginconfig struct (global plugin only)
@@ -296,6 +299,13 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
           DEBUG_LOG("Also Added TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK");
         }
+
+        // check if slice requests for cache lookup status
+        TSMLoc const locfield(TSMimeHdrFieldFind(hdr_buf, hdr_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER)));
+        if (nullptr != locfield) {
+          TSHandleMLocRelease(hdr_buf, hdr_loc, locfield);
+          txn_state->slice_request = true;
+        }
       }
       TSHandleMLocRelease(hdr_buf, hdr_loc, range_loc);
     } else {
@@ -370,6 +380,12 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
         DEBUG_LOG("Restoring response header to TS_HTTP_STATUS_PARTIAL_CONTENT.");
         TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
       }
+
+      remove_header(resp_buf, resp_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER));
+      if (txn_state->slice_response) {
+        std::string valStr = "-";
+        set_header(resp_buf, resp_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER), valStr.c_str(), valStr.length());
+      }
     } else {
       DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
     }
@@ -404,6 +420,7 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
 {
   TSMBuffer resp_buf = nullptr;
   TSMLoc resp_loc    = TS_NULL_MLOC;
+  int cache_lookup;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
     TSHttpStatus const status = TSHttpHdrStatusGet(resp_buf, resp_loc);
@@ -433,6 +450,13 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
         DEBUG_LOG("Allowing object to be cached.");
       }
     }
+    // slice requesting cache lookup status and cacheability
+    if (txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
+        TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
+        (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
+      txn_state->slice_response = true;
+    }
+
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
   }
 }

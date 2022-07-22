@@ -36,13 +36,7 @@
 
 #include <string>
 
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
-#define OVECTOR_SIZE 30
+static char const *const SLICE_CRR_HEADER = {"Slice-Crr-Status"};
 
 /**
   Designed to be a cheap throwaway struct which allows a
@@ -138,9 +132,6 @@ struct HttpHeader {
 
   // sets header value as a time_t
   bool setKeyTime(char const *const key, int const keylen, time_t const timeval);
-
-  // read "f cache-fill" status of Via Header
-  bool cacheFilled(pcre *regex_pat) const;
 
   /** dump header into provided char buffer
    */
