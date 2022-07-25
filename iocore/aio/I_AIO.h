@@ -40,9 +40,12 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define AIO_MODE_THREAD 0
 #define AIO_MODE_NATIVE 1
+#define AIO_MODE_IO_URING 2
 
 #if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE AIO_MODE_NATIVE
+#elif TS_USE_LINUX_IO_URING
+#define AIO_MODE AIO_MODE_IO_URING
 #else
 #define AIO_MODE AIO_MODE_THREAD
 #endif
@@ -63,6 +66,9 @@ typedef struct io_event ink_io_event_t;
 #define aio_nbytes u.c.nbytes
 #define aio_offset u.c.offset
 #define aio_buf u.c.buf
+
+#elif AIO_MODE == AIO_MODE_IO_URING
+#include <liburing.h>
 
 #else
 

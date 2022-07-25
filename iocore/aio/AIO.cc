@@ -179,7 +179,7 @@ ink_aio_start()
   return 0;
 }
 
-#if AIO_MODE != AIO_MODE_NATIVE
+#if AIO_MODE == AIO_MODE_THREAD
 
 struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
@@ -490,6 +490,33 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
   }
   return nullptr;
 }
+
+#elif AIO_MODE == AIO_MODE_IO_URING
+
+int
+ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
+  return 1;
+}
+
+int
+ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
+  return 1;
+}
+
+int
+ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
+  return 1;
+}
+
+int
+ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
+  return 1;
+}
+
 #else
 int
 DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e)
