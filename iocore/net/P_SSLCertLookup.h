@@ -26,6 +26,7 @@
 #include <set>
 #include <openssl/ssl.h>
 #include <mutex>
+#include <unordered_map>
 
 #include "ProxyConfig.h"
 
