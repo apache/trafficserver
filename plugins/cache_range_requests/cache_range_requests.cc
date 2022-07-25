@@ -434,7 +434,13 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
       if (txn_state->verify_cacheability && !TSHttpTxnIsCacheable(txnp, nullptr, resp_buf)) {
         DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
         TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
+      } else if (txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
+                 TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
+                 (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
+        // slice requesting cache lookup status and cacheability
+        txn_state->slice_response = true;
       }
+
     } else if (TS_HTTP_STATUS_OK == status) {
       bool cacheable = txn_state->cache_complete_responses;
 
@@ -449,12 +455,6 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
       } else {
         DEBUG_LOG("Allowing object to be cached.");
       }
-    }
-    // slice requesting cache lookup status and cacheability
-    if (txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
-        TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
-        (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
-      txn_state->slice_response = true;
     }
 
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
