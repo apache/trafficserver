@@ -360,9 +360,12 @@ Changes with Apache Traffic Server 9.2.0
   #8508 - Makes proxy_serve_stale version independent
   #8509 - Marks tls_engine test as OpenSSL-only
   #8517 - Remove commented out EventProcessor::eventthread
+  #8518 - Add 5xx's to be allowed to be used for simple retries
+  #8520 - Extend milestone api time tracking to remap.
   #8523 - url_sig: change cleanup msg from TSError to TSDebug
   #8524 - Set an appropriate callback function for OpenSSL 3
   #8525 - Remove unused function "ats_mallopt"
+  #8531 - Destroy ssl context after use.
   #8532 - Adds autest to test error cases loading ssl_multicert.config
   #8537 - docs: fix fedora install notes and spelling issues
   #8540 - Enable conf_remap_float test and remove special case for local config file
@@ -500,3 +503,7 @@ Changes with Apache Traffic Server 9.2.0
   #8943 - Fix doc formatting for rate_limit plugin
   #8944 - Make the autopep8 clang-format targets quieter
   #8950 - .fit/fmt/.clang-format-installed prerequisite
+  #8965 - Proxy Verifier: Update to version 2.4.1
+  #8970 - add a metric to track how often the range seek bug is detected
+  #8971 - Fixes issue with file size calculation for existing logs
+  #8975 - Fix reverting PR#7302
