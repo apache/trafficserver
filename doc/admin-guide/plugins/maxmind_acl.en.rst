@@ -82,7 +82,7 @@ There is an optional ``html`` field which takes a html file that will be used as
 Anonymous
 =========
 
-There is also an optional ``anonymous`` field. This allows you to use the maxmind anonymous IP database and reference it's optional fields. These are ``ip``, ``vpn``, 
+There is also an optional ``anonymous`` field. This allows you to use the maxmind anonymous IP database and reference it's optional fields. These are ``ip``, ``vpn``,
 ``hosting``, ``public``, ``tor``, and ``residential``. Currently anonymous blocking cannot be combined with GeoIP blocking since it is considered a separate database.
 However if you custom generate your own database that includes anonymous data then you could use them at the same time. Another solution is to have two instances
 of the maxmind_acl plugin on a remap, one to handle geo blocking and another for anonymous blocking. A setting of ``true`` will cause that type to be blocked, ``false``
