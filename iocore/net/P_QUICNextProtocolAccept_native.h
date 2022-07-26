@@ -46,8 +46,8 @@ public:
   SSLNextProtocolSet *getProtoSet();
 
   // noncopyable
-  QUICNextProtocolAccept(const QUICNextProtocolAccept &) = delete;            // disabled
-  QUICNextProtocolAccept &operator=(const QUICNextProtocolAccept &) = delete; // disabled
+  QUICNextProtocolAccept(const QUICNextProtocolAccept &) = delete;
+  QUICNextProtocolAccept &operator=(const QUICNextProtocolAccept &) = delete;
 
 private:
   int mainEvent(int event, void *netvc) override;
