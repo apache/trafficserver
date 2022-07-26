@@ -36,7 +36,7 @@
 
 #include <string>
 
-static char const *const SLICE_CRR_HEADER = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
 
 /**
   Designed to be a cheap throwaway struct which allows a

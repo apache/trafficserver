@@ -48,7 +48,7 @@ using parent_select_mode_t = enum parent_select_mode {
 };
 
 constexpr std::string_view DefaultImsHeader = {"X-Crr-Ims"};
-static char const *const SLICE_CRR_HEADER   = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
@@ -301,7 +301,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
         }
 
         // check if slice requests for cache lookup status
-        TSMLoc const locfield(TSMimeHdrFieldFind(hdr_buf, hdr_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER)));
+        TSMLoc const locfield(TSMimeHdrFieldFind(hdr_buf, hdr_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size()));
         if (nullptr != locfield) {
           TSHandleMLocRelease(hdr_buf, hdr_loc, locfield);
           txn_state->slice_request = true;
@@ -381,10 +381,10 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
         TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
       }
 
-      remove_header(resp_buf, resp_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER));
+      remove_header(resp_buf, resp_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
       if (txn_state->slice_response) {
-        std::string valStr = "-";
-        set_header(resp_buf, resp_loc, SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER), valStr.c_str(), valStr.length());
+        std::string valStr = "1";
+        set_header(resp_buf, resp_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), valStr.c_str(), valStr.length());
       }
     } else {
       DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
@@ -434,13 +434,7 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
       if (txn_state->verify_cacheability && !TSHttpTxnIsCacheable(txnp, nullptr, resp_buf)) {
         DEBUG_LOG("transaction is not cacheable; resetting status code to 206");
         TSHttpHdrStatusSet(resp_buf, resp_loc, TS_HTTP_STATUS_PARTIAL_CONTENT);
-      } else if (txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
-                 TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
-                 (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
-        // slice requesting cache lookup status and cacheability
-        txn_state->slice_response = true;
       }
-
     } else if (TS_HTTP_STATUS_OK == status) {
       bool cacheable = txn_state->cache_complete_responses;
 
@@ -455,6 +449,14 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
       } else {
         DEBUG_LOG("Allowing object to be cached.");
       }
+    }
+
+    // slice requesting cache lookup status and cacheability (only on miss or validation)
+    if ((txn_state->origin_status == TS_HTTP_STATUS_PARTIAL_CONTENT || txn_state->origin_status == TS_HTTP_STATUS_NOT_MODIFIED) &&
+        txn_state->slice_request && TSHttpTxnIsCacheable(txnp, nullptr, resp_buf) &&
+        TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) == TS_SUCCESS &&
+        (cache_lookup == TS_CACHE_LOOKUP_MISS || cache_lookup == TS_CACHE_LOOKUP_HIT_STALE)) {
+      txn_state->slice_response = true;
     }
 
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);

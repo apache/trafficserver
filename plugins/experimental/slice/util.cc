@@ -87,10 +87,10 @@ request_block(TSCont contp, Data *const data)
     return false;
   }
 
-  header.removeKey(SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER));
+  header.removeKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
   if (data->m_blocknum == 0 && data->m_config->m_prefetchcount > 0) {
-    std::string valStr = "-";
-    header.setKeyVal(SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER), valStr.c_str(), valStr.length());
+    std::string valStr = "1";
+    header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), valStr.c_str(), valStr.length());
   }
 
   // create virtual connection back into ATS

@@ -218,7 +218,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
 
-  if (data->m_config->m_prefetchcount > 0 && header.hasKey(SLICE_CRR_HEADER, strlen(SLICE_CRR_HEADER))) {
+  if (data->m_config->m_prefetchcount > 0 && header.hasKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size())) {
     data->m_prefetchable = true;
   }
 
