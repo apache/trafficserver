@@ -69,6 +69,16 @@ typedef struct io_event ink_io_event_t;
 
 #elif AIO_MODE == AIO_MODE_IO_URING
 #include <liburing.h>
+struct ink_aiocb {
+  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+  void *aio_buf     = nullptr; /* buffer location */
+  size_t aio_nbytes = 0;       /* length of transfer */
+  off_t aio_offset  = 0;       /* file offset */
+
+  int aio_lio_opcode = 0; /* listio operation */
+  int aio_state      = 0; /* state flag for List I/O */
+  int aio__pad[1];        /* extension padding */
+};
 
 #else
 
@@ -139,6 +149,37 @@ struct DiskHandler : public Continuation {
     }
   }
 };
+#endif
+
+#if AIO_MODE == AIO_MODE_IO_URING
+
+class UringThreadContext
+{
+public:
+  UringThreadContext(int entries = 1024, int wq_fd = 0, int poll_ms = 0);
+  ~UringThreadContext();
+
+  io_uring_sqe *
+  next_sqe()
+  {
+    return io_uring_get_sqe(&ring);
+  }
+
+  int set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
+  std::pair<int, int> get_wq_max_workers();
+
+  int get_eventfd();
+
+  void submit();
+  void service();
+
+  static UringThreadContext *local_context();
+
+private:
+  io_uring ring;
+  int efd;
+};
+
 #endif
 
 void ink_aio_init(ts::ModuleVersion version);

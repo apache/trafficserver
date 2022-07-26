@@ -25,6 +25,7 @@
  * Async Disk IO operations.
  */
 
+#include <sys/eventfd.h>
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_hw.h"
 
@@ -159,7 +160,7 @@ ink_aio_init(ts::ModuleVersion v)
                      (int)AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.KB_write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
-#if AIO_MODE != AIO_MODE_NATIVE
+#if AIO_MODE == AIO_MODE_THREAD
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 #endif
@@ -492,6 +493,95 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 }
 
 #elif AIO_MODE == AIO_MODE_IO_URING
+
+UringThreadContext::UringThreadContext(int entries, int wq_fd, int poll_ms)
+{
+  io_uring_params p{};
+
+  if (wq_fd > 0) {
+    p.flags = IORING_SETUP_ATTACH_WQ;
+    p.wq_fd = wq_fd;
+  }
+
+  if (poll_ms > 0) {
+    p.flags |= IORING_SETUP_SQPOLL;
+    p.sq_thread_idle = poll_ms;
+  }
+
+  int ret = io_uring_queue_init_params(entries, &ring, &p);
+  if (ret < 0) {
+    throw std::runtime_error(strerror(-ret));
+  }
+
+  efd = eventfd(0, EFD_CLOEXEC);
+  if (efd < 0) {
+    throw std::runtime_error(strerror(errno));
+  }
+
+  ret = io_uring_register_eventfd(&ring, efd);
+  if (ret) {
+    throw std::runtime_error("register eventfd");
+  }
+
+  /* no sharing for non-fixed either */
+  if (poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
+    throw std::runtime_error("No SQPOLL sharing with nonfixed");
+  }
+}
+
+UringThreadContext::~UringThreadContext()
+{
+  io_uring_queue_exit(&ring);
+}
+
+int
+UringThreadContext::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
+{
+  unsigned int args[2] = {bounded, unbounded};
+  return io_uring_register_iowq_max_workers(&ring, args);
+}
+
+std::pair<int, int>
+UringThreadContext::get_wq_max_workers()
+{
+  unsigned int args[2] = {0, 0};
+  io_uring_register_iowq_max_workers(&ring, args);
+  return std::make_pair(args[0], args[1]);
+}
+
+int
+UringThreadContext::get_eventfd()
+{
+  return efd;
+}
+
+void
+UringThreadContext::submit()
+{
+  io_uring_submit(&ring);
+}
+
+void
+UringThreadContext::service()
+{
+  io_uring_cqe *cqe = nullptr;
+  io_uring_peek_cqe(&ring, &cqe);
+  while (cqe) {
+    // TODO handle the completion
+    io_uring_cqe_seen(&ring, cqe);
+
+    cqe = nullptr;
+    io_uring_peek_cqe(&ring, &cqe);
+  }
+}
+
+UringThreadContext *
+UringThreadContext::local_context()
+{
+  thread_local UringThreadContext threadContext;
+
+  return &threadContext;
+}
 
 int
 ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)

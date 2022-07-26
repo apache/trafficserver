@@ -1697,12 +1697,17 @@ AC_ARG_ENABLE([experimental-linux-io-uring],
 )
 
 AS_IF([test "x$enable_linux_io_uring" = "xyes"], [
+  URING_LIBS="-luring"
   if test $host_os_def  != "linux"; then
     AC_MSG_ERROR([Linux io_uring can only be enabled on Linux systems])
   fi
 
   AC_CHECK_HEADERS([liburing.h], [],
     [AC_MSG_ERROR([Linux io_uring requires liburing.h (install liburing)])]
+  )
+
+  AC_SEARCH_LIBS([io_uring_queue_init], [uring], [AC_SUBST([URING_LIBS])],
+    [AC_MSG_ERROR([Linux io_uring require uring])]
   )
 ])
 
