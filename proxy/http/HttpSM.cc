@@ -6683,18 +6683,22 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   HTTP_SM_SET_DEFAULT_HANDLER(handler_arg);
 
-  // Clear the decks before we setup the new producers
-  // As things stand, we cannot have two static producers operating at
-  // once
-  tunnel.reset();
+  if (ua_entry && ua_entry->vc) {
+    // Clear the decks before we setup the new producers
+    // As things stand, we cannot have two static producers operating at
+    // once
+    tunnel.reset();
 
-  // Setup the tunnel to the client
-  HttpTunnelProducer *p =
-    tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr, HT_STATIC, "internal msg");
-  tunnel.add_consumer(ua_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+    // Setup the tunnel to the client
+    HttpTunnelProducer *p =
+      tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr, HT_STATIC, "internal msg");
+    tunnel.add_consumer(ua_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
-  ua_entry->in_tunnel = true;
-  tunnel.tunnel_run(p);
+    ua_entry->in_tunnel = true;
+    tunnel.tunnel_run(p);
+  } else {
+    (this->*default_handler)(HTTP_TUNNEL_EVENT_DONE, &tunnel);
+  }
 }
 
 // int HttpSM::find_http_resp_buffer_size(int cl)
