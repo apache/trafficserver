@@ -53,6 +53,27 @@ enum ThreadType {
   DEDICATED,
 };
 
+// A structured way to pass event fd events that need to be handled by the event loop
+struct EventFDItems {
+  int fd                      = -1;
+  EventIO *eio                = nullptr;
+  std::function<void(int)> cb = {};
+
+  ~EventFDItems()
+  {
+    if (fd != -1) {
+      close(fd);
+      fd = -1;
+    }
+    if (eio != nullptr) {
+      // this EventIO is created with ats_malloc
+      ats_free(eio);
+      eio = nullptr;
+    }
+  }
+};
+#define MAX_EVENT_FD_ITEMS 2
+
 /**
   Event System specific type of thread.
 
@@ -334,6 +355,7 @@ public:
   LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
 
 #if HAVE_EVENTFD
+  EventFDItems evfds[MAX_EVENT_FD_ITEMS];
   int evfd = ts::NO_FD;
 #else
   int evpipe[2];

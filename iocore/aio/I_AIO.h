@@ -153,11 +153,11 @@ struct DiskHandler : public Continuation {
 
 #if AIO_MODE == AIO_MODE_IO_URING
 
-class UringThreadContext
+class DiskHandler
 {
 public:
-  UringThreadContext(int entries = 1024, int wq_fd = 0, int poll_ms = 0);
-  ~UringThreadContext();
+  DiskHandler(int entries = 1024, int wq_fd = 0, int poll_ms = 0);
+  ~DiskHandler();
 
   io_uring_sqe *
   next_sqe()
@@ -168,16 +168,14 @@ public:
   int set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
   std::pair<int, int> get_wq_max_workers();
 
-  int get_eventfd();
-
   void submit();
   void service();
 
-  static UringThreadContext *local_context();
+  static DiskHandler *local_context();
 
 private:
   io_uring ring;
-  int efd;
+  int evfd;
 };
 
 #endif

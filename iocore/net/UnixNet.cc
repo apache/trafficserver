@@ -261,6 +261,10 @@ initialize_thread_for_net(EThread *thread)
 #else
   thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
 #endif
+
+#if TS_USE_LINUX_IO_URING
+  thread->diskHandler
+#endif
 }
 
 // NetHandler method definitions
@@ -543,6 +547,8 @@ NetHandler::waitForActivity(ink_hrtime timeout)
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
       this->thread->schedule_imm(epd->data.na);
+    } else if (epd->type == EVENTIO_CALLBACK) {
+      epd->data.cb->handleEvent(epd);
     }
     ev_next_event(pd, x);
   }

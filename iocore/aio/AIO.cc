@@ -30,6 +30,7 @@
 #include "tscore/ink_hw.h"
 
 #include "P_AIO.h"
+#include "iocore/P_UnixPollDescriptor.h"
 
 #if AIO_MODE == AIO_MODE_NATIVE
 #define AIO_PERIOD -HRTIME_MSECONDS(10)
@@ -494,7 +495,7 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 
 #elif AIO_MODE == AIO_MODE_IO_URING
 
-UringThreadContext::UringThreadContext(int entries, int wq_fd, int poll_ms)
+DiskHandler::DiskHandler(int entries, int wq_fd, int poll_ms)
 {
   io_uring_params p{};
 
@@ -513,12 +514,14 @@ UringThreadContext::UringThreadContext(int entries, int wq_fd, int poll_ms)
     throw std::runtime_error(strerror(-ret));
   }
 
-  efd = eventfd(0, EFD_CLOEXEC);
-  if (efd < 0) {
-    throw std::runtime_error(strerror(errno));
-  }
+  evfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 
-  ret = io_uring_register_eventfd(&ring, efd);
+  EThread *t = this_ethread();
+  ink_assert(t);
+
+  PollDescriptor *pd = get_PollDescriptor(t);
+
+  ret = io_uring_register_eventfd(&ring, evfd);
   if (ret) {
     throw std::runtime_error("register eventfd");
   }
@@ -529,40 +532,34 @@ UringThreadContext::UringThreadContext(int entries, int wq_fd, int poll_ms)
   }
 }
 
-UringThreadContext::~UringThreadContext()
+DiskHandler::~DiskHandler()
 {
   io_uring_queue_exit(&ring);
 }
 
 int
-UringThreadContext::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
+DiskHandler::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
 {
   unsigned int args[2] = {bounded, unbounded};
   return io_uring_register_iowq_max_workers(&ring, args);
 }
 
 std::pair<int, int>
-UringThreadContext::get_wq_max_workers()
+DiskHandler::get_wq_max_workers()
 {
   unsigned int args[2] = {0, 0};
   io_uring_register_iowq_max_workers(&ring, args);
   return std::make_pair(args[0], args[1]);
 }
 
-int
-UringThreadContext::get_eventfd()
-{
-  return efd;
-}
-
 void
-UringThreadContext::submit()
+DiskHandler::submit()
 {
   io_uring_submit(&ring);
 }
 
 void
-UringThreadContext::service()
+DiskHandler::service()
 {
   io_uring_cqe *cqe = nullptr;
   io_uring_peek_cqe(&ring, &cqe);
@@ -575,10 +572,10 @@ UringThreadContext::service()
   }
 }
 
-UringThreadContext *
-UringThreadContext::local_context()
+DiskHandler *
+DiskHandler::local_context()
 {
-  thread_local UringThreadContext threadContext;
+  thread_local DiskHandler threadContext;
 
   return &threadContext;
 }
@@ -586,12 +583,21 @@ UringThreadContext::local_context()
 int
 ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
 {
+  EThread *t        = this_ethread();
+  io_uring_sqe *sqe = t->diskHandler->next_sqe();
+  io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+  io_uring_sqe_set_data(sqe, op);
+
   return 1;
 }
 
 int
 ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
 {
+  EThread *t        = this_ethread();
+  io_uring_sqe *sqe = t->diskHandler->next_sqe();
+  io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+  io_uring_sqe_set_data(sqe, op);
   return 1;
 }
 
