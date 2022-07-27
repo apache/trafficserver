@@ -89,8 +89,7 @@ request_block(TSCont contp, Data *const data)
 
   header.removeKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
   if (data->m_blocknum == 0 && data->m_config->m_prefetchcount > 0) {
-    std::string valStr = "1";
-    header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), valStr.c_str(), valStr.length());
+    header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), SLICE_CRR_VAL.data(), SLICE_CRR_VAL.size());
   }
 
   // create virtual connection back into ATS

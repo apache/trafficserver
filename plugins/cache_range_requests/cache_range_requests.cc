@@ -49,6 +49,7 @@ using parent_select_mode_t = enum parent_select_mode {
 
 constexpr std::string_view DefaultImsHeader = {"X-Crr-Ims"};
 constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_VAL    = "1";
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
@@ -383,8 +384,8 @@ handle_client_send_response(TSHttpTxn txnp, txndata *const txn_state)
 
       remove_header(resp_buf, resp_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
       if (txn_state->slice_response) {
-        std::string valStr = "1";
-        set_header(resp_buf, resp_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), valStr.c_str(), valStr.length());
+        set_header(resp_buf, resp_loc, SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), SLICE_CRR_VAL.data(),
+                   SLICE_CRR_VAL.size());
       }
     } else {
       DEBUG_LOG("Ignoring status code %d; txn_state->origin_status=%d", status, txn_state->origin_status);
