@@ -1,4 +1,4 @@
-
+Test
 # Getting Started
 
 This directory contains different tests for Apache Trafficserver. It is recommended that all tests move to this common area under the correct location based on the type of test being added.
