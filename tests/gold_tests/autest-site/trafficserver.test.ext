@@ -82,12 +82,11 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         ts_args += f' --bind_stdout {traffic_out}'
 
     if block_for_debug:
-        if command.startswith('traffic_server'):
-            command += ' --block'
+        ts_args += ' --block'
 
     # Have the full command including arguments in the cmdline so tool scripts
     # can eventually use some keyword from the path to trace a particular TS instance
-    process_cmd = f"{os.path.join(ts_dir, bin_dir)}/{command}"
+    process_cmd = f"{os.path.join(ts_dir, bin_dir)}/{command} {ts_args}"
     # create process
     p = obj.Processes.Process(name, process_cmd)
     #p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
