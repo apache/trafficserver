@@ -26,8 +26,10 @@ ATS Release Roadmap
    :maxdepth: 1
 
 Apache Traffic Server is currently on a two year major release cycle. At any
-given time, we guarantee to have two major versions supported. Currently,
-this means v7.1.x and v8.0.x, with a possible v8.1.x coming.
+given time, we guarantee to have two major versions supported. Please refer to
+our `download page <https://trafficserver.apache.org/downloads>`_ to see the
+current supported versions.
+
 
 For details on the actual developer release process, See
 
