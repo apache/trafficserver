@@ -66,7 +66,7 @@ DNSConnection::close()
   if (fd >= 2) {
     int fd_save = fd;
     fd          = NO_FD;
-    return socketManager.close(fd_save);
+    return SocketManager::close(fd_save);
   } else {
     fd = NO_FD;
     return -EBADF;
@@ -103,12 +103,12 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 
   if (opt._use_tcp) {
     Proto = IPPROTO_TCP;
-    if ((res = socketManager.socket(af, SOCK_STREAM, 0)) < 0) {
+    if ((res = SocketManager::socket(af, SOCK_STREAM, 0)) < 0) {
       goto Lerror;
     }
   } else {
     Proto = IPPROTO_UDP;
-    if ((res = socketManager.socket(af, SOCK_DGRAM, 0)) < 0) {
+    if ((res = SocketManager::socket(af, SOCK_DGRAM, 0)) < 0) {
       goto Lerror;
     }
   }
@@ -144,7 +144,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
       Debug("dns", "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
-      if (socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto) < 0) {
+      if (SocketManager::ink_bind(fd, &bind_addr.sa, bind_size, Proto) < 0) {
         continue;
       }
       goto Lok;
@@ -153,7 +153,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   Lok:;
   } else if (ats_is_ip(&bind_addr.sa)) {
     ip_text_buffer b;
-    res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto);
+    res = SocketManager::ink_bind(fd, &bind_addr.sa, bind_size, Proto);
     if (res < 0) {
       Warning("Unable to bind local address to %s.", ats_ip_ntop(&bind_addr.sa, b, sizeof b));
     }
@@ -174,7 +174,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   }
 #endif
 #ifdef RECV_BUF_SIZE
-  socketManager.set_rcvbuf_size(fd, RECV_BUF_SIZE);
+  SocketManager::set_rcvbuf_size(fd, RECV_BUF_SIZE);
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak

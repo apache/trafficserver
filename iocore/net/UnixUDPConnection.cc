@@ -51,7 +51,7 @@ UnixUDPConnection::~UnixUDPConnection()
   }
   Debug("udpnet", "Destroying udp port = %d", getPortNum());
   if (fd != NO_FD) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
   }
   fd = NO_FD;
 }

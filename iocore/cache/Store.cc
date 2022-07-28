@@ -454,7 +454,7 @@ Span::init(const char *path, int64_t size)
   span_error_t serr;
   ink_device_geometry geometry;
 
-  ats_scoped_fd fd(socketManager.open(path, O_RDONLY));
+  ats_scoped_fd fd(SocketManager::open(path, O_RDONLY));
   if (fd < 0) {
     serr = make_span_error(errno);
     Warning("unable to open '%s': %s", path, strerror(errno));
@@ -781,7 +781,7 @@ Store::clear(char *filename, bool clear_dirs)
         return -1;
       }
       for (int b = 0; d->blocks; b++) {
-        if (socketManager.pwrite(fd, z, STORE_BLOCK_SIZE, d->offset + (b * STORE_BLOCK_SIZE)) < 0) {
+        if (SocketManager::pwrite(fd, z, STORE_BLOCK_SIZE, d->offset + (b * STORE_BLOCK_SIZE)) < 0) {
           close(fd);
           return -1;
         }

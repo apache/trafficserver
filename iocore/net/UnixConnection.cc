@@ -138,7 +138,7 @@ Connection::open(NetVCOptions const &opt)
     local_addr.network_order_port() = htons(opt.local_port);
   }
 
-  res = socketManager.socket(family, sock_type, 0);
+  res = SocketManager::socket(family, sock_type, 0);
   if (-1 == res) {
     return -errno;
   }
@@ -173,20 +173,20 @@ Connection::open(NetVCOptions const &opt)
   }
 
   if (opt.socket_recv_bufsize > 0) {
-    if (socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize)) {
+    if (SocketManager::set_rcvbuf_size(fd, opt.socket_recv_bufsize)) {
       // Round down until success
       int rbufsz = ROUNDUP(opt.socket_recv_bufsize, 1024);
-      while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz)) {
+      while (rbufsz && !SocketManager::set_rcvbuf_size(fd, rbufsz)) {
         rbufsz -= 1024;
       }
       Debug("socket", "::open: recv_bufsize = %d of %d", rbufsz, opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
-    if (socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize)) {
+    if (SocketManager::set_sndbuf_size(fd, opt.socket_send_bufsize)) {
       // Round down until success
       int sbufsz = ROUNDUP(opt.socket_send_bufsize, 1024);
-      while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz)) {
+      while (sbufsz && !SocketManager::set_sndbuf_size(fd, sbufsz)) {
         sbufsz -= 1024;
       }
       Debug("socket", "::open: send_bufsize = %d of %d", sbufsz, opt.socket_send_bufsize);
@@ -197,7 +197,7 @@ Connection::open(NetVCOptions const &opt)
   apply_options(opt);
 
   if (local_addr.network_order_port() || !is_any_address) {
-    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
+    if (-1 == SocketManager::ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       return -errno;
     }
   }

@@ -77,7 +77,7 @@ Server::accept(Connection *c)
   int res      = 0;
   socklen_t sz = sizeof(c->addr);
 
-  res = socketManager.accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+  res = SocketManager::accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
   if (res < 0) {
     return res;
   }
@@ -89,7 +89,7 @@ Server::accept(Connection *c)
   }
 
 #ifdef SEND_BUF_SIZE
-  socketManager.set_sndbuf_size(c->fd, SEND_BUF_SIZE);
+  SocketManager::set_sndbuf_size(c->fd, SEND_BUF_SIZE);
 #endif
 
   return 0;
@@ -104,7 +104,7 @@ Connection::close()
   if (fd >= 2) {
     int fd_save = fd;
     fd          = NO_FD;
-    return socketManager.close(fd_save);
+    return SocketManager::close(fd_save);
   } else {
     fd = NO_FD;
     return -EBADF;
@@ -169,11 +169,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
 
   if (opt.recv_bufsize) {
-    if (socketManager.set_rcvbuf_size(fd, opt.recv_bufsize)) {
+    if (SocketManager::set_rcvbuf_size(fd, opt.recv_bufsize)) {
       // Round down until success
       int rbufsz = ROUNDUP(opt.recv_bufsize, 1024);
       while (rbufsz) {
-        if (socketManager.set_rcvbuf_size(fd, rbufsz)) {
+        if (SocketManager::set_rcvbuf_size(fd, rbufsz)) {
           rbufsz -= 1024;
         } else {
           break;
@@ -183,11 +183,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
   if (opt.send_bufsize) {
-    if (socketManager.set_sndbuf_size(fd, opt.send_bufsize)) {
+    if (SocketManager::set_sndbuf_size(fd, opt.send_bufsize)) {
       // Round down until success
       int sbufsz = ROUNDUP(opt.send_bufsize, 1024);
       while (sbufsz) {
-        if (socketManager.set_sndbuf_size(fd, sbufsz)) {
+        if (SocketManager::set_sndbuf_size(fd, sbufsz)) {
           sbufsz -= 1024;
         } else {
           break;
@@ -353,7 +353,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     ats_ip_copy(&addr, &accept_addr);
   }
 
-  fd = res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
+  fd = res = SocketManager::socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
   if (res < 0) {
     goto Lerror;
   }
@@ -363,7 +363,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
+  if ((res = SocketManager::ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 

@@ -123,14 +123,14 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
 
     NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
-    err = socketManager.sendto(fd, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
+    err = SocketManager::sendto(fd, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
     if (err >= 0) {
       NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
     }
 
     BIO_set_data(bio, nullptr);
   } else {
-    err = socketManager.write(fd, (void *)in, insz);
+    err = SocketManager::write(fd, (void *)in, insz);
   }
 
   if (err < 0) {
@@ -155,7 +155,7 @@ fastopen_bread(BIO *bio, char *out, int outsz)
 
   // TODO: If we haven't done the fastopen, ink_abort().
 
-  err = socketManager.read(fd, out, outsz);
+  err = SocketManager::read(fd, out, outsz);
   if (err < 0) {
     errno = -err;
     if (BIO_sock_non_fatal_error(errno)) {
