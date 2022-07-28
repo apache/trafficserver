@@ -170,6 +170,7 @@ public:
 
   void submit();
   void service();
+  void submit_and_wait(int ms);
 
   int register_eventfd();
 

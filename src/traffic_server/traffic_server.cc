@@ -1856,7 +1856,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This call is required for win_9xMe
   // without this this_ethread() is failing when
   // start_HttpProxyServer is called from main thread
-  Thread *main_thread = new EThread;
+  EThread *main_thread = new EThread;
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.config configuration
@@ -2223,7 +2223,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   TSSystemState::initialization_done();
 
   while (!TSSystemState::is_event_system_shut_down()) {
-    sleep(1);
+    if (main_thread->diskHandler) {
+      main_thread->diskHandler->submit_and_wait();
+    } else {
+      sleep(1);
+    }
   }
 
   delete main_thread;

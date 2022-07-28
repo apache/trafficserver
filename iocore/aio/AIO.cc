@@ -562,6 +562,12 @@ DiskHandler::service()
   }
 }
 
+void
+DiskHandler::submit_and_wait(int ms)
+{
+  io_uring_submit_and_wait_timeout(&ring)
+}
+
 int
 DiskHandler::register_eventfd()
 {

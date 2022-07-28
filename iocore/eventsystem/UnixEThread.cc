@@ -80,31 +80,17 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
-  for (int i = 0; i < MAX_EVENT_FD_ITEMS; i++) {
-    evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    if (evfd < 0) {
-      if (errno == EINVAL) { // flags invalid for kernel <= 2.6.26
-        evfd = eventfd(0, 0);
-        if (evfd < 0) {
-          Fatal("EThread::EThread: %d=eventfd(0,0),errno(%d)", evfd, errno);
-        }
-      } else {
-        Fatal("EThread::EThread: %d=eventfd(0,EFD_NONBLOCK | EFD_CLOEXEC),errno(%d)", evfd, errno);
+  evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (evfd < 0) {
+    if (errno == EINVAL) { // flags invalid for kernel <= 2.6.26
+      evfd = eventfd(0, 0);
+      if (evfd < 0) {
+        Fatal("EThread::EThread: %d=eventfd(0,0),errno(%d)", evfd, errno);
       }
+    } else {
+      Fatal("EThread::EThread: %d=eventfd(0,EFD_NONBLOCK | EFD_CLOEXEC),errno(%d)", evfd, errno);
     }
-    evfds[i].fd = evfd;
   }
-  // TODO(cmcfarlen): There needs to be a better interface to add eventio stuff to the eventloop but there isn't a "public"
-  // interface to that for now, 0 will be the old behavior and 1 will be io_uring
-  evfds[0].cb = [=]() {
-    uint64_t counter;
-    ATS_UNUSED_RETURN(read(evfd, &counter, sizeof(uint64_t)));
-  };
-
-  evfds[1].cb = [=]() {
-    if (this->diskHandler) {
-    }
-  };
 #elif TS_USE_PORT
 /* Solaris ports requires no crutches to do cross thread signaling.
  * We'll just port_send the event straight over the port.
