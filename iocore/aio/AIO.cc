@@ -30,7 +30,6 @@
 #include "tscore/ink_hw.h"
 
 #include "P_AIO.h"
-#include "iocore/P_UnixPollDescriptor.h"
 
 #if AIO_MODE == AIO_MODE_NATIVE
 #define AIO_PERIOD -HRTIME_MSECONDS(10)
@@ -514,22 +513,13 @@ DiskHandler::DiskHandler(int entries, int wq_fd, int poll_ms)
     throw std::runtime_error(strerror(-ret));
   }
 
-  evfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-
-  EThread *t = this_ethread();
-  ink_assert(t);
-
-  PollDescriptor *pd = get_PollDescriptor(t);
-
-  ret = io_uring_register_eventfd(&ring, evfd);
-  if (ret) {
-    throw std::runtime_error("register eventfd");
-  }
-
   /* no sharing for non-fixed either */
   if (poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
     throw std::runtime_error("No SQPOLL sharing with nonfixed");
   }
+
+  // assign this handler to the thread
+  this_ethread()->diskHandler = this;
 }
 
 DiskHandler::~DiskHandler()
@@ -572,9 +562,20 @@ DiskHandler::service()
   }
 }
 
+int
+DiskHandler::register_eventfd()
+{
+  int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+
+  io_uring_register_eventfd(&ring, fd);
+
+  return fd;
+}
+
 DiskHandler *
 DiskHandler::local_context()
 {
+  // TODO(cmcfarlen): load config
   thread_local DiskHandler threadContext;
 
   return &threadContext;

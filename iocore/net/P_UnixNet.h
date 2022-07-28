@@ -24,6 +24,7 @@
 #pragma once
 
 #include <bitset>
+#include <functional>
 
 #include "tscore/ink_platform.h"
 
@@ -36,7 +37,7 @@
 #define EVENTIO_DNS_CONNECTION 3
 #define EVENTIO_UDP_CONNECTION 4
 #define EVENTIO_ASYNC_SIGNAL 5
-#define EVENTIO_CALLBACK 6
+#define EVENTIO_DISK 6
 
 #if TS_USE_EPOLL
 #ifndef EPOLLEXCLUSIVE
@@ -80,9 +81,6 @@ class NetEvent;
 class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
-struct EventIOCallback {
-  std::function(void())
-};
 
 /// Unified API for setting and clearing kernel and epoll events.
 struct EventIO {
@@ -99,7 +97,7 @@ struct EventIO {
     DNSConnection *dnscon;
     NetAccept *na;
     UnixUDPConnection *uc;
-    void (*cb)();
+    DiskHandler *dh;
   } data; ///< a kind of continuation
 
   /** The start methods all logically Setup a class to be called
@@ -116,7 +114,7 @@ struct EventIO {
   int start(EventLoop l, NetEvent *ne, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
   int start(EventLoop l, int fd, NetEvent *ne, int events);
-  int start(EventLoop l, int fd, EventIOCallback *cb, int events);
+  int start(EventLoop l, DiskHandler *dh);
   int start_common(EventLoop l, int fd, int events);
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
@@ -649,14 +647,6 @@ EventIO::start(EventLoop l, int afd, NetEvent *ne, int e)
 {
   data.ne = ne;
   return start_common(l, afd, e);
-}
-
-TS_INLINE int
-EventIO::start(EventLoop l, int fd, EventIOCallback *cb, int events)
-{
-  data.cb = cb;
-  type    = EVENTIO_CALLBACK;
-  return start_common(l, fd, events);
 }
 
 TS_INLINE int

@@ -171,11 +171,12 @@ public:
   void submit();
   void service();
 
+  int register_eventfd();
+
   static DiskHandler *local_context();
 
 private:
   io_uring ring;
-  int evfd;
 };
 
 #endif

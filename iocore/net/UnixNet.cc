@@ -22,6 +22,7 @@
  */
 
 #include "P_Net.h"
+#include "I_AIO.h"
 
 using namespace std::literals;
 
@@ -258,12 +259,11 @@ initialize_thread_for_net(EThread *thread)
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
+#if TS_USE_LINUX_IO_URING
+  thread->ep->start(pd, DiskHandler::local_context());
+#endif
 #else
   thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
-#endif
-
-#if TS_USE_LINUX_IO_URING
-  thread->diskHandler
 #endif
 }
 
@@ -489,12 +489,16 @@ NetHandler::mainNetEvent(int event, Event *e)
 int
 NetHandler::waitForActivity(ink_hrtime timeout)
 {
-  EventIO *epd = nullptr;
+  EventIO *epd    = nullptr;
+  DiskHandler *dh = DiskHandler::local_context();
+  bool servicedh  = false;
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
   SCOPED_MUTEX_LOCK(lock, mutex, this->thread);
 
   process_enabled_list();
+
+  dh->submit();
 
   // Polling event by PollCont
   PollCont *p = get_PollCont(this->thread);
@@ -546,9 +550,11 @@ NetHandler::waitForActivity(ink_hrtime timeout)
     } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
-      this->thread->schedule_imm(epd->data.na);
+      this->thread->schedule_imm(epd->data.c);
     } else if (epd->type == EVENTIO_CALLBACK) {
       epd->data.cb->handleEvent(epd);
+    } else if (epd->type == EVENTIO_DISK) {
+      servicedh = true;
     }
     ev_next_event(pd, x);
   }
@@ -556,6 +562,10 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   pd->result = 0;
 
   process_ready_list();
+
+  if (servicedh) {
+    dh->service();
+  }
 
   return EVENT_CONT;
 }
@@ -787,4 +797,13 @@ NetHandler::remove_from_active_queue(NetEvent *ne)
     active_queue.remove(ne);
     --active_queue_size;
   }
+}
+
+int
+EventIO::start(EventLoop l, DiskHandler *dh)
+{
+  data.dh = dh;
+  int fd  = dh->register_eventfd();
+  type    = EVENTIO_DISK;
+  return start_common(l, fd, EVENTIO_READ);
 }

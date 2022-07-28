@@ -94,6 +94,17 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
     }
     evfds[i].fd = evfd;
   }
+  // TODO(cmcfarlen): There needs to be a better interface to add eventio stuff to the eventloop but there isn't a "public"
+  // interface to that for now, 0 will be the old behavior and 1 will be io_uring
+  evfds[0].cb = [=]() {
+    uint64_t counter;
+    ATS_UNUSED_RETURN(read(evfd, &counter, sizeof(uint64_t)));
+  };
+
+  evfds[1].cb = [=]() {
+    if (this->diskHandler) {
+    }
+  };
 #elif TS_USE_PORT
 /* Solaris ports requires no crutches to do cross thread signaling.
  * We'll just port_send the event straight over the port.

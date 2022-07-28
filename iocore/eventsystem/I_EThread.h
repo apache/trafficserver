@@ -39,7 +39,7 @@
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-struct DiskHandler;
+class DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;
@@ -55,9 +55,9 @@ enum ThreadType {
 
 // A structured way to pass event fd events that need to be handled by the event loop
 struct EventFDItems {
-  int fd                      = -1;
-  EventIO *eio                = nullptr;
-  std::function<void(int)> cb = {};
+  int fd                   = -1;
+  EventIO *eio             = nullptr;
+  std::function<void()> cb = {};
 
   ~EventFDItems()
   {
