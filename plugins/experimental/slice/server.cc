@@ -20,6 +20,7 @@
 
 #include "Config.h"
 #include "ContentRange.h"
+#include "HttpHeader.h"
 #include "response.h"
 #include "transfer.h"
 #include "util.h"
@@ -216,6 +217,10 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
+
+  if (data->m_config->m_prefetchcount > 0 && header.hasKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size())) {
+    data->m_prefetchable = true;
+  }
 
   return HeaderState::Good;
 }

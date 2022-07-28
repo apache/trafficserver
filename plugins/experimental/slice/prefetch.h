@@ -35,22 +35,13 @@
 struct BgBlockFetch {
   static bool schedule(Data *const data, int blocknum);
 
-  explicit BgBlockFetch(int blocknum) : _blocknum(blocknum) {}
+  explicit BgBlockFetch(int blocknum) : m_blocknum(blocknum) {}
 
   bool fetch(Data *const data);
   static int handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */);
 
   /* This is for the actual background fetch / NetVC */
-  Stage _bg_stream;
-
-  int _blocknum;
-  TSCont _cont = nullptr;
-
-  ~BgBlockFetch()
-  {
-    if (nullptr != _cont) {
-      TSContDestroy(_cont);
-      _cont = nullptr;
-    }
-  }
+  Stage m_stream;
+  int m_blocknum;
+  TSCont m_cont = nullptr;
 };
