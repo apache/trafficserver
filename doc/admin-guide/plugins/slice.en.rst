@@ -113,13 +113,6 @@ The slice plugin supports the following options::
         Requires setting up an intermediate loopback remap rule.
         -r for short
 
-    --prefetch-count=<int> (optional)
-        Default is 0
-        Prefetches successive 'n' slice block requests in the background
-        and cached. Especially for large objects, prefetching can improve
-        cache miss latency.
-        -f for short
-
     --skip-header=<header name> (default: X-Slicer-Info)
         Header name used by the slice plugin after the loopback
         to indicate that the slice plugin should be skipped.
@@ -132,6 +125,14 @@ The slice plugin supports the following options::
         This must match the `--ims-header` option used by the
         `cache_range_requests` plugin.
         -i for short
+
+    --prefetch-count=<int> (optional)
+        Default is 0
+        Prefetches successive 'n' slice block requests in the background
+        and caches (with `cache_range_requests` plugin). Prefetching is only
+        enabled when first block is a cacheable object with miss or hit-stale status.
+        Especially for large objects, prefetching can improve cache miss latency.
+        -f for short
 
 Examples::
 

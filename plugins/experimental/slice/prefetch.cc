@@ -43,13 +43,13 @@ BgBlockFetch::schedule(Data *const data, int blocknum)
 bool
 BgBlockFetch::fetch(Data *const data)
 {
-  if (_bg_stream.m_read.isOpen()) {
+  if (m_stream.m_read.isOpen()) {
     // should never happen since the connection was just initialized
     ERROR_LOG("Background block request already in flight!");
     return false;
   }
 
-  int64_t const blockbeg = (data->m_config->m_blockbytes * _blocknum);
+  int64_t const blockbeg = (data->m_config->m_blockbytes * m_blocknum);
   Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
 
   char rangestr[1024];
@@ -69,11 +69,11 @@ BgBlockFetch::fetch(Data *const data)
     ERROR_LOG("Error trying to set range request header %s", rangestr);
     return false;
   }
-  TSAssert(nullptr == _cont);
+  TSAssert(nullptr == m_cont);
 
   // Setup the continuation
-  _cont = TSContCreate(handler, TSMutexCreate());
-  TSContDataSet(_cont, static_cast<void *>(this));
+  m_cont = TSContCreate(handler, TSMutexCreate());
+  TSContDataSet(m_cont, static_cast<void *>(this));
 
   // create virtual connection back into ATS
   TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
@@ -88,16 +88,17 @@ BgBlockFetch::fetch(Data *const data)
   int const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
 
   // set up connection with the HttpConnect server
-  _bg_stream.setupConnection(upvc);
-  _bg_stream.setupVioWrite(_cont, hlen);
-  TSHttpHdrPrint(header.m_buffer, header.m_lochdr, _bg_stream.m_write.m_iobuf);
+  m_stream.setupConnection(upvc);
+  m_stream.setupVioWrite(m_cont, hlen);
+  TSHttpHdrPrint(header.m_buffer, header.m_lochdr, m_stream.m_write.m_iobuf);
 
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
     std::string const headerstr(header.toString());
     DEBUG_LOG("Headers\n%s", headerstr.c_str());
   }
+  // ensure blocks are pulled through to cache
+  m_stream.setupVioRead(m_cont, INT64_MAX);
 
-  data->m_fetchstates[_blocknum] = true;
   return true;
 }
 
@@ -113,21 +114,36 @@ BgBlockFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSVConnShutdown(bg->_bg_stream.m_vc, 0, 1);
-    bg->_bg_stream.close();
-    delete bg;
+    TSVConnShutdown(bg->m_stream.m_vc, 0, 1);
     break;
-  default:
-    if (event == TS_EVENT_VCONN_INACTIVITY_TIMEOUT) {
-      DEBUG_LOG("encountered Inactivity Timeout");
-      TSVConnAbort(bg->_bg_stream.m_vc, TS_VC_CLOSE_ABORT);
-    } else {
-      TSVConnClose(bg->_bg_stream.m_vc);
+  case TS_EVENT_VCONN_READ_READY: {
+    TSIOBufferReader const reader = bg->m_stream.m_read.m_reader;
+    if (nullptr != reader) {
+      int64_t const avail = TSIOBufferReaderAvail(reader);
+      TSIOBufferReaderConsume(reader, avail);
+      TSVIO const rvio = bg->m_stream.m_read.m_vio;
+      TSVIONDoneSet(rvio, TSVIONDoneGet(rvio) + avail);
+      TSVIOReenable(rvio);
     }
-    bg->_bg_stream.abort();
+  } break;
+  case TS_EVENT_NET_ACCEPT_FAILED:
+  case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
+  case TS_EVENT_VCONN_ACTIVE_TIMEOUT:
+  case TS_EVENT_ERROR:
+    bg->m_stream.abort();
     TSContDataSet(contp, nullptr);
     delete bg;
     TSContDestroy(contp);
+    break;
+  case TS_EVENT_VCONN_READ_COMPLETE:
+  case TS_EVENT_VCONN_EOS:
+    bg->m_stream.close();
+    TSContDataSet(contp, nullptr);
+    delete bg;
+    TSContDestroy(contp);
+    break;
+  default:
+    DEBUG_LOG("Unhandled bg fetch event:%s (%d)", TSHttpEventNameLookup(event), event);
     break;
   }
   return 0;
