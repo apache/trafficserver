@@ -24,6 +24,7 @@
 #pragma once
 
 #include "hdrs/HTTP.h"
+#include "hdrs/VersionConverter.h"
 
 #include "QPACK.h"
 
@@ -54,7 +55,7 @@ private:
   bool _sent_all_data                  = false;
   HTTPParser _http_parser;
   HTTPHdr _header;
+  VersionConverter _hvc;
 
-  void _convert_header_from_1_1_to_3(HTTPHdr *hdrs);
   void _generate_header_block();
 };

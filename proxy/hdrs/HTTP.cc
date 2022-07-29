@@ -270,12 +270,12 @@ http_init()
   -------------------------------------------------------------------------*/
 
 HTTPHdrImpl *
-http_hdr_create(HdrHeap *heap, HTTPType polarity)
+http_hdr_create(HdrHeap *heap, HTTPType polarity, HTTPVersion version)
 {
   HTTPHdrImpl *hh;
 
   hh = (HTTPHdrImpl *)heap->allocate_obj(sizeof(HTTPHdrImpl), HDR_HEAP_OBJ_HTTP_HEADER);
-  http_hdr_init(heap, hh, polarity);
+  http_hdr_init(heap, hh, polarity, version);
   return (hh);
 }
 
@@ -283,7 +283,7 @@ http_hdr_create(HdrHeap *heap, HTTPType polarity)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity)
+http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion version)
 {
   memset(&(hh->u), 0, sizeof(hh->u));
   hh->m_polarity    = polarity;
@@ -292,6 +292,31 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity)
   if (polarity == HTTP_TYPE_REQUEST) {
     hh->u.req.m_url_impl       = url_create(heap);
     hh->u.req.m_method_wks_idx = -1;
+  }
+
+  if (version == HTTP_2_0 || version == HTTP_3_0) {
+    MIMEField *field;
+    switch (polarity) {
+    case HTTP_TYPE_REQUEST:
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+      mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
+
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
+
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
+
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
+      break;
+    case HTTP_TYPE_RESPONSE:
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+      mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
+      break;
+    default:
+      ink_abort("HTTP_TYPE_UNKNOWN");
+    }
   }
 }
 
@@ -348,7 +373,7 @@ http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap)
   //      one single memcpy.  For this first optimization, we just
   //      copy each object separately.
 
-  d_hh = http_hdr_create(d_heap, s_hh->m_polarity);
+  d_hh = http_hdr_create(d_heap, s_hh->m_polarity, s_hh->m_version);
   http_hdr_copy_onto(s_hh, s_heap, d_hh, d_heap, ((s_heap != d_heap) ? true : false));
   return (d_hh);
 }

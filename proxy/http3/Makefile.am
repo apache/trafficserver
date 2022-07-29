@@ -27,7 +27,6 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/http2 \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/proxy/http/remap \
@@ -77,7 +76,6 @@ test_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-  $(top_builddir)/proxy/http2/libhttp2.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBPCRE@ \
