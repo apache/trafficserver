@@ -94,6 +94,16 @@ protected:
   IpMap allow_ip_map;
   IpMap deny_ip_map;
 
+  // Anonymous blocking default to off
+  bool _anonymous_ip      = false;
+  bool _anonymous_vpn     = false;
+  bool _hosting_provider  = false;
+  bool _public_proxy      = false;
+  bool _tor_exit_node     = false;
+  bool _residential_proxy = false;
+
+  bool _anonymous_blocking = false;
+
   // Do we want to allow by default or not? Useful
   // for deny only rules
   bool default_allow = false;
@@ -103,7 +113,9 @@ protected:
   bool loadallow(const YAML::Node &allowNode);
   bool loaddeny(const YAML::Node &denyNode);
   void loadhtml(const YAML::Node &htmlNode);
+  bool loadanonymous(const YAML::Node &anonNode);
   bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len);
+  bool eval_anonymous(MMDB_entry_s *entry_data);
   void parseregex(const YAML::Node &regex, bool allow);
   ipstate eval_ip(const sockaddr *sock) const;
 };
