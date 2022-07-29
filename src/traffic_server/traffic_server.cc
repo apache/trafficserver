@@ -2012,6 +2012,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     proxyServerCheck.notify_one();
   }
 
+#if TS_USE_LINUX_IO_URING == 1
+  DiskHandler *main_aio = DiskHandler::local_context();
+#endif
+
   // !! ET_NET threads start here !!
   // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
@@ -2223,11 +2227,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   TSSystemState::initialization_done();
 
   while (!TSSystemState::is_event_system_shut_down()) {
-    if (main_thread->diskHandler) {
-      main_thread->diskHandler->submit_and_wait();
-    } else {
-      sleep(1);
-    }
+#if TS_USE_LINUX_IO_URING == 1
+    main_aio->submit_and_wait(1000);
+#else
+    sleep(1);
+#endif
   }
 
   delete main_thread;

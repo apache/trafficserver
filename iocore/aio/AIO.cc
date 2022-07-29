@@ -519,6 +519,7 @@ DiskHandler::DiskHandler(int entries, int wq_fd, int poll_ms)
   }
 
   // assign this handler to the thread
+  // TODO(cmcfarlen): maybe a bad place for this!
   this_ethread()->diskHandler = this;
 }
 
@@ -549,12 +550,36 @@ DiskHandler::submit()
 }
 
 void
+DiskHandler::handle_cqe(io_uring_cqe *cqe)
+{
+  AIOCallback *op = static_cast<AIOCallback *>(io_uring_cqe_get_data(cqe));
+
+  op->aio_result = static_cast<int64_t>(cqe->res);
+  op->link.prev  = nullptr;
+  op->link.next  = nullptr;
+  op->mutex      = op->action.mutex;
+
+  // the last op in the linked ops will have the original op stored in the aiocb
+  if (op->aiocb.aio_op) {
+    op = op->aiocb.aio_op;
+    if (op->thread == AIO_CALLBACK_THREAD_AIO) {
+      SCOPED_MUTEX_LOCK(lock, op->mutex, this_ethread());
+      op->handleEvent(EVENT_NONE, nullptr);
+    } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
+      eventProcessor.schedule_imm(op);
+    } else {
+      op->thread->schedule_imm(op);
+    }
+  }
+}
+
+void
 DiskHandler::service()
 {
   io_uring_cqe *cqe = nullptr;
   io_uring_peek_cqe(&ring, &cqe);
   while (cqe) {
-    // TODO handle the completion
+    handle_cqe(cqe);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;
@@ -565,7 +590,19 @@ DiskHandler::service()
 void
 DiskHandler::submit_and_wait(int ms)
 {
-  io_uring_submit_and_wait_timeout(&ring)
+  ink_hrtime t              = ink_hrtime_from_msec(ms);
+  timespec ts               = ink_hrtime_to_timespec(t);
+  __kernel_timespec timeout = {ts.tv_sec, ts.tv_nsec};
+  io_uring_cqe *cqe         = nullptr;
+
+  io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
+  while (cqe) {
+    handle_cqe(cqe);
+    io_uring_cqe_seen(&ring, cqe);
+
+    cqe = nullptr;
+    io_uring_peek_cqe(&ring, &cqe);
+  }
 }
 
 int
@@ -588,35 +625,42 @@ DiskHandler::local_context()
 }
 
 int
-ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
 {
-  EThread *t        = this_ethread();
-  io_uring_sqe *sqe = t->diskHandler->next_sqe();
-  io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-  io_uring_sqe_set_data(sqe, op);
+  EThread *t      = this_ethread();
+  AIOCallback *op = op_in;
+  while (op) {
+    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+    io_uring_sqe_set_data(sqe, op);
+    if (op->then) {
+      sqe->flags |= IOSQE_IO_LINK;
+    } else {
+      op->aiocb.aio_op = op_in;
+    }
 
+    op = op->then;
+  }
   return 1;
 }
 
 int
-ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+ink_aio_write(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
 {
-  EThread *t        = this_ethread();
-  io_uring_sqe *sqe = t->diskHandler->next_sqe();
-  io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-  io_uring_sqe_set_data(sqe, op);
-  return 1;
-}
+  EThread *t      = this_ethread();
+  AIOCallback *op = op_in;
+  while (op) {
+    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+    io_uring_sqe_set_data(sqe, op);
+    if (op->then) {
+      sqe->flags |= IOSQE_IO_LINK;
+    } else {
+      op->aiocb.aio_op = op_in;
+    }
 
-int
-ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
-  return 1;
-}
-
-int
-ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
-{
+    op = op->then;
+  }
   return 1;
 }
 

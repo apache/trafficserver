@@ -69,15 +69,17 @@ typedef struct io_event ink_io_event_t;
 
 #elif AIO_MODE == AIO_MODE_IO_URING
 #include <liburing.h>
+
+struct AIOCallback;
 struct ink_aiocb {
   int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_lio_opcode = 0; /* listio operation */
-  int aio_state      = 0; /* state flag for List I/O */
-  int aio__pad[1];        /* extension padding */
+  int aio_lio_opcode  = 0; /* listio operation */
+  int aio_state       = 0; /* state flag for List I/O */
+  AIOCallback *aio_op = nullptr;
 };
 
 #else
@@ -178,6 +180,8 @@ public:
 
 private:
   io_uring ring;
+
+  void handle_cqe(io_uring_cqe *);
 };
 
 #endif
@@ -187,9 +191,9 @@ int ink_aio_start();
 void ink_aio_set_callback(Continuation *error_callback);
 
 int ink_aio_read(AIOCallback *op,
-                 int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
+                 int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
 int ink_aio_write(AIOCallback *op, int fromAPI = 0);
 int ink_aio_readv(AIOCallback *op,
-                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
+                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
 int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
 AIOCallback *new_AIOCallback();
