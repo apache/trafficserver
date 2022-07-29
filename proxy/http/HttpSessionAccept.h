@@ -25,7 +25,7 @@
 
 #include "tscore/ink_platform.h"
 #include "records/I_RecHttp.h"
-#include "P_EventSystem.h"
+#include "I_EventSystem.h"
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "I_Net.h"

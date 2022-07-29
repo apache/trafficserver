@@ -25,23 +25,25 @@
 
 #include "PreWarmAlgorithm.h"
 
-#include "P_Net.h"
+#include "I_EventSystem.h"
 #include "I_NetVConnection.h"
-#include "P_SSLSNI.h"
-#include "P_HostDB.h"
+#include "I_HostDB.h"
 #include "YamlSNIConfig.h"
 #include "NetTimeout.h"
 #include "Milestones.h"
 
+#include "records/I_RecHttp.h"
 #include "records/DynamicStats.h"
 
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <queue>
 #include <string_view>
 
 class PreWarmSM;
 class PreWarmManager;
+struct SNIConfigParams;
 
 extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
 extern PreWarmManager prewarmManager;

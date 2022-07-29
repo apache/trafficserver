@@ -74,9 +74,6 @@ extern unsigned int dns_sequence_number;
 #define QFIXEDSZ 4
 #endif
 
-// Events
-#define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START
-
 // Stats
 enum DNS_Stats {
   dns_total_lookups_stat,

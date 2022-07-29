@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "P_EventSystem.h"
+#include "I_EventSystem.h"
 #include "PoolableSession.h"
 #include "tscore/IntrusiveHashMap.h"
 
