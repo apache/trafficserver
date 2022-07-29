@@ -78,6 +78,14 @@ test_libhttp2_LDADD = \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@
 
+if OS_LINUX
+test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\
+	-Wl,--unresolved-symbols=ignore-all
+else
+test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\
+    -Wl,-undefined -Wl,suppress -Wl,-flat_namespace -Wl,-dead_strip
+endif
+
 test_libhttp2_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
