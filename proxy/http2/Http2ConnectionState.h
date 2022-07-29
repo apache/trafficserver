@@ -175,8 +175,8 @@ private:
   Http2Error rcv_window_update_frame(const Http2Frame &);
   Http2Error rcv_continuation_frame(const Http2Frame &);
 
-  using http2_frame_dispatch                                       = Http2Error (Http2ConnectionState::*)(const Http2Frame &);
-  const http2_frame_dispatch _frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
+  using http2_frame_dispatch = Http2Error (Http2ConnectionState::*)(const Http2Frame &);
+  static constexpr http2_frame_dispatch _frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
     &Http2ConnectionState::rcv_data_frame,          // HTTP2_FRAME_TYPE_DATA
     &Http2ConnectionState::rcv_headers_frame,       // HTTP2_FRAME_TYPE_HEADERS
     &Http2ConnectionState::rcv_priority_frame,      // HTTP2_FRAME_TYPE_PRIORITY
