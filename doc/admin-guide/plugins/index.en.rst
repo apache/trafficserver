@@ -289,7 +289,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Dumps traffic data into a JSON format file which can be used to replay traffic.
 
 :doc:`Wasm <wasm.en>`
-   Allows WebAssembly/Wasm (proxy-wasm) module to be used as ATS Plugin   
+   Allows WebAssembly/Wasm (proxy-wasm) module to be used as ATS Plugin.
 
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.

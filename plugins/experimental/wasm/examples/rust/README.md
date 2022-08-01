@@ -1,4 +1,4 @@
-RUST example for ATS Wasm Plugin 
+RUST example for ATS Wasm Plugin
 
 To set up a rust environment
 * `curl https://sh.rustup.rs -sSf | sh`
