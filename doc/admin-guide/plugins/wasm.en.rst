@@ -32,8 +32,12 @@ Rust SDK is at https://github.com/proxy-wasm/proxy-wasm-rust-sdk
 How it Works
 ============
 
-The plugin uses the library and header files from the Proxy-Wasm project. Proxy-Wasm in turn uses an underlying
-WebAssembly runtime to execute the WebAssembly module. (Currently only WAVM is supported)
+The plugin uses the library and header files from the Proxy-Wasm project. 
+
+* https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/73fe589869a0effb0b6e2ed5d018ce8d7768a265
+* https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/tree/fd0be8405db25de0264bdb78fae3a82668c03782
+
+Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAVM is supported)
 
 The plugin creates a root context when ATS starts and a new context will be created out of the root context for each
 transaction. ATS plugin events will trigger the corresponding functions in the WebAssembly module to be executed through
