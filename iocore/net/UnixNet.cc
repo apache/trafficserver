@@ -489,16 +489,20 @@ NetHandler::mainNetEvent(int event, Event *e)
 int
 NetHandler::waitForActivity(ink_hrtime timeout)
 {
-  EventIO *epd    = nullptr;
+  EventIO *epd = nullptr;
+#if AIO_MODE == AIO_MODE_IO_URING
   DiskHandler *dh = DiskHandler::local_context();
   bool servicedh  = false;
+#endif
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
   SCOPED_MUTEX_LOCK(lock, mutex, this->thread);
 
   process_enabled_list();
 
+#if AIO_MODE == AIO_MODE_IO_URING
   dh->submit();
+#endif
 
   // Polling event by PollCont
   PollCont *p = get_PollCont(this->thread);
@@ -551,10 +555,10 @@ NetHandler::waitForActivity(ink_hrtime timeout)
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
       this->thread->schedule_imm(epd->data.c);
-    } else if (epd->type == EVENTIO_CALLBACK) {
-      epd->data.cb->handleEvent(epd);
+#if AIO_MODE == AIO_MODE_IO_URING
     } else if (epd->type == EVENTIO_DISK) {
       servicedh = true;
+#endif
     }
     ev_next_event(pd, x);
   }
@@ -563,9 +567,11 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   process_ready_list();
 
+#if AIO_MODE == AIO_MODE_IO_URING
   if (servicedh) {
     dh->service();
   }
+#endif
 
   return EVENT_CONT;
 }
@@ -802,8 +808,12 @@ NetHandler::remove_from_active_queue(NetEvent *ne)
 int
 EventIO::start(EventLoop l, DiskHandler *dh)
 {
+#if AIO_MODE == AIO_MODE_IO_URING
   data.dh = dh;
   int fd  = dh->register_eventfd();
   type    = EVENTIO_DISK;
   return start_common(l, fd, EVENTIO_READ);
+#else
+  return 1;
+#endif
 }

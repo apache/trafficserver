@@ -25,11 +25,14 @@
  * Async Disk IO operations.
  */
 
-#include <sys/eventfd.h>
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_hw.h"
 
 #include "P_AIO.h"
+
+#if AIO_MODE == AIO_MODE_IO_URING
+#include <sys/eventfd.h>
+#endif
 
 #if AIO_MODE == AIO_MODE_NATIVE
 #define AIO_PERIOD -HRTIME_MSECONDS(10)
