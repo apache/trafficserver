@@ -26,7 +26,7 @@
 #include <memory>
 #include <string_view>
 
-class SSLNetVConnection;
+class NetVConnection;
 
 class SSLProxySession
 {
@@ -45,7 +45,7 @@ public:
     return _client_provided_cert;
   }
 
-  void init(SSLNetVConnection const &new_vc);
+  void init(NetVConnection const &new_vc);
 
 private:
   std::unique_ptr<char[]> _client_sni_server_name;
