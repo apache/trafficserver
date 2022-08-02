@@ -37,7 +37,7 @@ VersionConverter::convert(HTTPHdr &header, int from, int to) const
   case HTTP_TYPE_RESPONSE:
     type = 1;
     break;
-  default:
+  case HTTP_TYPE_UNKNOWN:
     ink_abort("HTTP_TYPE_UNKNOWN");
     break;
   }
