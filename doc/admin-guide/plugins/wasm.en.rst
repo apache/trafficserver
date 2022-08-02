@@ -82,14 +82,14 @@ TODO
 * Currently only the WAVM runtime is supported. We need to also support V8, WAMR, Wasmtime, and WasmEdge as well.
 * Need to support functionality for retrieving and setting request/response body
 * Need to support functionality for making async request call
-* Need to support L4 lifecycle handler functions 
+* Need to support L4 lifecycle handler functions
 * Support loading more than one Wasm module
 
 Limitations
 ===========
 
 The plugin will not support the following functionality as specified in Proxy-Wasm specification
-* Getting and setting trailer request and response header 
+* Getting and setting trailer request and response header
 * Getting and setting HTTP/2 frame meta data
 * Support on Grpc lifecycle handler functions
 
