@@ -33,7 +33,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
+#include "I_EventSystem.h"
 
 // Get rid of any previous definition first... /leif
 #ifdef MAX_PRODUCERS

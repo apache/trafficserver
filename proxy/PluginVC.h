@@ -36,7 +36,7 @@
 #pragma once
 
 #include "Plugin.h"
-#include "P_Net.h"
+#include "I_Net.h"
 #include "tscore/ink_atomic.h"
 
 class PluginVCCore;

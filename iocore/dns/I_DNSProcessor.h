@@ -24,7 +24,11 @@
 #pragma once
 
 #include "tscore/ink_resolver.h"
+#include "I_EventSystem.h"
 #include "SRV.h"
+
+// Events
+#define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START
 
 const int DOMAIN_SERVICE_PORT = NAMESERVER_PORT;
 

@@ -50,7 +50,7 @@
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
-#include "records/P_RecProcess.h"
+#include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
