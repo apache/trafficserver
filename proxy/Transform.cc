@@ -791,7 +791,9 @@ RangeTransform::handle_event(int event, void *edata)
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      if (m_write_vio.cont) {
+        m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      }
       break;
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
@@ -812,6 +814,10 @@ RangeTransform::handle_event(int event, void *edata)
           add_boundary(false);
           add_sub_header(m_current_range);
         }
+      }
+
+      if (!m_write_vio.mutex) {
+        return 0;
       }
 
       MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
