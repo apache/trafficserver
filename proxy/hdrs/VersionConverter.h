@@ -24,7 +24,8 @@
 #pragma once
 
 #include <string_view>
-#include "HTTP.h"
+
+class HTTPHdr;
 
 class VersionConverter
 {

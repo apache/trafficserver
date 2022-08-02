@@ -22,6 +22,7 @@
  */
 
 #include "VersionConverter.h"
+#include "HTTP.h"
 #include "tscpp/util/LocalBuffer.h"
 
 int
