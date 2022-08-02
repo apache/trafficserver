@@ -24,18 +24,21 @@
 #include <cstring>
 
 #include "SSLProxySession.h"
-#include "P_Net.h"
-#include "P_SSLNetVConnection.h"
+#include "I_EventSystem.h"
+#include "I_NetVConnection.h"
+#include "TLSSNISupport.h"
 
 void
-SSLProxySession::init(SSLNetVConnection const &new_vc)
+SSLProxySession::init(NetVConnection const &new_vc)
 {
-  char const *name = new_vc.get_server_name();
-  int length       = std::strlen(name) + 1;
-  if (length > 1) {
-    char *n = new char[length];
-    std::memcpy(n, name, length);
-    _client_sni_server_name.reset(n);
+  if (dynamic_cast<const TLSSNISupport *>(&new_vc) != nullptr) {
+    char const *name = new_vc.get_server_name();
+    int length       = std::strlen(name) + 1;
+    if (length > 1) {
+      char *n = new char[length];
+      std::memcpy(n, name, length);
+      _client_sni_server_name.reset(n);
+    }
   }
   _client_provided_cert = new_vc.peer_provided_cert();
 }
