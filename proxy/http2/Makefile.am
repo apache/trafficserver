@@ -67,7 +67,9 @@ TESTS = $(check_PROGRAMS)
 # The order of libinkevent.a and libhdrs.a is sensitive for LLD on debug build.
 # Be careful if you change the order. Details in GitHub #6666
 test_libhttp2_LDADD = \
-	libhttp2.a \
+	HTTP2.o \
+	Http2Frame.o \
+	HPACK.o \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
