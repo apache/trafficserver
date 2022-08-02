@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <string_view>
 #include "HTTP.h"
-
-#pragma once
 
 class VersionConverter
 {
