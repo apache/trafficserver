@@ -27,9 +27,27 @@
 
 class HTTPHdr;
 
+/**
+ * HTTP Header Version Converter
+ *
+ * This converts HTTP header from a version to another. Currently it supports conversion among HTTP/1.1, HTTP/2, and HTTP/3.
+ */
 class VersionConverter
 {
 public:
+  /**
+   * Converts HTTP header version
+   *
+   * HTTP/2 and HTTP/3 use pseudo headers to store information that are in a
+   * request line or a status line on HTTP/1.1. This function relocates the
+   * information accordingly base on versions specified. @p from and @p to
+   * receive integers 1-3 that correspond to HTTP/1.1, HTTP/2 and HTTP/3.
+   *
+   * @param header A reference to HTTPHdr to be converted
+   * @param from Original HTTP version
+   * @param to Target HTTP version
+   * @return Returns @c 0 if conversion succeeds
+   */
   int convert(HTTPHdr &header, int from, int to) const;
 
 private:
