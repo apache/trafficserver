@@ -43,7 +43,11 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
-#include "P_SSLSNI.h"
+#include "SSLSNIConfig.h"
+#include "P_ALPNSupport.h"
+#include "TLSBasicSupport.h"
+#include "TLSSessionResumptionSupport.h"
+#include "TLSTunnelSupport.h"
 #include "HttpPages.h"
 #include "IPAllow.h"
 

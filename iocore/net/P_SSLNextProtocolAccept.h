@@ -26,7 +26,6 @@
 #include "P_Net.h"
 #include "P_EventSystem.h"
 #include "P_UnixNet.h"
-#include "P_SSLNetVConnection.h"
 #include "P_SSLNextProtocolSet.h"
 #include "I_IOBuffer.h"
 #include "records/I_RecHttp.h"

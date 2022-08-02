@@ -47,9 +47,7 @@
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
-#include "P_SSLSNI.h"
 #include "P_SSLCertLookup.h"
-#include "P_SSLSNI.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"

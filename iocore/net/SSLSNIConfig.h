@@ -22,7 +22,7 @@
  */
 
 /*************************** -*- Mod: C++ -*- ******************************
-  P_SSLSNI.h
+  SSLSNIConfig.h
    Created On      : 05/02/2017
 
    Description:
@@ -36,7 +36,7 @@
 #include <memory>
 
 #include "ProxyConfig.h"
-#include "P_SNIActionPerformer.h"
+#include "SNIActionPerformer.h"
 #include "YamlSNIConfig.h"
 
 // Properties for the next hop server

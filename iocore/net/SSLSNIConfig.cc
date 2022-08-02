@@ -29,7 +29,8 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 
-#include "P_SSLSNI.h"
+#include "SSLSNIConfig.h"
+#include "P_SNIActionPerformer.h"
 
 #include "PreWarmManager.h"
 

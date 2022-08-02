@@ -36,7 +36,6 @@
 #include "InkAPIInternal.h"
 
 #include "P_OCSPStapling.h"
-#include "P_SSLSNI.h"
 #include "P_SSLConfig.h"
 #include "P_TLSKeyLogger.h"
 #include "BoringSSLUtils.h"
@@ -46,6 +45,8 @@
 #include "SSLDynlock.h"
 #include "SSLDiags.h"
 #include "SSLStats.h"
+#include "TLSSessionResumptionSupport.h"
+#include "P_SSLNetVConnection.h"
 
 #include <string>
 #include <unistd.h>
