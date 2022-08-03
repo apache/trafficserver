@@ -22,6 +22,8 @@
  */
 
 #include "tsmemcache.h"
+#include "I_NetVConnection.h"
+#include "I_NetProcessor.h"
 
 /*
   TODO
