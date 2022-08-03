@@ -26,6 +26,7 @@
 
 #include "HttpConfig.h"
 #include "SSLSNIConfig.h"
+#include "P_VConnection.h"
 
 #include "tscore/ink_time.h"
 #include "tscpp/util/PostScript.h"
