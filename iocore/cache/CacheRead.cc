@@ -1285,5 +1285,3 @@ CacheVC::openReadDirDelete(int event, Event *e)
   }
 
   dir_delete(&earliest_key, vol, &earliest_dir);
-  return calluser(VC_EVENT_ERROR);
-}

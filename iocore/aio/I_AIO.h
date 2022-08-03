@@ -158,7 +158,7 @@ struct DiskHandler : public Continuation {
 class DiskHandler
 {
 public:
-  DiskHandler(int entries = 1024, int wq_fd = 0, int poll_ms = 0);
+  DiskHandler(int wq_fd = 0);
   ~DiskHandler();
 
   io_uring_sqe *
@@ -177,6 +177,8 @@ public:
   int register_eventfd();
 
   static DiskHandler *local_context();
+  static void set_main_queue(DiskHandler *);
+  static int get_main_queue_fd();
 
 private:
   io_uring ring;

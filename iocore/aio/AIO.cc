@@ -57,6 +57,13 @@ int thread_is_created = 0;
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
+// config for io_uring mode
+#if AIO_MODE == AIO_MODE_IO_URING
+RecInt aio_io_uring_queue_entries = 1024;
+RecInt aio_io_uring_sq_poll_ms    = 0;
+RecInt aio_io_uring_attach_wq     = 0;
+#endif
+
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
 // AIO Stats
@@ -170,6 +177,12 @@ ink_aio_init(ts::ModuleVersion v)
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
   Warning("Running with Linux AIO, there are known issues with this feature");
+#endif
+
+#if TS_USE_LINUX_IO_URING
+  REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.aio.io_uring.entries");
+  REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.aio.io_uring.sq_poll_ms");
+  REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.aio.io_uring.attach_wq");
 #endif
 }
 
@@ -497,21 +510,26 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 
 #elif AIO_MODE == AIO_MODE_IO_URING
 
-DiskHandler::DiskHandler(int entries, int wq_fd, int poll_ms)
+std::atomic<int> aio_main_wq_fd;
+
+DiskHandler::DiskHandler()
 {
   io_uring_params p{};
 
-  if (wq_fd > 0) {
-    p.flags = IORING_SETUP_ATTACH_WQ;
-    p.wq_fd = wq_fd;
+  if (aio_io_uring_attach_wq > 0 && wq_fd > 0) {
+    int wq_fd = get_main_queue_fd();
+    if (wq_fd > 0) {
+      p.flags = IORING_SETUP_ATTACH_WQ;
+      p.wq_fd = wq_fd;
+    }
   }
 
-  if (poll_ms > 0) {
+  if (aio_io_uring_sq_poll_ms > 0) {
     p.flags |= IORING_SETUP_SQPOLL;
     p.sq_thread_idle = poll_ms;
   }
 
-  int ret = io_uring_queue_init_params(entries, &ring, &p);
+  int ret = io_uring_queue_init_params(aio_io_uring_queue_entries, &ring, &p);
   if (ret < 0) {
     throw std::runtime_error(strerror(-ret));
   }
@@ -529,6 +547,18 @@ DiskHandler::DiskHandler(int entries, int wq_fd, int poll_ms)
 DiskHandler::~DiskHandler()
 {
   io_uring_queue_exit(&ring);
+}
+
+void
+DiskHandler::set_main_queue(DiskHandler *dh)
+{
+  aio_main_wq_fd.store(dh->ring.ring_fd);
+}
+
+int
+DiskHandler::get_main_queue_fd()
+{
+  return aio_main_wq_fd.load();
 }
 
 int
