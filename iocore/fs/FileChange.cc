@@ -24,11 +24,16 @@
 #include "FileChange.h"
 #include "tscore/Diags.h"
 #include "P_EventSystem.h"
+#include "tscore/ink_assert.h"
 
 #include <cassert>
+#include <cstring>
 #include <functional>
 #include <mutex>
 #include <optional>
+#include <sys/event.h>
+#include <sys/fcntl.h>
+#include <ts/apidefs.h>
 
 // Globals
 FileChangeManager fileChangeManager;
@@ -177,6 +182,11 @@ FileChangeManager::init()
   };
   poll_thread = std::thread(inotify_thread);
   poll_thread.detach();
+#elif TS_USE_KQUEUE
+  auto kq = kqueue();
+  if (kq < 0) {
+    Fatal("Failed to init kqueue: %s.", strerror(errno));
+  }
 #else
   // Implement this
 #endif
@@ -197,6 +207,9 @@ FileChangeManager::add(const ts::file::path &path, TSFileWatchKind kind, Continu
     mask = IN_DELETE_SELF | IN_MOVED_FROM;
   } else if (kind == TS_WATCH_MODIFY) {
     mask = IN_CLOSE_WRITE | IN_ATTRIB;
+  } else {
+    // Shouldn't get here
+    ink_release_assert(false);
   }
   wd = inotify_add_watch(inotify_fd, path.c_str(), mask);
   if (wd == -1) {
@@ -209,6 +222,25 @@ FileChangeManager::add(const ts::file::path &path, TSFileWatchKind kind, Continu
 
   Debug(TAG, "Watch handle = %d", wd);
   return wd;
+#elif TS_USE_KQUEUE
+  auto fd = open(path.c_str(), O_EVTONLY);
+  if (fd <= 0) {
+    Error("Failed to open %s for monitoring: %s.", path.c_str(), strerror(errno));
+    return -1;
+  }
+
+  unsigned int mask = 0;
+  if (kind == TS_WATCH_CREATE) {
+    mask = NOTE_WRITE;
+  } else if (kind == TS_WATCH_DELETE) {
+    mask = NOTE_DELETE | NOTE_RENAME;
+  } else if (kind == TS_WATCH_MODIFY) {
+    mask = NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB;
+  } else {
+    // Shouldn't get here
+    ink_release_assert(false);
+  }
+  EV_SET()
 #else
   Warning("File change notification is not supported on this OS.");
   return 0;
