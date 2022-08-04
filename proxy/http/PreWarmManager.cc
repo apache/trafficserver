@@ -25,7 +25,9 @@
 #include "PreWarmConfig.h"
 
 #include "HttpConfig.h"
-#include "P_SSLSNI.h"
+#include "SSLSNIConfig.h"
+#include "P_VConnection.h"
+#include "I_NetProcessor.h"
 
 #include "tscore/ink_time.h"
 #include "tscpp/util/PostScript.h"

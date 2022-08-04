@@ -32,44 +32,13 @@
 
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
+#include "SNIActionPerformer.h"
 #include "SSLTypes.h"
 
 #include "tscore/ink_inet.h"
 
 #include <vector>
-
-class ActionItem
-{
-public:
-  /**
-   * Context should contain extra data needed to be passed to the actual SNIAction.
-   */
-  struct Context {
-    using CapturedGroupViewVec = std::vector<std::string_view>;
-    /**
-     * if any, fqdn_wildcard_captured_groups will hold the captured groups from the `fqdn`
-     * match which will be used to construct the tunnel destination. This vector contains only
-     * partial views of the original server name, group views are valid as long as the original
-     * string from where the groups were obtained lives.
-     */
-    std::optional<CapturedGroupViewVec> _fqdn_wildcard_captured_groups;
-  };
-
-  virtual int SNIAction(TLSSNISupport *snis, const Context &ctx) const = 0;
-
-  /**
-    This method tests whether this action would have been triggered by a
-    particularly SNI value and IP address combination.  This is run after the
-    TLS exchange finished to see if the client used an SNI name different from
-    the host name to avoid SNI-based policy
-  */
-  virtual bool
-  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
-  {
-    return false;
-  }
-  virtual ~ActionItem(){};
-};
 
 class ControlH2 : public ActionItem
 {

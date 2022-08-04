@@ -23,7 +23,7 @@
 #include "TLSSNISupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
-#include "P_SSLSNI.h"
+#include "SSLSNIConfig.h"
 
 int TLSSNISupport::_ex_data_index = -1;
 

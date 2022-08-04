@@ -152,7 +152,6 @@ libinknet_a_SOURCES = \
 	P_SSLNetVConnection.h \
 	P_SSLNextProtocolAccept.h \
 	P_SSLNextProtocolSet.h \
-	P_SSLSNI.h \
 	P_SSLUtils.h \
 	P_SSLClientCoordinator.h \
 	P_SSLClientUtils.h \
@@ -184,6 +183,7 @@ libinknet_a_SOURCES = \
 	SSLNetVConnection.cc \
 	SSLNextProtocolAccept.cc \
 	SSLNextProtocolSet.cc \
+	SSLSNIConfig.h \
 	SSLSNIConfig.cc \
 	SSLStats.cc \
 	SSLSessionCache.cc \

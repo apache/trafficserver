@@ -30,6 +30,7 @@
 
 #include "I_EventSystem.h"
 #include "I_Net.h"
+#include "I_NetVConnection.h"
 #include "I_UDPNet.h"
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
