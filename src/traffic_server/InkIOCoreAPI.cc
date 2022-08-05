@@ -433,20 +433,6 @@ INKBasedTimeGet()
 /* UDP Connection Interface */
 
 TSAction
-INKUDPBind(TSCont contp, unsigned int ip, int port)
-{
-  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  struct sockaddr_in addr;
-  ats_ip4_set(&addr, ip, htons(port));
-
-  return reinterpret_cast<TSAction>(
-    udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), -1, INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
-}
-
-TSAction
 INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data, int64_t len)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
