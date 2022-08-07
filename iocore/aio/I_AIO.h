@@ -158,7 +158,7 @@ struct DiskHandler : public Continuation {
 class DiskHandler
 {
 public:
-  DiskHandler(int wq_fd = 0);
+  DiskHandler();
   ~DiskHandler();
 
   io_uring_sqe *

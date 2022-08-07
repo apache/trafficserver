@@ -2013,7 +2013,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
 #if TS_USE_LINUX_IO_URING == 1
+  Note("Using io_uring for AIO");
   DiskHandler *main_aio = DiskHandler::local_context();
+  DiskHandler::set_main_queue(main_aio);
+  auto [bounded, unbounded] = main_aio->get_wq_max_workers();
+  Note("io_uring: WQ workers - bounded = %d, unbounded = %d", bounded, unbounded);
 #endif
 
   // !! ET_NET threads start here !!

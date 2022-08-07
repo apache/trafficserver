@@ -62,6 +62,8 @@ RecInt api_config_threads_per_disk   = 12;
 RecInt aio_io_uring_queue_entries = 1024;
 RecInt aio_io_uring_sq_poll_ms    = 0;
 RecInt aio_io_uring_attach_wq     = 0;
+RecInt aio_io_uring_wq_bounded    = 0;
+RecInt aio_io_uring_wq_unbounded  = 0;
 #endif
 
 RecRawStatBlock *aio_rsb      = nullptr;
@@ -183,6 +185,8 @@ ink_aio_init(ts::ModuleVersion v)
   REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.aio.io_uring.entries");
   REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.aio.io_uring.sq_poll_ms");
   REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.aio.io_uring.attach_wq");
+  REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.aio.io_uring.wq_workers_bounded");
+  REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.aio.io_uring.wq_workers_unbounded");
 #endif
 }
 
@@ -516,7 +520,7 @@ DiskHandler::DiskHandler()
 {
   io_uring_params p{};
 
-  if (aio_io_uring_attach_wq > 0 && wq_fd > 0) {
+  if (aio_io_uring_attach_wq > 0) {
     int wq_fd = get_main_queue_fd();
     if (wq_fd > 0) {
       p.flags = IORING_SETUP_ATTACH_WQ;
@@ -526,7 +530,7 @@ DiskHandler::DiskHandler()
 
   if (aio_io_uring_sq_poll_ms > 0) {
     p.flags |= IORING_SETUP_SQPOLL;
-    p.sq_thread_idle = poll_ms;
+    p.sq_thread_idle = aio_io_uring_sq_poll_ms;
   }
 
   int ret = io_uring_queue_init_params(aio_io_uring_queue_entries, &ring, &p);
@@ -535,7 +539,7 @@ DiskHandler::DiskHandler()
   }
 
   /* no sharing for non-fixed either */
-  if (poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
+  if (aio_io_uring_sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
     throw std::runtime_error("No SQPOLL sharing with nonfixed");
   }
 
@@ -552,6 +556,7 @@ DiskHandler::~DiskHandler()
 void
 DiskHandler::set_main_queue(DiskHandler *dh)
 {
+  dh->set_wq_max_workers(aio_io_uring_wq_bounded, aio_io_uring_wq_unbounded);
   aio_main_wq_fd.store(dh->ring.ring_fd);
 }
 
@@ -564,8 +569,12 @@ DiskHandler::get_main_queue_fd()
 int
 DiskHandler::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
 {
+  if (bounded == 0 && unbounded == 0) {
+    return 0;
+  }
   unsigned int args[2] = {bounded, unbounded};
-  return io_uring_register_iowq_max_workers(&ring, args);
+  int result           = io_uring_register_iowq_max_workers(&ring, args);
+  return result;
 }
 
 std::pair<int, int>
