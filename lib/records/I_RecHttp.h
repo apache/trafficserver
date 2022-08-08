@@ -520,3 +520,27 @@ HttpProxyPort::findHttp(uint16_t family)
     This must be called before any proxy port parsing is done.
 */
 extern void ts_session_protocol_well_known_name_indices_init();
+
+/** Convert the comma separated ALPN protocol list to wire format.
+ *
+ * For the definition of wire format, see the NOTES section in the OpenSSL
+ * description of SSL_CTX_set_alpn_select_cb:
+ *
+ * https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_select_cb.html
+ *
+ * @param[in] protocols The comma separated list of protocols to convert to
+ *   wire format.
+ *
+ * @param[out] wire_format_buffer The output ALPN wire format string converted
+ *   from @a protocols. This is zero'd out if the conversion fails.
+ *
+ * @param[in,out] wire_format_buffer_len As an input, this is the size
+ *   allocated for @a wire_format_buffer. As an output, this is set to the final
+ *   size of @a wire_format_buffer after conversion. This is set to zero if the
+ *   conversion fails.
+ *
+ * @return True if the conversion was successful, false otherwise. Note that
+ * the wire format does not support an empty protocol list, therefore this
+ * function returns false if @a protocols is an empty string.
+ */
+bool convert_alpn_to_wire_format(std::string_view protocols, unsigned char *wire_format_buffer, int &wire_format_buffer_len);

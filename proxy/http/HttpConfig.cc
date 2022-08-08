@@ -1411,6 +1411,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
 
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
+  HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_alpn_protocols, "proxy.config.ssl.client.alpn_protocols");
 
   OutboundConnTrack::config_init(&c.global_outbound_conntrack, &c.oride.outbound_conntrack);
 
@@ -1691,7 +1692,8 @@ HttpConfig::reconfigure()
   params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
   params->http_host_sni_policy = m_master.http_host_sni_policy;
 
-  params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
   params->negative_caching_list = m_master.negative_caching_list;
 

@@ -735,6 +735,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
   HostResData host_res_data;
@@ -921,6 +922,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);
   ats_free(oride.ssl_client_sni_policy);
+  ats_free(oride.ssl_client_alpn_protocols);
   ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;

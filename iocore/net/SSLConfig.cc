@@ -263,6 +263,15 @@ SSLConfigParams::initialize()
   }
 #endif
 
+  // Read in the protocol string for ALPN to origin
+  char *clientALPNProtocols = nullptr;
+  REC_ReadConfigStringAlloc(clientALPNProtocols, "proxy.config.ssl.client.alpn_protocols");
+
+  if (clientALPNProtocols) {
+    this->alpn_protocols_array_size = MAX_ALPN_STRING;
+    convert_alpn_to_wire_format(clientALPNProtocols, this->alpn_protocols_array, this->alpn_protocols_array_size);
+  }
+
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
   REC_ReadConfigInteger(option, "proxy.config.ssl.server.honor_cipher_order");
   if (option) {

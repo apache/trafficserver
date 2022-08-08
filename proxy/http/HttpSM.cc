@@ -1795,9 +1795,20 @@ HttpSM::handle_api_return()
 PoolableSession *
 HttpSM::create_server_session(NetVConnection *netvc)
 {
-  HttpTransact::State &s  = this->t_state;
-  PoolableSession *retval = httpServerSessionAllocator.alloc();
+  // Figure out what protocol was negotiated
+  int proto_index      = SessionProtocolNameRegistry::INVALID;
+  auto const *sslnetvc = dynamic_cast<ALPNSupport *>(netvc);
+  if (sslnetvc) {
+    proto_index = sslnetvc->get_negotiated_protocol_id();
+  }
+  // No ALPN occurred. Assume it was HTTP/1.x and hope for the best
+  if (proto_index == SessionProtocolNameRegistry::INVALID) {
+    proto_index = TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
+  }
 
+  PoolableSession *retval = ProxySession::create_outbound_session(proto_index);
+
+  HttpTransact::State &s       = this->t_state;
   retval->sharing_pool         = static_cast<TSServerSessionSharingPoolType>(s.http_config_param->server_session_sharing_pool);
   retval->sharing_match        = static_cast<TSServerSessionSharingMatchMask>(s.txn_conf->server_session_sharing_match);
   MIOBuffer *netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -5299,6 +5310,16 @@ HttpSM::do_http_server_open(bool raw)
   opt.set_ssl_client_cert_name(t_state.txn_conf->ssl_client_cert_filename);
   opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
   opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
+  if (is_private()) {
+    // If the connection to origin is private, don't try to negotiate higher overhead protocols.
+    opt.alpn_protocols_array_size = -1;
+    SMDebug("ssl_alpn", "Clear ALPN for private session");
+  } else if (t_state.txn_conf->ssl_client_alpn_protocols != nullptr) {
+    opt.alpn_protocols_array_size = MAX_ALPN_STRING;
+    SMDebug("ssl_alpn", "Setting ALPN to: %s", t_state.txn_conf->ssl_client_alpn_protocols);
+    convert_alpn_to_wire_format(t_state.txn_conf->ssl_client_alpn_protocols, opt.alpn_protocols_array,
+                                opt.alpn_protocols_array_size);
+  }
 
   if (tls_upstream) {
     SMDebug("http", "calling sslNetProcessor.connect_re");

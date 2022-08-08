@@ -8872,6 +8872,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_SSL_CERT_FILEPATH:
   case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
+  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     // String, must be handled elsewhere
     break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
@@ -9121,6 +9122,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:

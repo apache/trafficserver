@@ -8698,6 +8698,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.ssl.client.sni_policy",
    "proxy.config.ssl.client.private_key.filename",
    "proxy.config.ssl.client.CA.cert.filename",
+   "proxy.config.ssl.client.alpn_protocols",
    "proxy.config.hostdb.ip_resolve",
    "proxy.config.http.connect.dead.policy",
    "proxy.config.http.max_proxy_cycles",

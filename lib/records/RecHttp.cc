@@ -26,6 +26,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"
+#include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
 #include <string_view>
@@ -840,4 +841,90 @@ ts::TextView
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
   return 0 <= idx && idx < m_n ? m_names[idx] : TextView{};
+}
+
+bool
+convert_alpn_to_wire_format(std::string_view protocols, unsigned char *wire_format_buffer, int &wire_format_buffer_len)
+{
+  // Callers expect wire_format_buffer_len to be zero'd out in the event of an
+  // error. To simplify the error handling from doing this on every return, we
+  // simply zero them out here at the start.
+  auto const orig_wire_format_buffer_len = wire_format_buffer_len;
+  memset(wire_format_buffer, 0, wire_format_buffer_len);
+  wire_format_buffer_len = 0;
+
+  if (protocols.empty()) {
+    return false;
+  }
+
+  // Parse the comma separated protocol string into a list of protocol names.
+  std::vector<std::string_view> alpn_protocols;
+  std::string_view protocol;
+  size_t pos                  = 0;
+  int computed_alpn_array_len = 0;
+  while (pos < protocols.size()) {
+    size_t next_pos = protocols.find(',', pos);
+    if (next_pos == std::string_view::npos) {
+      protocol = protocols.substr(pos);
+      pos      = protocols.size();
+    } else {
+      protocol = protocols.substr(pos, next_pos - pos);
+      pos      = next_pos + 1;
+    }
+    if (protocol.empty()) {
+      Warning("Empty protocol name in configured ALPN list: %.*s", static_cast<int>(protocols.size()), protocols.data());
+      return false;
+    }
+    if (protocol.size() > 255) {
+      // The length has to fit in one byte.
+      Warning("A protocol name larger than 255 bytes in configured ALPN list: %.*s", static_cast<int>(protocols.size()),
+              protocols.data());
+      return false;
+    }
+    // Check whether we recognize the protocol.
+    auto const protocol_index = globalSessionProtocolNameRegistry.indexFor(protocol);
+    if (protocol_index == SessionProtocolNameRegistry::INVALID) {
+      Warning("Unknown protocol name in configured ALPN list: %.*s", static_cast<int>(protocol.size()), protocol.data());
+      return false;
+    }
+    // We currently only support HTTP/1.x protocols toward the origin.
+    if (!HTTP_PROTOCOL_SET.contains(protocol_index)) {
+      Warning("Unsupported non-HTTP/1.x protocol name in configured ALPN list: %.*s", static_cast<int>(protocol.size()),
+              protocol.data());
+      return false;
+    }
+    // But not HTTP/0.9.
+    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9) {
+      Warning("Unsupported \"http/0.9\" protocol name in configured ALPN list: %.*s", static_cast<int>(protocol.size()),
+              protocol.data());
+      return false;
+    }
+
+    auto const protocol_wire_format = globalSessionProtocolNameRegistry.convert_openssl_alpn_wire_format(protocol_index);
+    computed_alpn_array_len += protocol_wire_format.size();
+    if (computed_alpn_array_len > orig_wire_format_buffer_len) {
+      // We have exceeded the size of the output buffer.
+      Warning("The output ALPN length (%d bytes) is larger than the output buffer size of %d bytes", computed_alpn_array_len,
+              orig_wire_format_buffer_len);
+      return false;
+    }
+
+    alpn_protocols.push_back(protocol_wire_format);
+  }
+  if (alpn_protocols.empty()) {
+    Warning("No protocols specified in ALPN list: %.*s", static_cast<int>(protocols.size()), protocols.data());
+    return false;
+  }
+
+  // All checks pass and the protocols are parsed. Write the result to the
+  // output buffer.
+  auto *end = wire_format_buffer;
+  for (auto &protocol : alpn_protocols) {
+    auto const len = protocol.size();
+    memcpy(end, protocol.data(), len);
+    end += len;
+  }
+  wire_format_buffer_len = computed_alpn_array_len;
+  Debug("ssl_alpn", "Successfully converted ALPN list to wire format: %.*s", static_cast<int>(protocols.size()), protocols.data());
+  return true;
 }
