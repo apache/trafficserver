@@ -119,6 +119,9 @@ SNIConfigParams::load_sni_config()
     if (item.offer_h2.has_value()) {
       ai->actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
     }
+    if (item.offer_quic.has_value()) {
+      ai->actions.push_back(std::make_unique<ControlQUIC>(item.offer_quic.value()));
+    }
     if (item.verify_client_level != 255) {
       ai->actions.push_back(
         std::make_unique<VerifyClient>(item.verify_client_level, item.verify_client_ca_file, item.verify_client_ca_dir));

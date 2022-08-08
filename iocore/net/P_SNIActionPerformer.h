@@ -36,12 +36,44 @@
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
+#include "P_QUICNetVConnection.h"
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
 
 #include "tscore/ink_inet.h"
 
 #include <vector>
+
+class ControlQUIC : public ActionItem
+{
+public:
+  ControlQUIC(bool turn_on) : enable_quic(turn_on) {}
+  ~ControlQUIC() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+    if (enable_quic) {
+      return SSL_TLSEXT_ERR_OK;
+    }
+
+    // This action is only available for QUIC connections
+    auto *quic_vc = dynamic_cast<QUICNetVConnection *>(snis);
+    if (quic_vc == nullptr) {
+      return SSL_TLSEXT_ERR_OK;
+    }
+
+    if (is_debug_tag_set("ssl_sni")) {
+      const char *servername = quic_vc->get_server_name();
+      Debug("ssl_sni", "Rejecting handshake, fqdn [%s]", servername);
+    }
+
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
+private:
+  bool enable_quic = false;
+};
 
 class ControlH2 : public ActionItem
 {
