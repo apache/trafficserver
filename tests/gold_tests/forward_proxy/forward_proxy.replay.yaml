@@ -1,0 +1,21 @@
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - all:
+    client-request:
+      method: "GET"
+      url: "/a/path"
+      version: "1.1"
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 8 ]
