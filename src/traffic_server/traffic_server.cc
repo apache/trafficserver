@@ -1917,6 +1917,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {
     // The default value was used. Let Machine::init derive the hostname.
+    ats_free(hostname);
     hostname = nullptr;
   }
   Machine::init(hostname, &machine_addr.sa);
