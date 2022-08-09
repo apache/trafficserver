@@ -106,6 +106,11 @@ tr.Processes.Default.Command = 'curl --verbose --header "Host: test-3" --header 
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --verbose --header "Host: test-2" --header "Foo: ab\x80d/ef" http://localhost:{0}/test-4' .format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
