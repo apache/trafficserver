@@ -34,9 +34,10 @@
 #include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
-#include <map>
 #include <set>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 struct SSLConfigParams;
 class SSLNetVConnection;
