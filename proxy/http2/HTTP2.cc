@@ -426,11 +426,21 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
   if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
     // :scheme
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME); field != nullptr && field->value_is_valid()) {
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       int scheme_len;
       const char *scheme = field->value_get(&scheme_len);
+      const char *scheme_wks;
 
-      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len);
+      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
+
+      if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+        // unkown scheme, validate the scheme
+        if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
+          return PARSE_RESULT_ERROR;
+        }
+      }
+
       url_scheme_set(headers->m_heap, headers->m_http->u.req.m_url_impl, scheme, scheme_wks_idx, scheme_len, true);
 
       headers->field_delete(field);
@@ -440,7 +450,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
     // :authority
     if (MIMEField *field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
-        field != nullptr && field->value_is_valid()) {
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       int authority_len;
       const char *authority = field->value_get(&authority_len);
 
@@ -452,7 +462,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     }
 
     // :path
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr && field->value_is_valid()) {
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       int path_len;
       const char *path = field->value_get(&path_len);
 
@@ -470,7 +481,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     }
 
     // :method
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD); field != nullptr && field->value_is_valid()) {
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       int method_len;
       const char *method = field->value_get(&method_len);
 
@@ -500,7 +512,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   // Check validity of all names and values
   MIMEFieldIter iter;
   for (auto *mf = headers->iter_get_first(&iter); mf != nullptr; mf = headers->iter_get_next(&iter)) {
-    if (!mf->name_is_valid() || !mf->value_is_valid()) {
+    if (!mf->name_is_valid(is_control_BIT | is_ws_BIT) || !mf->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
   }
