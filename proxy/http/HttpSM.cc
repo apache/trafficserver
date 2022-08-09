@@ -732,6 +732,20 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case PARSE_RESULT_DONE:
     SMDebug("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
+    if (!is_internal && t_state.http_config_param->scheme_proto_mismatch_policy != 0) {
+      auto scheme = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
+      if ((client_connection_is_ssl && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
+          (!client_connection_is_ssl && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
+        Warning("scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
+                client_connection_is_ssl ? "tls" : "plaintext");
+        if (t_state.http_config_param->scheme_proto_mismatch_policy == 2) {
+          t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
+          call_transact_and_set_next_state(HttpTransact::BadRequest);
+          break;
+        }
+      }
+    }
+
     ua_txn->set_session_active();
 
     if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&

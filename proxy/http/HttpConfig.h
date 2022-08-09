@@ -874,6 +874,7 @@ public:
 
   MgmtInt body_factory_response_max_size = 8192;
 
+  MgmtByte scheme_proto_mismatch_policy = 2;
   // noncopyable
   /////////////////////////////////////
   // operator = and copy constructor //
