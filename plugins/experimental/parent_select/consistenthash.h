@@ -75,9 +75,8 @@ public:
   PLNextHopConsistentHash() = delete;
   PLNextHopConsistentHash(const std::string_view name, const YAML::Node &n);
   ~PLNextHopConsistentHash();
-  void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len, in_port_t exclude_port,
-            const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port, bool *out_retry, bool *out_no_cache,
-            time_t now = 0) override;
+  void next(TSHttpTxn txnp, void *strategyTxn, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
+            bool *out_retry, bool *out_no_cache, time_t now = 0) override;
   void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
             const PLNHCmd status, const time_t now) override;
   void *newTxn() override;
