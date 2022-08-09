@@ -80,6 +80,12 @@ tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost : bob\r\n\r\nGET 
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
 
+tr = Test.AddTestRun("Another unsupported Transfer Encoding value")
+tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: \x08chunked\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/invalid_character_in_te_value.gold'
+
 # Commenting out a bunch of tests on master whose fixes are not in 8.1.x.
 #tr = Test.AddTestRun("Bad protocol number")
 #tr.Processes.Default.Command = 'printf "GET / HTTP/11.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(

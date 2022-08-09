@@ -2693,6 +2693,21 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     int field_name_wks_idx = hdrtoken_tokenize(field_name_first, field_name_length);
 
+    if (field_name_wks_idx < 0) {
+      for (int i = 0; i < field_name_length; ++i) {
+        if (ParseRules::is_control(field_name_first[i])) {
+          return PARSE_RESULT_ERROR;
+        }
+      }
+    }
+
+    // RFC 9110 Section 5.5. Field Values
+    for (int i = 0; i < field_value_length; ++i) {
+      if (ParseRules::is_control(field_value_first[i])) {
+        return PARSE_RESULT_ERROR;
+      }
+    }
+
     ///////////////////////////////////////////
     // build and insert the new field object //
     ///////////////////////////////////////////

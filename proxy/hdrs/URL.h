@@ -156,6 +156,8 @@ void url_adjust(MarshalXlate *str_xlate, int num_xlate);
 
 /* Public */
 bool validate_host_name(std::string_view addr);
+bool validate_scheme(std::string_view scheme);
+
 void url_init();
 
 URLImpl *url_create(HdrHeap *heap);

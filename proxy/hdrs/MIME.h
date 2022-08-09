@@ -164,7 +164,7 @@ struct MIMEField {
   int value_get_comma_list(StrList *list) const;
 
   void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
-  bool name_is_valid() const;
+  bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
   void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
@@ -176,7 +176,7 @@ struct MIMEField {
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma = false,
                     const char separator = ',');
-  bool value_is_valid() const;
+  bool value_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
   int has_dups() const;
 };
 
@@ -771,13 +771,13 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEField::name_is_valid() const
+MIMEField::name_is_valid(uint32_t invalid_char_bits) const
 {
   const char *name;
   int length;
 
   for (name = name_get(&length); length > 0; length--) {
-    if (ParseRules::is_control(name[length - 1])) {
+    if (ParseRules::is_type(name[length - 1], invalid_char_bits)) {
       return false;
     }
   }
@@ -878,13 +878,13 @@ MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int l
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEField::value_is_valid() const
+MIMEField::value_is_valid(uint32_t invalid_char_bits) const
 {
   const char *value;
   int length;
 
   for (value = value_get(&length); length > 0; length--) {
-    if (ParseRules::is_control(value[length - 1])) {
+    if (ParseRules::is_type(value[length - 1], invalid_char_bits)) {
       return false;
     }
   }
