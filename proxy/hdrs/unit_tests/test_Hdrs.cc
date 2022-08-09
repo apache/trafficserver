@@ -20,6 +20,8 @@
  */
 
 #include <cstdio>
+#include <string>
+#include <cstring>
 
 #include "catch.hpp"
 
