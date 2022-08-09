@@ -19,6 +19,3 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 8 ]
-
-    proxy-response:
-      status: 200
