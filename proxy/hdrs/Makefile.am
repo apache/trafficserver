@@ -92,7 +92,7 @@ test_proxy_hdrs_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBTCL@ @LIBCAP@
 
 test_mime_LDADD = -L. -lhdrs \
 	$(top_builddir)/src/tscore/libtscore.la \
