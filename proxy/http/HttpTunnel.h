@@ -528,12 +528,14 @@ HttpTunnel::has_consumer_besides_client() const
       continue;
     }
 
-    if (consumer.vc_type == HT_HTTP_CLIENT) {
-      res = false;
+    switch (consumer.vc_type) {
+    case HT_HTTP_CLIENT:
       continue;
-    } else {
-      res = true;
-      break;
+    case HT_HTTP_SERVER:
+      // ignore uploading data to servers
+      continue;
+    default:
+      return true;
     }
   }
 
