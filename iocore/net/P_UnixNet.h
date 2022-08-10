@@ -24,7 +24,6 @@
 #pragma once
 
 #include <bitset>
-#include <functional>
 
 #include "tscore/ink_platform.h"
 
