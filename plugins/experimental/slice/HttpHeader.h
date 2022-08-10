@@ -36,6 +36,9 @@
 
 #include <string>
 
+constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_VAL    = "1";
+
 /**
   Designed to be a cheap throwaway struct which allows a
   consumer to make various calls to manipulate headers.

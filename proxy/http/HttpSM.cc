@@ -43,7 +43,11 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
-#include "P_SSLSNI.h"
+#include "SSLSNIConfig.h"
+#include "P_ALPNSupport.h"
+#include "TLSBasicSupport.h"
+#include "TLSSessionResumptionSupport.h"
+#include "TLSTunnelSupport.h"
 #include "HttpPages.h"
 #include "IPAllow.h"
 
@@ -839,6 +843,20 @@ HttpSM::state_read_client_request_header(int event, void *data)
       t_state.http_return_code = HTTP_STATUS_NOT_IMPLEMENTED;
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
+    }
+
+    if (!is_internal && t_state.http_config_param->scheme_proto_mismatch_policy != 0) {
+      auto scheme = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
+      if ((client_connection_is_ssl && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
+          (!client_connection_is_ssl && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
+        Warning("scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
+                client_connection_is_ssl ? "tls" : "plaintext");
+        if (t_state.http_config_param->scheme_proto_mismatch_policy == 2) {
+          t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
+          call_transact_and_set_next_state(HttpTransact::BadRequest);
+          break;
+        }
+      }
     }
 
     if (_from_early_data) {
@@ -5188,7 +5206,6 @@ HttpSM::do_http_server_open(bool raw)
       HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
       ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
                             debug_on && is_debug_tag_set("http") ? "http" : nullptr);
-      send_origin_throttled_response();
 
       return;
     } else {
@@ -6605,18 +6622,22 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   HTTP_SM_SET_DEFAULT_HANDLER(handler_arg);
 
-  // Clear the decks before we setup the new producers
-  // As things stand, we cannot have two static producers operating at
-  // once
-  tunnel.reset();
+  if (ua_entry && ua_entry->vc) {
+    // Clear the decks before we setup the new producers
+    // As things stand, we cannot have two static producers operating at
+    // once
+    tunnel.reset();
 
-  // Setup the tunnel to the client
-  HttpTunnelProducer *p =
-    tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr, HT_STATIC, "internal msg");
-  tunnel.add_consumer(ua_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+    // Setup the tunnel to the client
+    HttpTunnelProducer *p =
+      tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr, HT_STATIC, "internal msg");
+    tunnel.add_consumer(ua_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
-  ua_entry->in_tunnel = true;
-  tunnel.tunnel_run(p);
+    ua_entry->in_tunnel = true;
+    tunnel.tunnel_run(p);
+  } else {
+    (this->*default_handler)(HTTP_TUNNEL_EVENT_DONE, &tunnel);
+  }
 }
 
 // int HttpSM::find_http_resp_buffer_size(int cl)

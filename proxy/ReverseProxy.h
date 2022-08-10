@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "records/P_RecProcess.h"
+#include "records/I_RecProcess.h"
 
 #include "tscore/ink_defs.h"
 #include "HttpTransact.h"

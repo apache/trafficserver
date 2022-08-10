@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "P_Net.h"
+#include "I_IOBuffer.h"
 
 #include "HTTP2.h"
 

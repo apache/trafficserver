@@ -55,6 +55,8 @@
 #define WRITE(_s) write(_s "", sizeof(_s "") - 1)
 #define STRLEN(_s) (sizeof(_s "") - 1)
 
+class NetVConnection;
+
 struct MCCacheHeader {
   uint32_t magic;
   uint32_t flags;

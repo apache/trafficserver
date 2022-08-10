@@ -749,6 +749,8 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
       doc->magic = DOC_CORRUPT;
 
+      CACHE_INCREMENT_DYN_STAT(cache_read_seek_fail_stat);
+
       CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
       if (!lock.is_locked()) {
         SET_HANDLER(&CacheVC::openReadDirDelete);

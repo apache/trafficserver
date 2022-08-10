@@ -50,6 +50,8 @@ public:
 #endif
   void on_servername(SSL *ssl, int *al, void *arg);
 
+  const char *get_sni_server_name() const;
+
   struct HintsFromSNI {
     std::optional<uint32_t> http2_buffer_water_mark;
   } hints_from_sni;
@@ -58,7 +60,6 @@ protected:
   virtual void _fire_ssl_servername_event() = 0;
 
   void _clear();
-  const char *_get_sni_server_name() const;
 
 private:
   static int _ex_data_index;

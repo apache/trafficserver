@@ -28,7 +28,6 @@
 #include "tscore/TSSystemState.h"
 #include <string_view>
 #include <memory>
-#include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/HttpSessionAccept.h"
 #include "IPAllow.h"

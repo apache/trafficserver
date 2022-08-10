@@ -27,7 +27,7 @@
 #include "tscore/ink_memory.h"
 #include "HPACK.h"
 #include "MIME.h"
-#include "records/P_RecDefs.h"
+#include "records/I_RecDefs.h"
 
 class HTTPHdr;
 

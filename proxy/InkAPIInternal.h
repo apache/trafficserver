@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include "P_EventSystem.h"
+#include "I_EventSystem.h"
 #include "URL.h"
-#include "P_Net.h"
+#include "I_Net.h"
 #include "HTTP.h"
 #include "tscore/List.h"
 #include "ProxyConfig.h"
-#include "P_Cache.h"
+#include "I_Cache.h"
 #include "I_Tasks.h"
 #include "Plugin.h"
 

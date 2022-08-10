@@ -1,0 +1,23 @@
+HTTP/1.1 400 Invalid HTTP Request
+Date:``
+Connection: close
+Server:``
+Cache-Control: no-store
+Content-Type: text/html
+Content-Language: en
+Content-Length:``
+
+<HTML>
+<HEAD>
+<TITLE>Bad Request</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Bad Request</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>

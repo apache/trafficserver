@@ -61,12 +61,12 @@ Acl::init(char const *filename)
     // Get our root maxmind node
     maxmind = _config["maxmind"];
 #if 0
-      // Test junk
-      for (YAML::const_iterator it = maxmind.begin(); it != maxmind.end(); ++it) {
-        const std::string &name    = it->first.as<std::string>();
-        YAML::NodeType::value type = it->second.Type();
-        TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
-      }
+    // Test junk
+    for (YAML::const_iterator it = maxmind.begin(); it != maxmind.end(); ++it) {
+      const std::string &name    = it->first.as<std::string>();
+      YAML::NodeType::value type = it->second.Type();
+      TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+    }
 #endif
   } catch (const YAML::Exception &e) {
     TSError("[%s] YAML::Exception %s when parsing YAML config file %s for maxmind", PLUGIN_NAME, e.what(), configloc.c_str());
@@ -95,7 +95,14 @@ Acl::init(char const *filename)
   allow_regex.clear();
   deny_regex.clear();
   _html.clear();
-  default_allow = false;
+  default_allow       = false;
+  _anonymous_blocking = false;
+  _anonymous_ip       = false;
+  _anonymous_vpn      = false;
+  _hosting_provider   = false;
+  _tor_exit_node      = false;
+  _residential_proxy  = false;
+  _public_proxy       = false;
 
   if (loadallow(maxmind["allow"])) {
     TSDebug(PLUGIN_NAME, "Loaded Allow ruleset");
@@ -113,12 +120,76 @@ Acl::init(char const *filename)
 
   loadhtml(maxmind["html"]);
 
+  _anonymous_blocking = loadanonymous(maxmind["anonymous"]);
+
   if (!status) {
     TSDebug(PLUGIN_NAME, "Failed to load any rulesets, none specified");
     status = false;
   }
 
   return status;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Parse the anonymous blocking settings
+bool
+Acl::loadanonymous(const YAML::Node &anonNode)
+{
+  if (!anonNode) {
+    TSDebug(PLUGIN_NAME, "No anonymous rules set");
+    return false;
+  }
+  if (anonNode.IsNull()) {
+    TSDebug(PLUGIN_NAME, "Anonymous rules are NULL");
+    return false;
+  }
+
+#if 0
+  // Test junk
+  for (YAML::const_iterator it = anonNode.begin(); it != anonNode.end(); ++it) {
+    const std::string &name    = it->first.as<std::string>();
+    YAML::NodeType::value type = it->second.Type();
+    TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
+  }
+#endif
+
+  try {
+    if (anonNode["ip"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw ip true");
+      _anonymous_ip = true;
+    }
+
+    if (anonNode["vpn"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw vpn true");
+      _anonymous_vpn = true;
+    }
+
+    if (anonNode["hosting"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw hosting true");
+      _hosting_provider = true;
+    }
+
+    if (anonNode["public"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw public proxy true");
+      _public_proxy = true;
+    }
+
+    if (anonNode["tor"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw tor exit node true");
+      _tor_exit_node = true;
+    }
+
+    if (anonNode["residential"].as<bool>(false)) {
+      TSDebug(PLUGIN_NAME, "saw residential proxy true");
+      _residential_proxy = true;
+    }
+
+  } catch (const YAML::Exception &e) {
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file anonymous list", e.what());
+    return false;
+  }
+
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -465,6 +536,15 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
         // Country map is empty as well as regexes, use our default rejection
         ret = default_allow;
       }
+
+      // We have mmdb data, check if we want anonymous blocking checked
+      // If blocked here, then block as well
+      if (_anonymous_blocking) {
+        if (!eval_anonymous(&result.entry)) {
+          TSDebug(PLUGIN_NAME, "Blocking Anonymous IP");
+          ret = false;
+        }
+      }
     }
   } else {
     TSDebug(PLUGIN_NAME, "No Country Code entry for this IP was found");
@@ -495,6 +575,94 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
   }
 
   return ret;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Returns true if entry data contains an
+// allowable non-anonymous IP.
+// False otherwise
+bool
+Acl::eval_anonymous(MMDB_entry_s *entry)
+{
+  MMDB_entry_data_s entry_data;
+  int status;
+
+  // For each value we only care if it was successful and if there was data.
+  // We can have unsuccessful gets in the instance an IP is not one of the things
+  // we are asking for, so its not an error
+  if (_anonymous_ip) {
+    status = MMDB_get_value(entry, &entry_data, "is_anonymous", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw is_anonymous set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_anonymous_vpn) {
+    status = MMDB_get_value(entry, &entry_data, "is_anonymous_vpn", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw is_anonymous vpn set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_hosting_provider) {
+    status = MMDB_get_value(entry, &entry_data, "is_hosting_provider", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw is_hosting set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_public_proxy) {
+    status = MMDB_get_value(entry, &entry_data, "is_public_proxy", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw public_proxy set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_tor_exit_node) {
+    status = MMDB_get_value(entry, &entry_data, "is_tor_exit_node", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw is_tor_exit_node set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_residential_proxy) {
+    status = MMDB_get_value(entry, &entry_data, "is_residential_proxy", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          TSDebug(PLUGIN_NAME, "saw is_residential set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -27,7 +27,7 @@
 #include <string>
 
 #include "tscore/ink_platform.h"
-#include "records/P_RecProcess.h"
+#include "records/I_RecProcess.h"
 #include "ProxyConfig.h"
 #include "LogObject.h"
 #include "RolledLogDeleter.h"

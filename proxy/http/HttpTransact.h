@@ -25,8 +25,7 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
-#include "P_HostDB.h"
-#include "P_Net.h"
+#include "I_HostDB.h"
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "HttpTransactCache.h"

@@ -24,7 +24,7 @@
 #include "HttpConfig.h"
 #include "HttpDebugNames.h"
 #include "ProxySession.h"
-#include "P_SSLNetVConnection.h"
+#include "TLSBasicSupport.h"
 
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 
@@ -279,10 +279,10 @@ ProxySession::get_local_addr()
 void
 ProxySession::_handle_if_ssl(NetVConnection *new_vc)
 {
-  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
-  if (ssl_vc) {
+  auto tbs = dynamic_cast<TLSBasicSupport *>(new_vc);
+  if (tbs) {
     _ssl = std::make_unique<SSLProxySession>();
-    _ssl.get()->init(*ssl_vc);
+    _ssl.get()->init(*new_vc);
   }
 }
 

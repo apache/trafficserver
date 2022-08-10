@@ -50,7 +50,7 @@
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
-#include "records/P_RecProcess.h"
+#include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
@@ -856,7 +856,8 @@ public:
   MgmtInt http_request_line_max_size = 65535;
   MgmtInt http_hdr_field_max_size    = 131070;
 
-  MgmtByte http_host_sni_policy = 0;
+  MgmtByte http_host_sni_policy         = 0;
+  MgmtByte scheme_proto_mismatch_policy = 2;
 
   // noncopyable
   /////////////////////////////////////

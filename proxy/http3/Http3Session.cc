@@ -121,6 +121,7 @@ void
 HQSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reade)
 {
   this->con_id = static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(new_vc))->connection_id();
+  this->_handle_if_ssl(new_vc);
 
   return;
 }

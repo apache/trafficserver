@@ -164,6 +164,31 @@ public:
   Http2ErrorCode decrement_server_rwnd(size_t amount);
 
 private:
+  Http2Error rcv_data_frame(const Http2Frame &);
+  Http2Error rcv_headers_frame(const Http2Frame &);
+  Http2Error rcv_priority_frame(const Http2Frame &);
+  Http2Error rcv_rst_stream_frame(const Http2Frame &);
+  Http2Error rcv_settings_frame(const Http2Frame &);
+  Http2Error rcv_push_promise_frame(const Http2Frame &);
+  Http2Error rcv_ping_frame(const Http2Frame &);
+  Http2Error rcv_goaway_frame(const Http2Frame &);
+  Http2Error rcv_window_update_frame(const Http2Frame &);
+  Http2Error rcv_continuation_frame(const Http2Frame &);
+
+  using http2_frame_dispatch = Http2Error (Http2ConnectionState::*)(const Http2Frame &);
+  static constexpr http2_frame_dispatch _frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
+    &Http2ConnectionState::rcv_data_frame,          // HTTP2_FRAME_TYPE_DATA
+    &Http2ConnectionState::rcv_headers_frame,       // HTTP2_FRAME_TYPE_HEADERS
+    &Http2ConnectionState::rcv_priority_frame,      // HTTP2_FRAME_TYPE_PRIORITY
+    &Http2ConnectionState::rcv_rst_stream_frame,    // HTTP2_FRAME_TYPE_RST_STREAM
+    &Http2ConnectionState::rcv_settings_frame,      // HTTP2_FRAME_TYPE_SETTINGS
+    &Http2ConnectionState::rcv_push_promise_frame,  // HTTP2_FRAME_TYPE_PUSH_PROMISE
+    &Http2ConnectionState::rcv_ping_frame,          // HTTP2_FRAME_TYPE_PING
+    &Http2ConnectionState::rcv_goaway_frame,        // HTTP2_FRAME_TYPE_GOAWAY
+    &Http2ConnectionState::rcv_window_update_frame, // HTTP2_FRAME_TYPE_WINDOW_UPDATE
+    &Http2ConnectionState::rcv_continuation_frame,  // HTTP2_FRAME_TYPE_CONTINUATION
+  };
+
   unsigned _adjust_concurrent_stream();
 
   // NOTE: 'stream_list' has only active streams.

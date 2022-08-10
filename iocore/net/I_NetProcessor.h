@@ -27,6 +27,7 @@
 #include "tscore/IpMap.h"
 #include "I_EventSystem.h"
 #include "I_Socks.h"
+#include "I_NetVConnection.h"
 struct socks_conf_struct;
 #define NET_CONNECT_TIMEOUT 30
 

@@ -44,6 +44,7 @@
 #include "HttpConfig.h"
 #include "P_Net.h"
 #include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
 #include "P_UDPNet.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"

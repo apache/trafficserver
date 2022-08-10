@@ -102,7 +102,6 @@ extern "C" int plock(int);
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
-#include "P_SSLSNI.h"
 #include "P_SSLClientUtils.h"
 
 // Mgmt Admin public handlers

@@ -25,6 +25,7 @@
 
 #include "I_Net.h"
 #include "I_VConnection.h"
+#include "I_NetVConnection.h"
 
 struct AclRecord;
 struct HttpProxyPort;

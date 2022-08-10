@@ -1,3 +1,4 @@
 {"foo":"ab\td\/ef","foo-slice":"\td"}
-{"foo":"ab\u001fd\/ef","foo-slice":"\u001fd"}
-{"foo":"abc\u007fde","foo-slice":"c"}
+{"foo":"-","foo-slice":""}
+{"foo":"-","foo-slice":""}
+{"foo":"ab\u00c2\u0080d\/ef","foo-slice":"\u00c2\u0080d"}

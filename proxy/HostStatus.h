@@ -36,7 +36,7 @@
 #include "tscore/Filenames.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_rwlock.h"
-#include "records/P_RecProcess.h"
+#include "records/I_RecProcess.h"
 
 #include <unordered_map>
 

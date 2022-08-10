@@ -86,6 +86,7 @@ test_UDPNet_SOURCES = \
 	test_I_UDPNet.cc
 
 test_libinknet_SOURCES = \
+	libinknet_stub.cc \
 	unit_tests/test_ProxyProtocol.cc
 
 test_libinknet_CPPFLAGS = \
@@ -109,6 +110,7 @@ test_libinknet_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
@@ -150,7 +152,6 @@ libinknet_a_SOURCES = \
 	P_SSLNetVConnection.h \
 	P_SSLNextProtocolAccept.h \
 	P_SSLNextProtocolSet.h \
-	P_SSLSNI.h \
 	P_SSLUtils.h \
 	P_SSLClientCoordinator.h \
 	P_SSLClientUtils.h \
@@ -182,6 +183,7 @@ libinknet_a_SOURCES = \
 	SSLNetVConnection.cc \
 	SSLNextProtocolAccept.cc \
 	SSLNextProtocolSet.cc \
+	SSLSNIConfig.h \
 	SSLSNIConfig.cc \
 	SSLStats.cc \
 	SSLSessionCache.cc \

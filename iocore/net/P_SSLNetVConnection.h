@@ -302,7 +302,7 @@ public:
   const char *
   get_server_name() const override
   {
-    return _get_sni_server_name() ? _get_sni_server_name() : "";
+    return get_sni_server_name() ? get_sni_server_name() : "";
   }
 
   bool

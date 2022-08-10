@@ -47,7 +47,7 @@ public:
   void init();
   /// Set the affinity for the current thread.
   int set_affinity(int, Event *);
-  /// Allocate a stack.
+  /// Allocate a stack and set guard pages.
   /// @internal This is the external entry point and is different depending on
   /// whether HWLOC is enabled.
   void *alloc_stack(EThread *t, size_t stacksize);
@@ -55,7 +55,8 @@ public:
 protected:
   /// Allocate a hugepage stack.
   /// If huge pages are not enable, allocate a basic stack.
-  void *alloc_hugepage_stack(size_t stacksize);
+  void *do_alloc_stack(size_t stacksize);
+  void setup_stack_guard(void *stack, int stackguard_pages);
 
 #if TS_USE_HWLOC
 
@@ -136,10 +137,55 @@ public:
 } Thread_Init_Func;
 } // namespace
 
-void *
-ThreadAffinityInitializer::alloc_hugepage_stack(size_t stacksize)
+void
+ThreadAffinityInitializer::setup_stack_guard(void *stack, int stackguard_pages)
 {
-  return ats_hugepage_enabled() ? ats_alloc_hugepage(stacksize) : ats_memalign(ats_pagesize(), stacksize);
+#if !(defined(__i386__) || defined(__x86_64__) || defined(__arm__) || defined(__arm64__) || defined(__aarch64__) || \
+      defined(__mips__))
+#error Unknown stack growth direction.  Determine the stack growth direction of your platform.
+// If your stack grows upwards, you need to change this function and the calculation of stack_begin in do_alloc_stack.
+#endif
+  // Assumption: stack grows down
+  if (stackguard_pages <= 0) {
+    return;
+  }
+
+  size_t pagesize  = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
+  size_t guardsize = stackguard_pages * pagesize;
+  int ret          = mprotect(stack, guardsize, 0);
+  if (ret != 0) {
+    Fatal("Failed to set up stack guard pages: %s (%d)", strerror(errno), errno);
+  }
+}
+
+void *
+ThreadAffinityInitializer::do_alloc_stack(size_t stacksize)
+{
+  size_t pagesize = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
+  int stackguard_pages;
+  REC_ReadConfigInteger(stackguard_pages, "proxy.config.thread.default.stackguard_pages");
+  ink_release_assert(stackguard_pages >= 0);
+
+  size_t size    = INK_ALIGN(stacksize + stackguard_pages * pagesize, pagesize);
+  int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+#ifdef MAP_HUGETLB
+  if (ats_hugepage_enabled()) {
+    mmap_flags |= MAP_HUGETLB;
+  }
+#endif
+  void *stack_and_guard = mmap(nullptr, size, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
+  if (stack_and_guard == MAP_FAILED) {
+    Error("Failed to allocate stack pages: size = %zu", size);
+    return nullptr;
+  }
+
+  setup_stack_guard(stack_and_guard, stackguard_pages);
+
+  void *stack_begin = static_cast<char *>(stack_and_guard) + stackguard_pages * pagesize;
+  Debug("iocore_thread", "Allocated %zu bytes (%zu bytes in guard pages) for stack {%p-%p guard, %p-%p stack}", size,
+        stackguard_pages * pagesize, stack_and_guard, stack_begin, stack_begin, static_cast<char *>(stack_begin) + stacksize);
+
+  return stack_begin;
 }
 
 #if TS_USE_HWLOC
@@ -239,7 +285,7 @@ ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
   }
 
   // Alloc our stack
-  stack = this->alloc_hugepage_stack(stacksize);
+  stack = this->do_alloc_stack(stacksize);
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
     // Now let's set it back to default for this thread.
@@ -260,7 +306,7 @@ ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
 void *
 ThreadAffinityInitializer::alloc_stack(EThread *t, size_t stacksize)
 {
-  return this->obj_count > 0 ? this->alloc_numa_stack(t, stacksize) : this->alloc_hugepage_stack(stacksize);
+  return this->obj_count > 0 ? this->alloc_numa_stack(t, stacksize) : this->do_alloc_stack(stacksize);
 }
 
 #else
@@ -279,7 +325,7 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
 void *
 ThreadAffinityInitializer::alloc_stack(EThread *, size_t stacksize)
 {
-  return this->alloc_hugepage_stack(stacksize);
+  return this->do_alloc_stack(stacksize);
 }
 
 #endif // TS_USE_HWLOC

@@ -32,44 +32,13 @@
 
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
+#include "SNIActionPerformer.h"
 #include "SSLTypes.h"
 
 #include "tscore/ink_inet.h"
 
 #include <vector>
-
-class ActionItem
-{
-public:
-  /**
-   * Context should contain extra data needed to be passed to the actual SNIAction.
-   */
-  struct Context {
-    using CapturedGroupViewVec = std::vector<std::string_view>;
-    /**
-     * if any, fqdn_wildcard_captured_groups will hold the captured groups from the `fqdn`
-     * match which will be used to construct the tunnel destination. This vector contains only
-     * partial views of the original server name, group views are valid as long as the original
-     * string from where the groups were obtained lives.
-     */
-    std::optional<CapturedGroupViewVec> _fqdn_wildcard_captured_groups;
-  };
-
-  virtual int SNIAction(TLSSNISupport *snis, const Context &ctx) const = 0;
-
-  /**
-    This method tests whether this action would have been triggered by a
-    particularly SNI value and IP address combination.  This is run after the
-    TLS exchange finished to see if the client used an SNI name different from
-    the host name to avoid SNI-based policy
-  */
-  virtual bool
-  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
-  {
-    return false;
-  }
-  virtual ~ActionItem(){};
-};
 
 class ControlH2 : public ActionItem
 {
@@ -81,7 +50,7 @@ public:
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
     auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername = ssl_vc->get_server_name();
+    const char *servername = snis->get_sni_server_name();
     if (ssl_vc) {
       if (!enable_h2) {
         ssl_vc->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
@@ -134,7 +103,7 @@ public:
   {
     // Set the netvc option?
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername       = ssl_netvc->get_server_name();
+    const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
@@ -247,7 +216,7 @@ public:
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
     auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername = ssl_vc->get_server_name();
+    const char *servername = snis->get_sni_server_name();
     Debug("ssl_sni", "action verify param %d, fqdn [%s]", this->mode, servername);
     setClientCertLevel(ssl_vc->ssl, this->mode);
     ssl_vc->set_ca_cert_file(ca_file, ca_dir);
@@ -313,7 +282,7 @@ public:
   {
     if (!unset) {
       auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-      const char *servername = ssl_vc->get_server_name();
+      const char *servername = snis->get_sni_server_name();
       Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
       ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
     }

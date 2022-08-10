@@ -185,6 +185,8 @@ extern int URL_LEN_MMST;
 
 /* Public */
 bool validate_host_name(std::string_view addr);
+bool validate_scheme(std::string_view scheme);
+
 void url_init();
 
 URLImpl *url_create(HdrHeap *heap);
