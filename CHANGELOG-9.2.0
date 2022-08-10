@@ -199,6 +199,7 @@ Changes with Apache Traffic Server 9.2.0
   #8075 - Add plugin parent_select reloading
   #8076 - Fix plugin parent_select missing null checks.
   #8078 - Clean up constructors and initialization in LogAccess class.
+  #8080 - Fix length bug in validate_unmapped_url_path
   #8083 - Cancel active timeout when releasing session
   #8084 - Defer canceling UA inactivity timeout for chunked bodies too
   #8085 - Add cache condition in header_rewrite plugin for lookup results
@@ -226,7 +227,6 @@ Changes with Apache Traffic Server 9.2.0
   #8187 - Ran clang-tidy over the master branch
   #8188 - lua: add ts.is_debug_tag_set function
   #8190 - Add TSMgmtConfigFileAdd api doc
-  #8191 - Fix error connection logging crash
   #8194 - Remove global g_rec_config_contents_llq
   #8201 - Fix H2 logic when setting EOS flag on DATA frame
   #8204 - transaction data sink: only stream body bytes
@@ -260,6 +260,7 @@ Changes with Apache Traffic Server 9.2.0
   #8264 - Prefetch plugin: add  --fetch-query option
   #8266 - Do not turn off cache for internal requests
   #8267 - Align TS API Au test with Yahoo internal version.
+  #8268 - Avoid chunking in the post redirect case
   #8269 - Fix leaks in ConfigManager::configName
   #8271 - Add warning message about why enhance your calm is being sent
   #8274 - Use better done file locations for some AuTests
@@ -303,6 +304,7 @@ Changes with Apache Traffic Server 9.2.0
   #8348 - remove unused RecConfigFileEntry from RecConfigParse
   #8354 - Adds support for TCP_NOTSENT_LOWAT sockopt
   #8356 - free sessions when timeout
+  #8357 - test_MMH: fix memory leak in unit test
   #8358 - Locking around SSLSecret::secret_map access
   #8359 - Fix regex_remap plugin redirection.
   #8360 - Stabilize regex_revalidate Au test.
@@ -313,6 +315,7 @@ Changes with Apache Traffic Server 9.2.0
   #8372 - Add Au test for pqsi and pqsp log fields.
   #8374 - 9.2.x autest fixes
   #8375 - Add a set-http-cntl operator for header_rewrite
+  #8376 - Doc: Add proxy.config.cache.mutex_retry_delay
   #8381 - Fix a potential H2 stall
   #8392 - Update the feature lists available for autest
   #8395 - Added metrics to the rate limit plugin and document the new options
@@ -334,7 +337,9 @@ Changes with Apache Traffic Server 9.2.0
   #8435 - Fix unused-but-set-variable warnings
   #8440 - Update the Multiplexer Docs for Multplexed HTTPS Connections
   #8441 - bigobj: use automake to build test utilities
+  #8443 - Add thread safety to PendingAction operations.
   #8445 - Include CPPFLAGS when building CompileParseRules
+  #8446 - Report an error if configure can't find zlib
   #8449 - Add AuTest for HTTP CONNECT
   #8450 - Document proxy.config.memory.max_usage
   #8453 - Ignore ECONNABORTED on blocking accept
@@ -363,7 +368,6 @@ Changes with Apache Traffic Server 9.2.0
   #8518 - Add 5xx's to be allowed to be used for simple retries
   #8520 - Extend milestone api time tracking to remap.
   #8523 - url_sig: change cleanup msg from TSError to TSDebug
-  #8524 - Set an appropriate callback function for OpenSSL 3
   #8525 - Remove unused function "ats_mallopt"
   #8531 - Destroy ssl context after use.
   #8532 - Adds autest to test error cases loading ssl_multicert.config
@@ -485,6 +489,7 @@ Changes with Apache Traffic Server 9.2.0
   #8882 - Make ats_scoped_obj a synonym for std::unique_ptr .
   #8884 - Upgrade to Proxy Verifier 2.4.0.
   #8886 - Add escape json for logging
+  #8890 - Update slice to only prefetch when first block is miss/hit-stale
   #8892 - Cleanup SNIConfig
   #8897 - Removed references to the throttle option from the slice plugin. (#8373)
   #8898 - slice and cache_range_requests: allow header override (#8666)
@@ -493,7 +498,6 @@ Changes with Apache Traffic Server 9.2.0
   #8909 - Move HKDF to OpenSSL 3 interfaces
   #8924 - Update location for core rule set in modsecurity example
   #8925 - Cleanup. Remove unnecessary use of a memory arena when logging.
-  #8926 - Allows errors from plugin initialization to bubble up
   #8927 - Add docs for remap_stats plugin
   #8928 - proxy_serve_stale: Test updates
   #8931 - Fix clang-format installation with multiple threads
@@ -502,8 +506,20 @@ Changes with Apache Traffic Server 9.2.0
   #8942 - Fix doc formatting for plugin remap_stats
   #8943 - Fix doc formatting for rate_limit plugin
   #8944 - Make the autopep8 clang-format targets quieter
+  #8949 - Setup UA consumer only if ua_entry is not nullptr
   #8950 - .fit/fmt/.clang-format-installed prerequisite
   #8965 - Proxy Verifier: Update to version 2.4.1
   #8970 - add a metric to track how often the range seek bug is detected
   #8971 - Fixes issue with file size calculation for existing logs
   #8975 - Fix reverting PR#7302
+  #8977 - Update roadmap doc with latest releases
+  #8980 - Add RangeTransform::m_write_vio state checks
+  #8996 - Add stack guard pages
+  #8999 - Fix compile on M1 Mac
+  #9005 - Add back validatation that the scheme matches the wire protocol
+  #9008 - Pin flask to version 2.1.3
+  #9009 - Fail fast on HTTP/2 header validation
+  #9010 - Restrict unknown scheme of HTTP/2 request
+  #9011 - Add control char check in MIME Parser
+  #9012 - Add content length mismatch check on handling HEADERS frame and CONTINUATION frame
+  #9013 - Ignore POST request case from a check for background fill
