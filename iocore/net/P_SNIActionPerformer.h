@@ -50,7 +50,7 @@ public:
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
     auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername = ssl_vc->get_server_name();
+    const char *servername = snis->get_sni_server_name();
     if (ssl_vc) {
       if (!enable_h2) {
         ssl_vc->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
@@ -103,7 +103,7 @@ public:
   {
     // Set the netvc option?
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername       = ssl_netvc->get_server_name();
+    const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
@@ -216,7 +216,7 @@ public:
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
     auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername = ssl_vc->get_server_name();
+    const char *servername = snis->get_sni_server_name();
     Debug("ssl_sni", "action verify param %d, fqdn [%s]", this->mode, servername);
     setClientCertLevel(ssl_vc->ssl, this->mode);
     ssl_vc->set_ca_cert_file(ca_file, ca_dir);
@@ -282,7 +282,7 @@ public:
   {
     if (!unset) {
       auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
-      const char *servername = ssl_vc->get_server_name();
+      const char *servername = snis->get_sni_server_name();
       Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
       ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
     }
