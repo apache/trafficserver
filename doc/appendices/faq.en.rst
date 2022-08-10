@@ -525,7 +525,7 @@ This happens when a log entry is too big to fit in a log buffer.  This is often 
 URLs in the entry.  You can truncate long URLs using the slice syntax for the URL log field in the log
 format, for example::
 
-    %<cquc[:1000]>
+    %<pquc[:1000]>
 
 You can also increase the value of :ts:cv:`proxy.config.log.log_buffer_size`, but this can have impacts
 on performance and memory usage.  Very large values may trigger software bugs.  Some production proxies

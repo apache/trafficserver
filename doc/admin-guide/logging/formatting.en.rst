@@ -808,6 +808,10 @@ URLs, Schemes, and Paths
 .. _cquc:
 .. _cqup:
 .. _cqus:
+.. _pqu:
+.. _pquc:
+.. _pqup:
+.. _pqus:
 .. _cquuc:
 .. _cquup:
 .. _cquuh:
@@ -821,13 +825,26 @@ Field Source         Description
 cqu   Proxy Request  URL of the proxy request from |TS| to the origin. If a
                      remap rule is used (:file:`remap.config`), the original
                      client URL is replaced with the URL in the target of the
-                     remap rule.
+                     remap rule. Deprecated since 10.0. Use ``pqu`` instead.
 cquc  Proxy Request  Canonical URL from the proxy request to origin. This field
                      differs from cqu_ by having its contents URL-escaped
                      (spaces and various other characters are replaced by
+                     percent-escaped entity codes). Deprecated since 10.0.
+                     Use ``pquc`` instead.
+cqup  Proxy Request  Path component from the proxy request. Deprecated since
+                     10.0. Use ``pqup`` instead.
+cqus  Proxy Request  URL scheme from the proxy request. Deprecated since 10.0.
+                     Use ``pqus`` instead.
+pqu   Proxy Request  URL of the proxy request from |TS| to the origin. If a
+                     remap rule is used (:file:`remap.config`), the original
+                     client URL is replaced with the URL in the target of the
+                     remap rule.
+pquc  Proxy Request  Canonical URL from the proxy request to origin. This field
+                     differs from pqu_ by having its contents URL-escaped
+                     (spaces and various other characters are replaced by
                      percent-escaped entity codes).
-cqup  Proxy Request  Path component from the proxy request.
-cqus  Proxy Request  URL scheme from the proxy request.
+pqup  Proxy Request  Path component from the proxy request.
+pqus  Proxy Request  URL scheme from the proxy request.
 cquuc Client Request Canonical (prior to remapping) effective URL from client request.
                      It is possible that plugins prior to the remap phase have
                      changed the client request, so this field may not match the
@@ -877,11 +894,11 @@ The below slice specifiers are allowed.
 
 Some examples below ::
 
-  '%<cqup>'       // the whole characters of <cqup>.
-  '%<cqup>[:]'    // the whole characters of <cqup>.
-  '%<cqup[0:30]>' // the first 30 characters of <cqup>.
-  '%<cqup[-10:]>' // the last 10 characters of <cqup>.
-  '%<cqup[:-5]>'  // everything except the last 5 characters of <cqup>.
+  '%<pqup>'       // the whole characters of <pqup>.
+  '%<pqup>[:]'    // the whole characters of <pqup>.
+  '%<pqup[0:30]>' // the first 30 characters of <pqup>.
+  '%<pqup[-10:]>' // the last 10 characters of <pqup>.
+  '%<pqup[:-5]>'  // everything except the last 5 characters of <pqup>.
 
 Note when ``escape`` in ``format`` is set to ``json``, the start is the
 position before escaping JSON strings, and escaped values are sliced at

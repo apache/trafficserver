@@ -76,7 +76,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: testformat
-      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+      format: '%<pssc> %<pquc> %<pscert> %<cscert>'
   logs:
     - mode: ascii
       format: testformat

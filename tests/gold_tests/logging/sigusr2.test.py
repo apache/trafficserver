@@ -74,7 +74,7 @@ class Sigusr2Test:
             logging:
               formats:
                 - name: has_path
-                  format: "%<cqu>: %<sssc>"
+                  format: "%<pqu>: %<sssc>"
               logs:
                 - filename: test_rotation
                   format: has_path

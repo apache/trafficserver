@@ -95,11 +95,11 @@ ts.Disk.records_config.update({
 })
 
 format_string = ('%<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
-                 '%<cqhm> %<cquc> %<phr>/%<pqsn> %<psct> %<{Y-RID}pqh> '
+                 '%<cqhm> %<pquc> %<phr>/%<pqsn> %<psct> %<{Y-RID}pqh> '
                  '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
                  'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
                  'sftcls=%<{x-safet-classification}cqh> '
-                 'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<cqus>')
+                 'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<pqus>')
 
 ts.Disk.logging_yaml.AddLines(
     ''' logging:

@@ -90,7 +90,7 @@ class LogFilenamesTest:
             logging:
               formats:
                 - name: url_and_return_code
-                  format: "%<cqu>: %<pssc>"
+                  format: "%<pqu>: %<pssc>"
               logs:
                 - filename: {self.sentinel_log_filename}
                   format: url_and_return_code

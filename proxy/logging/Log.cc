@@ -401,10 +401,20 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqu", field);
 
+  field = new LogField("client_req_url", "pqu", LogField::STRING, &LogAccess::marshal_client_req_url, &LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_url);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pqu", field);
+
   field = new LogField("client_req_url_canonical", "cquc", LogField::STRING, &LogAccess::marshal_client_req_url_canon,
                        &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_canon);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquc", field);
+
+  field = new LogField("client_req_url_canonical", "pquc", LogField::STRING, &LogAccess::marshal_client_req_url_canon,
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_canon);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pquc", field);
 
   field =
     new LogField("client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
@@ -427,10 +437,20 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqus", field);
 
+  field = new LogField("client_req_url_scheme", "pqus", LogField::STRING, &LogAccess::marshal_client_req_url_scheme,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pqus", field);
+
   field = new LogField("client_req_url_path", "cqup", LogField::STRING, &LogAccess::marshal_client_req_url_path,
                        &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_path);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqup", field);
+
+  field = new LogField("client_req_url_path", "pqup", LogField::STRING, &LogAccess::marshal_client_req_url_path,
+                       &LogAccess::unmarshal_str, &LogAccess::set_client_req_url_path);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pqup", field);
 
   field = new LogField("client_req_http_version", "cqhv", LogField::dINT, &LogAccess::marshal_client_req_http_version,
                        &LogAccess::unmarshal_http_version);

@@ -19,16 +19,16 @@ logging:
     # reporting tools, simply create a log that uses this format.
     - name: welf
       format: |-
-          id=firewall time="%<cqtd> %<cqtt>" fw=%<phn> pri=6 proto=%<cqus> duration=%<ttmsf> sent=%<psql> rcvd=%<cqhl> src=%<chi> dst=%<shi> dstname=%<shn> user=%<caun> op=%<cqhm> arg="%<cqup>" result=%<pssc> ref="%<{Referer}cqh>" agent="%<{user-agent}cqh>" cache=%<crc>
+          id=firewall time="%<cqtd> %<cqtt>" fw=%<phn> pri=6 proto=%<pqus> duration=%<ttmsf> sent=%<psql> rcvd=%<cqhl> src=%<chi> dst=%<shi> dstname=%<shn> user=%<caun> op=%<cqhm> arg="%<pqup>" result=%<pssc> ref="%<{Referer}cqh>" agent="%<{user-agent}cqh>" cache=%<crc>
     # Squid Log Format with seconds resolution timestamp.
     # The following is the squid format but with a seconds-only timestamp
     # (cqts) instead of a seconds and milliseconds timestamp (cqtq).
     - name: squid_seconds_only_timestamp
-      format: '%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+      format: '%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<pquc> %<caun> %<phr>/%<shn> %<psct>'
 
     # Squid Log Format.
     - name: squid
-      format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+      format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<pquc> %<caun> %<phr>/%<shn> %<psct>'
 
     # Common Log Format.
     - name: common
