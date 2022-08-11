@@ -432,7 +432,7 @@ check_shedding_warning()
   ink_hrtime t = Thread::get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
-    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "number of connections reaching shedding limit");
+    Warning("number of connections reaching shedding limit");
   }
 }
 
@@ -454,9 +454,8 @@ check_throttle_warning(ThrottleType type)
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     int connections       = net_connections_to_throttle(type);
-    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR,
-                     "too many connections, throttling.  connection_type=%s, current_connections=%d, net_connections_throttle=%d",
-                     type == ACCEPT ? "ACCEPT" : "CONNECT", connections, net_connections_throttle);
+    Warning("too many connections, throttling.  connection_type=%s, current_connections=%d, net_connections_throttle=%d",
+            type == ACCEPT ? "ACCEPT" : "CONNECT", connections, net_connections_throttle);
   }
 }
 

@@ -1262,22 +1262,6 @@ RecConfigReadPersistentStatsPath()
   return Layout::relative_to(rundir, ts::filename::RECORDS_STATS);
 }
 
-void
-RecSignalWarning(int sig, const char *fmt, ...)
-{
-  char msg[1024];
-  va_list args;
-
-  va_start(args, fmt);
-  WarningV(fmt, args);
-  va_end(args);
-
-  va_start(args, fmt);
-  vsnprintf(msg, sizeof(msg), fmt, args);
-  RecSignalManager(sig, msg);
-  va_end(args);
-}
-
 //-------------------------------------------------------------------------
 // RecConfigWarnIfUnregistered
 //-------------------------------------------------------------------------

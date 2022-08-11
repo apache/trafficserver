@@ -53,6 +53,8 @@
 
 #include "tscore/ink_apidefs.h"
 
+#include "MgmtDefs.h"
+
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
@@ -1080,8 +1082,6 @@ Log::init_when_enabled()
     if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
       LogConfig::register_config_callbacks();
     }
-
-    LogConfig::register_mgmt_callbacks();
 
     // create the flush thread
     create_threads();

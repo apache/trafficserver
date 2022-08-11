@@ -27,7 +27,7 @@ Test.Summary = 'Test jsonrpc admin API'
 
 
 # set the schema folder.
-schema_folder = os.path.join(Test.TestDirectory, '..', '..', '..', "mgmt2", "rpc", "schema")
+schema_folder = os.path.join(Test.TestDirectory, '..', '..', '..', "mgmt", "rpc", "schema")
 
 
 def substitute_context_in_file(process, file, context):

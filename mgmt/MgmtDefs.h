@@ -39,15 +39,6 @@ typedef int8_t MgmtByte;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 
-enum MgmtType {
-  MGMT_INVALID  = -1,
-  MGMT_INT      = 0,
-  MGMT_FLOAT    = 1,
-  MGMT_STRING   = 2,
-  MGMT_COUNTER  = 3,
-  MGMT_TYPE_MAX = 4,
-};
-
 /// Management callback signature.
 /// The memory span is the message payload for the callback.
 /// This can be a lambda, which should be used if additional context information is needed.
@@ -145,5 +136,3 @@ inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(const void *), void (*_
     store_string(_store_string)
 {
 }
-
-constexpr ts::TextView LM_CONNECTION_SERVER{"processerver.sock"};

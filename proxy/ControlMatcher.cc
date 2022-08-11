@@ -783,7 +783,6 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   int line_num       = 0;
   int second_pass    = 0;
   int numEntries     = 0;
-  bool alarmAlready  = false;
 
   // type counts
   int hostDomain = 0;
@@ -817,7 +816,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
         if (config_tags != &socks_server_tags) {
           Result error =
             Result::failure("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
-          SignalError(error.message(), alarmAlready);
+          Error("%s", error.message());
         }
         ats_free(current);
       } else {
@@ -915,7 +914,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
 
     // Check to see if there was an error in creating the NewEntry
     if (error.failed()) {
-      SignalError(error.message(), alarmAlready);
+      Error("%s", error.message());
     }
 
     // Deallocate the parsing structure

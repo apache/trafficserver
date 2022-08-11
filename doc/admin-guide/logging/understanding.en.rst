@@ -82,8 +82,7 @@ specifies where these messages are logged. A typical location is
 ``/var/log/messages`` (Linux).
 
 The :manpage:`syslog(8)` process works on a system-wide basis, so it serves as
-the single repository for messages from all |TS| processes (including
-:program:`traffic_server` and :program:`traffic_manager`).
+the single repository for messages from |TS| process (:program:`traffic_server`).
 
 System information logs observe a static format. Each log entry in the log
 contains information about the date and time the error was logged, the hostname

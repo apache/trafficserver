@@ -42,7 +42,7 @@ rec_updateof(int rec_updatetype)
   case 2:
     return "static, restart traffic_server";
   case 3:
-    return "static, restart traffic_manager";
+    return "Oops, we shouldn't be using this update type";
   case 0: /* fallthrough */
   default:
     return "none";

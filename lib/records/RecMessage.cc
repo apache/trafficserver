@@ -241,17 +241,6 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
 }
 
 //-------------------------------------------------------------------------
-// RecMessageRecvThis
-//-------------------------------------------------------------------------
-
-void
-RecMessageRecvThis(ts::MemSpan<void> span)
-{
-  RecMessage *msg = static_cast<RecMessage *>(span.data());
-  g_recv_cb(msg, msg->msg_type, g_recv_cookie);
-}
-
-//-------------------------------------------------------------------------
 // RecMessageReadFromDisk
 //-------------------------------------------------------------------------
 

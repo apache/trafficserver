@@ -100,7 +100,7 @@ enum RecUpdateT {
   RECU_NULL,       // default: don't know the behavior
   RECU_DYNAMIC,    // config can be updated dynamically w/ "traffic_ctl config reload"
   RECU_RESTART_TS, // config requires TS to be restarted to take effect
-  RECU_RESTART_TM, // config requires TM/TS to be restarted to take effect
+  RECU_RESTART_TM, // deprecated
 };
 
 enum RecCheckT {
@@ -125,7 +125,7 @@ enum RecModeT {
   RECM_NULL,
   RECM_CLIENT,
   RECM_SERVER,
-  RECM_STAND_ALONE,
+  RECM_STAND_ALONE, ///< The only option now as traffic_manager is no longer supported.
 };
 
 enum RecAccessT {

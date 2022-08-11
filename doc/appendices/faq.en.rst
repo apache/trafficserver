@@ -329,31 +329,14 @@ You are unable to execute Traffic Control commands
 
 :program:`traffic_ctl` commands do not execute under the following conditions:
 
-**When the traffic_manager process is not running**
-    Check to see if the :program:`traffic_manager` process is running by entering the
-    following command::
+**When the traffic_server process is not running**
+    :program:`traffic_ctl` needs traffic_server to be running, the former needs
+    the later to be running in order to connect to the jsonrpc endpoint. You can
+    check this :ref:`jsonrpc-node` for more information.
 
-        pgrep -l traffic_manager
-
-    If the :program:`traffic_manager` process is not running, then enter the
-    following command from the Traffic Server ``bin`` directory to start it::
-
-        ./traffic_manager
-
-.. XXX: this is wrong
-
-    You should always start and stop Traffic Server with the
-    :program:`trafficserver start` and :program:`trafficserver stop` commands to ensure
-    that all the processes start and stop correctly. For more information,
-    refer to :ref:`getting-started`.
-
-**When you are not executing the command from $TSHome/bin**
-    If the Traffic Server ``bin`` directory is not in your path, then prepend the
-    Traffic Control commands with ``./`` (for example, ``./traffic_ctl -h``).
-
-**When multiple Traffic Server installations are present and you are not
-executing the Traffic Control command from the active Traffic Server path
-specified in ``/etc/trafficserver``**
+**When :program:`traffic_ctl` is unable to locate the jsonrpc socket.**
+    The program needs to know where the path is located, this could be the default
+    build folder or the one specified by the runroot file.
 
 
 Web browsers display an error document with a 'data missing' message

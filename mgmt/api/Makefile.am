@@ -31,59 +31,13 @@ AM_CPPFLAGS += \
 	$(TS_INCLUDES) \
 	$(LIBUNWIND_CFLAGS)
 
-noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
-lib_LTLIBRARIES = libtsmgmt.la
+noinst_LTLIBRARIES = libmgmtapi.la
 
 libmgmtapi_la_SOURCES = \
-	CoreAPI.h \
 	CoreAPIShared.cc \
 	CoreAPIShared.h \
-	EventCallback.cc \
-	EventCallback.h \
 	INKMgmtAPI.cc \
-	NetworkMessage.cc \
-	NetworkMessage.h \
 	include/mgmtapi.h
-
-if BUILD_TESTS
-noinst_PROGRAMS = traffic_api_cli_remote
-endif
-
-libmgmtapilocal_la_SOURCES = \
-	CoreAPI.cc \
-	EventControlMain.cc \
-	EventControlMain.h \
-	NetworkUtilsLocal.cc \
-	NetworkUtilsLocal.h \
-	TSControlMain.cc \
-	TSControlMain.h
-
-libtsmgmt_la_SOURCES = \
-	CoreAPIRemote.cc \
-	NetworkUtilsRemote.cc \
-	NetworkUtilsRemote.h
-
-libmgmtapilocal_la_LIBADD = \
-	libmgmtapi.la \
-	$(top_builddir)/src/tscore/libtscore.la
-
-libtsmgmt_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
-libtsmgmt_la_LIBADD = @LIBOBJS@ \
-	libmgmtapi.la \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/mgmt/utils/libutils_p.la
-
-if BUILD_TESTS
-traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
-endif
-
-traffic_api_cli_remote_LDADD = \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	libtsmgmt.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@OPENSSL_LIBS@
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

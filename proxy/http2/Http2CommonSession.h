@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "HTTP2.h"
 #include "ProxySession.h"
 #include "Http2ConnectionState.h"

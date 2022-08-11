@@ -116,7 +116,6 @@ public:
 
   static void register_config_callbacks();
   static void register_stat_callbacks();
-  static void register_mgmt_callbacks();
 
   bool space_to_write(int64_t bytes_to_write) const;
 

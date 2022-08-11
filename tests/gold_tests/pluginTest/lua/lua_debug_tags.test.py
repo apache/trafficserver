@@ -28,7 +28,7 @@ Test.SkipUnless(
 
 Test.ContinueOnFail = False
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 ts.Disk.remap_config.AddLine(
     'map http://test http://127.0.0.1/ @plugin=tslua.so @pparam=tags.lua'

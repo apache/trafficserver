@@ -2060,8 +2060,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
       Debug("ssl", "currently parsing %s", line);
       if (errPtr != nullptr) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
-                         line_num, errPtr);
+        Warning("%s: discarding %s entry at line %d: %s", __func__, params->configFilePath, line_num, errPtr);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
           // There must be a certificate specified unless the tunnel action is set

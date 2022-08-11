@@ -119,11 +119,6 @@ the available tests.
 The maximum number of entries in metrics and configuration variables. The default is 1600, which is
 also the minimum. This may need to be increased if running plugins that create metrics.
 
-.. option:: -M, --remote_management
-
-Indicates the process should expect to be managed by :ref:`traffic_manager`. This option should not
-be used except by that process.
-
 .. option:: -n COUNT, --net_threads COUNT
 
 .. option:: -k, --clear_hostdb
@@ -149,11 +144,6 @@ be used except by that process.
 Environment
 ===========
 
-.. envvar:: PROXY_REMOTE_MGMT
-
-This environment variable forces :program:`traffic_server` to believe that it is being managed by
-:program:`traffic_manager`.
-
 .. envvar:: PROXY_AUTO_EXIT
 
 When this environment variable is set to an integral number of
@@ -176,4 +166,3 @@ See also
 ========
 
 :manpage:`traffic_ctl(8)`,
-:manpage:`traffic_manager(8)`

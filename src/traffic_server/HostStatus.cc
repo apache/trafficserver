@@ -23,7 +23,6 @@
 #include <fstream>
 #include "HostStatus.h"
 #include "I_Tasks.h"
-#include "ProcessManager.h"
 
 #include "tscore/BufferWriter.h"
 #include "rpc/jsonrpc/JsonRPC.h"

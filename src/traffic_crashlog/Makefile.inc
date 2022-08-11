@@ -42,7 +42,6 @@ traffic_crashlog_traffic_crashlog_LDADD = \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@

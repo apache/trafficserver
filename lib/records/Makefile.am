@@ -30,16 +30,13 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
 
-noinst_LIBRARIES = librecords_lm.a librecords_p.a
+noinst_LIBRARIES = librecords_p.a
 
 librecords_COMMON = \
-	I_RecAlarms.h \
 	I_RecCore.h \
 	I_RecDefs.h \
-	I_RecEvents.h \
 	I_RecHttp.h \
 	I_RecMutex.h \
-	I_RecSignals.h \
 	P_RecCore.cc \
 	P_RecCore.h \
 	P_RecDefs.h \
@@ -55,12 +52,6 @@ librecords_COMMON = \
 	RecMutex.cc \
 	RecRawStats.cc \
 	RecUtils.cc
-
-librecords_lm_a_SOURCES = \
-	$(librecords_COMMON) \
-	I_RecLocal.h \
-	P_RecLocal.h \
-	RecLocal.cc
 
 librecords_p_a_SOURCES = \
 	$(librecords_COMMON) \

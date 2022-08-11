@@ -386,7 +386,6 @@ Store::read_config()
     Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(), size,
           volume_num, seed ? " id=" : "", seed ? seed : "");
     if ((err = ns->init(pp.c_str(), size))) {
-      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp.c_str(), err);
       Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp.c_str(), err);
       delete ns;
       continue;

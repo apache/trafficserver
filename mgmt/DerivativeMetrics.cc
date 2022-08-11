@@ -30,7 +30,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This currently only supports one type of derivative metrics: Sums() of other, existing metrics. It's ok to add
-// additional metrics here, and we prefer to call them proxy.process (since, hopefully in the future, traffic_manager dies).
+// additional metrics here, and we prefer to call them proxy.process now that traffic_manager died.
 //
 static const std::vector<DerivativeSum> sum_metrics = {
   // Total bytes of client request body + headers

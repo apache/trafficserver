@@ -114,7 +114,7 @@ private:
 //      * debugging tags to selectively enable & disable diagnostics
 //      * action tags to selectively enable & disable code paths
 //      * configurable output to stdout, stderr, syslog, error logs
-//      * traffic_manager interface supporting on-the-fly reconfiguration
+//      * interface to supporting on-the-fly reconfiguration
 //
 //////////////////////////////////////////////////////////////////////////////
 

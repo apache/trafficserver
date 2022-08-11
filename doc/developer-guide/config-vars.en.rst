@@ -124,7 +124,7 @@ update:``RecUpdateT``
       The :program:`traffic_server` process must be restarted for a new value to take effect.
 
    ``RECD_RESTART_TM``
-      The :program:`traffic_manager` process must be restarted for a new value to take effect.
+      Deprecated.
 
 required:``RecordRequiredType``
    Effectively a boolean that specifies if the record is required to be present,

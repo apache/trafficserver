@@ -286,8 +286,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
       errPtr  = parseConfigLine(const_cast<char *>(tmp), current, &config_tags);
 
       if (errPtr != nullptr) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path,
-                         line_num, errPtr);
+        Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errPtr);
         ats_free(current);
       } else {
         // Line parsed ok.  Figure out what the destination
@@ -366,8 +365,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
         hostMatch->NewEntry(current);
       }
     } else {
-      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry with unknown type at line %d", matcher_name,
-                       config_file_path, current->line_num);
+      Warning("%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path, current->line_num);
     }
 
     // Deallocate the parsing structure
@@ -380,9 +378,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
   if (!generic_rec_initd) {
     const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
-    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
-                     "No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type,
-                     cache_type);
+    Warning("No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type, cache_type);
   }
 
   ink_assert(second_pass == numEntries);
@@ -436,7 +432,7 @@ CacheHostRecord::Init(CacheType typ)
     }
   }
   if (!num_cachevols) {
-    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "error: No volumes found for Cache Type %d", type);
+    Warning("error: No volumes found for Cache Type %d", type);
     return -1;
   }
   vols        = static_cast<Vol **>(ats_malloc(num_vols * sizeof(Vol *)));
@@ -485,16 +481,18 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           s++;
           if (!(*s)) {
             const char *errptr = "A volume number expected";
-            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file,
-                             line_info->line_num, errptr);
-            ats_free(val);
+            Warning("%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file, line_info->line_num, errptr);
+            if (val != nullptr) {
+              ats_free(val);
+            }
             return -1;
           }
         }
         if ((*s < '0') || (*s > '9')) {
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]",
-                           config_file, line_info->line_num, *s);
-          ats_free(val);
+          Warning("%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]", config_file, line_info->line_num, *s);
+          if (val != nullptr) {
+            ats_free(val);
+          }
           return -1;
         }
         s++;
@@ -528,9 +526,11 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             }
           }
           if (!is_vol_present) {
-            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad volume number [%d]",
-                             "[CacheHosting]", config_file, line_info->line_num, volume_number);
-            ats_free(val);
+            Warning("%s discarding %s entry at line %d : bad volume number [%d]", "[CacheHosting]", config_file,
+                    line_info->line_num, volume_number);
+            if (val != nullptr) {
+              ats_free(val);
+            }
             return -1;
           }
           if (c == '\0') {
@@ -545,14 +545,12 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
       break;
     }
 
-    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad token [%s]", "[CacheHosting]", config_file,
-                     line_info->line_num, label);
+    Warning("%s discarding %s entry at line %d : bad token [%s]", "[CacheHosting]", config_file, line_info->line_num, label);
     return -1;
   }
 
   if (i == MATCHER_MAX_TOKENS) {
-    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : No volumes specified", "[CacheHosting]",
-                     config_file, line_info->line_num);
+    Warning("%s discarding %s entry at line %d : No volumes specified", "[CacheHosting]", config_file, line_info->line_num);
     return -1;
   }
 
@@ -758,8 +756,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     }
 
     if (err) {
-      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num,
-                       err);
+      Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, err);
     } else if (volume_number && size && scheme) {
       /* add the config */
 

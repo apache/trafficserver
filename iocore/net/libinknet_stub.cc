@@ -139,30 +139,6 @@ SslAPIHooks *ssl_hooks             = nullptr;
 LifecycleAPIHooks *lifecycle_hooks = nullptr;
 StatPagesManager statPagesManager;
 
-#include "ProcessManager.h"
-ProcessManager *pmgmt = nullptr;
-
-int
-BaseManager::registerMgmtCallback(int, MgmtCallback const &)
-{
-  ink_assert(false);
-  return 0;
-}
-
-void
-ProcessManager::signalManager(int, char const *, int)
-{
-  ink_assert(false);
-  return;
-}
-
-void
-ProcessManager::signalManager(int, char const *)
-{
-  ink_assert(false);
-  return;
-}
-
 #include "PreWarmManager.h"
 void
 PreWarmManager::reconfigure()

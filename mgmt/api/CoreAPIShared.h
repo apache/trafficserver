@@ -34,27 +34,6 @@
 
 #include "mgmtapi.h"
 
-#define NUM_EVENTS 19           // number of predefined TM events
-#define MAX_EVENT_NAME_SIZE 100 // max length for an event name
-#define MAX_RECORD_SIZE 20      // max length of buffer to hold record values
-
-// LAN - BAD BHACK; copied from Alarms.h !!!!!
-/* Must be same as defined in Alarms.h; the reason we had to
- * redefine them here is because the remote client also needs
- * access to these values for its event handling
- */
-#define MGMT_ALARM_UNDEFINED 0
-
-#define MGMT_ALARM_PROXY_PROCESS_DIED 1
-#define MGMT_ALARM_PROXY_PROCESS_BORN 2
-#define MGMT_ALARM_PROXY_CONFIG_ERROR 3
-#define MGMT_ALARM_PROXY_SYSTEM_ERROR 4
-#define MGMT_ALARM_PROXY_CACHE_ERROR 5
-#define MGMT_ALARM_PROXY_CACHE_WARNING 6
-#define MGMT_ALARM_PROXY_LOGGING_ERROR 7
-#define MGMT_ALARM_PROXY_LOGGING_WARNING 8
-#define MGMT_ALARM_CONFIG_UPDATE_FAILED 9
-
 // used by TSReadFromUrl
 #define HTTP_DIVIDER "\r\n\r\n"
 #define URL_BUFSIZE 65536 // the max. length of URL obtainable (in bytes)
@@ -62,15 +41,8 @@
 #define HTTP_PORT 80
 #define BUFSIZE 1024
 
-// Flags for management API behaviour.
-#define MGMT_API_PRIVILEGED 0x0001u
-
 // used by TSReadFromUrl
 TSMgmtError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
 TSMgmtError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);
 TSMgmtError sendHTTPRequest(int sock, char *request, uint64_t timeout);
 int connectDirect(const char *host, int port, uint64_t timeout);
-
-// used for Events
-int get_event_id(const char *event_name);
-char *get_event_name(int id);

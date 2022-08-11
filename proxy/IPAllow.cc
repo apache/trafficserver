@@ -42,7 +42,6 @@ SignalError(ts::BufferWriter &w, bool &flag)
 {
   if (!flag) {
     flag = true;
-    pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, w.data());
   }
   Error("%s", w.data());
 }

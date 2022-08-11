@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "I_RecLocal.h"
 #include "P_RecUtils.h"
 #include "test_RecordsConfig.h"
 
