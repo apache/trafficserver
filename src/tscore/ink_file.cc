@@ -52,8 +52,8 @@
 #include <linux/hdreg.h> /* for struct hd_geometry */
 #endif
 
-#if HAVE_LINUX_FS_H
-#include <linux/fs.h> /* for BLKGETSIZE.  sys/mount.h is another candidate */
+#if HAVE_SYS_MOUNT_H
+#include <sys/mount.h> /* for BLKGETSIZE */
 #endif
 
 using ioctl_arg_t = union {
