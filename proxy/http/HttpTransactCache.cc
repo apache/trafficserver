@@ -1363,7 +1363,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 }
 
 /**
-  Validates the contents of If-range headers in client requests.
+  Validates the contents of If-range headers in client requests. The presence of Range
+  headers needs to be checked before calling this method.
 
   @return Whether the condition specified by If-range is met, if there is any.
     If there's no If-range header, then true.
@@ -1372,7 +1373,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 bool
 HttpTransactCache::validate_ifrange_header_if_any(HTTPHdr *request, HTTPHdr *response)
 {
-  if (!(request->presence(MIME_PRESENCE_RANGE) && request->presence(MIME_PRESENCE_IF_RANGE))) {
+  if (!request->presence(MIME_PRESENCE_IF_RANGE)) {
     return true;
   }
 
