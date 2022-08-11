@@ -33,53 +33,47 @@
 #include "include/proxy-wasm/signature_util.h"
 #include "include/proxy-wasm/vm_id_handle.h"
 
-namespace proxy_wasm
-{
-namespace
-{
-  // Map from Wasm Key to the local Wasm instance.
-  thread_local std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> local_wasms;
-  thread_local std::unordered_map<std::string, std::weak_ptr<PluginHandleBase>> local_plugins;
-  // Map from Wasm Key to the base Wasm instance, using a pointer to avoid the initialization fiasco.
-  std::mutex base_wasms_mutex;
-  std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> *base_wasms = nullptr;
+namespace proxy_wasm {
 
-  std::vector<uint8_t>
-  Sha256(const std::vector<std::string_view> &parts)
-  {
-    uint8_t sha256[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha_ctx;
-    SHA256_Init(&sha_ctx);
-    for (auto part : parts) {
-      SHA256_Update(&sha_ctx, part.data(), part.size());
-    }
-    SHA256_Final(sha256, &sha_ctx);
-    return std::vector<uint8_t>(std::begin(sha256), std::end(sha256));
-  }
+namespace {
 
-  std::string
-  BytesToHex(const std::vector<uint8_t> &bytes)
-  {
-    static const char *const hex = "0123456789ABCDEF";
-    std::string result;
-    result.reserve(bytes.size() * 2);
-    for (auto byte : bytes) {
-      result.push_back(hex[byte >> 4]);
-      result.push_back(hex[byte & 0xf]);
-    }
-    return result;
+// Map from Wasm Key to the local Wasm instance.
+thread_local std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> local_wasms;
+thread_local std::unordered_map<std::string, std::weak_ptr<PluginHandleBase>> local_plugins;
+// Map from Wasm Key to the base Wasm instance, using a pointer to avoid the initialization fiasco.
+std::mutex base_wasms_mutex;
+std::unordered_map<std::string, std::weak_ptr<WasmHandleBase>> *base_wasms = nullptr;
+
+std::vector<uint8_t> Sha256(const std::vector<std::string_view> &parts) {
+  uint8_t sha256[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha_ctx;
+  SHA256_Init(&sha_ctx);
+  for (auto part : parts) {
+    SHA256_Update(&sha_ctx, part.data(), part.size());
   }
+  SHA256_Final(sha256, &sha_ctx);
+  return std::vector<uint8_t>(std::begin(sha256), std::end(sha256));
+}
+
+std::string BytesToHex(const std::vector<uint8_t> &bytes) {
+  static const char *const hex = "0123456789ABCDEF";
+  std::string result;
+  result.reserve(bytes.size() * 2);
+  for (auto byte : bytes) {
+    result.push_back(hex[byte >> 4]);
+    result.push_back(hex[byte & 0xf]);
+  }
+  return result;
+}
 
 } // namespace
 
-std::string
-makeVmKey(std::string_view vm_id, std::string_view vm_configuration, std::string_view code)
-{
+std::string makeVmKey(std::string_view vm_id, std::string_view vm_configuration,
+                      std::string_view code) {
   return BytesToHex(Sha256({vm_id, vm_configuration, code}));
 }
 
-class WasmBase::ShutdownHandle
-{
+class WasmBase::ShutdownHandle {
 public:
   ~ShutdownHandle() { wasm_->finishShutdown(); }
   ShutdownHandle(std::shared_ptr<WasmBase> wasm) : wasm_(std::move(wasm)) {}
@@ -88,27 +82,29 @@ private:
   std::shared_ptr<WasmBase> wasm_;
 };
 
-void
-WasmBase::registerCallbacks()
-{
-#define _REGISTER(_fn)                                   \
-  wasm_vm_->registerCallback("env", #_fn, &exports::_fn, \
-                             &ConvertFunctionWordToUint32<decltype(exports::_fn), exports::_fn>::convertFunctionWordToUint32)
+void WasmBase::registerCallbacks() {
+#define _REGISTER(_fn)                                                                             \
+  wasm_vm_->registerCallback(                                                                      \
+      "env", #_fn, &exports::_fn,                                                                  \
+      &ConvertFunctionWordToUint32<decltype(exports::_fn),                                         \
+                                   exports::_fn>::convertFunctionWordToUint32)
   _REGISTER(pthread_equal);
   _REGISTER(emscripten_notify_memory_growth);
 #undef _REGISTER
 
   // Register the capability with the VM if it has been allowed, otherwise register a stub.
-#define _REGISTER(module_name, name_prefix, export_prefix, _fn)                                                         \
-  if (capabilityAllowed(name_prefix #_fn)) {                                                                            \
-    wasm_vm_->registerCallback(module_name, name_prefix #_fn, &exports::export_prefix##_fn,                             \
-                               &ConvertFunctionWordToUint32<decltype(exports::export_prefix##_fn),                      \
-                                                            exports::export_prefix##_fn>::convertFunctionWordToUint32); \
-  } else {                                                                                                              \
-    typedef decltype(exports::export_prefix##_fn) export_type;                                                          \
-    constexpr export_type *stub = &exports::_fn##Stub<export_type>::stub;                                               \
-    wasm_vm_->registerCallback(module_name, name_prefix #_fn, stub,                                                     \
-                               &ConvertFunctionWordToUint32<export_type, stub>::convertFunctionWordToUint32);           \
+#define _REGISTER(module_name, name_prefix, export_prefix, _fn)                                    \
+  if (capabilityAllowed(name_prefix #_fn)) {                                                       \
+    wasm_vm_->registerCallback(                                                                    \
+        module_name, name_prefix #_fn, &exports::export_prefix##_fn,                               \
+        &ConvertFunctionWordToUint32<decltype(exports::export_prefix##_fn),                        \
+                                     exports::export_prefix##_fn>::convertFunctionWordToUint32);   \
+  } else {                                                                                         \
+    typedef decltype(exports::export_prefix##_fn) export_type;                                     \
+    constexpr export_type *stub = &exports::_fn##Stub<export_type>::stub;                          \
+    wasm_vm_->registerCallback(                                                                    \
+        module_name, name_prefix #_fn, stub,                                                       \
+        &ConvertFunctionWordToUint32<export_type, stub>::convertFunctionWordToUint32);             \
   }
 
 #define _REGISTER_WASI_UNSTABLE(_fn) _REGISTER("wasi_unstable", , wasi_unstable_, _fn)
@@ -139,9 +135,7 @@ WasmBase::registerCallbacks()
 #undef _REGISTER
 }
 
-void
-WasmBase::getFunctions()
-{
+void WasmBase::getFunctions() {
 #define _GET(_fn) wasm_vm_->getFunction(#_fn, &_fn##_);
 #define _GET_ALIAS(_fn, _alias) wasm_vm_->getFunction(#_alias, &_fn##_);
   _GET(_initialize);
@@ -162,17 +156,17 @@ WasmBase::getFunctions()
 #undef _GET
 
   // Try to point the capability to one of the module exports, if the capability has been allowed.
-#define _GET_PROXY(_fn)                            \
-  if (capabilityAllowed("proxy_" #_fn)) {          \
-    wasm_vm_->getFunction("proxy_" #_fn, &_fn##_); \
-  } else {                                         \
-    _fn##_ = nullptr;                              \
+#define _GET_PROXY(_fn)                                                                            \
+  if (capabilityAllowed("proxy_" #_fn)) {                                                          \
+    wasm_vm_->getFunction("proxy_" #_fn, &_fn##_);                                                 \
+  } else {                                                                                         \
+    _fn##_ = nullptr;                                                                              \
   }
-#define _GET_PROXY_ABI(_fn, _abi)                        \
-  if (capabilityAllowed("proxy_" #_fn)) {                \
-    wasm_vm_->getFunction("proxy_" #_fn, &_fn##_abi##_); \
-  } else {                                               \
-    _fn##_abi##_ = nullptr;                              \
+#define _GET_PROXY_ABI(_fn, _abi)                                                                  \
+  if (capabilityAllowed("proxy_" #_fn)) {                                                          \
+    wasm_vm_->getFunction("proxy_" #_fn, &_fn##_abi##_);                                           \
+  } else {                                                                                         \
+    _fn##_abi##_ = nullptr;                                                                        \
   }
 
   FOR_ALL_MODULE_FUNCTIONS(_GET_PROXY);
@@ -180,7 +174,8 @@ WasmBase::getFunctions()
   if (abiVersion() == AbiVersion::ProxyWasm_0_1_0) {
     _GET_PROXY_ABI(on_request_headers, _abi_01);
     _GET_PROXY_ABI(on_response_headers, _abi_01);
-  } else if (abiVersion() == AbiVersion::ProxyWasm_0_2_0 || abiVersion() == AbiVersion::ProxyWasm_0_2_1) {
+  } else if (abiVersion() == AbiVersion::ProxyWasm_0_2_0 ||
+             abiVersion() == AbiVersion::ProxyWasm_0_2_1) {
     _GET_PROXY_ABI(on_request_headers, _abi_02);
     _GET_PROXY_ABI(on_response_headers, _abi_02);
     _GET_PROXY(on_foreign_function);
@@ -189,15 +184,14 @@ WasmBase::getFunctions()
 #undef _GET_PROXY
 }
 
-WasmBase::WasmBase(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, const WasmVmFactory &factory)
-  : std::enable_shared_from_this<WasmBase>(*base_wasm_handle->wasm()),
-    vm_id_(base_wasm_handle->wasm()->vm_id_),
-    vm_key_(base_wasm_handle->wasm()->vm_key_),
-    started_from_(base_wasm_handle->wasm()->wasm_vm()->cloneable()),
-    envs_(base_wasm_handle->wasm()->envs()),
-    allowed_capabilities_(base_wasm_handle->wasm()->allowed_capabilities_),
-    base_wasm_handle_(base_wasm_handle)
-{
+WasmBase::WasmBase(const std::shared_ptr<WasmHandleBase> &base_wasm_handle,
+                   const WasmVmFactory &factory)
+    : std::enable_shared_from_this<WasmBase>(*base_wasm_handle->wasm()),
+      vm_id_(base_wasm_handle->wasm()->vm_id_), vm_key_(base_wasm_handle->wasm()->vm_key_),
+      started_from_(base_wasm_handle->wasm()->wasm_vm()->cloneable()),
+      envs_(base_wasm_handle->wasm()->envs()),
+      allowed_capabilities_(base_wasm_handle->wasm()->allowed_capabilities_),
+      base_wasm_handle_(base_wasm_handle) {
   if (started_from_ != Cloneable::NotCloneable) {
     wasm_vm_ = base_wasm_handle->wasm()->wasm_vm()->clone();
   } else {
@@ -210,17 +204,13 @@ WasmBase::WasmBase(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, cons
   }
 }
 
-WasmBase::WasmBase(std::unique_ptr<WasmVm> wasm_vm, std::string_view vm_id, std::string_view vm_configuration,
-                   std::string_view vm_key, std::unordered_map<std::string, std::string> envs,
+WasmBase::WasmBase(std::unique_ptr<WasmVm> wasm_vm, std::string_view vm_id,
+                   std::string_view vm_configuration, std::string_view vm_key,
+                   std::unordered_map<std::string, std::string> envs,
                    AllowedCapabilitiesMap allowed_capabilities)
-  : vm_id_(std::string(vm_id)),
-    vm_key_(std::string(vm_key)),
-    wasm_vm_(std::move(wasm_vm)),
-    envs_(std::move(envs)),
-    allowed_capabilities_(std::move(allowed_capabilities)),
-    vm_configuration_(std::string(vm_configuration)),
-    vm_id_handle_(getVmIdHandle(vm_id))
-{
+    : vm_id_(std::string(vm_id)), vm_key_(std::string(vm_key)), wasm_vm_(std::move(wasm_vm)),
+      envs_(std::move(envs)), allowed_capabilities_(std::move(allowed_capabilities)),
+      vm_configuration_(std::string(vm_configuration)), vm_id_handle_(getVmIdHandle(vm_id)) {
   if (!wasm_vm_) {
     failed_ = FailState::UnableToCreateVm;
   } else {
@@ -228,16 +218,13 @@ WasmBase::WasmBase(std::unique_ptr<WasmVm> wasm_vm, std::string_view vm_id, std:
   }
 }
 
-WasmBase::~WasmBase()
-{
+WasmBase::~WasmBase() {
   root_contexts_.clear();
   pending_done_.clear();
   pending_delete_.clear();
 }
 
-bool
-WasmBase::load(const std::string &code, bool allow_precompiled)
-{
+bool WasmBase::load(const std::string &code, bool allow_precompiled) {
   assert(!started_from_.has_value());
 
   if (!wasm_vm_) {
@@ -308,22 +295,21 @@ WasmBase::load(const std::string &code, bool allow_precompiled)
 
   // Store for future use in non-cloneable Wasm engines.
   if (wasm_vm_->cloneable() == Cloneable::NotCloneable) {
-    module_bytecode_    = stripped;
+    module_bytecode_ = stripped;
     module_precompiled_ = precompiled;
   }
 
   return true;
 }
 
-bool
-WasmBase::initialize()
-{
+bool WasmBase::initialize() {
   if (!wasm_vm_) {
     return false;
   }
 
   if (started_from_ == Cloneable::NotCloneable) {
-    auto ok = wasm_vm_->load(base_wasm_handle_->wasm()->moduleBytecode(), base_wasm_handle_->wasm()->modulePrecompiled(),
+    auto ok = wasm_vm_->load(base_wasm_handle_->wasm()->moduleBytecode(),
+                             base_wasm_handle_->wasm()->modulePrecompiled(),
                              base_wasm_handle_->wasm()->functionNames());
     if (!ok) {
       fail(FailState::UnableToInitializeCode, "Failed to load Wasm module from base Wasm");
@@ -353,9 +339,8 @@ WasmBase::initialize()
   return !isFailed();
 }
 
-ContextBase *
-WasmBase::getRootContext(const std::shared_ptr<PluginBase> &plugin, bool allow_closed)
-{
+ContextBase *WasmBase::getRootContext(const std::shared_ptr<PluginBase> &plugin,
+                                      bool allow_closed) {
   auto it = root_contexts_.find(plugin->key());
   if (it != root_contexts_.end()) {
     return it->second.get();
@@ -369,9 +354,7 @@ WasmBase::getRootContext(const std::shared_ptr<PluginBase> &plugin, bool allow_c
   return nullptr;
 }
 
-void
-WasmBase::startVm(ContextBase *root_context)
-{
+void WasmBase::startVm(ContextBase *root_context) {
   if (_initialize_) {
     // WASI reactor.
     _initialize_(root_context);
@@ -389,22 +372,18 @@ WasmBase::startVm(ContextBase *root_context)
   }
 }
 
-bool
-WasmBase::configure(ContextBase *root_context, std::shared_ptr<PluginBase> plugin)
-{
+bool WasmBase::configure(ContextBase *root_context, std::shared_ptr<PluginBase> plugin) {
   return root_context->onConfigure(std::move(plugin));
 }
 
-ContextBase *
-WasmBase::start(const std::shared_ptr<PluginBase> &plugin)
-{
+ContextBase *WasmBase::start(const std::shared_ptr<PluginBase> &plugin) {
   auto it = root_contexts_.find(plugin->key());
   if (it != root_contexts_.end()) {
     it->second->onStart(plugin);
     return it->second.get();
   }
-  auto context                  = std::unique_ptr<ContextBase>(createRootContext(plugin));
-  auto *context_ptr             = context.get();
+  auto context = std::unique_ptr<ContextBase>(createRootContext(plugin));
+  auto *context_ptr = context.get();
   root_contexts_[plugin->key()] = std::move(context);
   if (!context_ptr->onStart(plugin)) {
     return nullptr;
@@ -412,9 +391,7 @@ WasmBase::start(const std::shared_ptr<PluginBase> &plugin)
   return context_ptr;
 };
 
-uint32_t
-WasmBase::allocContextId()
-{
+uint32_t WasmBase::allocContextId() {
   while (true) {
     auto id = next_context_id_++;
     // Prevent reuse.
@@ -424,9 +401,7 @@ WasmBase::allocContextId()
   }
 }
 
-void
-WasmBase::startShutdown(std::string_view plugin_key)
-{
+void WasmBase::startShutdown(std::string_view plugin_key) {
   auto it = root_contexts_.find(std::string(plugin_key));
   if (it != root_contexts_.end()) {
     if (it->second->onDone()) {
@@ -438,9 +413,7 @@ WasmBase::startShutdown(std::string_view plugin_key)
   }
 }
 
-void
-WasmBase::startShutdown()
-{
+void WasmBase::startShutdown() {
   auto it = root_contexts_.begin();
   while (it != root_contexts_.end()) {
     if (it->second->onDone()) {
@@ -452,9 +425,7 @@ WasmBase::startShutdown()
   }
 }
 
-WasmResult
-WasmBase::done(ContextBase *root_context)
-{
+WasmResult WasmBase::done(ContextBase *root_context) {
   auto it = pending_done_.find(root_context->plugin_->key());
   if (it == pending_done_.end()) {
     return WasmResult::NotFound;
@@ -463,13 +434,12 @@ WasmBase::done(ContextBase *root_context)
   pending_done_.erase(it);
   // Defer the delete so that onDelete is not called from within the done() handler.
   shutdown_handle_ = std::make_unique<ShutdownHandle>(shared_from_this());
-  addAfterVmCallAction([shutdown_handle = shutdown_handle_.release()]() { delete shutdown_handle; });
+  addAfterVmCallAction(
+      [shutdown_handle = shutdown_handle_.release()]() { delete shutdown_handle; });
   return WasmResult::Ok;
 }
 
-void
-WasmBase::finishShutdown()
-{
+void WasmBase::finishShutdown() {
   auto it = pending_delete_.begin();
   while (it != pending_delete_.end()) {
     (*it)->onDelete();
@@ -477,10 +447,11 @@ WasmBase::finishShutdown()
   }
 }
 
-std::shared_ptr<WasmHandleBase>
-createWasm(const std::string &vm_key, const std::string &code, const std::shared_ptr<PluginBase> &plugin,
-           const WasmHandleFactory &factory, const WasmHandleCloneFactory &clone_factory, bool allow_precompiled)
-{
+std::shared_ptr<WasmHandleBase> createWasm(const std::string &vm_key, const std::string &code,
+                                           const std::shared_ptr<PluginBase> &plugin,
+                                           const WasmHandleFactory &factory,
+                                           const WasmHandleCloneFactory &clone_factory,
+                                           bool allow_precompiled) {
   std::shared_ptr<WasmHandleBase> wasm_handle;
   {
     std::lock_guard<std::mutex> guard(base_wasms_mutex);
@@ -527,16 +498,15 @@ createWasm(const std::string &vm_key, const std::string &code, const std::shared
     return nullptr;
   }
   if (!configuration_canary_handle->wasm()->configure(root_context, plugin)) {
-    configuration_canary_handle->wasm()->fail(FailState::ConfigureFailed, "Failed to configure base Wasm plugin");
+    configuration_canary_handle->wasm()->fail(FailState::ConfigureFailed,
+                                              "Failed to configure base Wasm plugin");
     return nullptr;
   }
   configuration_canary_handle->kill();
   return wasm_handle;
 };
 
-std::shared_ptr<WasmHandleBase>
-getThreadLocalWasm(std::string_view vm_key)
-{
+std::shared_ptr<WasmHandleBase> getThreadLocalWasm(std::string_view vm_key) {
   auto it = local_wasms.find(std::string(vm_key));
   if (it == local_wasms.end()) {
     return nullptr;
@@ -549,8 +519,8 @@ getThreadLocalWasm(std::string_view vm_key)
 }
 
 static std::shared_ptr<WasmHandleBase>
-getOrCreateThreadLocalWasm(const std::shared_ptr<WasmHandleBase> &base_handle, const WasmHandleCloneFactory &clone_factory)
-{
+getOrCreateThreadLocalWasm(const std::shared_ptr<WasmHandleBase> &base_handle,
+                           const WasmHandleCloneFactory &clone_factory) {
   std::string vm_key(base_handle->wasm()->vm_key());
   // Get existing thread-local WasmVM.
   auto it = local_wasms.find(vm_key);
@@ -585,10 +555,9 @@ getOrCreateThreadLocalWasm(const std::shared_ptr<WasmHandleBase> &base_handle, c
   return wasm_handle;
 }
 
-std::shared_ptr<PluginHandleBase>
-getOrCreateThreadLocalPlugin(const std::shared_ptr<WasmHandleBase> &base_handle, const std::shared_ptr<PluginBase> &plugin,
-                             const WasmHandleCloneFactory &clone_factory, const PluginHandleFactory &plugin_factory)
-{
+std::shared_ptr<PluginHandleBase> getOrCreateThreadLocalPlugin(
+    const std::shared_ptr<WasmHandleBase> &base_handle, const std::shared_ptr<PluginBase> &plugin,
+    const WasmHandleCloneFactory &clone_factory, const PluginHandleFactory &plugin_factory) {
   std::string key(std::string(base_handle->wasm()->vm_key()) + "||" + plugin->key());
   // Get existing thread-local Plugin handle.
   auto it = local_plugins.find(key);
@@ -612,7 +581,8 @@ getOrCreateThreadLocalPlugin(const std::shared_ptr<WasmHandleBase> &base_handle,
     return nullptr;
   }
   if (!wasm_handle->wasm()->configure(plugin_context, plugin)) {
-    base_handle->wasm()->fail(FailState::ConfigureFailed, "Failed to configure thread-local Wasm plugin");
+    base_handle->wasm()->fail(FailState::ConfigureFailed,
+                              "Failed to configure thread-local Wasm plugin");
     return nullptr;
   }
   auto plugin_handle = plugin_factory(wasm_handle, plugin);
@@ -628,9 +598,7 @@ getOrCreateThreadLocalPlugin(const std::shared_ptr<WasmHandleBase> &base_handle,
   return plugin_handle;
 }
 
-void
-clearWasmCachesForTesting()
-{
+void clearWasmCachesForTesting() {
   local_plugins.clear();
   local_wasms.clear();
   std::lock_guard<std::mutex> guard(base_wasms_mutex);

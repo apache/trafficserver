@@ -24,13 +24,11 @@
 
 #include "include/proxy-wasm/bytecode_util.h"
 
-namespace
-{
+namespace {
+
 #ifdef PROXY_WASM_VERIFY_WITH_ED25519_PUBKEY
 
-uint8_t
-hex2dec(const unsigned char c)
-{
+uint8_t hex2dec(const unsigned char c) {
   if (c >= '0' && c <= '9') {
     return c - '0';
   }
@@ -43,10 +41,7 @@ hex2dec(const unsigned char c)
   throw std::logic_error{"invalid hex character"};
 }
 
-template <size_t N>
-constexpr std::array<uint8_t, N>
-hex2pubkey(const char (&hex)[2 * N + 1])
-{
+template <size_t N> constexpr std::array<uint8_t, N> hex2pubkey(const char (&hex)[2 * N + 1]) {
   std::array<uint8_t, N> pubkey{};
   for (size_t i = 0; i < pubkey.size(); i++) {
     pubkey[i] = hex2dec(hex[2 * i]) << 4 | hex2dec(hex[2 * i + 1]);
@@ -58,11 +53,10 @@ hex2pubkey(const char (&hex)[2 * N + 1])
 
 } // namespace
 
-namespace proxy_wasm
-{
-bool
-SignatureUtil::verifySignature(std::string_view bytecode, std::string &message)
-{
+namespace proxy_wasm {
+
+bool SignatureUtil::verifySignature(std::string_view bytecode, std::string &message) {
+
 #ifdef PROXY_WASM_VERIFY_WITH_ED25519_PUBKEY
 
   /*
@@ -113,7 +107,8 @@ SignatureUtil::verifySignature(std::string_view bytecode, std::string &message)
 
   static const auto ed25519_pubkey = hex2pubkey<32>(PROXY_WASM_VERIFY_WITH_ED25519_PUBKEY);
 
-  EVP_PKEY *pubkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, ed25519_pubkey.data(), 32 /* ED25519_PUBLIC_KEY_LEN */);
+  EVP_PKEY *pubkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, ed25519_pubkey.data(),
+                                                 32 /* ED25519_PUBLIC_KEY_LEN */);
   if (pubkey == nullptr) {
     message = "Failed to load the public key";
     return false;
@@ -126,8 +121,9 @@ SignatureUtil::verifySignature(std::string_view bytecode, std::string &message)
     return false;
   }
 
-  bool ok = (EVP_DigestVerifyInit(mdctx, nullptr, nullptr, nullptr, pubkey) != 0) &&
-            (EVP_DigestVerify(mdctx, signature, 64 /* ED25519_SIGNATURE_LEN */, hash, sizeof(hash)) != 0);
+  bool ok =
+      (EVP_DigestVerifyInit(mdctx, nullptr, nullptr, nullptr, pubkey) != 0) &&
+      (EVP_DigestVerify(mdctx, signature, 64 /* ED25519_SIGNATURE_LEN */, hash, sizeof(hash)) != 0);
 
   EVP_MD_CTX_free(mdctx);
   EVP_PKEY_free(pubkey);

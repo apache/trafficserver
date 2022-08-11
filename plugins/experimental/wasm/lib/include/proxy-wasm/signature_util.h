@@ -16,11 +16,10 @@
 
 #include <string_view>
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 // Utility functions to verify Wasm signatures.
-class SignatureUtil
-{
+class SignatureUtil {
 public:
   /**
    * verifySignature validates Wasm signature.

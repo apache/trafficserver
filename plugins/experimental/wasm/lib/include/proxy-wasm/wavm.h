@@ -19,8 +19,8 @@
 
 #include "include/proxy-wasm/wasm_vm.h"
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 std::unique_ptr<WasmVm> createWavmVm();
 
 } // namespace proxy_wasm

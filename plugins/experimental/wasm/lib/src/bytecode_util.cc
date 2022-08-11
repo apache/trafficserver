@@ -16,19 +16,15 @@
 
 #include <cstring>
 
-namespace proxy_wasm
-{
-bool
-BytecodeUtil::checkWasmHeader(std::string_view bytecode)
-{
+namespace proxy_wasm {
+
+bool BytecodeUtil::checkWasmHeader(std::string_view bytecode) {
   // Wasm file header is 8 bytes (magic number + version).
   static const uint8_t wasm_magic_number[4] = {0x00, 0x61, 0x73, 0x6d};
   return (bytecode.size() < 8 || ::memcmp(bytecode.data(), wasm_magic_number, 4) == 0);
 }
 
-bool
-BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersion &ret)
-{
+bool BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersion &ret) {
   ret = proxy_wasm::AbiVersion::Unknown;
   // Check Wasm header.
   if (!checkWasmHeader(bytecode)) {
@@ -43,7 +39,7 @@ BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersion &r
       return false;
     }
     const auto section_type = *pos++;
-    uint32_t section_len    = 0;
+    uint32_t section_len = 0;
     if (!parseVarint(pos, end, section_len) || pos + section_len > end) {
       return false;
     }
@@ -93,9 +89,8 @@ BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersion &r
   return true;
 }
 
-bool
-BytecodeUtil::getCustomSection(std::string_view bytecode, std::string_view name, std::string_view &ret)
-{
+bool BytecodeUtil::getCustomSection(std::string_view bytecode, std::string_view name,
+                                    std::string_view &ret) {
   // Check Wasm header.
   if (!checkWasmHeader(bytecode)) {
     return false;
@@ -109,14 +104,14 @@ BytecodeUtil::getCustomSection(std::string_view bytecode, std::string_view name,
       return false;
     }
     const auto section_type = *pos++;
-    uint32_t section_len    = 0;
+    uint32_t section_len = 0;
     if (!parseVarint(pos, end, section_len) || pos + section_len > end) {
       return false;
     }
     if (section_type == 0) {
       // Custom section.
       const auto *const section_data_start = pos;
-      uint32_t section_name_len            = 0;
+      uint32_t section_name_len = 0;
       if (!BytecodeUtil::parseVarint(pos, end, section_name_len) || pos + section_name_len > end) {
         return false;
       }
@@ -134,9 +129,8 @@ BytecodeUtil::getCustomSection(std::string_view bytecode, std::string_view name,
   return true;
 };
 
-bool
-BytecodeUtil::getFunctionNameIndex(std::string_view bytecode, std::unordered_map<uint32_t, std::string> &ret)
-{
+bool BytecodeUtil::getFunctionNameIndex(std::string_view bytecode,
+                                        std::unordered_map<uint32_t, std::string> &ret) {
   std::string_view name_section = {};
   if (!BytecodeUtil::getCustomSection(bytecode, "name", name_section)) {
     return false;
@@ -156,7 +150,7 @@ BytecodeUtil::getFunctionNameIndex(std::string_view bytecode, std::unordered_map
         pos += subsection_size;
       } else {
         // Enters function name subsection.
-        const auto *const start      = pos;
+        const auto *const start = pos;
         uint32_t namemap_vector_size = 0;
         if (!parseVarint(pos, end, namemap_vector_size) || pos + namemap_vector_size > end) {
           return false;
@@ -183,9 +177,7 @@ BytecodeUtil::getFunctionNameIndex(std::string_view bytecode, std::unordered_map
   return true;
 }
 
-bool
-BytecodeUtil::getStrippedSource(std::string_view bytecode, std::string &ret)
-{
+bool BytecodeUtil::getStrippedSource(std::string_view bytecode, std::string &ret) {
   // Check Wasm header.
   if (!checkWasmHeader(bytecode)) {
     return false;
@@ -200,13 +192,13 @@ BytecodeUtil::getStrippedSource(std::string_view bytecode, std::string &ret)
       return false;
     }
     const auto section_type = *pos++;
-    uint32_t section_len    = 0;
+    uint32_t section_len = 0;
     if (!parseVarint(pos, end, section_len) || pos + section_len > end) {
       return false;
     }
     if (section_type == 0 /* custom section */) {
       const auto *const section_data_start = pos;
-      uint32_t section_name_len            = 0;
+      uint32_t section_name_len = 0;
       if (!parseVarint(pos, end, section_name_len) || pos + section_name_len > end) {
         return false;
       }
@@ -235,9 +227,7 @@ BytecodeUtil::getStrippedSource(std::string_view bytecode, std::string &ret)
   return true;
 }
 
-bool
-BytecodeUtil::parseVarint(const char *&pos, const char *end, uint32_t &ret)
-{
+bool BytecodeUtil::parseVarint(const char *&pos, const char *end, uint32_t &ret) {
   uint32_t shift = 0;
   char b;
   do {

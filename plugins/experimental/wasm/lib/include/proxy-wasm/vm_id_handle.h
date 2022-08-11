@@ -19,10 +19,9 @@
 #include <memory>
 #include <unordered_map>
 
-namespace proxy_wasm
-{
-class VmIdHandle
-{
+namespace proxy_wasm {
+
+class VmIdHandle {
 public:
   VmIdHandle(std::string_view vm_id) : vm_id_(std::string(vm_id)){};
   ~VmIdHandle();

@@ -15,14 +15,15 @@
 #include "src/common/types.h"
 #include "wasmedge/wasmedge.h"
 
-namespace proxy_wasm::WasmEdge
-{
-using WasmEdgeStorePtr     = common::CSmartPtr<WasmEdge_StoreContext, WasmEdge_StoreDelete>;
-using WasmEdgeVMPtr        = common::CSmartPtr<WasmEdge_VMContext, WasmEdge_VMDelete>;
-using WasmEdgeLoaderPtr    = common::CSmartPtr<WasmEdge_LoaderContext, WasmEdge_LoaderDelete>;
+namespace proxy_wasm::WasmEdge {
+
+using WasmEdgeStorePtr = common::CSmartPtr<WasmEdge_StoreContext, WasmEdge_StoreDelete>;
+using WasmEdgeVMPtr = common::CSmartPtr<WasmEdge_VMContext, WasmEdge_VMDelete>;
+using WasmEdgeLoaderPtr = common::CSmartPtr<WasmEdge_LoaderContext, WasmEdge_LoaderDelete>;
 using WasmEdgeValidatorPtr = common::CSmartPtr<WasmEdge_ValidatorContext, WasmEdge_ValidatorDelete>;
-using WasmEdgeExecutorPtr  = common::CSmartPtr<WasmEdge_ExecutorContext, WasmEdge_ExecutorDelete>;
+using WasmEdgeExecutorPtr = common::CSmartPtr<WasmEdge_ExecutorContext, WasmEdge_ExecutorDelete>;
 using WasmEdgeASTModulePtr = common::CSmartPtr<WasmEdge_ASTModuleContext, WasmEdge_ASTModuleDelete>;
-using WasmEdgeModulePtr    = common::CSmartPtr<WasmEdge_ModuleInstanceContext, WasmEdge_ModuleInstanceDelete>;
+using WasmEdgeModulePtr =
+    common::CSmartPtr<WasmEdge_ModuleInstanceContext, WasmEdge_ModuleInstanceDelete>;
 
 } // namespace proxy_wasm::WasmEdge

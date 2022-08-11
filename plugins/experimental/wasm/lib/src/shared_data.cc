@@ -23,32 +23,26 @@
 
 #include "include/proxy-wasm/vm_id_handle.h"
 
-namespace proxy_wasm
-{
-SharedData &
-getGlobalSharedData()
-{
+namespace proxy_wasm {
+
+SharedData &getGlobalSharedData() {
   static auto *ptr = new SharedData;
   return *ptr;
 };
 
-SharedData::SharedData(bool register_vm_id_callback)
-{
+SharedData::SharedData(bool register_vm_id_callback) {
   if (register_vm_id_callback) {
     registerVmIdHandleCallback([this](std::string_view vm_id) { this->deleteByVmId(vm_id); });
   }
 }
 
-void
-SharedData::deleteByVmId(std::string_view vm_id)
-{
+void SharedData::deleteByVmId(std::string_view vm_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   data_.erase(std::string(vm_id));
 }
 
-WasmResult
-SharedData::get(std::string_view vm_id, const std::string_view key, std::pair<std::string, uint32_t> *result)
-{
+WasmResult SharedData::get(std::string_view vm_id, const std::string_view key,
+                           std::pair<std::string, uint32_t> *result) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto map = data_.find(std::string(vm_id));
   if (map == data_.end()) {
@@ -62,9 +56,7 @@ SharedData::get(std::string_view vm_id, const std::string_view key, std::pair<st
   return WasmResult::NotFound;
 }
 
-WasmResult
-SharedData::keys(std::string_view vm_id, std::vector<std::string> *result)
-{
+WasmResult SharedData::keys(std::string_view vm_id, std::vector<std::string> *result) {
   result->clear();
 
   std::lock_guard<std::mutex> lock(mutex_);
@@ -80,9 +72,8 @@ SharedData::keys(std::string_view vm_id, std::vector<std::string> *result)
   return WasmResult::Ok;
 }
 
-WasmResult
-SharedData::set(std::string_view vm_id, std::string_view key, std::string_view value, uint32_t cas)
-{
+WasmResult SharedData::set(std::string_view vm_id, std::string_view key, std::string_view value,
+                           uint32_t cas) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unordered_map<std::string, std::pair<std::string, uint32_t>> *map;
   auto map_it = data_.find(std::string(vm_id));
@@ -103,16 +94,15 @@ SharedData::set(std::string_view vm_id, std::string_view key, std::string_view v
   return WasmResult::Ok;
 }
 
-WasmResult
-SharedData::remove(std::string_view vm_id, std::string_view key, uint32_t cas, std::pair<std::string, uint32_t> *result)
-{
+WasmResult SharedData::remove(std::string_view vm_id, std::string_view key, uint32_t cas,
+                              std::pair<std::string, uint32_t> *result) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unordered_map<std::string, std::pair<std::string, uint32_t>> *map;
   auto map_it = data_.find(std::string(vm_id));
   if (map_it == data_.end()) {
     return WasmResult::NotFound;
   }
-  map     = &map_it->second;
+  map = &map_it->second;
   auto it = map->find(std::string(key));
   if (it != map->end()) {
     if (cas != 0U && cas != it->second.second) {

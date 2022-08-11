@@ -53,12 +53,10 @@ enum class WasmResult : uint32_t {
   Unimplemented = 12,
 };
 
-#define _CASE(_e)      \
-  case WasmResult::_e: \
+#define _CASE(_e)                                                                                  \
+  case WasmResult::_e:                                                                             \
     return #_e
-inline std::string
-toString(WasmResult r)
-{
+inline std::string toString(WasmResult r) {
   switch (r) {
     _CASE(Ok);
     _CASE(NotFound);
@@ -79,36 +77,36 @@ toString(WasmResult r)
 #undef _CASE
 
 enum class WasmHeaderMapType : int32_t {
-  RequestHeaders              = 0, // During the onLog callback these are immutable
-  RequestTrailers             = 1, // During the onLog callback these are immutable
-  ResponseHeaders             = 2, // During the onLog callback these are immutable
-  ResponseTrailers            = 3, // During the onLog callback these are immutable
-  GrpcReceiveInitialMetadata  = 4, // Immutable
+  RequestHeaders = 0,              // During the onLog callback these are immutable
+  RequestTrailers = 1,             // During the onLog callback these are immutable
+  ResponseHeaders = 2,             // During the onLog callback these are immutable
+  ResponseTrailers = 3,            // During the onLog callback these are immutable
+  GrpcReceiveInitialMetadata = 4,  // Immutable
   GrpcReceiveTrailingMetadata = 5, // Immutable
-  HttpCallResponseHeaders     = 6, // Immutable
-  HttpCallResponseTrailers    = 7, // Immutable
-  MAX                         = 7,
+  HttpCallResponseHeaders = 6,     // Immutable
+  HttpCallResponseTrailers = 7,    // Immutable
+  MAX = 7,
 };
 enum class WasmBufferType : int32_t {
-  HttpRequestBody       = 0, // During the onLog callback these are immutable
-  HttpResponseBody      = 1, // During the onLog callback these are immutable
+  HttpRequestBody = 0,       // During the onLog callback these are immutable
+  HttpResponseBody = 1,      // During the onLog callback these are immutable
   NetworkDownstreamData = 2, // During the onLog callback these are immutable
-  NetworkUpstreamData   = 3, // During the onLog callback these are immutable
-  HttpCallResponseBody  = 4, // Immutable
-  GrpcReceiveBuffer     = 5, // Immutable
-  VmConfiguration       = 6, // Immutable
-  PluginConfiguration   = 7, // Immutable
-  CallData              = 8, // Immutable
-  MAX                   = 8,
+  NetworkUpstreamData = 3,   // During the onLog callback these are immutable
+  HttpCallResponseBody = 4,  // Immutable
+  GrpcReceiveBuffer = 5,     // Immutable
+  VmConfiguration = 6,       // Immutable
+  PluginConfiguration = 7,   // Immutable
+  CallData = 8,              // Immutable
+  MAX = 8,
 };
 enum class WasmBufferFlags : int32_t {
   // These must be powers of 2.
   EndOfStream = 1,
 };
 enum class WasmStreamType : int32_t {
-  Request    = 0,
-  Response   = 1,
+  Request = 0,
+  Response = 1,
   Downstream = 2,
-  Upstream   = 3,
-  MAX        = 3,
+  Upstream = 3,
+  MAX = 3,
 };

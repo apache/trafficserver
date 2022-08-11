@@ -22,24 +22,28 @@
 #include "include/proxy-wasm/wasm.h"
 #include "include/proxy-wasm/wasm_api_impl.h"
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 /**
  * Registry for Plugin implementation.
  */
 struct NullPluginRegistry {
-  void (*proxy_abi_version_0_1_0_)()                                                                      = nullptr;
-  void (*proxy_abi_version_0_2_0_)()                                                                      = nullptr;
-  void (*proxy_abi_version_0_2_1_)()                                                                      = nullptr;
-  void (*proxy_on_log_)(uint32_t context_id)                                                              = nullptr;
-  uint32_t (*proxy_validate_configuration_)(uint32_t root_context_id, uint32_t plugin_configuration_size) = nullptr;
-  void (*proxy_on_context_create_)(uint32_t context_id, uint32_t parent_context_id)                       = nullptr;
-  uint32_t (*proxy_on_vm_start_)(uint32_t root_context_id, uint32_t vm_configuration_size)                = nullptr;
-  uint32_t (*proxy_on_configure_)(uint32_t root_context_id, uint32_t plugin_configuration_size)           = nullptr;
-  void (*proxy_on_tick_)(uint32_t context_id)                                                             = nullptr;
-  void (*proxy_on_foreign_function_)(uint32_t context_id, uint32_t token, uint32_t data_size)             = nullptr;
-  uint32_t (*proxy_on_done_)(uint32_t context_id)                                                         = nullptr;
-  void (*proxy_on_delete_)(uint32_t context_id)                                                           = nullptr;
+  void (*proxy_abi_version_0_1_0_)() = nullptr;
+  void (*proxy_abi_version_0_2_0_)() = nullptr;
+  void (*proxy_abi_version_0_2_1_)() = nullptr;
+  void (*proxy_on_log_)(uint32_t context_id) = nullptr;
+  uint32_t (*proxy_validate_configuration_)(uint32_t root_context_id,
+                                            uint32_t plugin_configuration_size) = nullptr;
+  void (*proxy_on_context_create_)(uint32_t context_id, uint32_t parent_context_id) = nullptr;
+  uint32_t (*proxy_on_vm_start_)(uint32_t root_context_id,
+                                 uint32_t vm_configuration_size) = nullptr;
+  uint32_t (*proxy_on_configure_)(uint32_t root_context_id,
+                                  uint32_t plugin_configuration_size) = nullptr;
+  void (*proxy_on_tick_)(uint32_t context_id) = nullptr;
+  void (*proxy_on_foreign_function_)(uint32_t context_id, uint32_t token,
+                                     uint32_t data_size) = nullptr;
+  uint32_t (*proxy_on_done_)(uint32_t context_id) = nullptr;
+  void (*proxy_on_delete_)(uint32_t context_id) = nullptr;
   std::unordered_map<std::string, null_plugin::RootFactory> root_factories;
   std::unordered_map<std::string, null_plugin::ContextFactory> context_factories;
 };
@@ -48,8 +52,7 @@ struct NullPluginRegistry {
  * Base class for all plugins, subclass to create a new plugin.
  * NB: this class must implement
  */
-class NullPlugin : public NullVmPlugin
-{
+class NullPlugin : public NullVmPlugin {
 public:
   using NewContextFnPtr = std::unique_ptr<ContextBase> (*)(uint32_t /* id */);
 
@@ -65,7 +68,8 @@ public:
   bool onConfigure(uint64_t root_context_id, uint64_t plugin_configuration_size);
   void onTick(uint64_t root_context_id);
   void onQueueReady(uint64_t root_context_id, uint64_t token);
-  void onForeignFunction(uint64_t root_context_id, uint64_t foreign_function_id, uint64_t data_size);
+  void onForeignFunction(uint64_t root_context_id, uint64_t foreign_function_id,
+                         uint64_t data_size);
 
   void onCreate(uint64_t context_id, uint64_t parent_context_id);
 
@@ -85,7 +89,8 @@ public:
   uint64_t onResponseTrailers(uint64_t context_id, uint64_t trailers);
   uint64_t onResponseMetadata(uint64_t context_id, uint64_t elements);
 
-  void onHttpCallResponse(uint64_t context_id, uint64_t token, uint64_t headers, uint64_t body_size, uint64_t trailers);
+  void onHttpCallResponse(uint64_t context_id, uint64_t token, uint64_t headers, uint64_t body_size,
+                          uint64_t trailers);
 
   void onGrpcReceive(uint64_t context_id, uint64_t token, size_t body_size);
   void onGrpcClose(uint64_t context_id, uint64_t token, uint64_t status_code);
@@ -99,11 +104,7 @@ public:
   null_plugin::RootContext *getRoot(std::string_view root_id);
   null_plugin::Context *getContext(uint64_t context_id);
 
-  void
-  error(std::string_view message)
-  {
-    wasm_vm_->integration()->error(message);
-  }
+  void error(std::string_view message) { wasm_vm_->integration()->error(message); }
 
   null_plugin::Context *ensureContext(uint64_t context_id, uint64_t root_context_id);
   null_plugin::RootContext *ensureRootContext(uint64_t context_id);
@@ -116,59 +117,55 @@ private:
   std::unordered_map<int64_t, std::unique_ptr<null_plugin::ContextBase>> context_map_;
 };
 
-#define PROXY_WASM_NULL_PLUGIN_REGISTRY                                                                                 \
-  extern NullPluginRegistry *context_registry_;                                                                         \
-  struct RegisterContextFactory {                                                                                       \
-    explicit RegisterContextFactory(null_plugin::ContextFactory context_factory, null_plugin::RootFactory root_factory, \
-                                    std::string_view root_id = "")                                                      \
-    {                                                                                                                   \
-      if (!context_registry_) {                                                                                         \
-        context_registry_ = new NullPluginRegistry;                                                                     \
-      }                                                                                                                 \
-      context_registry_->context_factories[std::string(root_id)] = context_factory;                                     \
-      context_registry_->root_factories[std::string(root_id)]    = root_factory;                                        \
-    }                                                                                                                   \
-    explicit RegisterContextFactory(null_plugin::ContextFactory context_factory, std::string_view root_id = "")         \
-    {                                                                                                                   \
-      if (!context_registry_) {                                                                                         \
-        context_registry_ = new NullPluginRegistry;                                                                     \
-      }                                                                                                                 \
-      context_registry_->context_factories[std::string(root_id)] = context_factory;                                     \
-    }                                                                                                                   \
-    explicit RegisterContextFactory(null_plugin::RootFactory root_factory, std::string_view root_id = "")               \
-    {                                                                                                                   \
-      if (!context_registry_) {                                                                                         \
-        context_registry_ = new NullPluginRegistry;                                                                     \
-      }                                                                                                                 \
-      context_registry_->root_factories[std::string(root_id)] = root_factory;                                           \
-    }                                                                                                                   \
+#define PROXY_WASM_NULL_PLUGIN_REGISTRY                                                            \
+  extern NullPluginRegistry *context_registry_;                                                    \
+  struct RegisterContextFactory {                                                                  \
+    explicit RegisterContextFactory(null_plugin::ContextFactory context_factory,                   \
+                                    null_plugin::RootFactory root_factory,                         \
+                                    std::string_view root_id = "") {                               \
+      if (!context_registry_) {                                                                    \
+        context_registry_ = new NullPluginRegistry;                                                \
+      }                                                                                            \
+      context_registry_->context_factories[std::string(root_id)] = context_factory;                \
+      context_registry_->root_factories[std::string(root_id)] = root_factory;                      \
+    }                                                                                              \
+    explicit RegisterContextFactory(null_plugin::ContextFactory context_factory,                   \
+                                    std::string_view root_id = "") {                               \
+      if (!context_registry_) {                                                                    \
+        context_registry_ = new NullPluginRegistry;                                                \
+      }                                                                                            \
+      context_registry_->context_factories[std::string(root_id)] = context_factory;                \
+    }                                                                                              \
+    explicit RegisterContextFactory(null_plugin::RootFactory root_factory,                         \
+                                    std::string_view root_id = "") {                               \
+      if (!context_registry_) {                                                                    \
+        context_registry_ = new NullPluginRegistry;                                                \
+      }                                                                                            \
+      context_registry_->root_factories[std::string(root_id)] = root_factory;                      \
+    }                                                                                              \
   };
 
-#define START_WASM_PLUGIN(_name) \
-  namespace proxy_wasm           \
-  {                              \
-    namespace null_plugin        \
-    {                            \
-      namespace _name            \
-      {                          \
-        PROXY_WASM_NULL_PLUGIN_REGISTRY
+#define START_WASM_PLUGIN(_name)                                                                   \
+  namespace proxy_wasm {                                                                           \
+  namespace null_plugin {                                                                          \
+  namespace _name {                                                                                \
+  PROXY_WASM_NULL_PLUGIN_REGISTRY
 
-#define END_WASM_PLUGIN \
-  }                     \
-  }                     \
+#define END_WASM_PLUGIN                                                                            \
+  }                                                                                                \
+  }                                                                                                \
   }
 
-#define WASM_EXPORT(_t, _f, _a)                                \
-  _t _f _a;                                                    \
-  static int register_export_##_f()                            \
-  {                                                            \
-    if (!context_registry_) {                                  \
-      context_registry_ = new NullPluginRegistry;              \
-    }                                                          \
-    context_registry_->_f##_ = _f;                             \
-    return 0;                                                  \
-  };                                                           \
-  static int register_export_##_f##_ = register_export_##_f(); \
+#define WASM_EXPORT(_t, _f, _a)                                                                    \
+  _t _f _a;                                                                                        \
+  static int register_export_##_f() {                                                              \
+    if (!context_registry_) {                                                                      \
+      context_registry_ = new NullPluginRegistry;                                                  \
+    }                                                                                              \
+    context_registry_->_f##_ = _f;                                                                 \
+    return 0;                                                                                      \
+  };                                                                                               \
+  static int register_export_##_f##_ = register_export_##_f();                                     \
   _t _f _a
 
 } // namespace proxy_wasm

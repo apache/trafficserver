@@ -18,22 +18,22 @@
 
 #include "include/proxy-wasm/wasm.h"
 
-namespace proxy_wasm
-{
-class SharedData
-{
+namespace proxy_wasm {
+
+class SharedData {
 public:
   SharedData(bool register_vm_id_callback = true);
-  WasmResult get(std::string_view vm_id, std::string_view key, std::pair<std::string, uint32_t> *result);
+  WasmResult get(std::string_view vm_id, std::string_view key,
+                 std::pair<std::string, uint32_t> *result);
   WasmResult keys(std::string_view vm_id, std::vector<std::string> *result);
-  WasmResult set(std::string_view vm_id, std::string_view key, std::string_view value, uint32_t cas);
-  WasmResult remove(std::string_view vm_id, std::string_view key, uint32_t cas, std::pair<std::string, uint32_t> *result);
+  WasmResult set(std::string_view vm_id, std::string_view key, std::string_view value,
+                 uint32_t cas);
+  WasmResult remove(std::string_view vm_id, std::string_view key, uint32_t cas,
+                    std::pair<std::string, uint32_t> *result);
   void deleteByVmId(std::string_view vm_id);
 
 private:
-  uint32_t
-  nextCas()
-  {
+  uint32_t nextCas() {
     auto result = cas_;
     cas_++;
     if (cas_ == 0U) { // 0 is not a valid CAS value.

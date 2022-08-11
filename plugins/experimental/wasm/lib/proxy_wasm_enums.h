@@ -26,49 +26,49 @@
 enum class LogLevel : int32_t { trace, debug, info, warn, error, critical, Max = critical };
 enum class FilterStatus : int32_t { Continue = 0, StopIteration = 1 };
 enum class FilterHeadersStatus : int32_t {
-  Continue                     = 0,
-  StopIteration                = 1,
-  ContinueAndEndStream         = 2,
-  StopAllIterationAndBuffer    = 3,
+  Continue = 0,
+  StopIteration = 1,
+  ContinueAndEndStream = 2,
+  StopAllIterationAndBuffer = 3,
   StopAllIterationAndWatermark = 4,
 };
 enum class FilterMetadataStatus : int32_t { Continue = 0 };
 enum class FilterTrailersStatus : int32_t { Continue = 0, StopIteration = 1 };
 enum class FilterDataStatus : int32_t {
-  Continue                  = 0,
-  StopIterationAndBuffer    = 1,
+  Continue = 0,
+  StopIterationAndBuffer = 1,
   StopIterationAndWatermark = 2,
-  StopIterationNoBuffer     = 3
+  StopIterationNoBuffer = 3
 };
 enum class GrpcStatus : int32_t {
-  Ok                 = 0,
-  Canceled           = 1,
-  Unknown            = 2,
-  InvalidArgument    = 3,
-  DeadlineExceeded   = 4,
-  NotFound           = 5,
-  AlreadyExists      = 6,
-  PermissionDenied   = 7,
-  ResourceExhausted  = 8,
+  Ok = 0,
+  Canceled = 1,
+  Unknown = 2,
+  InvalidArgument = 3,
+  DeadlineExceeded = 4,
+  NotFound = 5,
+  AlreadyExists = 6,
+  PermissionDenied = 7,
+  ResourceExhausted = 8,
   FailedPrecondition = 9,
-  Aborted            = 10,
-  OutOfRange         = 11,
-  Unimplemented      = 12,
-  Internal           = 13,
-  Unavailable        = 14,
-  DataLoss           = 15,
-  Unauthenticated    = 16,
-  MaximumValid       = Unauthenticated,
-  InvalidCode        = -1
+  Aborted = 10,
+  OutOfRange = 11,
+  Unimplemented = 12,
+  Internal = 13,
+  Unavailable = 14,
+  DataLoss = 15,
+  Unauthenticated = 16,
+  MaximumValid = Unauthenticated,
+  InvalidCode = -1
 };
 enum class MetricType : int32_t {
-  Counter   = 0,
-  Gauge     = 1,
+  Counter = 0,
+  Gauge = 1,
   Histogram = 2,
-  Max       = 2,
+  Max = 2,
 };
 enum class CloseType : int32_t {
   Unknown = 0,
-  Local   = 1, // Close initiated by the proxy.
-  Remote  = 2, // Close initiated by the peer.
+  Local = 1,  // Close initiated by the proxy.
+  Remote = 2, // Close initiated by the peer.
 };

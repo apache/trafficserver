@@ -25,25 +25,25 @@
 #include <memory>
 #include <vector>
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 #include "proxy_wasm_common.h"
 #include "proxy_wasm_enums.h"
 
-using Pairs                   = std::vector<std::pair<std::string_view, std::string_view>>;
-using PairsWithStringValues   = std::vector<std::pair<std::string_view, std::string>>;
-using TimerToken              = uint32_t;
-using HttpCallToken           = uint32_t;
-using GrpcToken               = uint32_t;
-using GrpcStatusCode          = uint32_t;
+using Pairs = std::vector<std::pair<std::string_view, std::string_view>>;
+using PairsWithStringValues = std::vector<std::pair<std::string_view, std::string>>;
+using TimerToken = uint32_t;
+using HttpCallToken = uint32_t;
+using GrpcToken = uint32_t;
+using GrpcStatusCode = uint32_t;
 using SharedQueueDequeueToken = uint32_t;
 using SharedQueueEnqueueToken = uint32_t;
 
 // TODO: update SDK and use this.
 enum class ProxyAction : uint32_t {
-  Illegal  = 0,
+  Illegal = 0,
   Continue = 1,
-  Pause    = 2,
+  Pause = 2,
 };
 
 struct PluginBase;
@@ -55,7 +55,7 @@ class WasmBase;
  * implement ABI calls which use buffers (e.g. the HTTP body).
  */
 struct BufferInterface {
-  virtual ~BufferInterface()  = default;
+  virtual ~BufferInterface() = default;
   virtual size_t size() const = 0;
   /**
    * Copy bytes from the buffer into the Wasm VM corresponding to 'wasm'.
@@ -69,7 +69,8 @@ struct BufferInterface {
    * NB: in order to support (future) 64-bit VMs and the NullVM we need 64-bits worth of resolution
    * for addresses.
    */
-  virtual WasmResult copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr, uint64_t size_ptr) const = 0;
+  virtual WasmResult copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr,
+                            uint64_t size_ptr) const = 0;
 
   /**
    * Copy (alias) bytes from the VM 'data' into the buffer, replacing the provided range..
@@ -159,7 +160,8 @@ struct RootInterface : public RootGrpcInterface {
    * Called on a Root Context when a response arrives for an outstanding httpCall().
    * @param token is the token returned by the corresponding httpCall().
    */
-  virtual void onHttpCallResponse(HttpCallToken token, uint32_t headers, uint32_t body_size, uint32_t trailers) = 0;
+  virtual void onHttpCallResponse(HttpCallToken token, uint32_t headers, uint32_t body_size,
+                                  uint32_t trailers) = 0;
 
   /**
    * Called on a Root Context when an Inter-VM shared queue message has arrived.
@@ -232,8 +234,9 @@ public:
    * @param grpc_status is an std::optional gRPC status if the connection is a gRPC connection.
    * @param details are details of any (gRPC) error.
    */
-  virtual WasmResult sendLocalResponse(uint32_t response_code, std::string_view body, Pairs additional_headers,
-                                       uint32_t grpc_status, std::string_view details) = 0;
+  virtual WasmResult sendLocalResponse(uint32_t response_code, std::string_view body,
+                                       Pairs additional_headers, uint32_t grpc_status,
+                                       std::string_view details) = 0;
 
   // Clears the route cache for the current request.
   virtual void clearRouteCache() = 0;
@@ -343,7 +346,8 @@ struct HeaderInterface {
    * @param key is the key (header).
    * @param value is the value (header value).
    */
-  virtual WasmResult addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value) = 0;
+  virtual WasmResult addHeaderMapValue(WasmHeaderMapType type, std::string_view key,
+                                       std::string_view value) = 0;
 
   /**
    * Get a value from to a header map.
@@ -351,7 +355,8 @@ struct HeaderInterface {
    * @param key is the key (header).
    * @param result is a pointer to the returned header value.
    */
-  virtual WasmResult getHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view *result) = 0;
+  virtual WasmResult getHeaderMapValue(WasmHeaderMapType type, std::string_view key,
+                                       std::string_view *result) = 0;
 
   /**
    * Get all the key-value pairs in a header map.
@@ -380,7 +385,8 @@ struct HeaderInterface {
    * @param key of the header map.
    * @param value to set in the header map.
    */
-  virtual WasmResult replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value) = 0;
+  virtual WasmResult replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key,
+                                           std::string_view value) = 0;
 
   /**
    * Returns the number of entries in a header map.
@@ -406,8 +412,9 @@ struct HttpCallInterface {
    * Note: the response arrives on the ancestor RootContext as this call may outlive any stream.
    * Plugin writers should use the VM SDK setEffectiveContext() to switch to any waiting streams.
    */
-  virtual WasmResult httpCall(std::string_view target, const Pairs &request_headers, std::string_view request_body,
-                              const Pairs &request_trailers, int timeout_milliseconds, HttpCallToken *token_ptr) = 0;
+  virtual WasmResult httpCall(std::string_view target, const Pairs &request_headers,
+                              std::string_view request_body, const Pairs &request_trailers,
+                              int timeout_milliseconds, HttpCallToken *token_ptr) = 0;
 };
 
 struct GrpcCallInterface {
@@ -423,9 +430,11 @@ struct GrpcCallInterface {
    * @param token_ptr contains a pointer to a location to store the token which will be used with
    * the corresponding onGrpc and grpc calls.
    */
-  virtual WasmResult grpcCall(std::string_view /* grpc_service */, std::string_view /* service_name */,
-                              std::string_view /* method_name */, const Pairs & /* initial_metadata */,
-                              std::string_view /* request */, std::chrono::milliseconds /* timeout */,
+  virtual WasmResult grpcCall(std::string_view /* grpc_service */,
+                              std::string_view /* service_name */,
+                              std::string_view /* method_name */,
+                              const Pairs & /* initial_metadata */, std::string_view /* request */,
+                              std::chrono::milliseconds /* timeout */,
                               GrpcToken * /* token_ptr */) = 0;
 
   /**
@@ -454,8 +463,9 @@ struct GrpcStreamInterface {
    * @param token_ptr contains a pointer to a location to store the token which will be used with
    * the corresponding onGrpc and grpc calls.
    */
-  virtual WasmResult grpcStream(std::string_view grpc_service, std::string_view service_name, std::string_view method_name,
-                                const Pairs & /* initial_metadata */, GrpcToken *token_ptr) = 0;
+  virtual WasmResult grpcStream(std::string_view grpc_service, std::string_view service_name,
+                                std::string_view method_name, const Pairs & /* initial_metadata */,
+                                GrpcToken *token_ptr) = 0;
 
   /**
    * Close a gRPC stream.  In flight data may still result in calls into the VM.
@@ -487,7 +497,8 @@ struct MetricsInterface {
    * @param metric_id_ptr is a location to store a token used for subsequent operations on the
    * metric.
    */
-  virtual WasmResult defineMetric(uint32_t /* type */, std::string_view /* name */, uint32_t * /* metric_id_ptr */) = 0;
+  virtual WasmResult defineMetric(uint32_t /* type */, std::string_view /* name */,
+                                  uint32_t * /* metric_id_ptr */) = 0;
 
   /**
    * Increment a metric.
@@ -540,7 +551,8 @@ struct GeneralInterface {
    * zero, a new timer will be allocated its token will be set.  If the target is non-zero, then
    * that timer will have the new period (or be reset/deleted if period is zero).
    */
-  virtual WasmResult setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr) = 0;
+  virtual WasmResult setTimerPeriod(std::chrono::milliseconds period,
+                                    uint32_t *timer_token_ptr) = 0;
 
   // Provides the current time in nanoseconds since the Unix epoch.
   virtual uint64_t getCurrentTimeNanoseconds() = 0;
@@ -597,7 +609,9 @@ struct SharedDataInterface {
    * @param data is a location to store the returned stored 'value' and the corresponding 'cas'
    * compare-and-swap value which can be used with setSharedData for safe concurrent updates.
    */
-  virtual WasmResult getSharedData(std::string_view key, std::pair<std::string /* value */, uint32_t /* cas */> *data) = 0;
+  virtual WasmResult
+  getSharedData(std::string_view key,
+                std::pair<std::string /* value */, uint32_t /* cas */> *data) = 0;
 
   /**
    * Set a key-value data shared between VMs.
@@ -621,8 +635,9 @@ struct SharedDataInterface {
    * @param cas is a location to store value, and cas number, associated with the removed key
    * the cas associated with the value.
    */
-  virtual WasmResult removeSharedDataKey(std::string_view key, uint32_t cas,
-                                         std::pair<std::string /* value */, uint32_t /* cas */> *result) = 0;
+  virtual WasmResult
+  removeSharedDataKey(std::string_view key, uint32_t cas,
+                      std::pair<std::string /* value */, uint32_t /* cas */> *result) = 0;
 }; // namespace proxy_wasm
 
 struct SharedQueueInterface {
@@ -633,7 +648,8 @@ struct SharedQueueInterface {
    * to make a unique identifier for the queue.
    * @param token_ptr a location to store a token corresponding to the queue.
    */
-  virtual WasmResult registerSharedQueue(std::string_view queue_name, SharedQueueDequeueToken *token_ptr) = 0;
+  virtual WasmResult registerSharedQueue(std::string_view queue_name,
+                                         SharedQueueDequeueToken *token_ptr) = 0;
 
   /**
    * Get the token for a queue.
@@ -642,7 +658,8 @@ struct SharedQueueInterface {
    * to make a unique identifier for the queue.
    * @param token_ptr a location to store a token corresponding to the queue.
    */
-  virtual WasmResult lookupSharedQueue(std::string_view vm_id, std::string_view queue_name, SharedQueueEnqueueToken *token_ptr) = 0;
+  virtual WasmResult lookupSharedQueue(std::string_view vm_id, std::string_view queue_name,
+                                       SharedQueueEnqueueToken *token_ptr) = 0;
 
   /**
    * Dequeue a message from a shared queue.

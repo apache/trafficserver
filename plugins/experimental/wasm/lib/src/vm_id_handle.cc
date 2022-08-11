@@ -21,34 +21,26 @@
 #include <unordered_map>
 #include <vector>
 
-namespace proxy_wasm
-{
-std::mutex &
-getGlobalIdHandleMutex()
-{
+namespace proxy_wasm {
+
+std::mutex &getGlobalIdHandleMutex() {
   static auto *ptr = new std::mutex;
   return *ptr;
 }
 
-std::vector<std::function<void(std::string_view vm_id)>> &
-getVmIdHandlesCallbacks()
-{
+std::vector<std::function<void(std::string_view vm_id)>> &getVmIdHandlesCallbacks() {
   static auto *ptr = new std::vector<std::function<void(std::string_view vm_id)>>;
   return *ptr;
 }
 
-std::unordered_map<std::string, std::weak_ptr<VmIdHandle>> &
-getVmIdHandles()
-{
+std::unordered_map<std::string, std::weak_ptr<VmIdHandle>> &getVmIdHandles() {
   static auto *ptr = new std::unordered_map<std::string, std::weak_ptr<VmIdHandle>>;
   return *ptr;
 }
 
-std::shared_ptr<VmIdHandle>
-getVmIdHandle(std::string_view vm_id)
-{
+std::shared_ptr<VmIdHandle> getVmIdHandle(std::string_view vm_id) {
   std::lock_guard<std::mutex> lock(getGlobalIdHandleMutex());
-  auto key      = std::string(vm_id);
+  auto key = std::string(vm_id);
   auto &handles = getVmIdHandles();
 
   auto it = handles.find(key);
@@ -60,20 +52,17 @@ getVmIdHandle(std::string_view vm_id)
     handles.erase(key);
   }
 
-  auto handle  = std::make_shared<VmIdHandle>(key);
+  auto handle = std::make_shared<VmIdHandle>(key);
   handles[key] = handle;
   return handle;
 };
 
-void
-registerVmIdHandleCallback(const std::function<void(std::string_view vm_id)> &f)
-{
+void registerVmIdHandleCallback(const std::function<void(std::string_view vm_id)> &f) {
   std::lock_guard<std::mutex> lock(getGlobalIdHandleMutex());
   getVmIdHandlesCallbacks().push_back(f);
 }
 
-VmIdHandle::~VmIdHandle()
-{
+VmIdHandle::~VmIdHandle() {
   std::lock_guard<std::mutex> lock(getGlobalIdHandleMutex());
   for (const auto &f : getVmIdHandlesCallbacks()) {
     f(vm_id_);

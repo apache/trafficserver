@@ -23,25 +23,20 @@
 
 #include "include/proxy-wasm/vm_id_handle.h"
 
-namespace proxy_wasm
-{
-SharedQueue &
-getGlobalSharedQueue()
-{
+namespace proxy_wasm {
+
+SharedQueue &getGlobalSharedQueue() {
   static auto *ptr = new SharedQueue;
   return *ptr;
 }
 
-SharedQueue::SharedQueue(bool register_vm_id_callback)
-{
+SharedQueue::SharedQueue(bool register_vm_id_callback) {
   if (register_vm_id_callback) {
     registerVmIdHandleCallback([this](std::string_view vm_id) { this->deleteByVmId(vm_id); });
   }
 }
 
-void
-SharedQueue::deleteByVmId(std::string_view vm_id)
-{
+void SharedQueue::deleteByVmId(std::string_view vm_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto queue_keys = vm_queue_keys_.find(std::string(vm_id));
   if (queue_keys != vm_queue_keys_.end()) {
@@ -56,9 +51,7 @@ SharedQueue::deleteByVmId(std::string_view vm_id)
   }
 }
 
-uint32_t
-SharedQueue::nextQueueToken()
-{
+uint32_t SharedQueue::nextQueueToken() {
   // TODO(@mathetake): Should we handle the case where the queue overflows, i.e. the number of used
   // tokens exceeds the max of uint32? If it overflows, the following loop never exits.
   while (true) {
@@ -73,13 +66,12 @@ SharedQueue::nextQueueToken()
   }
 }
 
-uint32_t
-SharedQueue::registerQueue(std::string_view vm_id, std::string_view queue_name, uint32_t context_id,
-                           CallOnThreadFunction call_on_thread, std::string_view vm_key)
-{
+uint32_t SharedQueue::registerQueue(std::string_view vm_id, std::string_view queue_name,
+                                    uint32_t context_id, CallOnThreadFunction call_on_thread,
+                                    std::string_view vm_key) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto key = std::make_pair(std::string(vm_id), std::string(queue_name));
-  auto it  = queue_tokens_.insert(std::make_pair(key, static_cast<uint32_t>(0)));
+  auto it = queue_tokens_.insert(std::make_pair(key, static_cast<uint32_t>(0)));
   if (it.second) {
     it.first->second = nextQueueToken();
 
@@ -94,30 +86,26 @@ SharedQueue::registerQueue(std::string_view vm_id, std::string_view queue_name, 
     queue_keys->insert(key);
   }
 
-  uint32_t token   = it.first->second;
-  auto &q          = queues_[token];
-  q.vm_key         = std::string(vm_key);
-  q.context_id     = context_id;
+  uint32_t token = it.first->second;
+  auto &q = queues_[token];
+  q.vm_key = std::string(vm_key);
+  q.context_id = context_id;
   q.call_on_thread = std::move(call_on_thread);
   // Preserve any existing data.
   return token;
 }
 
-uint32_t
-SharedQueue::resolveQueue(std::string_view vm_id, std::string_view queue_name)
-{
+uint32_t SharedQueue::resolveQueue(std::string_view vm_id, std::string_view queue_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto key = std::make_pair(std::string(vm_id), std::string(queue_name));
-  auto it  = queue_tokens_.find(key);
+  auto it = queue_tokens_.find(key);
   if (it != queue_tokens_.end()) {
     return it->second;
   }
   return 0; // N.B. zero indicates that the queue was not found.
 }
 
-WasmResult
-SharedQueue::dequeue(uint32_t token, std::string *data)
-{
+WasmResult SharedQueue::dequeue(uint32_t token, std::string *data) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it = queues_.find(token);
   if (it == queues_.end()) {
@@ -131,9 +119,7 @@ SharedQueue::dequeue(uint32_t token, std::string *data)
   return WasmResult::Ok;
 }
 
-WasmResult
-SharedQueue::enqueue(uint32_t token, std::string_view value)
-{
+WasmResult SharedQueue::enqueue(uint32_t token, std::string_view value) {
   std::string vm_key;
   uint32_t context_id;
   CallOnThreadFunction call_on_thread;
@@ -145,9 +131,9 @@ SharedQueue::enqueue(uint32_t token, std::string_view value)
       return WasmResult::NotFound;
     }
     Queue *target_queue = &(it->second);
-    vm_key              = target_queue->vm_key;
-    context_id          = target_queue->context_id;
-    call_on_thread      = target_queue->call_on_thread;
+    vm_key = target_queue->vm_key;
+    context_id = target_queue->context_id;
+    call_on_thread = target_queue->call_on_thread;
     target_queue->queue.emplace_back(value);
   }
 

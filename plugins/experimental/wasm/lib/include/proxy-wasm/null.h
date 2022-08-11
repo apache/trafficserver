@@ -17,8 +17,8 @@
 
 #include <memory>
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 class WasmVm;
 std::unique_ptr<WasmVm> createNullVm();
 

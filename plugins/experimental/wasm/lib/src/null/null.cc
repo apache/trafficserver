@@ -17,12 +17,8 @@
 #include "include/proxy-wasm/null_vm.h"
 #include "include/proxy-wasm/null_vm_plugin.h"
 
-namespace proxy_wasm
-{
-std::unique_ptr<WasmVm>
-createNullVm()
-{
-  return std::make_unique<NullVm>();
-}
+namespace proxy_wasm {
+
+std::unique_ptr<WasmVm> createNullVm() { return std::make_unique<NullVm>(); }
 
 } // namespace proxy_wasm

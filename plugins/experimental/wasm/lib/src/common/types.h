@@ -16,25 +16,20 @@
 
 #include <memory>
 
-namespace proxy_wasm::common
-{
-template <typename T, void (*deleter)(T *)> class CSmartPtr : public std::unique_ptr<T, void (*)(T *)>
-{
+namespace proxy_wasm::common {
+
+template <typename T, void (*deleter)(T *)>
+class CSmartPtr : public std::unique_ptr<T, void (*)(T *)> {
 public:
   CSmartPtr() : std::unique_ptr<T, void (*)(T *)>(nullptr, deleter) {}
   CSmartPtr(T *object) : std::unique_ptr<T, void (*)(T *)>(object, deleter) {}
 };
 
-template <typename T, void (*initializer)(T *), void (*deleter)(T *)> class CSmartType
-{
+template <typename T, void (*initializer)(T *), void (*deleter)(T *)> class CSmartType {
 public:
   CSmartType() { initializer(&item); }
   ~CSmartType() { deleter(&item); }
-  T *
-  get()
-  {
-    return &item;
-  }
+  T *get() { return &item; }
 
 private:
   T item;

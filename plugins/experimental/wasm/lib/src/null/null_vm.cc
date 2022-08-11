@@ -25,21 +25,20 @@
 
 #include "include/proxy-wasm/null_vm_plugin.h"
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 std::unordered_map<std::string, NullVmPluginFactory> *null_vm_plugin_factories_ = nullptr;
 
-RegisterNullVmPluginFactory::RegisterNullVmPluginFactory(std::string_view name, NullVmPluginFactory factory)
-{
+RegisterNullVmPluginFactory::RegisterNullVmPluginFactory(std::string_view name,
+                                                         NullVmPluginFactory factory) {
   if (null_vm_plugin_factories_ == nullptr) {
-    null_vm_plugin_factories_ = new std::remove_reference<decltype(*null_vm_plugin_factories_)>::type;
+    null_vm_plugin_factories_ =
+        new std::remove_reference<decltype(*null_vm_plugin_factories_)>::type;
   }
   (*null_vm_plugin_factories_)[std::string(name)] = std::move(factory);
 }
 
-std::unique_ptr<WasmVm>
-NullVm::clone()
-{
+std::unique_ptr<WasmVm> NullVm::clone() {
   auto cloned_null_vm = std::make_unique<NullVm>(*this);
   if (integration()) {
     cloned_null_vm->integration().reset(integration()->clone());
@@ -49,10 +48,8 @@ NullVm::clone()
 }
 
 // "Load" the plugin by obtaining a pointer to it from the factory.
-bool
-NullVm::load(std::string_view plugin_name, std::string_view /*precompiled*/,
-             const std::unordered_map<uint32_t, std::string> & /*function_names*/)
-{
+bool NullVm::load(std::string_view plugin_name, std::string_view /*precompiled*/,
+                  const std::unordered_map<uint32_t, std::string> & /*function_names*/) {
   if (null_vm_plugin_factories_ == nullptr) {
     return false;
   }
@@ -60,36 +57,25 @@ NullVm::load(std::string_view plugin_name, std::string_view /*precompiled*/,
   if (!factory) {
     return false;
   }
-  plugin_name_      = plugin_name;
-  plugin_           = factory();
+  plugin_name_ = plugin_name;
+  plugin_ = factory();
   plugin_->wasm_vm_ = this;
   return true;
 } // namespace proxy_wasm
 
-bool NullVm::link(std::string_view /* name */)
-{
-  return true;
-}
+bool NullVm::link(std::string_view /* name */) { return true; }
 
-uint64_t
-NullVm::getMemorySize()
-{
-  return std::numeric_limits<uint64_t>::max();
-}
+uint64_t NullVm::getMemorySize() { return std::numeric_limits<uint64_t>::max(); }
 
 // NulVm pointers are just native pointers.
-std::optional<std::string_view>
-NullVm::getMemory(uint64_t pointer, uint64_t size)
-{
+std::optional<std::string_view> NullVm::getMemory(uint64_t pointer, uint64_t size) {
   if (pointer == 0 && size != 0) {
     return std::nullopt;
   }
   return std::string_view(reinterpret_cast<char *>(pointer), static_cast<size_t>(size));
 }
 
-bool
-NullVm::setMemory(uint64_t pointer, uint64_t size, const void *data)
-{
+bool NullVm::setMemory(uint64_t pointer, uint64_t size, const void *data) {
   if (pointer == 0 || data == nullptr) {
     if (size != 0) {
       return false;
@@ -101,9 +87,7 @@ NullVm::setMemory(uint64_t pointer, uint64_t size, const void *data)
   return true;
 }
 
-bool
-NullVm::setWord(uint64_t pointer, Word data)
-{
+bool NullVm::setWord(uint64_t pointer, Word data) {
   if (pointer == 0) {
     return false;
   }
@@ -112,9 +96,7 @@ NullVm::setWord(uint64_t pointer, Word data)
   return true;
 }
 
-bool
-NullVm::getWord(uint64_t pointer, Word *data)
-{
+bool NullVm::getWord(uint64_t pointer, Word *data) {
   if (pointer == 0) {
     return false;
   }
@@ -123,15 +105,9 @@ NullVm::getWord(uint64_t pointer, Word *data)
   return true;
 }
 
-size_t
-NullVm::getWordSize()
-{
-  return sizeof(uint64_t);
-}
+size_t NullVm::getWordSize() { return sizeof(uint64_t); }
 
-std::string_view
-NullVm::getPrecompiledSectionName()
-{
+std::string_view NullVm::getPrecompiledSectionName() {
   // Return nothing: there is no WASM file.
   return {};
 }

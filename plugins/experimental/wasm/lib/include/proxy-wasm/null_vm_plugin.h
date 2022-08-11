@@ -17,18 +17,17 @@
 
 #include "include/proxy-wasm/wasm_vm.h"
 
-namespace proxy_wasm
-{
+namespace proxy_wasm {
+
 // A wrapper for the natively compiled NullVm plugin which implements the Wasm ABI.
-class NullVmPlugin
-{
+class NullVmPlugin {
 public:
-  NullVmPlugin()          = default;
+  NullVmPlugin() = default;
   virtual ~NullVmPlugin() = default;
 
   // NB: These are defined rather than declared PURE because gmock uses __LINE__ internally for
   // uniqueness, making it impossible to use FOR_ALL_WASM_VM_EXPORTS with MOCK_METHOD.
-#define _DEFINE_GET_FUNCTION(_T) \
+#define _DEFINE_GET_FUNCTION(_T)                                                                   \
   virtual void getFunction(std::string_view, _T *f) { *f = nullptr; }
   FOR_ALL_WASM_VM_EXPORTS(_DEFINE_GET_FUNCTION)
 #undef _DEFIN_GET_FUNCTIONE
