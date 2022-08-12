@@ -29,7 +29,7 @@ Synopsis
 :program:`traffic_ctl` [OPTIONS] SUBCOMMAND [OPTIONS]
 
 
-.. important::
+.. note::
 
    :program:`traffic_ctl` uses a `JSONRPC`_ protocol to communicate with :program:`traffic_server`.
 
@@ -81,10 +81,9 @@ Options
    ``legacy``          Will honour the old :program:`traffic_ctl` output messages. This is the default format type.
    ``pretty``          <if available> will print a different output, a prettier output. This depends on the implementation,
                        it's not required to always implement a pretty output
-   ``json``            It will show the response message formatted to `JSON`_ This is ideal if you want to redirect the stdout to a different source.
+   ``json``            It will show the response message formatted to `JSON`_. This is ideal if you want to redirect the stdout to a different source.
                        It will only stream the json response, no other messages.
-   ``data:``           This is an addon to the default format style, data can be: ``{req|resp|all}`` which will make :program:`traffic_ctl`
-                       to print in json format the request or response or both.
+   ``rpc``             Show the JSONRPC request and response + the default output.
    =================== ========================================================================
 
    In case of a record request(config) ``--records`` overrides this flag.
@@ -95,19 +94,10 @@ Options
 
    .. code-block::
 
-      traffic_ctl config get variable --format data:req
-      --> {request}
-
-   .. code-block::
-
-      $ traffic_ctl config get variable --format data:resp
-      <-- {response}
-
-   .. code-block::
-
-      $ traffic_ctl config get variable --format data:all
+      $ traffic_ctl config get variable --format rpc
       --> {request}
       <-- {response}
+      variable 1234
 
    .. code-block::
 
@@ -145,11 +135,15 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: defaults [--records]
 
+   :ref:`admin_lookup_records`
+
    Display the default values for all configuration records. The ``--records`` flag has the same
    behavior as :option:`traffic_ctl config get --records`.
 
 .. program:: traffic_ctl config
 .. option:: describe RECORD [RECORD...]
+
+   :ref:`admin_lookup_records`
 
    Display all the known information about a configuration record. This includes the current and
    default values, the data type, the record class and syntax checking expression.
@@ -159,13 +153,17 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: diff [--records]
 
+   :ref:`admin_lookup_records`
+
    Display configuration records that have non-default values. The ``--records`` flag has the same
    behavior as :option:`traffic_ctl config get --records`.
 
 .. program:: traffic_ctl config
 .. option:: get [--records] RECORD [RECORD...]
 
-   Display the current value of a configuration record.
+   :ref:`admin_lookup_records`
+
+Display the current value of a configuration record.
 
    Error output available if ``--format pretty`` is specified.
 
@@ -178,12 +176,16 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: match [--records] REGEX [REGEX...]
 
+   :ref:`admin_lookup_records`
+
    Display the current values of all configuration variables whose names match the given regular
    expression. The ``--records`` flag has the same behavior as :option:`traffic_ctl config get
    --records`.
 
 .. program:: traffic_ctl config
 .. option:: reload
+
+   :ref:`admin_config_reload`
 
    Initiate a Traffic Server configuration reload. Use this command to update the running
    configuration after any configuration file modification. If no configuration files have been
@@ -195,12 +197,16 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: set RECORD VALUE
 
+   :ref:`admin_config_set_records`
+
    Set the named configuration record to the specified value. Refer to the :file:`records.config`
    documentation for a list of the configuration variables you can specify. Note that this is not a
    synchronous operation.
 
 .. program:: traffic_ctl config
 .. option:: status
+
+   :ref:`admin_lookup_records`
 
    Display detailed status about the Traffic Server configuration system. This includes version
    information, whether the internal configuration store is current and whether any daemon processes
@@ -209,16 +215,20 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: registry
 
-   Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
-   if needs root access and if the file is required in |TS|. This command uses :ref:`filemanager.get_files_registry`
+   :ref:`filemanager.get_files_registry`
 
+   Display information about the registered files in |TS|. This includes the full file path, config record name, parent config (if any)
+   if needs root access and if the file is required in |TS|.
 
 .. _traffic-control-command-metric:
 
 traffic_ctl metric
 ------------------
+
 .. program:: traffic_ctl metric
 .. option:: get METRIC [METRIC...]
+
+   :ref:`admin_lookup_records`
 
    Display the current value of the specified statistics.
 
@@ -227,16 +237,22 @@ traffic_ctl metric
 .. program:: traffic_ctl metric
 .. option:: match REGEX [REGEX...]
 
+   :ref:`admin_lookup_records`
+
    Display the current values of all statistics whose names match
    the given regular expression.
 
 .. program:: traffic_ctl metric
 .. option:: zero METRIC [METRIC...]
 
+   :ref:`admin_clear_metrics_records`
+
    Reset the named statistics to zero.
 
 .. program:: traffic_ctl metric
 .. option:: describe RECORD [RECORD...]
+
+   :ref:`admin_lookup_records`
 
    Display all the known information about a metric record.
 
@@ -246,12 +262,17 @@ traffic_ctl metric
 
 traffic_ctl server
 ------------------
+
 .. program:: traffic_ctl server
 
 .. program:: traffic_ctl server
 .. option:: drain
 
-   Drop the number of active client connections.{
+   :ref:`admin_server_start_drain`
+
+   :ref:`admin_server_stop_drain`
+
+   Drop the number of active client connections.
 
 .. program:: traffic_ctl server
 .. option:: status
@@ -262,8 +283,11 @@ traffic_ctl server
 
 traffic_ctl storage
 -------------------
+
 .. program:: traffic_ctl storage
 .. option:: offline PATH [PATH ...]
+
+   :ref:`admin_storage_set_device_offline`
 
    Mark a cache storage device as offline. The storage is identified by :arg:`PATH` which must match
    exactly a path specified in :file:`storage.config`. This removes the storage from the cache and
@@ -271,12 +295,22 @@ traffic_ctl storage
    effect as a disk failure for that storage. This does not persist across restarts of the
    :program:`traffic_server` process.
 
+.. program:: traffic_ctl storage
+.. option:: status PATH [PATH ...]
+
+   :ref:`admin_storage_get_device_status`
+
+   Show the storage configuration status.
+
 .. _traffic-control-command-plugin:
 
 traffic_ctl plugin
 -------------------
+
 .. program:: traffic_ctl plugin
 .. option:: msg TAG DATA
+
+   :ref:`admin_plugin_send_basic_msg`
 
    Send a message to plugins. All plugins that have hooked the
    ``TSLifecycleHookID::TS_LIFECYCLE_MSG_HOOK`` will receive a callback for that hook.
@@ -290,11 +324,10 @@ traffic_ctl host
 ----------------
 .. program:: traffic_ctl host
 
-A stat to track status is created for each host. The name is the host fqdn with a prefix of
-"proxy.process.host_status". The value of the stat is a string which is the serialized
-representation of the status. This contains the overall status and the status for each reason.  The
-stats may be viewed using the :program:`traffic_ctl metric` command or through the `stats_over_http`
-endpoint.
+A record to track status is created for each host. The name is the host fqdn.  The value of the
+record when retrieved, is a serialized string representation of the status.
+This contains the overall status and the status for each reason.  The
+records may be viewed using the :program:`traffic_ctl host status` command.
 
 .. option:: --time count
 
@@ -328,10 +361,14 @@ endpoint.
 
 .. option:: status HOSTNAME [HOSTNAME ...]
 
+   :ref:`admin_lookup_records`
+
    Get the current status of the specified hosts with respect to their use as targets for parent
-   selection. This returns the same information as the per host stat.
+   selection. If the HOSTNAME arguments are omitted, all host records available are returned.
 
 .. option:: down HOSTNAME [HOSTNAME ...]
+
+   :ref:`admin_host_set_status`
 
    Marks the listed hosts as down so that they will not be chosen as a next hop parent. If
    :option:`--time` is included the host is marked down for the specified number of seconds after
@@ -341,6 +378,8 @@ endpoint.
    Supports :option:`--time`, :option:`--reason`.
 
 .. option:: up HOSTNAME [HOSTNAME ...]
+
+   :ref:`admin_host_set_status`
 
    Marks the listed hosts as up so that they will be available for use as a next hop parent. Use
    :option:`--reason` to mark the host reason code. The 'self_detect' is an internal reason code
@@ -371,6 +410,8 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
       traffic_ctl rpc file jsonrpc_cmd1.json jsonrpc_cmd2.yaml
 
 .. option:: get-api
+
+   :ref:`show_registered_handlers`
 
    Request the entire admin api. This will retrieve all the registered methods and notifications on the server side.
 
@@ -485,6 +526,42 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
          }
       }
 
+
+.. option:: invoke
+
+   Invoke a remote call by using the method name as parameter. This could be a handy option if you are developing a new handler or you
+   just don't want to expose the method in :program:`traffic_ctl`, for instance when implementing a custom handler inside a proprietary plugin.
+
+   .. option:: --params, -p
+
+      Parameters to be passed in the request, YAML or JSON format are accepted. If JSON is passed as param it should not
+      be mixed with YAML. It's important that you follow the :ref:`jsonrpc-protocol` specs. If the passed param does not
+      follows the specs the server will reject the request.
+
+.. _rpc_invoke_example_1:
+
+   Example 1:
+
+   Call a jsonrpc method with no parameter.
+
+   .. code-block::
+
+      $ traffic_ctl rpc invoke some_jsonrpc_handler
+      --> {"id": "0dbab88d-b78f-4ebf-8aa3-f100031711a5", "jsonrpc": "2.0", "method": "some_jsonrpc_handler"}
+      <-- { response }
+
+.. _rpc_invoke_example_2:
+
+   Example 2:
+
+   Call a jsonrpc method with parameters.
+
+   .. code-block::
+
+      $ traffic_ctl rpc invoke reload_files_from_folder --params 'filenames: ["file1", "file2"]' 'folder: "/path/to/folder"'
+      --> {"id": "9ac68652-5133-4d5f-8260-421baca4c67f", "jsonrpc": "2.0", "method": "reload_files_from_folder", "params": {"filenames": ["file1", "file2"], "folder": "/path/to/folder"}}
+      <-- { response }
+
 Examples
 ========
 
@@ -517,38 +594,9 @@ Configure Traffic Server to insert ``Via`` header in the response to the client
 Autest
 ======
 
-If you want to interact with |TS| under a unit test, then a few things need to be considered.
-
-- Runroot needs to be configured in order to  let `traffic_ctl` knows where to find the socket.
-
-   There are currently two ways to do this:
-
-   1. Using `run-root` param.
-
-      1. Let `Test.MakeATSProcess` to create the runroot file under the |TS| config directory. This can be done by passing `dump_runroot=True` to the above function:
-
-       .. code-block:: python
-
-         ts = Test.MakeATSProcess(..., dump_runroot=True)
-
-
-      `dump_runroot` will write out some of the keys inside the runroot file, in this case the `runtimedir`.
-
-      2. Then you should specify the :option:`traffic_ctl --run-root` when invoking the command:
-
-         .. code-block:: python
-
-            tr.Processes.Default.Command = f'traffic_ctl config reload --run-root {ts.Disk.runroot_yaml.Name}'
-
-   2. Setting up the `TS_RUNROOT` environment variable.
-      This is very similar to `1` but, instead of passing the `--run-root` param to `traffic_ctl`, you just need to specify the
-      `TS_RUNROOT` environment variable. To do that, just do as 1.1 shows and then:
-
-      .. code-block:: python
-
-         ts.SetRunRootEnv()
-
-      The above call will set the variable, please be aware that this variable will also be read by TS.
+Runroot needs to be configured in order to let `traffic_ctl` know where to find the socket. This is done by default
+and there is no change you have to do to interact with it, but make sure that you are not overriding the `dump_runroot=False`
+when creating the ATS Process, otherwise the `runroot.yaml` will not be set.
 
 See also
 ========
