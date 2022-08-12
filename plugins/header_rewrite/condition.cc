@@ -46,6 +46,10 @@ parse_matcher_op(std::string &arg)
     arg.erase(arg.length() - 1, arg.length());
     return MATCH_REGULAR_EXPRESSION;
     break;
+  case '{':
+    arg.erase(0, 1);
+    arg.erase(arg.length() - 1, arg.length());
+    return MATCH_IP_RANGES;
   default:
     return MATCH_EQUAL;
     break;

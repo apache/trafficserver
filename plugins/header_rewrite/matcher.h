@@ -28,6 +28,7 @@
 #include "ts/ts.h"
 
 #include "regex_helper.h"
+#include "ipranges_helper.h"
 #include "lulu.h"
 
 // Possible operators that we support (at least partially)
@@ -36,6 +37,7 @@ enum MatcherOps {
   MATCH_LESS_THEN,
   MATCH_GREATER_THEN,
   MATCH_REGULAR_EXPRESSION,
+  MATCH_IP_RANGES,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,6 +52,12 @@ public:
   // noncopyable
   Matcher(const Matcher &) = delete;
   void operator=(const Matcher &) = delete;
+
+  MatcherOps
+  op() const
+  {
+    return _op;
+  }
 
 protected:
   const MatcherOps _op;
@@ -70,7 +78,7 @@ public:
   void
   setRegex(const std::string & /* data ATS_UNUSED */)
   {
-    if (!helper.setRegexMatch(_data)) {
+    if (!reHelper.setRegexMatch(_data)) {
       std::stringstream ss;
       ss << _data;
       TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
@@ -117,6 +125,11 @@ public:
       break;
     case MATCH_REGULAR_EXPRESSION:
       return test_reg(t);
+      break;
+    case MATCH_IP_RANGES:
+      // This is an error, the Matcher doesn't make sense to match on IP ranges
+      TSError("[%s] Invalid matcher: MATCH_IP_RANGES", PLUGIN_NAME);
+      throw std::runtime_error("Can not match on IP ranges");
       break;
     default:
       // ToDo: error
@@ -189,7 +202,7 @@ private:
     int ovector[OVECCOUNT];
 
     TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
-    if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
+    if (reHelper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
       TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
       return true;
     }
@@ -197,5 +210,43 @@ private:
   }
 
   T _data;
-  regexHelper helper;
+  regexHelper reHelper;
+};
+
+// Specialized case matcher for the IP addresses matches.
+// ToDo: we should specialize the regex matcher as well.
+template <> class Matchers<const sockaddr *> : public Matcher
+{
+public:
+  explicit Matchers<const sockaddr *>(const MatcherOps op) : Matcher(op) {}
+
+  void
+  set(const std::string &data)
+  {
+    if (!ipHelper.addIpRanges(data)) {
+      TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
+      TSDebug(PLUGIN_NAME, "Invalid IP-range: failed to parse: %s", data.c_str());
+      throw std::runtime_error("Malformed IP-range");
+    } else {
+      TSDebug(PLUGIN_NAME, "IP-range precompiled successfully");
+    }
+  }
+
+  bool
+  test(const sockaddr *addr) const
+  {
+    if (ipHelper.ipRangesMatch(addr) > 0) {
+      if (TSIsDebugTagSet(PLUGIN_NAME)) {
+        char text[INET6_ADDRSTRLEN];
+
+        TSDebug(PLUGIN_NAME, "Successfully found IP-range match on %s", getIP(addr, text));
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+private:
+  ipRangesHelper ipHelper;
 };
