@@ -38,12 +38,14 @@ public:
   virtual ~CtrlCommand() = default;
 
   /// @brief This object will hold the arguments for now.
-  CtrlCommand(ts::Arguments args);
+  /// @note If you don't need to handle the args in your derived class you should just inherit CtrlCommand ctor:
+  ///       'using CtrlCommand::CtrlCommand;'
+  CtrlCommand(ts::Arguments *args);
 
   /// @brief Main execution point for a particular command. This function will invoke @c _invoked_func which should be set
   ///        by the derived class. In case you do not want the @c _invoked_func to be called directly, you should override this
-  ///        member function and call it yourself. @c RecordCommand does it and forwards the call to his childrens.
-  ///        If @c _invoked_func is not properly set, the function will not be called.
+  ///        member function and call it yourself.
+  ///        If @c _invoked_func is not properly set, the function will throw @c logic_error
   virtual void execute();
 
 protected:
@@ -59,10 +61,10 @@ protected:
   /// @param A Client request.
   /// @return A server response.
   shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
+
   /// @brief Function that calls the rpc server. The response will not be decoded, it will be a raw string.
   void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw);
 
-  ts::Arguments _arguments;              //!< parsed traffic_ctl arguments.
   std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
 
   /// @brief The whole design is that the command will execute the @c _invoked_func once invoked. This function ptr should be
@@ -70,8 +72,16 @@ protected:
   ///        the execute() function and do something else. Check @c RecordCommand as an example.
   std::function<void(void)> _invoked_func; //!< Actual function that the command will execute.
 
+  /// @brief Return the parsed arguments.
+  ts::Arguments *
+  get_parsed_arguments()
+  {
+    return _arguments;
+  }
+
 private:
-  shared::rpc::RPCClient _rpcClient; //!< RPC socket client implementation.
+  ts::Arguments *_arguments = nullptr; //!< parsed traffic_ctl arguments.
+  shared::rpc::RPCClient _rpcClient;   //!< RPC socket client implementation.
 };
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -82,13 +92,14 @@ private:
 class RecordCommand : public CtrlCommand
 {
 public:
+  using CtrlCommand::CtrlCommand;
   virtual ~RecordCommand() = default;
-  /// @brief RecordCommand constructor.
-  RecordCommand(ts::Arguments args);
-  /// @brief We will override this function as we want to call execute_subcommand() in the derived class.
-  void execute() override;
 
 protected:
+  static inline const std::string MATCH_STR{"match"};
+  static inline const std::string GET_STR{"get"};
+  static inline const std::string DESCRIBE_STR{"describe"};
+
   /// @brief Handy enum to hold which kind of records we are requesting.
   enum class RecordQueryType { CONFIG = 0, METRIC };
   /// @brief Function to fetch record from the rpc server.
@@ -96,16 +107,17 @@ protected:
   /// @param isRegex if the request should be done by regex or name.
   /// @param recQueryType Config or Metric.
   shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType);
-
-  /// @brief To be override
-  virtual void
-  execute_subcommand()
-  {
-  }
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class ConfigCommand : public RecordCommand
 {
+  static inline const std::string DIFF_STR{"diff"};
+  static inline const std::string DEFAULTS_STR{"defaults"};
+  static inline const std::string SET_STR{"set"};
+  static inline const std::string STATUS_STR{"status"};
+  static inline const std::string RELOAD_STR{"reload"};
+  static inline const std::string REGISTRY_STR{"registry"};
+
   void config_match();
   void config_get();
   void config_describe();
@@ -117,12 +129,14 @@ class ConfigCommand : public RecordCommand
   void config_show_file_registry();
 
 public:
-  ConfigCommand(ts::Arguments args);
-  void execute_subcommand() override;
+  ConfigCommand(ts::Arguments *args);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class MetricCommand : public RecordCommand
 {
+  static inline const std::string CLEAR_STR{"clear"};
+  static inline const std::string ZERO_STR{"zero"};
+
   void metric_get();
   void metric_match();
   void metric_describe();
@@ -130,16 +144,20 @@ class MetricCommand : public RecordCommand
   void metric_zero();
 
 public:
-  MetricCommand(ts::Arguments args);
-  void execute_subcommand() override;
+  MetricCommand(ts::Arguments *args);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class HostCommand : public CtrlCommand
 {
 public:
-  HostCommand(ts::Arguments args);
+  HostCommand(ts::Arguments *args);
 
 private:
+  static inline const std::string STATUS_STR{"status"};
+  static inline const std::string DOWN_STR{"down"};
+  static inline const std::string UP_STR{"up"};
+  static inline const std::string REASON_STR{"reason"};
+
   void status_get();
   void status_down();
   void status_up();
@@ -148,18 +166,26 @@ private:
 class PluginCommand : public CtrlCommand
 {
 public:
-  PluginCommand(ts::Arguments args);
+  PluginCommand(ts::Arguments *args);
 
 private:
+  static inline const std::string MSG_STR{"msg"};
   void plugin_msg();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class DirectRPCCommand : public CtrlCommand
 {
 public:
-  DirectRPCCommand(ts::Arguments args);
+  DirectRPCCommand(ts::Arguments *args);
 
 private:
+  static inline const std::string GET_API_STR{"get-api"};
+  static inline const std::string FILE_STR{"file"};
+  static inline const std::string INPUT_STR{"input"};
+  static inline const std::string INVOKE_STR{"invoke"};
+  static inline const std::string RAW_STR{"raw"};
+  static inline const std::string PARAMS_STR{"params"};
+
   void from_file_request();
   void get_rpc_api();
   void read_from_input();
@@ -171,17 +197,24 @@ private:
 class ServerCommand : public CtrlCommand
 {
 public:
-  ServerCommand(ts::Arguments args);
+  ServerCommand(ts::Arguments *args);
 
 private:
+  static inline const std::string DRAIN_STR{"drain"};
+  static inline const std::string UNDO_STR{"undo"};
+  static inline const std::string NO_NEW_CONN_STR{"no-new-connection"};
+
   void server_drain();
 };
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 struct StorageCommand : public CtrlCommand {
-  StorageCommand(ts::Arguments args);
+  StorageCommand(ts::Arguments *args);
 
 private:
+  static inline const std::string STATUS_STR{"status"};
+  static inline const std::string OFFLINE_STR{"offline"};
+
   void get_storage_status();
   void set_storage_offline();
 };

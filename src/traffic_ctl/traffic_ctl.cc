@@ -172,25 +172,25 @@ main(int argc, const char **argv)
     Layout::create();
 
     if (args.get("config")) {
-      command = std::make_shared<ConfigCommand>(args);
+      command = std::make_shared<ConfigCommand>(&args);
     } else if (args.get("metric")) {
-      command = std::make_shared<MetricCommand>(args);
+      command = std::make_shared<MetricCommand>(&args);
     } else if (args.get("server")) {
-      command = std::make_shared<ServerCommand>(args);
+      command = std::make_shared<ServerCommand>(&args);
     } else if (args.get("storage")) {
-      command = std::make_shared<StorageCommand>(args);
+      command = std::make_shared<StorageCommand>(&args);
     } else if (args.get("plugin")) {
-      command = std::make_shared<PluginCommand>(args);
+      command = std::make_shared<PluginCommand>(&args);
     } else if (args.get("host")) {
-      command = std::make_shared<HostCommand>(args);
+      command = std::make_shared<HostCommand>(&args);
     } else if (args.get("rpc")) {
-      command = std::make_shared<DirectRPCCommand>(args);
+      command = std::make_shared<DirectRPCCommand>(&args);
     }
     // Execute
     args.invoke();
   } catch (std::exception const &ex) {
     status_code = CTRL_EX_ERROR;
-    std::cerr << "Error found.\n" << ex.what() << '\n';
+    std::cerr << "Error found:\n" << ex.what() << '\n';
   }
 
   return status_code;
