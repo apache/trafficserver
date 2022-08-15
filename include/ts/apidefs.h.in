@@ -1389,9 +1389,9 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_3;
-extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_3_D27;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_3_D29;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_QUIC;
-extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D27;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
 
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;

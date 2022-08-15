@@ -24,8 +24,9 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
-class QUICSendStream : public QUICStream
+class QUICSendStream : public QUICStreamBase
 {
 public:
   QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data);
@@ -66,7 +67,7 @@ private:
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 };
 
-class QUICReceiveStream : public QUICStream, public QUICTransferProgressProvider
+class QUICReceiveStream : public QUICStreamBase, public QUICTransferProgressProvider
 {
 public:
   QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,

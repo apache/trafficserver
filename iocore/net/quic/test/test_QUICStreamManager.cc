@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "quic/QUICStreamManager.h"
+#include "quic/QUICStreamManager_native.h"
 #include "quic/QUICFrame.h"
 #include "quic/Mock.h"
 
@@ -39,7 +40,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   MockQUICConnectionInfoProvider cinfo_provider;
-  QUICStreamManager sm(&context, &app_map);
+  QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x08,      // parameter id - initial_max_streams_bidi
@@ -103,7 +104,7 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   MockQUICConnectionInfoProvider cinfo_provider;
-  QUICStreamManager sm(&context, &app_map);
+  QUICStreamManagerImpl sm(&context, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp  = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   std::shared_ptr<QUICTransportParameters> remote_tp = std::make_shared<QUICTransportParametersInClientHello>();
   sm.init_flow_control_params(local_tp, remote_tp);
@@ -128,7 +129,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   MockQUICConnection connection;
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&context, &app_map);
+  QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x08,                  // parameter id - initial_max_streams_bidi
@@ -183,7 +184,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   MockQUICConnection connection;
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&context, &app_map);
+  QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x08,                  // parameter id - initial_max_streams_bidi
@@ -251,7 +252,7 @@ TEST_CASE("QUICStreamManager_max_streams", "[quic]")
   MockQUICConnection connection;
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&context, &app_map);
+  QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x08, // parameter id - initial_max_streams_bidi

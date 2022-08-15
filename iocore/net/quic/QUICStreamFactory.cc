@@ -26,10 +26,10 @@
 #include "QUICUnidirectionalStream.h"
 #include "QUICStreamFactory.h"
 
-QUICStream *
+QUICStreamBase *
 QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint64_t remote_max_stream_data)
 {
-  QUICStream *stream = nullptr;
+  QUICStreamBase *stream = nullptr;
   switch (QUICTypeUtil::detect_stream_direction(sid, this->_info->direction())) {
   case QUICStreamDirection::BIDIRECTIONAL:
     stream = new QUICBidirectionalStream(this->_rtt_provider, this->_info, sid, local_max_stream_data, remote_max_stream_data);

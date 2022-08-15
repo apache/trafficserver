@@ -53,6 +53,8 @@ QUIC::init()
 int
 QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 {
+#if HAVE_QUICHE_H
+#else
   QUICTLS *qtls            = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
   const char *session_file = qtls->session_file();
   auto file                = BIO_new_file(session_file, "w");
@@ -64,6 +66,7 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 
   PEM_write_bio_SSL_SESSION(file, session);
   BIO_free(file);
+#endif
   return 0;
 }
 

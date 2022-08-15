@@ -381,26 +381,24 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters(QUICVersion v
   decltype(this->_parameters)::const_iterator ite;
 
   // MUSTs
-  if (version == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-    if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
-      // We cannot check the length because it's not a fixed length.
-    } else {
-      return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID);
-    }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
+    // We cannot check the length because it's not a fixed length.
+  } else {
+    return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID);
+  }
 
-    if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
-      // We cannot check the length because it's not a fixed length.
-    } else {
-      return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
-    }
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
+    // We cannot check the length because it's not a fixed length.
+  } else {
+    return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
+  }
 
-    // MUSTs if the server sent a Retry packet, but MUST NOT if the server did not send a Retry packet
-    // TODO Check if the server sent Retry packet
-    if ((ite = this->_parameters.find(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
-      // return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
-    } else {
-      // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
-    }
+  // MUSTs if the server sent a Retry packet, but MUST NOT if the server did not send a Retry packet
+  // TODO Check if the server sent Retry packet
+  if ((ite = this->_parameters.find(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
+    // return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
+  } else {
+    // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
   }
 
   // MAYs

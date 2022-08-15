@@ -82,6 +82,8 @@ protected:
   MIOBuffer _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   QUICStreamVCAdapter::IOInfo &_info;
 
+  size_t _sent_bytes = 0;
+
   VIO _read_vio;
   VIO _write_vio;
   Event *_read_event  = nullptr;

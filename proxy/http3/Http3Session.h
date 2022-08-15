@@ -53,7 +53,8 @@ public:
   int get_transact_count() const override;
 
   // HQSession
-  void add_transaction(HQTransaction *);
+  void add_transaction(HQTransaction *trans);
+  void remove_transaction(HQTransaction *trans);
   HQTransaction *get_transaction(QUICStreamId);
 
 private:

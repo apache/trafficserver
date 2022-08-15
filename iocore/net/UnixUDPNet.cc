@@ -806,6 +806,18 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     goto Lerror;
   }
 
+  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int)) < 0) {
+    Debug("udpnet", "setsockopt for SO_REUSEPORT failed");
+    goto Lerror;
+  }
+
+#ifdef SO_REUSEPORT_LB
+  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT_LB, SOCKOPT_ON, sizeof(int)) < 0) {
+    Debug("udpnet", "setsockopt for SO_REUSEPORT_LB failed");
+    goto Lerror;
+  }
+#endif
+
   if (need_bind && (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
     Debug("udpnet", "ink_bind failed");
     goto Lerror;
@@ -828,7 +840,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 
   Debug("udpnet", "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
   n->setBinding(&myaddr.sa);
-  n->bindToThread(cont);
+  n->bindToThread(cont, cont->getThreadAffinity());
 
   pc = get_UDPPollCont(n->ethread);
   pd = pc->pollDescriptor;

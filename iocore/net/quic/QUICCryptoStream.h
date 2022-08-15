@@ -24,6 +24,7 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
 /**
  * @brief QUIC Crypto stream
@@ -33,7 +34,7 @@
  * - no flow control
  * - no state (never closed)
  */
-class QUICCryptoStream : public QUICStream
+class QUICCryptoStream : public QUICStreamBase
 {
 public:
   QUICCryptoStream();
@@ -42,7 +43,6 @@ public:
   int state_stream_open(int event, void *data);
 
   const QUICConnectionInfoProvider *info() const;
-  QUICOffset final_offset() const;
   void reset_send_offset();
   void reset_recv_offset();
 

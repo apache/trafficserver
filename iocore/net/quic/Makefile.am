@@ -34,6 +34,8 @@ AM_CPPFLAGS += \
 
 noinst_LIBRARIES = libquic.a
 
+if USE_QUICHE
+else
 if OPENSSL_IS_BORINGSSL
 QUICPHProtector_impl = QUICPacketHeaderProtector_boringssl.cc
 QUICPPProtector_impl = QUICPacketPayloadProtector_boringssl.cc
@@ -47,7 +49,26 @@ QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
 
 QLog_impl = qlog/QLogEvent.cc qlog/QLogFrame.cc qlog/QLog.cc
+endif
 
+
+if USE_QUICHE
+libquic_a_SOURCES = \
+  QUICApplication.cc \
+  QUICApplicationMap.cc \
+  QUICConfig.cc \
+  QUICContext.cc \
+  QUICConnectionTable.cc \
+  QUICGlobals.cc \
+  QUICTypes.cc \
+  QUICIntUtil.cc \
+  QUICStream.cc \
+  QUICStream_quiche.cc \
+  QUICStreamManager.cc \
+  QUICStreamManager_quiche.cc \
+  QUICStreamAdapter.cc \
+  QUICStreamVCAdapter.cc
+else
 libquic_a_SOURCES = \
   QUICGlobals.cc \
   QUICTypes.cc \
@@ -59,12 +80,14 @@ libquic_a_SOURCES = \
   QUICVersionNegotiator.cc \
   QUICLossDetector.cc \
   QUICStreamManager.cc \
+  QUICStreamManager_native.cc \
   QUICNewRenoCongestionController.cc \
   QUICFlowController.cc \
   QUICStreamState.cc \
   QUICStreamAdapter.cc \
   QUICStreamVCAdapter.cc \
   QUICStream.cc \
+  QUICStreamBase.cc \
   QUICHandshake.cc \
   QUICPacketHeaderProtector.cc \
   $(QUICPHProtector_impl) \
@@ -103,10 +126,13 @@ libquic_a_SOURCES = \
   QUICContext.cc \
   QUICTokenCreator.cc \
   $(QLog_impl)
+endif
 
 #
 # Check Programs
 #
+if USE_QUICHE
+else
 check_PROGRAMS = \
   test_QUICAckFrameCreator \
   test_QUICAltConnectionManager \
@@ -132,6 +158,7 @@ check_PROGRAMS = \
   test_QUICFrameRetransmitter \
   test_QUICAddrVerifyState \
   test_QUICPinger
+endif
 
 TESTS = $(check_PROGRAMS)
 

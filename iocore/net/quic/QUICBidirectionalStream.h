@@ -24,14 +24,18 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
-class QUICBidirectionalStream : public QUICStream, public QUICTransferProgressProvider
+class QUICBidirectionalStream : public QUICStreamBase, public QUICTransferProgressProvider
 {
 public:
   QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                           uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
   QUICBidirectionalStream()
-    : QUICStream(), _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _state(nullptr, nullptr, nullptr, nullptr)
+    : QUICStreamBase(),
+      _remote_flow_controller(0, 0),
+      _local_flow_controller(nullptr, 0, 0),
+      _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
 

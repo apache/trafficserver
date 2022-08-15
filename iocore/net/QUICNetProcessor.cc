@@ -135,7 +135,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   if (opt->local_ip.isValid()) {
     con->setBinding(opt->local_ip, opt->local_port);
   }
-  con->bindToThread(packet_handler);
+  con->bindToThread(packet_handler, t);
 
   PollCont *pc       = get_UDPPollCont(con->ethread);
   PollDescriptor *pd = pc->pollDescriptor;
