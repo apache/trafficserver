@@ -3025,7 +3025,6 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
 
-  case HTTP_STATUS_RANGE_NOT_SATISFIABLE:
   // Check if cached response supports Range. If it does, append
   // Range transformation plugin
   // A little misnomer. HTTP_STATUS_RANGE_NOT_SATISFIABLE
@@ -3042,7 +3041,8 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       // Check if cached response supports Range. If it does, append
       // Range transformation plugin
       // only if the cached response is a 200 OK
-      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
+      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE) &&
+          HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default");
@@ -4210,6 +4210,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_DELETE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
+          // No need to worry about If-Range headers because the request isn't conditional
           if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
             s->state_machine->do_range_setup_if_necessary();
             // Check client request range header if we cached a stealed content with cacheable=false
@@ -4250,7 +4251,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_UPDATE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
-          if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+          auto *client_request  = &s->hdr_info.client_request;
+          auto *cached_response = s->cache_info.object_read->response_get();
+          if (client_request->presence(MIME_PRESENCE_RANGE) &&
+              HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
             s->state_machine->do_range_setup_if_necessary();
             // Note that even if the Range request is not satisfiable, we
             // update and serve this cache. This will give a 200 response to
@@ -4438,7 +4442,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         ink_assert(s->cache_info.object_read != nullptr);
         s->cache_info.action = CACHE_DO_REPLACE;
 
-        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+        auto *client_request = &s->hdr_info.client_request;
+        if (client_request->presence(MIME_PRESENCE_RANGE) &&
+            HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
           s->state_machine->do_range_setup_if_necessary();
         }
       }
@@ -4450,7 +4456,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else {
         s->cache_info.action = CACHE_DO_WRITE;
-        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+        auto *client_request = &s->hdr_info.client_request;
+        if (client_request->presence(MIME_PRESENCE_RANGE) &&
+            HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
           s->state_machine->do_range_setup_if_necessary();
         }
       }
