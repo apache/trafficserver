@@ -238,6 +238,12 @@ enum SquidHitMissCode {
   SQUID_HIT_RWW     = SQUID_HIT_LEVEL_6
 };
 
+constexpr std::string_view PSEUDO_HEADER_SCHEME    = ":scheme";
+constexpr std::string_view PSEUDO_HEADER_AUTHORITY = ":authority";
+constexpr std::string_view PSEUDO_HEADER_PATH      = ":path";
+constexpr std::string_view PSEUDO_HEADER_METHOD    = ":method";
+constexpr std::string_view PSEUDO_HEADER_STATUS    = ":status";
+
 enum HTTPType {
   HTTP_TYPE_UNKNOWN,
   HTTP_TYPE_REQUEST,
@@ -417,8 +423,8 @@ void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t 
 /* Public */
 void http_init();
 
-HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity);
-void http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity);
+HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity, HTTPVersion version);
+void http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion version);
 HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
 void http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
@@ -492,7 +498,7 @@ public:
 
   int valid() const;
 
-  void create(HTTPType polarity, HdrHeap *heap = nullptr);
+  void create(HTTPType polarity, HTTPVersion version = HTTP_INVALID, HdrHeap *heap = nullptr);
   void clear();
   void reset();
   void copy(const HTTPHdr *hdr);
@@ -686,7 +692,7 @@ HTTPHdr::valid() const
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::create(HTTPType polarity, HdrHeap *heap)
+HTTPHdr::create(HTTPType polarity, HTTPVersion version, HdrHeap *heap)
 {
   if (heap) {
     m_heap = heap;
@@ -694,7 +700,7 @@ HTTPHdr::create(HTTPType polarity, HdrHeap *heap)
     m_heap = new_HdrHeap();
   }
 
-  m_http = http_hdr_create(m_heap, polarity);
+  m_http = http_hdr_create(m_heap, polarity, version);
   m_mime = m_http->m_fields_impl;
 }
 

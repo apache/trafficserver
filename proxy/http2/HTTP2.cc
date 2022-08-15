@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "hdrs/VersionConverter.h"
 #include "HTTP2.h"
 #include "HPACK.h"
 
@@ -32,20 +33,6 @@
 
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
-// Constant strings for pseudo headers
-const char *HTTP2_VALUE_SCHEME    = ":scheme";
-const char *HTTP2_VALUE_METHOD    = ":method";
-const char *HTTP2_VALUE_AUTHORITY = ":authority";
-const char *HTTP2_VALUE_PATH      = ":path";
-const char *HTTP2_VALUE_STATUS    = ":status";
-
-const unsigned HTTP2_LEN_SCHEME    = countof(":scheme") - 1;
-const unsigned HTTP2_LEN_METHOD    = countof(":method") - 1;
-const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
-const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
-const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
-
-static size_t HTTP2_LEN_STATUS_VALUE_STR         = 3;
 static const uint32_t HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 namespace
@@ -55,7 +42,8 @@ struct Http2HeaderName {
   int name_len     = 0;
 };
 
-Http2HeaderName http2_connection_specific_headers[5] = {};
+static VersionConverter hvc;
+
 } // namespace
 
 // Statistics
@@ -423,244 +411,25 @@ http2_parse_window_update(IOVec iov, uint32_t &size)
 ParseResult
 http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 {
-  ink_assert(http_hdr_type_get(headers->m_http) != HTTP_TYPE_UNKNOWN);
-
-  // HTTP Version
-  headers->version_set(HTTPVersion(1, 1));
-
-  if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
-    // :scheme
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
-        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int scheme_len;
-      const char *scheme = field->value_get(&scheme_len);
-      const char *scheme_wks;
-
-      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
-
-      if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
-        // unkown scheme, validate the scheme
-        if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
-          return PARSE_RESULT_ERROR;
-        }
-      }
-
-      headers->m_http->u.req.m_url_impl->set_scheme(headers->m_heap, scheme, scheme_wks_idx, scheme_len, true);
-
-      headers->field_delete(field);
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :authority
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
-        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int authority_len;
-      const char *authority = field->value_get(&authority_len);
-
-      headers->m_http->u.req.m_url_impl->set_host(headers->m_heap, authority, authority_len, true);
-
-      headers->field_delete(field);
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :path
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
-        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int path_len;
-      const char *path = field->value_get(&path_len);
-
-      // cut first '/' if there, because `url_print()` add '/' before printing path
-      if (path_len >= 1 && path[0] == '/') {
-        ++path;
-        --path_len;
-      }
-
-      headers->m_http->u.req.m_url_impl->set_path(headers->m_heap, path, path_len, true);
-
-      headers->field_delete(field);
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :method
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
-        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int method_len;
-      const char *method = field->value_get(&method_len);
-
-      headers->method_set(method, method_len);
-      headers->field_delete(field);
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
-
-    // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
-    if (MIMEField *field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE); field != nullptr) {
-      headers->field_combine_dups(field, true, ';');
-    }
+  if (hvc.convert(*headers, 2, 1) == 0) {
+    return PARSE_RESULT_DONE;
   } else {
-    // Set status from :status
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS); field != nullptr) {
-      int status_len;
-      const char *status = field->value_get(&status_len);
-
-      headers->status_set(http_parse_status(status, status + status_len));
-      headers->field_delete(field);
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
-  }
-
-  // Check validity of all names and values
-  for (auto &mf : *headers) {
-    if (!mf.name_is_valid(is_control_BIT | is_ws_BIT) || !mf.value_is_valid()) {
-      return PARSE_RESULT_ERROR;
-    }
-  }
-
-  return PARSE_RESULT_DONE;
-}
-
-/**
-  Initialize HTTPHdr for HTTP/2
-
-  Reserve HTTP/2 Pseudo-Header Fields in front of HTTPHdr. Value of these header fields will be set by
-  `http2_convert_header_from_1_1_to_2()`. When a HTTPHdr for HTTP/2 headers is created, this should be called immediately.
-  Because all pseudo-header fields MUST appear in the header block before regular header fields.
- */
-void
-http2_init_pseudo_headers(HTTPHdr &hdr)
-{
-  switch (http_hdr_type_get(hdr.m_http)) {
-  case HTTP_TYPE_REQUEST: {
-    MIMEField *method = hdr.field_create(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
-    hdr.field_attach(method);
-
-    MIMEField *scheme = hdr.field_create(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
-    hdr.field_attach(scheme);
-
-    MIMEField *authority = hdr.field_create(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
-    hdr.field_attach(authority);
-
-    MIMEField *path = hdr.field_create(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
-    hdr.field_attach(path);
-
-    break;
-  }
-  case HTTP_TYPE_RESPONSE: {
-    MIMEField *status = hdr.field_create(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
-    hdr.field_attach(status);
-
-    break;
-  }
-  default:
-    ink_abort("HTTP_TYPE_UNKNOWN");
+    return PARSE_RESULT_ERROR;
   }
 }
 
 /**
   Convert HTTP/1.1 HTTPHdr to HTTP/2
 
-  Assuming HTTP/2 Pseudo-Header Fields are reserved by `http2_init_pseudo_headers()`.
+  Assuming HTTP/2 Pseudo-Header Fields are reserved by passing a version to `HTTPHdr::create()`.
  */
 ParseResult
 http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
 {
-  switch (http_hdr_type_get(headers->m_http)) {
-  case HTTP_TYPE_REQUEST: {
-    // :method
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD); field != nullptr) {
-      int value_len;
-      const char *value = headers->method_get(&value_len);
-
-      field->value_set(headers->m_heap, headers->m_mime, value, value_len);
-    } else {
-      ink_abort("initialize HTTP/2 pseudo-headers");
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :scheme
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME); field != nullptr) {
-      int value_len;
-      const char *value = headers->scheme_get(&value_len);
-
-      if (value != nullptr) {
-        field->value_set(headers->m_heap, headers->m_mime, value, value_len);
-      } else {
-        field->value_set(headers->m_heap, headers->m_mime, URL_SCHEME_HTTPS, URL_LEN_HTTPS);
-      }
-    } else {
-      ink_abort("initialize HTTP/2 pseudo-headers");
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :authority
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY); field != nullptr) {
-      int value_len;
-      const char *value = headers->host_get(&value_len);
-
-      if (headers->is_port_in_header()) {
-        int port = headers->port_get();
-        ts::LocalBuffer<char> buf(value_len + 8);
-        char *host_and_port = buf.data();
-        value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
-
-        field->value_set(headers->m_heap, headers->m_mime, host_and_port, value_len);
-      } else {
-        field->value_set(headers->m_heap, headers->m_mime, value, value_len);
-      }
-    } else {
-      ink_abort("initialize HTTP/2 pseudo-headers");
-      return PARSE_RESULT_ERROR;
-    }
-
-    // :path
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr) {
-      int value_len     = 0;
-      const char *value = headers->path_get(&value_len);
-
-      ts::LocalBuffer<char> buf(value_len + 1);
-      char *path = buf.data();
-      path[0]    = '/';
-      memcpy(path + 1, value, value_len);
-
-      field->value_set(headers->m_heap, headers->m_mime, path, value_len + 1);
-    } else {
-      ink_abort("initialize HTTP/2 pseudo-headers");
-      return PARSE_RESULT_ERROR;
-    }
-
-    // TODO: remove host/Host header
-    // [RFC 7540] 8.1.2.3. Clients that generate HTTP/2 requests directly SHOULD use the ":authority" pseudo-header field instead
-    // of the Host header field.
-
-    break;
-  }
-  case HTTP_TYPE_RESPONSE: {
-    // :status
-    if (MIMEField *field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS); field != nullptr) {
-      // ink_small_itoa() requires 5+ buffer length
-      char status_str[HTTP2_LEN_STATUS_VALUE_STR + 3];
-      mime_format_int(status_str, headers->status_get(), sizeof(status_str));
-
-      field->value_set(headers->m_heap, headers->m_mime, status_str, HTTP2_LEN_STATUS_VALUE_STR);
-    } else {
-      ink_abort("initialize HTTP/2 pseudo-headers");
-      return PARSE_RESULT_ERROR;
-    }
-    break;
-  }
-  default:
-    ink_abort("HTTP_TYPE_UNKNOWN");
-  }
-
-  // Intermediaries SHOULD remove connection-specific header fields.
-  for (auto &h : http2_connection_specific_headers) {
-    if (MIMEField *field = headers->field_find(h.name, h.name_len); field != nullptr) {
-      headers->field_delete(field);
-    }
+  if (hvc.convert(*headers, 1, 2) == 0) {
+    return PARSE_RESULT_DONE;
+  } else {
+    return PARSE_RESULT_ERROR;
   }
 
   return PARSE_RESULT_DONE;
@@ -750,7 +519,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   }
 
   // :path pseudo header MUST NOT empty for http or https URIs
-  field = hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
+  field = hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
   if (field) {
     field->value_get(&len);
     if (len == 0) {
@@ -778,11 +547,11 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (!is_trailing_header) {
     // Check pseudo headers
     if (hdr->fields_count() >= 4) {
-      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
+      if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) == nullptr ||
+          hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
+          hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) == nullptr ||
+          hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
+          hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
         // Decoded header field is invalid
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
@@ -927,21 +696,7 @@ Http2::init()
   http2_init();
 }
 
-/**
-  mime_init() needs to be called
- */
 void
 http2_init()
 {
-  ink_assert(MIME_FIELD_CONNECTION != nullptr);
-  ink_assert(MIME_FIELD_KEEP_ALIVE != nullptr);
-  ink_assert(MIME_FIELD_PROXY_CONNECTION != nullptr);
-  ink_assert(MIME_FIELD_TRANSFER_ENCODING != nullptr);
-  ink_assert(MIME_FIELD_UPGRADE != nullptr);
-
-  http2_connection_specific_headers[0] = {MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION};
-  http2_connection_specific_headers[1] = {MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE};
-  http2_connection_specific_headers[2] = {MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION};
-  http2_connection_specific_headers[3] = {MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING};
-  http2_connection_specific_headers[4] = {MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE};
 }

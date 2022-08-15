@@ -78,7 +78,7 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     HTTPHdr req_hdr;
     HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
-    req_hdr.create(HTTP_TYPE_REQUEST, heap);
+    req_hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
 
     http_parser_clear(&parser);
 
