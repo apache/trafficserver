@@ -35,6 +35,7 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 httpbin = "*"
+psutil = "*"
 
 # Keep init.cli.ext updated with this required microserver version.
 microserver = ">=1.0.6"
@@ -47,6 +48,7 @@ python-jose = "*"
 # depends upon. Pinning Wekrzeug for now until httpbin or its dependencies is
 # updated for the changed API.
 Werkzeug = "==2.0.3"
+flask = "==2.1.3"
 
 [requires]
 python_version = "3"
