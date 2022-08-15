@@ -41,8 +41,11 @@ default URL::
 
 where host and port is the hostname/IP and port number of the server.
 
+
+
 Plugin Options
 ==============
+
 
 .. option:: --integer-counters
 
@@ -104,3 +107,7 @@ if you wish to have it in CSV format you can do so by passing an ``Accept`` head
 
 In either case the ``Content-Type`` header returned by stats_over_http.so will reflect
 the content that has been returned, either ``text/json`` or ``text/csv``.
+
+.. option:: Accept-encoding: gzip, br
+
+Stats over http also accepts returning data in gzip or br compressed format
