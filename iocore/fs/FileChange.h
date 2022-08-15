@@ -22,16 +22,20 @@
  */
 
 #pragma once
+#include "ts/apidefs.h"
 #include "tscore/ink_config.h"
 
 #include <thread>
 #include <chrono>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <shared_mutex>
 #include "tscore/ts_file.h"
 #include "P_EventSystem.h"
+#include <filesystem>
+#include <algorithm>
 
 #if TS_USE_INOTIFY
 #include <sys/inotify.h>
@@ -42,7 +46,14 @@
 using watch_handle_t = int;
 
 // File watch info
-struct file_info {
+class FileChangeInfo
+{
+public:
+  FileChangeInfo(TSFileWatchKind kind, ts::file::path path, Continuation *contp) : kind{kind}, path{std::move(path)}, contp{contp}
+  {
+  }
+
+  TSFileWatchKind kind;
   ts::file::path path;
   Continuation *contp;
 };
@@ -68,12 +79,22 @@ public:
 
 private:
   std::thread poll_thread;
+  std::unordered_map<watch_handle_t, FileChangeInfo> file_watches; // protected by file_watches_mutex
+  std::shared_mutex file_watches_mutex;
 
 #if TS_USE_INOTIFY
-  void process_file_event(struct inotify_event *event);
-  std::shared_mutex file_watches_mutex;
-  std::unordered_map<watch_handle_t, struct file_info> file_watches;
+  void inotify_process_event(struct inotify_event *event);
   int inotify_fd;
+#elif TS_USE_KQUEUE
+  bool file_watches_dirty; // protected by file_watches_mutex
+
+  std::vector<struct kevent> events_to_monitor;
+  std::vector<struct kevent> events_from_kqueue;
+
+  int kq;
+  void kqueue_prepare_events();
+  int kqueue_wait_for_events();
+  void kqueue_process_event(const struct kevent &event);
 #else
   // implement this
 #endif

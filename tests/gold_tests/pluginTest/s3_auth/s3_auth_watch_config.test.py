@@ -20,7 +20,7 @@ Test s3_auth config change watch function
 Test.ContinueOnFail = True
 
 Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_INOTIFY'),
+    Condition.HasATSFeature('TS_USE_INOTIFY') or Condition.HasATSFeature('TS_USE_KQUEUE'),
 )
 
 ts = Test.MakeATSProcess("ts")

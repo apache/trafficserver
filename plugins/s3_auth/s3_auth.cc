@@ -23,6 +23,7 @@
 #include <ctime>
 #include <cstring>
 #include <getopt.h>
+#include <sys/fcntl.h>
 #include <sys/time.h>
 
 #include <cstdio>
@@ -141,49 +142,6 @@ loadRegionMap(StringMap &m, const String &filename)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Cache for the secrets file, to avoid reading / loading them repeatedly on
-// a reload of remap.config. This gets cached for 60s (not configurable).
-//
-class S3Config;
-
-class ConfigCache
-{
-public:
-  S3Config *get(const char *fname);
-
-private:
-  struct _ConfigData {
-    // This is incremented before and after cnf and load_time are set.
-    // Thus, an odd value indicates an update is in progress.
-    std::atomic<unsigned> update_status{0};
-
-    // A config from a file and the last time it was loaded.
-    // config should be written before load_time.  That way,
-    // if config is read after load_time, the load time will
-    // never indicate config is fresh when it isn't.
-    std::atomic<S3Config *> config;
-    std::atomic<time_t> load_time;
-    std::atomic<int> ttl = 60;
-
-    _ConfigData() {}
-
-    _ConfigData(S3Config *config_, time_t load_time_, int ttl_) : config(config_), load_time(load_time_), ttl(ttl_) {}
-
-    _ConfigData(_ConfigData &&lhs)
-    {
-      update_status = lhs.update_status.load();
-      config        = lhs.config.load();
-      load_time     = lhs.load_time.load();
-      ttl           = lhs.ttl.load();
-    }
-  };
-
-  std::unordered_map<std::string, _ConfigData> _cache;
-};
-
-ConfigCache gConfCache;
-
-///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
 //
 int event_handler(TSCont, TSEvent, void *); // Forward declaration
@@ -220,12 +178,21 @@ public:
     TSfree(_conf_fname);
     if (_conf_rld_act) {
       TSActionCancel(_conf_rld_act);
+      _conf_rld_act = nullptr;
     }
     if (_conf_rld) {
       TSContDestroy(_conf_rld);
     }
     if (_cont) {
       TSContDestroy(_cont);
+    }
+
+    if (_dir_watch) {
+      TSContDestroy(_dir_watch);
+    }
+
+    if (_conf_watch) {
+      TSContDestroy(_conf_watch);
     }
   }
 
@@ -405,12 +372,6 @@ public:
   }
 
   int
-  ttl() const
-  {
-    return _ttl;
-  }
-
-  int
   incr_conf_reload_count()
   {
     return _conf_reload_count++;
@@ -497,15 +458,15 @@ public:
   }
 
   void
-  set_ttl(const char *s)
-  {
-    _ttl = strtol(s, nullptr, 10);
-  }
-
-  void
   reset_conf_reload_count()
   {
     _conf_reload_count = 0;
+  }
+
+  void
+  clear_reload_action()
+  {
+    _conf_rld_act = nullptr;
   }
 
   // Parse configs from an external file
@@ -523,7 +484,9 @@ public:
   schedule_conf_reload(long delay)
   {
     if (_conf_rld_act != nullptr && !TSActionDone(_conf_rld_act)) {
+      TSDebug(PLUGIN_NAME, "_conf_rld_act = %p, cancelling...", _conf_rld_act);
       TSActionCancel(_conf_rld_act);
+      _conf_rld_act = nullptr;
     }
     _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_NET);
   }
@@ -548,7 +511,7 @@ public:
       _config_dir_wd  = TSFileEventRegister(parent_dir.c_str(), TS_WATCH_CREATE, _dir_watch);
       if (_config_dir_wd == -1) {
         _config_dir_wd.reset();
-        TSError("s3_auth: failed to watch config file directory: %s", parent_dir.c_str());
+        TSError("[%s]: failed to watch config file directory: %s", PLUGIN_NAME, parent_dir.c_str());
       } else {
         TSDebug(PLUGIN_NAME, "Watching config file directory: %s (%d)", parent_dir.c_str(), _config_file_wd.value());
       }
@@ -590,6 +553,18 @@ public:
     }
   }
 
+  void
+  set_watch_retry(int retries)
+  {
+    watch_retry_count = retries;
+  }
+
+  int
+  decrement_retry()
+  {
+    return --watch_retry_count;
+  }
+
   ts::shared_mutex reload_mutex;
   ts::shared_mutex wd_mutex;
 
@@ -621,8 +596,46 @@ private:
   bool _watch_config        = false;
   std::optional<TSWatchDescriptor> _config_file_wd;
   std::optional<TSWatchDescriptor> _config_dir_wd;
-  int _ttl = 60;
+  std::atomic<int> watch_retry_count = 0;
 };
+
+static bool
+try_flock(int fd)
+{
+  struct flock lck;
+  lck.l_start  = 0;
+  lck.l_len    = 0;
+  lck.l_type   = F_RDLCK;
+  lck.l_whence = SEEK_SET;
+  auto res     = fcntl(fd, F_SETLK, &lck);
+  if (res < 0) {
+    switch (errno) {
+    case EAGAIN:
+    case EINTR:
+      TSDebug(PLUGIN_NAME, "flock is busy.");
+      break;
+    default:
+      TSError("[%s] Failed to flock(): %s!", PLUGIN_NAME, strerror(errno));
+      break;
+    }
+    return false;
+  }
+  return true;
+}
+
+static void
+funlock(int fd)
+{
+  struct flock lck;
+  lck.l_start  = 0;
+  lck.l_len    = 0;
+  lck.l_type   = F_UNLCK;
+  lck.l_whence = SEEK_SET;
+  auto res     = fcntl(fd, F_SETLK, &lck);
+  if (res < 0) {
+    TSError("[%s] Failed to funlock(): %s!", PLUGIN_NAME, strerror(errno));
+  }
+}
 
 bool
 S3Config::parse_config(const std::string &config_fname)
@@ -632,10 +645,16 @@ S3Config::parse_config(const std::string &config_fname)
     return false;
   } else {
     char line[512]; // These are long lines ...
-    FILE *file = fopen(config_fname.c_str(), "r");
+    int fd     = open(config_fname.c_str(), O_RDONLY);
+    FILE *file = fdopen(fd, "r");
 
     if (nullptr == file) {
       TSError("[%s] unable to open %s", PLUGIN_NAME, config_fname.c_str());
+      return false;
+    }
+
+    if (!try_flock(fd)) {
+      fclose(file);
       return false;
     }
 
@@ -663,7 +682,7 @@ S3Config::parse_config(const std::string &config_fname)
 
       // Identify the keys (and values if appropriate)
       std::string key_val(pos2, pos1 - pos2 + 1);
-      size_t eq_pos       = key_val.find_first_of("=");
+      size_t eq_pos       = key_val.find_first_of('=');
       std::string key_str = trimWhiteSpaces(key_val.substr(0, eq_pos == String::npos ? key_val.size() : eq_pos));
       std::string val_str = eq_pos == String::npos ? "" : trimWhiteSpaces(key_val.substr(eq_pos + 1, key_val.size()));
 
@@ -685,8 +704,6 @@ S3Config::parse_config(const std::string &config_fname)
         set_region_map(val_str.c_str());
       } else if (key_str == "expiration") {
         set_expiration(val_str.c_str());
-      } else if (key_str == "ttl") {
-        set_ttl(val_str.c_str());
       } else if (key_str == "watch-config") {
         set_watch_config();
       } else {
@@ -694,6 +711,7 @@ S3Config::parse_config(const std::string &config_fname)
       }
     }
 
+    funlock(fd);
     fclose(file);
   }
 
@@ -707,10 +725,10 @@ S3Config::parse_config(const std::string &config_fname)
 // has to copy the relevant portions, but should not use the returned object
 // directly (i.e. it must be copied).
 //
-S3Config *
-ConfigCache::get(const char *fname)
+static S3Config *
+load_config(const char *fname)
 {
-  S3Config *s3;
+  S3Config *s3 = nullptr;
 
   struct timeval tv;
 
@@ -719,64 +737,17 @@ ConfigCache::get(const char *fname)
   // Make sure the filename is an absolute path, prepending the config dir if needed
   std::string config_fname = makeConfigPath(fname);
 
-  auto it = _cache.find(config_fname);
+  s3 = new S3Config(false); // false == this config does not get the continuation
 
-  if (it != _cache.end()) {
-    unsigned update_status = it->second.update_status;
-    if (tv.tv_sec > (it->second.load_time + it->second.ttl)) {
-      if (!(update_status & 1) && it->second.update_status.compare_exchange_strong(update_status, update_status + 1)) {
-        TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
-        s3 = new S3Config(false); // false == this config does not get the continuation
-
-        if (s3->parse_config(config_fname)) {
-          s3->set_conf_fname(fname);
-        } else {
-          // Failed the configuration parse... Set the cache response to nullptr
-          delete s3;
-          s3 = nullptr;
-          TSAssert(!"Configuration parsing / caching failed");
-        }
-        TSDebug(PLUGIN_NAME, "Updated rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(),
-                s3->virt_host() ? "yes" : "no", s3->version());
-
-        delete it->second.config;
-        it->second.config    = s3;
-        it->second.load_time = tv.tv_sec;
-        it->second.ttl       = s3->ttl();
-        TSDebug(PLUGIN_NAME, "Config ttl updated to %d seconds", it->second.ttl.load());
-
-        // Update is complete.
-        ++it->second.update_status;
-      } else {
-        // This thread lost the race with another thread that is also reloading
-        // the config for this file. Wait for the other thread to finish reloading.
-        while (it->second.update_status & 1) {
-          // Hopefully yielding will sleep the thread at least until the next
-          // scheduler interrupt, preventing a busy wait.
-          std::this_thread::yield();
-        }
-        s3 = it->second.config;
-      }
-    } else {
-      TSDebug(PLUGIN_NAME, "Configuration from %s is fresh, reusing", config_fname.c_str());
-      s3 = it->second.config;
-    }
+  if (s3->parse_config(config_fname)) {
+    s3->set_conf_fname(fname);
+    TSDebug(PLUGIN_NAME, "Updated rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no",
+            s3->version());
   } else {
-    // Create a new cached file.
-    s3 = new S3Config(false); // false == this config does not get the continuation
-
-    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
-    if (s3->parse_config(config_fname)) {
-      s3->set_conf_fname(fname);
-      _cache.emplace(config_fname, _ConfigData(s3, tv.tv_sec, s3->ttl()));
-      _cache[config_fname].ttl = s3->ttl();
-      TSDebug(PLUGIN_NAME, "Config ttl set to %d seconds", _cache[config_fname].ttl.load());
-    } else {
-      delete s3;
-      s3 = nullptr;
-      TSAssert(!"Configuration parsing / caching failed");
-    }
+    delete s3;
+    s3 = nullptr;
   }
+
   return s3;
 }
 
@@ -1181,12 +1152,19 @@ config_dir_watch(TSCont cont, TSEvent event, void *edata)
   }
 
   TSAssert(event == TS_EVENT_FILE_CREATED);
-  TSDebug(PLUGIN_NAME, "File created: %s", fwd->name);
-  if (strncmp(s3->conf_fname(), fwd->name, strlen(s3->conf_fname())) == 0) {
-    TSDebug(PLUGIN_NAME, "config file created");
-    config_reloader(cont, event, edata);
+  // On some platforms, we get a file name on create.
+  if (fwd->name != nullptr) {
+    TSDebug(PLUGIN_NAME, "File created: %s", fwd->name);
+    if (strncmp(s3->conf_fname(), fwd->name, strlen(s3->conf_fname())) == 0) {
+      TSDebug(PLUGIN_NAME, "config file created");
+    } else {
+      // Some other file was created.
+      return TS_SUCCESS;
+    }
   }
 
+  s3->set_watch_retry(5);
+  config_reloader(cont, event, edata);
   return TS_SUCCESS;
 }
 
@@ -1205,6 +1183,7 @@ config_watch(TSCont cont, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
 
+  s3->set_watch_retry(5);
   config_reloader(cont, event, edata);
 
   return TS_SUCCESS;
@@ -1214,12 +1193,24 @@ int
 config_reloader(TSCont cont, TSEvent event, void *edata)
 {
   TSDebug(PLUGIN_NAME, "reloading configs");
-  S3Config *s3          = static_cast<S3Config *>(TSContDataGet(cont));
-  S3Config *file_config = gConfCache.get(s3->conf_fname());
+  S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
+  s3->clear_reload_action();
+  S3Config *file_config = load_config(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
-    TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
-    return TS_ERROR;
+    // An invalid config is not necessarily an error.
+    // Sometimes a file notification is sent before a file finishes writing.
+    // It's also possible that the advisory lock on the file is still being held.
+    TSDebug(PLUGIN_NAME, "Failed to reload config.");
+    auto remaining = s3->decrement_retry();
+    if (remaining > 0) {
+      TSDebug(PLUGIN_NAME, "Retring config reload in 1 second.  %d tries remaining.", remaining);
+      s3->schedule_conf_reload(1);
+      return TS_SUCCESS;
+    } else {
+      TSError("[%s] Giving up config reload.  %d tries remaining.", PLUGIN_NAME, remaining);
+      return TS_ERROR;
+    }
   }
 
   {
@@ -1294,7 +1285,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("v4-region-map"), required_argument, nullptr, 'm'},
     {const_cast<char *>("session_token"), required_argument, nullptr, 't'},
     {const_cast<char *>("watch-config"), no_argument, nullptr, 'w'},
-    {const_cast<char *>("ttl"), no_argument, nullptr, 'T'},
     {nullptr, no_argument, nullptr, '\0'},
   };
 
@@ -1311,8 +1301,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     switch (opt) {
     case 'c':
-      file_config = gConfCache.get(optarg); // Get cached, or new, config object, from a file
-      if (!file_config) {
+      file_config = load_config(optarg); // Get cached, or new, config object, from a file
+      if (!file_config || !file_config->valid()) {
         TSError("[%s] invalid configuration file, %s", PLUGIN_NAME, optarg);
         *ih = nullptr;
         return TS_ERROR;
@@ -1344,9 +1334,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       break;
     case 'w':
       s3->set_watch_config();
-      break;
-    case 'T':
-      s3->set_ttl(optarg);
       break;
     }
 

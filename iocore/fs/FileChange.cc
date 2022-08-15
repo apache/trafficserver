@@ -33,11 +33,34 @@
 #include <optional>
 #include <sys/event.h>
 #include <sys/fcntl.h>
+#include <thread>
 #include <ts/apidefs.h>
+#include <chrono>
 
 // Globals
 FileChangeManager fileChangeManager;
 static constexpr auto TAG ATS_UNUSED = "FileChange";
+
+#if TS_USE_KQUEUE
+using namespace std::chrono_literals;
+
+// When using kqueue, new watches will take effect after at most this much time.
+// This value should be greater than 0.  Smaller values cost more CPU.
+static constexpr auto latency = 1s;
+
+static constexpr timespec
+chrono_to_timespec(std::chrono::nanoseconds duration)
+{
+  if (duration <= 0s) {
+    duration = 1s;
+  }
+
+  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+  duration -= seconds;
+  return timespec{seconds.count(), duration.count()};
+}
+
+#endif
 
 // Wrap a continuation
 class FileChangeCallback : public Continuation
@@ -76,9 +99,6 @@ private:
   TSEvent m_event;
 };
 
-#if TS_USE_INOTIFY
-static constexpr size_t INOTIFY_BUF_SIZE = 4096;
-
 static void
 invoke(FileChangeCallback *cb)
 {
@@ -86,8 +106,11 @@ invoke(FileChangeCallback *cb)
   eventProcessor.schedule_imm(cb, ET_TASK, 1, cookie);
 }
 
+#if TS_USE_INOTIFY
+static constexpr size_t INOTIFY_BUF_SIZE = 4096;
+
 void
-FileChangeManager::process_file_event(struct inotify_event *event)
+FileChangeManager::inotify_process_event(struct inotify_event *event)
 {
   std::shared_lock file_watches_read_lock(file_watches_mutex);
   auto finfo_it = file_watches.find(event->wd);
@@ -98,10 +121,6 @@ FileChangeManager::process_file_event(struct inotify_event *event)
 
     if (event->mask & (IN_DELETE_SELF | IN_MOVED_FROM)) {
       Debug(TAG, "Delete file event (%d) on %s", event->mask, finfo.path.c_str());
-      int rc2 = inotify_rm_watch(inotify_fd, event->wd);
-      if (rc2 == -1) {
-        Error("Failed to remove inotify watch on %s: %s (%d)", finfo.path.c_str(), strerror(errno), errno);
-      }
       event_type             = TS_EVENT_FILE_DELETED;
       FileChangeCallback *cb = new FileChangeCallback(contp, event_type);
       cb->data.wd            = event->wd;
@@ -142,6 +161,115 @@ FileChangeManager::process_file_event(struct inotify_event *event)
     }
   }
 }
+#elif TS_USE_KQUEUE
+static void
+kqueue_make_event(int fd, const FileChangeInfo &info, struct kevent *event)
+{
+  unsigned int mask = 0;
+  if (info.kind == TS_WATCH_CREATE) {
+    mask = NOTE_WRITE | NOTE_DELETE | NOTE_RENAME;
+  } else if (info.kind == TS_WATCH_DELETE) {
+    mask = NOTE_DELETE | NOTE_RENAME;
+  } else if (info.kind == TS_WATCH_MODIFY) {
+    mask = NOTE_WRITE | NOTE_DELETE | NOTE_RENAME;
+  } else {
+    // Shouldn't get here
+    ink_release_assert(false);
+  }
+  EV_SET(event, fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, mask, 0, (void *)(uintptr_t)fd);
+}
+
+void
+FileChangeManager::kqueue_prepare_events()
+{
+  if (file_watches_dirty) {
+    // Make events for kqueue to monitor
+    Debug(TAG, "Updating kqueue event list.");
+    std::unique_lock file_watches_lock{file_watches_mutex}; // unique lock because file_watches_dirty will be written
+    auto nwatches = file_watches.size();
+    events_to_monitor.resize(nwatches);
+    events_from_kqueue.resize(nwatches);
+    int i = 0;
+    for (const auto &[wd, info] : file_watches) {
+      // Add a file event to the list of events to monitor
+      kqueue_make_event(wd, info, &events_to_monitor[i]);
+      i++;
+    }
+    file_watches_dirty = false;
+  }
+}
+
+int
+FileChangeManager::kqueue_wait_for_events()
+{
+  // Wait for kqueue events
+  if (events_to_monitor.empty()) {
+    std::this_thread::sleep_for(latency);
+  } else {
+    // I couldn't find a clear answer as to whether the timeout value can be modified by kevent (e.g. on an interrupt)
+    constexpr timespec latency_timespec = chrono_to_timespec(latency);
+    return kevent(kq, events_to_monitor.data(), events_to_monitor.size(), events_from_kqueue.data(), events_from_kqueue.size(),
+                  &latency_timespec);
+  }
+
+  return 0;
+}
+
+void
+FileChangeManager::kqueue_process_event(const struct kevent &event)
+{
+  std::shared_lock file_watches_read_lock(file_watches_mutex);
+  auto fd64     = reinterpret_cast<uint64_t>(event.udata);
+  auto fd       = static_cast<int>(fd64); // Intentionally truncating to an int.  Casting twice to suppress compiler warnings.
+  auto finfo_it = file_watches.find(fd);
+  if (finfo_it != file_watches.end()) {
+    TSEvent event_type          = TS_EVENT_NONE;
+    const FileChangeInfo &finfo = finfo_it->second;
+    Continuation *contp         = finfo.contp;
+
+    if (event.fflags & (NOTE_DELETE | NOTE_RENAME)) {
+      Debug(TAG, "Delete file event (%d) on %s", event.fflags, finfo.path.c_str());
+      if (finfo.kind == TS_WATCH_DELETE) {
+        event_type             = TS_EVENT_FILE_DELETED;
+        FileChangeCallback *cb = new FileChangeCallback(contp, event_type);
+        cb->data.wd            = fd;
+        cb->data.name          = nullptr;
+        invoke(cb);
+      }
+
+      // kqueue doesn't notify us if a file watch no longer applies, so we do it.
+      event_type             = TS_EVENT_FILE_IGNORED;
+      FileChangeCallback *cb = new FileChangeCallback(contp, event_type);
+      cb->data.wd            = fd;
+      cb->data.name          = nullptr;
+      invoke(cb);
+    }
+
+    if (event.fflags & (NOTE_WRITE) && finfo.kind == TS_WATCH_CREATE) {
+      Debug(TAG, "Create file event (%d) on %s (wd = %d)", event.fflags, finfo.path.c_str(), fd);
+      event_type = TS_EVENT_FILE_CREATED;
+
+      FileChangeCallback *cb = new FileChangeCallback(contp, event_type);
+      cb->data.wd            = fd;
+      cb->data.name          = nullptr; // a kqueue create has no name
+      invoke(cb);
+    }
+
+    if (event.fflags & (NOTE_WRITE) && finfo.kind == TS_WATCH_MODIFY) {
+      Debug(TAG, "Modify file event (%d) on %s (wd = %d)", event.fflags, finfo.path.c_str(), fd);
+      event_type             = TS_EVENT_FILE_UPDATED;
+      FileChangeCallback *cb = new FileChangeCallback(contp, event_type);
+      cb->data.wd            = fd;
+      cb->data.name          = nullptr;
+      invoke(cb);
+    }
+  }
+  if (event.flags & EV_ERROR) {
+    Error("kqueue error: %s (%" PRIxPTR ")", strerror(event.data), event.data);
+    return;
+  }
+}
+
 #endif
 
 void
@@ -175,7 +303,7 @@ FileChangeManager::init()
         struct inotify_event *event = reinterpret_cast<struct inotify_event *>(inotify_buf + offset);
 
         // Process file events
-        manager->process_file_event(event);
+        manager->inotify_process_event(event);
         offset += sizeof(struct inotify_event) + event->len;
       }
     }
@@ -183,10 +311,24 @@ FileChangeManager::init()
   poll_thread = std::thread(inotify_thread);
   poll_thread.detach();
 #elif TS_USE_KQUEUE
-  auto kq = kqueue();
-  if (kq < 0) {
-    Fatal("Failed to init kqueue: %s.", strerror(errno));
-  }
+  auto kqueue_thread = [manager = this]() mutable {
+    manager->kq = kqueue();
+    if (manager->kq < 0) {
+      Fatal("Failed to init kqueue: %s.", strerror(errno));
+    }
+    for (;;) {
+      manager->kqueue_prepare_events();
+      int event_count = manager->kqueue_wait_for_events();
+      if (event_count == -1) {
+        Error("kqueue error: %s", strerror(errno));
+      }
+      for (int i = 0; i < event_count; i++) {
+        manager->kqueue_process_event(manager->events_from_kqueue[i]);
+      }
+    }
+  };
+  poll_thread = std::thread(kqueue_thread);
+  poll_thread.detach();
 #else
   // Implement this
 #endif
@@ -195,10 +337,11 @@ FileChangeManager::init()
 watch_handle_t
 FileChangeManager::add(const ts::file::path &path, TSFileWatchKind kind, Continuation *contp)
 {
-#if TS_USE_INOTIFY
-  Debug(TAG, "Adding a watch on %s", path.c_str());
   watch_handle_t wd = 0;
+  std::unique_lock file_watches_write_lock{file_watches_mutex};
+  Debug(TAG, "Adding a watch on %s", path.c_str());
 
+#if TS_USE_INOTIFY
   // Let the OS handle multiple watches on one file.
   uint32_t mask = 0;
   if (kind == TS_WATCH_CREATE) {
@@ -215,45 +358,53 @@ FileChangeManager::add(const ts::file::path &path, TSFileWatchKind kind, Continu
   if (wd == -1) {
     Error("Failed to add file watch on %s: %s (%d)", path.c_str(), strerror(errno), errno);
     return -1;
-  } else {
-    std::unique_lock file_watches_write_lock(file_watches_mutex);
-    file_watches[wd] = {path, contp};
   }
 
   Debug(TAG, "Watch handle = %d", wd);
-  return wd;
 #elif TS_USE_KQUEUE
-  auto fd = open(path.c_str(), O_EVTONLY);
-  if (fd <= 0) {
+  int o_flags = 0;
+
+#ifdef O_SYMLINK
+  o_flags |= O_SYMLINK;
+#endif
+
+#ifdef O_EVTONLY
+  // The descriptor is requested for event notifications only.
+  o_flags |= O_EVTONLY;
+#else
+  o_flags |= O_RDONLY;
+#endif
+
+#ifdef O_DIRECTORY
+  if (kind == TS_WATCH_CREATE) {
+    // file creation can only be monitored from the directory above
+    o_flags |= O_DIRECTORY;
+  }
+#endif
+
+  wd = open(path.c_str(), o_flags);
+  if (wd <= 0) {
     Error("Failed to open %s for monitoring: %s.", path.c_str(), strerror(errno));
     return -1;
   }
-
-  unsigned int mask = 0;
-  if (kind == TS_WATCH_CREATE) {
-    mask = NOTE_WRITE;
-  } else if (kind == TS_WATCH_DELETE) {
-    mask = NOTE_DELETE | NOTE_RENAME;
-  } else if (kind == TS_WATCH_MODIFY) {
-    mask = NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB;
-  } else {
-    // Shouldn't get here
-    ink_release_assert(false);
-  }
-  EV_SET()
 #else
   Warning("File change notification is not supported on this OS.");
-  return 0;
 #endif
+  file_watches.try_emplace(wd, kind, path, contp);
+  file_watches_dirty = true;
+  return wd;
 }
 
 void
 FileChangeManager::remove(watch_handle_t watch_handle)
 {
-#if TS_USE_INOTIFY
-  Debug(TAG, "Deleting watch %d", watch_handle);
-  inotify_rm_watch(inotify_fd, watch_handle);
   std::unique_lock file_watches_write_lock(file_watches_mutex);
-  file_watches.erase(watch_handle);
+  Debug(TAG, "Deleting watch %d", watch_handle);
+#if TS_USE_INOTIFY
+  inotify_rm_watch(inotify_fd, watch_handle);
+#elif TS_USE_KQUEUE
+  close(watch_handle);
 #endif
+  file_watches.erase(watch_handle);
+  file_watches_dirty = true;
 }
