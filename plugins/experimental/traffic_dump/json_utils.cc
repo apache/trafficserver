@@ -114,7 +114,7 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
       break;
     }
     default: {
-      if ('\x00' <= c && c <= '\x1f') {
+      if (c <= '\x1f') {
         write_buffered_context(buf, prevIdx, idx, jsonfile);
         jsonfile << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
       }
