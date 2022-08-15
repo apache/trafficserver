@@ -220,8 +220,7 @@ public:
   virtual ~TSNextHopSelectionStrategy(){};
 
   virtual const char *name()                                                                        = 0;
-  virtual void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
-                    in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
+  virtual void next(TSHttpTxn txnp, void *strategyTxn, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
                     bool *out_retry, bool *out_no_cache, time_t now = 0)                            = 0;
   virtual void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
                     const PLNHCmd status, const time_t now = 0)                                     = 0;
@@ -244,11 +243,10 @@ public:
   PLNextHopSelectionStrategy(const std::string_view &name, const YAML::Node &n);
   virtual ~PLNextHopSelectionStrategy(){};
 
-  void next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len, in_port_t exclude_port,
-            const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port, bool *out_retry, bool *out_no_cache,
-            time_t now = 0) override                             = 0;
+  void next(TSHttpTxn txnp, void *strategyTxn, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
+            bool *out_retry, bool *out_no_cache, time_t now = 0) override = 0;
   void mark(TSHttpTxn txnp, void *strategyTxn, const char *hostname, const size_t hostname_len, const in_port_t port,
-            const PLNHCmd status, const time_t now = 0) override = 0;
+            const PLNHCmd status, const time_t now = 0) override          = 0;
   bool nextHopExists(TSHttpTxn txnp) override;
   bool codeIsFailure(TSHttpStatus response_code) override;
   bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) override;
