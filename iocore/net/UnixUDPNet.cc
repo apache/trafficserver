@@ -1153,12 +1153,14 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
     char buf[CMSG_SPACE(sizeof(uint16_t))];
     struct cmsghdr align;
   };
-#endif
   if (use_udp_gso) {
     msgvec_size = sizeof(struct mmsghdr) * n;
   } else {
     msgvec_size = sizeof(struct mmsghdr) * n * 64;
   }
+#else
+  msgvec_size = sizeof(struct mmsghdr) * n * 64;
+#endif
   msgvec = static_cast<struct mmsghdr *>(alloca(msgvec_size));
   memset(msgvec, 0, msgvec_size);
 
