@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "I_HostDB.h"
@@ -570,12 +572,60 @@ public:
     ConnectionAttributes *server                 = nullptr;
     ink_time_t now                               = 0;
     ServerState_t state                          = STATE_UNDEFINED;
-    unsigned attempts                            = 0;
-    unsigned simple_retry_attempts               = 0;
-    unsigned unavailable_server_retry_attempts   = 0;
-    ParentRetry_t retry_type                     = PARENT_RETRY_NONE;
+    class Attempts
+    {
+    public:
+      Attempts()                 = default;
+      Attempts(Attempts const &) = delete;
 
-    _CurrentInfo() {}
+      unsigned
+      get() const
+      {
+        return _v;
+      }
+
+      void
+      maximize(MgmtInt configured_connect_attempts_max_retries)
+      {
+        ink_assert(_v <= configured_connect_attempts_max_retries);
+        if (_v < configured_connect_attempts_max_retries) {
+          ink_assert(0 == _saved_v);
+          _saved_v = _v;
+          _v       = configured_connect_attempts_max_retries;
+        }
+      }
+
+      void
+      clear()
+      {
+        _v       = 0;
+        _saved_v = 0;
+      }
+
+      void
+      increment(MgmtInt configured_connect_attempts_max_retries)
+      {
+        ++_v;
+        ink_assert(_v <= configured_connect_attempts_max_retries);
+      }
+
+      unsigned
+      saved() const
+      {
+        return _saved_v ? _saved_v : _v;
+      }
+
+    private:
+      unsigned _v{0}, _saved_v{0};
+    };
+    Attempts attempts;
+    unsigned simple_retry_attempts             = 0;
+    unsigned unavailable_server_retry_attempts = 0;
+    ParentRetry_t retry_type                   = PARENT_RETRY_NONE;
+
+    _CurrentInfo()                     = default;
+    _CurrentInfo(_CurrentInfo const &) = delete;
+
   } CurrentInfo;
 
   // Conversion handling for DNS host resolution type.
@@ -875,6 +925,12 @@ public:
         this->cause_of_death_errno = e;
       }
       Debug("http", "Setting upstream connection failure %d to %d", e, this->current.server->connect_result);
+    }
+
+    MgmtInt
+    configured_connect_attempts_max_retries() const
+    {
+      return txn_conf->connect_attempts_max_retries;
     }
 
   private:

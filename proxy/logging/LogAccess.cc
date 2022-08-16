@@ -2633,7 +2633,7 @@ int
 LogAccess::marshal_server_connect_attempts(char *buf)
 {
   if (buf) {
-    int64_t attempts = m_http_sm->t_state.current.attempts;
+    int64_t attempts = m_http_sm->t_state.current.attempts.saved();
     marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
