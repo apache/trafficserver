@@ -38,8 +38,10 @@ Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, s
     size_t len           = 0;
     Http3FrameUPtr frame = g->generate_frame();
     if (frame) {
-      auto b = frame->to_io_buffer_block();
-      len    = writer.write(b.get(), INT64_MAX, 0);
+      Ptr<IOBufferBlock> parent = frame->to_io_buffer_block();
+      for (auto *b = parent.get(); b != nullptr; b = b->next.get()) {
+        len += writer.write(b, b->read_avail(), 0);
+      }
       nwritten += len;
       Debug("http3", "[TX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(frame->type()), len);
     }

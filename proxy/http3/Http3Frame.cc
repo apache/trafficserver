@@ -146,11 +146,17 @@ Http3DataFrame::Http3DataFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(
   this->_payload_len = buf_len - this->_payload_offset;
 }
 
-Http3DataFrame::Http3DataFrame(ats_unique_buf payload, size_t payload_len)
-  : Http3Frame(Http3FrameType::DATA), _payload_uptr(std::move(payload)), _payload_len(payload_len)
+Http3DataFrame::Http3DataFrame(IOBufferReader *reader, size_t payload_len)
+  : Http3Frame(Http3FrameType::DATA), _reader(reader), _payload_len(payload_len)
 {
-  this->_length  = this->_payload_len;
-  this->_payload = this->_payload_uptr.get();
+  this->_length = payload_len;
+}
+
+Http3DataFrame::~Http3DataFrame()
+{
+  if (this->_reader) {
+    this->_reader->consume(this->_payload_len);
+  }
 }
 
 Ptr<IOBufferBlock>
@@ -160,18 +166,31 @@ Http3DataFrame::to_io_buffer_block() const
   size_t n       = 0;
   size_t written = 0;
 
+  // Make a block for header
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
+  block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD, BUFFER_SIZE_INDEX_8K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   QUICVariableInt::encode(block_start, UINT64_MAX, n, static_cast<uint64_t>(this->_type));
   written += n;
   QUICVariableInt::encode(block_start + written, UINT64_MAX, n, this->_length);
   written += n;
-  memcpy(block_start + written, this->_payload, this->_payload_len);
-  written += this->_payload_len;
-
   block->fill(written);
+
+  // Append payload
+  size_t total = 0;
+  auto *b_src  = this->_reader->get_current_block();
+  auto *b_dst  = block.get();
+  while (total < this->_payload_len) {
+    b_dst->next = b_src->clone();
+    b_dst->next.get()->_end =
+      b_dst->next.get()->_start + std::min(this->_payload_len - total, static_cast<size_t>(b_src->read_avail()));
+    total += b_dst->next->read_avail();
+    b_src = b_src->next.get();
+    b_dst = b_dst->next.get();
+  }
+  ink_assert(total == this->_payload_len);
+
   return block;
 }
 
@@ -490,40 +509,12 @@ Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, siz
   return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
 }
 
-Http3DataFrameUPtr
-Http3FrameFactory::create_data_frame(const uint8_t *payload, size_t payload_len)
-{
-  ats_unique_buf buf = ats_unique_malloc(payload_len);
-  memcpy(buf.get(), payload, payload_len);
-
-  Http3DataFrame *frame = http3DataFrameAllocator.alloc();
-  new (frame) Http3DataFrame(std::move(buf), payload_len);
-  return Http3DataFrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
-}
-
 // TODO: This should clone IOBufferBlock chain to avoid memcpy
 Http3DataFrameUPtr
 Http3FrameFactory::create_data_frame(IOBufferReader *reader, size_t payload_len)
 {
-  ats_unique_buf buf = ats_unique_malloc(payload_len);
-  size_t written     = 0;
-
-  while (written < payload_len) {
-    int64_t len = reader->block_read_avail();
-
-    if (written + len > payload_len) {
-      len = payload_len - written;
-    }
-
-    memcpy(buf.get() + written, reinterpret_cast<uint8_t *>(reader->start()), len);
-    reader->consume(len);
-    written += len;
-  }
-
-  ink_assert(written == payload_len);
-
   Http3DataFrame *frame = http3DataFrameAllocator.alloc();
-  new (frame) Http3DataFrame(std::move(buf), payload_len);
+  new (frame) Http3DataFrame(reader, payload_len);
 
   return Http3DataFrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
 }
