@@ -1082,7 +1082,7 @@ write_dns(DNSHandler *h, bool tcp_retry)
     max_nscount = MAX_NAMED;
   }
   if (max_nscount <= 0) {
-    Error("There is no name server found in the resolv.conf");
+    Warning("There is no name server found in the resolv.conf");
     if (h->entries.head) {
       dns_result(h, h->entries.head, nullptr, false);
     }
@@ -1559,48 +1559,48 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     Debug("dns", "received rcode = %d", h->rcode);
     switch (h->rcode) {
     default:
-      SiteThrottledWarning("Unknown: DNS error %d for [%s]", h->rcode, e->qname);
+      SiteThrottledNote("Unknown: DNS error %d for [%s]", h->rcode, e->qname);
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
     case NOERROR: // NOERROR the if condition excludes this status code to avoid spamming the logs, good for testing
-      SiteThrottledStatus("NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
+      SiteThrottledNote("NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
       break;
     case FORMERR: // FORMERR unrecoverable errors
-      SiteThrottledError("FORMERR: DNS error %d for [%s]: DNS Query Format Error.", h->rcode, e->qname);
+      SiteThrottledNote("FORMERR: DNS error %d for [%s]: DNS Query Format Error.", h->rcode, e->qname);
       break;
     case SERVFAIL: // SERVFAIL recoverable error
-      SiteThrottledError("SERVFAIL: DNS error %d for [%s]: Server failed to complete the DNS request.", h->rcode, e->qname);
+      SiteThrottledNote("SERVFAIL: DNS error %d for [%s]: Server failed to complete the DNS request.", h->rcode, e->qname);
       retry = true;
       break;
     case NXDOMAIN: // NXDOMAIN
-      SiteThrottledError("NXDOMAIN: DNS error %d for [%s]: Domain name does not exist.", h->rcode, e->qname);
+      SiteThrottledNote("NXDOMAIN: DNS error %d for [%s]: Domain name does not exist.", h->rcode, e->qname);
       retry     = false;
       tcp_retry = false;
       break;
     case NOTIMP: // NOTIMP
-      SiteThrottledError("NOTIMP: DNS error %d for [%s]: Function not implemented.", h->rcode, e->qname);
+      SiteThrottledNote("NOTIMP: DNS error %d for [%s]: Function not implemented.", h->rcode, e->qname);
       server_ok = false; // could be server problems
       goto Lerror;
       break;
     case REFUSED: // REFUSED
-      SiteThrottledError("REFUSED: DNS error %d for [%s]: The server refused to answer for the query.", h->rcode, e->qname);
+      SiteThrottledNote("REFUSED: DNS error %d for [%s]: The server refused to answer for the query.", h->rcode, e->qname);
       goto Lerror;
       break;
     case YXDOMAIN: // YXDOMAIN
-      SiteThrottledError("YXDOMAIN: DNS error %d for [%s]: Name that should not exist, does exist.", h->rcode, e->qname);
+      SiteThrottledNote("YXDOMAIN: DNS error %d for [%s]: Name that should not exist, does exist.", h->rcode, e->qname);
       break;
     case YXRRSET: // YXRRSET
-      SiteThrottledError("YXRRSET: DNS error %d for [%s]: RRSet that should not exist, does exist.", h->rcode, e->qname);
+      SiteThrottledNote("YXRRSET: DNS error %d for [%s]: RRSet that should not exist, does exist.", h->rcode, e->qname);
       break;
     case NXRRSET: // NXRRSET
-      SiteThrottledError("NXRRSET: DNS error %d for [%s]: RRSet that should not exist, does not exist.", h->rcode, e->qname);
+      SiteThrottledNote("NXRRSET: DNS error %d for [%s]: RRSet that should not exist, does not exist.", h->rcode, e->qname);
       break;
     case NOTAUTH: // NOTAUTH
-      SiteThrottledError("NOTAUTH: DNS error %d for [%s]: Server not authorative for the zone.", h->rcode, e->qname);
+      SiteThrottledNote("NOTAUTH: DNS error %d for [%s]: Server not authorative for the zone.", h->rcode, e->qname);
       break;
     case NOTZONE: // NOTZONE
-      SiteThrottledError("NOTZONE: DNS error %d for [%s]: Name not in zone.", h->rcode, e->qname);
+      SiteThrottledNote("NOTZONE: DNS error %d for [%s]: Name not in zone.", h->rcode, e->qname);
       goto Lerror;
       break;
     }
