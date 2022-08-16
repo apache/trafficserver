@@ -1248,6 +1248,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
 
   int res = ::sendmmsg(fd, msgvec, vlen, 0);
   if (res < 0) {
+#ifdef SOL_UDP
     if (use_udp_gso && errno == EIO) {
       Warning("Disabling UDP GSO due to an error");
       Debug("udp-send", "Disabling UDP GSO due to an error");
@@ -1257,12 +1258,18 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
       Debug("udp-send", "udp_gso=%d res=%d errno=%d", use_udp_gso, res, errno);
       return res;
     }
+#else
+    Debug("udp-send", "res=%d errno=%d", res, errno);
+    return res;
+#endif
   }
 
   if (res > 0) {
+#ifdef SOL_UDP
     if (use_udp_gso) {
       Debug("udp-send", "Sent %d messages by processing %d UDPPackets (GSO)", res, n);
     } else {
+#endif
       int i    = 0;
       int nmsg = res;
       for (i = 0; i < n && res > 0; ++i) {
@@ -1274,7 +1281,9 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
       }
       Debug("udp-send", "Sent %d messages by processing %d UDPPackets", nmsg, i);
       res = i;
+#ifdef SOL_UDP
     }
+#endif
   }
 
   return res;
