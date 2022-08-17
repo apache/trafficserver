@@ -4541,7 +4541,8 @@ UDP Configuration
 
 .. ts:cv:: CONFIG proxy.config.udp.threads INT 0
 
-   Specifies the number of UDP threads to run.
+   Specifies the number of UDP threads to run. By default 0 threads are dedicated to UDP,
+   which results in effectively disabling UDP support.
 
 .. ts:cv:: CONFIG proxy.config.udp.enable_gso INT 0
 

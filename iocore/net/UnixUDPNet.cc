@@ -875,7 +875,7 @@ UDPQueue::UDPQueue(bool enable_gso) : use_udp_gso(enable_gso) {}
 UDPQueue::UDPQueue(bool enable_gso)
 {
   if (enable_gso) {
-    Warning("UDP GSO is unavailable");
+    Warning("Attempted to use UDP GSO per configuration, but it is unavailable");
   }
 }
 #endif
