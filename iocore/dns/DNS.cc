@@ -1564,7 +1564,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       server_ok = false; // could be server problems
       goto Lerror;
     case NOERROR: // NOERROR the if condition excludes this status code to avoid spamming the logs, good for testing
-      SiteThrottledNote("NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
+      Debug("dns", "NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
       break;
     case FORMERR: // FORMERR unrecoverable errors
       SiteThrottledNote("FORMERR: DNS error %d for [%s]: DNS Query Format Error.", h->rcode, e->qname);
