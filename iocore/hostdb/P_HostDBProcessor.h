@@ -28,9 +28,12 @@
 #pragma once
 
 #include <shared_mutex>
+#include <unordered_map>
 
 #include "I_HostDBProcessor.h"
+#include "P_RefCountCache.h"
 #include "tscore/TsBuffer.h"
+#include "tscore/ts_file.h"
 
 //
 // Data
@@ -157,7 +160,20 @@ struct HostFileRecord {
   HostDBRecord::Handle record_6;
 };
 
-using HostFileMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<std::string_view>>;
+struct HostFile {
+  using HostFileForwardMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<std::string_view>>;
+  using HostFileReverseMap = std::unordered_map<IpAddr, HostDBRecord::Handle, IpAddr::Hasher>;
+
+  HostFile(ts_seconds ttl) : ttl(ttl) {}
+
+  HostDBRecord::Handle lookup(const HostDBHash &hash);
+
+  ts_seconds ttl;
+  HostFileForwardMap forward;
+  HostFileReverseMap reverse;
+};
+
+std::shared_ptr<HostFile> ParseHostFile(ts::file::path const &path, ts_seconds interval);
 
 //
 // HostDBCache (Private)
@@ -165,7 +181,7 @@ using HostFileMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<s
 struct HostDBCache {
   int start(int flags = 0);
   // Map to contain all of the host file overrides, initialize it to empty
-  std::shared_ptr<HostFileMap> host_file;
+  std::shared_ptr<HostFile> host_file;
   std::shared_mutex host_file_mutex;
 
   // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
@@ -178,12 +194,15 @@ struct HostDBCache {
   HostDBCache();
   bool is_pending_dns_for_hash(const CryptoHash &hash);
 
-  std::shared_ptr<HostFileMap> acquire_host_file();
+  std::shared_ptr<HostFile> acquire_host_file();
 };
 
 //
 // Types
 //
+
+struct DNSServer;
+struct SplitDNS;
 
 /** Container for a hash and its dependent data.
     This handles both the host name and raw address cases.
@@ -272,6 +291,12 @@ struct HostDBContinuation : public Continuation {
   is_srv()
   {
     return hash.db_mark == HOSTDB_MARK_SRV;
+  }
+
+  bool
+  is_reverse()
+  {
+    return !is_byname() && !is_srv();
   }
 
   Ptr<HostDBRecord>

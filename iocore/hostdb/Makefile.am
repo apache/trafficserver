@@ -43,7 +43,7 @@ libinkhostdb_a_SOURCES = \
 	RefCountCache.cc
 
 TESTS = $(check_PROGRAMS)
-check_PROGRAMS = test_RefCountCache
+check_PROGRAMS = test_RefCountCache test_HostFile
 
 test_RefCountCache_SOURCES = \
 	test_RefCountCache.cc
@@ -81,6 +81,46 @@ test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 test_RefCountCache_LDFLAGS = $(test_LD_FLAGS)
 
 test_RefCountCache_LDADD = $(test_LD_ADD)
+
+test_HostFile_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/proxy/http/remap
+
+test_HostFile_LDADD = \
+	$(top_builddir)/proxy/http/libhttp.a \
+	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
+	$(top_builddir)/proxy/http2/libhttp2.a \
+	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/proxy/shared/libdiagsconfig.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/utils/libinkutils.a \
+	$(top_builddir)/iocore/dns/libinkdns.a \
+	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
+	$(top_builddir)/iocore/dns/libinkdns.a \
+	$(top_builddir)/iocore/cache/libinkcache.a \
+	$(top_builddir)/lib/fastlz/libfastlz.a \
+	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/proxy/libproxy.a \
+	$(top_builddir)/iocore/net/libinknet.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	@HWLOC_LIBS@ \
+	@LIBPCRE@ \
+	@LIBRESOLV@ \
+	@LIBZ@ \
+	@LIBLZMA@ \
+	@LIBPROFILER@ \
+	@OPENSSL_LIBS@ \
+	@YAMLCPP_LIBS@ \
+	@BORINGOCSP_LIBS@ \
+	-lm
+
+test_HostFile_SOURCES = \
+	test_HostFile.cc
 
 include $(top_srcdir)/build/tidy.mk
 

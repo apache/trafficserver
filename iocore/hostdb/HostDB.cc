@@ -222,7 +222,7 @@ HostDB_Config_Init()
 
 HostDBCache hostDB;
 
-void ParseHostFile(ts::file::path const &path, ts_seconds interval);
+void UpdateHostsFile(ts::file::path const &path, ts_seconds interval);
 
 auto
 HostDBInfo::assign(sa_family_t af, void const *addr) -> self_type &
@@ -386,7 +386,7 @@ HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
   return false;
 }
 
-std::shared_ptr<HostFileMap>
+std::shared_ptr<HostFile>
 HostDBCache::acquire_host_file()
 {
   std::shared_lock lock(host_file_mutex);
@@ -1467,21 +1467,16 @@ HostDBContinuation::do_dns()
       hostdb_cont_free(this);
       return;
     }
+  }
 
-    // If looking for an IPv4 or IPv6 address, check the host file.
-    if (hash.db_mark == HOSTDB_MARK_IPV6 || hash.db_mark == HOSTDB_MARK_IPV4) {
-      if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
-        if (auto spot = static_hosts->find(hash.host_name); spot != static_hosts->end()) {
-          HostDBRecord::Handle r = (hash.db_mark == HOSTDB_MARK_IPV4) ? spot->second.record_4 : spot->second.record_6;
-          // Set the TTL based on how often we stat() the host file
-          if (r && action.continuation) {
-            r = lookup_done(hash.host_name, hostdb_hostfile_check_interval, nullptr, r);
-            reply_to_cont(action.continuation, r.get());
-            hostdb_cont_free(this);
-            return;
-          }
-        }
-      }
+  // Check if this can be fulfilled by the host file
+  if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
+    if (auto r = static_hosts->lookup(hash); r && action.continuation) {
+      // Set the TTL based on how often we stat() the host file
+      r = lookup_done(hash.host_name, static_hosts->ttl, nullptr, r);
+      reply_to_cont(action.continuation, r.get());
+      hostdb_cont_free(this);
+      return;
     }
   }
 
@@ -1566,7 +1561,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     }
     if (update_p) {
       Debug("hostdb", "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path).c_str());
-      ParseHostFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
+      UpdateHostsFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
     }
   }
 
@@ -2068,17 +2063,30 @@ ParseHostLine(TextView line, HostAddrMap &map)
   }
 }
 
-void
-ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_interval_parse)
+HostDBRecord::Handle
+HostFile::lookup(const HostDBHash &hash)
 {
-  std::shared_ptr<HostFileMap> map;
+  HostDBRecord::Handle result;
 
-  // Test and set for update in progress.
-  bool flag = false;
-  if (!HostDBFileUpdateActive.compare_exchange_strong(flag, true)) {
-    Debug("hostdb", "Skipped load of host file because update already in progress");
-    return;
+  // If looking for an IPv4 or IPv6 address, check the host file.
+  if (hash.db_mark == HOSTDB_MARK_IPV6 || hash.db_mark == HOSTDB_MARK_IPV4) {
+    if (auto spot = forward.find(hash.host_name); spot != forward.end()) {
+      result = (hash.db_mark == HOSTDB_MARK_IPV4) ? spot->second.record_4 : spot->second.record_6;
+    }
+  } else if (hash.db_mark != HOSTDB_MARK_SRV) {
+    if (auto spot = reverse.find(hash.ip); spot != reverse.end()) {
+      result = spot->second;
+    }
   }
+
+  return result;
+}
+
+std::shared_ptr<HostFile>
+ParseHostFile(ts::file::path const &path, ts_seconds interval)
+{
+  std::shared_ptr<HostFile> hf;
+
   Debug_bw("hostdb", R"(Loading host file "{}")", path);
 
   if (!path.empty()) {
@@ -2095,7 +2103,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         ParseHostLine(line, addr_map);
       }
       // @a map should be loaded with all of the data, create the records.
-      map = std::make_shared<HostFileMap>();
+      hf = std::make_shared<HostFile>(interval);
       // Common loading function for creating a record from the address vector.
       auto loader = [](TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
         HostDBRecord::Handle record{HostDBRecord::alloc(key, v.size())};
@@ -2116,13 +2124,20 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         // to each other.
         // IPv4
         if (auto const &v = std::get<IPV4_IDX>(value); v.size() > 0) {
-          auto r                          = loader(key, v);
-          (*map)[r->name_view()].record_4 = r;
+          auto r                               = loader(key, v);
+          hf->forward[r->name_view()].record_4 = r;
+          for (auto &ii : r->rr_info()) {
+            // use insert here to keep only the first host encountered for an ip
+            hf->reverse.insert(std::pair(ii.data.ip, r));
+          }
         }
         // IPv6
         if (auto const &v = std::get<IPV6_IDX>(value); v.size() > 0) {
-          auto r                          = loader(key, v);
-          (*map)[r->name_view()].record_6 = r;
+          auto r                               = loader(key, v);
+          hf->forward[r->name_view()].record_6 = r;
+          for (auto &ii : r->rr_info()) {
+            hf->reverse.insert(std::pair(ii.data.ip, r));
+          }
         }
       }
 
@@ -2130,10 +2145,25 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
     }
   }
 
+  return hf;
+}
+
+void
+UpdateHostsFile(ts::file::path const &path, ts_seconds interval)
+{
+  // Test and set for update in progress.
+  bool flag = false;
+  if (!HostDBFileUpdateActive.compare_exchange_strong(flag, true)) {
+    Debug("hostdb", "Skipped load of host file because update already in progress");
+    return;
+  }
+
+  std::shared_ptr<HostFile> hf = ParseHostFile(path, interval);
+
   // Swap the pointer
-  if (map) {
+  if (hf) {
     std::unique_lock lock(hostDB.host_file_mutex);
-    hostDB.host_file = map;
+    hostDB.host_file = hf;
   }
   // Mark this one as completed, so we can allow another update to happen
   HostDBFileUpdateActive = false;
