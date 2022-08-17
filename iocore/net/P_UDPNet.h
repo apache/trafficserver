@@ -40,6 +40,8 @@ static inline PollCont *get_UDPPollCont(EThread *);
 #include "P_UnixUDPConnection.h"
 #include "P_UDPIOEvent.h"
 
+#include "netinet/udp.h"
+
 class UDPNetHandler;
 
 struct UDPNetProcessorInternal : public UDPNetProcessor {
@@ -278,6 +280,9 @@ class UDPQueue
   ink_hrtime last_service = 0;
   int packets             = 0;
   int added               = 0;
+#ifdef SOL_UDP
+  bool use_udp_gso = false;
+#endif
 
 public:
   // Outgoing UDP Packet Queue
@@ -286,12 +291,13 @@ public:
   void service(UDPNetHandler *);
 
   void SendPackets();
-  void SendUDPPacket(UDPPacketInternal *p, int32_t pktLen);
+  void SendUDPPacket(UDPPacketInternal *p);
+  int SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n);
 
   // Interface exported to the outside world
   void send(UDPPacket *p);
 
-  UDPQueue();
+  UDPQueue(bool enable_gso);
   ~UDPQueue();
 };
 
@@ -301,7 +307,7 @@ class UDPNetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
   // engine for outgoing packets
-  UDPQueue udpOutQueue{};
+  UDPQueue udpOutQueue;
 
   // New UDPConnections
   // to hold the newly created descriptors before scheduling them on the servicing buckets.
@@ -323,7 +329,7 @@ public:
   int waitForActivity(ink_hrtime timeout) override;
   void signalActivity() override;
 
-  UDPNetHandler();
+  UDPNetHandler(bool enable_gso);
 };
 
 struct PollCont;

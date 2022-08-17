@@ -4536,6 +4536,19 @@ removed in the future without prior notice.
    This is just for debugging. Do not change it from the default value unless
    you really understand what this is.
 
+UDP Configuration
+=====================
+
+.. ts:cv:: CONFIG proxy.config.udp.threads INT 0
+
+   Specifies the number of UDP threads to run. By default 0 threads are dedicated to UDP,
+   which results in effectively disabling UDP support.
+
+.. ts:cv:: CONFIG proxy.config.udp.enable_gso INT 0
+
+   Enables (``1``) or disables (``0``) UDP GSO. When enabled, |TS| tries to use UDP GSO,
+   and disables it automatically if it causes send errors.
+
 Plug-in Configuration
 =====================
 

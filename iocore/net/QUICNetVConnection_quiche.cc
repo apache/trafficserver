@@ -548,19 +548,35 @@ QUICNetVConnection::_handle_write_ready()
 
   Ptr<IOBufferBlock> udp_payload;
   quiche_send_info send_info;
-  ssize_t written;
+  ssize_t res;
+  ssize_t written = 0;
 
-  do {
-    udp_payload = (new_IOBufferBlock());
-    udp_payload->alloc(iobuffer_size_to_index(quiche_conn_max_send_udp_payload_size(this->_quiche_con), BUFFER_SIZE_INDEX_16K));
-    written =
-      quiche_conn_send(this->_quiche_con, reinterpret_cast<uint8_t *>(udp_payload->end()), udp_payload->write_avail(), &send_info);
-    if (written > 0) {
-      udp_payload->fill(written);
-      this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload);
-      net_activity(this, this_ethread());
+  size_t quantum              = quiche_conn_send_quantum(this->_quiche_con);
+  size_t max_udp_payload_size = quiche_conn_max_send_udp_payload_size(this->_quiche_con);
+
+  // This buffer size must be less than 64KB because it can be used for UDP GSO (UDP_SEGMENT)
+  udp_payload = new_IOBufferBlock();
+  udp_payload->alloc(buffer_size_to_index(quantum, BUFFER_SIZE_INDEX_32K));
+  quantum = std::min(static_cast<int64_t>(quantum), udp_payload->write_avail());
+  while (written + max_udp_payload_size <= quantum) {
+    res = quiche_conn_send(this->_quiche_con, reinterpret_cast<uint8_t *>(udp_payload->end()) + written, max_udp_payload_size,
+                           &send_info);
+    if (res > 0) {
+      written += res;
     }
-  } while (written > 0);
+    if (static_cast<size_t>(res) != max_udp_payload_size) {
+      break;
+    }
+  }
+  if (written > 0) {
+    udp_payload->fill(written);
+    int segment_size = 0;
+    if (static_cast<size_t>(written) > max_udp_payload_size) {
+      segment_size = max_udp_payload_size;
+    }
+    this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size);
+    net_activity(this, this_ethread());
+  }
 }
 
 void

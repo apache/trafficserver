@@ -37,6 +37,12 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
+#include "netinet/udp.h"
+#ifndef UDP_SEGMENT
+// This is needed because old glibc may not have the constant even if Kernel supports it.
+#define UDP_SEGMENT 103
+#endif
+
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
@@ -63,9 +69,12 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
+  int enable_gso;
+  REC_ReadConfigInteger(enable_gso, "proxy.config.udp.enable_gso");
+
   UDPNetHandler *nh = get_UDPNetHandler(thread);
 
-  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler;
+  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler(enable_gso);
   new (reinterpret_cast<ink_dummy_for_new *>(get_UDPPollCont(thread))) PollCont(thread->mutex);
   // The UDPNetHandler cannot be accessed across EThreads.
   // Because the UDPNetHandler should be called back immediately after UDPPollCont.
@@ -860,7 +869,16 @@ Lerror:
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue() {}
+#ifdef SOL_UDP
+UDPQueue::UDPQueue(bool enable_gso) : use_udp_gso(enable_gso) {}
+#else
+UDPQueue::UDPQueue(bool enable_gso)
+{
+  if (enable_gso) {
+    Warning("Attempted to use UDP GSO per configuration, but it is unavailable");
+  }
+}
+#endif
 
 UDPQueue::~UDPQueue() {}
 
@@ -921,13 +939,23 @@ UDPQueue::SendPackets()
   ink_hrtime now                    = Thread::get_hrtime_updated();
   ink_hrtime send_threshold_time    = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
-  int32_t bytesThisPipe, sentOne;
+  int32_t bytesThisPipe;
   int64_t pktLen;
 
   bytesThisSlot = INT_MAX;
 
+#ifdef UIO_MAXIOV
+  constexpr int N_MAX_PACKETS = UIO_MAXIOV; // The limit comes from sendmmsg
+#else
+  constexpr int N_MAX_PACKETS = 1024;
+#endif
+  UDPPacketInternal *packets[N_MAX_PACKETS];
+  int nsent;
+  int npackets;
+
 sendPackets:
-  sentOne       = false;
+  nsent         = 0;
+  npackets      = 0;
   bytesThisPipe = bytesThisSlot;
 
   while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
@@ -941,21 +969,25 @@ sendPackets:
       goto next_pkt;
     }
 
-    SendUDPPacket(p, pktLen);
     bytesUsed += pktLen;
     bytesThisPipe -= pktLen;
+    packets[npackets++] = p;
   next_pkt:
-    sentOne = true;
-    p->free();
-
-    if (bytesThisPipe < 0) {
+    if (bytesThisPipe < 0 && npackets == N_MAX_PACKETS) {
       break;
     }
   }
 
+  if (npackets > 0) {
+    nsent = SendMultipleUDPPackets(packets, npackets);
+  }
+  for (int i = 0; i < nsent; ++i) {
+    packets[i]->free();
+  }
+
   bytesThisSlot -= bytesUsed;
 
-  if ((bytesThisSlot > 0) && sentOne) {
+  if ((bytesThisSlot > 0) && nsent) {
     // redistribute the slack...
     now = Thread::get_hrtime_updated();
     if (pipeInfo.firstPacket(now) == nullptr) {
@@ -971,50 +1003,132 @@ sendPackets:
 }
 
 void
-UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
+UDPQueue::SendUDPPacket(UDPPacketInternal *p)
 {
   struct msghdr msg;
   struct iovec iov[32];
-  int n, count, iov_len = 0;
+  int n, count = 0;
 
   p->conn->lastSentPktStartTime = p->delivery_time;
   Debug("udp-send", "Sending %p", p);
 
-#if !defined(solaris)
   msg.msg_control    = nullptr;
   msg.msg_controllen = 0;
   msg.msg_flags      = 0;
-#endif
-  msg.msg_name    = reinterpret_cast<caddr_t>(&p->to.sa);
-  msg.msg_namelen = ats_ip_size(p->to);
-  iov_len         = 0;
+  msg.msg_name       = reinterpret_cast<caddr_t>(&p->to.sa);
+  msg.msg_namelen    = ats_ip_size(p->to);
 
-  for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
-    iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
-    iov[iov_len].iov_len  = b->size();
-    iov_len++;
-  }
-  msg.msg_iov    = iov;
-  msg.msg_iovlen = iov_len;
+  if (p->segment_size > 0) {
+    ink_assert(p->chain->next == nullptr);
+    msg.msg_iov    = iov;
+    msg.msg_iovlen = 1;
+#ifdef SOL_UDP
+    if (use_udp_gso) {
+      iov[0].iov_base = p->chain.get()->start();
+      iov[0].iov_len  = p->chain.get()->size();
 
-  count = 0;
-  while (true) {
-    // stupid Linux problem: sendmsg can return EAGAIN
-    n = ::sendmsg(p->conn->getFd(), &msg, 0);
-    if ((n >= 0) || (errno != EAGAIN)) {
-      // send succeeded or some random error happened.
-      if (n < 0) {
-        Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+      union udp_segment_hdr {
+        char buf[CMSG_SPACE(sizeof(uint16_t))];
+        struct cmsghdr align;
+      } u;
+      msg.msg_control    = u.buf;
+      msg.msg_controllen = sizeof(u.buf);
+
+      struct cmsghdr *cm           = CMSG_FIRSTHDR(&msg);
+      cm->cmsg_level               = SOL_UDP;
+      cm->cmsg_type                = UDP_SEGMENT;
+      cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
+      *((uint16_t *)CMSG_DATA(cm)) = p->segment_size;
+
+      count = 0;
+      while (true) {
+        // stupid Linux problem: sendmsg can return EAGAIN
+        n = ::sendmsg(p->conn->getFd(), &msg, 0);
+        if (n >= 0) {
+          break;
+        }
+        if (errno == EIO && use_udp_gso) {
+          Warning("Disabling UDP GSO due to an error");
+          use_udp_gso = false;
+          SendUDPPacket(p);
+          return;
+        }
+        if (errno == EAGAIN) {
+          ++count;
+          if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
+            // tried too many times; give up
+            Debug("udpnet", "Send failed: too many retries");
+            return;
+          }
+        } else {
+          Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+          return;
+        }
       }
+    } else {
+#endif
+      // Send segments seprately if UDP_SEGMENT is not supported
+      int offset = 0;
+      while (offset < p->chain.get()->size()) {
+        iov[0].iov_base = p->chain.get()->start() + offset;
+        iov[0].iov_len = std::min(static_cast<long>(p->segment_size), p->chain.get()->end() - static_cast<char *>(iov[0].iov_base));
 
-      break;
+        count = 0;
+        while (true) {
+          // stupid Linux problem: sendmsg can return EAGAIN
+          n = ::sendmsg(p->conn->getFd(), &msg, 0);
+          if (n >= 0) {
+            break;
+          }
+          if (errno == EAGAIN) {
+            ++count;
+            if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
+              // tried too many times; give up
+              Debug("udpnet", "Send failed: too many retries");
+              return;
+            }
+          } else {
+            Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+            return;
+          }
+        }
+
+        offset += iov[0].iov_len;
+      }
+      ink_assert(offset == p->chain.get()->size());
+#ifdef SOL_UDP
+    } // use_udp_segment
+#endif
+  } else {
+    // Nothing is special
+    int iov_len = 0;
+    for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
+      iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
+      iov[iov_len].iov_len  = b->size();
+      iov_len++;
     }
-    if (errno == EAGAIN) {
-      ++count;
-      if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
-        // tried too many times; give up
-        Debug("udpnet", "Send failed: too many retries");
+    msg.msg_iov    = iov;
+    msg.msg_iovlen = iov_len;
+
+    count = 0;
+    while (true) {
+      // stupid Linux problem: sendmsg can return EAGAIN
+      n = ::sendmsg(p->conn->getFd(), &msg, 0);
+      if ((n >= 0) || (errno != EAGAIN)) {
+        // send succeeded or some random error happened.
+        if (n < 0) {
+          Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+        }
+
         break;
+      }
+      if (errno == EAGAIN) {
+        ++count;
+        if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
+          // tried too many times; give up
+          Debug("udpnet", "Send failed: too many retries");
+          break;
+        }
       }
     }
   }
@@ -1025,6 +1139,161 @@ UDPQueue::send(UDPPacket *p)
 {
   // XXX: maybe fastpath for immediate send?
   outQueue.push((UDPPacketInternal *)p);
+}
+
+int
+UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
+{
+#ifdef HAVE_SENDMMSG
+  struct mmsghdr *msgvec;
+  int msgvec_size;
+
+#ifdef SOL_UDP
+  union udp_segment_hdr {
+    char buf[CMSG_SPACE(sizeof(uint16_t))];
+    struct cmsghdr align;
+  };
+  if (use_udp_gso) {
+    msgvec_size = sizeof(struct mmsghdr) * n;
+  } else {
+    msgvec_size = sizeof(struct mmsghdr) * n * 64;
+  }
+#else
+  msgvec_size = sizeof(struct mmsghdr) * n * 64;
+#endif
+  msgvec = static_cast<struct mmsghdr *>(alloca(msgvec_size));
+  memset(msgvec, 0, msgvec_size);
+
+  int vlen = 0;
+  int fd   = p[0]->conn->getFd();
+  for (int i = 0; i < n; ++i) {
+    UDPPacketInternal *packet;
+    struct msghdr *msg;
+    struct iovec *iov;
+    int iov_len;
+
+    packet                             = p[i];
+    packet->conn->lastSentPktStartTime = packet->delivery_time;
+    ink_assert(packet->conn->getFd() == fd);
+    if (packet->segment_size > 0) {
+      // Presumes one big super buffer is given
+      ink_assert(packet->chain->next == nullptr);
+#ifdef SOL_UDP
+      if (use_udp_gso) {
+        msg              = &msgvec[vlen].msg_hdr;
+        msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
+        msg->msg_namelen = ats_ip_size(packet->to);
+
+        union udp_segment_hdr *u;
+        u                   = static_cast<union udp_segment_hdr *>(alloca(sizeof(union udp_segment_hdr)));
+        msg->msg_control    = u->buf;
+        msg->msg_controllen = sizeof(u->buf);
+        iov                 = static_cast<struct iovec *>(alloca(sizeof(struct iovec)));
+        iov_len             = 1;
+        iov->iov_base       = packet->chain.get()->start();
+        iov->iov_len        = packet->chain.get()->size();
+        msg->msg_iov        = iov;
+        msg->msg_iovlen     = iov_len;
+
+        struct cmsghdr *cm           = CMSG_FIRSTHDR(msg);
+        cm->cmsg_level               = SOL_UDP;
+        cm->cmsg_type                = UDP_SEGMENT;
+        cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
+        *((uint16_t *)CMSG_DATA(cm)) = packet->segment_size;
+        vlen++;
+      } else {
+#endif
+        // UDP_SEGMENT is unavailable
+        // Send the given data as multiple messages
+        int offset = 0;
+        while (offset < packet->chain.get()->size()) {
+          msg              = &msgvec[vlen].msg_hdr;
+          msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
+          msg->msg_namelen = ats_ip_size(packet->to);
+          iov              = static_cast<struct iovec *>(alloca(sizeof(struct iovec)));
+          iov_len          = 1;
+          iov->iov_base    = packet->chain.get()->start() + offset;
+          iov->iov_len =
+            std::min(packet->segment_size, static_cast<uint16_t>(packet->chain.get()->end() - static_cast<char *>(iov->iov_base)));
+          msg->msg_iov    = iov;
+          msg->msg_iovlen = iov_len;
+          offset += iov->iov_len;
+          vlen++;
+        }
+        ink_assert(offset == packet->chain.get()->size());
+#ifdef SOL_UDP
+      } // use_udp_gso
+#endif
+    } else {
+      // Nothing is special
+      msg              = &msgvec[vlen].msg_hdr;
+      msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
+      msg->msg_namelen = ats_ip_size(packet->to);
+      iov              = static_cast<struct iovec *>(alloca(sizeof(struct iovec) * 64));
+      iov_len          = 0;
+      for (IOBufferBlock *b = packet->chain.get(); b != nullptr; b = b->next.get()) {
+        iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
+        iov[iov_len].iov_len  = b->size();
+        iov_len++;
+      }
+      msg->msg_iov    = iov;
+      msg->msg_iovlen = iov_len;
+      vlen++;
+    }
+  }
+
+  if (vlen == 0) {
+    return 0;
+  }
+
+  int res = ::sendmmsg(fd, msgvec, vlen, 0);
+  if (res < 0) {
+#ifdef SOL_UDP
+    if (use_udp_gso && errno == EIO) {
+      Warning("Disabling UDP GSO due to an error");
+      Debug("udp-send", "Disabling UDP GSO due to an error");
+      use_udp_gso = false;
+      return SendMultipleUDPPackets(p, n);
+    } else {
+      Debug("udp-send", "udp_gso=%d res=%d errno=%d", use_udp_gso, res, errno);
+      return res;
+    }
+#else
+    Debug("udp-send", "res=%d errno=%d", res, errno);
+    return res;
+#endif
+  }
+
+  if (res > 0) {
+#ifdef SOL_UDP
+    if (use_udp_gso) {
+      Debug("udp-send", "Sent %d messages by processing %d UDPPackets (GSO)", res, n);
+    } else {
+#endif
+      int i    = 0;
+      int nmsg = res;
+      for (i = 0; i < n && res > 0; ++i) {
+        if (p[i]->segment_size == 0) {
+          res -= 1;
+        } else {
+          res -= (p[i]->chain.get()->size() / p[i]->segment_size) + ((p[i]->chain.get()->size() % p[i]->segment_size) != 0);
+        }
+      }
+      Debug("udp-send", "Sent %d messages by processing %d UDPPackets", nmsg, i);
+      res = i;
+#ifdef SOL_UDP
+    }
+#endif
+  }
+
+  return res;
+#else
+  // sendmmsg is unavailable
+  for (int i = 0; i < n; ++i) {
+    SendUDPPacket(p[i]);
+  }
+  return n;
+#endif
 }
 
 #undef LINK
@@ -1043,7 +1312,7 @@ net_signal_hook_callback(EThread *thread)
 #endif
 }
 
-UDPNetHandler::UDPNetHandler()
+UDPNetHandler::UDPNetHandler(bool enable_gso) : udpOutQueue(enable_gso)
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
