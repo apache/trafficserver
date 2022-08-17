@@ -1559,7 +1559,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     Debug("dns", "received rcode = %d", h->rcode);
     switch (h->rcode) {
     default:
-      SiteThrottledNote("Unknown: DNS error %d for [%s]", h->rcode, e->qname);
+      SiteThrottledWarning("Unknown: DNS error %d for [%s]", h->rcode, e->qname);
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
