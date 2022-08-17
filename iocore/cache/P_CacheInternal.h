@@ -28,6 +28,7 @@
 
 #include "HTTP.h"
 #include "P_CacheHttp.h"
+#include "P_CacheHosting.h"
 
 struct EvacuationBlock;
 
@@ -987,9 +988,10 @@ struct Cache {
   int total_nvol            = 0;
   int ready                 = CACHE_INITIALIZING;
   int64_t cache_size        = 0; // in store block size
-  CacheHostTable *hosttable = nullptr;
   int total_initialized_vol = 0;
   CacheType scheme          = CACHE_NONE_TYPE;
+
+  ReplaceablePtr<CacheHostTable> hosttable;
 
   int open(bool reconfigure, bool fix);
   int close();
