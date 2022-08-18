@@ -91,38 +91,8 @@ test_HostFile_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http/remap
 
 test_HostFile_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la
-
-# $(top_builddir)/proxy/http/libhttp.a \
-# $(top_builddir)/proxy/http/remap/libhttp_remap.a \
-# $(top_builddir)/proxy/http2/libhttp2.a \
-# $(top_builddir)/proxy/logging/liblogging.a \
-# $(top_builddir)/proxy/hdrs/libhdrs.a \
-# $(top_builddir)/proxy/shared/libdiagsconfig.a \
-# $(top_builddir)/mgmt/libmgmt_p.la \
-# $(top_builddir)/iocore/utils/libinkutils.a \
-# $(top_builddir)/iocore/dns/libinkdns.a \
-# $(top_builddir)/iocore/hostdb/libinkhostdb.a \
-# $(top_builddir)/iocore/dns/libinkdns.a \
-# $(top_builddir)/iocore/cache/libinkcache.a \
-# $(top_builddir)/lib/fastlz/libfastlz.a \
-# $(top_builddir)/iocore/aio/libinkaio.a \
-# $(top_builddir)/src/tscore/libtscore.la \
-# $(top_builddir)/src/tscpp/util/libtscpputil.la \
-# $(top_builddir)/proxy/libproxy.a \
-# $(top_builddir)/iocore/net/libinknet.a \
-# $(top_builddir)/lib/records/librecords_p.a \
-# $(top_builddir)/iocore/eventsystem/libinkevent.a \
-# @HWLOC_LIBS@ \
-# @LIBPCRE@ \
-# @LIBRESOLV@ \
-# @LIBZ@ \
-# @LIBLZMA@ \
-# @LIBPROFILER@ \
-# @OPENSSL_LIBS@ \
-# @YAMLCPP_LIBS@ \
-# @BORINGOCSP_LIBS@ \
-# -lm
+	$(top_builddir)/src/tscore/libtscore.la \
+    $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 test_HostFile_SOURCES = \
 	test_HostFile.cc \
