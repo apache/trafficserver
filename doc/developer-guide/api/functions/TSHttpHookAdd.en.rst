@@ -44,11 +44,13 @@ function for callback amounts to adding the function to a hook. You
 can register your plugin to be called back for every single
 transaction, or for specific transactions only.
 
-HTTP :term:`transaction` hooks are set on a global basis using the function
-:func:`TSHttpHookAdd`. This means that the continuation specified
-as the parameter to :func:`TSHttpHookAdd` is called for every
-transaction. :func:`TSHttpHookAdd` must only be called from
-:func:`TSPluginInit` or :func:`TSRemapInit`.
+HTTP :term:`transaction` and :term:`session` hooks are set on a
+global basis using the function :func:`TSHttpHookAdd`. This means
+that the continuation specified as the parameter to :func:`TSHttpHookAdd`
+is called for every transaction. :func:`TSHttpHookAdd` must only be called from
+:func:`TSPluginInit` or :func:`TSRemapInit`.  Continuations set on a
+global hook will run before any continuations set on the session/transaction
+hook with the same hook ID.
 
 :func:`TSHttpSsnHookAdd` adds :arg:`contp` to
 the end of the list of HTTP :term:`session` hooks specified by :arg:`id`.
@@ -56,14 +58,20 @@ This means that :arg:`contp` is called back for every transaction
 within the session, at the point specified by the hook ID. Since
 :arg:`contp` is added to a session, it is not possible to call
 :func:`TSHttpSsnHookAdd` from the plugin initialization routine;
-the plugin needs a handle to an HTTP session.
+the plugin needs a handle to an HTTP session.  Continuations set on a
+session hook will run before any continuations set on the transaction
+hook with the same hook ID.  This fucnction can be called from handler
+functions of continuations on a global per-session hook, including for
+the session hook with the same ID.
 
 :func:`TSHttpTxnHookAdd` adds :arg:`contp`
 to the end of the list of HTTP transaction hooks specified by
 :arg:`id`. Since :arg:`contp` is added to a transaction, it is
 not possible to call :func:`TSHttpTxnHookAdd` from the plugin
 initialization routine but only when the plugin has a handle to an
-HTTP transaction.
+HTTP transaction.  This fucnction can be called from handler
+functions of continuations on a global or session per-transaction
+hook, including the for transaction hook with the same ID.
 
 A single continuation can be attached to multiple hooks at the same time.
 It is good practice to conserve resources by reusing hooks in this way

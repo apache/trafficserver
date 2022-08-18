@@ -32,7 +32,6 @@ tsxs -o ats_fastcgi.so \
      -c ats_fastcgi.cc \
      -L "${ats_dir}lib/" \
      -I "${ats_dir}lib" \
-     -I "${ats_dir}lib/cppapi/include/" \
      -c ats_fcgi_client.cc \
      -latscppapi
 

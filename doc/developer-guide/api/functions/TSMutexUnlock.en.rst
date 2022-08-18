@@ -32,3 +32,9 @@ Synopsis
 
 Description
 ===========
+
+Decrements the recursive lock count.  If the count thus becomes zero, unlocks
+the mutex.  This should only be called within the continuation handler function or
+:type:`TSThread` function that locked the mutex.  Can also be called within
+the continuation handler for the continuation's mutex.  (This is normally done
+before the continution handler destroys the continuation running it.)
