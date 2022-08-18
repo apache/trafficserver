@@ -92,7 +92,8 @@ test_HostFile_CPPFLAGS = \
 
 test_HostFile_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
-    $(top_builddir)/iocore/eventsystem/libinkevent.a
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
 test_HostFile_SOURCES = \
 	test_HostFile.cc \
