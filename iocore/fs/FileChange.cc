@@ -31,11 +31,13 @@
 #include <functional>
 #include <mutex>
 #include <optional>
-#include <sys/event.h>
 #include <sys/fcntl.h>
 #include <thread>
 #include <ts/apidefs.h>
 #include <chrono>
+#if TS_USE_KQUEUE
+#include <sys/event.h>
+#endif
 
 // Globals
 FileChangeManager fileChangeManager;
@@ -115,9 +117,9 @@ FileChangeManager::inotify_process_event(struct inotify_event *event)
   std::shared_lock file_watches_read_lock(file_watches_mutex);
   auto finfo_it = file_watches.find(event->wd);
   if (finfo_it != file_watches.end()) {
-    TSEvent event_type            = TS_EVENT_NONE;
-    const struct file_info &finfo = finfo_it->second;
-    Continuation *contp           = finfo.contp;
+    TSEvent event_type          = TS_EVENT_NONE;
+    const FileChangeInfo &finfo = finfo_it->second;
+    Continuation *contp         = finfo.contp;
 
     if (event->mask & (IN_DELETE_SELF | IN_MOVED_FROM)) {
       Debug(TAG, "Delete file event (%d) on %s", event->mask, finfo.path.c_str());
@@ -387,11 +389,11 @@ FileChangeManager::add(const ts::file::path &path, TSFileWatchKind kind, Continu
     Error("Failed to open %s for monitoring: %s.", path.c_str(), strerror(errno));
     return -1;
   }
+  file_watches_dirty = true;
 #else
   Warning("File change notification is not supported on this OS.");
 #endif
   file_watches.try_emplace(wd, kind, path, contp);
-  file_watches_dirty = true;
   return wd;
 }
 
@@ -404,7 +406,7 @@ FileChangeManager::remove(watch_handle_t watch_handle)
   inotify_rm_watch(inotify_fd, watch_handle);
 #elif TS_USE_KQUEUE
   close(watch_handle);
+  file_watches_dirty = true;
 #endif
   file_watches.erase(watch_handle);
-  file_watches_dirty = true;
 }
