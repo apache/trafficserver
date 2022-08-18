@@ -155,25 +155,7 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
-struct HostFileRecord {
-  HostDBRecord::Handle record_4;
-  HostDBRecord::Handle record_6;
-};
-
-struct HostFile {
-  using HostFileForwardMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<std::string_view>>;
-  using HostFileReverseMap = std::unordered_map<IpAddr, HostDBRecord::Handle, IpAddr::Hasher>;
-
-  HostFile(ts_seconds ttl) : ttl(ttl) {}
-
-  HostDBRecord::Handle lookup(const HostDBHash &hash);
-
-  ts_seconds ttl;
-  HostFileForwardMap forward;
-  HostFileReverseMap reverse;
-};
-
-std::shared_ptr<HostFile> ParseHostFile(ts::file::path const &path, ts_seconds interval);
+struct HostFile;
 
 //
 // HostDBCache (Private)
@@ -223,7 +205,7 @@ struct HostDBHash {
   HostDBMark db_mark    = HOSTDB_MARK_GENERIC; ///< Mark / type of record.
 
   /// Default constructor.
-  HostDBHash();
+  HostDBHash() = default;
   /// Destructor.
   ~HostDBHash();
   /// Recompute and update the hash.

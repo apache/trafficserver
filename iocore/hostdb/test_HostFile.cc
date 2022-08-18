@@ -24,8 +24,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include "HostFile.h"
 #include "P_HostDBProcessor.h"
-#include "HttpBodyFactory.h"
 
 const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n"_sv;
 
@@ -39,8 +39,6 @@ spit(const ts::file::path &p, std::string_view data)
 
 TEST_CASE("HostFile", "[hostdb]")
 {
-  init_buffer_allocators(0);
-
   auto tmp = ts::file::temp_directory_path();
   ts::LocalBufferWriter<1024> w;
   w.print("{}/localhost.{}", tmp, ::getpid());
@@ -126,257 +124,41 @@ TEST_CASE("HostFile", "[hostdb]")
   }
 }
 
-// Obnoxious stubs below
+// NOTE(cmcfarlen): need this destructor defined so we don't have to link in the entire project for this test
+HostDBHash::~HostDBHash() {}
 
-AppVersionInfo appVersionInfo;
+#include "tscore/Scalar.h"
 
-void
-initialize_thread_for_http_sessions(EThread *, int)
+HostDBRecord *
+HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_name_size)
 {
-  ink_assert(false);
-}
+  const ts::Scalar<8> qn_size = ts::round_up(query_name.size() + 1);
+  const ts::Scalar<8> r_size  = ts::round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
+  auto ptr                    = malloc(r_size);
+  memset(ptr, 0, r_size);
+  auto self = static_cast<self_type *>(ptr);
+  new (self) self_type();
+  self->_iobuffer_index = 0;
+  self->_record_size    = r_size;
 
-#include "InkAPIInternal.h"
-void
-APIHooks::append(INKContInternal *cont)
-{
-}
+  Debug("hostdb", "allocating %ld bytes for %.*s with %d RR records at [%p]", r_size.value(), int(query_name.size()),
+        query_name.data(), rr_count, self);
 
-int
-APIHook::invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-APIHook *
-APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::head() const
-{
-  return nullptr;
-}
-
-void
-APIHooks::clear()
-{
-}
-
-HttpHookState::HttpHookState() {}
-
-void
-HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
-{
-}
-
-void
-api_init()
-{
-}
-
-APIHook const *
-HttpHookState::getNext()
-{
-  return nullptr;
-}
-
-void
-ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
-{
-  ink_release_assert(false);
-}
-
-HttpAPIHooks *http_global_hooks        = nullptr;
-SslAPIHooks *ssl_hooks                 = nullptr;
-LifecycleAPIHooks *lifecycle_hooks     = nullptr;
-ConfigUpdateCbTable *global_config_cbs = nullptr;
-
-HttpBodyFactory *body_factory = nullptr;
-
-intmax_t
-ts::svtoi(TextView src, TextView *out, int base)
-{
-  intmax_t zret = 0;
-
-  if (out) {
-    out->clear();
+  // where in our block of memory we are
+  int offset = sizeof(self_type);
+  memcpy(self->apply_offset<void>(offset), query_name);
+  offset += qn_size;
+  self->rr_offset = offset;
+  self->rr_count  = rr_count;
+  // Construct the info instances to a valid state.
+  for (auto &info : self->rr_info()) {
+    new (&info) std::remove_reference_t<decltype(info)>;
   }
-  if (!(0 <= base && base <= 36)) {
-    return 0;
-  }
-  if (src.ltrim_if(&isspace) && src) {
-    const char *start = src.data();
-    int8_t v;
-    bool neg = false;
-    if ('-' == *src) {
-      ++src;
-      neg = true;
-    }
-    // If base is 0, it wasn't specified - check for standard base prefixes
-    if (0 == base) {
-      base = 10;
-      if ('0' == *src) {
-        ++src;
-        base = 8;
-        if (src && ('x' == *src || 'X' == *src)) {
-          ++src;
-          base = 16;
-        }
-      }
-    }
 
-    // For performance in common cases, use the templated conversion.
-    switch (base) {
-    case 8:
-      zret = svto_radix<8>(src);
-      break;
-    case 10:
-      zret = svto_radix<10>(src);
-      break;
-    case 16:
-      zret = svto_radix<16>(src);
-      break;
-    default:
-      while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
-        auto n = zret * base + v;
-        if (n < zret) {
-          zret = std::numeric_limits<uintmax_t>::max();
-          break; // overflow, stop parsing.
-        }
-        zret = n;
-        ++src;
-      }
-      break;
-    }
-
-    if (out && (src.data() > (neg ? start + 1 : start))) {
-      out->assign(start, src.data());
-    }
-
-    if (neg) {
-      zret = -zret;
-    }
-  }
-  return zret;
+  return self;
 }
 
 void
-HostStatus::setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
-                          const unsigned int reason)
+HostDBRecord::free()
 {
 }
-
-HostStatRec *
-HostStatus::getHostStatus(const std::string_view name)
-{
-  return nullptr;
-}
-
-void
-HostStatus::createHostStat(const std::string_view name, const char *data)
-{
-}
-
-HostStatus::HostStatus() {}
-
-HostStatus::~HostStatus() {}
-
-int auto_clear_hostdb_flag = 0;
-bool ts_is_draining        = false;
-
-void
-INKVConnInternal::do_io_close(int error)
-{
-}
-
-void
-INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
-{
-}
-
-VIO *
-INKVConnInternal::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  return nullptr;
-}
-
-VIO *
-INKVConnInternal::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  return nullptr;
-}
-
-void
-INKVConnInternal::destroy()
-{
-}
-
-void
-INKVConnInternal::free()
-{
-}
-
-void
-INKVConnInternal::clear()
-{
-}
-
-void
-INKVConnInternal::reenable(VIO * /* vio ATS_UNUSED */)
-{
-}
-
-bool
-INKVConnInternal::get_data(int id, void *data)
-{
-  return false;
-}
-
-bool
-INKVConnInternal::set_data(int id, void *data)
-{
-  return false;
-}
-
-void
-INKVConnInternal::do_io_transform(VConnection *vc)
-{
-}
-
-void
-INKContInternal::handle_event_count(int event)
-{
-}
-
-void
-INKVConnInternal::retry(unsigned int delay)
-{
-}
-
-INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection(reinterpret_cast<ProxyMutex *>(mutexp)) {}
-
-INKContInternal::INKContInternal() : DummyVConnection(nullptr) {}
-
-void
-INKContInternal::destroy()
-{
-}
-
-void
-INKContInternal::clear()
-{
-}
-
-void
-INKContInternal::free()
-{
-}
-
-INKVConnInternal::INKVConnInternal() : INKContInternal() {}
-
-INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
