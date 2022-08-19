@@ -70,7 +70,8 @@ liblogging_a_SOURCES = \
 
 check_PROGRAMS = \
 	test_LogUtils \
-	test_RolledLogDeleter
+	test_RolledLogDeleter \
+	benchmark_LogObject
 
 TESTS = $(check_PROGRAMS)
 
@@ -102,6 +103,24 @@ test_RolledLogDeleter_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a
+
+benchmark_LogObject_SOURCES = unit-tests/benchmark_LogObject.cc LogConfig.cc
+benchmark_LogObject_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+benchmark_LogObject_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/lib/records/librecords_lm.a \
+	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/http/libhttp.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/proxy/shared/libdiagsconfig.a
+
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)
