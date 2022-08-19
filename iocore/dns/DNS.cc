@@ -1563,43 +1563,50 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR: // NOERROR the if condition excludes this status code to avoid spamming the logs, good for testing
+      break;
+    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
       Debug("dns", "NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
       break;
-    case FORMERR: // FORMERR unrecoverable errors
+    case FORMERR: // unrecoverable errors
       SiteThrottledNote("FORMERR: DNS error %d for [%s]: DNS Query Format Error.", h->rcode, e->qname);
+      goto Lerror;
       break;
-    case SERVFAIL: // SERVFAIL recoverable error
+    case SERVFAIL: // recoverable error
       SiteThrottledNote("SERVFAIL: DNS error %d for [%s]: Server failed to complete the DNS request.", h->rcode, e->qname);
       retry = true;
       break;
-    case NXDOMAIN: // NXDOMAIN
+    case NXDOMAIN: 
       SiteThrottledNote("NXDOMAIN: DNS error %d for [%s]: Domain name does not exist.", h->rcode, e->qname);
       retry     = false;
       tcp_retry = false;
+      goto Lerror;
       break;
-    case NOTIMP: // NOTIMP
+    case NOTIMP: 
       SiteThrottledNote("NOTIMP: DNS error %d for [%s]: Function not implemented.", h->rcode, e->qname);
       server_ok = false; // could be server problems
       goto Lerror;
       break;
-    case REFUSED: // REFUSED
+    case REFUSED:
       SiteThrottledNote("REFUSED: DNS error %d for [%s]: The server refused to answer for the query.", h->rcode, e->qname);
       goto Lerror;
       break;
-    case YXDOMAIN: // YXDOMAIN
+    case YXDOMAIN: 
       SiteThrottledNote("YXDOMAIN: DNS error %d for [%s]: Name that should not exist, does exist.", h->rcode, e->qname);
+      goto Lerror;
       break;
-    case YXRRSET: // YXRRSET
+    case YXRRSET:
       SiteThrottledNote("YXRRSET: DNS error %d for [%s]: RRSet that should not exist, does exist.", h->rcode, e->qname);
+      goto Lerror;
       break;
-    case NXRRSET: // NXRRSET
+    case NXRRSET:
       SiteThrottledNote("NXRRSET: DNS error %d for [%s]: RRSet that should not exist, does not exist.", h->rcode, e->qname);
+      goto Lerror;
       break;
-    case NOTAUTH: // NOTAUTH
+    case NOTAUTH:
       SiteThrottledNote("NOTAUTH: DNS error %d for [%s]: Server not authorative for the zone.", h->rcode, e->qname);
+      goto Lerror;
       break;
-    case NOTZONE: // NOTZONE
+    case NOTZONE:
       SiteThrottledNote("NOTZONE: DNS error %d for [%s]: Name not in zone.", h->rcode, e->qname);
       goto Lerror;
       break;
