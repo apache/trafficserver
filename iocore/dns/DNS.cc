@@ -1575,13 +1575,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       SiteThrottledNote("SERVFAIL: DNS error %d for [%s]: Server failed to complete the DNS request.", h->rcode, e->qname);
       retry = true;
       break;
-    case NXDOMAIN: 
+    case NXDOMAIN:
       SiteThrottledNote("NXDOMAIN: DNS error %d for [%s]: Domain name does not exist.", h->rcode, e->qname);
       retry     = false;
       tcp_retry = false;
       goto Lerror;
       break;
-    case NOTIMP: 
+    case NOTIMP:
       SiteThrottledNote("NOTIMP: DNS error %d for [%s]: Function not implemented.", h->rcode, e->qname);
       server_ok = false; // could be server problems
       goto Lerror;
@@ -1590,7 +1590,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       SiteThrottledNote("REFUSED: DNS error %d for [%s]: The server refused to answer for the query.", h->rcode, e->qname);
       goto Lerror;
       break;
-    case YXDOMAIN: 
+    case YXDOMAIN:
       SiteThrottledNote("YXDOMAIN: DNS error %d for [%s]: Name that should not exist, does exist.", h->rcode, e->qname);
       goto Lerror;
       break;
