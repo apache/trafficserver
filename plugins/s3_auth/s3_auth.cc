@@ -1202,6 +1202,8 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
     // Sometimes a file notification is sent before a file finishes writing.
     // It's also possible that the advisory lock on the file is still being held.
     TSDebug(PLUGIN_NAME, "Failed to reload config.");
+    delete file_config;
+    file_config    = nullptr;
     auto remaining = s3->decrement_retry();
     if (remaining > 0) {
       TSDebug(PLUGIN_NAME, "Retring config reload in 1 second.  %d tries remaining.", remaining);
@@ -1304,7 +1306,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       file_config = load_config(optarg); // Get cached, or new, config object, from a file
       if (!file_config || !file_config->valid()) {
         TSError("[%s] invalid configuration file, %s", PLUGIN_NAME, optarg);
-        *ih = nullptr;
+        delete file_config;
+        file_config = nullptr;
+        *ih         = nullptr;
         return TS_ERROR;
       }
       break;
