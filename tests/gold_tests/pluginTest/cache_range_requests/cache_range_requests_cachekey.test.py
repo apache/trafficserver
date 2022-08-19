@@ -153,7 +153,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 # cache debug
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
 # minimal configuration
 ts.Disk.records_config.update({

@@ -228,7 +228,7 @@ ts.Disk.remap_config.AddLines([
 ])
 
 # cache debug
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key')
 
 # enable debug
 ts.Disk.records_config.update({
