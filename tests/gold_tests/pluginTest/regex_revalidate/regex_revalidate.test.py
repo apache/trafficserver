@@ -125,7 +125,7 @@ server.addResponse("sessionlog.json", request_header_2, response_header_2)
 server.addResponse("sessionlog.json", request_header_3, response_header_3)
 
 # Configure ATS server
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.plugin_config.AddLine(
     'regex_revalidate.so -d -c regex_revalidate.conf'
 )

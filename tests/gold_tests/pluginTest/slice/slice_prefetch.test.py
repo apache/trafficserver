@@ -101,7 +101,7 @@ ts.Disk.remap_config.AddLines([
     ' @plugin=cache_range_requests.so',
 ])
 
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.logging_yaml.AddLines([
     'logging:',
     '  formats:',

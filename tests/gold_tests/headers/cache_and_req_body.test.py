@@ -37,7 +37,7 @@ response_header = {
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # ATS Configuration
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via')
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http',

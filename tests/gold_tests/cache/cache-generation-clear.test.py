@@ -31,7 +31,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.cache.generation': -1,  # Start with cache turned off
     'proxy.config.config_update_interval_ms': 1,
 })
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation')
 ts.Disk.remap_config.AddLines([
     'map /default/ http://127.0.0.1/ @plugin=generator.so',
     # line 2

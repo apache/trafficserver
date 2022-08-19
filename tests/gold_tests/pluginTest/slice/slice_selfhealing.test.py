@@ -82,7 +82,7 @@ ts.Disk.remap_config.AddLines([
     '  @plugin=cache_range_requests.so @pparam=--ims-header=crr-foo',
 ])
 
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 0,
