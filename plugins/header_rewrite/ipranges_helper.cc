@@ -16,40 +16,19 @@
   limitations under the License.
 */
 #include "ipranges_helper.h"
+#include "tscpp/util/TextView.h"
 
-#include <string_view>
 #include <vector>
-
-static std::vector<std::string_view>
-splitter(std::string_view input, char delim)
-{
-  std::vector<std::string_view> output;
-  size_t first = 0;
-
-  while (first < input.size()) {
-    const auto second = input.find_first_of(delim, first);
-
-    if (first != second) {
-      output.emplace_back(input.substr(first, second - first));
-    }
-    if (second == std::string_view::npos) {
-      break;
-    }
-    first = second + 1;
-  }
-
-  return output; // RVO
-}
 
 bool
 ipRangesHelper::addIpRanges(const std::string &s)
 {
-  auto ranges = splitter(s, ',');
+  ts::TextView src{s};
 
-  for (auto &it : ranges) {
+  while (src) {
     IpAddr start, end;
 
-    ats_ip_range_parse(it, start, end);
+    ats_ip_range_parse(src.take_prefix_at(','), start, end);
     _ipRanges.mark(start, end);
   }
 
