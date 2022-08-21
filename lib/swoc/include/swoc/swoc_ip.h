@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-License-Identifier: Apache-2.0
 // Copyright Network Geographics 2014
 /** @file
    IP address and network related classes.
@@ -334,11 +333,8 @@ protected:
   using bytes = std::array<uint8_t, 4>;
 
   friend bool operator==(self_type const &, self_type const &);
-
   friend bool operator!=(self_type const &, self_type const &);
-
   friend bool operator<(self_type const &, self_type const &);
-
   friend bool operator<=(self_type const &, self_type const &);
 
   in_addr_t _addr = INADDR_ANY; ///< Address in host order.
@@ -480,21 +476,21 @@ public:
 
   /** Bitwise AND.
    *
-   * @param that Source address.
+   * @param that Source mask.
    * @return @a this.
    *
    * The bits in @a this are set to the bitwise AND of the corresponding bits in @a this and @a that.
    */
-  self_type &operator&=(IPMask const &mask);
+  self_type &operator&=(IPMask const &that);
 
   /** Bitwise OR.
    *
-   * @param that Source address.
+   * @param that Source mask.
    * @return @a this.
    *
    * The bits in @a this are set to the bitwise OR of the corresponding bits in @a this and @a that.
    */
-  self_type &operator|=(IPMask const &mask);
+  self_type &operator|=(IPMask const &that);
 
   /** Convert between network and host ordering.
    *
@@ -986,6 +982,7 @@ protected:
   bool is_valid(IP4Addr mask) const;
 };
 
+/// Inclusive range of IPv6 addresses.
 class IP6Range : public DiscreteRange<IP6Addr> {
   using self_type  = IP6Range;
   using super_type = DiscreteRange<IP6Addr>;
@@ -1118,6 +1115,10 @@ protected:
   bool is_valid(IPMask const &mask);
 };
 
+/** Range of IP addresses.
+ * Although this can hold IPv4 or IPv6, any specific instance is one or the other, this can never contain
+ * a range of different address families.
+ */
 class IPRange {
   using self_type = IPRange;
 
@@ -1180,17 +1181,14 @@ public:
   /// @return The maximum address in the range.
   IPAddr max() const;
 
+  /// @return @c true if there are no addresses in the range.
   bool empty() const;
 
-  IP4Range const &
-  ip4() const {
-    return _range._ip4;
-  }
+  /// @return The IPv4 range.
+  IP4Range const & ip4() const { return _range._ip4; }
 
-  IP6Range const &
-  ip6() const {
-    return _range._ip6;
-  }
+  /// @return The IPv6 range.
+  IP6Range const & ip6() const { return _range._ip6; }
 
   /** Compute the mask for @a this as a network.
    *
@@ -1289,11 +1287,11 @@ public:
 
 protected:
   union {
-    std::monostate _nil;
-    IP4Range::NetSource _ip4;
-    IP6Range::NetSource _ip6;
+    std::monostate _nil; ///< Default value, no addresses.
+    IP4Range::NetSource _ip4; ///< IPv4 addresses.
+    IP6Range::NetSource _ip6; ///< IPv6 addresses.
   };
-  sa_family_t _family = AF_UNSPEC;
+  sa_family_t _family = AF_UNSPEC; ///< Mark for union content.
 };
 
 /// An IPv4 network.
@@ -1347,11 +1345,7 @@ public:
   self_type &assign(IP4Addr const &addr, IPMask const &mask);
 
   /// Reset network to invalid state.
-  self_type &
-  clear() {
-    _mask.clear();
-    return *this;
-  }
+  self_type & clear() {  _mask.clear(); return *this;  }
 
   /// Equality.
   bool operator==(self_type const &that) const;
@@ -1364,6 +1358,7 @@ protected:
   IPMask _mask;  ///< Network mask.
 };
 
+/// IPv6 network.
 class IP6Net {
   using self_type = IP6Net; ///< Self reference type.
 public:
@@ -2148,38 +2143,47 @@ IPAddr::invalidate() {
 }
 
 // Associated operators.
+
+/// Equality.
 bool operator==(IPAddr const &lhs, sockaddr const *rhs);
 
+/// Equality.
 inline bool
 operator==(sockaddr const *lhs, IPAddr const &rhs) {
   return rhs == lhs;
 }
 
+/// Inequality.
 inline bool
 operator!=(IPAddr const &lhs, sockaddr const *rhs) {
   return !(lhs == rhs);
 }
 
+/// Inequality.
 inline bool
 operator!=(sockaddr const *lhs, IPAddr const &rhs) {
   return !(rhs == lhs);
 }
 
+/// Equality.
 inline bool
 operator==(IPAddr const &lhs, IPEndpoint const &rhs) {
   return lhs == &rhs.sa;
 }
 
+/// Equality.
 inline bool
 operator==(IPEndpoint const &lhs, IPAddr const &rhs) {
   return &lhs.sa == rhs;
 }
 
+/// Inequality.
 inline bool
 operator!=(IPAddr const &lhs, IPEndpoint const &rhs) {
   return !(lhs == &rhs.sa);
 }
 
+/// Inequality.
 inline bool
 operator!=(IPEndpoint const &lhs, IPAddr const &rhs) {
   return !(rhs == &lhs.sa);
@@ -2301,7 +2305,7 @@ IPEndpoint::host_order_port(sockaddr const *sa) {
 
 inline constexpr IP4Addr::IP4Addr(in_addr_t addr) : _addr(addr) {}
 
-inline IP4Addr::IP4Addr(std::string_view const &text) {
+inline IP4Addr::IP4Addr(string_view const &text) {
   if (!this->load(text)) {
     _addr = INADDR_ANY;
   }
@@ -2361,31 +2365,37 @@ IP4Addr::operator=(in_addr_t ip) -> self_type & {
   return *this;
 }
 
+/// Equality.
 inline bool
 operator==(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr == rhs._addr;
 }
 
+/// @return @c true if @a lhs is equal to @a rhs.
 inline bool
 operator!=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr != rhs._addr;
 }
 
+/// @return @c true if @a lhs is less than @a rhs (host order).
 inline bool
 operator<(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr < rhs._addr;
 }
 
+/// @return @c true if @a lhs is less than or equal to@a rhs (host order).
 inline bool
 operator<=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return lhs._addr <= rhs._addr;
 }
 
+/// @return @c true if @a lhs is greater than @a rhs (host order).
 inline bool
 operator>(IP4Addr const &lhs, IP4Addr const &rhs) {
   return rhs < lhs;
 }
 
+/// @return @c true if @a lhs is greater than or equal to @a rhs (host order).
 inline bool
 operator>=(IP4Addr const &lhs, IP4Addr const &rhs) {
   return rhs <= lhs;
@@ -2434,7 +2444,7 @@ inline IP6Addr::IP6Addr(in6_addr const &addr) {
   *this = addr;
 }
 
-inline IP6Addr::IP6Addr(std::string_view const &text) {
+inline IP6Addr::IP6Addr(string_view const &text) {
   if (!this->load(text)) {
     this->clear();
   }
@@ -2527,33 +2537,39 @@ IP6Addr::reorder(unsigned char dst[WORD_SIZE], unsigned char const src[WORD_SIZE
   }
 }
 
+/// @return @c true if @a lhs is equal to @a rhs.
 inline bool
 operator==(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] == rhs._addr._store[1];
 }
 
+/// @return @c true if @a lhs is not equal to @a rhs.
 inline bool
 operator!=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] != rhs._addr._store[0] || lhs._addr._store[1] != rhs._addr._store[1];
 }
 
+/// @return @c true if @a lhs is less than @a rhs.
 inline bool
 operator<(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] < rhs._addr._store[1]);
 }
 
+/// @return @c true if @a lhs is greater than @a rhs.
 inline bool
 operator>(IP6Addr const &lhs, IP6Addr const &rhs) {
   return rhs < lhs;
 }
 
+/// @return @c true if @a lhs is less than or equal to @a rhs.
 inline bool
 operator<=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return lhs._addr._store[0] < rhs._addr._store[0] ||
          (lhs._addr._store[0] == rhs._addr._store[0] && lhs._addr._store[1] <= rhs._addr._store[1]);
 }
 
+/// @return @c true if @a lhs is greater than or equal to @a rhs.
 inline bool
 operator>=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return rhs <= lhs;
@@ -3349,12 +3365,14 @@ get(swoc::IPNet const &net) {
 }} // namespace swoc::SWOC_VERSION_NS
 
 namespace std {
+/// Standard hash support for @a IP4Addr.
 template <> struct hash<swoc::IP4Addr> {
   uint32_t operator()(swoc::IP4Addr const &addr) const {
     return addr.network_order();
   }
 };
 
+/// Standard hash support for @a IP6Addr.
 template <> struct hash<swoc::IP6Addr> {
   uint32_t operator()(swoc::IP6Addr const &addr) const {
     // XOR the 64 chunks then XOR that down to 32 bits.
@@ -3367,6 +3385,7 @@ template <> struct hash<swoc::IP6Addr> {
   }
 };
 
+/// Standard hash support for @a IPAddr.
 template <> struct hash<swoc::IPAddr> {
   uint32_t operator()(swoc::IPAddr const &addr) const {
     return addr.is_ip4() ? hash<swoc::IP4Addr>()(addr.ip4()) : addr.is_ip6() ? hash<swoc::IP6Addr>()(addr.ip6()) : 0;

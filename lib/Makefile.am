@@ -22,24 +22,32 @@ if BUILD_PERL_LIB
 SUBDIRS += perl
 endif
 
-# to prevent Clang Analyzer warning
-LOCAL =
+# These are broken out because the build and header export are separate actions.
+# Also clang analyzer requires the `all-local` target, which is annoying.
 
 if BUILD_YAML_CPP
-LOCAL += yamlcpp
+all-local:: yamlcpp
+	$(MAKE) -C yamlcpp
+
+clean-local::
+	$(MAKE) -C yamlcpp clean
+endif
+
+if EXPORT_YAML_HEADERS
+install-data-local::
+	$(MAKE) -C yamlcpp install
 endif
 
 if BUILD_SWOC
-LOCAL += swoc
+all-local:: swoc
+	$(MAKE) -C swoc
+
+clean-local::
+	$(MAKE) -C swoc clean
 endif
 
-all-local:	$(LOCAL)
-	$(MAKE) -C yamlcpp
-
-clean-local:
-	$(MAKE) -C yamlcpp clean
-
-if EXPORT_YAML_HEADERS
-install-data-local:
-	$(MAKE) -C yamlcpp install
+if EXPORT_SWOC_HEADERS
+install-data-local::
+	$(MAKE) -C swoc install
 endif
+

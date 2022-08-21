@@ -649,6 +649,30 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv) {
 }
 
 BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
+  using namespace swoc::literals;
+  bwf::Spec ptr_spec{spec};
+  ptr_spec._radix_lead_p = true;
+
+  if (ptr == nullptr) {
+    if (spec._type == 's' || spec._type == 'S') {
+      ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
+      ptr_spec._ext  = ""_sv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
+    } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
+      return w; // print nothing if there is no format character override.
+    }
+  }
+
+  if (ptr_spec._type == bwf::Spec::DEFAULT_TYPE || ptr_spec._type == 'p') {
+    ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
+  } else if (ptr_spec._type == 'P') {
+    ptr_spec._type = 'X'; // P means upper hex, overriding other specializations.
+  }
+  return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
+}
+
+BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
   char fmt_type      = spec._type;
   const char *digits = bwf::UPPER_DIGITS;
@@ -672,7 +696,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
+    const char *digits =  ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
     TextView view{span.view()};
     bool space_p = false;

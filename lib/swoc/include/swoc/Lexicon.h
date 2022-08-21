@@ -124,7 +124,7 @@ public:
    * The first value is the primary value and is required. Subsequent values are optional
    * and become secondary values.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -140,7 +140,7 @@ public:
    *
    * Each item in the intializers must be a @c Pair, that is a name and a value.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -153,7 +153,7 @@ public:
    * @param handler_1 A default handler.
    * @param handler_2 A default handler.
    *
-   * @a handler_2 is optional can be be omitted. The argument values are the same as for
+   * @a handler_2 is optional can be omitted. The argument values are the same as for
    * @c set_default.
    *
    * @see set_default.
@@ -236,11 +236,11 @@ public:
     using self_type = const_iterator;
 
   public:
-    using value_type        = const Pair;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-    using difference_type   = ptrdiff_t;
-    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type        = const Pair; ///< Iteration value.
+    using pointer           = value_type *; ///< Pointer to iteration value.
+    using reference         = value_type &; ///< Reference to iteration value.
+    using difference_type   = ptrdiff_t; ///< Type of difference between iterators.
+    using iterator_category = std::bidirectional_iterator_tag; ///< Concepts for iterator.
 
     /// Default constructor.
     const_iterator() = default;
@@ -290,7 +290,8 @@ public:
     friend Lexicon;
   };
 
-  // Only constant iterator allowed, values cannot be modified.
+  /// Pair iterator.
+  /// @note All iteration is over constant pairs, no modification is possible.
   using iterator = const_iterator;
 
   /// Iteration begin.
@@ -307,18 +308,21 @@ protected:
 
   /// Visitor functor for handling @c NameDefault.
   struct NameDefaultVisitor {
-    E _value;
+    E _value; ///< Value to use for default.
 
+    /// Visitor - invalid value type.
     std::string_view
     operator()(std::monostate const &) const {
       throw std::domain_error(detail::what("Lexicon: invalid enumeration value {}", static_cast<int>(_value)).data());
     }
 
+    /// Visitor - literal string.
     std::string_view
     operator()(std::string_view const &name) const {
       return name;
     }
 
+    /// Visitor - string generator.
     std::string_view
     operator()(UnknownValueHandler const &handler) const {
       return handler(_value);
@@ -327,18 +331,21 @@ protected:
 
   /// Visitor functor for handling @c ValueDefault.
   struct ValueDefaultVisitor {
-    std::string_view _name;
+    std::string_view _name; ///< Name of visited pair.
 
+    /// Vistor - invalid value.
     E
     operator()(std::monostate const &) const {
       throw std::domain_error(detail::what("Lexicon: Unknown name \"{}\"", _name).data());
     }
 
+    /// Visitor - value.
     E
     operator()(E const &value) const {
       return value;
     }
 
+    /// Visitor - value generator.
     E
     operator()(UnknownNameHandler const &handler) const {
       return handler(_name);
@@ -359,37 +366,31 @@ protected:
     E _value;               ///< Definition value.
     std::string_view _name; ///< Definition name
 
-    /// Intrusive linkage for name lookup.
+    /// @cond INTERNAL_DETAIL
+    // Intrusive list linkage support.
     struct NameLinkage {
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
       static Item *&next_ptr(Item *);
-
       static Item *&prev_ptr(Item *);
-
       static std::string_view key_of(Item *);
-
       static uint32_t hash_of(std::string_view s);
-
       static bool equal(std::string_view const &lhs, std::string_view const &rhs);
     } _name_link;
 
-    /// Intrusive linkage for value lookup.
+    // Intrusive linkage for value lookup.
     struct ValueLinkage {
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
       static Item *&next_ptr(Item *);
-
       static Item *&prev_ptr(Item *);
-
       static E key_of(Item *);
-
       static uintmax_t hash_of(E);
-
       static bool equal(E lhs, E rhs);
     } _value_link;
+    /// @endcond
   };
 
   /// Copy @a name in to local storage.
@@ -413,6 +414,7 @@ protected:
 
 template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _value(value), _name(name) {}
 
+/// @cond INTERNAL_DETAIL
 template <typename E>
 auto
 Lexicon<E>::Item::NameLinkage::next_ptr(Item *item) -> Item *& {
@@ -473,6 +475,7 @@ bool
 Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
   return lhs == rhs;
 }
+/// @endcond
 
 // -------
 // Lexicon

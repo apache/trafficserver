@@ -32,8 +32,9 @@ struct Pattern {
  * is type 'd' then just the numeric value is printed.
  */
 struct Errno {
-  int _e;
+  int _e; ///< Errno value.
 
+  /// Construct wrapper, default to current @c errno
   explicit Errno(int e = errno) : _e(e) {}
 };
 
@@ -42,12 +43,19 @@ struct Errno {
  * provided a format like "2017 Jun 29 14:11:29" is used.
  */
 struct Date {
+  /// Default format
   static constexpr std::string_view DEFAULT_FORMAT{"%Y %b %d %H:%M:%S"_sv};
-  time_t _epoch;
-  std::string_view _fmt;
+  time_t _epoch; ///< The time.
+  std::string_view _fmt; ///< Data format.
 
+  /** Constructor.
+   *
+   * @param t The timestamp.
+   * @param fmt Timestamp format.
+   */
   Date(time_t t, std::string_view fmt = DEFAULT_FORMAT) : _epoch(t), _fmt(fmt) {}
 
+  /// Default construct using current time with optional format.
   Date(std::string_view fmt = DEFAULT_FORMAT);
 };
 
@@ -200,12 +208,51 @@ Optional(TextView fmt, ARG &&arg) {
 }
 } // namespace bwf
 
+/** Repeatedly output a pattern.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param pattern Output patterning.
+ * @return @a w
+ *
+ * The @a pattern contains the count and text to output.
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern);
 
+/** Format an integer as an @c errno value.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param e Error code.
+ * @return @a w
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e);
 
+/** Format a timestamp wrapped in a @c Date.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param date Timestamp.
+ * @return @a w
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
 
+/** Output a nested formatted string.
+ *
+ * @tparam Args Argument pack for @a subtext.
+ * @param w Output
+ * @param subtext Format string and arguments.
+ * @return @a w
+ *
+ * This supports a nested format string and arguments inside another format string. This is most often useful
+ * if one of the formats is fixed or pre-compiled.
+ *
+ * @code
+ * bwformat(w, "Line {} offset {} with data {}.", line_no, line_off, bwf::SubText("alpha {} bravo {}", alpha, bravo"));
+ * @endcode
+ *
+ * @see bwf::Subtext
+ */
 template <typename... Args>
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &, bwf::SubText<Args...> const &subtext) {

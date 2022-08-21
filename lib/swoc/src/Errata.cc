@@ -27,10 +27,6 @@ std::vector<Errata::Sink::Handle> Sink_List;
 
 std::string_view Errata::DEFAULT_GLUE{"\n", 1};
 
-/** This is the implementation class for Errata.
-
-    It holds the actual messages and is treated as a passive data object with nice constructors.
-*/
 string_view
 Errata::Data::localize(string_view src) {
   auto span = _arena.alloc(src.size());
@@ -45,7 +41,7 @@ Errata::Severity Errata::DEFAULT_SEVERITY(2);
 Errata::Severity Errata::FAILURE_SEVERITY(2);
 Errata::Severity Errata::FILTER_SEVERITY(0);
 
-// Provide a somewhat reasonable set of default severities and names
+/// Default set of severity names.
 std::array<swoc::TextView, 4> Severity_Names{{"Info", "Warning", "Error"}};
 
 swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES{Severity_Names.data(), Severity_Names.size()};
