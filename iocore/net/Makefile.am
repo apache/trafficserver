@@ -33,7 +33,8 @@ AM_CPPFLAGS += \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@BORINGOCSP_INCLUDES@ \
-	@YAMLCPP_INCLUDES@
+	@YAMLCPP_INCLUDES@ \
+	@SWOC_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
 
@@ -43,7 +44,8 @@ noinst_LIBRARIES = libinknet.a
 test_certlookup_LDFLAGS = \
 	@AM_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ \
+	@SWOC_LDFLAGS@
 
 test_certlookup_SOURCES = \
 	test_certlookup.cc \
@@ -54,7 +56,8 @@ test_certlookup_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@YAMLCPP_LIBS@
+	@YAMLCPP_LIBS@ \
+	@SWOC_LIBS@
 
 test_UDPNet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -64,12 +67,14 @@ test_UDPNet_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	@OPENSSL_INCLUDES@
+	@OPENSSL_INCLUDES@ \
+	@SWOC_INCLUDES@
 
 test_UDPNet_LDFLAGS = \
 	@AM_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ \
+	@SWOC_LDFLAGS@
 
 test_UDPNet_LDADD = \
 	libinknet.a \
@@ -79,7 +84,7 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
 test_UDPNet_SOURCES = \
 	libinknet_stub.cc \
@@ -103,7 +108,8 @@ test_libinknet_CPPFLAGS = \
 test_libinknet_LDFLAGS = \
 	@AM_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ \
+	@SWOC_LDFLAGS@
 
 test_libinknet_LDADD = \
 	libinknet.a \
@@ -114,7 +120,7 @@ test_libinknet_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
 libinknet_a_SOURCES = \
 	ALPNSupport.cc \

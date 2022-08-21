@@ -37,13 +37,14 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	$(TS_INCLUDES) \
+	$(TS_INCLUDES) @SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 
-libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
+libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 libtscore_la_LIBADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ \
 	@LIBOBJS@ \
 	@LIBPCRE@ \
 	@OPENSSL_LIBS@ \

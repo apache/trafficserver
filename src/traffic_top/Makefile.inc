@@ -24,6 +24,7 @@ traffic_top_traffic_top_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES) \
+        @SWOC_INCLUDES@ \
 	@CURL_CFLAGS@ \
 	@CURSES_CFLAGS@ \
 	@YAMLCPP_INCLUDES@
@@ -32,7 +33,7 @@ traffic_top_traffic_top_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	@CURSES_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
-	@YAMLCPP_LIBS@
+	@SWOC_LIBS@ @YAMLCPP_LIBS@
 
 
 traffic_top_traffic_top_SOURCES = \
@@ -46,5 +47,5 @@ traffic_top_traffic_top_LDADD = \
 	@CURL_LIBS@ \
 	@CURSES_LIBS@ \
 	@HWLOC_LIBS@ \
-	@YAMLCPP_LIBS@
+	@SWOC_LIBS@ @YAMLCPP_LIBS@
 endif

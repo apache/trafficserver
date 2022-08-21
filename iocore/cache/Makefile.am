@@ -27,6 +27,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	@SWOC_INCLUDES@
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libinkcache.a
@@ -84,6 +85,7 @@ test_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/tests/include \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
@@ -107,6 +109,7 @@ test_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	@SWOC_LIBS@ \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \

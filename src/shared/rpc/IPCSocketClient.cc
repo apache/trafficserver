@@ -69,7 +69,7 @@ IPCSocketClient::read_all(ts::FixedBufferWriter &bw)
   }
   ReadStatus readStatus{ReadStatus::UNKNOWN};
   while (bw.remaining()) {
-    ts::MemSpan<char> span{bw.auxBuffer(), bw.remaining()};
+    swoc::MemSpan<char> span{bw.auxBuffer(), bw.remaining()};
     const ssize_t ret = ::read(_sock, span.data(), span.size());
     if (ret > 0) {
       bw.fill(ret);

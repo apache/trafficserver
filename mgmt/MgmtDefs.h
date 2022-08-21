@@ -30,7 +30,7 @@
 #include <string_view>
 
 #include "tscore/ink_defs.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 #include "tscpp/util/TextView.h"
 
 typedef int64_t MgmtIntCounter;
@@ -42,7 +42,7 @@ typedef char *MgmtString;
 /// Management callback signature.
 /// The memory span is the message payload for the callback.
 /// This can be a lambda, which should be used if additional context information is needed.
-using MgmtCallback = std::function<void(ts::MemSpan<void>)>;
+using MgmtCallback = std::function<void(swoc::MemSpan<void>)>;
 
 //-------------------------------------------------------------------------
 // API conversion functions.

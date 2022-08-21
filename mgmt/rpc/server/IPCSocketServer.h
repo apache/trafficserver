@@ -27,7 +27,7 @@
 #include <string_view>
 #include <memory>
 
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/I_Layout.h"
 
@@ -66,7 +66,7 @@ class IPCSocketServer : public BaseCommInterface
     void close();
     /// Reads from the socket, this function calls the system read function.
     /// @return the size of what was read by the read() function.
-    ssize_t read(ts::MemSpan<char> span) const;
+    ssize_t read(swoc::MemSpan<char> span) const;
     /// Function that reads all the data available in the socket, it will validate the data on every read if there is more than
     /// a single chunk.
     /// The size of the buffer to be read is not defined in this function, but rather passed in the @c bw parameter.

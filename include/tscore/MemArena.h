@@ -27,7 +27,7 @@
 #include <mutex>
 #include <memory>
 #include <utility>
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 #include "tscore/Scalar.h"
 #include "tscore/IntrusivePtr.h"
 
@@ -78,14 +78,14 @@ protected:
     size_t remaining() const;
 
     /// Span of unallocated storage.
-    MemSpan<void> remnant();
+    swoc::MemSpan<void> remnant();
 
     /** Allocate @a n bytes from this block.
      *
      * @param n Number of bytes to allocate.
      * @return The span of memory allocated.
      */
-    MemSpan<void> alloc(size_t n);
+    swoc::MemSpan<void> alloc(size_t n);
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -127,9 +127,9 @@ public:
       @a n bytes.
 
       @param n number of bytes to allocate.
-      @return a MemSpan of the allocated memory.
+      @return a swoc::MemSpan of the allocated memory.
    */
-  MemSpan<void> alloc(size_t n);
+  swoc::MemSpan<void> alloc(size_t n);
 
   /** Allocate and initialize a block of memory.
 
@@ -183,7 +183,7 @@ public:
   size_t remaining() const;
 
   /// @returns the remaining contiguous space in the active generation.
-  MemSpan<void> remnant() const;
+  swoc::MemSpan<void> remnant() const;
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -259,11 +259,11 @@ MemArena::Block::remaining() const
   return size - allocated;
 }
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::Block::alloc(size_t n)
 {
   ink_assert(n <= this->remaining());
-  MemSpan<void> zret = this->remnant().prefix(n);
+  swoc::MemSpan<void> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
 }
@@ -277,7 +277,7 @@ MemArena::make(Args &&... args)
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::Block::remnant()
 {
   return {this->data() + allocated, this->remaining()};
@@ -301,10 +301,10 @@ MemArena::remaining() const
   return _active ? _active->remaining() : 0;
 }
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::remnant() const
 {
-  return _active ? _active->remnant() : MemSpan<void>{};
+  return _active ? _active->remnant() : swoc::MemSpan<void>{};
 }
 
 inline size_t

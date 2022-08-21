@@ -31,8 +31,9 @@
 #include <iosfwd>
 #include <string_view>
 
+#include "swoc/MemSpan.h"
+
 #include "tscpp/util/TextView.h"
-#include "tscpp/util/MemSpan.h"
 #include "tscore/BufferWriterForward.h"
 
 namespace ts
@@ -237,7 +238,7 @@ public:
   FixedBufferWriter(FixedBufferWriter &&)                 = delete;
   FixedBufferWriter &operator=(FixedBufferWriter &&) = delete;
 
-  FixedBufferWriter(MemSpan<char> &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
+  FixedBufferWriter(swoc::MemSpan<char> &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
 
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &
@@ -732,7 +733,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 }
 
 // MemSpan
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void> const &span);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, swoc::MemSpan<void> const &span);
 
 // -- Common formatters --
 

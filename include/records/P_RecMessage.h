@@ -24,7 +24,7 @@
 #pragma once
 
 #include "P_RecDefs.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 //-------------------------------------------------------------------------
 // Initialization
