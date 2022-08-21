@@ -70,6 +70,8 @@ TEST_CASE("LogObject", "[proxy/logging]")
   main_thread->set_specific();
 
   auto diagsConfig = new DiagsConfig("Server", "diags.log", "", "", false);
+  // unused, but constructor must be called for side effects.
+  (void)diagsConfig;
   diags()->set_std_output(StdStream::STDOUT, bind_stdout);
   diags()->set_std_output(StdStream::STDERR, bind_stderr);
 
