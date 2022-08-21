@@ -32,19 +32,42 @@ limitations under the License.
 #include "tscore/I_Layout.h"
 
 #include <thread>
-#include <barrier>
+#include <condition_variable>
 #include <chrono>
 
 AppVersionInfo appVersionInfo;
 static char bind_stdout[512] = "";
 static char bind_stderr[512] = "";
 
+namespace notstd
+{
+struct barrier {
+  int count;
+  std::mutex m;
+  std::condition_variable cv;
+
+  barrier(int count) : count(count) {}
+
+  void
+  arrive_and_wait()
+  {
+    std::unique_lock lock{m};
+    if (0 == --count) {
+      cv.notify_all();
+    } else {
+      cv.wait(lock, [this] { return count == 0; });
+    }
+  }
+};
+} // namespace notstd
+
 TEST_CASE("LogObject", "[proxy/logging]")
 {
+  ink_freelist_init_ops(true, true);
+  init_buffer_allocators(0);
+
   Thread *main_thread = new EThread;
   main_thread->set_specific();
-
-  init_buffer_allocators(0);
 
   auto diagsConfig = new DiagsConfig("Server", "diags.log", "", "", false);
   diags()->set_std_output(StdStream::STDOUT, bind_stdout);
@@ -82,7 +105,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
   BENCHMARK("logobject fast")
   {
     int thread_cnt = 40;
-    std::barrier barrier(thread_cnt);
+    notstd::barrier barrier(thread_cnt);
     auto test_object = [&](LogObject *o) {
       Thread *me = new EThread;
       me->set_specific();
@@ -113,7 +136,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
   BENCHMARK("logobject slow")
   {
     int thread_cnt = 40;
-    std::barrier barrier(thread_cnt);
+    notstd::barrier barrier(thread_cnt);
 
     auto test_object = [&](LogObject *o) {
       Thread *me = new EThread;
