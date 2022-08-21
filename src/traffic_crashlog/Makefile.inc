@@ -25,6 +25,7 @@ traffic_crashlog_traffic_crashlog_CPPFLAGS = \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
     -I$(abs_top_srcdir)/mgmt/api/include \
+    @SWOC_INCLUDES@ \
     $(TS_INCLUDES)
 
 traffic_crashlog_traffic_crashlog_LDFLAGS = \

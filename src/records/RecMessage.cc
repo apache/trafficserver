@@ -31,7 +31,7 @@
 #include "records/P_RecUtils.h"
 #include "records/P_RecCore.h"
 #include "tscore/I_Layout.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 static RecMessageRecvCb g_recv_cb = nullptr;
 static void *g_recv_cookie        = nullptr;
@@ -245,7 +245,7 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
 //-------------------------------------------------------------------------
 
 void
-RecMessageRecvThis(ts::MemSpan<void> span)
+RecMessageRecvThis(swoc::MemSpan<void> span)
 {
   RecMessage *msg = static_cast<RecMessage *>(span.data());
   g_recv_cb(msg, msg->msg_type, g_recv_cookie);

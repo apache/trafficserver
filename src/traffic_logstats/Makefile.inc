@@ -29,11 +29,12 @@ traffic_logstats_traffic_logstats_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+        @SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 traffic_logstats_traffic_logstats_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	@YAMLCPP_LDFLAGS@
+	@SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 
 TESTS += \
 	traffic_logstats/tests/test_logstats_json \
@@ -54,6 +55,7 @@ traffic_logstats_traffic_logstats_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 traffic_logstats_traffic_logstats_LDADD += \
+  @SWOC_LIBS@ \
   @HWLOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @LIBPROFILER@ -lm

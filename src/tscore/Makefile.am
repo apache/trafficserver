@@ -38,9 +38,9 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
-	@YAMLCPP_INCLUDES@
+	@YAMLCPP_INCLUDES@ @SWOC_INCLUDES@
 
-libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
+libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@ @SWOC_LDFLAGS@
 libtscore_la_LIBADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@ \
@@ -50,6 +50,7 @@ libtscore_la_LIBADD = \
 	@LIBRESOLV@ \
 	@LIBCAP@ \
 	@YAMLCPP_LIBS@ \
+	@SWOC_LIBS@ \
 	-lc
 
 libtscore_la_SOURCES = \

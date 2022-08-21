@@ -99,7 +99,7 @@ LogConfig::setup_default_values()
   logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 }
 
-void LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
+void LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;

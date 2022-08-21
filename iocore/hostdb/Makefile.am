@@ -25,6 +25,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 EXTRA_DIST = I_HostDB.h
@@ -57,7 +58,7 @@ test_RefCountCache_SOURCES = \
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@SWOC_LDFLAGS@ @OPENSSL_LDFLAGS@
 
 test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
@@ -77,7 +78,7 @@ test_LD_ADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 

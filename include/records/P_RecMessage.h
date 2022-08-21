@@ -24,7 +24,7 @@
 #pragma once
 
 #include "P_RecDefs.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 //-------------------------------------------------------------------------
 // Initialization
@@ -45,7 +45,7 @@ int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **rec
 
 int RecMessageSend(RecMessage *msg);
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);
-void RecMessageRecvThis(ts::MemSpan<void>);
+void RecMessageRecvThis(swoc::MemSpan<void>);
 
 RecMessage *RecMessageReadFromDisk(const char *fpath);
 int RecMessageWriteToDisk(RecMessage *msg, const char *fpath);

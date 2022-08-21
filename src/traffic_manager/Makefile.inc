@@ -28,10 +28,12 @@ traffic_manager_traffic_manager_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	@SWOC_INCLUDES@ \
+        $(TS_INCLUDES)
 
 traffic_manager_traffic_manager_LDFLAGS = \
 	$(AM_LDFLAGS) \
+        @SWOC_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
 	@YAMLCPP_LDFLAGS@
 
@@ -49,7 +51,7 @@ traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/src/records/librecords_lm.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
    	$(LIBUNWIND_LIBS) \
-	@LIBPCRE@ @LIBCAP@ @HWLOC_LIBS@ \
+	@SWOC_LIBS@ @LIBPCRE@ @LIBCAP@ @HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@
 	-lm
 

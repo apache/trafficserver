@@ -25,6 +25,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+        @SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
@@ -58,7 +59,7 @@ test_mgmt_utils_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 
 test_mgmt_utils_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@SWOC_LDFLAGS@ @OPENSSL_LDFLAGS@
 
 test_mgmt_utils_SOURCES = \
 	unit_tests/unit_test_main.cc \
@@ -66,7 +67,8 @@ test_mgmt_utils_SOURCES = \
 
 test_mgmt_utils_LDADD = \
 	libutils_p.la \
-	$(top_builddir)/src/tscore/libtscore.la
+	$(top_builddir)/src/tscore/libtscore.la \
+        @SWOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

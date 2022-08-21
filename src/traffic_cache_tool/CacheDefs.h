@@ -351,7 +351,7 @@ using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
 using ts::CacheDirEntry;
-using ts::MemSpan;
+using swoc::MemSpan;
 using ts::Doc;
 
 constexpr int ESTIMATED_OBJECT_SIZE     = 8000;

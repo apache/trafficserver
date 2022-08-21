@@ -127,10 +127,10 @@ static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 
 static const long MAX_LOGIN = ink_login_name_max();
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan<void>);
-static void mgmt_drain_callback(ts::MemSpan<void>);
+static void mgmt_restart_shutdown_callback(swoc::MemSpan<void>);
+static void mgmt_drain_callback(swoc::MemSpan<void>);
 static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
-static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
+static void mgmt_lifecycle_msg_callback(swoc::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
@@ -2193,7 +2193,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Callback for various storage commands. These all go to the same function so we
     // pass the event code along so it can do the right thing. We cast that to <int> first
     // just to be safe because the value is a #define, not a typed value.
-    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](ts::MemSpan<void> span) -> void {
+    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](swoc::MemSpan<void> span) -> void {
       mgmt_storage_device_cmd_callback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, span.view());
     });
     pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, &mgmt_lifecycle_msg_callback);
@@ -2228,13 +2228,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   delete main_thread;
 }
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan<void>)
+static void mgmt_restart_shutdown_callback(swoc::MemSpan<void>)
 {
   sync_cache_dir_on_shutdown();
 }
 
 static void
-mgmt_drain_callback(ts::MemSpan<void> span)
+mgmt_drain_callback(swoc::MemSpan<void> span)
 {
   char *arg = span.rebind<char>().data();
   TSSystemState::drain(span.size() == 2 && arg[0] == '1');
@@ -2258,7 +2258,7 @@ mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg)
 }
 
 static void
-mgmt_lifecycle_msg_callback(ts::MemSpan<void> span)
+mgmt_lifecycle_msg_callback(swoc::MemSpan<void> span)
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
   TSPluginMsg msg;

@@ -69,6 +69,8 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
 
 namespace ts
 {
+template <typename T> using MemSpan = swoc::MemSpan<T>;
+
 const BWFSpec BWFSpec::DEFAULT;
 
 const BWFSpec::Property BWFSpec::_prop;

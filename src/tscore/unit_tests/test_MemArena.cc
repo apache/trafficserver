@@ -25,7 +25,7 @@
 
 #include <string_view>
 #include "tscore/MemArena.h"
-using ts::MemSpan;
+using swoc::MemSpan;
 using ts::MemArena;
 using namespace std::literals;
 
@@ -129,7 +129,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
 
   ts::MemArena arena{256};
   REQUIRE(arena.size() == 0);
-  ts::MemSpan<char> s = arena.alloc(56).rebind<char>();
+  swoc::MemSpan<char> s = arena.alloc(56).rebind<char>();
   REQUIRE(arena.size() == 56);
   void *ptr = s.begin();
 
@@ -141,8 +141,8 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   arena.freeze(128);
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr + 100));
-  ts::MemSpan<char> s2 = arena.alloc(10).rebind<char>();
-  void *ptr2           = s2.begin();
+  swoc::MemSpan<char> s2 = arena.alloc(10).rebind<char>();
+  void *ptr2             = s2.begin();
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr2));
   REQUIRE(arena.allocated_size() == 56 + 10);
@@ -183,10 +183,10 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
 TEST_CASE("MemArena large alloc", "[libts][MemArena]")
 {
   ts::MemArena arena;
-  ts::MemSpan s = arena.alloc(4000);
+  swoc::MemSpan s = arena.alloc(4000);
   REQUIRE(s.size() == 4000);
 
-  ts::MemSpan<void> s_a[10];
+  swoc::MemSpan<void> s_a[10];
   s_a[0] = arena.alloc(100);
   s_a[1] = arena.alloc(200);
   s_a[2] = arena.alloc(300);
@@ -210,9 +210,9 @@ TEST_CASE("MemArena large alloc", "[libts][MemArena]")
 TEST_CASE("MemArena block allocation", "[libts][MemArena]")
 {
   ts::MemArena arena{64};
-  ts::MemSpan<char> s  = arena.alloc(32).rebind<char>();
-  ts::MemSpan<char> s2 = arena.alloc(16).rebind<char>();
-  ts::MemSpan<char> s3 = arena.alloc(16).rebind<char>();
+  swoc::MemSpan<char> s  = arena.alloc(32).rebind<char>();
+  swoc::MemSpan<char> s2 = arena.alloc(16).rebind<char>();
+  swoc::MemSpan<char> s3 = arena.alloc(16).rebind<char>();
 
   REQUIRE(s.size() == 32);
   REQUIRE(arena.allocated_size() == 64);

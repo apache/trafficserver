@@ -30,7 +30,7 @@
 
 #include "tscore/ink_thread.h"
 #include "tscore/ink_mutex.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 #include "MgmtDefs.h"
 #include "MgmtMarshall.h"
@@ -88,7 +88,7 @@
 struct MgmtMessageHdr {
   int msg_id;
   int data_len;
-  ts::MemSpan<void>
+  swoc::MemSpan<void>
   payload()
   {
     return {this + 1, static_cast<size_t>(data_len)};
@@ -130,7 +130,7 @@ public:
   MgmtMessageHdr *dequeue();
 
 protected:
-  void executeMgmtCallback(int msg_id, ts::MemSpan<void> span);
+  void executeMgmtCallback(int msg_id, swoc::MemSpan<void> span);
 
   /// The mapping from an event type to a list of callbacks to invoke.
   std::unordered_map<int, MgmtCallbackList> mgmt_callback_table;

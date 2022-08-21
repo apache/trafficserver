@@ -31,7 +31,7 @@
 #include "I_RecAlarms.h"
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 struct RecRecord;
 
@@ -304,5 +304,5 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 // Manager Callback
 //------------------------------------------------------------------------
-using RecManagerCb = std::function<void(ts::MemSpan<void>)>;
+using RecManagerCb = std::function<void(swoc::MemSpan<void>)>;
 int RecRegisterManagerCb(int _signal, RecManagerCb const &_fn);

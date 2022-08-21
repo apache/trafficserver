@@ -21,6 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 check_PROGRAMS = test_librecords test_librecords_on_eventsystem
 
 AM_CPPFLAGS += \
+        -I$(abs_top_srcdir)/lib/swoc/include \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/iocore/utils \
 	-I$(abs_top_srcdir)/mgmt \
@@ -28,6 +29,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	@SWOC_INCLUDES@\
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = librecords_lm.a librecords_p.a
@@ -84,7 +86,7 @@ test_librecords_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ @LIBCAP@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
