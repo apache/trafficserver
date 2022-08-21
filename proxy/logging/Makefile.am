@@ -102,7 +102,8 @@ test_RolledLogDeleter_SOURCES = \
 test_RolledLogDeleter_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	@HWLOC_LIBS@
 
 benchmark_LogObject_SOURCES = unit-tests/benchmark_LogObject.cc LogConfig.cc
 benchmark_LogObject_CPPFLAGS = \
