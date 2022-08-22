@@ -120,7 +120,8 @@ benchmark_LogObject_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	$(top_builddir)/proxy/shared/libdiagsconfig.a
+	$(top_builddir)/proxy/shared/libdiagsconfig.a \
+	@HWLOC_LIBS@
 
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(EXTRA_DIST)
