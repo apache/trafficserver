@@ -28,6 +28,7 @@
  * and IPv6 addresses. These are used to generate the HostDBRecord instances that are stored persistently.
  */
 using HostAddrMap = std::unordered_map<std::string_view, std::tuple<std::vector<IpAddr>, std::vector<IpAddr>>>;
+using AddrHostMap = std::unordered_map<IpAddr, std::string_view, IpAddr::Hasher>;
 
 namespace
 {
@@ -36,7 +37,7 @@ constexpr unsigned IPV6_IDX = 1;
 } // namespace
 
 static void
-ParseHostLine(ts::TextView line, HostAddrMap &map)
+ParseHostLine(ts::TextView line, HostAddrMap &map, AddrHostMap &rmap)
 {
   // Elements should be the address then a list of host names.
   ts::TextView addr_text = line.take_prefix_if(&isspace);
@@ -54,6 +55,8 @@ ParseHostLine(ts::TextView line, HostAddrMap &map)
     } else if (addr.isIp4()) {
       std::get<IPV4_IDX>(map[name]).push_back(addr);
     }
+    // use insert here so only the first mapping in the file is used to provide a stable view between reloads
+    rmap.insert(std::pair(addr, name));
   }
 }
 
@@ -88,13 +91,14 @@ ParseHostFile(ts::file::path const &path, ts_seconds interval)
     std::string content = ts::file::load(path, ec);
     if (!ec) {
       HostAddrMap addr_map;
+      AddrHostMap host_map;
       ts::TextView text{content};
       while (text) {
         auto line = text.take_prefix_at('\n').ltrim_if(&isspace);
         if (line.empty() || '#' == *line) {
           continue;
         }
-        ParseHostLine(line, addr_map);
+        ParseHostLine(line, addr_map, host_map);
       }
       // @a map should be loaded with all of the data, create the records.
       hf = std::make_shared<HostFile>(interval);
@@ -120,17 +124,22 @@ ParseHostFile(ts::file::path const &path, ts_seconds interval)
         if (auto const &v = std::get<IPV4_IDX>(value); v.size() > 0) {
           auto r                               = loader(key, v);
           hf->forward[r->name_view()].record_4 = r;
-          for (auto &ii : r->rr_info()) {
-            // use insert here to keep only the first host encountered for an ip
-            hf->reverse.insert(std::pair(ii.data.ip, r));
-          }
         }
         // IPv6
         if (auto const &v = std::get<IPV6_IDX>(value); v.size() > 0) {
           auto r                               = loader(key, v);
           hf->forward[r->name_view()].record_6 = r;
-          for (auto &ii : r->rr_info()) {
-            hf->reverse.insert(std::pair(ii.data.ip, r));
+        }
+      }
+
+      // Walk the temporary reverse map and create the reverse index.
+      for (auto const &[ip, host] : host_map) {
+        auto lup = hf->forward.find(host);
+        if (lup != hf->forward.end()) {
+          if (ip.isIp4()) {
+            hf->reverse[ip] = lup->second.record_4;
+          } else {
+            hf->reverse[ip] = lup->second.record_6;
           }
         }
       }
