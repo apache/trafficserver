@@ -17,10 +17,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-./prepare_proxy_verifier.sh
+fail()
+{
+    echo $1
+    exit 1
+}
+./prepare_proxy_verifier.sh || fail "Failed to install Proxy Verifier."
 pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
-./test-env-check.sh
+./test-env-check.sh || fail "Failed Python environment checks."
 # this is for rhel or centos systems
 echo "Environment config finished. Running AuTest..."
 pipenv run autest -D gold_tests "$@"
