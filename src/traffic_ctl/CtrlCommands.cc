@@ -36,15 +36,15 @@ const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _
   {"rpc", BasePrinter::Options::OutputFormat::RPC}};
 
 BasePrinter::Options::OutputFormat
-parse_format(ts::Arguments &args)
+parse_format(ts::Arguments *args)
 {
-  if (args.get("records")) {
+  if (args->get("records")) {
     return BasePrinter::Options::OutputFormat::RECORDS;
   }
 
   BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::LEGACY};
 
-  if (auto data = args.get("format"); data) {
+  if (auto data = args->get("format"); data) {
     ts::TextView fmt{data.value()};
     if (auto search = _Fmt_str_to_enum.find(fmt); search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
@@ -54,20 +54,22 @@ parse_format(ts::Arguments &args)
 }
 
 BasePrinter::Options
-parse_print_opts(ts::Arguments &args)
+parse_print_opts(ts::Arguments *args)
 {
   return {parse_format(args)};
 }
 } // namespace
 
 //------------------------------------------------------------------------------------------------------------------------------------
-CtrlCommand::CtrlCommand(ts::Arguments args) : _arguments(args) {}
+CtrlCommand::CtrlCommand(ts::Arguments *args) : _arguments(args) {}
 
 void
 CtrlCommand::execute()
 {
   if (_invoked_func) {
     _invoked_func();
+  } else {
+    throw std::logic_error("CtrlCommand::execute(): Internal error. There should be a function to invoke. (_invoked_func not set)");
   }
 }
 
@@ -107,53 +109,38 @@ CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request, std::string &
   resp                       = invoke_rpc(encodedRequest);
 }
 // -----------------------------------------------------------------------------------------------------------------------------------
-RecordCommand::RecordCommand(ts::Arguments args) : CtrlCommand(args) {}
-
-void
-RecordCommand::execute()
+ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
 {
-  execute_subcommand();
-}
-ConfigCommand::ConfigCommand(ts::Arguments args) : RecordCommand(args)
-{
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
-  if (args.get("match")) {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (args->get(MATCH_STR)) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_match(); };
-  } else if (args.get("get")) {
+  } else if (args->get(GET_STR)) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_get(); };
-  } else if (args.get("diff")) {
+  } else if (args->get(DIFF_STR)) {
     _printer      = std::make_unique<DiffConfigPrinter>(printOpts);
     _invoked_func = [&]() { config_diff(); };
-  } else if (args.get("describe")) {
+  } else if (args->get(DESCRIBE_STR)) {
     _printer      = std::make_unique<RecordDescribePrinter>(printOpts);
     _invoked_func = [&]() { config_describe(); };
-  } else if (args.get("defaults")) {
+  } else if (args->get(DEFAULTS_STR)) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_defaults(); };
-  } else if (args.get("set")) {
+  } else if (args->get(SET_STR)) {
     _printer      = std::make_unique<ConfigSetPrinter>(printOpts);
     _invoked_func = [&]() { config_set(); };
-  } else if (args.get("status")) {
+  } else if (args->get(STATUS_STR)) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_status(); };
-  } else if (args.get("reload")) {
+  } else if (args->get(RELOAD_STR)) {
     _printer      = std::make_unique<ConfigReloadPrinter>(printOpts);
     _invoked_func = [&]() { config_reload(); };
-  } else if (args.get("registry")) {
+  } else if (args->get(REGISTRY_STR)) {
     _printer      = std::make_unique<ConfigShowFileRegistryPrinter>(printOpts);
     _invoked_func = [&]() { config_show_file_registry(); };
   } else {
     // work in here.
-  }
-}
-
-void
-ConfigCommand::execute_subcommand()
-{
-  if (_invoked_func) {
-    _invoked_func();
   }
 }
 
@@ -171,19 +158,19 @@ RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryT
 void
 ConfigCommand::config_match()
 {
-  _printer->write_output(record_fetch(_arguments.get("match"), shared::rpc::REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::CONFIG));
 }
 
 void
 ConfigCommand::config_get()
 {
-  _printer->write_output(record_fetch(_arguments.get("get"), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(GET_STR), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
 }
 
 void
 ConfigCommand::config_describe()
 {
-  _printer->write_output(record_fetch(_arguments.get("describe"), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(DESCRIBE_STR), shared::rpc::NOT_REGEX, RecordQueryType::CONFIG));
 }
 void
 ConfigCommand::config_defaults()
@@ -211,7 +198,7 @@ ConfigCommand::config_status()
 void
 ConfigCommand::config_set()
 {
-  auto const &data = _arguments.get("set");
+  auto const &data = get_parsed_arguments()->get(SET_STR);
   ConfigSetRecordRequest request{{data[0], data[1]}};
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
 
@@ -228,52 +215,43 @@ ConfigCommand::config_show_file_registry()
   _printer->write_output(invoke_rpc(ConfigShowFileRegistryRequest{}));
 }
 //------------------------------------------------------------------------------------------------------------------------------------
-MetricCommand::MetricCommand(ts::Arguments args) : RecordCommand(args)
+MetricCommand::MetricCommand(ts::Arguments *args) : RecordCommand(args)
 {
-  // auto const fmt = parse_format(_arguments);
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
-  if (args.get("match")) {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (args->get(MATCH_STR)) {
     _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
     _invoked_func = [&]() { metric_match(); };
-  } else if (args.get("get")) {
+  } else if (args->get(GET_STR)) {
     _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
     _invoked_func = [&]() { metric_get(); };
-  } else if (args.get("describe")) {
+  } else if (args->get(DESCRIBE_STR)) {
     _printer      = std::make_unique<RecordDescribePrinter>(printOpts);
     _invoked_func = [&]() { metric_describe(); };
-  } else if (args.get("clear")) {
+  } else if (args->get(CLEAR_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { metric_clear(); };
-  } else if (args.get("zero")) {
+  } else if (args->get(ZERO_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { metric_zero(); };
   }
 }
 
 void
-MetricCommand::execute_subcommand()
-{
-  if (_invoked_func) {
-    _invoked_func();
-  }
-}
-
-void
 MetricCommand::metric_get()
 {
-  _printer->write_output(record_fetch(_arguments.get("get"), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(GET_STR), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
 }
 
 void
 MetricCommand::metric_match()
 {
-  _printer->write_output(record_fetch(_arguments.get("match"), shared::rpc::REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::METRIC));
 }
 
 void
 MetricCommand::metric_describe()
 {
-  _printer->write_output(record_fetch(_arguments.get("describe"), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
+  _printer->write_output(record_fetch(get_parsed_arguments()->get(DESCRIBE_STR), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
 }
 
 void
@@ -285,7 +263,7 @@ MetricCommand::metric_clear()
 void
 MetricCommand::metric_zero()
 {
-  auto records = _arguments.get("zero");
+  auto records = get_parsed_arguments()->get(ZERO_STR);
   ClearMetricRequest request{// names
                              {{std::begin(records), std::end(records)}}};
 
@@ -293,16 +271,16 @@ MetricCommand::metric_zero()
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 // TODO, let call the super const
-HostCommand::HostCommand(ts::Arguments args) : CtrlCommand(args)
+HostCommand::HostCommand(ts::Arguments *args) : CtrlCommand(args)
 {
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
-  if (_arguments.get("status")) {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (get_parsed_arguments()->get(STATUS_STR)) {
     _printer      = std::make_unique<GetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_get(); };
-  } else if (_arguments.get("down")) {
+  } else if (get_parsed_arguments()->get(DOWN_STR)) {
     _printer      = std::make_unique<SetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_down(); };
-  } else if (_arguments.get("up")) {
+  } else if (get_parsed_arguments()->get(UP_STR)) {
     _printer      = std::make_unique<SetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_up(); };
   }
@@ -311,7 +289,7 @@ HostCommand::HostCommand(ts::Arguments args) : CtrlCommand(args)
 void
 HostCommand::status_get()
 {
-  auto const &data = _arguments.get("status");
+  auto const &data = get_parsed_arguments()->get(STATUS_STR);
   HostGetStatusRequest request{{std::begin(data), std::end(data)}};
 
   auto response = invoke_rpc(request);
@@ -322,9 +300,11 @@ HostCommand::status_get()
 void
 HostCommand::status_down()
 {
-  auto hosts = _arguments.get("down");
-  HostSetStatusRequest request{
-    {HostSetStatusRequest::Params::Op::DOWN, {std::begin(hosts), std::end(hosts)}, _arguments.get("reason").value(), "0"}};
+  auto hosts = get_parsed_arguments()->get(DOWN_STR);
+  HostSetStatusRequest request{{HostSetStatusRequest::Params::Op::DOWN,
+                                {std::begin(hosts), std::end(hosts)},
+                                get_parsed_arguments()->get(REASON_STR).value(),
+                                "0"}};
   auto response = invoke_rpc(request);
   _printer->write_output(response);
 }
@@ -332,26 +312,28 @@ HostCommand::status_down()
 void
 HostCommand::status_up()
 {
-  auto hosts = _arguments.get("up");
-  HostSetStatusRequest request{
-    {HostSetStatusRequest::Params::Op::UP, {std::begin(hosts), std::end(hosts)}, _arguments.get("reason").value(), "0"}};
+  auto hosts = get_parsed_arguments()->get(UP_STR);
+  HostSetStatusRequest request{{HostSetStatusRequest::Params::Op::UP,
+                                {std::begin(hosts), std::end(hosts)},
+                                get_parsed_arguments()->get(REASON_STR).value(),
+                                "0"}};
 
   auto response = invoke_rpc(request);
   _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
-PluginCommand::PluginCommand(ts::Arguments args) : CtrlCommand(args)
+PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 {
-  if (_arguments.get("msg")) {
+  if (get_parsed_arguments()->get(MSG_STR)) {
     _invoked_func = [&]() { plugin_msg(); };
   }
-  _printer = std::make_unique<GenericPrinter>(parse_print_opts(_arguments));
+  _printer = std::make_unique<GenericPrinter>(parse_print_opts(args));
 }
 
 void
 PluginCommand::plugin_msg()
 {
-  auto msgs = _arguments.get("msg");
+  auto msgs = get_parsed_arguments()->get(MSG_STR);
   BasicPluginMessageRequest::Params params;
   params.tag = msgs[0];
   if (msgs.size() > 1) {
@@ -362,19 +344,19 @@ PluginCommand::plugin_msg()
   auto response = invoke_rpc(request);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
-DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
+DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
 {
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
+  BasePrinter::Options printOpts{parse_print_opts(args)};
 
-  if (_arguments.get("get-api")) {
+  if (get_parsed_arguments()->get(GET_API_STR)) {
     _printer      = std::make_unique<RPCAPIPrinter>(printOpts);
     _invoked_func = [&]() { get_rpc_api(); };
     return;
-  } else if (_arguments.get("file")) {
+  } else if (get_parsed_arguments()->get(FILE_STR)) {
     _invoked_func = [&]() { from_file_request(); };
-  } else if (_arguments.get("input")) {
+  } else if (get_parsed_arguments()->get(INPUT_STR)) {
     _invoked_func = [&]() { read_from_input(); };
-  } else if (_arguments.get("invoke")) {
+  } else if (get_parsed_arguments()->get(INVOKE_STR)) {
     _invoked_func = [&]() { invoke_method(); };
     if (printOpts._format == BasePrinter::Options::OutputFormat::LEGACY) {
       // overwrite this and let it drop json instead.
@@ -401,7 +383,7 @@ void
 DirectRPCCommand::from_file_request()
 {
   // TODO: remove all the output messages from here if possible
-  auto filenames = _arguments.get("file");
+  auto filenames = get_parsed_arguments()->get(FILE_STR);
   for (auto &&filename : filenames) {
     std::string text;
     // run some basic validation on the passed files, they should
@@ -447,7 +429,7 @@ DirectRPCCommand::read_from_input()
     std::cin >> std::noskipws;
     // read cin.
     std::string content((std::istreambuf_iterator<char>(std::cin)), std::istreambuf_iterator<char>());
-    if (!_arguments.get("raw") && !validate_input(content)) {
+    if (!get_parsed_arguments()->get(RAW_STR) && !validate_input(content)) {
       _printer->write_output(ts::bwprint(text, "Content not accepted. expecting a valid sequence or structure\n"));
       return;
     }
@@ -463,12 +445,12 @@ void
 DirectRPCCommand::invoke_method()
 {
   shared::rpc::ClientRequest request;
-  if (auto method = _arguments.get("invoke"); method) {
+  if (auto method = get_parsed_arguments()->get(INVOKE_STR); method) {
     request.method = method.value();
     // We build up the parameter content if passed.
-    if (auto params = _arguments.get("params"); params) {
+    if (auto params = get_parsed_arguments()->get(PARAMS_STR); params) {
       std::ostringstream ss;
-      for (auto &&param : _arguments.get("params")) {
+      for (auto &&param : params) {
         ss << param;
         ss << '\n';
       }
@@ -479,10 +461,10 @@ DirectRPCCommand::invoke_method()
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
-ServerCommand::ServerCommand(ts::Arguments args) : CtrlCommand(args)
+ServerCommand::ServerCommand(ts::Arguments *args) : CtrlCommand(args)
 {
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
-  if (_arguments.get("drain")) {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (get_parsed_arguments()->get(DRAIN_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { server_drain(); };
   }
@@ -494,10 +476,10 @@ ServerCommand::server_drain()
   shared::rpc::JSONRPCResponse response;
   // TODO, can call_request take a && ?? if needed in the cmd just pass by ref.
 
-  if (_arguments.get("undo")) {
+  if (get_parsed_arguments()->get(UNDO_STR)) {
     response = invoke_rpc(ServerStopDrainRequest{});
   } else {
-    bool newConn = _arguments.get("no-new-connection");
+    const bool newConn = get_parsed_arguments()->get(NO_NEW_CONN_STR);
     ServerStartDrainRequest request{{newConn}};
     response = invoke_rpc(request);
   }
@@ -505,13 +487,13 @@ ServerCommand::server_drain()
   _printer->write_output(response);
 }
 // //------------------------------------------------------------------------------------------------------------------------------------
-StorageCommand::StorageCommand(ts::Arguments args) : CtrlCommand(args)
+StorageCommand::StorageCommand(ts::Arguments *args) : CtrlCommand(args)
 {
-  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
-  if (_arguments.get("status")) {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+  if (get_parsed_arguments()->get(STATUS_STR)) {
     _printer      = std::make_unique<CacheDiskStoragePrinter>(printOpts);
     _invoked_func = [&]() { get_storage_status(); };
-  } else if (_arguments.get("offline")) {
+  } else if (get_parsed_arguments()->get(OFFLINE_STR)) {
     _printer      = std::make_unique<CacheDiskStorageOfflinePrinter>(printOpts);
     _invoked_func = [&]() { set_storage_offline(); };
   }
@@ -520,7 +502,7 @@ StorageCommand::StorageCommand(ts::Arguments args) : CtrlCommand(args)
 void
 StorageCommand::get_storage_status()
 {
-  auto disks = _arguments.get("status");
+  auto disks = get_parsed_arguments()->get(STATUS_STR);
   GetStorageDeviceStatusRequest request{{{std::begin(disks), std::end(disks)}}};
   auto response = invoke_rpc(request);
   _printer->write_output(response);
@@ -528,9 +510,9 @@ StorageCommand::get_storage_status()
 void
 StorageCommand::set_storage_offline()
 {
-  auto disks = _arguments.get("offline");
+  auto disks = get_parsed_arguments()->get(OFFLINE_STR);
   SetStorageDeviceOfflineRequest request{{{std::begin(disks), std::end(disks)}}};
   auto response = invoke_rpc(request);
   _printer->write_output(response);
 }
-// //------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------
