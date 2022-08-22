@@ -85,7 +85,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   eventProcessor.start(10, stacksize);
 
-  pmgmt = new ProcessManager(RECM_STAND_ALONE);
+  pmgmt = new ProcessManager(false);
 
   Log::init(Log::NO_REMOTE_MANAGEMENT);
 
