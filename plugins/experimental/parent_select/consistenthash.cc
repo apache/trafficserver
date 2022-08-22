@@ -288,9 +288,8 @@ PLNextHopConsistentHash::deleteTxn(void *txn)
 }
 
 void
-PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exclude_hostname, size_t exclude_hostname_len,
-                              in_port_t exclude_port, const char **out_hostname, size_t *out_hostname_len, in_port_t *out_port,
-                              bool *out_retry, bool *out_no_cache, time_t now)
+PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char **out_hostname, size_t *out_hostname_len,
+                              in_port_t *out_port, bool *out_retry, bool *out_no_cache, time_t now)
 {
   // TODO add logic in the strategy to track when someone is retrying, and not give it out to multiple threads at once, to prevent
   // thundering retries See github issue #7485

@@ -166,6 +166,7 @@ struct CacheHostTableConfig : public Continuation {
     CacheHostTable *t   = new CacheHostTable((*ppt)->cache, (*ppt)->type);
     CacheHostTable *old = (CacheHostTable *)ink_atomic_swap(&t, *ppt);
     new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
+    delete this;
     return EVENT_DONE;
   }
 };

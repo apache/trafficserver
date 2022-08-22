@@ -47,8 +47,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_REQUEST);
-    http2_init_pseudo_headers(hdr_1);
+    hdr_1.create(HTTP_TYPE_REQUEST, HTTP_2_0);
 
     // parse
     const char *start = request;
@@ -61,7 +60,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :method
     {
-      MIMEField *f = hdr_1.field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "GET");
@@ -69,7 +68,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :scheme
     {
-      MIMEField *f = hdr_1.field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "https");
@@ -77,7 +76,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :authority
     {
-      MIMEField *f = hdr_1.field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "trafficserver.apache.org");
@@ -85,7 +84,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :path
     {
-      MIMEField *f = hdr_1.field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "/index.html");
@@ -121,8 +120,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_RESPONSE);
-    http2_init_pseudo_headers(hdr_1);
+    hdr_1.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
 
     // parse
     const char *start = response;
@@ -135,7 +133,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :status
     {
-      MIMEField *f = hdr_1.field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "200");

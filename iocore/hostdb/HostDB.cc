@@ -563,6 +563,7 @@ HostDBProcessor::start(int, size_t)
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);
   b->mutex = new_ProxyMutex();
+  b->updateHostFileConfig();
   eventProcessor.schedule_every(b, HRTIME_SECONDS(1), ET_DNS);
 
   return 0;
@@ -1513,6 +1514,15 @@ HostDBContinuation::do_dns()
   }
 }
 
+void
+HostDBContinuation::updateHostFileConfig()
+{
+  RecInt tmp_interval{};
+
+  REC_ReadConfigInteger(tmp_interval, "proxy.config.hostdb.host_file.interval");
+  hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
+}
+
 //
 // Background event
 // Increment the hostdb_current_timestamp which funcions as our cached version
@@ -1534,6 +1544,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 
+    updateHostFileConfig();
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Debug("hostdb", "%s",

@@ -57,9 +57,7 @@ Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initi
   this->_reader = this->_request_buffer.alloc_reader();
 
   _req_header.create(HTTP_TYPE_REQUEST);
-  response_header.create(HTTP_TYPE_RESPONSE);
-  // TODO: init _req_header instead of response_header if this Http2Stream is outgoing
-  http2_init_pseudo_headers(response_header);
+  response_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
 
   http_parser_init(&http_parser);
 }
@@ -688,8 +686,7 @@ Http2Stream::update_write_request(bool call_update)
       if (this->response_header.expect_final_response()) {
         this->response_header_done = false;
         response_header.destroy();
-        response_header.create(HTTP_TYPE_RESPONSE);
-        http2_init_pseudo_headers(response_header);
+        response_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
         http_parser_clear(&http_parser);
         http_parser_init(&http_parser);
       }

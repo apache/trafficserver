@@ -1912,8 +1912,8 @@ AC_CHECK_HEADERS([sys/types.h \
 
 # On OpenBSD, pthread.h must be included before pthread_np.h
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
-AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
-AC_CHECK_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
+AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h sys/mount.h])
+AC_CHECK_HEADERS([linux/hdreg.h linux/major.h])
 
 AC_CHECK_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H

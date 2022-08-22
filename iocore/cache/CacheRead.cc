@@ -1175,6 +1175,20 @@ CacheVC::openReadStartHead(int event, Event *e)
       } else {
         f.single_fragment = false;
       }
+
+      // Now that we have selected an alternate, validate that the content length and object size match
+      MIMEField *field = alternate.response_get()->field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      if (field) {
+        uint64_t cl = static_cast<uint64_t>(field->value_get_int64());
+        if (cl != doc_len) {
+          Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %" PRId64 " != %" PRId64,
+                  key.slice32(0), cl, doc_len);
+          CACHE_INCREMENT_DYN_STAT(cache_read_invalid_stat);
+          err = ECACHE_BAD_META_DATA;
+          goto Ldone;
+        }
+      }
+
     } else {
       next_CacheKey(&key, &doc->key);
       f.single_fragment = doc->single_fragment();

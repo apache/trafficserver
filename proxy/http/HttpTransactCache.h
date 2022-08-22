@@ -80,4 +80,6 @@ public:
 
   static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response,
                                                            ink_time_t response_received_time);
+
+  static bool validate_ifrange_header_if_any(HTTPHdr *ua_request, HTTPHdr *c_response);
 };

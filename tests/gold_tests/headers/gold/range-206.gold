@@ -1,0 +1,12 @@
+HTTP/1.1 206 Partial Content
+Server: ATS/``
+Cache-Control: max-age=300
+Last-Modified: Thu, 10 Feb 2022 00:00:00 GMT
+ETag: range
+Content-Length: 5
+Date: ``
+Age: ``
+Content-Range: bytes 1-5/11
+Connection: keep-alive
+
+12345``

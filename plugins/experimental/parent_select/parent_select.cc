@@ -128,6 +128,7 @@ handle_read_response(TSHttpTxn txnp, StrategyTxn *strategyTxn)
     TSResponseAction ra;
     TSHttpTxnResponseActionGet(txnp, &ra);
     ra.responseIsRetryable = strategy->responseIsRetryable(strategyTxn->request_count - 1, status);
+
     TSHttpTxnResponseActionSet(txnp, &ra);
   }
 
@@ -168,11 +169,7 @@ handle_os_dns(TSHttpTxn txnp, StrategyTxn *strategyTxn)
 
   TSResponseAction ra;
   memset(&ra, 0, sizeof(TSResponseAction));
-  const char *const exclude_host = strategyTxn->prev_ra.hostname;
-  const size_t exclude_host_len  = strategyTxn->prev_ra.hostname_len;
-  const in_port_t exclude_port   = strategyTxn->prev_ra.port;
-  strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry, &ra.no_cache);
+  strategy->next(txnp, strategyTxn->txn, &ra.hostname, &ra.hostname_len, &ra.port, &ra.is_retry, &ra.no_cache);
 
   ra.fail = ra.hostname == nullptr; // failed is whether to immediately fail and return the client a 502. In this case: whether or
                                     // not we found another parent.
@@ -340,11 +337,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   TSResponseAction ra;
   memset(&ra, 0, sizeof(TSResponseAction)); // because {0} gives a C++ warning. Ugh.
-  constexpr const char *const exclude_host = nullptr;
-  constexpr const size_t exclude_host_len  = 0;
-  constexpr const in_port_t exclude_port   = 0;
-  strategy->next(txnp, strategyTxn->txn, exclude_host, exclude_host_len, exclude_port, &ra.hostname, &ra.hostname_len, &ra.port,
-                 &ra.is_retry, &ra.no_cache);
+  strategy->next(txnp, strategyTxn->txn, &ra.hostname, &ra.hostname_len, &ra.port, &ra.is_retry, &ra.no_cache);
 
   ra.nextHopExists = ra.hostname != nullptr;
   ra.fail          = !ra.nextHopExists;
