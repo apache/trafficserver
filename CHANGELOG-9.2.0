@@ -528,7 +528,6 @@ Changes with Apache Traffic Server 9.2.0
   #9013 - Ignore POST request case from a check for background fill
   #9023 - Remove plugin parent_select unused symbols
   #9027 - Change linux/fs include to build with glibc 2.36
-  #9039 - utilize proxy.config.hostdb.host_file.interval config variable
   #9040 - ts::shared_mutex - Fix lock counting for debug
   #9041 - Fix reload memory leak
   #9047 - Fix compile error on macOS
