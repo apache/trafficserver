@@ -313,6 +313,7 @@ Changes with Apache Traffic Server 9.2.0
   #8365 - Fixes issue #8329 crash in NextHopConsistentHash
   #8368 - TSSslSecretSet: Update SSL_CTX TLS Secrets
   #8372 - Add Au test for pqsi and pqsp log fields.
+  #8373 - Removed references to the throttle option from the slice plugin.
   #8374 - 9.2.x autest fixes
   #8375 - Add a set-http-cntl operator for header_rewrite
   #8376 - Doc: Add proxy.config.cache.mutex_retry_delay
@@ -439,6 +440,7 @@ Changes with Apache Traffic Server 9.2.0
   #8723 - Adding prefetch feature to slice plugin
   #8724 - Change DNS retries to be a static (requires restart) config value
   #8725 - Update THREAD_FREE macro to only evaluate the _t parameter once.
+  #8737 - Require use of 'override' keyword when valid.
   #8738 - ts_lua: change type in stats struct from 'int' to 'TSMgmtInt' to avoid overflow
   #8742 - Fixes Issue #7824 - The strategies.yaml parser can incorrectly interpret
   #8745 - Add log format for whether origin TLS connection resumed an existing TLS session
@@ -512,6 +514,7 @@ Changes with Apache Traffic Server 9.2.0
   #8970 - add a metric to track how often the range seek bug is detected
   #8971 - Fixes issue with file size calculation for existing logs
   #8975 - Fix reverting PR#7302
+  #8976 - Validate that content length header matches object size on cache read
   #8977 - Update roadmap doc with latest releases
   #8980 - Add RangeTransform::m_write_vio state checks
   #8996 - Add stack guard pages
@@ -523,3 +526,10 @@ Changes with Apache Traffic Server 9.2.0
   #9011 - Add control char check in MIME Parser
   #9012 - Add content length mismatch check on handling HEADERS frame and CONTINUATION frame
   #9013 - Ignore POST request case from a check for background fill
+  #9023 - Remove plugin parent_select unused symbols
+  #9027 - Change linux/fs include to build with glibc 2.36
+  #9039 - utilize proxy.config.hostdb.host_file.interval config variable
+  #9040 - ts::shared_mutex - Fix lock counting for debug
+  #9041 - Fix reload memory leak
+  #9047 - Fix compile error on macOS
+  #9048 - Update prepare_proxy_verifier.sh to work in non-git directories
