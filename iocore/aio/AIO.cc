@@ -601,6 +601,14 @@ DiskHandler::handle_cqe(io_uring_cqe *cqe)
   op->link.next  = nullptr;
   op->mutex      = op->action.mutex;
 
+  if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
+    aio_num_write++;
+    aio_bytes_written += op->aiocb.aio_nbytes;
+  } else {
+    aio_num_read++;
+    aio_bytes_read += op->aiocb.aio_nbytes;
+  }
+
   // the last op in the linked ops will have the original op stored in the aiocb
   if (op->aiocb.aio_op) {
     op = op->aiocb.aio_op;
@@ -675,6 +683,7 @@ ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
     io_uring_sqe *sqe = t->diskHandler->next_sqe();
     io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
     io_uring_sqe_set_data(sqe, op);
+    op->aiocb.aio_lio_opcode = LIO_READ;
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;
     } else {
@@ -695,6 +704,7 @@ ink_aio_write(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
     io_uring_sqe *sqe = t->diskHandler->next_sqe();
     io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
     io_uring_sqe_set_data(sqe, op);
+    op->aiocb.aio_lio_opcode = LIO_WRITE;
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;
     } else {
