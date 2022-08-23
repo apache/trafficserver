@@ -422,7 +422,6 @@ HostDBProcessor::start(int, size_t)
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);
   b->mutex = new_ProxyMutex();
-  b->updateHostFileConfig();
   eventProcessor.schedule_every(b, HRTIME_SECONDS(1), ET_DNS);
 
   return 0;
@@ -1637,15 +1636,6 @@ HostDBContinuation::do_dns()
   }
 }
 
-void
-HostDBContinuation::updateHostFileConfig()
-{
-  RecInt tmp_interval{};
-
-  REC_ReadConfigInteger(tmp_interval, "proxy.config.hostdb.host_file.interval");
-  hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
-}
-
 //
 // Background event
 // Just increment the current_interval.  Might do other stuff
@@ -1666,7 +1656,6 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     struct stat info;
     char path[sizeof(hostdb_hostfile_path)];
 
-    updateHostFileConfig();
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path, path)) {
       Debug("hostdb", "Update host file '%s' -> '%s'", (*hostdb_hostfile_path ? hostdb_hostfile_path : "*-none-*"),
