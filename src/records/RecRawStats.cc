@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "P_RecCore.h"
-#include "P_RecProcess.h"
+#include "records/P_RecCore.h"
+#include "records/P_RecProcess.h"
 #include <string_view>
 
 //-------------------------------------------------------------------------

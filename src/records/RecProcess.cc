@@ -27,11 +27,11 @@
 #include "I_Tasks.h"
 
 #include "P_EventSystem.h"
-#include "P_RecCore.h"
-#include "P_RecProcess.h"
-#include "P_RecMessage.h"
-#include "P_RecUtils.h"
-#include "P_RecFile.h"
+#include "records/P_RecCore.h"
+#include "records/P_RecProcess.h"
+#include "records/P_RecMessage.h"
+#include "records/P_RecUtils.h"
+#include "records/P_RecFile.h"
 
 #include "mgmtapi.h"
 #include "ProcessManager.h"

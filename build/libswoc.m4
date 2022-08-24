@@ -45,7 +45,7 @@ AC_ARG_WITH(libswoc, [AS_HELP_STRING([--with-libswoc=DIR],[use a specific libswo
     fi
   fi
 
-  if test -d $swoc_include && test -d $swoc_ldflags && test -f $swoc_include/libswoc/yaml.h; then
+  if test -d $swoc_include && test -d $swoc_ldflags && test -f $swoc_include/libswoc/swoc_version.h; then
     AC_MSG_RESULT([ok])
   else
     AC_MSG_RESULT([not found])

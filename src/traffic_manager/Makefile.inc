@@ -46,7 +46,7 @@ traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/records/librecords_lm.a \
+	$(top_builddir)/src/records/librecords_lm.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
    	$(LIBUNWIND_LIBS) \
 	@LIBPCRE@ @LIBCAP@ @HWLOC_LIBS@ \

@@ -27,7 +27,7 @@ export CCACHE_BASEDIR
 # and mgmt, hence we have to build proxy/hdrs first.
 
 # depends on the generates ts/ts.h include file.
-SUBDIRS = include src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs tests
+SUBDIRS = include lib src/tscpp/util src/tscore src/records iocore proxy mgmt src plugins tools example rc configs tests
 
 if BUILD_DOCS
 SUBDIRS += doc include
@@ -125,7 +125,7 @@ CLANG_FORMAT_DIR_TARGETS = \
 	clang-format-src \
 	clang-format-example \
 	clang-format-iocore \
-	clang-format-lib \
+	clang-format-include \
 	clang-format-mgmt \
 	clang-format-plugins \
 	clang-format-proxy \
@@ -150,9 +150,8 @@ clang-format-example:
 clang-format-iocore:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/iocore
 
-clang-format-lib:
+clang-format-include:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/include
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
 
 clang-format-mgmt:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/mgmt

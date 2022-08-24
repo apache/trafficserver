@@ -37,7 +37,7 @@ traffic_crashlog_traffic_crashlog_SOURCES = \
 	traffic_crashlog/traffic_crashlog.h
 
 traffic_crashlog_traffic_crashlog_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
