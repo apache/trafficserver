@@ -39,7 +39,10 @@ github:
         # strict means "Require branches to be up to date before merging"
         strict: false
         contexts:
-          - AuTest
+          - AuTest 0of4
+          - AuTest 1of4
+          - AuTest 2of4
+          - AuTest 3of4
           - Rocky
           - Clang-Analyzer
           - Clang-Format
