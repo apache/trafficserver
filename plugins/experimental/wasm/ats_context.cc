@@ -30,7 +30,7 @@
 #include "src/shared_data.h"
 #include "src/shared_queue.h"
 
-namespace proxy_wasm
+namespace ats_wasm
 {
 // utiltiy function for properties
 static void
@@ -518,7 +518,6 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *client_ip;
-    // int64_t port;
     client_ip = TSHttpTxnClientAddrGet(txnp_);
     print_port(client_ip, result);
     return WasmResult::Ok;
@@ -1273,18 +1272,7 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
 WasmResult
 Context::getSharedData(std::string_view key, std::pair<std::string, uint32_t> *data)
 {
-  // TODO: remove hardcode secret key
-  if (key == "yhdrs-secret") {
-    static auto secrets = std::make_pair(R"({"csi.ypath": [{"version": 1, "secret": "secret1", "current": false}, )"
-                                         R"({"version": 2, "secret": "secret2", "current": true}], )"
-                                         R"("csi.yra": [{"version": 3, "secret": "secret3", "current": false}, )"
-                                         R"({"version": 4, "secret": "secret4", "current": true}]})",
-                                         1);
-    *data               = secrets;
-    return WasmResult::Ok;
-  }
-
-  return getGlobalSharedData().get(wasm_->vm_id(), key, data);
+  return proxy_wasm::getGlobalSharedData().get(wasm_->vm_id(), key, data);
 }
 
 // Header/Trailer/Metadata Maps
@@ -1503,4 +1491,4 @@ Context::getHeaderMap(WasmHeaderMapType type)
   }
 }
 
-} // namespace proxy_wasm
+} // namespace ats_wasm

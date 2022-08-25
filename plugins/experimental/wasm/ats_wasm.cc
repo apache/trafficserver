@@ -20,7 +20,7 @@
 
 #include <string>
 
-namespace proxy_wasm
+namespace ats_wasm
 {
 // extended constructors to initialize mutex
 Wasm::Wasm(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, const WasmVmFactory &factory)
@@ -53,6 +53,7 @@ Wasm::createVmContext()
 ContextBase *
 Wasm::createRootContext(const std::shared_ptr<PluginBase> &plugin)
 {
+  TSDebug(WASM_DEBUG_TAG, "Create root context for ats plugin");
   return new Context(this, plugin);
 }
 
@@ -64,11 +65,11 @@ Wasm::createContext(const std::shared_ptr<PluginBase> &plugin)
 
 // Function to start a new root context
 Context *
-Wasm::start(std::shared_ptr<PluginBase> plugin, TSCont contp)
+Wasm::start(const std::shared_ptr<PluginBase> &plugin, TSCont contp)
 {
   auto it = root_contexts_.find(plugin->key());
   if (it != root_contexts_.end()) {
-    Context *c = (Context *)it->second.get();
+    Context *c = static_cast<Context *>(it->second.get());
     if (c->scheduler_cont() == nullptr) {
       c->initialize(contp);
     } else {
@@ -78,7 +79,7 @@ Wasm::start(std::shared_ptr<PluginBase> plugin, TSCont contp)
     c->onStart(plugin);
     return c;
   }
-  auto context     = std::unique_ptr<Context>((Context *)createRootContext(plugin));
+  auto context     = std::unique_ptr<Context>(static_cast<Context *>(createRootContext(plugin)));
   auto context_ptr = context.get();
   context_ptr->initialize(contp);
   root_contexts_[plugin->key()] = std::move(context);
@@ -87,7 +88,7 @@ Wasm::start(std::shared_ptr<PluginBase> plugin, TSCont contp)
     return nullptr;
   }
   return context_ptr;
-};
+}
 
 // functions to manage lifecycle of VM
 bool
@@ -146,4 +147,4 @@ Wasm::error(std::string_view message)
   TSError("%.*s", (int)message.size(), message.data());
 }
 
-} // namespace proxy_wasm
+} // namespace ats_wasm

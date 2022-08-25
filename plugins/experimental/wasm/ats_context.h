@@ -41,65 +41,78 @@
 
 #define WASM_DEBUG_TAG "wasm"
 
-namespace proxy_wasm
+namespace ats_wasm
 {
+
+using proxy_wasm::ContextBase;
+using proxy_wasm::PluginBase;
+using proxy_wasm::WasmResult;
+using proxy_wasm::BufferInterface;
+using proxy_wasm::BufferBase;
+using proxy_wasm::WasmHeaderMapType;
+using proxy_wasm::Pairs;
+using proxy_wasm::GrpcStatusCode;
+using proxy_wasm::WasmBufferType;
+using proxy_wasm::LogLevel;
+using proxy_wasm::MetricType;
+
 class Wasm;
 
 // constants for property names
-static std::string p_request_path("request\0path\0", 13);
-static std::string p_request_url_path("request\0url_path\0", 17);
-static std::string p_request_host("request\0host\0", 13);
-static std::string p_request_scheme("request\0scheme\0", 15);
-static std::string p_request_method("request\0method\0", 15);
-static std::string p_request_headers("request\0headers\0", 16);
-static std::string p_request_referer("request\0referer\0", 16);
-static std::string p_request_useragent("request\0useragent\0", 18);
-static std::string p_request_time("request\0time\0", 13);
-static std::string p_request_id("request\0id\0", 11);
-static std::string p_request_protocol("request\0protocol\0", 17);
-static std::string p_request_query("request\0query\0", 14);
-static std::string p_request_duration("request\0duration\0", 17);
-static std::string p_request_size("request\0size\0", 13);
-static std::string p_request_total_size("request\0total_size\0", 19);
-static std::string p_response_code("response\0code\0", 14);
-static std::string p_response_code_details("response\0code_details\0", 22);
-static std::string p_response_headers("response\0headers\0", 17);
-static std::string p_response_size("response\0size\0", 14);
-static std::string p_response_total_size("response\0total_size\0", 20);
-static std::string p_node("node", 4);
-static std::string p_plugin_name("plugin_name", 11);
-static std::string p_plugin_root_id("plugin_root_id", 14);
-static std::string p_plugin_vm_id("plugin_vm_id", 12);
-static std::string p_source_address("source\0address\0", 15);
-static std::string p_source_port("source\0port\0", 12);
-static std::string p_destination_address("destination\0address\0", 20);
-static std::string p_destination_port("destination\0port\0", 17);
-static std::string p_connection_mtls("connection\0mtls\0", 16);
-static std::string p_connection_requested_server_name("connection\0requested_server_name\0", 33);
-static std::string p_connection_tls_version("connection\0tls_version\0", 23);
-static std::string p_connection_subject_local_certificate("connection\0subject_local_certificate\0", 37);
-static std::string p_connection_subject_peer_certificate("connection\0subject_peer_certificate\0", 36);
-static std::string p_connection_dns_san_local_certificate("connection\0dns_san_local_certificate\0", 37);
-static std::string p_connection_dns_san_peer_certificate("connection\0dns_san_peer_certificate\0", 36);
-static std::string p_connection_uri_san_local_certificate("connection\0uri_san_local_certificate\0", 37);
-static std::string p_connection_uri_san_peer_certificate("connection\0uri_san_peer_certificate\0", 36);
-static std::string p_upstream_address("upstream\0address\0", 17);
-static std::string p_upstream_port("upstream\0port\0", 14);
-static std::string p_upstream_local_address("upstream\0local_address\0", 23);
-static std::string p_upstream_local_port("upstream\0local_port\0", 20);
-static std::string p_upstream_tls_version("upstream\0tls_version\0", 21);
-static std::string p_upstream_subject_local_certificate("upstream\0subject_local_certificate\0", 36);
-static std::string p_upstream_subject_peer_certificate("upstream\0subject_peer_certificate\0", 35);
-static std::string p_upstream_dns_san_local_certificate("upstream\0dns_san_local_certificate\0", 36);
-static std::string p_upstream_dns_san_peer_certificate("upstream\0dns_san_peer_certificate\0", 35);
-static std::string p_upstream_uri_san_local_certificate("upstream\0uri_san_local_certificate\0", 36);
-static std::string p_upstream_uri_san_peer_certificate("upstream\0uri_san_peer_certificate\0", 35);
+constexpr std::string_view p_request_path                         = {"request\0path\0", 13};
+constexpr std::string_view p_request_url_path                     = {"request\0url_path\0", 17};
+constexpr std::string_view p_request_host                         = {"request\0host\0", 13};
+constexpr std::string_view p_request_scheme                       = {"request\0scheme\0", 15};
+constexpr std::string_view p_request_method                       = {"request\0method\0", 15};
+constexpr std::string_view p_request_headers                      = {"request\0headers\0", 16};
+constexpr std::string_view p_request_referer                      = {"request\0referer\0", 16};
+constexpr std::string_view p_request_useragent                    = {"request\0useragent\0", 18};
+constexpr std::string_view p_request_time                         = {"request\0time\0", 13};
+constexpr std::string_view p_request_id                           = {"request\0id\0", 11};
+constexpr std::string_view p_request_protocol                     = {"request\0protocol\0", 17};
+constexpr std::string_view p_request_query                        = {"request\0query\0", 14};
+constexpr std::string_view p_request_duration                     = {"request\0duration\0", 17};
+constexpr std::string_view p_request_size                         = {"request\0size\0", 13};
+constexpr std::string_view p_request_total_size                   = {"request\0total_size\0", 19};
+constexpr std::string_view p_response_code                        = {"response\0code\0", 14};
+constexpr std::string_view p_response_code_details                = {"response\0code_details\0", 22};
+constexpr std::string_view p_response_headers                     = {"response\0headers\0", 17};
+constexpr std::string_view p_response_size                        = {"response\0size\0", 14};
+constexpr std::string_view p_response_total_size                  = {"response\0total_size\0", 20};
+constexpr std::string_view p_node                                 = {"node", 4};
+constexpr std::string_view p_plugin_name                          = {"plugin_name", 11};
+constexpr std::string_view p_plugin_root_id                       = {"plugin_root_id", 14};
+constexpr std::string_view p_plugin_vm_id                         = {"plugin_vm_id", 12};
+constexpr std::string_view p_source_address                       = {"source\0address\0", 15};
+constexpr std::string_view p_source_port                          = {"source\0port\0", 12};
+constexpr std::string_view p_destination_address                  = {"destination\0address\0", 20};
+constexpr std::string_view p_destination_port                     = {"destination\0port\0", 17};
+constexpr std::string_view p_connection_mtls                      = {"connection\0mtls\0", 16};
+constexpr std::string_view p_connection_requested_server_name     = {"connection\0requested_server_name\0", 33};
+constexpr std::string_view p_connection_tls_version               = {"connection\0tls_version\0", 23};
+constexpr std::string_view p_connection_subject_local_certificate = {"connection\0subject_local_certificate\0", 37};
+constexpr std::string_view p_connection_subject_peer_certificate  = {"connection\0subject_peer_certificate\0", 36};
+constexpr std::string_view p_connection_dns_san_local_certificate = {"connection\0dns_san_local_certificate\0", 37};
+constexpr std::string_view p_connection_dns_san_peer_certificate  = {"connection\0dns_san_peer_certificate\0", 36};
+constexpr std::string_view p_connection_uri_san_local_certificate = {"connection\0uri_san_local_certificate\0", 37};
+constexpr std::string_view p_connection_uri_san_peer_certificate  = {"connection\0uri_san_peer_certificate\0", 36};
+constexpr std::string_view p_upstream_address                     = {"upstream\0address\0", 17};
+constexpr std::string_view p_upstream_port                        = {"upstream\0port\0", 14};
+constexpr std::string_view p_upstream_local_address               = {"upstream\0local_address\0", 23};
+constexpr std::string_view p_upstream_local_port                  = {"upstream\0local_port\0", 20};
+constexpr std::string_view p_upstream_tls_version                 = {"upstream\0tls_version\0", 21};
+constexpr std::string_view p_upstream_subject_local_certificate   = {"upstream\0subject_local_certificate\0", 36};
+constexpr std::string_view p_upstream_subject_peer_certificate    = {"upstream\0subject_peer_certificate\0", 35};
+constexpr std::string_view p_upstream_dns_san_local_certificate   = {"upstream\0dns_san_local_certificate\0", 36};
+constexpr std::string_view p_upstream_dns_san_peer_certificate    = {"upstream\0dns_san_peer_certificate\0", 35};
+constexpr std::string_view p_upstream_uri_san_local_certificate   = {"upstream\0uri_san_local_certificate\0", 36};
+constexpr std::string_view p_upstream_uri_san_peer_certificate    = {"upstream\0uri_san_peer_certificate\0", 35};
 
 // constants for property values
-static std::string pv_http2("HTTP/2", 6);
-static std::string pv_http10("HTTP/1.0", 8);
-static std::string pv_http11("HTTP/1.1", 8);
-static std::string pv_empty("", 0);
+constexpr std::string_view pv_http2  = {"HTTP/2", 6};
+constexpr std::string_view pv_http10 = {"HTTP/1.0", 8};
+constexpr std::string_view pv_http11 = {"HTTP/1.1", 8};
+constexpr std::string_view pv_empty  = {"", 0};
 
 // local struct representing the transaction header
 struct HeaderMap {
@@ -144,7 +157,7 @@ public:
   TSHttpTxn txnp();
   TSCont scheduler_cont();
 
-  void error(std::string_view message);
+  void error(std::string_view message) override;
 
   // local reply handler
   void onLocalReply();
@@ -152,41 +165,41 @@ public:
   //
   // General Callbacks.
   //
-  WasmResult log(uint32_t level, std::string_view message);
+  WasmResult log(uint32_t level, std::string_view message) override;
 
-  uint64_t getCurrentTimeNanoseconds();
+  uint64_t getCurrentTimeNanoseconds() override;
 
-  std::string_view getConfiguration();
+  std::string_view getConfiguration() override;
 
-  WasmResult setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr);
+  WasmResult setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr) override;
 
-  BufferInterface *getBuffer(WasmBufferType type);
+  BufferInterface *getBuffer(WasmBufferType type) override;
 
   // Metrics
-  WasmResult defineMetric(uint32_t metric_type, std::string_view name, uint32_t *metric_id_ptr);
-  WasmResult incrementMetric(uint32_t metric_id, int64_t offset);
-  WasmResult recordMetric(uint32_t metric_id, uint64_t value);
-  WasmResult getMetric(uint32_t metric_id, uint64_t *value_ptr);
+  WasmResult defineMetric(uint32_t metric_type, std::string_view name, uint32_t *metric_id_ptr) override;
+  WasmResult incrementMetric(uint32_t metric_id, int64_t offset) override;
+  WasmResult recordMetric(uint32_t metric_id, uint64_t value) override;
+  WasmResult getMetric(uint32_t metric_id, uint64_t *value_ptr) override;
 
   // Properties
-  WasmResult getProperty(std::string_view path, std::string *result);
+  WasmResult getProperty(std::string_view path, std::string *result) override;
 
-  WasmResult setProperty(std::string_view key, std::string_view serialized_value);
+  WasmResult setProperty(std::string_view key, std::string_view serialized_value) override;
 
   // send a premade response
   WasmResult sendLocalResponse(uint32_t response_code, std::string_view body_text, Pairs additional_headers,
-                               GrpcStatusCode /* grpc_status */, std::string_view details);
+                               GrpcStatusCode /* grpc_status */, std::string_view details) override;
 
-  WasmResult getSharedData(std::string_view key, std::pair<std::string, uint32_t /* cas */> *data);
+  WasmResult getSharedData(std::string_view key, std::pair<std::string, uint32_t /* cas */> *data) override;
 
   // Header/Trailer/Metadata Maps
-  WasmResult addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value);
-  WasmResult getHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view *result);
-  WasmResult getHeaderMapPairs(WasmHeaderMapType type, Pairs *result);
-  WasmResult setHeaderMapPairs(WasmHeaderMapType type, const Pairs &pairs);
-  WasmResult removeHeaderMapValue(WasmHeaderMapType type, std::string_view key);
-  WasmResult replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value);
-  WasmResult getHeaderMapSize(WasmHeaderMapType type, uint32_t *result);
+  WasmResult addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value) override;
+  WasmResult getHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view *result) override;
+  WasmResult getHeaderMapPairs(WasmHeaderMapType type, Pairs *result) override;
+  WasmResult setHeaderMapPairs(WasmHeaderMapType type, const Pairs &pairs) override;
+  WasmResult removeHeaderMapValue(WasmHeaderMapType type, std::string_view key) override;
+  WasmResult replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value) override;
+  WasmResult getHeaderMapSize(WasmHeaderMapType type, uint32_t *result) override;
 
 protected:
   friend class Wasm;
@@ -204,4 +217,4 @@ private:
   BufferBase buffer_;
 };
 
-} // namespace proxy_wasm
+} // namespace ats_wasm

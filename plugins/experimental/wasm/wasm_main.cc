@@ -32,10 +32,10 @@
 struct WasmInstanceConfig {
   std::string config_filename;
   std::string wasm_filename;
-  std::shared_ptr<proxy_wasm::Wasm> wasm         = nullptr;
+  std::shared_ptr<ats_wasm::Wasm> wasm           = nullptr;
   std::shared_ptr<proxy_wasm::PluginBase> plugin = nullptr;
 
-  std::list<std::pair<std::shared_ptr<proxy_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>> deleted_configs = {};
+  std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>> deleted_configs = {};
 };
 
 static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
@@ -46,9 +46,9 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
 {
   TSDebug(WASM_DEBUG_TAG, "[%s] Inside schedule_handler", __FUNCTION__);
 
-  proxy_wasm::Context *c = (proxy_wasm::Context *)TSContDataGet(contp);
+  ats_wasm::Context *c = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
 
-  proxy_wasm::Wasm *old_wasm = (proxy_wasm::Wasm *)c->wasm();
+  ats_wasm::Wasm *old_wasm = static_cast<ats_wasm::Wasm *>(c->wasm());
   TSMutexLock(old_wasm->mutex());
 
   c->onTick(0); // use 0 as  token
@@ -60,7 +60,7 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
   }
 
   if (c->wasm() == wasm_config->wasm.get()) {
-    proxy_wasm::Wasm *wasm   = (proxy_wasm::Wasm *)c->wasm();
+    ats_wasm::Wasm *wasm     = static_cast<ats_wasm::Wasm *>(c->wasm());
     uint32_t root_context_id = c->id();
     if (wasm->existsTimerPeriod(root_context_id)) {
       TSDebug(WASM_DEBUG_TAG, "[%s] reschedule continuation", __FUNCTION__);
@@ -70,8 +70,8 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
       TSDebug(WASM_DEBUG_TAG, "[%s] can't find period for root context id: %d", __FUNCTION__, root_context_id);
     }
   } else {
-    std::shared_ptr<proxy_wasm::Wasm> temp = nullptr;
-    uint32_t root_context_id               = c->id();
+    std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
+    uint32_t root_context_id             = c->id();
     old_wasm->removeTimerPeriod(root_context_id);
 
     if (old_wasm->readyShutdown()) {
@@ -82,13 +82,13 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
       } else {
         TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
         bool advance = true;
-        for (std::list<std::pair<std::shared_ptr<proxy_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
+        for (std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
                wasm_config->deleted_configs.begin();
              it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
           advance = true;
           TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
-          std::shared_ptr<proxy_wasm::Wasm> wbp = it->first;
-          temp                                  = wbp;
+          std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
+          temp                                = wbp;
           if (wbp.get() == old_wasm) {
             TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
             it      = wasm_config->deleted_configs.erase(it);
@@ -113,11 +113,11 @@ static int
 http_event_handler(TSCont contp, TSEvent event, void *data)
 {
   int result    = -1;
-  auto context  = (proxy_wasm::Context *)TSContDataGet(contp);
-  auto old_wasm = (proxy_wasm::Wasm *)context->wasm();
+  auto context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
+  auto old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
   TSMutexLock(old_wasm->mutex());
-  std::shared_ptr<proxy_wasm::Wasm> temp = nullptr;
-  auto txnp                              = (TSHttpTxn)data;
+  std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
+  auto txnp                            = static_cast<TSHttpTxn>(data);
 
   TSMBuffer buf;
   TSMLoc hdr_loc;
@@ -180,10 +180,6 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
     context->onDone();
     context->onDelete();
 
-    // TSMutexLock(old_wasm->mutex());
-
-    // delete context;
-
     if (context->wasm() == wasm_config->wasm.get()) {
       TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has not changed", __FUNCTION__);
     } else {
@@ -195,13 +191,13 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
         } else {
           TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
           bool advance = true;
-          for (std::list<std::pair<std::shared_ptr<proxy_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
+          for (std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
                  wasm_config->deleted_configs.begin();
                it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
             advance = true;
             TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
-            std::shared_ptr<proxy_wasm::Wasm> wbp = it->first;
-            temp                                  = wbp;
+            std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
+            temp                                = wbp;
             if (wbp.get() == old_wasm) {
               TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
               it      = wasm_config->deleted_configs.erase(it);
@@ -217,10 +213,8 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
     }
 
     delete context;
-    // TSMutexUnlock(old_wasm->mutex());
 
     TSContDestroy(contp);
-    // return 0;
     result = 0;
     break;
 
@@ -249,8 +243,8 @@ global_hook_handler(TSCont contp, TSEvent event, void *data)
   auto wasm = wasm_config->wasm.get();
   TSMutexLock(wasm->mutex());
   auto rootContext = wasm->getRootContext(wasm_config->plugin, false);
-  auto context     = new proxy_wasm::Context(wasm, rootContext->id(), wasm_config->plugin);
-  auto txnp        = (TSHttpTxn)data;
+  auto context     = new ats_wasm::Context(wasm, rootContext->id(), wasm_config->plugin);
+  auto txnp        = static_cast<TSHttpTxn>(data);
   context->initialize(txnp);
   context->onCreate();
   TSMutexUnlock(wasm->mutex());
@@ -264,9 +258,6 @@ global_hook_handler(TSCont contp, TSEvent event, void *data)
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp);
 
   TSContDataSet(txn_contp, context);
-
-  // context->onStart(wasm_config->plugin);
-  // context->onCreate();
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
@@ -426,12 +417,12 @@ read_configuration()
     return false;
   }
 
-  auto wasm = std::make_shared<proxy_wasm::Wasm>(proxy_wasm::createWavmVm(), // VM
-                                                 vm_id,                      // vm_id
-                                                 vm_configuration,           // vm_configuration
-                                                 "",                         // vm_key,
-                                                 envs,                       // envs
-                                                 cap_maps                    // allowed capabilities
+  auto wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWavmVm(), // VM
+                                               vm_id,                      // vm_id
+                                               vm_configuration,           // vm_configuration
+                                               "",                         // vm_key,
+                                               envs,                       // envs
+                                               cap_maps                    // allowed capabilities
   );
 
   auto plugin = std::make_shared<proxy_wasm::PluginBase>(name,          // name

@@ -23,8 +23,18 @@
 
 #include "ts/ts.h"
 
-namespace proxy_wasm
+namespace ats_wasm
 {
+
+using proxy_wasm::ContextBase;
+using proxy_wasm::PluginBase;
+
+using proxy_wasm::WasmBase;
+using proxy_wasm::WasmVm;
+using proxy_wasm::WasmHandleBase;
+using proxy_wasm::WasmVmFactory;
+using proxy_wasm::AllowedCapabilitiesMap;
+
 class Context;
 
 class Wasm : public WasmBase
@@ -36,7 +46,7 @@ public:
   Wasm(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, const WasmVmFactory &factory);
 
   // start a new VM
-  Context *start(std::shared_ptr<PluginBase> plugin, TSCont cont);
+  Context *start(const std::shared_ptr<PluginBase> &plugin, TSCont cont);
 
   // provide access to VM mutex
   TSMutex mutex() const;
@@ -46,9 +56,9 @@ public:
   bool readyDelete();
 
   // functions for creating contexts from the VM
-  ContextBase *createVmContext();
-  ContextBase *createRootContext(const std::shared_ptr<PluginBase> &plugin);
-  ContextBase *createContext(const std::shared_ptr<PluginBase> &plugin);
+  ContextBase *createVmContext() override;
+  ContextBase *createRootContext(const std::shared_ptr<PluginBase> &plugin) override;
+  ContextBase *createContext(const std::shared_ptr<PluginBase> &plugin) override;
 
   // functions managing timer
   bool existsTimerPeriod(uint32_t root_context_id);
@@ -56,7 +66,7 @@ public:
   void removeTimerPeriod(uint32_t root_context_id);
 
   // override function for reporting error
-  void error(std::string_view message);
+  void error(std::string_view message) override;
 
 protected:
   friend class Context;
@@ -65,4 +75,4 @@ private:
   TSMutex mutex_;
 };
 
-} // namespace proxy_wasm
+} // namespace ats_wasm
