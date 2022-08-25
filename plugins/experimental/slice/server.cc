@@ -174,9 +174,6 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_lastmodifiedlen = sizeof(data->m_lastmodified);
   header.valueForKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, data->m_lastmodified, &data->m_lastmodifiedlen);
 
-  // size of the first block payload
-  data->m_blockexpected = blockcr.rangeSize();
-
   // Now we can set up the expected client response
   if (TS_HTTP_STATUS_PARTIAL_CONTENT == data->m_statustype) {
     ContentRange respcr;
@@ -212,8 +209,16 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   // add the response header length to the total bytes to send
   int const hbytes = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
 
-  TSVIONBytesSet(output_vio, hbytes + bodybytes);
-  data->m_bytestosend = hbytes + bodybytes;
+  // HEAD request only sends header
+  if (data->m_config->m_head_req) {
+    data->m_bytestosend   = hbytes;
+    data->m_blockexpected = 0;
+  } else {
+    // GET request sends header + object
+    data->m_bytestosend   = hbytes + bodybytes;
+    data->m_blockexpected = blockcr.rangeSize();
+  }
+  TSVIONBytesSet(output_vio, data->m_bytestosend);
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
@@ -613,7 +618,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // corner condition, good source header + 0 length aborted content
     // results in no header being read, just an EOS.
     // trying to delete the upstream will crash ATS (??)
-    if (0 == data->m_blockexpected) {
+    if (0 == data->m_blockexpected && !data->m_config->m_head_req) {
       shutdown(contp, data); // this will crash if first block
       return;
     }
