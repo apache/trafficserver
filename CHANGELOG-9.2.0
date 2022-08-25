@@ -532,3 +532,4 @@ Changes with Apache Traffic Server 9.2.0
   #9041 - Fix reload memory leak
   #9047 - Fix compile error on macOS
   #9048 - Update prepare_proxy_verifier.sh to work in non-git directories
+  #9052 - Fix the connection limit crash while using parents (#7602)
