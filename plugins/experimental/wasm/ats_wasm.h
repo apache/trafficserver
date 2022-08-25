@@ -25,7 +25,6 @@
 
 namespace ats_wasm
 {
-
 using proxy_wasm::ContextBase;
 using proxy_wasm::PluginBase;
 
