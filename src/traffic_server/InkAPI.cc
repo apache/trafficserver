@@ -10472,17 +10472,17 @@ TSDbgCtlCreate(char const *tag)
 }
 
 tsapi TSWatchDescriptor
-TSFileEventRegister(const char *filename, TSFileWatchKind kind, TSCont contp)
+TSFileEventRegister(const char *path, TSFileWatchKind kind, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
 
   Continuation *pCont = reinterpret_cast<Continuation *>(contp);
-  return fileChangeManager.add(ts::file::path{filename}, kind, pCont);
+  return fileChangeManager.add(ts::file::path{path}, kind, pCont);
 }
 
 tsapi void
-TSFileEventUnRegister(TSWatchDescriptor wd)
+TSFileEventUnregister(TSWatchDescriptor wd)
 {
   fileChangeManager.remove(wd);
 }

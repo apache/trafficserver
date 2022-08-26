@@ -2767,8 +2767,8 @@ tsapi TSReturnCode TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType ctrl, bool da
  * wd is the watch descriptor for the event.
  *
  */
-tsapi TSWatchDescriptor TSFileEventRegister(const char *filename, TSFileWatchKind kind, TSCont contp);
-tsapi void TSFileEventUnRegister(TSWatchDescriptor wd);
+tsapi TSWatchDescriptor TSFileEventRegister(const char *path, TSFileWatchKind kind, TSCont contp);
+tsapi void TSFileEventUnregister(TSWatchDescriptor wd);
 
 #ifdef __cplusplus
 }

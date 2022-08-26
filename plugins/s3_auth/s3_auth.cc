@@ -523,12 +523,12 @@ public:
   {
     std::unique_lock lock(wd_mutex);
     if (_config_file_wd) {
-      TSFileEventUnRegister(_config_file_wd.value());
+      TSFileEventUnregister(_config_file_wd.value());
       _config_file_wd.reset();
     }
 
     if (_config_dir_wd) {
-      TSFileEventUnRegister(_config_dir_wd.value());
+      TSFileEventUnregister(_config_dir_wd.value());
       _config_dir_wd.reset();
     }
   }
@@ -538,7 +538,7 @@ public:
   {
     std::unique_lock lock(wd_mutex);
     if (_config_file_wd == wd) {
-      TSFileEventUnRegister(_config_file_wd.value());
+      TSFileEventUnregister(_config_file_wd.value());
       _config_file_wd.reset();
     }
   }
@@ -548,7 +548,7 @@ public:
   {
     std::unique_lock lock(wd_mutex);
     if (_config_dir_wd == wd) {
-      TSFileEventUnRegister(_config_dir_wd.value());
+      TSFileEventUnregister(_config_dir_wd.value());
       _config_dir_wd.reset();
     }
   }
