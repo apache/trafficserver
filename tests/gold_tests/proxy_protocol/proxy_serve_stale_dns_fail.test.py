@@ -54,7 +54,7 @@ ts_parent.Disk.remap_config.AddLine(
 )
 
 # Configure nameserver
-nameserver.addRecords(records={"localhost":["127.0.0.1"]})
+nameserver.addRecords(records={"localhost": ["127.0.0.1"]})
 
 # Object to push to proxies
 stale_5 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
