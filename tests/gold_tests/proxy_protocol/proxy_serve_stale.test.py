@@ -41,7 +41,6 @@ class ProxyServeStaleTest:
             "dns",
             default='127.0.0.1')
 
-
     def _configure_ts(self):
         self.ts_child = Test.MakeATSProcess("ts_child")
         # Config child proxy to route to parent proxy
