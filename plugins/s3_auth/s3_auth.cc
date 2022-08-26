@@ -1220,6 +1220,9 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
     s3->copy_changes_from(file_config);
   }
 
+  delete file_config;
+  file_config = nullptr;
+
   if (s3->expiration() == 0) {
     TSDebug(PLUGIN_NAME, "disabling auto config reload");
   } else {
@@ -1349,6 +1352,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   // Copy the config file secret into our instance of the configuration.
   if (file_config) {
     s3->copy_changes_from(file_config);
+    delete file_config;
+    file_config = nullptr;
   }
 
   // Make sure we got both the shared secret and the AWS secret
