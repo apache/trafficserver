@@ -25,6 +25,7 @@ Test.Setup.Copy("wait_reload.sh")
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_cache=False)
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/test.inc", id="test_cfg", typename="ats:config")
 ts.Disk.test_cfg.AddLine(
@@ -46,10 +47,12 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'regex_remap|url_rewrite|plugin_factory',
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
 })
 
 tr = Test.AddTestRun("Start TS, then update test.inc")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(nameserver)
 test_inc_path = ts.Variables.CONFIGDIR + "/test.inc"
 tr.Processes.Default.Command = (
     f"rm -f {test_inc_path} ; " +
