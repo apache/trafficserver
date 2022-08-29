@@ -88,6 +88,18 @@ QUICFlowController::forward_limit(QUICOffset limit)
 }
 
 void
+QUICFlowController::on_frame_acked(QUICFrameInformationUPtr &info)
+{
+  this->_on_frame_acked(info);
+}
+
+void
+QUICFlowController::on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  this->_on_frame_lost(info);
+}
+
+void
 QUICFlowController::set_limit(QUICOffset limit)
 {
   ink_assert(this->_limit == UINT64_MAX || this->_limit == limit);
@@ -110,7 +122,8 @@ QUICFlowController::will_generate_frame(QUICEncryptionLevel level, size_t curren
  */
 QUICFrame *
 QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                   uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
+                                   uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num,
+                                   QUICFrameGenerator *owner)
 {
   QUICFrame *frame = nullptr;
 
@@ -119,7 +132,7 @@ QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint
   }
 
   if (this->_should_create_frame) {
-    frame = this->_create_frame(buf);
+    frame = this->_create_frame(buf, owner);
     if (frame) {
       if (frame->size() <= maximum_frame_size) {
         this->_should_create_frame                    = false;
@@ -231,25 +244,25 @@ QUICLocalFlowController::_need_to_forward_limit()
 // QUIC[Remote|Local][Connection|Stream]FlowController
 //
 QUICFrame *
-QUICRemoteConnectionFlowController::_create_frame(uint8_t *buf)
+QUICRemoteConnectionFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
   return QUICFrameFactory::create_data_blocked_frame(buf, this->_offset, this->_issue_frame_id(), this);
 }
 
 QUICFrame *
-QUICLocalConnectionFlowController::_create_frame(uint8_t *buf)
+QUICLocalConnectionFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
   return QUICFrameFactory::create_max_data_frame(buf, this->_limit, this->_issue_frame_id(), this);
 }
 
 QUICFrame *
-QUICRemoteStreamFlowController::_create_frame(uint8_t *buf)
+QUICRemoteStreamFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_stream_data_blocked_frame(buf, this->_stream_id, this->_offset, this->_issue_frame_id(), this);
+  return QUICFrameFactory::create_stream_data_blocked_frame(buf, this->_stream_id, this->_offset, this->_issue_frame_id(), owner);
 }
 
 QUICFrame *
-QUICLocalStreamFlowController::_create_frame(uint8_t *buf)
+QUICLocalStreamFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_max_stream_data_frame(buf, this->_stream_id, this->_limit, this->_issue_frame_id(), this);
+  return QUICFrameFactory::create_max_stream_data_frame(buf, this->_stream_id, this->_limit, this->_issue_frame_id(), owner);
 }

@@ -55,7 +55,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
 private:
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;

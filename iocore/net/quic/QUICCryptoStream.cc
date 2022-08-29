@@ -112,7 +112,8 @@ QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, size_t current_
  */
 QUICFrame *
 QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                 uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
+                                 uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num,
+                                 QUICFrameGenerator *owner)
 {
   QUICConnectionErrorUPtr error = nullptr;
 
@@ -120,7 +121,7 @@ QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64
     return QUICFrameFactory::create_rst_stream_frame(buf, *this->_reset_reason);
   }
 
-  QUICFrame *frame = this->create_retransmitted_frame(buf, level, maximum_frame_size, this->_issue_frame_id(), this);
+  QUICFrame *frame = this->create_retransmitted_frame(buf, level, maximum_frame_size, this->_issue_frame_id(), owner);
   if (frame != nullptr) {
     ink_assert(frame->type() == QUICFrameType::CRYPTO);
     this->_records_crypto_frame(level, *static_cast<QUICCryptoFrame *>(frame));
@@ -143,7 +144,7 @@ QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64
   block->_end = std::min(block->start() + frame_payload_size, block->_buf_end);
   ink_assert(static_cast<uint64_t>(block->read_avail()) == frame_payload_size);
 
-  frame = QUICFrameFactory::create_crypto_frame(buf, block, this->_send_offset, this->_issue_frame_id(), this);
+  frame = QUICFrameFactory::create_crypto_frame(buf, block, this->_send_offset, this->_issue_frame_id(), owner);
   this->_send_offset += frame_payload_size;
   this->_write_buffer_reader->consume(frame_payload_size);
   this->_records_crypto_frame(level, *static_cast<QUICCryptoFrame *>(frame));

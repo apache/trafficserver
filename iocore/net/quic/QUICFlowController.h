@@ -53,6 +53,9 @@ public:
   virtual int update(QUICOffset offset);
   virtual void forward_limit(QUICOffset limit);
 
+  void on_frame_acked(QUICFrameInformationUPtr &info);
+  void on_frame_lost(QUICFrameInformationUPtr &info);
+
   /**
    * This is only for flow controllers initialized without a limit (== UINT64_MAX).
    * Once a limit is set, it should be updated with forward_limit().
@@ -62,11 +65,11 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
 protected:
   QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}
-  virtual QUICFrame *_create_frame(uint8_t *buf) = 0;
+  virtual QUICFrame *_create_frame(uint8_t *buf, QUICFrameGenerator *owner) = 0;
 
   QUICOffset _offset        = 0; //< Largest sent/received offset
   QUICOffset _limit         = 0; //< Maximum amount of data to send/receive
@@ -113,7 +116,7 @@ class QUICRemoteConnectionFlowController : public QUICRemoteFlowController
 {
 public:
   QUICRemoteConnectionFlowController(uint64_t initial_limit) : QUICRemoteFlowController(initial_limit) {}
-  QUICFrame *_create_frame(uint8_t *buf) override;
+  QUICFrame *_create_frame(uint8_t *buf, QUICFrameGenerator *owner) override;
 };
 
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
@@ -123,7 +126,7 @@ public:
     : QUICLocalFlowController(rtt_provider, initial_limit)
   {
   }
-  QUICFrame *_create_frame(uint8_t *buf) override;
+  QUICFrame *_create_frame(uint8_t *buf, QUICFrameGenerator *owner) override;
 };
 
 class QUICRemoteStreamFlowController : public QUICRemoteFlowController
@@ -133,7 +136,7 @@ public:
     : QUICRemoteFlowController(initial_limit), _stream_id(stream_id)
   {
   }
-  QUICFrame *_create_frame(uint8_t *buf) override;
+  QUICFrame *_create_frame(uint8_t *buf, QUICFrameGenerator *owner) override;
 
 private:
   QUICStreamId _stream_id = 0;
@@ -146,7 +149,7 @@ public:
     : QUICLocalFlowController(rtt_provider, initial_limit), _stream_id(stream_id)
   {
   }
-  QUICFrame *_create_frame(uint8_t *buf) override;
+  QUICFrame *_create_frame(uint8_t *buf, QUICFrameGenerator *owner) override;
 
 private:
   QUICStreamId _stream_id = 0;
