@@ -509,11 +509,13 @@ HttpTransact::is_server_negative_cached(State *s)
 
 inline static void
 update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAttributes *from,
-                    ResolveInfo::UpstreamResolveStyle who, int attempts)
+                    ResolveInfo::UpstreamResolveStyle who, bool clear_attempts)
 {
   into->request_to = who;
   into->server     = from;
-  into->attempts   = attempts;
+  if (clear_attempts) {
+    into->attempts.clear();
+  }
 }
 
 inline static void
@@ -640,7 +642,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   switch (s->parent_result.result) {
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
-    update_current_info(&s->current, &s->parent_info, ResolveInfo::PARENT_PROXY, (s->current.attempts)++);
+    update_current_info(&s->current, &s->parent_info, ResolveInfo::PARENT_PROXY, false);
     update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == ResolveInfo::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
@@ -661,7 +663,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     }
   /* fall through */
   default:
-    update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, (s->current.attempts)++);
+    update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, false);
     update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
     s->next_hop_scheme = s->scheme;
@@ -1676,7 +1678,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->scheme = s->next_hop_scheme = URL_WKSIDX_HTTP;
 
   // Set up a "fake" server entry
-  update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, 0);
+  update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, true);
 
   // Also "fake" the info we'd normally get from
   //   hostDB
@@ -2846,7 +2848,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     if (s->current.request_to == ResolveInfo::ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
         is_stale_cache_response_returnable(s) == true) {
       server_up = false;
-      update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, 0);
+      update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
       TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
     }
     // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
@@ -2854,7 +2856,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     else if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == PARENT_FAIL) {
       if (response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
-        update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, 0);
+        update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
         TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
       } else {
         handle_parent_died(s);
@@ -3025,7 +3027,6 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
 
-  case HTTP_STATUS_RANGE_NOT_SATISFIABLE:
   // Check if cached response supports Range. If it does, append
   // Range transformation plugin
   // A little misnomer. HTTP_STATUS_RANGE_NOT_SATISFIABLE
@@ -3042,7 +3043,8 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       // Check if cached response supports Range. If it does, append
       // Range transformation plugin
       // only if the cached response is a 200 OK
-      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
+      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE) &&
+          HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default");
@@ -3316,8 +3318,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       }
     }
     build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-    s->current.attempts = 0;
-    s->next_action      = how_to_open_connection(s);
+    s->current.attempts.clear();
+    s->next_action = how_to_open_connection(s);
     if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
       HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
     }
@@ -3621,7 +3623,7 @@ HttpTransact::handle_response_from_parent(State *s)
     }
 
     char addrbuf[INET6_ADDRSTRLEN];
-    TxnDebug("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
+    TxnDebug("http_trans", "[%d] failed to connect to parent %s", s->current.attempts.get(),
              ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
     // If the request is not retryable, just give up!
@@ -3634,20 +3636,20 @@ HttpTransact::handle_response_from_parent(State *s)
       return;
     }
 
-    if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
+    if (s->current.attempts.get() < s->txn_conf->parent_connect_attempts) {
       HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_stat);
-      s->current.attempts++;
+      s->current.attempts.increment(s->configured_connect_attempts_max_retries());
 
       // Are we done with this particular parent?
-      if ((s->current.attempts - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
+      if ((s->current.attempts.get() - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
         // No we are not done with this parent so retry
         HTTP_INCREMENT_DYN_STAT(http_total_parent_switches_stat);
         s->next_action = how_to_open_connection(s);
         TxnDebug("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
-                 s->current.attempts, s->txn_conf->per_parent_connect_attempts);
+                 s->current.attempts.get(), s->txn_conf->per_parent_connect_attempts);
         return;
       } else {
-        TxnDebug("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+        TxnDebug("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts.get());
         HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_exhausted_stat);
 
         // Only mark the parent down if we failed to connect
@@ -3755,9 +3757,9 @@ HttpTransact::handle_response_from_server(State *s)
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     }
 
-    TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts);
+    TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts.get());
 
-    if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
+    if (is_request_retryable(s) && s->current.attempts.get() < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
       if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
@@ -3773,7 +3775,7 @@ HttpTransact::handle_response_from_server(State *s)
         return CallOSDNSLookup(s);
       } else {
         if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
-            ((s->current.attempts + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
+            ((s->current.attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
           s->dns_info.select_next_rr();
         }
         retry_server_connection_not_open(s, s->current.state, max_connect_retries);
@@ -3805,7 +3807,7 @@ void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
   char addrbuf[INET6_ADDRSTRLEN];
-  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
+  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts.get(), conn_state,
            ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->current.server->had_connect_fail()) {
@@ -3820,8 +3822,8 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
                 "CONNECT: attempt fail [{}] to {} for host='{}' "
                 "connection_result={::s} error={::s} attempts={} url='{}'",
                 HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
-                ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno), s->current.attempts,
-                ts::bwf::FirstOf(url_str, "<none>"));
+                ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
+                s->current.attempts.get(), ts::bwf::FirstOf(url_str, "<none>"));
     Log::error("%s", error_bw_buffer.c_str());
 
     s->arena.str_free(url_str);
@@ -3845,7 +3847,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
 {
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
-  ink_assert(s->current.attempts <= max_retries);
+  ink_assert(s->current.attempts.get() <= max_retries);
   ink_assert(s->cause_of_death_errno != -UNKNOWN_INTERNAL_ERROR);
 
   error_log_connection_failure(s, conn_state);
@@ -3854,9 +3856,9 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // disable keep-alive for request and retry //
   //////////////////////////////////////////////
   s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-  s->current.attempts++;
+  s->current.attempts.increment(s->configured_connect_attempts_max_retries());
 
-  TxnDebug("http_trans", "attempts now: %d, max: %d", s->current.attempts, max_retries);
+  TxnDebug("http_trans", "attempts now: %d, max: %d", s->current.attempts.get(), max_retries);
 
   return;
 }
@@ -4210,6 +4212,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_DELETE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
+          // No need to worry about If-Range headers because the request isn't conditional
           if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
             s->state_machine->do_range_setup_if_necessary();
             // Check client request range header if we cached a stealed content with cacheable=false
@@ -4250,7 +4253,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_UPDATE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
-          if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+          auto *client_request  = &s->hdr_info.client_request;
+          auto *cached_response = s->cache_info.object_read->response_get();
+          if (client_request->presence(MIME_PRESENCE_RANGE) &&
+              HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
             s->state_machine->do_range_setup_if_necessary();
             // Note that even if the Range request is not satisfiable, we
             // update and serve this cache. This will give a 200 response to
@@ -4438,7 +4444,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         ink_assert(s->cache_info.object_read != nullptr);
         s->cache_info.action = CACHE_DO_REPLACE;
 
-        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+        auto *client_request = &s->hdr_info.client_request;
+        if (client_request->presence(MIME_PRESENCE_RANGE) &&
+            HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
           s->state_machine->do_range_setup_if_necessary();
         }
       }
@@ -4450,7 +4458,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else {
         s->cache_info.action = CACHE_DO_WRITE;
-        if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+        auto *client_request = &s->hdr_info.client_request;
+        if (client_request->presence(MIME_PRESENCE_RANGE) &&
+            HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
           s->state_machine->do_range_setup_if_necessary();
         }
       }

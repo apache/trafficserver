@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 pkglib_LTLIBRARIES += stats_over_http/stats_over_http.la
-stats_over_http_stats_over_http_la_SOURCES = stats_over_http/stats_over_http.c
+stats_over_http_stats_over_http_la_SOURCES = stats_over_http/stats_over_http.cc
 
 stats_over_http_stats_over_http_la_LDFLAGS = \
   $(AM_LDFLAGS) $(BROTLIENC_LIB) $(LIBZ)

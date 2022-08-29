@@ -107,7 +107,9 @@ public:
     if (error != 0) {
       _call_fatal("pthread_rwlock_rdlock", &_lock, error);
     }
+    X(TSAssert(_shared >= 0);)
     X(++_shared;)
+    X(TSAssert(_shared > 0);)
   }
 
   bool
@@ -184,8 +186,8 @@ private:
 
   // In debug builds, make sure shared vs. exlusive locks and unlocks are properly paired.
   //
-  X(std::atomic<bool> _exclusive;)
-  X(std::atomic<int> _shared;)
+  X(std::atomic<bool> _exclusive{false};)
+  X(std::atomic<int> _shared{0};)
 };
 
 } // end namespace ts

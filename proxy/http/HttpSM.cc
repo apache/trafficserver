@@ -4840,7 +4840,7 @@ HttpSM::send_origin_throttled_response()
   // t_state.current.attempts so that another parent or
   // NextHop may be tried.
   if (t_state.dns_info.looking_up != ResolveInfo::PARENT_PROXY) {
-    t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries;
+    t_state.current.attempts.maximize(t_state.configured_connect_attempts_max_retries());
   }
   t_state.current.state = HttpTransact::OUTBOUND_CONGESTION;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -5021,7 +5021,7 @@ HttpSM::do_http_server_open(bool raw)
         SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
                 ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
       }
-      t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
+      t_state.current.attempts.maximize(t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
       call_transact_and_set_next_state(HttpTransact::Forbidden);
       return;
     }
@@ -5214,11 +5214,10 @@ HttpSM::do_http_server_open(bool raw)
       } else { // queue size is 0, always block.
         ct_state.blocked();
         HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+        ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
+                              debug_on && is_debug_tag_set("http") ? "http" : nullptr);
         send_origin_throttled_response();
       }
-
-      ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
-                            debug_on && is_debug_tag_set("http") ? "http" : nullptr);
 
       return;
     } else {
@@ -5285,7 +5284,7 @@ HttpSM::do_http_server_open(bool raw)
 
           SMDebug("http_ss", "using pre-warmed tunnel netvc=%p", netvc);
 
-          t_state.current.attempts = 0;
+          t_state.current.attempts.clear();
 
           ink_release_assert(default_handler == HttpSM::default_handler);
           handleEvent(NET_EVENT_OPEN, netvc);

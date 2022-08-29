@@ -44,6 +44,8 @@ libhdrs_a_SOURCES = \
 	MIME.h \
 	URL.cc \
 	URL.h \
+	VersionConverter.cc \
+	VersionConverter.h \
 	HuffmanCodec.cc \
 	HuffmanCodec.h \
 	XPACK.cc \

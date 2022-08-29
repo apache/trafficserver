@@ -17,7 +17,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)}
+fail()
+{
+    echo $1
+    exit 1
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+ROOT=${ROOT:-${SCRIPT_DIR}}
+[ -d "${ROOT}" ] || fail "ROOT: \"${ROOT}\" is not a directory."
+[ -d "${ROOT}/tests" ] || fail "\"${ROOT}/tests\" is not a directory."
+
+PV_VERSION_FILE="${ROOT}/tests/proxy-verifier-version.txt"
+[ -r "${PV_VERSION_FILE}" ] || fail "\"${PV_VERSION_FILE}\" does not exist."
+
 pv_name="proxy-verifier"
 pv_version=`cat ${ROOT}/tests/proxy-verifier-version.txt`
 pv_top_dir="${ROOT}/tests/proxy-verifier"
@@ -32,11 +45,6 @@ pv_client="${bin_dir}/verifier-client"
 pv_server="${bin_dir}/verifier-server"
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
-fail()
-{
-    echo $1
-    exit 1
-}
 # Check to see whether Proxy Verifier has already been unpacked.
 if ! [ -x ${pv_client} -a -x ${pv_server} ]
 then
@@ -52,7 +60,8 @@ then
             SHASUM=${SHASUM:-shasum}
         fi
         mkdir -p ${pv_top_dir}
-        ${CURL} -L --progress-bar -o ${pv_tar} ${pv_tar_url}
+        ${CURL} -L --progress-bar -o ${pv_tar} ${pv_tar_url} || \
+            fail "Failed to download ${pv_tar_url}."
         cat > ${pv_top_dir}/sha1 << EOF
 ${expected_sha1}  ${pv_tar}
 EOF

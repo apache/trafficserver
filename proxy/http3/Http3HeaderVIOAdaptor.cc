@@ -25,14 +25,6 @@
 
 #include "I_VIO.h"
 #include "HTTP.h"
-#include "HTTP2.h"
-
-// Constant strings for pseudo headers
-const char *HTTP3_VALUE_SCHEME    = ":scheme";
-const char *HTTP3_VALUE_AUTHORITY = ":authority";
-
-const unsigned HTTP3_LEN_SCHEME    = countof(":scheme") - 1;
-const unsigned HTTP3_LEN_AUTHORITY = countof(":authority") - 1;
 
 Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)
   : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id)
@@ -103,8 +95,8 @@ Http3HeaderVIOAdaptor::event_handler(int event, Event *data)
 int
 Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
 {
-  ParseResult res = this->_convert_header_from_3_to_1_1(&this->_header);
-  if (res == PARSE_RESULT_ERROR) {
+  int res = this->_hvc.convert(this->_header, 3, 1);
+  if (res != 0) {
     Debug("http3", "PARSE_RESULT_ERROR");
     return -1;
   }
@@ -146,30 +138,4 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
 
   this->_is_complete = true;
   return 1;
-}
-
-ParseResult
-Http3HeaderVIOAdaptor::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
-{
-  // TODO: do HTTP/3 specific convert, if there
-
-  if (http_hdr_type_get(hdrs->m_http) == HTTP_TYPE_REQUEST) {
-    // Dirty hack to bypass checks
-    MIMEField *field;
-    if ((field = hdrs->field_find(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME)) == nullptr) {
-      char value_s[]          = "https";
-      MIMEField *scheme_field = hdrs->field_create(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME);
-      scheme_field->value_set(hdrs->m_heap, hdrs->m_mime, value_s, sizeof(value_s) - 1);
-      hdrs->field_attach(scheme_field);
-    }
-
-    if ((field = hdrs->field_find(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY)) == nullptr) {
-      char value_a[]             = "localhost";
-      MIMEField *authority_field = hdrs->field_create(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY);
-      authority_field->value_set(hdrs->m_heap, hdrs->m_mime, value_a, sizeof(value_a) - 1);
-      hdrs->field_attach(authority_field);
-    }
-  }
-
-  return http2_convert_header_from_2_to_1_1(hdrs);
 }
