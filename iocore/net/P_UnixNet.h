@@ -78,6 +78,7 @@ typedef PollDescriptor *EventLoop;
 
 class NetEvent;
 class UnixUDPConnection;
+class DiskHandler;
 struct DNSConnection;
 struct NetAccept;
 
