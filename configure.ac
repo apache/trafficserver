@@ -1466,7 +1466,7 @@ TS_CHECK_LIBSWOC
 AM_CONDITIONAL([BUILD_SWOC], [test x"$has_libswoc" = x"no"])
 
 TS_CHECK_SWOC_HEADERS_EXPORT
-AM_CONDITIONAL([EXPORT_SWOC_HEADER], [test x"$enable_swoc_headers" = x"yes"])
+AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test x"$enable_swoc_headers" = x"yes"])
 
 # Check for optional boringocsp library
 TS_CHECK_BORINGOCSP
@@ -2318,7 +2318,6 @@ AC_CONFIG_FILES([
   src/tscpp/api/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
-  lib/records/Makefile
   src/wccp/Makefile
   lib/fastlz/Makefile
   lib/swoc/Makefile
@@ -2343,6 +2342,7 @@ AC_CONFIG_FILES([
   rc/trafficserver.xml
   src/tscpp/util/Makefile
   src/tscore/Makefile
+  src/records/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
@@ -2371,6 +2371,8 @@ AC_MSG_NOTICE([Build option summary:
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
     YAMLCPP_LDFLAGS:    $YAMLCPP_LDFLAGS
     YAMLCPP_INCLUDES:   $YAMLCPP_INCLUDES
+    SWOC_LDFLAGS:       $SWOC_LDFLAGS
+    SWOC_INCLUDES:      $SWOC_INCLUDES
     NURAFT_LDFLAGS:     $NURAFT_LDFLAGS
     NURAFT_INCLUDES:    $NURAFT_INCLUDES
 ])

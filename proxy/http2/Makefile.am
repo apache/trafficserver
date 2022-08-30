@@ -70,7 +70,7 @@ test_libhttp2_LDADD = \
 	HTTP2.o \
 	Http2Frame.o \
 	HPACK.o \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
@@ -126,7 +126,7 @@ test_HPACK_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@

@@ -1,4 +1,4 @@
-# Makefile.am for the lib/records
+# Makefile.am for the src/records
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -78,7 +78,7 @@ test_librecords_SOURCES = \
     unit_tests/test_RecHttp.cc
 
 test_librecords_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
@@ -94,7 +94,7 @@ test_librecords_on_eventsystem_SOURCES = \
 	unit_tests/test_DynamicStats.cc
 
 test_librecords_on_eventsystem_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

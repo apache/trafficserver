@@ -23,8 +23,8 @@
 
 #include "catch.hpp"
 
-#include "DynamicStats.h"
-#include "P_RecProcess.h"
+#include "records/DynamicStats.h"
+#include "records/P_RecProcess.h"
 
 #include <string_view>
 

@@ -27,9 +27,9 @@
 #include "tscore/Filenames.h"
 
 #include "RecordsConfig.h"
-#include "P_RecFile.h"
-#include "P_RecCore.h"
-#include "P_RecUtils.h"
+#include "records/P_RecFile.h"
+#include "records/P_RecCore.h"
+#include "records/P_RecUtils.h"
 #include "tscore/I_Layout.h"
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified

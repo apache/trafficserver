@@ -68,7 +68,7 @@ test_CPP_FLAGS = \
 	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
