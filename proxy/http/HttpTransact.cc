@@ -5990,10 +5990,12 @@ HttpTransact::is_cache_response_returnable(State *s)
   // sure that our cached resource has a method that matches the incoming
   // requests's method. If not, then we cannot reply with the cached resource.
   // That is, we cannot reply to an incoming GET request with a response to a
-  // previous POST request.
+  // previous POST request. The only exception is replying a HEAD request with
+  // a cached GET request as neither are destructive
   int const client_request_method = s->hdr_info.client_request.method_get_wksidx();
   int const cached_request_method = s->cache_info.object_read->request_get()->method_get_wksidx();
-  if (client_request_method != cached_request_method) {
+  if (client_request_method != cached_request_method &&
+      (client_request_method != HTTP_WKSIDX_HEAD || cached_request_method != HTTP_WKSIDX_GET)) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     return false;
