@@ -1583,6 +1583,9 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
+    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
+      Debug("dns", "%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
+      break; // need to break here or this fails test: proxy_serve_stale_dns_fail even though NOERROR is not used in this block.
     case SERVFAIL: // recoverable error
       SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       retry = true;
@@ -1593,8 +1596,6 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
-      Debug("dns", "%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
     case NXDOMAIN:
     case YXDOMAIN:
     case YXRRSET:
