@@ -72,5 +72,5 @@ tr = Test.AddTestRun("alpn h2")
 tr.Processes.Default.Command = "curl -k --http2 -v -o /dev/null https://127.0.0.1:{}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN, server accepted to use h2", "negotiated h2")
+tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN. server accepted.*h2", "negotiated h2")
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/2 404 ", "Good response")
