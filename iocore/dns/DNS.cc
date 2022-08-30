@@ -32,6 +32,8 @@
 #define SRV_SERVER (RRFIXEDSZ + 6)
 #define SRV_FIXEDSZ (RRFIXEDSZ + 6)
 
+#define RCODE_ARRAY_SIZE 11
+
 EventType ET_DNS = ET_CALL;
 
 //
@@ -1529,6 +1531,24 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   bool server_ok    = true;
   uint32_t temp_ttl = 0;
 
+  const char *RCODE_NAME[RCODE_ARRAY_SIZE] = {
+    "NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP", "REFUSED", "YXDOMAIN", "YXRRSET", "NXRRSET", "NOTAUTH", "NOTZONE",
+  };
+
+  const char *RCODE_DESCRIPTION[RCODE_ARRAY_SIZE] = {
+    "No Error",
+    "Format Error",
+    "Server Failure",
+    "Non-Existent Domain",
+    "Not Implemented",
+    "Query Refused",
+    "Name Exists when it should not",
+    "RR Set Exists when it should not",
+    "RR Set that should exist does not",
+    "Not Authorized",
+    "Name not contained in zone",
+  };
+
   //
   // Do we have an entry for this id?
   //
@@ -1559,36 +1579,28 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     Debug("dns", "received rcode = %d", h->rcode);
     switch (h->rcode) {
     default:
-      SiteThrottledWarning("Unknown: DNS error %d for [%s]", h->rcode, e->qname);
+      SiteThrottledWarning("UNKNOWN: DNS error %d for [%s]", h->rcode, e->qname);
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
     case SERVFAIL: // recoverable error
-      SiteThrottledNote("SERVFAIL: DNS error %d for [%s]: Server failed to complete the DNS request.", h->rcode, e->qname);
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       retry = true;
       break;
     case FORMERR: // unrecoverable errors
-      SiteThrottledNote("FORMERR: DNS error %d for [%s]: DNS Query Format Error.", h->rcode, e->qname);
     case REFUSED:
-      SiteThrottledNote("REFUSED: DNS error %d for [%s]: The server refused to answer for the query.", h->rcode, e->qname);
     case NOTIMP:
-      SiteThrottledNote("NOTIMP: DNS error %d for [%s]: Function not implemented.", h->rcode, e->qname);
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
-      Debug("dns", "NOERROR: DNS code %d for [%s]: DNS Query completed successfully.", h->rcode, e->qname);
+    case NOERROR:
     case NXDOMAIN:
-      SiteThrottledNote("NXDOMAIN: DNS error %d for [%s]: Domain name does not exist.", h->rcode, e->qname);
     case YXDOMAIN:
-      SiteThrottledNote("YXDOMAIN: DNS error %d for [%s]: Name that should not exist, does exist.", h->rcode, e->qname);
     case YXRRSET:
-      SiteThrottledNote("YXRRSET: DNS error %d for [%s]: RRSet that should not exist, does exist.", h->rcode, e->qname);
     case NXRRSET:
-      SiteThrottledNote("NXRRSET: DNS error %d for [%s]: RRset that should exist, does not exist", h->rcode, e->qname);
     case NOTAUTH:
-      SiteThrottledNote("NOTAUTH: DNS error %d for [%s]: Not Authorized.", h->rcode, e->qname);
     case NOTZONE:
-      SiteThrottledNote("NOTZONE: DNS error %d for [%s]: Name not in zone.", h->rcode, e->qname);
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       goto Lerror;
     }
   } else {
