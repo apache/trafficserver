@@ -1593,7 +1593,8 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR:
+    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
+      Debug("dns", "%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
     case NXDOMAIN:
     case YXDOMAIN:
     case YXRRSET:
