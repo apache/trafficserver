@@ -31,7 +31,7 @@ Wasm::Wasm(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, const WasmVm
 
 Wasm::Wasm(std::unique_ptr<WasmVm> wasm_vm, std::string_view vm_id, std::string_view vm_configuration, std::string_view vm_key,
            std::unordered_map<std::string, std::string> envs, AllowedCapabilitiesMap allowed_capabilities)
-  : WasmBase(std::move(wasm_vm), vm_id, vm_configuration, vm_key, envs, allowed_capabilities)
+  : WasmBase(std::move(wasm_vm), vm_id, vm_configuration, vm_key, std::move(envs), std::move(allowed_capabilities))
 {
   mutex_ = TSMutexCreate();
 }
@@ -144,7 +144,7 @@ Wasm::removeTimerPeriod(uint32_t root_context_id)
 void
 Wasm::error(std::string_view message)
 {
-  TSError("%.*s", (int)message.size(), message.data());
+  TSError("%.*s", static_cast<int>(message.size()), message.data());
 }
 
 } // namespace ats_wasm

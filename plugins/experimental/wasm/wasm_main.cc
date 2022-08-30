@@ -65,7 +65,7 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
     if (wasm->existsTimerPeriod(root_context_id)) {
       TSDebug(WASM_DEBUG_TAG, "[%s] reschedule continuation", __FUNCTION__);
       std::chrono::milliseconds period = wasm->getTimerPeriod(root_context_id);
-      TSContScheduleOnPool(contp, (TSHRTime)period.count(), TS_THREAD_POOL_NET);
+      TSContScheduleOnPool(contp, static_cast<TSHRTime>(period.count()), TS_THREAD_POOL_NET);
     } else {
       TSDebug(WASM_DEBUG_TAG, "[%s] can't find period for root context id: %d", __FUNCTION__, root_context_id);
     }
@@ -265,7 +265,7 @@ global_hook_handler(TSCont contp, TSEvent event, void *data)
 
 // function to read a file
 static inline int
-read_file(std::string fn, std::string *s)
+read_file(const std::string &fn, std::string *s)
 {
   auto fd = open(fn.c_str(), O_RDONLY);
   if (fd < 0) {
@@ -274,8 +274,8 @@ read_file(std::string fn, std::string *s)
   auto n = ::lseek(fd, 0, SEEK_END);
   ::lseek(fd, 0, SEEK_SET);
   s->resize(n);
-  auto nn = ::read(fd, (char *)const_cast<char *>(&*s->begin()), n);
-  if (nn != (ssize_t)n) {
+  auto nn = ::read(fd, const_cast<char *>(&*s->begin()), n);
+  if (nn != static_cast<ssize_t>(n)) {
     return -1;
   }
   return 0;
@@ -341,8 +341,8 @@ read_configuration()
           if (second["allowed_capabilities"]) {
             const YAML::Node ac_node = second["allowed_capabilities"];
             if (ac_node.IsSequence()) {
-              for (std::size_t i = 0; i < ac_node.size(); i++) {
-                std::string ac = ac_node[i].as<std::string>();
+              for (const auto & i : ac_node) {
+                std::string ac = i.as<std::string>();
                 proxy_wasm::SanitizationConfig sc;
                 cap_maps[ac] = sc;
               }
@@ -378,8 +378,8 @@ read_configuration()
               if (vm_config_second["host_env_keys"]) {
                 const YAML::Node ek_node = vm_config_second["host_env_keys"];
                 if (ek_node.IsSequence()) {
-                  for (std::size_t i = 0; i < ek_node.size(); i++) {
-                    std::string ek = ek_node[i].as<std::string>();
+                  for (const auto & i : ek_node) {
+                    std::string ek = i.as<std::string>();
                     if (auto value = std::getenv(ek.data())) {
                       envs[ek] = value;
                     }

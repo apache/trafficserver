@@ -24,6 +24,7 @@
 #include <unordered_set>
 
 #include "ats_context.h"
+#include "ats_wasm.h"
 
 #include "include/proxy-wasm/context.h"
 #include "include/proxy-wasm/wasm.h"
@@ -40,13 +41,15 @@ print_address(struct sockaddr const *ip, std::string *result)
     char cip[128];
     int64_t port;
     if (ip->sa_family == AF_INET) {
-      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)ip)->sin_addr, cip, sizeof(cip));
-      port = ((struct sockaddr_in *)ip)->sin_port;
+      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
+      inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, cip, sizeof(cip));
+      port = s_sockaddr_in->sin_port;
     } else {
-      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)ip)->sin6_addr, cip, sizeof(cip));
-      port = ((struct sockaddr_in6 *)ip)->sin6_port;
+      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
+      inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, cip, sizeof(cip));
+      port = s_sockaddr_in6->sin6_port;
     }
-    TSDebug(WASM_DEBUG_TAG, "[%s] property retrieval - address: %.*s", __FUNCTION__, (int)sizeof(cip), cip);
+    TSDebug(WASM_DEBUG_TAG, "[%s] property retrieval - address: %.*s", __FUNCTION__, static_cast<int>(sizeof(cip)), cip);
     std::string cip_str(cip);
     result->assign(cip_str + ":" + std::to_string(port));
   } else {
@@ -60,11 +63,13 @@ print_port(struct sockaddr const *ip, std::string *result)
   if (ip != nullptr) {
     int64_t port;
     if (ip->sa_family == AF_INET) {
-      port = ((struct sockaddr_in *)ip)->sin_port;
+      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
+      port = s_sockaddr_in->sin_port;
     } else {
-      port = ((struct sockaddr_in6 *)ip)->sin6_port;
+      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
+      port = s_sockaddr_in6->sin6_port;
     }
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__, (int)port);
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__,  static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
   } else {
     *result = pv_empty;
@@ -108,7 +113,7 @@ print_san_certificate(std::string *result, X509 *cert, int type)
     GENERAL_NAME *gen_name;
 
     ext       = X509_get_ext(cert, ext_ndx);
-    alt_names = (stack_st_GENERAL_NAME *)X509V3_EXT_d2i(ext);
+    alt_names = static_cast<stack_st_GENERAL_NAME *>(X509V3_EXT_d2i(ext));
     if (alt_names) {
       int num, i;
       num        = sk_GENERAL_NAME_num(alt_names);
@@ -116,7 +121,7 @@ print_san_certificate(std::string *result, X509 *cert, int type)
       for (i = 0; i < num; i++) {
         gen_name = sk_GENERAL_NAME_value(alt_names, i);
         if (gen_name->type == type) {
-          char *dnsname   = (char *)ASN1_STRING_data(gen_name->d.dNSName);
+          char *dnsname   = reinterpret_cast<char *>(ASN1_STRING_data(gen_name->d.dNSName));
           int dnsname_len = ASN1_STRING_length(gen_name->d.dNSName);
           result->assign(dnsname, dnsname_len);
           found = true;
@@ -212,12 +217,12 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view v, std::string_view 
 
 Context::Context() : ContextBase() {}
 
-Context::Context(Wasm *wasm) : ContextBase((WasmBase *)wasm) {}
+Context::Context(Wasm *wasm) : ContextBase(wasm) {}
 
-Context::Context(Wasm *wasm, std::shared_ptr<PluginBase> plugin) : ContextBase((WasmBase *)wasm, plugin) {}
+Context::Context(Wasm *wasm, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm, plugin) {}
 
 // NB: wasm can be nullptr if it failed to be created successfully.
-Context::Context(Wasm *wasm, uint32_t parent_context_id, std::shared_ptr<PluginBase> plugin) : ContextBase((WasmBase *)wasm)
+Context::Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm)
 {
   id_                = wasm_ ? wasm_->allocContextId() : 0;
   parent_context_id_ = parent_context_id;
@@ -231,13 +236,13 @@ Context::Context(Wasm *wasm, uint32_t parent_context_id, std::shared_ptr<PluginB
 Wasm *
 Context::wasm() const
 {
-  return (Wasm *)wasm_;
+  return static_cast<Wasm *>(wasm_);
 }
 
 Context *
 Context::parent_context() const
 {
-  return (Context *)parent_context_;
+  return static_cast<Context *>(parent_context_);
 }
 
 Context *
@@ -249,7 +254,7 @@ Context::root_context() const
     previous = parent;
     parent   = parent->parent_context();
   }
-  return (Context *)parent;
+  return static_cast<Context *>(parent);
 }
 
 void
@@ -279,7 +284,7 @@ Context::scheduler_cont()
 void
 Context::error(std::string_view message)
 {
-  TSError("%.*s", (int)message.size(), message.data());
+  TSError("%.*s", static_cast<int>(message.size()), message.data());
   abort();
 }
 
@@ -308,26 +313,26 @@ Context::onLocalReply()
       std::string key(p.first);
       std::string value(p.second);
 
-      auto loc = TSMimeHdrFieldFind(bufp, hdr_loc, key.data(), (int)key.size());
+      auto loc = TSMimeHdrFieldFind(bufp, hdr_loc, key.data(), static_cast<int>(key.size()));
       if (loc != TS_NULL_MLOC) {
         int first = 1;
         while (loc != TS_NULL_MLOC) {
           auto tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, loc);
           if (first) {
             first = 0;
-            TSMimeHdrFieldValueStringSet(bufp, hdr_loc, loc, -1, value.data(), (int)value.size());
+            TSMimeHdrFieldValueStringSet(bufp, hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
           } else {
             TSMimeHdrFieldDestroy(bufp, hdr_loc, loc);
           }
           TSHandleMLocRelease(bufp, hdr_loc, loc);
           loc = tmp;
         }
-      } else if (TSMimeHdrFieldCreateNamed(bufp, hdr_loc, key.data(), (int)key.size(), &loc) != TS_SUCCESS) {
+      } else if (TSMimeHdrFieldCreateNamed(bufp, hdr_loc, key.data(), static_cast<int>(key.size()), &loc) != TS_SUCCESS) {
         TSError("[wasm][%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
         TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
         return;
       } else {
-        TSMimeHdrFieldValueStringSet(bufp, hdr_loc, loc, -1, value.data(), (int)value.size());
+        TSMimeHdrFieldValueStringSet(bufp, hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
         TSMimeHdrFieldAppend(bufp, hdr_loc, loc);
       }
 
@@ -350,22 +355,22 @@ Context::log(uint32_t level, std::string_view message)
   LogLevel l = static_cast<LogLevel>(level);
   switch (l) {
   case LogLevel::trace:
-    TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::debug:
-    TSDebug(WASM_DEBUG_TAG, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::info:
-    TSDebug(WASM_DEBUG_TAG, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::warn:
-    TSDebug(WASM_DEBUG_TAG, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::error:
-    TSDebug(WASM_DEBUG_TAG, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   case LogLevel::critical:
-    TSDebug(WASM_DEBUG_TAG, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), (int)message.size(), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
     return WasmResult::Ok;
   default: // e.g. off
     return unimplemented();
@@ -388,8 +393,8 @@ Context::getConfiguration()
 WasmResult
 Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr)
 {
-  Wasm *wasm            = (Wasm *)this->wasm();
-  Context *root_context = (Context *)this->root_context();
+  Wasm *wasm            = this->wasm();
+  Context *root_context = this->root_context();
   TSMutexLock(wasm->mutex());
   if (!wasm->existsTimerPeriod(root_context->id())) {
     TSDebug(WASM_DEBUG_TAG, "[%s] no previous timer period set", __FUNCTION__);
@@ -397,7 +402,7 @@ Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_
     if (contp != nullptr) {
       TSDebug(WASM_DEBUG_TAG, "[%s] scheduling continuation for timer", __FUNCTION__);
       TSContDataSet(contp, root_context);
-      TSContScheduleOnPool(contp, (TSHRTime)period.count(), TS_THREAD_POOL_NET);
+      TSContScheduleOnPool(contp, static_cast<TSHRTime>(period.count()), TS_THREAD_POOL_NET);
     }
   }
 
@@ -452,7 +457,7 @@ Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *met
 
   if (TSStatFindName(name.data(), &idp) == TS_ERROR) {
     idp = TSStatCreate(name.data(), TS_RECORDDATATYPE_INT, TS_STAT_PERSISTENT, ats_metric_type);
-    TSDebug(WASM_DEBUG_TAG, "[%s] creating stat: %.*s", __FUNCTION__, (int)name.size(), name.data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] creating stat: %.*s", __FUNCTION__, static_cast<int>(name.size()), name.data());
     *metric_id_ptr = idp;
   } else {
     TSError("[wasm][%s] Metric already exists", __FUNCTION__);
@@ -489,15 +494,15 @@ Context::getProperty(std::string_view path, std::string *result)
 {
   if (path == p_plugin_root_id) {
     *result = this->plugin_->root_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, (int)(*result).size(), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path == p_plugin_name) {
     *result = this->plugin_->name_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, (int)(*result).size(), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path == p_plugin_vm_id) {
     *result = this->plugin_->vm_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, (int)(*result).size(), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
     return WasmResult::Ok;
   } else if (path.substr(0, p_node.size()) == p_node) {
     *result = pv_empty;
@@ -1049,7 +1054,7 @@ Context::getProperty(std::string_view path, std::string *result)
   } else if (path == p_request_time) {
     TSHRTime epoch;
     if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_START, &epoch)) {
-      double timestamp = (double)epoch / 1000000000;
+      double timestamp = static_cast<double>(epoch) / 1000000000;
       result->assign(reinterpret_cast<const char *>(&timestamp), sizeof(double));
     } else {
       *result = pv_empty;
@@ -1061,7 +1066,7 @@ Context::getProperty(std::string_view path, std::string *result)
 
     if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_START, &epoch)) {
       if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_FINISH, &value)) {
-        double duration = (double)(value - epoch) / 1000000000;
+        double duration = static_cast<double>((value - epoch)) / 1000000000;
         result->assign(reinterpret_cast<const char *>(&duration), sizeof(double));
         return WasmResult::Ok;
       }
@@ -1221,7 +1226,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       int64_t *status = reinterpret_cast<int64_t *>(const_cast<char *>(serialized_value.data()));
-      TSHttpHdrStatusSet(bufp, hdr_loc, (TSHttpStatus)(*status));
+      TSHttpHdrStatusSet(bufp, hdr_loc, static_cast<TSHttpStatus>(*status));
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
@@ -1258,9 +1263,9 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
     TSError("[wasm][%s] Can't send local response without a transaction", __FUNCTION__);
     return WasmResult::InternalFailure;
   } else {
-    TSHttpTxnStatusSet(txnp_, (TSHttpStatus)response_code);
+    TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code));
 
-    TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(), NULL); // Defaults to text/html
+    TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(), nullptr); // Defaults to text/html
 
     local_reply_headers_ = additional_headers;
     local_reply_details_ = details;
@@ -1284,14 +1289,14 @@ Context::addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::st
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
-  auto field_loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), (int)key.size());
+  auto field_loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
   if (TS_NULL_MLOC == field_loc) {
-    if (TS_SUCCESS != TSMimeHdrFieldCreateNamed(map.bufp, map.hdr_loc, key.data(), (int)key.size(), &field_loc)) {
+    if (TS_SUCCESS != TSMimeHdrFieldCreateNamed(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()), &field_loc)) {
       TSError("[wasm][%s] Cannot create named field", __FUNCTION__);
       return WasmResult::InternalFailure;
     }
   }
-  if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, field_loc, -1, value.data(), (int)value.size())) {
+  if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, field_loc, -1, value.data(), static_cast<int>(value.size()))) {
     TSMimeHdrFieldAppend(map.bufp, map.hdr_loc, field_loc);
     TSHandleMLocRelease(map.bufp, map.hdr_loc, field_loc);
     return WasmResult::Ok;
@@ -1311,7 +1316,7 @@ Context::getHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::st
     return WasmResult::BadArgument;
   }
   if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), (int)key.size());
+    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     if (TS_NULL_MLOC != loc) {
       int vlen = 0;
       // TODO: add support for dups
@@ -1346,7 +1351,7 @@ Context::getHeaderMapPairs(WasmHeaderMapType type, Pairs *result)
     int vlen = 0;
     // TODO: add support for dups.
     auto v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
-    result->push_back(std::make_pair(std::string_view(n, (size_t)nlen), std::string_view(v, (size_t)vlen)));
+    result->push_back(std::make_pair(std::string_view(n, static_cast<size_t>(nlen)), std::string_view(v, static_cast<size_t>(vlen))));
     TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
   }
   return WasmResult::Ok;
@@ -1365,25 +1370,25 @@ Context::setHeaderMapPairs(WasmHeaderMapType type, const Pairs &pairs)
     std::string key(p.first);
     std::string value(p.second);
 
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), (int)key.size());
+    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     if (loc != TS_NULL_MLOC) {
       int first = 1;
       while (loc != TS_NULL_MLOC) {
         auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
         if (first) {
           first = 0;
-          TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), (int)value.size());
+          TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
         } else {
           TSMimeHdrFieldDestroy(map.bufp, map.hdr_loc, loc);
         }
         TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
         loc = tmp;
       }
-    } else if (TSMimeHdrFieldCreateNamed(map.bufp, map.hdr_loc, key.data(), (int)key.size(), &loc) != TS_SUCCESS) {
+    } else if (TSMimeHdrFieldCreateNamed(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()), &loc) != TS_SUCCESS) {
       TSError("[wasm][%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
       return WasmResult::InternalFailure;
     } else {
-      TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), (int)value.size());
+      TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
       TSMimeHdrFieldAppend(map.bufp, map.hdr_loc, loc);
     }
 
@@ -1404,7 +1409,7 @@ Context::removeHeaderMapValue(WasmHeaderMapType type, std::string_view key)
     return WasmResult::BadArgument;
   }
   if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), (int)key.size());
+    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     while (loc != TS_NULL_MLOC) {
       auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
       TSMimeHdrFieldDestroy(map.bufp, map.hdr_loc, loc);
@@ -1425,7 +1430,7 @@ Context::replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std
     return WasmResult::BadArgument;
   }
   if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), (int)key.size());
+    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
 
     if (loc != TS_NULL_MLOC) {
       int first = 1;
@@ -1433,7 +1438,7 @@ Context::replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std
         auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
         if (first) {
           first = 0;
-          TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), (int)value.size());
+          TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
         } else {
           TSMimeHdrFieldDestroy(map.bufp, map.hdr_loc, loc);
         }

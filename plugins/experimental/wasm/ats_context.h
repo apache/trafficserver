@@ -34,7 +34,6 @@
 #include <openssl/x509v3.h>
 
 #include "include/proxy-wasm/context.h"
-#include "ats_wasm.h"
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
@@ -130,8 +129,9 @@ struct HeaderMap {
   int
   size()
   {
-    if (bufp)
+    if (bufp) {
       return TSMimeHdrFieldsCount(bufp, hdr_loc);
+    }
     return 0;
   }
 };
@@ -142,8 +142,8 @@ public:
   // constructors for the extend class
   Context();
   Context(Wasm *wasm);
-  Context(Wasm *wasm, std::shared_ptr<PluginBase> plugin);
-  Context(Wasm *wasm, uint32_t parent_context_id, std::shared_ptr<PluginBase> plugin);
+  Context(Wasm *wasm, const std::shared_ptr<PluginBase> &plugin);
+  Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin);
 
   // extend class utility functions
   Wasm *wasm() const;
