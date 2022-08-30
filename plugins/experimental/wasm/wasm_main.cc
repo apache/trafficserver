@@ -341,7 +341,7 @@ read_configuration()
           if (second["allowed_capabilities"]) {
             const YAML::Node ac_node = second["allowed_capabilities"];
             if (ac_node.IsSequence()) {
-              for (const auto & i : ac_node) {
+              for (const auto &i : ac_node) {
                 std::string ac = i.as<std::string>();
                 proxy_wasm::SanitizationConfig sc;
                 cap_maps[ac] = sc;
@@ -378,7 +378,7 @@ read_configuration()
               if (vm_config_second["host_env_keys"]) {
                 const YAML::Node ek_node = vm_config_second["host_env_keys"];
                 if (ek_node.IsSequence()) {
-                  for (const auto & i : ek_node) {
+                  for (const auto &i : ek_node) {
                     std::string ek = i.as<std::string>();
                     if (auto value = std::getenv(ek.data())) {
                       envs[ek] = value;

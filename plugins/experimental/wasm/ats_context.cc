@@ -64,12 +64,12 @@ print_port(struct sockaddr const *ip, std::string *result)
     int64_t port;
     if (ip->sa_family == AF_INET) {
       const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
-      port = s_sockaddr_in->sin_port;
+      port                                    = s_sockaddr_in->sin_port;
     } else {
       const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
-      port = s_sockaddr_in6->sin6_port;
+      port                                      = s_sockaddr_in6->sin6_port;
     }
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__,  static_cast<int>(port));
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
   } else {
     *result = pv_empty;
@@ -355,22 +355,28 @@ Context::log(uint32_t level, std::string_view message)
   LogLevel l = static_cast<LogLevel>(level);
   switch (l) {
   case LogLevel::trace:
-    TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   case LogLevel::debug:
-    TSDebug(WASM_DEBUG_TAG, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm debug log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   case LogLevel::info:
-    TSDebug(WASM_DEBUG_TAG, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm info log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   case LogLevel::warn:
-    TSDebug(WASM_DEBUG_TAG, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm warn log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   case LogLevel::error:
-    TSDebug(WASM_DEBUG_TAG, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm error log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   case LogLevel::critical:
-    TSDebug(WASM_DEBUG_TAG, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()), message.data());
+    TSDebug(WASM_DEBUG_TAG, "wasm critical log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
+            message.data());
     return WasmResult::Ok;
   default: // e.g. off
     return unimplemented();
@@ -494,15 +500,18 @@ Context::getProperty(std::string_view path, std::string *result)
 {
   if (path == p_plugin_root_id) {
     *result = this->plugin_->root_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
+            (*result).data());
     return WasmResult::Ok;
   } else if (path == p_plugin_name) {
     *result = this->plugin_->name_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
+            (*result).data());
     return WasmResult::Ok;
   } else if (path == p_plugin_vm_id) {
     *result = this->plugin_->vm_id_;
-    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()), (*result).data());
+    TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
+            (*result).data());
     return WasmResult::Ok;
   } else if (path.substr(0, p_node.size()) == p_node) {
     *result = pv_empty;
@@ -1296,7 +1305,8 @@ Context::addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::st
       return WasmResult::InternalFailure;
     }
   }
-  if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, field_loc, -1, value.data(), static_cast<int>(value.size()))) {
+  if (TS_SUCCESS ==
+      TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, field_loc, -1, value.data(), static_cast<int>(value.size()))) {
     TSMimeHdrFieldAppend(map.bufp, map.hdr_loc, field_loc);
     TSHandleMLocRelease(map.bufp, map.hdr_loc, field_loc);
     return WasmResult::Ok;
@@ -1351,7 +1361,8 @@ Context::getHeaderMapPairs(WasmHeaderMapType type, Pairs *result)
     int vlen = 0;
     // TODO: add support for dups.
     auto v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
-    result->push_back(std::make_pair(std::string_view(n, static_cast<size_t>(nlen)), std::string_view(v, static_cast<size_t>(vlen))));
+    result->push_back(
+      std::make_pair(std::string_view(n, static_cast<size_t>(nlen)), std::string_view(v, static_cast<size_t>(vlen))));
     TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
   }
   return WasmResult::Ok;
