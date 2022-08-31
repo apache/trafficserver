@@ -28,8 +28,9 @@ ipRangesHelper::addIpRanges(const std::string &s)
   while (src) {
     IpAddr start, end;
 
-    ats_ip_range_parse(src.take_prefix_at(','), start, end);
-    _ipRanges.mark(start, end);
+    if (TS_SUCCESS == ats_ip_range_parse(src.take_prefix_at(','), start, end)) {
+      _ipRanges.mark(start, end);
+    }
   }
 
   if (_ipRanges.count() > 0) {
