@@ -37,6 +37,9 @@ class ProxyServeStaleTest:
         self.server = Test.MakeVerifierServerProcess(
             "server",
             self.single_transaction_replay)
+        self.nameserver = Test.MakeDNServer(
+            "dns",
+            default='127.0.0.1')
 
     def _configure_ts(self):
         self.ts_child = Test.MakeATSProcess("ts_child")
@@ -48,6 +51,7 @@ class ProxyServeStaleTest:
             'proxy.config.http.parent_proxy.self_detect': 0,
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http|dns|parent_proxy',
+            'proxy.config.dns.nameservers': f"127.0.0.1:{self.nameserver.Variables.Port}",
         })
         self.ts_child.Disk.parent_config.AddLine(
             f'dest_domain=. parent="{self.ts_parent_hostname}" round_robin=consistent_hash go_direct=false'
@@ -67,6 +71,7 @@ class ProxyServeStaleTest:
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.ts_child
         tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.nameserver)
         tr.Processes.Default.StartBefore(self.ts_child)
 
 
