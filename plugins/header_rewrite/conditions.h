@@ -348,6 +348,7 @@ protected:
 class ConditionIp : public Condition
 {
   typedef Matchers<std::string> MatcherType;
+  typedef Matchers<const sockaddr *> MatcherTypeIp;
 
 public:
   explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
@@ -503,8 +504,9 @@ private:
 /// Information about the inbound (client) session.
 class ConditionInbound : public Condition
 {
-  using MatcherType = Matchers<std::string>;
-  using self        = ConditionInbound;
+  using MatcherType   = Matchers<std::string>;
+  using MatcherTypeIp = Matchers<const sockaddr *>;
+  using self          = ConditionInbound;
 
 public:
   explicit ConditionInbound() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionInbound"); };

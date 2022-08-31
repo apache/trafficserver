@@ -35,6 +35,8 @@ header_rewrite_header_rewrite_la_SOURCES = \
 	header_rewrite/operators.h \
 	header_rewrite/regex_helper.cc \
 	header_rewrite/regex_helper.h \
+	header_rewrite/ipranges_helper.cc \
+	header_rewrite/ipranges_helper.h \
 	header_rewrite/resources.cc \
 	header_rewrite/resources.h \
 	header_rewrite/ruleset.cc \
