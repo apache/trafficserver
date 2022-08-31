@@ -1313,7 +1313,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
         file_config = nullptr;
         *ih         = nullptr;
         return TS_ERROR;
+      } else {
+        s3->copy_changes_from(file_config);
+        // Copy the config file secret into our instance of the configuration.
+        delete file_config;
+        file_config = nullptr;
       }
+
       break;
     case 'a':
       s3->set_keyid(optarg);
@@ -1347,13 +1353,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     if (opt == -1) {
       break;
     }
-  }
-
-  // Copy the config file secret into our instance of the configuration.
-  if (file_config) {
-    s3->copy_changes_from(file_config);
-    delete file_config;
-    file_config = nullptr;
   }
 
   // Make sure we got both the shared secret and the AWS secret
