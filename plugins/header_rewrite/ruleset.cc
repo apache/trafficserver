@@ -46,7 +46,7 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
   Condition *c = condition_factory(p.get_op());
 
   if (nullptr != c) {
-    TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+    TSDebug(PLUGIN_NAME, "    Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
       delete c;
@@ -76,7 +76,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
   Operator *o = operator_factory(p.get_op());
 
   if (nullptr != o) {
-    TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+    TSDebug(PLUGIN_NAME, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
       delete o;
