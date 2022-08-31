@@ -22,7 +22,7 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/src/records \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
@@ -69,7 +69,7 @@ libhttp_remap_a_SOURCES = \
 COMMON_PLUGINDSO_LDADDS = \
 	$(OPENSSL_LIBS) \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
@@ -136,7 +136,7 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
@@ -167,7 +167,7 @@ test_NextHopRoundRobin_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
@@ -198,7 +198,7 @@ test_NextHopConsistentHash_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \

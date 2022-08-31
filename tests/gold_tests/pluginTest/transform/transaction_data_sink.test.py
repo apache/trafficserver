@@ -31,11 +31,15 @@ class TransactionDataSyncTest:
 
     def __init__(self):
         self._setupOriginServer()
+        self._setupNameserver()
         self._setupTS()
 
     def _setupOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
             "server", self.replay_file)
+
+    def _setupNameserver(self):
+        self.nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
     def _setupTS(self):
         self.ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
@@ -43,6 +47,7 @@ class TransactionDataSyncTest:
             "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
             "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
             "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+            "proxy.config.dns.nameservers": f"127.0.0.1:{self.nameserver.Variables.Port}",
 
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http|txn_data_sink',
@@ -86,6 +91,7 @@ class TransactionDataSyncTest:
         """Configure a TestRun for the test."""
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.nameserver)
         tr.Processes.Default.StartBefore(self.ts)
         tr.AddVerifierClientProcess(
             "client",

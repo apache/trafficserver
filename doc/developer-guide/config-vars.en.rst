@@ -21,7 +21,7 @@
 
 .. |RecCore.cc| replace:: ``RecCore.cc``
 
-.. _RecCore.cc: https://github.com/apache/trafficserver/blob/master/lib/records/RecCore.cc
+.. _RecCore.cc: https://github.com/apache/trafficserver/blob/master/src/records/RecCore.cc
 
 .. |RecordsConfig.cc| replace:: ``RecordsConfig.cc``
 

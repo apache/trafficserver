@@ -83,7 +83,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_server.la \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \

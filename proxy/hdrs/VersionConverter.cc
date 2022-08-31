@@ -28,7 +28,7 @@
 int
 VersionConverter::convert(HTTPHdr &header, int from, int to) const
 {
-  int type;
+  int type = 0;
 
   switch (http_hdr_type_get(header.m_http)) {
   case HTTP_TYPE_REQUEST:

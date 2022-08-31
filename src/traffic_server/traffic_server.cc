@@ -177,6 +177,10 @@ static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
 static bool signal_received[NSIG];
 
+std::mutex pluginInitMutex;
+std::condition_variable pluginInitCheck;
+bool plugin_init_done = false;
+
 /*
 To be able to attach with a debugger to traffic_server running in an Au test case, temporarily add the
 parameter block_for_debug=True to the call to Test.MakeATSProcess().  This means Au test will wait
@@ -2068,6 +2072,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         proxyServerCheck.wait(lock, [] { return et_net_threads_ready; });
       }
 
+      {
+        std::unique_lock<std::mutex> lock(pluginInitMutex);
+        plugin_init_done = true;
+        lock.unlock();
+        pluginInitCheck.notify_one();
+      }
+
       if (cmd_ret >= 0) {
         ::exit(0); // everything is OK
       } else {
@@ -2075,6 +2086,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       }
     }
   } else {
+    // "Task" processor, possibly with its own set of task threads.
+    // We don't need task threads in the "command_flag" case.
+    tasksProcessor.register_event_type();
+    eventProcessor.thread_group[ET_TASK]._afterStartCallback = task_threads_started_callback;
+    tasksProcessor.start(num_task_threads, stacksize);
+
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
@@ -2106,6 +2123,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Init plugins as soon as logging is ready.
     (void)plugin_init(); // plugin.config
+
+    {
+      std::unique_lock<std::mutex> lock(pluginInitMutex);
+      plugin_init_done = true;
+      lock.unlock();
+      pluginInitCheck.notify_one();
+    }
 
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
@@ -2189,11 +2213,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // fire up as well.
     RecConfigWarnIfUnregistered();
 
-    // "Task" processor, possibly with its own set of task threads
-    tasksProcessor.register_event_type();
-    eventProcessor.thread_group[ET_TASK]._afterStartCallback = task_threads_started_callback;
-    tasksProcessor.start(num_task_threads, stacksize);
-
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
@@ -2256,6 +2275,11 @@ load_config_file_callback(const char *parent_file, const char *remap_file)
 static void
 task_threads_started_callback()
 {
+  {
+    std::unique_lock<std::mutex> lock(pluginInitMutex);
+    pluginInitCheck.wait(lock, [] { return plugin_init_done; });
+  }
+
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
   while (hook) {
     WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());

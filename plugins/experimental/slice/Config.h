@@ -45,6 +45,7 @@ struct Config {
   int m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
   RefType m_reftype{First}; // reference slice is relative to request
+  bool m_head_req{false};   // HEAD request
 
   std::string m_skip_header;
   std::string m_crr_ims_header;

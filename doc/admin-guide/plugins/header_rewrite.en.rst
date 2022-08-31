@@ -374,6 +374,14 @@ string. Therefore the condition is treated as if it were ::
 which is true when the connection is not TLS. The arguments ``H2``, ``IPV4``, and ``IPV6`` work the
 same way.
 
+As a special matcher, the inbound IP addresses can be matched against a list of IP ranges, e.g.
+::
+
+   cond %{INBOUND:REMOTE-ADDR} {192.168.201.0/24,10.0.0.0/8}
+
+Note that this will not work against the non-IP based conditions, such as the protocol families,
+and the configuration parser will error out. The format here is very specific, in particular no
+white spaces are allowed between the ranges.
 
 IP
 ~~
@@ -400,6 +408,13 @@ actually as a value to an operator, e.g. ::
      set-header X-Server-IP %{IP:SERVER}
      set-header X-Outbound-IP %{IP:OUTBOUND}
 
+As a special matcher, the `IP` can be matched against a list of IP ranges, e.g.
+::
+
+   cond %{IP:CLIENT} {192.168.201.0/24,10.0.0.0/8}
+
+The format here is very specific, in particular no white spaces are allowed between the
+ranges.
 
 INTERNAL-TRANSACTION
 ~~~~~~~~~~~~~~~~~~~~

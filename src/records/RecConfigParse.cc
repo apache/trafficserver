@@ -30,10 +30,10 @@
 #include "tscore/ink_string.h"
 #include "tscore/runroot.h"
 
-#include "P_RecFile.h"
-#include "P_RecUtils.h"
-#include "P_RecMessage.h"
-#include "P_RecCore.h"
+#include "records/P_RecFile.h"
+#include "records/P_RecUtils.h"
+#include "records/P_RecMessage.h"
+#include "records/P_RecCore.h"
 #include "tscore/I_Layout.h"
 
 const char *g_rec_config_fpath = nullptr;

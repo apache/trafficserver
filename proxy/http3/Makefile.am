@@ -22,7 +22,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/include \
   -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/src/records \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/proxy \
@@ -72,7 +72,7 @@ test_LDADD = \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/net/TLSKeyLogger.o \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
