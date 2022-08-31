@@ -533,3 +533,11 @@ Changes with Apache Traffic Server 9.2.0
   #9047 - Fix compile error on macOS
   #9048 - Update prepare_proxy_verifier.sh to work in non-git directories
   #9052 - Fix the connection limit crash while using parents (#7602)
+  #9055 - Test: Add nameserver to logging client ip test
+  #9056 - Test: Add nameserver to transaction_data_sink test
+  #9057 - Test: add nameserver to remap_inc test
+  #9058 - Test: add nameserver to proxy_serve_stale_dns_fail test
+  #9061 - Add HEAD requests to slice plugin
+  #9066 - Allow HEAD req to be served from cached GET
+  #9069 - Disable the QUIC TestRun in active_timeout AuTest
+  #9072 - Update expected ALPN output for recent versions of curl
