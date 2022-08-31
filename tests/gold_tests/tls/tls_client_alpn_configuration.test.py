@@ -134,12 +134,12 @@ class TestAlpnFunctionality:
         )
 
         if alpn_is_malformed:
-            ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "WARNING.*ALPN",
+            ts.Disk.diags_log.Content = Testers.ContainsExpression(
+                "ERROR.*ALPN",
                 "There should be no ALPN parse warnings.")
         else:
             ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                "WARNING.*ALPN",
+                "ERROR.*ALPN",
                 "There should be no ALPN parse warnings.")
 
         return ts

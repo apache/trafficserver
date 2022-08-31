@@ -542,5 +542,9 @@ extern void ts_session_protocol_well_known_name_indices_init();
  * @return True if the conversion was successful, false otherwise. Note that
  * the wire format does not support an empty protocol list, therefore this
  * function returns false if @a protocols is an empty string.
+ *
+ * TODO: ideally this would take a ts::TextView for @a protocols, but currently
+ * ts::TextView does not have a char* constructor while std::string_view does.
+ * Once that is added, this can be seemlessly switched to a ts::TextView.
  */
 bool convert_alpn_to_wire_format(std::string_view protocols, unsigned char *wire_format_buffer, int &wire_format_buffer_len);
