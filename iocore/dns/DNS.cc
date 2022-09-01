@@ -32,8 +32,6 @@
 #define SRV_SERVER (RRFIXEDSZ + 6)
 #define SRV_FIXEDSZ (RRFIXEDSZ + 6)
 
-#define RCODE_ARRAY_SIZE 11
-
 EventType ET_DNS = ET_CALL;
 
 //
@@ -1531,11 +1529,11 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   bool server_ok    = true;
   uint32_t temp_ttl = 0;
 
-  const char *RCODE_NAME[RCODE_ARRAY_SIZE] = {
+  const char *RCODE_NAME[] = {
     "NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP", "REFUSED", "YXDOMAIN", "YXRRSET", "NXRRSET", "NOTAUTH", "NOTZONE",
   };
 
-  const char *RCODE_DESCRIPTION[RCODE_ARRAY_SIZE] = {
+  const char *RCODE_DESCRIPTION[] = {
     "No Error",
     "Format Error",
     "Server Failure",
@@ -1583,9 +1581,9 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR: // Included for completeness. The above condition ensures that NOERROR should not enter this block.
+    case NOERROR: // included for completeness.
       Debug("dns", "%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
-      break; // need to break here or this fails test: proxy_serve_stale_dns_fail even though NOERROR is not used in this block.
+      break;
     case SERVFAIL: // recoverable error
       SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       retry = true;
