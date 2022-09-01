@@ -22,7 +22,9 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
+# TODO: Add this back in (i.e., remove the False boolean) when ATS 10.x builds
+# correctly with openssl-quic.
+if False and Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
     ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_quic=True)
 else:
     ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
