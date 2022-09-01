@@ -41,6 +41,7 @@ test_tscpputil_SOURCES = \
 	unit_tests/test_LocalBuffer.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
+	unit_tests/test_Strerror.cc \
 	unit_tests/test_TextView.cc \
 	unit_tests/test_ts_meta.cc
 
