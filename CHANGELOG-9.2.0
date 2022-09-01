@@ -528,6 +528,7 @@ Changes with Apache Traffic Server 9.2.0
   #9013 - Ignore POST request case from a check for background fill
   #9023 - Remove plugin parent_select unused symbols
   #9027 - Change linux/fs include to build with glibc 2.36
+  #9031 - Adds efficient IP range matching to HRW conditions
   #9040 - ts::shared_mutex - Fix lock counting for debug
   #9041 - Fix reload memory leak
   #9047 - Fix compile error on macOS
@@ -540,4 +541,5 @@ Changes with Apache Traffic Server 9.2.0
   #9061 - Add HEAD requests to slice plugin
   #9066 - Allow HEAD req to be served from cached GET
   #9069 - Disable the QUIC TestRun in active_timeout AuTest
+  #9070 - Test: add nameserver to proxy_serve_stale test (#9059)
   #9072 - Update expected ALPN output for recent versions of curl
