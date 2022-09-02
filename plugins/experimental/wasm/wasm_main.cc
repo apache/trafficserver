@@ -42,13 +42,13 @@ static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
 
 // handler for timer event
 static int
-schedule_handler(TSCont contp, TSEvent event, void *data)
+schedule_handler(TSCont contp, TSEvent /*event*/, void */*data*/)
 {
   TSDebug(WASM_DEBUG_TAG, "[%s] Inside schedule_handler", __FUNCTION__);
 
-  ats_wasm::Context *c = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
+  auto *c = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
 
-  ats_wasm::Wasm *old_wasm = static_cast<ats_wasm::Wasm *>(c->wasm());
+  auto *old_wasm = static_cast<ats_wasm::Wasm *>(c->wasm());
   TSMutexLock(old_wasm->mutex());
 
   c->onTick(0); // use 0 as  token
@@ -60,7 +60,7 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
   }
 
   if (c->wasm() == wasm_config->wasm.get()) {
-    ats_wasm::Wasm *wasm     = static_cast<ats_wasm::Wasm *>(c->wasm());
+    auto *wasm               = static_cast<ats_wasm::Wasm *>(c->wasm());
     uint32_t root_context_id = c->id();
     if (wasm->existsTimerPeriod(root_context_id)) {
       TSDebug(WASM_DEBUG_TAG, "[%s] reschedule continuation", __FUNCTION__);
@@ -82,8 +82,7 @@ schedule_handler(TSCont contp, TSEvent event, void *data)
       } else {
         TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
         bool advance = true;
-        for (std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
-               wasm_config->deleted_configs.begin();
+        for (auto it = wasm_config->deleted_configs.begin();
              it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
           advance = true;
           TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
@@ -113,15 +112,15 @@ static int
 http_event_handler(TSCont contp, TSEvent event, void *data)
 {
   int result    = -1;
-  auto context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
-  auto old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
+  auto *context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
+  auto *old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
   TSMutexLock(old_wasm->mutex());
   std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
-  auto txnp                            = static_cast<TSHttpTxn>(data);
+  auto *txnp                            = static_cast<TSHttpTxn>(data);
 
-  TSMBuffer buf;
-  TSMLoc hdr_loc;
-  int count;
+  TSMBuffer buf  = nullptr;
+  TSMLoc hdr_loc = nullptr;
+  int count      = 0;
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
@@ -191,8 +190,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
         } else {
           TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
           bool advance = true;
-          for (std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>>::iterator it =
-                 wasm_config->deleted_configs.begin();
+          for (auto it = wasm_config->deleted_configs.begin();
                it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
             advance = true;
             TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
@@ -231,6 +229,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
   } else {
     // TODO: wait for async operation
     // Temporarily resume with error
+    TSDebug(WASM_DEBUG_TAG, "[%s] result > 0, continue with error for now", __FUNCTION__);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
   }
   return 0;
@@ -238,13 +237,13 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
 
 // main handler/entry point for the plugin
 static int
-global_hook_handler(TSCont contp, TSEvent event, void *data)
+global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
 {
-  auto wasm = wasm_config->wasm.get();
+  auto *wasm = wasm_config->wasm.get();
   TSMutexLock(wasm->mutex());
-  auto rootContext = wasm->getRootContext(wasm_config->plugin, false);
-  auto context     = new ats_wasm::Context(wasm, rootContext->id(), wasm_config->plugin);
-  auto txnp        = static_cast<TSHttpTxn>(data);
+  auto *rootContext = wasm->getRootContext(wasm_config->plugin, false);
+  auto *context     = new ats_wasm::Context(wasm, rootContext->id(), wasm_config->plugin);
+  auto *txnp        = static_cast<TSHttpTxn>(data);
   context->initialize(txnp);
   context->onCreate();
   TSMutexUnlock(wasm->mutex());
@@ -309,9 +308,8 @@ read_configuration()
       YAML::NodeType::value type   = it->second.Type();
 
       if (node_name != "config" || type != YAML::NodeType::Map) {
-        const std::string reason = "Top level nodes must be named config and be of type map";
-        TSError("[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: %s", __FUNCTION__,
-                wasm_config->config_filename.c_str(), reason.c_str());
+        TSError("[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: Top level nodes must be named config and be of type map", __FUNCTION__,
+                wasm_config->config_filename.c_str());
         return false;
       }
 
@@ -320,7 +318,7 @@ read_configuration()
         const YAML::Node second = it2->second;
 
         const std::string &key = first.as<std::string>();
-        if (second.IsScalar() == true) {
+        if (second.IsScalar()) {
           const std::string &value = second.as<std::string>();
           if (key == "name") {
             name = value;
@@ -337,12 +335,12 @@ read_configuration()
             }
           }
         }
-        if (second.IsMap() == true && (key == "capability_restriction_config")) {
+        if (second.IsMap() && (key == "capability_restriction_config")) {
           if (second["allowed_capabilities"]) {
             const YAML::Node ac_node = second["allowed_capabilities"];
             if (ac_node.IsSequence()) {
               for (const auto &i : ac_node) {
-                std::string ac = i.as<std::string>();
+                auto ac = i.as<std::string>();
                 proxy_wasm::SanitizationConfig sc;
                 cap_maps[ac] = sc;
               }
@@ -350,13 +348,13 @@ read_configuration()
           }
         }
 
-        if (second.IsMap() == true && (key == "vm_config" || key == "vmConfig")) {
+        if (second.IsMap() && (key == "vm_config" || key == "vmConfig")) {
           for (YAML::const_iterator it3 = second.begin(); it3 != second.end(); ++it3) {
             const YAML::Node vm_config_first  = it3->first;
             const YAML::Node vm_config_second = it3->second;
 
             const std::string &vm_config_key = vm_config_first.as<std::string>();
-            if (vm_config_second.IsScalar() == true) {
+            if (vm_config_second.IsScalar()) {
               const std::string &vm_config_value = vm_config_second.as<std::string>();
               if (vm_config_key == "runtime") {
                 runtime = vm_config_value;
@@ -374,13 +372,13 @@ read_configuration()
               }
             }
 
-            if (vm_config_key == "environment_variables" && vm_config_second.IsMap() == true) {
+            if (vm_config_key == "environment_variables" && vm_config_second.IsMap()) {
               if (vm_config_second["host_env_keys"]) {
                 const YAML::Node ek_node = vm_config_second["host_env_keys"];
                 if (ek_node.IsSequence()) {
                   for (const auto &i : ek_node) {
-                    std::string ek = i.as<std::string>();
-                    if (auto value = std::getenv(ek.data())) {
+                    auto ek = i.as<std::string>();
+                    if (auto *value = std::getenv(ek.data())) {
                       envs[ek] = value;
                     }
                   }
@@ -396,7 +394,7 @@ read_configuration()
               }
             }
 
-            if (vm_config_key == "code" && vm_config_second.IsMap() == true) {
+            if (vm_config_key == "code" && vm_config_second.IsMap()) {
               if (vm_config_second["local"]) {
                 const YAML::Node local_node = vm_config_second["local"];
                 if (local_node["filename"]) {
@@ -463,7 +461,7 @@ read_configuration()
   }
 
   TSCont contp     = TSContCreate(schedule_handler, TSMutexCreate());
-  auto rootContext = wasm->start(plugin, contp);
+  auto *rootContext = wasm->start(plugin, contp);
 
   if (!wasm->configure(rootContext, plugin)) {
     TSError("[wasm][%s] Failed to configure Wasm", __FUNCTION__);
@@ -500,7 +498,7 @@ read_configuration()
 
 // handler for configuration event
 static int
-config_handler(TSCont contp, TSEvent event, void *data)
+config_handler(TSCont /*contp*/, TSEvent /*event*/, void */*data*/)
 {
   TSDebug(WASM_DEBUG_TAG, "[%s] configuration reloading", __FUNCTION__);
   read_configuration();
@@ -539,7 +537,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // global handler
   TSCont global_contp = TSContCreate(global_hook_handler, nullptr);
-  if (!global_contp) {
+  if (global_contp == nullptr) {
     TSError("[wasm][%s] could not create transaction start continuation", __FUNCTION__);
     return;
   }
@@ -547,7 +545,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // configuration handler
   TSCont config_contp = TSContCreate(config_handler, nullptr);
-  if (!config_contp) {
+  if (config_contp == nullptr) {
     TSError("[ts_lua][%s] could not create configuration continuation", __FUNCTION__);
     return;
   }

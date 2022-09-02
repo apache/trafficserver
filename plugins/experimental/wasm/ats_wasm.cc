@@ -69,7 +69,7 @@ Wasm::start(const std::shared_ptr<PluginBase> &plugin, TSCont contp)
 {
   auto it = root_contexts_.find(plugin->key());
   if (it != root_contexts_.end()) {
-    Context *c = static_cast<Context *>(it->second.get());
+    auto *c = static_cast<Context *>(it->second.get());
     if (c->scheduler_cont() == nullptr) {
       c->initialize(contp);
     } else {
@@ -80,7 +80,7 @@ Wasm::start(const std::shared_ptr<PluginBase> &plugin, TSCont contp)
     return c;
   }
   auto context     = std::unique_ptr<Context>(static_cast<Context *>(createRootContext(plugin)));
-  auto context_ptr = context.get();
+  auto *context_ptr = context.get();
   context_ptr->initialize(contp);
   root_contexts_[plugin->key()] = std::move(context);
   if (!context_ptr->onStart(plugin)) {
@@ -102,20 +102,13 @@ Wasm::readyShutdown()
   }
 
   // if there is an entry in timer_period_, there is a continuation still running for that root context
-  if (timer_period_.empty()) {
-    return true;
-  } else {
-    return false;
-  }
+  return timer_period_.empty();
 }
 
 bool
 Wasm::readyDelete()
 {
-  if (root_contexts_.empty() && pending_done_.empty() && pending_delete_.empty()) {
-    return true;
-  }
-  return false;
+  return (root_contexts_.empty() && pending_done_.empty() && pending_delete_.empty());
 }
 
 // functions to manage timer

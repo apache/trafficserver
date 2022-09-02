@@ -127,9 +127,9 @@ struct HeaderMap {
   }
 
   int
-  size()
+  size() const
   {
-    if (bufp) {
+    if (bufp != nullptr) {
       return TSMimeHdrFieldsCount(bufp, hdr_loc);
     }
     return 0;
@@ -209,9 +209,9 @@ private:
   TSHttpTxn txnp_{nullptr};
   TSCont scheduler_cont_{nullptr};
 
-  Pairs local_reply_headers_;
-  std::string local_reply_details_;
-  bool local_reply_ = false;
+  Pairs local_reply_headers_{};
+  std::string local_reply_details_ = "";
+  bool local_reply_                = false;
 
   BufferBase buffer_;
 };

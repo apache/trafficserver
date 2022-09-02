@@ -39,13 +39,13 @@ print_address(struct sockaddr const *ip, std::string *result)
 {
   if (ip != nullptr) {
     char cip[128];
-    int64_t port;
+    int64_t port = 0;
     if (ip->sa_family == AF_INET) {
-      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
+      const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
       inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, cip, sizeof(cip));
       port = s_sockaddr_in->sin_port;
     } else {
-      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
+      const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, cip, sizeof(cip));
       port = s_sockaddr_in6->sin6_port;
     }
@@ -61,12 +61,12 @@ static void
 print_port(struct sockaddr const *ip, std::string *result)
 {
   if (ip != nullptr) {
-    int64_t port;
+    int64_t port = 0;
     if (ip->sa_family == AF_INET) {
-      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
+      const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
       port                                    = s_sockaddr_in->sin_port;
     } else {
-      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
+      const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       port                                      = s_sockaddr_in6->sin6_port;
     }
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
@@ -79,22 +79,20 @@ print_port(struct sockaddr const *ip, std::string *result)
 static void
 print_certificate(std::string *result, X509_NAME *name)
 {
-  BIO *bio;
-
   if (name == nullptr) {
     *result = pv_empty;
     return;
   }
 
-  bio = BIO_new(BIO_s_mem());
+  BIO *bio = BIO_new(BIO_s_mem());
   if (bio == nullptr) {
     *result = pv_empty;
     return;
   }
 
   if (X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE) > 0) {
-    long len;
-    char *ptr;
+    int64_t len = 0;
+    char *ptr = nullptr;
     len = BIO_get_mem_data(bio, &ptr);
     result->assign(ptr, len);
     TSDebug(WASM_DEBUG_TAG, "print SSL certificate %.*s", static_cast<int>(len), ptr);
@@ -108,17 +106,16 @@ print_san_certificate(std::string *result, X509 *cert, int type)
 {
   int ext_ndx = X509_get_ext_by_NID(cert, NID_subject_alt_name, -1);
   if (ext_ndx >= 0) {
-    X509_EXTENSION *ext;
-    STACK_OF(GENERAL_NAME) * alt_names;
-    GENERAL_NAME *gen_name;
+    X509_EXTENSION *ext                = nullptr;
+    STACK_OF(GENERAL_NAME) * alt_names = nullptr;
+    GENERAL_NAME *gen_name             = nullptr;
 
     ext       = X509_get_ext(cert, ext_ndx);
     alt_names = static_cast<stack_st_GENERAL_NAME *>(X509V3_EXT_d2i(ext));
-    if (alt_names) {
-      int num, i;
-      num        = sk_GENERAL_NAME_num(alt_names);
+    if (alt_names != nullptr) {
+      int num        = sk_GENERAL_NAME_num(alt_names);
       bool found = false;
-      for (i = 0; i < num; i++) {
+      for (int i = 0; i < num; i++) {
         gen_name = sk_GENERAL_NAME_value(alt_names, i);
         if (gen_name->type == type) {
           char *dnsname   = reinterpret_cast<char *>(ASN1_STRING_data(gen_name->d.dNSName));
@@ -143,13 +140,14 @@ print_san_certificate(std::string *result, X509 *cert, int type)
 static bool
 get_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view v, std::string *result)
 {
-  const char *key = v.data();
-  int key_len     = v.size();
-  const char *val;
-  int val_len;
-  std::string res = "";
-  TSMLoc field_loc, next_field_loc;
-  bool found = false;
+  const char *key       = v.data();
+  int key_len           = v.size();
+  const char *val       = nullptr;
+  int val_len           = 0;
+  std::string res       = "";
+  TSMLoc field_loc      = nullptr;
+  TSMLoc next_field_loc = nullptr;
+  bool found            = false;
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, key, key_len);
   if (field_loc != TS_NULL_MLOC) {
@@ -178,8 +176,9 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view v, std::string_view 
     remove = true;
   }
 
-  TSMLoc field_loc, tmp;
-  bool first = true;
+  TSMLoc field_loc = nullptr;
+  TSMLoc tmp       = nullptr;
+  bool first       = true;
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, v.data(), v.size());
 
@@ -224,10 +223,10 @@ Context::Context(Wasm *wasm, const std::shared_ptr<PluginBase> &plugin) : Contex
 // NB: wasm can be nullptr if it failed to be created successfully.
 Context::Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm)
 {
-  id_                = wasm_ ? wasm_->allocContextId() : 0;
+  id_                = (wasm_ != nullptr) ? wasm_->allocContextId() : 0;
   parent_context_id_ = parent_context_id;
   plugin_            = plugin;
-  if (wasm_) {
+  if (wasm_ != nullptr) {
     parent_context_ = wasm_->getContext(parent_context_id_);
   }
 }
@@ -292,19 +291,19 @@ Context::error(std::string_view message)
 void
 Context::onLocalReply()
 {
-  if (local_reply_ == true) {
+  if (local_reply_) {
     if (txnp_ == nullptr) {
       return;
     }
 
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientRespGet(txnp_, &bufp, &hdr_loc) != TS_SUCCESS) {
       return;
     }
 
     // set local reply reason
-    if (local_reply_details_.size() > 0) {
+    if (!local_reply_details_.empty()) {
       TSHttpHdrReasonSet(bufp, hdr_loc, local_reply_details_.data(), local_reply_details_.size());
     }
 
@@ -313,12 +312,12 @@ Context::onLocalReply()
       std::string key(p.first);
       std::string value(p.second);
 
-      auto loc = TSMimeHdrFieldFind(bufp, hdr_loc, key.data(), static_cast<int>(key.size()));
+      auto *loc = TSMimeHdrFieldFind(bufp, hdr_loc, key.data(), static_cast<int>(key.size()));
       if (loc != TS_NULL_MLOC) {
         int first = 1;
         while (loc != TS_NULL_MLOC) {
-          auto tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, loc);
-          if (first) {
+          auto *tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, loc);
+          if (first != 0) {
             first = 0;
             TSMimeHdrFieldValueStringSet(bufp, hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
           } else {
@@ -343,7 +342,6 @@ Context::onLocalReply()
 
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
-  return;
 }
 
 //
@@ -352,7 +350,7 @@ Context::onLocalReply()
 WasmResult
 Context::log(uint32_t level, std::string_view message)
 {
-  LogLevel l = static_cast<LogLevel>(level);
+  auto l = static_cast<LogLevel>(level);
   switch (l) {
   case LogLevel::trace:
     TSDebug(WASM_DEBUG_TAG, "wasm trace log%s: %.*s", std::string(log_prefix()).c_str(), static_cast<int>(message.size()),
@@ -443,8 +441,8 @@ Context::getBuffer(WasmBufferType type)
 WasmResult
 Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *metric_id_ptr)
 {
-  int idp;
-  TSStatSync ats_metric_type;
+  int idp                    = 0;
+  TSStatSync ats_metric_type = TS_STAT_SYNC_COUNT;
   auto type = static_cast<MetricType>(metric_type);
   switch (type) {
   case MetricType::Counter:
@@ -522,7 +520,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *client_ip;
+    struct sockaddr const *client_ip = nullptr;
     client_ip = TSHttpTxnClientAddrGet(txnp_);
     print_address(client_ip, result);
     return WasmResult::Ok;
@@ -531,7 +529,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *client_ip;
+    struct sockaddr const *client_ip = nullptr;
     client_ip = TSHttpTxnClientAddrGet(txnp_);
     print_port(client_ip, result);
     return WasmResult::Ok;
@@ -540,7 +538,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *local_ip;
+    struct sockaddr const *local_ip = nullptr;
     local_ip = TSHttpTxnIncomingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
@@ -549,7 +547,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *local_ip;
+    struct sockaddr const *local_ip = nullptr;
     local_ip = TSHttpTxnIncomingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
@@ -564,7 +562,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       m = true;
       X509_free(cert);
     }
@@ -580,7 +578,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj     = TSVConnSslConnectionGet(client_conn);
     SSL *ssl                   = reinterpret_cast<SSL *>(sslobj);
     char const *const sni_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    if (sni_name) {
+    if (sni_name != nullptr) {
       result->assign(sni_name);
     } else {
       *result = pv_empty;
@@ -595,7 +593,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSHttpSsn ssnp           = TSHttpTxnSsnGet(txnp_);
     TSVConn client_conn      = TSHttpSsnClientVConnGet(ssnp);
 
-    if (TSVConnIsSsl(client_conn)) {
+    if (TSVConnIsSsl(client_conn) != 0) {
       ssl_protocol = TSVConnSslProtocolGet(client_conn);
     }
 
@@ -611,7 +609,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
     } else {
@@ -628,7 +626,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
     } else {
@@ -645,7 +643,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
     } else {
@@ -662,7 +660,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
     } else {
@@ -679,7 +677,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);
     } else {
@@ -696,7 +694,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);
     } else {
@@ -708,7 +706,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *server_ip;
+    struct sockaddr const *server_ip = nullptr;
     server_ip = TSHttpTxnServerAddrGet(txnp_);
     print_address(server_ip, result);
     return WasmResult::Ok;
@@ -717,7 +715,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *server_ip;
+    struct sockaddr const *server_ip = nullptr;
     server_ip = TSHttpTxnClientAddrGet(txnp_);
     print_port(server_ip, result);
     return WasmResult::Ok;
@@ -726,7 +724,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *local_ip;
+    struct sockaddr const *local_ip = nullptr;
     local_ip = TSHttpTxnOutgoingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
@@ -735,7 +733,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
       return WasmResult::Ok;
     }
-    struct sockaddr const *local_ip;
+    struct sockaddr const *local_ip = nullptr;
     local_ip = TSHttpTxnOutgoingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
@@ -748,7 +746,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSHttpSsn ssnp           = TSHttpTxnSsnGet(txnp_);
     TSVConn server_conn      = TSHttpSsnServerVConnGet(ssnp);
 
-    if (TSVConnIsSsl(server_conn)) {
+    if (TSVConnIsSsl(server_conn) != 0) {
       ssl_protocol = TSVConnSslProtocolGet(server_conn);
     }
 
@@ -764,7 +762,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
     } else {
@@ -781,7 +779,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
     } else {
@@ -798,7 +796,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
     } else {
@@ -815,7 +813,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
     } else {
@@ -832,7 +830,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);
     } else {
@@ -849,7 +847,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     X509 *cert             = SSL_get_peer_certificate(ssl);
-    if (cert) {
+    if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);
     } else {
@@ -857,13 +855,13 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_path) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
-    const char *path;
-    int path_len;
-    const char *query;
-    int query_len;
+    TSMBuffer bufp    = nullptr;
+    TSMLoc hdr_loc    = nullptr;
+    TSMLoc url_loc    = nullptr;
+    const char *path  = nullptr;
+    int path_len      = 0;
+    const char *query = nullptr;
+    int query_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -888,11 +886,11 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_url_path) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
-    const char *path;
-    int path_len;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc hdr_loc   = nullptr;
+    TSMLoc url_loc   = nullptr;
+    const char *path = nullptr;
+    int path_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -909,11 +907,11 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_host) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
-    const char *host;
-    int host_len;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc hdr_loc   = nullptr;
+    TSMLoc url_loc   = nullptr;
+    const char *host = nullptr;
+    int host_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -923,15 +921,15 @@ Context::getProperty(std::string_view path, std::string *result)
           const char *l_key = "host";
           int key_len       = 4;
 
-          TSMLoc field_loc;
+          TSMLoc field_loc = nullptr;
 
           field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, key, key_len);
-          if (field_loc) {
+          if (field_loc != nullptr) {
             host = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &host_len);
             TSHandleMLocRelease(bufp, hdr_loc, field_loc);
           } else {
             field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, l_key, key_len);
-            if (field_loc) {
+            if (field_loc != nullptr) {
               host = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &host_len);
               TSHandleMLocRelease(bufp, hdr_loc, field_loc);
             }
@@ -949,11 +947,11 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_scheme) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
-    const char *scheme;
-    int scheme_len;
+    TSMBuffer bufp     = nullptr;
+    TSMLoc hdr_loc     = nullptr;
+    TSMLoc url_loc     = nullptr;
+    const char *scheme = nullptr;
+    int scheme_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -969,10 +967,10 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_method) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    const char *method;
-    int method_len;
+    TSMBuffer bufp     = nullptr;
+    TSMLoc hdr_loc     = nullptr;
+    const char *method = nullptr;
+    int method_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
@@ -983,11 +981,11 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_query) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
-    const char *query;
-    int query_len;
+    TSMBuffer bufp    = nullptr;
+    TSMLoc hdr_loc    = nullptr;
+    TSMLoc url_loc    = nullptr;
+    const char *query = nullptr;
+    int query_len     = 0;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -1003,8 +1001,8 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_referer) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       get_header(bufp, hdr_loc, "Referer", result);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -1013,8 +1011,8 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_useragent) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       get_header(bufp, hdr_loc, "User-Agent", result);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -1023,8 +1021,8 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_id) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       bool found = get_header(bufp, hdr_loc, "x-request-id", result);
       if (!found) {
@@ -1040,8 +1038,8 @@ Context::getProperty(std::string_view path, std::string *result)
   } else if (path.substr(0, p_request_headers.size()) == p_request_headers) {
     std::string_view key_sv = path.substr(p_request_headers.size(), path.size() - p_request_headers.size() - 1);
 
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       get_header(bufp, hdr_loc, key_sv, result);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -1061,7 +1059,7 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_time) {
-    TSHRTime epoch;
+    TSHRTime epoch = 0;
     if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_START, &epoch)) {
       double timestamp = static_cast<double>(epoch) / 1000000000;
       result->assign(reinterpret_cast<const char *>(&timestamp), sizeof(double));
@@ -1070,8 +1068,8 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_request_duration) {
-    TSHRTime value;
-    TSHRTime epoch;
+    TSHRTime value = 0;
+    TSHRTime epoch = 0;
 
     if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_START, &epoch)) {
       if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_FINISH, &value)) {
@@ -1093,9 +1091,9 @@ Context::getProperty(std::string_view path, std::string *result)
     result->assign(reinterpret_cast<const char *>(&total), sizeof(int64_t));
     return WasmResult::Ok;
   } else if (path == p_response_code) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    int status;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    int status     = 0;
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       status = TSHttpHdrStatusGet(bufp, hdr_loc);
@@ -1106,10 +1104,10 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     return WasmResult::Ok;
   } else if (path == p_response_code_details) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    const char *reason;
-    int reason_len;
+    TSMBuffer bufp     = nullptr;
+    TSMLoc hdr_loc     = nullptr;
+    const char *reason = nullptr;
+    int reason_len     = 0;
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       reason = TSHttpHdrReasonGet(bufp, hdr_loc, &reason_len);
@@ -1121,8 +1119,8 @@ Context::getProperty(std::string_view path, std::string *result)
     return WasmResult::Ok;
   } else if (path.substr(0, p_response_headers.size()) == p_response_headers) {
     std::string_view key_sv = path.substr(p_response_headers.size(), path.size() - p_response_headers.size() - 1);
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       get_header(bufp, hdr_loc, key_sv, result);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -1151,9 +1149,9 @@ WasmResult
 Context::setProperty(std::string_view key, std::string_view serialized_value)
 {
   if (key == p_request_url_path) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    TSMLoc url_loc = nullptr;
     std::string_view result;
 
     if (serialized_value.substr(0, 1) == "/") {
@@ -1171,9 +1169,9 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_request_host) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    TSMLoc url_loc = nullptr;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -1184,9 +1182,9 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_request_scheme) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    TSMLoc url_loc = nullptr;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -1197,8 +1195,8 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_request_method) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       TSHttpHdrMethodSet(bufp, hdr_loc, serialized_value.data(), serialized_value.size());
@@ -1206,9 +1204,9 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_request_query) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
-    TSMLoc url_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    TSMLoc url_loc = nullptr;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
@@ -1221,8 +1219,8 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
   } else if (key.substr(0, p_request_headers.size()) == p_request_headers) {
     std::string_view key_sv = key.substr(p_request_headers.size(), key.size() - p_request_headers.size() - 1);
 
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       set_header(bufp, hdr_loc, key_sv, serialized_value);
@@ -1230,8 +1228,8 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_response_code) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       int64_t *status = reinterpret_cast<int64_t *>(const_cast<char *>(serialized_value.data()));
@@ -1240,8 +1238,8 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
     }
     return WasmResult::Ok;
   } else if (key == p_response_code_details) {
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       TSHttpHdrReasonSet(bufp, hdr_loc, serialized_value.data(), serialized_value.size());
@@ -1251,8 +1249,8 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
   } else if (key.substr(0, p_response_headers.size()) == p_response_headers) {
     std::string_view key_sv = key.substr(p_response_headers.size(), key.size() - p_response_headers.size() - 1);
 
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       set_header(bufp, hdr_loc, key_sv, serialized_value);
@@ -1294,11 +1292,11 @@ WasmResult
 Context::addHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
-  auto field_loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
+  auto *field_loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
   if (TS_NULL_MLOC == field_loc) {
     if (TS_SUCCESS != TSMimeHdrFieldCreateNamed(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()), &field_loc)) {
       TSError("[wasm][%s] Cannot create named field", __FUNCTION__);
@@ -1321,16 +1319,16 @@ WasmResult
 Context::getHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view *result)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
-  if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
+  if (map.bufp != nullptr) {
+    auto *loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     if (TS_NULL_MLOC != loc) {
       int vlen = 0;
       // TODO: add support for dups
-      auto v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
+      auto *v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
       std::string_view temp(v, vlen);
       *result = temp;
       TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
@@ -1347,7 +1345,7 @@ WasmResult
 Context::getHeaderMapPairs(WasmHeaderMapType type, Pairs *result)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
@@ -1355,12 +1353,12 @@ Context::getHeaderMapPairs(WasmHeaderMapType type, Pairs *result)
 
   result->reserve(num);
   for (int i = 0; i < num; i++) {
-    auto loc = TSMimeHdrFieldGet(map.bufp, map.hdr_loc, i);
+    auto *loc = TSMimeHdrFieldGet(map.bufp, map.hdr_loc, i);
     int nlen = 0;
-    auto n   = TSMimeHdrFieldNameGet(map.bufp, map.hdr_loc, loc, &nlen);
+    auto *n   = TSMimeHdrFieldNameGet(map.bufp, map.hdr_loc, loc, &nlen);
     int vlen = 0;
     // TODO: add support for dups.
-    auto v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
+    auto *v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
     result->push_back(
       std::make_pair(std::string_view(n, static_cast<size_t>(nlen)), std::string_view(v, static_cast<size_t>(vlen))));
     TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
@@ -1372,21 +1370,21 @@ WasmResult
 Context::setHeaderMapPairs(WasmHeaderMapType type, const Pairs &pairs)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
 
-  for (auto &p : pairs) {
+  for (const auto &p : pairs) {
     std::string key(p.first);
     std::string value(p.second);
 
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
+    auto *loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     if (loc != TS_NULL_MLOC) {
       int first = 1;
       while (loc != TS_NULL_MLOC) {
-        auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
-        if (first) {
+        auto *tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
+        if (first != 0) {
           first = 0;
           TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
         } else {
@@ -1415,14 +1413,14 @@ WasmResult
 Context::removeHeaderMapValue(WasmHeaderMapType type, std::string_view key)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
-  if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
+  if (map.bufp != nullptr) {
+    auto *loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
     while (loc != TS_NULL_MLOC) {
-      auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
+      auto *tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
       TSMimeHdrFieldDestroy(map.bufp, map.hdr_loc, loc);
       TSHandleMLocRelease(map.bufp, map.hdr_loc, loc);
       loc = tmp;
@@ -1436,17 +1434,17 @@ WasmResult
 Context::replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std::string_view value)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }
-  if (map.bufp) {
-    auto loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
+  if (map.bufp != nullptr) {
+    auto *loc = TSMimeHdrFieldFind(map.bufp, map.hdr_loc, key.data(), static_cast<int>(key.size()));
 
     if (loc != TS_NULL_MLOC) {
       int first = 1;
       while (loc != TS_NULL_MLOC) {
-        auto tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
+        auto *tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
         if (first) {
           first = 0;
           TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
@@ -1465,7 +1463,7 @@ WasmResult
 Context::getHeaderMapSize(WasmHeaderMapType type, uint32_t *result)
 {
   auto map = getHeaderMap(type);
-  if (!map.bufp) {
+  if (map.bufp == nullptr) {
     TSError("[wasm][%s] Invalid type", __FUNCTION__);
     return WasmResult::BadArgument;
   }

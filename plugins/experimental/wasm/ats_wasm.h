@@ -71,7 +71,7 @@ protected:
   friend class Context;
 
 private:
-  TSMutex mutex_;
+  TSMutex mutex_{nullptr};
 };
 
 } // namespace ats_wasm
