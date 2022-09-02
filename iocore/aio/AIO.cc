@@ -28,6 +28,8 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_hw.h"
 
+#include <atomic>
+
 #include "P_AIO.h"
 
 #if AIO_MODE == AIO_MODE_IO_URING
@@ -48,9 +50,11 @@ AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
 int num_filedes = 1;
 
+#if AIO_MODE == AIO_MODE_THREAD
 // acquire this mutex before inserting a new entry in the aio_reqs array.
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
+#endif
 
 int thread_is_created = 0;
 #endif // AIO_MODE == AIO_MODE_NATIVE
@@ -69,10 +73,12 @@ RecInt aio_io_uring_wq_unbounded  = 0;
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
 // AIO Stats
-uint64_t aio_num_read      = 0;
-uint64_t aio_bytes_read    = 0;
-uint64_t aio_num_write     = 0;
-uint64_t aio_bytes_written = 0;
+std::atomic<uint64_t> aio_num_read         = 0;
+std::atomic<uint64_t> aio_bytes_read       = 0;
+std::atomic<uint64_t> aio_num_write        = 0;
+std::atomic<uint64_t> aio_bytes_written    = 0;
+std::atomic<uint64_t> io_uring_submissions = 0;
+std::atomic<uint64_t> io_uring_completions = 0;
 
 /*
  * Stats
@@ -101,17 +107,25 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   }
   switch (id) {
   case AIO_STAT_READ_PER_SEC:
-    new_val = aio_num_read;
+    new_val = aio_num_read.load();
     break;
   case AIO_STAT_WRITE_PER_SEC:
-    new_val = aio_num_write;
+    new_val = aio_num_write.load();
     break;
   case AIO_STAT_KB_READ_PER_SEC:
-    new_val = aio_bytes_read >> 10;
+    new_val = aio_bytes_read.load() >> 10;
     break;
   case AIO_STAT_KB_WRITE_PER_SEC:
-    new_val = aio_bytes_written >> 10;
+    new_val = aio_bytes_written.load() >> 10;
     break;
+#if AIO_MODE == AIO_MODE_IO_URING
+  case AIO_STAT_IO_URING_SUBMITTED:
+    new_val = io_uring_submissions.load();
+    break;
+  case AIO_STAT_IO_URING_COMPLETED:
+    new_val = io_uring_completions.load();
+    break;
+#endif
   default:
     ink_assert(0);
   }
@@ -172,6 +186,12 @@ ink_aio_init(ts::ModuleVersion v)
                      (int)AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.KB_write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
+#if TS_USE_LINUX_IO_URING
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.submitted", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_IO_URING_SUBMITTED, aio_stats_cb);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.completed", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_IO_URING_COMPLETED, aio_stats_cb);
+#endif
 #if AIO_MODE == AIO_MODE_THREAD
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
@@ -481,11 +501,11 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 #endif
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-        aio_num_write++;
-        aio_bytes_written += op->aiocb.aio_nbytes;
+        aio_num_write.fetch_add(1);
+        aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
       } else {
-        aio_num_read++;
-        aio_bytes_read += op->aiocb.aio_nbytes;
+        aio_num_read.fetch_add(1);
+        aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
       }
       ink_mutex_release(&current_req->aio_mutex);
       cache_op((AIOCallbackInternal *)op);
@@ -588,7 +608,7 @@ DiskHandler::get_wq_max_workers()
 void
 DiskHandler::submit()
 {
-  io_uring_submit(&ring);
+  io_uring_submissions.fetch_add(io_uring_submit(&ring));
 }
 
 void
@@ -602,11 +622,11 @@ DiskHandler::handle_cqe(io_uring_cqe *cqe)
   op->mutex      = op->action.mutex;
 
   if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-    aio_num_write++;
-    aio_bytes_written += op->aiocb.aio_nbytes;
+    aio_num_write.fetch_add(1);
+    aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
   } else {
-    aio_num_read++;
-    aio_bytes_read += op->aiocb.aio_nbytes;
+    aio_num_read.fetch_add(1);
+    aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
   }
 
   // the last op in the linked ops will have the original op stored in the aiocb
@@ -630,6 +650,7 @@ DiskHandler::service()
   io_uring_peek_cqe(&ring, &cqe);
   while (cqe) {
     handle_cqe(cqe);
+    io_uring_completions.fetch_add(1);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;
@@ -648,6 +669,7 @@ DiskHandler::submit_and_wait(int ms)
   io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
   while (cqe) {
     handle_cqe(cqe);
+    io_uring_completions.fetch_add(1);
     io_uring_cqe_seen(&ring, cqe);
 
     cqe = nullptr;
