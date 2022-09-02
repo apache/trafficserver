@@ -1445,7 +1445,7 @@ Context::replaceHeaderMapValue(WasmHeaderMapType type, std::string_view key, std
       int first = 1;
       while (loc != TS_NULL_MLOC) {
         auto *tmp = TSMimeHdrFieldNextDup(map.bufp, map.hdr_loc, loc);
-        if (first) {
+        if (first != 0) {
           first = 0;
           TSMimeHdrFieldValueStringSet(map.bufp, map.hdr_loc, loc, -1, value.data(), static_cast<int>(value.size()));
         } else {
