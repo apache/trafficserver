@@ -64,10 +64,10 @@ print_port(struct sockaddr const *ip, std::string *result)
     int64_t port = 0;
     if (ip->sa_family == AF_INET) {
       const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
-      port                                    = s_sockaddr_in->sin_port;
+      port                      = s_sockaddr_in->sin_port;
     } else {
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
-      port                                      = s_sockaddr_in6->sin6_port;
+      port                       = s_sockaddr_in6->sin6_port;
     }
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for source port: %d", __FUNCTION__, static_cast<int>(port));
     result->assign(reinterpret_cast<const char *>(&port), sizeof(int64_t));
@@ -92,8 +92,8 @@ print_certificate(std::string *result, X509_NAME *name)
 
   if (X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE) > 0) {
     int64_t len = 0;
-    char *ptr = nullptr;
-    len = BIO_get_mem_data(bio, &ptr);
+    char *ptr   = nullptr;
+    len         = BIO_get_mem_data(bio, &ptr);
     result->assign(ptr, len);
     TSDebug(WASM_DEBUG_TAG, "print SSL certificate %.*s", static_cast<int>(len), ptr);
   }
@@ -106,14 +106,14 @@ print_san_certificate(std::string *result, X509 *cert, int type)
 {
   int ext_ndx = X509_get_ext_by_NID(cert, NID_subject_alt_name, -1);
   if (ext_ndx >= 0) {
-    X509_EXTENSION *ext                = nullptr;
-    STACK_OF(GENERAL_NAME) * alt_names = nullptr;
-    GENERAL_NAME *gen_name             = nullptr;
+    X509_EXTENSION *ext               = nullptr;
+    STACK_OF(GENERAL_NAME) *alt_names = nullptr;
+    GENERAL_NAME *gen_name            = nullptr;
 
     ext       = X509_get_ext(cert, ext_ndx);
     alt_names = static_cast<stack_st_GENERAL_NAME *>(X509V3_EXT_d2i(ext));
     if (alt_names != nullptr) {
-      int num        = sk_GENERAL_NAME_num(alt_names);
+      int num    = sk_GENERAL_NAME_num(alt_names);
       bool found = false;
       for (int i = 0; i < num; i++) {
         gen_name = sk_GENERAL_NAME_value(alt_names, i);
@@ -443,7 +443,7 @@ Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *met
 {
   int idp                    = 0;
   TSStatSync ats_metric_type = TS_STAT_SYNC_COUNT;
-  auto type = static_cast<MetricType>(metric_type);
+  auto type                  = static_cast<MetricType>(metric_type);
   switch (type) {
   case MetricType::Counter:
     ats_metric_type = TS_STAT_SYNC_COUNT;
@@ -521,7 +521,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *client_ip = nullptr;
-    client_ip = TSHttpTxnClientAddrGet(txnp_);
+    client_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_address(client_ip, result);
     return WasmResult::Ok;
   } else if (path == p_source_port) {
@@ -530,7 +530,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *client_ip = nullptr;
-    client_ip = TSHttpTxnClientAddrGet(txnp_);
+    client_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_port(client_ip, result);
     return WasmResult::Ok;
   } else if (path == p_destination_address) {
@@ -539,7 +539,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *local_ip = nullptr;
-    local_ip = TSHttpTxnIncomingAddrGet(txnp_);
+    local_ip                        = TSHttpTxnIncomingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
   } else if (path == p_destination_port) {
@@ -548,7 +548,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *local_ip = nullptr;
-    local_ip = TSHttpTxnIncomingAddrGet(txnp_);
+    local_ip                        = TSHttpTxnIncomingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
   } else if (path == p_connection_mtls) {
@@ -707,7 +707,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *server_ip = nullptr;
-    server_ip = TSHttpTxnServerAddrGet(txnp_);
+    server_ip                        = TSHttpTxnServerAddrGet(txnp_);
     print_address(server_ip, result);
     return WasmResult::Ok;
   } else if (path == p_upstream_port) {
@@ -716,7 +716,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *server_ip = nullptr;
-    server_ip = TSHttpTxnClientAddrGet(txnp_);
+    server_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_port(server_ip, result);
     return WasmResult::Ok;
   } else if (path == p_upstream_local_address) {
@@ -725,7 +725,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *local_ip = nullptr;
-    local_ip = TSHttpTxnOutgoingAddrGet(txnp_);
+    local_ip                        = TSHttpTxnOutgoingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
   } else if (path == p_upstream_local_port) {
@@ -734,7 +734,7 @@ Context::getProperty(std::string_view path, std::string *result)
       return WasmResult::Ok;
     }
     struct sockaddr const *local_ip = nullptr;
-    local_ip = TSHttpTxnOutgoingAddrGet(txnp_);
+    local_ip                        = TSHttpTxnOutgoingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
   } else if (path == p_upstream_tls_version) {
@@ -1119,8 +1119,8 @@ Context::getProperty(std::string_view path, std::string *result)
     return WasmResult::Ok;
   } else if (path.substr(0, p_response_headers.size()) == p_response_headers) {
     std::string_view key_sv = path.substr(p_response_headers.size(), path.size() - p_response_headers.size() - 1);
-    TSMBuffer bufp = nullptr;
-    TSMLoc hdr_loc = nullptr;
+    TSMBuffer bufp          = nullptr;
+    TSMLoc hdr_loc          = nullptr;
     if (TSHttpTxnServerRespGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
       get_header(bufp, hdr_loc, key_sv, result);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -1354,9 +1354,9 @@ Context::getHeaderMapPairs(WasmHeaderMapType type, Pairs *result)
   result->reserve(num);
   for (int i = 0; i < num; i++) {
     auto *loc = TSMimeHdrFieldGet(map.bufp, map.hdr_loc, i);
-    int nlen = 0;
+    int nlen  = 0;
     auto *n   = TSMimeHdrFieldNameGet(map.bufp, map.hdr_loc, loc, &nlen);
-    int vlen = 0;
+    int vlen  = 0;
     // TODO: add support for dups.
     auto *v = TSMimeHdrFieldValueStringGet(map.bufp, map.hdr_loc, loc, 0, &vlen);
     result->push_back(

@@ -42,7 +42,7 @@ static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
 
 // handler for timer event
 static int
-schedule_handler(TSCont contp, TSEvent /*event*/, void */*data*/)
+schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 {
   TSDebug(WASM_DEBUG_TAG, "[%s] Inside schedule_handler", __FUNCTION__);
 
@@ -82,8 +82,7 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void */*data*/)
       } else {
         TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
         bool advance = true;
-        for (auto it = wasm_config->deleted_configs.begin();
-             it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
+        for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
           advance = true;
           TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
           std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
@@ -111,12 +110,12 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void */*data*/)
 static int
 http_event_handler(TSCont contp, TSEvent event, void *data)
 {
-  int result    = -1;
+  int result     = -1;
   auto *context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
   auto *old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
   TSMutexLock(old_wasm->mutex());
   std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
-  auto *txnp                            = static_cast<TSHttpTxn>(data);
+  auto *txnp                           = static_cast<TSHttpTxn>(data);
 
   TSMBuffer buf  = nullptr;
   TSMLoc hdr_loc = nullptr;
@@ -190,8 +189,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
         } else {
           TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
           bool advance = true;
-          for (auto it = wasm_config->deleted_configs.begin();
-               it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
+          for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
             advance = true;
             TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
             std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
@@ -308,8 +306,9 @@ read_configuration()
       YAML::NodeType::value type   = it->second.Type();
 
       if (node_name != "config" || type != YAML::NodeType::Map) {
-        TSError("[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: Top level nodes must be named config and be of type map", __FUNCTION__,
-                wasm_config->config_filename.c_str());
+        TSError("[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: Top level nodes must be named config and be of "
+                "type map",
+                __FUNCTION__, wasm_config->config_filename.c_str());
         return false;
       }
 
@@ -460,7 +459,7 @@ read_configuration()
     return false;
   }
 
-  TSCont contp     = TSContCreate(schedule_handler, TSMutexCreate());
+  TSCont contp      = TSContCreate(schedule_handler, TSMutexCreate());
   auto *rootContext = wasm->start(plugin, contp);
 
   if (!wasm->configure(rootContext, plugin)) {
@@ -498,7 +497,7 @@ read_configuration()
 
 // handler for configuration event
 static int
-config_handler(TSCont /*contp*/, TSEvent /*event*/, void */*data*/)
+config_handler(TSCont /*contp*/, TSEvent /*event*/, void * /*data*/)
 {
   TSDebug(WASM_DEBUG_TAG, "[%s] configuration reloading", __FUNCTION__);
   read_configuration();
