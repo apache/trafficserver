@@ -73,6 +73,8 @@ asf-distdir:
 	test -d .git && git clone . $(distdir)
 	cd $(distdir) && autoreconf -i
 	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
+	grep -v 'img.shields.io' $(distdir)/README.md > $(distdir)/README.md.clean
+	mv $(distdir)/README.md.clean $(distdir)/README.md
 
 asf-dist-sign: asf-dist
 	sha512sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha512
