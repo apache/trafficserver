@@ -1071,7 +1071,7 @@ public:
 
   QUICFrame *
   generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                 size_t current_packet_size, uint32_t seq_num) override
+                 size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());

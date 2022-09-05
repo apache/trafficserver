@@ -32,13 +32,13 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
   // Initial state
-  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
   // One packet
   ack_manager.update(level, 1, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -54,7 +54,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 5, 1, false);
   ack_manager.update(level, 3, 1, false);
   ack_manager.update(level, 4, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -66,7 +66,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 6, 1, false);
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 10, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -79,13 +79,13 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.on_frame_acked(frame->id());
 
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   CHECK(ack_frame == nullptr);
 
   ack_manager.update(level, 11, 1, false);
   ack_manager.update(level, 12, 1, false);
   ack_manager.update(level, 13, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -101,10 +101,10 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 15, 1, true);
   ack_manager.update(level, 16, 1, true);
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
 
   ack_manager.update(level, 17, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -152,7 +152,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 1, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    QUICFrame *frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    QUICFrame *frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     CHECK(frame != nullptr);
     frame->~QUICFrame();
 
@@ -162,7 +162,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 3, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     CHECK(frame != nullptr);
     frame->~QUICFrame();
   }
@@ -219,7 +219,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame == nullptr);
 
@@ -233,7 +233,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     sleep(1);
     Thread::get_hrtime_updated();
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
-    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
 
     CHECK(frame->ack_block_count() == 0);
@@ -251,7 +251,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 
   // Initial state
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
@@ -261,7 +261,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   ack_manager.update(level, 8, 1, false);
   ack_manager.update(level, 9, 1, false);
 
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
@@ -274,7 +274,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -331,7 +331,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
   // Initial state
-  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
@@ -341,7 +341,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   ack_manager.update(level, 8, 1, false);
   ack_manager.update(level, 9, 1, false);
 
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
@@ -352,7 +352,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
 
   ack_manager.on_frame_lost(frame->id());
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
@@ -367,7 +367,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
 
-  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -388,7 +388,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
     // Initial state
-    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame == nullptr);
 
@@ -400,7 +400,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame != nullptr);
     CHECK(frame->ack_block_count() == 0);
@@ -421,7 +421,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
     // Initial state
-    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame == nullptr);
 
@@ -433,7 +433,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0, nullptr);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame != nullptr);
     CHECK(frame->ack_block_count() == 0);

@@ -126,6 +126,9 @@ QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint
                                    QUICFrameGenerator *owner)
 {
   QUICFrame *frame = nullptr;
+  if (owner == nullptr) {
+    owner = this;
+  }
 
   if (!this->_is_level_matched(level)) {
     return frame;
@@ -246,13 +249,13 @@ QUICLocalFlowController::_need_to_forward_limit()
 QUICFrame *
 QUICRemoteConnectionFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_data_blocked_frame(buf, this->_offset, this->_issue_frame_id(), this);
+  return QUICFrameFactory::create_data_blocked_frame(buf, this->_offset, this->_issue_frame_id(), owner);
 }
 
 QUICFrame *
 QUICLocalConnectionFlowController::_create_frame(uint8_t *buf, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_max_data_frame(buf, this->_limit, this->_issue_frame_id(), this);
+  return QUICFrameFactory::create_max_data_frame(buf, this->_limit, this->_issue_frame_id(), owner);
 }
 
 QUICFrame *
