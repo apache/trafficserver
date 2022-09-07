@@ -22,7 +22,7 @@
 set -e
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1k+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1q+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -65,7 +65,7 @@ set -x
 echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
 cd openssl-quic
-./config --prefix=${OPENSSL_PREFIX}
+./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 
@@ -79,7 +79,13 @@ echo "Building nghttp3..."
 [ ! -d nghttp3 ] && git clone https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure \
+  --prefix=${BASE} \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  CFLAGS="${CFLAGS}" \
+  CXXFLAGS="${CXXFLAGS}" \
+  LDFLAGS="${LDFLAGS}" \
+  --enable-lib-only
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -89,7 +95,13 @@ echo "Building ngtcp2..."
 [ ! -d ngtcp2 ] && git clone https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure \
+  --prefix=${BASE} \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  CFLAGS="${CFLAGS}" \
+  CXXFLAGS="${CXXFLAGS}" \
+  LDFLAGS="${LDFLAGS}" \
+  --enable-lib-only
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -100,7 +112,13 @@ echo "Building nghttp2 ..."
 cd nghttp2
 git checkout --track -b quic origin/quic
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure \
+  --prefix=${BASE} \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  CFLAGS="${CFLAGS}" \
+  CXXFLAGS="${CXXFLAGS}" \
+  LDFLAGS="${LDFLAGS}" \
+  --enable-lib-only
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -110,6 +128,14 @@ echo "Building curl ..."
 [ ! -d curl ] && git clone https://github.com/curl/curl.git
 cd curl
 autoreconf -i
-./configure --prefix=${BASE} --with-ssl=${OPENSSL_PREFIX} --with-nghttp2=${BASE} --with-nghttp3=${BASE} --with-ngtcp2=${BASE} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure \
+  --prefix=${BASE} \
+  --with-ssl=${OPENSSL_PREFIX} \
+  --with-nghttp2=${BASE} \
+  --with-nghttp3=${BASE} \
+  --with-ngtcp2=${BASE} \
+  CFLAGS="${CFLAGS}" \
+  CXXFLAGS="${CXXFLAGS}" \
+  LDFLAGS="${LDFLAGS}"
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
