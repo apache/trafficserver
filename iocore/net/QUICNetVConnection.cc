@@ -1678,6 +1678,8 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
       frame =
         g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, len, seq_num);
       if (frame) {
+        ink_release_assert(dynamic_cast<QUICStreamBase *>(frame->generated_by()) == nullptr);
+        ink_release_assert(dynamic_cast<QUICBidirectionalStream *>(frame->generated_by()) == nullptr);
         this->_context->trigger(QUICContext::CallbackEvent::FRAME_PACKETIZE, *frame);
         // Some frame types must not be sent on Initial and Handshake packets
         switch (auto t = frame->type(); level) {

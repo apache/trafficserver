@@ -40,6 +40,9 @@ public:
   virtual void on_read() override;
   virtual void on_eos() override;
 
+  void on_frame_acked(QUICFrameInformationUPtr &info);
+  void on_frame_lost(QUICFrameInformationUPtr &info);
+
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame);

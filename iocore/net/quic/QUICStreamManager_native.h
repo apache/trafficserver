@@ -62,7 +62,9 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t timestamp) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t timestamp) override;
+                            size_t current_packet_size, uint32_t timestamp, QUICFrameGenerator *owner) override;
+  void _on_frame_acked(QUICFrameInformationUPtr &info) override;
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   // QUICStreamStateListener
   void on_stream_state_close(const QUICStream *stream) override;

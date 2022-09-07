@@ -443,9 +443,13 @@ QUICStreamManagerImpl::will_generate_frame(QUICEncryptionLevel level, size_t cur
 
 QUICFrame *
 QUICStreamManagerImpl::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                                      uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
+                                      uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num,
+                                      QUICFrameGenerator *owner)
 {
   QUICFrame *frame = nullptr;
+  if (owner == nullptr) {
+    owner = this;
+  }
 
   if (!this->_is_level_matched(level)) {
     return frame;
@@ -458,7 +462,7 @@ QUICStreamManagerImpl::generate_frame(uint8_t *buf, QUICEncryptionLevel level, u
 
   // FIXME We should pick a stream based on priority
   for (QUICStreamBase *s = this->stream_list.head; s; s = s->link.next) {
-    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, current_packet_size, seq_num);
+    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, current_packet_size, seq_num, owner);
     if (frame) {
       break;
     }
@@ -469,6 +473,24 @@ QUICStreamManagerImpl::generate_frame(uint8_t *buf, QUICEncryptionLevel level, u
   }
 
   return frame;
+}
+
+void
+QUICStreamManagerImpl::_on_frame_acked(QUICFrameInformationUPtr &info)
+{
+  auto stream = this->_find_stream(info->stream_id);
+  if (stream) {
+    stream->on_frame_acked(info);
+  }
+}
+
+void
+QUICStreamManagerImpl::_on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  auto stream = this->_find_stream(info->stream_id);
+  if (stream) {
+    stream->on_frame_lost(info);
+  }
 }
 
 bool

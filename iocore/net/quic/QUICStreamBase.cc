@@ -79,6 +79,7 @@ QUICStreamBase::_records_stream_frame(QUICEncryptionLevel level, const QUICStrea
   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = frame.type();
   info->level                   = level;
+  info->stream_id               = this->id();
   StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
   frame_info->stream_id         = frame.stream_id();
   frame_info->offset            = frame.offset();
@@ -93,6 +94,7 @@ QUICStreamBase::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICR
   QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                     = frame.type();
   info->level                    = level;
+  info->stream_id                = this->id();
   RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
   frame_info->error_code         = frame.error_code();
   frame_info->final_offset       = frame.final_offset();
@@ -105,6 +107,7 @@ QUICStreamBase::_records_stop_sending_frame(QUICEncryptionLevel level, const QUI
   QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                       = frame.type();
   info->level                      = level;
+  info->stream_id                  = this->id();
   StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
   frame_info->error_code           = frame.error_code();
   this->_records_frame(frame.id(), std::move(info));
@@ -116,6 +119,7 @@ QUICStreamBase::_records_crypto_frame(QUICEncryptionLevel level, const QUICCrypt
   QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                         = QUICFrameType::CRYPTO;
   info->level                        = level;
+  info->stream_id                    = this->id();
   CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
   crypto_frame_info->offset          = frame.offset();
   crypto_frame_info->block           = frame.data();
@@ -166,4 +170,16 @@ QUICStreamBase::on_eos()
 void
 QUICStreamBase::on_read()
 {
+}
+
+void
+QUICStreamBase::on_frame_acked(QUICFrameInformationUPtr &info)
+{
+  this->_on_frame_acked(info);
+}
+
+void
+QUICStreamBase::on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  this->_on_frame_lost(info);
 }
