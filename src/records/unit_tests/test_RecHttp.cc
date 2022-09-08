@@ -197,8 +197,15 @@ std::vector<ConvertAlpnToWireFormatTestCase> convertAlpnToWireFormatTestCases = 
     true
   },
   {
-    "Multiple protocols: HTTP/0.9, HTTP/1.0, HTTP/1.1",
+    "Multiple protocols: HTTP/1.0, HTTP/1.1",
     "http/1.1,http/1.0",
+    {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '0'},
+    18,
+    true
+  },
+  {
+    "Whitespace: verify that we gracefully handle padded whitespace",
+    "http/1.1, http/1.0",
     {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '0'},
     18,
     true
