@@ -133,7 +133,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   stream->increment_data_length(payload_length - pad_length - nbytes);
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    stream->recv_end_stream = true;
+    stream->receive_end_stream = true;
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
       this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -271,7 +271,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
   uint32_t header_block_fragment_length = payload_length;
 
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_STREAM) {
-    stream->recv_end_stream = true;
+    stream->receive_end_stream = true;
   }
 
   // NOTE: Strip padding if exists
@@ -385,7 +385,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     }
 
     // Check Content-Length & payload length when END_STREAM flag is true
-    if (stream->recv_end_stream && !stream->payload_length_is_valid()) {
+    if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
@@ -949,7 +949,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     }
 
     // Check Content-Length & payload length when END_STREAM flag is true
-    if (stream->recv_end_stream && !stream->payload_length_is_valid()) {
+    if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
@@ -1615,7 +1615,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
       dependency_tree->update(node, len);
 
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-      stream->signal_write_event(true);
+      stream->signal_write_event(Http2Stream::CALL_UPDATE);
     }
     break;
   }
@@ -1643,7 +1643,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   payload_length                    = 0;
 
   uint8_t flags               = 0x00;
-  IOBufferReader *resp_reader = stream->response_get_data_reader();
+  IOBufferReader *resp_reader = stream->get_data_reader_for_send();
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
@@ -1753,7 +1753,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 
   Http2StreamDebug(session, stream->get_id(), "Send HEADERS frame");
 
-  HTTPHdr *resp_hdr = &stream->response_header;
+  HTTPHdr *resp_hdr = &stream->_send_header;
   http2_convert_header_from_1_1_to_2(resp_hdr);
 
   uint32_t buf_len = resp_hdr->length_get() * 2; // Make it double just in case
@@ -1911,9 +1911,9 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     }
   }
   stream->change_state(HTTP2_FRAME_TYPE_PUSH_PROMISE, HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS);
-  stream->set_request_headers(hdr);
+  stream->set_receive_headers(hdr);
   stream->new_transaction();
-  stream->recv_end_stream = true; // No more data with the request
+  stream->receive_end_stream = true; // No more data with the request
   stream->send_request(*this);
 
   return true;
