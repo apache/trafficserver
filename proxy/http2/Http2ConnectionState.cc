@@ -170,7 +170,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   stream->decrement_server_rwnd(payload_length);
 
   if (is_debug_tag_set("http2_con")) {
-    uint32_t rwnd = this->server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+    uint32_t rwnd = this->local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
     Http2StreamDebug(this->session, id, "Received DATA frame: rwnd con=%zd/%" PRId32 " stream=%zd/%" PRId32, this->server_rwnd(),
                      rwnd, stream->server_rwnd(), rwnd);
   }
@@ -369,7 +369,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
 
     stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
     Http2ErrorCode result =
-      stream->decode_header_blocks(*this->local_hpack_handle, this->server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+      stream->decode_header_blocks(*this->local_hpack_handle, this->local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -649,7 +649,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
       this->update_initial_rwnd(param.value);
     }
 
-    this->client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
+    this->peer_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
     ++n_settings;
   }
 
@@ -933,7 +933,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     }
 
     Http2ErrorCode result =
-      stream->decode_header_blocks(*this->local_hpack_handle, this->server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+      stream->decode_header_blocks(*this->local_hpack_handle, this->local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -1073,8 +1073,8 @@ Http2ConnectionState::send_connection_preface()
 
   send_settings_frame(configured_settings);
 
-  if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
-    send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
+  if (local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
+    send_window_update_frame(0, local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
   }
 }
 
@@ -1318,14 +1318,14 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   // that receives a HEADERS frame that causes their advertised concurrent
   // stream limit to be exceeded MUST treat this as a stream error.
   if (client_streamid) {
-    if (client_streams_in_count >= server_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+    if (client_streams_in_count >= local_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
       HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN, this_ethread());
       error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                          "recv headers creating inbound stream beyond max_concurrent limit");
       return nullptr;
     }
   } else {
-    if (client_streams_out_count >= client_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+    if (client_streams_out_count >= peer_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
       HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT, this_ethread());
       error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                          "recv headers creating outbound stream beyond max_concurrent limit");
@@ -1334,7 +1334,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   }
 
   Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), new_id,
-                                              client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+                                              peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
 
   ink_assert(nullptr != new_stream);
   ink_assert(!stream_list.in(new_stream));
@@ -1417,8 +1417,8 @@ Http2ConnectionState::restart_streams()
 void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
-  uint32_t initial_rwnd = this->server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd     = std::min(initial_rwnd, this->server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+  uint32_t initial_rwnd = this->local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+  uint32_t min_rwnd     = std::min(initial_rwnd, this->local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
 
   // Connection level WINDOW UPDATE
   if (this->server_rwnd() < min_rwnd) {
@@ -1566,7 +1566,7 @@ Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
   // Update stream level window sizes
   for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
     SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
-    s->update_initial_rwnd(new_size - (client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - s->client_rwnd()));
+    s->update_initial_rwnd(new_size - (peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - s->client_rwnd()));
   }
 }
 
@@ -1762,7 +1762,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 
   stream->mark_milestone(Http2StreamMilestone::START_ENCODE_HEADERS);
   Http2ErrorCode result = http2_encode_header_blocks(resp_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
-                                                     client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+                                                     peer_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     return;
   }
@@ -1821,7 +1821,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   int payload_length          = 0;
   uint8_t flags               = 0x00;
 
-  if (client_settings.get(HTTP2_SETTINGS_ENABLE_PUSH) == 0) {
+  if (peer_settings.get(HTTP2_SETTINGS_ENABLE_PUSH) == 0) {
     return false;
   }
 
@@ -1852,7 +1852,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   uint8_t *buf = local_buffer.data();
 
   Http2ErrorCode result = http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
-                                                     client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+                                                     peer_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     return false;
   }
@@ -1963,13 +1963,13 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
     unsigned settings_value    = new_settings.get(id);
 
     // Send only difference
-    if (settings_value != server_settings.get(id)) {
+    if (settings_value != local_settings.get(id)) {
       Http2StreamDebug(session, stream_id, "  %s : %u", Http2DebugNames::get_settings_param_name(id), settings_value);
 
       params[params_size++] = {static_cast<uint16_t>(id), settings_value};
 
       // Update current settings
-      server_settings.set(id, new_settings.get(id));
+      local_settings.set(id, new_settings.get(id));
     }
   }
 

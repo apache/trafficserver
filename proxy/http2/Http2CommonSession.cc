@@ -268,13 +268,13 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
 
   this->_read_buffer_reader->consume(nbytes);
 
-  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
+  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     return -1;
   }
 
   // If we know up front that the payload is too long, nuke this connection.
-  if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+  if (this->current_hdr.length > this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR;
     return -1;
   }
