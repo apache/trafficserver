@@ -220,7 +220,7 @@ Http2ErrorCode
 Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
 {
   Http2ErrorCode error = http2_decode_header_blocks(&_req_header, header_blocks, header_blocks_length, nullptr, hpack_handle,
-                                                    trailing_header, maximum_table_size);
+                                                    is_trailing_header, maximum_table_size);
   if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
   }

@@ -173,8 +173,8 @@ private:
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
-  bool trailing_header = false;
-  bool has_body        = false;
+  bool is_trailing_header = false;
+  bool has_body           = false;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -266,7 +266,7 @@ Http2Stream::update_initial_rwnd(Http2WindowSize new_size)
 inline bool
 Http2Stream::has_trailing_header() const
 {
-  return trailing_header;
+  return is_trailing_header;
 }
 
 inline void
