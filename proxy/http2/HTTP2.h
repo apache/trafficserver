@@ -31,14 +31,15 @@
 
 class HTTPHdr;
 
-typedef unsigned Http2StreamId;
+// [RFC 9113] 5.1.1 Stream identifiers.
+using Http2StreamId = uint32_t;
 
-constexpr Http2StreamId HTTP2_CONNECTION_CONTROL_STRTEAM = 0;
-constexpr uint8_t HTTP2_FRAME_NO_FLAG                    = 0;
+constexpr Http2StreamId HTTP2_CONNECTION_CONTROL_STREAM = 0;
+constexpr uint8_t HTTP2_FRAME_NO_FLAG                   = 0;
 
 // [RFC 7540] 6.9.2. Initial Flow Control Window Size
 // the flow control window can be come negative so we need to track it with a signed type.
-typedef int32_t Http2WindowSize;
+using Http2WindowSize = int32_t;
 
 extern const char *const HTTP2_CONNECTION_PREFACE;
 const size_t HTTP2_CONNECTION_PREFACE_LEN = 24;
@@ -360,6 +361,15 @@ ParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
 ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
 void http2_init();
 
+/** Each of these values correspond to the flow control policy described in or
+ * records.config documentation for proxy.config.http2.flow_control.in.policy.
+ */
+enum class Http2FlowControlPolicy {
+  STATIC_SESSION_AND_STATIC_STREAM,
+  LARGE_SESSION_AND_STATIC_STREAM,
+  LARGE_SESSION_AND_DYNAMIC_STREAM,
+};
+
 // Not sure where else to put this, but figure this is as good of a start as
 // anything else.
 // Right now, only the static init() is available, which sets up some basic
@@ -373,7 +383,8 @@ public:
   static uint32_t max_active_streams_in;
   static bool throttling;
   static uint32_t stream_priority_enabled;
-  static uint32_t initial_window_size;
+  static uint32_t initial_window_size_in;
+  static Http2FlowControlPolicy flow_control_policy_in;
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
   static uint32_t max_header_list_size;
