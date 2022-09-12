@@ -465,9 +465,11 @@ Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
                            bool &trailing_header, uint32_t maximum_table_size)
 {
-  const MIMEField *field;
-  const char *value;
-  int len;
+  const MIMEField *field  = nullptr;
+  const char *name        = nullptr;
+  int name_len            = 0;
+  const char *value       = nullptr;
+  int value_len           = 0;
   bool is_trailing_header = trailing_header;
   int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
 
@@ -492,14 +494,14 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
     expected_pseudo_header_count = 0;
   }
   for (auto &field : *hdr) {
-    value = field.name_get(&len);
+    name = field.name_get(&name_len);
     // Pseudo headers must appear before regular headers
-    if (len && value[0] == ':') {
+    if (name_len && name[0] == ':') {
       ++pseudo_header_count;
       if (pseudo_header_count > expected_pseudo_header_count) {
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
-    } else if (len <= 0) {
+    } else if (name_len <= 0) {
       return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
@@ -521,8 +523,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   // :path pseudo header MUST NOT empty for http or https URIs
   field = hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
   if (field) {
-    field->value_get(&len);
-    if (len == 0) {
+    field->value_get(&value_len);
+    if (value_len == 0) {
       return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
@@ -538,8 +540,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   // value other than "trailers".
   field = hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
   if (field) {
-    value = field->value_get(&len);
-    if (!(len == 8 && memcmp(value, "trailers", 8) == 0)) {
+    value = field->value_get(&value_len);
+    if (!(value_len == 8 && memcmp(value, "trailers", 8) == 0)) {
       return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }

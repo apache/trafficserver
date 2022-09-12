@@ -86,9 +86,11 @@ public:
   DependencyTree *dependency_tree  = nullptr;
   ActivityCop<Http2Stream> _cop;
 
-  // Settings.
-  Http2ConnectionSettings server_settings;
-  Http2ConnectionSettings client_settings;
+  /// The HTTP/2 settings configured by ATS.
+  Http2ConnectionSettings local_settings;
+
+  /// The HTTP/2 settings configured by the peer.
+  Http2ConnectionSettings peer_settings;
 
   void init(Http2CommonSession *ssn);
   void send_connection_preface();

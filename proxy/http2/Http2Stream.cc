@@ -54,10 +54,10 @@ Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initi
   this->_server_rwnd              = Http2::initial_window_size;
   this->upstream_outbound_options = *(session->accept_options);
 
-  this->_reader = this->_request_buffer.alloc_reader();
+  this->_reader = this->_receive_buffer.alloc_reader();
 
-  _req_header.create(HTTP_TYPE_REQUEST);
-  response_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+  _receive_header.create(HTTP_TYPE_REQUEST);
+  _send_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
 
   http_parser_init(&http_parser);
 }
@@ -119,11 +119,11 @@ Http2Stream::~Http2Stream()
           this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
   }
 
-  _req_header.destroy();
-  response_header.destroy();
+  _receive_header.destroy();
+  _send_header.destroy();
 
   // Drop references to all buffer data
-  this->_request_buffer.clear();
+  this->_receive_buffer.clear();
 
   // Free the mutexes in the VIO
   read_vio.mutex.clear();
@@ -219,8 +219,8 @@ Http2Stream::main_event_handler(int event, void *edata)
 Http2ErrorCode
 Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
 {
-  Http2ErrorCode error = http2_decode_header_blocks(&_req_header, header_blocks, header_blocks_length, nullptr, hpack_handle,
-                                                    trailing_header, maximum_table_size);
+  Http2ErrorCode error = http2_decode_header_blocks(&_receive_header, header_blocks, header_blocks_length, nullptr, hpack_handle,
+                                                    is_trailing_header, maximum_table_size);
   if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
   }
@@ -234,10 +234,10 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   this->_http_sm_id = this->_sm->sm_id;
 
   // Convert header to HTTP/1.1 format
-  if (http2_convert_header_from_2_to_1_1(&_req_header) == PARSE_RESULT_ERROR) {
+  if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
     // There's no way to cause Bad Request directly at this time.
     // Set an invalid method so it causes an error later.
-    _req_header.method_set("\xffVOID", 1);
+    _receive_header.method_set("\xffVOID", 1);
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -248,16 +248,16 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   do {
     bufindex             = 0;
     tmp                  = dumpoffset;
-    IOBufferBlock *block = this->_request_buffer.get_current_block();
+    IOBufferBlock *block = this->_receive_buffer.get_current_block();
     if (!block) {
-      this->_request_buffer.add_block();
-      block = this->_request_buffer.get_current_block();
+      this->_receive_buffer.add_block();
+      block = this->_receive_buffer.get_current_block();
     }
-    done = _req_header.print(block->start(), block->write_avail(), &bufindex, &tmp);
+    done = _receive_header.print(block->start(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
-    this->_request_buffer.fill(bufindex);
+    this->_receive_buffer.fill(bufindex);
     if (!done) {
-      this->_request_buffer.add_block();
+      this->_receive_buffer.add_block();
     }
   } while (!done);
 
@@ -268,7 +268,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
 
   // Is the _sm ready to process the header?
   if (this->read_vio.nbytes > 0) {
-    if (this->recv_end_stream) {
+    if (this->receive_end_stream) {
       this->read_vio.nbytes = bufindex;
       this->signal_read_event(VC_EVENT_READ_COMPLETE);
     } else {
@@ -286,7 +286,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
   switch (_state) {
   case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
     if (type == HTTP2_FRAME_TYPE_HEADERS) {
-      if (recv_end_stream) {
+      if (receive_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
       } else if (send_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
@@ -294,7 +294,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
         _state = Http2StreamState::HTTP2_STREAM_STATE_OPEN;
       }
     } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
-      if (recv_end_stream) {
+      if (receive_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
       } else if (send_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
@@ -312,7 +312,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     if (type == HTTP2_FRAME_TYPE_RST_STREAM) {
       _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
     } else if (type == HTTP2_FRAME_TYPE_HEADERS || type == HTTP2_FRAME_TYPE_DATA) {
-      if (recv_end_stream) {
+      if (receive_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
       } else if (send_end_stream) {
         _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
@@ -344,7 +344,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     return false;
 
   case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
-    if (type == HTTP2_FRAME_TYPE_RST_STREAM || recv_end_stream) {
+    if (type == HTTP2_FRAME_TYPE_RST_STREAM || receive_end_stream) {
       _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
     } else {
       // Error, set state closed
@@ -418,9 +418,9 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.vc_server = this;
   write_vio.op        = VIO::WRITE;
 
-  if (c != nullptr && nbytes > 0 && this->is_client_state_writeable()) {
+  if (c != nullptr && nbytes > 0 && this->is_state_writeable()) {
     update_write_request(false);
-  } else if (!this->is_client_state_writeable()) {
+  } else if (!this->is_state_writeable()) {
     // Cannot start a write on a closed stream
     return nullptr;
   }
@@ -442,7 +442,7 @@ Http2Stream::do_io_close(int /* flags */)
     // by the time this is called from transaction_done.
     closed = true;
 
-    if (_proxy_ssn && this->is_client_state_writeable()) {
+    if (_proxy_ssn && this->is_state_writeable()) {
       // Make sure any trailing end of stream frames are sent
       // We will be removed at send_data_frames or closing connection phase
       Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
@@ -591,7 +591,7 @@ Http2Stream::update_read_request(bool call_update)
 
   // Try to be smart and only signal if there was additional data
   int send_event = VC_EVENT_READ_READY;
-  if (read_vio.ntodo() == 0 || (this->recv_end_stream && this->read_vio.nbytes != INT64_MAX)) {
+  if (read_vio.ntodo() == 0 || (this->receive_end_stream && this->read_vio.nbytes != INT64_MAX)) {
     send_event = VC_EVENT_READ_COMPLETE;
   }
 
@@ -612,11 +612,11 @@ Http2Stream::update_read_request(bool call_update)
 void
 Http2Stream::restart_sending()
 {
-  if (!this->response_header_done) {
+  if (!this->parsing_header_done) {
     return;
   }
 
-  IOBufferReader *reader = this->response_get_data_reader();
+  IOBufferReader *reader = this->get_data_reader_for_send();
   if (reader && !reader->is_read_avail_more_than(0)) {
     return;
   }
@@ -625,13 +625,13 @@ Http2Stream::restart_sending()
     return;
   }
 
-  this->send_response_body(true);
+  this->send_body(true);
 }
 
 void
 Http2Stream::update_write_request(bool call_update)
 {
-  if (!this->is_client_state_writeable() || closed || _proxy_ssn == nullptr || write_vio.mutex == nullptr ||
+  if (!this->is_state_writeable() || closed || _proxy_ssn == nullptr || write_vio.mutex == nullptr ||
       write_vio.get_reader() == nullptr) {
     return;
   }
@@ -652,19 +652,19 @@ Http2Stream::update_write_request(bool call_update)
   }
 
   // Process the new data
-  if (!this->response_header_done) {
+  if (!this->parsing_header_done) {
     // Still parsing the response_header
     int bytes_used = 0;
-    int state      = this->response_header.parse_resp(&http_parser, vio_reader, &bytes_used, false);
+    int state      = this->_send_header.parse_resp(&http_parser, vio_reader, &bytes_used, false);
     // HTTPHdr::parse_resp() consumed the vio_reader in above (consumed size is `bytes_used`)
     write_vio.ndone += bytes_used;
 
     switch (state) {
     case PARSE_RESULT_DONE: {
-      this->response_header_done = true;
+      this->parsing_header_done = true;
 
       // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->response_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
       if (field) {
         int len;
         const char *value = field->value_get(&len);
@@ -683,10 +683,10 @@ Http2Stream::update_write_request(bool call_update)
       }
 
       // Roll back states of response header to read final response
-      if (this->response_header.expect_final_response()) {
-        this->response_header_done = false;
-        response_header.destroy();
-        response_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+      if (this->_send_header.expect_final_response()) {
+        this->parsing_header_done = false;
+        _send_header.destroy();
+        _send_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
         http_parser_clear(&http_parser);
         http_parser_init(&http_parser);
       }
@@ -695,7 +695,7 @@ Http2Stream::update_write_request(bool call_update)
 
       if (vio_reader->is_read_avail_more_than(0)) {
         this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
-        this->send_response_body(call_update);
+        this->send_body(call_update);
       }
       break;
     }
@@ -707,7 +707,7 @@ Http2Stream::update_write_request(bool call_update)
     }
   } else {
     this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
-    this->send_response_body(call_update);
+    this->send_body(call_update);
   }
 
   return;
@@ -786,7 +786,7 @@ Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 }
 
 void
-Http2Stream::send_response_body(bool call_update)
+Http2Stream::send_body(bool call_update)
 {
   Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
   _timeout.update_inactivity();
@@ -826,7 +826,7 @@ Http2Stream::reenable(VIO *vio)
 }
 
 IOBufferReader *
-Http2Stream::response_get_data_reader() const
+Http2Stream::get_data_reader_for_send() const
 {
   return write_vio.get_reader();
 }
