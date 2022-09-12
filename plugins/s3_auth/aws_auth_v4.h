@@ -67,7 +67,23 @@ static const String X_AMZ                = "x-amz-";
 static const String CONTENT_TYPE         = "content-type";
 static const String HOST                 = "host";
 
-String trimWhiteSpaces(const String &s);
+/**
+ * @brief Trim white spaces from beginning and end.
+ * @returns trimmed string
+ */
+template <class StringLike>
+StringLike
+trimWhiteSpaces(const StringLike &s)
+{
+  /* @todo do this better? */
+  static const auto whiteSpace = " \t\n\v\f\r";
+  size_t start                 = s.find_first_not_of(whiteSpace);
+  if (StringLike::npos == start) {
+    return StringLike();
+  }
+  size_t stop = s.find_last_not_of(whiteSpace);
+  return s.substr(start, stop - start + 1);
+}
 
 template <typename ContainerType>
 void

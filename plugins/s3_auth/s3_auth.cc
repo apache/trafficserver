@@ -23,6 +23,8 @@
 #include <ctime>
 #include <cstring>
 #include <getopt.h>
+#include <ios>
+#include <string_view>
 #include <sys/time.h>
 
 #include <cstdio>
@@ -523,41 +525,29 @@ S3Config::parse_config(const std::string &config_fname)
     TSError("[%s] called without a config file, this is broken", PLUGIN_NAME);
     return false;
   } else {
-    char line[512]; // These are long lines ...
-    FILE *file = fopen(config_fname.c_str(), "r");
+    std::ifstream file;
+    file.open(config_fname, std::ios_base::in);
 
-    if (nullptr == file) {
+    if (!file.is_open()) {
       TSError("[%s] unable to open %s", PLUGIN_NAME, config_fname.c_str());
       return false;
     }
 
-    while (fgets(line, sizeof(line), file) != nullptr) {
-      char *pos1, *pos2;
+    for (std::string buf; std::getline(file, buf);) {
+      std::string_view line{buf};
 
-      // Skip leading white spaces
-      pos1 = line;
-      while (*pos1 && isspace(*pos1)) {
-        ++pos1;
-      }
-      if (!*pos1 || ('#' == *pos1)) {
-        continue;
-      }
+      // Skip leading/trailing white spaces
+      const auto key_val = trimWhiteSpaces(line);
 
-      // Skip trailing white spaces
-      pos2 = pos1;
-      pos1 = pos2 + strlen(pos2) - 1;
-      while ((pos1 > pos2) && isspace(*pos1)) {
-        *(pos1--) = '\0';
-      }
-      if (pos1 == pos2) {
+      // Skip empty or comment lines
+      if (key_val.length() == 0 || ('#' == key_val[0])) {
         continue;
       }
 
       // Identify the keys (and values if appropriate)
-      std::string key_val(pos2, pos1 - pos2 + 1);
-      size_t eq_pos       = key_val.find_first_of("=");
-      std::string key_str = trimWhiteSpaces(key_val.substr(0, eq_pos == String::npos ? key_val.size() : eq_pos));
-      std::string val_str = eq_pos == String::npos ? "" : trimWhiteSpaces(key_val.substr(eq_pos + 1, key_val.size()));
+      size_t eq_pos = key_val.find_first_of('=');
+      std::string key_str{trimWhiteSpaces(key_val.substr(0, eq_pos == std::string_view::npos ? key_val.size() : eq_pos))};
+      std::string val_str{eq_pos == std::string_view::npos ? "" : trimWhiteSpaces(key_val.substr(eq_pos + 1, key_val.size()))};
 
       if (key_str == "secret_key") {
         set_secret(val_str.c_str());
@@ -578,11 +568,9 @@ S3Config::parse_config(const std::string &config_fname)
       } else if (key_str == "expiration") {
         set_expiration(val_str.c_str());
       } else {
-        // ToDo: warnings?
+        TSWarning("[%s] unknown config key: %s", PLUGIN_NAME, key_str.c_str());
       }
     }
-
-    fclose(file);
   }
 
   return true;
