@@ -599,44 +599,6 @@ private:
   std::atomic<int> watch_retry_count = 0;
 };
 
-static bool
-try_flock(int fd)
-{
-  struct flock lck;
-  lck.l_start  = 0;
-  lck.l_len    = 0;
-  lck.l_type   = F_RDLCK;
-  lck.l_whence = SEEK_SET;
-  auto res     = fcntl(fd, F_SETLK, &lck);
-  if (res < 0) {
-    switch (errno) {
-    case EAGAIN:
-    case EINTR:
-      TSDebug(PLUGIN_NAME, "flock is busy.");
-      break;
-    default:
-      TSError("[%s] Failed to flock(): %s!", PLUGIN_NAME, strerror(errno));
-      break;
-    }
-    return false;
-  }
-  return true;
-}
-
-static void
-funlock(int fd)
-{
-  struct flock lck;
-  lck.l_start  = 0;
-  lck.l_len    = 0;
-  lck.l_type   = F_UNLCK;
-  lck.l_whence = SEEK_SET;
-  auto res     = fcntl(fd, F_SETLK, &lck);
-  if (res < 0) {
-    TSError("[%s] Failed to funlock(): %s!", PLUGIN_NAME, strerror(errno));
-  }
-}
-
 bool
 S3Config::parse_config(const std::string &config_fname)
 {
@@ -652,11 +614,7 @@ S3Config::parse_config(const std::string &config_fname)
       TSError("[%s] unable to open %s", PLUGIN_NAME, config_fname.c_str());
       return false;
     }
-
-    if (!try_flock(fd)) {
-      fclose(file);
-      return false;
-    }
+    // TODO: we really should have some kind of file locking strategy here.
 
     while (fgets(line, sizeof(line), file) != nullptr) {
       char *pos1, *pos2;
@@ -711,7 +669,6 @@ S3Config::parse_config(const std::string &config_fname)
       }
     }
 
-    funlock(fd);
     fclose(file);
   }
 
