@@ -554,7 +554,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
     } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
-      this->thread->schedule_imm(epd->data.c);
+      this->thread->schedule_imm(epd->data.na);
 #if AIO_MODE == AIO_MODE_IO_URING
     } else if (epd->type == EVENTIO_DISK) {
       servicedh = true;
