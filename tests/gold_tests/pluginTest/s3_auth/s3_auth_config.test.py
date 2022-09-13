@@ -17,6 +17,8 @@ Test s3_auth config parsing
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 
@@ -45,12 +47,12 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 's3_auth',
 })
 
-ts.Setup.CopyAs('rules/v4-parse-test.conf', Test.RunDirectory)
+ts.Setup.CopyAs('rules/v4-parse-test.test_input', Test.RunDirectory)
 
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0} \
         @plugin=s3_auth.so \
-            @pparam=--config @pparam={1}/v4-parse-test.conf'
+            @pparam=--config @pparam={1}/v4-parse-test.test_input'
     .format(server.Variables.Port, Test.RunDirectory)
 )
 
