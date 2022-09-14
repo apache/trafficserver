@@ -130,3 +130,25 @@ tr = Test.AddTestRun("Verify correct max-age cache-control behavior.")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("proxy-verifier-client", replay_file, http_ports=[ts.Variables.port])
+
+
+#
+# Verify correct handling of cache-control no-cache and interaction with pragma header
+#
+#
+ts = Test.MakeATSProcess("ts-cache-control-pragma")
+ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'http|cache',
+
+})
+tr = Test.AddTestRun("Verify Pragma: no-cache does not conflict with Cache-Control headers")
+replay_file = "replay/cache-control-pragma.replay.yaml"
+server = tr.AddVerifierServerProcess("pragma-server", replay_file)
+tr.AddVerifierClientProcess("pragma-client", replay_file, http_ports=[ts.Variables.port])
+ts.Disk.remap_config.AddLine(
+    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
+)
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
+tr.StillRunningAfter = ts
