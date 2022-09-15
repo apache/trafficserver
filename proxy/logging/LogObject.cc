@@ -138,7 +138,7 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
   }
   _setup_rolling(cfg, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
-  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
+  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p fast=%d", m_filename, this, m_fast);
 }
 
 LogObject::~LogObject()
@@ -494,12 +494,18 @@ public:
       period = 1;
     }
     eventProcessor.schedule_every(this, period * HRTIME_SECOND, ET_CALL);
+    Debug("log-config", "thread local buffer manager init: %d wakeup period", period);
   }
-  ~ThreadLocalLogBufferManager()
+  ~ThreadLocalLogBufferManager() override
   {
+    Debug("log-config", "thread local buffer manager destructor");
+    // only the LogBuffer objects are owned by this
     for (auto [o, b] : current_buffers) {
-      o->flush_buffer(b);
+      // ideally we flush these here but there are shutdown order issues so if the
+      // logbuffer still exists at this point we have to drop it
+      delete b;
     }
+    current_buffers.clear();
   }
   int
   wakeup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -843,7 +849,7 @@ TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timesta
                              bool reopen_after_rolling, bool fast)
   : LogObject(Log::config, TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads,
               rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count,
-              rolling_min_count, reopen_after_rolling, fast)
+              rolling_min_count, reopen_after_rolling, 0, fast)
 {
   if (timestamps) {
     this->set_fmt_timestamps();
