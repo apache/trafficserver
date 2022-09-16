@@ -31,6 +31,8 @@
 #include "HTTP.h"
 #include "tscore/Diags.h"
 
+const char URLImpl::ASTERISK = '\xff';
+
 const char *URL_SCHEME_FILE;
 const char *URL_SCHEME_FTP;
 const char *URL_SCHEME_GOPHER;
@@ -1688,11 +1690,17 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     }
   }
 
-  if (!url->m_path_is_empty) {
-    TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-  }
-  if (url->m_ptr_path) {
-    TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  if (url->m_len_path == 1 && url->m_ptr_path[0] == URLImpl::ASTERISK) {
+    if (!url->m_path_is_empty) {
+      TRY(mime_mem_print("*", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
+  } else {
+    if (!url->m_path_is_empty) {
+      TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
+    if (url->m_ptr_path) {
+      TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
   }
 
   if (url->m_ptr_params && url->m_len_params > 0) {

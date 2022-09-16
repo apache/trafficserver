@@ -43,6 +43,8 @@ enum URLType {
 class URLImpl : public HdrHeapObjImpl
 {
 public:
+  static const char ASTERISK;
+
   // HdrHeapObjImpl is 4 bytes
   uint16_t m_len_scheme;
   uint16_t m_len_user;

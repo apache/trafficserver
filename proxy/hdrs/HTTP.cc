@@ -1133,7 +1133,12 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
     url = hh->u.req.m_url_impl;
-    err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
+    if (method_wks_idx == HTTP_WKSIDX_OPTIONS && url_end - url_start == 1 && url_start[0] == '*') {
+      url->set_path(heap, &URLImpl::ASTERISK, 1, true);
+      err = PARSE_RESULT_DONE;
+    } else {
+      err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
+    }
 
     if (err < 0) {
       return err;
@@ -1181,11 +1186,10 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
   url->get_scheme(&scheme_len);
 
   if (host_len == 0) {
-    if (path_len == 1 && path[0] == '*') { // asterisk-form
-      // Skip this check for now because URLImpl can't distinguish '*' and '/*'
-      // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
-      //   ret = PARSE_RESULT_ERROR;
-      // }
+    if (path_len == 1 && path[0] == URLImpl::ASTERISK) { // asterisk-form
+      if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
+        ret = PARSE_RESULT_ERROR;
+      }
     } else { // origin-form
       // Nothing to check here
     }
