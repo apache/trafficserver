@@ -1218,6 +1218,7 @@ mptcp
    size allowed, otherwise, the post would fail.
 
 .. ts:cv:: CONFIG proxy.config.http.request_line_max_size INT 65535
+   :reloadable:
 
    Controls the maximum size, in bytes, of an HTTP Request Line in requests. Requests
    with a request line exceeding this size will be treated as invalid and
@@ -1226,18 +1227,23 @@ mptcp
    URI in which case the request line may also include the request scheme and domain name.
 
 .. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 131070
+   :reloadable:
 
    Controls the maximum size, in bytes, of an HTTP header field in requests. Headers
    in a request with the sum of their name and value that exceed this size will cause the
    entire request to be treated as invalid and rejected by the proxy.
 
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
+   :overridable:
+   :reloadable:
 
    Controls the maximum size, in bytes, of an HTTP header in requests. Headers
    in a request which exceed this size will cause the entire request to be
    treated as invalid and rejected by the proxy.
 
 .. ts:cv:: CONFIG proxy.config.http.response_header_max_size INT 131072
+   :overridable:
+   :reloadable:
 
    Controls the maximum size, in bytes, of headers in HTTP responses from the
    proxy. Any responses with a header exceeding this limit will be treated as
@@ -2422,6 +2428,7 @@ Cache Control
    connections, but smaller numbers could increase (waste) seeks.
 
 .. ts:cv:: CONFIG proxy.config.cache.alt_rewrite_max_size INT 4096
+   :reloadable:
 
    Configures the size, in bytes, of an alternate that will be considered
    small enough to trigger a rewrite of the resident alt fragment within a
