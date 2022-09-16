@@ -423,9 +423,14 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
 bool
 HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp)
 {
-  uint32_t cc_mask = (MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
+  uint32_t cc_mask = (MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
 
-  if ((resp->get_cooked_cc_mask() & cc_mask) || (resp->get_cooked_pragma_no_cache())) {
+  // According to https://www.rfc-editor.org/rfc/rfc7234#section-5.4
+  // ... When the Cache-Control header field is also present and
+  // understood in a request, Pragma is ignored.
+  if (resp->get_cooked_cc_mask() == 0 && resp->get_cooked_pragma_no_cache()) {
+    return false;
+  } else if (resp->get_cooked_cc_mask() & cc_mask) {
     return false;
   } else {
     return true;
