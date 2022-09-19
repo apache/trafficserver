@@ -35,7 +35,7 @@
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/TextView.h"
-#include "Cleanup.h"
+#include "tscpp/api/Cleanup.h"
 
 namespace
 {
