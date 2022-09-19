@@ -25,4 +25,5 @@ library_include_HEADERS = \
 	Strerror.h \
 	string_view_util.h \
 	TextView.h \
+	TsScalableSharedMutex.h \
 	TsSharedMutex.h
