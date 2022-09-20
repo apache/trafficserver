@@ -187,6 +187,7 @@ inline static void
 findParent(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
+  HTTP_INCREMENT_DYN_STAT(http_parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
     s->parent_result.port     = s->response_action.action.port;
@@ -277,6 +278,7 @@ nextParent(HttpTransact::State *s)
   TxnDebug("parent_down", "connection to parent %s failed, conn_state: %s, request to origin: %s", s->parent_result.hostname,
            HttpDebugNames::get_server_state_name(s->current.state), s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
+  HTTP_INCREMENT_DYN_STAT(http_parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
     s->parent_result.port     = s->response_action.action.port;
