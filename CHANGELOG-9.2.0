@@ -466,6 +466,7 @@ Changes with Apache Traffic Server 9.2.0
   #8815 - Fedora/RHEL path layout for config.layout
   #8816 - Add support for caching complete responses to the cache range requests plugin
   #8817 - Fix `COMPRESSION_ERROR` on valid HPACK input
+  #8819 - build: use non-deprecated form of autoconf macro
   #8821 - Fixes leak of SNI config filename on load
   #8827 - Fixes leak in SNIAction name globbing
   #8828 - Fixes issues with the CRR plugin introduced in #8488
@@ -543,3 +544,5 @@ Changes with Apache Traffic Server 9.2.0
   #9069 - Disable the QUIC TestRun in active_timeout AuTest
   #9070 - Test: add nameserver to proxy_serve_stale test (#9059)
   #9072 - Update expected ALPN output for recent versions of curl
+  #9077 - Make README a Markdown Doc, Add Badges
+  #9082 - Update doc max size reloadable/overridable flags
