@@ -17,8 +17,6 @@ Test s3_auth config parsing
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 
