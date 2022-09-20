@@ -971,6 +971,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
                                           false, max_hdr_field_size);
       // If we're done with the main parse do some validation
       if (ret == PARSE_RESULT_DONE) {
+        ret = validate_hdr_request_target(HTTP_WKSIDX_GET, url);
+      }
+      if (ret == PARSE_RESULT_DONE) {
         ret = validate_hdr_host(hh); // check HOST header
       }
       if (ret == PARSE_RESULT_DONE) {
@@ -1126,11 +1129,43 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
                                       max_hdr_field_size);
   // If we're done with the main parse do some validation
   if (ret == PARSE_RESULT_DONE) {
+    ret = validate_hdr_request_target(hh->u.req.m_method_wks_idx, hh->u.req.m_url_impl);
+  }
+  if (ret == PARSE_RESULT_DONE) {
     ret = validate_hdr_host(hh); // check HOST header
   }
   if (ret == PARSE_RESULT_DONE) {
     ret = validate_hdr_content_length(heap, hh);
   }
+  return ret;
+}
+
+ParseResult
+validate_hdr_request_target(int method_wk_idx, URLImpl *url)
+{
+  ParseResult ret  = PARSE_RESULT_DONE;
+  int host_len     = url->m_len_host;
+  int path_len     = url->m_len_path;
+  const char *path = url->m_ptr_path;
+  int scheme_len   = url->m_len_scheme;
+
+  if (host_len == 0) {
+    if (path_len == 1 && path[0] == '*') { // asterisk-form
+      // Skip this check for now because URLImpl can't distinguish '*' and '/*'
+      // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
+      //   ret = PARSE_RESULT_ERROR;
+      // }
+    } else { // origin-form
+      // Nothing to check here
+    }
+  } else if (scheme_len == 0 && host_len != 0) { // authority-form
+    if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
+      ret = PARSE_RESULT_ERROR;
+    }
+  } else { // absolute-form
+    // Nothing to check here
+  }
+
   return ret;
 }
 
