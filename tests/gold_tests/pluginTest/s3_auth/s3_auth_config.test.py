@@ -50,23 +50,14 @@ ts.Disk.records_config.update({
 ts.Setup.CopyAs('rules/v4-parse-test.test_input', Test.RunDirectory)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0} \
+    f'map http://www.example.com http://127.0.0.1:{server.Variables.Port} \
         @plugin=s3_auth.so \
-            @pparam=--config @pparam={1}/v4-parse-test.test_input'
-    .format(server.Variables.Port, Test.RunDirectory)
-)
-
-# Commands to get the following response headers
-# 1. make a request
-# 2. modify the config
-# 3. make another request
-curlRequest = (
-    'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0}/s3-bucket;'
+            @pparam=--config @pparam={Test.RunDirectory}/v4-parse-test.test_input'
 )
 
 # Test Case
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = curlRequest.format(ts.Variables.port, Test.RunDirectory)
+tr.Processes.Default.Command = f'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{ts.Variables.port}/s3-bucket;'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

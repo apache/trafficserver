@@ -24,7 +24,6 @@
 #include <cstring>
 #include <getopt.h>
 #include <ios>
-#include <string_view>
 #include <sys/time.h>
 
 #include <cstdio>
@@ -49,6 +48,7 @@
 #include <ts/remap.h>
 #include <tscpp/util/TsSharedMutex.h>
 #include "tscore/ink_config.h"
+#include "tscpp/util/TextView.h"
 
 #include "aws_auth_v4.h"
 
@@ -534,20 +534,19 @@ S3Config::parse_config(const std::string &config_fname)
     }
 
     for (std::string buf; std::getline(file, buf);) {
-      std::string_view line{buf};
+      ts::TextView line{buf};
 
       // Skip leading/trailing white spaces
-      const auto key_val = trimWhiteSpaces(line);
+      ts::TextView key_val = line.trim_if(&isspace);
 
       // Skip empty or comment lines
-      if (key_val.length() == 0 || ('#' == key_val[0])) {
+      if (key_val.empty() || ('#' == key_val[0])) {
         continue;
       }
 
       // Identify the keys (and values if appropriate)
-      size_t eq_pos = key_val.find_first_of('=');
-      std::string key_str{trimWhiteSpaces(key_val.substr(0, eq_pos == std::string_view::npos ? key_val.size() : eq_pos))};
-      std::string val_str{eq_pos == std::string_view::npos ? "" : trimWhiteSpaces(key_val.substr(eq_pos + 1, key_val.size()))};
+      std::string key_str{key_val.split_prefix_at('=').trim_if(&isspace)};
+      std::string val_str{key_val.trim_if(&isspace)};
 
       if (key_str == "secret_key") {
         set_secret(val_str.c_str());

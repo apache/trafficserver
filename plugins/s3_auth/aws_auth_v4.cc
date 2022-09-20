@@ -22,12 +22,11 @@
  * @see aws_auth_v4.h
  */
 
-#include <cstring> /* strlen() */
-#include <string>  /* stoi() */
-#include <ctime>   /* strftime(), time(), gmtime_r() */
-#include <iomanip> /* std::setw */
-#include <sstream> /* std::stringstream */
-#include <string_view>
+#include <cstring>        /* strlen() */
+#include <string>         /* stoi() */
+#include <ctime>          /* strftime(), time(), gmtime_r() */
+#include <iomanip>        /* std::setw */
+#include <sstream>        /* std::stringstream */
 #include <openssl/sha.h>  /* SHA(), sha256_Update(), SHA256_Final, etc. */
 #include <openssl/hmac.h> /* HMAC() */
 
@@ -203,6 +202,23 @@ trimWhiteSpacesAndSqueezeInnerSpaces(const char *in, size_t inLen)
   out_str.resize(n);
 
   return out_str;
+}
+
+/**
+ * @brief Trim white spaces from beginning and end.
+ * @returns trimmed string
+ */
+String
+trimWhiteSpaces(const String &s)
+{
+  /* @todo do this better? */
+  static const String whiteSpace = " \t\n\v\f\r";
+  size_t start                   = s.find_first_not_of(whiteSpace);
+  if (String::npos == start) {
+    return String();
+  }
+  size_t stop = s.find_last_not_of(whiteSpace);
+  return s.substr(start, stop - start + 1);
 }
 
 /*
