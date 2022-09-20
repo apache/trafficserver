@@ -82,6 +82,7 @@ public:
   // 8 bytes + 4 bits, will result in padding
 
   // Accessors
+  const char *get_scheme(int *length);
   const char *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
   const char *get_user(int *length);
   void set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
@@ -514,13 +515,9 @@ inline const std::string_view
 URL::scheme_get()
 {
   ink_assert(valid());
-
-  if (m_url_impl->m_scheme_wks_idx >= 0) {
-    return std::string_view{hdrtoken_index_to_wks(m_url_impl->m_scheme_wks_idx),
-                            static_cast<size_t>(hdrtoken_index_to_length(m_url_impl->m_scheme_wks_idx))};
-  } else {
-    return std::string_view{m_url_impl->m_ptr_scheme, m_url_impl->m_len_scheme};
-  }
+  int length;
+  const char *scheme = m_url_impl->get_scheme(&length);
+  return std::string_view{scheme, static_cast<size_t>(length)};
 }
 
 inline const char *
