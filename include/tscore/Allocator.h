@@ -50,7 +50,7 @@
 #define RND16(_x) (((_x) + 15) & ~15)
 
 /** Allocator for fixed size memory blocks. */
-class Allocator
+class FreelistAllocator
 {
 public:
   /**
@@ -87,7 +87,7 @@ public:
     ink_freelist_free_bulk(this->fl, head, tail, num_item);
   }
 
-  Allocator() { fl = nullptr; }
+  FreelistAllocator() { fl = nullptr; }
 
   /**
     Creates a new allocator.
@@ -97,7 +97,7 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  Allocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+  FreelistAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
   {
     ink_freelist_init(&fl, name, element_size, chunk_size, alignment);
   }
@@ -114,7 +114,7 @@ public:
   destroy_if_enabled(void *)
   {
   }
-  Allocator &
+  FreelistAllocator &
   raw()
   {
     return *this;
@@ -124,11 +124,110 @@ protected:
   InkFreeList *fl;
 };
 
+class MallocAllocator
+{
+public:
+  /**
+    Allocate a block of memory (size specified during construction
+    of Allocator.
+  */
+  void *
+  alloc_void()
+  {
+    void *ptr = nullptr;
+    if (alignment) {
+      ptr = aligned_alloc(alignment, element_size);
+    } else {
+      ptr = malloc(element_size);
+    }
+    if (advice) {
+      madvise(ptr, element_size, advice);
+    }
+    return ptr;
+  }
+
+  /**
+    Deallocate a block of memory allocated by the Allocator.
+
+    @param ptr pointer to be freed.
+  */
+  void
+  free_void(void *ptr)
+  {
+    free(ptr);
+  }
+
+  /**
+    Deallocate blocks of memory allocated by the Allocator.
+
+    @param head pointer to be freed.
+    @param tail pointer to be freed.
+    @param num_item of blocks to be freed.
+  */
+  void
+  free_void_bulk(void *head, void *, size_t num_item)
+  {
+    void *item = head;
+    void *next;
+
+    for (size_t i = 0; i < num_item && item; ++i, item = next) {
+      next = *static_cast<void **>(item); // find next item before freeing current item
+      free_void(item);
+    }
+  }
+
+  MallocAllocator() {}
+
+  /**
+    Creates a new allocator.
+
+    @param name identification tag used for mem tracking .
+    @param element_size size of memory blocks to be allocated.
+    @param chunk_size number of units to be allocated if free pool is empty.
+    @param alignment of objects must be a power of 2.
+  */
+  MallocAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+    : element_size(element_size), alignment(alignment), advice(0)
+  {
+  }
+
+  /** Re-initialize the parameters of the allocator. */
+  void
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice)
+  {
+    this->element_size = element_size;
+    this->alignment    = alignment;
+    this->advice       = advice;
+  }
+
+  // Dummies
+  void
+  destroy_if_enabled(void *)
+  {
+  }
+  MallocAllocator &
+  raw()
+  {
+    return *this;
+  }
+
+private:
+  unsigned int element_size;
+  unsigned int alignment;
+  int advice;
+};
+
+#if TS_USE_MALLOC_ALLOCATOR
+using Allocator = MallocAllocator;
+#else
+using Allocator = FreelistAllocator;
+#endif
+
 /**
   Allocator for Class objects.
 
 */
-template <class C, bool Destruct_on_free_ = false> class ClassAllocator : private Allocator
+template <class C, bool Destruct_on_free_ = false> class ClassAllocator : public Allocator
 {
 public:
   using Value_type                   = C;
@@ -139,10 +238,10 @@ public:
   C *
   alloc(Args &&... args)
   {
-    void *ptr = ink_freelist_new(this->fl);
+    void *ptr = alloc_void();
 
     ::new (ptr) C(std::forward<Args>(args)...);
-    return (C *)ptr;
+    return reinterpret_cast<C *>(ptr);
   }
 
   /**
@@ -155,7 +254,7 @@ public:
   {
     destroy_if_enabled(ptr);
 
-    ink_freelist_free(this->fl, ptr);
+    free_void(ptr);
   }
 
   /**
@@ -166,8 +265,8 @@ public:
     @param alignment of objects must be a power of 2.
   */
   ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
+    : Allocator(name, static_cast<unsigned int>(RND16(sizeof(C))), chunk_size, static_cast<unsigned int>(RND16(alignment)))
   {
-    ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, RND16(alignment));
   }
 
   Allocator &
