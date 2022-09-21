@@ -150,7 +150,8 @@ public:
     return (ink_atomic_cas(&m_state.ival, old_state.ival, new_state.ival));
   }
 
-  LB_ResultCode add_entry(size_t *write_offset, size_t write_size);
+  // 'fast' mode only, not thread-safe
+  LB_ResultCode fast_write(size_t *write_offset, size_t write_size);
   LB_ResultCode checkout_write(size_t *write_offset, size_t write_size);
   LB_ResultCode checkin_write(size_t write_offset);
   void force_full();

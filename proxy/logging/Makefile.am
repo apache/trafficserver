@@ -101,9 +101,7 @@ test_RolledLogDeleter_SOURCES = \
 test_RolledLogDeleter_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	@HWLOC_LIBS@
-
+	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)

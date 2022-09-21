@@ -188,11 +188,14 @@ LogBuffer::~LogBuffer()
 }
 
 /*-------------------------------------------------------------------------
-  LogBuffer::checkout_write
+  LogBuffer::fast_write
+
+  This function is used for the thread-local 'fast' log buffer mode and is not thread-safe.
+  In 'fast' mode, each thread owns its own LogBuffer rather than multiple threads contending over one.
   -------------------------------------------------------------------------*/
 
 LogBuffer::LB_ResultCode
-LogBuffer::add_entry(size_t *write_offset, size_t write_size)
+LogBuffer::fast_write(size_t *write_offset, size_t write_size)
 {
   LB_ResultCode ret_val    = LB_OK;
   size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
@@ -216,6 +219,10 @@ LogBuffer::add_entry(size_t *write_offset, size_t write_size)
 
   return ret_val;
 }
+
+/*-------------------------------------------------------------------------
+  LogBuffer::checkout_write
+  -------------------------------------------------------------------------*/
 
 LogBuffer::LB_ResultCode
 LogBuffer::checkout_write(size_t *write_offset, size_t write_size)

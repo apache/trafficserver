@@ -484,6 +484,9 @@ LogObject::log(LogAccess *lad, const char *text_entry)
 class ThreadLocalLogBufferManager : public Continuation
 {
 public:
+  static LogBuffer *thread_local_buffer(LogObject *o, size_t *offset, size_t bytes_needed);
+
+private:
   ThreadLocalLogBufferManager()
   {
     this->thread_affinity = this_ethread();
@@ -496,6 +499,7 @@ public:
     eventProcessor.schedule_every(this, period * HRTIME_SECOND, ET_CALL);
     Debug("log-config", "thread local buffer manager init: %d wakeup period", period);
   }
+
   ~ThreadLocalLogBufferManager() override
   {
     Debug("log-config", "thread local buffer manager destructor");
@@ -507,6 +511,7 @@ public:
     }
     current_buffers.clear();
   }
+
   int
   wakeup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
@@ -528,19 +533,18 @@ public:
       buffer             = new LogBuffer(Log::config, o, Log::config->log_buffer_size);
       current_buffers[o] = buffer;
     }
-    if (buffer->add_entry(offset, bytes_needed) != LogBuffer::LB_OK) {
+    if (buffer->fast_write(offset, bytes_needed) != LogBuffer::LB_OK) {
       o->flush_buffer(buffer);
 
       buffer             = new LogBuffer(Log::config, o, Log::config->log_buffer_size);
       current_buffers[o] = buffer;
-      if (buffer->add_entry(offset, bytes_needed) != LogBuffer::LB_OK) {
+      if (buffer->fast_write(offset, bytes_needed) != LogBuffer::LB_OK) {
         return nullptr;
       }
     };
     return buffer;
   }
 
-private:
   std::map<LogObject *, LogBuffer *> current_buffers;
 };
 
@@ -549,7 +553,7 @@ private:
  * the details around flushing buffers to the preproc threads and periodically checking for idle buffers.
  */
 LogBuffer *
-thread_local_buffer(LogObject *o, size_t *offset, size_t bytes_needed)
+ThreadLocalLogBufferManager::thread_local_buffer(LogObject *o, size_t *offset, size_t bytes_needed)
 {
   thread_local ThreadLocalLogBufferManager manager;
   return manager.current_buffer(o, offset, bytes_needed);
@@ -643,7 +647,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   if (!m_fast) {
     buffer = _checkout_write(&offset, bytes_needed);
   } else {
-    buffer = thread_local_buffer(this, &offset, bytes_needed);
+    buffer = ThreadLocalLogBufferManager::thread_local_buffer(this, &offset, bytes_needed);
   }
 
   if (!buffer) {
