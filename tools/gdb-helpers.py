@@ -226,7 +226,7 @@ commands = [
 
 
 def usage():
-    print("Usage: ats <command> <expr>")
+    print("Usage: atspr <command> <expr>")
     print("commands:")
     for cmd, f, desc in commands:
         print("  {}: {}".format(cmd, desc))
