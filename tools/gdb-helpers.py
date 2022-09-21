@@ -39,7 +39,11 @@ from curses.ascii import isgraph
 def ats_str(addr, addr_len):
     #print("addr {} len {}".format(addr, addr_len))
     inferior = gdb.selected_inferior()
-    return inferior.read_memory(addr, addr_len)
+    buff = inferior.read_memory(addr, addr_len)
+    if buff[0] == '\x00':
+        return 'null'
+    else:
+        return buff
 
 
 def hdrtoken(idx):
