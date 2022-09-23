@@ -925,6 +925,13 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     Layout::get()->update_sysconfdir(conf_dir);
   }
 
+  if (!plugin_init(true)) {
+    exitStatus |= (1 << 2);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::PLUGIN, exitStatus);
+  } else {
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::PLUGIN);
+  }
+
   if (!urlRewriteVerify()) {
     exitStatus |= (1 << 0);
     fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::REMAP, exitStatus);
@@ -937,13 +944,6 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::RECORDS, exitStatus);
   } else {
     fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::RECORDS);
-  }
-
-  if (!plugin_init(true)) {
-    exitStatus |= (1 << 2);
-    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::PLUGIN, exitStatus);
-  } else {
-    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::PLUGIN);
   }
 
   SSLInitializeLibrary();
