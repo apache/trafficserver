@@ -401,7 +401,7 @@ SSLNetVConnection::read_raw_data()
     buf_len = rattempted;
     b       = b->next.get();
 
-    r = socketManager.read(this->con.fd, buffer, buf_len);
+    r = SocketManager::read(this->con.fd, buffer, buf_len);
     NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
     total_read += rattempted;
 

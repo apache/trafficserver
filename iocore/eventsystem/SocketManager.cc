@@ -30,8 +30,6 @@
 
 #include "tscore/TextBuffer.h"
 
-SocketManager socketManager;
-
 #if !HAVE_ACCEPT4
 static int
 accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
@@ -73,13 +71,6 @@ SocketManager::accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int fla
   } while (transient_error());
 
   return -errno;
-}
-
-SocketManager::SocketManager() : pagesize(ats_pagesize()) {}
-
-SocketManager::~SocketManager()
-{
-  // free the hash table and values
 }
 
 int
