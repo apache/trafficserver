@@ -105,8 +105,6 @@ spawn_same_session_send(void *arg)
 
   SSL_set_fd(ssl, sfd);
   int ret            = SSL_connect(ssl);
-  int read_count     = 0;
-  int write_count    = 1;
   int write_ret      = -1;
   int post_write_ret = -1;
 
@@ -120,12 +118,10 @@ spawn_same_session_send(void *arg)
     case SSL_ERROR_WANT_READ:
     case SSL_ERROR_WANT_ACCEPT:
       FD_SET(sfd, &reads);
-      read_count++;
       break;
     case SSL_ERROR_WANT_CONNECT:
     case SSL_ERROR_WANT_WRITE:
       FD_SET(sfd, &writes);
-      write_count++;
       break;
     case SSL_ERROR_SYSCALL:
     case SSL_ERROR_SSL:

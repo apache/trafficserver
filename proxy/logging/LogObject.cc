@@ -1128,8 +1128,6 @@ LogObjectManager::open_local_pipes()
 void
 LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
 {
-  unsigned num_kept_objects = 0;
-
   Debug("log-config-transfer", "transferring objects from LogObjectManager %p, to %p", &old_mgr, this);
 
   if (is_debug_tag_set("log-config-transfer")) {
@@ -1172,7 +1170,6 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
         if (new_obj->refcount_dec() == 0) {
           delete new_obj;
         }
-        ++num_kept_objects;
         break;
       }
     }
