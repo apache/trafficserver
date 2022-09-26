@@ -148,7 +148,7 @@ is_inkeylist(const char *key, ...)
   va_start(ap, key);
 
   const char *str = va_arg(ap, const char *);
-  for (unsigned idx = 1; str; idx++) {
+  while (str) {
     if (!strcasecmp(key, str)) {
       va_end(ap);
       return true;
