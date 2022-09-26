@@ -121,7 +121,8 @@ std::set<std::string> valid_log_object_keys = {"filename",
                                                "rolling_min_count",
                                                "rolling_max_count",
                                                "rolling_allow_empty",
-                                               "pipe_buffer_size"};
+                                               "pipe_buffer_size",
+                                               "fast"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
@@ -152,6 +153,11 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   if (!fmt) {
     Error("Format %s is not a known format; cannot create LogObject", format.c_str());
     return nullptr;
+  }
+
+  bool fast = cfg->log_fast_buffer;
+  if (node["fast"]) {
+    fast = node["fast"].as<bool>();
   }
 
   // file format
@@ -220,7 +226,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
                                  static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), cfg->preproc_threads,
                                  obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
                                  /* rolling_max_count */ obj_rolling_max_count, /* rolling_min_count */ obj_rolling_min_count,
-                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size);
+                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size, fast);
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;

@@ -157,3 +157,20 @@ aforementioned aggregate functions and the specification of an interval, as so:
 The interval itself is given with *n* as the number of seconds for each period
 of aggregation. There is no default value.
 
+Logging Performance
+-------------------
+
+In normal operations, log entries are strictly ordered in the output file.
+This serialization of entries comes at a cost as multiple threads potentially
+contend for log access.  For binary logs or when order does not matter, ATS supports
+faster logging where each thread can buffer its own entries.  In this mode, log
+parsers will need to expect out of order entries, but ATS can log much larger
+transaction rates. Consider adding fields to the log format that include the timestamp so
+entries can be reordered if necessary (see :ref:`admin-logging-fields-time`)
+
+.. code:: yaml
+
+   formats:
+   - name: mysummary
+     format: '%<operator(field)> , %<operator(field)>'
+     fast: true
