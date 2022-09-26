@@ -1109,15 +1109,24 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       SSL_CTX *clientCTX       = nullptr;
 
       // First Look to see if there are override parameters
+      Debug("ssl", "Checking for outbound client cert override [%p]", options.ssl_client_cert_name.get());
       if (options.ssl_client_cert_name) {
-        std::string certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, options.ssl_client_cert_name.get());
+        std::string certFilePath;
         std::string keyFilePath;
-        if (options.ssl_client_private_key_name) {
-          keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, options.ssl_client_private_key_name);
-        }
         std::string caCertFilePath;
-        if (options.ssl_client_ca_cert_name) {
-          caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
+        // Enable override to explicitly disable the client certificate. That is, don't fill
+        // in any of the cert paths if the cert file name is empty or "NULL".
+        if (*options.ssl_client_cert_name != '\0' && 0 != strcasecmp("NULL", options.ssl_client_cert_name)) {
+          certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, options.ssl_client_cert_name.get());
+          if (options.ssl_client_private_key_name) {
+            keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, options.ssl_client_private_key_name);
+          }
+          if (options.ssl_client_ca_cert_name) {
+            caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
+          }
+          Debug("ssl", "Using outbound client cert `%s'", options.ssl_client_cert_name.get());
+        } else {
+          Debug("ssl", "Clearing outbound client cert");
         }
         sharedCTX =
           params->getCTX(certFilePath, keyFilePath, caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(),
