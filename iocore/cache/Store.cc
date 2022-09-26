@@ -303,7 +303,6 @@ Result
 Store::read_config()
 {
   int n_dsstore   = 0;
-  int ln          = 0;
   int i           = 0;
   const char *err = nullptr;
   Span *sd = nullptr, *cur = nullptr;
@@ -326,10 +325,6 @@ Store::read_config()
   while ((len = ink_file_fd_readline(fd, sizeof(line), line)) > 0) {
     const char *path;
     const char *seed = nullptr;
-    // update lines
-
-    ++ln;
-
     // Because the SimpleTokenizer is a bit too simple, we have to normalize whitespace.
     for (char *spot = line, *limit = line + len; spot < limit; ++spot) {
       if (ParseRules::is_space(*spot)) {

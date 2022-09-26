@@ -2889,7 +2889,6 @@ cplist_reconfigure()
       }
 
       int64_t size_to_alloc = size_in_blocks - cp->size;
-      int disk_full         = 0;
       for (int i = 0; (i < gndisks) && size_to_alloc; i++) {
         int disk_no = sorted_vols[i];
         ink_assert(cp->disk_vols[sorted_vols[gndisks - 1]]);
@@ -2921,10 +2920,6 @@ cplist_reconfigure()
             break;
           }
         } while ((size_diff > 0));
-
-        if (!dpb) {
-          disk_full++;
-        }
 
         size_to_alloc = size_in_blocks - cp->size;
       }
