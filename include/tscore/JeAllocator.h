@@ -25,7 +25,6 @@
 #include <cstddef>
 #include <unordered_map>
 #include <mutex>
-#include <shared_mutex>
 
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
