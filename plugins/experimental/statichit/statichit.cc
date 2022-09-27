@@ -90,8 +90,8 @@ struct StaticHitConfig {
 
   ~StaticHitConfig() { TSContDestroy(cont); }
 
-  std::string
-  makePath(TSHttpTxn txnp) const
+  std::string_view
+  makePath(TSHttpTxn txnp, std::string &output) const
   {
     if (!dirPath.empty()) {
       TSMBuffer reqp;
@@ -110,19 +110,20 @@ struct StaticHitConfig {
 
           if (std::equal(dirPath.begin(), dirPath.end(), requested_file_path.begin()) &&
               std::filesystem::is_regular_file(requested_file_path)) {
-            return requested_file_path;
+            output = requested_file_path.string();
+            return {output.c_str(), output.size()};
           } else {
-            return "";
+            return {};
           }
         } else {
           TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
-          return "";
+          return {};
         }
       } else {
-        return "";
+        return {};
       }
     } else {
-      return filePath;
+      return {filePath};
     }
   }
 
@@ -229,12 +230,12 @@ struct StaticHitRequest {
   {
     StaticHitRequest *shr = new StaticHitRequest;
     std::ifstream ifstr;
+    std::string output;
+    std::string_view filePath = tc->makePath(txn, output);
 
-    auto filePath = tc->makePath(txn);
+    VDEBUG("Requested file path: %s", filePath.data());
 
-    VDEBUG("Requested file path: %s", filePath.c_str());
-
-    ifstr.open(filePath);
+    ifstr.open(filePath.data());
     if (!ifstr) {
       shr->statusCode = tc->failureCode;
       return shr;
