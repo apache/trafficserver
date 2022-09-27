@@ -474,39 +474,37 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
-  {
-    // Retrieve ja3_data from vconn args
-    auto a = ja3_data::access(vconn);
-    if (a.get()) {
-      // Decide global or remap
-      ja3_remap_info *info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
-      bool raw_flag        = info ? info->raw : enable_raw;
-      bool log_flag        = info ? info->log : enable_log;
-      TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): Found ja3 string.");
+  // Retrieve ja3_data from vconn args. It is importand that 'a' is destroyed within the 'if' block, before the
+  // the reenable function is called.
+  if (auto a = ja3_data::access(vconn); a.get()) {
+    // Decide global or remap
+    ja3_remap_info *info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
+    bool raw_flag        = info ? info->raw : enable_raw;
+    bool log_flag        = info ? info->log : enable_log;
+    TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): Found ja3 string.");
 
-      // Get handle to headers
-      TSMBuffer bufp;
-      TSMLoc hdr_loc;
-      TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
+    // Get handle to headers
+    TSMBuffer bufp;
+    TSMLoc hdr_loc;
+    TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
 
-      // Add JA3 md5 fingerprints
-      append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, a.get()->md5_string, 32);
+    // Add JA3 md5 fingerprints
+    append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, a.get()->md5_string, 32);
 
-      // If raw string is configured, added JA3 raw string to header as well
-      if (raw_flag) {
-        append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, a.get()->ja3_string.data(), a.get()->ja3_string.size());
-      }
-      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-
-      // Write to logfile
-      if (log_flag) {
-        TSTextLogObjectWrite(pluginlog, "Client IP: %s\tJA3: %.*s\tMD5: %.*s", a.get()->ip_addr,
-                             static_cast<int>(a.get()->ja3_string.size()), a.get()->ja3_string.data(), 32, a.get()->md5_string);
-      }
-    } else {
-      TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");
+    // If raw string is configured, added JA3 raw string to header as well
+    if (raw_flag) {
+      append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, a.get()->ja3_string.data(), a.get()->ja3_string.size());
     }
-  } // This block is needed to make sure 'a' is destroyed before reeenable is called.
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+    // Write to logfile
+    if (log_flag) {
+      TSTextLogObjectWrite(pluginlog, "Client IP: %s\tJA3: %.*s\tMD5: %.*s", a.get()->ip_addr,
+                           static_cast<int>(a.get()->ja3_string.size()), a.get()->ja3_string.data(), 32, a.get()->md5_string);
+    }
+  } else {
+    TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");
+  }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
