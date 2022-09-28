@@ -261,7 +261,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       msg.msg_namelen = ats_ip_size(vc->get_remote_addr());
       msg.msg_iov     = &tiovec[0];
       msg.msg_iovlen  = niov;
-      r               = socketManager.recvmsg(vc->con.fd, &msg, 0);
+      r               = SocketManager::recvmsg(vc->con.fd, &msg, 0);
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
 
@@ -686,7 +686,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
   switch (howto) {
   case IO_SHUTDOWN_READ:
-    socketManager.shutdown((this)->con.fd, 0);
+    SocketManager::shutdown((this)->con.fd, 0);
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
@@ -694,7 +694,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown |= NetEvent::SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
-    socketManager.shutdown((this)->con.fd, 1);
+    SocketManager::shutdown((this)->con.fd, 1);
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
@@ -702,7 +702,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown |= NetEvent::SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
-    socketManager.shutdown((this)->con.fd, 2);
+    SocketManager::shutdown((this)->con.fd, 2);
     read.enabled  = 0;
     write.enabled = 0;
     read.vio.buffer.clear();
@@ -918,7 +918,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
       flags = MSG_FASTOPEN;
     }
-    r = socketManager.sendmsg(con.fd, &msg, flags);
+    r = SocketManager::sendmsg(con.fd, &msg, flags);
     if (!this->con.is_connected && this->options.f_tcp_fastopen) {
       if (r < 0) {
         if (r == -EINPROGRESS || r == -EWOULDBLOCK) {

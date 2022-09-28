@@ -106,7 +106,7 @@ template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
   // If we failed before finalizing the on-disk copy, close up and nuke the temporary sync file.
   if (this->fd != -1) {
     unlink(this->tmp_filename.c_str());
-    socketManager.close(fd);
+    SocketManager::close(fd);
   }
 
   for (auto &entry : this->partition_items) {
@@ -231,7 +231,7 @@ template <class C>
 int
 RefCountCacheSerializer<C>::initialize_storage(int /* event */, Event *e)
 {
-  this->fd = socketManager.open(this->tmp_filename.c_str(), O_TRUNC | O_RDWR | O_CREAT, 0644); // TODO: configurable perms
+  this->fd = SocketManager::open(this->tmp_filename.c_str(), O_TRUNC | O_RDWR | O_CREAT, 0644); // TODO: configurable perms
   if (this->fd < 0) {
     Warning("Unable to create temporary file %s, unable to persist hostdb: %s", this->tmp_filename.c_str(), strerror(errno));
     delete this;
@@ -261,19 +261,19 @@ RefCountCacheSerializer<C>::finalize_sync()
   int dirfd = -1;
 
   // fsync the fd we have
-  if ((error = socketManager.fsync(this->fd))) {
+  if ((error = SocketManager::fsync(this->fd))) {
     return error;
   }
 
 #ifdef O_DIRECTORY
-  dirfd = socketManager.open(this->dirname.c_str(), O_DIRECTORY);
+  dirfd = SocketManager::open(this->dirname.c_str(), O_DIRECTORY);
 #else
   struct stat st;
   stat(this->dirname.c_str(), &st);
   if (!S_ISDIR(st.st_mode)) {
     return -ENOTDIR;
   }
-  dirfd = socketManager.open(this->dirname.c_str(), 0);
+  dirfd = SocketManager::open(this->dirname.c_str(), 0);
 #endif
   if (dirfd == -1) {
     return -errno;
@@ -282,20 +282,20 @@ RefCountCacheSerializer<C>::finalize_sync()
   // Rename from the temp name to the real name.
   if (rename(this->tmp_filename.c_str(), this->filename.c_str()) != 0) {
     error = -errno;
-    socketManager.close(dirfd);
+    SocketManager::close(dirfd);
     return error;
   }
 
   // Fsync the directory to persist the rename.
-  if ((error = socketManager.fsync(dirfd))) {
-    socketManager.close(dirfd);
+  if ((error = SocketManager::fsync(dirfd))) {
+    SocketManager::close(dirfd);
     return error;
   }
 
   // Don't bother checking for errors on the close since there's nothing we can do about it at
   // this point anyway.
-  socketManager.close(dirfd);
-  socketManager.close(this->fd);
+  SocketManager::close(dirfd);
+  SocketManager::close(this->fd);
   this->fd = -1;
 
   if (this->rsb) {
@@ -315,7 +315,7 @@ RefCountCacheSerializer<C>::write_to_disk(const void *ptr, size_t n_bytes)
 {
   size_t written = 0;
   while (written < n_bytes) {
-    int ret = socketManager.write(this->fd, (char *)ptr + written, n_bytes - written);
+    int ret = SocketManager::write(this->fd, (char *)ptr + written, n_bytes - written);
     if (ret <= 0) {
       return ret;
     } else {

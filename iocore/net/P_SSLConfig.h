@@ -215,7 +215,7 @@ private:
 struct SSLTicketParams : public ConfigInfo {
   ssl_ticket_key_block *default_global_keyblock = nullptr;
   time_t load_time                              = 0;
-  char *ticket_key_filename;
+  char *ticket_key_filename                     = nullptr;
   bool LoadTicket(bool &nochange);
   bool LoadTicketData(char *ticket_data, int ticket_data_len);
   void cleanup();

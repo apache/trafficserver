@@ -36,7 +36,7 @@ std::vector<NetAccept *> naVec;
 static void
 safe_delay(int msec)
 {
-  socketManager.poll(nullptr, 0, msec);
+  SocketManager::poll(nullptr, 0, msec);
 }
 
 //
@@ -432,7 +432,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   do {
     socklen_t sz = sizeof(con.addr);
-    int fd       = socketManager.accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+    int fd       = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
 
     if (likely(fd >= 0)) {
@@ -446,10 +446,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
       Debug("iocore_net", "accepted a new socket: %d", fd);
       NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
       if (opt.send_bufsize > 0) {
-        if (unlikely(socketManager.set_sndbuf_size(fd, opt.send_bufsize))) {
+        if (unlikely(SocketManager::set_sndbuf_size(fd, opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
           while (bufsz > 0) {
-            if (!socketManager.set_sndbuf_size(fd, bufsz)) {
+            if (!SocketManager::set_sndbuf_size(fd, bufsz)) {
               break;
             }
             bufsz -= 1024;
@@ -457,10 +457,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
       if (opt.recv_bufsize > 0) {
-        if (unlikely(socketManager.set_rcvbuf_size(fd, opt.recv_bufsize))) {
+        if (unlikely(SocketManager::set_rcvbuf_size(fd, opt.recv_bufsize))) {
           bufsz = ROUNDUP(opt.recv_bufsize, 1024);
           while (bufsz > 0) {
-            if (!socketManager.set_rcvbuf_size(fd, bufsz)) {
+            if (!SocketManager::set_rcvbuf_size(fd, bufsz)) {
               break;
             }
             bufsz -= 1024;

@@ -793,7 +793,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   ctx_key = client_cert;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
-  Debug("ssl_client_ctx", "Look for client cert %s %s", top_level_key.c_str(), ctx_key.c_str());
+  Debug("ssl_client_ctx", "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
 
   ink_mutex_acquire(&ctxMapLock);
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);

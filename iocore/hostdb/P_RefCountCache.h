@@ -586,12 +586,12 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
   RefCountCacheHeader tmpHeader = RefCountCacheHeader();
   int read_ret                  = read(fd, (char *)&tmpHeader, sizeof(RefCountCacheHeader));
   if (read_ret != sizeof(RefCountCacheHeader)) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
     Warning("Error reading cache header from disk (expected %ld): %d", sizeof(RefCountCacheHeader), read_ret);
     return -1;
   }
   if (!cache.get_header().compatible(&tmpHeader)) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
     Warning("Incompatible cache at %s, not loading.", filepath.c_str());
     return -1; // TODO: specific code for incompatible
   }
@@ -615,6 +615,6 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
     }
   };
 
-  socketManager.close(fd);
+  SocketManager::close(fd);
   return 0;
 }

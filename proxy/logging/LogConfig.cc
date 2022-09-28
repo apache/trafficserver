@@ -71,6 +71,7 @@ LogConfig::setup_default_values()
 {
   hostname              = ats_strdup(Machine::instance()->host_name.c_str());
   log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
+  log_fast_buffer       = false;
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
   max_space_mb_headroom = 10;
@@ -126,6 +127,11 @@ LogConfig::read_configuration_variables()
   val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_buffer_size"));
   if (val > 0) {
     log_buffer_size = val;
+  }
+
+  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_fast_buffer"));
+  if (val > 0) {
+    log_fast_buffer = true;
   }
 
   val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_secs_per_buffer"));

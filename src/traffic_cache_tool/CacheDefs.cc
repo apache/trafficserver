@@ -542,10 +542,8 @@ Stripe::walk_bucket_chain(int s)
     CacheDirEntry *p = nullptr;
     auto *dir_b      = dir_bucket(b, seg);
     CacheDirEntry *e = dir_b;
-    int len          = 0;
 
     while (e) {
-      len++;
       int i = dir_to_offset(e, seg);
       if (b_bitset.test(i)) {
         std::cout << "bit already set in "

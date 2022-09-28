@@ -182,6 +182,7 @@ public:
   LogFormatList format_list;
 
   int log_buffer_size;
+  bool log_fast_buffer;
   int max_secs_per_buffer;
   int max_space_mb_for_logs;
   int max_space_mb_headroom;

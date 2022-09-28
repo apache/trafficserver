@@ -680,7 +680,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) { // looking for a bounce
-    int res = socketManager.send(con_fd, buffer, r, 0);
+    int res = SocketManager::send(con_fd, buffer, r, 0);
     Debug("dns", "ping result = %d", res);
   }
 }
@@ -710,7 +710,7 @@ DNSHandler::try_primary_named(bool reopen)
     }
     ink_assert(r >= 0);
     if (r >= 0) { // looking for a bounce
-      int res = socketManager.send(con_fd, buffer, r, 0);
+      int res = SocketManager::send(con_fd, buffer, r, 0);
       Debug("dns", "ping result = %d", res);
     }
   }
@@ -862,7 +862,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         if (dnsc->tcp_data.total_length == 0) {
           // see if TS gets a two-byte size
           uint16_t tmp = 0;
-          res          = socketManager.recv(dnsc->fd, &tmp, sizeof(tmp), MSG_PEEK);
+          res          = SocketManager::recv(dnsc->fd, &tmp, sizeof(tmp), MSG_PEEK);
           if (res == -EAGAIN || res == 1) {
             break;
           }
@@ -870,7 +870,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             goto Lerror;
           }
           // reading total size
-          res = socketManager.recv(dnsc->fd, &(dnsc->tcp_data.total_length), sizeof(dnsc->tcp_data.total_length), 0);
+          res = SocketManager::recv(dnsc->fd, &(dnsc->tcp_data.total_length), sizeof(dnsc->tcp_data.total_length), 0);
           if (res == -EAGAIN) {
             break;
           }
@@ -884,7 +884,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
         // continue reading data
         void *buf_start = (char *)dnsc->tcp_data.buf_ptr->buf + dnsc->tcp_data.done_reading;
-        res             = socketManager.recv(dnsc->fd, buf_start, dnsc->tcp_data.total_length - dnsc->tcp_data.done_reading, 0);
+        res             = SocketManager::recv(dnsc->fd, buf_start, dnsc->tcp_data.total_length - dnsc->tcp_data.done_reading, 0);
         if (res == -EAGAIN) {
           break;
         }
@@ -906,7 +906,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         hostent_cache = dnsBufAllocator.alloc();
       }
 
-      res = socketManager.recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_RESPONSE_LEN, 0, &from_ip.sa, &from_length);
+      res = SocketManager::recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_RESPONSE_LEN, 0, &from_ip.sa, &from_length);
       Debug("dns", "DNSHandler::recv_dns res = [%d]", res);
       if (res == -EAGAIN) {
         break;
@@ -1183,7 +1183,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   int con_fd                      = over_tcp ? h->tcpcon[h->name_server].fd : h->udpcon[h->name_server].fd;
   Debug("dns", "send query (qtype=%d) for %s to fd %d", e->qtype, e->qname, con_fd);
 
-  int s = socketManager.send(con_fd, buffer, r, 0);
+  int s = SocketManager::send(con_fd, buffer, r, 0);
   if (s != r) {
     Debug("dns", "send() failed: qname = %s, %d != %d, nameserver= %d", e->qname, s, r, h->name_server);
 
@@ -1529,6 +1529,24 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   bool server_ok    = true;
   uint32_t temp_ttl = 0;
 
+  const char *RCODE_NAME[] = {
+    "NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP", "REFUSED", "YXDOMAIN", "YXRRSET", "NXRRSET", "NOTAUTH", "NOTZONE",
+  };
+
+  const char *RCODE_DESCRIPTION[] = {
+    "No Error",
+    "Format Error",
+    "Server Failure",
+    "Non-Existent Domain",
+    "Not Implemented",
+    "Query Refused",
+    "Name Exists when it should not",
+    "RR Set Exists when it should not",
+    "RR Set that should exist does not",
+    "Not Authorized",
+    "Name not contained in zone",
+  };
+
   //
   // Do we have an entry for this id?
   //
@@ -1553,31 +1571,36 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     goto Lerror;
   }
 
+  // Logs using SiteThrottled* version is helpful for noisy logs, being used here
+  // instead of print statements to help with the possible retries when a dns code occurs
   if (h->rcode != NOERROR || !h->ancount) {
     Debug("dns", "received rcode = %d", h->rcode);
     switch (h->rcode) {
     default:
-      Warning("Unknown DNS error %d for [%s]", h->rcode, e->qname);
+      SiteThrottledWarning("UNKNOWN: DNS error %d for [%s]", h->rcode, e->qname);
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
+    case NOERROR: // included for completeness.
+      Debug("dns", "%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
+      break;
     case SERVFAIL: // recoverable error
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       retry = true;
       break;
     case FORMERR: // unrecoverable errors
     case REFUSED:
     case NOTIMP:
-      Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR:
     case NXDOMAIN:
-    case 6:  // YXDOMAIN
-    case 7:  // YXRRSET
-    case 8:  // NOTAUTH
-    case 9:  // NOTAUTH
-    case 10: // NOTZONE
-      Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
+    case YXDOMAIN:
+    case YXRRSET:
+    case NXRRSET:
+    case NOTAUTH:
+    case NOTZONE:
+      SiteThrottledNote("%s: DNS error %d for [%s]: %s", RCODE_NAME[h->rcode], h->rcode, e->qname, RCODE_DESCRIPTION[h->rcode]);
       goto Lerror;
     }
   } else {

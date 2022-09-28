@@ -41,40 +41,48 @@ class Strerror
 public:
   Strerror(int err_num)
   {
-    // Handle either GNU or XSI version of strerror_r().
-    //
-    if (!_success(strerror_r(err_num, _buf, 256))) {
-      _c_str = "strerror_r() call failed";
-    } else {
-      _buf[255] = '\0';
-      _c_str    = _buf;
-    }
-
     // Make sure there are no unused function warnings.
     //
-    static_cast<void>(_success(0));
-    static_cast<void>(_success(nullptr));
+    static_cast<void>(_handle(0));
+    static_cast<void>(_handle(nullptr));
+
+    // Handle either GNU or XSI version of strerror_r().
+    //
+    if (!_handle(strerror_r(err_num, _buf, sizeof(_buf)))) {
+      _c_str = "strerror_r() call failed";
+    }
   }
 
   char const *
   c_str() const
   {
-    return (_c_str);
+    return _c_str;
   }
 
 private:
   char _buf[256];
   char const *_c_str;
 
+  // For XSI-compliant strerror_r().
+  //
   bool
-  _success(int retval)
+  _handle(int retval)
   {
-    return retval == 0;
+    if (0 != retval) {
+      return false;
+    }
+    _buf[sizeof(_buf) - 1] = '\0';
+    _c_str                 = _buf;
+    return true;
   }
 
+  // For GNU-specific strerror_r().
+  //
   bool
-  _success(char *retval)
+  _handle(char *retval)
   {
+    _buf[sizeof(_buf) - 1] = '\0';
+    _c_str                 = retval;
     return retval != nullptr;
   }
 };

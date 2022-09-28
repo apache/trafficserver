@@ -7608,7 +7608,7 @@ HttpSM::set_next_state()
       t_state.dns_info.resolved_p = true; // seems dangerous - where's the IP address?
       call_transact_and_set_next_state(nullptr);
       break;
-    } else if (t_state.dns_info.resolve_immediate()) {
+    } else if (t_state.parent_result.result == PARENT_UNDEFINED && t_state.dns_info.resolve_immediate()) {
       call_transact_and_set_next_state(nullptr);
       break;
     }

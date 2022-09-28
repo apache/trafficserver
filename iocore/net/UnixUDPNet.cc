@@ -187,7 +187,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     msg.msg_controllen = sizeof(cbuf);
 
     // receive data by recvmsg
-    r = socketManager.recvmsg(uc->getFd(), &msg, 0);
+    r = SocketManager::recvmsg(uc->getFd(), &msg, 0);
     if (r <= 0) {
       // error
       break;
@@ -466,7 +466,7 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
   c = completionUtil::getContinuation(event);
   // do read
   socklen_t tmp_fromlen = *fromaddrlen;
-  int rlen              = socketManager.recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
+  int rlen              = SocketManager::recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
 
   completionUtil::setThread(event, e->ethread);
   // call back user with their event
@@ -534,7 +534,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
 
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
-  actual = socketManager.recvfrom(fd, buf->end(), len, 0, fromaddr, fromaddrlen);
+  actual = SocketManager::recvfrom(fd, buf->end(), len, 0, fromaddr, fromaddrlen);
 
   if (actual > 0) {
     completionUtil::setThread(event, this_ethread());
@@ -577,7 +577,7 @@ UDPNetProcessor::sendmsg_re(Continuation *cont, void *token, int fd, struct msgh
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
 
-  actual = socketManager.sendmsg(fd, msg, 0);
+  actual = SocketManager::sendmsg(fd, msg, 0);
   if (actual >= 0) {
     completionUtil::setThread(event, this_ethread());
     completionUtil::setInfo(event, fd, msg, actual, errno);
@@ -610,7 +610,7 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 {
   (void)token;
   ink_assert(buf->read_avail() >= len);
-  int nbytes_sent = socketManager.sendto(fd, buf->start(), len, 0, toaddr, toaddrlen);
+  int nbytes_sent = SocketManager::sendto(fd, buf->start(), len, 0, toaddr, toaddrlen);
 
   if (nbytes_sent >= 0) {
     ink_assert(nbytes_sent == len);
@@ -651,7 +651,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   *resfd = -1;
-  if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+  if ((res = SocketManager::socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto HardError;
   }
 
@@ -661,12 +661,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   if (opt.socket_recv_bufsize > 0) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
+    if (unlikely(SocketManager::set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize))) {
+    if (unlikely(SocketManager::set_sndbuf_size(fd, opt.socket_send_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
     }
   }
@@ -708,7 +708,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   if (local_addr.network_order_port() || !is_any_address) {
-    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
+    if (-1 == SocketManager::ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       char buff[INET6_ADDRPORTSTRLEN];
       Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
       goto SoftError;
@@ -728,7 +728,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
 SoftError:
   Debug("udpnet", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
   if (fd != -1) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
   }
   *resfd  = -1;
   *status = nullptr;
@@ -736,7 +736,7 @@ SoftError:
 HardError:
   Debug("udpnet", "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
   if (fd != -1) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
   }
   *resfd  = -1;
   *status = ACTION_IO_ERROR;
@@ -755,7 +755,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   bool need_bind     = true;
 
   if (fd == -1) {
-    if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
       goto Lerror;
     }
     fd = res;
@@ -827,18 +827,18 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   }
 #endif
 
-  if (need_bind && (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
+  if (need_bind && (SocketManager::ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
     Debug("udpnet", "ink_bind failed");
     goto Lerror;
   }
 
   if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
+    if (unlikely(SocketManager::set_rcvbuf_size(fd, recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
     }
   }
   if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
+    if (unlikely(SocketManager::set_sndbuf_size(fd, send_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
     }
   }
@@ -860,7 +860,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   return ACTION_RESULT_DONE;
 Lerror:
   if (fd != NO_FD) {
-    socketManager.close(fd);
+    SocketManager::close(fd);
   }
   Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
 

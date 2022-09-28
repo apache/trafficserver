@@ -188,6 +188,39 @@ LogBuffer::~LogBuffer()
 }
 
 /*-------------------------------------------------------------------------
+  LogBuffer::fast_write
+
+  This function is used for the thread-local 'fast' log buffer mode and is not thread-safe.
+  In 'fast' mode, each thread owns its own LogBuffer rather than multiple threads contending over one.
+  -------------------------------------------------------------------------*/
+
+LogBuffer::LB_ResultCode
+LogBuffer::fast_write(size_t *write_offset, size_t write_size)
+{
+  LB_ResultCode ret_val    = LB_OK;
+  size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
+  if (m_state.s.offset + actual_write_size <= m_size) {
+    size_t offset = m_state.s.offset;
+
+    LogEntryHeader *entry_header = reinterpret_cast<LogEntryHeader *>(&m_buffer[offset]);
+    struct timeval tp            = ink_hrtime_to_timeval(Thread::get_hrtime());
+
+    entry_header->timestamp      = tp.tv_sec;
+    entry_header->timestamp_usec = tp.tv_usec;
+    entry_header->entry_len      = actual_write_size;
+
+    *write_offset = offset + sizeof(LogEntryHeader);
+
+    m_state.s.offset += actual_write_size;
+    m_state.s.num_entries++;
+  } else {
+    ret_val = LB_FULL_NO_WRITERS;
+  }
+
+  return ret_val;
+}
+
+/*-------------------------------------------------------------------------
   LogBuffer::checkout_write
   -------------------------------------------------------------------------*/
 
@@ -321,7 +354,6 @@ LogBuffer::checkin_write(size_t write_offset)
     if (--new_s.s.num_writers == 0) {
       ret_val = (old_s.s.full ? LB_ALL_WRITERS_DONE : LB_OK);
     }
-
   } while (!switch_state(old_s, new_s));
 
   //    Debug("log-logbuffer","[%p] checkin_write for buffer %u (%s) "

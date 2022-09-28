@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <vector>
 #include <thread>
+#include <map>
 
 static bool
 should_roll_on_time(Log::RollingEnabledValues roll)
@@ -92,7 +93,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool auto_created, int rolling_max_count, int rolling_min_count,
-                     bool reopen_after_rolling, int pipe_buffer_size)
+                     bool reopen_after_rolling, int pipe_buffer_size, bool fast)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
@@ -105,7 +106,8 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
     m_min_rolled(rolling_min_count),
     m_reopen_after_rolling(reopen_after_rolling),
     m_buffer_manager_idx(0),
-    m_pipe_buffer_size(pipe_buffer_size)
+    m_pipe_buffer_size(pipe_buffer_size),
+    m_fast(fast)
 {
   ink_release_assert(format);
   m_format         = new LogFormat(*format);
@@ -129,13 +131,14 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
     m_logFile->open_file();
   }
 
-  LogBuffer *b = new LogBuffer(cfg, this, cfg->log_buffer_size);
-  ink_assert(b);
-  SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
-
+  if (!m_fast) {
+    LogBuffer *b = new LogBuffer(cfg, this, cfg->log_buffer_size);
+    ink_assert(b);
+    SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
+  }
   _setup_rolling(cfg, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
-  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
+  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p fast=%d", m_filename, this, m_fast);
 }
 
 LogObject::~LogObject()
@@ -148,7 +151,9 @@ LogObject::~LogObject()
   ats_free(m_alt_filename);
   delete m_format;
   delete[] m_buffer_manager;
-  delete static_cast<LogBuffer *>(FREELIST_POINTER(m_log_buffer));
+  if (!m_fast) {
+    delete static_cast<LogBuffer *>(FREELIST_POINTER(m_log_buffer));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -428,7 +433,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       }
 #endif
     }
-
   } while (retry && write_offset); // if write_offset is null, we do
   // not retry because we really do not want to write to the buffer,
   // only to mark the buffer as full
@@ -475,6 +479,93 @@ LogObject::log(LogAccess *lad, const char *text_entry)
 {
   // Clang doesn't like initializing a view with nullptr, have to check.
   return this->log(lad, std::string_view{text_entry ? text_entry : ""});
+}
+
+class ThreadLocalLogBufferManager : public Continuation
+{
+public:
+  static LogBuffer *thread_local_buffer(LogObject *o, size_t *offset, size_t bytes_needed);
+
+private:
+  ThreadLocalLogBufferManager()
+  {
+    this->thread_affinity = this_ethread();
+    SET_HANDLER(&ThreadLocalLogBufferManager::wakeup);
+
+    int period = Log::config->max_secs_per_buffer >> 1;
+    if (period < 1) {
+      period = 1;
+    }
+    eventProcessor.schedule_every(this, period * HRTIME_SECOND, ET_CALL);
+    Debug("log-config", "thread local buffer manager init: %d wakeup period", period);
+  }
+
+  ~ThreadLocalLogBufferManager() override
+  {
+    Debug("log-config", "thread local buffer manager destructor");
+    // only the LogBuffer objects are owned by this
+    for (auto [o, b] : current_buffers) {
+      // ideally we flush these here but there are shutdown order issues so if the
+      // logbuffer still exists at this point we have to drop it
+      delete b;
+    }
+    current_buffers.clear();
+  }
+
+  int
+  wakeup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  {
+    for (auto &[o, b] : current_buffers) {
+      if (b && ink_hrtime_to_sec(Thread::get_hrtime()) > b->expiration_time()) {
+        o->flush_buffer(b);
+        b = nullptr;
+      }
+    }
+
+    return EVENT_CONT;
+  }
+
+  LogBuffer *
+  current_buffer(LogObject *o, size_t *offset, size_t bytes_needed)
+  {
+    LogBuffer *buffer = current_buffers[o];
+    if (buffer == nullptr) {
+      buffer             = new LogBuffer(Log::config, o, Log::config->log_buffer_size);
+      current_buffers[o] = buffer;
+    }
+    if (buffer->fast_write(offset, bytes_needed) != LogBuffer::LB_OK) {
+      o->flush_buffer(buffer);
+
+      buffer             = new LogBuffer(Log::config, o, Log::config->log_buffer_size);
+      current_buffers[o] = buffer;
+      if (buffer->fast_write(offset, bytes_needed) != LogBuffer::LB_OK) {
+        return nullptr;
+      }
+    };
+    return buffer;
+  }
+
+  std::map<LogObject *, LogBuffer *> current_buffers;
+};
+
+/*
+ * This will return a LogBuffer object that is per-LogObject and per-Thread.  This function will handle all of
+ * the details around flushing buffers to the preproc threads and periodically checking for idle buffers.
+ */
+LogBuffer *
+ThreadLocalLogBufferManager::thread_local_buffer(LogObject *o, size_t *offset, size_t bytes_needed)
+{
+  thread_local ThreadLocalLogBufferManager manager;
+  return manager.current_buffer(o, offset, bytes_needed);
+}
+
+void
+LogObject::flush_buffer(LogBuffer *buffer)
+{
+  int idx = m_buffer_manager_idx++ % m_flush_threads;
+  Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
+  m_buffer_manager[idx].add_to_flush_queue(buffer);
+  Log::preproc_notify[idx].signal();
 }
 
 int
@@ -553,7 +644,11 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   }
 
   // Now try to place this entry in the current LogBuffer.
-  buffer = _checkout_write(&offset, bytes_needed);
+  if (!m_fast) {
+    buffer = _checkout_write(&offset, bytes_needed);
+  } else {
+    buffer = ThreadLocalLogBufferManager::thread_local_buffer(this, &offset, bytes_needed);
+  }
 
   if (!buffer) {
     SiteThrottledNote("Skipping the current log entry for %s because its size (%zu) exceeds "
@@ -561,6 +656,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
                       m_basename, bytes_needed);
     return Log::FAIL;
   }
+
   //
   // Ok, the checkout_write was successful, which means we have a valid
   // offset into the current buffer.  Marshal the entry into the buffer,
@@ -583,7 +679,9 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     memset(dst + text_entry.size(), 0, bytes_needed - text_entry.size());
   }
 
-  buffer->checkin_write(offset);
+  if (!m_fast) {
+    buffer->checkin_write(offset);
+  }
 
   return Log::LOG_OK;
 }
@@ -752,10 +850,10 @@ const LogFormat *TextLogObject::textfmt = MakeTextLogFormat();
 TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
                              Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                              int rolling_offset_hr, int rolling_size_mb, int rolling_max_count, int rolling_min_count,
-                             bool reopen_after_rolling)
+                             bool reopen_after_rolling, bool fast)
   : LogObject(Log::config, TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads,
               rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count,
-              rolling_min_count, reopen_after_rolling)
+              rolling_min_count, reopen_after_rolling, 0, fast)
 {
   if (timestamps) {
     this->set_fmt_timestamps();
@@ -1123,8 +1221,6 @@ LogObjectManager::open_local_pipes()
 void
 LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
 {
-  unsigned num_kept_objects = 0;
-
   Debug("log-config-transfer", "transferring objects from LogObjectManager %p, to %p", &old_mgr, this);
 
   if (is_debug_tag_set("log-config-transfer")) {
@@ -1167,7 +1263,6 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
         if (new_obj->refcount_dec() == 0) {
           delete new_obj;
         }
-        ++num_kept_objects;
         break;
       }
     }

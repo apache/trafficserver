@@ -466,15 +466,7 @@ case "$1" in
             status=$?
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
-<<<<<<< HEAD
         elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" -o "$DISTRIB_ID" = "nixos" ]; then
-            if pgrep $TM_NAME > /dev/null ; then
-                echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else
-                echo "$TM_NAME not running"
-            fi
-=======
-        elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" ]; then
->>>>>>> 24778a1... JSONRPC - Adapt rc/* files to work with TS instead of TM
             if pgrep $TS_NAME > /dev/null ; then
                 echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else
                 echo "$TS_NAME not running"

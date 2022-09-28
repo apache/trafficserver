@@ -30,6 +30,7 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/bwf_std_format.h"
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
+#include "HostFile.h"
 
 #include <utility>
 #include <vector>
@@ -75,27 +76,6 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 namespace
 {
-/** Assign raw storage to an @c IpAddr
- *
- * @param ip Destination.
- * @param af IP family.
- * @param ptr Raw data for an address of family @a af.
- */
-void
-ip_addr_set(IpAddr &ip,     ///< Target storage.
-            uint8_t af,     ///< Address format.
-            void const *ptr ///< Raw address data
-)
-{
-  if (AF_INET6 == af) {
-    ip = *static_cast<in6_addr const *>(ptr);
-  } else if (AF_INET == af) {
-    ip = *static_cast<in_addr_t const *>(ptr);
-  } else {
-    ip.invalidate();
-  }
-}
-
 unsigned int
 HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, IpAddr const &rhs)
 {
@@ -223,41 +203,7 @@ HostDB_Config_Init()
 
 HostDBCache hostDB;
 
-void ParseHostFile(ts::file::path const &path, ts_seconds interval);
-
-auto
-HostDBInfo::assign(sa_family_t af, void const *addr) -> self_type &
-{
-  type = HostDBType::ADDR;
-  ip_addr_set(data.ip, af, addr);
-  return *this;
-}
-
-auto
-HostDBInfo::assign(IpAddr const &addr) -> self_type &
-{
-  type    = HostDBType::ADDR;
-  data.ip = addr;
-  return *this;
-}
-
-auto
-HostDBInfo::assign(SRV const *srv, char const *name) -> self_type &
-{
-  type                  = HostDBType::SRV;
-  data.srv.srv_weight   = srv->weight;
-  data.srv.srv_priority = srv->priority;
-  data.srv.srv_port     = srv->port;
-  data.srv.key          = srv->key;
-  data.srv.srv_offset   = reinterpret_cast<char const *>(this) - name;
-  return *this;
-}
-
-char const *
-HostDBInfo::srvname() const
-{
-  return data.srv.srv_offset ? reinterpret_cast<char const *>(this) + data.srv.srv_offset : nullptr;
-}
+void UpdateHostsFile(ts::file::path const &path, ts_seconds interval);
 
 static inline bool
 is_addr_valid(uint8_t af, ///< Address family (format of data)
@@ -364,8 +310,6 @@ HostDBHash::refresh()
   ctx.finalize(hash);
 }
 
-HostDBHash::HostDBHash() {}
-
 HostDBHash::~HostDBHash()
 {
   if (pSD) {
@@ -387,7 +331,7 @@ HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
   return false;
 }
 
-std::shared_ptr<HostFileMap>
+std::shared_ptr<HostFile>
 HostDBCache::acquire_host_file()
 {
   std::shared_lock lock(host_file_mutex);
@@ -1468,21 +1412,16 @@ HostDBContinuation::do_dns()
       hostdb_cont_free(this);
       return;
     }
+  }
 
-    // If looking for an IPv4 or IPv6 address, check the host file.
-    if (hash.db_mark == HOSTDB_MARK_IPV6 || hash.db_mark == HOSTDB_MARK_IPV4) {
-      if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
-        if (auto spot = static_hosts->find(hash.host_name); spot != static_hosts->end()) {
-          HostDBRecord::Handle r = (hash.db_mark == HOSTDB_MARK_IPV4) ? spot->second.record_4 : spot->second.record_6;
-          // Set the TTL based on how often we stat() the host file
-          if (r && action.continuation) {
-            r = lookup_done(hash.host_name, hostdb_hostfile_check_interval, nullptr, r);
-            reply_to_cont(action.continuation, r.get());
-            hostdb_cont_free(this);
-            return;
-          }
-        }
-      }
+  // Check if this can be fulfilled by the host file
+  if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
+    if (auto r = static_hosts->lookup(hash); r && action.continuation) {
+      // Set the TTL based on how often we stat() the host file
+      r = lookup_done(hash.host_name, static_hosts->ttl, nullptr, r);
+      reply_to_cont(action.continuation, r.get());
+      hostdb_cont_free(this);
+      return;
     }
   }
 
@@ -1567,7 +1506,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     }
     if (update_p) {
       Debug("hostdb", "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path).c_str());
-      ParseHostFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
+      UpdateHostsFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
     }
   }
 
@@ -1995,13 +1934,6 @@ ink_hostdb_init(ts::ModuleVersion v)
   ts_host_res_global_init();
 }
 
-/// Pair of IP address and host name from a host file.
-struct HostFilePair {
-  using self = HostFilePair;
-  IpAddr ip;
-  const char *name;
-};
-
 struct HostDBFileContinuation : public Continuation {
   using self = HostDBFileContinuation;
   using Keys = std::vector<CryptoHash>;
@@ -2036,106 +1968,24 @@ HostDBFileContinuation::destroy()
 // globals.
 std::atomic<bool> HostDBFileUpdateActive{false};
 
-/* Container for temporarily holding data from the host file. For each FQDN there is a vector of IPv4
- * and IPv6 addresses. These are used to generate the HostDBRecord instances that are stored persistently.
- */
-using HostAddrMap = std::unordered_map<std::string_view, std::tuple<std::vector<IpAddr>, std::vector<IpAddr>>>;
-
-namespace
-{
-constexpr unsigned IPV4_IDX = 0;
-constexpr unsigned IPV6_IDX = 1;
-} // namespace
-
-static void
-ParseHostLine(TextView line, HostAddrMap &map)
-{
-  // Elements should be the address then a list of host names.
-  TextView addr_text = line.take_prefix_if(&isspace);
-  IpAddr addr;
-
-  // Don't use RecHttpLoadIp because the address *must* be literal.
-  if (TS_SUCCESS != addr.load(addr_text)) {
-    return;
-  }
-
-  while (!line.ltrim_if(&isspace).empty()) {
-    TextView name = line.take_prefix_if(&isspace);
-    if (addr.isIp6()) {
-      std::get<IPV6_IDX>(map[name]).push_back(addr);
-    } else if (addr.isIp4()) {
-      std::get<IPV4_IDX>(map[name]).push_back(addr);
-    }
-  }
-}
-
 void
-ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_interval_parse)
+UpdateHostsFile(ts::file::path const &path, ts_seconds interval)
 {
-  std::shared_ptr<HostFileMap> map;
-
   // Test and set for update in progress.
   bool flag = false;
   if (!HostDBFileUpdateActive.compare_exchange_strong(flag, true)) {
     Debug("hostdb", "Skipped load of host file because update already in progress");
     return;
   }
-  Debug_bw("hostdb", R"(Loading host file "{}")", path);
 
-  if (!path.empty()) {
-    std::error_code ec;
-    std::string content = ts::file::load(path, ec);
-    if (!ec) {
-      HostAddrMap addr_map;
-      TextView text{content};
-      while (text) {
-        auto line = text.take_prefix_at('\n').ltrim_if(&isspace);
-        if (line.empty() || '#' == *line) {
-          continue;
-        }
-        ParseHostLine(line, addr_map);
-      }
-      // @a map should be loaded with all of the data, create the records.
-      map = std::make_shared<HostFileMap>();
-      // Common loading function for creating a record from the address vector.
-      auto loader = [](TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
-        HostDBRecord::Handle record{HostDBRecord::alloc(key, v.size())};
-        record->af_family = v.front().family(); // @a v is presumed family homogenous
-        auto rr_info      = record->rr_info();
-        auto spot         = v.begin();
-        for (auto &item : rr_info) {
-          item.assign(*spot++);
-        }
-        return record;
-      };
-      // Walk the temporary map and create the corresponding records for the persistent map.
-      for (auto const &[key, value] : addr_map) {
-        // Bit of subtlety to be able to search records with a view and not a string - the key
-        // must point at stable memory for the name, which is available in the record itself.
-        // Therefore the lookup for adding the record must be done using a view based in the record.
-        // It doesn't matter if it's the IPv4 or IPv6 record that's used, both are stable and equal
-        // to each other.
-        // IPv4
-        if (auto const &v = std::get<IPV4_IDX>(value); v.size() > 0) {
-          auto r                          = loader(key, v);
-          (*map)[r->name_view()].record_4 = r;
-        }
-        // IPv6
-        if (auto const &v = std::get<IPV6_IDX>(value); v.size() > 0) {
-          auto r                          = loader(key, v);
-          (*map)[r->name_view()].record_6 = r;
-        }
-      }
-
-      hostdb_hostfile_update_timestamp = hostdb_current_timestamp;
-    }
-  }
+  std::shared_ptr<HostFile> hf = ParseHostFile(path, interval);
 
   // Swap the pointer
-  if (map) {
+  if (hf) {
     std::unique_lock lock(hostDB.host_file_mutex);
-    hostDB.host_file = map;
+    hostDB.host_file = hf;
   }
+  hostdb_hostfile_update_timestamp = hostdb_current_timestamp;
   // Mark this one as completed, so we can allow another update to happen
   HostDBFileUpdateActive = false;
 }
