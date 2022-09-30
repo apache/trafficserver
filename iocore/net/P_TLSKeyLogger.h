@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <mutex>
-#include <shared_mutex>
+#include <tscpp/util/TsSharedMutex.h>
 
 /** A class for handling TLS secrets logging. */
 class TLSKeyLogger
@@ -126,5 +126,5 @@ private:
 
   /** A mutex to coordinate dynamically changing TLS logging config changes and
    * logging to the TLS log file. */
-  std::shared_mutex _mutex;
+  ts::shared_mutex _mutex;
 };

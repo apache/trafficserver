@@ -27,8 +27,9 @@
 
 #pragma once
 
-#include <shared_mutex>
 #include <unordered_map>
+
+#include <tscpp/util/TsSharedMutex.h>
 
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
@@ -164,7 +165,7 @@ struct HostDBCache {
   int start(int flags = 0);
   // Map to contain all of the host file overrides, initialize it to empty
   std::shared_ptr<HostFile> host_file;
-  std::shared_mutex host_file_mutex;
+  ts::shared_mutex host_file_mutex;
 
   // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
   RefCountCache<HostDBRecord> *refcountcache = nullptr;

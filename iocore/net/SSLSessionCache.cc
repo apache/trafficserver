@@ -25,6 +25,7 @@
 
 #include <cstring>
 #include <memory>
+#include <shared_mutex>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
 #define SSLSESSIONCACHE_STRINGIFY(x) SSLSESSIONCACHE_STRINGIFY0(x)
@@ -274,7 +275,7 @@ void inline SSLSessionBucket::print(const char *ref_str) const
   }
 }
 
-void inline SSLSessionBucket::removeOldestSession(const std::unique_lock<std::shared_mutex> &lock)
+void inline SSLSessionBucket::removeOldestSession(const std::unique_lock<ts::shared_mutex> &lock)
 {
   // Caller must hold the bucket shared_mutex with unique_lock.
   ink_assert(lock.owns_lock());
@@ -398,7 +399,7 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
 }
 
 void
-SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock)
+SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock)
 {
   // Caller must hold the bucket shared_mutex with unique_lock.
   ink_release_assert(lock.owns_lock());

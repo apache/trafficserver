@@ -30,7 +30,7 @@
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>
 #include <mutex>
-#include <shared_mutex>
+#include <tscpp/util/TsSharedMutex.h>
 
 #define SSL_MAX_SESSION_SIZE 256
 #define SSL_MAX_ORIG_SESSION_SIZE 4096
@@ -159,9 +159,9 @@ public:
 private:
   /* these method must be used while hold the lock */
   void print(const char *) const;
-  void removeOldestSession(const std::unique_lock<std::shared_mutex> &lock);
+  void removeOldestSession(const std::unique_lock<ts::shared_mutex> &lock);
 
-  mutable std::shared_mutex mutex;
+  mutable ts::shared_mutex mutex;
   CountQueue<SSLSession> bucket_que;
   std::map<SSLSessionID, SSLSession *> bucket_map;
 };
@@ -210,9 +210,9 @@ public:
   void remove_session(const std::string &lookup_key);
 
 private:
-  void remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock);
+  void remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock);
 
-  mutable std::shared_mutex mutex;
+  mutable ts::shared_mutex mutex;
   CountQueue<SSLOriginSession> orig_sess_que;
   std::map<std::string, SSLOriginSession *> orig_sess_map;
 };

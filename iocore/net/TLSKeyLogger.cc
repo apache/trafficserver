@@ -23,6 +23,7 @@
 #include "tscore/Diags.h"
 
 #include <cstring>
+#include <shared_mutex>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
