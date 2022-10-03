@@ -53,7 +53,8 @@ typedef struct {
   pcre_extra *_extra;
 } plugin_regex;
 
-typedef enum { ALLOW_IP, DENY_IP, UNKNOWN_IP } ipstate;
+enum ipstate { ALLOW_IP, DENY_IP, UNKNOWN_IP };
+enum regex_type { PATH, HOST };
 
 // Base class for all ACLs
 class Acl
@@ -62,7 +63,7 @@ public:
   Acl() {}
   ~Acl()
   {
-    if (db_loaded) {
+    if (_db_loaded) {
       MMDB_close(&_mmdb);
     }
   }
@@ -79,6 +80,7 @@ public:
       TSHttpTxnErrorBodySet(txnp, msg, _html.size(), nullptr); // Defaults to text/html
     }
   }
+  bool _db_loaded = false;
 
 protected:
   // Class members
@@ -88,34 +90,35 @@ protected:
   std::string _html;
   std::unordered_map<std::string, bool> allow_country;
 
-  std::unordered_map<std::string, std::vector<plugin_regex>> allow_regex;
-  std::unordered_map<std::string, std::vector<plugin_regex>> deny_regex;
+  std::unordered_map<std::string, std::vector<plugin_regex>> allow_regex_path;
+  std::unordered_map<std::string, std::vector<plugin_regex>> deny_regex_path;
+
+  std::unordered_map<std::string, std::vector<plugin_regex>> allow_regex_host;
+  std::unordered_map<std::string, std::vector<plugin_regex>> deny_regex_host;
 
   IpMap allow_ip_map;
   IpMap deny_ip_map;
 
   // Anonymous blocking default to off
-  bool _anonymous_ip      = false;
-  bool _anonymous_vpn     = false;
-  bool _hosting_provider  = false;
-  bool _public_proxy      = false;
-  bool _tor_exit_node     = false;
-  bool _residential_proxy = false;
-
+  bool _anonymous_ip       = false;
+  bool _anonymous_vpn      = false;
+  bool _hosting_provider   = false;
+  bool _public_proxy       = false;
+  bool _tor_exit_node      = false;
+  bool _residential_proxy  = false;
   bool _anonymous_blocking = false;
 
   // Do we want to allow by default or not? Useful
   // for deny only rules
   bool default_allow = false;
-  bool db_loaded     = false;
 
   bool loaddb(const YAML::Node &dbNode);
   bool loadallow(const YAML::Node &allowNode);
   bool loaddeny(const YAML::Node &denyNode);
   void loadhtml(const YAML::Node &htmlNode);
   bool loadanonymous(const YAML::Node &anonNode);
-  bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len);
+  bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len, const char *host, int host_len);
   bool eval_anonymous(MMDB_entry_s *entry_data);
-  void parseregex(const YAML::Node &regex, bool allow);
+  void parseregex(const YAML::Node &regex, regex_type type, bool allow);
   ipstate eval_ip(const sockaddr *sock) const;
 };

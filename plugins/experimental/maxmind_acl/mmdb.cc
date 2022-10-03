@@ -81,7 +81,6 @@ Acl::init(char const *filename)
 
   // Find our database name and convert to full path as needed
   status = loaddb(maxmind["database"]);
-
   if (!status) {
     TSDebug(PLUGIN_NAME, "Failed to load MaxMind Database");
     return status;
@@ -92,8 +91,10 @@ Acl::init(char const *filename)
   allow_country.clear();
   allow_ip_map.clear();
   deny_ip_map.clear();
-  allow_regex.clear();
-  deny_regex.clear();
+  allow_regex_path.clear();
+  deny_regex_path.clear();
+  allow_regex_host.clear();
+  deny_regex_host.clear();
   _html.clear();
   default_allow       = false;
   _anonymous_blocking = false;
@@ -257,9 +258,23 @@ Acl::loaddeny(const YAML::Node &denyNode)
     return false;
   }
 
+  // regex at one point was only based on path, however at one point
+  // we introduced regex based on host as well "regex_host", so this supports
+  // both the old "regex" for backwards compatability for configs as well as the newer
+  // "regex_path"
   if (denyNode["regex"]) {
     YAML::Node regex = denyNode["regex"];
-    parseregex(regex, false);
+    parseregex(regex, PATH, false);
+  }
+
+  if (denyNode["regex_path"]) {
+    YAML::Node regex = denyNode["regex_path"];
+    parseregex(regex, PATH, false);
+  }
+
+  if (denyNode["regex_host"]) {
+    YAML::Node regex = denyNode["regex_host"];
+    parseregex(regex, HOST, false);
   }
 
 #if 0
@@ -338,11 +353,24 @@ Acl::loadallow(const YAML::Node &allowNode)
     return false;
   }
 
+  // regex at one point was only based on path, however we introduced
+  // regex based on host as well "regex_host", so this supports
+  // both the old "regex" for backwards compatability for configs as well as the newer
+  // "regex_path"
   if (allowNode["regex"]) {
     YAML::Node regex = allowNode["regex"];
-    parseregex(regex, true);
+    parseregex(regex, PATH, true);
   }
 
+  if (allowNode["regex_path"]) {
+    YAML::Node regex = allowNode["regex_path"];
+    parseregex(regex, PATH, true);
+  }
+
+  if (allowNode["regex_host"]) {
+    YAML::Node regex = allowNode["regex_host"];
+    parseregex(regex, HOST, true);
+  }
 #if 0
   std::unordered_map<std::string, bool>::iterator cursor;
   TSDebug(PLUGIN_NAME, "Allow Country List:");
@@ -355,7 +383,7 @@ Acl::loadallow(const YAML::Node &allowNode)
 }
 
 void
-Acl::parseregex(const YAML::Node &regex, bool allow)
+Acl::parseregex(const YAML::Node &regex, regex_type type, bool allow)
 {
   try {
     if (!regex.IsNull()) {
@@ -384,9 +412,17 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           for (std::size_t y = 0; y < temprule.size() - 1; y++) {
             TSDebug(PLUGIN_NAME, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
             if (allow) {
-              allow_regex[i[y].as<std::string>()].push_back(temp);
+              if (type == PATH) {
+                allow_regex_path[i[y].as<std::string>()].push_back(temp);
+              } else if (type == HOST) {
+                allow_regex_host[i[y].as<std::string>()].push_back(temp);
+              }
             } else {
-              deny_regex[i[y].as<std::string>()].push_back(temp);
+              if (type == PATH) {
+                deny_regex_path[i[y].as<std::string>()].push_back(temp);
+              } else if (type == HOST) {
+                deny_regex_host[i[y].as<std::string>()].push_back(temp);
+              }
             }
           }
         }
@@ -457,7 +493,7 @@ Acl::loaddb(const YAML::Node &dbNode)
   }
 
   // Make sure we close any previously opened DBs in case this is a reload
-  if (db_loaded) {
+  if (_db_loaded) {
     MMDB_close(&_mmdb);
   }
 
@@ -466,8 +502,7 @@ Acl::loaddb(const YAML::Node &dbNode)
     TSDebug(PLUGIN_NAME, "Can't open DB %s - %s", dbloc.c_str(), MMDB_strerror(status));
     return false;
   }
-
-  db_loaded = true;
+  _db_loaded = true;
   TSDebug(PLUGIN_NAME, "Initialized MMDB with %s", dbloc.c_str());
   return true;
 }
@@ -487,7 +522,6 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
   }
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&_mmdb, sockaddr, &mmdb_error);
-
   if (MMDB_SUCCESS != mmdb_error) {
     TSDebug(PLUGIN_NAME, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
     ret = false;
@@ -517,20 +551,32 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
 #endif
 
       MMDB_entry_data_s entry_data;
-      int path_len     = 0;
+      int path_len, host_len = 0;
       const char *path = nullptr;
-      if (!allow_regex.empty() || !deny_regex.empty()) {
+      const char *host = nullptr;
+      if (!allow_regex_path.empty() || !deny_regex_path.empty()) {
         path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
       }
+
+      if (!allow_regex_host.empty() || !deny_regex_host.empty()) {
+        TSMBuffer hbuf;
+        TSMLoc hloc;
+        if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &hbuf, &hloc)) {
+          host = TSUrlHostGet(hbuf, hloc, &host_len);
+          TSHandleMLocRelease(hbuf, TS_NULL_MLOC, hloc);
+        }
+      }
+
       // Test for country code
-      if (!allow_country.empty() || !allow_regex.empty() || !deny_regex.empty()) {
+      if (!allow_country.empty() || !allow_regex_path.empty() || !deny_regex_path.empty() || !allow_regex_host.empty() ||
+          !deny_regex_host.empty()) {
         status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
         if (MMDB_SUCCESS != status) {
           TSDebug(PLUGIN_NAME, "err on get country code value: %s", MMDB_strerror(status));
           return false;
         }
         if (entry_data.has_data) {
-          ret = eval_country(&entry_data, path, path_len);
+          ret = eval_country(&entry_data, path, path_len, host, host_len);
         }
       } else {
         // Country map is empty as well as regexes, use our default rejection
@@ -670,7 +716,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
 // allowable country code from our map.
 // False otherwise
 bool
-Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
+Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len, const char *host, int host_len)
 {
   bool ret     = false;
   bool allow   = default_allow;
@@ -694,19 +740,39 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
     ret = true;
   }
 
+  // test for path regex
   if (nullptr != path && 0 != path_len) {
-    if (!allow_regex[output].empty()) {
-      for (auto &i : allow_regex[output]) {
+    if (!allow_regex_path[output].empty()) {
+      for (auto &i : allow_regex_path[output]) {
         if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, path, path_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
-          TSDebug(PLUGIN_NAME, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
+          TSDebug(PLUGIN_NAME, "Got a regex allow hit on regex path: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
       }
     }
-    if (!deny_regex[output].empty()) {
-      for (auto &i : deny_regex[output]) {
+    if (!deny_regex_path[output].empty()) {
+      for (auto &i : deny_regex_path[output]) {
         if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, path, path_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
-          TSDebug(PLUGIN_NAME, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
+          TSDebug(PLUGIN_NAME, "Got a regex deny hit on regex path: %s, country: %s", i._regex_s.c_str(), output);
+          ret = false;
+        }
+      }
+    }
+  }
+  // test for host regex
+  if (nullptr != host && 0 != host_len) {
+    if (!allow_regex_host[output].empty()) {
+      for (auto &i : allow_regex_host[output]) {
+        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, host, host_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
+          TSDebug(PLUGIN_NAME, "Got a regex allow hit on regex host: %s, country: %s", i._regex_s.c_str(), output);
+          ret = true;
+        }
+      }
+    }
+    if (!deny_regex_host[output].empty()) {
+      for (auto &i : deny_regex_host[output]) {
+        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, host, host_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
+          TSDebug(PLUGIN_NAME, "Got a regex deny hit on regex host: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }
       }
