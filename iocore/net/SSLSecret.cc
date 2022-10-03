@@ -23,6 +23,13 @@
 #include "tscore/ts_file.h"
 #include "P_SSLConfig.h"
 
+#include <utility>
+
+// NOTE: The secret_map_mutex should not be held by the caller of this
+// function. The implementation of this function may call a plugin's
+// TS_EVENT_SSL_SECRET handler which in turn may grab a lock for
+// secret_map_mutex via a TSSslSecretSet call. These events will result in a
+// deadlock.
 void
 SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {
@@ -44,8 +51,10 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
   if (data1.empty() || (!name2.empty() && data2.empty())) {
     // If none of them loaded it, assume it is a file
     data1 = loadFile(name1);
+    setSecret(name1, data1);
     if (!name2.empty()) {
       data2 = loadFile(name2);
+      setSecret(name2, data2);
     }
   }
 }
@@ -100,19 +109,25 @@ void
 SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {
   Debug("ssl_secret", "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
-  std::scoped_lock lock(secret_map_mutex);
-  std::string *const data1ptr = &(secret_map[name1]);
-  std::string *const data2ptr = [&]() -> std::string *const {
-    if (name2.empty()) {
-      data2.clear();
-      return &data2;
-    }
-    return &(secret_map[name2]);
-  }();
-  // If we can't find either secret, load them both again
-  if (data1ptr->empty() || (!name2.empty() && data2ptr->empty())) {
-    this->loadSecret(name1, name2, *data1ptr, *data2ptr);
+  {
+    std::scoped_lock lock(secret_map_mutex);
+    std::string *const data1ptr = &(secret_map[name1]);
+    std::string *const data2ptr = [&]() -> std::string *const {
+      if (name2.empty()) {
+        data2.clear();
+        return &data2;
+      }
+      return &(secret_map[name2]);
+    }();
+    data1 = *data1ptr;
+    data2 = *data2ptr;
   }
-  data1 = *data1ptr;
-  data2 = *data2ptr;
+  // If we can't find either secret, load them both again
+  if (data1.empty() || (!name2.empty() && data2.empty())) {
+    std::string data1tmp;
+    std::string data2tmp;
+    this->loadSecret(name1, name2, data1tmp, data2tmp);
+    data1 = std::move(data1tmp);
+    data2 = std::move(data2tmp);
+  }
 }
