@@ -204,12 +204,9 @@ public:
   class AckBlockSection
   {
   public:
-    class const_iterator
+    class const_iterator : public std::iterator<std::input_iterator_tag, QUICAckFrame::AckBlock>
     {
     public:
-      using iterator_category = std::input_iterator_tag;
-      using value_type        = QUICAckFrame::AckBlock;
-
       const_iterator(uint8_t index, const std::vector<QUICAckFrame::AckBlock> *ack_blocks);
 
       const QUICAckFrame::AckBlock &
