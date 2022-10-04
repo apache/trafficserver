@@ -1,0 +1,237 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# This replay file generates an HTTP/2 session with three streams in order to
+# verify that ATS generates the expected SETTINGS and WINDOW_UPDATE frames.
+
+sessions:
+
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: www.example.com
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /zero-request ]
+        - [ uuid, zero-request ]
+        - [ X-Request, zero-request ]
+        - [ Content-Length, 0 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, { value: 'zero-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, zero-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, { value: 'zero-response', as: equal } ]
+
+  - client-request:
+      delay: 500ms
+
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /first-request ]
+        - [ uuid, first-request ]
+        - [ X-Request, first-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, { value: 'first-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, first-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, { value: 'first-response', as: equal } ]
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /second-request ]
+        - [ uuid, second-request ]
+        - [ X-Request, second-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'second-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, second-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'second-response', as: equal } ]
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /third-request ]
+        - [ uuid, third-request ]
+        - [ X-Request, third-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'third-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, third-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'third-response', as: equal } ]
+
+  - client-request:
+      # Intentionally test a stream after the three other parallel POST
+      # requests.
+      delay: 500ms
+
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /fourth-request ]
+        - [ uuid, fourth-request ]
+        - [ X-Request, fourth-request ]
+      content:
+        # Send a very large DATA frame so that we exceed the 65,535 window
+        # size of most of the test runs.
+        size: 120000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'fourth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, fourth-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'fourth-response', as: equal } ]
+
+  - client-request:
+      # Give the above request time to process and give us an opportunity to
+      # receive any other WINDOW_UPDATE frames.
+      delay: 500ms
+
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /fifth-request ]
+        - [ uuid, fifth-request ]
+        - [ X-Request, fifth-request ]
+      content:
+        size: 10000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'fifth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, fifth-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'fifth-response', as: equal } ]
+
