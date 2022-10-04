@@ -546,3 +546,11 @@ Changes with Apache Traffic Server 9.2.0
   #9072 - Update expected ALPN output for recent versions of curl
   #9077 - Make README a Markdown Doc, Add Badges
   #9082 - Update doc max size reloadable/overridable flags
+  #9090 - s3_auth: accept longer config lines
+  #9097 - Add a proxy.config.http.per_server.connection.max test
+  #9102 - Move plugin_init for verify cmd
+  #9103 - s3_auth: Fix parsing of virtual_host
+  #9105 - Fix compile error with llvm-15
+  #9106 - Fix unused-but-set-variable warnings by llvm-15
+  #9110 - Updating AuTest to use Proxy Verifier v2.4.2
+  #9112 - Fix expected sha1sum for the Proxy Verifier binary
