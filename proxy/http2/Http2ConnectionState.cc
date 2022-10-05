@@ -158,7 +158,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   // Check whether Window Size is acceptable
-  if (cstate.server_rwnd() < payload_length) {
+  if (!cstate.server_rwnd_is_shrinking && cstate.server_rwnd() < payload_length) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data cstate.server_rwnd < payload_length");
   }
@@ -1054,8 +1054,18 @@ Http2ConnectionState::Http2ConnectionState() : stream_list()
 void
 Http2ConnectionState::init(Http2CommonSession *ssn)
 {
-  session            = ssn;
-  this->_server_rwnd = Http2::initial_window_size;
+  session = ssn;
+
+  if (Http2::initial_window_size < HTTP2_INITIAL_WINDOW_SIZE) {
+    // There is no HTTP/2 specified way to shrink the connection window size
+    // other than to receive data and not send WINDOW_UPDATE frames for a
+    // while.
+    this->_server_rwnd             = HTTP2_INITIAL_WINDOW_SIZE;
+    this->server_rwnd_is_shrinking = true;
+  } else {
+    this->_server_rwnd             = Http2::initial_window_size;
+    this->server_rwnd_is_shrinking = false;
+  }
 
   local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
   remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
@@ -1439,6 +1449,7 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
   if (this->server_rwnd() < min_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - this->server_rwnd();
     this->increment_server_rwnd(diff_size);
+    this->server_rwnd_is_shrinking = false;
     this->send_window_update_frame(0, diff_size);
   }
 
