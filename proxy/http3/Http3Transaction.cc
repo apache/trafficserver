@@ -356,13 +356,13 @@ Http3Transaction::state_stream_open(int event, void *edata)
     this->_info.read_vio->reenable();
     break;
   case VC_EVENT_READ_COMPLETE:
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_process_read_vio();
     if (!this->_header_handler->is_complete()) {
       // Delay processing READ_COMPLETE
       this_ethread()->schedule_imm(this, VC_EVENT_READ_COMPLETE);
       break;
     }
-    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    this->_process_read_vio();
     this->_data_handler->finalize();
     // always signal regardless of progress
     this->_signal_read_event();
