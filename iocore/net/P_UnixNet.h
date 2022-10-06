@@ -90,7 +90,7 @@ struct EventIO {
   bool syscall         = true;    ///< if false, disable all functionality (for QUIC)
   int type             = 0;       ///< class identifier of union data.
   union {
-    Continuation *c;
+    void *untyped;
     NetEvent *ne;
     DNSConnection *dnscon;
     NetAccept *na;
@@ -131,7 +131,7 @@ struct EventIO {
   /// Remove the epoll event and close the connection. Returns 0 on success.
   int close();
 
-  EventIO() { data.c = nullptr; }
+  EventIO() { data.untyped = nullptr; }
 };
 
 #include "P_Net.h"

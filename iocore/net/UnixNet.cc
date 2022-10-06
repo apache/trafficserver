@@ -542,7 +542,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
     } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
-      this->thread->schedule_imm(epd->data.c);
+      this->thread->schedule_imm(epd->data.na);
     }
     ev_next_event(pd, x);
   }
