@@ -223,7 +223,8 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
 
-  if (data->m_config->m_prefetchcount > 0 && header.hasKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size())) {
+  if (data->m_config->m_prefetchcount > 0 && data->m_blocknum == data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) &&
+      header.hasKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size())) {
     data->m_prefetchable = true;
   }
 
@@ -478,6 +479,11 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   }
 
   data->m_blockexpected = blockcr.rangeSize();
+
+  if (data->m_config->m_prefetchcount > 0 && data->m_blocknum == data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) &&
+      header.hasKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size())) {
+    data->m_prefetchable = true;
+  }
 
   return true;
 }
