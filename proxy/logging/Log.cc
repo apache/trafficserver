@@ -182,7 +182,7 @@ struct PeriodicWakeup : Continuation {
   PeriodicWakeup(int preproc_threads, int flush_threads)
     : Continuation(new_ProxyMutex()), m_preproc_threads(preproc_threads), m_flush_threads(flush_threads)
   {
-    SET_HANDLER((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
+    SET_HANDLER(&PeriodicWakeup::wakeup);
   }
 };
 

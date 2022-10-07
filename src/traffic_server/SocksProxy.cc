@@ -149,7 +149,7 @@ SocksProxy::init(NetVConnection *netVC)
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
-  SET_HANDLER(static_cast<EventHandler>(&SocksProxy::acceptEvent));
+  SET_HANDLER(&SocksProxy::acceptEvent);
 
   handleEvent(NET_EVENT_ACCEPT, netVC);
 }
@@ -178,7 +178,7 @@ SocksProxy::acceptEvent(int event, void *data)
 
   buf->reset();
 
-  SET_HANDLER(static_cast<EventHandler>(&SocksProxy::mainEvent));
+  SET_HANDLER(&SocksProxy::mainEvent);
   vc_handler = &SocksProxy::state_read_client_request;
 
   timeout   = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
@@ -694,7 +694,7 @@ struct SocksAccepter : public Continuation {
   }
 
   // There is no state used we dont need a mutex
-  SocksAccepter() : Continuation(nullptr) { SET_HANDLER((SocksAccepterHandler)&SocksAccepter::mainEvent); }
+  SocksAccepter() : Continuation(nullptr) { SET_HANDLER(&SocksAccepter::mainEvent); }
 };
 
 void
