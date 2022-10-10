@@ -153,10 +153,7 @@ struct CacheHostTableConfig;
 typedef int (CacheHostTableConfig::*CacheHostTabHandler)(int, void *);
 struct CacheHostTableConfig : public Continuation {
   CacheHostTable **ppt;
-  CacheHostTableConfig(CacheHostTable **appt) : Continuation(nullptr), ppt(appt)
-  {
-    SET_HANDLER((CacheHostTabHandler)&CacheHostTableConfig::mainEvent);
-  }
+  CacheHostTableConfig(CacheHostTable **appt) : Continuation(nullptr), ppt(appt) { SET_HANDLER(&CacheHostTableConfig::mainEvent); }
 
   int
   mainEvent(int event, Event *e)

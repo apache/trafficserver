@@ -267,7 +267,7 @@ initialize_thread_for_net(EThread *thread)
 
 NetHandler::NetHandler() : Continuation(nullptr)
 {
-  SET_HANDLER((NetContHandler)&NetHandler::mainNetEvent);
+  SET_HANDLER(&NetHandler::mainNetEvent);
 }
 
 int

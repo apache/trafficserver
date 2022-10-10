@@ -1035,14 +1035,14 @@ UDPNetHandler::UDPNetHandler()
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
-  SET_HANDLER((UDPNetContHandler)&UDPNetHandler::startNetEvent);
+  SET_HANDLER(&UDPNetHandler::startNetEvent);
 }
 
 int
 UDPNetHandler::startNetEvent(int event, Event *e)
 {
   (void)event;
-  SET_HANDLER((UDPNetContHandler)&UDPNetHandler::mainNetEvent);
+  SET_HANDLER(&UDPNetHandler::mainNetEvent);
   trigger_event = e;
   e->schedule_every(-HRTIME_MSECONDS(UDP_NH_PERIOD));
   return EVENT_CONT;

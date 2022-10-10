@@ -99,10 +99,7 @@ struct FreerContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  explicit FreerContinuation(void *ap) : Continuation(nullptr), p(ap)
-  {
-    SET_HANDLER((FreerContHandler)&FreerContinuation::dieEvent);
-  }
+  explicit FreerContinuation(void *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&FreerContinuation::dieEvent); }
 };
 
 TS_INLINE void
