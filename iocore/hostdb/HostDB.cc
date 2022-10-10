@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <shared_mutex>
 #include <http/HttpConfig.h>
 
 using ts::TextView;

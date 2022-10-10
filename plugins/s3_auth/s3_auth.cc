@@ -545,7 +545,7 @@ S3Config::parse_config(const std::string &config_fname)
       }
 
       // Identify the keys (and values if appropriate)
-      std::string key_str{key_val.split_prefix_at('=').trim_if(&isspace)};
+      std::string key_str{key_val.take_prefix_at('=').trim_if(&isspace)};
       std::string val_str{key_val.trim_if(&isspace)};
 
       if (key_str == "secret_key") {

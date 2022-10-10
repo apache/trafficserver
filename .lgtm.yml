@@ -19,6 +19,7 @@ path_classifiers:
     - "lib/fastlz"
     - "lib/yamlcpp"
     - "tests/include/catch.hpp"
+    - "plugins/experimental/wasm/lib"
 queries:
   - exclude:
       tags:

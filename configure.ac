@@ -1447,6 +1447,9 @@ TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 fi
 
+# Check for optional WAVM library
+TS_CHECK_WAVM
+
 #
 # Enable experimental/uri_signing plugin
 # This is here, instead of above, because it needs to know if PCRE is available.
