@@ -81,10 +81,7 @@ struct CC_FreerContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap)
-  {
-    SET_HANDLER((CC_FreerContHandler)&CC_FreerContinuation::freeEvent);
-  }
+  CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&CC_FreerContinuation::freeEvent); }
 };
 
 // struct CC_UpdateContinuation

@@ -242,7 +242,7 @@ void
 QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
+  SET_HANDLER(&QUICNetVConnection::startEvent);
   this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
@@ -267,7 +267,7 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
                          QUICConnectionId retry_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
                          QUICResetTokenTable *rtable, QUICConnectionTable *ctable)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  SET_HANDLER(&QUICNetVConnection::acceptEvent);
   this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
@@ -366,7 +366,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   this->read.enabled = 1;
 
   // Handshake callback handler.
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
+  SET_HANDLER(&QUICNetVConnection::state_pre_handshake);
 
   // Send this netvc to InactivityCop.
   nh->startCop(this);
@@ -576,7 +576,7 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
   this->thread   = this_ethread();
   ink_assert(nh->mutex->thread_holding == this->thread);
 
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
+  SET_HANDLER(&QUICNetVConnection::state_pre_handshake);
 
   if ((res = nh->startIO(this)) < 0) {
     // FIXME: startIO only return 0 now! what should we do if it failed ?
@@ -2138,7 +2138,7 @@ void
 QUICNetVConnection::_switch_to_handshake_state()
 {
   QUICConDebug("Enter state_handshake");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  SET_HANDLER(&QUICNetVConnection::state_handshake);
 }
 
 void
@@ -2149,7 +2149,7 @@ QUICNetVConnection::_switch_to_established_state()
     QUICConDebug("Negotiated cipher suite: %s", this->_handshake_handler->negotiated_cipher_suite());
     this->_record_tls_handshake_end_time();
 
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+    SET_HANDLER(&QUICNetVConnection::state_connection_established);
 
     std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
     std::shared_ptr<const QUICTransportParameters> local_tp  = this->_handshake_handler->local_transport_parameters();
@@ -2201,7 +2201,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   ink_hrtime rto = this->_rtt_measure.current_pto_period();
 
   QUICConDebug("Enter state_connection_closing");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+  SET_HANDLER(&QUICNetVConnection::state_connection_closing);
 
   // This states SHOULD persist for three times the
   // current Retransmission Timeout (RTO) interval as defined in
@@ -2229,7 +2229,7 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   ink_hrtime rto = this->_rtt_measure.current_pto_period();
 
   QUICConDebug("Enter state_connection_draining");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
+  SET_HANDLER(&QUICNetVConnection::state_connection_draining);
 
   // This states SHOULD persist for three times the
   // current Retransmission Timeout (RTO) interval as defined in
@@ -2247,7 +2247,7 @@ QUICNetVConnection::_switch_to_close_state()
     QUICConDebug("Switching state without handshake completion");
   }
   QUICConDebug("Enter state_connection_closed");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+  SET_HANDLER(&QUICNetVConnection::state_connection_closed);
   this->_schedule_closed_event();
 }
 

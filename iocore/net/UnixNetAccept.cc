@@ -102,7 +102,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       vc->read.triggered = 1;
     }
 #endif
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
+    SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
     EThread *t;
     NetHandler *h;
@@ -193,7 +193,7 @@ NetAccept::init_accept(EThread *t)
     return;
   }
 
-  SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
+  SET_HANDLER(&NetAccept::acceptEvent);
   period = -HRTIME_MSECONDS(net_accept_period);
   t->schedule_every(this, period);
 }
@@ -212,9 +212,9 @@ NetAccept::accept_per_thread(int event, void *ep)
   }
 
   if (accept_fn == net_accept) {
-    SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);
+    SET_HANDLER(&NetAccept::acceptFastEvent);
   } else {
-    SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
+    SET_HANDLER(&NetAccept::acceptEvent);
   }
   PollDescriptor *pd = get_PollDescriptor(this_ethread());
   if (this->ep.start(pd, this, EVENTIO_READ) < 0) {
@@ -240,7 +240,7 @@ NetAccept::init_accept_per_thread()
     }
   }
 
-  SET_HANDLER((NetAcceptHandler)&NetAccept::accept_per_thread);
+  SET_HANDLER(&NetAccept::accept_per_thread);
   n = eventProcessor.thread_group[opt.etype]._count;
 
   for (i = 0; i < n; i++) {
@@ -365,7 +365,7 @@ NetAccept::do_blocking_accept(EThread *t)
       vc->read.triggered = 1;
     }
 #endif
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
+    SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
     EThread *localt = eventProcessor.assign_thread(opt.etype);
     NetHandler *h   = get_NetHandler(localt);
@@ -518,7 +518,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       vc->read.triggered = 1;
     }
 #endif
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
+    SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
     EThread *t    = e->ethread;
     NetHandler *h = get_NetHandler(t);

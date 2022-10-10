@@ -420,7 +420,7 @@ HostDBProcessor::start(int, size_t)
   hostdb_current_interval = ink_time();
 
   HostDBContinuation *b = hostDBContAllocator.alloc();
-  SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);
+  SET_CONTINUATION_HANDLER(b, &HostDBContinuation::backgroundEvent);
   b->mutex = new_ProxyMutex();
   eventProcessor.schedule_every(b, HRTIME_SECONDS(1), ET_DNS);
 
@@ -710,7 +710,7 @@ Lretry:
   copt.cont           = cont;
   copt.host_res_style = (hash.db_mark == HOSTDB_MARK_SRV) ? HOST_RES_NONE : opt.host_res_style;
   c->init(hash, copt);
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
+  SET_CONTINUATION_HANDLER(c, &HostDBContinuation::probeEvent);
 
   thread->schedule_in(c, MUTEX_RETRY_DELAY);
 
@@ -831,7 +831,7 @@ HostDBProcessor::iterate(Continuation *cont)
   copt.host_res_style = HOST_RES_NONE;
   c->init(HostDBHash(), copt);
   c->current_iterate_pos = 0;
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::iterateEvent);
+  SET_CONTINUATION_HANDLER(c, &HostDBContinuation::iterateEvent);
 
   thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
 
@@ -1073,7 +1073,7 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
     hostdb_cont_free(this);
     return EVENT_DONE;
   } else {
-    SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
+    SET_HANDLER(&HostDBContinuation::probeEvent);
     return probeEvent(EVENT_INTERVAL, nullptr);
   }
 }
@@ -1357,7 +1357,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       // Check for IP family failover
       if (failed && check_for_retry(hash.db_mark, host_res_style)) {
         this->refresh_hash(); // family changed if we're doing a retry.
-        SET_CONTINUATION_HANDLER(this, (HostDBContHandler)&HostDBContinuation::probeEvent);
+        SET_CONTINUATION_HANDLER(this, &HostDBContinuation::probeEvent);
         thread->schedule_in(this, MUTEX_RETRY_DELAY);
         return EVENT_CONT;
       }
@@ -1379,7 +1379,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       }
 
       if (need_to_reschedule) {
-        SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
+        SET_HANDLER(&HostDBContinuation::probeEvent);
         // Will reschedule on affinity thread or current thread
         timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
@@ -1617,7 +1617,7 @@ HostDBContinuation::do_dns()
     DNSProcessor::Options opt;
     opt.timeout        = dns_lookup_timeout;
     opt.host_res_style = host_res_style_for(hash.db_mark);
-    SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsEvent);
+    SET_HANDLER(&HostDBContinuation::dnsEvent);
     if (is_byname()) {
       if (hash.dns_server) {
         opt.handler = hash.dns_server->x_dnsH;
@@ -1632,7 +1632,7 @@ HostDBContinuation::do_dns()
       pending_action = dnsProcessor.gethostbyaddr(this, &hash.ip, opt);
     }
   } else {
-    SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsPendingEvent);
+    SET_HANDLER(&HostDBContinuation::dnsPendingEvent);
   }
 }
 
@@ -2053,7 +2053,7 @@ struct HostDBTestReverse : public Continuation {
   HostDBTestReverse(RegressionTest *t, int atype, int *astatus)
     : Continuation(new_ProxyMutex()), test(t), type(atype), status(astatus)
   {
-    SET_HANDLER((HostDBTestReverseHandler)&HostDBTestReverse::mainEvent);
+    SET_HANDLER(&HostDBTestReverse::mainEvent);
     randu.seed(std::chrono::system_clock::now().time_since_epoch().count());
   }
 };

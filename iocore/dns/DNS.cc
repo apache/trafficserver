@@ -442,7 +442,7 @@ DNSEntry::init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProce
     }
   }
 
-  SET_HANDLER((DNSEntryHandler)&DNSEntry::mainEvent);
+  SET_HANDLER(&DNSEntry::mainEvent);
 }
 
 /**
@@ -1240,7 +1240,7 @@ DNSEntry::delayEvent(int event, Event *e)
 {
   (void)event;
   if (dnsProcessor.handler) {
-    SET_HANDLER((DNSEntryHandler)&DNSEntry::mainEvent);
+    SET_HANDLER(&DNSEntry::mainEvent);
     return handleEvent(EVENT_IMMEDIATE, e);
   }
   e->schedule_in(DNS_DELAY_PERIOD);
@@ -1261,7 +1261,7 @@ DNSEntry::mainEvent(int event, Event *e)
     }
     if (!dnsH) {
       Debug("dns", "handler not found, retrying...");
-      SET_HANDLER((DNSEntryHandler)&DNSEntry::delayEvent);
+      SET_HANDLER(&DNSEntry::delayEvent);
       return handleEvent(event, e);
     }
 
@@ -1972,7 +1972,7 @@ struct DNSRegressionContinuation : public Continuation {
       i(0),
       test(t)
   {
-    SET_HANDLER((DNSRegContHandler)&DNSRegressionContinuation::mainEvent);
+    SET_HANDLER(&DNSRegressionContinuation::mainEvent);
   }
 };
 

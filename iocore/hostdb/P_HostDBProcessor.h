@@ -504,7 +504,7 @@ struct HostDBContinuation : public Continuation {
   {
     ink_zero(hash_host_name_store);
     ink_zero(hash.hash);
-    SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
+    SET_HANDLER(&HostDBContinuation::probeEvent);
   }
 };
 
