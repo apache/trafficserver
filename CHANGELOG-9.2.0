@@ -427,6 +427,7 @@ Changes with Apache Traffic Server 9.2.0
   #8690 - 9.2.x: Fix Clang 13.0.1 and GCC 12.0.1 Compiler Warnings
   #8691 - 9.2.x: Fix test_QUIC unit test builds. (#8678)
   #8692 - Add docs for parent.config defaults
+  #8698 - Remove intermediate buffer in PluginVC
   #8700 - Change api TSSslTicketKeyUpdate to return TSReturnCode
   #8705 - Add back "DNS: Fix lack of nameserver failover in low use circumstances."
   #8706 - Provide libquic.a definition to VIO::VIO()
@@ -554,3 +555,5 @@ Changes with Apache Traffic Server 9.2.0
   #9106 - Fix unused-but-set-variable warnings by llvm-15
   #9110 - Updating AuTest to use Proxy Verifier v2.4.2
   #9112 - Fix expected sha1sum for the Proxy Verifier binary
+  #9122 - Fix HTTP/2 session receive window handling for small sizes (#9117)
+  #9123 - 9.2: Fix s3_auth_config test output check
