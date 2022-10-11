@@ -1125,9 +1125,9 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
     zret = TSHttpTxnClientProtocolStackContains(res.txnp, "ip");
     break;
   case NET_QUAL_STACK: {
-    std::array<char const *, 8> tags;
-    int count  = 0;
-    size_t len = 0;
+    std::array<char const *, 8> tags = {};
+    int count                        = 0;
+    size_t len                       = 0;
     TSHttpTxnClientProtocolStackGet(res.txnp, tags.size(), tags.data(), &count);
     for (int i = 0; i < count; ++i) {
       len += 1 + strlen(tags[i]);
