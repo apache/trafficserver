@@ -52,6 +52,7 @@ AC_ARG_WITH([mimalloc], [AS_HELP_STRING([--with-mimalloc=DIR],[use a specific mi
 ])
 
 mimalloch=0
+mimalloc_libs=""
 if test "$has_mimalloc" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -82,7 +83,10 @@ if test "$has_mimalloc" != "no"; then
           #endif
         ]
       )],
-      [mimalloch=1],
+      [
+        mimalloch=1
+        mimalloc_libs="-lmimalloc"
+      ],
       [AC_MSG_ERROR(mimalloc has bogus version)]
     )
   else
@@ -92,4 +96,5 @@ if test "$has_mimalloc" != "no"; then
   fi
 fi
 AC_SUBST(mimalloch)
+AC_SUBST([mimalloc_libs])
 ])

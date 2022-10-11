@@ -1,17 +1,22 @@
-/*
- * Copyright 2016-present Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/** @file
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
  */
 
 // https://github.com/jemalloc/jemalloc/releases
@@ -36,9 +41,16 @@
 #else
 #define JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED 0
 #endif /* MADV_DONTDUMP */
+#elif TS_HAS_MIMALLOC
+#include <mimalloc.h>
+#ifdef MADV_DONTDUMP
+#define MIMALLOC_NODUMP_ALLOCATOR_SUPPORTED 1
+#else
+#define MIMALLOC_NODUMP_ALLOCATOR_SUPPORTED 0
+#endif /* MADV_DONTDUMP */
 #endif /* TS_HAS_JEMALLOC */
 
-namespace jearena
+namespace je_mi_malloc
 {
 /**
  * An allocator which uses Jemalloc to create an dedicated arena to allocate
@@ -55,14 +67,14 @@ namespace jearena
  * by any other part of the code by just calling `malloc`.
  *
  * If target system doesn't support MADV_DONTDUMP or jemalloc doesn't support
- * custom arena hook, JemallocNodumpAllocator would fall back to using malloc /
+ * custom arena hook, JeMiNodumpAllocator would fall back to using malloc /
  * free. Such behavior can be identified by using
  * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED).
  *
  * Similarly, if binary isn't linked with jemalloc, the logic would fall back to
  * malloc / free.
  */
-class JemallocNodumpAllocator
+class JeMiNodumpAllocator
 {
 public:
   void *allocate(InkFreeList *f);
@@ -77,12 +89,14 @@ private:
   static void *alloc(extent_hooks_t *extent, void *new_addr, size_t size, size_t alignment, bool *zero, bool *commit,
                      unsigned int arena_id);
   int extend_and_setup_arena();
+#elif MIMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+  thread_local static mi_heap_t *nodump_heap;
 #endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
 };
 
 /**
- * JemallocNodumpAllocator singleton.
+ * JeMiNodumpAllocator singleton.
  */
-JemallocNodumpAllocator &globalJemallocNodumpAllocator();
+JeMiNodumpAllocator &globalJeMiNodumpAllocator();
 
-} /* namespace jearena */
+} /* namespace je_mi_malloc */
