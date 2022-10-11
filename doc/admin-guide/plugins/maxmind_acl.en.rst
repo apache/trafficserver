@@ -70,7 +70,7 @@ In the above example all requests from the US would be allowed except for those 
 *NOTE* ``regex`` will continue to work but has been deprecated in favor of ``regex_path``. Either will match on the path currently.
 
 You can also specify ``regex_host`` which will match based on the pristine (pre-remapped) fqdn. This can be useful depending on particular automation setups where you may have
-multiple generated remap lines just with slight differences (such as a country code) but wish to have a single MaxMind configuration. For these instances you can 
+multiple generated remap lines just with slight differences (such as a country code) but wish to have a single MaxMind configuration. For these instances you can
 use the regex_host field to then allow or deny specific country codes to matching fqdns. In the above instance it will block all US IP when the request entered on any fqdn matching ``test``.
 
 Currently the only rules available are ``country``, ``ip``, and ``regex``, though more can easily be added if needed. Each config file does require a top level
