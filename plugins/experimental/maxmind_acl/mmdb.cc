@@ -551,7 +551,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
 #endif
 
       MMDB_entry_data_s entry_data;
-      int path_len, host_len = 0;
+      int path_len = 0, host_len = 0;
       const char *path = nullptr;
       const char *host = nullptr;
       if (!allow_regex_path.empty() || !deny_regex_path.empty()) {
