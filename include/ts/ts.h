@@ -2773,12 +2773,16 @@ typedef void (*TSRPCNotificationCb)(TSYaml params);
  * check-in if they intent to handle RPC commands, passing their yamlcpp library version this function will validate it against the
  * one used internally in TS.
  *
- * @param yamlcpp_lib_version a string with the yamlcpp library version. A null terminated string is expected.
+ * @param provider_name The name of the provider.
+ * @param provider_len The length of the provider string.
+ * @param yamlcpp_lib_version a string with the yamlcpp library version.
+ * @param yamlcpp_lib_len The length of the yamlcpp_lib_len string.
  * @return A new TSRPCProviderHandle, nullptr if the yamlcpp_lib_version was not set, or the yamlcpp version does not match with
  * the one used internally in TS. The returned TSRPCProviderHandle will be set with the provider's name. The caller should pass the
  * returned TSRPCProviderHandle object to each subsequent TSRPCRegisterMethod/Notification* call.
  */
-tsapi TSRPCProviderHandle TSRPCRegister(const char *provider_name, const char *yamlcpp_lib_version);
+tsapi TSRPCProviderHandle TSRPCRegister(const char *provider_name, size_t provider_len, const char *yamlcpp_lib_version,
+                                        size_t yamlcpp_lib_len);
 
 /**
  * @brief Add new registered method handler to the JSON RPC engine.
@@ -2786,15 +2790,16 @@ tsapi TSRPCProviderHandle TSRPCRegister(const char *provider_name, const char *y
  * @param name Call name to be exposed by the RPC Engine, this should match the incoming request. i.e: If you register 'get_stats'
  *             then the incoming jsonrpc call should have this very same name in the 'method' field. .. {...'method':
  *             'get_stats'...} .
+ * @param name_len The length of the name string.
  * @param callback  The function to be registered. See @c TSRPCMethodCb
  * @param info TSRPCProviderHandle pointer, this will be used to provide more context information about this call. This object
- *             ideally should be the one returned by the TSRPCRegister API.
+ * ideally should be the one returned by the TSRPCRegister API.
  * @param opt Pointer to @c TSRPCHandlerOptions object. This will be used to store specifics about a particular call, the rpc
  *            manager will use this object to perform certain actions. A copy of this object wil be stored by the rpc manager.
  *
  * @return TS_SUCCESS if the handler was successfully registered, TS_ERROR if the handler is already registered.
  */
-tsapi TSReturnCode TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb callback, TSRPCProviderHandle info,
+tsapi TSReturnCode TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info,
                                               const TSRPCHandlerOptions *opt);
 
 /**
@@ -2803,15 +2808,16 @@ tsapi TSReturnCode TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb ca
  * @param name Call name to be exposed by the RPC Engine, this should match the incoming request. i.e: If you register 'get_stats'
  *             then the incoming jsonrpc call should have this very same name in the 'method' field. .. {...'method':
  *             'get_stats'...} .
+ * @param name_len The length of the name string.
  * @param callback  The function to be registered. See @c TSRPCNotificationCb
  * @param info TSRPCProviderHandle pointer, this will be used to provide more description for instance, when logging before or after
- *             a call. This object ideally should be the one returned by the TSRPCRegister API.
+ * a call. This object ideally should be the one returned by the TSRPCRegister API.
  * @param opt Pointer to @c TSRPCHandlerOptions object. This will be used to store specifics about a particular call, the rpc
  *            manager will use this object to perform certain actions. A copy of this object wil be stored by the rpc manager.
  * @return TS_SUCCESS if the handler was successfully registered, TS_ERROR if the handler is already registered.
  */
-tsapi TSReturnCode TSRPCRegisterNotificationHandler(const char *name, TSRPCNotificationCb callback, TSRPCProviderHandle info,
-                                                    const TSRPCHandlerOptions *opt);
+tsapi TSReturnCode TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback,
+                                                    TSRPCProviderHandle info, const TSRPCHandlerOptions *opt);
 
 /**
  * @brief Function to notify the JSONRPC engine that the current handler is done working.
@@ -2833,10 +2839,11 @@ tsapi TSReturnCode TSRPCHandlerDone(TSYaml resp);
  * call.
  * @param code Error code.
  * @param descr A text with a description of the error.
+ * @param descr_len The length of the descrition string.
  * @note The @c code and @c descr will be part of the @c 'data' field in the jsonrpc error response.
  * @return TS_SUCCESS if no issues. TS_ERROR otherwise.
  */
-tsapi TSReturnCode TSRPCHandlerError(int code, const char *descr);
+tsapi TSReturnCode TSRPCHandlerError(int code, const char *descr, size_t descr_len);
 
 #ifdef __cplusplus
 }

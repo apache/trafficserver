@@ -10349,7 +10349,7 @@ extern bool g_rpcHandlerProcessingCompleted;
 } // namespace rpc
 
 tsapi TSRPCProviderHandle
-TSRPCRegister(const char *provider_name, const char *yaml_version)
+TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_version, size_t yamlcpp_lib_len)
 {
   sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(provider_name) == TS_SUCCESS);
@@ -10357,23 +10357,24 @@ TSRPCRegister(const char *provider_name, const char *yaml_version)
   // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
   // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
   // version is the same.
-  if (std::string_view{yaml_version} != YAMLCPP_LIB_VERSION) {
+  if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
     return nullptr;
   }
 
   rpc::RPCRegistryInfo *info = new rpc::RPCRegistryInfo();
-  info->provider             = provider_name;
+  info->provider             = {provider_name, provider_len};
 
   return (TSRPCProviderHandle)info;
 }
 
 tsapi TSReturnCode
-TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb callback, TSRPCProviderHandle info, const TSRPCHandlerOptions *opt)
+TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info,
+                           const TSRPCHandlerOptions *opt)
 {
   sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
 
   if (!rpc::add_method_handler_from_plugin(
-        name,
+        {name, name_len},
         [callback](std::string_view const &id, const YAML::Node &params) -> void {
           std::string msgId{id.data(), id.size()};
           callback(msgId.c_str(), (TSYaml)&params);
@@ -10385,14 +10386,14 @@ TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb callback, TSRPCProvid
 }
 
 tsapi TSReturnCode
-TSRPCRegisterNotificationHandler(const char *name, TSRPCNotificationCb callback, TSRPCProviderHandle info,
+TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback, TSRPCProviderHandle info,
                                  const TSRPCHandlerOptions *opt)
 {
   sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
 
   if (!rpc::add_notification_handler(
-        name, [callback](const YAML::Node &params) -> void { callback((TSYaml)&params); }, (const rpc::RPCRegistryInfo *)info,
-        *opt)) {
+        {name, name_len}, [callback](const YAML::Node &params) -> void { callback((TSYaml)&params); },
+        (const rpc::RPCRegistryInfo *)info, *opt)) {
     return TS_ERROR;
   }
   return TS_SUCCESS;
@@ -10412,11 +10413,11 @@ TSRPCHandlerDone(TSYaml resp)
 }
 
 tsapi TSReturnCode
-TSRPCHandlerError(int ec, const char *descr)
+TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 {
   Debug("rpc.api", ">> Handler seems to be done with an error");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
-  rpc::g_rpcHandlerResponseData        = ts::Errata{}.push(1, ec, std::string{descr});
+  rpc::g_rpcHandlerResponseData        = ts::Errata{}.push(1, ec, std::string{descr, descr_len});
   rpc::g_rpcHandlerProcessingCompleted = true;
   rpc::g_rpcHandlingCompletion.notify_one();
   Debug("rpc.api", ">> error  flagged.");

@@ -35,10 +35,10 @@
 
 namespace
 {
-static constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
+constexpr char PLUGIN_NAME[] = "jsonrpc_plugin_handler_test";
 
-static const std::string MY_YAML_VERSION{"0.7.0"};
-static const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
+const std::string MY_YAML_VERSION{"0.7.0"};
+const std::string RPC_PROVIDER_NAME{"RPC Plugin test"};
 } // namespace
 
 namespace
@@ -57,13 +57,15 @@ test_join_hosts_method(const char *id, TSYaml p)
       hosts = node.as<std::vector<std::string>>();
     } else {
       // We can't continue. Notify the RPC manager.
-      TSRPCHandlerError(NO_HOST_ERROR, "No host provided");
+      std::string descr{"No host provided"};
+      TSRPCHandlerError(NO_HOST_ERROR, descr.c_str(), descr.size());
       return;
     }
 
     if (0 == hosts.size()) {
       // We can't continue. Notify the RPC manager.
-      TSRPCHandlerError(EMPTY_HOSTS_ERROR, "At least one host should be provided");
+      std::string descr{"At least one host should be provided"};
+      TSRPCHandlerError(EMPTY_HOSTS_ERROR, descr.c_str(), descr.size());
       return;
     }
 
@@ -75,7 +77,8 @@ test_join_hosts_method(const char *id, TSYaml p)
     TSRPCHandlerDone(reinterpret_cast<TSYaml>(&resp));
   } catch (YAML::Exception const &ex) {
     TSDebug(PLUGIN_NAME, "Oops, something went wrong: %s", ex.what());
-    TSRPCHandlerError(UNKNOWN_ERROR, ex.what());
+    std::string descr{ex.what()};
+    TSRPCHandlerError(UNKNOWN_ERROR, descr.c_str(), descr.size());
   }
 }
 
@@ -124,7 +127,8 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
   // we only care for a map type {}
   if (params.Type() != YAML::NodeType::Map) {
-    TSRPCHandlerError(INVALID_PARAM_TYPE, "Handler is expecting a map.");
+    std::string descr{"Handler is expecting a map."};
+    TSRPCHandlerError(INVALID_PARAM_TYPE, descr.c_str(), descr.size());
     return TS_SUCCESS;
   }
 
@@ -149,7 +153,8 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
       incHosts.push_back({name, status});
     }
   } else {
-    TSRPCHandlerError(INVALID_HOST_PARAM_TYPE, "not a sequence, we expect a list of hosts");
+    std::string descr{"not a sequence, we expect a list of hosts"};
+    TSRPCHandlerError(INVALID_HOST_PARAM_TYPE, descr.c_str(), descr.size());
     return TS_SUCCESS;
   }
 
@@ -197,7 +202,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
     } catch (YAML::Exception const &e) {
       std::string buff;
       ts::bwprint(buff, "Error during file handling: {}", e.what());
-      TSRPCHandlerError(UNKNOWN_ERROR, buff.c_str());
+      TSRPCHandlerError(UNKNOWN_ERROR, buff.c_str(), buff.size());
       return TS_SUCCESS;
     }
   } else {
@@ -220,7 +225,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
   if (fs::copy(tmpFile, dumpFile, ec); ec) {
     std::string buff;
     ts::bwprint(buff, "Error during file handling: {}, {}", ec.value(), ec.message());
-    TSRPCHandlerError(FILE_UPDATE_ERROR, buff.c_str());
+    TSRPCHandlerError(FILE_UPDATE_ERROR, buff.c_str(), buff.size());
     return TS_SUCCESS;
   }
 
@@ -268,33 +273,39 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   // Check-in to make sure we are compliant with the YAML version in TS.
-  TSRPCProviderHandle rpcRegistrationInfo = TSRPCRegister(RPC_PROVIDER_NAME.c_str(), MY_YAML_VERSION.c_str());
+  TSRPCProviderHandle rpcRegistrationInfo =
+    TSRPCRegister(RPC_PROVIDER_NAME.c_str(), RPC_PROVIDER_NAME.size(), MY_YAML_VERSION.c_str(), MY_YAML_VERSION.size());
 
   if (rpcRegistrationInfo == nullptr) {
     TSError("[%s] RPC handler registration failed, yaml version not supported.", PLUGIN_NAME);
   }
 
   TSRPCHandlerOptions opt{{true}};
-  if (TSRPCRegisterMethodHandler("test_join_hosts_method", test_join_hosts_method, rpcRegistrationInfo, &opt) == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "test_join_hosts_method failed to register");
-  } else {
-    TSDebug(PLUGIN_NAME, "test_join_hosts_method successfully registered");
-  }
-
-  // TASK thread
-  if (TSRPCRegisterMethodHandler("test_io_on_et_task", test_io_on_et_task, rpcRegistrationInfo, &opt) == TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "test_io_on_et_task failed to register");
-  } else {
-    TSDebug(PLUGIN_NAME, "test_io_on_et_task successfully registered");
-  }
-
-  // Notification - not restricted
-  TSRPCHandlerOptions nOpt{{false}};
-  if (TSRPCRegisterNotificationHandler("test_join_hosts_notification", test_join_hosts_notification, rpcRegistrationInfo, &nOpt) ==
+  std::string method_name{"test_join_hosts_method"};
+  if (TSRPCRegisterMethodHandler(method_name.c_str(), method_name.size(), test_join_hosts_method, rpcRegistrationInfo, &opt) ==
       TS_ERROR) {
-    TSDebug(PLUGIN_NAME, "test_join_hosts_notification failed to register");
+    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
   } else {
-    TSDebug(PLUGIN_NAME, "test_join_hosts_notification successfully registered");
+    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
+  }
+
+  // TASK thread.
+  method_name = "test_io_on_et_task";
+  if (TSRPCRegisterMethodHandler(method_name.c_str(), method_name.size(), test_io_on_et_task, rpcRegistrationInfo, &opt) ==
+      TS_ERROR) {
+    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
+  } else {
+    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
+  }
+
+  // Notification
+  TSRPCHandlerOptions nOpt{{false}};
+  method_name = "test_join_hosts_notification";
+  if (TSRPCRegisterNotificationHandler(method_name.c_str(), method_name.size(), test_join_hosts_notification, rpcRegistrationInfo,
+                                       &nOpt) == TS_ERROR) {
+    TSDebug(PLUGIN_NAME, "%s failed to register", method_name.c_str());
+  } else {
+    TSDebug(PLUGIN_NAME, "%s successfully registered", method_name.c_str());
   }
 
   TSDebug(PLUGIN_NAME, "Test Plugin Initialized.");
