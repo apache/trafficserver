@@ -111,7 +111,6 @@ class MultiplexerTestBase:
             "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
             "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
             "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-            'proxy.config.ssl.keylog_file': '/tmp/tls_session_keys.txt',
 
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'multiplexer',
