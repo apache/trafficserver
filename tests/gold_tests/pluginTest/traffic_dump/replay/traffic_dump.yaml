@@ -333,3 +333,38 @@ sessions:
     proxy-response:
       status: 200
 
+- transactions:
+  - client-request:
+      method: CONNECT
+      url: www.connect_target.com:443/tunnel/me
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.connect_target.com ]
+        - [ X-Request-1, request_tunnel ]
+        - [ Content-Length, 0 ]
+        - [ uuid, tunnel ]
+
+    proxy-request:
+      headers:
+        fields:
+        # The field should get through to the server. The traffic dump, though,
+        # should not contain it since x-request-1 is a sensitive field.
+        - [ X-Request-1, { value: request_tunnel, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ X-Response-1,  response_tunnel ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        # Again, the sensitive set-cookie should get through to the client, it
+        # just shouldn't be dumped in traffic dumps.
+        - [ X-Response-1, { value: response_tunnel, as: equal } ]
+

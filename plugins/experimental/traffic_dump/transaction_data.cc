@@ -367,7 +367,14 @@ TransactionData::write_proxy_request_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
 {
   std::ostringstream proxy_request_node;
   proxy_request_node << R"(,"proxy-request":{)";
-  proxy_request_node << _server_protocol_description + ",";
+  // For CONNECT requests, the _server_protocol_description will be empty
+  // because it gets populated on receipt of an HTTP response. For tunnels, we
+  // establish a connection to the origin for the tunnel but don't send an HTTP
+  // request nor does the server send a response. Therefore the protocol is
+  // never populated and will be empty here.
+  if (!_server_protocol_description.empty()) {
+    proxy_request_node << _server_protocol_description + ",";
+  }
   proxy_request_node << write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(_txnp));
   _txn_json += proxy_request_node.str();
 }
