@@ -159,6 +159,11 @@ HTTP Connection
 
    Counts the number of times a multi-hop proxy loop was detected
 
+.. ts:stat:: global proxy.process.http_parent_count integer
+   :type: counter
+
+   Counts the number of times current parent or next parent was detected
+
 HTTP/2
 ------
 
