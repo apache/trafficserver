@@ -114,7 +114,7 @@ protected:
   bool loaddeny(const YAML::Node &denyNode);
   void loadhtml(const YAML::Node &htmlNode);
   bool loadanonymous(const YAML::Node &anonNode);
-  bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len);
+  bool eval_country(MMDB_entry_data_s *entry_data, std::string url);
   bool eval_anonymous(MMDB_entry_s *entry_data);
   void parseregex(const YAML::Node &regex, bool allow);
   ipstate eval_ip(const sockaddr *sock) const;
