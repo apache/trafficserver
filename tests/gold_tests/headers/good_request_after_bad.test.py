@@ -23,14 +23,14 @@ Test.Summary = '''
 Verify that request following a ill-formed request is not processed
 '''
 Test.ContinueOnFail = True
-ts = Test.MakeATSProcess("ts", enable_cache=True)
+ts = Test.MakeATSProcess("ts")
 Test.ContinueOnFail = True
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                'proxy.config.diags.debug.enabled': 0,
                                'proxy.config.http.strict_uri_parsing': 1
                                })
 
-ts2 = Test.MakeATSProcess("ts2", enable_cache=True)
+ts2 = Test.MakeATSProcess("ts2")
 
 ts2.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                 'proxy.config.diags.debug.enabled': 0,
