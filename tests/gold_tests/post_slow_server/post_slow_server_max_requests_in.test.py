@@ -38,7 +38,7 @@ class PostAndMaxRequestsInTest:
         )
 
     def __setupTS(self):
-        self.ts = Test.MakeATSProcess("ts", select_ports=True)
+        self.ts = Test.MakeATSProcess("ts")
 
         self.ts.Disk.records_config.update({
             "proxy.config.http.server_ports": f"{self.ts.Variables.port}",

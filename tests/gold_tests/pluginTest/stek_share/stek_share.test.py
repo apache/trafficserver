@@ -26,11 +26,11 @@ Test.SkipUnless(Condition.PluginExists('stek_share.so'))
 
 server = Test.MakeOriginServer('server')
 
-ts1 = Test.MakeATSProcess("ts1", select_ports=True, enable_tls=True)
-ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True)
-ts3 = Test.MakeATSProcess("ts3", select_ports=True, enable_tls=True)
-ts4 = Test.MakeATSProcess("ts4", select_ports=True, enable_tls=True)
-ts5 = Test.MakeATSProcess("ts5", select_ports=True, enable_tls=True)
+ts1 = Test.MakeATSProcess("ts1", enable_tls=True)
+ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
+ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
+ts4 = Test.MakeATSProcess("ts4", enable_tls=True)
+ts5 = Test.MakeATSProcess("ts5", enable_tls=True)
 
 Test.Setup.Copy('ssl/self_signed.crt')
 Test.Setup.Copy('ssl/self_signed.key')

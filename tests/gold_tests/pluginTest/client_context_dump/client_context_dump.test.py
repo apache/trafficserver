@@ -25,7 +25,7 @@ Test client_context_dump plugin
 Test.SkipUnless(Condition.PluginExists('client_context_dump.so'))
 
 # Set up ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True)
 
 # Set up ssl files
 ts.addSSLfile("ssl/one.com.pem")

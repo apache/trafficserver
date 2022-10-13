@@ -24,7 +24,7 @@ heck hsts header is set correctly
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 # **testname is required**

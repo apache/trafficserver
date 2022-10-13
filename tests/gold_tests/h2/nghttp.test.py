@@ -40,7 +40,7 @@ post_body_file.close()
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True,
+ts = Test.MakeATSProcess("ts",
                          enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server

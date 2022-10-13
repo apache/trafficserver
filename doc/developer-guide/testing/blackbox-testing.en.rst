@@ -86,7 +86,7 @@ TrafficServer
 
 For TrafficServer, we have defined the following functions and objects in ``tests/gold_tests/autest-site/trafficserver.test.ext``:
 
-- ``MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enable_tls=False)``
+- ``MakeATSProcess(obj, name, command='traffic_server', enable_tls=False)``
 
   - name - A name for this instance of ATS
   - command - optional argument defining what process to use. Defaults to ``traffic_server``

@@ -68,7 +68,7 @@ class TtlDnsTest:
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess(
-            f"ts-{self.server_process_counter}", select_ports=True, enable_cache=False)
+            f"ts-{self.server_process_counter}", enable_cache=False)
         self.dns_port = ports.get_port(self.ts, 'dns_port')
         self.ts.Disk.records_config.update({
             "proxy.config.diags.debug.enabled": 1,
