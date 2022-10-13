@@ -65,26 +65,21 @@ static int StaticHitTxnHook(TSCont contp, TSEvent event, void *edata);
 struct StaticHitConfig {
   explicit StaticHitConfig(const std::string &fileOrDir, const std::string &mimeType, bool exact) : mimeType(mimeType)
   {
-    std::filesystem::path base_path;
+    std::filesystem::path base_path{fileOrDir};
 
-    if (fileOrDir.find('/') != 0) {
-      base_path = std::filesystem::weakly_canonical(std::string(TSConfigDirGet()) + "/" + fileOrDir);
-    } else {
-      base_path = std::filesystem::weakly_canonical(fileOrDir);
+    if (!base_path.is_absolute()) {
+      base_path = std::filesystem::path(TSConfigDirGet()) / base_path;
     }
+    base_path = std::filesystem::weakly_canonical(base_path);
 
     if (std::filesystem::is_directory(base_path)) {
       dirPath      = base_path;
       filePath     = "";
       disableExact = true;
-    } else if (std::filesystem::is_regular_file(base_path)) {
+    } else {
       dirPath      = "";
       filePath     = base_path;
       disableExact = exact;
-    } else {
-      VERROR("Invalid file path: %s", filePath.c_str());
-      filePath = "";
-      dirPath  = "";
     }
   }
 
@@ -93,6 +88,8 @@ struct StaticHitConfig {
   std::string_view
   makePath(TSHttpTxn txnp, std::string &output) const
   {
+    std::string_view ret = {};
+
     if (!dirPath.empty()) {
       TSMBuffer reqp;
       TSMLoc hdr_loc = nullptr, url_loc = nullptr;
@@ -111,20 +108,17 @@ struct StaticHitConfig {
           if (std::equal(dirPath.begin(), dirPath.end(), requested_file_path.begin()) &&
               std::filesystem::is_regular_file(requested_file_path)) {
             output = requested_file_path.string();
-            return {output.c_str(), output.size()};
-          } else {
-            return {};
+            ret    = {output.c_str(), output.size()};
           }
         } else {
           TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
-          return {};
         }
-      } else {
-        return {};
       }
     } else {
-      return {filePath};
+      ret = {filePath};
     }
+
+    return ret;
   }
 
   std::filesystem::path dirPath;
