@@ -68,7 +68,6 @@ class ForwardProxyTest:
             'proxy.config.ssl.server.cert.path': self.ts.Variables.SSLDir,
             'proxy.config.ssl.server.private_key.path': self.ts.Variables.SSLDir,
             'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.ssl.keylog_file': '/tmp/keylog.txt',
 
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': "http",

@@ -318,6 +318,14 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
+    if enable_tls or enable_quic:
+        fname = "tls_session_keys.txt"
+        tmpname = os.path.join(log_dir, fname)
+        p.Disk.File(tmpname, id='tls_session_keys')
+        p.Disk.records_config.update({
+            'proxy.config.ssl.keylog_file': tmpname,
+        })
+
     if enable_cache:
         # In records.config, the cache is enabled by default so there's nothing
         # we have to do here to functionally enable it. However, the tests that
