@@ -42,7 +42,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_manager")
 
 Test.testName = "regex_revalidate"
 Test.Setup.Copy("metrics.sh")

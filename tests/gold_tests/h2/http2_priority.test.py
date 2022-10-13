@@ -43,7 +43,7 @@ server.addResponse("sessionlog.json",
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 ts.addDefaultSSLFiles()
 

@@ -38,9 +38,9 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
-ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True, enable_cache=False)
+ts2 = Test.MakeATSProcess("ts2", enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()

@@ -31,7 +31,7 @@ Test.GetTcpPort("upstream_port")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()

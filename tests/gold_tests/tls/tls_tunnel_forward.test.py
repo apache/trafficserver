@@ -21,7 +21,7 @@ Test tunneling and forwarding based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=False)
 server_random = Test.MakeOriginServer("server_random", ssl=False)

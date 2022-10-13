@@ -30,7 +30,7 @@ Test.ContinueOnFail = True
 Test.GetTcpPort("upstream_port")
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")

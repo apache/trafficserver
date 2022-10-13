@@ -22,7 +22,7 @@ Test.Summary = '''
 Test per SNI server name selection of CA certs for validating cert sent by client.
 '''
 
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 server = Test.MakeOriginServer("server")
 

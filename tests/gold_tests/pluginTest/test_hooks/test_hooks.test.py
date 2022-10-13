@@ -35,7 +35,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 # Disable the cache to make sure each request is forwarded to the origin
 # server.
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 # test_hooks.so will output test logging to this file.
 log_path = os.path.join(ts.Variables.LOGDIR, "log.txt")

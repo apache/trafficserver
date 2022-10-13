@@ -25,7 +25,7 @@ Combined key and cert files.  Faulty key path
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 

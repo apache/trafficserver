@@ -24,7 +24,7 @@ Test.SkipUnless(
     Condition.HasProgram("nc", "Need nc to send data to server")
 )
 
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 ts.addSSLfile("../tls/ssl/server.pem")
 ts.addSSLfile("../tls/ssl/server.key")

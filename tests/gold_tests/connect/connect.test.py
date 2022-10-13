@@ -41,7 +41,7 @@ class ConnectTest:
         self.httpbin = Test.MakeHttpBinServer("httpbin")
 
     def __setupTS(self):
-        self.ts = Test.MakeATSProcess("ts", select_ports=True)
+        self.ts = Test.MakeATSProcess("ts")
 
         self.ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,

@@ -20,7 +20,7 @@ Test.Summary = '''
 Test that Trafficserver starts with default configurations.
 '''
 
-ts = Test.MakeATSProcess("ts", select_ports=True)
+ts = Test.MakeATSProcess("ts")
 t = Test.AddTestRun("Test traffic server started properly")
 t.StillRunningAfter = Test.Processes.ts
 
