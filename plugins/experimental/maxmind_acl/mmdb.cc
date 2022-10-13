@@ -682,7 +682,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
 // allowable country code from our map.
 // False otherwise
 bool
-Acl::eval_country(MMDB_entry_data_s *entry_data, std::string url)
+Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
 {
   bool ret     = false;
   bool allow   = default_allow;
