@@ -66,6 +66,10 @@ class TlsKeyloggingTest:
 
         keylog_file = os.path.join(self.ts.Variables.LOGDIR, "tls_secrets.txt")
 
+        # Remove the keylog_file configuration automatically configured via the
+        # trafficserver AuTest extension.
+        del self.ts.Disk.records_config['proxy.config.ssl.keylog_file']
+
         if enable_secrets_logging:
             self.ts.Disk.records_config.update({
                 'proxy.config.ssl.keylog_file': keylog_file,
