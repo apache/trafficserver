@@ -172,6 +172,7 @@ class Http2FlowControlTest:
             # need to set up client expectations.
             return
 
+        # ATS currently always sends a MAX_CONCURRENT_STREAMS setting.
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             f'MAX_CONCURRENT_STREAMS:{self._expected_max_concurrent_streams_in}',
             "Client should receive a MAX_CONCURRENT_STREAMS setting.")
@@ -181,14 +182,14 @@ class Http2FlowControlTest:
                 f'INITIAL_WINDOW_SIZE:{self._expected_initial_stream_window_size}',
                 "Client should receive an INITIAL_WINDOW_SIZE setting.")
 
-            if self._expected_flow_control_policy == 0:
-                update_window_size = (
-                    self._expected_initial_stream_window_size -
-                    self._default_initial_window_size)
-                if update_window_size > 0:
-                    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                        f'WINDOW_UPDATE.*id 0: {update_window_size}',
-                        "Client should receive a session WINDOW_UPDATE.")
+        if self._expected_flow_control_policy == 0:
+            update_window_size = (
+                self._expected_initial_stream_window_size -
+                self._default_initial_window_size)
+            if update_window_size > 0:
+                tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+                    f'WINDOW_UPDATE.*id 0: {update_window_size}',
+                    "Client should receive a session WINDOW_UPDATE.")
 
         if self._expected_flow_control_policy in (1, 2):
             # Verify the larger window size.
@@ -196,6 +197,7 @@ class Http2FlowControlTest:
             session_window_size = (
                 self._expected_initial_stream_window_size *
                 self._expected_max_concurrent_streams_in)
+
             # ATS will send a WINDOW_UPDATE frame to the client to increase
             # the session window size to the configured value from the default
             # value.
@@ -207,6 +209,16 @@ class Http2FlowControlTest:
             if update_window_size > Http2FlowControlTest._default_initial_window_size:
                 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
                     f'WINDOW_UPDATE.*id 0: {update_window_size}',
+                    "Client should receive an initial session WINDOW_UPDATE.")
+            else:
+                # Our test traffic is large enough that eventually we should
+                # send a session WINDOW_UPDATE frame for the smaller window.
+                # It's not clear what it will be in advance though. A 100 byte
+                # session window may not receive a 100 byte WINDOW_UPDATE frame
+                # if the client is sending DATA frames in 10 byte chunks due to
+                # a smaller stream window.
+                tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+                    'WINDOW_UPDATE.*id 0: ',
                     "Client should receive a session WINDOW_UPDATE.")
 
             if self._expected_flow_control_policy == 2:
@@ -278,18 +290,18 @@ test = Http2FlowControlTest(
     flow_control_policy=23)
 test.run()
 test = Http2FlowControlTest(
-    description="Static flow control with a small initial_window_size_in",
-    initial_window_size=500,
+    description="Flow control policy 0 (default): small initial_window_size_in",
+    initial_window_size=500,  # The default is 65 KB.
     flow_control_policy=0)
 test.run()
 test = Http2FlowControlTest(
-    description="Static flow control with a large initial_window_size_in",
+    description="Flow control policy 1: 100 byte session, 10 byte stream windows",
     max_concurrent_streams_in=10,
     initial_window_size=10,
     flow_control_policy=1)
 test.run()
 test = Http2FlowControlTest(
-    description="Dynamic flow control with a small initial_window_size_in",
+    description="Flow control policy 2: 100 byte session, dynamic stream windows",
     max_concurrent_streams_in=10,
     initial_window_size=10,
     flow_control_policy=2)
