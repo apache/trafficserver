@@ -1480,6 +1480,10 @@ namespace ts
 }
 #endif
 
+// JSONRPC 2.0 related interface.
+typedef struct tsapi_rpcproviderhandle *TSRPCProviderHandle;
+typedef struct tsapi_yaml *TSYaml;
+
 ///
 /// @brief JSON-RPC Handler options
 ///
