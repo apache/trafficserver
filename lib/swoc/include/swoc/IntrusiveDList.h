@@ -878,6 +878,7 @@ IntrusiveDList<L>::clear() -> self_type & {
 }
 
 namespace detail {
+/// @cond INTERNAL_DETAIL
 // Make @c apply more convenient by allowing the function to take a reference type or pointer type
 // to the container elements. The pointer type is the base, plus a shim to convert from a reference
 // type functor to a pointer pointer type. The complex return type definition forces only one, but
@@ -911,5 +912,5 @@ auto
 IntrusiveDList<L>::apply(F &&f) -> self_type & {
   return detail::Intrusive_DList_Apply(*this, f);
 }
-
+/// @endcond
 }} // namespace swoc::SWOC_VERSION_NS

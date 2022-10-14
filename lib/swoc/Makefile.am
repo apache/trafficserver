@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-noinst_LTLIBRARIES = libtsswoc.la
+lib_LTLIBRARIES = libtsswoc.la
 
 library_includedir=$(includedir)/swoc
 

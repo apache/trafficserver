@@ -22,36 +22,75 @@ namespace detail {
 /// A set of metafunctions to get extrema from a metric type.
 /// These probe for a static member and falls back to @c std::numeric_limits.
 /// @{
+
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ *
+ * Use @c std::numeric_limits.
+ */
 template <typename M>
 constexpr auto
 maximum(meta::CaseTag<0>) -> M {
   return std::numeric_limits<M>::max();
 }
 
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ *
+ * Use @c M::MAX
+ */
 template <typename M>
 constexpr auto
 maximum(meta::CaseTag<1>) -> decltype(M::MAX) {
   return M::MAX;
 }
 
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ */
 template <typename M>
 constexpr M
 maximum() {
   return maximum<M>(meta::CaseArg);
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ *
+ * Use @c std::numeric_limits
+ */
 template <typename M>
 constexpr auto
 minimum(meta::CaseTag<0>) -> M {
   return std::numeric_limits<M>::min();
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ *
+ * Use @c M::MIN
+ */
 template <typename M>
 constexpr auto
 minimum(meta::CaseTag<1>) -> decltype(M::MIN) {
   return M::MIN;
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ */
 template <typename M>
 constexpr M
 minimum() {

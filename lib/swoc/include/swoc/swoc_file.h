@@ -22,9 +22,10 @@ namespace file {
 /** Utility class for file system paths.
  */
 class path {
-  using self_type = path;
+  using self_type = path; ///< Self reference type.
 
 public:
+  /// Default path separator.
   static constexpr char SEPARATOR = '/';
 
   /// Default construct empty path.
@@ -65,6 +66,14 @@ public:
    */
   self_type &operator/=(const self_type &that);
 
+  /** Append or replace path with @a that.
+   *
+   * If @a that is absolute, it replaces @a this. Otherwise @a that is appended with exactly one
+   * separator.
+   *
+   * @param that Filesystem path.
+   * @return @a this
+   */
   self_type &operator/=(std::string_view that);
 
   /// Check if the path is empty.
@@ -76,6 +85,7 @@ public:
   /// Check if the path is not absolute.
   bool is_relative() const;
 
+  /// Path of the parent.
   self_type parent_path() const;
 
   /// Access the path explicitly.
@@ -154,8 +164,11 @@ bool is_readable(const path &s);
  */
 path absolute(path const &src, std::error_code &ec);
 
+/// @return The modified time for @a fs.
 std::chrono::system_clock::time_point modify_time(file_status const &fs);
+/// @return The access time for @a fs.
 std::chrono::system_clock::time_point access_time(file_status const &fs);
+/// @return The status change time for @a fs.
 std::chrono::system_clock::time_point status_time(file_status const &fs);
 
 /** Load the file at @a p into a @c std::string.
@@ -215,35 +228,55 @@ path::operator/=(const self_type &that) {
   return *this /= std::string_view(that._path);
 }
 
+/** Compare two paths.
+ *
+ * @return @c true if @a lhs is identical to @a rhs.
+ */
 inline bool
 operator==(path const &lhs, path const &rhs) {
   return lhs.view() == rhs.view();
 }
 
+/** Compare two paths.
+ *
+ * @return @c true if @a lhs is not identical to @a rhs.
+ */
 inline bool
 operator!=(path const &lhs, path const &rhs) {
   return lhs.view() != rhs.view();
 }
 
 /** Combine two strings as file paths.
-
-     @return A @c path with the combined path.
-*/
+ *
+ * @return A @c path with the combined path.
+ */
 inline path
 operator/(const path &lhs, const path &rhs) {
   return path(lhs) /= rhs;
 }
 
+/** Combine two strings as file paths.
+ *
+ * @return A @c path with the combined path.
+ */
 inline path
 operator/(path &&lhs, const path &rhs) {
   return path(std::move(lhs)) /= rhs;
 }
 
+/** Combine two strings as file paths.
+ *
+ * @return A @c path with the combined path.
+ */
 inline path
 operator/(const path &lhs, std::string_view rhs) {
   return path(lhs) /= rhs;
 }
 
+/** Combine two strings as file paths.
+ *
+ * @return A @c path with the combined path.
+ */
 inline path
 operator/(path &&lhs, std::string_view rhs) {
   return path(std::move(lhs)) /= rhs;

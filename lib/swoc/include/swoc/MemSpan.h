@@ -21,6 +21,7 @@
 #include <exception>
 
 #include "swoc/swoc_version.h"
+#include "swoc/Scalar.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A span of contiguous piece of memory.
@@ -53,9 +54,9 @@ protected:
   size_t _count = 0;       ///< Number of elements.
 
 public:
-  using value_type     = T;
-  using iterator       = T *;
-  using const_iterator = T const *;
+  using value_type     = T; ///< Element type for span.
+  using iterator       = T *; ///< Iterator.
+  using const_iterator = T const *; ///< Constant iterator.
 
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
@@ -82,7 +83,7 @@ public:
    * @tparam N Number of elements in the array.
    * @param a The array.
    */
-  template <auto N> MemSpan(T (&a)[N]);
+  template <auto N> constexpr MemSpan(T (&a)[N]);
 
   /** Construct from constant @c std::array.
    *
@@ -136,7 +137,7 @@ public:
       @return @c true if the contents of @a that are the same as the content of @a this,
       @c false otherwise.
    */
-  bool operator==(self_type const &that) const;
+  constexpr bool operator==(self_type const &that) const;
 
   /** Identical.
 
@@ -149,7 +150,7 @@ public:
       @return @c true if @a that does not refer to the same span as @a this,
       @c false otherwise.
    */
-  bool operator!=(self_type const &that) const;
+  constexpr bool operator!=(self_type const &that) const;
 
   /// Assignment - the span is copied, not the content.
   self_type &operator=(self_type const &that) = default;
@@ -167,24 +168,27 @@ public:
 
   /// Check for empty span (no content).
   /// @see operator bool
-  bool empty() const;
+  constexpr bool empty() const;
 
   /// @name Accessors.
   //@{
   /// Pointer to the first element in the span.
-  T *begin() const;
+  constexpr T *begin() const;
 
   /// Pointer to first element not in the span.
-  T *end() const;
+  constexpr T *end() const;
 
   /// Number of elements in the span
-  size_t count() const;
+  constexpr size_t count() const;
 
   /// Number of bytes in the span.
   size_t size() const;
 
-  /// Pointer to memory in the span.
-  T *data() const;
+  /// @return Pointer to memory in the span.
+  T * data() const;
+
+  /// @return Pointer to immediate after memory in the span.
+  constexpr T *data_end() const;
 
   /** Access the first element in the span.
    *
@@ -404,9 +408,9 @@ public:
   size_t size() const;
 
   /// Pointer to memory in the span.
-  value_type *data() const;
+  constexpr value_type *data() const;
 
-  /// Pointer to memory in the span.
+  /// Pointer to just after memory in the span.
   value_type *data_end() const;
 
   /** Create a new span for a different type @a V on the same memory.
@@ -478,6 +482,26 @@ public:
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
 
+  /** Align span for a type.
+   *
+   * @tparam T Alignment type.
+   * @return A suffix of the span suitably aligned for @a T.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  template <typename T> self_type align() const;
+
+  /** Force memory alignment.
+   *
+   * @param n Alignment size (must be power of 2).
+   * @return An aligned span.
+   *
+   * The minimum amount of space is removed from the front to yield an aligned span. If the span is not large
+   * enough to perform the alignment, the pointer is aligned and the size reduced to zero (empty).
+   */
+  self_type align(size_t n) const;
+
   /** Return a view of the memory.
    *
    * @return A @c string_view covering the span contents.
@@ -488,8 +512,7 @@ public:
 // -- Implementation --
 
 namespace detail {
-/// pointer distance calculations for all types, @b including @c <void*>.
-/// This is useful in templates.
+/// @cond INTERNAL_DETAIL
 inline size_t
 ptr_distance(void const *first, void const *last) {
   return static_cast<const char *>(last) - static_cast<const char *>(first);
@@ -505,6 +528,7 @@ inline void *
 ptr_add(void *ptr, size_t count) {
   return static_cast<char *>(ptr) + count;
 }
+/// @endcond
 
 /** Meta Function to check the type compatibility of two spans..
  *
@@ -616,34 +640,47 @@ memcpy(MemSpan<void> &span, std::string_view view) {
 }
 
 using std::memcpy;
-using std::memcpy;
 
+/** Set contents of a span to a fixed @a value.
+ *
+ * @tparam T Span type.
+ * @param dst Span to change.
+ * @param value Source value.
+ * @return
+ */
 template <typename T>
 inline MemSpan<T> const &
-memset(MemSpan<T> const &dst, T const &t) {
+memset(MemSpan<T> const &dst, T const &value) {
   for (auto &e : dst) {
-    e = t;
+    e = value;
   }
   return dst;
 }
 
+/// @cond INTERNAL_DETAIL
+
+// Optimization for @c char.
 inline MemSpan<char> const &
 memset(MemSpan<char> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
+// Optimization for @c unsigned @c char
 inline MemSpan<unsigned char> const &
 memset(MemSpan<unsigned char> const &dst, unsigned char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
 
+// Optimization for @c char.
 inline MemSpan<void> const &
 memset(MemSpan<void> const &dst, char c) {
   std::memset(dst.data(), c, dst.size());
   return dst;
 }
+
+/// @endcond
 
 using std::memset;
 
@@ -653,7 +690,7 @@ template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr
 
 template <typename T> constexpr MemSpan<T>::MemSpan(T *first, T *last) : _ptr{first}, _count{detail::ptr_distance(first, last)} {}
 
-template <typename T> template <auto N> MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
 
 template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 
@@ -691,13 +728,13 @@ MemSpan<T>::is_same(self_type const &that) const {
 }
 
 template <typename T>
-bool
+constexpr bool
 MemSpan<T>::operator==(self_type const &that) const {
   return _count == that._count && (_ptr == that._ptr || 0 == memcmp(_ptr, that._ptr, this->size()));
 }
 
 template <typename T>
-bool
+constexpr bool
 MemSpan<T>::operator!=(self_type const &that) const {
   return !(*this == that);
 }
@@ -712,13 +749,13 @@ template <typename T> MemSpan<T>::operator bool() const {
   return _count != 0;
 }
 
-template <typename T>
+template <typename T> constexpr
 bool
 MemSpan<T>::empty() const {
   return _count == 0;
 }
 
-template <typename T>
+template <typename T> constexpr
 T *
 MemSpan<T>::begin() const {
   return _ptr;
@@ -730,7 +767,13 @@ MemSpan<T>::data() const {
   return _ptr;
 }
 
-template <typename T>
+template <typename T> constexpr
+T *
+MemSpan<T>::data_end() const {
+  return _ptr + _count;
+}
+
+template <typename T> constexpr
 T *
 MemSpan<T>::end() const {
   return _ptr + _count;
@@ -742,7 +785,7 @@ MemSpan<T>::operator[](size_t idx) const {
   return _ptr[idx];
 }
 
-template <typename T>
+template <typename T> constexpr
 size_t
 MemSpan<T>::count() const {
   return _count;
@@ -760,14 +803,14 @@ MemSpan<T>::contains(T const *ptr) const {
   return _ptr <= ptr && ptr < _ptr + _count;
 }
 
-template <typename T>
-constexpr auto
+template <typename T> constexpr
+auto
 MemSpan<T>::prefix(size_t count) const -> self_type {
   return {_ptr, std::min(count, _count)};
 }
 
-template <typename T>
-constexpr auto
+template <typename T> constexpr
+auto
 MemSpan<T>::first(size_t count) const -> self_type {
   return this->prefix(count);
 }
@@ -781,8 +824,8 @@ MemSpan<T>::remove_prefix(size_t count) -> self_type & {
   return *this;
 }
 
-template <typename T>
-constexpr auto
+template <typename T> constexpr
+auto
 MemSpan<T>::suffix(size_t count) const -> self_type {
   count = std::min(_count, count);
   return {(_ptr + _count) - count, count};
@@ -821,7 +864,7 @@ MemSpan<T>::back() {
 
 template <typename T>
 template <typename F>
-MemSpan<T> &
+typename MemSpan<T>::self_type &
 MemSpan<T>::apply(F &&f) {
   for (auto &item : *this) {
     f(item);
@@ -905,7 +948,7 @@ MemSpan<void>::empty() const {
   return _size == 0;
 }
 
-inline void *
+inline constexpr void *
 MemSpan<void>::data() const {
   return _ptr;
 }
@@ -961,6 +1004,17 @@ inline MemSpan<void> &
 MemSpan<void>::remove_suffix(size_t count) {
   _size -= std::min(count, _size);
   return *this;
+}
+
+template <typename T>
+MemSpan<void>::self_type
+MemSpan<void>::align() const { return this->align(alignof(T)); }
+
+inline MemSpan<void>::self_type
+MemSpan<void>::align(size_t n) const {
+  auto p = uintptr_t(_ptr);
+  auto padding = p & (n - 1);
+  return { reinterpret_cast<void*>(p + padding), _size - std::min<uintptr_t>(_size, padding) };
 }
 
 template <typename U>
