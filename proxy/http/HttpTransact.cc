@@ -6361,6 +6361,11 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   RequestError_t incoming_error;
   URL *url = nullptr;
 
+  // If we are blind tunneling the header is just a synthesized placeholder anyway
+  if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+    return true;
+  }
+
   if (incoming_request) {
     url = incoming_request->url_get();
   }
