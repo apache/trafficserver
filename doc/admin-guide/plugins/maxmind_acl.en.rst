@@ -62,7 +62,8 @@ Rules
 You can mix and match the allow rules and deny rules, however deny rules will always take precedence so in the above case ``127.0.0.1`` would be denied.
 The IP rules can take either single IPs or cidr formatted rules. It will also accept IPv6 IP and ranges.
 
-The regex portion can be added to both the allow and deny sections for creating allowable or deniable regexes. Each regex takes a country code first and a regex second.
+The regex portion can be added to both the allow and deny sections for creating allowable or deniable regexes. Each regex takes a country code first and a regex second. The regex
+operates on the entire original request URL, the pre-remapped fqdn and path.
 In the above example all requests from the US would be allowed except for those on ``txt`` and ``mp3`` files. More rules should be added as pairs, not as additions to existing lists.
 
 Currently the only rules available are ``country``, ``ip``, and ``regex``, though more can easily be added if needed. Each config file does require a top level
