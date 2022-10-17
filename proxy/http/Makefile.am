@@ -33,6 +33,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/http2 \
 	-I$(abs_top_srcdir)/proxy/http3 \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
@@ -110,7 +111,7 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
-	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 
 test_PreWarm_CPPFLAGS = \

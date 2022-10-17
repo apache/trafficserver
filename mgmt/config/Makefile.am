@@ -30,8 +30,8 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/ \
   -I$(abs_top_srcdir)/proxy/http \
   -I$(abs_top_srcdir)/proxy/hdrs \
-	$(TS_INCLUDES) \
-	@YAMLCPP_INCLUDES@
+  $(TS_INCLUDES) @SWOC_INCLUDES@ \
+  @YAMLCPP_INCLUDES@
 
 # ^^ all the proxy/* is to include the PluginCallbacks.
 

@@ -24,7 +24,7 @@
 #pragma once
 
 #include <cstring>
-#include <tscpp/util/MemSpan.h>
+#include <swoc/MemSpan.h>
 
 struct MIMEField {
   const char *tag, *value;
@@ -46,7 +46,7 @@ struct MIMEField {
 class MIMEHdr
 {
 private:
-  ts::MemSpan<MIMEField const> _fields;
+  swoc::MemSpan<MIMEField const> _fields;
 
 public:
   MIMEHdr(const MIMEField *first, int count) : _fields{first, size_t(count)} {}

@@ -23,7 +23,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib/ \
 	-I$(abs_top_srcdir)/mgmt/ \
-	$(TS_INCLUDES) \
+	$(TS_INCLUDES) @SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 
 

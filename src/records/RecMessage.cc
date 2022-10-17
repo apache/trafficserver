@@ -31,7 +31,7 @@
 #include "records/P_RecUtils.h"
 #include "records/P_RecCore.h"
 #include "tscore/I_Layout.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 static RecMessageRecvCb g_recv_cb = nullptr;
 static void *g_recv_cookie        = nullptr;

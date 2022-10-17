@@ -339,7 +339,7 @@ IPCSocketServer::Client::close()
 }
 
 ssize_t
-IPCSocketServer::Client::read(ts::MemSpan<char> span) const
+IPCSocketServer::Client::read(swoc::MemSpan<char> span) const
 {
   return ::read(_fd, span.data(), span.size());
 }

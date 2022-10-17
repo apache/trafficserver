@@ -23,6 +23,7 @@ traffic_cache_tool_traffic_cache_tool_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I $(abs_top_srcdir)/include \
     -I $(abs_top_srcdir)/lib \
+    @SWOC_INCLUDES@ \
     -D__STDC_FORMAT_MACROS
 
 traffic_cache_tool_traffic_cache_tool_SOURCES = \
@@ -31,6 +32,8 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
     traffic_cache_tool/CacheTool.cc \
     traffic_cache_tool/CacheScan.h \
     traffic_cache_tool/CacheScan.cc
+
+traffic_cache_tool_traffic_cache_tool_LDFLAGS = $(AM_LDFLAGS) @SWOC_LDFLAGS@
 
 traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ArgParser.o \
@@ -54,4 +57,4 @@ traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ink_args.o \
     $(top_builddir)/src/tscore/.libs/ParseRules.o \
     $(top_builddir)/src/tscore/.libs/SourceLocation.o \
-    @OPENSSL_LIBS@ @LIBPCRE@
+    @SWOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@

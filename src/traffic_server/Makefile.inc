@@ -34,6 +34,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+        @SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@BORINGOCSP_INCLUDES@ \
@@ -41,6 +42,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
+        @SWOC_LDFLAGS@ \
 	@YAMLCPP_LDFLAGS@ \
 	@BORINGOCSP_LDFLAGS@
 
@@ -95,6 +97,7 @@ traffic_server_traffic_server_LDADD = \
 	@LIBZ@ \
 	@LIBLZMA@ \
 	@LIBPROFILER@ \
+        @SWOC_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@BORINGOCSP_LIBS@ \

@@ -20,6 +20,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	@SWOC_INCLUDES@
 	$(TS_INCLUDES)
 
 TESTS = test_AIO.sample
@@ -35,7 +36,7 @@ libinkaio_a_SOURCES = \
 
 test_AIO_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@
 
 test_AIO_SOURCES = \
 	test_AIO.cc
@@ -49,7 +50,7 @@ test_AIO_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	@OPENSSL_INCLUDES@
+	@SWOC_INCLUDES@ @OPENSSL_INCLUDES@
 
 test_AIO_LDADD = \
 	libinkaio.a \
@@ -59,7 +60,7 @@ test_AIO_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

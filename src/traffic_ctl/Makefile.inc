@@ -24,7 +24,7 @@ traffic_ctl_traffic_ctl_CPPFLAGS = \
 	$(TS_INCLUDES) \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/include \
-	@YAMLCPP_INCLUDES@
+	@SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 traffic_ctl_traffic_ctl_SOURCES = \
 	traffic_ctl/traffic_ctl.cc \
@@ -34,4 +34,4 @@ traffic_ctl_traffic_ctl_SOURCES = \
 
 traffic_ctl_traffic_ctl_LDADD = \
     $(top_builddir)/src/tscore/libtscore.la \
-    @HWLOC_LIBS@ @YAMLCPP_LIBS@
+    @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@

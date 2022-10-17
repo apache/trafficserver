@@ -29,6 +29,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http/remap \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhttp2.a
@@ -78,7 +79,7 @@ test_libhttp2_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@
 
 if OS_LINUX
 test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\

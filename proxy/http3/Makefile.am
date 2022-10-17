@@ -30,7 +30,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/proxy/http/remap \
-  $(TS_INCLUDES) \
+  $(TS_INCLUDES) @SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libhttp3.a
@@ -80,7 +80,7 @@ test_LDADD = \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
-  @HWLOC_LIBS@
+  @HWLOC_LIBS@ @SWOC_LIBS@
 
 test_libhttp3_CPPFLAGS = $(test_CPPFLAGS)
 test_libhttp3_LDFLAGS = @AM_LDFLAGS@

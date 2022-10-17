@@ -29,7 +29,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/http3 \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
-  $(TS_INCLUDES) \
+  $(TS_INCLUDES) @SWOC_INCLUDES@ \
   @OPENSSL_INCLUDES@ @YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libquic.a
@@ -176,7 +176,7 @@ test_LDADD = \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
   $(top_builddir)/iocore/net/TLSKeyLogger.o \
-  @HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
+  @HWLOC_LIBS@ @SWOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_event_main_SOURCES = \
   ./test/event_processor_main.cc
