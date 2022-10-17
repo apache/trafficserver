@@ -240,7 +240,6 @@ Changes with Apache Traffic Server 9.2.0
   #8227 - Fix the skipping logic for autest and docs
   #8228 - Doc: Fix TSUrlPercentEncode documentation. Invalid function in the example.
   #8229 - uri_signing: address memory leak with the internal jwt struct
-  #8232 - Updates yaml-cpp to 0.7.0
   #8233 - Add --with-mimalloc option to build
   #8234 - Add debug message when there is a header parse error for http/2
   #8237 - Cleanup url_*_get/set functions
@@ -462,7 +461,6 @@ Changes with Apache Traffic Server 9.2.0
   #8797 - Adds new plugin, http_stats
   #8798 - Create clean exit path for traffic_manager on SIGTERM
   #8805 - remove pthread_*specific and replace with thread_local
-  #8806 - Modifying array outside bounds
   #8810 - Add Au test for prefetch plugin in simple mode.
   #8815 - Fedora/RHEL path layout for config.layout
   #8816 - Add support for caching complete responses to the cache range requests plugin
@@ -476,8 +474,6 @@ Changes with Apache Traffic Server 9.2.0
   #8832 - Make post-early-return Au test more robust.
   #8834 - Handle opentelemetry-cpp v1.3.0 upgrade for otel_tracer plugin
   #8835 - Remove incorrect comment from base64 functions
-  #8837 - Add compatibility define when building with OpenSSL3
-  #8838 - mkdfa.c is not being used and doesn't compile with gcc 12.1.1
   #8846 - Add `#pragma once` for PendingAction.h
   #8847 - Restore down nameservers after they come back online
   #8850 - Fix Rocky Linux 8 arm64 GCC Compiler Warnings
@@ -499,7 +495,6 @@ Changes with Apache Traffic Server 9.2.0
   #8898 - slice and cache_range_requests: allow header override (#8666)
   #8902 - Fix plugin stats_over_http OK reason phrase
   #8906 - Fix autest uses of File exists parameter
-  #8909 - Move HKDF to OpenSSL 3 interfaces
   #8924 - Update location for core rule set in modsecurity example
   #8925 - Cleanup. Remove unnecessary use of a memory arena when logging.
   #8927 - Add docs for remap_stats plugin
@@ -557,3 +552,7 @@ Changes with Apache Traffic Server 9.2.0
   #9112 - Fix expected sha1sum for the Proxy Verifier binary
   #9122 - Fix HTTP/2 session receive window handling for small sizes (#9117)
   #9123 - 9.2: Fix s3_auth_config test output check
+  #9132 - Fail sni.yaml loading if related resources fail to load
+  #9133 - fix contradicting documentation and say a bit about the resident size…
+  #9137 - AuTest automatic keylog file configuration
+  #9139 - Traffic Dump: fix YAML format for CONNECT requests
