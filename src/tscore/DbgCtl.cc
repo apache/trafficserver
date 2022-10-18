@@ -26,6 +26,7 @@
 #include <set>
 #include <cstring>
 
+#include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
 
 // The resistry of fast debug controllers has a ugly implementation to handle the whole-program initialization
@@ -50,6 +51,13 @@ public:
   struct Data {
     std::mutex mtx;
     Set set;
+
+    ~Data()
+    {
+      for (auto &ctl : set) {
+        delete[] ctl.tag;
+      }
+    }
   };
 
   static Data &
@@ -85,13 +93,15 @@ DbgCtl::_get_ptr(char const *tag)
   ink_assert(sz > 0);
 
   {
-    char *t = new char[sz + 1]; // Deleted implicitly by program termination.
+    char *t = new char[sz + 1]; // Deleted by ~Data().
     std::memcpy(t, tag, sz + 1);
     ctl.tag = t;
   }
   ctl.on = diags() && diags()->tag_activated(tag, DiagsTagType_Debug);
 
   auto res = d.set.insert(ctl);
+
+  ink_assert(res.second);
 
   return &*res.first;
 }
