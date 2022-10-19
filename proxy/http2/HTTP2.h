@@ -362,7 +362,7 @@ ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
 void http2_init();
 
 /** Each of these values correspond to the flow control policy described in or
- * records.config documentation for proxy.config.http2.flow_control.policy.in.
+ * records.config documentation for proxy.config.http2.flow_control.policy_in.
  */
 enum class Http2FlowControlPolicy {
   STATIC_SESSION_AND_STATIC_STREAM,

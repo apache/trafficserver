@@ -4155,10 +4155,10 @@ HTTP/2 Configuration
    The initial HTTP/2 stream window size for inbound connections that |TS| as a
    receiver advertises to the peer. See IETF RFC 9113 section 5.2 for details
    concerning HTTP/2 flow control. See
-   :ts:cv:`proxy.config.http2.flow_control.policy.in` for how HTTP/2 stream and
+   :ts:cv:`proxy.config.http2.flow_control.policy_in` for how HTTP/2 stream and
    session windows are maintained over the lifetime of HTTP/2 sessions.
 
-.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy.in INT 0
+.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_in INT 0
    :reloadable:
 
    Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
