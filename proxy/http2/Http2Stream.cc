@@ -40,8 +40,8 @@
 
 ClassAllocator<Http2Stream, true> http2StreamAllocator("http2StreamAllocator");
 
-Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_client_rwnd, ssize_t initial_server_rwnd)
-  : super(session), _id(sid), _client_rwnd(initial_client_rwnd), _server_rwnd(initial_server_rwnd)
+Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_peer_rwnd, ssize_t initial_local_rwnd)
+  : super(session), _id(sid), _peer_rwnd(initial_peer_rwnd), _local_rwnd(initial_local_rwnd)
 {
   SET_HANDLER(&Http2Stream::main_event_handler);
 
@@ -80,7 +80,7 @@ Http2Stream::~Http2Stream()
     // In many cases, this has been called earlier, so this call is a no-op
     h2_proxy_ssn->connection_state.delete_stream(this);
 
-    h2_proxy_ssn->connection_state.decrement_stream_count();
+    h2_proxy_ssn->connection_state.decrement_peer_stream_count();
 
     // Update session's stream counts, so it accurately goes into keep-alive state
     h2_proxy_ssn->connection_state.release_stream();
@@ -914,15 +914,15 @@ Http2Stream::decrement_transactions_stat()
 }
 
 ssize_t
-Http2Stream::client_rwnd() const
+Http2Stream::get_peer_rwnd() const
 {
-  return this->_client_rwnd;
+  return this->_peer_rwnd;
 }
 
 Http2ErrorCode
-Http2Stream::increment_client_rwnd(size_t amount)
+Http2Stream::increment_peer_rwnd(size_t amount)
 {
-  this->_client_rwnd += amount;
+  this->_peer_rwnd += amount;
 
   this->_recent_rwnd_increment[this->_recent_rwnd_increment_index] = amount;
   ++this->_recent_rwnd_increment_index;
@@ -936,10 +936,10 @@ Http2Stream::increment_client_rwnd(size_t amount)
 }
 
 Http2ErrorCode
-Http2Stream::decrement_client_rwnd(size_t amount)
+Http2Stream::decrement_peer_rwnd(size_t amount)
 {
-  this->_client_rwnd -= amount;
-  if (this->_client_rwnd < 0) {
+  this->_peer_rwnd -= amount;
+  if (this->_peer_rwnd < 0) {
     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   } else {
     return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
@@ -947,23 +947,23 @@ Http2Stream::decrement_client_rwnd(size_t amount)
 }
 
 ssize_t
-Http2Stream::server_rwnd() const
+Http2Stream::get_local_rwnd() const
 {
-  return this->_server_rwnd;
+  return this->_local_rwnd;
 }
 
 Http2ErrorCode
-Http2Stream::increment_server_rwnd(size_t amount)
+Http2Stream::increment_local_rwnd(size_t amount)
 {
-  this->_server_rwnd += amount;
+  this->_local_rwnd += amount;
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 Http2ErrorCode
-Http2Stream::decrement_server_rwnd(size_t amount)
+Http2Stream::decrement_local_rwnd(size_t amount)
 {
-  this->_server_rwnd -= amount;
-  if (this->_server_rwnd < 0) {
+  this->_local_rwnd -= amount;
+  if (this->_local_rwnd < 0) {
     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   } else {
     return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;

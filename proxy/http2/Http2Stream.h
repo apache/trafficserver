@@ -55,7 +55,7 @@ public:
   using super           = ProxyTransaction; ///< Parent type.
 
   Http2Stream() {} // Just to satisfy ClassAllocator
-  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_client_rwnd, ssize_t initial_server_rwnd);
+  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_peer_rwnd, ssize_t initial_local_rwnd);
   ~Http2Stream();
 
   int main_event_handler(int event, void *edata);
@@ -85,12 +85,21 @@ public:
   bool push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
-  ssize_t client_rwnd() const;
-  Http2ErrorCode increment_client_rwnd(size_t amount);
-  Http2ErrorCode decrement_client_rwnd(size_t amount);
-  ssize_t server_rwnd() const;
-  Http2ErrorCode increment_server_rwnd(size_t amount);
-  Http2ErrorCode decrement_server_rwnd(size_t amount);
+  // The following peer versions are our accounting of how many bytes we can
+  // send to the peer in order to respect their advertised receive window.
+  ssize_t get_peer_rwnd() const;
+  Http2ErrorCode increment_peer_rwnd(size_t amount);
+  Http2ErrorCode decrement_peer_rwnd(size_t amount);
+
+  // The following local versions are the accounting of how big our receive
+  // window is that we have communicated to the peer and which the peer needs
+  // to respect when sending us data. We use this for calculating whether the
+  // peer has exceeded the window size by sending us too many bytes and we also
+  // use this to calculate WINDOW_UPDATE frame increment values to send to the
+  // peer.
+  ssize_t get_local_rwnd() const;
+  Http2ErrorCode increment_local_rwnd(size_t amount);
+  Http2ErrorCode decrement_local_rwnd(size_t amount);
 
   /////////////////
   // Accessors
@@ -125,8 +134,8 @@ public:
   Http2StreamId get_id() const;
   Http2StreamState get_state() const;
   bool change_state(uint8_t type, uint8_t flags);
-  void set_client_rwnd(Http2WindowSize new_size);
-  void set_server_rwnd(Http2WindowSize new_size);
+  void set_peer_rwnd(Http2WindowSize new_size);
+  void set_local_rwnd(Http2WindowSize new_size);
   bool has_trailing_header() const;
   void set_receive_headers(HTTPHdr &h2_headers);
   MIOBuffer *read_vio_writer() const;
@@ -204,8 +213,8 @@ private:
   uint64_t data_length = 0;
   uint64_t bytes_sent  = 0;
 
-  ssize_t _client_rwnd = 0;
-  ssize_t _server_rwnd = 0;
+  ssize_t _peer_rwnd  = 0;
+  ssize_t _local_rwnd = 0;
 
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
@@ -260,15 +269,15 @@ Http2Stream::get_state() const
 }
 
 inline void
-Http2Stream::set_client_rwnd(Http2WindowSize new_size)
+Http2Stream::set_peer_rwnd(Http2WindowSize new_size)
 {
-  this->_client_rwnd = new_size;
+  this->_peer_rwnd = new_size;
 }
 
 inline void
-Http2Stream::set_server_rwnd(Http2WindowSize new_size)
+Http2Stream::set_local_rwnd(Http2WindowSize new_size)
 {
-  this->_server_rwnd = new_size;
+  this->_local_rwnd = new_size;
 }
 
 inline bool
