@@ -608,9 +608,9 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(initial_window_size_in, "proxy.config.http2.initial_window_size_in");
 
   uint32_t flow_control_policy_in_int = 0;
-  REC_EstablishStaticConfigInt32U(flow_control_policy_in_int, "proxy.config.http2.flow_control.in.policy");
+  REC_EstablishStaticConfigInt32U(flow_control_policy_in_int, "proxy.config.http2.flow_control.policy.in");
   if (flow_control_policy_in_int > 2) {
-    Error("Invalid value for proxy.config.http2.flow_control.in.policy: %d", flow_control_policy_in_int);
+    Error("Invalid value for proxy.config.http2.flow_control.policy.in: %d", flow_control_policy_in_int);
     flow_control_policy_in_int = 0;
   }
   flow_control_policy_in = static_cast<Http2FlowControlPolicy>(flow_control_policy_in_int);

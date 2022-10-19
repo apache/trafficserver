@@ -62,7 +62,7 @@ class Http2FlowControlTest:
         will be explicitly set and ATS will use the default value.
 
         :param flow_control_policy: The value with which to configure the
-        proxy.config.http2.flow_control.in.policy ATS parameter the
+        proxy.config.http2.flow_control.policy.in ATS parameter the
         records.config file. If the paramenter is None, then no policy
         configuration will be explicitly set and ATS will use the default
         value.
@@ -133,7 +133,7 @@ class Http2FlowControlTest:
 
         if self._flow_control_policy is not None:
             ts.Disk.records_config.update({
-                'proxy.config.http2.flow_control.in.policy': self._flow_control_policy,
+                'proxy.config.http2.flow_control.policy.in': self._flow_control_policy,
             })
 
         if self._max_concurrent_streams_in is not None:
@@ -151,7 +151,7 @@ class Http2FlowControlTest:
 
         if self._flow_control_policy_is_malformed:
             ts.Disk.diags_log.Content = Testers.ContainsExpression(
-                "ERROR.*proxy.config.http2.flow_control.in.policy",
+                "ERROR.*proxy.config.http2.flow_control.policy.in",
                 "There should be an about an invalid flow control policy.")
 
         return ts
