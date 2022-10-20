@@ -22,6 +22,8 @@
  */
 
 #pragma once
+#include <memory>
+#include <shared_mutex>
 #include "P_Cache.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
@@ -105,6 +107,113 @@ private:
   CacheType type;
 };
 
+// ReplaceablePtr provides threadsafe access to an object which may be replaced.
+//
+// Access is provided via ScopedReader and ScopedWriter classes, which acquire
+// shared (read) and exclusive (write) locks respectively on construction and
+// release them upon destruction.
+//
+// The underlying object may be replaced by a concurrent thread via 'reset',
+// which acquires an exclusive lock before setting the internal pointer. This
+// takes ownership of the given pointer. If this already has ownership of
+// another pointer, that object is destroyed and its memory freed.
+//
+// Direct access without acquiring the lock is intentionally not provided, to
+// prevent accidental usage without locking, or forgetting to release the lock.
+//
+// This may not be copied. To use, construct with one owner, and pass a pointer
+// to other users.
+//
+template <typename T> class ReplaceablePtr
+{
+public:
+  ReplaceablePtr() {}
+  virtual ~ReplaceablePtr() {}
+
+  // reset acquires an exclusive (write) lock and updates the internal pointer
+  // with t.
+  // If an existing pointer is owned, the object is destructed and its memory
+  // freed.
+  void
+  reset(T *t)
+  {
+    std::scoped_lock l(m);
+    h.reset(t);
+  }
+
+  // ScopedReader constructs an object which is allowed to read from a
+  // ReplaceablePtr.
+  //
+  // The lifetime of the ReplaceablePtr must exceed the lifetime of this.
+  // The shared (read) lock is immediately acquired  upon construction of this,
+  // and released upon destruction.
+  class ScopedReader
+  {
+  public:
+    ScopedReader(ReplaceablePtr<T> *ptr) : ptr(ptr) { ptr->m.lock_shared(); }
+    ~ScopedReader() { ptr->m.unlock_shared(); }
+
+    const T *
+    operator->()
+    {
+      return ptr->h.get();
+    }
+
+    const T *
+    get()
+    {
+      return ptr->h.get();
+    }
+
+  private:
+    ScopedReader(const ScopedReader &) = delete;
+    ScopedReader &operator=(const ScopedReader &) = delete;
+
+    ReplaceablePtr<T> *ptr;
+  };
+
+  // ScopedWriter constructs an object which is allowed to read and modify the
+  // object pointed to by a ReplaceablePtr.
+  //
+  // The lifetime of the ReplaceablePtr must exceed the lifetime of this.
+  //
+  // An exclusive (write) lock is immediately acquired  upon construction of
+  // this, and released upon destruction.
+  class ScopedWriter
+  {
+  public:
+    ScopedWriter(ReplaceablePtr<T> *ptr) : ptr(ptr) { ptr->m.lock(); }
+    ~ScopedWriter() { ptr->m.unlock(); }
+
+    T *
+    operator->()
+    {
+      return ptr->h.get();
+    }
+
+    T *
+    get()
+    {
+      return ptr->h.get();
+    }
+
+  private:
+    ScopedWriter(const ScopedWriter &) = delete;
+    ScopedWriter &operator=(const ScopedWriter &) = delete;
+
+    ReplaceablePtr<T> *ptr;
+  };
+
+private:
+  ReplaceablePtr(const ReplaceablePtr &) = delete;
+  ReplaceablePtr &operator=(const ReplaceablePtr &) = delete;
+
+  std::unique_ptr<T> h = nullptr;
+  std::shared_mutex m;
+
+  friend class ReplaceablePtr::ScopedReader;
+};
+
 class CacheHostTable
 {
 public:
@@ -133,7 +242,7 @@ public:
   static int config_callback(const char *, RecDataT, RecData, void *);
 
   void
-  register_config_callback(CacheHostTable **p)
+  register_config_callback(ReplaceablePtr<CacheHostTable> *p)
   {
     REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
@@ -152,20 +261,33 @@ private:
 struct CacheHostTableConfig;
 typedef int (CacheHostTableConfig::*CacheHostTabHandler)(int, void *);
 struct CacheHostTableConfig : public Continuation {
-  CacheHostTable **ppt;
-  CacheHostTableConfig(CacheHostTable **appt) : Continuation(nullptr), ppt(appt) { SET_HANDLER(&CacheHostTableConfig::mainEvent); }
+  CacheHostTableConfig(ReplaceablePtr<CacheHostTable> *appt) : Continuation(nullptr), ppt(appt)
+  {
+    SET_HANDLER(&CacheHostTableConfig::mainEvent);
+  }
+
+  ~CacheHostTableConfig() {}
 
   int
   mainEvent(int event, Event *e)
   {
     (void)e;
     (void)event;
-    CacheHostTable *t   = new CacheHostTable((*ppt)->cache, (*ppt)->type);
-    CacheHostTable *old = (CacheHostTable *)ink_atomic_swap(&t, *ppt);
-    new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
+
+    CacheType type = CACHE_HTTP_TYPE;
+    Cache *cache   = nullptr;
+    {
+      ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);
+      type  = hosttable->type;
+      cache = hosttable->cache;
+    }
+    ppt->reset(new CacheHostTable(cache, type));
     delete this;
     return EVENT_DONE;
   }
+
+private:
+  ReplaceablePtr<CacheHostTable> *ppt;
 };
 
 /* list of volumes in the volume.config file */
