@@ -59,10 +59,16 @@ The **hosts** definitions is a **YAML** list of hosts.  This list is **optional*
 In the example below, **hosts** is a **YAML** list of hosts.  Each host entry  uses a **YAML** anchor,
 **&p1** and **&p2** that may be used elsewhere in the **YAML** document to refer to hosts **p1** and **p2**.
 
-- **host**: the host value is a hostname string
+- **host**: the host value is a Fully Qualified Domain Name string
 - **protocol**: a list of schemes, ports, and health check urls for the host. The **scheme** is optional; strategies with no scheme will match hosts with no scheme. Note the scheme is only used to match the strategy, the actual scheme used in the upstream request will be the scheme of the remap target, regardless of the strategy or host scheme.
 - **healthcheck**: health check information with the **url** used to check
   the hosts health by some external health check agent.
+- **hash_string**: a string to use for this host's entry in the strategy. By default, the ``host`` is used (notably without a port).
+   - This is currently only used by ``consistent_hash`` policy strategies, but may be used by other policies in the future.
+   - There's generally no benefit to giving any host any particular hash string, but this may be useful, for example:
+      - If multiple host objects share the same ``host`` FQDN, possibly on different ports
+      - If a parent server's FQDN changes, to prevent changing a host's position on the hash ring, and thus breaking the cache and sending different requests to different parents
+      - To force a change in the order of the hash ring for debugging purposes
 
 Example::
 
@@ -77,7 +83,8 @@ Example::
           port: 443
           health_check_url: https://192.168.1.1:443
     - &p2
-      host: p2.foo.com
+      host: p2.new.foo.com
+      hash_string: p2.original.foo.com
       protocol:
         - scheme: http
           port: 80
