@@ -57,14 +57,18 @@ CacheVC::scanVol(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (_action.cancelled) {
     return free_CacheVC(this);
   }
-  CacheHostRecord *rec = &theCache->hosttable->gen_host_rec;
+
+  ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
+
+  const CacheHostRecord *rec = &hosttable->gen_host_rec;
   if (host_len) {
     CacheHostResult res;
-    theCache->hosttable->Match(hostname, host_len, &res);
+    hosttable->Match(hostname, host_len, &res);
     if (res.record) {
       rec = res.record;
     }
   }
+
   if (!vol) {
     if (!rec->num_vols) {
       goto Ldone;
