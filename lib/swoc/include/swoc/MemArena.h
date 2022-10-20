@@ -36,7 +36,7 @@ class MemArena
   using self_type = MemArena; ///< Self reference type.
 
 public:
-  static constexpr size_t DEFAULT_ALIGNMENT{1};
+  static constexpr size_t DEFAULT_ALIGNMENT{1}; ///< Default memory alignment.
 
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
@@ -98,7 +98,7 @@ public:
     bool is_full() const;
 
   protected:
-    friend MemArena;
+    friend MemArena; ///< Container.
 
     /** Override @c operator @c delete.
      *
@@ -139,15 +139,18 @@ public:
     size_t allocated{0}; ///< Current allocated (in use) bytes.
 
     struct Linkage {
+      /// @cond INTERNAL_DETAIL
       Block *_next{nullptr};
       Block *_prev{nullptr};
 
       static Block *&next_ptr(Block *);
 
       static Block *&prev_ptr(Block *);
-    } _link;
+      /// @endcond
+    } _link; ///< Intrusive list support.
   };
 
+  /// Intrusive list of blocks.
   using BlockList = IntrusiveDList<Block::Linkage>;
 
   /** Construct with reservation hint.
@@ -184,9 +187,11 @@ public:
   /// Destructor.
   ~MemArena();
 
-  self_type &operator=(self_type const &that) = delete;
+  /// No copy assignment.
+  self_type & operator=(self_type const & that) = delete;
 
-  self_type &operator=(self_type &&that);
+  /// Move assignment.
+  self_type & operator=(self_type &&that);
 
   /** Make a self-contained instance.
    *
@@ -309,8 +314,29 @@ public:
   /// @return The amount of free space.
   size_t remaining() const;
 
+  /** Get aligned and sized remnant.
+   *
+   * @tparam T Element type.
+   * @param n Number of instances of @a T
+   * @return A span that is in the remnant, correctly aligned with minimal padding.
+   *
+   * This is guaranteed to be the same bytes as if @c alloc<T> was called. The returned span will
+   * always be the specified size, the remnant will be expanded as needed.
+   */
+  template <typename T> MemSpan<T> remnant_span(size_t n);
+
   /// @return Contiguous free space in the current internal block.
   MemSpan<void> remnant();
+
+  /** Get an aligned remnant.
+   *
+   * @param n Remnant size.
+   * @param align Memory alignment (default 1, must be power of 2).
+   * @return Space in the remnant with minimal alignment padding.
+   *
+   * @note This will always return a span of @a n bytes, the remnant will be expanded as needed.
+   */
+  MemSpan<void> remnant(size_t n, size_t align = DEFAULT_ALIGNMENT);
 
   /** Require @a n bytes of contiguous memory to be available for allocation.
    *
@@ -338,19 +364,20 @@ public:
    */
   size_t reserved_size() const;
 
-  using const_iterator = BlockList::const_iterator;
-  using iterator       = const_iterator; // only const iteration allowed on blocks.
+  using const_iterator = BlockList::const_iterator; ///< Constant element iteration.
+  using iterator       = const_iterator; ///< Element iteration.
 
-  /// Iterate over active blocks.
+  /// First active block.
   const_iterator begin() const;
 
+  /// After Last active block.
   const_iterator end() const;
 
-  /// Iterator over frozen blocks.
+  /// First frozen block.
   const_iterator frozen_begin() const;
 
+  /// After last frozen block.
   const_iterator frozen_end() const;
-
 protected:
   /** Internally allocates a new block of memory of size @a n bytes.
    *
@@ -454,8 +481,13 @@ public:
 
   /// Drop all items in the free list.
   void clear();
+
+  /// Access the wrapped arena directly.
+  MemArena & arena();
 };
-// Implementation
+
+// --- Implementation ---
+/// @cond INTERNAL_DETAIL
 
 inline auto
 MemArena::Block::Linkage::next_ptr(Block *b) -> Block *& {
@@ -508,20 +540,6 @@ MemArena::Block::alloc(size_t n, size_t align) {
   return zret;
 }
 
-template <typename T>
-MemSpan<T>
-MemArena::alloc_span(size_t n) {
-  return this->alloc(sizeof(T) * n, size_t{alignof(T)}).rebind<T>();
-}
-
-template <typename T, typename... Args>
-T *
-MemArena::make(Args &&... args) {
-  return new (this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
-}
-
-inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
-
 inline MemSpan<void>
 MemArena::Block::remnant() {
   return {this->data() + allocated, this->remaining()};
@@ -544,9 +562,39 @@ MemArena::Block::operator delete([[maybe_unused]] void *ptr, void *place) noexce
 
 inline size_t
 MemArena::Block::align_padding(void const *ptr, size_t align) {
-  auto delta = uintptr_t(ptr) & (size_t(align) - 1);
-  return delta ? size_t(align) - delta : delta;
+  if (auto delta = uintptr_t(ptr) & (align - 1) ; delta > 0) {
+    return align - delta;
+  }
+  return 0;
 }
+
+inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
+
+template <typename T>
+MemSpan<T>
+MemArena::alloc_span(size_t n) {
+  return this->alloc(sizeof(T) * n, alignof(T)).rebind<T>();
+}
+
+template <typename T, typename... Args>
+T *
+MemArena::make(Args &&... args) {
+  return new (this->alloc(sizeof(T), alignof(T)).data()) T(std::forward<Args>(args)...);
+}
+
+template <typename T>
+MemSpan<T>
+MemArena::remnant_span(size_t n) {
+  auto span = this->require(sizeof(T) * n, alignof(T)).remnant();
+  return span.remove_prefix(Block::align_padding(span.data(), alignof(T))).rebind<T>();
+}
+
+template <>
+inline MemSpan<void>
+MemArena::remnant_span<void>(size_t n) { return this->require(n).remnant().prefix(n); }
+
+inline MemSpan<void>
+MemArena::remnant(size_t n, size_t align) { return this->require(n, align).remnant().prefix(n); }
 
 inline size_t
 MemArena::size() const {
@@ -625,5 +673,9 @@ void
 FixedArena<T>::clear() {
   _list._next = nullptr;
 }
+
+template < typename T > MemArena & FixedArena<T>::arena() { return _arena; }
+
+/// @endcond INTERNAL_DETAIL
 
 }} // namespace swoc::SWOC_VERSION_NS

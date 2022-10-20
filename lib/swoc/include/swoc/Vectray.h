@@ -36,19 +36,19 @@ namespace swoc { inline namespace SWOC_VERSION_NS {
 template < typename T, size_t N, class A = std::allocator<T> >
 class Vectray {
   using self_type = Vectray; ///< Self reference type.
-  using vector_type = std::vector<T, A>;
+  using vector_type = std::vector<T, A>; ///< Internal dynamic storage type.
 
 public: // STL compliance types.
-  using value_type = T;
-  using reference = std::remove_reference<T>&;
-  using const_reference = std::remove_reference<T> const&;
-  using pointer = std::remove_reference<T>*;
-  using const_pointer = std::remove_reference<T> const*;
-  using allocator_type = A;
-  using size_type = typename vector_type::size_type;
-  using difference_type = typename vector_type::difference_type;
-  using iterator = typename swoc::MemSpan<T>::iterator;
-  using const_iterator = typename swoc::MemSpan<const T>::iterator;
+  using value_type = T; ///< Element type for container.
+  using reference = std::remove_reference<T>&; ///< Reference to element.
+  using const_reference = std::remove_reference<T> const&; ///< Reference to constant element.
+  using pointer = std::remove_reference<T>*; ///< Pointer to element.
+  using const_pointer = std::remove_reference<T> const*; ///< Pointer to constant element.
+  using allocator_type = A; ///< Dynamic storage allocator.
+  using size_type = typename vector_type::size_type; ///< Type for element count.
+  using difference_type = typename vector_type::difference_type; ///< Iterator difference.
+  using iterator = typename swoc::MemSpan<T>::iterator; ///< Element iteration.
+  using const_iterator = typename swoc::MemSpan<const T>::iterator; ///< Constant element iteration.
   // Need to add reverse iterators - @c reverse_iterator and @c const_reverse_iterator
 
   /// Internal (fixed) storage.
@@ -79,8 +79,9 @@ public: // STL compliance types.
 
   using DynamicStore = vector_type; ///< Dynamic (heap) storage.
 
-  /// Generic form for referencing stored objects.
+  /// Element access.
   using span = swoc::MemSpan<T>;
+  /// Constant element access.
   using const_span = swoc::MemSpan<T const>;
 
 public:
@@ -100,6 +101,7 @@ public:
    */
   explicit Vectray(size_type n, allocator_type const& alloc = allocator_type{});
 
+  /// Move constructor for difference static sized instance.
   template < size_t M > Vectray(Vectray<T, M, A> && that);
 
   /// Move constructor.
@@ -157,14 +159,14 @@ public:
   }
   /** Append an element by copy.
    *
-   * @param src Element to add.
+   * @param t Element to add.
    * @return @a this.
    */
   self_type& push_back(T const& t);
 
   /** Append an element by move.
    *
-   * @param src Element to add.
+   * @param t Element to add.
    * @return @a this.
    */
   self_type& push_back(T && t);
@@ -175,7 +177,7 @@ public:
    * @param args Constructor arguments.
    * @return @a this
    */
-  template < typename ... Args> self_type& emplace_back(Args && ... args);
+  template < typename ... Args> self_type & emplace_back(Args && ... args);
 
   /** Remove an element from the end of the current elements.
    *
@@ -261,7 +263,7 @@ template <typename T, size_t N, class A> Vectray<T, N, A>::FixedStore::~FixedSto
 
 template<typename T, size_t N, class A>
 MemSpan<T> Vectray<T, N, A>::FixedStore::span() {
-  return MemSpan(_raw).template rebind<T>();
+  return MemSpan<std::byte>(_raw).template rebind<T>();
 }
 
 template<typename T, size_t N, class A>
@@ -322,7 +324,7 @@ auto Vectray<T,N,A>::push_back(T && t) -> self_type& {
 
 template<typename T, size_t N, class A>
 template<typename... Args>
-auto Vectray<T, N, A>::emplace_back(Args && ... args) -> self_type& {
+typename Vectray<T,N,A>::self_type & Vectray<T, N, A>::emplace_back(Args && ... args) {
   if (_store.index() == FIXED) {
     auto& fs{std::get<FIXED>(_store)};
     if (fs._count < N) {
