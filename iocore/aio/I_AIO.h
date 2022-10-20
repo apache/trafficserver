@@ -82,7 +82,21 @@ typedef struct io_event ink_io_event_t;
 
 struct AIOCallback;
 struct ink_aiocb {
-  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+#if TS_USE_MMAP
+  struct aio_mmap {
+    void *first = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+    void *last  = nullptr;
+    operator char *() const { return (char *)first; }
+    void
+    operator=(void *p)
+    {
+      first = p;
+      last  = nullptr;
+    }
+  } aio_fildes;
+#else
+  int aio_fildes = -1; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+#endif
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
@@ -96,13 +110,23 @@ struct ink_aiocb {
 
 struct ink_aiocb {
 #if TS_USE_MMAP
-  void *aio_fildes  = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+  struct aio_mmap {
+    void *first = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+    void *last  = nullptr;
+    operator char *() const { return (char *)first; }
+    void
+    operator=(void *p)
+    {
+      first = p;
+      last  = nullptr;
+    }
+  } aio_fildes;
 #else
   int aio_fildes = -1; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
 #endif
-  void *aio_buf     = nullptr;    /* buffer location */
-  size_t aio_nbytes = 0;          /* length of transfer */
-  off_t aio_offset  = 0;          /* file offset */
+  void *aio_buf     = nullptr; /* buffer location */
+  size_t aio_nbytes = 0;       /* length of transfer */
+  off_t aio_offset  = 0;       /* file offset */
 
   int aio_lio_opcode = 0; /* listio operation */
   int aio_state      = 0; /* state flag for List I/O */

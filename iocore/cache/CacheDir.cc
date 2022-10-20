@@ -896,7 +896,7 @@ dir_sync_init()
 
 void
 #if TS_USE_MMAP
-CacheSync::aio_write(void *fd, char *b, int n, off_t o)
+CacheSync::aio_write(ink_aiocb::aio_mmap &fd, char *b, int n, off_t o)
 #else
 CacheSync::aio_write(int fd, char *b, int n, off_t o)
 #endif
@@ -983,7 +983,8 @@ sync_cache_dir_on_shutdown()
       d->header->agg_pos = d->header->write_pos + d->agg_buf_pos;
 #if TS_USE_MMAP
       int r = d->agg_buf_pos;
-      memcpy(static_cast<char *>(d->fd) + d->header->write_pos, d->agg_buffer, d->agg_buf_pos);
+      ink_assert(static_cast<char *>(d->fd) + d->header->write_pos + d->agg_buf_pos <= d->fd.last);
+      memcpy(static_cast<char *>(d->fd.first) + d->header->write_pos, d->agg_buffer, d->agg_buf_pos);
 #else
       int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos, d->header->write_pos);
 #endif

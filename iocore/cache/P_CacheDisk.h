@@ -89,7 +89,7 @@ struct CacheDisk : public Continuation {
   off_t num_usable_blocks = 0;
   int hw_sector_size      = 0;
 #if TS_USE_MMAP
-  void *fd = MAP_FAILED;
+  ink_aiocb::aio_mmap fd = {MAP_FAILED, nullptr};
 #else
   int fd = -1;
 #endif

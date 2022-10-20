@@ -129,7 +129,7 @@ struct Vol : public Continuation {
   ats_scoped_str hash_text;
   CryptoHash hash_id;
 #if TS_USE_MMAP
-  void *fd = MAP_FAILED;
+  ink_aiocb::aio_mmap fd = {MAP_FAILED, nullptr};
 #else
   int fd = -1;
 #endif

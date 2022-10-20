@@ -8521,7 +8521,7 @@ TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
 
 TSReturnCode
 #if TS_USE_MMAP
-TSAIORead(void *fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
+TSAIORead(ink_aiocb::aio_mmap &fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 #else
 TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 #endif
@@ -8568,7 +8568,7 @@ TSAIONBytesGet(TSAIOCallback data)
 
 TSReturnCode
 #if TS_USE_MMAP
-TSAIOWrite(void *fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
+TSAIOWrite(ink_aiocb::aio_mmap &fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
 #else
 TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
 #endif
