@@ -89,6 +89,7 @@ Limitations
 ===========
 
 The plugin will not support the following functionality as specified in Proxy-Wasm specification
+
 * Getting and setting trailer request and response header
 * Getting and setting HTTP/2 frame meta data
 * Support on Grpc lifecycle handler functions

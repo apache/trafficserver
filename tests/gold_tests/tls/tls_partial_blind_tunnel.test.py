@@ -18,7 +18,7 @@
 
 Test.Summary = 'Testing partial_blind_tunnel'
 
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 

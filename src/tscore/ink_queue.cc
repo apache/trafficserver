@@ -51,7 +51,7 @@
 #include "tscore/ink_align.h"
 #include "tscore/hugepages.h"
 #include "tscore/Diags.h"
-#include "tscore/JeAllocator.h"
+#include "tscore/JeMiAllocator.h"
 
 #define DEBUG_TAG "freelist"
 
@@ -66,7 +66,7 @@
 #define DEADBEEF
 #endif
 
-static auto jna = jearena::globalJemallocNodumpAllocator();
+static auto jma = je_mi_malloc::globalJeMiNodumpAllocator();
 
 struct ink_freelist_ops {
   void *(*fl_new)(InkFreeList *);
@@ -265,7 +265,7 @@ malloc_new(InkFreeList *f)
   void *newp = nullptr;
 
   if (f->alignment) {
-    newp = jna.allocate(f);
+    newp = jma.allocate(f);
   } else {
     newp = ats_malloc(f->type_size);
   }
@@ -328,7 +328,7 @@ static void
 malloc_free(InkFreeList *f, void *item)
 {
   if (f->alignment) {
-    jna.deallocate(f, item);
+    jma.deallocate(f, item);
   } else {
     ats_free(item);
   }

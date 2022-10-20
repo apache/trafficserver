@@ -366,7 +366,7 @@ enum {
   http_origin_private,
   http_origin_close_private,
   http_origin_raw,
-
+  http_parent_count,
   http_stat_count
 };
 

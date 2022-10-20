@@ -643,17 +643,22 @@ HttpSM::setup_blind_tunnel_port()
   NetVConnection *netvc = ua_txn->get_netvc();
   ink_release_assert(netvc);
   int host_len;
-  if (auto *tts = dynamic_cast<TLSTunnelSupport *>(netvc)) {
+
+  // This applies to both the TLS and non TLS cases
+  if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+    // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
+    URL u;
+
+    t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+    t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+    t_state.hdr_info.client_request.url_create(&u);
+    u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+    t_state.hdr_info.client_request.url_set(&u);
+  }
+
+  TLSTunnelSupport *tts = nullptr;
+  if (!ua_txn->is_outbound_transparent() && (tts = dynamic_cast<TLSTunnelSupport *>(netvc))) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
-      // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
-      URL u;
-
-      t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
-      t_state.hdr_info.client_request.url_create(&u);
-      u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
-      t_state.hdr_info.client_request.url_set(&u);
-
       if (tts->has_tunnel_destination()) {
         const char *tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
@@ -667,7 +672,7 @@ HttpSM::setup_blind_tunnel_port()
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
-  } else {
+  } else { // If outbound transparent or not TLS, just use the local IP as the origin
     char new_host[INET6_ADDRSTRLEN];
     ats_ip_ntop(netvc->get_local_addr(), new_host, sizeof(new_host));
 

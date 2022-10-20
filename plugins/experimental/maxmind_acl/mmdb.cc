@@ -517,10 +517,22 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
 #endif
 
       MMDB_entry_data_s entry_data;
-      int path_len     = 0;
-      const char *path = nullptr;
+      std::string url;
       if (!allow_regex.empty() || !deny_regex.empty()) {
-        path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
+        TSMBuffer mbuf;
+        TSMLoc ul;
+        TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
+        if (rc != TS_SUCCESS) {
+          TSDebug(PLUGIN_NAME, "Failed call to TSHttpTxnPristineUrlGet()");
+          return false;
+        }
+        int host_len = 0, path_len = 0;
+        auto host = TSUrlHostGet(mbuf, ul, &host_len);
+        auto path = TSUrlPathGet(mbuf, ul, &path_len);
+        url.assign(host, host_len);
+        url.append("/");
+        url.append(path, path_len);
+        TSHandleMLocRelease(mbuf, TS_NULL_MLOC, ul);
       }
       // Test for country code
       if (!allow_country.empty() || !allow_regex.empty() || !deny_regex.empty()) {
@@ -530,7 +542,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
           return false;
         }
         if (entry_data.has_data) {
-          ret = eval_country(&entry_data, path, path_len);
+          ret = eval_country(&entry_data, url);
         }
       } else {
         // Country map is empty as well as regexes, use our default rejection
@@ -670,7 +682,7 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
 // allowable country code from our map.
 // False otherwise
 bool
-Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
+Acl::eval_country(MMDB_entry_data_s *entry_data, const std::string &url)
 {
   bool ret     = false;
   bool allow   = default_allow;
@@ -694,10 +706,11 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
     ret = true;
   }
 
-  if (nullptr != path && 0 != path_len) {
+  if (!url.empty()) {
+    TSDebug(PLUGIN_NAME, "saw url not empty: %s, %ld", url.c_str(), url.length());
     if (!allow_regex[output].empty()) {
       for (auto &i : allow_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, path, path_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
           TSDebug(PLUGIN_NAME, "Got a regex allow hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = true;
         }
@@ -705,7 +718,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
     }
     if (!deny_regex[output].empty()) {
       for (auto &i : deny_regex[output]) {
-        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, path, path_len, 0, PCRE_NOTEMPTY, nullptr, 0)) {
+        if (PCRE_ERROR_NOMATCH != pcre_exec(i._rex, i._extra, url.c_str(), url.length(), 0, PCRE_NOTEMPTY, nullptr, 0)) {
           TSDebug(PLUGIN_NAME, "Got a regex deny hit on regex: %s, country: %s", i._regex_s.c_str(), output);
           ret = false;
         }

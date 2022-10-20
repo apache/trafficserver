@@ -50,13 +50,11 @@
 #endif
 #endif
 
-#define DEFAULT_OPEN_MODE 0644
-
 extern int net_config_poll_timeout;
 
 #define SOCKET int
 
-/** Utility class for socket operations.
+/** Utility namespace for socket operations.
  */
 namespace SocketManager
 {
@@ -65,60 +63,30 @@ bool fastopen_supported();
 
 // result is the socket or -errno
 SOCKET socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol = 0);
-SOCKET mc_socket(int domain = AF_INET, int type = SOCK_DGRAM, int protocol = 0, bool bNonBlocking = true);
+
+const mode_t DEFAULT_OPEN_MODE{0644};
 
 // result is the fd or -errno
 int open(const char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
 // result is the number of bytes or -errno
 int64_t read(int fd, void *buf, int len, void *pOLP = nullptr);
-int64_t vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = nullptr);
-int64_t readv(int fd, struct iovec *vector, size_t count);
-int64_t read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = nullptr);
-int64_t pread(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
 int recv(int s, void *buf, int len, int flags);
 int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
 int recvmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
 
 int64_t write(int fd, void *buf, int len, void *pOLP = nullptr);
-int64_t writev(int fd, struct iovec *vector, size_t count);
-int64_t write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = nullptr);
 int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
 int send(int fd, void *buf, int len, int flags);
 int sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen);
 int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
 int64_t lseek(int fd, off_t offset, int whence);
-int fstat(int fd, struct stat *);
-int unlink(char *buf);
 int fsync(int fildes);
-int ftruncate(int fildes, off_t length);
-int lockf(int fildes, int function, off_t size);
 int poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
-#if TS_USE_EPOLL
-int epoll_create(int size);
-int epoll_close(int eps);
-int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
-int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout = net_config_poll_timeout);
-#endif
-
-#if TS_USE_KQUEUE
-int kqueue();
-int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents,
-           const struct timespec *timeout);
-#endif
-
-#if TS_USE_PORT
-int port_create();
-int port_associate(int port, int fd, uintptr_t obj, int events, void *user);
-int port_dissociate(int port, int fd, uintptr_t obj);
-int port_getn(int port, port_event_t *list, uint_t max, uint_t *nget, timespec_t *timeout);
-#endif
-
 int shutdown(int s, int how);
-int dup(int s);
 
 // result is the fd or -errno
 int accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int flags);

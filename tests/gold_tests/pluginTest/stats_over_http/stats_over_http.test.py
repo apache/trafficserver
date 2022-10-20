@@ -40,7 +40,7 @@ class StatsOverHttpPluginTest:
         self.__setupTS()
 
     def __setupTS(self):
-        self.ts = Test.MakeATSProcess("ts", select_ports=True)
+        self.ts = Test.MakeATSProcess("ts")
 
         self.ts.Disk.plugin_config.AddLine('stats_over_http.so _stats')
 

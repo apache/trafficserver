@@ -130,7 +130,7 @@ To change the RAM cache size:
 
 #. Set the variable :ts:cv:`proxy.config.cache.ram_cache.size`
    to specify the size of the RAM cache. The default value of ``-1`` means
-   that the RAM cache is automatically sized at approximately 1MB per
+   that the RAM cache is automatically sized at approximately 10MB per
    gigabyte of disk.
 
 #. Restart Traffic Server. If you increase the RAM cache to a size of

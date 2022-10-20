@@ -174,6 +174,10 @@ change, neither does this memory requirement, so |TS| does not consume more
 memory as more content is stored in the cache. If there is enough memory to run
 |TS| with an empty cache there is enough to run it with a full cache.
 
+The resident size of the directory for a cache volume is generally <0.2% of the
+volume size.  The exact memory allocated for the directory of a volume can be
+seen if traffic_server is run with the 'cache_init' debug tag enabled.
+
 .. figure:: images/cache-directory-structure.png
    :align: center
 

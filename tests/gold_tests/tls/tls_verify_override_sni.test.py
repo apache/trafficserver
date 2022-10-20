@@ -21,7 +21,7 @@ Test tls server certificate verification options. Exercise conf_remap
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True)
+ts = Test.MakeATSProcess("ts")
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 
 server_foo = Test.MakeOriginServer("server_foo",

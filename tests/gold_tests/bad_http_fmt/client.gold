@@ -1,0 +1,25 @@
+HTTP/1.0 200 OK
+X-Resp-Id: 1
+======
+HTTP/1.1 200 OK
+X-Resp-Id: 2
+======
+HTTP/1.0 400 Invalid HTTP Request
+<HTML>
+======
+HTTP/1.1 505 Unsupported HTTP Version
+<HTML>
+======
+<HTML>
+======
+<HTML>
+======
+HTTP/1.1 200 OK
+X-Resp-Id: 3
+======
+HTTP/1.1 200 OK
+X-Resp-Id: 4
+======
+HTTP/1.1 403 Access Denied
+<HTML>
+======

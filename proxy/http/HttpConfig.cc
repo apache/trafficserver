@@ -1073,6 +1073,10 @@ register_stat_callbacks()
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.dead_server.no_requests", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_dead_server_no_requests, RecRawStatSyncSum);
+
+  // Current transaction stats parent counter
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http_parent_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_parent_count, RecRawStatSyncCount);
 }
 
 static bool

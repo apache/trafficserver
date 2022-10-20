@@ -1838,6 +1838,17 @@ TS_CHECK_JEMALLOC
 TS_CHECK_MIMALLOC
 
 #
+# Check whether to use malloc or freelist allocator
+AC_MSG_CHECKING([Use malloc allocator])
+AC_ARG_ENABLE([malloc-allocator],
+  [AS_HELP_STRING([--enable-malloc-allocator],[Allocator uses malloc])],
+  [enable_malloc_allocator=1],
+  [enable_malloc_allocator=0]
+)
+AC_MSG_RESULT([$enable_malloc_allocator])
+AC_SUBST(enable_malloc_allocator)
+
+#
 # Check for libreadline/libedit
 AX_LIB_READLINE
 

@@ -27,7 +27,7 @@ Ensure that handshake fails if invalid alpn string is offered
 Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")

@@ -20,7 +20,7 @@ Test command: traffic_ctl config describe proxy.config.http.background_fill_comp
 '''
 Test.testName = 'Float in conf_remap Config Test'
 
-ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 ts.Disk.MakeConfigFile('conf_remap.config').AddLines([
     'CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.500000'

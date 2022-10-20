@@ -162,9 +162,13 @@ LogConfig::read_configuration_variables()
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
-  if (ptr != nullptr && std::string_view(ptr) != "localhost") {
-    ats_free(hostname);
-    hostname = ptr;
+  if (ptr != nullptr) {
+    if (std::string_view(ptr) != "localhost") {
+      ats_free(hostname);
+      hostname = ptr;
+    } else {
+      ats_free(ptr);
+    }
   }
 
   ptr = REC_ConfigReadString("proxy.config.error.logfile.filename");

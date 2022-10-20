@@ -46,8 +46,7 @@ class BackgroundFillTest:
         self.httpbin = Test.MakeHttpBinServer("httpbin")
 
     def __setupTS(self):
-        self.ts = Test.MakeATSProcess(
-            "ts", select_ports=True, enable_tls=True, enable_cache=True)
+        self.ts = Test.MakeATSProcess("ts", enable_tls=True)
 
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.ssl_multicert_config.AddLine(

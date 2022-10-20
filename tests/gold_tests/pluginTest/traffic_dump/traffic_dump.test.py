@@ -50,7 +50,7 @@ ts.Setup.Copy("ssl/signed-foo.key")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'traffic_dump',
+    'proxy.config.diags.debug.tags': 'traffic_dump|http',
     'proxy.config.http.insert_age_in_response': 0,
 
     'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
@@ -61,21 +61,20 @@ ts.Disk.records_config.update({
     'proxy.config.http.host_sni_policy': 2,
     'proxy.config.ssl.TLSv1_3': 0,
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+
+    'proxy.config.http.connect_ports': f"{server.Variables.http_port}",
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-ts.Disk.remap_config.AddLine(
-    f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}'
-)
-ts.Disk.remap_config.AddLine(
-    f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}'
-)
-ts.Disk.remap_config.AddLine(
-    f'map / http://127.0.0.1:{server.Variables.http_port}'
-)
+ts.Disk.remap_config.AddLines([
+    f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}',
+    f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}',
+    f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
+    f'map / http://127.0.0.1:{server.Variables.http_port}',
+])
 
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
@@ -132,6 +131,8 @@ replay_file_session_9 = os.path.join(replay_dir, "127", "0000000000000008")
 ts.Disk.File(replay_file_session_9, exists=True)
 replay_file_session_10 = os.path.join(replay_dir, "127", "0000000000000009")
 ts.Disk.File(replay_file_session_10, exists=True)
+replay_file_session_11 = os.path.join(replay_dir, "127", "000000000000000a")
+ts.Disk.File(replay_file_session_11, exists=True)
 
 # Run our test traffic.
 tr = Test.AddTestRun("Run the test traffic.")
@@ -300,6 +301,19 @@ http_server_stack = "http,tcp,ip"
 tr.Processes.Default.Command = \
     (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_10} '
      f'--server-protocols "{http_server_stack}"')
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+#
+# Test 9: Verify correct handling of a CONNECT request.
+#
+
+tr = Test.AddTestRun("Verify handling of a CONNECT request.")
+tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+
+tr.Processes.Default.Command = \
+    (f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_11} {sensitive_fields_arg} ")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

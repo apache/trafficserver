@@ -37,7 +37,7 @@ class SplitDNSTest:
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess(
-            "ts", select_ports=True, enable_cache=False)
+            "ts", enable_cache=False)
         self.ts.Disk.records_config.update({
             "proxy.config.dns.splitDNS.enabled": 1,
             "proxy.config.diags.debug.enabled": 1,

@@ -25,7 +25,7 @@ Test ATS offering both RSA and EC certificates loaded via plugin
 Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 

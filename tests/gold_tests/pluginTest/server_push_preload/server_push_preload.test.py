@@ -54,7 +54,7 @@ microserver.addResponse("sessionfile.log",
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 ts.addDefaultSSLFiles()
 

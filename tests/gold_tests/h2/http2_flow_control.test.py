@@ -120,7 +120,6 @@ class Http2FlowControlTest:
             'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
             'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
             'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self._dns.Variables.Port),
-            'proxy.config.ssl.keylog_file': os.path.join(Test.RunDirectory, 'tls_session_keys.txt'),
 
             'proxy.config.diags.debug.enabled': 3,
             'proxy.config.diags.debug.tags': 'http',

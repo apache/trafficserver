@@ -22,8 +22,8 @@ Test tls tickets
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 

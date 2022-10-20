@@ -35,7 +35,7 @@ server = Test.MakeVerifierServerProcess(
     ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 
 ts.addSSLfile("ssl/server.pem")

@@ -1,5 +1,4 @@
-'''
-'''
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,15 +15,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Test.Summary = '''
-Test that Trafficserver starts with default configurations.
-'''
+PROXY_WASM_CPP_SDK=/sdk
 
-ts = Test.MakeATSProcess("ts")
-t = Test.AddTestRun("Test traffic server started properly")
-t.StillRunningAfter = Test.Processes.ts
+all: myproject.wasm
 
-p = t.Processes.Default
-p.Command = "curl http://127.0.0.1:{0}".format(ts.Variables.port)
-p.ReturnCode = 0
-p.StartBefore(Test.Processes.ts)
+include ${PROXY_WASM_CPP_SDK}/Makefile.base_lite

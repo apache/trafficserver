@@ -195,7 +195,7 @@ SocksEntry::startEvent(int event, void *data)
       auth_handler = &socks5BasicAuthHandler;
     }
 
-    SET_HANDLER((SocksEntryHandler)&SocksEntry::mainEvent);
+    SET_HANDLER(&SocksEntry::mainEvent);
     mainEvent(NET_EVENT_OPEN, data);
   } else {
     if (timeout) {

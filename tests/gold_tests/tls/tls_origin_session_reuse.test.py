@@ -22,10 +22,10 @@ Test tls origin session reuse
 '''
 
 # Define default ATS
-ts1 = Test.MakeATSProcess("ts1", select_ports=True, enable_tls=True)
-ts2 = Test.MakeATSProcess("ts2", select_ports=True, enable_tls=True)
-ts3 = Test.MakeATSProcess("ts3", select_ports=True, enable_tls=True)
-ts4 = Test.MakeATSProcess("ts4", select_ports=True, enable_tls=True)
+ts1 = Test.MakeATSProcess("ts1", enable_tls=True)
+ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
+ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
+ts4 = Test.MakeATSProcess("ts4", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 # Add info the origin server responses

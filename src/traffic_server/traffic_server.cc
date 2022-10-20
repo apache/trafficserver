@@ -279,6 +279,12 @@ public:
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
+
+#if TS_HAS_JEMALLOC
+      char buf[PATH_NAME_MAX] = "";
+      RecGetRecordString("proxy.config.memory.malloc_stats_print_opts", buf, PATH_NAME_MAX);
+      malloc_stats_print(nullptr, nullptr, buf);
+#endif
     }
 
     if (signal_received[SIGUSR2]) {
@@ -1958,6 +1964,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {
     // The default value was used. Let Machine::init derive the hostname.
+    ats_free(hostname);
     hostname = nullptr;
   }
   Machine::init(hostname, &machine_addr.sa);

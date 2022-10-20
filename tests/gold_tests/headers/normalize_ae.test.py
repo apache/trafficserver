@@ -45,7 +45,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 # Define first ATS. Disable the cache to make sure each request is sent to the
 # origin server.
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 
 def baselineTsSetup(ts):
@@ -140,7 +140,7 @@ def perTsTest(shouldWaitForUServer, ts):
 perTsTest(True, ts)
 
 # Define second ATS
-ts2 = Test.MakeATSProcess("ts2", select_ports=True)
+ts2 = Test.MakeATSProcess("ts2")
 
 baselineTsSetup(ts2)
 

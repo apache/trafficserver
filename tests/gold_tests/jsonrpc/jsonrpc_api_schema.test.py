@@ -94,7 +94,7 @@ def add_testrun_for_jsonrpc_request(
     return tr
 
 
-ts = Test.MakeATSProcess('ts', enable_cache=True)
+ts = Test.MakeATSProcess('ts')
 
 Test.testName = 'Basic JSONRPC API test'
 

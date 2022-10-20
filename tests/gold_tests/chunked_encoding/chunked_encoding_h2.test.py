@@ -29,7 +29,7 @@ Test.ContinueOnFail = True
 Test.GetTcpPort("upstream_port")
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
