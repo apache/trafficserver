@@ -55,7 +55,7 @@ public:
   using super           = ProxyTransaction; ///< Parent type.
 
   Http2Stream() {} // Just to satisfy ClassAllocator
-  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd);
+  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_client_rwnd, ssize_t initial_server_rwnd);
   ~Http2Stream();
 
   int main_event_handler(int event, void *edata);
@@ -125,7 +125,8 @@ public:
   Http2StreamId get_id() const;
   Http2StreamState get_state() const;
   bool change_state(uint8_t type, uint8_t flags);
-  void update_initial_rwnd(Http2WindowSize new_size);
+  void set_client_rwnd(Http2WindowSize new_size);
+  void set_server_rwnd(Http2WindowSize new_size);
   bool has_trailing_header() const;
   void set_receive_headers(HTTPHdr &h2_headers);
   MIOBuffer *read_vio_writer() const;
@@ -259,9 +260,15 @@ Http2Stream::get_state() const
 }
 
 inline void
-Http2Stream::update_initial_rwnd(Http2WindowSize new_size)
+Http2Stream::set_client_rwnd(Http2WindowSize new_size)
 {
   this->_client_rwnd = new_size;
+}
+
+inline void
+Http2Stream::set_server_rwnd(Http2WindowSize new_size)
+{
+  this->_server_rwnd = new_size;
 }
 
 inline bool

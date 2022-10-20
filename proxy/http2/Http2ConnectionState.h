@@ -24,6 +24,7 @@
 #pragma once
 
 #include <atomic>
+#include <queue>
 
 #include "NetTimeout.h"
 
@@ -86,10 +87,28 @@ public:
   DependencyTree *dependency_tree  = nullptr;
   ActivityCop<Http2Stream> _cop;
 
-  /// The HTTP/2 settings configured by ATS.
+  /** The HTTP/2 settings configured by ATS and dictated to the peer via
+   * SETTINGS frames. */
   Http2ConnectionSettings local_settings;
 
-  /// The HTTP/2 settings configured by the peer.
+  /** The latest set of settings that have been acknowledged by the peer.
+   *
+   * The default constructed value of this via the Http2ConnectionSettings
+   * constructor (i.e., the value before any SETTINGS ACK frames have been
+   * received) will instantiate these settings to the default HTTP/2 settings
+   * values.
+   *
+   * @note that @a local_settings are our latest configured settings which have
+   * been sent to the peer but may not be acknowledged yet. @a
+   * last_acknowledged_settings are the latest settings of which the peer has
+   * acknowledged receipt. For this reason, window enforcement behavior and
+   * WINDOW_UPDATE calculations should be based upon @a
+   * last_acknowledged_settings.
+   */
+  Http2ConnectionSettings acknowledged_local_settings;
+
+  /** The HTTP/2 settings configured by the peer and dictated to ATS via
+   * SETTINGS frames. */
   Http2ConnectionSettings peer_settings;
 
   void init(Http2CommonSession *ssn);
@@ -109,7 +128,12 @@ public:
   void release_stream();
   void cleanup_streams();
   void restart_receiving(Http2Stream *stream);
-  void update_initial_rwnd(Http2WindowSize new_size);
+
+  /** Update all streams for the peer's newly dictated stream window size. */
+  void update_initial_client_rwnd(Http2WindowSize new_size);
+
+  /** Update all streams for our newly dictated stream window size. */
+  void update_initial_server_rwnd(Http2WindowSize new_size);
 
   Http2StreamId get_latest_stream_id_in() const;
   Http2StreamId get_latest_stream_id_out() const;
@@ -134,7 +158,16 @@ public:
   void send_headers_frame(Http2Stream *stream);
   bool send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
+
+  /** Send a SETTINGS frame to the peer.
+   *
+   * local_settings is updated to the value of @a new_settings as a byproduct
+   * of this call.
+   *
+   * @param[in] new_settings The settings to send to the peer.
+   */
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
+
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
@@ -193,6 +226,25 @@ private:
 
   unsigned _adjust_concurrent_stream();
 
+  /** Receive and process a SETTINGS frame with the ACK flag set.
+   *
+   * This function will process any settings updates that have now been
+   * acknowleged by the peer.
+   */
+  void _process_incoming_settings_ack_frame();
+
+  /** Calculate the initial session window size that we communicate to peers.
+   *
+   * @return The initial receive window size.
+   */
+  uint32_t _get_configured_receive_session_window_size_in() const;
+
+  /** Whether our stream window can change over the lifetime of a session.
+   *
+   * @return @c true if the stream window can change, @c false otherwise.
+   */
+  bool _has_dynamic_stream_window() const;
+
   // NOTE: 'stream_list' has only active streams.
   //   If given Stream Identifier is not found in stream_list and it is less
   //   than or equal to latest_streamid_in, the state of Stream
@@ -217,7 +269,26 @@ private:
   uint32_t stream_error_count = 0;
 
   // Connection level window size
+
+  /** The session level window that we have to respect when we send data to the
+   * peer.
+   *
+   * This is the session window configured by the peer via WINDOW_UPDATE
+   * frames. Per specification, this defaults to HTTP2_INITIAL_WINDOW_SIZE (see
+   * RFC 9113, section 6.9.2). As we send data, we decrement this value. If it
+   * reaches zero, we stop sending data to respect the peer's flow control
+   * specification. When we receive WINDOW_UPDATE frames, we increment this
+   * value.
+   */
   ssize_t _client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
+
+  /** The session window we maintain with the peer via WINDOW_UPDATE frames.
+   *
+   * We maintain the window we expect the peer to respect by sending
+   * WINDOW_UPDATE frames to the peer. As we receive data, we decrement this
+   * value, as we send WINDOW_UPDATE frames, we increment it. If it reaches
+   * zero, we generate a connection-level error.
+   */
   ssize_t _server_rwnd = 0;
 
   /** Whether the session window is in a shrinking state before we send the
@@ -239,6 +310,54 @@ private:
   Http2FrequencyCounter _received_settings_frame_counter;
   Http2FrequencyCounter _received_ping_frame_counter;
   Http2FrequencyCounter _received_priority_frame_counter;
+
+  /** Records the various settings for each SETTINGS frame that we've sent.
+   *
+   * There are certain SETTINGS values that we send but cannot act upon until the
+   * peer acknowledges them. For instance, we cannot enforce reduced stream
+   * window sizes until the peer acknowledges the SETTINGS frame that shrinks the
+   * size.
+   *
+   * There is an OutstandingSettingsFrame instance for each SETTINGS frame that
+   * we send. We store these in a queue and associate each SETTINGS frame with
+   * an ACK flag from the peer with a corresponding OutstandingSettingsFrame
+   * instance.
+   *
+   * For details about SETTINGS synchronization via the ACK flag, see:
+   *
+   *   [RFC 9113] 6.5.3 Settings Synchronization
+   */
+  class OutstandingSettingsFrame
+  {
+  public:
+    OutstandingSettingsFrame(const Http2ConnectionSettings &settings) : _settings(settings) {}
+
+    /** Returns the settings parameters that were configured via the SETTINGS frame
+     * associated with this instance.
+     *
+     * @return The settigns parameters that were configured at the time the
+     * associated SETTINGS frame was sent. @note that this is not just the
+     * values in the SETTINGS frame, but those values along with all the local
+     * settings that were in place but not explicitly configured via the frame.
+     * Thus this returns the snapshot of the entire set of settings configured
+     * when the SETTINGS frame was sent.
+     */
+    Http2ConnectionSettings const &
+    get_outstanding_settings() const
+    {
+      return _settings;
+    }
+
+  private:
+    /** The SETTINGS parameters that were set at the time of the associated
+     * SETTINGS frame being sent.
+     */
+    Http2ConnectionSettings const _settings;
+  };
+
+  /** The queue of SETTINGS frames that we have sent but have not yet been
+   * acknowledged by the peer. */
+  std::queue<OutstandingSettingsFrame> _outstanding_settings_frames;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS

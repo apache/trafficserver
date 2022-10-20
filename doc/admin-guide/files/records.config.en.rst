@@ -4152,7 +4152,40 @@ HTTP/2 Configuration
    :reloadable:
    :units: bytes
 
-   The initial window size for inbound connections.
+   The initial HTTP/2 stream window size for inbound connections that |TS| as a
+   receiver advertises to the peer. See IETF RFC 9113 section 5.2 for details
+   concerning HTTP/2 flow control. See
+   :ts:cv:`proxy.config.http2.flow_control.policy_in` for how HTTP/2 stream and
+   session windows are maintained over the lifetime of HTTP/2 sessions.
+
+.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_in INT 0
+   :reloadable:
+
+   Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
+   stream and session windows for inbound connections. See IETF RFC 9113
+   section 5.2 for details concerning HTTP/2 flow control.
+
+   ===== ===========================================================================================
+   Value Description
+   ===== ===========================================================================================
+   ``0`` Session and stream receive windows are initialized and maintained at the value as specified
+         in :ts:cv:`proxy.config.http2.initial_window_size_in` over the lifetime of HTTP/2
+         sessions.
+   ``1`` Session receive windows are initialized to the value of the product of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and
+         :ts:cv:`proxy.config.http2.max_concurrent_streams_in` and are maintained as such over the
+         lifetime of HTTP/2 sessions. Stream windows are initialized to the value of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and are maintained as such over the
+         lifetime of each HTTP/2 stream.
+   ``2`` Session receive windows are initialized to the value of the product of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and
+         :ts:cv:`proxy.config.http2.max_concurrent_streams_in` and are maintained as such over the
+         lifetime of HTTP/2 sessions. Stream windows are initialized to the value of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` but are dynamically adjusted to the
+         session window size divided by the number of concurrent streams over the lifetime of HTTP/2
+         sessions. That is, stream window sizes dynamically adjust to fill the session window in
+         a way that shares the window equally among all concurrent streams.
+   ===== ===========================================================================================
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:
