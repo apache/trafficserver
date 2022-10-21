@@ -59,7 +59,7 @@ for i in range(slice_body_len):
     slice_body += 'x'
 
 # Define and configure ATS
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 # Define and configure origin server
 server = Test.MakeOriginServer("server", lookup_key="{%UID}")

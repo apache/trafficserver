@@ -21,7 +21,7 @@ Test.Summary = '''
 Test client certs to origin selected via wildcard names in sni
 '''
 
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server",

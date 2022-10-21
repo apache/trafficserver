@@ -192,7 +192,7 @@ TestHttp1_1('www.forwarded-connection-compact.com')
 TestHttp1_1('www.forwarded-connection-std.com')
 TestHttp1_1('www.forwarded-connection-full.com')
 
-ts2 = Test.MakeATSProcess("ts2", command="traffic_server", enable_tls=True)
+ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
 
 baselineTsSetup(ts2)
 

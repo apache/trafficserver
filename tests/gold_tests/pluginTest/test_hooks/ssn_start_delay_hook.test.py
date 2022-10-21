@@ -30,7 +30,7 @@ request_header = {
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", enable_tls=False)
+ts = Test.MakeATSProcess("ts")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'test',
