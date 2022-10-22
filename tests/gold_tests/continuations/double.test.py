@@ -24,7 +24,7 @@ Test transactions and sessions for http1, making sure the two continuations catc
 
 Test.ContinueOnFail = True
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""

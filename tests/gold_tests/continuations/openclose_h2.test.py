@@ -27,7 +27,7 @@ Test.SkipUnless(
 )
 
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", enable_tls=True, command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 
 server = Test.MakeOriginServer("server")

@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%Range}{PATH}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 body = "the quick brown fox"  # len 19
 

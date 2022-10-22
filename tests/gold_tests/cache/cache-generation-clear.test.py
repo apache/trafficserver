@@ -23,7 +23,7 @@ Test that incrementing the cache generation acts like a cache clear
 '''
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 # setup some config file for this server
 ts.Disk.records_config.update({

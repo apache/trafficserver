@@ -25,7 +25,7 @@ Test unsupported values for chunked_encoding
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts1", enable_tls=False)
+ts = Test.MakeATSProcess("ts1")
 server = Test.MakeOriginServer("server")
 
 testName = ""

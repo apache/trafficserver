@@ -23,7 +23,7 @@ Test transactions and sessions, making sure they open and close in the proper or
 '''
 
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
