@@ -61,7 +61,7 @@ if test "$has_mimalloc" != "no"; then
   if test "$mimalloc_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${mimalloc_include}])
     TS_ADDTO(LDFLAGS, [-L${mimalloc_ldflags}])
-    TS_ADDTO(LDFLAGS, [-Wl,--add-needed -L${mimalloc_ldflags} -Wl,-rpath,${mimalloc_ldflags} -Wl,--no-as-needed])
+    TS_ADDTO(LDFLAGS, [-Wl,--as-needed -L${mimalloc_ldflags} -Wl,-rpath,${mimalloc_ldflags} -Wl,--no-as-needed])
     TS_ADDTO_RPATH(${mimalloc_ldflags})
   fi
   AC_SEARCH_LIBS([mi_malloc], [mimalloc], [mimalloc_has_libs=1])
