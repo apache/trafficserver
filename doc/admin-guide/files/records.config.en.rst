@@ -4903,6 +4903,28 @@ Sockets
    platforms.  (Currently only Linux).  IO buffers are allocated with the MADV_DONTDUMP
    with madvise() on Linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_chunk_sizes STRING
+
+   This configures the chunk sizes of each of the IO buffer allocators.  The chunk size is the number
+   of buffers allocated in a batch when the allocator's freelist is exhausted.  This must be specified as a
+   space separated list of up to 15 numbers.  If not specified or if any value specified is 0, the default
+   value will be used.
+
+   The list of numbers will specify the chunk sizes in the following order:
+
+   ``128 256 512 1k 2k 4k 8k 16k 32k 64k 128k 256k 512k 1M 2M``
+
+   The defaults for each allocator is:
+
+   ``128 128 128 128 128 128 32 32 32 32 32 32 32 32 32``
+
+   Even though this is specified, the actual chunk size might be modified based on the system's page size (or hugepage
+   size if enabled).
+
+   You might want to adjust these values to reduce the overall number of allocations that ATS needs to make based
+   on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
+   log the allocator statistics and see how many of each buffer size have been allocated.
+
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 
    Configures the max IOBuffer Block index used for various SSL Operations

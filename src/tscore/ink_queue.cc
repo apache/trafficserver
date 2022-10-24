@@ -117,7 +117,8 @@ ink_freelist_init_ops(int nofl_class, int nofl_proxy)
 }
 
 void
-ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment)
+ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
+                  uint32_t use_hugepages)
 {
   InkFreeList *f;
   ink_freelist_list *fll;
@@ -137,15 +138,23 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   ink_assert(!(alignment & (alignment - 1)));
   // It is never useful to have alignment requirement looser than a page size
   // so clip it. This makes the item alignment checks in the actual allocator simpler.
-  f->alignment = alignment;
-  if (f->alignment > ats_pagesize()) {
-    f->alignment = ats_pagesize();
+  f->alignment         = alignment;
+  f->use_hugepages     = ats_hugepage_enabled() && use_hugepages;
+  f->hugepages_failure = 0;
+  if (f->use_hugepages) {
+    // for hugepages, always make the allocation alignment on a hugepage boundary
+    f->alignment = ats_hugepage_size();
+    f->type_size = type_size;
+  } else {
+    if (f->alignment > ats_pagesize()) {
+      f->alignment = ats_pagesize();
+    }
+    // Make sure we align *all* the objects in the allocation, not just the first one
+    f->type_size = INK_ALIGN(type_size, f->alignment);
   }
   Debug(DEBUG_TAG "_init", "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
-  // Make sure we align *all* the objects in the allocation, not just the first one
-  f->type_size = INK_ALIGN(type_size, f->alignment);
   Debug(DEBUG_TAG "_init", "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
-  if (ats_hugepage_enabled()) {
+  if (f->use_hugepages) {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
   } else {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_pagesize()) / f->type_size;
@@ -158,18 +167,18 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
 void
 ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                          int advice)
+                          uint32_t use_hugepages, int advice)
 {
-  ink_freelist_init(fl, name, type_size, chunk_size, alignment);
+  ink_freelist_init(fl, name, type_size, chunk_size, alignment, use_hugepages);
   (*fl)->advice = advice;
 }
 
 InkFreeList *
-ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment)
+ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, uint32_t use_hugepages)
 {
   InkFreeList *f;
 
-  ink_freelist_init(&f, name, type_size, chunk_size, alignment);
+  ink_freelist_init(&f, name, type_size, chunk_size, alignment, use_hugepages);
   return f;
 }
 
@@ -206,9 +215,12 @@ freelist_new(InkFreeList *f)
       size_t alloc_size = f->chunk_size * f->type_size;
       size_t alignment  = 0;
 
-      if (ats_hugepage_enabled()) {
+      if (f->use_hugepages) {
         alignment = ats_hugepage_size();
         newp      = ats_alloc_hugepage(alloc_size);
+        if (newp == nullptr) {
+          f->hugepages_failure++;
+        }
       }
 
       if (newp == nullptr) {
@@ -451,17 +463,20 @@ ink_freelists_dump(FILE *f)
     f = stderr;
   }
 
-  fprintf(f, "     Allocated      |        In-Use      | Type Size  |   Free List Name\n");
-  fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
+  fprintf(f, "     Allocated      |   Allocated Count  |        In-Use      |    In-Use Count    | Type Size  | Chunk Size | HP "
+             "Fails |   Free List Name\n");
+  fprintf(f, "--------------------|--------------------|--------------------|--------------------|------------|------------|-------"
+             "---|----------------------------------\n");
 
   uint64_t total_allocated = 0;
   uint64_t total_used      = 0;
   fll                      = freelists;
   while (fll) {
-    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n",
+    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %18" PRIu64 " | %18" PRIu64 " | %10u | %10u | %10u | memory/%s\n",
             static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size),
-            static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size), fll->fl->type_size,
-            fll->fl->name ? fll->fl->name : "<unknown>");
+            static_cast<uint64_t>(fll->fl->allocated),
+            static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size), static_cast<uint64_t>(fll->fl->used),
+            fll->fl->type_size, fll->fl->chunk_size, fll->fl->hugepages_failure, fll->fl->name ? fll->fl->name : "<unknown>");
     total_allocated += static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size);
     total_used += static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size);
     fll = fll->next;
