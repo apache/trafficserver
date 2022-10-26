@@ -1687,6 +1687,34 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
 AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
 
+# Check for enabling io_uring on linux
+
+AC_MSG_CHECKING([whether to enable Linux io_uring])
+AC_ARG_ENABLE([experimental-linux-io-uring],
+  [AS_HELP_STRING([--enable-experimental-linux-io-uring], [WARNING this is experimental: enable Linux io_uring support @<:@default=no@:>@])],
+  [enable_linux_io_uring="${enableval}"],
+  [enable_linux_io_uring=no]
+)
+
+AS_IF([test "x$enable_linux_io_uring" = "xyes"], [
+  URING_LIBS="-luring"
+  if test $host_os_def  != "linux"; then
+    AC_MSG_ERROR([Linux io_uring can only be enabled on Linux systems])
+  fi
+
+  AC_CHECK_HEADERS([liburing.h], [],
+    [AC_MSG_ERROR([Linux io_uring requires liburing.h (install liburing)])]
+  )
+
+  AC_SEARCH_LIBS([io_uring_queue_init], [uring], [AC_SUBST([URING_LIBS])],
+    [AC_MSG_ERROR([Linux io_uring require uring])]
+  )
+])
+
+AC_MSG_RESULT([$enable_linux_io_uring])
+TS_ARG_ENABLE_VAR([use], [linux_io_uring])
+
+
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
 use_hwloc=0

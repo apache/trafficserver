@@ -40,9 +40,12 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define AIO_MODE_THREAD 0
 #define AIO_MODE_NATIVE 1
+#define AIO_MODE_IO_URING 2
 
 #if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE AIO_MODE_NATIVE
+#elif TS_USE_LINUX_IO_URING
+#define AIO_MODE AIO_MODE_IO_URING
 #else
 #define AIO_MODE AIO_MODE_THREAD
 #endif
@@ -63,6 +66,21 @@ typedef struct io_event ink_io_event_t;
 #define aio_nbytes u.c.nbytes
 #define aio_offset u.c.offset
 #define aio_buf u.c.buf
+
+#elif AIO_MODE == AIO_MODE_IO_URING
+#include <liburing.h>
+
+struct AIOCallback;
+struct ink_aiocb {
+  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+  void *aio_buf     = nullptr; /* buffer location */
+  size_t aio_nbytes = 0;       /* length of transfer */
+  off_t aio_offset  = 0;       /* file offset */
+
+  int aio_lio_opcode  = 0; /* listio operation */
+  int aio_state       = 0; /* state flag for List I/O */
+  AIOCallback *aio_op = nullptr;
+};
 
 #else
 
@@ -135,14 +153,49 @@ struct DiskHandler : public Continuation {
 };
 #endif
 
+#if AIO_MODE == AIO_MODE_IO_URING
+
+class DiskHandler
+{
+public:
+  DiskHandler();
+  ~DiskHandler();
+
+  io_uring_sqe *
+  next_sqe()
+  {
+    return io_uring_get_sqe(&ring);
+  }
+
+  int set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
+  std::pair<int, int> get_wq_max_workers();
+
+  void submit();
+  void service();
+  void submit_and_wait(int ms);
+
+  int register_eventfd();
+
+  static DiskHandler *local_context();
+  static void set_main_queue(DiskHandler *);
+  static int get_main_queue_fd();
+
+private:
+  io_uring ring;
+
+  void handle_cqe(io_uring_cqe *);
+};
+
+#endif
+
 void ink_aio_init(ts::ModuleVersion version);
 int ink_aio_start();
 void ink_aio_set_callback(Continuation *error_callback);
 
 int ink_aio_read(AIOCallback *op,
-                 int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
+                 int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
 int ink_aio_write(AIOCallback *op, int fromAPI = 0);
 int ink_aio_readv(AIOCallback *op,
-                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
+                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
 int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
 AIOCallback *new_AIOCallback();

@@ -39,7 +39,7 @@
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-struct DiskHandler;
+class DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;

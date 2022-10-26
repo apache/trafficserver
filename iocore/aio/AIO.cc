@@ -28,7 +28,13 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_hw.h"
 
+#include <atomic>
+
 #include "P_AIO.h"
+
+#if AIO_MODE == AIO_MODE_IO_URING
+#include <sys/eventfd.h>
+#endif
 
 #if AIO_MODE == AIO_MODE_NATIVE
 #define AIO_PERIOD -HRTIME_MSECONDS(10)
@@ -44,22 +50,35 @@ AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
 int num_filedes = 1;
 
+#if AIO_MODE == AIO_MODE_THREAD
 // acquire this mutex before inserting a new entry in the aio_reqs array.
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
+#endif
 
 int thread_is_created = 0;
 #endif // AIO_MODE == AIO_MODE_NATIVE
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
+// config for io_uring mode
+#if AIO_MODE == AIO_MODE_IO_URING
+RecInt aio_io_uring_queue_entries = 1024;
+RecInt aio_io_uring_sq_poll_ms    = 0;
+RecInt aio_io_uring_attach_wq     = 0;
+RecInt aio_io_uring_wq_bounded    = 0;
+RecInt aio_io_uring_wq_unbounded  = 0;
+#endif
+
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
 // AIO Stats
-uint64_t aio_num_read      = 0;
-uint64_t aio_bytes_read    = 0;
-uint64_t aio_num_write     = 0;
-uint64_t aio_bytes_written = 0;
+std::atomic<uint64_t> aio_num_read         = 0;
+std::atomic<uint64_t> aio_bytes_read       = 0;
+std::atomic<uint64_t> aio_num_write        = 0;
+std::atomic<uint64_t> aio_bytes_written    = 0;
+std::atomic<uint64_t> io_uring_submissions = 0;
+std::atomic<uint64_t> io_uring_completions = 0;
 
 /*
  * Stats
@@ -88,17 +107,25 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   }
   switch (id) {
   case AIO_STAT_READ_PER_SEC:
-    new_val = aio_num_read;
+    new_val = aio_num_read.load();
     break;
   case AIO_STAT_WRITE_PER_SEC:
-    new_val = aio_num_write;
+    new_val = aio_num_write.load();
     break;
   case AIO_STAT_KB_READ_PER_SEC:
-    new_val = aio_bytes_read >> 10;
+    new_val = aio_bytes_read.load() >> 10;
     break;
   case AIO_STAT_KB_WRITE_PER_SEC:
-    new_val = aio_bytes_written >> 10;
+    new_val = aio_bytes_written.load() >> 10;
     break;
+#if AIO_MODE == AIO_MODE_IO_URING
+  case AIO_STAT_IO_URING_SUBMITTED:
+    new_val = io_uring_submissions.load();
+    break;
+  case AIO_STAT_IO_URING_COMPLETED:
+    new_val = io_uring_completions.load();
+    break;
+#endif
   default:
     ink_assert(0);
   }
@@ -159,13 +186,27 @@ ink_aio_init(ts::ModuleVersion v)
                      (int)AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.KB_write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
-#if AIO_MODE != AIO_MODE_NATIVE
+#if TS_USE_LINUX_IO_URING
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.submitted", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_IO_URING_SUBMITTED, aio_stats_cb);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.completed", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_IO_URING_COMPLETED, aio_stats_cb);
+#endif
+#if AIO_MODE == AIO_MODE_THREAD
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 #endif
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
   Warning("Running with Linux AIO, there are known issues with this feature");
+#endif
+
+#if TS_USE_LINUX_IO_URING
+  REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.aio.io_uring.entries");
+  REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.aio.io_uring.sq_poll_ms");
+  REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.aio.io_uring.attach_wq");
+  REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.aio.io_uring.wq_workers_bounded");
+  REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.aio.io_uring.wq_workers_unbounded");
 #endif
 }
 
@@ -179,7 +220,7 @@ ink_aio_start()
   return 0;
 }
 
-#if AIO_MODE != AIO_MODE_NATIVE
+#if AIO_MODE == AIO_MODE_THREAD
 
 struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
@@ -460,11 +501,11 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 #endif
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-        aio_num_write++;
-        aio_bytes_written += op->aiocb.aio_nbytes;
+        aio_num_write.fetch_add(1);
+        aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
       } else {
-        aio_num_read++;
-        aio_bytes_read += op->aiocb.aio_nbytes;
+        aio_num_read.fetch_add(1);
+        aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
       }
       ink_mutex_release(&current_req->aio_mutex);
       cache_op((AIOCallbackInternal *)op);
@@ -490,6 +531,213 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
   }
   return nullptr;
 }
+
+#elif AIO_MODE == AIO_MODE_IO_URING
+
+std::atomic<int> aio_main_wq_fd;
+
+DiskHandler::DiskHandler()
+{
+  io_uring_params p{};
+
+  if (aio_io_uring_attach_wq > 0) {
+    int wq_fd = get_main_queue_fd();
+    if (wq_fd > 0) {
+      p.flags = IORING_SETUP_ATTACH_WQ;
+      p.wq_fd = wq_fd;
+    }
+  }
+
+  if (aio_io_uring_sq_poll_ms > 0) {
+    p.flags |= IORING_SETUP_SQPOLL;
+    p.sq_thread_idle = aio_io_uring_sq_poll_ms;
+  }
+
+  int ret = io_uring_queue_init_params(aio_io_uring_queue_entries, &ring, &p);
+  if (ret < 0) {
+    throw std::runtime_error(strerror(-ret));
+  }
+
+  /* no sharing for non-fixed either */
+  if (aio_io_uring_sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
+    throw std::runtime_error("No SQPOLL sharing with nonfixed");
+  }
+
+  // assign this handler to the thread
+  // TODO(cmcfarlen): maybe a bad place for this!
+  this_ethread()->diskHandler = this;
+}
+
+DiskHandler::~DiskHandler()
+{
+  io_uring_queue_exit(&ring);
+}
+
+void
+DiskHandler::set_main_queue(DiskHandler *dh)
+{
+  dh->set_wq_max_workers(aio_io_uring_wq_bounded, aio_io_uring_wq_unbounded);
+  aio_main_wq_fd.store(dh->ring.ring_fd);
+}
+
+int
+DiskHandler::get_main_queue_fd()
+{
+  return aio_main_wq_fd.load();
+}
+
+int
+DiskHandler::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
+{
+  if (bounded == 0 && unbounded == 0) {
+    return 0;
+  }
+  unsigned int args[2] = {bounded, unbounded};
+  int result           = io_uring_register_iowq_max_workers(&ring, args);
+  return result;
+}
+
+std::pair<int, int>
+DiskHandler::get_wq_max_workers()
+{
+  unsigned int args[2] = {0, 0};
+  io_uring_register_iowq_max_workers(&ring, args);
+  return std::make_pair(args[0], args[1]);
+}
+
+void
+DiskHandler::submit()
+{
+  io_uring_submissions.fetch_add(io_uring_submit(&ring));
+}
+
+void
+DiskHandler::handle_cqe(io_uring_cqe *cqe)
+{
+  AIOCallback *op = static_cast<AIOCallback *>(io_uring_cqe_get_data(cqe));
+
+  op->aio_result = static_cast<int64_t>(cqe->res);
+  op->link.prev  = nullptr;
+  op->link.next  = nullptr;
+  op->mutex      = op->action.mutex;
+
+  if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
+    aio_num_write.fetch_add(1);
+    aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
+  } else {
+    aio_num_read.fetch_add(1);
+    aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
+  }
+
+  // the last op in the linked ops will have the original op stored in the aiocb
+  if (op->aiocb.aio_op) {
+    op = op->aiocb.aio_op;
+    if (op->thread == AIO_CALLBACK_THREAD_AIO) {
+      SCOPED_MUTEX_LOCK(lock, op->mutex, this_ethread());
+      op->handleEvent(EVENT_NONE, nullptr);
+    } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
+      eventProcessor.schedule_imm(op);
+    } else {
+      op->thread->schedule_imm(op);
+    }
+  }
+}
+
+void
+DiskHandler::service()
+{
+  io_uring_cqe *cqe = nullptr;
+  io_uring_peek_cqe(&ring, &cqe);
+  while (cqe) {
+    handle_cqe(cqe);
+    io_uring_completions.fetch_add(1);
+    io_uring_cqe_seen(&ring, cqe);
+
+    cqe = nullptr;
+    io_uring_peek_cqe(&ring, &cqe);
+  }
+}
+
+void
+DiskHandler::submit_and_wait(int ms)
+{
+  ink_hrtime t              = ink_hrtime_from_msec(ms);
+  timespec ts               = ink_hrtime_to_timespec(t);
+  __kernel_timespec timeout = {ts.tv_sec, ts.tv_nsec};
+  io_uring_cqe *cqe         = nullptr;
+
+  io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
+  while (cqe) {
+    handle_cqe(cqe);
+    io_uring_completions.fetch_add(1);
+    io_uring_cqe_seen(&ring, cqe);
+
+    cqe = nullptr;
+    io_uring_peek_cqe(&ring, &cqe);
+  }
+}
+
+int
+DiskHandler::register_eventfd()
+{
+  int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+
+  io_uring_register_eventfd(&ring, fd);
+
+  return fd;
+}
+
+DiskHandler *
+DiskHandler::local_context()
+{
+  // TODO(cmcfarlen): load config
+  thread_local DiskHandler threadContext;
+
+  return &threadContext;
+}
+
+int
+ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
+{
+  EThread *t      = this_ethread();
+  AIOCallback *op = op_in;
+  while (op) {
+    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+    io_uring_sqe_set_data(sqe, op);
+    op->aiocb.aio_lio_opcode = LIO_READ;
+    if (op->then) {
+      sqe->flags |= IOSQE_IO_LINK;
+    } else {
+      op->aiocb.aio_op = op_in;
+    }
+
+    op = op->then;
+  }
+  return 1;
+}
+
+int
+ink_aio_write(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
+{
+  EThread *t      = this_ethread();
+  AIOCallback *op = op_in;
+  while (op) {
+    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+    io_uring_sqe_set_data(sqe, op);
+    op->aiocb.aio_lio_opcode = LIO_WRITE;
+    if (op->then) {
+      sqe->flags |= IOSQE_IO_LINK;
+    } else {
+      op->aiocb.aio_op = op_in;
+    }
+
+    op = op->then;
+  }
+  return 1;
+}
+
 #else
 int
 DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e)
