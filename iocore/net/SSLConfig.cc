@@ -570,7 +570,7 @@ SSLCertificateConfig::reconfigure()
 
   // If there are errors in the certificate configs and we had wanted to exit on error
   // we won't want to reset the config
-  if (retStatus || !params->configExitOnLoadError) {
+  if (retStatus) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;
