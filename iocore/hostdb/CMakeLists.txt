@@ -25,6 +25,7 @@ add_library(inkhostdb STATIC
 )
 target_include_directories(inkhostdb PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
+        ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/aio
         ${CMAKE_SOURCE_DIR}/iocore/net

@@ -73,12 +73,10 @@ RecInt aio_io_uring_wq_unbounded  = 0;
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
 // AIO Stats
-std::atomic<uint64_t> aio_num_read         = 0;
-std::atomic<uint64_t> aio_bytes_read       = 0;
-std::atomic<uint64_t> aio_num_write        = 0;
-std::atomic<uint64_t> aio_bytes_written    = 0;
-std::atomic<uint64_t> io_uring_submissions = 0;
-std::atomic<uint64_t> io_uring_completions = 0;
+std::atomic<uint64_t> aio_num_read      = 0;
+std::atomic<uint64_t> aio_bytes_read    = 0;
+std::atomic<uint64_t> aio_num_write     = 0;
+std::atomic<uint64_t> aio_bytes_written = 0;
 
 /*
  * Stats
@@ -534,87 +532,12 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 
 #elif AIO_MODE == AIO_MODE_IO_URING
 
-std::atomic<int> aio_main_wq_fd;
-
-DiskHandler::DiskHandler()
-{
-  io_uring_params p{};
-
-  if (aio_io_uring_attach_wq > 0) {
-    int wq_fd = get_main_queue_fd();
-    if (wq_fd > 0) {
-      p.flags = IORING_SETUP_ATTACH_WQ;
-      p.wq_fd = wq_fd;
-    }
-  }
-
-  if (aio_io_uring_sq_poll_ms > 0) {
-    p.flags          |= IORING_SETUP_SQPOLL;
-    p.sq_thread_idle = aio_io_uring_sq_poll_ms;
-  }
-
-  int ret = io_uring_queue_init_params(aio_io_uring_queue_entries, &ring, &p);
-  if (ret < 0) {
-    throw std::runtime_error(strerror(-ret));
-  }
-
-  /* no sharing for non-fixed either */
-  if (aio_io_uring_sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
-    throw std::runtime_error("No SQPOLL sharing with nonfixed");
-  }
-
-  // assign this handler to the thread
-  // TODO(cmcfarlen): maybe a bad place for this!
-  this_ethread()->diskHandler = this;
-}
-
-DiskHandler::~DiskHandler()
-{
-  io_uring_queue_exit(&ring);
-}
+#include "I_IO_URING.h"
 
 void
-DiskHandler::set_main_queue(DiskHandler *dh)
+ink_aiocb::handle_complete(io_uring_cqe *cqe)
 {
-  dh->set_wq_max_workers(aio_io_uring_wq_bounded, aio_io_uring_wq_unbounded);
-  aio_main_wq_fd.store(dh->ring.ring_fd);
-}
-
-int
-DiskHandler::get_main_queue_fd()
-{
-  return aio_main_wq_fd.load();
-}
-
-int
-DiskHandler::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
-{
-  if (bounded == 0 && unbounded == 0) {
-    return 0;
-  }
-  unsigned int args[2] = {bounded, unbounded};
-  int result           = io_uring_register_iowq_max_workers(&ring, args);
-  return result;
-}
-
-std::pair<int, int>
-DiskHandler::get_wq_max_workers()
-{
-  unsigned int args[2] = {0, 0};
-  io_uring_register_iowq_max_workers(&ring, args);
-  return std::make_pair(args[0], args[1]);
-}
-
-void
-DiskHandler::submit()
-{
-  io_uring_submissions.fetch_add(io_uring_submit(&ring));
-}
-
-void
-DiskHandler::handle_cqe(io_uring_cqe *cqe)
-{
-  AIOCallback *op = static_cast<AIOCallback *>(io_uring_cqe_get_data(cqe));
+  AIOCallback *op = this_op;
 
   op->aio_result = static_cast<int64_t>(cqe->res);
   op->link.prev  = nullptr;
@@ -643,68 +566,15 @@ DiskHandler::handle_cqe(io_uring_cqe *cqe)
   }
 }
 
-void
-DiskHandler::service()
-{
-  io_uring_cqe *cqe = nullptr;
-  io_uring_peek_cqe(&ring, &cqe);
-  while (cqe) {
-    handle_cqe(cqe);
-    io_uring_completions.fetch_add(1);
-    io_uring_cqe_seen(&ring, cqe);
-
-    cqe = nullptr;
-    io_uring_peek_cqe(&ring, &cqe);
-  }
-}
-
-void
-DiskHandler::submit_and_wait(int ms)
-{
-  ink_hrtime t              = ink_hrtime_from_msec(ms);
-  timespec ts               = ink_hrtime_to_timespec(t);
-  __kernel_timespec timeout = {ts.tv_sec, ts.tv_nsec};
-  io_uring_cqe *cqe         = nullptr;
-
-  io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
-  while (cqe) {
-    handle_cqe(cqe);
-    io_uring_completions.fetch_add(1);
-    io_uring_cqe_seen(&ring, cqe);
-
-    cqe = nullptr;
-    io_uring_peek_cqe(&ring, &cqe);
-  }
-}
-
-int
-DiskHandler::register_eventfd()
-{
-  int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-
-  io_uring_register_eventfd(&ring, fd);
-
-  return fd;
-}
-
-DiskHandler *
-DiskHandler::local_context()
-{
-  // TODO(cmcfarlen): load config
-  thread_local DiskHandler threadContext;
-
-  return &threadContext;
-}
-
 int
 ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
 {
-  EThread *t      = this_ethread();
-  AIOCallback *op = op_in;
+  IOUringContext *ur = IOUringContext::local_context();
+  AIOCallback *op    = op_in;
   while (op) {
-    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    op->aiocb.this_op = op;
+    io_uring_sqe *sqe = ur->next_sqe(&op->aiocb);
     io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-    io_uring_sqe_set_data(sqe, op);
     op->aiocb.aio_lio_opcode = LIO_READ;
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;
@@ -720,12 +590,12 @@ ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
 int
 ink_aio_write(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
 {
-  EThread *t      = this_ethread();
-  AIOCallback *op = op_in;
+  IOUringContext *ur = IOUringContext::local_context();
+  AIOCallback *op    = op_in;
   while (op) {
-    io_uring_sqe *sqe = t->diskHandler->next_sqe();
+    op->aiocb.this_op = op;
+    io_uring_sqe *sqe = ur->next_sqe(&op->aiocb);
     io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-    io_uring_sqe_set_data(sqe, op);
     op->aiocb.aio_lio_opcode = LIO_WRITE;
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;

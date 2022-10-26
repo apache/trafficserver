@@ -60,3 +60,7 @@ target_link_libraries(traffic_server
         jsonrpc_server
         rpcpublichandlers
         )
+
+if (TS_USE_LINUX_IO_URING)
+    target_link_libraries(traffic_server inkuring uring)
+endif (TS_USE_LINUX_IO_URING)

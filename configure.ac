@@ -1686,6 +1686,7 @@ AC_ARG_ENABLE([experimental-linux-io-uring],
   [enable_linux_io_uring="${enableval}"],
   [enable_linux_io_uring=no]
 )
+AM_CONDITIONAL([ENABLE_IO_URING], [ test "x${enable_linux_io_uring}" = "xyes" ])
 
 AS_IF([test "x$enable_linux_io_uring" = "xyes"], [
   URING_LIBS="-luring"
@@ -2316,6 +2317,7 @@ AC_SUBST([default_stack_size], [$with_default_stack_size])
 #
 iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/eventsystem \
+-I\$(abs_top_srcdir)/iocore/io_uring \
 -I\$(abs_top_srcdir)/iocore/net \
 -I\$(abs_top_srcdir)/iocore/net/quic \
 -I\$(abs_top_srcdir)/iocore/aio \
@@ -2367,6 +2369,7 @@ AC_CONFIG_FILES([
   include/tscore/ink_config.h
   iocore/Makefile
   iocore/aio/Makefile
+  iocore/io_uring/Makefile
   iocore/cache/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile

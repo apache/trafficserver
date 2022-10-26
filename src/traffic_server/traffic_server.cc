@@ -2041,9 +2041,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if TS_USE_LINUX_IO_URING == 1
   Note("Using io_uring for AIO");
-  DiskHandler *main_aio = DiskHandler::local_context();
-  DiskHandler::set_main_queue(main_aio);
-  auto [bounded, unbounded] = main_aio->get_wq_max_workers();
+  IOUringContext *ur = IOUringContext::local_context();
+  IOUringContext::set_main_queue(ur);
+  auto [bounded, unbounded] = ur->get_wq_max_workers();
   Note("io_uring: WQ workers - bounded = %d, unbounded = %d", bounded, unbounded);
 #endif
 
@@ -2248,7 +2248,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   while (!TSSystemState::is_event_system_shut_down()) {
 #if TS_USE_LINUX_IO_URING == 1
-    main_aio->submit_and_wait(1000);
+    ur->submit_and_wait(1000);
 #else
     sleep(1);
 #endif

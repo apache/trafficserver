@@ -36,7 +36,7 @@
 #define EVENTIO_DNS_CONNECTION 3
 #define EVENTIO_UDP_CONNECTION 4
 #define EVENTIO_ASYNC_SIGNAL   5
-#define EVENTIO_DISK           6
+#define EVENTIO_IO_URING       6
 
 #if TS_USE_EPOLL
 #ifndef EPOLLEXCLUSIVE
@@ -114,7 +114,6 @@ struct EventIO {
   int start(EventLoop l, NetEvent *ne, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
   int start(EventLoop l, int fd, NetEvent *ne, int events);
-  int start(EventLoop l, DiskHandler *dh);
   int start_common(EventLoop l, int fd, int events);
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
@@ -276,6 +275,10 @@ public:
   uint32_t keep_alive_queue_size = 0;
   Que(NetEvent, active_queue_link) active_queue;
   uint32_t active_queue_size = 0;
+
+#ifdef TS_USE_LINUX_IO_URING
+  EventIO uring_evio;
+#endif
 
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
