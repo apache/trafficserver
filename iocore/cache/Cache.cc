@@ -1073,15 +1073,6 @@ CacheProcessor::dir_check(bool afix)
   return 0;
 }
 
-int
-CacheProcessor::db_check(bool afix)
-{
-  for (int i = 0; i < gnvol; i++) {
-    gvol[i]->db_check(afix);
-  }
-  return 0;
-}
-
 Action *
 CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
@@ -1133,24 +1124,6 @@ CacheProcessor::IsCacheReady(CacheFragType type)
     return false;
   }
   return static_cast<bool>(cache_ready & (1 << type));
-}
-
-int
-Vol::db_check(bool /* fix ATS_UNUSED */)
-{
-  char tt[256];
-  printf("    Data for [%s]\n", hash_text.get());
-  printf("        Length:          %" PRIu64 "\n", static_cast<uint64_t>(len));
-  printf("        Write Position:  %" PRIu64 "\n", static_cast<uint64_t>(header->write_pos - skip));
-  printf("        Phase:           %d\n", static_cast<int>(!!header->phase));
-  ink_ctime_r(&header->create_time, tt);
-  tt[strlen(tt) - 1] = 0;
-  printf("        Create Time:     %s\n", tt);
-  printf("        Sync Serial:     %u\n", static_cast<unsigned int>(header->sync_serial));
-  printf("        Write Serial:    %u\n", static_cast<unsigned int>(header->write_serial));
-  printf("\n");
-
-  return 0;
 }
 
 static void

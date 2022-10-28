@@ -204,21 +204,10 @@ struct Vol : public Continuation {
   int dir_init_done(int event, void *data);
 
   int dir_check(bool fix);
-  int db_check(bool fix);
 
   bool evac_bucket_valid(off_t bucket) const;
 
   int is_io_in_progress() const;
-  int
-  increment_generation()
-  {
-    // this is stored in the offset field of the directory (!=0)
-    ink_assert(mutex->thread_holding == this_ethread());
-    header->generation++;
-    if (!header->generation)
-      header->generation++;
-    return header->generation;
-  }
   void set_io_not_in_progress();
 
   int aggWriteDone(int event, Event *e);
@@ -317,7 +306,6 @@ struct Doc {
   uint32_t data_len() const;
   uint32_t prefix_len() const;
   int single_fragment() const;
-  int no_data_in_fragment();
   char *hdr();
   char *data();
 };
