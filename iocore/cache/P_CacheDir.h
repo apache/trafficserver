@@ -321,12 +321,14 @@ dir_from_offset(int64_t i, Dir *seg)
   return dir_in_seg(seg, i);
 #endif
 }
+
 TS_INLINE Dir *
 next_dir(Dir *d, Dir *seg)
 {
   int i = dir_next(d);
   return dir_from_offset(i, seg);
 }
+
 TS_INLINE int64_t
 dir_to_offset(const Dir *d, const Dir *seg)
 {
@@ -338,11 +340,13 @@ dir_to_offset(const Dir *d, const Dir *seg)
   return i;
 #endif
 }
+
 TS_INLINE Dir *
 dir_bucket(int64_t b, Dir *seg)
 {
   return dir_in_seg(seg, b * DIR_DEPTH);
 }
+
 TS_INLINE Dir *
 dir_bucket_row(Dir *b, int64_t i)
 {
