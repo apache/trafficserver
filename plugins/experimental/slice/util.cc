@@ -88,7 +88,8 @@ request_block(TSCont contp, Data *const data)
   }
 
   header.removeKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
-  if (data->m_blocknum == 0 && data->m_config->m_prefetchcount > 0) {
+  if (data->m_config->m_prefetchcount > 0 && data->m_req_range.m_beg >= 0 &&
+      data->m_blocknum == data->m_req_range.firstBlockFor(data->m_config->m_blockbytes)) {
     header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), SLICE_CRR_VAL.data(), SLICE_CRR_VAL.size());
   }
 
@@ -119,8 +120,8 @@ request_block(TSCont contp, Data *const data)
 
   // if prefetch config set, schedule next block requests in background
   if (data->m_prefetchable && data->m_config->m_prefetchcount > 0) {
-    int nextblocknum = 2;
-    if (data->m_blocknum > 1) {
+    int nextblocknum = data->m_blocknum + 1;
+    if (data->m_blocknum > data->m_req_range.firstBlockFor(data->m_config->m_blockbytes) + 1) {
       nextblocknum = data->m_blocknum + data->m_config->m_prefetchcount;
     }
     for (int i = nextblocknum; i <= data->m_blocknum + data->m_config->m_prefetchcount; i++) {
