@@ -60,7 +60,7 @@ more widely. Those are described on this page.
 
    Valiable lenght data stored in memory allocated with :func:`TSmalloc`.
 
-   .. member:: char * data 
+   .. member:: char * data
 
       Pointer to first byte of sequence of bytes containing data.  Must be freed by plugin with :func:`TSfree`.
 
