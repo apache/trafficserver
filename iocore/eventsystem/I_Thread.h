@@ -68,6 +68,8 @@
 #include "tscore/ink_thread.h"
 #include "I_ProxyAllocator.h"
 
+#include <atomic>
+
 class ProxyMutex;
 
 constexpr int MAX_THREAD_NAME_LENGTH = 16;
@@ -177,7 +179,7 @@ public:
 protected:
   Thread();
 
-  static ink_hrtime cur_time;
+  static std::atomic<ink_hrtime> cur_time;
 };
 
 extern Thread *this_thread();
