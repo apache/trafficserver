@@ -274,7 +274,6 @@ struct CacheSync : public Continuation {
 // Global Functions
 
 void vol_init_dir(Vol *d);
-int dir_token_probe(const CacheKey *, Vol *, Dir *);
 int dir_probe(const CacheKey *, Vol *, Dir *, Dir **);
 int dir_insert(const CacheKey *key, Vol *d, Dir *to_part);
 int dir_overwrite(const CacheKey *key, Vol *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);

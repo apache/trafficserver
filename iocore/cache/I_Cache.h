@@ -72,7 +72,6 @@ struct CacheProcessor : public Processor {
   void stop();
 
   int dir_check(bool fix);
-  int db_check(bool fix);
 
   Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                  const char *hostname = nullptr, int host_len = 0);
