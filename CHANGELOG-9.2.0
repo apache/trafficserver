@@ -524,10 +524,12 @@ Changes with Apache Traffic Server 9.2.0
   #9012 - Add content length mismatch check on handling HEADERS frame and CONTINUATION frame
   #9013 - Ignore POST request case from a check for background fill
   #9023 - Remove plugin parent_select unused symbols
+  #9026 - Add docs for strategies.yaml hash_string
   #9027 - Change linux/fs include to build with glibc 2.36
   #9031 - Adds efficient IP range matching to HRW conditions
   #9040 - ts::shared_mutex - Fix lock counting for debug
   #9041 - Fix reload memory leak
+  #9046 - Fix hosting.config reload
   #9047 - Fix compile error on macOS
   #9048 - Update prepare_proxy_verifier.sh to work in non-git directories
   #9052 - Fix the connection limit crash while using parents (#7602)
@@ -552,7 +554,9 @@ Changes with Apache Traffic Server 9.2.0
   #9112 - Fix expected sha1sum for the Proxy Verifier binary
   #9122 - Fix HTTP/2 session receive window handling for small sizes (#9117)
   #9123 - 9.2: Fix s3_auth_config test output check
+  #9129 - Remove unnecessary, dangerous casts from SET_HANDLER/SET_CONTINUATION _HANDLER invocations.
   #9132 - Fail sni.yaml loading if related resources fail to load
   #9133 - fix contradicting documentation and say a bit about the resident size…
   #9137 - AuTest automatic keylog file configuration
   #9139 - Traffic Dump: fix YAML format for CONNECT requests
+  #9141 - Remove deprecated ld option (--add-needed)
