@@ -55,7 +55,7 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
     return nullptr;
   }
 
-  int i        = ink_atomic_increment(&g_num_records, 1);
+  int i        = g_num_records++;
   RecRecord *r = &(g_records[i]);
 
   RecRecordInit(r);
