@@ -45,7 +45,7 @@ rec_mutex_acquire(RecMutex *m)
 {
   ink_thread this_thread = ink_thread_self();
 
-  if (m->thread_holding != this_thread) {
+  if (!pthread_equal(m->thread_holding, this_thread)) {
     ink_mutex_acquire(&(m->the_mutex));
     m->thread_holding = this_thread;
   }

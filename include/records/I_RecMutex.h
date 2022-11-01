@@ -26,6 +26,8 @@
 #include "tscore/ink_mutex.h"
 #include "tscore/ink_thread.h"
 
+#include <atomic>
+
 /**
   A wrapper to ink_mutex class. It allows multiple acquire of mutex lock
   by the SAME thread. This is a trimmed down version of ProxyMutex.
@@ -33,7 +35,7 @@
 */
 struct RecMutex {
   size_t nthread_holding;
-  ink_thread thread_holding;
+  std::atomic<ink_thread> thread_holding;
   ink_mutex the_mutex;
 };
 
