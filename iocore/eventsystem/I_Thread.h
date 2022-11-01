@@ -156,8 +156,8 @@ public:
       This gets a cached copy of the time so it is very fast and reasonably accurate.
       The cached time is updated every time the actual operating system time is fetched which is
       at least every 10ms and generally more frequently.
-      @note The cached copy shared among threads which means the cached copy is updated
-      for all threads if any thread updates it.
+
+      @note The cached copy is thread local which means each thread need to update the cached copy by itself.
   */
   static ink_hrtime get_hrtime();
 
@@ -177,7 +177,7 @@ public:
 protected:
   Thread();
 
-  static ink_hrtime cur_time;
+  static thread_local ink_hrtime cur_time;
 };
 
 extern Thread *this_thread();
