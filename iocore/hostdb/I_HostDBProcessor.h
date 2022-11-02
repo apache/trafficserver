@@ -66,7 +66,7 @@ extern int hostdb_enable;
  * updated in backgroundEvent which runs every second, it should be
  * approximately accurate to a second.
  */
-extern ts_time hostdb_current_timestamp;
+extern std::atomic<ts_time> hostdb_current_timestamp;
 
 /** How long before any DNS response is consided stale, regardless of DNS TTL.
  * This corresponds to proxy.config.hostdb.verify_after.
@@ -753,7 +753,8 @@ HostDBRecord::ip_age() const
 {
   static constexpr ts_seconds ZERO{0};
   static constexpr ts_seconds MAX{0x7FFFFFFF};
-  return std::clamp(std::chrono::duration_cast<ts_seconds>(hostdb_current_timestamp - ip_timestamp), ZERO, MAX);
+
+  return std::clamp(std::chrono::duration_cast<ts_seconds>(hostdb_current_timestamp.load() - ip_timestamp), ZERO, MAX);
 }
 
 inline ts_seconds
