@@ -106,4 +106,7 @@ void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned v
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
+// Check if the string contains the prefix
+bool ContainsPrefix(const char *str, const char *prefix);
+
 // vim: set ts=4 sw=4 et :

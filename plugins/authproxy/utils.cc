@@ -117,4 +117,10 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
   return ischunked;
 }
 
+bool
+ContainsPrefix(const char *str, const char *prefix)
+{
+  return strlen(str) < strlen(prefix) ? false : (strncmp(str, prefix, strlen(prefix)) == 0);
+}
+
 // vim: set ts=4 sw=4 et :
