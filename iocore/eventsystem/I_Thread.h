@@ -63,6 +63,7 @@
 #endif
 
 #include <functional>
+#include <atomic>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_thread.h"
@@ -177,7 +178,7 @@ public:
 protected:
   Thread();
 
-  static ink_hrtime cur_time;
+  static std::atomic<ink_hrtime> cur_time;
 };
 
 extern Thread *this_thread();
@@ -185,11 +186,13 @@ extern Thread *this_thread();
 TS_INLINE ink_hrtime
 Thread::get_hrtime()
 {
-  return cur_time;
+  return cur_time.load(std::memory_order_relaxed);
 }
 
 TS_INLINE ink_hrtime
 Thread::get_hrtime_updated()
 {
-  return cur_time = ink_get_hrtime_internal();
+  auto ct = ink_get_hrtime_internal();
+  cur_time.store(ct, std::memory_order_relaxed);
+  return ct;
 }

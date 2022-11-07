@@ -138,7 +138,7 @@ EThread::process_event(Event *e, int calling_code)
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
   WEAK_MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
-    e->timeout_at = cur_time + DELAY_FOR_RETRY;
+    e->timeout_at = cur_time.load(std::memory_order_relaxed) + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
   } else {
     if (e->cancelled) {
@@ -187,7 +187,7 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
       ink_assert(e->period == 0);
       process_event(e, e->callback_event);
     } else if (e->timeout_at > 0) { // INTERVAL
-      EventQueue.enqueue(e, cur_time);
+      EventQueue.enqueue(e, cur_time.load(std::memory_order_relaxed));
     } else { // NEGATIVE
       Event *p = nullptr;
       Event *a = NegativeQueue->head;
@@ -248,7 +248,7 @@ EThread::execute_regular()
       done_one = false;
       // execute all the eligible internal events
       EventQueue.check_ready(loop_start_time, this);
-      while ((e = EventQueue.dequeue_ready(cur_time))) {
+      while ((e = EventQueue.dequeue_ready(cur_time.load(std::memory_order_relaxed)))) {
         ink_assert(e);
         ink_assert(e->timeout_at > 0);
         if (e->cancelled) {

@@ -312,7 +312,8 @@ ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, u
   return f;
 }
 
-#ifdef SANITY
+//#ifdef SANITY
+#if 0 // TEMP
 int fake_global_for_ink_queue = 0;
 #endif
 
@@ -381,7 +382,8 @@ freelist_new(InkFreeList *f)
           ink_abort("ink_freelist_new: bad list");
         }
         if (head) {
-          fake_global_for_ink_queue = *static_cast<int *>(head);
+          // fake_global_for_ink_queue = *static_cast<int *>(head);
+          static_cast<void>(*const_cast<void *volatile *>(&head));
         }
 #endif /* SANITY */
         break;
@@ -440,7 +442,8 @@ freelist_free(InkFreeList *f, void *item)
     ink_abort("ink_freelist_free: bad list");
   }
   if (head) {
-    fake_global_for_ink_queue = *static_cast<int *>(head);
+    // fake_global_for_ink_queue = *static_cast<int *>(head);
+    static_cast<void>(*const_cast<void *volatile *>(&head));
   }
 #endif /* SANITY */
 
@@ -501,7 +504,8 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail,
     ink_abort("ink_freelist_free: bad list");
   }
   if (old_head) {
-    fake_global_for_ink_queue = *static_cast<int *>(old_head);
+    // fake_global_for_ink_queue = *static_cast<int *>(old_head);
+    static_cast<void>(*const_cast<void *volatile *>(&old_head));
   }
 #endif /* SANITY */
 
