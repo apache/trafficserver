@@ -1408,12 +1408,14 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     LogObjectManager mgr1;
     LogObjectManager mgr2;
 
+#ifndef __clang_analyzer__
     mgr1.manage_object(MakeTestLogObject("object1"));
     mgr1.manage_object(MakeTestLogObject("object2"));
     mgr1.manage_object(MakeTestLogObject("object3"));
     mgr1.manage_object(MakeTestLogObject("object4"));
 
     mgr2.transfer_objects(mgr1);
+#endif
 
     rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n", static_cast<int>(mgr1.get_num_objects()),
             static_cast<int>(mgr2.get_num_objects()));
