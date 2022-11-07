@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <string_view>
 #include <ts/ts.h>
 #include <netinet/in.h>
 #include <memory>
@@ -107,6 +108,6 @@ void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned v
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
 // Check if the string contains the prefix
-bool ContainsPrefix(const char *str, const char *prefix);
+bool ContainsPrefix(const std::string_view str, const std::string_view prefix);
 
 // vim: set ts=4 sw=4 et :

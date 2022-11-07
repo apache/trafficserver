@@ -35,8 +35,10 @@
 
 #include <getopt.h>
 #include <arpa/inet.h>
+#include <string_view>
 #include <sys/param.h>
 #include <ts/remap.h>
+#include <unistd.h>
 
 using std::strlen;
 
@@ -58,6 +60,7 @@ struct AuthOptions {
   int hostport                   = -1;
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
+  std::string_view forwardHeaderPrefix;
 
   AuthOptions()  = default;
   ~AuthOptions() = default;
@@ -612,37 +615,37 @@ StateAuthorized(AuthRequestContext *auth, void *)
     TSHttpTxnConfigIntSet(auth->txn, TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, 1);
   }
 
-  // Copy headers starting from "x-geneva" in the authentication response to the original request
-  const char *GENEVA_PLUGIN_PREFIX = "x-geneva";
+  if (!options->forwardHeaderPrefix.empty()) {
+    // Copy headers starting from "x-geneva" in the authentication response to the original request
+    TSMLoc field_loc;
+    TSMLoc next_field_loc;
+    TSMBuffer request_bufp;
+    TSMLoc request_hdr;
 
-  TSMLoc field_loc;
-  TSMLoc next_field_loc;
-  TSMBuffer request_bufp;
-  TSMLoc request_hdr;
+    TSReleaseAssert(TSHttpTxnClientReqGet(auth->txn, &request_bufp, &request_hdr) == TS_SUCCESS);
+    field_loc = TSMimeHdrFieldGet(auth->rheader.buffer, auth->rheader.header, 0);
+    TSReleaseAssert(field_loc != TS_NULL_MLOC);
 
-  TSReleaseAssert(TSHttpTxnClientReqGet(auth->txn, &request_bufp, &request_hdr) == TS_SUCCESS);
-  field_loc = TSMimeHdrFieldGet(auth->rheader.buffer, auth->rheader.header, 0);
-  TSReleaseAssert(field_loc != TS_NULL_MLOC);
+    while (field_loc) {
+      int key_len = 0;
+      int val_len = 0;
 
-  while (field_loc) {
-    int key_len = 0;
-    int val_len = 0;
+      char *key = const_cast<char *>(TSMimeHdrFieldNameGet(auth->rheader.buffer, auth->rheader.header, field_loc, &key_len));
+      char *val =
+        const_cast<char *>(TSMimeHdrFieldValueStringGet(auth->rheader.buffer, auth->rheader.header, field_loc, -1, &val_len));
 
-    char *key = const_cast<char *>(TSMimeHdrFieldNameGet(auth->rheader.buffer, auth->rheader.header, field_loc, &key_len));
-    char *val =
-      const_cast<char *>(TSMimeHdrFieldValueStringGet(auth->rheader.buffer, auth->rheader.header, field_loc, -1, &val_len));
+      if (key && val && ContainsPrefix(std::string_view(key, key_len), options->forwardHeaderPrefix)) {
+        // Append the matched header to the request in original transection
+        char *key_buf = TSstrndup(key, key_len);
+        char *val_buf = TSstrndup(val, val_len);
+        HttpSetMimeHeader(request_bufp, request_hdr, key_buf, val_buf);
+      }
 
-    if (key && val && ContainsPrefix(key, GENEVA_PLUGIN_PREFIX)) {
-      // Append the matched header to the request in original transection
-      char *key_buf = TSstrndup(key, key_len);
-      char *val_buf = TSstrndup(val, val_len);
-      HttpSetMimeHeader(request_bufp, request_hdr, key_buf, val_buf);
+      // Validate the next header field in sequence
+      next_field_loc = TSMimeHdrFieldNext(auth->rheader.buffer, auth->rheader.header, field_loc);
+      TSHandleMLocRelease(auth->rheader.buffer, auth->rheader.header, field_loc);
+      field_loc = next_field_loc;
     }
-
-    // Validate the next header field in sequence
-    next_field_loc = TSMimeHdrFieldNext(auth->rheader.buffer, auth->rheader.header, field_loc);
-    TSHandleMLocRelease(auth->rheader.buffer, auth->rheader.header, field_loc);
-    field_loc = next_field_loc;
   }
 
   // Proceed with the modified request
@@ -708,6 +711,7 @@ AuthParseOptions(int argc, const char **argv)
     {const_cast<char *>("auth-port"), required_argument, nullptr, 'p'},
     {const_cast<char *>("auth-transform"), required_argument, nullptr, 't'},
     {const_cast<char *>("force-cacheability"), no_argument, nullptr, 'c'},
+    {const_cast<char *>("forward-header-prefix"), required_argument, nullptr, 'f'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -740,6 +744,9 @@ AuthParseOptions(int argc, const char **argv)
         AuthLogError("invalid authorization transform '%s'", optarg);
         // XXX make this a fatal error?
       }
+      break;
+    case 'f':
+      options->forwardHeaderPrefix = optarg;
       break;
     }
 
