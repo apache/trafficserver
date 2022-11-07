@@ -399,8 +399,9 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
               TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
               static const char *body = "Unexpected Response From the Origin Server\n";
-              char *buf               = static_cast<char *>(TSmalloc(strlen(body) + 1));
-              sprintf(buf, "%s", body);
+              int length              = strlen(body) + 1;
+              char *buf               = static_cast<char *>(TSmalloc(length));
+              snprintf(buf, length, "%s", body);
               TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
               resultEvent = TS_EVENT_HTTP_ERROR;

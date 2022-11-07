@@ -45,8 +45,9 @@ getTemporaryDir()
   fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
   tmpDir /= "sandbox_XXXXXX";
 
-  char dirNameTemplate[tmpDir.string().length() + 1];
-  sprintf(dirNameTemplate, "%s", tmpDir.c_str());
+  int length = tmpDir.string().length() + 1;
+  char dirNameTemplate[length];
+  snprintf(dirNameTemplate, length, "%s", tmpDir.c_str());
 
   return fs::path(mkdtemp(dirNameTemplate));
 }

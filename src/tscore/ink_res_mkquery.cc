@@ -223,6 +223,8 @@ labellen(const u_char *lp)
   return (l);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 static int
 decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
 {
@@ -276,6 +278,7 @@ decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
   *cpp = cp;
   return (dn - beg);
 }
+#pragma GCC diagnostic pop
 
 /*%
  *	Thinking in noninternationalized USASCII (per the DNS spec),

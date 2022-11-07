@@ -554,12 +554,12 @@ handle_write_header(TSCont contp, TransformData *data)
   /* formulate the ICAP request header */
   char res_buf[1000];
   memset(res_buf, 0, 1000);
-  sprintf(res_buf,
-          "RESPMOD %s ICAP/%s\r\n"
-          "Host: %s\r\n"
-          "Connection: close\r\n" // "Connection: close" is used since each scan creates a new connection
-          "Encapsulated: req-hdr=0, res-hdr=%" PRIu64 ", res-body=%" PRIu64 "\r\n\r\n",
-          ICAP_SERVICE_URL, ICAP_VERSION, server_ip.c_str(), client_req_size, server_resp_size + client_req_size);
+  snprintf(res_buf, sizeof(res_buf),
+           "RESPMOD %s ICAP/%s\r\n"
+           "Host: %s\r\n"
+           "Connection: close\r\n" // "Connection: close" is used since each scan creates a new connection
+           "Encapsulated: req-hdr=0, res-hdr=%" PRIu64 ", res-body=%" PRIu64 "\r\n\r\n",
+           ICAP_SERVICE_URL, ICAP_VERSION, server_ip.c_str(), client_req_size, server_resp_size + client_req_size);
 
   TSIOBufferWrite(data->input_buf, (const char *)res_buf, strlen(res_buf));
   TSHttpHdrPrint(bufp_c, req_loc, data->input_buf);

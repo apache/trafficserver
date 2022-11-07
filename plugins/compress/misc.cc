@@ -171,7 +171,7 @@ init_hidden_header_name()
     int hidden_header_name_len                 = strlen("x-accept-encoding-") + strlen(result);
     hidden_header_name                         = static_cast<char *>(TSmalloc(hidden_header_name_len + 1));
     hidden_header_name[hidden_header_name_len] = 0;
-    sprintf(hidden_header_name, "x-accept-encoding-%s", result);
+    snprintf(hidden_header_name, sizeof(hidden_header_name), "x-accept-encoding-%s", result);
     TSfree(result);
   }
   return hidden_header_name;

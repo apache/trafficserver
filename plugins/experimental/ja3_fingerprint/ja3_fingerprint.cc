@@ -319,7 +319,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     MD5((unsigned char *)data->ja3_string.c_str(), data->ja3_string.length(), digest);
 
     for (int i = 0; i < 16; i++) {
-      sprintf(&(data->md5_string[i * 2]), "%02x", static_cast<unsigned int>(digest[i]));
+      snprintf(&(data->md5_string[i * 2]), 3, "%02x", static_cast<unsigned int>(digest[i]));
     }
     TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5_string);
     break;
