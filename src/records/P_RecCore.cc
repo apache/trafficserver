@@ -655,6 +655,8 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
   int i, num_records;
   RecUpdateT update_type = RECU_NULL;
 
+  ink_rwlock_rdlock(&g_records_rwlock);
+
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     r = &(g_records[i]);
@@ -686,6 +688,8 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
     }
     rec_mutex_release(&(r->lock));
   }
+
+  ink_rwlock_unlock(&g_records_rwlock);
 
   return update_type;
 }
