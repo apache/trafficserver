@@ -26,7 +26,7 @@ pyflakes = "*"
 [packages]
 
 # Keep init.cli.ext updated with this required autest version.
-autest = "==1.10.1"
+autest = "==1.10.2"
 
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 hyper = "*"
