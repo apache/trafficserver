@@ -278,7 +278,7 @@ RestrictCapabilities()
     if (cap_set_flag(caps, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
     } else {
       if (cap_set_proc(caps) == -1) { // it failed, back out
-        Warning("CAP_PERMITTED failed for option %d", i);
+        Debug("privileges", "CAP_PERMITTED failed for option %d", i);
       } else {
         if (cap_set_flag(caps_good, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
         }
@@ -294,7 +294,7 @@ RestrictCapabilities()
     if (cap_set_flag(caps, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
     } else {
       if (cap_set_proc(caps) == -1) { // it failed, back out
-        Warning("CAP_EFFECTIVE failed for option %d", i);
+        Debug("privileges", "CAP_EFFECTIVE failed for option %d", i);
       } else {
         if (cap_set_flag(caps_good, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
         }
@@ -314,14 +314,14 @@ RestrictCapabilities()
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, perm_list[i], CAP_PERMITTED, &val) < 0) {
     } else {
-      Warning("CAP_PERMITTED offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Debug("privileges", "CAP_PERMITTED offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
   for (int i = 0; i < EFF_CAP_COUNT; i++) {
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, eff_list[i], CAP_EFFECTIVE, &val) < 0) {
     } else {
-      Warning("CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Debug("privileges", "CAP_EFFECTIVE offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
 

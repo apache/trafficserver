@@ -238,6 +238,11 @@ DiagsConfig::config_diags_norecords()
     c.enabled(DiagsTagType_Action, 0);
   }
 
+  // Route all outputs to stderr by default until reconfigured with records.config
+  for (auto &o : c.outputs) {
+    o.to_stderr = true;
+  }
+
 #if !defined(__GNUC__)
   _diags->config = c;
 #else
