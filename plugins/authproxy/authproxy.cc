@@ -35,12 +35,11 @@
 
 #include <getopt.h>
 #include <arpa/inet.h>
-#include <string_view>
 #include <sys/param.h>
 #include <ts/remap.h>
-#include <unistd.h>
 
 using std::strlen;
+using std::string_view;
 
 struct AuthRequestContext;
 
@@ -57,10 +56,10 @@ static TSCont AuthOsDnsContinuation;
 
 struct AuthOptions {
   std::string hostname;
+  string_view forward_header_prefix;
   int hostport                   = -1;
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
-  std::string_view forwardHeaderPrefix;
 
   AuthOptions()  = default;
   ~AuthOptions() = default;
@@ -615,7 +614,7 @@ StateAuthorized(AuthRequestContext *auth, void *)
     TSHttpTxnConfigIntSet(auth->txn, TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, 1);
   }
 
-  if (!options->forwardHeaderPrefix.empty()) {
+  if (!options->forward_header_prefix.empty()) {
     // Copy headers starting from "x-geneva" in the authentication response to the original request
     TSMLoc field_loc;
     TSMLoc next_field_loc;
@@ -634,9 +633,9 @@ StateAuthorized(AuthRequestContext *auth, void *)
       char *val =
         const_cast<char *>(TSMimeHdrFieldValueStringGet(auth->rheader.buffer, auth->rheader.header, field_loc, -1, &val_len));
 
-      if (key && val && ContainsPrefix(std::string_view(key, key_len), options->forwardHeaderPrefix)) {
+      if (key && val && ContainsPrefix(string_view(key, key_len), options->forward_header_prefix)) {
         // Append the matched header to the request in original transection
-        HttpSetMimeHeader(request_bufp, request_hdr, std::string_view(key, key_len), std::string_view(val, val_len));
+        HttpSetMimeHeader(request_bufp, request_hdr, string_view(key, key_len), string_view(val, val_len));
       }
 
       // Validate the next header field in sequence
@@ -744,7 +743,7 @@ AuthParseOptions(int argc, const char **argv)
       }
       break;
     case 'f':
-      options->forwardHeaderPrefix = optarg;
+      options->forward_header_prefix = optarg;
       break;
     }
 
