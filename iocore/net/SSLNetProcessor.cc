@@ -44,8 +44,9 @@ struct OCSPContinuation : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
+    Note("OCSP refresh started");
     ocsp_update();
-
+    Note("OCSP refresh finished");
     return EVENT_CONT;
   }
 
@@ -79,13 +80,11 @@ SSLNetProcessor::start(int, size_t stacksize)
 
 #if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    // Call the update initially to get things populated
-    Note("Initial OCSP refresh started");
-    ocsp_update();
-    Note("Initial OCSP refresh finished");
-
-    EventType ET_OCSP = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
-    eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
+    EventType ET_OCSP  = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
+    Continuation *cont = new OCSPContinuation();
+    // schedule the update initially to get things populated
+    eventProcessor.schedule_imm(cont, ET_OCSP);
+    eventProcessor.schedule_every(cont, HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
   }
 #endif /* TS_USE_TLS_OCSP */
 
