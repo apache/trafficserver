@@ -636,9 +636,7 @@ StateAuthorized(AuthRequestContext *auth, void *)
 
       if (key && val && ContainsPrefix(std::string_view(key, key_len), options->forwardHeaderPrefix)) {
         // Append the matched header to the request in original transection
-        char *key_buf = TSstrndup(key, key_len);
-        char *val_buf = TSstrndup(val, val_len);
-        HttpSetMimeHeader(request_bufp, request_hdr, key_buf, val_buf);
+        HttpSetMimeHeader(request_bufp, request_hdr, std::string_view(key, key_len), std::string_view(val, val_len));
       }
 
       // Validate the next header field in sequence

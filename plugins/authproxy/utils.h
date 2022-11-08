@@ -103,6 +103,7 @@ unsigned HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr);
 // Set the value of an arbitrary HTTP header.
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *value);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value);
+void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name, const std::string_view value);
 
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
