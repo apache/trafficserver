@@ -562,5 +562,6 @@ Changes with Apache Traffic Server 9.2.0
   #9139 - Traffic Dump: fix YAML format for CONNECT requests
   #9141 - Remove deprecated ld option (--add-needed)
   #9175 - s3_auth_parsing.gold: Make Age Less Specified
+  #9177 - Fix the Loading of Client Certificate Chains
   #9178 - Asynchronously refresh OCSP
   #9180 - update autest version
