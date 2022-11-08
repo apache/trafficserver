@@ -615,7 +615,7 @@ StateAuthorized(AuthRequestContext *auth, void *)
   }
 
   if (!options->forward_header_prefix.empty()) {
-    // Copy headers starting from "x-geneva" in the authentication response to the original request
+    // Copy headers with configured prefix in the authentication response to the original request
     TSMLoc field_loc;
     TSMLoc next_field_loc;
     TSMBuffer request_bufp;
@@ -634,11 +634,11 @@ StateAuthorized(AuthRequestContext *auth, void *)
         const_cast<char *>(TSMimeHdrFieldValueStringGet(auth->rheader.buffer, auth->rheader.header, field_loc, -1, &val_len));
 
       if (key && val && ContainsPrefix(string_view(key, key_len), options->forward_header_prefix)) {
-        // Append the matched header to the request in original transection
+        // Append the matched header key/val to the original request
         HttpSetMimeHeader(request_bufp, request_hdr, string_view(key, key_len), string_view(val, val_len));
       }
 
-      // Validate the next header field in sequence
+      // Validate the next header field
       next_field_loc = TSMimeHdrFieldNext(auth->rheader.buffer, auth->rheader.header, field_loc);
       TSHandleMLocRelease(auth->rheader.buffer, auth->rheader.header, field_loc);
       field_loc = next_field_loc;
@@ -730,6 +730,9 @@ AuthParseOptions(int argc, const char **argv)
     case 'c':
       options->force = true;
       break;
+    case 'f':
+      options->forward_header_prefix = optarg;
+      break;
     case 't':
       if (strcasecmp(optarg, "redirect") == 0) {
         options->transform = AuthWriteRedirectedRequest;
@@ -741,9 +744,6 @@ AuthParseOptions(int argc, const char **argv)
         AuthLogError("invalid authorization transform '%s'", optarg);
         // XXX make this a fatal error?
       }
-      break;
-    case 'f':
-      options->forward_header_prefix = optarg;
       break;
     }
 
