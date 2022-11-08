@@ -555,8 +555,12 @@ Changes with Apache Traffic Server 9.2.0
   #9122 - Fix HTTP/2 session receive window handling for small sizes (#9117)
   #9123 - 9.2: Fix s3_auth_config test output check
   #9129 - Remove unnecessary, dangerous casts from SET_HANDLER/SET_CONTINUATION _HANDLER invocations.
+  #9130 - Enable slice prefetching for range requests
   #9132 - Fail sni.yaml loading if related resources fail to load
   #9133 - fix contradicting documentation and say a bit about the resident size…
   #9137 - AuTest automatic keylog file configuration
   #9139 - Traffic Dump: fix YAML format for CONNECT requests
   #9141 - Remove deprecated ld option (--add-needed)
+  #9175 - s3_auth_parsing.gold: Make Age Less Specified
+  #9178 - Asynchronously refresh OCSP
+  #9180 - update autest version
