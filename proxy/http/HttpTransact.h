@@ -722,10 +722,15 @@ public:
     int64_t internal_msg_buffer_size                = 0;       // out
     int64_t internal_msg_buffer_fast_allocator_size = -1;
 
-    int scheme               = -1;     // out
-    int next_hop_scheme      = scheme; // out
-    int orig_scheme          = scheme; // pre-mapped scheme
-    int method               = 0;
+    int scheme          = -1;     // out
+    int next_hop_scheme = scheme; // out
+    int orig_scheme     = scheme; // pre-mapped scheme
+    int method          = 0;
+
+    /// The errno associated with a failed connect attempt.
+    ///
+    /// This is used for logging and (in some code paths) for determing HTTP
+    /// response reason phrases.
     int cause_of_death_errno = -UNKNOWN_INTERNAL_ERROR; // in
 
     ink_time_t client_request_time    = UNDEFINED_TIME; // internal
@@ -918,7 +923,13 @@ public:
     void
     set_connect_fail(int e)
     {
-      if (e == EIO || this->current.server->connect_result == EIO) {
+      if (e == EUSERS) {
+        // EUSERS is used when the number of connections exceeds the configured
+        // limit. Since this is not a network connectivity issue with the
+        // server, we should not mark it as such. Otherwise we will incorrectly
+        // mark the server as down.
+        this->current.server->connect_result = 0;
+      } else if (e == EIO || this->current.server->connect_result == EIO) {
         this->current.server->connect_result = e;
       }
       if (e != EIO) {
