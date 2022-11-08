@@ -115,7 +115,7 @@ struct StaticHitConfig {
         }
       }
     } else {
-      ret = {filePath};
+      ret = filePath;
     }
 
     return ret;
