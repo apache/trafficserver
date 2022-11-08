@@ -46,7 +46,7 @@ Plugin Configuration
 
    .. option:: --limit <N>
 
-   (`required`) - Specifies the max disk usage to N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit.
+   (`required`) - Specifies the maximum disk usage to N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit. Setting this value to ``0`` disables the disk utilization limit.
 
    .. option:: --sensitive-fields <field1,field2,...,fieldn>
 

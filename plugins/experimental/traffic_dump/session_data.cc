@@ -210,8 +210,12 @@ SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_
   TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, ssncont);
 
   TSDebug(debug_tag, "Initialized with log directory: %s", SessionData::log_directory.c_str());
-  TSDebug(debug_tag, "Initialized with sample pool size %" PRId64 " bytes and disk limit %" PRId64 " bytes", sample_size,
-          max_disk_usage);
+  if (SessionData::max_disk_usage == 0) {
+    TSDebug(debug_tag, "Initialized with sample pool size of %" PRId64 " bytes and unlimited disk utilization", sample_size);
+  } else {
+    TSDebug(debug_tag, "Initialized with sample pool size of %" PRId64 " bytes and disk limit of %" PRId64 " bytes", sample_size,
+            max_disk_usage);
+  }
   return true;
 }
 
@@ -464,7 +468,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     if (this_session_count % sample_pool_size != 0) {
       TSDebug(debug_tag, "Ignore session %" PRId64 " per the random sampling mechanism", id);
       break;
-    } else if (disk_usage >= max_disk_usage) {
+    } else if (max_disk_usage > 0 && disk_usage >= max_disk_usage) {
       TSDebug(debug_tag, "Ignore session %" PRId64 " due to disk usage %" PRId64 " bytes", id, disk_usage.load());
       break;
     } else {

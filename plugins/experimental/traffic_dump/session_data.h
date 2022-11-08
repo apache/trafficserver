@@ -92,7 +92,7 @@ private:
   /// be dumped.
   static std::atomic<int64_t> sample_pool_size;
   /// The maximum space logs should take up before stopping the dumping of new
-  /// sessions.
+  /// sessions. A value of 0 correlates with unlimited space utilization.
   static std::atomic<int64_t> max_disk_usage;
   /// The amount of bytes currently written to dump files.
   static std::atomic<int64_t> disk_usage;
