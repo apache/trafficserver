@@ -314,14 +314,14 @@ RestrictCapabilities()
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, perm_list[i], CAP_PERMITTED, &val) < 0) {
     } else {
-      Debug("privileges", "CAP_PERMITTED offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Debug("privileges", "CAP_PERMITTED offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
   for (int i = 0; i < EFF_CAP_COUNT; i++) {
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, eff_list[i], CAP_EFFECTIVE, &val) < 0) {
     } else {
-      Debug("privileges", "CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Debug("privileges", "CAP_EFFECTIVE offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
 
