@@ -37,6 +37,8 @@
 #include "tscpp/util/TextView.h"
 #include "tscpp/api/Cleanup.h"
 
+static bool XScanRequestHeaders(TSHttpTxn txn, TSEvent event);
+
 namespace
 {
 struct BodyBuilder {
@@ -60,7 +62,7 @@ struct XDebugTxnAuxData {
 
 atscppapi::TxnAuxMgrData mgrData;
 
-using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
+using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData, XScanRequestHeaders>;
 
 } // end anonymous namespace
 
@@ -587,24 +589,19 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
 
 // Scan the client request headers and determine which debug headers they
 // want in the response.
-static int
-XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
+static bool
+XScanRequestHeaders(TSHttpTxn txn, TSEvent event)
 {
-  TSHttpTxn txn     = static_cast<TSHttpTxn>(edata);
   unsigned xheaders = 0;
   intmax_t fwdCnt   = 0;
   TSMLoc field, next;
   TSMBuffer buffer;
   TSMLoc hdr;
 
-  // Make sure TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE) is called before exiting function.
-  //
-  ts::PostScript ps([=]() -> void { TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE); });
-
   TSReleaseAssert(event == TS_EVENT_HTTP_READ_REQUEST_HDR);
 
   if (TSHttpTxnClientReqGet(txn, &buffer, &hdr) == TS_ERROR) {
-    return TS_EVENT_NONE;
+    return true;
   }
 
   TSDebug("xdebug", "scanning for %s header values", xDebugHeader.str);
@@ -708,7 +705,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
     }
   }
 
-  return TS_EVENT_NONE;
+  return true;
 }
 
 // Continuation function to delete the x-debug header.
@@ -791,7 +788,7 @@ TSPluginInit(int argc, const char *argv[])
   // Setup the global hook
   TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
   TSReleaseAssert(XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr));
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
+  AuxDataMgr::handle_global_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
 
   gethostname(Hostname, 1024);
 }
