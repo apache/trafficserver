@@ -109,6 +109,9 @@ void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name,
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
 // Check if the string contains the prefix
-bool ContainsPrefix(const std::string_view str, const std::string_view prefix);
-
+inline bool
+ContainsPrefix(const std::string_view str, const std::string_view prefix)
+{
+  return str.size() < prefix.size() ? false : (strncmp(str.data(), prefix.data(), prefix.size()) == 0);
+}
 // vim: set ts=4 sw=4 et :

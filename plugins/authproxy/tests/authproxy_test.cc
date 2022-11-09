@@ -4,19 +4,18 @@
 #include "../utils.h"
 
 using std::string_view;
-
-TEST_CASE("ContainsPrefix(): contains prefix", "[authproxy][utility]")
+TEST_CASE("Util methods", "[authproxy][utility]")
 {
-  CHECK(ContainsPrefix(string_view{"abcdef"}, string_view{"abc"}) == true);
+  SECTION("ContainsPrefix()")
+  {
+    CHECK(ContainsPrefix(string_view{"abcdef"}, string_view{"abc"}) == true);
+    CHECK(ContainsPrefix(string_view{"abc"}, string_view{"abcdef"}) == false);
+    CHECK(ContainsPrefix(string_view{"abcdef"}, string_view{"abd"}) == false);
+    CHECK(ContainsPrefix(string_view{"abc"}, string_view{"abc"}) == true);
+    CHECK(ContainsPrefix(string_view{""}, string_view{""}) == true);
+    CHECK(ContainsPrefix(string_view{"abc"}, string_view{""}) == true);
+    CHECK(ContainsPrefix(string_view{""}, string_view{"abc"}) == false);
+    CHECK(ContainsPrefix(string_view{"abcdef"}, string_view{"abc\0"}) == true);
+    CHECK(ContainsPrefix(string_view{"abcdef\0"}, string_view{"abc\0"}) == true);
+  }
 }
-
-// TEST_CASE("ContainsPrefix(): contains prefix", "[authproxy][utility]")
-// {
-//     CHECK(ContainsPrefix("abc", "abcdef") == false);
-// }
-
-// TEST_CASE("ContainsPrefix(): contains prefix", "[authproxy][utility]")
-// {
-//     CHECK(ContainsPrefix("abc", "abc") == true);
-
-// }

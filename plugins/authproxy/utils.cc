@@ -135,10 +135,4 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
   return ischunked;
 }
 
-bool
-ContainsPrefix(const std::string_view str, const std::string_view prefix)
-{
-  return str.size() < prefix.size() ? false : (strncmp(str.data(), prefix.data(), prefix.size()) == 0);
-}
-
 // vim: set ts=4 sw=4 et :
