@@ -23,10 +23,11 @@ Test.Summary = '''
 Verify ATS handles down origin servers with cached domain correctly.
 '''
 
+
 class DownCachedOriginServerTest:
     replay_file = "replay/server_down.replay.yaml"
 
-    def __init__(self, host_down = False):
+    def __init__(self):
         """Initialize the Test processes for the test runs."""
         self._dns_port = None
 
@@ -39,7 +40,7 @@ class DownCachedOriginServerTest:
         )
 
         self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 0,
+            'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'hostdb|dns|http|socket',
             'proxy.config.http.connect_attempts_max_retries': 0,
             'proxy.config.http.connect_attempts_rr_retries': 0,
@@ -49,7 +50,7 @@ class DownCachedOriginServerTest:
             'proxy.config.hostdb.timeout': 10,
             'proxy.config.hostdb.lookup_timeout': 2,
             'proxy.config.http.transaction_no_activity_timeout_in': 2,
-            'proxy.config.hostdb.host_file.interval' : 1,
+            'proxy.config.hostdb.host_file.interval': 1,
             'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
         })
 
@@ -89,5 +90,6 @@ class DownCachedOriginServerTest:
     def run(self):
         self._test_host_mark_down()
         self._test_host_unreachable()
+
 
 DownCachedOriginServerTest().run()
