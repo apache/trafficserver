@@ -47,9 +47,10 @@ class DownCachedOriginServerTest:
             'proxy.config.hostdb.fail.timeout': 10,
             'proxy.config.dns.resolv_conf': 'NULL',
             'proxy.config.hostdb.ttl_mode': 1,
-            'proxy.config.hostdb.timeout': 10,
+            'proxy.config.hostdb.timeout': 2,
             'proxy.config.hostdb.lookup_timeout': 2,
             'proxy.config.http.transaction_no_activity_timeout_in': 2,
+            'proxy.config.http.connect_attempts_timeout': 2,
             'proxy.config.hostdb.host_file.interval': 1,
             'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
         })
