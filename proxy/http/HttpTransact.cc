@@ -3752,11 +3752,6 @@ HttpTransact::handle_response_from_server(State *s)
   case CONNECTION_CLOSED:
   case BAD_INCOMING_RESPONSE:
 
-    // Set to generic I/O error if not already set specifically.
-    if (!s->current.server->had_connect_fail()) {
-      s->set_connect_fail(EIO);
-    }
-
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
     } else {

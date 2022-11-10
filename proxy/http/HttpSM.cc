@@ -1919,9 +1919,6 @@ HttpSM::state_http_server_open(int event, void *data)
 
       server_entry->write_vio = server_txn->do_io_write(this, nbytes, server_txn->get_remote_reader());
 
-      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-      // bytes are received back
-      t_state.set_connect_fail(EIO);
     } else { // in the case of an intercept plugin don't to the connect timeout change
       SMDebug("http", "not setting handler for TCP handshake");
       handle_http_server_open();
@@ -7626,6 +7623,9 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN: {
+    // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
+    // bytes are received back
+    t_state.set_connect_fail(EIO);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_http_server_open);
 
     // We need to close the previous attempt
