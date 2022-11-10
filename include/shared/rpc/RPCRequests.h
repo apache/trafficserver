@@ -39,6 +39,8 @@ struct JSONRPCRequest {
   std::string id;             //!< optional, only needed for method calls.
   YAML::Node params;          //!< This is defined by each remote API.
 
+  virtual ~JSONRPCRequest() {} ///< Virtual destructor required because virtual methods present.
+
   virtual std::string
   get_method() const
   {
