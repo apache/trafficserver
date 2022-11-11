@@ -318,8 +318,10 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     unsigned char digest[MD5_DIGEST_LENGTH];
     MD5((unsigned char *)data->ja3_string.c_str(), data->ja3_string.length(), digest);
 
+    // Validate that the buffer is the same size as we will be writing into (compile time)
+    static_assert((16 * 2 + 1) == sizeof(data->md5_string));
     for (int i = 0; i < 16; i++) {
-      snprintf(&(data->md5_string[i * 2]), 3, "%02x", static_cast<unsigned int>(digest[i]));
+      snprintf(&(data->md5_string[i * 2]), sizeof(data->md5_string) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
     }
     TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5_string);
     break;

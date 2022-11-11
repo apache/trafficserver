@@ -3086,17 +3086,21 @@ build_request(int sock)
   *eheaders    = 0;
   int nheaders = extra_headers;
   if (nheaders > 0) {
-    char *eh = eheaders;
+    char *eh           = eheaders;
+    char *eheaders_end = eheaders + sizeof(eheaders);
     if (!vary_user_agent) {
       eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
+      assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
       nheaders--;
     }
     if (nheaders > 0) {
       eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders),
                      "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
+      assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
     }
     while (--nheaders > 0) {
       eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+      assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
     }
   }
   char cookie[256];
