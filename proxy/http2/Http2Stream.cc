@@ -550,7 +550,7 @@ Http2Stream::initiating_close()
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("initiating_close client_window=%" PRId64 " session_window=%" PRId64, _peer_rwnd,
-                     this->get_connection_state().get_peer_rwnd_in());
+                     this->get_connection_state().get_peer_rwnd());
 
     // Set the state of the connection to closed
     // TODO - these states should be combined
@@ -726,12 +726,12 @@ Http2Stream::update_write_request(bool call_update)
 
   IOBufferReader *vio_reader = write_vio.get_reader();
   if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0) ||
-                                // If there is no window left, just give up now too
-                                std::min(_peer_rwnd, this->get_connection_state().get_peer_rwnd_in()) == 0)) {
+                                // If there is no window left, just give up now too until we receive a WINDOW_UPDATE.
+                                std::min(_peer_rwnd, this->get_connection_state().get_peer_rwnd()) == 0)) {
     Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%" PRId64
                      " session_window=%" PRId64,
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,
-                     this->get_connection_state().get_peer_rwnd_in());
+                     this->get_connection_state().get_peer_rwnd());
     return;
   }
 

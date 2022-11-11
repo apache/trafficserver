@@ -1015,6 +1015,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       } else {
         Debug("http_tunnel", "Start read vio %ld bytes", producer_n);
         p->read_vio = p->vc->do_io_read(this, producer_n, p->read_buffer);
+        p->read_vio->reenable();
       }
     }
   } else {
