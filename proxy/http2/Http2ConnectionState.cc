@@ -35,6 +35,7 @@
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/LocalBuffer.h"
 
+#include <cstdint>
 #include <sstream>
 #include <numeric>
 
@@ -173,7 +174,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   }
 
   // Check whether Window Size is acceptable
-  if (!this->_local_rwnd_is_shrinking_in && this->get_local_rwnd_in() < payload_length) {
+  if (!this->_local_rwnd_is_shrinking && this->get_local_rwnd() < payload_length) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data this->local_rwnd < payload_length");
   }
@@ -183,14 +184,15 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   }
 
   // Update Window size
-  this->decrement_local_rwnd_in(payload_length);
+  this->decrement_local_rwnd(payload_length);
   stream->decrement_local_rwnd(payload_length);
 
   if (is_debug_tag_set("http2_con")) {
     uint32_t const stream_window  = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-    uint32_t const session_window = this->_get_configured_receive_session_window_size_in();
-    Http2StreamDebug(this->session, id, "Received DATA frame: rwnd con=%zd/%" PRId32 " stream=%zd/%" PRId32,
-                     this->get_local_rwnd_in(), session_window, stream->get_local_rwnd(), stream_window);
+    uint32_t const session_window = this->_get_configured_receive_session_window_size();
+    Http2StreamDebug(this->session, id,
+                     "Received DATA frame: payload_length=%" PRId32 " rwnd con=%zd/%" PRId32 " stream=%zd/%" PRId32, payload_length,
+                     this->get_local_rwnd(), session_window, stream->get_local_rwnd(), stream_window);
   }
 
   const uint32_t unpadded_length = payload_length - pad_length;
@@ -554,7 +556,7 @@ Http2ConnectionState::rcv_priority_frame(const Http2Frame &frame)
 
     // Restrict number of inactive node in dependency tree smaller than max_concurrent_streams.
     // Current number of inactive node is size of tree minus active node count.
-    if (Http2::max_concurrent_streams_in > this->dependency_tree->size() - this->get_peer_stream_count() + 1) {
+    if (this->_get_configured_max_concurrent_streams() > this->dependency_tree->size() - this->get_peer_stream_count() + 1) {
       this->dependency_tree->add(priority.stream_dependency, stream_id, priority.weight, priority.exclusive_flag, nullptr);
     }
   }
@@ -710,7 +712,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
     // windows that it maintains by the difference between the new value and
     // the old value.
     if (param.id == HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) {
-      this->update_initial_peer_rwnd_in(param.value);
+      this->update_initial_peer_rwnd(param.value);
     }
 
     this->peer_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
@@ -863,7 +865,7 @@ Http2ConnectionState::rcv_window_update_frame(const Http2Frame &frame)
   if (stream_id == HTTP2_CONNECTION_CONTROL_STREAM) {
     // Connection level window update
     Http2StreamDebug(this->session, stream_id, "Received WINDOW_UPDATE frame - updated to: %zd delta: %u",
-                     (this->get_peer_rwnd_in() + size), size);
+                     (this->get_peer_rwnd() + size), size);
 
     // A sender MUST NOT allow a flow-control window to exceed 2^31-1
     // octets.  If a sender receives a WINDOW_UPDATE that causes a flow-
@@ -872,12 +874,12 @@ Http2ConnectionState::rcv_window_update_frame(const Http2Frame &frame)
     // sends a RST_STREAM with an error code of FLOW_CONTROL_ERROR; for the
     // connection, a GOAWAY frame with an error code of FLOW_CONTROL_ERROR
     // is sent.
-    if (size > HTTP2_MAX_WINDOW_SIZE - this->get_peer_rwnd_in()) {
+    if (size > HTTP2_MAX_WINDOW_SIZE - this->get_peer_rwnd()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                         "window update too big");
     }
 
-    auto error = this->increment_peer_rwnd_in(size);
+    auto error = this->increment_peer_rwnd(size);
     if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, error, "Erroneous client window update");
     }
@@ -915,7 +917,7 @@ Http2ConnectionState::rcv_window_update_frame(const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, error, "Bad stream rwnd");
     }
 
-    ssize_t wnd = std::min(this->get_peer_rwnd_in(), stream->get_peer_rwnd());
+    ssize_t wnd = std::min(this->get_peer_rwnd(), stream->get_peer_rwnd());
     if (wnd > 0) {
       SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
       stream->restart_sending();
@@ -1034,6 +1036,64 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
 }
 
 ////////
+// Configuration Getters.
+//
+uint32_t
+Http2ConnectionState::_get_configured_max_concurrent_streams() const
+{
+  ink_assert(this->session != nullptr);
+  if (this->session->is_outbound()) {
+    return Http2::max_concurrent_streams_out;
+  } else {
+    return Http2::max_concurrent_streams_in;
+  }
+}
+
+uint32_t
+Http2ConnectionState::_get_configured_min_concurrent_streams() const
+{
+  ink_assert(this->session != nullptr);
+  if (this->session->is_outbound()) {
+    return Http2::min_concurrent_streams_out;
+  } else {
+    return Http2::min_concurrent_streams_in;
+  }
+}
+
+uint32_t
+Http2ConnectionState::_get_configured_max_active_streams() const
+{
+  ink_assert(this->session != nullptr);
+  if (this->session->is_outbound()) {
+    return Http2::max_active_streams_out;
+  } else {
+    return Http2::max_active_streams_in;
+  }
+}
+
+uint32_t
+Http2ConnectionState::_get_configured_initial_window_size() const
+{
+  ink_assert(this->session != nullptr);
+  if (this->session->is_outbound()) {
+    return Http2::initial_window_size_out;
+  } else {
+    return Http2::initial_window_size_in;
+  }
+}
+
+Http2FlowControlPolicy
+Http2ConnectionState::_get_configured_flow_control_policy() const
+{
+  ink_assert(this->session != nullptr);
+  if (this->session->is_outbound()) {
+    return Http2::flow_control_policy_out;
+  } else {
+    return Http2::flow_control_policy_in;
+  }
+}
+
+////////
 // Http2ConnectionSettings
 //
 Http2ConnectionSettings::Http2ConnectionSettings()
@@ -1050,13 +1110,18 @@ Http2ConnectionSettings::Http2ConnectionSettings()
 }
 
 void
-Http2ConnectionSettings::settings_from_configs()
+Http2ConnectionSettings::settings_from_configs(bool is_outbound)
 {
-  settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
-  settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size_in;
-  settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = Http2::max_frame_size;
-  settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = Http2::header_table_size;
-  settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = Http2::max_header_list_size;
+  if (is_outbound) {
+    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_out;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size_out;
+  } else {
+    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size_in;
+  }
+  settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]       = Http2::max_frame_size;
+  settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]    = Http2::header_table_size;
+  settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = Http2::max_header_list_size;
 }
 
 unsigned
@@ -1103,23 +1168,23 @@ void
 Http2ConnectionState::init(Http2CommonSession *ssn)
 {
   session                                  = ssn;
-  uint32_t const configured_session_window = this->_get_configured_receive_session_window_size_in();
+  uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
 
   if (configured_session_window < HTTP2_INITIAL_WINDOW_SIZE) {
     // There is no HTTP/2 specified way to shrink the connection window size
     // other than to receive data and not send WINDOW_UPDATE frames for a
     // while.
-    this->_local_rwnd_in              = HTTP2_INITIAL_WINDOW_SIZE;
-    this->_local_rwnd_is_shrinking_in = true;
+    this->_local_rwnd              = HTTP2_INITIAL_WINDOW_SIZE;
+    this->_local_rwnd_is_shrinking = true;
   } else {
-    this->_local_rwnd_in              = configured_session_window;
-    this->_local_rwnd_is_shrinking_in = false;
+    this->_local_rwnd              = configured_session_window;
+    this->_local_rwnd_is_shrinking = false;
   }
 
   local_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
   peer_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
   if (Http2::stream_priority_enabled) {
-    dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
+    dependency_tree = new DependencyTree(this->_get_configured_max_concurrent_streams());
   }
 
   _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
@@ -1142,19 +1207,22 @@ Http2ConnectionState::send_connection_preface()
   REMEMBER(NO_EVENT, this->recursion)
 
   Http2ConnectionSettings configured_settings;
-  configured_settings.settings_from_configs();
+  configured_settings.settings_from_configs(session->is_outbound());
 
-  // Communicate to the peer that we do not support PUSH_PROMISE
+  // We do not have PUSH_PROMISE implemented, so we communicate to the peer
+  // that they should not send such frames to us. RFC 9113 6.5.2 says that
+  // servers can send this too, but they  must always set a value of 0. Thus we
+  // send a value of 0 for both inbound and outbound connections.
   configured_settings.set(HTTP2_SETTINGS_ENABLE_PUSH, 0);
 
   configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
 
+  uint32_t const configured_initial_window_size = this->_get_configured_receive_session_window_size();
   if (this->_has_dynamic_stream_window()) {
     // Since this is the beginning of the connection and there are no streams
     // yet, we can just set the stream window size to fill the entire session
     // window size.
-    uint32_t const stream_window = this->_get_configured_receive_session_window_size_in();
-    configured_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, stream_window);
+    configured_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, configured_initial_window_size);
   }
 
   send_settings_frame(configured_settings);
@@ -1162,8 +1230,8 @@ Http2ConnectionState::send_connection_preface()
   // If the session window size is non-default, send a WINDOW_UPDATE right
   // away. Note that there is no session window size setting in HTTP/2. The
   // session window size is controlled entirely by WINDOW_UPDATE frames.
-  if (this->_get_configured_receive_session_window_size_in() > HTTP2_INITIAL_WINDOW_SIZE) {
-    auto const diff = this->_get_configured_receive_session_window_size_in() - HTTP2_INITIAL_WINDOW_SIZE;
+  if (configured_initial_window_size > HTTP2_INITIAL_WINDOW_SIZE) {
+    auto const diff = configured_initial_window_size - HTTP2_INITIAL_WINDOW_SIZE;
     Http2ConDebug(session, "Updating the session window with a WINDOW_UPDATE frame: %u", diff);
     send_window_update_frame(HTTP2_CONNECTION_CONTROL_STREAM, diff);
   }
@@ -1457,6 +1525,17 @@ Http2ConnectionState::create_initiating_stream(Http2Error &error)
   // Clear the session timeout.  Let the transaction timeouts reign
   session->get_proxy_session()->cancel_inactivity_timeout();
 
+  if (session->is_outbound() && this->_has_dynamic_stream_window()) {
+    // See the comment in create_stream() concerning the difference between the
+    // initial window size and the target window size for dynamic stream window
+    // sizes.
+    Http2ConnectionSettings new_settings = local_settings;
+    uint32_t const initial_stream_window_target =
+      this->_get_configured_receive_session_window_size() / (peer_streams_count_in.load());
+    new_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, initial_stream_window_target);
+    send_settings_frame(new_settings);
+  }
+
   return new_stream;
 }
 
@@ -1532,7 +1611,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     return nullptr;
   }
 
-  ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session())->is_outbound() == false);
+  ink_release_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session())->is_outbound() == false);
   uint32_t initial_stream_window        = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
   uint32_t initial_stream_window_target = initial_stream_window;
   if (is_client_streamid && this->_has_dynamic_stream_window()) {
@@ -1547,7 +1626,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     //
     // The situation of dynamic stream window sizes is described in [RFC 9113]
     // 6.9.3.
-    initial_stream_window_target = this->_get_configured_receive_session_window_size_in() / (peer_streams_count_in.load() + 1);
+    initial_stream_window_target = this->_get_configured_receive_session_window_size() / (peer_streams_count_in.load() + 1);
   }
   Http2Stream *new_stream =
     THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), new_id,
@@ -1631,14 +1710,14 @@ Http2ConnectionState::restart_streams()
     // Call send_response_body() for each streams
     while (s != end) {
       Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
-      if (std::min(this->get_peer_rwnd_in(), s->get_peer_rwnd()) > 0) {
+      if (std::min(this->get_peer_rwnd(), s->get_peer_rwnd()) > 0) {
         SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
         s->restart_sending();
       }
       ink_assert(s != next);
       s = next;
     }
-    if (std::min(this->get_peer_rwnd_in(), s->get_peer_rwnd()) > 0) {
+    if (std::min(this->get_peer_rwnd(), s->get_peer_rwnd()) > 0) {
       SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
       s->restart_sending();
     }
@@ -1651,14 +1730,14 @@ void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
   // Connection level WINDOW UPDATE
-  uint32_t const configured_session_window = this->_get_configured_receive_session_window_size_in();
+  uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
   uint32_t const min_session_window =
     std::min(configured_session_window, this->acknowledged_local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
-  if (this->get_local_rwnd_in() < min_session_window) {
-    Http2WindowSize diff_size = configured_session_window - this->get_local_rwnd_in();
+  if (this->get_local_rwnd() < min_session_window) {
+    Http2WindowSize diff_size = configured_session_window - this->get_local_rwnd();
     if (diff_size > 0) {
-      this->increment_local_rwnd_in(diff_size);
-      this->_local_rwnd_is_shrinking_in = false;
+      this->increment_local_rwnd(diff_size);
+      this->_local_rwnd_is_shrinking = false;
       this->send_window_update_frame(HTTP2_CONNECTION_CONTROL_STREAM, diff_size);
     }
   }
@@ -1670,12 +1749,8 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
     return;
   }
 
-  // If read_vio is buffering data, do not fully update window
   uint32_t const initial_stream_window = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
   int64_t data_size                    = stream->read_vio_read_avail();
-  if (data_size >= initial_stream_window) {
-    return;
-  }
 
   Http2WindowSize diff_size = 0;
   if (stream->get_local_rwnd() < 0) {
@@ -1685,7 +1760,7 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
     // target initial_stream_window size.
     diff_size = initial_stream_window - stream->get_local_rwnd();
   } else {
-    diff_size = initial_stream_window - std::max(static_cast<int64_t>(stream->get_local_rwnd()), data_size);
+    diff_size = initial_stream_window - std::min(static_cast<int64_t>(stream->get_local_rwnd()), data_size);
   }
 
   // Dynamic stream window sizes may result in negative values. In this case,
@@ -1821,7 +1896,7 @@ Http2ConnectionState::release_stream()
 }
 
 void
-Http2ConnectionState::update_initial_peer_rwnd_in(Http2WindowSize new_size)
+Http2ConnectionState::update_initial_peer_rwnd(Http2WindowSize new_size)
 {
   // Update stream level window sizes
   for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
@@ -1842,7 +1917,7 @@ Http2ConnectionState::update_initial_peer_rwnd_in(Http2WindowSize new_size)
 }
 
 void
-Http2ConnectionState::update_initial_local_rwnd_in(Http2WindowSize new_size)
+Http2ConnectionState::update_initial_local_rwnd(Http2WindowSize new_size)
 {
   // Update stream level window sizes
   for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
@@ -1887,7 +1962,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   Http2DependencyTree::Node *node = dependency_tree->top();
 
   // No node to send or no connection level window left
-  if (node == nullptr || _peer_rwnd_in <= 0) {
+  if (node == nullptr || _peer_rwnd <= 0) {
     return;
   }
 
@@ -1930,7 +2005,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
 Http2SendDataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
-  const ssize_t window_size         = std::min(this->get_peer_rwnd_in(), stream->get_peer_rwnd());
+  const ssize_t window_size         = std::min(this->get_peer_rwnd(), stream->get_peer_rwnd());
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   payload_length                    = 0;
@@ -1952,7 +2027,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
       if (session->is_outbound()) {
         ip_port_text_buffer ipb;
         const char *client_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", client_ip, get_peer_rwnd_in(),
+        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", client_ip, get_peer_rwnd(),
                 stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       }
       Http2StreamDebug(this->session, stream->get_id(), "No window");
@@ -1969,8 +2044,11 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     payload_length = 0;
   }
 
+  // For HTTP/2 sessions, is_write_high_water() returning true correlates to
+  // our write buffer exceeding HTTP2_SETTINGS_MAX_FRAME_SIZE. Thus we will
+  // hold off on processing the payload until the write buffer is drained.
   if (payload_length > 0 && this->session->is_write_high_water()) {
-    Http2StreamDebug(this->session, stream->get_id(), "Not write avail");
+    Http2StreamDebug(this->session, stream->get_id(), "Not write avail, payload_length=%zu", payload_length);
     this->session->flush();
     return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
@@ -1992,15 +2070,15 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   }
 
   // Update window size
-  this->decrement_peer_rwnd_in(payload_length);
+  this->decrement_peer_rwnd(payload_length);
   stream->decrement_peer_rwnd(payload_length);
 
   // Create frame
   Http2StreamDebug(session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd flags: 0x%x",
-                   _peer_rwnd_in, stream->get_peer_rwnd(), payload_length, flags);
+                   _peer_rwnd, stream->get_peer_rwnd(), payload_length, flags);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
-  this->session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
+  this->session->xmit(data);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(session, stream->get_id(), "END_STREAM");
@@ -2176,6 +2254,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   int payload_length          = 0;
   uint8_t flags               = 0x00;
 
+  // It makes no sense to send a PUSH_PROMISE toward the server.
+  ink_release_assert(!this->session->is_outbound());
   if (peer_settings.get(HTTP2_SETTINGS_ENABLE_PUSH) == 0) {
     return false;
   }
@@ -2331,7 +2411,7 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
   Http2SettingsFrame settings(stream_id, HTTP2_FRAME_NO_FLAG, params, params_size);
 
-  this->_outstanding_settings_frames_in.emplace(new_settings);
+  this->_outstanding_settings_frames.emplace(new_settings);
   this->session->xmit(settings, true);
 }
 
@@ -2340,12 +2420,12 @@ Http2ConnectionState::_process_incoming_settings_ack_frame()
 {
   constexpr Http2StreamId stream_id = HTTP2_CONNECTION_CONTROL_STREAM;
   Http2StreamDebug(session, stream_id, "Processing SETTINGS ACK frame with a queue size of %zu",
-                   this->_outstanding_settings_frames_in.size());
+                   this->_outstanding_settings_frames.size());
 
   // Do not update this->acknowledged_local_settings yet as
-  // update_initial_local_rwnd_in relies upon it still pointing to the old value.
+  // update_initial_local_rwnd relies upon it still pointing to the old value.
   Http2ConnectionSettings const &old_settings = this->acknowledged_local_settings;
-  Http2ConnectionSettings const &new_settings = this->_outstanding_settings_frames_in.front().get_outstanding_settings();
+  Http2ConnectionSettings const &new_settings = this->_outstanding_settings_frames.front().get_outstanding_settings();
 
   for (int i = HTTP2_SETTINGS_HEADER_TABLE_SIZE; i < HTTP2_SETTINGS_MAX; ++i) {
     Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
@@ -2361,11 +2441,11 @@ Http2ConnectionState::_process_incoming_settings_ack_frame()
 
     if (id == HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) {
       // Update all the streams for the newly acknowledged window size.
-      this->update_initial_local_rwnd_in(new_value);
+      this->update_initial_local_rwnd(new_value);
     }
   }
   this->acknowledged_local_settings = new_settings;
-  this->_outstanding_settings_frames_in.pop();
+  this->_outstanding_settings_frames.pop();
 }
 
 void
@@ -2466,9 +2546,13 @@ Http2ConnectionState::get_received_priority_frame_count()
 unsigned
 Http2ConnectionState::_adjust_concurrent_stream()
 {
-  if (Http2::max_active_streams_in == 0) {
+  uint32_t const max_concurrent_streams = this->_get_configured_max_concurrent_streams();
+  uint32_t const max_active_streams     = this->_get_configured_max_active_streams();
+  uint32_t const min_concurrent_streams = this->_get_configured_min_concurrent_streams();
+
+  if (max_active_streams == 0) {
     // Throttling down is disabled.
-    return Http2::max_concurrent_streams_in;
+    return max_concurrent_streams;
   }
 
   int64_t current_client_streams = 0;
@@ -2476,43 +2560,43 @@ Http2ConnectionState::_adjust_concurrent_stream()
 
   Http2ConDebug(session, "current client streams: %" PRId64, current_client_streams);
 
-  if (current_client_streams >= Http2::max_active_streams_in) {
+  if (current_client_streams >= max_active_streams) {
     if (!Http2::throttling) {
       Warning("too many streams: %" PRId64 ", reduce SETTINGS_MAX_CONCURRENT_STREAMS to %d", current_client_streams,
-              Http2::min_concurrent_streams_in);
+              min_concurrent_streams);
       Http2::throttling = true;
     }
 
-    return Http2::min_concurrent_streams_in;
+    return min_concurrent_streams;
   } else {
     if (Http2::throttling) {
-      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", Http2::max_concurrent_streams_in);
+      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", max_concurrent_streams);
       Http2::throttling = false;
     }
   }
 
-  return Http2::max_concurrent_streams_in;
+  return max_concurrent_streams;
 }
 
 uint32_t
-Http2ConnectionState::_get_configured_receive_session_window_size_in() const
+Http2ConnectionState::_get_configured_receive_session_window_size() const
 {
-  switch (Http2::flow_control_policy_in) {
+  switch (this->_get_configured_flow_control_policy()) {
   case Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM:
-    return Http2::initial_window_size_in;
+    return this->_get_configured_initial_window_size();
   case Http2FlowControlPolicy::LARGE_SESSION_AND_STATIC_STREAM:
   case Http2FlowControlPolicy::LARGE_SESSION_AND_DYNAMIC_STREAM:
-    return Http2::initial_window_size_in * Http2::max_concurrent_streams_in;
+    return this->_get_configured_initial_window_size() * this->_get_configured_max_concurrent_streams();
   }
 
   // This is unreachable, but adding a return here quiets a compiler warning.
-  return Http2::initial_window_size_in;
+  return this->_get_configured_initial_window_size();
 }
 
 bool
 Http2ConnectionState::_has_dynamic_stream_window() const
 {
-  switch (Http2::flow_control_policy_in) {
+  switch (this->_get_configured_flow_control_policy()) {
   case Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM:
   case Http2FlowControlPolicy::LARGE_SESSION_AND_STATIC_STREAM:
     return false;
@@ -2525,15 +2609,15 @@ Http2ConnectionState::_has_dynamic_stream_window() const
 }
 
 ssize_t
-Http2ConnectionState::get_peer_rwnd_in() const
+Http2ConnectionState::get_peer_rwnd() const
 {
-  return this->_peer_rwnd_in;
+  return this->_peer_rwnd;
 }
 
 Http2ErrorCode
-Http2ConnectionState::increment_peer_rwnd_in(size_t amount)
+Http2ConnectionState::increment_peer_rwnd(size_t amount)
 {
-  this->_peer_rwnd_in += amount;
+  this->_peer_rwnd += amount;
 
   this->_recent_rwnd_increment[this->_recent_rwnd_increment_index] = amount;
   ++this->_recent_rwnd_increment_index;
@@ -2549,28 +2633,28 @@ Http2ConnectionState::increment_peer_rwnd_in(size_t amount)
 }
 
 Http2ErrorCode
-Http2ConnectionState::decrement_peer_rwnd_in(size_t amount)
+Http2ConnectionState::decrement_peer_rwnd(size_t amount)
 {
-  this->_peer_rwnd_in -= amount;
+  this->_peer_rwnd -= amount;
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 ssize_t
-Http2ConnectionState::get_local_rwnd_in() const
+Http2ConnectionState::get_local_rwnd() const
 {
-  return this->_local_rwnd_in;
+  return this->_local_rwnd;
 }
 
 Http2ErrorCode
-Http2ConnectionState::increment_local_rwnd_in(size_t amount)
+Http2ConnectionState::increment_local_rwnd(size_t amount)
 {
-  this->_local_rwnd_in += amount;
+  this->_local_rwnd += amount;
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 Http2ErrorCode
-Http2ConnectionState::decrement_local_rwnd_in(size_t amount)
+Http2ConnectionState::decrement_local_rwnd(size_t amount)
 {
-  this->_local_rwnd_in -= amount;
+  this->_local_rwnd -= amount;
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }

@@ -88,9 +88,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, first-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -120,9 +120,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, second-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -152,9 +152,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, third-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -190,9 +190,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, fourth-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 120000 ]
       content:
-        size: 28
+        size: 120000
 
     proxy-response:
       headers:
@@ -226,9 +226,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, fifth-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 10000 ]
       content:
-        size: 28
+        size: 10000
 
     proxy-response:
       headers:
