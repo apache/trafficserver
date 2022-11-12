@@ -29,7 +29,8 @@ class DownCachedOriginServerTest:
 
     def __init__(self):
         """Initialize the Test processes for the test runs."""
-        self._dns_port = None
+        self._server = Test.MakeVerifierServerProcess("server", DownCachedOriginServerTest.replay_file)
+        self._configure_trafficserver()
 
     def _configure_trafficserver(self):
         """Configure Traffic Server."""
@@ -59,38 +60,43 @@ class DownCachedOriginServerTest:
     # After request has failed, SM should mark the IP as down
     def _test_host_mark_down(self):
         tr = Test.AddTestRun()
-        self._server = tr.AddVerifierServerProcess("server", DownCachedOriginServerTest.replay_file)
-        self._configure_trafficserver()
 
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
-        tr.DelayStart = 1
         tr.AddVerifierClientProcess(
             "client-1",
             DownCachedOriginServerTest.replay_file,
             http_ports=[self._ts.Variables.port],
             other_args='--keys 1')
 
-        tr.NotRunningAfter = self._server
-
     # After host has been marked down from previous test, HostDB should not return
     # the host as available and DNS lookup should fail.
     def _test_host_unreachable(self):
         tr = Test.AddTestRun()
 
-        tr.NotRunningBefore = self._server
-
-        tr.DelayStart = 1
         tr.AddVerifierClientProcess(
             "client-2",
             DownCachedOriginServerTest.replay_file,
             http_ports=[self._ts.Variables.port],
             other_args='--keys 2')
 
+    # Verify error log marking host down exists
+    def _test_error_log(self):
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = (
+            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+            os.path.join(self._ts.Variables.LOGDIR, 'error.log')
+        )
+
+        self._ts.Disk.error_log.Content = Testers.ContainsExpression("/dns/mark/down' marking down", "host should be marked down")
+        self._ts.Disk.error_log.Content = Testers.ContainsExpression(
+            "DNS Error: no valid server http://resolve.this.com", "DNS lookup should fail")
+
     def run(self):
         self._test_host_mark_down()
         self._test_host_unreachable()
+        self._test_error_log()
 
 
 DownCachedOriginServerTest().run()
