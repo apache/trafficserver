@@ -32,6 +32,7 @@ include_directories(
         include
         tests/include
         lib
+        lib/swoc/include
         lib/yamlcpp/include
         proxy
         proxy/hdrs
