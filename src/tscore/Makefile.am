@@ -175,6 +175,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_CryptoHash.cc \
 	unit_tests/test_Extendible.cc \
+	unit_tests/test_Histogram.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
 	unit_tests/test_ink_memory.cc \
