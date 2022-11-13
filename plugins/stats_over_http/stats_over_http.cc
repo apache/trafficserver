@@ -42,13 +42,12 @@
 #include <fstream>
 #include <ts/remap.h>
 
+#include <tscpp/util/ts_ip.h>
+
 #include "ink_autoconf.h"
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
-
-#include "tscore/ink_defs.h"
-#include "tscore/IpMap.h"
 
 #define PLUGIN_NAME "stats_over_http"
 #define FREE_TMOUT 300000
@@ -57,8 +56,8 @@
 #define SYSTEM_RECORD_TYPE (0x100)
 #define DEFAULT_RECORD_TYPES (SYSTEM_RECORD_TYPE | TS_RECORDTYPE_PROCESS | TS_RECORDTYPE_PLUGIN)
 
-std::string_view const DEFAULT_IP  = "0.0.0.0/0";
-std::string_view const DEFAULT_IP6 = "::/0";
+static const swoc::IP4Range DEFAULT_IP{swoc::IP4Addr::MIN, swoc::IP4Addr::MAX};
+static const swoc::IP6Range DEFAULT_IP6{swoc::IP6Addr::MIN, swoc::IP6Addr::MAX};
 
 /* global holding the path used for access to this JSON data */
 std::string const DEFAULT_URL_PATH = "_stats";
@@ -92,7 +91,7 @@ static bool wrap_counters    = false;
 struct config_t {
   unsigned int recordTypes;
   std::string stats_path;
-  IpMap allow_ip_map;
+  ts::IPAddrSet addrs;
 };
 struct config_holder_t {
   char *config_path;
@@ -359,8 +358,7 @@ wrap_unsigned_counter(uint64_t value)
 }
 
 static void
-json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED, const char *name,
-              TSRecordDataType data_type, TSRecordData *datum)
+json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state = static_cast<stats_state *>(edata);
 
@@ -384,8 +382,7 @@ json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_
 }
 
 static void
-csv_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED, const char *name, TSRecordDataType data_type,
-             TSRecordData *datum)
+csv_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state = static_cast<stats_state *>(edata);
   switch (data_type) {
@@ -737,37 +734,29 @@ is_ipmap_allowed(const config_t *config, const struct sockaddr *addr)
     return true;
   }
 
-  if (config->allow_ip_map.contains(addr, nullptr)) {
+  if (config->addrs.contains(swoc::IPAddr(addr))) {
     return true;
   }
 
   return false;
 }
 static void
-parseIpMap(config_t *config, const char *ipStr)
+parseIpMap(config_t *config, swoc::TextView txt)
 {
-  IpAddr min, max;
-  ts::TextView ipstring("");
-
-  if (ipStr != 0) {
-    ipstring.assign(ipStr, strlen(ipStr));
-  }
-
   // sent null ipstring, fill with default open IPs
-  if (ipStr == nullptr) {
-    ats_ip_range_parse(DEFAULT_IP6, min, max);
-    config->allow_ip_map.fill(min, max, nullptr);
-    ats_ip_range_parse(DEFAULT_IP, min, max);
-    config->allow_ip_map.fill(min, max, nullptr);
+  if (txt.empty()) {
+    config->addrs.fill(DEFAULT_IP6);
+    config->addrs.fill(DEFAULT_IP);
     TSDebug(PLUGIN_NAME, "Empty allow settings, setting all IPs in allow list");
     return;
   }
 
-  while (ipstring) {
-    ts::TextView token{ipstring.take_prefix_at(',')};
-    ats_ip_range_parse(std::string_view{token}, min, max);
-    config->allow_ip_map.fill(min, max, nullptr);
-    TSDebug(PLUGIN_NAME, "Added %.*s to allow ip list", int(token.length()), token.data());
+  while (txt) {
+    auto token{txt.take_prefix_at(',')};
+    if (swoc::IPRange r; r.load(token)) {
+      config->addrs.fill(r);
+      TSDebug(PLUGIN_NAME, "Added %.*s to allow ip list", int(token.length()), token.data());
+    }
   }
 }
 
@@ -779,7 +768,6 @@ new_config(std::fstream &fh)
   config->recordTypes = DEFAULT_RECORD_TYPES;
   config->stats_path  = "";
   std::string cur_line;
-  IpAddr min, max;
 
   if (!fh) {
     TSDebug(PLUGIN_NAME, "No config file, using defaults");
@@ -787,37 +775,34 @@ new_config(std::fstream &fh)
   }
 
   while (std::getline(fh, cur_line)) {
-    // skip empty lines
-    if (cur_line == "") {
-      continue;
-    }
-    if (cur_line.at(0) == '#') {
+    swoc::TextView line{cur_line};
+    if (line.ltrim_if(&isspace).empty() || '#' == *line) {
       continue; /* # Comments, only at line beginning */
     }
 
     size_t p = 0;
 
-    if ((p = cur_line.find("path=")) != std::string::npos) {
+    static constexpr swoc::TextView PATH_TAG   = "path=";
+    static constexpr swoc::TextView RECORD_TAG = "record_types=";
+    static constexpr swoc::TextView ADDR_TAG   = "allow_ip=";
+    static constexpr swoc::TextView ADDR6_TAG  = "allow_ip6=";
+
+    if ((p = line.find(PATH_TAG)) != std::string::npos) {
+      line.remove_prefix(p + PATH_TAG.size()).ltrim('/');
       TSDebug(PLUGIN_NAME, "parsing path");
-      p += strlen("path=");
-      if (cur_line.at(p + 1) == '/') {
-        p++;
-      }
-      config->stats_path = cur_line.substr(p);
-    } else if ((p = cur_line.find("record_types=")) != std::string::npos) {
+      config->stats_path = line;
+    } else if ((p = line.find(RECORD_TAG)) != std::string::npos) {
       TSDebug(PLUGIN_NAME, "parsing record types");
-      p += strlen("record_types=");
-      config->recordTypes = strtol(cur_line.substr(p).c_str(), nullptr, 16);
-    } else if ((p = cur_line.find("allow_ip=")) != std::string::npos) {
-      p += strlen("allow_ip=");
-      parseIpMap(config, cur_line.substr(p).c_str());
-    } else if ((p = cur_line.find("allow_ip6=")) != std::string::npos) {
-      p += strlen("allow_ip6=");
-      parseIpMap(config, cur_line.substr(p).c_str());
+      line.remove_prefix(p).remove_prefix(RECORD_TAG.size());
+      config->recordTypes = swoc::svtou(line, nullptr, 16);
+    } else if ((p = line.find(ADDR_TAG)) != std::string::npos) {
+      parseIpMap(config, line.remove_prefix(p).remove_prefix(ADDR_TAG.size()));
+    } else if ((p = line.find(ADDR6_TAG)) != std::string::npos) {
+      parseIpMap(config, line.remove_prefix(p).remove_prefix(ADDR6_TAG.size()));
     }
   }
 
-  if (config->allow_ip_map.count() == 0) {
+  if (config->addrs.count() == 0) {
     TSDebug(PLUGIN_NAME, "empty ip map found, setting defaults");
     parseIpMap(config, nullptr);
   }
