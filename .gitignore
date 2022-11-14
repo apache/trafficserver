@@ -156,7 +156,7 @@ plugins/esi/vars_test
 
 plugins/experimental/uri_signing/test_uri_signing
 
-mgmt2/rpc/overridable_txn_vars.cc
+mgmt/rpc/overridable_txn_vars.cc
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
 mgmt/tools/traffic_net_config
