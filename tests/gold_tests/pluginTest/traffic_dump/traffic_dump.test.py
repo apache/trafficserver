@@ -38,7 +38,7 @@ server = Test.MakeVerifierServerProcess(
 
 
 # Define ATS and configure it.
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", command='traffic_manager', enable_tls=True)
 replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 
 ts.addSSLfile("ssl/server.pem")
@@ -101,7 +101,7 @@ ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     f"Initialized with log directory: {replay_dir}",
     "Verify traffic_dump initialized with the configured directory.")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Initialized with sample pool size 1 bytes and disk limit 1000000000 bytes",
+    "Initialized with sample pool size of 1 bytes and disk limit of 1000000000 bytes",
     "Verify traffic_dump initialized with the configured disk limit.")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Finish a session with log file of.*bytes",
@@ -133,6 +133,20 @@ replay_file_session_10 = os.path.join(replay_dir, "127", "0000000000000009")
 ts.Disk.File(replay_file_session_10, exists=True)
 replay_file_session_11 = os.path.join(replay_dir, "127", "000000000000000a")
 ts.Disk.File(replay_file_session_11, exists=True)
+
+# The following will not be written to disk because of a restricted disk limit.
+replay_file_session_12 = os.path.join(replay_dir, "127", "000000000000000b")
+ts.Disk.File(replay_file_session_12, exists=False)
+
+# The following will be written to disk because the disk restriction will be
+# removed.
+replay_file_session_13 = os.path.join(replay_dir, "127", "000000000000000c")
+ts.Disk.File(replay_file_session_13, exists=True)
+
+# The following will not be written to disk because the restriction will be
+# re-added.
+replay_file_session_14 = os.path.join(replay_dir, "127", "000000000000000d")
+ts.Disk.File(replay_file_session_14, exists=False)
 
 # Run our test traffic.
 tr = Test.AddTestRun("Run the test traffic.")
@@ -317,3 +331,78 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+
+#
+# Test 10: Verify that we can change the --limit value.
+#
+tr = Test.AddTestRun("Verify changing --limit via traffic_ctl.")
+tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.limit 0"
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Run some more test traffic with the restricted disk limit.")
+tr.AddVerifierClientProcess(
+    "client-2", replay_file, http_ports=[ts.Variables.port],
+    https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    other_args='--keys 1')
+
+# Since the limit is zero, we should not see any new replay file created.
+tr = Test.AddTestRun("Verify no new traffic was dumped")
+# Sleep 2 seconds to give the replay plugin plenty of time to write the file.
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
+file = tr.Disk.File(replay_file_session_12)
+file.Exists = False
+
+#
+# Test 11: Verify that we can remove the disk limit.
+#
+tr = Test.AddTestRun("Removing the disk limit via traffic_ctl.")
+tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.unlimit"
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Run some more test traffic with no disk limit.")
+tr.AddVerifierClientProcess(
+    "client-3", replay_file, http_ports=[ts.Variables.port],
+    https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    other_args='--keys 1')
+
+# Since the limit is zero, we should not see any new replay file created.
+tr = Test.AddTestRun("Verify the new traffic was dumped")
+# Sleep 2 seconds to give the replay plugin plenty of time to write the file.
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
+file = tr.Disk.File(replay_file_session_13)
+file.Exists = True
+
+#
+# Test 11: Verify that we can again restrict the disk limit.
+#
+# Verify that the restriction can be re-added after unlimit was set. This
+# verifies correct handling of the boolean controlling unlimited disk space.
+#
+tr = Test.AddTestRun("Verify re-adding --limit via traffic_ctl.")
+tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.limit 0"
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Run test traffic with newly restricted disk limit.")
+tr.AddVerifierClientProcess(
+    "client-4", replay_file, http_ports=[ts.Variables.port],
+    https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    other_args='--keys 1')
+
+# Since the limit is zero, we should not see any new replay file created.
+tr = Test.AddTestRun("Verify no new traffic was dumped")
+# Sleep 2 seconds to give the replay plugin plenty of time to write the file.
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
+file = tr.Disk.File(replay_file_session_14)
+file.Exists = False

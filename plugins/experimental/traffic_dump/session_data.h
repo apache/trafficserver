@@ -50,6 +50,8 @@ public:
   static constexpr int64_t default_sample_pool_size = 1000;
   /// By default, logging will stop after 10 MB have been dumped.
   static constexpr int64_t default_max_disk_usage = 10 * 1000 * 1000;
+  /// By default, do not enforce disk utilization limits.
+  static constexpr bool default_enforce_disk_limit = false;
 
 private:
   //
@@ -92,10 +94,12 @@ private:
   /// be dumped.
   static std::atomic<int64_t> sample_pool_size;
   /// The maximum space logs should take up before stopping the dumping of new
-  /// sessions.
+  /// sessions. This is only enforced if enforce_disk_limit is true.
   static std::atomic<int64_t> max_disk_usage;
   /// The amount of bytes currently written to dump files.
   static std::atomic<int64_t> disk_usage;
+  /// Whether to enforce a disk utilization limit.
+  static std::atomic<bool> enforce_disk_limit;
 
   /// The directory into which to put the dump files.
   static ts::file::path log_directory;
@@ -120,9 +124,10 @@ public:
    *
    * @return True if initialization is successful, false otherwise.
    */
-  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter);
-  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter,
-                   std::string_view sni_filter);
+  static bool init(std::string_view log_directory, bool enforce_disk_limit, int64_t max_disk_usage, int64_t sample_size,
+                   std::string_view ip_filter);
+  static bool init(std::string_view log_directory, bool enforce_disk_limit, int64_t max_disk_usage, int64_t sample_size,
+                   std::string_view ip_filter, std::string_view sni_filter);
 
   /** Set the sample_pool_size to a new value.
    *
@@ -132,6 +137,12 @@ public:
 
   /** Reset the disk usage counter to 0. */
   static void reset_disk_usage();
+
+  /** Disable disk usage enforcement.
+   *
+   * @param[in] new_max_disk_usage The new value to set for max_disk_usage.
+   */
+  static void disable_disk_limit_enforcement();
 
   /** Set the max_disk_usage to a new value.
    *
