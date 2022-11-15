@@ -74,7 +74,7 @@ ts.Disk.sni_yaml.AddLines([
 # Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
 sni_filter = "bob.com"
 ts.Disk.plugin_config.AddLine(
-    f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 0 '
+    f'traffic_dump.so --logdir {replay_dir} --sample 1 '
     f'--sni-filter "{sni_filter}"'
 )
 
