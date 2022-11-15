@@ -19,7 +19,7 @@ include $(top_srcdir)/build/tidy.mk
 
 lib_LTLIBRARIES = libtscppapi.la
 
-libtscppapi_la_CPPFLAGS = $(AM_CPPFLAGS) -I $(abs_top_srcdir)/include
+libtscppapi_la_CPPFLAGS = $(AM_CPPFLAGS) -I $(abs_top_srcdir)/include @SWOC_INCLUDES@
 
 libtscppapi_la_LDFLAGS=-lz -lpthread -version-info @TS_LIBTOOL_VERSION@
 

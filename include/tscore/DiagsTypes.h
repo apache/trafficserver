@@ -43,6 +43,8 @@
 #include "SourceLocation.h"
 #include "DbgCtl.h"
 
+#include "tscpp/util/ts_diag_levels.h"
+
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
 
@@ -57,19 +59,6 @@ struct DiagsModeOutput {
   bool to_stderr;
   bool to_syslog;
   bool to_diagslog;
-};
-
-enum DiagsLevel { // do not renumber --- used as array index
-  DL_Diag = 0,    // process does not die
-  DL_Debug,       // process does not die
-  DL_Status,      // process does not die
-  DL_Note,        // process does not die
-  DL_Warning,     // process does not die
-  DL_Error,       // process does not die
-  DL_Fatal,       // causes process termination
-  DL_Alert,       // causes process termination
-  DL_Emergency,   // causes process termination, exits with UNRECOVERABLE_EXIT
-  DL_Undefined    // must be last, used for size!
 };
 
 enum StdStream { STDOUT = 0, STDERR };

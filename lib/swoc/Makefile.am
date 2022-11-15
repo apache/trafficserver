@@ -55,6 +55,7 @@ library_include_HEADERS = \
         include/swoc/string_view_util.h \
         include/swoc/TextView.h \
         include/swoc/Vectray.h \
+	include/swoc/string_view_util.h \
         include/swoc/HashFNV.h
 endif
 
