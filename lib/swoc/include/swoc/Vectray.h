@@ -357,7 +357,7 @@ auto Vectray<T,N,A>::size() const -> size_type {
 template<typename T, size_t N, typename A>
 bool Vectray<T,N,A>::empty() const {
   return std::visit(swoc::meta::vary{
-           [](FixedStore const& fs) { return fs._count > 0; }
+           [](FixedStore const& fs) { return fs._count == 0; }
          , [](DynamicStore const& ds) { return ds.empty(); }
          }, _store);
 }
