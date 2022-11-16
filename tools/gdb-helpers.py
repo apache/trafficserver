@@ -37,18 +37,29 @@ from curses.ascii import isgraph
 
 
 def ats_str(addr, addr_len):
+    if addr_len == 0:
+        return ''
     #print("addr {} len {}".format(addr, addr_len))
     inferior = gdb.selected_inferior()
-    buff = inferior.read_memory(addr, addr_len)
-    if buff[0] == '\x00':
-        return 'null'
-    else:
-        return buff
+    try:
+        buff = inferior.read_memory(addr, addr_len)
+        if buff[0] == '\x00':
+            return 'null'
+        else:
+            return buff
+    except:
+        return 'unreadable({:x})'.format(int(addr))
 
 
 def hdrtoken(idx):
     hdrtokens = gdb.parse_and_eval('hdrtoken_strs')
     return hdrtokens[idx].string()
+
+def wks_or_str(idx, addr, addr_len):
+    if idx >= 0:
+        return hdrtoken(idx)
+    else:
+        return ats_str(addr, addr_len)
 
 
 class URL:
@@ -112,7 +123,7 @@ class HTTPHdr:
             for slot_idx in range(fblock['m_freetop']):
                 fld = slots[slot_idx]
                 wks = fld['m_wks_idx']
-                name = ats_str(fld['m_ptr_name'], fld['m_len_name'])
+                name = wks_or_str(wks, fld['m_ptr_name'], fld['m_len_name'])
                 yield (name, ats_str(fld['m_ptr_value'], fld['m_len_value']))
 
             fblock_ptr = fblock['m_next']
@@ -222,10 +233,14 @@ def sm_command(val):
 def hdrs_command(val):
     HTTPHdr(val).pr()
 
+def url_command(val):
+    print("{}".format(URL(val)))
+
 
 commands = [
     ("sm", sm_command, "Print HttpSM details (type HttpSM*)"),
     ("hdrs", hdrs_command, "Print HttpHdr details (type HTTPHdr)"),
+    ("url", url_command, "Print URL"),
 ]
 
 
