@@ -88,8 +88,7 @@ trafficserver ............. Top src dir
 
   <https://cwiki.apache.org/confluence/display/TS/Building>.
 
-  As of ATS v7.0.0 and later, gcc 4.8.1 or later is required, since we now use
-  and require the C++11 standard.
+  As of ATS v9.0.0 and later, gcc 7 or later is required, since we now use and require the C++17 standard.
 
 ### Fedora / CentOS / RHEL:
 ```
