@@ -37,7 +37,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-
+    - name: Install dependencies
+      run: |
+        sudo apt install libmagick++-dev libncurses-dev libpcre2-dev libbrotli-dev libluajit-5.1-dev luajit libjansson-dev libcjose-dev libmaxminddb-dev libgeoip-dev
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
@@ -65,9 +67,8 @@ jobs:
     - run: |
          echo "Run, Build Application using script"
          autoreconf -fiv
-         ./configure
-         make -j
-
+         ./configure --enable-experimental-plugins
+         make
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
