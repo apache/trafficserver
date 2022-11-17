@@ -44,10 +44,9 @@ all-local:: swoc
 
 clean-local::
 	$(MAKE) -C swoc clean
-endif
 
-if EXPORT_SWOC_HEADERS
 install-data-local::
 	$(MAKE) -C swoc install
+
 endif
 

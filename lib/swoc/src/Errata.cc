@@ -42,7 +42,7 @@ Errata::Severity Errata::FAILURE_SEVERITY(2);
 Errata::Severity Errata::FILTER_SEVERITY(0);
 
 /// Default set of severity names.
-std::array<swoc::TextView, 4> Severity_Names{{"Info", "Warning", "Error"}};
+std::array<swoc::TextView, 3> Severity_Names{{"Info", "Warning", "Error"}};
 
 swoc::MemSpan<TextView const> Errata::SEVERITY_NAMES{Severity_Names.data(), Severity_Names.size()};
 

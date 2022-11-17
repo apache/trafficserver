@@ -23,6 +23,5 @@ library_include_HEADERS = \
 	LocalBuffer.h \
 	PostScript.h \
 	Strerror.h \
-	string_view_util.h \
 	TextView.h \
 	TsSharedMutex.h

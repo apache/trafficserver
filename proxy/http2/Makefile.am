@@ -100,7 +100,8 @@ test_libhttp2_SOURCES = \
 
 test_Http2DependencyTree_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@
 
 test_Http2DependencyTree_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
@@ -112,7 +113,8 @@ test_Http2DependencyTree_SOURCES = \
 test_Http2FrequencyCounter_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@
 
 test_Http2FrequencyCounter_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
@@ -130,7 +132,7 @@ test_HPACK_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@
 
 test_HPACK_SOURCES = \
 	test_HPACK.cc \

@@ -34,7 +34,7 @@
 #include <string_view>
 #include <limits>
 
-#include "tscpp/util/string_view_util.h"
+#include "swoc/string_view_util.h"
 
 namespace ts
 {
