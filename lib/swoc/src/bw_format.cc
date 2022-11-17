@@ -943,67 +943,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
   return w;
 }
 
-// --- IP address support ---
-
-#if 0
-BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
-{
-  bwf::Spec local_spec{spec}; // Format for address elements and port.
-  bool addr_p{true};
-  bool family_p{false};
-
-  if (spec._ext.size()) {
-    if (spec._ext.front() == '=') {
-      local_spec._ext.remove_prefix(1);
-    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
-      local_spec._ext.remove_prefix(2);
-    }
-  }
-  if (local_spec._ext.size()) {
-    addr_p = false;
-    for (char c : local_spec._ext) {
-      switch (c) {
-        case 'a':
-        case 'A':
-          addr_p = true;
-          break;
-        case 'f':
-        case 'F':
-          family_p = true;
-          break;
-      }
-    }
-  }
-
-  if (addr_p) {
-    if (addr.isIp4()) {
-      bwformat(w, spec, addr._addr._ip4);
-    } else if (addr.isIp6()) {
-      bwformat(w, spec, addr._addr._ip6);
-    } else {
-      w.print("*Not IP address [{}]*", addr.family());
-    }
-  }
-
-  if (family_p) {
-    local_spec._min = 0;
-    if (addr_p) {
-      w.write(' ');
-    }
-    if (spec.has_numeric_type()) {
-      bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
-    } else {
-      bwformat(w, local_spec, addr.family());
-    }
-  }
-  return w;
-}
-#endif
-
-namespace {
-} // namespace
-
 }} // namespace swoc::SWOC_VERSION_NS
 
 namespace std {

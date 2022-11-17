@@ -258,26 +258,42 @@ IP4Addr::load(std::string_view const &text) {
   TextView src{text};
   int n = SIZE; /// # of octets
 
-  if (src.empty() || ('[' == *src && ((++src).empty() || src.back() != ']'))) {
+  _addr = INADDR_ANY; // clear to zero.
+
+  // empty or trailing dot or empty brackets or unmatched brackets.
+  if (src.empty() || src.back() == '.' || ('[' == *src && ((++src).empty() || src.back() != ']'))) {
     return false;
   }
 
-  auto octet = reinterpret_cast<uint8_t *>(&_addr);
-  while (n > 0 && !src.empty()) {
-    TextView token{src.take_prefix_at('.')};
-    auto x = svto_radix<10>(token);
-    if (token.empty() && x <= std::numeric_limits<uint8_t>::max()) {
-      octet[--n] = x;
-    } else {
+  in_addr_t max = std::numeric_limits<in_addr_t>::max();
+  while (n > 0) {
+    TextView parsed;
+    auto token = src.take_prefix_at('.');
+    auto v = svtou(token, &parsed);
+    if (parsed.size() != token.size()) {
       break;
     }
+    if (src.empty()) {
+      if (v <= max) {
+        _addr += v;
+        n = 0; // signal complete.
+      }
+      break;
+    } else if (v <= std::numeric_limits<uint8_t>::max()){
+      _addr += v << ( --n * 8);
+    } else {
+      break; // invalid.
+    }
+    max >>= 8; // reduce by one octet.
   }
 
-  if (n == 0 && src.empty()) {
-    return true;
+  // If there's text left, or not all the octets were filled, fail.
+  if (! src.empty() || n != 0) {
+    _addr = INADDR_ANY;
+    return false;
   }
-  _addr = INADDR_ANY;
-  return false;
+
+  return true;
 }
 
 IP4Addr::IP4Addr(sockaddr_in const *sa) : _addr(reorder(sa->sin_addr.s_addr)) {}
@@ -292,6 +308,16 @@ sockaddr_in *
 IP4Addr::copy_to(sockaddr_in *sa, in_port_t port) const {
   sa->sin_addr.s_addr = this->network_order();
   sa->sin_port        = port;
+  return sa;
+}
+
+// --- IPv6
+
+sockaddr *
+IP6Addr::copy_to(sockaddr *sa, in_port_t port) const {
+  IPEndpoint addr(sa);
+  self_type::reorder(addr.sa6.sin6_addr, _addr._raw);
+  addr.network_order_port() = port;
   return sa;
 }
 
@@ -439,6 +465,15 @@ IP6Addr::reorder(raw_type &dst, in6_addr const &src) {
   self_type::reorder(dst.data() + WORD_SIZE, src.s6_addr + WORD_SIZE);
 }
 
+IPAddr::IPAddr(IPEndpoint const &addr) {
+  this->assign(&addr.sa);
+}
+
+IPAddr &
+IPAddr::operator=(IPEndpoint const &addr) {
+  return this->assign(&addr.sa);
+}
+
 bool
 IPAddr::load(const std::string_view &text) {
   TextView src{text};
@@ -576,9 +611,9 @@ IPMask::load(string_view const &text) {
 IPMask
 IPMask::mask_for(IPAddr const &addr) {
   if (addr.is_ip4()) {
-    return self_type::mask_for(static_cast<IP4Addr const &>(addr));
+    return self_type::mask_for(addr.ip4());
   } else if (addr.is_ip6()) {
-    return self_type::mask_for(static_cast<IP6Addr const &>(addr));
+    return self_type::mask_for(addr.ip6());
   }
   return {};
 }
@@ -632,6 +667,119 @@ IPMask::as_ip6() const {
     return {MASK, MASK << (2 * IP6Addr::WORD_WIDTH - _cidr)};
   }
   return {MASK, MASK};
+}
+
+// --- SRV ---
+
+IP4Srv::IP4Srv(swoc::TextView text) {
+  this->load(text);
+}
+
+bool
+IP4Srv::load(swoc::TextView text) {
+  TextView addr_text, port_text, rest;
+  if (IPEndpoint::tokenize(text, &addr_text, &port_text, &rest)) {
+    if (rest.empty()) {
+      uintmax_t n = 0;
+      if (!port_text.empty()) {
+        n = swoc::svtou(port_text, &rest);
+        if (rest.size() != port_text.size() || n > std::numeric_limits<in_port_t>::max()) {
+          return false; // bad port.
+        }
+      }
+      IP4Addr addr;
+      if (addr.load(addr_text)) {
+        this->assign(addr, n);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+IP6Srv::IP6Srv(swoc::TextView text) {
+  this->load(text);
+}
+
+bool
+IP6Srv::load(swoc::TextView text) {
+  TextView addr_text, port_text, rest;
+  if (IPEndpoint::tokenize(text, &addr_text, &port_text, &rest)) {
+    if (rest.empty()) {
+      uintmax_t n = 0;
+      if (!port_text.empty()) {
+        n = swoc::svtou(port_text, &rest);
+        if (rest.size() != port_text.size() || n > std::numeric_limits<in_port_t>::max()) {
+          return false; // bad port.
+        }
+      }
+      IP6Addr addr;
+      if (addr.load(addr_text)) {
+        this->assign(addr, n);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+IPSrv::IPSrv(swoc::TextView text) {
+  this->load(text);
+}
+
+bool
+IPSrv::load(swoc::TextView text) {
+  TextView addr_text, port_text, rest;
+  if (IPEndpoint::tokenize(text, &addr_text, &port_text, &rest)) {
+    if (rest.empty()) {
+      uintmax_t n = 0;
+      if (!port_text.empty()) {
+        n = swoc::svtou(port_text, &rest);
+        if (rest.size() != port_text.size() || n > std::numeric_limits<in_port_t>::max()) {
+          return false; // bad port.
+        }
+      }
+      IPAddr addr;
+      if (addr.load(addr_text)) {
+        this->assign(addr, n);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+
+IPSrv::IPSrv(IPAddr addr, in_port_t port) {
+  _family = addr.family();
+  if (addr.is_ip4()) {
+    _srv._ip4.assign(addr.ip4(), port);
+  } else if (addr.is_ip6()) {
+    _srv._ip6.assign(addr.ip6(), port);
+  } else {
+    _family = AF_UNSPEC;
+  }
+}
+
+IPSrv::IPSrv(IPEndpoint const& ep) {
+  if (ep.is_ip4()) {
+    _family = _srv._ip4.family();
+    _srv._ip4.assign(&ep.sa4);
+  } else if (ep.is_ip6()) {
+    _family = _srv._ip6.family();
+    _srv._ip6.assign(&ep.sa6);
+  }
+}
+
+auto IPSrv::assign(const sockaddr *sa) -> self_type & {
+  if (AF_INET == sa->sa_family) {
+    _family = AF_INET;
+    _srv._ip4.assign(reinterpret_cast<sockaddr_in const *>(sa));
+  } else if (AF_INET6 == sa->sa_family) {
+    _family = AF_INET6;
+    _srv._ip6.assign(reinterpret_cast<sockaddr_in6 const *>(sa));
+  }
+  return *this;
 }
 
 // ++ IPNet ++
@@ -879,20 +1027,16 @@ IPRange::IPRange(IPAddr const &min, IPAddr const &max) {
 
 bool
 IPRange::load(std::string_view const &text) {
-  static const string_view CHARS{".:"};
-  if ( auto idx = text.find_first_of(CHARS) ; idx != text.npos ) {
-    if (text[idx] == '.') {
-      if (_range._ip4.load(text)) {
-        _family = AF_INET;
-        return true;
-      }
-    } else {
-      if (_range._ip6.load(text)) {
-        _family = AF_INET6;
-        return true;
-      }
+  if ( auto idx = text.find_first_of(':') ; idx != text.npos ) {
+    if (_range._ip6.load(text)) {
+      _family = AF_INET6;
+      return true;
     }
+  } else if (_range._ip4.load(text)) {
+    _family = AF_INET;
+    return true;
   }
+
   return false;
 }
 

@@ -47,6 +47,10 @@ library_include_HEADERS = \
         include/swoc/RBTree.h \
         include/swoc/Scalar.h \
         include/swoc/swoc_file.h \
+        include/swoc/IPEndpoint.h \
+        include/swoc/IPAddr.h \
+        include/swoc/IPSrv.h \
+        include/swoc/IPRange.h \
         include/swoc/swoc_ip.h \
         include/swoc/swoc_meta.h \
         include/swoc/swoc_version.h\

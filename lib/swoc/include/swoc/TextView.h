@@ -148,7 +148,7 @@ public:
   /// Assign from C-string @a s.
   self_type &operator=(char *&s);
   /// Assign from C-string @a s.
-  self_type &operator=(char const *&s);
+  self_type &operator=(char const * & s);
 
   /// Assign from a @c std::string.
   self_type &operator=(const std::string &s);
