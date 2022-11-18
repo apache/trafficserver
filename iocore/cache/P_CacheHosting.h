@@ -27,6 +27,7 @@
 #include "P_Cache.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
+#include "tscpp/util/TsSharedMutex.h"
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
@@ -209,7 +210,7 @@ private:
   ReplaceablePtr &operator=(const ReplaceablePtr &) = delete;
 
   std::unique_ptr<T> h = nullptr;
-  std::shared_mutex m;
+  ts::shared_mutex m;
 
   friend class ReplaceablePtr::ScopedReader;
 };
