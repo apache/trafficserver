@@ -495,6 +495,7 @@ Changes with Apache Traffic Server 9.2.0
   #8898 - slice and cache_range_requests: allow header override (#8666)
   #8902 - Fix plugin stats_over_http OK reason phrase
   #8906 - Fix autest uses of File exists parameter
+  #8919 - AuTest: bind stdout/stderr to traffic.out
   #8924 - Update location for core rule set in modsecurity example
   #8925 - Cleanup. Remove unnecessary use of a memory arena when logging.
   #8927 - Add docs for remap_stats plugin
@@ -550,6 +551,7 @@ Changes with Apache Traffic Server 9.2.0
   #9103 - s3_auth: Fix parsing of virtual_host
   #9105 - Fix compile error with llvm-15
   #9106 - Fix unused-but-set-variable warnings by llvm-15
+  #9107 - Adds support for serving statichit content out of a directory
   #9110 - Updating AuTest to use Proxy Verifier v2.4.2
   #9112 - Fix expected sha1sum for the Proxy Verifier binary
   #9122 - Fix HTTP/2 session receive window handling for small sizes (#9117)
@@ -565,3 +567,6 @@ Changes with Apache Traffic Server 9.2.0
   #9177 - Fix the Loading of Client Certificate Chains
   #9178 - Asynchronously refresh OCSP
   #9180 - update autest version
+  #9181 - Adding back set_connect_fail for generic I/O error
+  #9186 - Traffic Dump: Allow unlimited disk utilization
+  #9195 - AuTest: make MakeATSProcess accessible for TestRuns
