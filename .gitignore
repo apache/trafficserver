@@ -206,6 +206,7 @@ tools/escape_mapper/escape_mapper
 BUILDS
 DEBUG
 RELEASE
+cmake-build-*
 
 # lcov generated files.
 *.gcda
