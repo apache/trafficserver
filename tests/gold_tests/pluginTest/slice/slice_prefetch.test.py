@@ -150,25 +150,26 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 O
 ps.Streams.stdout.Content += Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts
 
-# 3 Test - Full object slice (miss) with only blocks 10-14, 15-19 prefetched in background, block bytes= 5
-tr = Test.AddTestRun("Full object slice: first block is miss, only blocks 10-14, 15-19 prefetched")
+# 3 Test - Full object slice (hit-fresh) with no prefetched blocks, block bytes= 7
+tr = Test.AddTestRun("Full object slice: first block is hit-fresh with range 0-, no blocks prefetched")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://sliceprefetchbytes2/path' + ' -r 0-'
+ps.Command = curl_and_args + ' http://sliceprefetchbytes1/path' + ' -r 0-'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-17/18", "mismatch byte content response")
-ps.Streams.stdout.Content += Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content += Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
 
-# 4 Test - Non aligned slice request
-tr = Test.AddTestRun("Non aligned slice request")
+# 4 Test - Client range request (hit-stale/miss) enables prefetching
+tr = Test.AddTestRun("Client range request")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://sliceprefetchbytes1/path' + ' -r 5-16'
+ps.Command = curl_and_args + ' http://sliceprefetchbytes2/path' + ' -r 5-16'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_mid.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 5-16/18", "mismatch byte content response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 tr.StillRunningAfter = ts
 
 # 5 Test - special case, begin inside last slice block but outside asset len

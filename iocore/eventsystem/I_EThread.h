@@ -30,6 +30,7 @@
 #include "I_Thread.h"
 #include "I_PriorityEventQueue.h"
 #include "I_ProtectedQueue.h"
+#include "tscpp/util/Histogram.h"
 
 // TODO: This would be much nicer to have "run-time" configurable (or something),
 // perhaps based on proxy.config.stat_api.max_stats_allowed or other configs. XXX
@@ -39,7 +40,7 @@
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-struct DiskHandler;
+class DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;
@@ -360,8 +361,7 @@ public:
   */
   class DefaultTailHandler : public LoopTailHandler
   {
-    // cppcheck-suppress noExplicitConstructor; allow implicit conversion
-    DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
+    explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
     int
     waitForActivity(ink_hrtime timeout) override
@@ -383,84 +383,234 @@ public:
     ProtectedQueue &_q;
 
     friend class EThread;
-  } DEFAULT_TAIL_HANDLER = EventQueueExternal;
+  } DEFAULT_TAIL_HANDLER = DefaultTailHandler(EventQueueExternal);
 
-  /// Statistics data for event dispatching.
-  struct EventMetrics {
-    /// Time the loop was active, not including wait time but including event dispatch time.
-    struct LoopTimes {
-      ink_hrtime _start = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
-      ink_hrtime _min   = INT64_MAX; ///< Shortest loop time.
-      ink_hrtime _max   = 0;         ///< Longest loop time.
-      LoopTimes() {}
-    } _loop_time;
+  struct Metrics {
+    using self_type = Metrics; ///< Self reference type.
 
-    struct Events {
-      int _min   = INT_MAX;
-      int _max   = 0;
-      int _total = 0;
-      Events() {}
-    } _events;
+    /// Information about loops within the same time slice.
+    struct Slice {
+      using self_type = Slice;
 
-    int _count = 0; ///< # of times the loop executed.
-    int _wait  = 0; ///< # of timed wait for events
+      /// Data for timing of the loop.
+      struct Duration {
+        ink_hrtime _start = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
+        ink_hrtime _min   = INT64_MAX; ///< Shortest loop time.
+        ink_hrtime _max   = 0;         ///< Longest loop time.
+        Duration()        = default;
+      } _duration;
 
-    /// Add @a that to @a this data.
-    /// This embodies the custom logic per member concerning whether each is a sum, min, or max.
-    EventMetrics &operator+=(EventMetrics const &that);
+      /// Events in the slice.
+      struct Events {
+        int _min   = INT_MAX; ///< Minimum # of events in a loop.
+        int _max   = 0;       ///< Maximum # of events in a loop.
+        int _total = 0;       ///< Total # of events.
+        Events() {}
+      } _events;
 
-    EventMetrics() {}
+      int _count = 0; ///< # of times the loop executed.
+      int _wait  = 0; ///< # of timed wait for events
+
+      /** Record the loop start time.
+       *
+       * @param t Start time.
+       * @return @a this
+       */
+      self_type &record_loop_start(ink_hrtime t);
+
+      /** Record event loop duration.
+       *
+       * @param delta Duration of the loop.
+       * @return @a this.
+       */
+      self_type &record_loop_duration(ink_hrtime delta);
+
+      /** Record number of events in a loop.
+       *
+       * @param count Event count.
+       * @return
+       */
+      self_type &record_event_count(int count);
+
+      /// Add @a that to @a this data.
+      /// This embodies the custom logic per member concerning whether each is a sum, min, or max.
+      Slice &operator+=(Slice const &that);
+
+      /** Slice related statistics.
+          THE ORDER IS VERY SENSITIVE.
+          More than one part of the code depends on this exact order. Be careful and thorough when changing.
+      */
+      enum class STAT_ID {
+        LOOP_COUNT,      ///< # of event loops executed.
+        LOOP_EVENTS,     ///< # of events
+        LOOP_EVENTS_MIN, ///< min # of events dispatched in a loop
+        LOOP_EVENTS_MAX, ///< max # of events dispatched in a loop
+        LOOP_WAIT,       ///< # of loops that did a conditional wait.
+        LOOP_TIME_MIN,   ///< Shortest time spent in loop.
+        LOOP_TIME_MAX,   ///< Longest time spent in loop.
+      };
+      /// Number of statistics for a slice.
+      static constexpr unsigned N_STAT_ID = unsigned(STAT_ID::LOOP_TIME_MAX) + 1;
+
+      /// Statistic name stems.
+      /// These will be qualfied by time scale.
+      static char const *const STAT_NAME[N_STAT_ID];
+
+      Slice() = default;
+    };
+
+    /** The number of slices.
+        This is a circular buffer, with one slice per second. We have a bit more than the required 1000
+        to provide sufficient slop for cross thread reading of the data (as only the current slice
+        is being updated).
+    */
+    static constexpr int N_SLICES = 1024;
+    /// The slices.
+    std::array<Slice, N_SLICES> _slice;
+
+    Slice *volatile current_slice = nullptr; ///< The current slice.
+
+    /** The number of time scales used in the event statistics.
+        Currently these are 10s, 100s, 1000s.
+    */
+    static constexpr unsigned N_TIMESCALES = 3;
+
+    /// # of samples for each time scale.
+    static constexpr std::array<unsigned, 3> SLICE_SAMPLE_COUNT = {10, 100, 1000};
+
+    /// Total # of stats created for slice metrics.
+    static constexpr unsigned N_SLICE_STATS = Slice::N_STAT_ID * N_TIMESCALES;
+
+    /// Back up the metric pointer, wrapping as needed.
+    Slice *prev_slice(Slice *current);
+    /// Advance the metric pointer, wrapping as needed.
+    Slice *next_slice(Slice *current);
+
+    /** Record a loop time sample in the histogram.
+     *
+     * @param delta Loop time.
+     * @return @a this
+     */
+    self_type &record_loop_time(ink_hrtime delta);
+
+    /** Record total api sample in the histogram.
+     *
+     * @param delta Duration.
+     * @return @a this
+     */
+    self_type &record_api_time(ink_hrtime delta);
+
+    /// Do any accumulated data decay that's required.
+    self_type &decay();
+
+    /// Base name for event loop histogram stats.
+    /// The actual stats are determined by the @c Histogram properties.
+    static constexpr ts::TextView LOOP_HISTOGRAM_STAT_STEM = "proxy.process.eventloop.time.";
+    /// Base bucket size for @c Graph
+    static constexpr ts_milliseconds LOOP_HISTOGRAM_BUCKET_SIZE{5};
+
+    /// Histogram type. 7,2 provides a reasonable range (5-2560 ms) and accuracy.
+    using Graph = ts::Histogram<7, 2>;
+    Graph _loop_timing; ///< Event loop timings.
+    /// Base name for event loop histogram stats.
+    /// The actual stats are determined by the @c Histogram properties.
+    static constexpr ts::TextView API_HISTOGRAM_STAT_STEM = "proxy.process.api.time.";
+    /// Base bucket size in milliseconds for plugin API timings.
+    static constexpr ts_milliseconds API_HISTOGRAM_BUCKET_SIZE{1};
+    Graph _api_timing; ///< Plugin API callout timings.
+
+    /// Data in the histogram needs to decay over time. To avoid races and locks the
+    /// summarizing thread bumps this to indicate a decay is needed and doesn't update if
+    /// this is non-zero. The event loop does the decay and decrements the count.
+    std::atomic<unsigned> _decay_count = 0;
+    /// Decay this often.
+    static inline std::chrono::duration _decay_delay = std::chrono::seconds{90};
+    /// Time of last decay.
+    static inline ts_clock::time_point _last_decay_time;
+
+    /// Total number of metric based statistics.
+    static constexpr unsigned N_STATS = N_SLICE_STATS + 2 * Graph::N_BUCKETS;
+
+    /// Summarize this instance into a global instance.
+    void summarize(self_type &global);
   };
 
-  /** The number of metric blocks kept.
-      This is a circular buffer, with one block per second. We have a bit more than the required 1000
-      to provide sufficient slop for cross thread reading of the data (as only the current metric block
-      is being updated).
-  */
-  static int const N_EVENT_METRICS = 1024;
-
-  volatile EventMetrics *current_metric = nullptr; ///< The current element of @a metrics
-  EventMetrics metrics[N_EVENT_METRICS];
-
-  /** The various stats provided to the administrator.
-      THE ORDER IS VERY SENSITIVE.
-      More than one part of the code depends on this exact order. Be careful and thorough when changing.
-  */
-  enum STAT_ID {
-    STAT_LOOP_COUNT,      ///< # of event loops executed.
-    STAT_LOOP_EVENTS,     ///< # of events
-    STAT_LOOP_EVENTS_MIN, ///< min # of events dispatched in a loop
-    STAT_LOOP_EVENTS_MAX, ///< max # of events dispatched in a loop
-    STAT_LOOP_WAIT,       ///< # of loops that did a conditional wait.
-    STAT_LOOP_TIME_MIN,   ///< Shortest time spent in loop.
-    STAT_LOOP_TIME_MAX,   ///< Longest time spent in loop.
-    N_EVENT_STATS         ///< NOT A VALID STAT INDEX - # of different stat types.
-  };
-
-  static char const *const STAT_NAME[N_EVENT_STATS];
-
-  /** The number of time scales used in the event statistics.
-      Currently these are 10s, 100s, 1000s.
-  */
-  static int const N_EVENT_TIMESCALES = 3;
-  /// # of samples for each time scale.
-  static int const SAMPLE_COUNT[N_EVENT_TIMESCALES];
-
-  /// Process the last 1000s of data and write out the summaries to @a summary.
-  void summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES]);
-  /// Back up the metric pointer, wrapping as needed.
-  EventMetrics *
-  prev(EventMetrics volatile *current)
-  {
-    return const_cast<EventMetrics *>(--current < metrics ? &metrics[N_EVENT_METRICS - 1] : current); // cast to remove volatile
-  }
-  /// Advance the metric pointer, wrapping as needed.
-  EventMetrics *
-  next(EventMetrics volatile *current)
-  {
-    return const_cast<EventMetrics *>(++current > &metrics[N_EVENT_METRICS - 1] ? metrics : current); // cast to remove volatile
-  }
+  Metrics metrics;
 };
+
+// --- Inline implementation
+
+inline auto
+EThread::Metrics::Slice::record_loop_start(ink_hrtime t) -> self_type &
+{
+  _duration._start = t;
+  return *this;
+}
+
+inline auto
+EThread::Metrics::Slice::record_loop_duration(ink_hrtime delta) -> self_type &
+{
+  if (delta > _duration._max) {
+    _duration._max = delta;
+  }
+  if (delta < _duration._min) {
+    _duration._min = delta;
+  }
+  return *this;
+}
+
+inline auto
+EThread::Metrics::Slice::record_event_count(int count) -> self_type &
+{
+  if (count < _events._min) {
+    _events._min = count;
+  }
+  if (count > _events._max) {
+    _events._max = _count;
+  }
+  _events._total += count;
+  return *this;
+}
+
+inline EThread::Metrics::Slice *
+EThread::Metrics::prev_slice(EThread::Metrics::Slice *current)
+{
+  return --current < _slice.data() ? &_slice[N_SLICES - 1] : current;
+}
+
+inline EThread::Metrics::Slice *
+EThread::Metrics::next_slice(EThread::Metrics::Slice *current)
+{
+  return ++current > &_slice[N_SLICES - 1] ? _slice.data() : current;
+}
+
+inline auto
+EThread::Metrics::record_loop_time(ink_hrtime delta) -> self_type &
+{
+  static auto constexpr DIVISOR = std::chrono::duration_cast<ts_nanoseconds>(LOOP_HISTOGRAM_BUCKET_SIZE).count();
+  current_slice->record_loop_duration(delta);
+  _loop_timing(delta / DIVISOR);
+  return *this;
+}
+
+inline auto
+EThread::Metrics::record_api_time(ink_hrtime delta) -> self_type &
+{
+  static auto constexpr DIVISOR = std::chrono::duration_cast<ts_nanoseconds>(LOOP_HISTOGRAM_BUCKET_SIZE).count();
+  _api_timing(delta / DIVISOR);
+  return *this;
+}
+
+inline auto
+EThread::Metrics::decay() -> self_type &
+{
+  while (_decay_count) {
+    _loop_timing.decay();
+    _api_timing.decay();
+    --_decay_count;
+  }
+  return *this;
+}
 
 /**
   This is used so that we dont use up operator new(size_t, void *)

@@ -61,7 +61,7 @@ unsigned int hostdb_serve_stale_but_revalidate = 0;
 static ts_seconds hostdb_hostfile_check_interval{std::chrono::hours(24)};
 // Epoch timestamp of the current hosts file check. This also functions as a
 // cached version of ts_clock::now().
-ts_time hostdb_current_timestamp{TS_TIME_ZERO};
+std::atomic<ts_time> hostdb_current_timestamp{TS_TIME_ZERO};
 // Epoch timestamp of the last time we actually checked for a hosts file update.
 static ts_time hostdb_last_timestamp{TS_TIME_ZERO};
 // Epoch timestamp when we updated the hosts file last.
@@ -1480,7 +1480,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     return EVENT_CONT;
   }
 
-  if ((hostdb_current_timestamp - hostdb_last_timestamp) > hostdb_hostfile_check_interval) {
+  if ((hostdb_current_timestamp.load() - hostdb_last_timestamp) > hostdb_hostfile_check_interval) {
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 

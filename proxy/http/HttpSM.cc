@@ -1384,6 +1384,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
   // FALLTHROUGH
   case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     // Transform VC sends NULL on error conditions
     if (!c) {
       c = tunnel.get_consumer(t_info->vc);
@@ -1922,9 +1923,6 @@ HttpSM::state_http_server_open(int event, void *data)
 
       server_entry->write_vio = server_txn->do_io_write(this, nbytes, server_txn->get_remote_reader());
 
-      // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
-      // bytes are received back
-      t_state.set_connect_fail(EIO);
     } else { // in the case of an intercept plugin don't to the connect timeout change
       SMDebug("http", "not setting handler for TCP handshake");
       handle_http_server_open();
@@ -7663,6 +7661,9 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN: {
+    // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
+    // bytes are received back
+    t_state.set_connect_fail(EIO);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_http_server_open);
 
     // We need to close the previous attempt
@@ -8480,14 +8481,11 @@ HttpSM::milestone_update_api_time()
     if (!active) {
       api_timer = -api_timer;
     }
-    delta     = Thread::get_hrtime_updated() - api_timer;
-    api_timer = 0;
     // Zero or negative time is a problem because we want to signal *something* happened
     // vs. no API activity at all. This can happen due to graininess or real time
     // clock adjustment.
-    if (delta <= 0) {
-      delta = 1;
-    }
+    delta     = std::max<ink_hrtime>(1, Thread::get_hrtime_updated() - api_timer);
+    api_timer = 0;
 
     if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL]) {
       milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
@@ -8499,5 +8497,6 @@ HttpSM::milestone_update_api_time()
       }
       milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
     }
+    this_ethread()->metrics.record_api_time(delta);
   }
 }

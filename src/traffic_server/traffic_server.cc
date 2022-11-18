@@ -1892,7 +1892,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This call is required for win_9xMe
   // without this this_ethread() is failing when
   // start_HttpProxyServer is called from main thread
-  Thread *main_thread = new EThread;
+  EThread *main_thread = new EThread;
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.config configuration
@@ -2049,6 +2049,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     lock.unlock();
     proxyServerCheck.notify_one();
   }
+
+#if TS_USE_LINUX_IO_URING == 1
+  Note("Using io_uring for AIO");
+  DiskHandler *main_aio = DiskHandler::local_context();
+  DiskHandler::set_main_queue(main_aio);
+  auto [bounded, unbounded] = main_aio->get_wq_max_workers();
+  Note("io_uring: WQ workers - bounded = %d, unbounded = %d", bounded, unbounded);
+#endif
 
   // !! ET_NET threads start here !!
   // This means any spawn scheduling must be done before this point.
@@ -2248,7 +2256,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   TSSystemState::initialization_done();
 
   while (!TSSystemState::is_event_system_shut_down()) {
+#if TS_USE_LINUX_IO_URING == 1
+    main_aio->submit_and_wait(1000);
+#else
     sleep(1);
+#endif
   }
 
   delete main_thread;

@@ -33,6 +33,7 @@
 #include <sstream>
 
 #include <string>
+#include <filesystem>
 #include <getopt.h>
 
 #include <netinet/in.h>
@@ -62,21 +63,74 @@ static int StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int StaticHitTxnHook(TSCont contp, TSEvent event, void *edata);
 
 struct StaticHitConfig {
-  explicit StaticHitConfig(const std::string &filePath, const std::string &mimeType, bool disableExact)
-    : filePath(filePath), mimeType(mimeType), disableExact(disableExact)
+  explicit StaticHitConfig(const std::string &fileOrDir, const std::string &mimeType, bool exact) : mimeType(mimeType)
   {
+    std::filesystem::path base_path{fileOrDir};
+
+    if (!base_path.is_absolute()) {
+      base_path = std::filesystem::path(TSConfigDirGet()) / base_path;
+    }
+    base_path = std::filesystem::weakly_canonical(base_path);
+
+    if (std::filesystem::is_directory(base_path)) {
+      dirPath      = base_path;
+      filePath     = "";
+      disableExact = true;
+    } else {
+      dirPath      = "";
+      filePath     = base_path;
+      disableExact = exact;
+    }
   }
 
   ~StaticHitConfig() { TSContDestroy(cont); }
 
-  std::string filePath;
-  std::string mimeType;
+  std::string_view
+  makePath(TSHttpTxn txnp, std::string &output) const
+  {
+    std::string_view ret = {};
 
-  int successCode = 200;
-  int failureCode = 404;
-  int maxAge      = 0;
+    if (!dirPath.empty()) {
+      TSMBuffer reqp;
+      TSMLoc hdr_loc = nullptr, url_loc = nullptr;
+
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) {
+        if (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc)) {
+          int path_len = 0;
+          auto path    = TSUrlPathGet(reqp, url_loc, &path_len);
+
+          std::filesystem::path requested_file_path(
+            std::filesystem::weakly_canonical(dirPath / std::string_view{path, static_cast<size_t>(path_len)}));
+
+          TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+          TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+
+          if (std::equal(dirPath.begin(), dirPath.end(), requested_file_path.begin()) &&
+              std::filesystem::is_regular_file(requested_file_path)) {
+            output = requested_file_path.string();
+            ret    = {output.c_str(), output.size()};
+          }
+        } else {
+          TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+        }
+      }
+    } else {
+      ret = filePath;
+    }
+
+    return ret;
+  }
+
+  std::filesystem::path dirPath;
+  std::string filePath;
+
+  std::string mimeType = "";
+  int successCode      = 200;
+  int failureCode      = 404;
+  int maxAge           = 0;
 
   bool disableExact = false;
+  bool isDirectory  = false;
 
   TSCont cont;
 };
@@ -166,12 +220,16 @@ struct StaticHitRequest {
   std::string mimeType;
 
   static StaticHitRequest *
-  createStaticHitRequest(StaticHitConfig *tc)
+  createStaticHitRequest(StaticHitConfig *tc, TSHttpTxn txn)
   {
     StaticHitRequest *shr = new StaticHitRequest;
     std::ifstream ifstr;
+    std::string output;
+    std::string_view filePath = tc->makePath(txn, output);
 
-    ifstr.open(tc->filePath);
+    VDEBUG("Requested file path: %s", filePath.data());
+
+    ifstr.open(filePath.data());
     if (!ifstr) {
       shr->statusCode = tc->failureCode;
       return shr;
@@ -485,9 +543,9 @@ StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata)
 static void
 StaticHitSetupIntercept(StaticHitConfig *cfg, TSHttpTxn txn)
 {
-  StaticHitRequest *req = StaticHitRequest::createStaticHitRequest(cfg);
+  StaticHitRequest *req = StaticHitRequest::createStaticHitRequest(cfg, txn);
+
   if (req == nullptr) {
-    VERROR("could not create request for %s", cfg->filePath.c_str());
     return;
   }
 
@@ -651,15 +709,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   if (filePath.size() == 0) {
-    printf("Need to specify --file-path\n");
+    VERROR("Need to specify --file-path\n");
     return TS_ERROR;
   }
 
-  if (filePath.find('/') != 0) {
-    filePath = std::string(TSConfigDirGet()) + '/' + filePath;
-  }
-
   StaticHitConfig *tc = new StaticHitConfig(filePath, mimeType, disableExact);
+
   if (maxAge > 0) {
     tc->maxAge = maxAge;
   }

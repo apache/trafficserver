@@ -1,3 +1,12 @@
+#
+#  ThreadSanitizer suppressions file
+#
+#  ```
+#  TSAN_OPTIONS="suppressions=/PATH/TO/THE/.tsan_suppressions" ./traffic_server
+#  ```
+#
+#  https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -6,7 +15,7 @@
 #  "License"); you may not use this file except in compliance
 #  with the License.  You may obtain a copy of the License at
 #
-#  http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,28 +23,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-path_classifiers:
-  3rd-party:
-    - "lib/fastlz"
-    - "lib/yamlcpp"
-    - "tests/include/catch.hpp"
-    - "plugins/experimental/wasm/lib"
-queries:
-  - exclude:
-      tags:
-        - "3rd-party"
-extraction:
-  cpp:
-    prepare:
-      packages:
-      - "libcjose-dev"
-      - "libcjose0"
-      - "libjansson-dev"
-      - "libluajit-5.1-dev"
-      - "libpcre3-dev"
-      - "zlib1g-dev"
-    after_prepare: "autoreconf -fiv"
-    configure:
-      command: "./configure --enable-experimental-plugins"
-    index:
-      build_command: "make"
+# Ignore data race of freelist
+race:freelist_new

@@ -46,7 +46,7 @@ Plugin Configuration
 
    .. option:: --limit <N>
 
-   (`required`) - Specifies the max disk usage to N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit.
+   (`optional`) - Specifies the maximum disk usage to N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit. If this option is not used then no disk utilization limit will be enforced.
 
    .. option:: --sensitive-fields <field1,field2,...,fieldn>
 
@@ -62,6 +62,7 @@ Plugin Configuration
    * ``traffic_ctl plugin msg traffic_dump.sample N`` - changes the sampling ratio N as mentioned above.
    * ``traffic_ctl plugin msg traffic_dump.reset`` - resets the disk usage counter.
    * ``traffic_ctl plugin msg traffic_dump.limit N`` - changes the max disk usage to N bytes as mentioned above.
+   * ``traffic_ctl plugin msg traffic_dump.unlimit`` - configure Traffic Dump to not enforce a disk usage limit.
 
 Replay Format
 =============

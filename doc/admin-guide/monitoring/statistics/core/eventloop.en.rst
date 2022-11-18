@@ -25,15 +25,15 @@ general mechanism is
 
 *  Dispatch any pending events.
 
-*  Check for any pending I/O activity. This wait a variable amount of time. It is at most
-   :ts:cv:`proxy.config.thread.max_heartbeat_mseconds` milliseconds. It is reduced to the amount of
-   time until the next scheduled event. Although this is done in milliseconds, system timers are
+*  Check for any pending I/O activity. This waits a variable amount of time, but at most
+   :ts:cv:`proxy.config.thread.max_heartbeat_mseconds` milliseconds. It is reduced to wake up before
+   the next scheduled event. Although this is done in milliseconds, system timers are
    rarely that accurate.
 
-*  For each network connection dispatch an event to the corresponding network virtual connection
-   object.
+*  For each network connection that has pending I/O, dispatch an event to the corresponding network
+   virtual connection object.
 
-*  Dispatch any events generated while handling I/O in the previous step
+*  Dispatch any events generated while handling I/O in the previous steps.
 
 Event loops that take a long time will have a noticeable impact on transaction latency. There are a
 number of statistics gathered to help determine if this is the problem. Because instantaneous values
@@ -41,7 +41,8 @@ are not useful, the data is gathered in three different time buckets - 10, 100, 
 There is a parallel set of statistics for each, and each larger time period includes the smaller
 ones. The statistic values are all "for this time period". For example, the statistic
 "proxy.process.eventloop.count.100s" is "the number of event loops executed in the last 100
-seconds".
+seconds". The histogram metrics provide a more detailed look at the distribution of event loop times
+to distinguish whether long times are common or an outlier.
 
 In general, the maximum loop time will create a floor under response latency. If that is frequently
 high then it is likely transactions are experiencing significant latency.
@@ -144,3 +145,60 @@ high then it is likely transactions are experiencing significant latency.
     :units: nanoseconds
 
     The maximum amount of time spent in a single loop in the last 1000 seconds.
+
+.. rubric:: Histogram Metrics
+
+.. ts:stat:: global proxy.process.eventloop.time.*ms integer
+
+    This is a set of statistics that provide a histogram of event loop times. Each is labeled
+    with a value indicating the minimum time for the bucket. The maximum is less than the minimum
+    of the next bucket. E.g. there is a "10ms" and a "20ms" statistic. The "10ms" statistic counts
+    the number of times the event loop took at least 10ms and less than 20ms. The exception is the
+    last bucket which has no maximum. The histogram is semi-logarithmic so that bucket sizes increase
+    exponentially with smaller intermediate steps. Every 60 seconds the accumulated values are
+    decreased by half to provide an exponential decay of recent activity. The current set of
+    statistics is ::
+
+        proxy.process.eventloop.time.0ms 2210
+        proxy.process.eventloop.time.5ms 293
+        proxy.process.eventloop.time.10ms 1848
+        proxy.process.eventloop.time.15ms 1483
+        proxy.process.eventloop.time.20ms 0
+        proxy.process.eventloop.time.25ms 0
+        proxy.process.eventloop.time.30ms 0
+        proxy.process.eventloop.time.35ms 348
+        proxy.process.eventloop.time.40ms 0
+        proxy.process.eventloop.time.50ms 0
+        proxy.process.eventloop.time.60ms 23872
+        proxy.process.eventloop.time.70ms 0
+        proxy.process.eventloop.time.80ms 0
+        proxy.process.eventloop.time.100ms 0
+        proxy.process.eventloop.time.120ms 0
+        proxy.process.eventloop.time.140ms 0
+        proxy.process.eventloop.time.160ms 0
+        proxy.process.eventloop.time.200ms 0
+        proxy.process.eventloop.time.240ms 0
+        proxy.process.eventloop.time.280ms 0
+        proxy.process.eventloop.time.320ms 0
+        proxy.process.eventloop.time.400ms 0
+        proxy.process.eventloop.time.480ms 0
+        proxy.process.eventloop.time.560ms 0
+        proxy.process.eventloop.time.640ms 0
+        proxy.process.eventloop.time.800ms 0
+        proxy.process.eventloop.time.960ms 0
+        proxy.process.eventloop.time.1120ms 0
+        proxy.process.eventloop.time.1280ms 0
+        proxy.process.eventloop.time.1600ms 0
+        proxy.process.eventloop.time.1920ms 0
+        proxy.process.eventloop.time.2240ms 0
+        proxy.process.eventloop.time.2560ms 0
+
+    This is an idle instance therefore the values are clustered strongly on 0 (less than 5ms) and
+    60ms (the default wait for I/O timeout).
+
+.. ts:stat:: global proxy.process.api.time.*ms integer
+
+   A set of statistics that provide a histogram of total time spent in plugins. This is sampled
+   per plugin, rather than the aggregate value for milestone :c:macro:`TS_MILESTONE_PLUGIN_TOTAL`.
+
+   See :ts:stat:`proxy.process.eventloop.time.*ms` for technical details.

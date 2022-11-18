@@ -579,7 +579,7 @@ SSLCertificateConfig::reconfigure()
 
   // If there are errors in the certificate configs and we had wanted to exit on error
   // we won't want to reset the config
-  if (retStatus || !params->configExitOnLoadError) {
+  if (retStatus) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;
@@ -843,7 +843,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
       // Continue to fetch certs to associate intermediate certificates
       cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       while (cert) {
-        if (!SSL_CTX_use_certificate(client_ctx.get(), cert)) {
+        if (!SSL_CTX_add_extra_chain_cert(client_ctx.get(), cert)) {
           SSLError("failed to attach client chain certificate from %s", client_cert.c_str());
           goto fail;
         }

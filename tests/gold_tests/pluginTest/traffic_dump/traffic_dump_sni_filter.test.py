@@ -74,7 +74,7 @@ ts.Disk.sni_yaml.AddLines([
 # Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
 sni_filter = "bob.com"
 ts.Disk.plugin_config.AddLine(
-    f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 1000000000 '
+    f'traffic_dump.so --logdir {replay_dir} --sample 1 '
     f'--sni-filter "{sni_filter}"'
 )
 
@@ -86,6 +86,10 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Ignore HTTPS session with non-filtered SNI: dave",
     "Verify that the non-desired SNI session was filtered out.")
+
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "Initialized with sample pool size of 1 bytes and unlimited disk utilization",
+    "Verify traffic_dump initialized with the configured disk limit.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")

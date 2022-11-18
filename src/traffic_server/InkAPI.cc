@@ -8462,7 +8462,7 @@ TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
 TSReturnCode
 TSAIOThreadNumSet(int thread_num)
 {
-#if AIO_MODE == AIO_MODE_NATIVE
+#if AIO_MODE == AIO_MODE_NATIVE || AIO_MODE == AIO_MODE_IO_URING
   (void)thread_num;
   return TS_SUCCESS;
 #else

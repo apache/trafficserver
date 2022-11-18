@@ -28,6 +28,7 @@
 
 #include "HTTP.h"
 #include "P_CacheHttp.h"
+#include "P_CacheHosting.h"
 
 struct EvacuationBlock;
 
@@ -358,9 +359,6 @@ struct CacheVC : public CacheVConnection {
   int updateVecWrite(int event, Event *e);
 
   int removeEvent(int event, Event *e);
-
-  int linkWrite(int event, Event *e);
-  int derefRead(int event, Event *e);
 
   int scanVol(int event, Event *e);
   int scanObject(int event, Event *e);
@@ -987,9 +985,10 @@ struct Cache {
   int total_nvol            = 0;
   int ready                 = CACHE_INITIALIZING;
   int64_t cache_size        = 0; // in store block size
-  CacheHostTable *hosttable = nullptr;
   int total_initialized_vol = 0;
   CacheType scheme          = CACHE_NONE_TYPE;
+
+  ReplaceablePtr<CacheHostTable> hosttable;
 
   int open(bool reconfigure, bool fix);
   int close();
@@ -1009,10 +1008,6 @@ struct Cache {
                      int host_len = 0);
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, cache_generation_t generation = -1);
-
-  Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname,
-               int host_len);
-  Action *deref(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len);
 
   void vol_initialized(bool result);
 
