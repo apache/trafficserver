@@ -27,6 +27,7 @@ lib_LTLIBRARIES = libtscpputil.la
 AM_CPPFLAGS += -I$(abs_top_srcdir)/include @SWOC_INCLUDES@
 
 libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
+libtscpputil_la_LIBADD = @SWOC_LIBS@
 
 libtscpputil_la_SOURCES = \
 	ts_diags.cc TextView.cc
