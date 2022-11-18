@@ -27,8 +27,9 @@
 #include <mutex>
 #include <memory>
 #include <utility>
+#include "ink_assert.h"
 #include "swoc/MemSpan.h"
-#include "tscore/Scalar.h"
+#include "swoc/Scalar.h"
 #include "tscore/IntrusivePtr.h"
 
 /// Apache Traffic Server commons.
@@ -208,12 +209,12 @@ protected:
    */
   BlockPtr make_block(size_t n);
 
-  using Page      = ts::Scalar<4096>; ///< Size for rounding block sizes.
-  using Paragraph = ts::Scalar<16>;   ///< Minimum unit of memory allocation.
+  using Page      = swoc::Scalar<4096>; ///< Size for rounding block sizes.
+  using Paragraph = swoc::Scalar<16>;   ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.
-  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
+  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{swoc::round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
   size_t _active_reserved  = 0; ///< Total current reserved memory.

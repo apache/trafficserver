@@ -34,7 +34,7 @@
 
 #include "tscore/Ptr.h"
 #include "tscore/ink_assert.h"
-#include "tscore/Scalar.h"
+#include "swoc/Scalar.h"
 #include "HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,
@@ -42,7 +42,7 @@
 
 static constexpr size_t HDR_PTR_SIZE           = sizeof(uint64_t);
 static constexpr size_t HDR_PTR_ALIGNMENT_MASK = HDR_PTR_SIZE - 1L;
-using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
+using HdrHeapMarshalBlocks                     = swoc::Scalar<HDR_PTR_SIZE>;
 
 // A many of the operations regarding read-only str
 //  heaps are hand unrolled in the code.  Changing
@@ -319,7 +319,7 @@ public:
   int m_lost_string_space;
 };
 
-static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{ts::round_up(sizeof(HdrHeap))};
+static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{swoc::round_up(sizeof(HdrHeap))};
 static constexpr size_t HDR_MAX_ALLOC_SIZE = HdrHeap::DEFAULT_SIZE - HDR_HEAP_HDR_SIZE;
 
 inline void

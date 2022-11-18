@@ -28,7 +28,7 @@
 #include <list>
 
 #include "tscore/I_Version.h"
-#include "tscore/Scalar.h"
+#include "swoc/Scalar.h"
 #include "tscore/Regex.h"
 #include "tscore/Errata.h"
 #include "tscpp/util/TextView.h"
@@ -43,8 +43,8 @@ struct bytes {
 };
 } // namespace ts::tag
 
-using ts::round_down;
-using ts::round_up;
+using swoc::round_down;
+using swoc::round_up;
 
 namespace ts
 {
@@ -76,19 +76,19 @@ constexpr static int MAX_VOLUME_IDX          = 255;
 constexpr static int ENTRIES_PER_BUCKET      = 4;
 constexpr static int MAX_BUCKETS_PER_SEGMENT = (1 << 16) / ENTRIES_PER_BUCKET;
 
-typedef Scalar<1, off_t, ts::tag::bytes> Bytes;
-typedef Scalar<1024, off_t, ts::tag::bytes> Kilobytes;
-typedef Scalar<1024 * Kilobytes::SCALE, off_t, ts::tag::bytes> Megabytes;
-typedef Scalar<1024 * Megabytes::SCALE, off_t, ts::tag::bytes> Gigabytes;
-typedef Scalar<1024 * Gigabytes::SCALE, off_t, ts::tag::bytes> Terabytes;
+using Bytes     = swoc::Scalar<1, off_t, ts::tag::bytes>;
+using Kilobytes = swoc::Scalar<1024, off_t, ts::tag::bytes>;
+using Megabytes = swoc::Scalar<1024 * Kilobytes::SCALE, off_t, ts::tag::bytes>;
+using Gigabytes = swoc::Scalar<1024 * Megabytes::SCALE, off_t, ts::tag::bytes>;
+using Terabytes = swoc::Scalar<1024 * Gigabytes::SCALE, off_t, ts::tag::bytes>;
 
 // Units of allocation for stripes.
-typedef Scalar<128 * Megabytes::SCALE, int64_t, ts::tag::bytes> CacheStripeBlocks;
+using CacheStripeBlocks = swoc::Scalar<128 * Megabytes::SCALE, int64_t, ts::tag::bytes>;
 // Size measurement of cache storage.
 // Also size of meta data storage units.
-typedef Scalar<8 * Kilobytes::SCALE, int64_t, ts::tag::bytes> CacheStoreBlocks;
+using CacheStoreBlocks = swoc::Scalar<8 * Kilobytes::SCALE, int64_t, ts::tag::bytes>;
 // Size unit for content stored in cache.
-typedef Scalar<512, int64_t, ts::tag::bytes> CacheDataBlocks;
+using CacheDataBlocks = swoc::Scalar<512, int64_t, ts::tag::bytes>;
 
 /** A cache span is a representation of raw storage.
     It corresponds to a raw disk, disk partition, file, or directory.

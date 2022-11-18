@@ -193,7 +193,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
-	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_Throttler.cc \
 	unit_tests/test_Tokenizer.cc \
