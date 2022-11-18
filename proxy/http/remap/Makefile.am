@@ -142,6 +142,7 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 
@@ -173,6 +174,7 @@ test_NextHopRoundRobin_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 
@@ -204,6 +206,7 @@ test_NextHopConsistentHash_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 

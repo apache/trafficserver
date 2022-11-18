@@ -20,7 +20,7 @@
 #include <limits>
 
 #include "swoc/swoc_version.h"
-#include "tscpp/util/string_view_util.h"
+#include "swoc/string_view_util.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
