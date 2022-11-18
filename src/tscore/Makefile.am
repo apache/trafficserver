@@ -52,6 +52,7 @@ libtscore_la_LIBADD = \
 	@LIBCAP@ \
 	@HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@SWOC_LIBS@ \
 	-lc
 
 libtscore_la_SOURCES = \
