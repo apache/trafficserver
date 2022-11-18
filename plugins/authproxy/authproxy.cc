@@ -56,7 +56,7 @@ static TSCont AuthOsDnsContinuation;
 
 struct AuthOptions {
   std::string hostname;
-  string_view forward_header_prefix;
+  std::string forward_header_prefix;
   int hostport                   = -1;
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
