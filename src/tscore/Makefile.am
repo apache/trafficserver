@@ -157,7 +157,7 @@ test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@
 
 test_geometry_SOURCES = test_geometry.cc
-test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@
+test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
 
 test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
