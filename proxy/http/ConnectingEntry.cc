@@ -117,7 +117,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     int lerrno           = EIO;
     if (_netvc != nullptr) {
       vc_provided_cert = _netvc->provided_cert();
-      lerrno           = _netvc->lerrno;
+      lerrno           = _netvc->lerrno == 0 ? lerrno : _netvc->lerrno;
       _netvc->do_io_close();
     }
     while (!_connect_sms.empty()) {
