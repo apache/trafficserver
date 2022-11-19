@@ -925,6 +925,7 @@ public:
     void
     set_connect_fail(int e)
     {
+      int const original_connect_result = this->current.server->connect_result;
       if (e == EUSERS) {
         // EUSERS is used when the number of connections exceeds the configured
         // limit. Since this is not a network connectivity issue with the
@@ -937,7 +938,7 @@ public:
       if (e != EIO) {
         this->cause_of_death_errno = e;
       }
-      Debug("http", "Setting upstream connection failure %d to %d", e, this->current.server->connect_result);
+      Debug("http", "Setting upstream connection failure %d to %d", original_connect_result, this->current.server->connect_result);
     }
 
     MgmtInt
