@@ -29,7 +29,7 @@
 
 // using namespace ct;
 
-constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = ts::round_up(sizeof(HTTPCacheAlt));
+constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = swoc::round_up(sizeof(HTTPCacheAlt));
 
 namespace ct
 {
@@ -248,7 +248,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   hh->m_magic = HDR_BUF_MAGIC_ALIVE;
 
-  return HdrHeapMarshalBlocks(ts::round_up(hh->unmarshal_size()));
+  return HdrHeapMarshalBlocks(swoc::round_up(hh->unmarshal_size()));
 }
 
 Errata
