@@ -19,6 +19,7 @@
 library_includedir=$(includedir)/tscpp/util
 
 library_include_HEADERS = \
+        ts_diag_levels.h \
 	IntrusiveDList.h \
 	LocalBuffer.h \
 	PostScript.h \
