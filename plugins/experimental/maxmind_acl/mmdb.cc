@@ -242,10 +242,10 @@ Acl::loaddeny(const YAML::Node &denyNode)
         if (ip.IsSequence()) {
           // Do IP Deny processing
           for (auto &&i : ip) {
-            IpAddr min, max;
-            ats_ip_range_parse(std::string_view{i.as<std::string>()}, min, max);
-            deny_ip_map.fill(min, max, nullptr);
-            TSDebug(PLUGIN_NAME, "loading ip: valid: %d, fam %d ", min.isValid(), min.family());
+            if (swoc::IPRange r; r.load(i.Scalar())) {
+              deny_ip_map.fill(r);
+              TSDebug(PLUGIN_NAME, "Denying ip fam %d ", r.family());
+            }
           }
         } else {
           TSDebug(PLUGIN_NAME, "Invalid IP deny list yaml");
@@ -323,10 +323,10 @@ Acl::loadallow(const YAML::Node &allowNode)
         if (ip.IsSequence()) {
           // Do IP Allow processing
           for (auto &&i : ip) {
-            IpAddr min, max;
-            ats_ip_range_parse(std::string_view{i.as<std::string>()}, min, max);
-            allow_ip_map.fill(min, max, nullptr);
-            TSDebug(PLUGIN_NAME, "loading ip: valid: %d, fam %d ", min.isValid(), min.family());
+            if (swoc::IPRange r; r.load(i.Scalar())) {
+              allow_ip_map.fill(r);
+              TSDebug(PLUGIN_NAME, "loading ip: valid: fam %d ", r.family());
+            }
           }
         } else {
           TSDebug(PLUGIN_NAME, "Invalid IP allow list yaml");
@@ -749,12 +749,13 @@ Acl::eval_ip(const sockaddr *sock) const
   }
 #endif
 
-  if (allow_ip_map.contains(sock, nullptr)) {
+  swoc::IPAddr addr(sock);
+  if (allow_ip_map.contains(addr)) {
     // Allow map has this ip, we know we want to allow it
     return ALLOW_IP;
   }
 
-  if (deny_ip_map.contains(sock, nullptr)) {
+  if (deny_ip_map.contains(addr)) {
     // Deny map has this ip, explicitly deny
     return DENY_IP;
   }
