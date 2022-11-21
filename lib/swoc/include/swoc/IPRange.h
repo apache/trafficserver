@@ -373,6 +373,9 @@ public:
   /// @return The IPv6 range.
   IP6Range const & ip6() const { return _range._ip6; }
 
+  /// @return The range family.
+  sa_family_t family() const { return _family; }
+
   /** Compute the mask for @a this as a network.
    *
    * @return If @a this is a network, the mask for that network. Otherwise an invalid mask.

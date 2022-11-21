@@ -394,6 +394,9 @@ public:
   /// @return Number of ranges in the set.
   size_t count() const;
 
+  /// Remove all addresses in the set.
+  void clear();
+
 protected:
   /// Empty struct to use for payload.
   /// This declares the struct and defines the singleton instance used.
@@ -433,6 +436,12 @@ inline size_t
 IPAddrSet::count() const
 {
   return _addrs.count();
+}
+
+inline void
+IPAddrSet::clear()
+{
+  _addrs.clear();
 }
 
 inline bool
