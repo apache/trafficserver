@@ -102,6 +102,7 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
         NH_Error("Invalid policy '%s' for the strategy named '%s', this strategy will be ignored.", policy_value.c_str(),
                  name.c_str());
       } else {
+        NH_Debug(NH_DEBUG_TAG, "createStragety '%s'", name.c_str());
         createStrategy(name, policy_type, strategy);
         strategy.done();
       }
