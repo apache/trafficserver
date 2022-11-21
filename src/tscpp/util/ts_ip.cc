@@ -33,15 +33,17 @@ namespace ts
 IPAddrPair
 getbestaddrinfo(swoc::TextView name)
 {
+  // If @a name parses as a valid address, return it as that address.
+
   if (swoc::IP4Addr addr; addr.load(name)) {
-    return {};
+    return addr;
   }
 
   if (swoc::IP6Addr addr; addr.load(name)) {
-    return {};
+    return addr;
   }
 
-  // Copy to guarantee C string
+  // Presume it is a host name, make a copy to guarantee C string.
   char *tmp = static_cast<char *>(alloca(name.size() + 1));
   memcpy(tmp, name.data(), name.size());
   tmp[name.size()] = 0;

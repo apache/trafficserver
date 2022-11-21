@@ -37,6 +37,18 @@ public:
 
   IPAddrPair() = default; ///< Default construct empty pair.
 
+  /** Construct with IPv4 address.
+   *
+   * @param a4 Address.
+   */
+  IPAddrPair(swoc::IP4Addr a4);
+
+  /** Construct with IPv6 address.
+   *
+   * @param a6 Address.
+   */
+  IPAddrPair(swoc::IP6Addr a6);
+
   /// @return @c true if either address is present.
   bool has_value() const;
 
@@ -81,6 +93,9 @@ protected:
   std::optional<swoc::IP4Addr> _ip4;
   std::optional<swoc::IP6Addr> _ip6;
 };
+
+inline IPAddrPair::IPAddrPair(swoc::IP4Addr a4) : _ip4(a4) {}
+inline IPAddrPair::IPAddrPair(swoc::IP6Addr a6) : _ip6(a6) {}
 
 inline bool
 IPAddrPair::has_value() const
@@ -134,6 +149,7 @@ IPAddrPair::operator=(swoc::IPAddr const &addr) -> self_type &
   } else if (addr.is_ip6()) {
     _ip6 = addr.ip6();
   }
+
   return *this;
 }
 
@@ -161,14 +177,14 @@ public:
    * @param a4 IPv4 address
    * @param port Port.
    */
-  explicit IPSrvPair(swoc::IP4Addr const &a4, in_port_t port = 0);
+  IPSrvPair(swoc::IP4Addr const &a4, in_port_t port = 0);
 
   /** Construct from IPv6 address and optional port.
    *
    * @param a6 IPv6 address
    * @param port Port.
    */
-  explicit IPSrvPair(swoc::IP6Addr const &a6, in_port_t port = 0);
+  IPSrvPair(swoc::IP6Addr const &a6, in_port_t port = 0);
 
   /** Construct from an address pair and optional port.
    *
@@ -238,7 +254,9 @@ inline IPSrvPair::IPSrvPair(IPAddrPair const &a, in_port_t port)
 {
   if (a.has_ip4()) {
     _ip4 = swoc::IP4Srv(a.ip4(), port);
-  } else if (a.has_ip6()) {
+  }
+
+  if (a.has_ip6()) {
     _ip6 = swoc::IP6Srv(a.ip6(), port);
   }
 }
@@ -301,54 +319,46 @@ IPSrvPair::operator=(swoc::IPSrv const &srv) -> self_type &
 /** Get the best address info for @a name.
 
  * @param name Address / host.
- * @param ip4 [out] Best IPv4 result, if any.
- * @param ip6 [out] Best IPv6 result, if any.
- * @return @c true if an address was found, @c false if not.
+ * @return An address pair.
  *
  * If @a name is a valid IP address it is interpreted as such. Otherwise it is presumed
  * to be a host name suitable for resolution using @c getaddrinfo. The "best" address is
- * selected by ranking the types of addresss in the order
+ * selected by ranking the types of addresses in the order
  *
  * - Global, multi-cast, non-routable (private), link local, loopback
  *
- * For a host name, both IPv4 and IPv6 addresses may be returned. Each is judged
- * independently.
- *
- * Either @a ip4 or @ip6 can be @c nullptr in which that result is discarded.
- *
- * @note If @name is known or required to be an IP address, use a standard address conversion
- * instead, e.g. @c IPAddr::load .
+ * For a host name, an IPv4 and IPv6 address may be returned. The "best" is computed independently
+ * for each family.
  *
  * @see getaddrinfo
+ * @see ts::getbestsrvinfo
  */
 IPAddrPair getbestaddrinfo(swoc::TextView name);
 
-/** Get the best address info for @a name.
+/** Get the best address and port info for @a name.
 
  * @param name Address / host.
- * @param ip4 [out] Best IPv4 result, if any.
- * @param ip6 [out] Best IPv6 result, if any.
- * @return @c true if an address was found, @c false if not.
+ * @return An address pair.
  *
- * If @a name is a valid IP address it is interpreted as such. Otherwise it is presumed
- * to be a host name suitable for resolution using @c getaddrinfo. The "best" address is
- * selected by ranking the types of addresss in the order
+ * If @a name is a valid IP address (with optional port) it is interpreted as such. Otherwise it is
+ * presumed to be a host name (with optional port) suitable for resolution using @c getaddrinfo. The "best" address is
+ * selected by ranking the types of addresses in the order
  *
  * - Global, multi-cast, non-routable (private), link local, loopback
  *
- * For a host name, both IPv4 and IPv6 addresses may be returned. Each is judged
- * independently.
- *
- * Either @a ip4 or @ip6 can be @c nullptr in which that result is discarded.
- *
- * @note If @name is known or required to be an IP address, use a standard address conversion
- * instead, e.g. @c IPAddr::load .
+ * For a host name, an IPv4 and IPv6 service may be returned. The "best" is computed independently
+ * for each family. The port, if present, is the same for all returned services.
  *
  * @see getaddrinfo
+ * @see ts::getbestaddrinfo
  */
 IPSrvPair getbestsrvinfo(swoc::TextView name);
 
-/** An IPSpace that only tracks the presence of IP addresses.
+/** An IPSpace that contains only addresses.
+ *
+ * This is to @c IPSpace as @c std::set is to @c std::map. The @c value_type is removed from the API
+ * and only the keys are visible. This suits use cases where the goal is to track the presence of
+ * addresses without any additional data.
  *
  * @note Because there is only one value stored, there is no difference between @c mark and @c fill.
  */
