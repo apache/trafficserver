@@ -116,7 +116,9 @@ main(int argc, const char **argv)
   metric_command.add_command("zero", "Clear one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); });
 
   // plugin command
-  plugin_command.add_command("msg", "Send message to plugins - a TAG and the message DATA", "", 2, [&]() { command->execute(); })
+  plugin_command
+    .add_command("msg", "Send message to plugins - a TAG and the message DATA(optional)", "", MORE_THAN_ONE_ARG_N,
+                 [&]() { command->execute(); })
     .add_example_usage("traffic_ctl plugin msg TAG DATA");
 
   // server commands
