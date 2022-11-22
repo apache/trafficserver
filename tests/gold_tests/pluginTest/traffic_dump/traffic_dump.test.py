@@ -360,7 +360,7 @@ file.Exists = False
 # Test 11: Verify that we can remove the disk limit.
 #
 tr = Test.AddTestRun("Removing the disk limit via traffic_ctl.")
-tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.unlimit 1"
+tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.unlimit"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
