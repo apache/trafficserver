@@ -16,8 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import re
+from enum import Enum
 from typing import List, Optional
 
 
@@ -28,6 +28,7 @@ class Http2FlowControlTest:
     """Define an object to test HTTP/2 flow control behavior."""
 
     _replay_file: str = 'http2_flow_control.replay.yaml'
+    _replay_chunked_file: str = 'http2_flow_control_chunked.replay.yaml'
     _valid_policy_values: List[int] = list(range(0, 3))
     _flow_control_policy: Optional[int] = None
     _flow_control_policy_is_malformed: bool = False
@@ -46,6 +47,13 @@ class Http2FlowControlTest:
 
     IS_HTTP2_TO_ORIGIN = True
     IS_HTTP1_TO_ORIGIN = False
+
+    class ServerType(Enum):
+        """Define the type of server to use in a TestRun."""
+
+        HTTP1_CONTENT_LENGTH = 0
+        HTTP1_CHUNKED = 1
+        HTTP2 = 2
 
     def __init__(
             self,
@@ -100,20 +108,26 @@ class Http2FlowControlTest:
         Http2FlowControlTest._dns_counter += 1
         return dns
 
-    def _configure_server(self, tr: 'TestRun') -> 'Process':
+    def _configure_server(self, tr: 'TestRun',
+                          server_type: ServerType) -> 'Process':
         """Configure the test server."""
+        if server_type == self.ServerType.HTTP1_CHUNKED:
+            replay_file = self._replay_chunked_file
+        else:
+            replay_file = self._replay_file
+
         server = tr.AddVerifierServerProcess(
             f'server-{Http2FlowControlTest._server_counter}',
-            self._replay_file)
+            replay_file)
         Http2FlowControlTest._server_counter += 1
         return server
 
-    def _configure_trafficserver(self, tr: 'TestRun', is_outbound: bool, is_http2_to_orign: bool) -> 'Process':
+    def _configure_trafficserver(self, tr: 'TestRun', is_outbound: bool,
+                                 server_type: ServerType) -> 'Process':
         """Configure a Traffic Server process."""
         ts = tr.MakeATSProcess(
             f'ts-{Http2FlowControlTest._ts_counter}',
-            enable_tls=True,
-            enable_cache=False)
+            enable_tls=True)
         Http2FlowControlTest._ts_counter += 1
 
         ts.addDefaultSSLFiles()
@@ -122,12 +136,14 @@ class Http2FlowControlTest:
             'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
             'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
             'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self._dns.Variables.Port),
+            'proxy.config.dns.resolv_conf': 'NULL',
+            'proxy.config.http.insert_age_in_response': 0,
 
             'proxy.config.diags.debug.enabled': 3,
             'proxy.config.diags.debug.tags': 'http',
         })
 
-        if is_http2_to_orign:
+        if server_type == self.ServerType.HTTP2:
             ts.Disk.records_config.update({
                 'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
             })
@@ -174,11 +190,11 @@ class Http2FlowControlTest:
                 configuration = 'proxy.config.http2.flow_control.policy_in'
             ts.Disk.diags_log.Content = Testers.ContainsExpression(
                 f"ERROR.*{configuration}",
-                "There should be an error about an invalid flow control policy.")
+                "Expected an error about an invalid flow control policy.")
 
         return ts
 
-    def _configure_client(self, tr):
+    def _configure_client(self, tr, ):
         """Configure a client process.
 
         :param tr: The TestRun to associate the client with.
@@ -251,25 +267,35 @@ class Http2FlowControlTest:
                 stream_window_1 = session_window_size
                 stream_window_2 = int(session_window_size / 2)
                 stream_window_3 = int(session_window_size / 3)
-                host.Streams.stdout += Testers.ContainsExpression(
-                    (f'INITIAL_WINDOW_SIZE:{stream_window_1}.*'
-                     f'INITIAL_WINDOW_SIZE:{stream_window_2}.*'
-                     f'INITIAL_WINDOW_SIZE:{stream_window_3}'),
-                    f"{hostname} should stream receive window updates",
-                    reflags=re.DOTALL | re.MULTILINE)
+                if self._server:
+                    # Toward the server, there is a potential race condition
+                    # between sending of first-request and the sending of the
+                    # SETTINGS frame which reduces the stream window size.
+                    # Allow for either scenario.
+                    host.Streams.stdout += Testers.ContainsExpression(
+                        (f'INITIAL_WINDOW_SIZE:{stream_window_1}.*'
+                         f'INITIAL_WINDOW_SIZE:{stream_window_2}.*'),
+                        f"{hostname} should stream receive window updates",
+                        reflags=re.DOTALL | re.MULTILINE)
+                else:
+                    host.Streams.stdout += Testers.ContainsExpression(
+                        (f'INITIAL_WINDOW_SIZE:{stream_window_1}.*'
+                         f'INITIAL_WINDOW_SIZE:{stream_window_2}.*'
+                         f'INITIAL_WINDOW_SIZE:{stream_window_3}'),
+                        f"{hostname} should stream receive window updates",
+                        reflags=re.DOTALL | re.MULTILINE)
 
         if self._expected_initial_stream_window_size < 1000:
             first_id = 5 if self._server else 3
 
-            # WINDOW_UPDATE timing is different between the server and the
-            # client. Toward the origin we send SETTINGS frames to update the
-            # INITIAL_WINDOW_SIZE with the headers so they are received earlier
-            # than with the client, wherein we send the updated
-            # INITIAL_WINDOW_SIZE after receiving headers from the client.
             if self._server and self._expected_flow_control_policy == 2:
-                window_update_size = 33
+                # Toward the server, there is a potential race condition
+                # between sending of first-request and the sending of the
+                # SETTINGS frame which reduces the stream window size. Allow
+                # for either scenario.
+                window_update_size = f'33|{self._expected_initial_stream_window_size}'
             else:
-                window_update_size = self._expected_initial_stream_window_size
+                window_update_size = f'{self._expected_initial_stream_window_size}'
             # For the smaller session window sizes, we expect WINDOW_UPDATE frames.
             host.Streams.stdout += Testers.ContainsExpression(
                 f'WINDOW_UPDATE.*id {first_id}: {window_update_size}',
@@ -283,11 +309,12 @@ class Http2FlowControlTest:
                 f'WINDOW_UPDATE.*id {first_id + 4}: {window_update_size}',
                 f"{hostname} should receive a stream WINDOW_UPDATE.")
 
-    def _configure_test_run_common(self, tr, is_outbound: bool, is_http2_to_origin: bool):
+    def _configure_test_run_common(self, tr, is_outbound: bool,
+                                   server_type: ServerType) -> None:
         """Perform the common Process configuration."""
         self._dns = self._configure_dns(tr)
-        self._server = self._configure_server(tr)
-        self._ts = self._configure_trafficserver(tr, is_outbound, is_http2_to_origin)
+        self._server = self._configure_server(tr, server_type)
+        self._ts = self._configure_trafficserver(tr, is_outbound, server_type)
         if not self._flow_control_policy_is_malformed:
             self._configure_client(tr)
             tr.Processes.Default.StartBefore(self._dns)
@@ -297,25 +324,36 @@ class Http2FlowControlTest:
         tr.Processes.Default.StartBefore(self._ts)
         tr.TimeOut = 20
 
-    def _configure_inbound_http1_to_origin_test_run(self):
+    def _configure_inbound_http1_to_origin_test_run(self) -> None:
         """Configure the TestRun for inbound stream configuration."""
-        tr = Test.AddTestRun(f'{self._description} - inbound')
-        self._configure_test_run_common(tr, self.IS_INBOUND, self.IS_HTTP1_TO_ORIGIN)
+        tr = Test.AddTestRun(f'{self._description} - inbound, '
+                             'HTTP/1 Content-Length origin')
+        self._configure_test_run_common(tr, self.IS_INBOUND,
+                                        self.ServerType.HTTP1_CONTENT_LENGTH)
         self._configure_log_expectations(tr.Processes.Default)
 
-    def _configure_inbound_http2_to_origin_test_run(self):
-        """Configure the TestRun for inbound stream configuration."""
-        tr = Test.AddTestRun(f'{self._description} - inbound')
-        self._configure_test_run_common(tr, self.IS_INBOUND, self.IS_HTTP2_TO_ORIGIN)
+        tr = Test.AddTestRun(f'{self._description} - inbound, '
+                             'HTTP/1 chunked origin')
+        self._configure_test_run_common(tr, self.IS_INBOUND,
+                                        self.ServerType.HTTP1_CHUNKED)
         self._configure_log_expectations(tr.Processes.Default)
 
-    def _configure_outbound_test_run(self):
+    def _configure_inbound_http2_to_origin_test_run(self) -> None:
+        """Configure the TestRun for inbound stream configuration."""
+        tr = Test.AddTestRun(f'{self._description} - inbound, HTTP/2 origin')
+        self._configure_test_run_common(tr, self.IS_INBOUND,
+                                        self.ServerType.HTTP2)
+        self._configure_log_expectations(tr.Processes.Default)
+
+    def _configure_outbound_test_run(self) -> None:
         """Configure the TestRun outbound stream configuration."""
-        tr = Test.AddTestRun(f'{self._description} - outbound')
-        self._configure_test_run_common(tr, self.IS_OUTBOUND, self.IS_HTTP2_TO_ORIGIN)
+        tr = Test.AddTestRun(f'{self._description} - outbound, HTTP/2 origin')
+        self._configure_test_run_common(tr, self.IS_OUTBOUND,
+                                        self.ServerType.HTTP2)
         self._configure_log_expectations(self._server)
 
-    def run(self):
+    def run(self) -> None:
+        """Configure the test run for various origin side configurations."""
         self._configure_inbound_http1_to_origin_test_run()
         self._configure_inbound_http2_to_origin_test_run()
         self._configure_outbound_test_run()
@@ -352,18 +390,18 @@ test = Http2FlowControlTest(
 test.run()
 
 test = Http2FlowControlTest(
-    description="Flow control policy 0 (default): small initial_window_size_(in|out)",
+    description="Flow control policy 0 (default): small initial_window_size",
     initial_window_size=500,  # The default is 65 KB.
     flow_control_policy=0)
 test.run()
 test = Http2FlowControlTest(
-    description="Flow control policy 1: 100 byte session, 10 byte stream windows",
+    description="Flow control policy 1: 100 byte session, 10 byte streams",
     max_concurrent_streams=10,
     initial_window_size=10,
     flow_control_policy=1)
 test.run()
 test = Http2FlowControlTest(
-    description="Flow control policy 2: 100 byte session, dynamic stream windows",
+    description="Flow control policy 2: 100 byte session, dynamic streams",
     max_concurrent_streams=10,
     initial_window_size=10,
     flow_control_policy=2)

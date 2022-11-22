@@ -54,7 +54,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, zero-response ]
-        - [ Content-Length, 28 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 28
 
@@ -88,7 +88,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, first-response ]
-        - [ Content-Length, 1200 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 1200
 
@@ -114,6 +114,8 @@ sessions:
         fields:
         - [ X-Request, {value: 'second-request', as: equal } ]
 
+    # Intermix a Content-Length encoding just to make sure they interact well
+    # with each other.
     server-response:
       status: 200
       reason: OK
@@ -152,7 +154,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, third-response ]
-        - [ Content-Length, 1200 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 1200
 
@@ -190,7 +192,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, fourth-response ]
-        - [ Content-Length, 120000 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 120000
 
@@ -226,7 +228,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, fifth-response ]
-        - [ Content-Length, 10000 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 10000
 
@@ -259,7 +261,7 @@ sessions:
         fields:
         - [ X-Response, sixth-response ]
         - [ Cache-Control, max-age=3600 ]
-        - [ Content-Length, 120000 ]
+        - [ Transfer-Encoding, chunked ]
       content:
         size: 120000
 

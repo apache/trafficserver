@@ -232,6 +232,12 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   if (stream->read_enabled()) {
     if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+      if (this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
+        // This final DATA frame for this stream consumed all the bytes for the
+        // session window. Send a WINDOW_UPDATE frame in order to open up the
+        // session window for other streams.
+        restart_receiving(nullptr);
+      }
       stream->signal_read_event(VC_EVENT_READ_COMPLETE);
     } else {
       stream->signal_read_event(VC_EVENT_READ_READY);
@@ -1717,6 +1723,9 @@ Http2ConnectionState::restart_streams()
       ink_assert(s != next);
       s = next;
     }
+
+    // The above stopped at end, so we need to call send_response_body() one
+    // last time for the stream pointed to by end.
     if (std::min(this->get_peer_rwnd(), s->get_peer_rwnd()) > 0) {
       SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
       s->restart_sending();
@@ -2026,11 +2035,15 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     if (window_size <= 0) {
       if (session->is_outbound()) {
         ip_port_text_buffer ipb;
-        const char *client_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", client_ip, get_peer_rwnd(),
+        const char *server_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
+        // Warn the user to give them visibility that their server-side
+        // connection is being limited by their server's flow control. Maybe
+        // they can make adjustments.
+        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", server_ip, get_peer_rwnd(),
                 stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       }
-      Http2StreamDebug(this->session, stream->get_id(), "No window");
+      Http2StreamDebug(this->session, stream->get_id(), "No window session_wnd=%zd stream_wnd=%zd peer_initial_window=%u",
+                       get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       this->session->flush();
       return Http2SendDataFrameResult::NO_WINDOW;
     }
@@ -2074,7 +2087,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   stream->decrement_peer_rwnd(payload_length);
 
   // Create frame
-  Http2StreamDebug(session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd flags: 0x%x",
+  Http2StreamDebug(session, stream->get_id(), "Send a DATA frame - peer window con: %5zd stream: %5zd payload: %5zd flags: 0x%x",
                    _peer_rwnd, stream->get_peer_rwnd(), payload_length, flags);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
