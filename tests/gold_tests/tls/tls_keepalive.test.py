@@ -40,7 +40,7 @@ ts.addSSLfile("ssl/server.key")
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.TLSv1_3': 0,
+    'proxy.config.ssl.TLSv1_3.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.log.max_secs_per_buffer': 1
 })

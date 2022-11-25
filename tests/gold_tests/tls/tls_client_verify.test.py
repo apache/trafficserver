@@ -46,7 +46,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.certification_level': 2,
     'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.TLSv1_3': 0
+    'proxy.config.ssl.TLSv1_3.enabled': 0
 })
 
 ts.Disk.ssl_multicert_config.AddLine(

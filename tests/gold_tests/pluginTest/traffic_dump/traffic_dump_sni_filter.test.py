@@ -52,7 +52,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.http.host_sni_policy': 2,
-    'proxy.config.ssl.TLSv1_3': 0,
+    'proxy.config.ssl.TLSv1_3.enabled': 0,
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 

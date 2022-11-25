@@ -37,7 +37,7 @@ function recordsConfig() {
     startServer
 
     traffic_ctl config set proxy.config.reverse_proxy.enabled 1
-    traffic_ctl config set proxy.config.exec_thread.autoconfig 1
+    traffic_ctl config set proxy.config.exec_thread.autoconfig.enabled 1
 
     # Good default on a dedicated box or SMP VM.
     #traffic_ctl config set proxy.config.exec_thread.autoconfig.scale 3.000000
