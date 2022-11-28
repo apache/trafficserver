@@ -111,7 +111,7 @@ void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
 // Check if the string contains the prefix
 inline bool
-ContainsPrefix(const std::string_view str, const std::string prefix)
+ContainsPrefix(const std::string_view str, const std::string &prefix)
 {
   return str.size() < prefix.size() ? false : (strncmp(str.data(), prefix.data(), prefix.size()) == 0);
 }
