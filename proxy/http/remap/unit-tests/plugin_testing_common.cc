@@ -46,7 +46,7 @@ getTemporaryDir()
   tmpDir /= "sandbox_XXXXXX";
 
   char dirNameTemplate[tmpDir.string().length() + 1];
-  sprintf(dirNameTemplate, "%s", tmpDir.c_str());
+  memcpy(dirNameTemplate, tmpDir.c_str(), sizeof(dirNameTemplate));
 
   return fs::path(mkdtemp(dirNameTemplate));
 }

@@ -443,41 +443,31 @@ varIntFromName(const char *varName, RecInt *value)
 // void percentStrFromFloat(MgmtFloat, char* bufVal)
 //
 //  Converts a float to a percent string
-//
-//     bufVal must point to adequate space a la sprintf
-//
 void
-percentStrFromFloat(RecFloat val, char *bufVal)
+percentStrFromFloat(RecFloat val, char *bufVal, int bufLen)
 {
-  int percent;
-
-  percent = static_cast<int>((val * 100.0) + 0.5);
-  snprintf(bufVal, 4, "%d%%", percent);
+  int percent = static_cast<int>((val * 100.0) + 0.5);
+  snprintf(bufVal, bufLen, "%d%%", percent);
 }
 
 // void commaStrFromInt(RecInt bytes, char* bufVal)
 //   Converts an Int to string with commas in it
-//
-//     bufVal must point to adequate space a la sprintf
-//
 void
-commaStrFromInt(RecInt bytes, char *bufVal)
+commaStrFromInt(RecInt bytes, char *bufVal, int bufLen)
 {
-  int len;
-  int numCommas;
   char *curPtr;
 
-  sprintf(bufVal, "%" PRId64 "", bytes);
-  len = strlen(bufVal);
+  int len = snprintf(bufVal, bufLen, "%" PRId64 "", bytes);
 
   // The string is too short to need commas
   if (len < 4) {
     return;
   }
 
-  numCommas = (len - 1) / 3;
-  curPtr    = bufVal + (len + numCommas);
-  *curPtr   = '\0';
+  int numCommas = (len - 1) / 3;
+  ink_release_assert(bufLen > numCommas + len);
+  curPtr  = bufVal + (len + numCommas);
+  *curPtr = '\0';
   curPtr--;
 
   for (int i = 0; i < len; i++) {
@@ -494,17 +484,13 @@ commaStrFromInt(RecInt bytes, char *bufVal)
 }
 
 // void MbytesFromInt(RecInt bytes, char* bufVal)
-//     Converts into a string in units of megabytes
-//      No unit specification is added
-//
-//     bufVal must point to adequate space a la sprintf
-//
+//     Converts into a string in units of megabytes No unit specification is added
 void
-MbytesFromInt(RecInt bytes, char *bufVal)
+MbytesFromInt(RecInt bytes, char *bufVal, int bufLen)
 {
   RecInt mBytes = bytes / 1048576;
 
-  sprintf(bufVal, "%" PRId64 "", mBytes);
+  snprintf(bufVal, bufLen, "%" PRId64 "", mBytes);
 }
 
 // void bytesFromInt(RecInt bytes, char* bufVal)
@@ -514,7 +500,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
 //
 //     bufVal must point to adequate space a la sprintf
 void
-bytesFromInt(RecInt bytes, char *bufVal)
+bytesFromInt(RecInt bytes, char *bufVal, int bufLen)
 {
   const int64_t gb  = 1073741824;
   const long int mb = 1048576;
@@ -523,7 +509,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
 
   if (bytes >= gb) {
     unitBytes = bytes / static_cast<double>(gb);
-    snprintf(bufVal, 15, "%.1f GB", unitBytes);
+    snprintf(bufVal, bufLen, "%.1f GB", unitBytes);
   } else {
     // Reduce the precision of the bytes parameter
     //   because we know that it less than 1GB which
@@ -533,12 +519,12 @@ bytesFromInt(RecInt bytes, char *bufVal)
     int bytesP = static_cast<int>(bytes);
     if (bytesP >= mb) {
       unitBytes = bytes / static_cast<double>(mb);
-      snprintf(bufVal, 15, "%.1f MB", unitBytes);
+      snprintf(bufVal, bufLen, "%.1f MB", unitBytes);
     } else if (bytesP >= kb) {
       unitBytes = bytes / static_cast<double>(kb);
-      snprintf(bufVal, 15, "%.1f KB", unitBytes);
+      snprintf(bufVal, bufLen, "%.1f KB", unitBytes);
     } else {
-      snprintf(bufVal, 15, "%d", bytesP);
+      snprintf(bufVal, bufLen, "%d", bytesP);
     }
   }
 }
@@ -603,11 +589,11 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   case RECD_INT:
     RecGetRecordInt(varName, &data.rec_int);
     if (formatOption == 'b') {
-      bytesFromInt(data.rec_int, bufVal);
+      bytesFromInt(data.rec_int, bufVal, bufLen);
     } else if (formatOption == 'm') {
-      MbytesFromInt(data.rec_int, bufVal);
+      MbytesFromInt(data.rec_int, bufVal, bufLen);
     } else if (formatOption == 'c') {
-      commaStrFromInt(data.rec_int, bufVal);
+      commaStrFromInt(data.rec_int, bufVal, bufLen);
     } else {
       snprintf(bufVal, bufLen, "%" PRId64 "", data.rec_int);
     }
@@ -616,11 +602,11 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   case RECD_COUNTER:
     RecGetRecordCounter(varName, &data.rec_counter);
     if (formatOption == 'b') {
-      bytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal);
+      bytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal, bufLen);
     } else if (formatOption == 'm') {
-      MbytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal);
+      MbytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal, bufLen);
     } else if (formatOption == 'c') {
-      commaStrFromInt(data.rec_counter, bufVal);
+      commaStrFromInt(data.rec_counter, bufVal, bufLen);
     } else {
       snprintf(bufVal, bufLen, "%" PRId64 "", data.rec_counter);
     }
@@ -628,7 +614,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   case RECD_FLOAT:
     RecGetRecordFloat(varName, &data.rec_float);
     if (formatOption == 'p') {
-      percentStrFromFloat(data.rec_float, bufVal);
+      percentStrFromFloat(data.rec_float, bufVal, bufLen);
     } else {
       snprintf(bufVal, bufLen, "%.2f", data.rec_float);
     }

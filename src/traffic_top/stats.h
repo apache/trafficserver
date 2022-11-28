@@ -306,7 +306,7 @@ public:
             }
             string key = item.name;
             char buffer[32];
-            sprintf(buffer, "%" PRId64, value);
+            snprintf(buffer, sizeof(buffer), "%" PRId64, value);
             string foo     = buffer;
             (*_stats)[key] = foo;
           }

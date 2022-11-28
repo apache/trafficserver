@@ -584,8 +584,9 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         TSHttpHdrReasonSet(bufp, hdrLoc, reason, reasonLen);
         PrefetchDebug("set response: %d %.*s '%s'", data->_status, reasonLen, reason, data->_body.c_str());
 
-        char *buf = static_cast<char *>(TSmalloc(data->_body.length() + 1));
-        sprintf(buf, "%s", data->_body.c_str());
+        size_t bufsize = data->_body.length() + 1;
+        char *buf      = static_cast<char *>(TSmalloc(bufsize));
+        memcpy(buf, data->_body.c_str(), bufsize);
         TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
         setHeader(bufp, hdrLoc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, TS_HTTP_VALUE_NO_STORE,

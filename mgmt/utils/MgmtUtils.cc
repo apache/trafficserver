@@ -233,11 +233,11 @@ mgmt_log(const char *message_format, ...)
   } else {
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
+      vsnprintf(message, sizeof(message), extended_format, ap);
       syslog(LOG_WARNING, "%s", message);
     } else {
       snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] log ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
+      vsnprintf(message, sizeof(message), extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
     }
   }
@@ -262,14 +262,14 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
   } else {
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
+      vsnprintf(message, sizeof(message), extended_format, ap);
       syslog(LOG_ERR, "%s", message);
       if (lerrno != 0) {
         syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
       }
     } else {
       snprintf(extended_format, sizeof(extended_format), "Manager ERROR: %s", message_format);
-      vsprintf(message, extended_format, ap);
+      vsnprintf(message, sizeof(message), extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
       if (lerrno != 0) {
         snprintf(message, sizeof(message), "(last system error %d: %s)", lerrno, strerror(lerrno));
@@ -297,7 +297,7 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
   } else {
     char extended_format[4096], message[4096];
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
-    vsprintf(message, extended_format, ap);
+    vsnprintf(message, sizeof(message), extended_format, ap);
 
     ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
 

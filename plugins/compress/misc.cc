@@ -168,10 +168,9 @@ init_hidden_header_name()
   if (TSMgmtStringGet(var_name, &result) != TS_SUCCESS) {
     fatal("failed to get server name");
   } else {
-    int hidden_header_name_len                 = strlen("x-accept-encoding-") + strlen(result);
-    hidden_header_name                         = static_cast<char *>(TSmalloc(hidden_header_name_len + 1));
-    hidden_header_name[hidden_header_name_len] = 0;
-    sprintf(hidden_header_name, "x-accept-encoding-%s", result);
+    size_t hidden_header_name_size = strlen("x-accept-encoding-") + strlen(result) + 1; // add one for null
+    hidden_header_name             = static_cast<char *>(TSmalloc(hidden_header_name_size));
+    snprintf(hidden_header_name, hidden_header_name_size, "x-accept-encoding-%s", result);
     TSfree(result);
   }
   return hidden_header_name;
