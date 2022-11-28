@@ -124,7 +124,7 @@ urlEncode(const char *in, size_t inLen, char *out, size_t outLen)
       *dst++ = '+';
     } else {
       *dst++ = '%';
-      snprintf(dst, outLen - 1, "%02x", static_cast<unsigned char>(*src));
+      snprintf(dst, out + outLen - dst, "%02x", static_cast<unsigned char>(*src));
       dst += 2;
     }
     src++;

@@ -586,7 +586,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
         size_t bufsize = data->_body.length() + 1;
         char *buf      = static_cast<char *>(TSmalloc(bufsize));
-        snprintf(buf, bufsize, "%s", data->_body.c_str());
+        memcpy(buf, data->_body.c_str(), bufsize);
         TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
         setHeader(bufp, hdrLoc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, TS_HTTP_VALUE_NO_STORE,
