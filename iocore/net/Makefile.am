@@ -79,8 +79,9 @@ test_UDPNet_LDFLAGS = \
 test_UDPNet_LDADD = \
 	libinknet.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
@@ -114,8 +115,9 @@ test_libinknet_LDFLAGS = \
 test_libinknet_LDADD = \
 	libinknet.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

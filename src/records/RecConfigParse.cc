@@ -36,6 +36,9 @@
 #include "records/P_RecCore.h"
 #include "tscore/I_Layout.h"
 
+#include "records/RecYAMLDefs.h"
+#include "records/RecYAMLDecoder.h"
+
 const char *g_rec_config_fpath = nullptr;
 std::unordered_set<std::string> g_rec_config_contents_ht;
 ink_mutex g_rec_config_lock;
@@ -259,4 +262,19 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
   ats_free(fbuf);
 
   return REC_ERR_OKAY;
+}
+
+swoc::Errata
+RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler)
+{
+  try {
+    auto root = YAML::LoadFile(path);
+    if (auto ret = ParseRecordsFromYAML(root, handler); !ret.empty()) {
+      return ret;
+    }
+  } catch (std::exception const &ex) {
+    return swoc::Errata(ERRATA_ERROR, "Error parsing {}. {}", path, ex.what());
+  }
+
+  return {};
 }

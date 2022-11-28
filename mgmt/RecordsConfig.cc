@@ -30,6 +30,7 @@
 #else
 #define MGMT_CRASHLOG_HELPER NULL
 #endif
+
 //-------------------------------------------------------------------------
 // RecordsConfig
 //-------------------------------------------------------------------------
@@ -75,7 +76,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
+  {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1528,4 +1529,16 @@ RecordsConfigIterate(RecordElementCallback callback, void *data)
   for (unsigned i = 0; i < countof(RecordsConfig); ++i) {
     callback(&RecordsConfig[i], data);
   }
+}
+
+const RecordElement *
+GetRecordElementByName(std::string_view name)
+{
+  for (unsigned i = 0; i < countof(RecordsConfig); ++i) {
+    if (strncmp(RecordsConfig[i].name, name.data(), name.size()) == 0) {
+      return &RecordsConfig[i];
+    }
+  }
+
+  return nullptr;
 }

@@ -53,7 +53,8 @@ libmgmt_p_la_SOURCES = \
 
 libmgmt_p_la_LIBADD = \
 	libmgmt_c.la \
-	$(top_builddir)/mgmt/utils/libutils_p.la
+	$(top_builddir)/mgmt/utils/libutils_p.la \
+	@YAMLCPP_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

@@ -25,12 +25,14 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tscore/Filenames.h"
+#include "tscore/ts_file.h"
 
 #include "RecordsConfig.h"
 #include "records/P_RecFile.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecUtils.h"
 #include "tscore/I_Layout.h"
+#include "tscpp/util/ts_errata.h"
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
@@ -220,16 +222,33 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     ink_mutex_init(&g_rec_config_lock);
 
     g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
+
+    // Make sure there is no legacy file, if so we fail. This is to avoid issues with someone not knowing
+    // that we now are using records.yaml
+    ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
+    if (ts::file::exists(old_config)) {
+      RecLog(DL_Warning, "Found a legacy config file. %s", old_config.c_str());
+      return REC_ERR_FAIL;
+    }
+
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
       RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
       file_exists = false;
     }
 
     if (file_exists) {
-      RecReadConfigFile();
+      auto err = RecReadYamlConfigFile();
+      RecLog(DL_Note, "records parsing completed.");
+      if (!err.empty()) {
+        std::string text;
+        RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
+      }
+    } else {
+      RecLog(DL_Note, "%s does not exist.", g_rec_config_fpath);
     }
   }
 
+  RecLog(DL_Note, "%s finished loading", std::string{g_rec_config_fpath}.c_str());
   g_initialized = true;
 
   return REC_ERR_OKAY;

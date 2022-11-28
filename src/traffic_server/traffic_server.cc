@@ -955,7 +955,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::REMAP);
   }
 
-  if (RecReadConfigFile() != REC_ERR_OKAY) {
+  if (auto ret = RecReadYamlConfigFile(); !ret.empty()) {
     exitStatus |= (1 << 1);
     fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::RECORDS, exitStatus);
   } else {

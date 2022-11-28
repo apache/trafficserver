@@ -77,7 +77,7 @@ check_PROGRAMS = test_IOBuffer \
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@
+	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 
 test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
@@ -99,7 +99,7 @@ test_LD_ADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ @SWOC_LIBS@
+	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 test_EventSystem_SOURCES = unit_tests/test_EventSystem.cc
 test_EventSystem_CPPFLAGS = $(test_CPP_FLAGS)

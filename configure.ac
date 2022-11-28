@@ -2346,7 +2346,7 @@ AC_CONFIG_FILES([
   configs/Makefile
   configs/body_factory/Makefile
   configs/body_factory/default/Makefile
-  configs/records.config.default
+  configs/records.yaml.default
   configs/storage.config.default
   doc/Makefile
   doc/ext/local-config.py
