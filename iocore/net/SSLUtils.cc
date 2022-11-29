@@ -1039,7 +1039,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
     if (pkey) {
       if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-        SSLError("failed to load server private key from engine");
+        Debug("ssl", "failed to load server private key from engine");
         EVP_PKEY_free(pkey);
         return false;
       }
@@ -1052,16 +1052,16 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
     pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if (nullptr == pkey) {
-      SSLError("failed to load server private key");
+      Debug("ssl", "failed to load server private key");
       return false;
     }
     if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      SSLError("failed to attache server private key");
+      Debug("ssl", "failed to attache server private key");
       EVP_PKEY_free(pkey);
       return false;
     }
     if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-      SSLError("server private key does not match the certificate public key");
+      Debug("ssl", "server private key does not match the certificate public key");
       return false;
     }
   }
