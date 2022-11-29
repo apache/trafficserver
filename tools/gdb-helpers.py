@@ -236,7 +236,7 @@ def hdrs_command(val):
 
 
 def url_command(val):
-    print("{}".format(URL(val)))
+    print(URL(val))
 
 
 commands = [
