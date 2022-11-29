@@ -27,16 +27,16 @@
 #include "records/P_RecCore.h"
 
 // Convert to byte units (GB, MB, KB)
-void bytesFromInt(RecInt bytes, char *bufVal);
+void bytesFromInt(RecInt bytes, char *bufVal, int bufLen);
 
 // Convert to MB
-void MbytesFromInt(RecInt bytes, char *bufVal);
+void MbytesFromInt(RecInt bytes, char *bufVal, int bufLen);
 
 // Create comma string from int
-void commaStrFromInt(RecInt bytes, char *bufVal);
+void commaStrFromInt(RecInt bytes, char *bufVal, int bufLen);
 
 // Create percent string from float
-void percentStrFromFloat(RecFloat val, char *bufVal);
+void percentStrFromFloat(RecFloat val, char *bufVal, int bufLen);
 
 // Converts where applicable to specified type
 bool varDataFromName(RecDataT varType, const char *varName, RecData *value);

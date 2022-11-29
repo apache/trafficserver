@@ -410,11 +410,11 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   HttpBodyTemplate *t   = nullptr;
   HttpBodySet *body_set = nullptr;
   if (pType != nullptr && 0 != *pType && 0 != strncmp(pType, "NONE", 4)) {
-    sprintf(template_base, "%s_%s", pType, type);
+    snprintf(template_base, sizeof(template_base), "%s_%s", pType, type);
     t = find_template(set, template_base, &body_set);
     // Check for default alternate.
     if (t == nullptr) {
-      sprintf(template_base, "%s_default", pType);
+      snprintf(template_base, sizeof(template_base), "%s_default", pType);
       t = find_template(set, template_base, &body_set);
     }
   }

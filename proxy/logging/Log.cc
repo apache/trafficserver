@@ -1131,7 +1131,7 @@ Log::create_threads()
   // on the event system.
   for (int i = 0; i < preproc_threads; i++) {
     Continuation *preproc_cont = new LoggingPreprocContinuation(i);
-    sprintf(desc, "[LOG_PREPROC %d]", i);
+    snprintf(desc, sizeof(desc), "[LOG_PREPROC %d]", i);
     eventProcessor.spawn_thread(preproc_cont, desc, stacksize);
   }
 
