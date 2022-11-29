@@ -47,13 +47,14 @@ def ats_str(addr, addr_len):
             return 'null'
         else:
             return buff
-    except:
+    except BaseException:
         return 'unreadable({:x})'.format(int(addr))
 
 
 def hdrtoken(idx):
     hdrtokens = gdb.parse_and_eval('hdrtoken_strs')
     return hdrtokens[idx].string()
+
 
 def wks_or_str(idx, addr, addr_len):
     if idx >= 0:
@@ -232,6 +233,7 @@ def sm_command(val):
 
 def hdrs_command(val):
     HTTPHdr(val).pr()
+
 
 def url_command(val):
     print("{}".format(URL(val)))
