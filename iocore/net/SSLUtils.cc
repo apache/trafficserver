@@ -1052,11 +1052,11 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
     pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if (nullptr == pkey) {
-      SSLError("failed to load server private key from %s", keyPath);
+      SSLError("failed to load server private key");
       return false;
     }
     if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      SSLError("failed to attache server private key loaded from %s", keyPath);
+      SSLError("failed to attache server private key");
       EVP_PKEY_free(pkey);
       return false;
     }
@@ -2451,6 +2451,10 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       secret_key_data = secret_data;
     }
     if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
+      if (keyPath.empty())
+        SSLError("Failed to load private key from %s", cert_names_list[i].c_str());
+      else
+        SSLError("Failed to load private key from %s", keyPath.c_str());
       return false;
     }
     // Must load all the intermediate certificates before starting the next chain
