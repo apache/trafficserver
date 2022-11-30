@@ -493,6 +493,7 @@ class YAMLFile(File):
     '''
     Class representing a YAML config file.
     '''
+
     def __init__(self,
                  runable,
                  name,
@@ -526,14 +527,10 @@ class YAMLFile(File):
         def int_representer(dumper, value):
             return dumper.represent_scalar(u'tag:yaml.org,2002:int', str(value), style="'")
 
-        def bool_representer(dumper, value):
-            return dumper.represent_scalar(u'tag:yaml.org,2002:bool', str(value), style="'")
-
         if len(self.__content) > 0:
             with open(name, 'w') as f:
                 yaml.add_representer(float, float_representer)
                 yaml.add_representer(int, int_representer)
-                yaml.add_representer(bool, bool_representer)
                 updated_content = {}
                 if self.__root_tag:
                     updated_content[self.__root_tag] = self.__content

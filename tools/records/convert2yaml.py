@@ -166,10 +166,14 @@ def get_value(type, value):
     if value == 'nullptr' or value == 'NULL':
         return None
 
+    # We want to make the type right when inserting the element into the dict.
     if type == 'FLOAT':
         return float(value)
     elif type == 'INT':
-        if value.startswith('0x'):
+        # We need to make it YAML compliant as this will be an int, so if contains
+        # any special character like hex or a multiplier, then we make a string. ATS will
+        # parse it as string anyway.
+        if value.startswith('0x') or have_multipliers(value, ['K', 'M', 'G', 'T']):
             return str(value)
         else:
             return int(value)
@@ -235,13 +239,16 @@ def handle_file_input(args):
             name = s[1]
             type = s[2]
             value = s[3]
-            ori_name = name
+
+            # We ignore the prefix and work away from  there.
             if name.startswith("proxy.config."):
                 name = name[len("proxy.config."):]
             elif name.startswith("local.config."):
                 name = name[len("local.config."):]
             elif args.node and name.startswith("proxy.node."):
                 name = name[len("proxy."):]
+
+            # Build the object
             add_object(config, name, value[:-1], type)
             idx = idx + 1
 

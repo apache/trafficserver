@@ -1,74 +1,74 @@
 ts:
-  accept_threads: !!int '1'
+  accept_threads: 1
   alarm:
     abs_path: nullpt
     bin: example_alarm_bin.sh
-    script_runtime: !!int '5'
+    script_runtime: 5
   allocator:
-    dontdump_iobuffers: !!int '1'
-    hugepages: !!int '0'
-    thread_freelist_low_watermark: !!int '32'
-    thread_freelist_size: !!int '512'
+    dontdump_iobuffers: 1
+    hugepages: 0
+    thread_freelist_low_watermark: 32
+    thread_freelist_size: 512
   body_factory:
-    enable_customizations: !!int '1'
-    enable_logging: !!int '0'
-    response_max_size: !!int '8192'
-    response_suppression_mode: !!int '0'
+    enable_customizations: 1
+    enable_logging: 0
+    response_max_size: 8192
+    response_suppression_mode: 0
     template_base: NONE
   cache:
-    agg_write_backlog: !!int '5242880'
-    alt_rewrite_max_size: !!int '4096'
+    agg_write_backlog: 5242880
+    alt_rewrite_max_size: 4096
     dir:
-      sync_frequency: !!int '60'
-    enable_checksum: !!int '0'
-    enable_read_while_writer: !!int '1'
-    force_sector_size: !!int '0'
-    hit_evacuate_percent: !!int '0'
-    hit_evacuate_size_limit: !!int '0'
+      sync_frequency: 60
+    enable_checksum: 0
+    enable_read_while_writer: 1
+    force_sector_size: 0
+    hit_evacuate_percent: 0
+    hit_evacuate_size_limit: 0
     hostdb:
-      disable_reverse_lookup: !!int '0'
-      sync_frequency: !!int '0'
+      disable_reverse_lookup: 0
+      sync_frequency: 0
     limits:
       http:
-        max_alts: !!int '5'
+        max_alts: 5
     log:
       alternate:
-        eviction: !!int '0'
-    max_disk_errors: !!int '5'
-    max_doc_size: !!int '0'
-    min_average_object_size: !!int '8000'
-    mutex_retry_delay: !!int '2'
+        eviction: 0
+    max_disk_errors: 5
+    max_doc_size: 0
+    min_average_object_size: 8000
+    mutex_retry_delay: 2
     permit:
-      pinning: !!int '0'
+      pinning: 0
     ram_cache:
-      algorithm: !!int '1'
-      compress: !!int '0'
-      compress_percent: !!int '90'
-      size: !!int '-1'
-      use_seen_filter: !!int '1'
-    ram_cache_cutoff: !!int '4194304'
+      algorithm: 1
+      compress: 0
+      compress_percent: 90
+      size: -1
+      use_seen_filter: 1
+    ram_cache_cutoff: 4194304
     read_while_writer:
-      max_retries: !!int '10'
+      max_retries: 10
     read_while_writer_retry:
-      delay: !!int '50'
-    select_alternate: !!int '1'
-    target_fragment_size: !!int '1048576'
-    threads_per_disk: !!int '8'
-  config_update_interval_ms: !!int '3000'
-  core_limit: !!int '-1'
+      delay: 50
+    select_alternate: 1
+    target_fragment_size: 1048576
+    threads_per_disk: 8
+  config_update_interval_ms: 3000
+  core_limit: -1
   diags:
     action:
-      enabled: !!int '0'
+      enabled: 0
     debug:
-      enabled: !!int '0'
+      enabled: 0
       tags: http|dns
-      throttling_interval_msec: !!int '0'
+      throttling_interval_msec: 0
     logfile:
       filename: diags.log
-      rolling_enabled: !!int '0'
-      rolling_interval_sec: !!int '3600'
-      rolling_min_count: !!int '0'
-      rolling_size_mb: !!int '10'
+      rolling_enabled: 0
+      rolling_interval_sec: 3600
+      rolling_min_count: 0
+      rolling_size_mb: 10
     logfile_perm: rw-r--r--
     output:
       alert: L
@@ -80,450 +80,450 @@ ts:
       note: L
       status: L
       warning: L
-    show_location: !!int '1'
+    show_location: 1
   dns:
-    connection_mode: !!int '0'
-    dedicated_thread: !!int '0'
-    failover_number: !!int '5'
-    failover_period: !!int '60'
+    connection_mode: 0
+    dedicated_thread: 0
+    failover_number: 5
+    failover_period: 60
     local_ipv4: null
     local_ipv6: null
-    lookup_timeout: !!int '20'
-    max_dns_in_flight: !!int '2048'
-    max_tcp_continuous_failures: !!int '10'
+    lookup_timeout: 20
+    max_dns_in_flight: 2048
+    max_tcp_continuous_failures: 10
     nameservers: null
     resolv_conf: /etc/resolv.conf
-    retries: !!int '5'
-    round_robin_nameservers: !!int '1'
-    search_default_domains: !!int '0'
+    retries: 5
+    round_robin_nameservers: 1
+    search_default_domains: 0
     splitDNS:
-      enabled: !!int '0'
-    validate_query_name: !!int '0'
-  dump_mem_info_frequency: !!int '0'
+      enabled: 0
+    validate_query_name: 0
+  dump_mem_info_frequency: 0
   error:
     logfile:
       filename: error.log
   exec_thread:
-    affinity: !!int '1'
+    affinity: 1
     autoconfig:
-      enabled: !!int '1'
-      scale: !!float '1.0'
-    limit: !!int '2'
-    listen: !!int '0'
+      enabled: 1
+      scale: 1.0
+    limit: 2
+    listen: 0
   hostdb:
-    enabled: !!int '1'
+    enabled: 1
     fail:
-      timeout: !!int '0'
+      timeout: 0
     filename: host.db
     host_file:
-      interval: !!int '86400'
+      interval: 86400
       path: null
     io:
-      max_buffer_index: !!int '8'
+      max_buffer_index: 8
     ip_resolve: null
-    lookup_timeout: !!int '30'
-    max_count: !!int '-1'
+    lookup_timeout: 30
+    max_count: -1
     max_size: 10M
-    migrate_on_demand: !!int '0'
-    partitions: !!int '64'
-    re_dns_on_reload: !!int '0'
-    round_robin_max_count: !!int '16'
-    serve_stale_for: !!int '0'
-    strict_round_robin: !!int '0'
-    timed_round_robin: !!int '0'
-    timeout: !!int '86400'
-    ttl_mode: !!int '0'
-    verify_after: !!int '720'
+    migrate_on_demand: 0
+    partitions: 64
+    re_dns_on_reload: 0
+    round_robin_max_count: 16
+    serve_stale_for: 0
+    strict_round_robin: 0
+    timed_round_robin: 0
+    timeout: 86400
+    ttl_mode: 0
+    verify_after: 720
   http:
-    accept_no_activity_timeout: !!int '120'
-    allow_half_open: !!int '1'
-    allow_multi_range: !!int '0'
-    anonymize_remove_client_ip: !!int '0'
-    anonymize_remove_cookie: !!int '0'
-    anonymize_remove_from: !!int '0'
-    anonymize_remove_referer: !!int '0'
-    anonymize_remove_user_agent: !!int '0'
-    attach_server_session_to_client: !!int '0'
-    auth_server_session_private: !!int '1'
-    background_fill_active_timeout: !!int '0'
-    background_fill_completed_threshold: !!float '0.0'
+    accept_no_activity_timeout: 120
+    allow_half_open: 1
+    allow_multi_range: 0
+    anonymize_remove_client_ip: 0
+    anonymize_remove_cookie: 0
+    anonymize_remove_from: 0
+    anonymize_remove_referer: 0
+    anonymize_remove_user_agent: 0
+    attach_server_session_to_client: 0
+    auth_server_session_private: 1
+    background_fill_active_timeout: 0
+    background_fill_completed_threshold: 0.0
     cache:
-      cache_responses_to_cookies: !!int '1'
-      cache_urls_that_look_dynamic: !!int '1'
-      generation: !!int '-1'
-      guaranteed_max_lifetime: !!int '31536000'
-      guaranteed_min_lifetime: !!int '0'
-      heuristic_lm_factor: !!float '0.1'
-      heuristic_max_lifetime: !!int '86400'
-      heuristic_min_lifetime: !!int '3600'
-      http: !!int '1'
-      ignore_accept_charset_mismatch: !!int '2'
-      ignore_accept_encoding_mismatch: !!int '2'
-      ignore_accept_language_mismatch: !!int '2'
-      ignore_accept_mismatch: !!int '2'
-      ignore_authentication: !!int '0'
-      ignore_client_cc_max_age: !!int '1'
-      ignore_client_no_cache: !!int '1'
-      ignore_server_no_cache: !!int '0'
-      ims_on_client_no_cache: !!int '1'
-      max_open_read_retries: !!int '-1'
-      max_open_write_retries: !!int '1'
-      max_stale_age: !!int '604800'
-      open_read_retry_time: !!int '10'
-      open_write_fail_action: !!int '0'
-      post_method: !!int '0'
+      cache_responses_to_cookies: 1
+      cache_urls_that_look_dynamic: 1
+      generation: -1
+      guaranteed_max_lifetime: 31536000
+      guaranteed_min_lifetime: 0
+      heuristic_lm_factor: 0.1
+      heuristic_max_lifetime: 86400
+      heuristic_min_lifetime: 3600
+      http: 1
+      ignore_accept_charset_mismatch: 2
+      ignore_accept_encoding_mismatch: 2
+      ignore_accept_language_mismatch: 2
+      ignore_accept_mismatch: 2
+      ignore_authentication: 0
+      ignore_client_cc_max_age: 1
+      ignore_client_no_cache: 1
+      ignore_server_no_cache: 0
+      ims_on_client_no_cache: 1
+      max_open_read_retries: -1
+      max_open_write_retries: 1
+      max_stale_age: 604800
+      open_read_retry_time: 10
+      open_write_fail_action: 0
+      post_method: 0
       range:
-        lookup: !!int '1'
-        write: !!int '0'
-      required_headers: !!int '2'
-      when_to_revalidate: !!int '0'
+        lookup: 1
+        write: 0
+      required_headers: 2
+      when_to_revalidate: 0
     chunking:
-      size: !!int '4096'
-    chunking_enabled: !!int '1'
+      size: 4096
+    chunking_enabled: 1
     connect:
       dead:
-        policy: !!int '2'
-    connect_attempts_max_retries: !!int '3'
-    connect_attempts_max_retries_dead_server: !!int '1'
-    connect_attempts_rr_retries: !!int '3'
-    connect_attempts_timeout: !!int '30'
+        policy: 2
+    connect_attempts_max_retries: 3
+    connect_attempts_max_retries_dead_server: 1
+    connect_attempts_rr_retries: 3
+    connect_attempts_timeout: 30
     connect_ports: '443'
-    default_buffer_size: !!int '8'
-    default_buffer_water_mark: !!int '32768'
-    disallow_post_100_continue: !!int '0'
-    doc_in_cache_skip_dns: !!int '1'
+    default_buffer_size: 8
+    default_buffer_water_mark: 32768
+    disallow_post_100_continue: 0
+    doc_in_cache_skip_dns: 1
     down_server:
-      cache_time: !!int '60'
-    enable_http_info: !!int '0'
-    enable_http_stats: !!int '1'
-    enabled: !!int '1'
+      cache_time: 60
+    enable_http_info: 0
+    enable_http_stats: 1
+    enabled: 1
     errors:
-      log_error_pages: !!int '1'
+      log_error_pages: 1
     flow_control:
-      enabled: !!int '0'
-      high_water: !!int '0'
-      low_water: !!int '0'
+      enabled: 0
+      high_water: 0
+      low_water: 0
     forward:
-      proxy_auth_to_parent: !!int '0'
-    forward_connect_method: !!int '0'
-    header_field_max_size: !!int '131070'
-    host_sni_policy: !!int '2'
-    insert_age_in_response: !!int '1'
-    insert_client_ip: !!int '1'
+      proxy_auth_to_parent: 0
+    forward_connect_method: 0
+    header_field_max_size: 131070
+    host_sni_policy: 2
+    insert_age_in_response: 1
+    insert_client_ip: 1
     insert_forwarded: none
-    insert_request_via_str: !!int '1'
-    insert_response_via_str: !!int '0'
-    insert_squid_x_forwarded_for: !!int '1'
-    keep_alive_enabled_in: !!int '1'
-    keep_alive_enabled_out: !!int '1'
-    keep_alive_no_activity_timeout_in: !!int '120'
-    keep_alive_no_activity_timeout_out: !!int '120'
-    keep_alive_post_out: !!int '1'
-    max_post_size: !!int '0'
-    max_proxy_cycles: !!int '0'
-    negative_caching_enabled: !!int '0'
-    negative_caching_lifetime: !!int '1800'
+    insert_request_via_str: 1
+    insert_response_via_str: 0
+    insert_squid_x_forwarded_for: 1
+    keep_alive_enabled_in: 1
+    keep_alive_enabled_out: 1
+    keep_alive_no_activity_timeout_in: 120
+    keep_alive_no_activity_timeout_out: 120
+    keep_alive_post_out: 1
+    max_post_size: 0
+    max_proxy_cycles: 0
+    negative_caching_enabled: 0
+    negative_caching_lifetime: 1800
     negative_caching_list: '2'
-    negative_revalidating_enabled: !!int '1'
-    negative_revalidating_lifetime: !!int '1800'
-    no_dns_just_forward_to_parent: !!int '0'
-    no_origin_server_dns: !!int '0'
-    normalize_ae: !!int '1'
-    number_of_redirections: !!int '0'
+    negative_revalidating_enabled: 1
+    negative_revalidating_lifetime: 1800
+    no_dns_just_forward_to_parent: 0
+    no_origin_server_dns: 0
+    normalize_ae: 1
+    number_of_redirections: 0
     parent_proxies: nullpt
     parent_proxy:
-      disable_connect_tunneling: !!int '0'
-      disable_parent_markdowns: !!int '0'
-      enable_parent_timeout_markdowns: !!int '0'
-      fail_threshold: !!int '10'
-      mark_down_hostdb: !!int '0'
-      per_parent_connect_attempts: !!int '2'
-      retry_time: !!int '300'
-      self_detect: !!int '2'
-      total_connect_attempts: !!int '4'
+      disable_connect_tunneling: 0
+      disable_parent_markdowns: 0
+      enable_parent_timeout_markdowns: 0
+      fail_threshold: 10
+      mark_down_hostdb: 0
+      per_parent_connect_attempts: 2
+      retry_time: 300
+      self_detect: 2
+      total_connect_attempts: 4
     per_server:
       connection:
-        alert_delay: !!int '60'
+        alert_delay: 60
         match: both
-        max: !!int '0'
-        min: !!int '0'
+        max: 0
+        min: 0
     post:
       check:
         content_length:
-          enabled: !!int '1'
-    post_copy_size: !!int '2048'
+          enabled: 1
+    post_copy_size: 2048
     proxy_protocol_allowlist: none
-    proxy_protocol_out: !!int '-1'
-    push_method_enabled: !!int '0'
+    proxy_protocol_out: -1
+    push_method_enabled: 0
     redirect:
       actions: routable:follow
-    redirect_host_no_port: !!int '1'
-    redirect_use_orig_cache_key: !!int '0'
+    redirect_host_no_port: 1
+    redirect_use_orig_cache_key: 0
     referer_default_redirect: http://www.example.com/
-    referer_filter: !!int '0'
-    referer_format_redirect: !!int '0'
-    request_buffer_enabled: !!int '0'
-    request_header_max_size: !!int '131072'
-    request_line_max_size: !!int '65535'
+    referer_filter: 0
+    referer_format_redirect: 0
+    request_buffer_enabled: 0
+    request_header_max_size: 131072
+    request_line_max_size: 65535
     request_via_str: ApacheTrafficServer
-    response_header_max_size: !!int '131072'
-    response_server_enabled: !!int '1'
+    response_header_max_size: 131072
+    response_server_enabled: 1
     response_server_str: ATS/
     response_via_str: ApacheTrafficServer
-    send_100_continue_response: !!int '0'
-    send_http11_requests: !!int '1'
-    server_max_connections: !!int '0'
+    send_100_continue_response: 0
+    send_http11_requests: 1
+    server_max_connections: 0
     server_ports: '80'
     server_session_sharing:
       match: both
       pool: thread
     slow:
       log:
-        threshold: !!int '0'
-    strict_uri_parsing: !!int '2'
-    transaction_active_timeout_in: !!int '900'
-    transaction_active_timeout_out: !!int '0'
-    transaction_no_activity_timeout_in: !!int '30'
-    transaction_no_activity_timeout_out: !!int '30'
-    uncacheable_requests_bypass_parent: !!int '1'
-    use_client_source_port: !!int '0'
-    use_client_target_addr: !!int '0'
-    wait_for_cache: !!int '0'
+        threshold: 0
+    strict_uri_parsing: 2
+    transaction_active_timeout_in: 900
+    transaction_active_timeout_out: 0
+    transaction_no_activity_timeout_in: 30
+    transaction_no_activity_timeout_out: 30
+    uncacheable_requests_bypass_parent: 1
+    use_client_source_port: 0
+    use_client_target_addr: 0
+    wait_for_cache: 0
     websocket:
-      max_number_of_connections: !!int '-1'
+      max_number_of_connections: -1
   http2:
-    accept_no_activity_timeout: !!int '120'
-    active_timeout_in: !!int '0'
+    accept_no_activity_timeout: 120
+    active_timeout_in: 0
     connection:
       slow:
         log:
-          threshold: !!int '0'
-    default_buffer_water_mark: !!int '-1'
-    header_table_size: !!int '4096'
-    header_table_size_limit: !!int '65536'
-    initial_window_size_in: !!int '65535'
-    max_active_streams_in: !!int '0'
-    max_concurrent_streams_in: !!int '100'
-    max_frame_size: !!int '16384'
-    max_header_list_size: !!int '131072'
-    max_ping_frames_per_minute: !!int '60'
-    max_priority_frames_per_minute: !!int '120'
-    max_settings_frames_per_minute: !!int '14'
-    max_settings_per_frame: !!int '7'
-    max_settings_per_minute: !!int '14'
-    min_avg_window_update: !!float '2560.0'
-    min_concurrent_streams_in: !!int '10'
-    no_activity_timeout_in: !!int '120'
-    push_diary_size: !!int '256'
+          threshold: 0
+    default_buffer_water_mark: -1
+    header_table_size: 4096
+    header_table_size_limit: 65536
+    initial_window_size_in: 65535
+    max_active_streams_in: 0
+    max_concurrent_streams_in: 100
+    max_frame_size: 16384
+    max_header_list_size: 131072
+    max_ping_frames_per_minute: 60
+    max_priority_frames_per_minute: 120
+    max_settings_frames_per_minute: 14
+    max_settings_per_frame: 7
+    max_settings_per_minute: 14
+    min_avg_window_update: 2560.0
+    min_concurrent_streams_in: 10
+    no_activity_timeout_in: 120
+    push_diary_size: 256
     stream:
       slow:
         log:
-          threshold: !!int '0'
-    stream_error_rate_threshold: !!float '0.1'
-    stream_error_sampling_threshold: !!int '10'
-    stream_priority_enabled: !!int '0'
-    write_buffer_block_size: !!int '262144'
-    write_size_threshold: !!float '0.5'
-    write_time_threshold: !!int '100'
-    zombie_debug_timeout_in: !!int '0'
+          threshold: 0
+    stream_error_rate_threshold: 0.1
+    stream_error_sampling_threshold: 10
+    stream_priority_enabled: 0
+    write_buffer_block_size: 262144
+    write_size_threshold: 0.5
+    write_time_threshold: 100
+    zombie_debug_timeout_in: 0
   http3:
-    header_table_size: !!int '0'
-    max_header_list_size: !!int '4096'
-    max_settings: !!int '10'
-    num_placeholders: !!int '100'
-    qpack_blocked_streams: !!int '0'
-  http_ui_enabled: !!int '0'
+    header_table_size: 0
+    max_header_list_size: 4096
+    max_settings: 10
+    num_placeholders: 100
+    qpack_blocked_streams: 0
+  http_ui_enabled: 0
   incoming_ip_to_bind: null
   log:
-    ascii_buffer_size: !!int '36864'
-    auto_delete_rolled_files: !!int '1'
-    file_stat_frequency: !!int '32'
+    ascii_buffer_size: 36864
+    auto_delete_rolled_files: 1
+    file_stat_frequency: 32
     hostname: localhost
     io:
-      max_buffer_index: !!int '8'
-    log_buffer_size: !!int '9216'
-    log_fast_buffer: !!int '0'
+      max_buffer_index: 8
+    log_buffer_size: 9216
+    log_fast_buffer: 0
     logfile_perm: rw-r--r--
-    logging_enabled: !!int '3'
-    max_line_size: !!int '9216'
-    max_secs_per_buffer: !!int '5'
-    max_space_mb_for_logs: !!int '25000'
-    max_space_mb_headroom: !!int '1000'
-    periodic_tasks_interval: !!int '5'
-    preproc_threads: !!int '1'
-    rolling_allow_empty: !!int '0'
-    rolling_enabled: !!int '1'
-    rolling_interval_sec: !!int '86400'
-    rolling_max_count: !!int '0'
-    rolling_min_count: !!int '0'
-    rolling_offset_hr: !!int '0'
-    rolling_size_mb: !!int '10'
-    sampling_frequency: !!int '1'
-    space_used_frequency: !!int '2'
-    throttling_interval_msec: !!int '60000'
+    logging_enabled: 3
+    max_line_size: 9216
+    max_secs_per_buffer: 5
+    max_space_mb_for_logs: 25000
+    max_space_mb_headroom: 1000
+    periodic_tasks_interval: 5
+    preproc_threads: 1
+    rolling_allow_empty: 0
+    rolling_enabled: 1
+    rolling_interval_sec: 86400
+    rolling_max_count: 0
+    rolling_min_count: 0
+    rolling_offset_hr: 0
+    rolling_size_mb: 10
+    sampling_frequency: 1
+    space_used_frequency: 2
+    throttling_interval_msec: 60000
   memory:
-    max_usage: !!int '0'
-  mlock_enabled: !!int '0'
+    max_usage: 0
+  mlock_enabled: 0
   msg:
     io:
-      max_buffer_index: !!int '8'
+      max_buffer_index: 8
   net:
-    accept_period: !!int '10'
-    connections_throttle: !!int '30000'
-    default_inactivity_timeout: !!int '86400'
-    defer_accept: !!int '1'
-    event_period: !!int '10'
-    inactivity_check_frequency: !!int '1'
-    listen_backlog: !!int '-1'
-    max_connections_in: !!int '30000'
-    max_requests_in: !!int '0'
-    poll_timeout: !!int '10'
-    retry_delay: !!int '10'
-    sock_mss_in: !!int '0'
-    sock_notsent_lowat: !!int '32768'
+    accept_period: 10
+    connections_throttle: 30000
+    default_inactivity_timeout: 86400
+    defer_accept: 1
+    event_period: 10
+    inactivity_check_frequency: 1
+    listen_backlog: -1
+    max_connections_in: 30000
+    max_requests_in: 0
+    poll_timeout: 10
+    retry_delay: 10
+    sock_mss_in: 0
+    sock_notsent_lowat: 32768
     sock_option_flag_in: '0x1'
     sock_option_flag_out: '0x1'
-    sock_option_tfo_queue_size_in: !!int '10000'
+    sock_option_tfo_queue_size_in: 10000
     sock_packet_mark_in: '0x0'
     sock_packet_mark_out: '0x0'
     sock_packet_tos_in: '0x0'
     sock_packet_tos_out: '0x0'
-    sock_recv_buffer_size_in: !!int '0'
-    sock_recv_buffer_size_out: !!int '0'
-    sock_send_buffer_size_in: !!int '0'
-    sock_send_buffer_size_out: !!int '0'
+    sock_recv_buffer_size_in: 0
+    sock_recv_buffer_size_out: 0
+    sock_send_buffer_size_in: 0
+    sock_send_buffer_size_out: 0
     tcp_congestion_control_in: val
     tcp_congestion_control_out: val
-    throttle_delay: !!int '50'
+    throttle_delay: 50
   outgoing_ip_to_bind: null
   output:
     logfile:
       name: traffic.out
-      rolling_enabled: !!int '0'
-      rolling_interval_sec: !!int '3600'
-      rolling_min_count: !!int '0'
-      rolling_size_mb: !!int '100'
+      rolling_enabled: 0
+      rolling_interval_sec: 3600
+      rolling_min_count: 0
+      rolling_size_mb: 100
     logfile_perm: rw-r--r--
   payload:
     io:
-      max_buffer_index: !!int '8'
+      max_buffer_index: 8
   plugin:
-    dynamic_reload_mode: !!int '1'
-    load_elevated: !!int '0'
+    dynamic_reload_mode: 1
+    load_elevated: 0
     vc:
-      default_buffer_index: !!int '8'
-      default_buffer_water_mark: !!int '0'
+      default_buffer_index: 8
+      default_buffer_water_mark: 0
   product_company: Apache Software Foundation
   product_name: Traffic Server
   product_vendor: Apache
   proxy_name: traffic_server
   quic:
-    ack_delay_exponent_in: !!int '3'
-    ack_delay_exponent_out: !!int '3'
-    active_cid_limit_in: !!int '4'
-    active_cid_limit_out: !!int '8'
+    ack_delay_exponent_in: 3
+    ack_delay_exponent_out: 3
+    active_cid_limit_in: 4
+    active_cid_limit_out: 8
     client:
-      cm_exercise_enabled: !!int '0'
-      quantum_readiness_test_enabled: !!int '0'
+      cm_exercise_enabled: 0
+      quantum_readiness_test_enabled: 0
       session_file: null
       supported_groups: P-256:X25519:P-384:P-52
-      vn_exercise_enabled: !!int '0'
+      vn_exercise_enabled: 0
     congestion_control:
-      initial_window: !!int '12000'
-      loss_reduction_factor: !!float '0.5'
-      max_datagram_size: !!int '1200'
-      minimum_window: !!int '2400'
-      persistent_congestion_threshold: !!int '3'
+      initial_window: 12000
+      loss_reduction_factor: 0.5
+      max_datagram_size: 1200
+      minimum_window: 2400
+      persistent_congestion_threshold: 3
     connection_table:
-      size: !!int '65521'
-    disable_active_migration: !!int '0'
-    initial_max_data_in: !!int '65536'
-    initial_max_data_out: !!int '65536'
-    initial_max_stream_data_bidi_local_in: !!int '0'
-    initial_max_stream_data_bidi_local_out: !!int '4096'
-    initial_max_stream_data_bidi_remote_in: !!int '4096'
-    initial_max_stream_data_bidi_remote_out: !!int '0'
-    initial_max_stream_data_uni_in: !!int '4096'
-    initial_max_stream_data_uni_out: !!int '4096'
-    initial_max_streams_bidi_in: !!int '100'
-    initial_max_streams_bidi_out: !!int '100'
-    initial_max_streams_uni_in: !!int '100'
-    initial_max_streams_uni_out: !!int '100'
-    instance_id: !!int '0'
+      size: 65521
+    disable_active_migration: 0
+    initial_max_data_in: 65536
+    initial_max_data_out: 65536
+    initial_max_stream_data_bidi_local_in: 0
+    initial_max_stream_data_bidi_local_out: 4096
+    initial_max_stream_data_bidi_remote_in: 4096
+    initial_max_stream_data_bidi_remote_out: 0
+    initial_max_stream_data_uni_in: 4096
+    initial_max_stream_data_uni_out: 4096
+    initial_max_streams_bidi_in: 100
+    initial_max_streams_bidi_out: 100
+    initial_max_streams_uni_in: 100
+    initial_max_streams_uni_out: 100
+    instance_id: 0
     loss_detection:
-      granularity: !!int '1'
-      initial_rtt: !!int '500'
-      packet_threshold: !!int '3'
-      time_threshold: !!float '1.25'
-    max_ack_delay_in: !!int '25'
-    max_ack_delay_out: !!int '25'
-    no_activity_timeout_in: !!int '30000'
-    no_activity_timeout_out: !!int '30000'
-    num_alt_connection_ids: !!int '8'
+      granularity: 1
+      initial_rtt: 500
+      packet_threshold: 3
+      time_threshold: 1.25
+    max_ack_delay_in: 25
+    max_ack_delay_out: 25
+    no_activity_timeout_in: 30000
+    no_activity_timeout_out: 30000
+    num_alt_connection_ids: 8
     preferred_address_ipv4: null
     preferred_address_ipv6: null
     qlog_dir: null
     server:
-      quantum_readiness_test_enabled: !!int '0'
-      stateless_retry_enabled: !!int '0'
+      quantum_readiness_test_enabled: 0
+      stateless_retry_enabled: 0
       supported_groups: P-256:X25519:P-384:P-52
-  raw_stat_sync_interval_ms: !!int '5000'
-  remote_sync_interval_ms: !!int '5000'
-  res_track_memory: !!int '0'
+  raw_stat_sync_interval_ms: 5000
+  remote_sync_interval_ms: 5000
+  res_track_memory: 0
   restart:
-    active_client_threshold: !!int '0'
-    stop_listening: !!int '0'
+    active_client_threshold: 0
+    stop_listening: 0
   reverse_proxy:
-    enabled: !!int '1'
+    enabled: 1
   socks:
-    accept_enabled: !!int '0'
-    accept_port: !!int '1080'
-    connection_attempts: !!int '4'
+    accept_enabled: 0
+    accept_port: 1080
+    connection_attempts: 4
     default_servers: val
-    http_port: !!int '80'
-    per_server_connection_attempts: !!int '1'
-    server_connect_timeout: !!int '10'
-    server_fail_threshold: !!int '2'
-    server_retry_time: !!int '300'
-    server_retry_timeout: !!int '300'
-    socks_needed: !!int '0'
-    socks_timeout: !!int '100'
-    socks_version: !!int '4'
-  srv_enabled: !!int '0'
+    http_port: 80
+    per_server_connection_attempts: 1
+    server_connect_timeout: 10
+    server_fail_threshold: 2
+    server_retry_time: 300
+    server_retry_timeout: 300
+    socks_needed: 0
+    socks_timeout: 100
+    socks_version: 4
+  srv_enabled: 0
   ssl:
     CA:
       cert:
         filename: null
-    TLSv1: !!int '0'
-    TLSv1_1: !!int '0'
-    TLSv1_2: !!int '1'
+    TLSv1: 0
+    TLSv1_1: 0
+    TLSv1_2: 1
     TLSv1_3:
-      enabled: !!int '1'
-    allow_client_renegotiation: !!int '0'
+      enabled: 1
+    allow_client_renegotiation: 0
     async:
       handshake:
-        enabled: !!int '0'
+        enabled: 0
     cert:
-      load_elevated: !!int '0'
+      load_elevated: 0
     client:
       CA:
         cert:
           filename: null
-      TLSv1: !!int '0'
-      TLSv1_1: !!int '0'
-      TLSv1_2: !!int '1'
+      TLSv1: 0
+      TLSv1_1: 0
+      TLSv1_2: 1
       TLSv1_3:
         cipher_suites: TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
-        enabled: !!int '1'
+        enabled: 1
       alpn_protocols: null
       cert:
         filename: null
-      certification_level: !!int '0'
+      certification_level: 0
       cipher_suite: ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-CCM8:ECDHE-ECDSA-AES256-CCM:DHE-RSA-AES256-CCM8:DHE-RSA-AES256-CCM:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-ARIA256-GCM-SHA384:ECDHE-ARIA256-GCM-SHA384:DHE-DSS-ARIA256-GCM-SHA384:DHE-RSA-ARIA256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:ECDHE-ECDSA-CAMELLIA256-SHA384:ECDHE-RSA-CAMELLIA256-SHA384:DHE-RSA-CAMELLIA256-SHA256:DHE-DSS-CAMELLIA256-SHA256:RSA-PSK-AES256-GCM-SHA384:RSA-PSK-CHACHA20-POLY1305:RSA-PSK-ARIA256-GCM-SHA384:AES256-GCM-SHA384:AES256-CCM8:AES256-CCM:ARIA256-GCM-SHA384:AES256-SHA256:CAMELLIA256-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM8:ECDHE-ECDSA-AES128-CCM:DHE-RSA-AES128-CCM8:DHE-RSA-AES128-CCM:ECDHE-ECDSA-ARIA128-GCM-SHA256:ECDHE-ARIA128-GCM-SHA256:DHE-DSS-ARIA128-GCM-SHA256:DHE-RSA-ARIA128-GCM-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:ECDHE-ECDSA-CAMELLIA128-SHA256:ECDHE-RSA-CAMELLIA128-SHA256:DHE-RSA-CAMELLIA128-SHA256:DHE-DSS-CAMELLIA128-SHA256:RSA-PSK-AES128-GCM-SHA256:RSA-PSK-ARIA128-GCM-SHA256:AES128-GCM-SHA256:AES128-CCM8:AES128-CCM:ARIA128-GCM-SHA256:AES128-SHA256:CAMELLIA128-SHA256
       groups_list: null
       private_key:
         filename: null
-      scheme_proto_mismatch_policy: !!int '2'
+      scheme_proto_mismatch_policy: 2
       sni_policy: host
       verify:
         server:
@@ -531,84 +531,84 @@ ts:
           properties: ALL
     engine:
       conf_file: null
-    handshake_timeout_in: !!int '30'
-    hsts_include_subdomains: !!int '0'
-    hsts_max_age: !!int '-1'
+    handshake_timeout_in: 30
+    hsts_include_subdomains: 0
+    hsts_max_age: -1
     keylog_file: null
     ktls:
-      enabled: !!int '0'
-    max_record_size: !!int '0'
+      enabled: 0
+    max_record_size: 0
     misc:
       io:
-        max_buffer_index: !!int '8'
+        max_buffer_index: 8
     ocsp:
-      cache_timeout: !!int '3600'
-      enabled: !!int '0'
-      request_timeout: !!int '10'
-      update_period: !!int '60'
+      cache_timeout: 3600
+      enabled: 0
+      request_timeout: 10
+      update_period: 60
     origin_session_cache:
-      enabled: !!int '1'
-      size: !!int '10240'
+      enabled: 1
+      size: 10240
     server:
       TLSv1_3:
         cipher_suites: TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
-      allow_early_data_params: !!int '0'
+      allow_early_data_params: 0
       cert_chain:
         filename: null
       cipher_suite: ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES256-CCM8:ECDHE-ECDSA-AES128-CCM8:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-CCM8:DHE-RSA-AES128-CCM8:DHE-RSA-AES256-CCM:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-CCM8:AES128-CCM8:AES256-CCM:AES128-CCM:AES256-SHA256:AES128-SHA2
       dhparams_file: null
       groups_list: null
-      honor_cipher_order: !!int '1'
-      max_early_data: !!int '0'
+      honor_cipher_order: 1
+      max_early_data: 0
       multicert:
-        exit_on_load_fail: !!int '1'
-      prioritize_chacha: !!int '0'
+        exit_on_load_fail: 1
+      prioritize_chacha: 0
       session_ticket:
-        enable: !!int '1'
-        number: !!int '2'
+        enable: 1
+        number: 2
       ticket_key:
         filename: null
     session_cache:
-      auto_clear: !!int '1'
-      num_buckets: !!int '256'
-      size: !!int '102400'
-      skip_cache_on_bucket_contention: !!int '0'
-      timeout: !!int '0'
-      value: !!int '2'
+      auto_clear: 1
+      num_buckets: 256
+      size: 102400
+      skip_cache_on_bucket_contention: 0
+      timeout: 0
+      value: 2
   stat_api:
-    max_stats_allowed: !!int '256'
+    max_stats_allowed: 256
   stop:
-    shutdown_timeout: !!int '0'
+    shutdown_timeout: 0
   system:
-    file_max_pct: !!float '0.9'
-  task_threads: !!int '2'
+    file_max_pct: 0.9
+  task_threads: 2
   thread:
     default:
-      stackguard_pages: !!int '1'
-      stacksize: !!int '1048576'
-    max_heartbeat_mseconds: !!int '60'
+      stackguard_pages: 1
+      stacksize: 1048576
+    max_heartbeat_mseconds: 60
   tunnel:
-    activity_check_period: !!int '0'
+    activity_check_period: 0
     prewarm:
-      algorithm: !!int '2'
-      enabled: !!int '0'
-      event_period: !!int '1000'
-      max_stats_size: !!int '100'
+      algorithm: 2
+      enabled: 0
+      event_period: 1000
+      max_stats_size: 100
   udp:
-    enable_gso: !!int '0'
-    free_cancelled_pkts_sec: !!int '10'
-    periodic_cleanup: !!int '10'
-    send_retries: !!int '0'
-    threads: !!int '0'
+    enable_gso: 0
+    free_cancelled_pkts_sec: 10
+    periodic_cleanup: 10
+    send_retries: 0
+    threads: 0
   url_remap:
-    min_rules_required: !!int '0'
-    pristine_host_hdr: !!int '0'
-    remap_required: !!int '1'
+    min_rules_required: 0
+    pristine_host_hdr: 0
+    remap_required: 1
     strategies:
       filename: strategies.yaml
   wccp:
     addr: some
     services: some
   websocket:
-    active_timeout: !!int '3600'
-    no_activity_timeout: !!int '600'
+    active_timeout: 3600
+    no_activity_timeout: 600

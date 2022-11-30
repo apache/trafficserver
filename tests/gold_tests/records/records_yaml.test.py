@@ -47,6 +47,10 @@ ts.Disk.records_config.update(
         # to encode json
         field2: 0
 
+    cache:
+      # test multipliers with and without tag
+      ram_cache:
+        size: 30G
     '''
 )
 
@@ -92,3 +96,13 @@ tr.AddJsonRPCClientRequest(ts, Request.admin_lookup_records(
 
 # do our own check on the response.
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(check_response)
+
+# 2
+tctl = Test.AddTestRun("Test field with multiplier")
+tctl.Processes.Default.Command = 'traffic_ctl config get proxy.config.cache.ram_cache.size'
+tctl.Processes.Default.Env = ts.Env
+tctl.Processes.Default.ReturnCode = 0
+tctl.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+    'proxy.config.cache.ram_cache.size: 32212254720',
+    'Should hold the configured value.'
+)
