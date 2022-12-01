@@ -2235,7 +2235,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
   size_t cert_tok_num = cert_tok.getNumTokensRemaining();
   if (sslMultCertSettings && sslMultCertSettings->key && cert_tok_num != key_tok.getNumTokensRemaining()) {
-    Error("the number of certificates in ssl_cert_name (%zu) and ssl_key_name (%zu) doesn't match", cert_tok_num,
+    Error("the number of certificates in ssl_cert_name (%zu) and ssl_key_name (%zu) do not match", cert_tok_num,
           key_tok.getNumTokensRemaining());
     return false;
   }
@@ -2244,7 +2244,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   if (sslMultCertSettings && sslMultCertSettings->ca) {
     ca_tok.setString(sslMultCertSettings->ca);
     if (cert_tok.getNumTokensRemaining() != ca_tok.getNumTokensRemaining()) {
-      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ca_name (%zu) doesn't match", cert_tok_num,
+      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ca_name (%zu) do not match", cert_tok_num,
             ca_tok.getNumTokensRemaining());
       return false;
     }
@@ -2254,7 +2254,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   if (sslMultCertSettings && sslMultCertSettings->ocsp_response) {
     ocsp_tok.setString(sslMultCertSettings->ocsp_response);
     if (cert_tok.getNumTokensRemaining() != ocsp_tok.getNumTokensRemaining()) {
-      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ocsp_name (%zu) doesn't match", cert_tok_num,
+      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ocsp_name (%zu) do not match", cert_tok_num,
             ocsp_tok.getNumTokensRemaining());
       return false;
     }

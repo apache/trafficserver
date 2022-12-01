@@ -55,7 +55,7 @@ SSLSecret::loadFile(const std::string &name, std::string &data_item)
   struct stat statdata;
   // Load the secret and add it to the map
   if (stat(name.c_str(), &statdata) < 0) {
-    Debug("ssl_secret", "File does not exist or cannot be found: %s", name.c_str());
+    Debug("ssl_secret", "File: %s received error: %s", name.c_str(), strerror(errno));
     return false;
   }
   std::error_code error;
