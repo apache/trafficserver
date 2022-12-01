@@ -1039,7 +1039,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
     if (pkey) {
       if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-        SSLError("failed to load server private key from engine");
+        Debug("ssl", "failed to load server private key from engine");
         EVP_PKEY_free(pkey);
         return false;
       }
@@ -1052,16 +1052,17 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
     pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if (nullptr == pkey) {
-      SSLError("failed to load server private key from %s", keyPath);
+      Debug("ssl", "failed to load server private key from %s", (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       return false;
     }
     if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      SSLError("failed to attache server private key loaded from %s", keyPath);
+      Debug("ssl", "failed to attach server private key loaded from %s",
+            (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       EVP_PKEY_free(pkey);
       return false;
     }
     if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-      SSLError("server private key does not match the certificate public key");
+      Debug("ssl", "server private key does not match the certificate public key");
       return false;
     }
   }
@@ -1534,7 +1535,10 @@ SSLMultiCertConfigLoader::_set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfi
   if (!sslMultCertSettings->ca && params->serverCACertPath != nullptr) {
     if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
         (!SSL_CTX_set_default_verify_paths(ctx))) {
-      SSLError("invalid CA Certificate file or CA Certificate path");
+      SSLError("invalid CA Certificate file: %s or CA Certificate path: %s",
+               (!params->serverCACertFilename || params->serverCACertFilename[0] == '\0') ? "[empty file name]" :
+                                                                                            params->serverCACertFilename,
+               (!params->serverCACertPath || params->serverCACertPath[0] == '\0') ? "[empty path]" : params->serverCACertPath);
       return false;
     }
   }
@@ -1570,7 +1574,10 @@ SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
     if (params->serverCACertFilename != nullptr && params->serverCACertPath != nullptr) {
       if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
           (!SSL_CTX_set_default_verify_paths(ctx))) {
-        SSLError("CA Certificate file or CA Certificate path invalid");
+        SSLError("invalid CA Certificate file: %s or CA Certificate path: %s",
+                 (!params->serverCACertFilename || params->serverCACertFilename[0] == '\0') ? "[empty file name]" :
+                                                                                              params->serverCACertFilename,
+                 (!params->serverCACertPath || params->serverCACertPath[0] == '\0') ? "[empty path]" : params->serverCACertPath);
         return false;
       }
     }
@@ -1690,17 +1697,21 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
 
     if (ctx && cert_path) {
       if (!SSL_CTX_use_certificate_file(ctx.get(), cert_path, SSL_FILETYPE_PEM)) {
-        SSLError("SSLCreateServerContext(): failed to load server certificate.");
+        SSLError("SSLCreateServerContext(): failed to load server certificate file: %s",
+                 (!cert_path || cert_path[0] == '\0') ? "[empty file]" : cert_path);
         ctx = nullptr;
       } else if (!key_path || key_path[0] == '\0') {
         key_path = cert_path;
       }
       if (ctx) {
         if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
-          SSLError("SSLCreateServerContext(): failed to load server private key.");
+          SSLError("SSLCreateServerContext(): failed to load server private key: %s",
+                   (!key_path || key_path[0] == '\0') ? "[empty file]" : key_path);
           ctx = nullptr;
         } else if (!SSL_CTX_check_private_key(ctx.get())) {
-          SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
+          SSLError("SSLCreateServerContext(): server private key: %s does not match server certificate: %s",
+                   (!key_path || key_path[0] == '\0') ? "[empty file]" : key_path,
+                   (!cert_path || cert_path[0] == '\0') ? "[empty file]" : cert_path);
           ctx = nullptr;
         }
       }
@@ -2058,7 +2069,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
       const char *errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Debug("ssl", "currently parsing %s", line);
+      Debug("ssl", "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
       if (errPtr != nullptr) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
                          line_num, errPtr);
@@ -2222,8 +2233,10 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     key_tok.setString("");
   }
 
-  if (sslMultCertSettings && sslMultCertSettings->key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
-    Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
+  size_t cert_tok_num = cert_tok.getNumTokensRemaining();
+  if (sslMultCertSettings && sslMultCertSettings->key && cert_tok_num != key_tok.getNumTokensRemaining()) {
+    Error("the number of certificates in ssl_cert_name (%zu) and ssl_key_name (%zu) doesn't match", cert_tok_num,
+          key_tok.getNumTokensRemaining());
     return false;
   }
 
@@ -2231,7 +2244,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   if (sslMultCertSettings && sslMultCertSettings->ca) {
     ca_tok.setString(sslMultCertSettings->ca);
     if (cert_tok.getNumTokensRemaining() != ca_tok.getNumTokensRemaining()) {
-      Error("the number of certificates in ssl_cert_name and ssl_ca_name doesn't match");
+      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ca_name (%zu) doesn't match", cert_tok_num,
+            ca_tok.getNumTokensRemaining());
       return false;
     }
   }
@@ -2240,7 +2254,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   if (sslMultCertSettings && sslMultCertSettings->ocsp_response) {
     ocsp_tok.setString(sslMultCertSettings->ocsp_response);
     if (cert_tok.getNumTokensRemaining() != ocsp_tok.getNumTokensRemaining()) {
-      Error("the number of certificates in ssl_cert_name and ssl_ocsp_name doesn't match");
+      Error("the number of certificates in ssl_cert_name (%zu) and ssl_ocsp_name (%zu) doesn't match", cert_tok_num,
+            ocsp_tok.getNumTokensRemaining());
       return false;
     }
   }
@@ -2271,7 +2286,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     params->secrets.getOrLoadSecret(data.cert_names_list[i], data.key_list.size() > i ? data.key_list[i] : "", secret_data,
                                     secret_key_data);
     if (secret_data.empty()) {
-      SSLError("failed to load certificate secret for %s", data.cert_names_list[i].c_str());
+      SSLError("failed to load certificate secret for %s with key path %s", data.cert_names_list[i].c_str(),
+               data.key_list.size() > i ? data.key_list[i].c_str() : "[empty key path]");
       return false;
     }
     scoped_BIO bio(BIO_new_mem_buf(secret_data.data(), secret_data.size()));
@@ -2280,7 +2296,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
       cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
     }
     if (!bio || !cert) {
-      SSLError("failed to load certificate chain from %s", data.cert_names_list[i].c_str());
+      SSLError("failed to load certificate chain from %s with key path %s", data.cert_names_list[i].c_str(),
+               data.key_list.size() > i ? data.key_list[i].c_str() : "[empty key path]");
       return false;
     }
 
@@ -2421,7 +2438,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     std::string_view secret_key_data;
     params->secrets.getOrLoadSecret(cert_names_list[i], keyPath, secret_data, secret_key_data);
     if (secret_data.empty()) {
-      SSLError("failed to load certificate secret for %s", cert_names_list[i].c_str());
+      SSLError("failed to load certificate secret for %s with key path %s", cert_names_list[i].c_str(),
+               keyPath.empty() ? "[empty key path]" : keyPath.c_str());
       return false;
     }
     scoped_BIO bio(BIO_new_mem_buf(secret_data.data(), secret_data.size()));
@@ -2451,6 +2469,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       secret_key_data = secret_data;
     }
     if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
+      SSLError("Failed to load private key: %s with key path: %s", cert_names_list[i].c_str(),
+               keyPath.empty() ? "[empty key path]" : keyPath.c_str());
       return false;
     }
     // Must load all the intermediate certificates before starting the next chain
@@ -2530,7 +2550,7 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
   if (nullptr != setting_cert) {
     Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings->cert.get());
     if (EVP_DigestUpdate(digest, sslMultCertSettings->cert, strlen(setting_cert)) == 0) {
-      SSLError("EVP_DigestUpdate failed");
+      SSLError("EVP_DigestUpdate failed using '%s' in hash for session id context", sslMultCertSettings->cert.get());
       goto fail;
     }
   }
@@ -2542,7 +2562,7 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
       X509_NAME *name = sk_X509_NAME_value(ca_list, i);
       if (X509_NAME_digest(name, evp_md_func, hash_buf /* borrow our final hash buffer. */, &hash_len) == 0 ||
           EVP_DigestUpdate(digest, hash_buf, hash_len) == 0) {
-        SSLError("Adding X509 name to digest failed");
+        SSLError("Adding X509 name to digest failed using '%s' in hash for session id context", hash_buf);
         goto fail;
       }
     }
@@ -2552,12 +2572,12 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
   }
 
   if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
-    SSLError("EVP_DigestFinal_ex failed");
+    SSLError("EVP_DigestFinal_ex failed using '%s' in hash for session id context", hash_buf);
     goto fail;
   }
 
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
-    SSLError("SSL_CTX_set_session_id_context failed");
+    SSLError("SSL_CTX_set_session_id_context failed using '%s' in hash for session id context", hash_buf);
     goto fail;
   }
 
