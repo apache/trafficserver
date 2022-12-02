@@ -293,7 +293,7 @@ filters                array of    The optional list of filter objects which
                                    may only contain one accept filter.
 ====================== =========== =================================================
 
-Enabling log rolling may be done globally in :file:`records.config`, or on a
+Enabling log rolling may be done globally in :file:`records.yaml`, or on a
 per-log basis by passing appropriate values for the ``rolling_enabled`` key. The
 latter method may also be used to effect different rolling settings for
 individual logs. The numeric values that may be passed are the same as used by

@@ -171,7 +171,7 @@ Display the current value of a configuration record.
 .. option:: --records
 
    If this flag is provided, :option:`traffic_ctl config get` will emit results in
-   :file:`records.config` format.
+   :file:`records.yaml` format.
 
 .. program:: traffic_ctl config
 .. option:: match [--records] REGEX [REGEX...]
@@ -199,7 +199,7 @@ Display the current value of a configuration record.
 
    :ref:`admin_config_set_records`
 
-   Set the named configuration record to the specified value. Refer to the :file:`records.config`
+   Set the named configuration record to the specified value. Refer to the :file:`records.yaml`
    documentation for a list of the configuration variables you can specify. Note that this is not a
    synchronous operation.
 
@@ -601,7 +601,7 @@ when creating the ATS Process, otherwise the `runroot.yaml` will not be set.
 See also
 ========
 
-:manpage:`records.config(5)`,
+:manpage:`records.yaml(5)`,
 :manpage:`storage.config(5)`,
 :ref:`admin-jsonrpc-configuration`,
 :ref:`jsonrpc-protocol`

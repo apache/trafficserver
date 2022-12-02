@@ -123,7 +123,7 @@ The marking used is arbitrary but it must be consistent between
 1..253.
 
 To configure Traffic Server set the following values in
-:file:`records.config`
+:file:`records.yaml`
 
 - :ts:cv:`proxy.config.http.server_ports` *value from* ``--on-port`` (see below)
 

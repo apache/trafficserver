@@ -301,7 +301,7 @@ Edge Cache Debugging
 
 To include debugging output for this plugin in your |TS| logs, adjust the values
 for :ts:cv:`proxy.config.diags.debug.enabled` and
-:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.config` as so::
+:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.yaml` as so::
 
     CONFIG proxy.config.diags.debug.enabled INT 1
     CONFIG proxy.config.diags.debug.tags STRING url_sig

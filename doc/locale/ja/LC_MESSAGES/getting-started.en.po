@@ -380,7 +380,7 @@ msgstr ""
 
 #: ../../getting-started.en.rst:246
 msgid ""
-"Within the :file:`records.config` configuration file, ensure that the "
+"Within the :file:`records.yaml` configuration file, ensure that the "
 "following settings have been configured as shown below::"
 msgstr ""
 
@@ -518,7 +518,7 @@ msgid ""
 msgstr ""
 
 #: ../../getting-started.en.rst:339
-msgid ":file:`records.config`::"
+msgid ":file:`records.yaml`::"
 msgstr ""
 
 #: ../../getting-started.en.rst:347
@@ -556,7 +556,7 @@ msgid ""
 "Contrary to a reverse proxy, where you have a defined list of origin "
 "servers for which you wish to proxy (and optionally cache), a forward proxy "
 "is used to proxy (and optionally cache) for arbitrary remote hosts. As "
-"such, the following settings in :file:`records.config` are the base "
+"such, the following settings in :file:`records.yaml` are the base "
 "configuration for a minimal forward proxy::"
 msgstr ""
 

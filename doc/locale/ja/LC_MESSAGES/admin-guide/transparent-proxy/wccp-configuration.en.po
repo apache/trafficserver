@@ -58,11 +58,11 @@ msgid ""
 "Finally Traffic Server itself must be configured for transparency and use "
 "of WCCP. The former is again very similar to the standard use, while WCCP "
 "configuration is specific to WCCP and uses a separate configuration file, "
-"referred to by the :file:`records.config` file."
+"referred to by the :file:`records.yaml` file."
 msgstr ""
 "最後に Traffic Server 自体が透過性と WCCP を使用するように設定されなければな"
 "りません。構成方法もまた標準的な使用とよく似ており、WCCP の設定は WCCP に特"
-"化していて分離された設定ファイルを使用しますが、:file:`records.config` ファ"
+"化していて分離された設定ファイルを使用しますが、:file:`records.yaml` ファ"
 "イルにより参照されます。"
 
 #: ../../admin-guide/transparent-proxy/wccp-configuration.en.rst:32

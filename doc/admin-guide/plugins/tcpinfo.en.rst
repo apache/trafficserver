@@ -121,7 +121,7 @@ The following options may be specified in :file:`plugin.config`:
   This logfile option allows you to set logfile rolling behaviour of
   the output log file  without making any changes to the global
   logging configurations.  This option overrides the
-  :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in :file:`records.config`
+  :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in :file:`records.yaml`
   for the ``tcpinfo`` plugin.  The setting may range from ``0`` to ``3``.
   ``0`` disables logfile rolling.  ``1`` is the ``default`` and enables logfile
   rolling at specific intervals set by ``--rolling-interval-sec`` discussed

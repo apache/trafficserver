@@ -127,7 +127,7 @@ When Traffic Server is first started, it consults the plugin.config
 file to determine the names of all shared plugin libraries that
 need to be loaded. The plugin.config file also defines arguments
 that are to be passed to each plugin's initialization function,
-:func:`TSPluginInit`. The :file:`records.config` file defines the path to
+:func:`TSPluginInit`. The :file:`records.yaml` file defines the path to
 each plugin shared library.
 
 The sample :file:`plugin.config` file below contains a comment line, a blank
@@ -167,7 +167,7 @@ Files
 =====
 
 :file:`plugin.config`,
-:file:`records.config`
+:file:`records.yaml`
 
 See Also
 ========

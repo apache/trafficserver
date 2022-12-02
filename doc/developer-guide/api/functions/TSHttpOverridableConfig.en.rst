@@ -42,7 +42,7 @@ Synopsis
 Description
 ===========
 
-Some of the values that are set in :file:`records.config` can be changed for a
+Some of the values that are set in :file:`records.yaml` can be changed for a
 specific transaction. It is important to note that these functions change the
 configuration values stored for the transaction, which is not quite the same as
 changing the actual operating values of the transaction. The critical effect is

@@ -17,16 +17,16 @@
 
 .. include:: ../../common.defs
 
-.. configfile:: records.config
+.. configfile:: records.yaml
 
-records.config
-**************
+records.yaml
+************
 
-The :file:`records.config` file (by default, located in
+The :file:`records.yaml` file (by default, located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
-the |TS| software. Many of the variables in :file:`records.config` are set
+the |TS| software. Many of the variables in :file:`records.yaml` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
-modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
+modify :file:`records.yaml`, run the command :option:`traffic_ctl config reload`
 to apply the changes.
 
 Note: The configuration directory, containing the ``SYSCONFDIR`` value specified at build time
@@ -138,16 +138,16 @@ prefix. ::
 Environment Overrides
 =====================
 
-Every :file:`records.config` configuration variable can be overridden
+Every :file:`records.yaml` configuration variable can be overridden
 by a corresponding environment variable. This can be useful in
-situations where you need a static :file:`records.config` but still
+situations where you need a static :file:`records.yaml` but still
 want to tweak one or two settings. The override variable is formed
-by converting the :file:`records.config` variable name to upper
+by converting the :file:`records.yaml` variable name to upper
 case, and replacing any dot separators with an underscore.
 
 Overriding a variable from the environment is permanent and will
 not be affected by future configuration changes made in
-:file:`records.config` or applied with :program:`traffic_ctl`.
+:file:`records.yaml` or applied with :program:`traffic_ctl`.
 
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
@@ -161,7 +161,7 @@ Configuration Variables
 =======================
 
 The following list describes the configuration variables available in
-the :file:`records.config` file.
+the :file:`records.yaml` file.
 
 System Variables
 ----------------
@@ -825,7 +825,7 @@ mptcp
    :reloadable:
    :overridable:
 
-   Set the server and version string in the ``Via`` request header to the origin server which is inserted when the value of :ts:cv:`proxy.config.http.insert_request_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
+   Set the server and version string in the ``Via`` request header to the origin server which is inserted when the value of :ts:cv:`proxy.config.http.insert_request_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.yaml` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
@@ -851,7 +851,7 @@ mptcp
    :reloadable:
    :overridable:
 
-   Set the server and version string in the ``Via`` response header to the client which is inserted when the value of :ts:cv:`proxy.config.http.insert_response_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
+   Set the server and version string in the ``Via`` response header to the client which is inserted when the value of :ts:cv:`proxy.config.http.insert_response_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.yaml` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
 
 .. ts:cv:: CONFIG proxy.config.http.send_100_continue_response INT 0
    :reloadable:
@@ -891,7 +891,7 @@ mptcp
    requested, see above). Note that the actual default value is defined with
    ``"ATS/" PACKAGE_VERSION`` in the C++ source, and you must write such as
    ``ATS/6.0.0`` if you really set a value with the version in
-   :file:`records.config`. If you want to hide the version, you can set this
+   :file:`records.yaml`. If you want to hide the version, you can set this
    value to ``ATS``.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_age_in_response INT 1
@@ -1993,7 +1993,7 @@ Security
    global ``proxy.config.http.host_sni_policy`` is set to a value of 1 or 2. It is only performed for connections to
    hosts specifying ``verify_client`` and/or ``ip_allow`` policies in :file:`sni.yaml`. That is, the SNI and hostname
    mismatch check is only performed if a relevant security policy for the SNI is set in :file:`sni.yaml`. The
-   ``proxy.config.http.host_sni_policy`` :file:`records.config` value is used as the default value if either of these
+   ``proxy.config.http.host_sni_policy`` :file:`records.yaml` value is used as the default value if either of these
    policies is set in the corresponding :file:`sni.yaml` file entry and the :file:`sni.yaml` entry does not override
    this value via a :ref:`host_sni_policy<override-host-sni-policy>` attribute.
 
@@ -2632,7 +2632,7 @@ DNS
 ===
 
 .. ts:cv:: CONFIG proxy.config.dns.search_default_domains INT 0
-   :Reloadable:
+   :reloadable:
 
    |TS| can attempt to resolve unqualified hostnames by expanding to the local
    domain. For example if a client makes a request to an unqualified host (e.g.
@@ -4682,7 +4682,7 @@ SOCKS Processor
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
-.. ts:cv::  CONFIG proxy.config.socks.default_servers STRING
+.. ts:cv::  CONFIG proxy.config.socks.default_servers STRING ""
 
    Default list of SOCKS servers and their ports.
 
@@ -4851,13 +4851,13 @@ Sockets
 
    Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
 
-.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
+.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10
 
    Same as the command line option ``--poll_timeout``, or ``-t``, which
    specifies the timeout used for the polling mechanism used. This timeout is
    always in milliseconds (ms). This is the timeout to ``epoll_wait()`` on
    Linux platforms, and to ``kevent()`` on BSD type OSs. The default value is
-   ``10`` on all platforms.
+   ``10`` on all platforms or 30 on Solaris.
 
    Changing this configuration can reduce CPU usage on an idle system, since
    periodic tasks gets processed at these intervals. On busy servers, this

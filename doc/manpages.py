@@ -62,7 +62,7 @@ man_pages = [
         u'Traffic Server parent cache configuration file', None, '5'),
     ('admin-guide/files/plugin.config.en', 'plugin.config',
         u'Traffic Server global plugin configuration file', None, '5'),
-    ('admin-guide/files/records.config.en', 'records.config',
+    ('admin-guide/files/records.yaml.en', 'records.yaml',
         u'Traffic Server configuration file', None, '5'),
     ('admin-guide/files/remap.config.en', 'remap.config',
         u'Traffic Server remap rules configuration file', None, '5'),

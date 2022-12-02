@@ -30,7 +30,7 @@ Fatal Process Messages
 ======================
 
 ``Accept port is not between 1 and 65535. Please check configuration``
-   The port specified in :file:`records.config` that accepts
+   The port specified in :file:`records.yaml` that accepts
    incoming HTTP requests is not valid.
 
 ``Self loop is detected in parent proxy configuration``

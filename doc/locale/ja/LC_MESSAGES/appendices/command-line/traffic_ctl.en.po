@@ -164,7 +164,7 @@ msgstr ""
 #: ../../../appendices/command-line/traffic_ctl.en.rst:133
 msgid ""
 "If this flag is provided, :option:`traffic_ctl config get` will emit "
-"results in :file:`records.config` format."
+"results in :file:`records.yaml` format."
 msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:139
@@ -319,5 +319,5 @@ msgid "See also"
 msgstr "参考"
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:281
-msgid ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
-msgstr ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
+msgid ":manpage:`records.yaml(5)`, :manpage:`storage.config(5)`"
+msgstr ":manpage:`records.yaml(5)`, :manpage:`storage.config(5)`"

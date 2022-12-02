@@ -39,7 +39,7 @@ msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/a-simple-plugin.en.rst:35
 msgid ""
-"Add the path to your plugin shared library into the :file:`records.config` "
+"Add the path to your plugin shared library into the :file:`records.yaml` "
 "file."
 msgstr ""
 

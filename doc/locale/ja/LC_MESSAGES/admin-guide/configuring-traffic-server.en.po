@@ -94,7 +94,7 @@ msgstr "設定ファイルを使用して Traffic Server を設定する"
 #: ../../../admin-guide/configuring-traffic-server.en.rst:61
 msgid ""
 "You can change Traffic Server configuration options by manually editing "
-"specific variables in :file:`records.config`."
+"specific variables in :file:`records.yaml`."
 msgstr ""
 
 #: ../../../admin-guide/configuring-traffic-server.en.rst:65
@@ -108,8 +108,8 @@ msgstr ""
 "かの設定では Traffic Server の完全な再起動が必要となります。"
 
 #: ../../../admin-guide/configuring-traffic-server.en.rst:69
-msgid "The following is a sample portion of :file:`records.config`:"
-msgstr "以下は :file:`records.config` ファイルの部分的なサンプルです"
+msgid "The following is a sample portion of :file:`records.yaml`:"
+msgstr "以下は :file:`records.yaml` ファイルの部分的なサンプルです"
 
 #: ../../../admin-guide/configuring-traffic-server.en.rst:75
 msgid "Sample records.config file"
@@ -117,7 +117,7 @@ msgstr "records.config ファイルのサンプル"
 
 #: ../../../admin-guide/configuring-traffic-server.en.rst:77
 msgid ""
-"In addition to :file:`records.config`, Traffic Server provides other "
+"In addition to :file:`records.yaml`, Traffic Server provides other "
 "configuration files that are used to configure specific features. You can "
 "manually edit all configuration files as described in :ref:`admin-"
 "configuration-files`."

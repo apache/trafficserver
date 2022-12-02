@@ -30,7 +30,7 @@ configuration reload, i.e.::
 
   traffic_ctl config reload
 
-This feature is enabled by default. It can be turned off by setting the configuration variable :ts:cv:`proxy.config.plugin.dynamic_reload_mode` to ``0`` in :file:`records.config`. When the feature is turned off, once ATS is started one will be able load only one version of a plugin, and re-loading the same plugin would do nothing.
+This feature is enabled by default. It can be turned off by setting the configuration variable :ts:cv:`proxy.config.plugin.dynamic_reload_mode` to ``0`` in :file:`records.yaml`. When the feature is turned off, once ATS is started one will be able load only one version of a plugin, and re-loading the same plugin would do nothing.
 
 Although plugin reloading should be transparent to plugin developers, the following are some design considerations
 and implementation details for this feature.

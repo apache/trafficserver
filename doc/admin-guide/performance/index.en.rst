@@ -108,7 +108,7 @@ startup. Your |TS| systems will need at least enough memory to satisfy basic
 operating system requirements, as well as capacity for the cache directory, and
 any memory cache you wish to use. The default settings allocate roughly 10
 megabytes of RAM cache for every gigabyte of disk cache storage, though this
-setting can be adjusted manually in :file:`records.config` using the setting
+setting can be adjusted manually in :file:`records.yaml` using the setting
 :ts:cv:`proxy.config.cache.ram_cache.size`. |TS| will, under the default
 configuration, adjust this automatically if your system does not have enough
 physical memory to accommodate the aforementioned target.
@@ -173,7 +173,7 @@ Traffic Server Tuning
 
 |TS| itself, of course, has many options you may want to consider adjusting to
 achieve optimal performance in your environment. Many of these settings are
-recorded in :file:`records.config` and may be adjusted with the
+recorded in :file:`records.yaml` and may be adjusted with the
 :option:`traffic_ctl config set` command line utility while the server is operating.
 
 CPU and Thread Optimization
@@ -183,7 +183,7 @@ Thread Scaling
 ~~~~~~~~~~~~~~
 
 By default, |TS| creates one thread per CPU core on the host system. This may
-be adjusted with the following settings in :file:`records.config`:
+be adjusted with the following settings in :file:`records.yaml`:
 
 * :ts:cv:`proxy.config.exec_thread.autoconfig`
 * :ts:cv:`proxy.config.exec_thread.autoconfig.scale`
@@ -196,7 +196,7 @@ On multi-socket servers, such as Intel architectures with NUMA, you can adjust
 the thread affinity configuration to take advantage of cache pipelines and
 faster memory access, as well as preventing possibly costly thread migrations
 across sockets. This is adjusted with :ts:cv:`proxy.config.exec_thread.affinity`
-in :file:`records.config`. ::
+in :file:`records.yaml`. ::
 
     CONFIG proxy.config.exec_thread.affinity INT 1
 
@@ -224,7 +224,7 @@ instance, if you are not using any hierarchical caching then the parent proxy
 timeouts will be irrelevant.
 
 While all of the timeouts described below may be set globally for your |TS|
-instance using :file:`records.config`, many of them are also overridable on a
+instance using :file:`records.yaml`, many of them are also overridable on a
 per-transaction basis by plugins (including :ref:`admin-plugins-conf-remap`).
 This allows the possibility for adjusting timeout value for individual subsets
 of your cache.

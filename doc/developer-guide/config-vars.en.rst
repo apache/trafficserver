@@ -61,7 +61,7 @@
 Configuration Variable Implementation
 *************************************
 
-Adding a new configuration variable in :file:`records.config` requires a number
+Adding a new configuration variable in :file:`records.yaml` requires a number
 of steps which are mostly documented here.
 
 Before adding a new configuration variable, please discuss it on the mailing
@@ -182,7 +182,7 @@ dynamic if possible.
 Documentation and Defaults
 --------------------------
 
-A configuration variable should be documented in :file:`records.config`. There
+A configuration variable should be documented in :file:`records.yaml`. There
 are many examples in the file already that can be used for guidance. The general
 format is to use the tag ::
 
@@ -218,9 +218,9 @@ can use the form ::
 This will display the name as a link to the full definition.
 
 In general, a new configuration variable should not be present in the default
-:file:`records.config`. If it is added, such defaults should be added to the
+:file:`records.yaml`. If it is added, such defaults should be added to the
 file ``proxy/config/records.config.default.in``. This is used to generate the
-default :file:`records.config`. Just add the variable to the file in an
+default :file:`records.yaml`. Just add the variable to the file in an
 appropriate place with a proper default as this will now override whatever
 default you put in the code for new installs.
 
@@ -229,7 +229,7 @@ Handling Updates
 
 The simplest mechanism for handling updates is the ``REC_EstablishStaticConfigXXX``
 family of functions. This mechanism will cause the value in the indicated
-instance to be updated in place when an update to :file:`records.config` occurs.
+instance to be updated in place when an update to :file:`records.yaml` occurs.
 This is done asynchronously using atomic operations. Use of these variables must
 keep that in mind.
 

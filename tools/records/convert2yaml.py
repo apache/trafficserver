@@ -163,6 +163,13 @@ def print_summary():
 
 
 def get_value(type, value):
+    def have_multipliers(value, mps):
+        for m in mps:
+            if value.endswith(m):
+                return True
+
+        return False
+
     if value == 'nullptr' or value == 'NULL':
         return None
 

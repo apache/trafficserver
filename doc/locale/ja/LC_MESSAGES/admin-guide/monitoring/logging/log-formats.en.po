@@ -187,10 +187,10 @@ msgstr ""
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:97
 msgid ""
 "These formats may be used by enabling the :ts:cv:`proxy.config.log."
-"custom_logs_enabled` setting in :file:`records.config` and adding "
+"custom_logs_enabled` setting in :file:`records.yaml` and adding "
 "appropriate entries to :file:`logging.config`."
 msgstr ""
-"これらのフォーマットは :file:`records.config` の :ts:cv:`proxy.config.log."
+"これらのフォーマットは :file:`records.yaml` の :ts:cv:`proxy.config.log."
 "custom_logs_enabled` 設定を有効にし、 :file:`logging.config` に適切なエント"
 "リを追加することで使えるようになります。"
 

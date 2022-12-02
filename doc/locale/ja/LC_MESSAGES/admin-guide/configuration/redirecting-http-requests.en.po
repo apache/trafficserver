@@ -193,7 +193,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records."
 "config`. ::"
 msgstr ""
-":file:`records.config` にある :ts:cv:`proxy.config.reverse_proxy.enabled` を"
+":file:`records.yaml` にある :ts:cv:`proxy.config.reverse_proxy.enabled` を"
 "編集してください ::"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:324
@@ -542,7 +542,7 @@ msgid ""
 "Traffic Server provides several reverse proxy configuration options in :"
 "file:`records.config` that enable you to:"
 msgstr ""
-"Traffic Server は :file:`records.config` でいくつかのリバースプロキシー設定"
+"Traffic Server は :file:`records.yaml` でいくつかのリバースプロキシー設定"
 "オプションを提供し次のことを可能にします。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:243

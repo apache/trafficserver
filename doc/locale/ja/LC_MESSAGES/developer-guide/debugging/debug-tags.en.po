@@ -57,7 +57,7 @@ msgstr ""
 
 #: ../../../developer-guide/debugging/debug-tags.en.rst:43
 msgid ""
-"Set the following variables in :file:`records.config` (in the Traffic "
+"Set the following variables in :file:`records.yaml` (in the Traffic "
 "Server ``config`` directory):"
 msgstr ""
 

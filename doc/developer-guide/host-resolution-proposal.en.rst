@@ -115,7 +115,7 @@ Configuration
 
 To configuration the resolution, each resolver would be assigned a tag. It is not, however, sufficient to simply provide
 the list of resolver tags because some resolvers require additional configuration. Unfortunately this will likely
-require a separate configuration file outside of :file:`records.config`, although we would be able to remove
+require a separate configuration file outside of :file:`records.yaml`, although we would be able to remove
 :file:`splitdns.config`. In this case we would need chain start / end markers around a list of resolver tags. Each tag
 would the be able to take additional resolver configuration data. For instance, for a SplitDNS resolver the nameservers.
 

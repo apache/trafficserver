@@ -35,6 +35,8 @@ sphinxcontrib-plantuml = "*"
 # i18n
 sphinx-intl = "*"
 
+pyyaml = "*"
+
 # For parsing Doxygen XML output, to add links from an API description
 # to the source code for that object
 lxml = "*"

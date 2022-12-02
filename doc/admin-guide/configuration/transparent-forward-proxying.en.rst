@@ -66,13 +66,13 @@ and straightforward.
 
 1. Permit Traffic Server to process requests for hosts not explicitly configured
    in the remap rules, by modifying :ts:cv:`proxy.config.url_remap.remap_required`
-   in :file:`records.config`::
+   in :file:`records.yaml`::
 
         CONFIG proxy.config.url_remap.remap_required INT 0
 
 2. *Optional*: If Traffic Server will be operating strictly as a forward proxy,
    you will want to disable reverse proxy support by modifying
-   :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records.config`::
+   :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records.yaml`::
 
         CONFIG proxy.config.reverse_proxy.enabled INT 0
 

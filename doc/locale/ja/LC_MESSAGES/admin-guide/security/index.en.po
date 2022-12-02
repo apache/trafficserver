@@ -159,13 +159,13 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:106
 msgid ""
 "Set the port number used for SSL communication using :ts:cv:`proxy.config."
-"http.server_ports` in :file:`records.config`."
+"http.server_ports` in :file:`records.yaml`."
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:109
 msgid ""
 "Set the appropriate base path for your SSL certificates and private keys "
-"in :file:`records.config`. ::"
+"in :file:`records.yaml`. ::"
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:115
@@ -178,7 +178,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:122
 msgid ""
 "*Optional*: Configure the use of client certificates using the variable :ts:"
-"cv:`proxy.config.ssl.client.certification_level` in :file:`records.config`. "
+"cv:`proxy.config.ssl.client.certification_level` in :file:`records.yaml`. "
 "If you configure Traffic Server to require client certificates, then "
 "Traffic Server verifies the client certificate during the SSL handshake "
 "that authenticates the client. If you configure Traffic Server to not "
@@ -230,7 +230,7 @@ msgid ""
 "*Optional*: Configure the use of Certification Authorities (CAs). CAs add "
 "security by verifying the identity of the person requesting a certificate. "
 "The list of acceptable CA signers is configured with :ts:cv:`proxy.config."
-"ssl.CA.cert.path` in :file:`records.config`. ::"
+"ssl.CA.cert.path` in :file:`records.yaml`. ::"
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:151
@@ -337,7 +337,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:230
 msgid ""
 "Add the collection of authorized Certificate Authorities to the Traffic "
-"Server configuration in :file:`records.config` using the settings :ts:cv:"
+"Server configuration in :file:`records.yaml` using the settings :ts:cv:"
 "`proxy.config.ssl.client.CA.cert.path` and :ts:cv:`proxy.config.ssl.client."
 "CA.cert.filename`. ::"
 msgstr ""
@@ -421,7 +421,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:301
 msgid ""
 "To configure Traffic Server to use OCSP Stapling, edit the following "
-"variables in :file:`records.config` file:"
+"variables in :file:`records.yaml` file:"
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:304
@@ -469,7 +469,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:328
 msgid ""
 "Enable the *Split DNS* option by adjusting :ts:cv:`proxy.config.dns."
-"splitDNS.enabled` in :file:`records.config`. ::"
+"splitDNS.enabled` in :file:`records.yaml`. ::"
 msgstr ""
 
 #~ msgid ""

@@ -31,7 +31,7 @@ Configuration Files
    logging.yaml.en
    parent.config.en
    plugin.config.en
-   records.config.en
+   records.yaml.en
    remap.config.en
    splitdns.config.en
    ssl_multicert.config.en
@@ -63,7 +63,7 @@ Configuration Files
    Control runtime loadable plugins available to |TS|, as well as their
    configurations.
 
-:doc:`records.config.en`
+:doc:`records.yaml.en`
    Contains many configuration variables affecting |TS| operation.
 
 :doc:`remap.config.en`

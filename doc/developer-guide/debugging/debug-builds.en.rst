@@ -25,7 +25,7 @@ Debug Builds
 A debugger can set breakpoints in a plugin. Use a Traffic Server debug
 build and compile the plugin with the ``-g`` option. A debugger can also
 be used to analyze a core dump. To generate core, set the size limit of
-the core files in the :file:`records.config` file to -1 as follows:
+the core files in the :file:`records.yaml` file to -1 as follows:
 
 ::
 

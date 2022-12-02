@@ -84,5 +84,5 @@ carefully before posting it in a public forum.
 See also
 ========
 
-:manpage:`records.config(5)`,
+:manpage:`records.yaml(5)`,
 :manpage:`traffic_server(8)`

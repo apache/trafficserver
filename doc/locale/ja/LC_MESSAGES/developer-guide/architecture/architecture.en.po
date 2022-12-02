@@ -1203,10 +1203,10 @@ msgstr ""
 
 #: ../../../developer-guide/architecture/architecture.en.rst:566
 msgid ""
-"The target fragment size can set with the :file:`records.config` value :ts:"
+"The target fragment size can set with the :file:`records.yaml` value :ts:"
 "cv:`proxy.config.cache.target_fragment_size`."
 msgstr ""
-"ターゲットフラグメントサイズは :file:`records.config` の値 :ts:cv:`proxy."
+"ターゲットフラグメントサイズは :file:`records.yaml` の値 :ts:cv:`proxy."
 "config.cache.target_fragment_size` で設定できます。"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:569
@@ -1276,11 +1276,11 @@ msgstr ""
 
 #: ../../../developer-guide/architecture/architecture.en.rst:600
 msgid ""
-"The comment in earlier versions of the :file:`records.config` documentation "
+"The comment in earlier versions of the :file:`records.yaml` documentation "
 "which indicated that this value must be a power of two were, unfortunately, "
 "mistaken and have been corrected."
 msgstr ""
-":file:`records.config` のドキュメントの以前の版のコメントでこの値が 2 の冪乗"
+":file:`records.yaml` のドキュメントの以前の版のコメントでこの値が 2 の冪乗"
 "でなければならないと述べていましたが、それは間違いだったため修正されました。"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:607
@@ -1470,8 +1470,8 @@ msgid "Built in constraints."
 msgstr "組込みの制約。"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:689
-msgid "Settings in :file:`records.config`."
-msgstr ":file:`records.config` の設定。"
+msgid "Settings in :file:`records.yaml`."
+msgstr ":file:`records.yaml` の設定。"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:690
 msgid "Settings in :file:`cache.config`."
@@ -1483,11 +1483,11 @@ msgstr "プラグインの操作。"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:693
 msgid ""
-"The initial internal checks, along with their :file:`records.config` "
+"The initial internal checks, along with their :file:`records.yaml` "
 "overrides[#cacheability-overrides]_, are done in ``HttpTransact::"
 "is_request_cache_lookupable``."
 msgstr ""
-"初期の内部チェック、それらの :file:`records.config` を伴った オーバーライド"
+"初期の内部チェック、それらの :file:`records.yaml` を伴った オーバーライド"
 "[#cacheability-overrides]_ は ``HttpTransact::is_request_cache_lookupable`` "
 "内で処理されます。"
 
@@ -1569,7 +1569,7 @@ msgid ""
 "can allow for the response to be cached. It is disabled by default, for "
 "best performance."
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache.range.lookup` がゼ"
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache.range.lookup` がゼ"
 "ロでない値である場合に限りキャッシュバリッドです。これはレンジリクエストが"
 "キャッシュ可能であることを意味しません。キャッシュから満たされるかもしれない"
 "というだけです。加えて、 :ts:cv:`proxy.config.http.cache.range.write` をレン"
@@ -1730,7 +1730,7 @@ msgstr ""
 "込みながら読込み* とはあるトランザクションでオブジェクトをキャッシュに書き込"
 "みながら別のトランザクションでキャッシュからオブジェクトを配信することです。"
 "使用するためにはいくつかの設定が必要になります。 :ref:`admin-configuration-"
-"reducing-origin-requests` を参照してください。 :file:`records.config` で明示"
+"reducing-origin-requests` を参照してください。 :file:`records.yaml` で明示"
 "的に有効にする必要があります。そうしなければ、オブジェクトが現在書込まれてい"
 "るか更新されている場合はキャッシュ読込みは失敗するでしょう。"
 
@@ -1800,14 +1800,14 @@ msgstr ""
 
 #: ../../../developer-guide/architecture/architecture.en.rst:822
 msgid ""
-"How this age is used is determined by the :file:`records.config` setting "
+"How this age is used is determined by the :file:`records.yaml` setting "
 "for :ts:cv:`proxy.config.http.cache.when_to_revalidate`. If this is ``0`` "
 "then the built calculations are used which compare the freshness limits "
 "with document age, modified by any of the client supplied cache control "
 "values (``max-age``, ``min-fresh``, ``max-stale``) unless explicitly "
 "overridden in :file:`cache.config`."
 msgstr ""
-"この経過時間がどのように利用されるかは :file:`records.config` の :ts:cv:"
+"この経過時間がどのように利用されるかは :file:`records.yaml` の :ts:cv:"
 "`proxy.config.http.cache.when_to_revalidate` によって決定されます。これが "
 "``0`` なら組み立てられた計算を使って新鮮さの限界とドキュメントの経過時間を比"
 "較します。ドキュメントの経過時間は :file:`cache.config` で明示的に上書きされ"

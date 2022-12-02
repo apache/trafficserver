@@ -98,8 +98,8 @@ source_file = _build/locale/pot/admin-guide/files/plugin.config.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--files--records_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/records.config.en.po
-source_file = _build/locale/pot/admin-guide/files/records.config.en.pot
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/records.yaml.en.po
+source_file = _build/locale/pot/admin-guide/files/records.yaml.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--files--remap_config_en]

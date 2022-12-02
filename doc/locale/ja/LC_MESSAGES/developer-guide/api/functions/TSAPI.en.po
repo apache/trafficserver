@@ -30,7 +30,7 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSAPI.en.rst:167
-msgid ":file:`plugin.config`, :file:`records.config`"
+msgid ":file:`plugin.config`, :file:`records.yaml`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSAPI.en.rst:173
@@ -313,7 +313,7 @@ msgstr ""
 "Traffic Server が最初にスタートするとき、読み込まれる必要のあるすべての共有"
 "ライブラリの名前を決定するために plugin.config ファイルを参照します。 "
 "plugin.config ファイルは個々のプラグインの初期化関数 :func:`TSPluginInit` に"
-"渡される引数も定義します。:file:`records.config` ファイルは個々のプラグイン"
+"渡される引数も定義します。:file:`records.yaml` ファイルは個々のプラグイン"
 "共有ライブラリのパスを定義します。"
 
 #: ../../developer-guide/api/functions/TSAPI.en.rst:31

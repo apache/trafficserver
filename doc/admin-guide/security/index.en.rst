@@ -106,10 +106,10 @@ Client/|TS| connections, you must do the following:
    and exchange encryption keys.
 
 #. Set the port number used for SSL communication using
-   :ts:cv:`proxy.config.http.server_ports` in :file:`records.config`.
+   :ts:cv:`proxy.config.http.server_ports` in :file:`records.yaml`.
 
 #. Set the appropriate base path for your SSL certificates and private keys
-   in :file:`records.config`. ::
+   in :file:`records.yaml`. ::
 
         CONFIG proxy.config.ssl.server.cert.path STRING /opt/ts/etc/ssl/certs/
         CONFIG proxy.config.ssl.server.private_key.path STRING /opt/ts/etc/ssl/keys/
@@ -122,7 +122,7 @@ Client/|TS| connections, you must do the following:
         dest_ip=* ssl_cert_name=default.pem
 
 #. *Optional*: Configure the use of client certificates using the variable
-   :ts:cv:`proxy.config.ssl.client.certification_level` in :file:`records.config`.
+   :ts:cv:`proxy.config.ssl.client.certification_level` in :file:`records.yaml`.
    If you configure |TS| to require client certificates, then Traffic
    Server verifies the client certificate during the SSL handshake that
    authenticates the client. If you configure |TS| to not require
@@ -146,7 +146,7 @@ Client/|TS| connections, you must do the following:
 #. *Optional*: Configure the use of Certification Authorities (CAs). CAs add
    security by verifying the identity of the person requesting a certificate.
    The list of acceptable CA signers is configured with
-   :ts:cv:`proxy.config.ssl.CA.cert.path` in :file:`records.config`. ::
+   :ts:cv:`proxy.config.ssl.CA.cert.path` in :file:`records.yaml`. ::
 
         CONFIG proxy.config.ssl.CA.cert.path STRING /opt/CA/certs/private-ca.pem
 
@@ -207,7 +207,7 @@ and origin server connections, you must do the following:
    Certificate Authority recognized by your origin server.
 
    If you are using a client certificate, you must add its location to
-   :file:`records.config` in the setting :ts:cv:`proxy.config.ssl.client.cert.path`
+   :file:`records.yaml` in the setting :ts:cv:`proxy.config.ssl.client.cert.path`
    and :ts:cv:`proxy.config.ssl.client.cert.filename`. ::
 
         CONFIG proxy.config.ssl.client.cert.path STRING /opt/ts/etc/ssl/certs/
@@ -223,12 +223,12 @@ and origin server connections, you must do the following:
 
 #. Enable or disable, per your security policy, server SSL certificate
    verification using :ts:cv:`proxy.config.ssl.client.verify.server.policy` in
-   :file:`records.config`. ::
+   :file:`records.yaml`. ::
 
         CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
 
 #. Add the collection of authorized Certificate Authorities to the Traffic
-   Server configuration in :file:`records.config` using the settings
+   Server configuration in :file:`records.yaml` using the settings
    :ts:cv:`proxy.config.ssl.client.CA.cert.path` and
    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`. ::
 
@@ -310,7 +310,7 @@ Support for OCSP Stapling can be tested using the -status option of the OpenSSL 
 Details of the OCSP Stapling TLS extension can be found in :rfc:`6961`.
 
 To configure |TS| to use OCSP Stapling, edit the following variables
-in :file:`records.config` file:
+in :file:`records.yaml` file:
 
 * :ts:cv:`proxy.config.ssl.ocsp.enabled`
 * :ts:cv:`proxy.config.ssl.ocsp.cache_timeout`
@@ -338,7 +338,7 @@ To configure Split DNS:
    These rules are located in :file:`splitdns.config`.
 
 #. Enable the *Split DNS* option by adjusting :ts:cv:`proxy.config.dns.splitDNS.enabled`
-   in :file:`records.config`. ::
+   in :file:`records.yaml`. ::
 
         CONFIG proxy.config.dns.splitDNS.enabled INT 1
 

@@ -52,7 +52,7 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:33
 msgid ""
-"The port specified in :file:`records.config` that accepts incoming HTTP "
+"The port specified in :file:`records.yaml` that accepts incoming HTTP "
 "requests is not valid."
 msgstr ""
 

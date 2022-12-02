@@ -70,7 +70,7 @@ roughly the same way as the standard transparency use.
 Finally Traffic Server itself must be configured for transparency and
 use of WCCP. The former is again very similar to the standard use, while
 WCCP configuration is specific to WCCP and uses a separate configuration
-file, referred to by the :file:`records.config` file.
+file, referred to by the :file:`records.yaml` file.
 
 The primary concern for configuration in which of three basic topologies
 are to be used.

@@ -1,194 +1,194 @@
 ##############################################################################
 # *NOTE*: All options covered in this file should be documented in the docs:
 #
-#    https://docs.trafficserver.apache.org/records.config
+#    https://docs.trafficserver.apache.org/records.yaml
 ##############################################################################
 
 ts:
-  accept_threads: !!int '1'
+  accept_threads: 1
   cache:
     limits:
       http:
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
-        max_alts: !!int '5'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-cache-limits-http-max-alts
+        max_alts: 5
     log:
       alternate:
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-cache-log-alternate-eviction
-        eviction: !!int '0'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-cache-log-alternate-eviction
+        eviction: 0
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-cache-max-doc-size
-    max_doc_size: !!int '0'
-    min_average_object_size: !!int '8000'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-cache-max-doc-size
+    max_doc_size: 0
+    min_average_object_size: 8000
 
 ##############################################################################
 # RAM and disk cache configurations. Docs:
-#    https://docs.trafficserver.apache.org/records.config#ram-cache
+#    https://docs.trafficserver.apache.org/records.yaml#ram-cache
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
 ##############################################################################
     ram_cache:
-      size: !!int '-1'
-    ram_cache_cutoff: !!int '4194304'
-    threads_per_disk: !!int '8'
+      size: -1
+    ram_cache_cutoff: 4194304
+    threads_per_disk: 8
 ##############################################################################
 # Debugging. Docs:
-#    https://docs.trafficserver.apache.org/records.config#diagnostic-logging-configuration
+#    https://docs.trafficserver.apache.org/records.yaml#diagnostic-logging-configuration
 ##############################################################################
   diags:
     debug:
-      enabled: !!int '0'
+      enabled: 0
       tags: http|dns
 
-#    https://docs.trafficserver.apache.org/records.config#proxy-config-dump-mem-info-frequency
-  dump_mem_info_frequency: !!int '0'
+#    https://docs.trafficserver.apache.org/records.yaml#proxy-config-dump-mem-info-frequency
+  dump_mem_info_frequency: 0
 
 ##############################################################################
 # Thread configurations. Docs:
-#    https://docs.trafficserver.apache.org/records.config#thread-variables
+#    https://docs.trafficserver.apache.org/records.yaml#thread-variables
 ##############################################################################
   exec_thread:
-    affinity: !!int '1'
+    affinity: 1
     autoconfig:
-      enabled: !!int '1'
-      scale: !!float '1.0'
-    limit: !!int '2'
+      enabled: 1
+      scale: 1.13
+    limit: 2
   http:
-    accept_no_activity_timeout: !!int '120'
+    accept_no_activity_timeout: 120
     cache:
-      cache_responses_to_cookies: !!int '1'
-      cache_urls_that_look_dynamic: !!int '1'
+      cache_responses_to_cookies: 1
+      cache_urls_that_look_dynamic: 1
 
 ##############################################################################
 # Heuristic cache expiration. Docs:
-#    https://docs.trafficserver.apache.org/records.config#heuristic-expiration
+#    https://docs.trafficserver.apache.org/records.yaml#heuristic-expiration
 ##############################################################################
-      heuristic_lm_factor: !!float '0.1'
-      heuristic_max_lifetime: !!int '86400'
-      heuristic_min_lifetime: !!int '3600'
+      heuristic_lm_factor: 0.1
+      heuristic_max_lifetime: 86400
+      heuristic_min_lifetime: 3600
 
 ##############################################################################
 # Enable / disable HTTP caching. Useful for testing, but also as an
 # overridable (per remap) config
 ##############################################################################
-      http: !!int '1'
+      http: 1
 
 ##############################################################################
 # Cache control. Docs:
-#    https://docs.trafficserver.apache.org/records.config#cache-control
+#    https://docs.trafficserver.apache.org/records.yaml#cache-control
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
 ##############################################################################
-      ignore_client_cc_max_age: !!int '1'
+      ignore_client_cc_max_age: 1
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-required-headers
-      required_headers: !!int '2'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-http-cache-required-headers
+      required_headers: 2
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-when-to-revalidate
-      when_to_revalidate: !!int '0'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-http-cache-when-to-revalidate
+      when_to_revalidate: 0
 
 ##############################################################################
 # Origin server connect attempts. Docs:
-#    https://docs.trafficserver.apache.org/records.config#origin-server-connect-attempts
+#    https://docs.trafficserver.apache.org/records.yaml#origin-server-connect-attempts
 ##############################################################################
-    connect_attempts_max_retries: !!int '3'
-    connect_attempts_max_retries_dead_server: !!int '1'
-    connect_attempts_rr_retries: !!int '3'
-    connect_attempts_timeout: !!int '30'
+    connect_attempts_max_retries: 3
+    connect_attempts_max_retries_dead_server: 1
+    connect_attempts_rr_retries: 3
+    connect_attempts_timeout: 30
     down_server:
-      cache_time: !!int '60'
+      cache_time: 60
     forward:
-      proxy_auth_to_parent: !!int '0'
+      proxy_auth_to_parent: 0
 
 ##############################################################################
 # Proxy users variables. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
+#    https://docs.trafficserver.apache.org/records.yaml#proxy-user-variables
 ##############################################################################
-    insert_client_ip: !!int '1'
+    insert_client_ip: 1
 
 ##############################################################################
 # Via: headers. Docs:
-#     https://docs.trafficserver.apache.org/records.config#proxy-config-http-insert-response-via-str
+#     https://docs.trafficserver.apache.org/records.yaml#proxy-config-http-insert-response-via-str
 ##############################################################################
-    insert_request_via_str: !!int '1'
-    insert_response_via_str: !!int '0'
-    insert_squid_x_forwarded_for: !!int '1'
-    keep_alive_no_activity_timeout_in: !!int '120'
-    keep_alive_no_activity_timeout_out: !!int '120'
+    insert_request_via_str: 1
+    insert_response_via_str: 0
+    insert_squid_x_forwarded_for: 1
+    keep_alive_no_activity_timeout_in: 120
+    keep_alive_no_activity_timeout_out: 120
 
 ##############################################################################
 # Negative response caching, for redirects and errors. Docs:
-#    https://docs.trafficserver.apache.org/records.config#negative-response-caching
+#    https://docs.trafficserver.apache.org/records.yaml#negative-response-caching
 ##############################################################################
-    negative_caching_enabled: !!int '0'
-    negative_caching_lifetime: !!int '1800'
-    normalize_ae: !!int '1'
+    negative_caching_enabled: 0
+    negative_caching_lifetime: 1800
+    normalize_ae: 1
 
 ##############################################################################
 # Parent proxy configuration, in addition to these settings also see parent.config. Docs:
-#    https://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
+#    https://docs.trafficserver.apache.org/records.yaml#parent-proxy-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/parent.config.en.html
 ##############################################################################
     parent_proxy:
-      retry_time: !!int '300'
+      retry_time: 300
 
 ##############################################################################
 # Security. Docs:
-#    https://docs.trafficserver.apache.org/records.config#security
+#    https://docs.trafficserver.apache.org/records.yaml#security
 ##############################################################################
-    push_method_enabled: !!int '0'
+    push_method_enabled: 0
 
 ##############################################################################
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
+#    https://docs.trafficserver.apache.org/records.yaml#proxy.config.http.server_ports
 ##############################################################################
     server_ports: 8080 8080:ipv6
 
-#    https://docs.trafficserver.apache.org/records.config#proxy-config-http-slow-log-threshold
+#    https://docs.trafficserver.apache.org/records.yaml#proxy-config-http-slow-log-threshold
     slow:
       log:
-        threshold: !!int '0'
+        threshold: 0
 
 ##############################################################################
 # HTTP connection timeouts (secs). Docs:
-#    https://docs.trafficserver.apache.org/records.config#http-connection-timeouts
+#    https://docs.trafficserver.apache.org/records.yaml#http-connection-timeouts
 ##############################################################################
-    transaction_active_timeout_in: !!int '900'
-    transaction_active_timeout_out: !!int '0'
-    transaction_no_activity_timeout_in: !!int '30'
-    transaction_no_activity_timeout_out: !!int '30'
-    uncacheable_requests_bypass_parent: !!int '1'
+    transaction_active_timeout_in: 900
+    transaction_active_timeout_out: 0
+    transaction_no_activity_timeout_in: 30
+    transaction_no_activity_timeout_out: 30
+    uncacheable_requests_bypass_parent: 1
 
 ##############################################################################
 # Logging Config. Docs:
-#    https://docs.trafficserver.apache.org/records.config#logging-configuration
+#    https://docs.trafficserver.apache.org/records.yaml#logging-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logging.yaml.en.html
 ##############################################################################
   log:
-    auto_delete_rolled_files: !!int '1'
-    logging_enabled: !!int '3'
-    max_space_mb_for_logs: !!int '25000'
-    max_space_mb_headroom: !!int '1000'
-    periodic_tasks_interval: !!int '5'
-    rolling_enabled: !!int '1'
-    rolling_interval_sec: !!int '86400'
-    rolling_size_mb: !!int '10'
+    auto_delete_rolled_files: 1
+    logging_enabled: 3
+    max_space_mb_for_logs: 25000
+    max_space_mb_headroom: 1000
+    periodic_tasks_interval: 5
+    rolling_enabled: 1
+    rolling_interval_sec: 86400
+    rolling_size_mb: 10
 
 ##############################################################################
 # Network. Docs:
-#    https://docs.trafficserver.apache.org/records.config#network
+#    https://docs.trafficserver.apache.org/records.yaml#network
 ##############################################################################
   net:
-    connections_throttle: !!int '30000'
-    default_inactivity_timeout: !!int '86400'
-    max_connections_in: !!int '30000'
-    max_requests_in: !!int '0'
+    connections_throttle: 30000
+    default_inactivity_timeout: 86400
+    max_connections_in: 30000
+    max_requests_in: 0
 
-#    https://docs.trafficserver.apache.org/records.config#proxy-config-res-track-memory
-  res_track_memory: !!int '0'
+#    https://docs.trafficserver.apache.org/records.yaml#proxy-config-res-track-memory
+  res_track_memory: 0
 
-# https://docs.trafficserver.apache.org/records.config#reverse-proxy
+# https://docs.trafficserver.apache.org/records.yaml#reverse-proxy
   reverse_proxy:
-    enabled: !!int '1'
+    enabled: 1
   ssl:
     client:
       CA:
@@ -197,22 +197,22 @@ ts:
 
 ##############################################################################
 # SSL Termination. Docs:
-#    https://docs.trafficserver.apache.org/records.config#client-related-configuration
+#    https://docs.trafficserver.apache.org/records.yaml#client-related-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.config.en.html
 ##############################################################################
       verify:
         server:
           policy: PERMISSIVE
           properties: ALL
-  task_threads: !!int '2'
+  task_threads: 2
 
 ##############################################################################
 # These settings control remapping, and if the proxy allows (open) forward proxy or not. Docs:
-#    https://docs.trafficserver.apache.org/records.config#url-remap-rules
+#    https://docs.trafficserver.apache.org/records.yaml#url-remap-rules
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/remap.config.en.html
 ##############################################################################
   url_remap:
 
-# https://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
-    pristine_host_hdr: !!int '0'
-    remap_required: !!int '1'
+# https://docs.trafficserver.apache.org/records.yaml#proxy-config-url-remap-pristine-host-hdr
+    pristine_host_hdr: 0
+    remap_required: 1

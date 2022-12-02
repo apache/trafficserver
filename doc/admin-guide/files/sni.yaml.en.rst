@@ -96,7 +96,7 @@ host_sni_policy           Inbound   One of the values :code:`DISABLED`, :code:`P
                                     If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
                                     This controls how policy impacting mismatches between host header and SNI values are
                                     dealt with.  For details about hos this configuration behaves, see the corresponding
-                                    :ts:cv:`proxy.config.http.host_sni_policy` :file:`records.config` documentation.
+                                    :ts:cv:`proxy.config.http.host_sni_policy` :file:`records.yaml` documentation.
 
                                     Note that this particular configuration will be inspected at the time the HTTP Host
                                     header field is processed. Further, this policy check will be keyed off of the Host header
