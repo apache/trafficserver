@@ -92,8 +92,7 @@ struct HttpVCTableEntry {
   MIOBuffer *write_buffer;
   VIO *read_vio;
   VIO *write_vio;
-  HttpSMHandler vc_read_handler;
-  HttpSMHandler vc_write_handler;
+  HttpSMHandler vc_handler;
   HttpVC_t vc_type;
   HttpSM *sm;
   bool eos;

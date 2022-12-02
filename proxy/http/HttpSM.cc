@@ -214,12 +214,11 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
   // for remaining I/O operations because the netvc
   // may have been deleted at this point and the pointer
   // could be stale.
-  e->read_vio         = nullptr;
-  e->write_vio        = nullptr;
-  e->vc_read_handler  = nullptr;
-  e->vc_write_handler = nullptr;
-  e->vc_type          = HTTP_UNKNOWN;
-  e->in_tunnel        = false;
+  e->read_vio   = nullptr;
+  e->write_vio  = nullptr;
+  e->vc_handler = nullptr;
+  e->vc_type    = HTTP_UNKNOWN;
+  e->in_tunnel  = false;
 }
 
 // bool HttpVCTable::cleanup_entry(HttpVCEntry* e)
@@ -591,7 +590,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   hooks_set = client_vc->has_hooks();
 
   // Setup for parsing the header
-  ua_entry->vc_read_handler = &HttpSM::state_read_client_request_header;
+  ua_entry->vc_handler = &HttpSM::state_read_client_request_header;
   t_state.hdr_info.client_request.destroy();
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
@@ -633,7 +632,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
 void
 HttpSM::setup_client_read_request_header()
 {
-  ink_assert(ua_entry->vc_read_handler == &HttpSM::state_read_client_request_header);
+  ink_assert(ua_entry->vc_handler == &HttpSM::state_read_client_request_header);
 
   ua_entry->read_vio = ua_txn->do_io_read(this, INT64_MAX, ua_txn->get_remote_reader()->mbuf);
   // The header may already be in the buffer if this
@@ -793,8 +792,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_raw_buffer_reader = nullptr;
     }
     http_parser_clear(&http_parser);
-    ua_entry->vc_read_handler                    = &HttpSM::state_watch_for_client_abort;
-    ua_entry->vc_write_handler                   = &HttpSM::state_watch_for_client_abort;
+    ua_entry->vc_handler                         = &HttpSM::state_watch_for_client_abort;
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = Thread::get_hrtime();
   }
 
@@ -1076,7 +1074,7 @@ HttpSM::setup_push_read_response_header()
   ink_assert(t_state.method == HTTP_WKSIDX_PUSH);
 
   // Set the handler to read the pushed response hdr
-  ua_entry->vc_read_handler = &HttpSM::state_read_push_response_header;
+  ua_entry->vc_handler = &HttpSM::state_read_push_response_header;
 
   // We record both the total payload size as
   //  client_request_body_bytes and the bytes for the individual
@@ -1899,8 +1897,7 @@ HttpSM::state_http_server_open(int event, void *data)
     if (this->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
       SMDebug("http", "setting handler for TCP handshake");
       // Just want to get a write-ready event so we know that the TCP handshake is complete.
-      server_entry->vc_write_handler = &HttpSM::state_http_server_open;
-      server_entry->vc_read_handler  = &HttpSM::state_http_server_open;
+      server_entry->vc_handler = &HttpSM::state_http_server_open;
 
       int64_t nbytes = 1;
       if (t_state.txn_conf->proxy_protocol_out >= 0) {
@@ -1922,7 +1919,7 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
     SMDebug("http_ss", "TCP Handshake complete");
-    server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
+    server_entry->vc_handler = &HttpSM::state_send_server_request_header;
 
     // Reset the timeout to the non-connect timeout
     server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
@@ -1995,6 +1992,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
   // a WRITE event appear after receiving EOS from the server connection
   if (server_entry->eos) {
     return 0;
+  } else if (data == server_entry->write_vio) {
+    return this->state_send_server_request_header(event, data);
   }
 
   ink_assert(server_entry->eos != true);
@@ -2160,6 +2159,9 @@ int
 HttpSM::state_send_server_request_header(int event, void *data)
 {
   ink_assert(server_entry != nullptr);
+  if (server_entry->read_vio == data) {
+    return this->state_read_server_response_header(event, data);
+  }
   ink_assert(server_entry->eos == false);
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(&HttpSM::state_send_server_request_header, event);
@@ -2172,22 +2174,20 @@ HttpSM::state_send_server_request_header(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
-    if (server_entry->write_vio != nullptr) {
-      // We are done sending the request header, deallocate
-      //  our buffer and then decide what to do next
-      free_MIOBuffer(server_entry->write_buffer);
-      server_entry->write_buffer = nullptr;
-      method                     = t_state.hdr_info.server_request.method_get_wksidx();
-      if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
-          ua_txn->has_request_body(t_state.hdr_info.request_content_length,
-                                   t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
-        if (post_transform_info.vc) {
-          setup_transform_to_server_transfer();
-        } else {
-          // Go ahead and set up the post tunnel if we are not waiting for a 100 response
-          if (!t_state.hdr_info.client_request.m_100_continue_required) {
-            do_setup_post_tunnel(HTTP_SERVER_VC);
-          }
+    // We are done sending the request header, deallocate
+    //  our buffer and then decide what to do next
+    free_MIOBuffer(server_entry->write_buffer);
+    server_entry->write_buffer = nullptr;
+    method                     = t_state.hdr_info.server_request.method_get_wksidx();
+    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
+        ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                 t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+      if (post_transform_info.vc) {
+        setup_transform_to_server_transfer();
+      } else {
+        // Go ahead and set up the post tunnel if we are not waiting for a 100 response
+        if (!t_state.hdr_info.client_request.m_100_continue_required) {
+          do_setup_post_tunnel(HTTP_SERVER_VC);
         }
       }
     }
@@ -2741,7 +2741,7 @@ HttpSM::main_handler(int event, void *data)
   }
 
   if (vc_entry) {
-    jump_point = static_cast<VIO *>(data) == vc_entry->read_vio ? vc_entry->vc_read_handler : vc_entry->vc_write_handler;
+    jump_point = vc_entry->vc_handler;
     ink_assert(jump_point != (HttpSMHandler) nullptr);
     ink_assert(vc_entry->vc != (VConnection *)nullptr);
     (this->*jump_point)(event, data);
@@ -3682,9 +3682,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       ua_txn->cancel_inactivity_timeout();
 
       // Initiate another read to catch aborts
-      ua_entry->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
-      ua_entry->vc_write_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio         = p->vc->do_io_read(this, INT64_MAX, ua_txn->get_remote_reader()->mbuf);
+      ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+      ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_txn->get_remote_reader()->mbuf);
     }
     break;
   default:
@@ -3792,8 +3791,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // Before shutting down, initiate another read
     //  on the user agent in order to get timeouts
     //  coming to the state machine and not the tunnel
-    ua_entry->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
-    ua_entry->vc_write_handler = &HttpSM::state_watch_for_client_abort;
+    ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
 
     // YTS Team, yamsat Plugin
     // When event is VC_EVENT_ERROR,and when redirection is enabled
@@ -5816,9 +5814,8 @@ HttpSM::handle_server_setup_error(int event, void *data)
         HttpTunnelProducer *ua_producer = c->producer;
         ink_assert(ua_entry->vc == ua_producer->vc);
 
-        ua_entry->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
-        ua_entry->vc_write_handler = &HttpSM::state_watch_for_client_abort;
-        ua_entry->read_vio         = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+        ua_entry->read_vio   = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
         ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
         ua_producer->alive         = false;
@@ -6270,10 +6267,10 @@ HttpSM::attach_server_session()
   server_txn->increment_transactions_stat();
 
   // Record the VC in our table
-  server_entry                   = vc_table.new_entry();
-  server_entry->vc               = server_txn;
-  server_entry->vc_type          = HTTP_SERVER_VC;
-  server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
+  server_entry             = vc_table.new_entry();
+  server_entry->vc         = server_txn;
+  server_entry->vc_type    = HTTP_SERVER_VC;
+  server_entry->vc_handler = &HttpSM::state_send_server_request_header;
 
   UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
 
@@ -6356,8 +6353,8 @@ HttpSM::setup_server_send_request()
   hsm_release_assert(server_entry->vc == server_txn);
 
   // Send the request header
-  server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
-  server_entry->write_buffer     = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  server_entry->vc_handler   = &HttpSM::state_send_server_request_header;
+  server_entry->write_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
 
   if (t_state.api_server_request_body_set) {
     msg_len = t_state.internal_msg_buffer_size;
@@ -6403,8 +6400,8 @@ HttpSM::setup_server_read_response_header()
 
   // Now that we've got the ability to read from the
   //  server, setup to read the response header
-  server_entry->vc_read_handler = &HttpSM::state_read_server_response_header;
-  server_entry->vc              = server_txn;
+  server_entry->vc_handler = &HttpSM::state_read_server_response_header;
+  server_entry->vc         = server_txn;
 
   t_state.current.state         = HttpTransact::STATE_UNDEFINED;
   t_state.current.server->state = HttpTransact::STATE_UNDEFINED;
