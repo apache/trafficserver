@@ -522,14 +522,14 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 
   // Event loop timings.
   for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
-    snprintf(name, sizeof(name), "%s%ldms", EThread::Metrics::LOOP_HISTOGRAM_STAT_STEM.data(),
+    snprintf(name, sizeof(name), "%s%" PRIu64 "ms", EThread::Metrics::LOOP_HISTOGRAM_STAT_STEM.data(),
              EThread::Metrics::LOOP_HISTOGRAM_BUCKET_SIZE.count() * Graph::lower_bound(id));
     RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
   }
 
   // plugin API timings
   for (Graph::raw_type id = 0; id < Graph::N_BUCKETS; ++id) {
-    snprintf(name, sizeof(name), "%s%ldms", EThread::Metrics::API_HISTOGRAM_STAT_STEM.data(),
+    snprintf(name, sizeof(name), "%s%" PRIu64 "ms", EThread::Metrics::API_HISTOGRAM_STAT_STEM.data(),
              EThread::Metrics::API_HISTOGRAM_BUCKET_SIZE.count() * Graph::lower_bound(id));
     RecRegisterRawStat(rsb, RECT_PROCESS, name, RECD_INT, RECP_NON_PERSISTENT, stat_idx++, NULL);
   }
