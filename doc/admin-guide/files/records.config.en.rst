@@ -1956,7 +1956,7 @@ Proxy User Variables
 
    See :ref:`proxy-protocol` for more discussion on how |TS| transforms the `Forwarded: header`.
 
-.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_out INT ``-1``
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_out INT -1
    :reloadable:
    :overridable:
 
@@ -2616,21 +2616,21 @@ Customizable User Response Pages
    ``PREFIX`` directory.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.template_base STRING ""
-    :reloadable:
-    :overridable:
+   :reloadable:
+   :overridable:
 
     A prefix for the file name to use to find an error template file. If set (not the empty string)
     this value and an underscore are prepended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
-    :reloadable:
+   :reloadable:
 
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
-    :reloadable:
-    :overridable:
+   :reloadable:
+   :overridable:
 
    Specifies when |TS| suppresses generated response pages:
 
@@ -4692,9 +4692,9 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
    :reloadable:
 
-  This directive sets the maximum number of pending connections.
-  If it is set to -1, |TS| will automatically set this
-  to a platform-specific maximum.
+   This directive sets the maximum number of pending connections.
+   If it is set to -1, |TS| will automatically set this
+   to a platform-specific maximum.
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_in STRING ""
 
