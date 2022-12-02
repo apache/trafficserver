@@ -1,0 +1,12 @@
+tests/request.txt 200 TCP_MISS FIN 33 -
+tests/prefetch.txt 200 TCP_MISS - 16 tests/request.txt
+tests/prefetch.txt 200 TCP_MISS FIN 34 -
+tests/prefetch.txt 200 TCP_HIT - 34 -
+tests/query.txt 200 TCP_MISS FIN 41 -
+tests/query 200 TCP_MISS - 16 tests/query.txt
+tests/query 200 TCP_MISS FIN 41 -
+tests/query 200 TCP_HIT - 41 -
+tests/same.txt 200 TCP_MISS FIN 30 -
+root.txt 200 TCP_MISS FIN 30 -
+rooted 200 TCP_MISS - 16 root.txt
+rooted 200 TCP_MISS FIN 28 -

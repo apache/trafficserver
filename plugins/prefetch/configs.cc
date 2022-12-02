@@ -54,9 +54,11 @@ isTrue(const char *arg)
 bool
 PrefetchConfig::init(int argc, char *argv[])
 {
+<<<<<<< HEAD
   static const struct option longopt[] = {
     {const_cast<char *>("front"),              optional_argument, nullptr, 'f'},
     {const_cast<char *>("api-header"),         optional_argument, nullptr, 'h'},
+    {const_cast<char *>("cmcd-nor"),           optional_argument, nullptr, 'd'},
     {const_cast<char *>("next-header"),        optional_argument, nullptr, 'n'},
     {const_cast<char *>("fetch-policy"),       optional_argument, nullptr, 'p'},
     {const_cast<char *>("fetch-count"),        optional_argument, nullptr, 'c'},
@@ -68,15 +70,15 @@ PrefetchConfig::init(int argc, char *argv[])
     {const_cast<char *>("metrics-prefix"),     optional_argument, nullptr, 'm'},
     {const_cast<char *>("exact-match"),        optional_argument, nullptr, 'y'},
     {const_cast<char *>("log-name"),           optional_argument, nullptr, 'l'},
-    {nullptr,                                  0,                 nullptr, 0  }
+    {nullptr,                                  0,                 nullptr, 0  },
   };
 
   bool status = true;
   optind      = 0;
 
   /* argv contains the "to" and "from" URLs. Skip the first so that the second one poses as the program name. */
-  argc--;
-  argv++;
+  --argc;
+  ++argv;
 
   for (;;) {
     int opt;
@@ -95,6 +97,10 @@ PrefetchConfig::init(int argc, char *argv[])
 
     case 'h': /* --api-header */
       setApiHeader(optarg);
+      break;
+
+    case 'd': /* --cmcd-nor */
+      _cmcd_nor = ::isTrue(optarg);
       break;
 
     case 'n': /* --next-header */
