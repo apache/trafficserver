@@ -75,7 +75,7 @@ Global instance
 .. code::
 
   $ cat plugin.config
-  cache_range_request.so
+  cache_range_requests.so
 
 
 Per-remap instance
