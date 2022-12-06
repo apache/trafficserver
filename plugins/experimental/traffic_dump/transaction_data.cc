@@ -22,6 +22,7 @@
  */
 
 #include <sstream>
+#include <iomanip>
 
 #include "transaction_data.h"
 #include "global_variables.h"
@@ -106,16 +107,13 @@ TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edat
 void
 TransactionData::initialize_default_sensitive_field()
 {
-  // 128 KB is the maximum size supported for all headers, so this size should
-  // be plenty large for our needs.
+  std::ostringstream ss;
+  // 128 KB is the maximum size supported for all headers, so this size should be plenty large for our needs.
   constexpr size_t default_field_size = 128 * 1024;
-  default_sensitive_field_value.resize(default_field_size);
-
-  char *field_buffer = default_sensitive_field_value.data();
-  for (auto i = 0u; i < default_field_size; i += 8) {
-    sprintf(field_buffer, "%07x ", i / 8);
-    field_buffer += 8;
+  for (uint32_t i = 0; i < default_field_size; i += 8) {
+    ss << std::hex << std::setw(7) << std::setfill('0') << i / 8 << " ";
   }
+  default_sensitive_field_value = ss.str();
 }
 
 /// The set of fields, default and user-specified, that are sensitive and whose

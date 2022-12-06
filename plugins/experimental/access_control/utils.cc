@@ -51,7 +51,7 @@ hexEncode(const char *in, size_t inLen, char *out, size_t outLen)
   char *dst          = out;
   char *dstEnd       = out + outLen;
 
-  while (src < srcEnd && dst < dstEnd && 2 == sprintf(dst, "%02x", static_cast<unsigned char>(*src))) {
+  while (src < srcEnd && dst < dstEnd && 2 == snprintf(dst, outLen, "%02x", static_cast<unsigned char>(*src))) {
     dst += 2;
     src++;
   }
@@ -124,7 +124,7 @@ urlEncode(const char *in, size_t inLen, char *out, size_t outLen)
       *dst++ = '+';
     } else {
       *dst++ = '%';
-      sprintf(dst, "%02x", static_cast<unsigned char>(*src));
+      snprintf(dst, out + outLen - dst, "%02x", static_cast<unsigned char>(*src));
       dst += 2;
     }
     src++;

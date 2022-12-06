@@ -423,7 +423,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
   unsigned char digest[MD5_DIGEST_LENGTH];
   MD5(reinterpret_cast<unsigned char const *>(commonName.data()), commonName.length(), digest);
   char md5String[5];
-  sprintf(md5String, "%02hhx%02hhx", digest[0], digest[1]);
+  snprintf(md5String, sizeof(md5String), "%02hhx%02hhx", digest[0], digest[1]);
   std::string path          = store_path + "/" + std::string(md5String, 3);
   std::string cert_filename = path + '/' + commonName + ".crt";
 

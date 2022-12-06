@@ -122,7 +122,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
     right--;
   }
 
-  buf_len = sprintf(buf, "%.*s%.*s", left, query, right, query + query_len - right);
+  buf_len = snprintf(buf, sizeof(buf), "%.*s%.*s", left, query, right, query + query_len - right);
   TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, buf, buf_len);
 
   // remove Accept-Encoding

@@ -332,10 +332,11 @@ struct FD {
 
   int state;   // request parsing state
   int req_pos; // request read position
-  char *base_url        = nullptr;
-  char *req_header      = nullptr;
-  char *response        = nullptr;
-  char *response_header = nullptr;
+  char *base_url          = nullptr;
+  char *req_header        = nullptr;
+  char *response          = nullptr;
+  char *response_header   = nullptr;
+  int max_req_header_size = 0;
   int length;
   int response_length;
   int response_remaining;
@@ -592,7 +593,8 @@ static void
 poll_init(int sock)
 {
   if (!fd[sock].req_header) {
-    fd[sock].req_header = (char *)malloc(HEADER_SIZE * pipeline + MAX_REQUEST_BODY_LENGTH);
+    fd[sock].max_req_header_size = HEADER_SIZE * pipeline + MAX_REQUEST_BODY_LENGTH;
+    fd[sock].req_header          = (char *)malloc(fd[sock].max_req_header_size);
   }
   if (!fd[sock].response_header) {
     fd[sock].response_header = (char *)malloc(HEADER_SIZE);
@@ -761,7 +763,8 @@ make_response_header(int sock, char *url_start, char *url_end, int *url_len, cha
                            no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "", url_start ? url_start : "");
     }
   } else {
-    *url_len = print_len = sprintf(header, "ftp://%s:%d/%12.10f/%d", local_host, server_port, fd[sock].doc, fd[sock].length);
+    *url_len = print_len =
+      snprintf(header, header_limit, "ftp://%s:%d/%12.10f/%d", local_host, server_port, fd[sock].doc, fd[sock].length);
   }
 
   if (show_headers) {
@@ -966,7 +969,7 @@ static void
 make_response(int sock, int code)
 {
   fd[sock].response        = fd[sock].req_header;
-  fd[sock].length          = sprintf(fd[sock].req_header, "%d\r\n", code);
+  fd[sock].length          = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "%d\r\n", code);
   fd[sock].req_pos         = 0;
   fd[sock].response_length = strlen(fd[sock].req_header);
   poll_set(sock, nullptr, write_ftp_response);
@@ -1452,7 +1455,7 @@ read_ftp_request(int sock)
       make_response(sock, res);
       return 0;
     } else if (STREQ(buffer, "SIZE")) {
-      fd[sock].length = sprintf(fd[sock].req_header, "213 %d\r\n", atoi(buffer + 5));
+      fd[sock].length = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "213 %d\r\n", atoi(buffer + 5));
       make_long_response(sock);
       return 0;
     } else if (STREQ(buffer, "MDTM")) {
@@ -1461,10 +1464,10 @@ read_ftp_request(int sock)
         err_rand = ts::Random::drandom();
       }
       if (err_rand < ftp_mdtm_err_rate) {
-        fd[sock].length = sprintf(fd[sock].req_header, "550 mdtm file not found\r\n");
+        fd[sock].length = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "550 mdtm file not found\r\n");
       } else {
         if (ftp_mdtm_rate == 0) {
-          fd[sock].length = sprintf(fd[sock].req_header, "213 19900615100045\r\n");
+          fd[sock].length = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "213 19900615100045\r\n");
         } else {
           time_t mdtm_now;
           time(&mdtm_now);
@@ -1472,10 +1475,10 @@ read_ftp_request(int sock)
             struct tm *mdtm_tm;
             ftp_mdtm_last_update = mdtm_now;
             mdtm_tm              = localtime(&ftp_mdtm_last_update);
-            sprintf(ftp_mdtm_str, "213 %.4d%.2d%.2d%.2d%.2d%.2d", mdtm_tm->tm_year + 1900, mdtm_tm->tm_mon + 1, mdtm_tm->tm_mday,
-                    mdtm_tm->tm_hour, mdtm_tm->tm_min, mdtm_tm->tm_sec);
+            snprintf(ftp_mdtm_str, sizeof(ftp_mdtm_str), "213 %.4d%.2d%.2d%.2d%.2d%.2d", mdtm_tm->tm_year + 1900,
+                     mdtm_tm->tm_mon + 1, mdtm_tm->tm_mday, mdtm_tm->tm_hour, mdtm_tm->tm_min, mdtm_tm->tm_sec);
           }
-          fd[sock].length = sprintf(fd[sock].req_header, "%s\r\n", ftp_mdtm_str);
+          fd[sock].length = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "%s\r\n", ftp_mdtm_str);
         }
       }
       make_long_response(sock);
@@ -1493,9 +1496,10 @@ read_ftp_request(int sock)
         printf("ftp PASV %d <-> %d\n", sock, fd[sock].ftp_data_fd);
       }
       unsigned short p = fd[fd[sock].ftp_data_fd].name.sin_port;
-      fd[sock].length  = sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n", ((unsigned char *)&local_addr)[0],
-                                ((unsigned char *)&local_addr)[1], ((unsigned char *)&local_addr)[2],
-                                ((unsigned char *)&local_addr)[3], ((unsigned char *)&p)[0], ((unsigned char *)&p)[1]);
+      fd[sock].length =
+        snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "227 (%u,%u,%u,%u,%u,%u)\r\n",
+                 ((unsigned char *)&local_addr)[0], ((unsigned char *)&local_addr)[1], ((unsigned char *)&local_addr)[2],
+                 ((unsigned char *)&local_addr)[3], ((unsigned char *)&p)[0], ((unsigned char *)&p)[1]);
       if (verbose) {
         puts(fd[sock].req_header);
       }
@@ -1520,7 +1524,7 @@ read_ftp_request(int sock)
       ((unsigned char *)&(fd[sock].ftp_peer_port))[0] = strtol(start, &stop, 10);
       start                                           = ++stop;
       ((unsigned char *)&(fd[sock].ftp_peer_port))[1] = strtol(start, nullptr, 10);
-      fd[sock].length                                 = sprintf(fd[sock].req_header, "200 Okay\r\n");
+      fd[sock].length                                 = snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "200 Okay\r\n");
       if (verbose) {
         puts(fd[sock].req_header);
       }
@@ -1568,8 +1572,9 @@ read_ftp_request(int sock)
         }
         return 1;
       }
-      fd[sock].response        = fd[sock].req_header;
-      fd[sock].length          = sprintf(fd[sock].req_header, "150 %d bytes\r\n", fd[fd[sock].ftp_data_fd].length);
+      fd[sock].response = fd[sock].req_header;
+      fd[sock].length =
+        snprintf(fd[sock].req_header, fd[sock].max_req_header_size, "150 %d bytes\r\n", fd[fd[sock].ftp_data_fd].length);
       fd[sock].req_pos         = 0;
       fd[sock].response_length = strlen(fd[sock].req_header);
       poll_set(sock, nullptr, write_ftp_response);
@@ -2929,64 +2934,64 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
   switch (post_support) {
   case 0:
     if (range_mode) {
-      sprintf(fd[sock].req_header,
-              "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header,
-              ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                    "%s"
-                    "%s"
-                    "%s"
-                    "%s"
-                    "\r\n" :
-                    "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                    "%s"
-                    "%s"
-                    "%s"
-                    "%s"
-                    "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                     "%s"
+                     "%s"
+                     "%s"
+                     "%s"
+                     "\r\n" :
+                     "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                     "%s"
+                     "%s"
+                     "%s"
+                     "%s"
+                     "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     break;
   case 1:
     if (range_mode) {
-      sprintf(fd[sock].req_header,
-              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-              "Content-Length: %d\r\n"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+               "Content-Length: %d\r\n"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header,
-              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-              "Content-Length: %d\r\n"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+               "Content-Length: %d\r\n"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     post_length = fd[sock].response_length;
     break;
@@ -2995,31 +3000,31 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
       ink_assert(!"post_size should never be zero!");
 
     if (range_mode) {
-      sprintf(fd[sock].req_header,
-              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-              "Content-Length: %d\r\n"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+               "Content-Length: %d\r\n"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header,
-              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-              "Content-Length: %d\r\n"
-              "%s"
-              "%s"
-              "%s"
-              "%s"
-              "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
-              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-              reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+      snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+               "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+               "Content-Length: %d\r\n"
+               "%s"
+               "%s"
+               "%s"
+               "%s"
+               "\r\n",
+               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
+               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+               reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
     }
     post_length = post_size;
     break;
@@ -3031,17 +3036,17 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
 static int
 make_host1_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
-  sprintf(fd[sock].req_header,
-          "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-          "Host: %s:%d\r\n"
-          "%s"
-          "%s"
-          "%s"
-          "%s"
-          "\r\n",
-          dr, fd[sock].response_length, evo_str, extension, local_host, server_port,
-          fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
-          eheaders, cookie);
+  snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+           "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+           "Host: %s:%d\r\n"
+           "%s"
+           "%s"
+           "%s"
+           "%s"
+           "\r\n",
+           dr, fd[sock].response_length, evo_str, extension, local_host, server_port,
+           fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
+           reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
   return 0;
 }
 
@@ -3049,15 +3054,15 @@ static int
 make_host2_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
   /* Send a non-proxy client request i.e. for Transparency testing */
-  sprintf(fd[sock].req_header,
-          "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-          "%s"
-          "%s"
-          "%s"
-          "%s"
-          "\r\n",
-          dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
-          reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+  snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+           "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+           "%s"
+           "%s"
+           "%s"
+           "%s"
+           "\r\n",
+           dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
+           reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
   return 0;
 }
 
@@ -3081,16 +3086,21 @@ build_request(int sock)
   *eheaders    = 0;
   int nheaders = extra_headers;
   if (nheaders > 0) {
-    char *eh = eheaders;
+    char *eh           = eheaders;
+    char *eheaders_end = eheaders + sizeof(eheaders);
     if (!vary_user_agent) {
-      eh += sprintf(eh, "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
+      ink_release_assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
       nheaders--;
     }
     if (nheaders > 0) {
-      eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders),
+                     "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
+      ink_release_assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
     }
     while (--nheaders > 0) {
-      eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+      ink_release_assert(eh < eheaders_end); // valdate that eh doesn't point past eheaders (buffer overflow)
     }
   }
   char cookie[256];
@@ -3098,9 +3108,9 @@ build_request(int sock)
   fd[sock].nalternate = (int)(alternates * ts::Random::drandom());
   if (alternates) {
     if (!vary_user_agent) {
-      sprintf(cookie, "Cookie: jtest-cookie-%d\r\n", fd[sock].nalternate);
+      snprintf(cookie, sizeof(cookie), "Cookie: jtest-cookie-%d\r\n", fd[sock].nalternate);
     } else {
-      sprintf(cookie, "User-Agent: jtest-browser-%d\r\n", fd[sock].nalternate);
+      snprintf(cookie, sizeof(cookie), "User-Agent: jtest-browser-%d\r\n", fd[sock].nalternate);
     }
   }
   const char *extension;
@@ -3122,7 +3132,7 @@ build_request(int sock)
   evo_str[0] = '\0';
   if (evo_rate != 0.0) {
     double evo_index = dr + (((double)now) / HRTIME_HOUR) * evo_rate;
-    sprintf(evo_str, ".%u", ((unsigned int)evo_index));
+    snprintf(evo_str, sizeof(evo_str), ".%u", ((unsigned int)evo_index));
   }
 
   int post_body = 0;
@@ -3536,38 +3546,39 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   if (nheaders > 0) {
     char *eh = eheaders;
     if (!vary_user_agent) {
-      eh += sprintf(eh, "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
       nheaders--;
     }
     if (nheaders > 0) {
-      eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders),
+                     "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
     }
     while (--nheaders > 0) {
-      eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+      eh += snprintf(eh, sizeof(eheaders) - (eh - eheaders), "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
     }
   }
   if (proxy_port) {
-    sprintf(fd[sock].req_header,
-            "GET %s HTTP/1.0\r\n"
-            "%s"
-            "%s"
-            "Accept: */*\r\n"
-            "%s"
-            "\r\n",
-            curl, reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
-            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "", eheaders);
+    snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+             "GET %s HTTP/1.0\r\n"
+             "%s"
+             "%s"
+             "Accept: */*\r\n"
+             "%s"
+             "\r\n",
+             curl, reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+             fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "", eheaders);
   } else {
-    sprintf(fd[sock].req_header,
-            "GET /%s%s%s%s%s HTTP/1.0\r\n"
-            "Host: %s\r\n"
-            "%s"
-            "%s"
-            "Accept: */*\r\n"
-            "%s"
-            "\r\n",
-            path, xquer ? "?" : "", quer, xpar ? ";" : "", para, host,
-            reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
-            fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", eheaders);
+    snprintf(fd[sock].req_header, fd[sock].max_req_header_size,
+             "GET /%s%s%s%s%s HTTP/1.0\r\n"
+             "Host: %s\r\n"
+             "%s"
+             "%s"
+             "Accept: */*\r\n"
+             "%s"
+             "\r\n",
+             path, xquer ? "?" : "", quer, xpar ? ";" : "", para, host,
+             reload_rate > ts::Random::drandom() ? "Pragma: no-cache\r\n" : "",
+             fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "", eheaders);
   }
 
   if (verbose) {

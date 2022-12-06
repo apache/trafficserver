@@ -190,7 +190,6 @@ struct Doc {
   uint32_t data_len();
   uint32_t prefix_len();
   int single_fragment();
-  int no_data_in_fragment();
   char *hdr();
   char *data();
 };
