@@ -1279,7 +1279,8 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
     TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code));
 
     if (body_text.size() > 0) {
-      TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(), nullptr); // Defaults to text/html
+      TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(),
+                            nullptr); // Defaults to text/html
     }
 
     local_reply_headers_ = additional_headers;
