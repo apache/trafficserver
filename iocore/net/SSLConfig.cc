@@ -490,7 +490,7 @@ SSLConfig::startup()
 void
 SSLConfig::reconfigure()
 {
-  Debug("ssl", "Reload SSLConfig");
+  Debug("ssl_load", "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
   // start loading the next config
@@ -549,7 +549,7 @@ SSLCertificateConfig::reconfigure()
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
-    Debug("ssl", "delaying certificate reload by %d secs", secs);
+    Debug("ssl_load", "delaying certificate reload by %d secs", secs);
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
@@ -625,7 +625,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
     struct stat sdata;
     if (last_load_time && (stat(ticket_key_filename, &sdata) >= 0)) {
       if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
-        Debug("ssl", "ticket key %s has not changed", ticket_key_filename);
+        Debug("ssl_load", "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
         return true;
       }
@@ -647,7 +647,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   default_global_keyblock = keyblock;
   load_time               = time(nullptr);
 
-  Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
+  Debug("ssl_load", "ticket key reloaded from %s", ticket_key_filename);
 #endif
   return true;
 }
@@ -740,7 +740,7 @@ void
 SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 {
   // Clear the corresponding client CTXs.  They will be lazy loaded later
-  Debug("ssl", "Update cert %s", cert_secret_name.c_str());
+  Debug("ssl_load", "Update cert %s", cert_secret_name.c_str());
   this->clearCTX(cert_secret_name);
 
   // Update the server cert
@@ -756,7 +756,7 @@ SSLConfigParams::clearCTX(const std::string &client_cert) const
     auto ctx_iter = ctx_map_iter->second.find(client_cert);
     if (ctx_iter != ctx_map_iter->second.end()) {
       ctx_iter->second = nullptr;
-      Debug("ssl", "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
+      Debug("ssl_load", "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
     }
   }
   ink_mutex_release(&ctxMapLock);

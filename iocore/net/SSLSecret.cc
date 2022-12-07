@@ -55,12 +55,14 @@ SSLSecret::loadFile(const std::string &name, std::string &data_item)
   struct stat statdata;
   // Load the secret and add it to the map
   if (stat(name.c_str(), &statdata) < 0) {
+    Debug("ssl_secret", "File: %s received error: %s", name.c_str(), strerror(errno));
     return false;
   }
   std::error_code error;
   data_item = ts::file::load(ts::file::path(name), error);
   if (error) {
     // Loading file failed
+    Debug("ssl_secret", "Loading file: %s failed ", name.c_str());
     return false;
   }
   if (SSLConfigParams::load_ssl_file_cb) {
@@ -116,7 +118,7 @@ SSLSecret::getSecret(const std::string &name, std::string_view &data) const
 bool
 SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, std::string_view &data1, std::string_view &data2)
 {
-  Debug("ssl_secret", "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
+  Debug("ssl_secret", "lookup up secrets for %s and %s", name1.c_str(), name2.empty() ? "[empty]" : name2.c_str());
   std::scoped_lock lock(secret_map_mutex);
   bool found_secret1 = this->getSecret(name1, data1);
   bool found_secret2 = name2.empty() || this->getSecret(name2, data2);
