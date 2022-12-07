@@ -5,7 +5,7 @@ TinyGo example for ATS Wasm Plugin
 To retrieve `plugin.wasm` for the Coraza Proxy WASM
 * `docker pull ghcr.io/corazawaf/coraza-proxy-wasm:main`
 * `docker container create ghcr.io/corazawaf/coraza-proxy-wasm:main '/plugin.wasm'`
-* `docker cp d7f055b746bb:/plugin.wasm /usr/local/var/wasm/plugin.wasm`
+* `docker cp <container id>:/plugin.wasm /usr/local/var/wasm/plugin.wasm`
 
 Copy the yaml in this directory to `/usr/local/var/wasm/` and activate the plugin in `plugin.config`
 * `wasm.so /usr/local/var/wasm/plugin.yaml`
