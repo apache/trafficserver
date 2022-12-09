@@ -2477,6 +2477,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     // Load up any additional chain certificates
     if (!SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get())) {
       Debug("ssl_load", "couldn't add chain to %p", ctx);
+      SSLError("failed to load intermediate certificate chain from %s", cert_names_list[i].c_str());
+      return false;
     }
 
     if (secret_key_data.empty()) {
