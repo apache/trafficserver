@@ -25,6 +25,7 @@ Test.SkipUnless(
     Condition.PluginExists('cache_range_requests.so'),
 )
 
+
 class SliceStripRangeForHeadRequestTest:
     replay_file = "replay/slice_range.replay.yaml"
 
@@ -32,7 +33,6 @@ class SliceStripRangeForHeadRequestTest:
         """Initialize the Test processes for the test runs."""
         self._server = Test.MakeVerifierServerProcess("server", SliceStripRangeForHeadRequestTest.replay_file)
         self._configure_trafficserver()
-
 
     def _configure_trafficserver(self):
         """Configure Traffic Server."""
@@ -59,11 +59,12 @@ class SliceStripRangeForHeadRequestTest:
             "client",
             SliceStripRangeForHeadRequestTest.replay_file,
             http_ports=[self._ts.Variables.port])
-        
+
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
     def run(self):
         self._test_head_request_range_header()
+
 
 SliceStripRangeForHeadRequestTest().run()
