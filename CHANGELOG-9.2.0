@@ -273,7 +273,6 @@ Changes with Apache Traffic Server 9.2.0
   #8296 - Make port queue an ordered set
   #8298 - Update nghttp gold file based on previous h2 fix
   #8300 - Revert "autest: double the initial port pool for get_port (#8292)"
-  #8301 - Make separate read and write vc_handlers
   #8303 - Truly treat multiple certs with the same SAN as a warning
   #8305 - Revert "Fail requests with incomplete line ends (#8096)"
   #8306 - Fix crash during raw connect failures
@@ -508,6 +507,7 @@ Changes with Apache Traffic Server 9.2.0
   #8944 - Make the autopep8 clang-format targets quieter
   #8949 - Setup UA consumer only if ua_entry is not nullptr
   #8950 - .fit/fmt/.clang-format-installed prerequisite
+  #8954 - Use std::unique_ptr for X509 and BIO scoped heap objects.
   #8965 - Proxy Verifier: Update to version 2.4.1
   #8970 - add a metric to track how often the range seek bug is detected
   #8971 - Fixes issue with file size calculation for existing logs
@@ -570,3 +570,9 @@ Changes with Apache Traffic Server 9.2.0
   #9181 - Adding back set_connect_fail for generic I/O error
   #9186 - Traffic Dump: Allow unlimited disk utilization
   #9195 - AuTest: make MakeATSProcess accessible for TestRuns
+  #9221 - AuTest: Update to Proxy Verifier v2.5.0
+  #9223 - AuTest: Update to Proxy Verifier 2.5.2
+  #9225 - Verbose SSL error logs
+  #9230 - Fail out when intermediate certificate chain fails to load
+  #9236 - Remove out of bound SSL log
+  #9237 - Revert "9.2: Fix s3_auth_config test output check (#9123)"
