@@ -4925,6 +4925,28 @@ Sockets
    on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
    log the allocator statistics and see how many of each buffer size have been allocated.
 
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_use_hugepages INT
+
+   This setting controls whether huge pages allocations are used to allocate io buffers.  If enabled, and hugepages are
+   not available, this will fall back to normal size pages. Using hugepages for iobuffer can sometimes improve performance
+   by utilizing more of the TLB and reducing TLB misses.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` IO buffer allocation uses normal pages sizes
+   ``1`` IO buffer allocation uses huge pages
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.enable_hugepages INT
+
+   This setting controls whether huge pages allocations are used to allocate memory for cache volume dir entries.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Use normal pages sizes
+   ``1`` Use huge pages
+
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 
    Configures the max IOBuffer Block index used for various SSL Operations
