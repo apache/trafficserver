@@ -330,6 +330,51 @@ TEST_CASE("MIOBuffer", "[iocore]")
   }
 }
 
+TEST_CASE("block size parser", "[iocore]")
+{
+  int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
+  auto reset                            = [&]() {
+    for (auto &s : chunk_sizes) {
+      s = 0;
+    }
+  };
+
+  REQUIRE(parse_buffer_chunk_sizes("1 2,3, 4", chunk_sizes));
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_128] == 1);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256] == 2);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_512] == 3);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_1K] == 4);
+  reset();
+
+  REQUIRE(parse_buffer_chunk_sizes("256k:1", chunk_sizes));
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256K] == 1);
+  reset();
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256K] == 0);
+
+  REQUIRE(parse_buffer_chunk_sizes("1M:1 256k:2,256:5 2M:10", chunk_sizes));
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_1M] == 1);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256K] == 2);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256] == 5);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_2M] == 10);
+  reset();
+
+  REQUIRE(parse_buffer_chunk_sizes("2M:1 256k:2", chunk_sizes));
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_2M] == 1);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_256K] == 2);
+  reset();
+
+  // leaving out the index token will just move to the next spot
+  REQUIRE(parse_buffer_chunk_sizes("1M:1 2", chunk_sizes));
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_1M] == 1);
+  REQUIRE(chunk_sizes[TS_IOBUFFER_SIZE_INDEX_2M] == 2);
+
+  // test can't go past the end
+  REQUIRE(parse_buffer_chunk_sizes("1M:1 2 3", chunk_sizes) == false);
+
+  // bad index token
+  REQUIRE(parse_buffer_chunk_sizes("bob:1 2 3", chunk_sizes) == false);
+}
+
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase;
 

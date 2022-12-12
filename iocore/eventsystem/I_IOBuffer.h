@@ -115,6 +115,8 @@ extern FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 void init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages);
 void init_buffer_allocators(int iobuffer_advice);
 
+bool parse_buffer_chunk_sizes(const char *s, int chunk_sizes[DEFAULT_BUFFER_SIZES]);
+
 /**
   A reference counted wrapper around fast allocated or malloced memory.
   The IOBufferData class provides two basic services around a portion
