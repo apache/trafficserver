@@ -80,6 +80,7 @@ struct StateTransition {
 };
 
 static TSEvent StateAuthProxyConnect(AuthRequestContext *, void *);
+static TSEvent StateAuthProxyWriteReady(AuthRequestContext *, void *);
 static TSEvent StateAuthProxyWriteComplete(AuthRequestContext *, void *);
 static TSEvent StateUnauthorized(AuthRequestContext *, void *);
 static TSEvent StateAuthorized(AuthRequestContext *, void *);
@@ -127,6 +128,7 @@ static const StateTransition StateTableProxyReadHeader[] = {
 
 // State table for sending the request to the auth proxy.
 static const StateTransition StateTableProxyRequest[] = {
+  {TS_EVENT_VCONN_WRITE_READY, StateAuthProxyWriteReady, StateTableProxyRequest},
   {TS_EVENT_VCONN_WRITE_COMPLETE, StateAuthProxyWriteComplete, StateTableProxyReadHeader},
   {TS_EVENT_ERROR, StateUnauthorized, nullptr},
   {TS_EVENT_NONE, nullptr, nullptr}};
@@ -530,6 +532,13 @@ StateAuthProxyReadHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUSED *
 
   // If the headers are complete, send a completion event.
   return complete ? TS_EVENT_HTTP_READ_REQUEST_HDR : TS_EVENT_CONTINUE;
+}
+
+static TSEvent
+StateAuthProxyWriteReady(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
+{
+  TSVConnWrite(auth->vconn, auth->cont, auth->iobuf.reader, TSIOBufferReaderAvail(auth->iobuf.reader));
+  return TS_EVENT_CONTINUE;
 }
 
 static TSEvent
