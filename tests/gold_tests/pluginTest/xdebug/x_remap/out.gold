@@ -68,8 +68,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -117,8 +117,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -166,8 +166,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -216,8 +216,8 @@ Content-Type: text/plain
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -267,8 +267,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -316,8 +316,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -367,8 +367,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -418,8 +418,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -467,8 +467,8 @@ Content-Type: text/plain
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-       'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
-       'Content-Type' : 'text/plain'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
