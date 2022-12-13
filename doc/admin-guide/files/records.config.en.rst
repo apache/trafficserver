@@ -4936,6 +4936,7 @@ Sockets
    ===== ======================================================================
    ``0`` IO buffer allocation uses normal pages sizes
    ``1`` IO buffer allocation uses huge pages
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.cache.dir.enable_hugepages INT
 
@@ -4946,6 +4947,7 @@ Sockets
    ===== ======================================================================
    ``0`` Use normal pages sizes
    ``1`` Use huge pages
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 
