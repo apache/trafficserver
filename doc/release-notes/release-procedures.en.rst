@@ -37,12 +37,12 @@ ATS Release Procedure Steps
 
    ::
 
-      svn checkout https://dist.apache.org/repos/dist/release/trafficserver/ 
-      cd trafficserver 
-      mv ../trafficserver-${version}.tar* . 
-      svn add trafficserver-${version}.tar* 
+      svn checkout https://dist.apache.org/repos/dist/release/trafficserver/
+      cd trafficserver
+      mv ../trafficserver-${version}.tar* .
+      svn add trafficserver-${version}.tar*
       svn commit . -m "Release $version"
-      cd .. 
+      cd ..
       rm -rf trafficserver
 
    - Publish the updated version information to the TrafficServer website
