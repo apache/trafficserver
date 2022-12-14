@@ -377,6 +377,29 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 }
 
 static void
+InjectOriginalContentTypeHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+  if (TS_NULL_MLOC != ct_field) {
+    int original_content_type_len     = 0;
+    const char *original_content_type = TSMimeHdrFieldValueStringGet(buffer, hdr, ct_field, -1, &original_content_type_len);
+    if (original_content_type != nullptr) {
+      TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Original-Content-Type", lengthof("X-Original-Content-Type"));
+      TSReleaseAssert(TS_NULL_MLOC != dst);
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, original_content_type,
+                                                      original_content_type_len) == TS_SUCCESS);
+    }
+  } else {
+    if (TSMimeHdrFieldCreateNamed(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, &ct_field) == TS_SUCCESS) {
+      TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, ct_field) == TS_SUCCESS);
+    }
+  }
+
+  TSMimeHdrFieldValuesClear(buffer, hdr, ct_field);
+  TSReleaseAssert(TSMimeHdrFieldValueStringSet(buffer, hdr, ct_field, -1, "text/plain", lengthof("text/plain")) == TS_SUCCESS);
+}
+
+static void
 InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Transaction-ID", lengthof("X-Transaction-ID"));
@@ -491,6 +514,7 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
   }
 
   if (xheaders & XHEADER_X_PROBE_HEADERS) {
+    InjectOriginalContentTypeHeader(txn, buffer, hdr);
     BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
     TSDebug("xdebug_transform", "XInjectResponseHeaders(): client resp header ready");
     if (data == nullptr) {
