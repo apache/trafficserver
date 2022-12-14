@@ -91,6 +91,7 @@ The following settings are simply gone, and have no purpose:
 * `proxy.config.cache.storage_filename` (see next section as well)
 * `proxy.config.http.server_tcp_init_cwnd` (see Solaris section below)
 * `proxy.config.http.parent_proxy_routing_enable` (implicit by use of :file:`parent.config`)
+* `proxy.config.disable_configuration_modification` (is always on)
 
 All the `Vary` related configuration overrides were eliminated, prefer to set this via the origin server, or modify the `Vary`
 header on server responses instead.
