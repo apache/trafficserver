@@ -40,6 +40,16 @@ Synopsis
    An opaque pointer to an internal representation of rpc::RPCRegistryInfo. This object contains context information about the RPC
    handler.
 
+.. type:: TSRPCHandlerOptions
+
+   This class holds information about how a handler will be managed and delivered when called. The JSON-RPC manager would use this
+   object to perform certain validation.
+
+
+   .. var:: bool restricted
+
+      Tells the RPC Manager if the call can be delivered or not based on the config rules.
+
 .. type::  void (*TSRPCMethodCb)(const char *id, TSYaml params);
 
    JSONRPC callback signature for method.
@@ -48,11 +58,11 @@ Synopsis
 
    JSONRPC callback signature for notification.
 
-.. function:: TSRPCProviderHandle TSRPCRegister(const char *provider_name, const char *yamlcpp_lib_version);
-.. function:: TSReturnCode TSRPCRegisterMethodHandler(const char *name, TSRPCMethodCb callback, TSRPCProviderHandle info);
-.. function:: TSReturnCode TSRPCRegisterNotificationHandler(const char *name, TSRPCNotificationCb callback, TSRPCProviderHandle info);
+.. function:: TSRPCProviderHandle TSRPCRegister(const char *provider_name, size_t provider_len, const char *yamlcpp_lib_version, size_t yamlcpp_lib_len);
+.. function:: TSReturnCode TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info, const TSRPCHandlerOptions *opt);
+.. function:: TSReturnCode TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback, TSRPCProviderHandle info, const TSRPCHandlerOptions *opt);
 .. function:: TSReturnCode TSRPCHandlerDone(TSYaml resp);
-.. function:: void TSRPCHandlerError(int code, const char *descr);
+.. function:: void TSRPCHandlerError(int code, const char *descr, size_t descr_len);
 
 Description
 ===========
@@ -69,9 +79,10 @@ Description
 
     .. code-block:: cpp
 
-        TSRPCProviderHandle info = TSRPCRegister("FooBar's Plugin!", "0.7.0");
+        TSRPCProviderHandle info = TSRPCRegister("FooBar's Plugin!", 16, "0.7.0", 5);
         ...
-        TSRPCRegisterMethodHandler("my_join_string_handler", &func, info);
+        TSRPCHandlerOptions opt{{true}};
+        TSRPCRegisterMethodHandler("my_join_string_handler", 22, func, info, &opt);
 
 
     Then when requesting :ref:`get_service_descriptor` It will then display as follows:
@@ -96,26 +107,48 @@ Description
 
    We will provide binary compatibility within the lifespan of a major release.
 
+:arg:`provider_name` should be a string with the Plugin's descriptor. A null terminated string is expected.
+
+:arg:`provider_len` should be the length of the provider string..
+
 :arg:`yamlcpp_lib_version` should be a string with the yaml-cpp library version
 the plugin is using. A null terminated string is expected.
 
-:arg:`provider_name` should be a string with the Plugin's descriptor. A null terminated string is expected.
+:arg:`yamlcpp_lib_len` should be the length of the yamlcpp_lib_len string.
 
 :c:func:`TSRPCRegisterMethodHandler` Add new registered method handler to the JSON RPC engine.
+
 :arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
 If you register **get_stats** then the incoming jsonrpc call should have this very
 same name in the **method** field. .. {...'method': 'get_stats'...}.
-:arg:`callback` The function to be registered. Check :c:func:`TSRPCMethodCb`.  :arg:`info` TSRPCProviderHandle pointer,
+
+:arg:`name_len` The length of the name string.
+
+:arg:`callback` The function to be registered. Check :c:func:`TSRPCMethodCb`.
+
+:arg:`info` TSRPCProviderHandle pointer,
 this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
+
+:arg:`opt` Pointer to `TSRPCHandlerOptions`` object. This will be used to store specifics about a particular call, the rpc
+manager will use this object to perform certain actions. A copy of this object will be stored by the rpc manager.
 
 Please check :ref:`jsonrpc_development` for examples.
 
 :c:func:`TSRPCRegisterNotificationHandler` Add new registered method handler to the JSON RPC engine.
+
 :arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
 If you register **get_stats** then the incoming jsonrpc call should have this very
 same name in the **method** field. .. {...'method': 'get_stats'...}.
-:arg:`callback` The function to be registered. Check :c:func:`TSRPCNotificationCb`.  :arg:`info` TSRPCProviderHandle pointer,
+
+:arg:`name_len` The length of the name string.
+
+:arg:`callback` The function to be registered. Check :c:func:`TSRPCNotificationCb`.
+
+:arg:`info` TSRPCProviderHandle pointer,
 this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
+
+:arg:`opt` Pointer to `TSRPCHandlerOptions`` object. This will be used to store specifics about a particular call, the rpc
+manager will use this object to perform certain actions. A copy of this object will be stored by the rpc manager.
 
 Please check :ref:`jsonrpc_development` for examples.
 
@@ -155,8 +188,12 @@ Example:
 
 :c:func:`TSRPCHandlerError` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request with an error.
 
-:arg:`code` Should be the error number for this particular error. :arg:`descr` should be a text with a description of the error. It's up to the
+:arg:`code` Should be the error number for this particular error.
+
+:arg:`descr` should be a text with a description of the error. It's up to the
 developer to specify their own error codes and description. Error will be part of the *data* field in the jsonrpc response. See :ref:`jsonrpc-error`
+
+:arg:`descr_len`` The length of the description string.
 
 Example:
 
@@ -168,7 +205,7 @@ Example:
             } catch (std::exception const &e) {
                 std::string buff;
                 ts::bwprint(buff, "Error during rpc handling: {}.", e.what());
-                TSRPCHandlerError(ID_123456, buff.c_str());
+                TSRPCHandlerError(ID_123456, buff.c_str(), buff.size());
                 return;
             }
         }
