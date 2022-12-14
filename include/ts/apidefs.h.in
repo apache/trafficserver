@@ -1473,6 +1473,10 @@ namespace ts
 }
 #endif
 
+// YAML-CPP core version
+extern tsapi const char *TS_YAML_CPP_CORE_VERSION;
+extern tsapi int TS_YAML_CPP_CORE_VERSION_LEN;
+
 // JSONRPC 2.0 related interface.
 typedef struct tsapi_rpcproviderhandle *TSRPCProviderHandle;
 typedef struct tsapi_yaml *TSYaml;

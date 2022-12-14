@@ -384,6 +384,10 @@ tsapi int TS_HTTP_LEN_PUT;
 tsapi int TS_HTTP_LEN_TRACE;
 tsapi int TS_HTTP_LEN_PUSH;
 
+/* YAML-CPP core version */
+tsapi const char *TS_YAML_CPP_CORE_VERSION;
+tsapi int TS_YAML_CPP_CORE_VERSION_LEN;
+
 HttpAPIHooks *http_global_hooks        = nullptr;
 SslAPIHooks *ssl_hooks                 = nullptr;
 LifecycleAPIHooks *lifecycle_hooks     = nullptr;
@@ -1840,6 +1844,10 @@ api_init()
     ssl_hooks         = new SslAPIHooks;
     lifecycle_hooks   = new LifecycleAPIHooks;
     global_config_cbs = new ConfigUpdateCbTable;
+
+    static const std::string YAML_CPP_CORE_VERSION{YAMLCPP_LIB_VERSION};
+    TS_YAML_CPP_CORE_VERSION     = YAML_CPP_CORE_VERSION.data();
+    TS_YAML_CPP_CORE_VERSION_LEN = static_cast<int>(YAML_CPP_CORE_VERSION.size());
 
     int api_metrics = max_records_entries - REC_INTERNAL_RECORDS;
     if (api_metrics > 0) {
@@ -10246,6 +10254,33 @@ TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl)
   DbgCtl::_rm_reference();
 }
 
+namespace
+{
+TSReturnCode
+yamlcpp_version_check(std::string_view version)
+{
+  // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
+  // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
+  // version is the same.
+  if (version != YAMLCPP_LIB_VERSION) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+} // namespace
+
+tsapi TSReturnCode
+TSYAMLCompatibilityCheck(const char *yaml_version, int yamlcpp_lib_len)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
+
+  if (yamlcpp_lib_len < 0) {
+    yamlcpp_lib_len = strlen(yaml_version);
+  }
+  return yamlcpp_version_check(std::string_view{yaml_version, static_cast<std::size_t>(yamlcpp_lib_len)});
+}
+
 namespace rpc
 {
 extern std::mutex g_rpcHandlingMutex;
@@ -10260,10 +10295,7 @@ TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_v
   sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(provider_name) == TS_SUCCESS);
 
-  // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
-  // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
-  // version is the same.
-  if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
+  if (yamlcpp_version_check(std::string_view{yaml_version, yamlcpp_lib_len}) != TS_SUCCESS) {
     return nullptr;
   }
 
