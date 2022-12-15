@@ -6,6 +6,7 @@ Cache-Control: no-store
 Content-Type: text/html
 Content-Language: en
 X-Remap: from=Not-Found, to=Not-Found
+X-Original-Content-Type: text/html; charset=utf-8
 Content-Length: 391
 
 <HTML>
@@ -33,6 +34,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -66,7 +68,8 @@ X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -80,6 +83,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -113,7 +117,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -127,6 +132,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -160,7 +166,8 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -174,6 +181,7 @@ Age: ``
 Transfer-Encoding: chunked
 Connection: close
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -208,7 +216,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -222,6 +231,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -257,7 +267,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -271,6 +282,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -304,7 +316,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -318,6 +331,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -353,7 +367,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -367,6 +382,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -402,7 +418,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
@@ -416,6 +433,7 @@ Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+Content-Type: text/plain
 
 ``
 {'xDebugProbeAt' : '``
@@ -449,7 +467,8 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'Content-Type' : 'text/plain'
 	}}
    ]
 }
