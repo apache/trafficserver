@@ -45,8 +45,8 @@ QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t se
   hkdf_label_len += 2;
 
   // label (prefix + Label) field
-  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%ctls13 %.*s", static_cast<int>(6 + label_len),
-                            static_cast<int>(label_len), label);
+  hkdf_label_len += snprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), sizeof(hkdf_label) - hkdf_label_len,
+                             "%ctls13 %.*s", static_cast<int>(6 + label_len), static_cast<int>(label_len), label);
 
   // context field
   // XXX: Assuming Context is zero-length character (indicated by "")
