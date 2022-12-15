@@ -109,7 +109,7 @@ Release Managers
 =======  =======  =========  ===========  =========
 Version  Primary  Secondary  1st Release  Supported
 =======  =======  =========  ===========  =========
-8.x      Bryan    Leif       8/2018         1/2022
+8.x      Evan     Leif       8/2018         1/2022
 9.x      Leif     Bryan      1/2020         1/2024
 10.x     TBD      TBD        1/2022         1/2026
 =======  =======  =========  ===========  =========
