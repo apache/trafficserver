@@ -547,6 +547,7 @@ Changes with Apache Traffic Server 9.2.0
   #9082 - Update doc max size reloadable/overridable flags
   #9090 - s3_auth: accept longer config lines
   #9097 - Add a proxy.config.http.per_server.connection.max test
+  #9098 - Add URLImpl::get_scheme
   #9102 - Move plugin_init for verify cmd
   #9103 - s3_auth: Fix parsing of virtual_host
   #9105 - Fix compile error with llvm-15
@@ -577,3 +578,4 @@ Changes with Apache Traffic Server 9.2.0
   #9236 - Remove out of bound SSL log
   #9237 - Revert "9.2: Fix s3_auth_config test output check (#9123)"
   #9244 - Add autest to reproduce the conditional get cache body drain issue
+  #9246 - Change Content-Type to text/plain if xdebug modifies response body
