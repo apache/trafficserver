@@ -1489,6 +1489,17 @@ typedef struct TSRPCHandlerOptions_s {
   } auth;
 } TSRPCHandlerOptions;
 
+/// Configuration field info related to a parsed YAML node.
+///
+/// This contains information about the parsed record field. This will be passed back to the @a TSYAMLRecNodeHandler
+/// when you call @a TSRecYAMLConfigParse. This class holds the record name as well as the YAML node in case the caller
+/// wants to use this information to manipulate the record.
+typedef struct TSYAMLCfgFieldData_s {
+  const char *field_name;  ///< YAML field name. null terminated
+  const char *record_name; ///< record name. null terminated
+  TSYaml value_node;       ///< YAML::Node pointer.
+} TSYAMLRecCfgFieldData;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

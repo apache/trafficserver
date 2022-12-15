@@ -73,12 +73,13 @@
 #include "records/I_RecordsConfig.h"
 #include "records/I_RecDefs.h"
 #include "records/I_RecCore.h"
+#include "records/RecYAMLDecoder.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
 
 #include "rpc/jsonrpc/JsonRPC.h"
-
+#include <swoc/bwf_base.h>
 #include "ts/ts.h"
 
 /****************************************************************
@@ -10313,4 +10314,30 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
   rpc::g_rpcHandlingCompletion.notify_one();
   Debug("rpc.api", ">> error  flagged.");
   return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
+{
+  swoc::Errata ret = ParseRecordsFromYAML(
+    *reinterpret_cast<YAML::Node *>(node),
+    [handler, data](const CfgNode &field, swoc::Errata &) -> void {
+      // Errors from the handler should be reported and handled by the handler.
+      // RecYAMLConfigFileParse will report any YAML parsing error.
+      TSYAMLRecCfgFieldData cfg;
+      auto const &field_str = field.node.as<std::string>();
+      cfg.field_name        = field_str.c_str();
+      cfg.record_name       = field.get_record_name().data();
+      cfg.value_node        = reinterpret_cast<TSYaml>(const_cast<YAML::Node *>(&field.value_node));
+      handler(&cfg, data);
+    },
+    true /* lock */);
+
+  // Drop API logs in case of an error.
+  if (!ret.empty()) {
+    std::string text;
+    Debug("plugin", "%s", swoc::bwprint(text, "{}", ret).c_str());
+  }
+
+  return ret.empty() ? TS_SUCCESS : TS_ERROR;
 }
