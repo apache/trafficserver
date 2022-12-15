@@ -76,7 +76,7 @@ TEST_CASE("MMH", "[libts][MMH]")
   for (int xx = 0; xx < TEST_COLLISIONS; xx++) {
     char xs[256];
     xf[xx] = ts::Random::drandom();
-    sprintf(xs, "http://@npdev/%16.14f/4000;?", xf[xx]);
+    snprintf(xs, sizeof(xs), "http://@npdev/%16.14f/4000;?", xf[xx]);
     ink_code_MMH((unsigned char *)xs, strlen(xs), (unsigned char *)&xxh[xx]);
   }
   qsort(xxh, TEST_COLLISIONS, 16, xxcompar);
