@@ -90,7 +90,11 @@ PluginDso::load(std::string &error)
       PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), _mtime);
 
       /* Now attempt to load the plugin DSO */
+#if defined(darwin)
+      if (!dlopen_preflight(_runtimePath.c_str()) || (_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
+#else
       if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
+#endif
 #if defined(freebsd) || defined(openbsd)
         char *err = (char *)dlerror();
 #else
