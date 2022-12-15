@@ -425,7 +425,7 @@ TEST_CASE("Encoding", "[qpack-encode]")
 
   while ((d = readdir(dir)) != nullptr) {
     char section_name[1024];
-    sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d", d->d_name, tablesize, streams, ackmode);
+    snprintf(section_name, sizeof(section_name), "%s: DTS=%d, MBS=%d, AM=%d", d->d_name, tablesize, streams, ackmode);
     SECTION(section_name)
     {
       qif_file[strlen(qifdir)]     = '/';
@@ -433,7 +433,8 @@ TEST_CASE("Encoding", "[qpack-encode]")
       ink_strlcat(qif_file, d->d_name, sizeof(qif_file));
       stat(qif_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, ".qif") == (d->d_name + (strlen(d->d_name) - 4))) {
-        sprintf(out_file + strlen(encdir), "/ats/%s.ats.%d.%d.%d", d->d_name, tablesize, streams, ackmode);
+        snprintf(out_file + strlen(encdir), sizeof(out_file) - strlen(encdir), "/ats/%s.ats.%d.%d.%d", d->d_name, tablesize,
+                 streams, ackmode);
         CHECK(test_encode(qif_file, out_file, tablesize, streams, ackmode) == 0);
       }
     }
@@ -443,7 +444,7 @@ TEST_CASE("Encoding", "[qpack-encode]")
 TEST_CASE("Decoding", "[qpack-decode]")
 {
   char app_dir[PATH_MAX + 1] = "";
-  sprintf(app_dir, "%s/%s", encdir, appname);
+  snprintf(app_dir, sizeof(app_dir), "%s/%s", encdir, appname);
   struct dirent *d;
   DIR *dir = opendir(app_dir);
 
@@ -460,13 +461,14 @@ TEST_CASE("Decoding", "[qpack-decode]")
 
   while ((d = readdir(dir)) != nullptr) {
     char section_name[1024];
-    sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d, APP=%s", d->d_name, tablesize, streams, ackmode, appname);
+    snprintf(section_name, sizeof(section_name), "%s: DTS=%d, MBS=%d, AM=%d, APP=%s", d->d_name, tablesize, streams, ackmode,
+             appname);
     SECTION(section_name)
     {
-      sprintf(enc_file + strlen(encdir), "/%s/%s", appname, d->d_name);
+      snprintf(enc_file + strlen(encdir), sizeof(enc_file) - strlen(encdir), "/%s/%s", appname, d->d_name);
       stat(enc_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
-        sprintf(out_file + strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
+        snprintf(out_file + strlen(decdir), sizeof(out_file) - strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
         CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
       }
     }
