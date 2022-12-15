@@ -162,7 +162,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   buf = (char *)TSmalloc(4096);
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
-  sprintf(buf, "You are forbidden from accessing \"%s\"\n", url_str);
+  snprintf(buf, 4096, "You are forbidden from accessing \"%s\"\n", url_str);
   TSfree(url_str);
   TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -179,7 +179,7 @@ read_denylist(TSCont contp)
   char denylist_file[1024];
   TSFile file;
 
-  sprintf(denylist_file, "%s/denylist.txt", TSPluginDirGet());
+  snprintf(denylist_file, 1024, "%s/denylist.txt", TSPluginDirGet());
   file   = TSfopen(denylist_file, "r");
   nsites = 0;
 
