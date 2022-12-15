@@ -344,7 +344,7 @@ public:
   void check_sni_host();
   SNIRoutingType get_tunnel_type() const;
 
-protected:
+private:
   int reentrancy_count = 0;
 
   HttpTunnel tunnel;
@@ -360,7 +360,7 @@ public:
 
   ProxyTransaction *ua_txn = nullptr;
 
-protected:
+private:
   IOBufferReader *ua_raw_buffer_reader = nullptr;
 
   HttpVCTableEntry *ua_entry     = nullptr;
@@ -573,7 +573,7 @@ public:
   //  do_api_callout_internal()
   bool hooks_set = false;
 
-protected:
+private:
   TSHttpHookID cur_hook_id = TS_HTTP_LAST_HOOK;
   APIHook const *cur_hook  = nullptr;
   HttpHookState hook_state;
