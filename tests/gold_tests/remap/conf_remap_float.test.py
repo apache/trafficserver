@@ -22,12 +22,16 @@ Test.testName = 'Float in conf_remap Config Test'
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.MakeConfigFile('conf_remap.config').AddLines([
-    'CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.500000'
-])
+ts.Disk.MakeConfigFile('conf_remap.yaml').update(
+    '''
+ts:
+  http:
+    background_fill_completed_threshold: !!float '0.5'
+'''
+)
 
 ts.Disk.remap_config.AddLine(
-    f"map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={Test.RunDirectory}/ts/config/conf_remap.config"
+    f"map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={Test.RunDirectory}/ts/config/conf_remap.yaml"
 )
 
 tr = Test.AddTestRun("traffic_ctl command")

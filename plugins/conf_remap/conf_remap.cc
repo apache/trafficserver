@@ -19,6 +19,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
+#include "tscpp/util/YamlCfg.h"
+#include <swoc/bwf_base.h>
 
 #include <cstdio>
 #include <cstring>
@@ -122,16 +124,99 @@ RemapConfigs::parse_inline(const char *arg)
   return true;
 }
 
-// Config file parser, somewhat borrowed from P_RecCore.i
+namespace
+{
+TSRecordDataType
+try_deduce_type(YAML::Node node)
+{
+  std::string_view tag = node.Tag();
+  if (tag == ts::Yaml::YAML_FLOAT_TAG_URI) {
+    return TS_RECORDDATATYPE_FLOAT;
+  } else if (tag == ts::Yaml::YAML_INT_TAG_URI) {
+    return TS_RECORDDATATYPE_INT;
+  } else if (tag == ts::Yaml::YAML_STR_TAG_URI) {
+    return TS_RECORDDATATYPE_STRING;
+  }
+  // we only care about string, int and float.
+  return TS_RECORDDATATYPE_NULL;
+}
+/// @brief Context class used to pass information to the TSYAMLRecNodeHandler as the data obj.
+struct Context {
+  RemapConfigs::Item *items;
+  int *current;
+};
+
+TSReturnCode
+scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
+{
+  TSOverridableConfigKey name;
+  TSRecordDataType expected_type;
+  std::string text;
+
+  auto &ctx        = *static_cast<Context *>(data);
+  YAML::Node value = *reinterpret_cast<YAML::Node *>(cfg->value_node);
+
+  if (TSHttpTxnConfigFind(cfg->record_name, strlen(cfg->record_name), &name, &expected_type) != TS_SUCCESS) {
+    TSError("[%s] '%s' is not a configuration variable or cannot be overridden", PLUGIN_NAME, cfg->record_name);
+    return TS_ERROR;
+  }
+
+  RemapConfigs::Item *item = &ctx.items[*ctx.current];
+
+  auto type = try_deduce_type(value);
+
+  // If we detected a type but it's different from the one registered with the in ATS, then we ignore it.
+  if (type != TS_RECORDDATATYPE_NULL && expected_type != type) {
+    TSError("%s", swoc::bwprint(text, "[{}] '{}' variable type mismatch, expected {}, got {}", PLUGIN_NAME, cfg->record_name,
+                                static_cast<int>(expected_type), static_cast<int>(type))
+                    .c_str());
+    return TS_ERROR; // Ignore the field
+  }
+
+  // We use the expected type. If no type set or the time did match, then it's
+  // safe to use the expected type.
+  try {
+    switch (expected_type) {
+    case TS_RECORDDATATYPE_INT:
+      item->_data.rec_int = value.as<int64_t>();
+      break;
+    case TS_RECORDDATATYPE_STRING: {
+      std::string str = value.as<std::string>();
+      if (str == "NULL") {
+        item->_data.rec_string = nullptr;
+        item->_data_len        = 0;
+      } else {
+        item->_data.rec_string = TSstrdup(str.c_str());
+        item->_data_len        = str.size();
+      }
+    } break;
+    case TS_RECORDDATATYPE_FLOAT:
+      item->_data.rec_float = value.as<float>();
+      break;
+    default:
+      TSError("[%s] field %s: type(%d) not support (unheard of)", PLUGIN_NAME, cfg->field_name, expected_type);
+      return TS_ERROR;
+
+      ;
+    }
+  } catch (YAML::BadConversion const &e) {
+    TSError("%s", swoc::bwprint(text, "[{}] We couldn't convert the passed field({}) value({}) to the expected type {}. {}",
+                                PLUGIN_NAME, cfg->field_name, value.as<std::string>(), static_cast<int>(expected_type), e.what())
+                    .c_str());
+    return TS_ERROR;
+  }
+
+  item->_name = name;
+  item->_type = expected_type;
+  ++*ctx.current;
+
+  return TS_SUCCESS;
+}
+} // namespace
+
 bool
 RemapConfigs::parse_file(const char *filename)
 {
-  int line_num = 0;
-  TSFile file;
-  char buf[8192];
-  TSOverridableConfigKey name;
-  TSRecordDataType type, expected_type;
-
   std::string path;
 
   if (!filename || ('\0' == *filename)) {
@@ -148,108 +233,27 @@ RemapConfigs::parse_file(const char *filename)
     path += filename;
   }
 
-  if (nullptr == (file = TSfopen(path.c_str(), "r"))) {
-    TSError("[%s] Could not open config file %s", PLUGIN_NAME, path.c_str());
+  TSDebug(PLUGIN_NAME, "loading configuration file %s", path.c_str());
+
+  YAML::Node root;
+  try {
+    root = YAML::LoadFile(path);
+
+  } catch (std::exception const &ex) {
+    std::string text;
+    TSError("[%s] We found an error while parsing '%s'.", PLUGIN_NAME, swoc::bwprint(text, "{}. {}", path, ex.what()).c_str());
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "loading configuration file %s", path.c_str());
+  Context ctx{&*_items, &_current}; // Context object will be passed on every callback so the handler can fill in
+                                    // the details.
+  auto ret = TSRecYAMLConfigParse(reinterpret_cast<TSYaml>(&root), scalar_node_handler, &ctx);
 
-  while (nullptr != TSfgets(file, buf, sizeof(buf))) {
-    char *ln, *tok;
-    char *s = buf;
-
-    ++line_num; // First line is #1 ...
-    while (isspace(*s)) {
-      ++s;
-    }
-    tok = strtok_r(s, " \t", &ln);
-
-    // check for blank lines and comments
-    if ((!tok) || (tok && ('#' == *tok))) {
-      continue;
-    }
-
-    if (strncmp(tok, "CONFIG", 6)) {
-      TSError("[%s] File %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
-      continue;
-    }
-
-    // Find the configuration name
-    tok = strtok_r(nullptr, " \t", &ln);
-    if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-      TSError("[%s] File %s, line %d: %s is not a configuration variable or cannot be overridden", PLUGIN_NAME, path.c_str(),
-              line_num, tok);
-      continue;
-    }
-
-    // Find the type (INT or STRING only)
-    tok = strtok_r(nullptr, " \t", &ln);
-    if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-      TSError("[%s] file %s, line %d: only INT, STRING, and FLOAT types supported", PLUGIN_NAME, path.c_str(), line_num);
-      continue;
-    }
-
-    if (type != expected_type) {
-      TSError("[%s] file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, path.c_str(), line_num);
-      continue;
-    }
-
-    // Find the value (which depends on the type above)
-    if (ln) {
-      while (isspace(*ln)) {
-        ++ln;
-      }
-      if ('\0' == *ln) {
-        tok = nullptr;
-      } else {
-        tok = ln;
-        while (*ln != '\0') {
-          ++ln;
-        }
-        --ln;
-        while (isspace(*ln) && (ln > tok)) {
-          --ln;
-        }
-        ++ln;
-        *ln = '\0';
-      }
-    } else {
-      tok = nullptr;
-    }
-    if (!tok) {
-      TSError("[%s] file %s, line %d: the configuration must provide a value", PLUGIN_NAME, path.c_str(), line_num);
-      continue;
-    }
-
-    // Now store the new config
-    switch (type) {
-    case TS_RECORDDATATYPE_INT:
-      _items[_current]._data.rec_int = strtoll(tok, nullptr, 10);
-      break;
-    case TS_RECORDDATATYPE_STRING:
-      if (strcmp(tok, "NULL") == 0) {
-        _items[_current]._data.rec_string = nullptr;
-        _items[_current]._data_len        = 0;
-      } else {
-        _items[_current]._data.rec_string = TSstrdup(tok);
-        _items[_current]._data_len        = strlen(tok);
-      }
-      break;
-    case TS_RECORDDATATYPE_FLOAT:
-      _items[_current]._data.rec_float = strtof(tok, nullptr);
-      break;
-    default:
-      TSError("[%s] file %s, line %d: type not support (unheard of)", PLUGIN_NAME, path.c_str(), line_num);
-      continue;
-      break;
-    }
-    _items[_current]._name = name;
-    _items[_current]._type = type;
-    ++_current;
+  if (ret != TS_SUCCESS) {
+    TSError("[%s] We found an error while parsing '%s'.", PLUGIN_NAME, path.c_str());
+    return false;
   }
 
-  TSfclose(file);
   return (_current > 0);
 }
 
@@ -327,7 +331,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
   if (nullptr != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
     TSHttpTxn txnp     = static_cast<TSHttpTxn>(rh);
-
     for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {
       case TS_RECORDDATATYPE_INT:
