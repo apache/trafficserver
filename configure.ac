@@ -1886,11 +1886,6 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # We should only build traffic_top if we have curses
 AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
 
-AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
-AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
-AC_SUBST(has_mysql)
-AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
-
 AC_CHECK_HEADERS([kclangc.h], [
   AC_CHECK_LIB([kyotocabinet], [kcdbopen], [
     AC_SUBST([LIB_KYOTOCABINET], ["-lkyotocabinet"])
