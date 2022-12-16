@@ -192,6 +192,7 @@ cccs  Proxy Cache    Cache collapsed connection success;
 Connections and Transactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _sta:
 .. _sca:
 .. _sstc:
 .. _ccid:
@@ -205,6 +206,8 @@ transactions between |TS| proxies and origin servers.
 ===== ============== ==================================================================
 Field Source         Description
 ===== ============== ==================================================================
+purc  Proxy          Parent unavailable retry count within the current transaction by |TS|
+psrc  Proxy          Parent simple server retry count within the current transaction by |TS|
 sca   Proxy          Number of attempts within the current transaction by |TS|
                      in connecting to the origin server.
 sstc  Proxy          Number of transactions between the |TS| proxy and the origin

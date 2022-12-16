@@ -195,18 +195,20 @@ public:
   //
   // server -> proxy fields
   //
-  int marshal_server_host_ip(char *);                // INT
-  int marshal_server_host_name(char *);              // STR
-  int marshal_server_resp_status_code(char *);       // INT
-  int marshal_server_resp_squid_len(char *);         // INT
-  int marshal_server_resp_content_len(char *);       // INT
-  int marshal_server_resp_header_len(char *);        // INT
-  int marshal_server_resp_http_version(char *);      // INT
-  int marshal_server_resp_time_ms(char *);           // INT
-  int marshal_server_resp_time_s(char *);            // INT
-  int marshal_server_transact_count(char *);         // INT
-  int marshal_server_connect_attempts(char *);       // INT
-  int marshal_server_resp_all_header_fields(char *); // STR
+  int marshal_server_host_ip(char *);                 // INT
+  int marshal_server_host_name(char *);               // STR
+  int marshal_server_resp_status_code(char *);        // INT
+  int marshal_server_resp_squid_len(char *);          // INT
+  int marshal_server_resp_content_len(char *);        // INT
+  int marshal_server_resp_header_len(char *);         // INT
+  int marshal_server_resp_http_version(char *);       // INT
+  int marshal_server_resp_time_ms(char *);            // INT
+  int marshal_server_resp_time_s(char *);             // INT
+  int marshal_server_transact_count(char *);          // INT
+  int marshal_parent_simple_retry_count(char *);      // INT
+  int marshal_parent_unavailable_retry_count(char *); // INT
+  int marshal_server_connect_attempts(char *);        // INT
+  int marshal_server_resp_all_header_fields(char *);  // STR
 
   //
   // cache -> client fields

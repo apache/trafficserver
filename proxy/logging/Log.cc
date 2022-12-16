@@ -831,6 +831,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sstc", field);
 
+  field = new LogField("parent_unavailable_retry_count", "purc", LogField::sINT, &LogAccess::marshal_parent_unavailable_retry_count,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("purc", field);
+
+  field = new LogField("parent_simple_retry_count", "psrc", LogField::sINT, &LogAccess::marshal_parent_simple_retry_count,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("psrc", field);
+
   field = new LogField("server_connect_attempts", "sca", LogField::sINT, &LogAccess::marshal_server_connect_attempts,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
