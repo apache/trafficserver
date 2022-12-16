@@ -917,7 +917,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   LogAccess::unmarshal_http_text
 
   The http text is simply the fields http_method (cqhm) + url (pqu) +
-  http_version (cqhv), all right next to each other, in that order.
+  http_version (cqhv, which was removed on 10.0.0), all right next to each other, in that order.
   -------------------------------------------------------------------------*/
 
 int

@@ -558,7 +558,6 @@ cqint Client Request   If a request was generated internally (via a plugin), the
 Protocols and Versions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. _cqhv:
 .. _cqpv:
 .. _csshv:
 .. _sshv:
@@ -569,8 +568,6 @@ were in effect for a given event.
 ===== ===================== ===================================================
 Field Source                Description
 ===== ===================== ===================================================
-cqhv  Client Request        Client request HTTP version. Deprecated since 9.0.
-                            Use ``cqpv`` instead.
 cqpv  Client Request        Client request protocol and version.
 sqpv  Proxy Request         Origin negotiated protocol and version
 csshv Cached Proxy Response Origin server's HTTP version from cached version of

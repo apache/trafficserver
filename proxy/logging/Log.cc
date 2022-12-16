@@ -454,11 +454,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqup", field);
 
-  field = new LogField("client_req_http_version", "cqhv", LogField::dINT, &LogAccess::marshal_client_req_http_version,
-                       &LogAccess::unmarshal_http_version);
-  global_field_list.add(field, false);
-  field_symbol_hash.emplace("cqhv", field);
-
   field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
