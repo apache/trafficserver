@@ -230,7 +230,7 @@ main(int argc, char *argv[])
            sizeof(post_buf));
   int i;
   for (i = 0; i < header_count; i++) {
-    sprintf(req_buf + strlen(req_buf), "header%d:%d\r\n", i, i);
+    snprintf(req_buf + strlen(req_buf), sizeof(req_buf) - strlen(req_buf), "header%d:%d\r\n", i, i);
   }
   strcat(req_buf, "\r\n");
   memset(post_buf, '0', sizeof(post_buf));

@@ -125,7 +125,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   EVP_MD_CTX_destroy(ctx);
 #endif
   for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
-    sprintf(&hash[i * 2], "%02x", md[i]);
+    snprintf(&hash[i * 2], sizeof(hash) - (i * 2), "%02x", md[i]);
   }
   time(&t);
   e = (NULL == expire ? 0 : strtol(expire, NULL, 16));

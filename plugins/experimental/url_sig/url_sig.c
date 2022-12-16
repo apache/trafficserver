@@ -825,7 +825,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   for (i = 0; i < sig_len; i++) {
-    sprintf(&(sig_string[i * 2]), "%02x", sig[i]);
+    snprintf(&(sig_string[i * 2]), sizeof(sig_string) - (i * 2), "%02x", sig[i]);
   }
 
   TSDebug(PLUGIN_NAME, "Expected signature: %s", sig_string);
