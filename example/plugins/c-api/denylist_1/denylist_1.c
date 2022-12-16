@@ -179,7 +179,7 @@ read_denylist(TSCont contp)
   char denylist_file[1024];
   TSFile file;
 
-  snprintf(denylist_file, 1024, "%s/denylist.txt", TSPluginDirGet());
+  snprintf(denylist_file, sizeof(denylist_file), "%s/denylist.txt", TSPluginDirGet());
   file   = TSfopen(denylist_file, "r");
   nsites = 0;
 
