@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "I_EventSystem.h"
 
 class NetHandler;
@@ -71,13 +73,34 @@ public:
   int error      = 0;
   NetHandler *nh = nullptr;
 
-  ink_hrtime inactivity_timeout_in      = 0;
-  ink_hrtime active_timeout_in          = 0;
-  ink_hrtime next_inactivity_timeout_at = 0;
-  ink_hrtime next_activity_timeout_at   = 0;
-  ink_hrtime submit_time                = 0;
+  /** The explicitly set inactivity timeout duration in seconds.
+   *
+   * 0 means no timeout.
+   */
+  ink_hrtime inactivity_timeout_in = 0;
 
-  bool default_inactivity_timeout = false;
+  /** The fallback inactivity timeout which is applied if no other timeouts are
+   * set. That is, this timeout is used if inactivity_timeout_in is 0.
+   *
+   * A value of 0 means no timeout. A value of -1 means that no default timeout
+   * has been set yet. This is initialized to -1 instead of 0 so that the
+   * inactivity cop can distinguish between no value having been set and a
+   * value of 0 having been set by some override plugin.
+   */
+  std::atomic<ink_hrtime> default_inactivity_timeout_in = -1;
+
+  /** The active timeout duration in seconds. */
+  ink_hrtime active_timeout_in = 0;
+
+  /** The time of the next inactivity timeout. */
+  ink_hrtime next_inactivity_timeout_at = 0;
+
+  /** The time of the next activity timeout. */
+  ink_hrtime next_activity_timeout_at = 0;
+  ink_hrtime submit_time              = 0;
+
+  /** Whether the current timeout is a default inactivity timeout. */
+  bool use_default_inactivity_timeout = false;
 
   LINK(NetEvent, open_link);
   LINK(NetEvent, cop_link);
