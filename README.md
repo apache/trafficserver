@@ -7,8 +7,7 @@
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_36%2F&label=Fedora%2036)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_36/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Ffreebsd%2F&label=FreeBSD)](https://ci.trafficserver.apache.org/job/master/job/freebsd/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx%2F&label=macOS)](https://ci.trafficserver.apache.org/job/master/job/osx/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx-m1%2F&label=macOS%20arm64)]
-(https://ci.trafficserver.apache.org/job/master/job/osx-m1/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx-m1%2F&label=macOS%20arm64)](https://ci.trafficserver.apache.org/job/master/job/osx-m1/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-rockylinux_8%2F&label=Rocky%20Linux%208)](https://ci.trafficserver.apache.org/job/master/job/os-rockylinux_8/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_20.04%2F&label=Ubuntu%2020.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_20.04/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_21.04%2F&label=Ubuntu%2021.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_21.04/)
