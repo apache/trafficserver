@@ -4614,16 +4614,16 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //  the order of the fields
     MIMEField *resp_via = s->hdr_info.server_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
     if (resp_via) {
-      int saved_our_via_len = 0;
-      char saved_our_via[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
+      int saved_via_len = 0;
+      ts::LocalBufferWriter<HTTP_OUR_VIA_MAX_LENGTH> saved_via_w;
       MIMEField *our_via;
       our_via = s->hdr_info.client_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
       if (our_via == nullptr) {
         our_via = s->hdr_info.client_response.field_create(MIME_FIELD_VIA, MIME_LEN_VIA);
         s->hdr_info.client_response.field_attach(our_via);
       } else {
-        const char *src = our_via->value_get(&saved_our_via_len);
-        memcpy(saved_our_via, src, saved_our_via_len);
+        const char *src = our_via->value_get(&saved_via_len);
+        saved_via_w.write(src, saved_via_len);
         s->hdr_info.client_response.field_value_set(our_via, "", 0, true);
       }
       // HDR FIX ME - Multiple appends are VERY slow
@@ -4633,8 +4633,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->hdr_info.client_response.field_value_append(our_via, cfield, clen, true);
         resp_via = resp_via->m_next_dup;
       }
-      if (saved_our_via_len) {
-        s->hdr_info.client_response.field_value_append(our_via, saved_our_via, saved_our_via_len, true);
+      if (saved_via_w.size()) {
+        s->hdr_info.client_response.field_value_append(our_via, saved_via_w.data(), saved_via_w.size(), true);
       }
     }
     // a warning text is added only in the case of a NOT MODIFIED response
