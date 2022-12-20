@@ -168,7 +168,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Money Trace <money_trace.en>
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
-   MySQL Remap <mysql_remap.en>
    OpenTelemetry Tracer <otel_tracer.en>
    Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
@@ -233,9 +232,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    are beacons or other metric gathering requests, to report to multiple upstreams. Alternatively
    this can be used to do A/B testing by sending a duplicated slice of inbound production traffic to
    experimental upstreams.
-
-:doc:`MySQL Remap <mysql_remap.en>`
-   Allows dynamic remaps from a MySQL database.
 
 :doc:`OpenTelemetry Tracer <otel_tracer.en>`
    Allows Trafficserver to participate in OpenTelemetry distributed tracing system

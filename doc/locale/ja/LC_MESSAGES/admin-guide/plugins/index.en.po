@@ -280,14 +280,6 @@ msgstr ""
 msgid "MP4 streaming media."
 msgstr ""
 
-#: ../../../admin-guide/plugins/index.en.rst:177
-msgid ":doc:`MySQL Remap <mysql_remap.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:177
-msgid "Allows dynamic remaps from a MySQL database."
-msgstr ""
-
 #: ../../../admin-guide/plugins/index.en.rst:180
 msgid ":doc:`Regex Revalidate <regex_revalidate.en>`"
 msgstr ""

@@ -129,10 +129,6 @@ include experimental/webp_transform/Makefile.inc
 include experimental/magick/Makefile.inc
 endif
 
-if HAS_MYSQL
-include experimental/mysql_remap/Makefile.inc
-endif
-
 endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(top_srcdir)/plugins/suppression.txt
