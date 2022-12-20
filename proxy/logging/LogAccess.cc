@@ -916,8 +916,8 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_http_text
 
-  The http text is simply the fields http_method (cqhm) + url (pqu) +
-  http_version (cqhv), all right next to each other, in that order.
+  The http text is a reproduced HTTP/1.x request line. It's HTTP method (cqhm) + URL (pqu) + HTTP version.
+  This doesn't support HTTP/2 and HTTP/3 since those don't have a request line.
   -------------------------------------------------------------------------*/
 
 int

@@ -988,11 +988,6 @@ msgstr ""
 "他のものです。( ``cqtx`` のサブセット )"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:403
-#, fuzzy
-msgid "``cqhv``"
-msgstr "``cqhl``"
-
-#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:403
 msgid "The client request HTTP version."
 msgstr "クライアントリクエストの HTTP バージョン。"
 
@@ -2462,9 +2457,6 @@ msgstr "クライアントが接続したが、その後リクエストを送る
 
 #~ msgid "chp"
 #~ msgstr "chp"
-
-#~ msgid "cqhv"
-#~ msgstr "cqhv"
 
 #~ msgid "cqpv"
 #~ msgstr "cqpv"
