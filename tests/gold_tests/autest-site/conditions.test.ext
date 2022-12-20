@@ -130,6 +130,7 @@ def PluginExists(self, pluginname):
 
 
 ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(HasProxyVerifierVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
 ExtendCondition(HasATSFeature)
