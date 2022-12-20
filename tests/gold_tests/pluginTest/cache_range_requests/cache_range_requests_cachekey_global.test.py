@@ -152,7 +152,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.plugin_config.AddLines([
     'cachekey.so --include-headers=Range --static-prefix=foo',
     'cache_range_requests.so --no-modify-cachekey',
-    'xdebug.so',
+    'xdebug.so --enable=x-cache,x-cache-key,x-parentselection-key',
 ])
 
 # minimal configuration

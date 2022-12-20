@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <cinttypes>
 #include <string_view>
+#include <algorithm>
 #include <unistd.h>
 
 #include <ts/ts.h>
@@ -84,6 +85,46 @@ enum {
   XHEADER_X_PSELECT_KEY    = 1u << 10,
   XHEADER_X_CACHE_INFO     = 1u << 11,
   XHEADER_X_EFFECTIVE_URL  = 1u << 12,
+  XHEADER_VIA              = 1u << 13,
+  XHEADER_DIAGS            = 1u << 14,
+  XHEADER_ALL              = UINT_MAX
+};
+
+static unsigned int allowedHeaders = 0;
+
+constexpr std::string_view HEADER_NAME_X_CACHE_KEY      = "x-cache-key";
+constexpr std::string_view HEADER_NAME_X_MILESTONES     = "x-milestones";
+constexpr std::string_view HEADER_NAME_X_CACHE          = "x-cache";
+constexpr std::string_view HEADER_NAME_X_GENERATION     = "x-cache-generation";
+constexpr std::string_view HEADER_NAME_X_TRANSACTION_ID = "x-transaction-id";
+constexpr std::string_view HEADER_NAME_X_DUMP_HEADERS   = "x-dump-headers";
+constexpr std::string_view HEADER_NAME_X_REMAP          = "x-remap";
+constexpr std::string_view HEADER_NAME_X_PROBE_HEADERS  = "probe";
+constexpr std::string_view HEADER_NAME_X_PSELECT_KEY    = "x-parentselection-key";
+constexpr std::string_view HEADER_NAME_X_CACHE_INFO     = "x-cache-info";
+constexpr std::string_view HEADER_NAME_X_EFFECTIVE_URL  = "x-effective-url";
+constexpr std::string_view HEADER_NAME_VIA              = "via";
+constexpr std::string_view HEADER_NAME_DIAGS            = "diags";
+constexpr std::string_view HEADER_NAME_ALL              = "all";
+
+constexpr struct XHeader {
+  std::string_view name;
+  unsigned int flag;
+} header_flags[] = {
+  {HEADER_NAME_X_CACHE_KEY, XHEADER_X_CACHE_KEY},
+  {HEADER_NAME_X_MILESTONES, XHEADER_X_MILESTONES},
+  {HEADER_NAME_X_CACHE, XHEADER_X_CACHE},
+  {HEADER_NAME_X_GENERATION, XHEADER_X_GENERATION},
+  {HEADER_NAME_X_TRANSACTION_ID, XHEADER_X_TRANSACTION_ID},
+  {HEADER_NAME_X_DUMP_HEADERS, XHEADER_X_DUMP_HEADERS},
+  {HEADER_NAME_X_REMAP, XHEADER_X_REMAP},
+  {HEADER_NAME_X_PROBE_HEADERS, XHEADER_X_PROBE_HEADERS},
+  {HEADER_NAME_X_PSELECT_KEY, XHEADER_X_PSELECT_KEY},
+  {HEADER_NAME_X_CACHE_INFO, XHEADER_X_CACHE_INFO},
+  {HEADER_NAME_X_EFFECTIVE_URL, XHEADER_X_EFFECTIVE_URL},
+  {HEADER_NAME_VIA, XHEADER_VIA},
+  {HEADER_NAME_DIAGS, XHEADER_DIAGS},
+  {HEADER_NAME_ALL, XHEADER_ALL},
 };
 
 static TSCont XInjectHeadersCont  = nullptr;
@@ -623,30 +664,30 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         continue;
       }
 
-#define header_field_eq(name, vptr, vlen) (((int)lengthof(name) == vlen) && (strncasecmp(name, vptr, vlen) == 0))
+#define header_field_eq(name, vptr, vlen) (((int)name.size() == vlen) && (strncasecmp(name.data(), vptr, vlen) == 0))
 
-      if (header_field_eq("x-cache-key", value, vsize)) {
-        xheaders |= XHEADER_X_CACHE_KEY;
-      } else if (header_field_eq("x-cache-info", value, vsize)) {
-        xheaders |= XHEADER_X_CACHE_INFO;
-      } else if (header_field_eq("x-milestones", value, vsize)) {
-        xheaders |= XHEADER_X_MILESTONES;
-      } else if (header_field_eq("x-cache", value, vsize)) {
-        xheaders |= XHEADER_X_CACHE;
-      } else if (header_field_eq("x-cache-generation", value, vsize)) {
-        xheaders |= XHEADER_X_GENERATION;
-      } else if (header_field_eq("x-transaction-id", value, vsize)) {
-        xheaders |= XHEADER_X_TRANSACTION_ID;
-      } else if (header_field_eq("x-remap", value, vsize)) {
-        xheaders |= XHEADER_X_REMAP;
-      } else if (header_field_eq("via", value, vsize)) {
+      if (header_field_eq(HEADER_NAME_X_CACHE_KEY, value, vsize)) {
+        xheaders |= XHEADER_X_CACHE_KEY & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_CACHE_INFO, value, vsize)) {
+        xheaders |= XHEADER_X_CACHE_INFO & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_MILESTONES, value, vsize)) {
+        xheaders |= XHEADER_X_MILESTONES & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_CACHE, value, vsize)) {
+        xheaders |= XHEADER_X_CACHE & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_GENERATION, value, vsize)) {
+        xheaders |= XHEADER_X_GENERATION & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_TRANSACTION_ID, value, vsize)) {
+        xheaders |= XHEADER_X_TRANSACTION_ID & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_X_REMAP, value, vsize)) {
+        xheaders |= XHEADER_X_REMAP & allowedHeaders;
+      } else if (header_field_eq(HEADER_NAME_VIA, value, vsize) && (XHEADER_VIA & allowedHeaders)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
-      } else if (header_field_eq("diags", value, vsize)) {
+      } else if (header_field_eq(HEADER_NAME_DIAGS, value, vsize) && (XHEADER_DIAGS & allowedHeaders)) {
         // Enable diagnostics for DebugTxn()'s only
         TSHttpTxnCntlSet(txn, TS_HTTP_CNTL_TXN_DEBUG, true);
 
-      } else if (header_field_eq("probe", value, vsize)) {
+      } else if (header_field_eq(HEADER_NAME_X_PROBE_HEADERS, value, vsize) && (XHEADER_X_PROBE_HEADERS & allowedHeaders)) {
         xheaders |= XHEADER_X_PROBE_HEADERS;
 
         auto &auxData = AuxDataMgr::data(txn);
@@ -667,8 +708,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         TSHttpTxnTransformedRespCache(txn, 0);
         TSHttpTxnUntransformedRespCache(txn, 0);
 
-      } else if (header_field_eq("x-parentselection-key", value, vsize)) {
-        xheaders |= XHEADER_X_PSELECT_KEY;
+      } else if (header_field_eq(HEADER_NAME_X_PSELECT_KEY, value, vsize)) {
+        xheaders |= XHEADER_X_PSELECT_KEY & allowedHeaders;
 
       } else if (isFwdFieldValue(std::string_view(value, vsize), fwdCnt)) {
         if (fwdCnt > 0) {
@@ -677,8 +718,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
           snprintf(newVal, sizeof(newVal), "fwd=%" PRIiMAX, fwdCnt - 1);
           TSMimeHdrFieldValueStringSet(buffer, hdr, field, i, newVal, std::strlen(newVal));
         }
-      } else if (header_field_eq("x-effective-url", value, vsize)) {
-        xheaders |= XHEADER_X_EFFECTIVE_URL;
+      } else if (header_field_eq(HEADER_NAME_X_EFFECTIVE_URL, value, vsize)) {
+        xheaders |= XHEADER_X_EFFECTIVE_URL & allowedHeaders;
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
@@ -744,10 +785,32 @@ XDeleteDebugHdr(TSCont /* contp */, TSEvent event, void *edata)
   return TS_EVENT_NONE;
 }
 
+static void
+updateAllowedHeaders(const char *optarg)
+{
+  char *list;
+  char *token;
+  char *last;
+
+  list = TSstrdup(optarg);
+  std::transform(list, list + strlen(list), list, ::tolower);
+  for (token = strtok_r(list, ",", &last); token; token = strtok_r(nullptr, ",", &last)) {
+    const auto ite = std::find_if(std::begin(header_flags), std::end(header_flags),
+                                  [token](const struct XHeader &x) { return x.name.compare(token) == 0; });
+    if (ite != std::end(header_flags)) {
+      allowedHeaders |= ite->flag;
+    } else {
+      TSError("[xdebug] Unknown header name: %s", token);
+    }
+  }
+  TSfree(list);
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
   static const struct option longopt[] = {{const_cast<char *>("header"), required_argument, nullptr, 'h'},
+                                          {const_cast<char *>("enable"), required_argument, nullptr, 'e'},
                                           {nullptr, no_argument, nullptr, '\0'}};
   TSPluginRegistrationInfo info;
 
@@ -767,11 +830,18 @@ TSPluginInit(int argc, const char *argv[])
     case 'h':
       xDebugHeader.str = TSstrdup(optarg);
       break;
+    case 'e':
+      updateAllowedHeaders(optarg);
+      break;
     }
 
     if (opt == -1) {
       break;
     }
+  }
+
+  if (allowedHeaders == 0) {
+    TSError("[xdebug] No features are enabled");
   }
 
   if (nullptr == xDebugHeader.str) {
