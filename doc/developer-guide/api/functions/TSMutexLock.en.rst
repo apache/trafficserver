@@ -32,3 +32,6 @@ Synopsis
 
 Description
 ===========
+
+Locks the mutex (recursively).  Should only be called from a continuation
+handler function or a :type:`TSThread` function.

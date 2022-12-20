@@ -35,7 +35,7 @@ Copyright (C) 2013 GoDaddy Operating Company, LLC
 
 ~~~
 
-lib/cppapi developed by LinkedIn
+include/tscpp/api, src/tscpp/api developed by LinkedIn
 Copyright (c) 2013 LinkedIn
 
 ~~~
