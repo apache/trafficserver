@@ -39,6 +39,7 @@
 #include <ts/remap.h>
 
 using std::strlen;
+using std::string_view;
 
 struct AuthRequestContext;
 
@@ -55,10 +56,12 @@ static TSCont AuthOsDnsContinuation;
 
 struct AuthOptions {
   std::string hostname;
+  std::string forward_header_prefix;
   int hostport                   = -1;
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
   bool cache_internal_requests   = false;
+  string_view forwardHeaderPrefix;
 
   AuthOptions()  = default;
   ~AuthOptions() = default;
@@ -622,6 +625,38 @@ StateAuthorized(AuthRequestContext *auth, void *)
     TSHttpTxnConfigIntSet(auth->txn, TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, 1);
   }
 
+  if (!options->forward_header_prefix.empty()) {
+    // Copy headers with configured prefix in the authentication response to the original request
+    TSMLoc field_loc;
+    TSMLoc next_field_loc;
+    TSMBuffer request_bufp;
+    TSMLoc request_hdr;
+
+    TSReleaseAssert(TSHttpTxnClientReqGet(auth->txn, &request_bufp, &request_hdr) == TS_SUCCESS);
+    field_loc = TSMimeHdrFieldGet(auth->rheader.buffer, auth->rheader.header, 0);
+    TSReleaseAssert(field_loc != TS_NULL_MLOC);
+
+    while (field_loc) {
+      int key_len = 0;
+      int val_len = 0;
+
+      char *key = const_cast<char *>(TSMimeHdrFieldNameGet(auth->rheader.buffer, auth->rheader.header, field_loc, &key_len));
+      char *val =
+        const_cast<char *>(TSMimeHdrFieldValueStringGet(auth->rheader.buffer, auth->rheader.header, field_loc, -1, &val_len));
+
+      if (key && val && ContainsPrefix(string_view(key, key_len), options->forward_header_prefix)) {
+        // Append the matched header key/val to the original request
+        HttpSetMimeHeader(request_bufp, request_hdr, string_view(key, key_len), string_view(val, val_len));
+      }
+
+      // Validate the next header field
+      next_field_loc = TSMimeHdrFieldNext(auth->rheader.buffer, auth->rheader.header, field_loc);
+      TSHandleMLocRelease(auth->rheader.buffer, auth->rheader.header, field_loc);
+      field_loc = next_field_loc;
+    }
+  }
+
+  // Proceed with the modified request
   TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
   return TS_EVENT_CONTINUE;
 }
@@ -693,6 +728,7 @@ AuthParseOptions(int argc, const char **argv)
     {const_cast<char *>("auth-transform"), required_argument, nullptr, 't'},
     {const_cast<char *>("force-cacheability"), no_argument, nullptr, 'c'},
     {const_cast<char *>("cache-internal"), no_argument, nullptr, 'i'},
+    {const_cast<char *>("forward-header-prefix"), required_argument, nullptr, 'f'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -716,6 +752,9 @@ AuthParseOptions(int argc, const char **argv)
       break;
     case 'i':
       options->cache_internal_requests = true;
+      break;
+    case 'f':
+      options->forward_header_prefix = optarg;
       break;
     case 't':
       if (strcasecmp(optarg, "redirect") == 0) {

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
 #include <ts/ts.h>
 #include <netinet/in.h>
 #include <memory>
@@ -102,8 +104,15 @@ unsigned HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr);
 // Set the value of an arbitrary HTTP header.
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *value);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value);
+void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name, const std::string_view value);
 
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
+// Check if the string contains the prefix
+inline bool
+ContainsPrefix(const std::string_view str, const std::string &prefix)
+{
+  return str.size() < prefix.size() ? false : (strncmp(str.data(), prefix.data(), prefix.size()) == 0);
+}
 // vim: set ts=4 sw=4 et :
