@@ -26,6 +26,7 @@
 #include <bitset>
 
 #include <tscpp/util/PostScript.h>
+#include <tscpp/api/Cleanup.h>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -40,9 +41,11 @@ namespace
 {
 char PIName[] = PINAME;
 
-auto dbg_ctl = TSDbgCtlCreate(PIName);
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
+TSDbgCtl const * const dbg_ctl{dbg_ctl_guard.get()};
 
-auto off_dbg_ctl = TSDbgCtlCreate("yada-yada-yada");
+atscppapi::TSDbgCtlUniqPtr off_dbg_ctl_guard{TSDbgCtlCreate("yada-yada-yada")};
+TSDbgCtl const * const off_dbg_ctl{off_dbg_ctl_guard.get()};
 
 // NOTE:  It's important to flush this after writing so that a gold test using this plugin can examine the log before TS
 // terminates.

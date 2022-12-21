@@ -31,6 +31,7 @@
 #include <tscpp/api/Cleanup.h>
 
 using atscppapi::TSContUniqPtr;
+using atscppapi::TSDbgCtlUniqPtr;
 
 /*
 Plugin for testing TSVConnFdCreate().
@@ -427,7 +428,8 @@ Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
   return 0;
 }
 
-auto dbg_ctl{TSDbgCtlCreate(PIName)};
+TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
+TSDbgCtl const * const dbg_ctl{dbg_ctl_guard.get()};
 
 // Delete file whose path is specified in the constructor when the instance is destroyed.
 //
