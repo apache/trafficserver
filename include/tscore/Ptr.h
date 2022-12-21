@@ -23,8 +23,7 @@
 
 #pragma once
 
-#include "tscore/ink_atomic.h"
-
+#include <atomic>
 #include <cstddef>
 
 ////////////////////////////////////////////////////////////////////
@@ -47,32 +46,23 @@ class RefCountObj : public ForceVFPTToTop
 {
 public:
   RefCountObj() {}
-  RefCountObj(const RefCountObj &s)
-  {
-    (void)s;
-    return;
-  }
-
+  RefCountObj(const RefCountObj &) = delete;
   ~RefCountObj() override {}
-  RefCountObj &
-  operator=(const RefCountObj &s)
-  {
-    (void)s;
-    return (*this);
-  }
+
+  RefCountObj &operator=(const RefCountObj &) = delete;
 
   // Increment the reference count, returning the new count.
   int
   refcount_inc()
   {
-    return ink_atomic_increment((int *)&m_refcount, 1) + 1;
+    return ++m_refcount;
   }
 
   // Decrement the reference count, returning the new count.
   int
   refcount_dec()
   {
-    return ink_atomic_increment((int *)&m_refcount, -1) - 1;
+    return --m_refcount;
   }
 
   int
@@ -88,7 +78,7 @@ public:
   }
 
 private:
-  int m_refcount = 0;
+  std::atomic<int> m_refcount = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////

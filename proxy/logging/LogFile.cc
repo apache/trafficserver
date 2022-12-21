@@ -93,27 +93,6 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   This (copy) constructor builds a LogFile object from another LogFile object.
   -------------------------------------------------------------------------*/
 
-LogFile::LogFile(const LogFile &copy)
-  : RefCountObj(copy),
-    m_file_format(copy.m_file_format),
-    m_name(ats_strdup(copy.m_name)),
-    m_header(ats_strdup(copy.m_header)),
-    m_signature(copy.m_signature),
-    m_ascii_buffer_size(copy.m_ascii_buffer_size),
-    m_max_line_size(copy.m_max_line_size),
-    m_pipe_buffer_size(copy.m_pipe_buffer_size),
-    m_fd(copy.m_fd)
-{
-  ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
-
-  if (copy.m_log) {
-    m_log = new BaseLogFile(*(copy.m_log));
-  } else {
-    m_log = nullptr;
-  }
-
-  Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p", m_name, this);
-}
 /*-------------------------------------------------------------------------
   LogFile::~LogFile
   -------------------------------------------------------------------------*/
