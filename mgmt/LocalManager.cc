@@ -559,7 +559,20 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     ats_free_null(parent);
     ats_free_null(child);
   } break;
-
+  case MGMT_SIGNAL_CONFIG_FILE_CHILD_NO_PERIODIC_TRACK: {
+    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING};
+    char *parent                           = nullptr;
+    char *child                            = nullptr;
+    if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child) != -1) {
+      configFiles->configFileChild(parent, child, false);
+    } else {
+      mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
+               "MGMT_SIGNAL_CONFIG_FILE_CHILD_NO_PERIODIC_TRACK mgmt_message_parse error\n");
+    }
+    // Output pointers are guaranteed to be NULL or valid.
+    ats_free_null(parent);
+    ats_free_null(child);
+  } break;
   default:
     break;
   }

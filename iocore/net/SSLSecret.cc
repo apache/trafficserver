@@ -66,7 +66,7 @@ SSLSecret::loadFile(const std::string &name, std::string &data_item)
     return false;
   }
   if (SSLConfigParams::load_ssl_file_cb) {
-    SSLConfigParams::load_ssl_file_cb(name.c_str());
+    SSLConfigParams::load_ssl_file_cb(name.c_str(), true);
   }
   return true;
 }

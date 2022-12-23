@@ -103,11 +103,11 @@ FileManager::addFile(const char *fileName, const char *configName, bool root_acc
 // caller must hold the lock
 void
 FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
-                           ConfigManager *parentConfig)
+                           ConfigManager *parentConfig, bool trackPeriodic)
 {
   ink_assert(fileName != nullptr);
 
-  ConfigManager *rb = new ConfigManager(fileName, configName, root_access_needed, isRequired, parentConfig);
+  ConfigManager *rb = new ConfigManager(fileName, configName, root_access_needed, isRequired, parentConfig, trackPeriodic);
   rb->configFiles   = this;
 
   bindings.emplace(rb->getFileName(), rb);
@@ -253,13 +253,13 @@ FileManager::isConfigStale()
 //
 // Add child to the bindings with parentConfig
 void
-FileManager::configFileChild(const char *parent, const char *child)
+FileManager::configFileChild(const char *parent, const char *child, bool trackPeriodic)
 {
   ConfigManager *parentConfig = nullptr;
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
     parentConfig = it->second;
-    addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig);
+    addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig, trackPeriodic);
   }
   ink_mutex_release(&accessLock);
 }

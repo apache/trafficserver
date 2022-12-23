@@ -84,6 +84,7 @@
 // This are additional on top of the ones defined in Alarms.h. Que?
 #define MGMT_SIGNAL_LIBRECORDS 10
 #define MGMT_SIGNAL_CONFIG_FILE_CHILD 11
+#define MGMT_SIGNAL_CONFIG_FILE_CHILD_NO_PERIODIC_TRACK 12
 
 struct MgmtMessageHdr {
   int msg_id;

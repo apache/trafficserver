@@ -57,7 +57,7 @@ class ConfigManager
 public:
   // fileName_ should be rooted or a base file name.
   ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, bool isRequired_,
-                ConfigManager *parentConfig_);
+                ConfigManager *parentConfig_, bool trackPeriodic_);
   ~ConfigManager() = default;
 
   // Manual take out of lock required
@@ -129,4 +129,5 @@ private:
   bool isRequired;
   ConfigManager *parentConfig;
   time_t fileLastModified = 0;
+  bool trackPeriodic;
 };

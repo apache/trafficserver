@@ -132,7 +132,7 @@ static void mgmt_drain_callback(ts::MemSpan<void>);
 static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
 static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-static void load_ssl_file_callback(const char *ssl_file);
+static void load_ssl_file_callback(const char *ssl_file, bool track_periodic);
 static void task_threads_started_callback();
 
 // We need these two to be accessible somewhere else now
@@ -2308,9 +2308,9 @@ init_ssl_ctx_callback(void *ctx, bool server)
 }
 
 static void
-load_ssl_file_callback(const char *ssl_file)
+load_ssl_file_callback(const char *ssl_file, bool track_periodic)
 {
-  pmgmt->signalConfigFileChild(ts::filename::SSL_MULTICERT, ssl_file);
+  pmgmt->signalConfigFileChild(ts::filename::SSL_MULTICERT, ssl_file, track_periodic);
 }
 
 void

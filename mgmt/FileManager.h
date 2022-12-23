@@ -87,7 +87,7 @@ public:
   void fileChanged(const char *fileName, const char *configName);
   void rereadConfig();
   bool isConfigStale();
-  void configFileChild(const char *parent, const char *child);
+  void configFileChild(const char *parent, const char *child, bool track_periodic = true);
 
 private:
   ink_mutex accessLock; // Protects bindings hashtable
@@ -95,7 +95,7 @@ private:
   DLL<callbackListable> cblist;
   std::unordered_map<std::string_view, ConfigManager *> bindings;
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
-                     ConfigManager *parentConfig);
+                     ConfigManager *parentConfig, bool trackPeriodic = true);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc

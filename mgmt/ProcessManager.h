@@ -57,7 +57,7 @@ public:
   // Stop the process manager, dropping any unprocessed messages.
   void stop();
 
-  void signalConfigFileChild(const char *parent, const char *child);
+  void signalConfigFileChild(const char *parent, const char *child, bool track_periodic = true);
   void signalManager(int msg_id, const char *data_str);
   void signalManager(int msg_id, const char *data_raw, int data_len);
 

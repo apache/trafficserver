@@ -222,7 +222,7 @@ ProcessManager::reconfigure()
 }
 
 void
-ProcessManager::signalConfigFileChild(const char *parent, const char *child)
+ProcessManager::signalConfigFileChild(const char *parent, const char *child, bool track_periodic)
 {
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING};
 
@@ -230,7 +230,10 @@ ProcessManager::signalConfigFileChild(const char *parent, const char *child)
   void *buffer = ats_malloc(len);
 
   mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child);
-  signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, static_cast<const char *>(buffer), len);
+  if (track_periodic)
+    signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, static_cast<const char *>(buffer), len);
+  else
+    signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD_NO_PERIODIC_TRACK, static_cast<const char *>(buffer), len);
 
   ats_free(buffer);
 }

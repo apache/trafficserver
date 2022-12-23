@@ -2501,7 +2501,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
         return false;
       }
       if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str());
+        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str(), true);
       }
     }
 
@@ -2515,7 +2515,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
           return false;
         }
         if (SSLConfigParams::load_ssl_file_cb) {
-          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str());
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str(), true);
         }
       }
     }
