@@ -72,8 +72,8 @@ tr.Processes.Default.ReturnCode = 0
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    "N=10 ; while ((N > 0 )) ; do " +
-    "if [[ ! -f " + InProgressFilePathspec + " ]] ; then exit 0 ; fi ; sleep 1 ; let N=N-1 ; " +
+    "N=10 ; while [ $$N -gt 0 ] ; do " +
+    "if [ ! -f " + InProgressFilePathspec + " ] ; then exit 0 ; fi ; sleep 1 ; N=$$(( N-1 )) ; " +
     "done ; echo 'TIMEOUT' ; exit 1"
 )
 tr.Processes.Default.ReturnCode = 0
