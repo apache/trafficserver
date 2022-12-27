@@ -1,0 +1,241 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.cache_responses_to_cookies is set to 2(cache only for
+# image types)
+#
+meta:
+  version: "1.0"
+
+sessions:
+  - transactions:
+      # Verify that response containing Set-Cookie with text content type is not
+      # cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/set-cookie-text
+          headers:
+            fields:
+              - [uuid, set-cookie-text-response]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Content-Type, "text/html"]
+              - [Cache-Control, "max-age=5"]
+              - [Set-Cookie, "tasty_cookie=strawberry"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+
+      # Re-request to make sure the previous response was not cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/set-cookie-text
+          headers:
+            fields:
+              - [uuid, set-cookie-text-response-verify]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # Use a different Content-Length to differentiate between two
+              # responses
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is new response from the server
+              - [Content-Length, { value: 5, as: equal }]
+
+      # Verify that response containing Set-Cookie with image content type is
+      # cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/set-cookie-img
+          headers:
+            fields:
+              - [uuid, set-cookie-img-response]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              # image content type
+              - [Content-Type, "image/jpeg"]
+              - [Cache-Control, "max-age=5"]
+              - [Set-Cookie, "tasty_cookie=strawberry"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request to make sure the previous response was cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/set-cookie-img
+          headers:
+            fields:
+              - [uuid, set-cookie-img-response-verify]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # Use a different Content-Length to differentiate between two
+              # responses
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is cached response
+              - [Content-Length, { value: 4, as: equal }]
+
+      # Verify response with text content type for a cookie-containing request
+      # is not cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/cookie-text
+          headers:
+            fields:
+              - [uuid, cookie-response]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              # text content type
+              - [Content-Type, "text/html"]
+              - [Cache-Control, "max-age=5"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request to make sure the previous response was not cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/cookie-text
+          headers:
+            fields:
+              - [uuid, cookie-response-verify]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # Use a different Content-Length to differentiate between two
+              # responses
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is the new response from the server
+              - [Content-Length, { value: 5, as: equal }]
+
+      # Verify response with image content type for a cookie-containing request
+      # is cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/cookie-img
+          headers:
+            fields:
+              - [uuid, cookie-img-response]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              # image content type
+              - [Content-Type, "image/jpeg"]
+              - [Cache-Control, "max-age=5"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request to make sure the previous response was cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cookie/cookie-img
+          headers:
+            fields:
+              - [uuid, cookie-img-response-verify]
+              - [Host, example.com]
+              - [Cookie, "tasty_cookie=strawberry"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # Use a different Content-Length to differentiate between two
+              # responses
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is the cached response from the server
+              - [Content-Length, { value: 4, as: equal }]

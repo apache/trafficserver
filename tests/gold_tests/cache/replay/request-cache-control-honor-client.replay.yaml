@@ -1,0 +1,127 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_no_cache is set to 0(honoring the client
+# requests to bypass the cache)
+#
+meta:
+  version: "1.0"
+
+sessions:
+  - transactions:
+      # Populating the cache
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/request-no-cache
+          headers:
+            fields:
+              - [uuid, request-cc-no-cache]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, "max-age=5"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request and verify that Cache-Control: no-cache in the request is
+      # honored by making sure non-cached response was used
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/request-no-cache
+          headers:
+            fields:
+              - [uuid, request-cc-no-cache-verify]
+              - [Host, example.com]
+              - [Cache-Control, "no-cache"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # change content length to differentiate from the previous
+              # response to verify the non-cached response is returned
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is the new response from the server
+              - [Content-Length, { value: 5, as: equal }]
+
+      # Verify that Cache-Control: no-store in the request is honored
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/request-no-store
+          headers:
+            fields:
+              - [uuid, request-cc-no-store]
+              - [Host, example.com]
+              - [Cache-Control, "no-store"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, "max-age=5"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request and verify that Cache-Control: no-store in the previous
+      # request is honored by making sure the previous response is not cached
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/request-no-store
+          headers:
+            fields:
+              - [uuid, request-cc-no-store-verify]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # change content length to differentiate from the previous
+              # response to verify it was not cached.
+              - [Content-Length, 5]
+
+        eroxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is the new response from the server
+              - [Content-Length, { value: 5, as: equal }]
