@@ -631,6 +631,17 @@ private:
 ////
 // Inline Functions
 //
+
+// This can't be defined until HttpSM is defined.
+//
+inline int64_t
+HttpTransact::State::state_machine_id() const
+{
+  ink_assert(state_machine != nullptr);
+
+  return state_machine->sm_id;
+}
+
 inline ProxyTransaction *
 HttpSM::get_ua_txn()
 {
