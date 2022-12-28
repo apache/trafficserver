@@ -135,7 +135,7 @@ The slice plugin supports the following options::
         can improve cache miss latency.
         -f for short
 
-    --enable-strip-range (optional)
+    --strip-range-for-head (optional)
         Enable slice plugin to strip Range header for HEAD requests.
         -h for short
 

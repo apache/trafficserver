@@ -1,5 +1,5 @@
 '''
-Verify ATS slice plugin config: @pparam=--enable-strip-range
+Verify ATS slice plugin config: @pparam=--strip-range-for-head
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@ Verify ATS slice plugin config: @pparam=--enable-strip-range
 #  limitations under the License.
 
 Test.Summary = '''
-Verify ATS slice plugin config: @pparam=--enable-strip-range
+Verify ATS slice plugin config: @pparam=--strip-range-for-head
 '''
 Test.SkipUnless(
     Condition.PluginExists('slice.so'),
@@ -40,7 +40,7 @@ class SliceStripRangeForHeadRequestTest:
 
         self._ts.Disk.remap_config.AddLines([
             f"map /no/range http://127.0.0.1:{self._server.Variables.http_port} \
-                @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--enable-strip-range \
+                @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--strip-range-for-head \
                 @plugin=cache_range_requests.so",
             f"map /with/range http://127.0.0.1:{self._server.Variables.http_port} \
                 @plugin=slice.so @pparam=--blockbytes-test=10 \
