@@ -22,15 +22,15 @@
  */
 
 #include <mutex>
-#include <atomic>
 #include <set>
 #include <cstring>
+#include <atomic>
 
 #include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
 
 // The resistry of fast debug controllers has a ugly implementation to handle the whole-program initialization
-// order problem with C++.
+// and destruction order problem with C++.
 //
 class DbgCtl::_RegistryAccessor
 {
@@ -44,41 +44,97 @@ private:
   };
 
 public:
-  _RegistryAccessor() : _lg(data().mtx) {}
-
   using Set = std::set<TSDbgCtl, TagCmp>;
 
-  struct Data {
-    std::mutex mtx;
+  class Registry
+  {
+  public:
     Set set;
 
-    ~Data()
+  private:
+    Registry() = default;
+
+    // Mutex must be locked before this is called.
+    //
+    ~Registry()
     {
       for (auto &ctl : set) {
         delete[] ctl.tag;
       }
+      _mtx.unlock();
     }
+
+    std::mutex _mtx;
+
+    friend class DbgCtl::_RegistryAccessor;
   };
 
-  static Data &
-  data()
+  _RegistryAccessor()
   {
-    static Data d;
-    return d;
+    if (!_registry_instance) {
+      Registry *expected{nullptr};
+      Registry *r{new Registry};
+      if (!_registry_instance.compare_exchange_strong(expected, r)) {
+        r->_mtx.lock();
+        delete r;
+      }
+    }
+    _registry_instance.load()->_mtx.lock();
+    _mtx_is_locked = true;
   }
 
+  ~_RegistryAccessor()
+  {
+    if (_mtx_is_locked) {
+      _registry_instance.load()->_mtx.unlock();
+    }
+  }
+
+  // This is not static so it can't be called with the registry mutex is unlocked.  It should not be called
+  // after registry is deleted.
+  //
+  Registry &
+  data()
+  {
+    return *_registry_instance;
+  }
+
+  void
+  delete_registry()
+  {
+    auto r = _registry_instance.load();
+    ink_assert(r != nullptr);
+    _registry_instance = nullptr;
+    delete r;
+    _mtx_is_locked = false;
+  }
+
+  // Reference count of references to Registry.
+  //
+  inline static std::atomic<unsigned> registry_reference_count{0};
+
 private:
-  std::lock_guard<std::mutex> _lg;
+  bool _mtx_is_locked{false};
+
+  inline static std::atomic<Registry *> _registry_instance{nullptr};
 };
 
 TSDbgCtl const *
-DbgCtl::_get_ptr(char const *tag)
+DbgCtl::_new_reference(char const *tag)
 {
   ink_assert(tag != nullptr);
 
   TSDbgCtl ctl;
 
   ctl.tag = tag;
+
+  // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
+  // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
+  // other instances of DbgCtl.  That is why it is important to make sure the reference count is non-zero before
+  // constructing _RegistryAccessor.  The _RegistryAccessor constructor is thereby able to assume that, if it creates
+  // the Registry, the new Registry will not be destroyed before the mutex in the new Registry is locked.
+
+  ++_RegistryAccessor::registry_reference_count;
 
   _RegistryAccessor ra;
 
@@ -93,7 +149,7 @@ DbgCtl::_get_ptr(char const *tag)
   ink_assert(sz > 0);
 
   {
-    char *t = new char[sz + 1]; // Deleted by ~Data().
+    char *t = new char[sz + 1]; // Deleted by ~Registry().
     std::memcpy(t, tag, sz + 1);
     ctl.tag = t;
   }
@@ -107,11 +163,29 @@ DbgCtl::_get_ptr(char const *tag)
 }
 
 void
+DbgCtl::_rm_reference()
+{
+  _RegistryAccessor ra;
+
+  ink_assert(ra.registry_reference_count != 0);
+
+  --ra.registry_reference_count;
+
+  if (0 == ra.registry_reference_count) {
+    ra.delete_registry();
+  }
+}
+
+void
 DbgCtl::update()
 {
   ink_release_assert(diags() != nullptr);
 
   _RegistryAccessor ra;
+
+  if (!ra.registry_reference_count) {
+    return;
+  }
 
   auto &d{ra.data()};
 

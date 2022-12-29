@@ -100,6 +100,17 @@ struct TSIOBufferReaderDeleter {
 };
 using TSIOBufferReaderUniqPtr = std::unique_ptr<std::remove_pointer_t<TSIOBufferReader>, TSIOBufferReaderDeleter>;
 
+// Deleter and unique pointer for TSDbgCtl const.
+//
+struct TSDbgCtlDeleter {
+  void
+  operator()(TSDbgCtl const *ptr)
+  {
+    TSDbgCtlDestroy(ptr);
+  }
+};
+using TSDbgCtlUniqPtr = std::unique_ptr<TSDbgCtl const, TSDbgCtlDeleter>;
+
 class TxnAuxDataMgrBase
 {
 protected:

@@ -40,7 +40,8 @@ namespace
 {
 char PIName[] = PINAME;
 
-auto dbg_ctl{TSDbgCtlCreate(PIName)};
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
+TSDbgCtl const * const dbg_ctl{dbg_ctl_guard.get()};
 
 enum Test_step
 {

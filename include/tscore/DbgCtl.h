@@ -33,7 +33,9 @@ public:
   // Tag is a debug tag.  Debug output associated with this control will be output when debug output
   // is enabled globally, and the tag matches the configured debug tag regular expression.
   //
-  DbgCtl(char const *tag) : _ptr(_get_ptr(tag)) {}
+  DbgCtl(char const *tag) : _ptr{_new_reference(tag)} {}
+
+  ~DbgCtl() { _rm_reference(); }
 
   TSDbgCtl const *
   ptr() const
@@ -48,9 +50,13 @@ public:
 private:
   TSDbgCtl const *const _ptr;
 
-  static const TSDbgCtl *_get_ptr(char const *tag);
+  static const TSDbgCtl *_new_reference(char const *tag);
+
+  static void _rm_reference();
 
   class _RegistryAccessor;
 
   friend TSDbgCtl const *TSDbgCtlCreate(char const *tag);
+
+  friend void TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
 };
