@@ -54,6 +54,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/set-cookie-img
@@ -108,6 +111,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/set-cookie-vid
@@ -162,6 +168,9 @@ sessions:
 
       # Re-request to make sure the previous response was not cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/set-cookie-text
@@ -216,6 +225,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/img
@@ -270,6 +282,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/vid
@@ -324,6 +339,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/text-response-no-set-cookie
@@ -378,6 +396,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure the previous response was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cookie/text-response-has-cc-public

@@ -57,7 +57,8 @@ class AuthDefaultTest:
             "Verify ATS doesn't store the response with WWW-Authenticate.")
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun(
+            "Verify the proper caching behavior for request/response containing auth-related fields when ATS is in default configuration")
         tr.AddVerifierClientProcess(
             "auth-default-client",
             self.authDefaultReplayFile,
@@ -103,7 +104,8 @@ class AuthIgnoredTest:
         )
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun(
+            "Verify the proper caching behavior for request/response containing auth-related fields when ATS is configured to bypass caching for those")
         tr.AddVerifierClientProcess(
             "auth-ignored-client",
             self.authIgnoredReplayFile,

@@ -49,6 +49,9 @@ sessions:
       # Re-request and verify that Cache-Control: no-cache in the request is
       # ignored by making sure cached response was used
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cc/request-no-cache
@@ -101,6 +104,9 @@ sessions:
       # Re-request to make sure the previous response was cached despite the
       # no-store directive in the previous request
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cc/request-no-store

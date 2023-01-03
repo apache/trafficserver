@@ -50,6 +50,9 @@ sessions:
       # Re-request and make sure cached response is used, verifying that
       # Cache-Control: no-cache in the response is ignored
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cc/response-no-cache
@@ -101,6 +104,9 @@ sessions:
               - [Content-Length, { value: 4, as: equal }]
       # Re-request to make sure it was cached
       - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
           method: "GET"
           version: "1.1"
           url: /cc/response-no-store

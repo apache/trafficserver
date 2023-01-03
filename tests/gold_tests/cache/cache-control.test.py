@@ -171,7 +171,7 @@ class RequestCacheControlDefaultTest:
         )
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun("Verify the proper handling of cache-control directives in requests in default configuration")
         tr.AddVerifierClientProcess(
             "request-cache-control-default-client",
             self.requestCacheControlReplayFile,
@@ -225,7 +225,8 @@ class RequestCacheControlHonorClientTest:
             "Verify that ATS honors the no-store.")
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun(
+            "Verify the proper handling of cache-control directives in requests when ATS is configured to honor client's request to bypass the cache")
         tr.AddVerifierClientProcess(
             "request-cache-control-honor-client-client",
             self.requestCacheControlReplayFile,
@@ -273,7 +274,7 @@ class ResponseCacheControlDefaultTest:
             "Verify that ATS honors the no-cache(or no-store) in response and bypasses the cache.")
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun("Verify the proper handling of cache-control directives in responses in default configuration")
         tr.AddVerifierClientProcess(
             "response-cache-control-client-default",
             self.responseCacheControlReplayFile,
@@ -322,7 +323,8 @@ class ResponseCacheControlIgnoredTest:
             "Verify that ATS ignores the no-cache(or no-store) in response and caches the responses despite their presence.")
 
     def runTraffic(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun(
+            "Verify the proper handling of cache-control directives in responses when ATS is configured to ignore server's request to bypass the cache")
         tr.AddVerifierClientProcess(
             "response-cache-control-client-ignored",
             self.responseCacheControlReplayFile,
