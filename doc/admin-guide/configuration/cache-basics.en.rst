@@ -563,7 +563,7 @@ You can reconfigure Traffic Server to:
 
 -  Cache all cookied content except text type.
 
-   It may be approprite to configure Traffic Server to not cache cookied text
+   It may be appropriate to configure Traffic Server to not cache cookied text
    content because object headers are stored along with the object, and
    personalized cookie header values could be saved with the object. With
    non-text objects, it is unlikely that personalized headers are delivered or
