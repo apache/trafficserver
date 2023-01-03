@@ -49,7 +49,7 @@ class SliceStripRangeForHeadRequestTest:
 
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|slice',
+            'proxy.config.diags.debug.tags': 'http|slice|cache_range_requests',
         })
 
     def _test_head_request_range_header(self):

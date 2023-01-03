@@ -48,7 +48,7 @@ sessions:
       headers:
         fields:
         - [ X-Response, { value: response, as: equal } ]
-        - [ Content-Length, 16 ]
+        - [ Content-Length, { value: "16", as: equal} ]
 
   - client-request:
       method: "HEAD"
@@ -78,5 +78,6 @@ sessions:
       status: 206
       headers:
         fields:
-        - [ Content-Length, 6 ]
+        - [ Content-Length, { value: "6", as: equal} ]
+        - [ Content-Range, { value: "bytes 0-5/16", as: equal} ]
         - [ X-Response, { value: response, as: equal } ]
