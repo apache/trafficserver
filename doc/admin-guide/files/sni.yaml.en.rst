@@ -140,9 +140,6 @@ http2_buffer_water_mark   Inbound   Specifies the high water mark for all HTTP/2
                                     By default this is :ts:cv:`proxy.config.http2.default_buffer_water_mark`.
                                     NOTE: Connection coalescing may prevent this taking effect.
 
-disable_h2                Inbound   Deprecated for the more general h2 setting.  Setting disable_h2
-                                    to :code:`true` is the same as setting http2 to :code:`on`.
-
 tunnel_route              Inbound   Destination as an FQDN and port, separated by a colon ``:``.
                                     Match group number can be specified by ``$N`` where N should refer to a specified group
                                     in the FQDN, ``tunnel_route: $1.domain``.
