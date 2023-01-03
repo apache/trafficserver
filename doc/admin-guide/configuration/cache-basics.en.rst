@@ -385,7 +385,7 @@ these request headers):
    To configure Traffic Server to honor the ``Cache-Control: no-store`` and
    ``Cache-Control: no-cache`` request headers, refer to `Configuring Traffic
    Server to Honor Client no-cache Headers`_.
-   
+
 -  ``Cookie`` (for text objects)
 
    By default, Traffic Server caches objects served in response to
@@ -401,14 +401,14 @@ By default, Traffic Server ignores client ``Cache-Control: no-cache``
 directives. Even if a requested object contains a ``no-cache`` header, Traffic
 Server serves the object from its cache. You can configure Traffic Server to
 honor this header and forwards the request to the origin server even if it has a
-fresh copy in cache. 
+fresh copy in cache.
 
 By default, Traffic Server also ignores client ``Cache-Control: no-store``
 directives. Traffic Server caches response from the server regardless of the
-``no-store`` headers from client requests. 
+``no-store`` headers from client requests.
 
 You can configure Traffic Server to honor both client directives with the
-following: 
+following:
 
 #. Edit :ts:cv:`proxy.config.http.cache.ignore_client_no_cache` in
    :file:`records.config`. ::
