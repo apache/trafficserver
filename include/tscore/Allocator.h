@@ -202,8 +202,6 @@ public:
     this->element_size = element_size;
     this->alignment    = alignment;
     this->advice       = advice;
-
-    // TODO(cmcfarlen): enable THP if available
   }
 
   // Dummies
