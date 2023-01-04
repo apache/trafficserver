@@ -65,7 +65,9 @@ SSLSecret::loadFile(const std::string &name, std::string &data_item)
     Debug("ssl_secret", "Loading file: %s failed ", name.c_str());
     return false;
   }
-  if (SSLConfigParams::load_ssl_file_cb) {
+  SSLConfig::scoped_config params;
+
+  if (params->configTrackCerts && SSLConfigParams::load_ssl_file_cb) {
     SSLConfigParams::load_ssl_file_cb(name.c_str());
   }
   return true;

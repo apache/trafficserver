@@ -130,6 +130,7 @@ SSLConfigParams::reset()
   ssl_session_cache_timeout            = 0;
   ssl_session_cache_auto_clear         = 1;
   configExitOnLoadError                = 1;
+  configTrackCerts                     = 0;
 }
 
 void
@@ -318,6 +319,7 @@ SSLConfigParams::initialize()
 
   configFilePath = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
+  REC_ReadConfigInteger(configTrackCerts, "proxy.config.ssl.server.multicert.track_certs");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);

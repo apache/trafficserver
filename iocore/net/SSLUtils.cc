@@ -2500,7 +2500,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
         SSLError("failed to load global certificate chain from %s", completeServerCertChainPath.c_str());
         return false;
       }
-      if (SSLConfigParams::load_ssl_file_cb) {
+      if (params->configTrackCerts && SSLConfigParams::load_ssl_file_cb) {
         SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str());
       }
     }
@@ -2514,7 +2514,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
           SSLError("failed to load certificate chain from %s", completeServerCertChainPath.c_str());
           return false;
         }
-        if (SSLConfigParams::load_ssl_file_cb) {
+        if (params->configTrackCerts && SSLConfigParams::load_ssl_file_cb) {
           SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath.c_str());
         }
       }
