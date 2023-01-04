@@ -191,7 +191,8 @@ struct _InkFreeList {
   const char *name;
   uint32_t type_size, chunk_size, used, allocated, alignment;
   uint32_t allocated_base, used_base;
-  uint32_t use_hugepages, hugepages_failure;
+  uint32_t hugepages_failure;
+  bool use_hugepages;
   int advice;
 };
 
@@ -206,12 +207,12 @@ void ink_freelist_init_ops(int nofl_class, int nofl_proxy);
  * alignment must be a power of 2
  */
 InkFreeList *ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                                 uint32_t use_hugepages = 0);
+                                 bool use_hugepages = false);
 
 void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                       uint32_t use_hugepages);
+                       bool use_hugepages);
 void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                               uint32_t use_hugepages, int advice);
+                               bool use_hugepages, int advice);
 void *ink_freelist_new(InkFreeList *f);
 void ink_freelist_free(InkFreeList *f, void *item);
 void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);

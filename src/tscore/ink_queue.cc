@@ -118,7 +118,7 @@ ink_freelist_init_ops(int nofl_class, int nofl_proxy)
 
 void
 ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                  uint32_t use_hugepages)
+                  bool use_hugepages)
 {
   InkFreeList *f;
   ink_freelist_list *fll;
@@ -167,14 +167,14 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
 void
 ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
-                          uint32_t use_hugepages, int advice)
+                          bool use_hugepages, int advice)
 {
   ink_freelist_init(fl, name, type_size, chunk_size, alignment, use_hugepages);
   (*fl)->advice = advice;
 }
 
 InkFreeList *
-ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, uint32_t use_hugepages)
+ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, bool use_hugepages)
 {
   InkFreeList *f;
 

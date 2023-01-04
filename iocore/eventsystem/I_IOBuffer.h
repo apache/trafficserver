@@ -112,7 +112,7 @@ enum AllocType {
 
 extern FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
-void init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], uint32_t use_hugepages);
+void init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages);
 void init_buffer_allocators(int iobuffer_advice);
 
 /**

@@ -43,7 +43,7 @@ int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 // Initialization
 //
 void
-init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], uint32_t use_hugepages)
+init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages)
 {
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * ((static_cast<int64_t>(1)) << i);
@@ -70,7 +70,7 @@ void
 init_buffer_allocators(int iobuffer_advice)
 {
   int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
-  init_buffer_allocators(iobuffer_advice, chunk_sizes, 0);
+  init_buffer_allocators(iobuffer_advice, chunk_sizes, false);
 }
 
 //

@@ -62,7 +62,7 @@ ink_event_system_init(ts::ModuleVersion v)
 
   int hugepage_config = REC_ConfigReadInteger("proxy.config.allocator.iobuf_use_hugepages");
 
-  uint32_t use_hugepages = ats_hugepage_enabled() && hugepage_config == 1;
+  bool use_hugepages = ats_hugepage_enabled() && hugepage_config == 1;
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
   RecBool dont_dump_enabled = true;

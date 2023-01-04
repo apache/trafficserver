@@ -98,14 +98,14 @@ public:
     @param alignment of objects must be a power of 2.
   */
   FreelistAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
-                    unsigned int use_hugepages = 0)
+                    bool use_hugepages = false)
   {
     ink_freelist_init(&fl, name, element_size, chunk_size, alignment, use_hugepages);
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, unsigned int use_hugepages,
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
           int advice)
   {
     ink_freelist_madvise_init(&this->fl, name, element_size, chunk_size, alignment, use_hugepages, advice);
@@ -189,14 +189,14 @@ public:
     @param alignment of objects must be a power of 2.
   */
   MallocAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
-                  unsigned int use_hugepages = 0)
+                  bool use_hugepages = false)
     : element_size(element_size), alignment(alignment), advice(0)
   {
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, unsigned int use_hugepages,
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
           int advice)
   {
     this->element_size = element_size;
