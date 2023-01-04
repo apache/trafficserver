@@ -263,7 +263,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.admin.api.restricted", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.periodic_track_config_files", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.track_config_files_time_secs", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
 
   //##############################################################################
