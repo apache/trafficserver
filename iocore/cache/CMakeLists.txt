@@ -1,0 +1,31 @@
+add_library(inkcache STATIC
+    Cache.cc
+    CacheDir.cc
+    CacheDisk.cc
+    CacheHosting.cc
+    CacheHttp.cc
+    CachePages.cc
+    CachePagesInternal.cc
+    CacheRead.cc
+    CacheVol.cc
+    CacheWrite.cc
+    Inline.cc
+    RamCacheCLFUS.cc
+    RamCacheLRU.cc
+    Store.cc
+)
+target_include_directories(inkcache PRIVATE
+        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
+        ${CMAKE_SOURCE_DIR}/iocore/dns
+        ${CMAKE_SOURCE_DIR}/iocore/aio
+        ${CMAKE_SOURCE_DIR}/iocore/net
+        ${CMAKE_SOURCE_DIR}/iocore/cache
+        ${CMAKE_SOURCE_DIR}/iocore/hostdb
+        ${CMAKE_SOURCE_DIR}/proxy
+        ${CMAKE_SOURCE_DIR}/proxy/http
+        ${CMAKE_SOURCE_DIR}/proxy/http/remap
+        ${CMAKE_SOURCE_DIR}/proxy/hdrs
+        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/mgmt/utils
+        ${CMAKE_SOURCE_DIR}/lib
+)

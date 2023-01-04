@@ -1,0 +1,68 @@
+/* ink_config.h */
+
+#pragma once
+
+#cmakedefine BUILD_MACHINE "@BUILD_MACHINE@"
+#cmakedefine BUILD_PERSON "@BUILD_PERSON@"
+#cmakedefine BUILD_GROUP "@BUILD_GROUP@"
+#define BUILD_NUMBER "@BUILD_NUMBER@"
+
+#cmakedefine HAVE_DLFCN_H 1
+#cmakedefine HAVE_FLOAT_H 1
+#cmakedefine HAVE_STDLIB_H 1
+#cmakedefine HAVE_STDINT_H 1
+#cmakedefine HAVE_INTTYPES_H 1
+#cmakedefine HAVE_STRING_H 1
+#cmakedefine HAVE_SYS_IOCTL_H 1
+#cmakedefine HAVE_SYS_TYPES_H 1
+#cmakedefine HAVE_SYS_STAT_H 1
+#cmakedefine HAVE_SYS_STATVFS_H 1
+#cmakedefine HAVE_SYS_UIO_H 1
+#cmakedefine HAVE_SYS_MMAN_H 1
+#cmakedefine HAVE_UNISTD_H 1
+#cmakedefine HAVE_NETINET_IN_H 1
+#cmakedefine HAVE_NETINET_IN_SYSTM_H 1
+#cmakedefine HAVE_NETINET_TCP_H 1
+#cmakedefine HAVE_NETINET_IP_ICMP_H 1
+#cmakedefine HAVE_NETDB_H 1
+#cmakedefine HAVE_ARPA_INET_H 1
+#cmakedefine HAVE_ARPA_NAMESER_H 1
+#cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
+#cmakedefine HAVE_SIGINFO_H 1
+
+#cmakedefine HAVE_BIO_METH_NEW 1
+
+/* TODO(cmcfarlen): make this configurable */
+#define TS_BUILD_PREFIX "@CMAKE_INSTALL_PREFIX@"
+#define TS_BUILD_EXEC_PREFIX ""
+#define TS_BUILD_BINDIR "bin"
+#define TS_BUILD_SBINDIR "bin"
+#define TS_BUILD_SYSCONFDIR "etc/trafficserver"
+#define TS_BUILD_DATADIR "share/trafficserver"
+#define TS_BUILD_INCLUDEDIR "include"
+#define TS_BUILD_LIBDIR "lib"
+#define TS_BUILD_LIBEXECDIR "libexec/trafficserver"
+#define TS_BUILD_LOCALSTATEDIR "var"
+#define TS_BUILD_RUNTIMEDIR "var/trafficserver"
+#define TS_BUILD_LOGDIR "var/log/trafficserver"
+#define TS_BUILD_MANDIR "share/man"
+#define TS_BUILD_CACHEDIR "var/trafficserver"
+#define TS_BUILD_INFODIR "info"
+
+#define TS_ABS_TOP_SRCDIR "@CMAKE_SOURCE_DIR@"
+
+/* Build definitions */
+const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
+#define TS_MAX_HOST_NAME_LEN @TS_MAX_HOST_NAME_LEN@
+
+/* Feature Flags */
+#cmakedefine01 TS_USE_EPOLL
+#cmakedefine01 TS_USE_KQUEUE
+#cmakedefine01 TS_USE_LINUX_IO_URING
+#cmakedefine01 TS_USE_SET_RBIO
+#cmakedefine01 TS_USE_DIAGS
+#cmakedefine01 TS_USE_GET_DH_2048_256
+
+
+
+

@@ -1,0 +1,31 @@
+add_library(http STATIC
+        HttpSessionAccept.cc
+        HttpBodyFactory.cc
+        HttpCacheSM.cc
+        Http1ClientSession.cc
+        Http1ClientTransaction.cc
+        Http1ServerTransaction.cc
+        HttpConfig.cc
+        HttpConnectionCount.cc
+        HttpDebugNames.cc
+        HttpPages.cc
+        HttpProxyServerMain.cc
+        HttpSM.cc
+        Http1ServerSession.cc
+        HttpSessionManager.cc
+        HttpTransact.cc
+        HttpTransactCache.cc
+        HttpTransactHeaders.cc
+        HttpTunnel.cc
+        ForwardedConfig.cc
+        PreWarmConfig.cc
+        PreWarmManager.cc
+)
+target_include_directories(http PRIVATE
+        ${IOCORE_INCLUDE_DIRS}
+        ${PROXY_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/mgmt/utils
+        ${YAMLCPP_INCLUDE_DIR}
+)
+add_subdirectory(remap)

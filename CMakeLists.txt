@@ -23,108 +23,106 @@
 #
 #######################
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.23)
 project(ats)
 
 set(CMAKE_CXX_STANDARD 17)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+
+# Gather some environment info
+string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} HOST_OS)
+set(BUILD_NUMBER "0" CACHE STRING "The build number")
+execute_process(COMMAND id -nu OUTPUT_VARIABLE BUILD_PERSON OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Options
+set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
+set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
+set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
+set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
+
+set(TS_VERSION_MAJOR 10)
+set(TS_VERSION_MINOR 0)
+set(TS_VERSION_MICRO 0)
+set(TS_LIBTOOL_MAJOR ${TS_VERSION_MAJOR}${TS_VERSION_MINOR})
+set(TS_LIBTOOL_VERSION ${TS_LIBTOOL_MAJOR}:${TS_VERSION_MICRO}:${TS_VERSION_MINOR})
+set(TS_VERSION_STRING TS_VERSION_S)
+set(TS_VERSION_NUMBER TS_VERSION_N)
+
+# Check include files
+include(CheckIncludeFile)
+include(CheckIncludeFiles)
+include(CheckIncludeFileCXX)
+include(CheckSymbolExists)
+
+CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
+CHECK_INCLUDE_FILE(float.h HAVE_FLOAT_H)
+CHECK_INCLUDE_FILE(stdlib.h HAVE_STDLIB_H)
+CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
+CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
+CHECK_INCLUDE_FILE(string.h HAVE_STRING_H)
+CHECK_INCLUDE_FILE(sys/ioctl.h HAVE_SYS_IOCTL_H)
+CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
+CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
+CHECK_INCLUDE_FILE(sys/statvfs.h HAVE_SYS_STATVFS_H)
+CHECK_INCLUDE_FILE(sys/uio.h HAVE_SYS_UIO_H)
+CHECK_INCLUDE_FILE(sys/mman.h HAVE_SYS_MMAN_H)
+CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
+CHECK_INCLUDE_FILE(netinet/in.h HAVE_NETINET_IN_H)
+CHECK_INCLUDE_FILE(netinet/in_systm.h HAVE_NETINET_IN_SYSTM_H)
+CHECK_INCLUDE_FILE(netinet/tcp.h HAVE_NETINET_TCP_H)
+CHECK_INCLUDE_FILE(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
+CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
+CHECK_INCLUDE_FILE(arpa/inet.h HAVE_ARPA_INET_H)
+CHECK_INCLUDE_FILE(arpa/nameser.h HAVE_ARPA_NAMESER_H)
+CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
+CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
+
+# Find libraries
+find_package(PCRE)
+include(FindOpenSSL)
+find_package(OpenSSL)
+
+# Check for IO faculties
+check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
+check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
+check_symbol_exists(io_uring_queue_init "liburing.h" HAVE_IOURING)
+option(USE_IOURING "Use experimental io_uring (linux only)" 0)
+if (HAVE_IOURING AND USE_IOUIRNG)
+    set(TS_USE_LINUX_IO_URING)
+endif(HAVE_IOURING AND USE_IOUIRNG)
+
+# Check ssl functionality
+list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
+check_symbol_exists(BIO_meth_new "openssl/bio.h" HAVE_BIO_METH_NEW)
+check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
+
+message("Configuring for ${HOST_OS}")
+
+configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
+configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
+
+add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
+add_compile_options(-Wno-invalid-offsetof)
+
+# common includes for everyone
 include_directories(
-        include
-        tests/include
-        lib
-        lib/swoc/include
-        lib/yamlcpp/include
-        proxy
-        proxy/hdrs
-        proxy/http
-        proxy/http/remap
-        proxy/shared
-        iocore/eventsystem
-        iocore/net
-        iocore/dns
-        iocore/hostdb
-        iocore/aio
-        iocore/cache
-        iocore/utils
-        mgmt
-        mgmt/api
-        mgmt/utils
-        mgmt/api/include
-        proxy/api)
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}/include
+        ${PCRE_INCLUDE_DIRS}
+)
+if (OPENSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+endif(OPENSSL_FOUND)
 
-macro(CC_EXEC exec path)
-    file(GLOB cc_exec_files ${path}/*.cc ${path}/*.h)
-    add_executable(${exec} ${cc_exec_files})
-endmacro(CC_EXEC)
-
-macro(CPP_LIB name src_path inc_path)
-    file(GLOB cc_lib_files ${inc_path}/*.h ${src_path}/*.cc ${src_path}/*.h ${src_path}/unit_tests/*.cc)
-    add_library(${name} SHARED ${cc_lib_files})
-endmacro(CPP_LIB)
-
-macro(CPP_ADD_SOURCES target path)
-    file(GLOB cpp_add_src_files ${path}/*.h ${path}/*.cc)
-    target_sources(${target} PRIVATE ${cpp_add_src_files})
-endmacro(CPP_ADD_SOURCES)
-
-CC_EXEC(traffic_cache_tool src/traffic_cache_tool)
-CC_EXEC(traffic_crashlog src/traffic_crashlog)
-CC_EXEC(traffic_ctl src/traffic_ctl)
-CC_EXEC(traffic_layout src/traffic_layout)
-CC_EXEC(traffic_logcat src/traffic_logcat)
-CC_EXEC(traffic_logstats src/traffic_logstats)
-CC_EXEC(traffic_server src/traffic_server)
-target_sources(traffic_server PRIVATE src/shared/overridable_txn_vars.cc)
-CC_EXEC(traffic_top src/traffic_top)
-CC_EXEC(traffic_via src/traffic_via)
-CC_EXEC(traffic_wccp src/traffic_wccp)
-
-CPP_LIB(tscore src/tscore include/tscore)
-CPP_LIB(tscpputil src/tscpp/util include/tscpp/util)
-CPP_LIB(tscppapi src/tscpp/api include/tscpp/api)
-
-CC_EXEC(test_tscore src/tscore/unit_tests)
-CC_EXEC(test_tsutil src/tscpp/util/unit_tests)
-CC_EXEC(test_librecords src/records/unit_tests)
-
-CPP_LIB(proxy proxy proxy)
-CPP_ADD_SOURCES(proxy proxy/http)
-CPP_ADD_SOURCES(proxy proxy/http/unit_tests)
-CPP_ADD_SOURCES(proxy proxy/http2)
-CPP_ADD_SOURCES(proxy proxy/http/remap)
-CPP_ADD_SOURCES(proxy proxy/hdrs)
-CPP_ADD_SOURCES(proxy proxy/hdrs/unit_tests)
-CPP_ADD_SOURCES(proxy proxy/logging)
-
-CPP_LIB(iocore iocore iocore)
-CPP_ADD_SOURCES(iocore iocore/eventsystem)
-CPP_ADD_SOURCES(iocore iocore/net)
-CPP_ADD_SOURCES(iocore iocore/cache)
-CPP_ADD_SOURCES(iocore iocore/aio)
-CPP_ADD_SOURCES(iocore iocore/dns)
-CPP_ADD_SOURCES(iocore iocore/hostdb)
-CPP_ADD_SOURCES(iocore iocore/utils)
-
-CPP_LIB(mgmt mgmt mgmt)
-CPP_ADD_SOURCES(mgmt mgmt/api)
-CPP_ADD_SOURCES(mgmt mgmt/utils)
-
-CPP_LIB(records src/records src/records)
-CPP_LIB(logging proxy/logging proxy/logging)
-
-CPP_LIB(wccp src/wccp include/wccp)
-
-file(GLOB plugin_files
-        plugins/*/*.h
-        plugins/*/*.c
-        plugins/*/*.cc
-        plugins/experimental/*/*.h
-        plugins/experimental/*/*.c
-        plugins/experimental/*/*.cc
-        example/*/*.h
-        example/*/*.c
-        example/*/*.cc
-        )
-add_library(plugins SHARED ${plugin_files})
-
-add_custom_target(clang-format WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY} COMMAND make -j clang-format)
+add_subdirectory(lib)
+add_subdirectory(src/tscpp/util)
+add_subdirectory(src/tscore)
+add_subdirectory(src/records)
+add_subdirectory(iocore)
+add_subdirectory(proxy)
+add_subdirectory(mgmt)
