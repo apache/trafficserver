@@ -740,8 +740,6 @@ public:
 
     char via_string[MAX_VIA_INDICES + 1];
 
-    int64_t state_machine_id = 0;
-
     // new ACL filtering result (calculated immediately after remap)
     bool client_connection_enabled = true;
     bool acl_filtering_performed   = false;
@@ -893,6 +891,8 @@ public:
       range_setup = RANGE_NONE;
       return;
     }
+
+    int64_t state_machine_id() const;
 
     // Little helper function to setup the per-transaction configuration copy
     void

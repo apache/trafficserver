@@ -380,9 +380,8 @@ HttpSM::init(bool from_early_data)
   magic = HTTP_SM_MAGIC_ALIVE;
 
   // Unique state machine identifier
-  sm_id                    = next_sm_id++;
-  t_state.state_machine_id = sm_id;
-  t_state.state_machine    = this;
+  sm_id                 = next_sm_id++;
+  t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
@@ -6302,7 +6301,7 @@ HttpSM::setup_server_send_request()
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
 
-  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
+  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
