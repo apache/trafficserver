@@ -235,6 +235,10 @@ FileManager::isConfigStale()
 {
   ConfigManager *rb;
   bool stale = false;
+  bool found;
+  int track = static_cast<int>(REC_readInteger("proxy.config.periodic_track_config_files", &found));
+  if (found && track == 0)
+    return stale;
 
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
