@@ -579,3 +579,4 @@ Changes with Apache Traffic Server 9.2.0
   #9237 - Revert "9.2: Fix s3_auth_config test output check (#9123)"
   #9244 - Add autest to reproduce the conditional get cache body drain issue
   #9246 - Change Content-Type to text/plain if xdebug modifies response body
+  #9285 - Do not track config file periodically
