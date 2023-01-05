@@ -72,17 +72,14 @@ sync_thr(void *data)
 
     // If we didn't successfully sync to disk, check whether we need to update ....
     bool found;
-    int track_time = static_cast<int>(REC_readInteger("proxy.config.track_config_files_time_secs", &found));
+    int track_time = static_cast<int>(REC_readInteger("proxy.config.track_config_files", &found));
     if (found && track_time > 0 && check) {
       if (configFiles->isConfigStale()) {
         RecSetRecordInt("proxy.node.config.reconfigure_required", 1, REC_SOURCE_DEFAULT);
       }
     }
-    size_t sleep_time = REC_REMOTE_SYNC_INTERVAL_MS * 1000;
-    if (found || track_time > 0)
-      sleep_time = track_time * 1000 * 1000;
 
-    usleep(sleep_time);
+    usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
 
   return nullptr;
