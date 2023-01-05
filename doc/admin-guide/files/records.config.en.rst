@@ -601,6 +601,14 @@ Local Manager
    This setting is not reloadable, since it is must be applied when
    :program:`traffic_manager` initializes.
 
+.. ts:cv:: CONFIG proxy.config.track_config_files INT 1
+
+   Enables (``1``) or disables (``0``) tracking configuration file updates.
+   This setting is enabled by default. Disabling this setting disables the config status of traffic_ctl.
+
+   This setting is not reloadable, since it is must be applied when
+   :program:`traffic_manager` initializes.
+
 .. ts:cv:: CONFIG proxy.node.config.manager_exponential_sleep_ceiling INT 60
 
    In case of :program:`traffic_manager` is unable to start :program:`traffic_server`,
