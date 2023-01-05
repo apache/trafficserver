@@ -65,13 +65,13 @@ sync_thr(void *data)
   FileManager *configFiles = static_cast<FileManager *>(data);
 
   while (!TSSystemState::is_event_system_shut_down()) {
-    RecBool check = true;
-
     send_push_message();
     RecSyncStatsFile();
 
     // If we didn't successfully sync to disk, check whether we need to update ....
-    if (check) {
+    bool found;
+    int track_time = static_cast<int>(REC_readInteger("proxy.config.track_config_files", &found));
+    if (found && track_time > 0) {
       if (configFiles->isConfigStale()) {
         RecSetRecordInt("proxy.node.config.reconfigure_required", 1, REC_SOURCE_DEFAULT);
       }
