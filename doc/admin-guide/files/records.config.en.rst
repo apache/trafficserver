@@ -604,7 +604,12 @@ Local Manager
 .. ts:cv:: CONFIG proxy.config.track_config_files INT 1
 
    Enables (``1``) or disables (``0``) tracking configuration file updates.
-   This setting is enabled by default. Disabling this setting disables the config status of traffic_ctl.
+   This setting is enabled by default, meaning that configuration files are monitored for changes.
+   Having tracking enabled is a dependency for :option:`traffic_ctl config status` to function. However,
+   tracking the files is implemented via a frequent call to ``stat()`` which may be problematic
+   in some deployments. If the call to ``stat()`` on configuration files causes problems, then
+   it can be avoided by setting this value to ``0`` at the cost of disabling the config status feature
+   for :program:`traffic_ctl`.
 
    This setting is not reloadable, since it is must be applied when
    :program:`traffic_manager` initializes.
