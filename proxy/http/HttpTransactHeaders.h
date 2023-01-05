@@ -52,7 +52,7 @@ public:
 
   static ink_time_t calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
                                            ink_time_t base_response_date, ink_time_t now);
-  static bool does_server_allow_response_to_be_stored(HTTPHdr *resp);
+  static bool does_server_allow_response_to_be_stored(HTTPHdr *resp, bool does_server_allow_response_to_be_stored);
   static bool downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request);
   static bool is_method_safe(int method);
   static bool is_method_idempotent(int method);

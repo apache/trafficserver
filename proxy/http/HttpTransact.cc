@@ -543,7 +543,7 @@ find_appropriate_cached_resp(HttpTransact::State *s)
   return s->cache_info.object_read->response_get();
 }
 
-int response_cacheable_indicated_by_cc(HTTPHdr *response);
+int response_cacheable_indicated_by_cc(HTTPHdr *response, bool ignore_no_store_and_no_cache_directives);
 
 inline static bool
 is_negative_caching_appropriate(HttpTransact::State *s)
@@ -5781,8 +5781,8 @@ void
 HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incoming_response)
 {
   /* check if the server permits caching */
-  s->cache_info.directives.does_server_permit_storing =
-    HttpTransactHeaders::does_server_allow_response_to_be_stored(&s->hdr_info.server_response);
+  s->cache_info.directives.does_server_permit_storing = HttpTransactHeaders::does_server_allow_response_to_be_stored(
+    &s->hdr_info.server_response, s->cache_control.ignore_server_no_cache);
 
   /*
    * A stupid moronic broken pathetic excuse
@@ -6123,7 +6123,7 @@ HttpTransact::is_request_cache_lookupable(State *s)
 // Name       : response_cacheable_indicated_by_cc()
 // Description: check if a response is cacheable as indicated by Cache-Control
 //
-// Input      : Response header
+// Input      : Response header, whether to ignored response's no-cache/no-store
 // Output     : -1, 0, or +1
 //
 // Details    :
@@ -6135,11 +6135,11 @@ HttpTransact::is_request_cache_lookupable(State *s)
 //
 ///////////////////////////////////////////////////////////////////////////////
 int
-response_cacheable_indicated_by_cc(HTTPHdr *response)
+response_cacheable_indicated_by_cc(HTTPHdr *response, bool ignore_no_store_and_no_cache_directives)
 {
   uint32_t cc_mask;
   // the following directives imply not cacheable
-  cc_mask = (MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
+  cc_mask = MIME_COOKED_MASK_CC_PRIVATE | (ignore_no_store_and_no_cache_directives ? 0 : MIME_COOKED_MASK_CC_NO_STORE);
   if (response->get_cooked_cc_mask() & cc_mask) {
     return -1;
   }
@@ -6289,7 +6289,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
   // check if cache control overrides default cacheability
   int indicator;
-  indicator = response_cacheable_indicated_by_cc(response);
+  indicator = response_cacheable_indicated_by_cc(response, s->cache_control.ignore_server_no_cache);
   if (indicator > 0) { // cacheable indicated by cache control header
     TxnDebug("http_trans", "YES by response cache control");
     // even if it is authenticated, this is cacheable based on regular rules
