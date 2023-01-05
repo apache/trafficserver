@@ -97,16 +97,18 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  FreelistAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+  FreelistAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
+                    bool use_hugepages = false)
   {
-    ink_freelist_init(&fl, name, element_size, chunk_size, alignment);
+    ink_freelist_init(&fl, name, element_size, chunk_size, alignment, use_hugepages);
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice)
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
+          int advice)
   {
-    ink_freelist_madvise_init(&this->fl, name, element_size, chunk_size, alignment, advice);
+    ink_freelist_madvise_init(&this->fl, name, element_size, chunk_size, alignment, use_hugepages, advice);
   }
 
   // Dummies
@@ -186,14 +188,16 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  MallocAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+  MallocAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
+                  bool use_hugepages = false)
     : element_size(element_size), alignment(alignment), advice(0)
   {
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice)
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
+          int advice)
   {
     this->element_size = element_size;
     this->alignment    = alignment;
@@ -227,7 +231,7 @@ using Allocator = FreelistAllocator;
   Allocator for Class objects.
 
 */
-template <class C, bool Destruct_on_free_ = false> class ClassAllocator : public Allocator
+template <class C, bool Destruct_on_free_ = false, typename BaseAllocator = Allocator> class ClassAllocator : public BaseAllocator
 {
 public:
   using Value_type                   = C;
@@ -238,7 +242,7 @@ public:
   C *
   alloc(Args &&... args)
   {
-    void *ptr = alloc_void();
+    void *ptr = this->alloc_void();
 
     ::new (ptr) C(std::forward<Args>(args)...);
     return reinterpret_cast<C *>(ptr);
@@ -254,7 +258,7 @@ public:
   {
     destroy_if_enabled(ptr);
 
-    free_void(ptr);
+    this->free_void(ptr);
   }
 
   /**
@@ -265,7 +269,7 @@ public:
     @param alignment of objects must be a power of 2.
   */
   ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
-    : Allocator(name, static_cast<unsigned int>(RND16(sizeof(C))), chunk_size, static_cast<unsigned int>(RND16(alignment)))
+    : BaseAllocator(name, static_cast<unsigned int>(RND16(sizeof(C))), chunk_size, static_cast<unsigned int>(RND16(alignment)))
   {
   }
 
