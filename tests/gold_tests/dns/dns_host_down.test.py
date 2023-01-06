@@ -22,6 +22,11 @@ import os
 Test.Summary = '''
 Verify ATS handles down origin servers with cached domain correctly.
 '''
+# This test is dependent on the new HostDB restructure that is not in 9.2.x.
+# The production patch associated with this test is still applicable for 9.2.x
+# but the autest created to show its functionality relies upon the restructured
+# HostDB's relationship with down nameservers, which only applies to 10-Dev.
+Test.SkipIf(Condition.true("This test depends on new HostDB restructure"))
 
 
 class DownCachedOriginServerTest:
