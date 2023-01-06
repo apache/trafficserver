@@ -2186,7 +2186,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   When enabled (``1``), |TS| ignores client requests to bypass the cache.
+   When enabled (``1``), |TS| ignores client requests to bypass the cache. Specifically, ``Pragma: no-cache``, ``Cache-Control: no-cache`` and ``Cache-Control: no-store`` in requests are ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
    :reloadable:
@@ -2198,7 +2198,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   When enabled (``1``), |TS| ignores origin server requests to bypass the cache.
+   When enabled (``1``), |TS| ignores origin server requests to bypass the cache. Specifically, ``Pragma: no-cache``, ``Cache-Control: no-cache`` and ``Cache-Control: no-store`` in responses are ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
    :reloadable:
@@ -2220,8 +2220,8 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_authentication INT 0
    :overridable:
 
-   When enabled (``1``), |TS| ignores ``WWW-Authentication`` headers in responses ``WWW-Authentication`` headers are removed and
-   not cached.
+   When enabled (``1``), |TS| ignores ``WWW-Authentication`` headers in
+   responses and the responses are cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
    :reloadable:

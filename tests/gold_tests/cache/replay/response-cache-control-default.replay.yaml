@@ -1,0 +1,132 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_server_no_cache is set to 0(current default,
+# meaning the cache-control directives in responses to bypass the cache is
+# honored)
+meta:
+  version: "1.0"
+
+sessions:
+  - transactions:
+      # Verify Cache-Control: no-cache in response is honored
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/response-no-cache
+          headers:
+            fields:
+              - [uuid, response-cc-no-cache]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, "max-age=5"]
+              - [Cache-Control, "no-cache"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request and make sure non-cached response is used, verifying that
+      # Cache-Control: no-cache in the previous response is honored
+      - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /cc/response-no-cache
+          headers:
+            fields:
+              - [uuid, response-cc-no-cache-verify]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # change content length to differentiate from the previous
+              # response to verify the non-cached response is returned
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # make sure this is a non-cached response
+              - [Content-Length, { value: 5, as: equal }]
+
+      # Verify that Cache-Control: no-store in the response is honored
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /cc/response-no-store
+          headers:
+            fields:
+              - [uuid, response-cc-no-store]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, "max-age=5"]
+              - [Cache-Control, "no-store"]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, { value: 4, as: equal }]
+      # Re-request to make sure the response was not cached
+      - client-request:
+          # Add a delay so ATS has time to finish any caching IO for the
+          # previous transaction.
+          delay: 100ms
+          method: "GET"
+          version: "1.1"
+          url: /cc/response-no-store
+          headers:
+            fields:
+              - [uuid, response-cc-no-store-verify]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              # change content length to differentiate from the previous
+              # response to verify it was not cached.
+              - [Content-Length, 5]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              # Verify this is the new response from the server
+              - [Content-Length, { value: 5, as: equal }]
