@@ -5874,7 +5874,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     ink_release_assert(0);
   }
 
-  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
+  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR || event == VC_EVENT_EOS) {
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {

@@ -27,7 +27,7 @@ class SlowPostAttack:
     def __init__(cls):
         Test.Summary = 'Test how ATS handles the slow-post attack'
         cls._origin_max_connections = 3
-        cls._slow_post_client = 'slow_post_client.py'
+        cls._slow_post_client = 'slow_post_clients.py'
         cls.setupOriginServer()
         cls.setupTS()
         cls._ts.Setup.CopyAs(cls._slow_post_client, Test.RunDirectory)
