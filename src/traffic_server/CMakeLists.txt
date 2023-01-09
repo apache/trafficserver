@@ -15,30 +15,43 @@
 #
 #######################
 
-
-
-add_library(mgmt_c STATIC RecordsConfig.cc)
-add_library(mgmt_p STATIC
-        BaseManager.cc
-        RecordsConfigUtils.cc
-        RecordsConfig.cc
-        ProcessManager.cc
-        ProxyConfig.cc
-        YamlCfg.cc
+add_executable(traffic_server
+        Crash.cc
+        EventName.cc
+        FetchSM.cc
+        HostStatus.cc
+        InkAPI.cc
+        InkIOCoreAPI.cc
+        SocksProxy.cc
+        traffic_server.cc
+        ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
-add_library(mgmt_lm STATIC
-        BaseManager.cc
-        RecordsConfigUtils.cc
-        Alarms.cc
-        DerivativeMetrics.cc
-        FileManager.cc
-        LocalManager.cc
-        ConfigManager.cc
-        WebMgmtUtils.cc
+target_include_directories(traffic_server PRIVATE
+        ${IOCORE_INCLUDE_DIRS}
+        ${PROXY_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/mgmt/utils
 )
-include_directories(${IOCORE_INCLUDE_DIRS} ${PROXY_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/utils ${CMAKE_CURRENT_SOURCE_DIR})
-
-#target_link_libraries(mgmt_lm yaml-cpp proxy logging tscore records_lm mgmt_c inkevent utils_lm proxy)
-#target_link_libraries(mgmt_p yaml-cpp proxy logging tscore records_p mgmt_c inkevent utils_p )
-
-add_subdirectory(utils)
+target_link_libraries(traffic_server
+        http
+        http_remap
+        http2
+        logging
+        hdrs
+        diagsconfig
+        mgmt_p
+        utils_p
+        inkutils
+        inkdns
+        inkhostdb
+        inkcache
+        fastlz
+        aio
+        tscore
+        tscpputil
+        proxy
+        inknet
+        records_p
+        inkevent
+        yaml-cpp
+        )

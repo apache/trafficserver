@@ -16,14 +16,14 @@
 #######################
 
 
-add_library(utils_lm SHARED
+add_library(utils_lm STATIC
         MgmtMarshall.cc
         MgmtSocket.cc
         MgmtUtils.cc
         ExpandingArray.cc
         MgmtLocalCleanup.cc
 )
-add_library(utils_p SHARED
+add_library(utils_p STATIC
         MgmtMarshall.cc
         MgmtSocket.cc
         MgmtUtils.cc
@@ -41,5 +41,6 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/proxy/logging
         ${CMAKE_SOURCE_DIR}/proxy/http/remap
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

@@ -44,7 +44,9 @@ set(PROXY_INCLUDE_DIRS
         ${CMAKE_SOURCE_DIR}/proxy/logging
         ${CMAKE_SOURCE_DIR}/proxy/http/remap
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
+        ${CMAKE_SOURCE_DIR}/proxy/shared
 )
+set(PROXY_INCLUDE_DIRS ${PROXY_INCLUDE_DIRS} PARENT_SCOPE)
 
 target_include_directories(proxy PRIVATE
         ${IOCORE_INCLUDE_DIRS}

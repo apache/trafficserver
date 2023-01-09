@@ -24,6 +24,9 @@
 
 #pragma once
 
+#define _TS_STR(x) #x
+#define TS_STR(x) _TS_STR(x)
+
 #cmakedefine BUILD_MACHINE "@BUILD_MACHINE@"
 #cmakedefine BUILD_PERSON "@BUILD_PERSON@"
 #cmakedefine BUILD_GROUP "@BUILD_GROUP@"
@@ -55,6 +58,9 @@
 #cmakedefine HAVE_BIO_METH_NEW 1
 
 /* TODO(cmcfarlen): make this configurable */
+#define TS_PKGSYSUSER "@pkgsysuser@"
+#define TS_PKGSYSGROUP "@pkgsysgroup@"
+
 #define TS_BUILD_PREFIX "@CMAKE_INSTALL_PREFIX@"
 #define TS_BUILD_EXEC_PREFIX ""
 #define TS_BUILD_BINDIR "bin"
@@ -85,6 +91,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_GET_DH_2048_256
 
+#define TS_BUILD_CANONICAL_HOST "@CMAKE_HOST@"
 
 
 
