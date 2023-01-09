@@ -2085,7 +2085,7 @@ REGRESSION_TEST(HostDBProcessor)(RegressionTest *t, int atype, int *pstatus)
 void
 HostDBRecord::free()
 {
-  if (_iobuffer_index > 0) {
+  if (_iobuffer_index >= 0) {
     Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + _iobuffer_index)), this);
     ioBufAllocator[_iobuffer_index].free_void(static_cast<void *>(this));
   }

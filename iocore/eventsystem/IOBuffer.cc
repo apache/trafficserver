@@ -31,7 +31,7 @@
 //
 // General Buffer Allocator
 //
-Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 ClassAllocator<MIOBuffer> ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferData> ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
@@ -43,20 +43,34 @@ int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 // Initialization
 //
 void
-init_buffer_allocators(int iobuffer_advice)
+init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages)
 {
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * ((static_cast<int64_t>(1)) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
-    int n     = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
+    int n     = chunk_sizes[i];
+    if (n == 0) {
+      n = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
+    }
     if (s < a) {
       a = s;
     }
 
     auto name = new char[64];
-    snprintf(name, 64, "ioBufAllocator[%d]", i);
-    ioBufAllocator[i].re_init(name, s, n, a, iobuffer_advice);
+    if (use_hugepages) {
+      snprintf(name, 64, "ioBufAllocatorHP[%d]", i);
+    } else {
+      snprintf(name, 64, "ioBufAllocator[%d]", i);
+    }
+    ioBufAllocator[i].re_init(name, s, n, a, use_hugepages, iobuffer_advice);
   }
+}
+
+void
+init_buffer_allocators(int iobuffer_advice)
+{
+  int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
+  init_buffer_allocators(iobuffer_advice, chunk_sizes, false);
 }
 
 //

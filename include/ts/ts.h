@@ -2208,6 +2208,14 @@ extern char ts_new_debug_on_flag_; /* Do not use directly. */
  */
 tsapi TSDbgCtl const *TSDbgCtlCreate(char const *tag);
 
+/**
+    Destroy (dereference) a debug control object previously created
+    with TSDbgCtlCreate().
+
+    @param dbg_ctl pointer to debug control object.
+ */
+tsapi void TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
+
 void _TSDbg(const char *tag, const char *format_str, ...) TS_PRINTFLIKE(2, 3); /* Not for direct use. */
 
 /* --------------------------------------------------------------------------

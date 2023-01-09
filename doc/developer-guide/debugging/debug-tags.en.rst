@@ -32,10 +32,13 @@ traces in your plugin. In this macro:
 -  ``...`` are variables for ``format_str`` in the standard ``printf``
    style.
 
-``void TSDbgCtlCreate (const char *tag)`` returns a (const) pointer to
+``TSDbgCtlCreate (const char *tag)`` returns a (const) pointer to
 ``TSDbgCtl``.  The ``TSDbgCtl`` control is enabled when debug output is
-enabled globally by configuaration, and ``tag`` matches a configured
+enabled globally by configuration, and ``tag`` matches a configured
 regular expression.
+
+``TSDbgCtlDestroy (TSDbgCtl const *dbg_ctl)`` destroys a debug control
+created by ``TSDbgCtlCreast()``.
 
 The deprecated API
 ``void TSDebug (const char *tag, const char *format_str, ...)`` also
@@ -81,6 +84,8 @@ Example:
        TSDbg(my_dbg_ctl, "Starting my-plugin at %d", the_time);
        ...
        TSDbg(my_dbg_ctl, "Later on in my-plugin");
+       ...
+       TSDbgCtlDestroy(my_dbg_ctl);
 
 
 The statement ``"Starting my-plugin at <time>"`` appears whenever you
@@ -94,7 +99,10 @@ If your plugin is a C++ plugin, the above example can be written as:
 
 .. code-block:: cpp
 
-       static auto my_dbg_ctl = TSDbgCtlCreate("my-plugin"); // Non-local variable.
+       #include <tscpp/api/Cleanup.h>
+       ...
+       static TSDbgCtlUniqPtr my_dbg_ctl_guard{TSDbgCtlCreate("my-plugin")}; // Non-local variable.
+       TSDbgCtl const * const my_dbg_ctl{my_dbg_ctl_guard.get()}; // Non-local variable.
        ...
        TSDbg(my_dbg_ctl, "Starting my-plugin at %d", the_time);
        ...

@@ -671,7 +671,8 @@ set-body
 
   set-body <text>
 
-Sets the body to ``<text>``. Can also be used to delete a body with ``""``
+Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
+intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
 
 set-config
 ~~~~~~~~~~

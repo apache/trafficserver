@@ -26,3 +26,4 @@ Release Notes
   whats-new.en
   upgrading.en
   roadmap.en
+  release-procedures.en

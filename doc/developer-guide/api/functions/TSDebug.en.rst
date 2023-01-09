@@ -40,6 +40,7 @@ Synopsis
 .. type:: TSDbgCtl
 .. function:: void TSDbg(const TSDbgCtl * ctlptr, const char * format, ...)
 .. function:: const TSDbgCtl * TSDbgCtlCreate(const char * tag)
+.. function:: void TSDbgCtlDestroy(const TSDbgCtl * dbg_ctl)
 .. function:: void TSDebug(const char * tag, const char * format, ...)
 .. function:: int TSIsDbgCtlSet(const TSDbgCtl * ctlptr)
 .. function:: int TSIsDebugTagSet(const char * tag)
@@ -85,6 +86,8 @@ trafficserver.out
 
 :func:`TSDbgCtlCreate` creates a debug control, associated with the
 debug :arg:`tag`, and returns a const pointer to it.
+
+:func:`TSDbgCtlDestroy` destroys a debug control, pointed to by :arg:`dbg_ctl`.
 
 :func:`TSIsDbgCtlSet` returns non-zero if the given debug control, pointed to by :arg:`ctlptr`, is
 enabled.

@@ -1,0 +1,99 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  # Cache a request
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/request
+      headers:
+        fields:
+          - [ uuid, 1]
+          - [ Host, example.com ]
+          - [ Accept, "*/*" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 4 ]
+        - [ Cache-Control, max-age=10 ]
+        - [ ETag, "42" ]
+      content:
+        encoding: plain
+        data: "good"
+
+
+    proxy-response:
+      status: 200
+
+  # conditionally get it but with a body
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/request
+      headers:
+        fields:
+          - [ uuid, 2 ]
+          - [ Host, example.com ]
+          - [ Accept, "*/*" ]
+          - [ If-None-Match, "42" ]
+          - [ Content-Length, 1 ]
+      content:
+        encoding: plain
+        data: "\n"
+
+    server-response:
+      status: 500
+      reason: ERR
+
+    # Since there is a cached ETag of 42, ATS should reply with a 304 as a proxy and
+    # the server should not get the request.
+    proxy-response:
+      status: 304
+
+
+    # Re-request the object and make sure the previous request's body does not
+    # confuse the parsing mechanism for this next request.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/request
+      headers:
+        fields:
+          - [ uuid, 3 ]
+          - [ Host, example.com ]
+          - [ Accept, "*/*" ]
+
+    # ATS should reply with the cached resource as a proxy and the origin
+    # should not receive the request.
+    server-response:
+      status: 500
+      reason: NOTUSED
+
+    proxy-response:
+      status: 200
+      reason: OK
+      content:
+        verify: {value: "good", as: equal}
+
+

@@ -1886,7 +1886,7 @@ Proxy User Variables
 
    See :ref:`proxy-protocol` for more discussion on how |TS| transforms the `Forwarded: header`.
 
-.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_out INT ``-1``
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_out INT -1
    :reloadable:
    :overridable:
 
@@ -2103,7 +2103,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   When enabled (``1``), |TS| ignores client requests to bypass the cache.
+   When enabled (``1``), |TS| ignores client requests to bypass the cache. Specifically, ``Pragma: no-cache``, ``Cache-Control: no-cache`` and ``Cache-Control: no-store`` in requests are ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
    :reloadable:
@@ -2115,7 +2115,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   When enabled (``1``), |TS| ignores origin server requests to bypass the cache.
+   When enabled (``1``), |TS| ignores origin server requests to bypass the cache. Specifically, ``Pragma: no-cache``, ``Cache-Control: no-cache`` and ``Cache-Control: no-store`` in responses are ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
    :reloadable:
@@ -2137,8 +2137,8 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_authentication INT 0
    :overridable:
 
-   When enabled (``1``), |TS| ignores ``WWW-Authentication`` headers in responses ``WWW-Authentication`` headers are removed and
-   not cached.
+   When enabled (``1``), |TS| ignores ``WWW-Authentication`` headers in
+   responses and the responses are cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
    :reloadable:
@@ -2546,21 +2546,21 @@ Customizable User Response Pages
    ``PREFIX`` directory.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.template_base STRING ""
-    :reloadable:
-    :overridable:
+   :reloadable:
+   :overridable:
 
     A prefix for the file name to use to find an error template file. If set (not the empty string)
     this value and an underscore are prepended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
-    :reloadable:
+   :reloadable:
 
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
-    :reloadable:
-    :overridable:
+   :reloadable:
+   :overridable:
 
    Specifies when |TS| suppresses generated response pages:
 
@@ -4713,9 +4713,9 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
    :reloadable:
 
-  This directive sets the maximum number of pending connections.
-  If it is set to -1, |TS| will automatically set this
-  to a platform-specific maximum.
+   This directive sets the maximum number of pending connections.
+   If it is set to -1, |TS| will automatically set this
+   to a platform-specific maximum.
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_in STRING ""
 
@@ -4923,6 +4923,52 @@ Sockets
    Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
    platforms.  (Currently only Linux).  IO buffers are allocated with the MADV_DONTDUMP
    with madvise() on Linux platforms that support MADV_DONTDUMP.  Enabled by default.
+
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_chunk_sizes STRING
+
+   This configures the chunk sizes of each of the IO buffer allocators.  The chunk size is the number
+   of buffers allocated in a batch when the allocator's freelist is exhausted.  This must be specified as a
+   space separated list of up to 15 numbers.  If not specified or if any value specified is 0, the default
+   value will be used.
+
+   The list of numbers will specify the chunk sizes in the following order:
+
+   ``128 256 512 1k 2k 4k 8k 16k 32k 64k 128k 256k 512k 1M 2M``
+
+   The defaults for each allocator is:
+
+   ``128 128 128 128 128 128 32 32 32 32 32 32 32 32 32``
+
+   Even though this is specified, the actual chunk size might be modified based on the system's page size (or hugepage
+   size if enabled).
+
+   You might want to adjust these values to reduce the overall number of allocations that ATS needs to make based
+   on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
+   log the allocator statistics and see how many of each buffer size have been allocated.
+
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_use_hugepages INT 0
+
+   This setting controls whether huge pages allocations are used to allocate io buffers.  If enabled, and hugepages are
+   not available, this will fall back to normal size pages. Using hugepages for iobuffer can sometimes improve performance
+   by utilizing more of the TLB and reducing TLB misses.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` IO buffer allocation uses normal pages sizes
+   ``1`` IO buffer allocation uses huge pages
+   ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.enable_hugepages INT 0
+
+   This setting controls whether huge pages allocations are used to allocate memory for cache volume dir entries.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Use normal pages sizes
+   ``1`` Use huge pages
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 

@@ -388,6 +388,12 @@ Context::getCurrentTimeNanoseconds()
   return TShrtime();
 }
 
+uint64_t
+Context::getMonotonicTimeNanoseconds()
+{
+  return TShrtime();
+}
+
 std::string_view
 Context::getConfiguration()
 {
@@ -496,17 +502,17 @@ Context::getMetric(uint32_t metric_id, uint64_t *value_ptr)
 WasmResult
 Context::getProperty(std::string_view path, std::string *result)
 {
-  if (path == p_plugin_root_id) {
+  if (path.substr(0, p_plugin_root_id.size()) == p_plugin_root_id) {
     *result = this->plugin_->root_id_;
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_root_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
             (*result).data());
     return WasmResult::Ok;
-  } else if (path == p_plugin_name) {
+  } else if (path.substr(0, p_plugin_name.size()) == p_plugin_name) {
     *result = this->plugin_->name_;
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_name: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
             (*result).data());
     return WasmResult::Ok;
-  } else if (path == p_plugin_vm_id) {
+  } else if (path.substr(0, p_plugin_vm_id.size()) == p_plugin_vm_id) {
     *result = this->plugin_->vm_id_;
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for plugin_vm_id: %.*s", __FUNCTION__, static_cast<int>((*result).size()),
             (*result).data());
@@ -515,7 +521,7 @@ Context::getProperty(std::string_view path, std::string *result)
     *result = pv_empty;
     TSDebug(WASM_DEBUG_TAG, "[%s] looking for node property: empty string for now", __FUNCTION__);
     return WasmResult::Ok;
-  } else if (path == p_source_address) {
+  } else if (path.substr(0, p_source_address.size()) == p_source_address) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -524,7 +530,7 @@ Context::getProperty(std::string_view path, std::string *result)
     client_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_address(client_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_source_port) {
+  } else if (path.substr(0, p_source_port.size()) == p_source_port) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -533,7 +539,7 @@ Context::getProperty(std::string_view path, std::string *result)
     client_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_port(client_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_destination_address) {
+  } else if (path.substr(0, p_destination_address.size()) == p_destination_address) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -542,7 +548,7 @@ Context::getProperty(std::string_view path, std::string *result)
     local_ip                        = TSHttpTxnIncomingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_destination_port) {
+  } else if (path.substr(0, p_destination_port.size()) == p_destination_port) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -551,7 +557,7 @@ Context::getProperty(std::string_view path, std::string *result)
     local_ip                        = TSHttpTxnIncomingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_connection_mtls) {
+  } else if (path.substr(0, p_connection_mtls.size()) == p_connection_mtls) {
     bool m = false;
     if (txnp_ == nullptr) {
       result->assign(reinterpret_cast<const char *>(&m), sizeof(bool));
@@ -568,7 +574,7 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     result->assign(reinterpret_cast<const char *>(&m), sizeof(bool));
     return WasmResult::Ok;
-  } else if (path == p_connection_requested_server_name) {
+  } else if (path.substr(0, p_connection_requested_server_name.size()) == p_connection_requested_server_name) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -584,7 +590,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_tls_version) {
+  } else if (path.substr(0, p_connection_tls_version.size()) == p_connection_tls_version) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -599,7 +605,7 @@ Context::getProperty(std::string_view path, std::string *result)
 
     result->assign(ssl_protocol);
     return WasmResult::Ok;
-  } else if (path == p_connection_subject_local_certificate) {
+  } else if (path.substr(0, p_connection_subject_local_certificate.size()) == p_connection_subject_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -616,7 +622,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_subject_peer_certificate) {
+  } else if (path.substr(0, p_connection_subject_peer_certificate.size()) == p_connection_subject_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -633,7 +639,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_dns_san_local_certificate) {
+  } else if (path.substr(0, p_connection_dns_san_local_certificate.size()) == p_connection_dns_san_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -650,7 +656,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_dns_san_peer_certificate) {
+  } else if (path.substr(0, p_connection_dns_san_peer_certificate.size()) == p_connection_dns_san_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -667,7 +673,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_uri_san_local_certificate) {
+  } else if (path.substr(0, p_connection_uri_san_local_certificate.size()) == p_connection_uri_san_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -684,7 +690,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_connection_uri_san_peer_certificate) {
+  } else if (path.substr(0, p_connection_uri_san_peer_certificate.size()) == p_connection_uri_san_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -701,7 +707,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_address) {
+  } else if (path.substr(0, p_upstream_address.size()) == p_upstream_address) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -710,7 +716,7 @@ Context::getProperty(std::string_view path, std::string *result)
     server_ip                        = TSHttpTxnServerAddrGet(txnp_);
     print_address(server_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_upstream_port) {
+  } else if (path.substr(0, p_upstream_port.size()) == p_upstream_port) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -719,7 +725,7 @@ Context::getProperty(std::string_view path, std::string *result)
     server_ip                        = TSHttpTxnClientAddrGet(txnp_);
     print_port(server_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_upstream_local_address) {
+  } else if (path.substr(0, p_upstream_local_address.size()) == p_upstream_local_address) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -728,7 +734,7 @@ Context::getProperty(std::string_view path, std::string *result)
     local_ip                        = TSHttpTxnOutgoingAddrGet(txnp_);
     print_address(local_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_upstream_local_port) {
+  } else if (path.substr(0, p_upstream_local_port.size()) == p_upstream_local_port) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -737,7 +743,7 @@ Context::getProperty(std::string_view path, std::string *result)
     local_ip                        = TSHttpTxnOutgoingAddrGet(txnp_);
     print_port(local_ip, result);
     return WasmResult::Ok;
-  } else if (path == p_upstream_tls_version) {
+  } else if (path.substr(0, p_upstream_tls_version.size()) == p_upstream_tls_version) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -752,7 +758,7 @@ Context::getProperty(std::string_view path, std::string *result)
 
     result->assign(ssl_protocol);
     return WasmResult::Ok;
-  } else if (path == p_upstream_subject_local_certificate) {
+  } else if (path.substr(0, p_upstream_subject_local_certificate.size()) == p_upstream_subject_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -769,7 +775,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_subject_peer_certificate) {
+  } else if (path.substr(0, p_upstream_subject_peer_certificate.size()) == p_upstream_subject_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -786,7 +792,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_dns_san_local_certificate) {
+  } else if (path.substr(0, p_upstream_dns_san_local_certificate.size()) == p_upstream_dns_san_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -803,7 +809,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_dns_san_peer_certificate) {
+  } else if (path.substr(0, p_upstream_dns_san_peer_certificate.size()) == p_upstream_dns_san_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -820,7 +826,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_uri_san_local_certificate) {
+  } else if (path.substr(0, p_upstream_uri_san_local_certificate.size()) == p_upstream_uri_san_local_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -837,7 +843,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_upstream_uri_san_peer_certificate) {
+  } else if (path.substr(0, p_upstream_uri_san_peer_certificate.size()) == p_upstream_uri_san_peer_certificate) {
     if (txnp_ == nullptr) {
       *result = pv_empty;
       return WasmResult::Ok;
@@ -854,7 +860,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_path) {
+  } else if (path.substr(0, p_request_path.size()) == p_request_path) {
     TSMBuffer bufp    = nullptr;
     TSMLoc hdr_loc    = nullptr;
     TSMLoc url_loc    = nullptr;
@@ -885,7 +891,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_url_path) {
+  } else if (path.substr(0, p_request_url_path.size()) == p_request_url_path) {
     TSMBuffer bufp   = nullptr;
     TSMLoc hdr_loc   = nullptr;
     TSMLoc url_loc   = nullptr;
@@ -906,7 +912,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_host) {
+  } else if (path.substr(0, p_request_host.size()) == p_request_host) {
     TSMBuffer bufp   = nullptr;
     TSMLoc hdr_loc   = nullptr;
     TSMLoc url_loc   = nullptr;
@@ -946,7 +952,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_scheme) {
+  } else if (path.substr(0, p_request_scheme.size()) == p_request_scheme) {
     TSMBuffer bufp     = nullptr;
     TSMLoc hdr_loc     = nullptr;
     TSMLoc url_loc     = nullptr;
@@ -966,7 +972,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_method) {
+  } else if (path.substr(0, p_request_method.size()) == p_request_method) {
     TSMBuffer bufp     = nullptr;
     TSMLoc hdr_loc     = nullptr;
     const char *method = nullptr;
@@ -980,7 +986,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_query) {
+  } else if (path.substr(0, p_request_query.size()) == p_request_query) {
     TSMBuffer bufp    = nullptr;
     TSMLoc hdr_loc    = nullptr;
     TSMLoc url_loc    = nullptr;
@@ -1000,7 +1006,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_referer) {
+  } else if (path.substr(0, p_request_referer.size()) == p_request_referer) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
@@ -1010,7 +1016,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_useragent) {
+  } else if (path.substr(0, p_request_useragent.size()) == p_request_useragent) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
@@ -1020,7 +1026,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_id) {
+  } else if (path.substr(0, p_request_id.size()) == p_request_id) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     if (TSHttpTxnClientReqGet(txnp_, &bufp, &hdr_loc) == TS_SUCCESS) {
@@ -1047,7 +1053,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_protocol) {
+  } else if (path.substr(0, p_request_protocol.size()) == p_request_protocol) {
     if (TSHttpTxnClientProtocolStackContains(txnp_, "h2") != nullptr) {
       *result = pv_http2;
     } else if (TSHttpTxnClientProtocolStackContains(txnp_, "http/1.0") != nullptr) {
@@ -1058,7 +1064,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_time) {
+  } else if (path.substr(0, p_request_time.size()) == p_request_time) {
     TSHRTime epoch = 0;
     if (TS_SUCCESS == TSHttpTxnMilestoneGet(txnp_, TS_MILESTONE_SM_START, &epoch)) {
       double timestamp = static_cast<double>(epoch) / 1000000000;
@@ -1067,7 +1073,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_request_duration) {
+  } else if (path.substr(0, p_request_duration.size()) == p_request_duration) {
     TSHRTime value = 0;
     TSHRTime epoch = 0;
 
@@ -1080,17 +1086,17 @@ Context::getProperty(std::string_view path, std::string *result)
     }
     *result = pv_empty;
     return WasmResult::Ok;
-  } else if (path == p_request_size) {
+  } else if (path.substr(0, p_request_size.size()) == p_request_size) {
     int64_t bytes = TSHttpTxnClientReqBodyBytesGet(txnp_);
     result->assign(reinterpret_cast<const char *>(&bytes), sizeof(int64_t));
     return WasmResult::Ok;
-  } else if (path == p_request_total_size) {
+  } else if (path.substr(0, p_request_total_size.size()) == p_request_total_size) {
     int h_bytes     = TSHttpTxnClientReqHdrBytesGet(txnp_);
     int64_t b_bytes = TSHttpTxnClientReqBodyBytesGet(txnp_);
     int64_t total   = h_bytes + b_bytes;
     result->assign(reinterpret_cast<const char *>(&total), sizeof(int64_t));
     return WasmResult::Ok;
-  } else if (path == p_response_code) {
+  } else if (path.substr(0, p_response_code.size()) == p_response_code) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     int status     = 0;
@@ -1103,7 +1109,7 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_response_code_details) {
+  } else if (path.substr(0, p_response_code_details.size()) == p_response_code_details) {
     TSMBuffer bufp     = nullptr;
     TSMLoc hdr_loc     = nullptr;
     const char *reason = nullptr;
@@ -1128,11 +1134,11 @@ Context::getProperty(std::string_view path, std::string *result)
       *result = pv_empty;
     }
     return WasmResult::Ok;
-  } else if (path == p_response_size) {
+  } else if (path.substr(0, p_response_size.size()) == p_response_size) {
     int64_t bytes = TSHttpTxnServerRespBodyBytesGet(txnp_);
     result->assign(reinterpret_cast<const char *>(&bytes), sizeof(int64_t));
     return WasmResult::Ok;
-  } else if (path == p_response_total_size) {
+  } else if (path.substr(0, p_response_total_size.size()) == p_response_total_size) {
     int h_bytes     = TSHttpTxnServerRespHdrBytesGet(txnp_);
     int64_t b_bytes = TSHttpTxnServerRespBodyBytesGet(txnp_);
     int64_t total   = h_bytes + b_bytes;
@@ -1148,7 +1154,7 @@ Context::getProperty(std::string_view path, std::string *result)
 WasmResult
 Context::setProperty(std::string_view key, std::string_view serialized_value)
 {
-  if (key == p_request_url_path) {
+  if (key.substr(0, p_request_url_path.size()) == p_request_url_path) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     TSMLoc url_loc = nullptr;
@@ -1168,7 +1174,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_request_host) {
+  } else if (key.substr(0, p_request_host.size()) == p_request_host) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     TSMLoc url_loc = nullptr;
@@ -1181,7 +1187,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_request_scheme) {
+  } else if (key.substr(0, p_request_scheme.size()) == p_request_scheme) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     TSMLoc url_loc = nullptr;
@@ -1194,7 +1200,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_request_method) {
+  } else if (key.substr(0, p_request_method.size()) == p_request_method) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
 
@@ -1203,7 +1209,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_request_query) {
+  } else if (key.substr(0, p_request_query.size()) == p_request_query) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
     TSMLoc url_loc = nullptr;
@@ -1227,7 +1233,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_response_code) {
+  } else if (key.substr(0, p_response_code.size()) == p_response_code) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
 
@@ -1237,7 +1243,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     }
     return WasmResult::Ok;
-  } else if (key == p_response_code_details) {
+  } else if (key.substr(0, p_response_code_details.size()) == p_response_code_details) {
     TSMBuffer bufp = nullptr;
     TSMLoc hdr_loc = nullptr;
 
@@ -1272,7 +1278,10 @@ Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, P
   } else {
     TSHttpTxnStatusSet(txnp_, static_cast<TSHttpStatus>(response_code));
 
-    TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(), nullptr); // Defaults to text/html
+    if (body_text.size() > 0) {
+      TSHttpTxnErrorBodySet(txnp_, TSstrndup(body_text.data(), body_text.size()), body_text.size(),
+                            nullptr); // Defaults to text/html
+    }
 
     local_reply_headers_ = additional_headers;
     local_reply_details_ = details;

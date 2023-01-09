@@ -10221,7 +10221,15 @@ TSDbgCtlCreate(char const *tag)
   sdk_assert(tag != nullptr);
   sdk_assert(*tag != '\0');
 
-  return DbgCtl::_get_ptr(tag);
+  return DbgCtl::_new_reference(tag);
+}
+
+tsapi void
+TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl)
+{
+  sdk_assert(dbg_ctl != nullptr);
+
+  DbgCtl::_rm_reference();
 }
 
 namespace rpc

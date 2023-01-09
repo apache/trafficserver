@@ -1,0 +1,18 @@
+config:
+  configuration: |
+      {
+        "rules": [
+          "SecDebugLogLevel 5",
+          "SecRuleEngine On",
+          "SecRule REQUEST_HEADERS:User-Agent \"perl\" \"id:1234,deny,status:403\""
+        ]
+      }
+  name: "coraza-filter"
+  rootId: "test"
+  vmConfig:
+    code:
+      local:
+        filename: /usr/local/var/wasm/plugin.wasm
+    runtime: envoy.wasm.runtime.wavm
+    vmId: "coraza-filter_vm_id"
+    allow_precompiled: true

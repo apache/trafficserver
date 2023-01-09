@@ -510,7 +510,7 @@ ocsp_update()
   time_t current_time;
 
   SSLCertificateConfig::scoped_config certLookup;
-  const unsigned ctxCount = certLookup->count();
+  const unsigned ctxCount = certLookup ? certLookup->count() : 0;
 
   Debug("ssl_ocsp", "updating OCSP data");
   for (unsigned i = 0; i < ctxCount; i++) {

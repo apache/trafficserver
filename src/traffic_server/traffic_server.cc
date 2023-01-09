@@ -276,15 +276,15 @@ public:
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
 
-      // TODO: TS-567 Integrate with debugging allocators "dump" features?
-      ink_freelists_dump(stderr);
-      ResourceTracker::dump(stderr);
-
 #if TS_HAS_JEMALLOC
       char buf[PATH_NAME_MAX] = "";
       RecGetRecordString("proxy.config.memory.malloc_stats_print_opts", buf, PATH_NAME_MAX);
       malloc_stats_print(nullptr, nullptr, buf);
 #endif
+
+      // TODO: TS-567 Integrate with debugging allocators "dump" features?
+      ink_freelists_dump(stderr);
+      ResourceTracker::dump(stderr);
     }
 
     if (signal_received[SIGUSR2]) {

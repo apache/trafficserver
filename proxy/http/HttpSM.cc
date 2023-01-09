@@ -372,9 +372,8 @@ HttpSM::init(bool from_early_data)
   magic = HTTP_SM_MAGIC_ALIVE;
 
   // Unique state machine identifier
-  sm_id                    = next_sm_id++;
-  t_state.state_machine_id = sm_id;
-  t_state.state_machine    = this;
+  sm_id                 = next_sm_id++;
+  t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
@@ -5813,7 +5812,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     ink_release_assert(0);
   }
 
-  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
+  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR || event == VC_EVENT_EOS) {
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
@@ -6309,7 +6308,7 @@ HttpSM::setup_server_send_request()
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
 
-  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
+  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
@@ -7784,6 +7783,9 @@ HttpSM::set_next_state()
     if (server_entry != nullptr && server_entry->in_tunnel == false) {
       release_server_session();
     }
+
+    do_drain_request_body(t_state.hdr_info.client_response);
+
     // If we're in state SEND_API_RESPONSE_HDR, it means functions
     // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
     // need to call do_api_callout. Otherwise TS loops infinitely in this state !

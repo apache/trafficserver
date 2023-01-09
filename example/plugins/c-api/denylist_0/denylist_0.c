@@ -118,7 +118,7 @@ handle_response(TSHttpTxn txnp)
   buf = TSmalloc(4096);
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
-  sprintf(buf, "You are forbidden from accessing \"%s\"\n", url_str);
+  snprintf(buf, 4096, "You are forbidden from accessing \"%s\"\n", url_str);
   TSfree(url_str);
   TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
