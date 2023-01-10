@@ -205,8 +205,8 @@ private:
   ssize_t _client_rwnd = 0;
   ssize_t _server_rwnd = 0;
 
-  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
-  int _recent_rwnd_increment_index           = 0;
+  std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index             = 0;
 
   Event *cross_thread_event = nullptr;
   Event *read_event         = nullptr;

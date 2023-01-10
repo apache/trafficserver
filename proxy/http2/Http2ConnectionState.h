@@ -230,8 +230,8 @@ private:
    */
   bool _server_rwnd_is_shrinking = false;
 
-  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
-  int _recent_rwnd_increment_index           = 0;
+  std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index             = 0;
 
   Http2FrequencyCounter _received_settings_counter;
   Http2FrequencyCounter _received_settings_frame_counter;
