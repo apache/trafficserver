@@ -580,3 +580,5 @@ Changes with Apache Traffic Server 9.2.0
   #9244 - Add autest to reproduce the conditional get cache body drain issue
   #9246 - Change Content-Type to text/plain if xdebug modifies response body
   #9285 - Do not track config file periodically
+  #9287 - Fix a crash from a server early abort
+  #9291 - Documentation-only changes from #9282 for 9.2.x
