@@ -26,10 +26,10 @@
 cmake_minimum_required(VERSION 3.23)
 project(ats)
 
+enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 
 # Gather some environment info
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} HOST_OS)
@@ -100,6 +100,11 @@ list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
 list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
 check_symbol_exists(BIO_meth_new "openssl/bio.h" HAVE_BIO_METH_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
+
+# Catch2 for tests
+set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/tests/include)
+
+include(CTest)
 
 message("Configuring for ${HOST_OS}")
 

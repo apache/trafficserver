@@ -19,3 +19,15 @@
 add_library(tscpputil SHARED
         string_view_util.cc
         TextView.cc)
+
+add_executable(test_tscpputil
+        unit_tests/test_LocalBuffer.cc
+        unit_tests/test_MemSpan.cc
+        unit_tests/test_PostScript.cc
+        unit_tests/test_TextView.cc
+        unit_tests/test_Strerror.cc
+        unit_tests/test_ts_meta.cc
+        unit_tests/unit_test_main.cc
+        )
+target_link_libraries(test_tscpputil PRIVATE tscpputil)
+target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})

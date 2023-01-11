@@ -110,3 +110,42 @@ target_include_directories(tscore PRIVATE
         ${YAML_INCLUDE_DIRS}
 )
 target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv)
+
+add_executable(test_tscore
+        unit_tests/test_AcidPtr.cc
+        unit_tests/test_ArgParser.cc
+        unit_tests/test_BufferWriter.cc
+        unit_tests/test_BufferWriterFormat.cc
+        unit_tests/test_CryptoHash.cc
+        unit_tests/test_Errata.cc
+        unit_tests/test_Extendible.cc
+        unit_tests/test_HKDF.cc
+        unit_tests/test_Histogram.cc
+        unit_tests/test_History.cc
+        unit_tests/test_IntrusiveHashMap.cc
+        unit_tests/test_IntrusivePtr.cc
+        unit_tests/test_IpMap.cc
+        unit_tests/test_List.cc
+        unit_tests/test_MMH.cc
+        unit_tests/test_MT_hashtable.cc
+        unit_tests/test_MemArena.cc
+        unit_tests/test_ParseRules.cc
+        unit_tests/test_PluginUserArgs.cc
+        unit_tests/test_PriorityQueue.cc
+        unit_tests/test_Ptr.cc
+        unit_tests/test_Random.cc
+        unit_tests/test_Regex.cc
+        unit_tests/test_Scalar.cc
+        unit_tests/test_Throttler.cc
+        unit_tests/test_Tokenizer.cc
+        unit_tests/test_Version.cc
+        unit_tests/test_arena.cc
+        unit_tests/test_ink_inet.cc
+        unit_tests/test_ink_memory.cc
+        unit_tests/test_layout.cc
+        unit_tests/test_scoped_resource.cc
+        unit_tests/test_ts_file.cc
+        unit_tests/unit_test_main.cc
+)
+target_link_libraries(test_tscore PRIVATE tscore inkevent)
+target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/iocore/eventsystem ${CATCH_INCLUDE_DIR})

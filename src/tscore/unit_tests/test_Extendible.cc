@@ -117,9 +117,6 @@ TEST_CASE("Create A", "")
   ext::details::areFieldsFinalized() = true;
   a_ptr                              = ext::create<A>();
   CHECK(Extendible<A>::schema.no_instances() == false);
-}
-TEST_CASE("Delete A", "")
-{
   delete a_ptr;
   CHECK(Extendible<A>::schema.no_instances());
 }
@@ -127,9 +124,6 @@ TEST_CASE("Create B", "")
 {
   a_ptr = ext::create<B>();
   CHECK(Extendible<A>::schema.no_instances() == false);
-}
-TEST_CASE("Delete B", "")
-{
   delete a_ptr;
   CHECK(Extendible<A>::schema.no_instances());
 }
