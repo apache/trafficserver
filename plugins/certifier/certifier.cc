@@ -349,9 +349,26 @@ mkcsr(const char *cn)
   return req;
 }
 
+/// Local helper function that adds a Subject Alternative Name field into a
+/// certificate
+static void
+addSANExtToCert(X509 *cert, const std::string &dnsName)
+{
+  TSDebug(PLUGIN_NAME, "Adding SAN extension to the cert");
+  GENERAL_NAMES *generalNames = sk_GENERAL_NAME_new_null();
+  GENERAL_NAME *generalName   = GENERAL_NAME_new();
+  ASN1_IA5STRING *ia5         = ASN1_IA5STRING_new();
+  ASN1_STRING_set(ia5, dnsName.data(), dnsName.length());
+  // generalName owns ia5 after this call
+  GENERAL_NAME_set0_value(generalName, GEN_DNS, ia5);
+  sk_GENERAL_NAME_push(generalNames, generalName);
+  X509_add1_ext_i2d(cert, NID_subject_alt_name, generalNames, 0, X509V3_ADD_DEFAULT);
+  sk_GENERAL_NAME_pop_free(generalNames, GENERAL_NAME_free);
+}
+
 /// Local helper function that generates a X509 certificate based on CSR
 static scoped_X509
-mkcrt(X509_REQ *req, int serial)
+mkcrt(X509_REQ *req, int serial, const std::string &commonName)
 {
   TSDebug(PLUGIN_NAME, "Entering mkcrt()...");
   X509_NAME *subj, *tmpsubj;
@@ -401,7 +418,10 @@ mkcrt(X509_REQ *req, int serial)
     X509_NAME_free(tmpsubj);
     return nullptr;
   }
+  /// Add the Subject Alternative Name (SAN) extension
+  addSANExtToCert(cert.get(), commonName);
 
+  // Sign the certificate
   X509_sign(cert.get(), ca_pkey_scoped.get(), EVP_sha256());
 
   return cert;
@@ -490,7 +510,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
       return TS_ERROR;
     }
 
-    cert = mkcrt(req.get(), serial);
+    cert = mkcrt(req.get(), serial, commonName);
 
     if (cert == nullptr) {
       TSDebug(PLUGIN_NAME, "[shadow_cert_generator] Cert generation failed");
@@ -602,10 +622,11 @@ TSPluginInit(int argc, const char *argv[])
     {"store", required_argument, nullptr, 's'},       {nullptr, no_argument, nullptr, 0}};
 
   int opt = 0;
-
   while (opt >= 0) {
     opt = getopt_long(argc, const_cast<char *const *>(argv), "c:k:r:m:s:", longopts, nullptr);
     switch (opt) {
+      // todo: zli11 - investigate crash and see whether we need to gracefully
+      // handle miss configuration
     case 'c': {
       cert = optarg;
       break;
