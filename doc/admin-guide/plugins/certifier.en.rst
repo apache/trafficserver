@@ -77,8 +77,7 @@ Example Usage
 =============
 To use this plugin, enable it in a :file:`plugin.config` rule, specifying certificates storage path, max number of certificates in memory, and signing cert+key+serial. For example:
 
-.. code-block:: text
-      certifier.so --store=/home/zeyuan/certifier/certs --max=1000 --sign-cert=/home/zeyuan/certifier/root-ca.crt --sign-key=/home/zeyuan/certifier/root-ca.key --sign-serial=/home/zeyuan/certifier/ca-serial.txt
+   ``certifier.so --store=/home/zeyuan/certifier/certs --max=1000 --sign-cert=/home/zeyuan/certifier/root-ca.crt --sign-key=/home/zeyuan/certifier/root-ca.key --sign-serial=/home/zeyuan/certifier/ca-serial.txt``
 
 One use case would be routing incoming CONNECT request to another port on |TS|. With the certifier generating a trusted certificate, other plugins can act with a similar behavior to Man-In-The-Middle (logging interesting data for example).
 
