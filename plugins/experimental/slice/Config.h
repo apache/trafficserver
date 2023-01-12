@@ -45,8 +45,9 @@ struct Config {
   int m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
   int m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
-  RefType m_reftype{First}; // reference slice is relative to request
-  bool m_head_req{false};   // HEAD request
+  RefType m_reftype{First};       // reference slice is relative to request
+  bool m_head_req{false};         // HEAD request
+  bool m_head_strip_range{false}; // strip range header for head requests
 
   std::string m_skip_header;
   std::string m_crr_ims_header;

@@ -124,6 +124,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("skip-header"), required_argument, nullptr, 's'},
     {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
     {const_cast<char *>("prefetch-count"), required_argument, nullptr, 'f'},
+    {const_cast<char *>("strip-range-for-head"), no_argument, nullptr, 'h'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -225,6 +226,9 @@ Config::fromArgs(int const argc, char const *const argv[])
     } break;
     case 'f': {
       m_prefetchcount = atoi(optarg);
+    } break;
+    case 'h': {
+      m_head_strip_range = true;
     } break;
     default:
       break;
