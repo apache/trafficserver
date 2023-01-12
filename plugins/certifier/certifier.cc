@@ -316,39 +316,6 @@ static TSMutex serial_mutex;     ///< serial number mutex
 static std::unique_ptr<SslLRUList> ssl_list = nullptr;
 static std::string store_path;
 
-/// Local helper function that generates a CSR based on common name
-static scoped_X509_REQ
-mkcsr(const char *cn)
-{
-  TSDebug(PLUGIN_NAME, "Entering mkcsr()...");
-  X509_NAME *n;
-  scoped_X509_REQ req;
-  req.reset(X509_REQ_new());
-
-  /// Set X509 version
-  X509_REQ_set_version(req.get(), 1);
-
-  /// Get handle to subject name
-  n = X509_REQ_get_subject_name(req.get());
-
-  /// Set common name field
-  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)cn, -1, -1, 0) != 1) {
-    TSError("[%s] mkcsr(): Failed to add entry.", PLUGIN_NAME);
-    return nullptr;
-  }
-  /// Set Traffic Server public key
-  if (X509_REQ_set_pubkey(req.get(), ca_pkey_scoped.get()) != 1) {
-    TSError("[%s] mkcsr(): Failed to set pubkey.", PLUGIN_NAME);
-    return nullptr;
-  }
-  /// Sign with Traffic Server private key
-  if (X509_REQ_sign(req.get(), ca_pkey_scoped.get(), EVP_sha256()) <= 0) {
-    TSError("[%s] mkcsr(): Failed to Sign.", PLUGIN_NAME);
-    return nullptr;
-  }
-  return req;
-}
-
 /// Local helper function that adds a Subject Alternative Name field into a
 /// certificate
 static void
@@ -368,10 +335,9 @@ addSANExtToCert(X509 *cert, const std::string &dnsName)
 
 /// Local helper function that generates a X509 certificate based on CSR
 static scoped_X509
-mkcrt(X509_REQ *req, int serial, const std::string &commonName)
+mkcrt(int serial, const std::string &commonName)
 {
   TSDebug(PLUGIN_NAME, "Entering mkcrt()...");
-  X509_NAME *subj, *tmpsubj;
   scoped_EVP_PKEY pktmp;
   scoped_X509 cert;
 
@@ -396,26 +362,16 @@ mkcrt(X509_REQ *req, int serial, const std::string &commonName)
   X509_gmtime_adj(X509_get_notBefore(cert.get()), 0);
   X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
-  /// Get a handle to csr subject name
-  subj = X509_REQ_get_subject_name(req);
-  if ((tmpsubj = X509_NAME_dup(subj)) == nullptr) {
-    TSDebug(PLUGIN_NAME, "mkcrt(): Failed to duplicate subject name.");
+  /// Get handle to subject name
+  X509_NAME *n = X509_get_subject_name(cert.get());
+  /// Set common name field
+  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.data(), -1, -1, 0) != 1) {
+    TSError("[%s] mkcsr(): Failed to add entry.", PLUGIN_NAME);
     return nullptr;
   }
-  if ((X509_set_subject_name(cert.get(), tmpsubj)) == 0) {
-    TSDebug(PLUGIN_NAME, "mkcrt(): Failed to set X509 subject name");
-    X509_NAME_free(tmpsubj); ///< explicit call to free X509_NAME object
-    return nullptr;
-  }
-  pktmp.reset(X509_REQ_get_pubkey(req));
-  if (pktmp == nullptr) {
-    TSDebug(PLUGIN_NAME, "mkcrt(): Failed to get CSR public key.");
-    X509_NAME_free(tmpsubj);
-    return nullptr;
-  }
-  if (X509_set_pubkey(cert.get(), pktmp.get()) == 0) {
+  /// Set Traffic Server public key
+  if (X509_set_pubkey(cert.get(), ca_pkey_scoped.get()) == 0) {
     TSDebug(PLUGIN_NAME, "mkcrt(): Failed to set X509 public key.");
-    X509_NAME_free(tmpsubj);
     return nullptr;
   }
   /// Add the Subject Alternative Name (SAN) extension
@@ -501,17 +457,8 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 
     TSMutexUnlock(serial_mutex);
 
-    /// Create CSR and cert
-    req = mkcsr(commonName.c_str());
-    if (req == nullptr) {
-      TSDebug(PLUGIN_NAME, "[shadow_cert_generator] CSR generation failed");
-      TSContDestroy(contp);
-      ssl_list->set_schedule(commonName, false);
-      return TS_ERROR;
-    }
-
-    cert = mkcrt(req.get(), serial, commonName);
-
+    /// Create cert
+    cert = mkcrt(serial, commonName);
     if (cert == nullptr) {
       TSDebug(PLUGIN_NAME, "[shadow_cert_generator] Cert generation failed");
       TSContDestroy(contp);
@@ -625,8 +572,6 @@ TSPluginInit(int argc, const char *argv[])
   while (opt >= 0) {
     opt = getopt_long(argc, const_cast<char *const *>(argv), "c:k:r:m:s:", longopts, nullptr);
     switch (opt) {
-      // todo: zli11 - investigate crash and see whether we need to gracefully
-      // handle miss configuration
     case 'c': {
       cert = optarg;
       break;

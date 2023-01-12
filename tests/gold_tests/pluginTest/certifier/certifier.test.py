@@ -1,5 +1,5 @@
 '''
-Test cookie-related caching behaviors
+Test certifier plugin behaviors
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,9 +17,10 @@ Test cookie-related caching behaviors
 #  limitations under the License.
 import hashlib
 import os
+import re
 
 Test.Summary = '''
-Test certifier behaviors
+Test certifier plugin behaviors
 '''
 # **testname is required**
 testName = ""
@@ -30,9 +31,8 @@ Test.SkipUnless(
 
 
 class DynamicCertTest:
-    chunkedReplayFile = "replays/https.replay.yaml"
+    httpsReplayFile = "replays/https.replay.yaml"
     certPathSrc = os.path.join(Test.TestDirectory, "certs")
-    # todo: might need to rename
     host = "www.tls.com"
     certPathDest = ""
 
@@ -41,12 +41,12 @@ class DynamicCertTest:
         self.setupTS()
 
     def setupOriginServer(self):
-        self.server = Test.MakeVerifierServerProcess("verifier-server1", self.chunkedReplayFile)
+        self.server = Test.MakeVerifierServerProcess("verifier-server1", self.httpsReplayFile)
 
     def setupTS(self):
-        self.ts = Test.MakeATSProcess("ts2", enable_tls=True)
+        self.ts = Test.MakeATSProcess("ts1", enable_tls=True)
         self.ts.addDefaultSSLFiles()
-        # copy over the cert store
+        # copy over the cert store in which the certs will be generated/stored
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
         Setup.Copy(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update({
@@ -61,10 +61,8 @@ class DynamicCertTest:
         self.ts.Disk.remap_config.AddLine(
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         )
-
-        # todo: zli11 - os path join
         self.ts.Disk.plugin_config.AddLine(
-            f"certifier.so -s {self.certPathDest}/store -m 1000 -c {self.certPathDest}/ca.cert -k {self.certPathDest}/ca.key -r {self.certPathDest}/ca-serial.txt")
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
         # Verify logs for dynamic generation of certs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "Creating shadow certs",
@@ -74,7 +72,7 @@ class DynamicCertTest:
         tr = Test.AddTestRun("Test dynamic generation of certs")
         tr.AddVerifierClientProcess(
             "client1",
-            self.chunkedReplayFile,
+            self.httpsReplayFile,
             http_ports=[self.ts.Variables.port],
             https_ports=[self.ts.Variables.ssl_port],
             other_args='--thread-limit 1')
@@ -83,31 +81,17 @@ class DynamicCertTest:
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts
 
-    def runHTTPSTraffic(self):
-        tr = Test.AddTestRun("Test dynamic generation of certs")
-        tr.AddVerifierClientProcess(
-            "client1",
-            self.chunkedReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
-        tr.Processes.Default.StartBefore(self.server)
-        tr.Processes.Default.StartBefore(self.ts)
-        tr.StillRunningAfter = self.server
-        tr.StillRunningAfter = self.ts
-
-    def runHTTPSTraffic(self):
-        tr = Test.AddTestRun("Test dynamic generation of certs")
-        tr.AddVerifierClientProcess(
-            "client1",
-            self.chunkedReplayFile,
-            http_ports=[self.ts.Variables.port],
-            https_ports=[self.ts.Variables.ssl_port],
-            other_args='--thread-limit 1')
-        tr.Processes.Default.StartBefore(self.server)
-        tr.Processes.Default.StartBefore(self.ts)
-        tr.StillRunningAfter = self.server
-        tr.StillRunningAfter = self.ts
+    def verifyCert(self, certPath):
+        tr = Test.AddTestRun("Verify the content of the generated cert")
+        tr.Processes.Default.Command = f'openssl x509 -in {certPath} -text -noout'
+        tr.Processes.Default.ReturnCode = 0
+        # Verifiy certificate content
+        tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+            "Subject: CN = www.tls.com", "Subject should match the host in the request")
+        tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+            r"X509v3 extensions:\n.*X509v3 Subject Alternative Name:.*\n.*DNS:www.tls.com",
+            "Should contain the SAN extension",
+            reflags=re.MULTILINE)
 
     def run(self):
         # the certifier plugin generates the cert and store it in a directory
@@ -124,7 +108,64 @@ class DynamicCertTest:
         self.runHTTPSTraffic()
         genCertDir.Exists = True
         genCertFile.Exists = True
-        # todo: check content of cert with openssl
+        self.verifyCert(os.path.join(genCertDirPath, genCertPath))
 
 
 DynamicCertTest().run()
+
+
+class ReuseExistingCertTest:
+    httpsReplayFile = "replays/https-two-sessions.replay.yaml"
+    certPathSrc = os.path.join(Test.TestDirectory, "certs")
+    host = "www.tls.com"
+    certPathDest = ""
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess("verifier-server2", self.httpsReplayFile)
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("ts2", enable_tls=True)
+        self.ts.addDefaultSSLFiles()
+        # copy over the cert store in which the certs will be generated/stored
+        self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
+        Setup.Copy(self.certPathSrc, self.certPathDest)
+        self.ts.Disk.records_config.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|certifier|ssl",
+            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+        })
+        self.ts.Disk.ssl_multicert_config.AddLine(
+            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+        )
+        self.ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        )
+        self.ts.Disk.plugin_config.AddLine(
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
+        # Verify logs for reusing existing cert
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            "Reuse existing cert and context for www.tls.com", "Should reuse the existing certificate")
+
+    def runHTTPSTraffic(self):
+        tr = Test.AddTestRun("Test dynamic generation of certs")
+        tr.AddVerifierClientProcess(
+            "client2",
+            self.httpsReplayFile,
+            http_ports=[self.ts.Variables.port],
+            https_ports=[self.ts.Variables.ssl_port],
+            other_args='--thread-limit 1')
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def run(self):
+        self.runHTTPSTraffic()
+
+
+ReuseExistingCertTest().run()
