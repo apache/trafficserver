@@ -135,6 +135,10 @@ The slice plugin supports the following options::
         can improve cache miss latency.
         -f for short
 
+    --strip-range-for-head (optional)
+        Enable slice plugin to strip Range header for HEAD requests.
+        -h for short
+
 Examples::
 
     @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so

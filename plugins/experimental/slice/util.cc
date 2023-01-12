@@ -79,12 +79,17 @@ request_block(TSCont contp, Data *const data)
   // reuse the incoming client header, just change the range
   HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
-  // add/set sub range key and add slicer tag
-  bool const rangestat = header.setKeyVal(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, rangelen);
+  // if configured, remove range header from head requests
+  if (data->m_config->m_head_req && data->m_config->m_head_strip_range) {
+    header.removeKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  } else {
+    // add/set sub range key and add slicer tag
+    bool const rangestat = header.setKeyVal(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, rangelen);
 
-  if (!rangestat) {
-    ERROR_LOG("Error trying to set range request header %s", rangestr);
-    return false;
+    if (!rangestat) {
+      ERROR_LOG("Error trying to set range request header %s", rangestr);
+      return false;
+    }
   }
 
   header.removeKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
