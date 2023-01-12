@@ -104,7 +104,6 @@ class DynamicCertTest:
         genCertFile = Test.Disk.File(genCertPath)
         genCertDir.Exists = False
         genCertFile.Exists = False
-        print(f"the dir checking is {genCertDir}")
         self.runHTTPSTraffic()
         genCertDir.Exists = True
         genCertFile.Exists = True

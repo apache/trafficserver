@@ -333,9 +333,9 @@ addSANExtToCert(X509 *cert, const std::string &dnsName)
   sk_GENERAL_NAME_pop_free(generalNames, GENERAL_NAME_free);
 }
 
-/// Local helper function that generates a X509 certificate based on CSR
+/// Local helper function that generates a X509 certificate based on SNI
 static scoped_X509
-mkcrt(int serial, const std::string &commonName)
+mkcrt(const std::string &commonName, int serial)
 {
   TSDebug(PLUGIN_NAME, "Entering mkcrt()...");
   scoped_EVP_PKEY pktmp;
@@ -458,7 +458,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
     TSMutexUnlock(serial_mutex);
 
     /// Create cert
-    cert = mkcrt(serial, commonName);
+    cert = mkcrt(commonName, serial);
     if (cert == nullptr) {
       TSDebug(PLUGIN_NAME, "[shadow_cert_generator] Cert generation failed");
       TSContDestroy(contp);
