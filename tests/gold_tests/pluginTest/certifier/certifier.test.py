@@ -95,8 +95,7 @@ class DynamicCertTest:
     def verifyCertNotExist(self, certPath):
         tr = Test.AddTestRun("Verify the cert doesn't exist in the store")
         tr.Processes.Default.Command = "echo verify"
-        certFile = tr.Disk.File(certPath)
-        certFile.Exists = False
+        certFile = tr.Disk.File(certPath, exists=False)
 
     def run(self):
         # the certifier plugin generates the cert and store it in a directory
