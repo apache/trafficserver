@@ -111,6 +111,14 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     // Should run TSVIONSetBytes(output_io, hlen + bodybytes);
     int64_t const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
     int64_t const clen = contentLengthFrom(header);
+    if (data->m_config->m_head_req && TS_HTTP_STATUS_OK == header.status()) {
+      DEBUG_LOG("HEAD request stripped Range header: expects 200");
+      TSVIONBytesSet(output_vio, hlen);
+      TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
+      data->m_bytessent = hlen;
+      TSVIOReenable(output_vio);
+      return HeaderState::Good;
+    }
     DEBUG_LOG("Passthru bytes: header: %" PRId64 " body: %" PRId64, hlen, clen);
     if (clen != INT64_MAX) {
       TSVIONBytesSet(output_vio, hlen + clen);

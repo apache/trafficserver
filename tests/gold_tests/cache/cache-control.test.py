@@ -268,10 +268,14 @@ class ResponseCacheControlDefaultTest:
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         )
 
-        # Verify logs for the response containing no-cache or no-store
+        # Verify logs for the response containing no-cache
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            "Revalidate document with server",
+            "Verify that ATS honors the no-cache in response and performs a revalidation.")
+        # Verify logs for the response containing no-store
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             "server does not permit storing and config file does not indicate that server directive should be ignored",
-            "Verify that ATS honors the no-cache(or no-store) in response and bypasses the cache.")
+            "Verify that ATS honors the no-store in response and bypasses the cache.")
 
     def runTraffic(self):
         tr = Test.AddTestRun("Verify the proper handling of cache-control directives in responses in default configuration")
@@ -319,8 +323,11 @@ class ResponseCacheControlIgnoredTest:
 
         # Verify logs for the response containing no-cache or no-store
         self.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            "Revalidate document with server",
+            "Verify that ATS ignores the no-cache in response and therefore doesn't perform a revalidation.")
+        self.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             "server does not permit storing and config file does not indicate that server directive should be ignored",
-            "Verify that ATS ignores the no-cache(or no-store) in response and caches the responses despite their presence.")
+            "Verify that ATS ignores the no-store in response and caches the responses despite its presence.")
 
     def runTraffic(self):
         tr = Test.AddTestRun(
@@ -338,5 +345,5 @@ class ResponseCacheControlIgnoredTest:
     def run(self):
         self.runTraffic()
 
-# Commenting out as this test would fail due to issue #9283
-# ResponseCacheControlIgnoredTest().run()
+
+ResponseCacheControlIgnoredTest().run()

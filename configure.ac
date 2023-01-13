@@ -1876,10 +1876,6 @@ AC_ARG_ENABLE([malloc-allocator],
 AC_MSG_RESULT([$enable_malloc_allocator])
 AC_SUBST(enable_malloc_allocator)
 
-#
-# Check for libreadline/libedit
-AX_LIB_READLINE
-
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
@@ -1943,8 +1939,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   sysexits.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
-                  readline/readline.h \
-                  editline/readline.h \
                   ucred.h ])
 
 # On OpenBSD, pthread.h must be included before pthread_np.h

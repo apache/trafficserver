@@ -23,7 +23,7 @@ dnl TS_CHECK_WAVM: look for wavm libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_WAVM], [
 has_wavm=0
-AC_ARG_WITH(wavm, [AC_HELP_STRING([--with-wavm=DIR], [use specific WAVM library])],
+AC_ARG_WITH(wavm, [AS_HELP_STRING([--with-wavm=DIR], [use specific WAVM library])],
 [
 if test "x$withval" != "xyes" && test "x$withval" != "x"; then
   wavm_base_dir="$withval"
