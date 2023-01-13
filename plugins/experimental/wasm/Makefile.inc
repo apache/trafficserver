@@ -16,8 +16,9 @@
 
 AM_CPPFLAGS += @YAMLCPP_INCLUDES@
 
-experimental_wasm_wasm_la_CPPFLAGS = -I$(srcdir)/experimental/wasm/lib -I$(srcdir)/experimental/wasm $(AM_CPPFLAGS) $(WAVM_CPPFLAGS) -DWAVM_API=
-experimental_wasm_wasm_la_LDFLAGS = = $(AM_LDFLAGS) $(WAVM_LDFLAGS)
+experimental_wasm_wasm_la_CPPFLAGS = -I$(srcdir)/experimental/wasm/lib -I$(srcdir)/experimental/wasm $(AM_CPPFLAGS)
+experimental_wasm_wasm_la_LDFLAGS = = $(AM_LDFLAGS)
+experimental_wasm_wasm_la_LIBADD = $(WAMR_LIBS)
 
 pkglib_LTLIBRARIES += experimental/wasm/wasm.la
 
@@ -40,6 +41,8 @@ experimental_wasm_wasm_la_SOURCES = \
   experimental/wasm/lib/include/proxy-wasm/signature_util.h \
   experimental/wasm/lib/src/vm_id_handle.cc \
   experimental/wasm/lib/include/proxy-wasm/vm_id_handle.h \
+  experimental/wasm/lib/src/pairs_util.cc \
+  experimental/wasm/lib/include/proxy-wasm/pairs_util.h \
   experimental/wasm/lib/include/proxy-wasm/wasm_vm.h \
   experimental/wasm/lib/src/wasm.cc \
   experimental/wasm/lib/include/proxy-wasm/wasm.h \
@@ -48,7 +51,9 @@ experimental_wasm_wasm_la_SOURCES = \
   experimental/wasm/ats_context.cc \
   experimental/wasm/ats_context.h \
   experimental/wasm/wasm_main.cc \
-  experimental/wasm/lib/src/wavm/wavm.cc \
-  experimental/wasm/lib/include/proxy-wasm/wavm.h \
+  experimental/wasm/lib/src/wamr/wamr.cc \
+  experimental/wasm/lib/src/wamr/types.h \
+  experimental/wasm/lib/include/proxy-wasm/wamr.h \
+  experimental/wasm/lib/src/common/types.h \
   experimental/wasm/lib/include/proxy-wasm/word.h
 

@@ -14,6 +14,10 @@
 
 #include "include/proxy-wasm/bytecode_util.h"
 
+#if !defined(_MSC_VER)
+#include <cxxabi.h>
+#endif
+
 #include <cstring>
 
 namespace proxy_wasm {
@@ -44,15 +48,18 @@ bool BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersi
       return false;
     }
     if (section_type == 7 /* export section */) {
+      const char *section_end = pos + section_len;
       uint32_t export_vector_size = 0;
-      if (!parseVarint(pos, end, export_vector_size) || pos + export_vector_size > end) {
+      if (!parseVarint(pos, section_end, export_vector_size) ||
+          pos + export_vector_size > section_end) {
         return false;
       }
       // Search thourgh exports.
       for (uint32_t i = 0; i < export_vector_size; i++) {
         // Parse name of the export.
         uint32_t export_name_size = 0;
-        if (!parseVarint(pos, end, export_name_size) || pos + export_name_size > end) {
+        if (!parseVarint(pos, section_end, export_name_size) ||
+            pos + export_name_size > section_end) {
           return false;
         }
         const auto *const name_begin = pos;
@@ -61,7 +68,7 @@ bool BytecodeUtil::getAbiVersion(std::string_view bytecode, proxy_wasm::AbiVersi
           return false;
         }
         // Check if it is a function type export
-        if (*pos++ == 0x00) {
+        if (*pos++ == 0x00 /* function */) {
           const std::string export_name = {name_begin, export_name_size};
           // Check the name of the function.
           if (export_name == "proxy_abi_version_0_1_0") {
@@ -110,24 +117,25 @@ bool BytecodeUtil::getCustomSection(std::string_view bytecode, std::string_view 
     }
     if (section_type == 0) {
       // Custom section.
-      const auto *const section_data_start = pos;
+      const char *section_end = pos + section_len;
       uint32_t section_name_len = 0;
-      if (!BytecodeUtil::parseVarint(pos, end, section_name_len) || pos + section_name_len > end) {
+      if (!BytecodeUtil::parseVarint(pos, section_end, section_name_len) ||
+          pos + section_name_len > section_end) {
         return false;
       }
       if (section_name_len == name.size() && ::memcmp(pos, name.data(), section_name_len) == 0) {
         pos += section_name_len;
-        ret = {pos, static_cast<size_t>(section_data_start + section_len - pos)};
+        ret = {pos, static_cast<size_t>(section_end - pos)};
         return true;
       }
-      pos = section_data_start + section_len;
+      pos = section_end;
     } else {
       // Skip other sections.
       pos += section_len;
     }
   }
   return true;
-};
+}
 
 bool BytecodeUtil::getFunctionNameIndex(std::string_view bytecode,
                                         std::unordered_map<uint32_t, std::string> &ret) {
@@ -165,7 +173,16 @@ bool BytecodeUtil::getFunctionNameIndex(std::string_view bytecode,
           if (!parseVarint(pos, end, func_name_size) || pos + func_name_size > end) {
             return false;
           }
-          ret.insert({func_index, std::string(pos, func_name_size)});
+          auto func_name = std::string(pos, func_name_size);
+#if !defined(_MSC_VER)
+          int status;
+          char *data = abi::__cxa_demangle(func_name.c_str(), nullptr, nullptr, &status);
+          if (data != nullptr) {
+            func_name = std::string(data);
+            ::free(data);
+          }
+#endif
+          ret.insert({func_index, func_name});
           pos += func_name_size;
         }
         if (start + subsection_size != pos) {
@@ -229,16 +246,32 @@ bool BytecodeUtil::getStrippedSource(std::string_view bytecode, std::string &ret
 
 bool BytecodeUtil::parseVarint(const char *&pos, const char *end, uint32_t &ret) {
   uint32_t shift = 0;
+  uint32_t total = 0;
+  uint32_t v;
   char b;
-  do {
+  while (pos < end) {
     if (pos + 1 > end) {
+      // overread
       return false;
     }
     b = *pos++;
-    ret += (b & 0x7f) << shift;
+    v = (b & 0x7f);
+    if (shift == 28 && v > 3) {
+      // overflow
+      return false;
+    }
+    total += v << shift;
+    if ((b & 0x80) == 0) {
+      ret = total;
+      return true;
+    }
     shift += 7;
-  } while ((b & 0x80) != 0);
-  return ret != static_cast<uint32_t>(-1);
+    if (shift > 28) {
+      // overflow
+      return false;
+    }
+  }
+  return false;
 }
 
 } // namespace proxy_wasm

@@ -33,8 +33,21 @@ using proxy_wasm::WasmVm;
 using proxy_wasm::WasmHandleBase;
 using proxy_wasm::WasmVmFactory;
 using proxy_wasm::AllowedCapabilitiesMap;
+using proxy_wasm::WasmVmIntegration;
 
 class Context;
+
+class ATSWasmVmIntegration : public WasmVmIntegration
+{
+public:
+  //  proxy_wasm::WasmVmIntegration
+  WasmVmIntegration* clone() override { return new ATSWasmVmIntegration(); }
+  bool getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments,
+                         proxy_wasm::NullPlugin* plugin, void* ptr_to_function_return) override;
+  proxy_wasm::LogLevel getLogLevel() override;
+  void error(std::string_view message) override;
+  void trace(std::string_view message) override;
+};
 
 class Wasm : public WasmBase
 {

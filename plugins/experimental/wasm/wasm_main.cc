@@ -19,7 +19,7 @@
 #include "ts/ts.h"
 #include <yaml-cpp/yaml.h>
 #include "ats_wasm.h"
-#include "include/proxy-wasm/wavm.h"
+#include "include/proxy-wasm/wamr.h"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -414,13 +414,14 @@ read_configuration()
     return false;
   }
 
-  auto wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWavmVm(), // VM
+  auto wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWamrVm(), // VM
                                                vm_id,                      // vm_id
                                                vm_configuration,           // vm_configuration
                                                "",                         // vm_key,
                                                envs,                       // envs
                                                cap_maps                    // allowed capabilities
   );
+  wasm->wasm_vm()->integration() = std::make_unique<ats_wasm::ATSWasmVmIntegration>();
 
   auto plugin = std::make_shared<proxy_wasm::PluginBase>(name,          // name
                                                          root_id,       // root_id

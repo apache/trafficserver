@@ -21,6 +21,7 @@ using WasmEnginePtr = common::CSmartPtr<wasm_engine_t, wasm_engine_delete>;
 using WasmFuncPtr = common::CSmartPtr<wasm_func_t, wasm_func_delete>;
 using WasmStorePtr = common::CSmartPtr<wasm_store_t, wasm_store_delete>;
 using WasmModulePtr = common::CSmartPtr<wasm_module_t, wasm_module_delete>;
+using WasmSharedModulePtr = common::CSmartPtr<wasm_shared_module_t, wasm_shared_module_delete>;
 using WasmMemoryPtr = common::CSmartPtr<wasm_memory_t, wasm_memory_delete>;
 using WasmTablePtr = common::CSmartPtr<wasm_table_t, wasm_table_delete>;
 using WasmInstancePtr = common::CSmartPtr<wasm_instance_t, wasm_instance_delete>;
