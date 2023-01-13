@@ -316,10 +316,15 @@ static TSMutex serial_mutex;     ///< serial number mutex
 static std::unique_ptr<SslLRUList> ssl_list = nullptr;
 static std::string store_path;
 
-/// Local helper function that adds a Subject Alternative Name field into a
-/// certificate
+/**
+ * Local helper function that adds a Subject Alternative Name field into a
+ * certificate.
+ *
+ * @param[out] cert
+ * @param[in] dnsName
+ */
 static void
-addSANExtToCert(X509 *cert, const std::string &dnsName)
+addSANExtToCert(X509 *cert, std::string_view dnsName)
 {
   TSDebug(PLUGIN_NAME, "Adding SAN extension to the cert");
   GENERAL_NAMES *generalNames = sk_GENERAL_NAME_new_null();
@@ -365,7 +370,7 @@ mkcrt(const std::string &commonName, int serial)
   /// Get handle to subject name
   X509_NAME *n = X509_get_subject_name(cert.get());
   /// Set common name field
-  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.data(), -1, -1, 0) != 1) {
+  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.c_str(), -1, -1, 0) != 1) {
     TSError("[%s] mkcsr(): Failed to add entry.", PLUGIN_NAME);
     return nullptr;
   }

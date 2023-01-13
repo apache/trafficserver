@@ -22,8 +22,6 @@ import re
 Test.Summary = '''
 Test certifier plugin behaviors
 '''
-# **testname is required**
-testName = ""
 
 Test.SkipUnless(
     Condition.PluginExists('certifier.so')
@@ -85,7 +83,7 @@ class DynamicCertTest:
         tr = Test.AddTestRun("Verify the content of the generated cert")
         tr.Processes.Default.Command = f'openssl x509 -in {certPath} -text -noout'
         tr.Processes.Default.ReturnCode = 0
-        # Verifiy certificate content
+        # Verify certificate content
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             "Subject: CN = www.tls.com", "Subject should match the host in the request")
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
@@ -93,21 +91,22 @@ class DynamicCertTest:
             "Should contain the SAN extension",
             reflags=re.MULTILINE)
 
+    def verifyCertNotExist(self, certPath):
+        tr = Test.AddTestRun("Verify the cert doesn't exist in the store")
+        tr.Processes.Default.Command = "echo verify"
+        certFile = tr.Disk.File(certPath)
+        certFile.Exists = False
+
     def run(self):
         # the certifier plugin generates the cert and store it in a directory
         # named with the first three character of the md5 hash of the hostname
-        genCertDirPath = os.path.join(self.certPathDest,
-                                      'store',
-                                      str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]))
-        genCertPath = os.path.join(genCertDirPath, self.host + ".crt")
-        genCertDir = Test.Disk.Directory(genCertDirPath)
-        genCertFile = Test.Disk.File(genCertPath)
-        genCertDir.Exists = False
-        genCertFile.Exists = False
+        genCertPath = os.path.join(self.certPathDest,
+                                   'store',
+                                   str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]),
+                                   self.host + ".crt")
+        self.verifyCertNotExist(genCertPath)
         self.runHTTPSTraffic()
-        genCertDir.Exists = True
-        genCertFile.Exists = True
-        self.verifyCert(os.path.join(genCertDirPath, genCertPath))
+        self.verifyCert(genCertPath)
 
 
 DynamicCertTest().run()
