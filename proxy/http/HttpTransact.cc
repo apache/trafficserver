@@ -311,7 +311,7 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
     ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
                (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
                (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
-               s->current.state == OUTBOUND_CONGESTION);
+               s->current.state == OUTBOUND_CONGESTION || s->current.state == BAD_INCOMING_RESPONSE);
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;
