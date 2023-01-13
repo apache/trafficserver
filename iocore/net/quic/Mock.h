@@ -27,7 +27,11 @@
 
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
+#if HAVE_QUICHE_H
+#include "QUICStreamManager_quiche.h"
+#else
 #include "QUICStreamManager_native.h"
+#endif
 #include "QUICLossDetector.h"
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPinger.h"
@@ -39,6 +43,11 @@
 #include "QUICPadder.h"
 #include "QUICHandshakeProtocol.h"
 #include "QUICStreamAdapter.h"
+#if HAVE_QUICHE_H
+#include "QUICStream_quiche.h"
+#else
+#include "QUICStream_native.h"
+#endif
 
 class MockQUICContext;
 
@@ -246,6 +255,7 @@ public:
   MockQUICStreamManager(QUICContext *context) : QUICStreamManagerImpl(context, nullptr) {}
 
   // Override
+#ifndef HAVE_QUICHE_H
   virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
@@ -254,6 +264,7 @@ public:
 
     return nullptr;
   }
+#endif
 
   // for Test
   int
@@ -652,6 +663,7 @@ public:
   {
     return _config;
   }
+#ifndef HAVE_QUICHE_H
   virtual QUICRTTProvider *
   rtt_provider() const override
   {
@@ -681,6 +693,7 @@ public:
   {
     return _path_manager.get();
   }
+#endif
 
 private:
   QUICConfig::scoped_config _config;
