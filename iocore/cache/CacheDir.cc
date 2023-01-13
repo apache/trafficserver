@@ -640,8 +640,20 @@ Lagain:
     goto Lagain;
   }
 Llink:
-  dir_set_next(e, dir_next(b));
-  dir_set_next(b, dir_to_offset(e, seg));
+  // dir_probe searches from head to tail of list and resumes from last_collision.
+  // Need to insert at the tail of the list so that no entries can be inserted
+  // before last_collision. This means walking the entire list on each insert,
+  // but at least the lists are completely in memory and should be quite short
+  Dir *prev, *last;
+
+  last = b;
+  do {
+    prev = last;
+    last = next_dir(last, seg);
+  } while (last);
+
+  dir_set_next(e, 0);
+  dir_set_next(prev, dir_to_offset(e, seg));
 Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
