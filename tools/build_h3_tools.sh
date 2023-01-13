@@ -61,13 +61,27 @@ fi
 
 set -x
 
+# Build quiche
+# Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
+echo "Building quiche"
+[ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
+cd quiche
+cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
+sudo mkdir -p /opt/quiche/lib/pkgconfig
+sudo mkdir -p /opt/quiche/include
+sudo cp target/release/libquiche.a /opt/quiche/lib/
+sudo cp target/release/libquiche.so /opt/quiche/lib/
+sudo cp quiche/include/quiche.h /opt/quiche/include/
+sudo cp target/release/quiche.pc /opt/quiche/lib/pkgconfig
+cd ..
+
 # OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
 echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
 cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j $(nproc)
-sudo ${MAKE} install
+sudo ${MAKE} -j install
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
@@ -76,7 +90,12 @@ cd ..
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone https://github.com/ngtcp2/nghttp3.git
+if [ ! -d nghttp3 ]; then
+  git clone https://github.com/ngtcp2/nghttp3.git
+  cd nghttp3
+  git checkout -b v0.8.0 v0.8.0
+  cd ..
+fi
 cd nghttp3
 autoreconf -if
 ./configure \
@@ -92,7 +111,12 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone https://github.com/ngtcp2/ngtcp2.git
+if [ ! -d ngtcp2 ]; then
+  git clone https://github.com/ngtcp2/ngtcp2.git
+  cd ngtcp2
+  git checkout -b v0.12.0 v0.12.0
+  cd ..
+fi
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -108,9 +132,13 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone https://github.com/tatsuhiro-t/nghttp2.git
+if [ ! -d nghttp2 ]; then
+  git clone https://github.com/tatsuhiro-t/nghttp2.git
+  cd nghttp2
+  git checkout -b v1.51.0 v1.51.0
+  cd ..
+fi
 cd nghttp2
-git checkout --track -b quic origin/quic
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
@@ -118,7 +146,8 @@ autoreconf -if
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
-  --enable-lib-only
+  --enable-http3 \
+  --enable-app
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
