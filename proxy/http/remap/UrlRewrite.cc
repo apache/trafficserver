@@ -769,7 +769,7 @@ UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping
     h_table->emplace(src_host, ht_contents);
   }
   if (!ht_contents->Insert(mapping)) {
-    Warning("Could not insert new mapping");
+    Warning("Could not insert new mapping: duplicated entry exists.");
     return false;
   }
   return true;
