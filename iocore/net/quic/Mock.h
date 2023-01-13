@@ -255,8 +255,7 @@ public:
   MockQUICStreamManager(QUICContext *context) : QUICStreamManagerImpl(context, nullptr) {}
 
   // Override
-#if HAVE_QUICHE_H
-#else
+#ifndef HAVE_QUICHE_H
   virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
@@ -664,8 +663,7 @@ public:
   {
     return _config;
   }
-#if HAVE_QUICHE_H
-#else
+#ifndef HAVE_QUICHE_H
   virtual QUICRTTProvider *
   rtt_provider() const override
   {
