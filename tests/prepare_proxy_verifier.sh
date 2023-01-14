@@ -40,7 +40,7 @@ pv_dir="${pv_name}-${pv_version}"
 pv_tar_filename="${pv_dir}.tar.gz"
 pv_tar="${pv_top_dir}/${pv_tar_filename}"
 pv_tar_url="https://ci.trafficserver.apache.org/bintray/${pv_tar_filename}"
-expected_sha1="d939629949bafe6df8821e5d441762066cc6d556"
+expected_sha1="011bd50b74a07484683ed56a671f37afbdd0c786"
 pv_client="${bin_dir}/verifier-client"
 pv_server="${bin_dir}/verifier-server"
 TAR=${TAR:-tar}
@@ -76,7 +76,17 @@ EOF
     pv_os_dir=""
     case $(uname -s) in
     Darwin)
-        pv_os_dir="${pv_unpack_dir}/${pv_dir}/mac-os"
+        case $(uname -m) in
+        x86_64)
+            pv_os_dir="${pv_unpack_dir}/${pv_dir}/mac-x86_64"
+            ;;
+        arm64)
+            pv_os_dir="${pv_unpack_dir}/${pv_dir}/mac-m1"
+            ;;
+        *)
+            fail "Unrecognized Mac architecture: $(uname -m)"
+            ;;
+        esac
         ;;
     Linux)
         pv_os_dir="${pv_unpack_dir}/${pv_dir}/linux"
