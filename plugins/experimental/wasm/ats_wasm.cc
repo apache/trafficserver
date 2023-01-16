@@ -46,10 +46,8 @@ ATSWasmVmIntegration::trace(std::string_view message)
 }
 
 bool
-ATSWasmVmIntegration::getNullVmFunction(std::string_view function_name, bool returns_word,
-                                        int number_of_arguments,
-                                        proxy_wasm::NullPlugin* plugin,
-                                        void* ptr_to_function_return)
+ATSWasmVmIntegration::getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments,
+                                        proxy_wasm::NullPlugin* plugin, void* ptr_to_function_return)
 {
   return false;
 }

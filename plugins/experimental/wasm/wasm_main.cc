@@ -414,7 +414,7 @@ read_configuration()
     return false;
   }
 
-  auto wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWamrVm(), // VM
+  auto wasm                      = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWamrVm(), // VM
                                                vm_id,                      // vm_id
                                                vm_configuration,           // vm_configuration
                                                "",                         // vm_key,

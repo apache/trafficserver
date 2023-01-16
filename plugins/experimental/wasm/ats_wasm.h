@@ -41,9 +41,13 @@ class ATSWasmVmIntegration : public WasmVmIntegration
 {
 public:
   //  proxy_wasm::WasmVmIntegration
-  WasmVmIntegration* clone() override { return new ATSWasmVmIntegration(); }
-  bool getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments,
-                         proxy_wasm::NullPlugin* plugin, void* ptr_to_function_return) override;
+  WasmVmIntegration*
+  clone() override
+  {
+    return new ATSWasmVmIntegration();
+  }
+  bool getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments, proxy_wasm::NullPlugin* plugin,
+                         void* ptr_to_function_return) override;
   proxy_wasm::LogLevel getLogLevel() override;
   void error(std::string_view message) override;
   void trace(std::string_view message) override;
