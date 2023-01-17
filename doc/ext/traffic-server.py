@@ -106,7 +106,7 @@ class TSConfVar(std.Target):
         title['first'] = False
         title['objtype'] = 'cv'
         self.add_name(title)
-        title.set_class('ts-cv-title')
+        title['classes'].append('ts-cv-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
@@ -115,7 +115,7 @@ class TSConfVar(std.Target):
         node.append(title)
 
         if ('class' in self.options):
-            title.set_class(self.options.get('class'))
+            title['classes'].append(self.options.get('class'))
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
         nodes.target('', '', names=[cv_name])
@@ -244,7 +244,7 @@ class TSStat(std.Target):
         title['first'] = False
         title['objtype'] = 'stat'
         self.add_name(title)
-        title.set_class('ts-stat-title')
+        title['classes'].append('ts-stat-title')
 
         # Finally, add a desc_name() node to display the name of the
         # configuration variable.
