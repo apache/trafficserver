@@ -39,6 +39,12 @@ int fds_limit = 8000;
 
 class FakeUDPNetProcessor : public UDPNetProcessor
 {
+  EventType
+  register_event_type() override
+  {
+    return 999;
+  }
+
   int
   start(int, size_t) override
   {
