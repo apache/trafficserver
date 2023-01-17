@@ -28,6 +28,8 @@ Synopsis
 
     #include <ts/apidefs.h>
 
+.. c:macro:: TS_SSL_MAX_SSL_SESSION_ID_LENGTH
+
 .. type:: TSSslSessionID
 
    .. member:: size_t len
@@ -46,4 +48,3 @@ opaque TS object type).
 
 
 :type:`TSSslSession` references the SSL session object.  It can be cast to the OpenSSL type ``SSL_SESSION``.
-
