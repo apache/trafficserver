@@ -98,6 +98,7 @@ private:
                              std::function<R(ContextBase *, Args...)> *function);
 
   void terminate() override {}
+  bool usesWasmByteOrder() override { return true; }
 
   WasmStorePtr store_;
   WasmModulePtr module_;
@@ -394,7 +395,7 @@ bool Wasmtime::getWord(uint64_t pointer, Word *word) {
 
   uint32_t word32;
   ::memcpy(&word32, wasm_memory_data(memory_.get()) + pointer, size);
-  word->u64_ = wasmtoh(word32);
+  word->u64_ = wasmtoh(word32, true);
   return true;
 }
 
@@ -403,7 +404,7 @@ bool Wasmtime::setWord(uint64_t pointer, Word word) {
   if (pointer + size > wasm_memory_data_size(memory_.get())) {
     return false;
   }
-  uint32_t word32 = htowasm(word.u32());
+  uint32_t word32 = htowasm(word.u32(), true);
   ::memcpy(wasm_memory_data(memory_.get()) + pointer, &word32, size);
   return true;
 }
@@ -616,9 +617,9 @@ void Wasmtime::getModuleFunctionImpl(std::string_view function_name,
     if (trap) {
       WasmByteVec error_message;
       wasm_trap_message(trap.get(), error_message.get());
+      std::string message(error_message.get()->data); // NULL-terminated
       fail(FailState::RuntimeError,
-           "Function: " + std::string(function_name) + " failed:\n" +
-               std::string(error_message.get()->data, error_message.get()->size));
+           "Function: " + std::string(function_name) + " failed: " + message);
       return;
     }
     if (log) {
@@ -678,9 +679,9 @@ void Wasmtime::getModuleFunctionImpl(std::string_view function_name,
     if (trap) {
       WasmByteVec error_message;
       wasm_trap_message(trap.get(), error_message.get());
+      std::string message(error_message.get()->data); // NULL-terminated
       fail(FailState::RuntimeError,
-           "Function: " + std::string(function_name) + " failed:\n" +
-               std::string(error_message.get()->data, error_message.get()->size));
+           "Function: " + std::string(function_name) + " failed: " + message);
       return R{};
     }
     R ret = convertValueTypeToArg<R>(results.data[0]);

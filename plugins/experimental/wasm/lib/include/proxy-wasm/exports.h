@@ -62,36 +62,6 @@ struct RegisterForeignFunction {
 
 namespace exports {
 
-template <typename Pairs> size_t pairsSize(const Pairs &result) {
-  size_t size = 4; // number of headers
-  for (auto &p : result) {
-    size += 8;                   // size of key, size of value
-    size += p.first.size() + 1;  // null terminated key
-    size += p.second.size() + 1; // null terminated value
-  }
-  return size;
-}
-
-template <typename Pairs> void marshalPairs(const Pairs &result, char *buffer) {
-  char *b = buffer;
-  *reinterpret_cast<uint32_t *>(b) = htowasm(result.size());
-  b += sizeof(uint32_t);
-  for (auto &p : result) {
-    *reinterpret_cast<uint32_t *>(b) = htowasm(p.first.size());
-    b += sizeof(uint32_t);
-    *reinterpret_cast<uint32_t *>(b) = htowasm(p.second.size());
-    b += sizeof(uint32_t);
-  }
-  for (auto &p : result) {
-    memcpy(b, p.first.data(), p.first.size());
-    b += p.first.size();
-    *b++ = 0;
-    memcpy(b, p.second.data(), p.second.size());
-    b += p.second.size();
-    *b++ = 0;
-  }
-}
-
 // ABI functions exported from host to wasm.
 
 Word get_configuration(Word value_ptr_ptr, Word value_size_ptr);

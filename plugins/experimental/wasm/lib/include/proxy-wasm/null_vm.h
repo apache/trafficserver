@@ -61,6 +61,7 @@ struct NullVm : public WasmVm {
 #undef _REGISTER_CALLBACK
 
   void terminate() override {}
+  bool usesWasmByteOrder() override { return false; }
 
   std::string plugin_name_;
   std::unique_ptr<NullVmPlugin> plugin_;

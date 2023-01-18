@@ -24,11 +24,11 @@ namespace proxy_wasm {
 // Use byteswap functions only when compiling for big-endian platforms.
 #if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) &&                                    \
     __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define htowasm(x) __builtin_bswap32(x)
-#define wasmtoh(x) __builtin_bswap32(x)
+#define htowasm(x, vm_uses_wasm_byte_order) ((vm_uses_wasm_byte_order) ? __builtin_bswap32(x) : (x))
+#define wasmtoh(x, vm_uses_wasm_byte_order) ((vm_uses_wasm_byte_order) ? __builtin_bswap32(x) : (x))
 #else
-#define htowasm(x) (x)
-#define wasmtoh(x) (x)
+#define htowasm(x, vm_uses_wasm_byte_order) (x)
+#define wasmtoh(x, vm_uses_wasm_byte_order) (x)
 #endif
 
 // Represents a Wasm-native word-sized datum. On 32-bit VMs, the high bits are always zero.

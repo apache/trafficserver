@@ -355,6 +355,25 @@ ContextBase *WasmBase::getRootContext(const std::shared_ptr<PluginBase> &plugin,
 }
 
 void WasmBase::startVm(ContextBase *root_context) {
+  // wasi_snapshot_preview1.clock_time_get
+  wasm_vm_->setRestrictedCallback(
+      true, {// logging (Proxy-Wasm)
+             "env.proxy_log",
+             // logging (stdout/stderr)
+             "wasi_unstable.fd_write", "wasi_snapshot_preview1.fd_write",
+             // args
+             "wasi_unstable.args_sizes_get", "wasi_snapshot_preview1.args_sizes_get",
+             "wasi_unstable.args_get", "wasi_snapshot_preview1.args_get",
+             // environment variables
+             "wasi_unstable.environ_sizes_get", "wasi_snapshot_preview1.environ_sizes_get",
+             "wasi_unstable.environ_get", "wasi_snapshot_preview1.environ_get",
+             // preopened files/directories
+             "wasi_unstable.fd_prestat_get", "wasi_snapshot_preview1.fd_prestat_get",
+             "wasi_unstable.fd_prestat_dir_name", "wasi_snapshot_preview1.fd_prestat_dir_name",
+             // time
+             "wasi_unstable.clock_time_get", "wasi_snapshot_preview1.clock_time_get",
+             // random
+             "wasi_unstable.random_get", "wasi_snapshot_preview1.random_get"});
   if (_initialize_) {
     // WASI reactor.
     _initialize_(root_context);
@@ -370,6 +389,7 @@ void WasmBase::startVm(ContextBase *root_context) {
     // WASI command.
     _start_(root_context);
   }
+  wasm_vm_->setRestrictedCallback(false);
 }
 
 bool WasmBase::configure(ContextBase *root_context, std::shared_ptr<PluginBase> plugin) {
@@ -447,6 +467,35 @@ void WasmBase::finishShutdown() {
   }
 }
 
+bool WasmHandleBase::canary(const std::shared_ptr<PluginBase> &plugin,
+                            const WasmHandleCloneFactory &clone_factory) {
+  if (this->wasm() == nullptr) {
+    return false;
+  }
+  auto configuration_canary_handle = clone_factory(shared_from_this());
+  if (!configuration_canary_handle) {
+    this->wasm()->fail(FailState::UnableToCloneVm, "Failed to clone Base Wasm");
+    return false;
+  }
+  if (!configuration_canary_handle->wasm()->initialize()) {
+    configuration_canary_handle->wasm()->fail(FailState::UnableToInitializeCode,
+                                              "Failed to initialize Wasm code");
+    return false;
+  }
+  auto *root_context = configuration_canary_handle->wasm()->start(plugin);
+  if (root_context == nullptr) {
+    configuration_canary_handle->wasm()->fail(FailState::StartFailed, "Failed to start base Wasm");
+    return false;
+  }
+  if (!configuration_canary_handle->wasm()->configure(root_context, plugin)) {
+    configuration_canary_handle->wasm()->fail(FailState::ConfigureFailed,
+                                              "Failed to configure base Wasm plugin");
+    return false;
+  }
+  configuration_canary_handle->kill();
+  return true;
+}
+
 std::shared_ptr<WasmHandleBase> createWasm(const std::string &vm_key, const std::string &code,
                                            const std::shared_ptr<PluginBase> &plugin,
                                            const WasmHandleFactory &factory,
@@ -465,44 +514,29 @@ std::shared_ptr<WasmHandleBase> createWasm(const std::string &vm_key, const std:
         base_wasms->erase(it);
       }
     }
-    if (wasm_handle) {
-      return wasm_handle;
-    }
-    wasm_handle = factory(vm_key);
     if (!wasm_handle) {
-      return nullptr;
+      // If no cached base_wasm, creates a new base_wasm, loads the code and initializes it.
+      wasm_handle = factory(vm_key);
+      if (!wasm_handle) {
+        return nullptr;
+      }
+      if (!wasm_handle->wasm()->load(code, allow_precompiled)) {
+        wasm_handle->wasm()->fail(FailState::UnableToInitializeCode, "Failed to load Wasm code");
+        return nullptr;
+      }
+      if (!wasm_handle->wasm()->initialize()) {
+        wasm_handle->wasm()->fail(FailState::UnableToInitializeCode,
+                                  "Failed to initialize Wasm code");
+        return nullptr;
+      }
+      (*base_wasms)[vm_key] = wasm_handle;
     }
-    (*base_wasms)[vm_key] = wasm_handle;
   }
 
-  if (!wasm_handle->wasm()->load(code, allow_precompiled)) {
-    wasm_handle->wasm()->fail(FailState::UnableToInitializeCode, "Failed to load Wasm code");
+  // Either creating new one or reusing the existing one, apply canary for each plugin.
+  if (!wasm_handle->canary(plugin, clone_factory)) {
     return nullptr;
   }
-  if (!wasm_handle->wasm()->initialize()) {
-    wasm_handle->wasm()->fail(FailState::UnableToInitializeCode, "Failed to initialize Wasm code");
-    return nullptr;
-  }
-  auto configuration_canary_handle = clone_factory(wasm_handle);
-  if (!configuration_canary_handle) {
-    wasm_handle->wasm()->fail(FailState::UnableToCloneVm, "Failed to clone Base Wasm");
-    return nullptr;
-  }
-  if (!configuration_canary_handle->wasm()->initialize()) {
-    wasm_handle->wasm()->fail(FailState::UnableToInitializeCode, "Failed to initialize Wasm code");
-    return nullptr;
-  }
-  auto *root_context = configuration_canary_handle->wasm()->start(plugin);
-  if (root_context == nullptr) {
-    configuration_canary_handle->wasm()->fail(FailState::StartFailed, "Failed to start base Wasm");
-    return nullptr;
-  }
-  if (!configuration_canary_handle->wasm()->configure(root_context, plugin)) {
-    configuration_canary_handle->wasm()->fail(FailState::ConfigureFailed,
-                                              "Failed to configure base Wasm plugin");
-    return nullptr;
-  }
-  configuration_canary_handle->kill();
   return wasm_handle;
 };
 
