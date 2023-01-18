@@ -191,6 +191,7 @@ hpack_field_is_literal(HpackField ftype)
 
 // Try not to use memcmp(sv, sv) and strncasecmp(sv, sv) because we don't care which value comes first on a dictionary.
 // Return immediately if the lengths of given strings don't match.
+// Also, we noticed with profiling that taking char* and int was more performant than taking std::string_view.
 static inline bool
 match(const char *s1, int s1_len, const char *s2, int s2_len)
 {
@@ -266,6 +267,7 @@ namespace HpackStaticTable
     HpackLookupResult result;
 
     for (unsigned int index = 1; index < TS_HPACK_STATIC_TABLE_ENTRY_NUM; ++index) {
+      // Profiling showed that use of const reference here is more performant than copying string_views.
       const std::string_view &name  = STATIC_TABLE[index].name;
       const std::string_view &value = STATIC_TABLE[index].value;
 
