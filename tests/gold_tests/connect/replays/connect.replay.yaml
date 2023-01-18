@@ -34,6 +34,8 @@ sessions:
         server-response:
           status: 200
 
+        # ATS returns a 200 responses to client when it establishes a tunnel
+        # between the client and server
         proxy-response:
           status: 200
 
