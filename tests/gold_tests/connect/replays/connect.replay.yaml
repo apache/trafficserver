@@ -51,3 +51,14 @@ sessions:
               - [Host, www.example.com]
         server-response:
           status: 200
+          reason: OK
+          headers:
+            fields:
+              - [X-Response-1, response_tunnel]
+
+        proxy-response:
+          status: 200
+          headers:
+            field:
+              # make sure the client gets the X-Response header
+              - [X-Response-1, { value: response_tunnel, as: equal }]
