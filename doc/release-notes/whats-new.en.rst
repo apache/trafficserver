@@ -385,6 +385,7 @@ In addition to the new features from v9.0.x, this release includes:
 * New features, and overall improvements for Parent Selection were added.
 * There is now an internal inspector to produce stats for remap rule frequency.
 * BoringSSL is now properly supported, and should be a drop in replacement for OpenSSL.
+* A new allocator, `mimalloc`, is now available via the ``--with-mimalloc`` configure option.
 * A large number of autest have been added, and improvements made to the existing tests.
 
 A new infrastructure and tool chain for end-to-end testing and replaying traffic is introduced, the Proxy Verifier.
@@ -405,7 +406,17 @@ Parent Selection Improvements
 
 * A setting to control the ring mode was added, ``ring_mode``, with
   three possible settings: `exhaust_ring`, `alternate_ring`, or `peering_ring`.
-*
+* Two new settings are now available to control how parents are marked down. The
+  configurations are :ts:cv:`proxy.config.http.parent_proxy.enable_parent_timeout_markdowns`
+  and :ts:cv:`proxy.config.http.parent_proxy.disable_parent_markdowns`.
+
+HTTP/2
+------
+
+* New metrics were added for streams status, :ts:stat:`proxy.process.http2.max_concurrent_streams_exceeded_in`
+  and :ts:stat:`proxy.process.http2.max_concurrent_streams_exceeded_out`.
+* The new setting :ts:cv:`proxy.config.http2.stream_error_sampling_threshold` allows for
+  control over the sampling rate of stream errors.
 
 Remap inspector
 ~~~~~~~~~~~~~~~
@@ -422,6 +433,26 @@ New configuration options
   a better idea of how many alternates are being evicted, and to tune the setting.
 * Better control over loop detection was added, via the
   :ts:cv:`proxy.config.http.max_proxy_cycles` configuration.
+* An option to control tunnel activity check frequencey was added,
+  :ts:cv:`proxy.config.tunnel.activity_check_period`. In addition, a new metric was added as well,
+  :ts:stat:`proxy.process.tunnel.current_active_connections`.
+* For debugging, a new option allowing to log TLS session keys was added, the new
+  :ts:cv:`proxy.config.ssl.keylog_file` setting specifies the log file to write to.
+* The setting :ts:cv:`proxy.config.net.sock_notsent_lowat` was added, allowing for better control
+  over the TCP send buffer. This can both reduce memory usage and reduce buffer bloat.
+
+Misc changes
+------------
+
+* The default for :ts:cv:`proxy.config.ssl.origin_session_cache` is now `1` (enabled).
+* A new log tag is available for custom log formats, ``pqssr``. This is an indicator if
+  TLS session reuse to origin was succesful.
+* Two new metrics around loop detection was added, :ts:stat:`proxy.process.http.http_proxy_loop_detected`
+  and :ts:stat:`proxy.process.http.http_proxy_mh_loop_detected`.
+* A metric :ts:stat:`proxy.process.hostdb.total_serve_stale` now tracks HostDB lookups that
+  served stale data.
+* A new setting :ts:cv:`proxy.config.track_config_files` allows for control over tracking
+  configuration files for changes. This should be used with care.
 
 Plugins
 -------
@@ -434,32 +465,84 @@ header_rewrite
 * A new directive ``rm-destination`` was added to remove either the query parameters or the PATH
   from the incoming request.
 * A new ``%{CACHE}`` condition was added, exposing the cache lookup status on the request.
+* The new directive ``set-http-cntl`` allows control over various HTTP transaction features, such
+  as turning off logging, cacheability etc.
+* The ``set-body`` directive lets you override the body factory, and force a body on
+  requests that are considered errors early on (before going to cache or origin).
+* As a special matcher ('{}'), the inbound IP addresses can be matched against a list of IP ranges, e.g.
+  ``cond %{INBOUND:REMOTE-ADDR} {192.168.201.0/24,10.0.0.0/8}``.
 
 generator
 ~~~~~~~~~
 
-* POST request are now handled as well as GET requests.
+POST request are now handled as well as GET requests.
 
 cache_promote
 ~~~~~~~~~~~~~
 
 * We can now count bytes served as the threshold within the LRU.
+* A new setting, ``--internal-enabled``, was added to allow promotion on internal request.
 
 xdebug
 ~~~~~~
 
-* A new header ``X-Effective-URL``, to expose the effective (remapped) URL.
+A new header ``X-Effective-URL``, to expose the effective (remapped) URL.
 
 regex_revalidate
 ~~~~~~~~~~~~~~~~
 
-* New metrics for misses and stale counts were added.
+New metrics for misses and stale counts were added.
 
 url_sig
 ~~~~~~~
 
-* Add a new directive, ``url_type = pristine``, to use the pristine URL for signing.
+Add a new directive, ``url_type = pristine``, to use the pristine URL for signing.
 
+prefetch
+~~~~~~~~
+
+A new option was added, ``--fetch-query``. This allows giving hints for subsequent
+URLs via a query parameter.
+
+authproxy
+~~~~~~~~~
+
+A new option to enable the cache for internal requests was added, ``--cache-internal``.
+
+slice
+~~~~~
+
+The plugin now supports prefetching future ranges, similar to to the ``prefetch`` plugin.
+
+cache_range_requests
+~~~~~~~~~~~~~~~~~~~~
+
+* The setting ``--verify-cacheability`` now gives better control over what is cacheable. This
+  is useful together with other plugins such as `cache_promote`.
+* A new setting ``--cache-complete-responses`` now allows for "200 OK" responses to be cached
+  as well.
+
+rate_limit
+~~~~~~~~~~
+
+* Two new options were added for metrics, ``--prefix`` and ``--tag``.
+* An IP reputation system was added to the plugin.
+
+static_hit
+~~~~~~~~~~
+
+The plugin can now serve content out of a directory.
+
+otel_tracer
+~~~~~~~~~~~
+
+This is a new plugin for OpenTelemetry tracing.
+
+http_stats
+~~~~~~~~~~
+
+This new plugin provides stats over HTTP, but is implemented as a remap plugin. This should
+make the older ``stats_over_http`` obsolete.
 
 Plugin APIs
 -----------
@@ -467,7 +550,7 @@ Plugin APIs
 A new hook for loading certificates was added, :cpp:enumerator:`TS_LIFECYCLE_SSL_SECRET_HOOK`. When using
 this hook, the plugin recieved a structure with a type :c:type:`TSSecretID`.
 
-Misc changes
-------------
+The transction control APIs where refactored and promoted to that ``ts.h`` public APIs. This adds
+:c:func:`TSHttpTxnCntlGet` and :c:func:`TSHttpTxnCntlSet`, and the c:enum::`TSHttpCntlType` enum.
 
-The default for :ts:cv:`proxy.config.ssl.origin_session_cache` is now ``1`` (enabled).
+For introspection into the SNI, the new :c:func:`TSVConnSslSniGet` was added.
