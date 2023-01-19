@@ -74,9 +74,8 @@ public:
       if (ne->default_inactivity_timeout_in == -1) {
         // If no context-specific default inactivity timeout has been set by an
         // override plugin, then use the global default.
-        Debug("inactivity_cop",
-              "vc: %p setting a the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64, ne,
-              nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
+        Debug("inactivity_cop", "vc: %p setting the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64,
+              ne, nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
         ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
       }
 
@@ -88,6 +87,7 @@ public:
               nh.config.default_inactivity_timeout);
         ne->use_default_inactivity_timeout = true;
         ne->next_inactivity_timeout_at     = Thread::get_hrtime() + ne->default_inactivity_timeout_in;
+        ne->inactivity_timeout_in          = 0;
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
       }
 
