@@ -25,9 +25,9 @@ What's New in ATS v9.x?
 ATS v9.x is the current major release train, with many new features and improvements. This document describes  new
 features and changes in these releases. Currently three minor versions have been released:
 
-* :ref:`ATS v9.0.x<version_9_0_x>` (last version was v9.0.2)
-* ATS v9.1.x (last version was v9.1.4)
-* :ref:`ATS v9.2.x<version_9_2_x>` (current stable version v9.2.0)
+* :ref:`ATS v9.0.x<version_9_0_x>` (last version was ``v9.0.2``)
+* ATS v9.1.x (last version was ``v9.1.4``)
+* :ref:`ATS v9.2.x<version_9_2_x>` (current stable version ``v9.2.0``)
 
 Keep in mind that only the latest (current) minor version is actively maintained, which is `v9.2.x`. This
 is expected to the the last minor relase in this train, with an upcoming `v10.0.0` release.
@@ -161,9 +161,9 @@ Connection management
 
 The old settings for origin connection management included the following settings:
 
-* `proxy.config.http.origin_max_connections`
-* `proxy.config.http.origin_max_connections_queue`
-* `proxy.config.http.origin_min_keep_alive_connections`
+* ``proxy.config.http.origin_max_connections``
+* ``proxy.config.http.origin_max_connections_queue``
+* ``proxy.config.http.origin_min_keep_alive_connections``
 
 These are all gone, and replaced with the following set of configurations:
 
@@ -376,20 +376,90 @@ Version 9.2.x Updates
 New Features
 ------------
 
-In additions to the new features from v9.0.x, this release includes:
+In addition to the new features from v9.0.x, this release includes:
 
-* New configurations to allow throttling of log messages are added.
-*
+* A number of performance improvements have been made, and this should show noticeable gains.
+* Log throttling can now be controlled via two new settings.
+* A new feature to create and manage pre-warmed TLS tunnels was added.
+* The setting for :ts:cv:`proxy.config.ssl.client.sni_policy` can now be controlled via :file:`sni.yaml`.
+* New features, and overall improvements for Parent Selection were added.
+* There is now an internal inspector to produce stats for remap rule frequency.
+* BoringSSL is now properly supported, and should be a drop in replacement for OpenSSL.
+* A large number of autest have been added, and improvements made to the existing tests.
 
 A new infrastructure and tool chain for end-to-end testing and replaying traffic is introduced, the Proxy Verifier.
 
-Logging
-~~~~~~~
+Log throttling
+~~~~~~~~~~~~~~
 
 The throttling of logging is controlled by the new configurations:
 
 * :ts:cv:`proxy.config.log.proxy.config.log.throttling_interval_msec`
 * :ts:cv:`proxy.config.diags.debug.throttling_interval_msec`
+
+This feature is useful to control logging pressure under traffic spikes, bad
+configurations or DDoS attacks.
+
+Parent Selection Improvements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* A setting to control the ring mode was added, ``ring_mode``, with
+  three possible settings: `exhaust_ring`, `alternate_ring`, or `peering_ring`.
+*
+
+Remap inspector
+~~~~~~~~~~~~~~~
+
+This feature can help identifying which remap rule is most frequently used. This helps
+when ordering remap rules, and also when removing unused rules. This is not well documented
+unfortunately, for some details see https://github.com/apache/trafficserver/pull/7936 .
+
+New configuration options
+-------------------------
+
+* The :ts:cv:`proxy.config.cache.log.alternate.eviction` configuration
+  allows control over logging of alternate eviction events. This is useful to get
+  a better idea of how many alternates are being evicted, and to tune the setting.
+* Better control over loop detection was added, via the
+  :ts:cv:`proxy.config.http.max_proxy_cycles` configuration.
+
+Plugins
+-------
+
+The following plugins have new features or configurations.
+
+header_rewrite
+~~~~~~~~~~~~~~
+
+* A new directive ``rm-destination`` was added to remove either the query parameters or the PATH
+  from the incoming request.
+* A new ``%{CACHE}`` condition was added, exposing the cache lookup status on the request.
+
+generator
+~~~~~~~~~
+
+* POST request are now handled as well as GET requests.
+
+cache_promote
+~~~~~~~~~~~~~
+
+* We can now count bytes served as the threshold within the LRU.
+
+xdebug
+~~~~~~
+
+* A new header ``X-Effective-URL``, to expose the effective (remapped) URL.
+
+regex_revalidate
+~~~~~~~~~~~~~~~~
+
+* New metrics for misses and stale counts were added.
+
+url_sig
+~~~~~~~
+
+* Add a new directive, ``url_type = pristine``, to use the pristine URL for signing.
+
 
 Plugin APIs
 -----------
@@ -400,4 +470,4 @@ this hook, the plugin recieved a structure with a type :c:type:`TSSecretID`.
 Misc changes
 ------------
 
-The default for :ts:cv:`proxy.config.ssl.origin_session_cache` is now `1` (enabled).
+The default for :ts:cv:`proxy.config.ssl.origin_session_cache` is now ``1`` (enabled).
