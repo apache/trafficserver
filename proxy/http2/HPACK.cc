@@ -296,7 +296,7 @@ namespace HpackStaticTable
     HpackLookupResult result;
 
     // Limit the search range of static table
-    unsigned int start = 1;
+    unsigned int start = 1; // First effective index for TS_HPACK_STATIC_TABLE_ENTRY is 1
     unsigned int end   = TS_HPACK_STATIC_TABLE_ENTRY_NUM;
     if ('a' <= header.name[0] && header.name[0] <= 'z') {
       start = HPACK_STATIC_TABLE_OFFSET[header.name[0] - 'a'];
