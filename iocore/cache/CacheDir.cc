@@ -646,7 +646,7 @@ Llink:
   // but at least the lists are completely in memory and should be quite short
   Dir *prev, *last;
 
-  l = 0;
+  l    = 0;
   last = b;
   do {
     prev = last;
@@ -733,7 +733,7 @@ Llink:
   // as with dir_insert above, need to insert new entries at the tail of the linked list
   Dir *prev, *last;
 
-  l = 0;
+  l    = 0;
   last = b;
   do {
     prev = last;
