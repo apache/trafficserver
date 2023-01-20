@@ -37,7 +37,7 @@ Certificates management is done by `SslLRUList` (a Least-Recently-Used (LRU) lis
 When the plugin sees an incoming HTTPS request, it does:
 
 #. Look up the SNI in `SslLRUList` and set up the context if a valid context exists. Otherwise, it will schedule a thread to retrieve such context from disk (or generate). If such a thread is already scheduled, it will put this SSL connection onto the queue.
-#. The retriever thread will first try to load the cert from disk. If no such certs exist and dynamic generation is enabled, the thread will generate a Certificate Signing Request (CSR) with provided SNI and sign it with root CA passed in from config options. The signed certificate is then written to the disk and all queued up SSL connections are set up with correct context and enabled.
+#. The retriever thread will first try to load the cert from disk. If no such certs exist and dynamic generation is enabled, the thread will generate a certificate with provided SNI and sign it with root CA passed in from config options. The signed certificate is then written to the disk and all queued up SSL connections are set up with correct context and enabled.
 
 Setup
 =====
@@ -77,7 +77,7 @@ Example Usage
 =============
 To use this plugin, enable it in a :file:`plugin.config` rule, specifying certificates storage path, max number of certificates in memory, and signing cert+key+serial. For example:
 
-   certifier.so --store=/home/zeyuan/certifier/certs --max=1000 --sign-cert=/home/zeyuan/certifier/root-ca.crt --sign-key=/home/zeyuan/certifier/root-ca.key --sign-serial=/home/zeyuan/certifier/ca-serial.txt
+   ``certifier.so --store=/home/zeyuan/certifier/certs --max=1000 --sign-cert=/home/zeyuan/certifier/root-ca.crt --sign-key=/home/zeyuan/certifier/root-ca.key --sign-serial=/home/zeyuan/certifier/ca-serial.txt``
 
 One use case would be routing incoming CONNECT request to another port on |TS|. With the certifier generating a trusted certificate, other plugins can act with a similar behavior to Man-In-The-Middle (logging interesting data for example).
 
