@@ -298,13 +298,13 @@ namespace HpackStaticTable
     // Limit the search range of static table
     unsigned int start = 1; // First effective index for TS_HPACK_STATIC_TABLE_ENTRY is 1
     unsigned int end   = TS_HPACK_STATIC_TABLE_ENTRY_NUM;
-    if ('a' <= header.name[0] && header.name[0] <= 'z') {
-      start = HPACK_STATIC_TABLE_OFFSET[header.name[0] - 'a'];
-      if ('z' != header.name[0]) {
+    if (const auto c = header.name[0]; 'a' <= c && c <= 'z') {
+      start = HPACK_STATIC_TABLE_OFFSET[c - 'a'];
+      if ('z' != c) {
         // This does not always set the ideal end index but works for some cases
-        end = HPACK_STATIC_TABLE_OFFSET[header.name[0] - 'a' + 1];
+        end = HPACK_STATIC_TABLE_OFFSET[c - 'a' + 1];
       }
-    } else if (':' == header.name[0]) {
+    } else if (':' == c) {
       end = HPACK_STATIC_TABLE_OFFSET[0];
     }
 
