@@ -410,6 +410,13 @@ Parent Selection Improvements
   configurations are :ts:cv:`proxy.config.http.parent_proxy.enable_parent_timeout_markdowns`
   and :ts:cv:`proxy.config.http.parent_proxy.disable_parent_markdowns`.
 
+Remap inspector
+~~~~~~~~~~~~~~~
+
+This feature can help identifying which remap rule is most frequently used. This helps
+when ordering remap rules, and also when removing unused rules. This is not well documented
+unfortunately, for some details see https://github.com/apache/trafficserver/pull/7936 .
+
 HTTP/2
 ------
 
@@ -417,13 +424,6 @@ HTTP/2
   and :ts:stat:`proxy.process.http2.max_concurrent_streams_exceeded_out`.
 * The new setting :ts:cv:`proxy.config.http2.stream_error_sampling_threshold` allows for
   control over the sampling rate of stream errors.
-
-Remap inspector
-~~~~~~~~~~~~~~~
-
-This feature can help identifying which remap rule is most frequently used. This helps
-when ordering remap rules, and also when removing unused rules. This is not well documented
-unfortunately, for some details see https://github.com/apache/trafficserver/pull/7936 .
 
 New configuration options
 -------------------------
