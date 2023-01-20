@@ -27,6 +27,7 @@
 #include "tscore/Diags.h"
 #include "FileManager.h"
 #include "tscore/Errata.h"
+#include "tscore/ink_memory.h"
 
 static constexpr bool REQUIRED{true};
 static constexpr bool NOT_REQUIRED{false};
@@ -39,8 +40,8 @@ static constexpr bool NOT_REQUIRED{false};
 void
 registerFile(const char *configName, const char *defaultName, bool isRequired)
 {
-  bool found        = false;
-  const char *fname = REC_readString(configName, &found);
+  bool found = false;
+  ats_scoped_str fname(REC_readString(configName, &found));
   if (!found) {
     fname = defaultName;
   }
