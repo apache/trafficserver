@@ -228,6 +228,14 @@ ProxySession::set_inactivity_timeout(ink_hrtime timeout_in)
 }
 
 void
+ProxySession::set_default_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (_vc) {
+    _vc->set_default_inactivity_timeout(timeout_in);
+  }
+}
+
+void
 ProxySession::cancel_inactivity_timeout()
 {
   if (_vc) {

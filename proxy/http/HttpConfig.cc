@@ -1166,6 +1166,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.tunnel_activity_check_period, "proxy.config.tunnel.activity_check_period");
 
+  HttpEstablishStaticConfigLongLong(c.oride.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
 
@@ -1480,6 +1482,8 @@ HttpConfig::reconfigure()
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
   params->oride.tunnel_activity_check_period    = m_master.oride.tunnel_activity_check_period;
+
+  params->oride.default_inactivity_timeout = m_master.oride.default_inactivity_timeout;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;

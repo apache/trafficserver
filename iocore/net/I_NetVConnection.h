@@ -595,9 +595,9 @@ public:
   virtual void cancel_active_timeout() = 0;
 
   /**
-    Clears the inactivity timeout. No inactivity timeouts will be
-    sent until set_inactivity_timeout() is used to reset the
-    inactivity timeout.
+    Clears the inactivity timeout. No inactivity timeouts will be sent (aside
+    from the default inactivity timeout) until set_inactivity_timeout() is used
+    to reset the inactivity timeout.
 
   */
   virtual void cancel_inactivity_timeout() = 0;

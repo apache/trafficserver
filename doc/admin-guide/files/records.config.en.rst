@@ -459,12 +459,24 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
+   :overridable:
 
    The connection inactivity timeout (in seconds) to apply when
    |TS| detects that no inactivity timeout has been applied
    by the HTTP state machine. When this timeout is applied, the
    `proxy.process.net.default_inactivity_timeout_applied` metric
    is incremented.
+
+   Note that this configuration is overridable. While most overridable
+   configurations conceptually apply to specific transactions,
+   ``default_inactivity_timeout`` is a connection level concept. This is not
+   necessarily a problem, but it does mean that care must be taken when
+   applying the override to consider that all transactions in the connection
+   which has this timeout overriden will be impacted by the override. For
+   instance, if the default inactivity timeout is being overridden via a
+   :ref:`admin-plugins-conf-remap` rule in :file:`remap.config`, then all
+   transactions for that connection will be impacted by the override, not just
+   the ones matching that ``remap.config`` rule.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 

@@ -168,6 +168,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_NET_SOCK_PACKET_MARK_OUT`                        :ts:cv:`proxy.config.net.sock_packet_mark_out`
 :c:enumerator:`TS_CONFIG_NET_SOCK_PACKET_TOS_OUT`                         :ts:cv:`proxy.config.net.sock_packet_tos_out`
 :c:enumerator:`TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT`                   :ts:cv:`proxy.config.net.sock_recv_buffer_size_out`
+:c:enumerator:`TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT`                  :ts:cv:`proxy.config.net.default_inactivity_timeout`
 :c:enumerator:`TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT`                   :ts:cv:`proxy.config.net.sock_send_buffer_size_out`
 :c:enumerator:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                   :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
 :c:enumerator:`TS_CONFIG_SRV_ENABLED`                                     :ts:cv:`proxy.config.srv_enabled`

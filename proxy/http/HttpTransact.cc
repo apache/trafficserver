@@ -1034,6 +1034,9 @@ HttpTransact::EndRemapRequest(State *s)
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   TxnDebug("http_trans", "EndRemapRequest host is %.*s", host_len, host);
+  if (s->state_machine->ua_txn) {
+    s->state_machine->ua_txn->set_default_inactivity_timeout(HRTIME_SECONDS(s->txn_conf->default_inactivity_timeout));
+  }
 
   // Setting enable_redirection according to HttpConfig (master or overridable). We
   // defer this as late as possible, to allow plugins to modify the overridable
