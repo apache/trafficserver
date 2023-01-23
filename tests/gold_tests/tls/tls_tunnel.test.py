@@ -21,7 +21,7 @@ Test tunneling based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
@@ -47,6 +47,8 @@ ts.addSSLfile("ssl/signer.key")
 dns.addRecords(records={"localhost": ["127.0.0.1"]})
 dns.addRecords(records={"one.testmatch": ["127.0.0.1"]})
 dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
+dns.addRecords(records={"backend.incoming.port.com": ["127.0.0.1"]})
+dns.addRecords(records={"backend.proxy.protocol.port.com": ["127.0.0.1"]})
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
@@ -58,15 +60,19 @@ ts.Disk.ssl_multicert_config.AddLine(
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
                                'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,
-                                                                                       server_foo.Variables.SSL_Port,
-                                                                                       server_bar.Variables.SSL_Port),
+                               'proxy.config.http.connect_ports': '{0} {1} {2} {3}'.format(ts.Variables.ssl_port,
+                                                                                           server_foo.Variables.SSL_Port,
+                                                                                           server_bar.Variables.SSL_Port,
+                                                                                           ts.Variables.proxy_protocol_ssl_port),
                                'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
                                'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
                                'proxy.config.exec_thread.autoconfig.scale': 1.0,
                                'proxy.config.url_remap.pristine_host_hdr': 1,
+                               'proxy.config.diags.debug.enabled': 1,
+                               'proxy.config.diags.debug.tags': 'http|ssl_sni',
                                'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
                                'proxy.config.dns.resolv_conf': 'NULL'})
+
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
@@ -82,7 +88,11 @@ ts.Disk.sni_yaml.AddLines([
     "- fqdn: '*.ok.*.com'",
     "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
     "- fqdn: ''",  # No SNI sent
-    "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
+    "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
+    "- fqdn: 'incoming.port.com'",
+    "  tunnel_route: backend.incoming.port.com:{inbound_local_port}",
+    "- fqdn: 'proxy.protocol.port.com'",
+    "  tunnel_route: backend.proxy.protocol.port.com:{proxy_protocol_port}",
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
@@ -149,7 +159,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should
 
 
 tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
-tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https:/one.ok.two.com:{0}".format(
+tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -161,6 +171,40 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
+tr = Test.AddTestRun("test inbound_local_port")
+tr.Processes.Default.Command = "curl -vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(
+    ts.Variables.ssl_port)
+# The tunnel connecting to the outgoing port which is the same as the incoming
+# port (per the `inbound_local_port` configuration) will result in ATS
+# connecting back to itself. This will result in a connection close and a
+# non-zero return code from curl. In production, the server will listen on the
+# same port as ATS but have a different IP.
+tr.ReturnCode = 35
+tr.StillRunningAfter = ts
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"CONNECT tunnel://backend.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
+    "Verify a CONNECT request is handled")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Direct self loop detected", "The loop should be detected")
+
+tr = Test.AddTestRun("test proxy_protocol_port")
+tr.Processes.Default.Command = (
+    "curl -vvv -k --http1.1 --haproxy-protocol "
+    f"--resolve 'proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port}:127.0.0.1' "
+    f"https://proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port}"
+)
+# The tunnel connecting to the outgoing port which is the same as the incoming
+# port (per the Proxy Protocol configuration) will result in ATS connecting
+# back to itself. This will result in a connection close and a non-zero return
+# code from curl. In production, the server will listen on the same port as ATS
+# but have a different IP.
+tr.ReturnCode = 35
+tr.StillRunningAfter = ts
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"CONNECT tunnel://backend.proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port} HTTP/1.1",
+    "Verify a CONNECT request is handled")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "HTTP/1.1 400 Direct self loop detected",
+    "The loop should be detected")
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")

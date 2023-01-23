@@ -90,12 +90,69 @@ private:
 
 class TunnelDestination : public ActionItem
 {
+  // ID of the configured variable. This will be used to know which function
+  // should be called when processing the tunnel destination.
+  enum OpId : int32_t {
+    DEFAULT = -1,                 // No specific variable set.
+    MATCH_GROUPS,                 // Deal with configured groups.
+    MAP_WITH_RECV_PORT,           // Use port from inbound local
+    MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
+    MAX                           // Always at the end and do not change the value of the above items.
+  };
+  const std::string MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
+  const std::string MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
+
 public:
   TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
                     const std::vector<int> &alpn)
     : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
   {
-    need_fix = (destination.find_first_of('$') != std::string::npos);
+    std::size_t var_start_pos{0}; // keep the starting position of the variable.
+    if (destination.find_first_of('$') != std::string::npos) {
+      fnArrIndex = OpId::MATCH_GROUPS;
+    } else if (var_start_pos = destination.find(MAP_WITH_RECV_PORT_STR); var_start_pos != std::string::npos) {
+      fnArrIndex = OpId::MAP_WITH_RECV_PORT;
+    } else if (var_start_pos = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR); var_start_pos != std::string::npos) {
+      fnArrIndex = OpId::MAP_WITH_PROXY_PROTOCOL_PORT;
+    }
+
+    // Replace wildcards with matched groups.
+    fix_destination[OpId::MATCH_GROUPS] = [&](std::string_view destination, const Context &ctx,
+                                              SSLNetVConnection *) -> std::string {
+      if ((destination.find_first_of('$') != std::string::npos) && ctx._fqdn_wildcard_captured_groups) {
+        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
+        return fixed_dst;
+      }
+      return {};
+    };
+
+    // Use local port for the tunnel.
+    fix_destination[OpId::MAP_WITH_RECV_PORT] = [&, var_start_pos](std::string_view destination, const Context &ctx,
+                                                                   SSLNetVConnection *vc) -> std::string {
+      if (vc) {
+        if (var_start_pos != std::string::npos) {
+          const auto local_port = vc->get_local_port();
+          std::string dst{destination.substr(0, var_start_pos)};
+          dst += std::to_string(local_port);
+          return dst;
+        }
+      }
+      return {};
+    };
+
+    // Use the Proxy Protocol port for the tunnel.
+    fix_destination[OpId::MAP_WITH_PROXY_PROTOCOL_PORT] = [&, var_start_pos](std::string_view destination, const Context &ctx,
+                                                                             SSLNetVConnection *vc) -> std::string {
+      if (vc) {
+        if (var_start_pos != std::string::npos) {
+          const auto local_port = vc->get_proxy_protocol_dst_port();
+          std::string dst{destination.substr(0, var_start_pos)};
+          dst += std::to_string(local_port);
+          return dst;
+        }
+      }
+      return {};
+    };
   }
   ~TunnelDestination() override {}
 
@@ -106,14 +163,14 @@ public:
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
     const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
-      // If needed, we will try to amend the tunnel destination.
-      if (ctx._fqdn_wildcard_captured_groups && need_fix) {
-        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
-        ssl_netvc->set_tunnel_destination(fixed_dst, type, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
-      } else {
+      if (fnArrIndex < 0) {
         ssl_netvc->set_tunnel_destination(destination, type, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
+      } else {
+        // Dispatch to the correct tunnel destination port function.
+        const auto &fixed_dst = fix_destination[fnArrIndex](destination, ctx, ssl_netvc);
+        ssl_netvc->set_tunnel_destination(fixed_dst, type, tunnel_prewarm);
+        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       }
 
       if (type == SNIRoutingType::BLIND) {
@@ -131,10 +188,10 @@ public:
 
 private:
   bool
-  is_number(const std::string &s) const
+  is_number(std::string_view s) const
   {
     return !s.empty() &&
-           std::find_if(std::begin(s), std::end(s), [](std::string::value_type c) { return !std::isdigit(c); }) == std::end(s);
+           std::find_if(std::begin(s), std::end(s), [](std::string_view::value_type c) { return !std::isdigit(c); }) == std::end(s);
   }
 
   /**
@@ -143,10 +200,10 @@ private:
    * groups could be at any order.
    */
   std::string
-  replace_match_groups(const std::string &dst, const ActionItem::Context::CapturedGroupViewVec &groups) const
+  replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups) const
   {
     if (dst.empty() || groups.empty()) {
-      return dst;
+      return std::string{dst};
     }
     std::string real_dst;
     std::string::size_type pos{0};
@@ -169,13 +226,13 @@ private:
             to = (port - pos) - 1;
           }
         }
-        const auto &number_str = dst.substr(pos + 1, to);
+        std::string_view number_str{dst.substr(pos + 1, to)};
         if (!is_number(number_str)) {
           // it may be some issue on the configured string, place the char and keep going.
           real_dst += *c;
           continue;
         }
-        const std::size_t group_index = std::stoi(number_str);
+        const std::size_t group_index = std::stoi(std::string{number_str});
         if ((group_index - 1) < groups.size()) {
           // place the captured group.
           real_dst += groups[group_index - 1];
@@ -199,7 +256,17 @@ private:
   SNIRoutingType type                         = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
-  bool need_fix;
+
+  OpId fnArrIndex{OpId::DEFAULT}; /// On creation, we decide which function needs to be called, set the index and then we
+                                  /// call it with the relevant data
+
+  // callback array.
+  std::array<std::function<std::string(std::string_view,   // destination view
+                                       const Context &,    // Context
+                                       SSLNetVConnection * // Net vc to get the port.
+                                       )>,
+             OpId::MAX>
+    fix_destination;
 };
 
 class VerifyClient : public ActionItem
