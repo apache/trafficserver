@@ -33,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <limits>
+#include <cstdint>
 
 #include "tscpp/util/string_view_util.h"
 
