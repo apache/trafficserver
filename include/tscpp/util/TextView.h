@@ -33,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <limits>
+#include <cstdint>
 
 /** Compare views with ordering, ignoring case.
  *
