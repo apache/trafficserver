@@ -141,7 +141,7 @@ void
 ThreadAffinityInitializer::setup_stack_guard(void *stack, int stackguard_pages)
 {
 #if !(defined(__i386__) || defined(__x86_64__) || defined(__arm__) || defined(__arm64__) || defined(__aarch64__) || \
-      defined(__mips__))
+      defined(__mips__) || defined(__powerpc64__))
 #error Unknown stack growth direction.  Determine the stack growth direction of your platform.
 // If your stack grows upwards, you need to change this function and the calculation of stack_begin in do_alloc_stack.
 #endif
