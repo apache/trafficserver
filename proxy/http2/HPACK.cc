@@ -99,6 +99,35 @@ using TS_HPACK_STATIC_TABLE_ENTRY = enum {
   TS_HPACK_STATIC_TABLE_ENTRY_NUM
 };
 
+constexpr int HPACK_STATIC_TABLE_OFFSET[26] = {
+  TS_HPACK_STATIC_TABLE_ACCEPT_CHARSET,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_CACHE_CONTROL,
+  TS_HPACK_STATIC_TABLE_DATE,
+  TS_HPACK_STATIC_TABLE_ETAG,
+  TS_HPACK_STATIC_TABLE_FROM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_HOST,
+  TS_HPACK_STATIC_TABLE_IF_MATCH,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_LAST_MODIFIED,
+  TS_HPACK_STATIC_TABLE_MAX_FORWARDS,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_PROXY_AUTHENTICATE,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_RANGE,
+  TS_HPACK_STATIC_TABLE_SERVER,
+  TS_HPACK_STATIC_TABLE_TRANSFER_ENCODING,
+  TS_HPACK_STATIC_TABLE_USER_AGENT,
+  TS_HPACK_STATIC_TABLE_VARY,
+  TS_HPACK_STATIC_TABLE_WWW_AUTHENTICATE,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+};
+
 constexpr HpackHeaderField STATIC_TABLE[] = {{"", ""},
                                              {":authority", ""},
                                              {":method", "GET"},
@@ -266,7 +295,20 @@ namespace HpackStaticTable
   {
     HpackLookupResult result;
 
-    for (unsigned int index = 1; index < TS_HPACK_STATIC_TABLE_ENTRY_NUM; ++index) {
+    // Limit the search range of static table
+    unsigned int start = 1; // First effective index for TS_HPACK_STATIC_TABLE_ENTRY is 1
+    unsigned int end   = TS_HPACK_STATIC_TABLE_ENTRY_NUM;
+    if (const auto c = header.name[0]; 'a' <= c && c <= 'z') {
+      start = HPACK_STATIC_TABLE_OFFSET[c - 'a'];
+      if ('z' != c) {
+        // This does not always set the ideal end index but works for some cases
+        end = HPACK_STATIC_TABLE_OFFSET[c - 'a' + 1];
+      }
+    } else if (':' == c) {
+      end = HPACK_STATIC_TABLE_OFFSET[0];
+    }
+
+    for (unsigned int index = start; index < end; ++index) {
       // Profiling showed that use of const reference here is more performant than copying string_views.
       const std::string_view &name  = STATIC_TABLE[index].name;
       const std::string_view &value = STATIC_TABLE[index].value;
