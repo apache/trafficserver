@@ -44,7 +44,10 @@ static inline PollCont *get_UDPPollCont(EThread *);
 
 class UDPNetHandler;
 
-struct UDPNetProcessorInternal : public UDPNetProcessor {
+class UDPNetProcessorInternal : public UDPNetProcessor
+{
+public:
+  EventType register_event_type() override;
   int start(int n_udp_threads, size_t stacksize) override;
   void udp_read_from_net(UDPNetHandler *nh, UDPConnection *uc);
   int udp_callback(UDPNetHandler *nh, UDPConnection *uc, EThread *thread);

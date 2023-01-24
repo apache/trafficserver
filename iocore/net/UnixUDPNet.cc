@@ -111,6 +111,13 @@ initialize_thread_for_udp_net(EThread *thread)
 #endif
 }
 
+EventType
+UDPNetProcessorInternal::register_event_type()
+{
+  ET_UDP = eventProcessor.register_event_type("ET_UDP");
+  return ET_UDP;
+}
+
 int
 UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 {
@@ -121,7 +128,6 @@ UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
   pollCont_offset      = eventProcessor.allocate(sizeof(PollCont));
   udpNetHandler_offset = eventProcessor.allocate(sizeof(UDPNetHandler));
 
-  ET_UDP = eventProcessor.register_event_type("ET_UDP");
   eventProcessor.schedule_spawn(&initialize_thread_for_udp_net, ET_UDP);
   eventProcessor.spawn_event_threads(ET_UDP, n_upd_threads, stacksize);
 

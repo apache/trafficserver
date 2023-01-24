@@ -2160,6 +2160,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     if (!num_of_udp_threads) {
       REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     }
+
+    udpNet.register_event_type();
     if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
       eventProcessor.thread_group[ET_UDP]._afterStartCallback = init_HttpProxyServer;
