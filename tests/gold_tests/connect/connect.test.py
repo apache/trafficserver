@@ -18,6 +18,7 @@
 
 from enum import Enum
 import os
+import re
 
 Test.Summary = 'Exercise HTTP CONNECT Method'
 Test.ContinueOnFail = True
@@ -106,3 +107,61 @@ logging:
 
 
 ConnectTest().run()
+
+
+class ConnectViaPVTest:
+    # This test also executes the CONNECT request but using proxy verifier to
+    # generate traffic
+    connectReplayFile = "replays/connect.replay.yaml"
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess(
+            "connect-verifier-server",
+            self.connectReplayFile)
+        # Verify server output
+        self.server.Streams.stdout += Testers.ExcludesExpression(
+            "uuid: 1",
+            "Verify the CONNECT request doesn't reach the server.")
+        self.server.Streams.stdout += Testers.ContainsExpression(
+            "GET /get HTTP/1.1\nuuid: 2", reflags=re.MULTILINE,
+            description="Verify the server gets the second request.")
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("connect-ts")
+
+        self.ts.Disk.records_config.update({
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http',
+            'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
+            'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
+        })
+
+        self.ts.Disk.remap_config.AddLines([
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        ])
+        # Verify ts logs
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1", reflags=re.MULTILINE,
+            description="Verify that ATS recognizes the CONNECT request.")
+
+    def runTraffic(self):
+        tr = Test.AddTestRun("Verify correct handling of CONNECT request")
+        tr.AddVerifierClientProcess(
+            "connect-client",
+            self.connectReplayFile,
+            http_ports=[self.ts.Variables.port],
+            other_args='--thread-limit 1')
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def run(self):
+        self.runTraffic()
+
+
+ConnectViaPVTest().run()
