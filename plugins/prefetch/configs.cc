@@ -46,6 +46,12 @@ isTrue(const char *arg)
   return (0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
 }
 
+inline static char const *const
+stringForBool(bool val)
+{
+  return val ? "true" : "false";
+}
+
 /**
  * @brief initializes plugin configuration.
  * @param argc number of plugin parameters
@@ -56,8 +62,10 @@ PrefetchConfig::init(int argc, char *argv[])
 {
   static const struct option longopt[] = {
     {const_cast<char *>("front"),              optional_argument, nullptr, 'f'},
+    {const_cast<char *>("two-tier"),           required_argument, nullptr, 'w'},
     {const_cast<char *>("api-header"),         optional_argument, nullptr, 'h'},
     {const_cast<char *>("cmcd-nor"),           optional_argument, nullptr, 'd'},
+    {const_cast<char *>("tier-header"),        required_argument, nullptr, 't'},
     {const_cast<char *>("next-header"),        optional_argument, nullptr, 'n'},
     {const_cast<char *>("fetch-policy"),       optional_argument, nullptr, 'p'},
     {const_cast<char *>("fetch-count"),        optional_argument, nullptr, 'c'},
@@ -94,12 +102,20 @@ PrefetchConfig::init(int argc, char *argv[])
       _front = ::isTrue(optarg);
       break;
 
+    case 'w': /* --two-tier */
+      _two_tier = ::isTrue(optarg);
+      break;
+
     case 'h': /* --api-header */
       setApiHeader(optarg);
       break;
 
     case 'd': /* --cmcd-nor */
       _cmcd_nor = ::isTrue(optarg);
+      break;
+
+    case 't': /* --tier-header */
+      setTierHeader(optarg);
       break;
 
     case 'n': /* --next-header */
@@ -169,11 +185,13 @@ PrefetchConfig::init(int argc, char *argv[])
 bool
 PrefetchConfig::finalize()
 {
-  PrefetchDebug("front-end: %s", (_front ? "true" : "false"));
-  PrefetchDebug("exact match: %s", (_exactMatch ? "true" : "false"));
+  PrefetchDebug("front-end: %s", stringForBool(_front));
+  PrefetchDebug("two-tier: %s", stringForBool(_two_tier));
+  PrefetchDebug("exact match: %s", stringForBool(_exactMatch));
   PrefetchDebug("query key: %s", _queryKey.c_str());
   PrefetchDebug("cncd-nor: %s", (_front ? "true" : "false"));
   PrefetchDebug("API header name: %s", _apiHeader.c_str());
+  PrefetchDebug("tier header name: %s", _tierHeader.c_str());
   PrefetchDebug("next object header name: %s", _nextHeader.c_str());
   PrefetchDebug("fetch policy parameters: %s", _fetchPolicy.c_str());
   PrefetchDebug("fetch count: %d", _fetchCount);

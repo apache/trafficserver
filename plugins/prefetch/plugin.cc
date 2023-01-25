@@ -562,7 +562,13 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
             /* Cancel the requested fetch */
             retEvent = shortcutResponse(data, TS_HTTP_STATUS_ALREADY_REPORTED, "fetch not scheduled\n", TS_EVENT_HTTP_ERROR);
           } else {
-            /* Fetch */
+            /* Fetch, set tier header */
+            const String &tierHeader = config.getTierHeader();
+            constexpr std::string_view backsv{"backend"};
+            if (setHeader(reqBuffer, reqHdrLoc, tierHeader.data(), tierHeader.length(), backsv.data(), backsv.length())) {
+              PrefetchDebug("Set header: '%.*s' value: '%.*s'", (int)tierHeader.length(), tierHeader.data(), (int)backsv.length(),
+                            backsv.data());
+            }
           }
         } else {
           retEvent = shortcutResponse(data, TS_HTTP_STATUS_ALREADY_REPORTED, "fetch not scheduled\n", TS_EVENT_HTTP_ERROR);
@@ -579,6 +585,12 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           }
         } else {
           retEvent = shortcutResponse(data, TS_HTTP_STATUS_ALREADY_REPORTED, "fetch not scheduled\n", TS_EVENT_HTTP_ERROR);
+        }
+      } else {
+        /* add tier header to the request */
+        const String &tierHeader = config.getTierHeader();
+        if (removeHeader(reqBuffer, reqHdrLoc, tierHeader.data(), tierHeader.length())) {
+          PrefetchDebug("Removed header: '%.*s'", (int)tierHeader.length(), tierHeader.data());
         }
       }
     }
@@ -798,6 +810,22 @@ TSRemapDeleteInstance(void *instance)
  * @brief Organizes the background fetch by registering necessary hooks, by identifying front-end vs back-end, first vs second
  * pass.
  *
+ * Front-tier (--front=true):
+ * Front first pass: no header
+ * Front second pass: api header
+ *
+ * Back-tier (--front=false):
+ * Front first pass: api header
+ * Front second pass: no header
+ *
+ * Two-tier (--two-tier=true):
+ * Front first pass: no headers
+ * Front second pass: api header
+ * Back first pass: api header and tier header
+ * Back second pass: no header and tier header
+ *
+ * Two-tier configuration trumps front true/false configs.
+ *
  * Remap is never done, continue with next in chain.
  * @param instance plugin instance pointer
  * @param txnp transaction handle
@@ -810,22 +838,36 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   PrefetchInstance *inst = static_cast<PrefetchInstance *>(instance);
 
   if (nullptr != inst) {
+    TSMBuffer const reqBuf = rri->requestBufp;
+    TSMLoc const reqHdr    = rri->requestHdrp;
+
     PrefetchConfig &config = inst->_config;
 
-    int methodLen        = 0;
-    const char *method   = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &methodLen);
-    const String &header = config.getApiHeader();
+    int methodLen      = 0;
+    const char *method = TSHttpHdrMethodGet(reqBuf, reqHdr, &methodLen);
     if (nullptr != method && methodLen == TS_HTTP_LEN_GET && 0 == memcmp(TS_HTTP_METHOD_GET, method, TS_HTTP_LEN_GET)) {
-      bool front     = config.isFront();
-      bool firstPass = false;
-      if (headerExist(rri->requestBufp, rri->requestHdrp, header.c_str(), header.length())) {
-        PrefetchDebug("%s: found %.*s", front ? "front-end" : "back-end", (int)header.length(), header.c_str());
+      bool const twotier = config.isTwoTier();
+      bool front         = config.isFront();
+      bool firstPass     = true;
+
+      String const &apiHeader = config.getApiHeader();
+      bool const hasApiHeader = headerExist(reqBuf, reqHdr, apiHeader.c_str(), apiHeader.length());
+
+      /* two tier configuration trumps front configuration */
+      if (twotier) {
+        String const &tierHeader = config.getTierHeader();
+        front                    = !headerExist(reqBuf, reqHdr, tierHeader.data(), tierHeader.length());
+      }
+
+      if (hasApiHeader) {
         /* On front-end: presence of header means second-pass, on back-end means first-pass. */
         firstPass = !front;
       } else {
         /* On front-end: lack of header means first-pass, on back-end means second-pass. */
         firstPass = front;
       }
+
+      PrefetchDebug("front: '%s' firstpass: '%s'", front ? "true" : "false", firstPass ? "true" : "false");
 
       /* Make sure we handle only URLs that match the path pattern on the front-end + first-pass, cancel otherwise */
       bool handleFetch = true;

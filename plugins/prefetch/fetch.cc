@@ -500,9 +500,9 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
   }
 
   /* Save the path before changing */
-  int pathLen;
+  int pathLen      = 0;
   const char *path = TSUrlPathGet(_mbuf, _urlLoc, &pathLen);
-  if (nullptr == path) {
+  if (nullptr == path || 0 == pathLen) {
     PrefetchError("failed to get a URL path");
     return false;
   }
@@ -517,14 +517,16 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
   }
 
   /* Now set or remove the prefetch API header */
-  const String &header = _config.getApiHeader();
-  if (_config.isFront()) {
-    if (setHeader(_mbuf, _headerLoc, header.c_str(), static_cast<int>(header.length()), path, pathLen)) {
-      PrefetchDebug("set header '%.*s: %.*s'", (int)header.length(), header.c_str(), (int)fetchPathLen, fetchPath);
+  const String &apiHeader = _config.getApiHeader();
+  bool const hasApiHeader = headerExist(_mbuf, _headerLoc, apiHeader.data(), apiHeader.length());
+
+  if (hasApiHeader) {
+    if (removeHeader(_mbuf, _headerLoc, apiHeader.c_str(), apiHeader.length())) {
+      PrefetchDebug("remove header '%.*s'", (int)apiHeader.length(), apiHeader.c_str());
     }
   } else {
-    if (removeHeader(_mbuf, _headerLoc, header.c_str(), header.length())) {
-      PrefetchDebug("remove header '%.*s'", (int)header.length(), header.c_str());
+    if (setHeader(_mbuf, _headerLoc, apiHeader.c_str(), static_cast<int>(apiHeader.length()), fetchPath, fetchPathLen)) {
+      PrefetchDebug("set api header '%.*s: %.*s'", (int)apiHeader.length(), apiHeader.c_str(), (int)fetchPathLen, fetchPath);
     }
   }
 

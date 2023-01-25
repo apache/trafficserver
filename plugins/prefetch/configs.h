@@ -36,6 +36,7 @@ class PrefetchConfig
 public:
   PrefetchConfig()
     : _apiHeader("X-CDN-Prefetch"),
+      _tierHeader("X-CDN-Prefetch-Tier"), // seen by front 2tier
       _nextHeader("X-CDN-Prefetch-Next"),
       _replaceHost(),
       _namespace("default"),
@@ -61,6 +62,18 @@ public:
   getApiHeader() const
   {
     return _apiHeader;
+  }
+
+  void
+  setTierHeader(const char *optarg)
+  {
+    _tierHeader.assign(optarg);
+  }
+
+  const std::string &
+  getTierHeader() const
+  {
+    return _tierHeader;
   }
 
   void
@@ -103,6 +116,12 @@ public:
   isFront() const
   {
     return _front;
+  }
+
+  bool
+  isTwoTier() const
+  {
+    return _two_tier;
   }
 
   bool
@@ -203,6 +222,7 @@ public:
 
 private:
   std::string _apiHeader;
+  std::string _tierHeader;
   std::string _nextHeader;
   std::string _fetchPolicy;
   std::string _replaceHost;
@@ -213,6 +233,7 @@ private:
   unsigned _fetchCount = 1;
   unsigned _fetchMax   = 0;
   bool _front          = false;
+  bool _two_tier       = false;
   bool _exactMatch     = false;
   bool _cmcd_nor       = false;
   MultiPattern _nextPaths;
