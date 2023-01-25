@@ -488,7 +488,7 @@ public:
     if (_conf_rld_act != nullptr && !TSActionDone(_conf_rld_act)) {
       TSActionCancel(_conf_rld_act);
     }
-    _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_NET);
+    _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_TASK);
   }
 
   ts::shared_mutex reload_mutex;
