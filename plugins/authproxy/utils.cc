@@ -26,6 +26,7 @@
 #include <getopt.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string_view>
 
 void
 HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
@@ -76,6 +77,23 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *val
   }
 
   TSReleaseAssert(TSMimeHdrFieldValueStringInsert(mbuf, mhdr, mloc, 0 /* index */, value, -1) == TS_SUCCESS);
+  TSReleaseAssert(TSMimeHdrFieldAppend(mbuf, mhdr, mloc) == TS_SUCCESS);
+
+  TSHandleMLocRelease(mbuf, mhdr, mloc);
+}
+
+void
+HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name, const std::string_view value)
+{
+  TSMLoc mloc;
+  mloc = TSMimeHdrFieldFind(mbuf, mhdr, name.data(), name.size());
+  if (mloc == TS_NULL_MLOC) {
+    TSReleaseAssert(TSMimeHdrFieldCreateNamed(mbuf, mhdr, name.data(), name.size(), &mloc) == TS_SUCCESS);
+  } else {
+    TSReleaseAssert(TSMimeHdrFieldValuesClear(mbuf, mhdr, mloc) == TS_SUCCESS);
+  }
+
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(mbuf, mhdr, mloc, 0 /* index */, value.data(), value.size()) == TS_SUCCESS);
   TSReleaseAssert(TSMimeHdrFieldAppend(mbuf, mhdr, mloc) == TS_SUCCESS);
 
   TSHandleMLocRelease(mbuf, mhdr, mloc);
