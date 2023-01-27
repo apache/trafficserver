@@ -36,6 +36,14 @@ Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source,
   http_parser_init(&this->_http_parser);
 }
 
+Http3HeaderFramer::~Http3HeaderFramer()
+{
+  _header.destroy();
+  if (_header_block != nullptr) {
+    free_MIOBuffer(_header_block);
+  }
+}
+
 Http3FrameUPtr
 Http3HeaderFramer::generate_frame()
 {
