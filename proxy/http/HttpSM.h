@@ -383,8 +383,8 @@ protected:
   HttpCacheSM transform_cache_sm;
 
   HttpSMHandler default_handler = nullptr;
-  PendingAction pending_action;
-  Continuation *schedule_cont = nullptr;
+  Action *pending_action        = nullptr;
+  Continuation *schedule_cont   = nullptr;
 
   HTTPParser http_parser;
   void start_sub_sm();
