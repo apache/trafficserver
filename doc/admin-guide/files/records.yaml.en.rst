@@ -2559,9 +2559,18 @@ RAM Cache
 
    Enabling this option will filter inserts into the RAM cache to ensure that
    they have been seen at least once.  For the **LRU**, this provides scan
-   resistance. Note that **CLFUS** already requires that a document have history
+   resistance.
+
+   As of ATS v10.0.0 and later, this setting can take values in the range ``0`` to
+   ``9``. Values above ``1`` will only enable the seen filter after a certain
+   threshold of RAM cache usage has been reached.  The threshold is determined by
+   the value of this setting, with ``2`` being 50% filled, ``3`` being 67% filled,
+   and so on.
+
+   Note that **CLFUS** already requires that a document have history
    before it is inserted, so for **CLFUS**, setting this option means that a
    document must be seen three times before it is added to the RAM cache.
+
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.compress INT 0
 
