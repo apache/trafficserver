@@ -6983,7 +6983,13 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
     client_response_hdr_bytes = 0;
   }
 
-  client_request_body_bytes = 0;
+  int64_t nbytes = 0;
+  if (t_state.txn_conf->proxy_protocol_out >= 0) {
+    nbytes = do_outbound_proxy_protocol(from_ua_buf, static_cast<NetVConnection *>(server_entry->vc), ua_txn->get_netvc(),
+                                        t_state.txn_conf->proxy_protocol_out);
+  }
+
+  client_request_body_bytes = nbytes;
   if (ua_raw_buffer_reader != nullptr) {
     client_request_body_bytes += from_ua_buf->write(ua_raw_buffer_reader, client_request_hdr_bytes);
     ua_raw_buffer_reader->dealloc();
