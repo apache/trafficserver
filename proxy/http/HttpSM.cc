@@ -127,6 +127,7 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
       // nothing to forward
       return 0;
     } else {
+      Debug("proxyprotocol", "vc_in had no Proxy Protocol. Manufacturing from the vc_in socket.");
       // set info from incoming NetVConnection
       IpEndpoint local = vc_in->get_local_endpoint();
       info             = ProxyProtocol{pp_version, local.family(), local, vc_in->get_remote_endpoint()};
