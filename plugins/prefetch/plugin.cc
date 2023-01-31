@@ -350,8 +350,8 @@ getPristineUrlQuery(TSHttpTxn txnp)
   return pristineQuery;
 }
 
-static StringView const CmcdHeader{"Cmcd-Request"};
-static StringView const CmcdNorFieldPrefix{"nor="};
+static const StringView CmcdHeader{"Cmcd-Request"};
+static const StringView CmcdNorFieldPrefix{"nor="};
 
 /**
  * @brief Look for and return the nor field of any Cmcd-Request header
@@ -365,16 +365,16 @@ static StringView const CmcdNorFieldPrefix{"nor="};
  * Cmcd-Request: mtp=103600,bl=153500,nor="14_176.mp4a"
  */
 static String
-getCmcdNor(TSMBuffer buffer, TSMLoc hdrloc)
+getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
 {
   String relpath;
-  TSMLoc const cmcdloc = TSMimeHdrFieldFind(buffer, hdrloc, CmcdHeader.data(), CmcdHeader.length());
+  const TSMLoc cmcdloc = TSMimeHdrFieldFind(buffer, hdrloc, CmcdHeader.data(), CmcdHeader.length());
   if (TS_NULL_MLOC != cmcdloc) {
     // iterate through the fields
-    int const cnt = TSMimeHdrFieldValuesCount(buffer, hdrloc, cmcdloc);
+    const int cnt = TSMimeHdrFieldValuesCount(buffer, hdrloc, cmcdloc);
     for (int ind = 0; ind < cnt; ++ind) {
       int flen               = 0;
-      char const *const fval = TSMimeHdrFieldValueStringGet(buffer, hdrloc, cmcdloc, ind, &flen);
+      const char *const fval = TSMimeHdrFieldValueStringGet(buffer, hdrloc, cmcdloc, ind, &flen);
 
       StringView fv(fval, flen);
       PrefetchDebug("cmcd-request field: %.*s", (int)fv.length(), fv.data());
@@ -506,7 +506,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
     }
     if (!appendCacheKey(txnp, reqBuffer, data->_cachekey)) {
       PrefetchError("failed to get the cache key");
-      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       return 0;
     }
 
@@ -562,8 +562,8 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
     if (data->frontend()) {
       /* front-end instance */
 
-      String const currentPath  = getPristineUrlPath(txnp);
-      String const currentQuery = getPristineUrlQuery(txnp);
+      const String currentPath  = getPristineUrlPath(txnp);
+      const String currentQuery = getPristineUrlQuery(txnp);
       bool hasValidQuery        = false;
 
       // If there is a --fetch-query defined in the config, and that string is found in the querystring, assume it is
@@ -581,13 +581,13 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           TSAssert(nullptr != reqBuffer);
           TSAssert(TS_NULL_MLOC != reqHdrLoc);
 
-          String const relpath = getCmcdNor(reqBuffer, reqHdrLoc);
+          const String relpath = getCmcdNor(reqBuffer, reqHdrLoc);
           if (!relpath.empty()) {
             PrefetchDebug("Current path: '%s'", currentPath.c_str());
             PrefetchDebug("Parsed cmcd nor relpath: '%s'", relpath.c_str());
 
-            String::size_type const lsi = currentPath.find_last_of("/");
-            String const nextPath       = currentPath.substr(0, lsi + 1) + relpath;
+            const String::size_type lsi = currentPath.find_last_of("/");
+            const String nextPath       = currentPath.substr(0, lsi + 1) + relpath;
 
             PrefetchDebug("Next cmcd nor path: '%s'", nextPath.c_str());
 
@@ -606,7 +606,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           /* Trigger all necessary background fetches based on the next path pattern */
 
           if (!currentPath.empty()) {
-            unsigned const total = config.getFetchCount();
+            const unsigned total = config.getFetchCount();
             String workingPath   = currentPath;
             for (unsigned i = 0; i < total; ++i) {
               PrefetchDebug("generating prefetch request %d/%d", i + 1, total);
@@ -635,8 +635,8 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           /* Trigger all necessary background fetches based on the query string(s) */
 
           PrefetchDebug("currentQuery: %s", currentQuery.c_str());
-          size_t const lastSlashIndex = currentPath.find_last_of("/");
-          size_t const keyLen         = config.getQueryKeyName().size();
+          const size_t lastSlashIndex = currentPath.find_last_of("/");
+          const size_t keyLen         = config.getQueryKeyName().size();
           unsigned done               = 1;
           std::istringstream cStringStream(currentQuery);
           String param;

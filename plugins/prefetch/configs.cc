@@ -54,7 +54,6 @@ isTrue(const char *arg)
 bool
 PrefetchConfig::init(int argc, char *argv[])
 {
-<<<<<<< HEAD
   static const struct option longopt[] = {
     {const_cast<char *>("front"),              optional_argument, nullptr, 'f'},
     {const_cast<char *>("api-header"),         optional_argument, nullptr, 'h'},
