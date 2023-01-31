@@ -59,7 +59,8 @@ tr.Processes.Default.Command = f'curl -s -v -H "Host: www.example.com" http://12
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Streams.stderr = "gold/s3_auth_parsing.gold"
+tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "expected 200 response")
+tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression("Content-Length: 8", "expected content-length 8")
 tr.StillRunningAfter = server
 
 ts.Disk.traffic_out.Content = "gold/s3_auth_parsing_ts.gold"

@@ -20,6 +20,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "include/proxy-wasm/word.h"
@@ -302,6 +303,12 @@ public:
    */
   virtual void terminate() = 0;
 
+  /**
+   * Byte order flag (host or wasm).
+   * @return 'false' for a null VM and 'true' for a wasm VM.
+   */
+  virtual bool usesWasmByteOrder() = 0;
+
   bool isFailed() { return failed_ != FailState::Ok; }
   void fail(FailState fail_state, std::string_view message) {
     integration()->error(message);
@@ -314,6 +321,16 @@ public:
     fail_callbacks_.push_back(fail_callback);
   }
 
+  bool isHostFunctionAllowed(const std::string &name) {
+    return !restricted_callback_ || allowed_hostcalls_.find(name) != allowed_hostcalls_.end();
+  }
+
+  void setRestrictedCallback(bool restricted,
+                             std::unordered_set<std::string> allowed_hostcalls = {}) {
+    restricted_callback_ = restricted;
+    allowed_hostcalls_ = std::move(allowed_hostcalls);
+  }
+
   // Integrator operations.
   std::unique_ptr<WasmVmIntegration> &integration() { return integration_; }
   bool cmpLogLevel(proxy_wasm::LogLevel level) { return integration_->getLogLevel() <= level; }
@@ -322,6 +339,10 @@ protected:
   std::unique_ptr<WasmVmIntegration> integration_;
   FailState failed_ = FailState::Ok;
   std::vector<std::function<void(FailState)>> fail_callbacks_;
+
+private:
+  bool restricted_callback_{false};
+  std::unordered_set<std::string> allowed_hostcalls_{};
 };
 
 // Thread local state set during a call into a WASM VM so that calls coming out of the

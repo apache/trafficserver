@@ -34,9 +34,9 @@
 class SourceLocation
 {
 public:
-  const char *file = nullptr;
-  const char *func = nullptr;
-  int line         = 0;
+  const char *file;
+  const char *func;
+  int line;
 
   SourceLocation()                          = default;
   SourceLocation(const SourceLocation &rhs) = default;

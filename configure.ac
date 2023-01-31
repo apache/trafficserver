@@ -1856,6 +1856,21 @@ AC_CHECK_HEADERS([opentelemetry/trace/provider.h], [
 AM_CONDITIONAL([HAS_OTEL], [test "x${has_otel}" = "x1" ])
 AC_LANG_POP([C++])
 
+# Checking if wamr is available
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([wasm_c_api.h], [
+  AC_CHECK_LIB([iwasm], [main], [
+    AC_SUBST([WAMR_LIBS], [" -liwasm "])
+    AC_SUBST(has_wamr, 1)
+  ], [
+    AC_SUBST([WAMR_LIBS], [""])
+    AC_SUBST(has_wamr, 0)
+  ])
+])
+
+AM_CONDITIONAL([HAS_WAMR], [test "x${has_wamr}" = "x1" ])
+AC_LANG_POP([C++])
+
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 

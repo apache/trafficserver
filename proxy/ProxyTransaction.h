@@ -47,6 +47,7 @@ public:
 
   virtual void set_active_timeout(ink_hrtime timeout_in);
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_inactivity_timeout();
   virtual void cancel_active_timeout();
 
@@ -251,6 +252,14 @@ ProxyTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   if (_proxy_ssn) {
     _proxy_ssn->set_inactivity_timeout(timeout_in);
+  }
+}
+
+inline void
+ProxyTransaction::set_default_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (_proxy_ssn) {
+    _proxy_ssn->set_default_inactivity_timeout(timeout_in);
   }
 }
 

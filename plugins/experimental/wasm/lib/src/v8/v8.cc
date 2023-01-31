@@ -30,12 +30,9 @@
 
 #include "include/v8-version.h"
 #include "include/v8.h"
+#include "src/flags/flags.h"
 #include "src/wasm/c-api.h"
 #include "wasm-api/wasm.hh"
-
-namespace v8::internal {
-extern unsigned int FLAG_wasm_max_mem_pages;
-} // namespace v8::internal
 
 namespace proxy_wasm {
 namespace v8 {
@@ -45,7 +42,8 @@ wasm::Engine *engine() {
   static wasm::own<wasm::Engine> engine;
 
   std::call_once(init, []() {
-    ::v8::internal::FLAG_wasm_max_mem_pages =
+    ::v8::internal::v8_flags.liftoff = false;
+    ::v8::internal::v8_flags.wasm_max_mem_pages =
         PROXY_WASM_HOST_MAX_WASM_MEMORY_SIZE_BYTES / PROXY_WASM_HOST_WASM_MEMORY_PAGE_SIZE_BYTES;
     ::v8::V8::EnableWebAssemblyTrapHandler(true);
     engine = wasm::Engine::make();
@@ -103,8 +101,11 @@ public:
 #undef _GET_MODULE_FUNCTION
 
   void terminate() override;
+  bool usesWasmByteOrder() override { return true; }
 
 private:
+  wasm::own<wasm::Trap> trap(std::string message);
+
   std::string getFailMessage(std::string_view function_name, wasm::own<wasm::Trap> trap);
 
   template <typename... Args>
@@ -465,6 +466,10 @@ uint64_t V8::getMemorySize() { return memory_->data_size(); }
 
 std::optional<std::string_view> V8::getMemory(uint64_t pointer, uint64_t size) {
   assert(memory_ != nullptr);
+  // Make sure we're operating in a wasm32 memory space.
+  if (pointer > UINT32_MAX || size > UINT32_MAX || pointer + size > UINT32_MAX) {
+    return std::nullopt;
+  }
   if (pointer + size > memory_->data_size()) {
     return std::nullopt;
   }
@@ -473,6 +478,10 @@ std::optional<std::string_view> V8::getMemory(uint64_t pointer, uint64_t size) {
 
 bool V8::setMemory(uint64_t pointer, uint64_t size, const void *data) {
   assert(memory_ != nullptr);
+  // Make sure we're operating in a wasm32 memory space.
+  if (pointer > UINT32_MAX || size > UINT32_MAX || pointer + size > UINT32_MAX) {
+    return false;
+  }
   if (pointer + size > memory_->data_size()) {
     return false;
   }
@@ -482,23 +491,35 @@ bool V8::setMemory(uint64_t pointer, uint64_t size, const void *data) {
 
 bool V8::getWord(uint64_t pointer, Word *word) {
   constexpr auto size = sizeof(uint32_t);
+  // Make sure we're operating in a wasm32 memory space.
+  if (pointer > UINT32_MAX || pointer + size > UINT32_MAX) {
+    return false;
+  }
   if (pointer + size > memory_->data_size()) {
     return false;
   }
   uint32_t word32;
   ::memcpy(&word32, memory_->data() + pointer, size);
-  word->u64_ = wasmtoh(word32);
+  word->u64_ = wasmtoh(word32, true);
   return true;
 }
 
 bool V8::setWord(uint64_t pointer, Word word) {
   constexpr auto size = sizeof(uint32_t);
+  // Make sure we're operating in a wasm32 memory space.
+  if (pointer > UINT32_MAX || pointer + size > UINT32_MAX) {
+    return false;
+  }
   if (pointer + size > memory_->data_size()) {
     return false;
   }
-  uint32_t word32 = htowasm(word.u32());
+  uint32_t word32 = htowasm(word.u32(), true);
   ::memcpy(memory_->data() + pointer, &word32, size);
   return true;
+}
+
+wasm::own<wasm::Trap> V8::trap(std::string message) {
+  return wasm::Trap::make(store_.get(), wasm::Message::make(std::move(message)));
 }
 
 template <typename... Args>
@@ -516,6 +537,9 @@ void V8::registerHostFunctionImpl(std::string_view module_name, std::string_view
         if (log) {
           func_data->vm_->integration()->trace("[vm->host] " + func_data->name_ + "(" +
                                                printValues(params, sizeof...(Args)) + ")");
+        }
+        if (!func_data->vm_->isHostFunctionAllowed(func_data->name_)) {
+          return dynamic_cast<V8 *>(func_data->vm_)->trap("restricted_callback");
         }
         auto args = convertValTypesToArgsTuple<std::tuple<Args...>>(params);
         auto function = reinterpret_cast<void (*)(Args...)>(func_data->raw_func_);
@@ -549,6 +573,9 @@ void V8::registerHostFunctionImpl(std::string_view module_name, std::string_view
         if (log) {
           func_data->vm_->integration()->trace("[vm->host] " + func_data->name_ + "(" +
                                                printValues(params, sizeof...(Args)) + ")");
+        }
+        if (!func_data->vm_->isHostFunctionAllowed(func_data->name_)) {
+          return dynamic_cast<V8 *>(func_data->vm_)->trap("restricted_callback");
         }
         auto args = convertValTypesToArgsTuple<std::tuple<Args...>>(params);
         auto function = reinterpret_cast<R (*)(Args...)>(func_data->raw_func_);

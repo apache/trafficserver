@@ -86,7 +86,7 @@ bool SignatureUtil::verifySignature(std::string_view bytecode, std::string &mess
 
   uint32_t alg_id;
   std::memcpy(&alg_id, payload.data(), sizeof(uint32_t));
-  alg_id = wasmtoh(alg_id);
+  alg_id = wasmtoh(alg_id, true);
 
   if (alg_id != 2) {
     message = "Signature has a wrong alg_id (want: 2, is: " + std::to_string(alg_id) + ")";

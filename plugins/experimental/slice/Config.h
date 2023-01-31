@@ -26,6 +26,7 @@
 #include <pcre.h>
 #endif
 
+#include <string>
 #include <mutex>
 
 // Data Structures and Classes

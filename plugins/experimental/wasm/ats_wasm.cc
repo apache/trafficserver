@@ -22,6 +22,36 @@
 
 namespace ats_wasm
 {
+// extended Wasm VM Integration object
+proxy_wasm::LogLevel
+ATSWasmVmIntegration::getLogLevel()
+{
+  if (TSIsDebugTagSet(WASM_DEBUG_TAG)) {
+    return proxy_wasm::LogLevel::debug;
+  } else {
+    return proxy_wasm::LogLevel::error;
+  }
+}
+
+void
+ATSWasmVmIntegration::error(std::string_view message)
+{
+  TSError("%.*s", static_cast<int>(message.size()), message.data());
+}
+
+void
+ATSWasmVmIntegration::trace(std::string_view message)
+{
+  TSDebug(WASM_DEBUG_TAG, "%.*s", static_cast<int>(message.size()), message.data());
+}
+
+bool
+ATSWasmVmIntegration::getNullVmFunction(std::string_view function_name, bool returns_word, int number_of_arguments,
+                                        proxy_wasm::NullPlugin *plugin, void *ptr_to_function_return)
+{
+  return false;
+}
+
 // extended constructors to initialize mutex
 Wasm::Wasm(const std::shared_ptr<WasmHandleBase> &base_wasm_handle, const WasmVmFactory &factory)
   : WasmBase(base_wasm_handle, factory)

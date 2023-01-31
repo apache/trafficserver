@@ -488,7 +488,19 @@ public:
     if (_conf_rld_act != nullptr && !TSActionDone(_conf_rld_act)) {
       TSActionCancel(_conf_rld_act);
     }
-    _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_NET);
+    _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_TASK);
+  }
+
+  /**
+     Clear _conf_rld_act if the event handler is handling the action
+   */
+  void
+  check_current_action(void *edata)
+  {
+    // Following what's TSContScheduleOnPool does before returning TSAction
+    if (_conf_rld_act == ((TSAction)((uintptr_t)edata | 0x1))) {
+      _conf_rld_act = nullptr;
+    }
   }
 
   ts::shared_mutex reload_mutex;
@@ -1049,6 +1061,7 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
   {
     std::unique_lock lock(s3->reload_mutex);
     s3->copy_changes_from(file_config);
+    s3->check_current_action(edata);
   }
 
   if (s3->expiration() == 0) {

@@ -127,9 +127,10 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
       // nothing to forward
       return 0;
     } else {
+      Debug("proxyprotocol", "vc_in had no Proxy Protocol. Manufacturing from the vc_in socket.");
       // set info from incoming NetVConnection
       IpEndpoint local = vc_in->get_local_endpoint();
-      info             = ProxyProtocol{pp_version, local.family(), local, vc_in->get_remote_endpoint()};
+      info             = ProxyProtocol{pp_version, local.family(), vc_in->get_remote_endpoint(), local};
     }
   }
 
@@ -6884,13 +6885,6 @@ HttpSM::setup_server_transfer()
 
   nbytes = server_transfer_init(buf, hdr_size);
 
-  if (t_state.is_cacheable_due_to_negative_caching_configuration &&
-      t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NO_CONTENT) {
-    int s = sizeof("No Content") - 1;
-    buf->write("No Content", s);
-    nbytes += s;
-  }
-
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   HttpTunnelProducer *p =
@@ -6996,7 +6990,13 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
     client_response_hdr_bytes = 0;
   }
 
-  client_request_body_bytes = 0;
+  int64_t nbytes = 0;
+  if (t_state.txn_conf->proxy_protocol_out >= 0) {
+    nbytes = do_outbound_proxy_protocol(from_ua_buf, static_cast<NetVConnection *>(server_entry->vc), ua_txn->get_netvc(),
+                                        t_state.txn_conf->proxy_protocol_out);
+  }
+
+  client_request_body_bytes = nbytes;
   if (ua_raw_buffer_reader != nullptr) {
     client_request_body_bytes += from_ua_buf->write(ua_raw_buffer_reader, client_request_hdr_bytes);
     ua_raw_buffer_reader->dealloc();

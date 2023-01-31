@@ -99,6 +99,35 @@ using TS_HPACK_STATIC_TABLE_ENTRY = enum {
   TS_HPACK_STATIC_TABLE_ENTRY_NUM
 };
 
+constexpr int HPACK_STATIC_TABLE_OFFSET[26] = {
+  TS_HPACK_STATIC_TABLE_ACCEPT_CHARSET,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_CACHE_CONTROL,
+  TS_HPACK_STATIC_TABLE_DATE,
+  TS_HPACK_STATIC_TABLE_ETAG,
+  TS_HPACK_STATIC_TABLE_FROM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_HOST,
+  TS_HPACK_STATIC_TABLE_IF_MATCH,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_LAST_MODIFIED,
+  TS_HPACK_STATIC_TABLE_MAX_FORWARDS,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_PROXY_AUTHENTICATE,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_RANGE,
+  TS_HPACK_STATIC_TABLE_SERVER,
+  TS_HPACK_STATIC_TABLE_TRANSFER_ENCODING,
+  TS_HPACK_STATIC_TABLE_USER_AGENT,
+  TS_HPACK_STATIC_TABLE_VARY,
+  TS_HPACK_STATIC_TABLE_WWW_AUTHENTICATE,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+  TS_HPACK_STATIC_TABLE_ENTRY_NUM,
+};
+
 constexpr HpackHeaderField STATIC_TABLE[] = {{"", ""},
                                              {":authority", ""},
                                              {":method", "GET"},
@@ -189,6 +218,45 @@ hpack_field_is_literal(HpackField ftype)
   return ftype == HpackField::INDEXED_LITERAL || ftype == HpackField::NOINDEX_LITERAL || ftype == HpackField::NEVERINDEX_LITERAL;
 }
 
+// Try not to use memcmp(sv, sv) and strncasecmp(sv, sv) because we don't care which value comes first on a dictionary.
+// Return immediately if the lengths of given strings don't match.
+// Also, we noticed with profiling that taking char* and int was more performant than taking std::string_view.
+static inline bool
+match(const char *s1, int s1_len, const char *s2, int s2_len)
+{
+  if (s1_len != s2_len) {
+    return false;
+  }
+
+  if (s1 == s2) {
+    return true;
+  }
+
+  if (memcmp(s1, s2, s1_len) != 0) {
+    return false;
+  }
+
+  return true;
+}
+
+static inline bool
+match_ignore_case(const char *s1, int s1_len, const char *s2, int s2_len)
+{
+  if (s1_len != s2_len) {
+    return false;
+  }
+
+  if (s1 == s2) {
+    return true;
+  }
+
+  if (strncasecmp(s1, s2, s1_len) != 0) {
+    return false;
+  }
+
+  return true;
+}
+
 //
 // The first byte of an HPACK field unambiguously tells us what
 // kind of field it is. Field types are specified in the high 4 bits
@@ -227,13 +295,27 @@ namespace HpackStaticTable
   {
     HpackLookupResult result;
 
-    for (unsigned int index = 1; index < TS_HPACK_STATIC_TABLE_ENTRY_NUM; ++index) {
-      std::string_view name  = STATIC_TABLE[index].name;
-      std::string_view value = STATIC_TABLE[index].value;
+    // Limit the search range of static table
+    unsigned int start = 1; // First effective index for TS_HPACK_STATIC_TABLE_ENTRY is 1
+    unsigned int end   = TS_HPACK_STATIC_TABLE_ENTRY_NUM;
+    if (const auto c = header.name[0]; 'a' <= c && c <= 'z') {
+      start = HPACK_STATIC_TABLE_OFFSET[c - 'a'];
+      if ('z' != c) {
+        // This does not always set the ideal end index but works for some cases
+        end = HPACK_STATIC_TABLE_OFFSET[c - 'a' + 1];
+      }
+    } else if (':' == c) {
+      end = HPACK_STATIC_TABLE_OFFSET[0];
+    }
+
+    for (unsigned int index = start; index < end; ++index) {
+      // Profiling showed that use of const reference here is more performant than copying string_views.
+      const std::string_view &name  = STATIC_TABLE[index].name;
+      const std::string_view &value = STATIC_TABLE[index].value;
 
       // Check whether name (and value) are matched
-      if (memcmp(header.name, name) == 0) {
-        if (memcmp(header.value, value) == 0) {
+      if (match(header.name.data(), header.name.length(), name.data(), name.length())) {
+        if (match(header.value.data(), header.value.length(), value.data(), value.length())) {
           result.index      = index;
           result.index_type = HpackIndex::STATIC;
           result.match_type = HpackMatch::EXACT;
@@ -402,10 +484,9 @@ HpackDynamicTable::lookup(const HpackHeaderField &header) const
     std::string_view name    = m_field->name_get();
     std::string_view value   = m_field->value_get();
 
-    // TODO: replace `strcasecmp` with `memcmp`
     // Check whether name (and value) are matched
-    if (strcasecmp(header.name, name) == 0) {
-      if (memcmp(header.value, value) == 0) {
+    if (match_ignore_case(header.name.data(), header.name.length(), name.data(), name.length())) {
+      if (match(header.value.data(), header.value.length(), value.data(), value.length())) {
         result.index      = index;
         result.index_type = HpackIndex::DYNAMIC;
         result.match_type = HpackMatch::EXACT;
@@ -924,7 +1005,8 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     // - Authorization header obviously should not be indexed
     // - Short Cookie header should not be indexed because of low entropy
     HpackField field_type;
-    if ((value.size() < 20 && memcmp(name, HPACK_HDR_FIELD_COOKIE) == 0) || memcmp(name, HPACK_HDR_FIELD_AUTHORIZATION) == 0) {
+    if ((value.size() < 20 && match(name.data(), name.length(), HPACK_HDR_FIELD_COOKIE.data(), HPACK_HDR_FIELD_COOKIE.length())) ||
+        match(name.data(), name.length(), HPACK_HDR_FIELD_AUTHORIZATION.data(), HPACK_HDR_FIELD_AUTHORIZATION.length())) {
       field_type = HpackField::NEVERINDEX_LITERAL;
     } else {
       field_type = HpackField::INDEXED_LITERAL;

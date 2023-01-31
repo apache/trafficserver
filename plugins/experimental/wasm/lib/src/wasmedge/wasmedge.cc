@@ -281,6 +281,7 @@ private:
                              std::function<R(ContextBase *, Args...)> *function);
 
   void terminate() override {}
+  bool usesWasmByteOrder() override { return true; }
 
   WasmEdgeLoaderPtr loader_;
   WasmEdgeValidatorPtr validator_;
@@ -416,7 +417,7 @@ void WasmEdge::registerHostFunctionImpl(std::string_view module_name,
   auto *func_type = newWasmEdgeFuncType<std::tuple<Args...>>();
   data->vm_ = this;
   data->raw_func_ = reinterpret_cast<void *>(function);
-  data->callback_ = [](void *data, WasmEdge_MemoryInstanceContext * /*MemCxt*/,
+  data->callback_ = [](void *data, const WasmEdge_CallingFrameContext * /*CallFrameCxt*/,
                        const WasmEdge_Value *Params,
                        WasmEdge_Value * /*Returns*/) -> WasmEdge_Result {
     auto *func_data = reinterpret_cast<HostFuncData *>(data);
@@ -463,7 +464,7 @@ void WasmEdge::registerHostFunctionImpl(std::string_view module_name,
   auto *func_type = newWasmEdgeFuncType<R, std::tuple<Args...>>();
   data->vm_ = this;
   data->raw_func_ = reinterpret_cast<void *>(function);
-  data->callback_ = [](void *data, WasmEdge_MemoryInstanceContext * /*MemCxt*/,
+  data->callback_ = [](void *data, const WasmEdge_CallingFrameContext * /*CallFrameCxt*/,
                        const WasmEdge_Value *Params, WasmEdge_Value *Returns) -> WasmEdge_Result {
     auto *func_data = reinterpret_cast<HostFuncData *>(data);
     const bool log = func_data->vm_->cmpLogLevel(LogLevel::trace);
@@ -540,8 +541,8 @@ void WasmEdge::getModuleFunctionImpl(std::string_view function_name,
     WasmEdge_Result res =
         WasmEdge_ExecutorInvoke(executor_.get(), func_cxt, params, sizeof...(Args), nullptr, 0);
     if (!WasmEdge_ResultOK(res)) {
-      fail(FailState::RuntimeError, "Function: " + std::string(function_name) + " failed:\n" +
-                                        WasmEdge_ResultGetMessage(res));
+      fail(FailState::RuntimeError, "Function: " + std::string(function_name) +
+                                        " failed: " + WasmEdge_ResultGetMessage(res));
       return;
     }
     if (log) {
@@ -594,8 +595,8 @@ void WasmEdge::getModuleFunctionImpl(std::string_view function_name,
     WasmEdge_Result res =
         WasmEdge_ExecutorInvoke(executor_.get(), func_cxt, params, sizeof...(Args), results, 1);
     if (!WasmEdge_ResultOK(res)) {
-      fail(FailState::RuntimeError, "Function: " + std::string(function_name) + " failed:\n" +
-                                        WasmEdge_ResultGetMessage(res));
+      fail(FailState::RuntimeError, "Function: " + std::string(function_name) +
+                                        " failed: " + WasmEdge_ResultGetMessage(res));
       return R{};
     }
     R ret = convValTypeToArg<R>(results[0]);

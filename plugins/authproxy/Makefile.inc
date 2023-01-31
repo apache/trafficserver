@@ -19,3 +19,7 @@ authproxy_authproxy_la_SOURCES = \
 	authproxy/authproxy.cc \
 	authproxy/utils.cc \
 	authproxy/utils.h
+
+check_PROGRAMS +=  authproxy/authproxy_test
+authproxy_authproxy_test_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
+authproxy_authproxy_test_SOURCES = authproxy/tests/authproxy_test.cc

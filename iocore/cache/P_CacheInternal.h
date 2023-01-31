@@ -100,6 +100,7 @@ struct EvacuationBlock;
 enum {
   cache_bytes_used_stat,
   cache_bytes_total_stat,
+  cache_stripes_stat,
   cache_ram_cache_bytes_stat,
   cache_ram_cache_bytes_total_stat,
   cache_direntries_total_stat,

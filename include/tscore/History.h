@@ -32,8 +32,8 @@
 
 struct HistoryEntry {
   SourceLocation location;
-  unsigned short event = 0;
-  short reentrancy     = 0;
+  unsigned short event;
+  short reentrancy;
 };
 
 template <unsigned Count> class History

@@ -513,6 +513,7 @@ struct OverridableHttpConfigParams {
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt max_proxy_cycles                    = 0;
   MgmtInt tunnel_activity_check_period        = 0;
+  MgmtInt default_inactivity_timeout          = 24 * 60 * 60;
 
   MgmtByte forward_connect_method = 0;
 

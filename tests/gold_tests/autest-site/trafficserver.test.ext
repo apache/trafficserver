@@ -41,7 +41,8 @@ default_log_data = {
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
                    enable_tls=False, enable_cache=True, enable_quic=False,
                    block_for_debug=False, log_data=default_log_data,
-                   use_traffic_out=True, dump_runroot=True):
+                   use_traffic_out=True, dump_runroot=True,
+                   enable_proxy_protocol=False):
     #####################################
     # common locations
 
@@ -327,6 +328,14 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         if enable_tls:
             get_port(p, "ssl_port")
             get_port(p, "ssl_portv6")
+
+        if enable_proxy_protocol:
+            get_port(p, "proxy_protocol_port")
+            get_port(p, "proxy_protocol_portv6")
+
+            if enable_tls:
+                get_port(p, "proxy_protocol_ssl_port")
+                get_port(p, "proxy_protocol_ssl_portv6")
     else:
         p.Variables.port = 8080
         p.Variables.portv6 = 8080
@@ -381,6 +390,10 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         if enable_quic:
             port_str += " {ssl_port}:quic {ssl_portv6}:quic:ipv6".format(
                 ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
+        if enable_proxy_protocol:
+            port_str += f" {p.Variables.proxy_protocol_port}:pp {p.Variables.proxy_protocol_portv6}:pp:ipv6"
+            if enable_tls:
+                port_str += f" {p.Variables.proxy_protocol_ssl_port}:pp:ssl {p.Variables.proxy_protocol_ssl_portv6}:pp:ssl:ipv6"
         #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
         p.Disk.records_config.update({
             'proxy.config.http.server_ports': port_str,

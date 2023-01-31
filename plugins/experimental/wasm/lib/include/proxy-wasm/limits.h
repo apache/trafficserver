@@ -30,3 +30,13 @@
 #ifndef PROXY_WASM_HOST_WASI_RANDOM_GET_MAX_SIZE_BYTES
 #define PROXY_WASM_HOST_WASI_RANDOM_GET_MAX_SIZE_BYTES (64 * 1024)
 #endif
+
+// Maximum allowed size of Pairs buffer to deserialize.
+#ifndef PROXY_WASM_HOST_PAIRS_MAX_BYTES
+#define PROXY_WASM_HOST_PAIRS_MAX_BYTES (1024 * 1024)
+#endif
+
+// Maximum allowed number of pairs in a Pairs buffer to deserialize.
+#ifndef PROXY_WASM_HOST_PAIRS_MAX_COUNT
+#define PROXY_WASM_HOST_PAIRS_MAX_COUNT 1024
+#endif

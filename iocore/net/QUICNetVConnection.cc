@@ -370,11 +370,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   // Send this netvc to InactivityCop.
   nh->startCop(this);
 
-  if (inactivity_timeout_in) {
-    set_inactivity_timeout(inactivity_timeout_in);
-  } else {
-    set_inactivity_timeout(0);
-  }
+  set_inactivity_timeout(inactivity_timeout_in);
 
   if (active_timeout_in) {
     set_active_timeout(active_timeout_in);

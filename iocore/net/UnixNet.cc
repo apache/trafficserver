@@ -23,6 +23,7 @@
 
 #include "P_Net.h"
 #include "I_AIO.h"
+#include "tscore/ink_hrtime.h"
 
 using namespace std::literals;
 
@@ -70,20 +71,30 @@ public:
         continue;
       }
 
+      if (ne->default_inactivity_timeout_in == -1) {
+        // If no context-specific default inactivity timeout has been set by an
+        // override plugin, then use the global default.
+        Debug("inactivity_cop", "vc: %p setting the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64,
+              ne, nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
+        ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
+      }
+
       // set a default inactivity timeout if one is not set
       // The event `EVENT_INACTIVITY_TIMEOUT` only be triggered if a read
       // or write I/O operation was set by `do_io_read()` or `do_io_write()`.
-      if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0 &&
-          (ne->read.enabled || ne->write.enabled)) {
+      if (ne->next_inactivity_timeout_at == 0 && ne->default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) {
         Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
               nh.config.default_inactivity_timeout);
-        ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
+        ne->use_default_inactivity_timeout = true;
+        ne->next_inactivity_timeout_at     = Thread::get_hrtime() + ne->default_inactivity_timeout_in;
+        ne->inactivity_timeout_in          = 0;
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
       }
 
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
         if (ne->is_default_inactivity_timeout()) {
           // track the connections that timed out due to default inactivity
+          Debug("inactivity_cop", "vc: %p timed out due to default inactivity timeout", ne);
           NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
         }
         if (nh.keep_alive_queue.in(ne)) {

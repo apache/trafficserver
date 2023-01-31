@@ -453,7 +453,7 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   }
 
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-  if (field && !field->value_get_int64()) {
+  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTP_STATUS_NO_CONTENT) {
     f.allow_empty_doc = 1;
     // Set the object size here to zero in case this is a cache replace where the new object
     // length is zero but the old object was not.
@@ -997,6 +997,7 @@ CacheProcessor::cacheInitialized()
           vol_total_cache_bytes = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
+          CACHE_VOL_SUM_DYN_STAT(cache_stripes_stat, 1); // Count the cache stripes
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
@@ -2688,6 +2689,7 @@ cplist_reconfigure()
   int volume_number;
   off_t size_in_blocks;
   ConfigVol *config_vol;
+  int assignedVol = 0; // Number of assigned volumes
 
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
@@ -2725,7 +2727,6 @@ cplist_reconfigure()
       cp->num_vols += dp[0]->num_volblocks;
       cp->disk_vols[i] = dp[0];
     }
-
   } else {
     for (int i = 0; i < gndisks; i++) {
       if (gdisks[i]->header->num_volumes == 1 && gdisks[i]->disk_vols[0]->vol_number == 0) {
@@ -2746,6 +2747,8 @@ cplist_reconfigure()
       // in such a way forced volumes will not impact volume percentage calculations.
       if (-1 == gdisks[i]->forced_volume_num) {
         tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+      } else {
+        ++assignedVol;
       }
     }
 
@@ -2913,6 +2916,9 @@ cplist_reconfigure()
       gnvol += cp->num_vols;
     }
   }
+
+  GLOBAL_CACHE_SET_DYN_STAT(cache_stripes_stat, gnvol + assignedVol);
+
   return 0;
 }
 
@@ -3053,6 +3059,7 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   reg_int("bytes_used", cache_bytes_used_stat, rsb, prefix, cache_stats_bytes_used_cb);
 
   REG_INT("bytes_total", cache_bytes_total_stat);
+  REG_INT("stripes", cache_stripes_stat);
   REG_INT("ram_cache.total_bytes", cache_ram_cache_bytes_total_stat);
   REG_INT("ram_cache.bytes_used", cache_ram_cache_bytes_stat);
   REG_INT("ram_cache.hits", cache_ram_cache_hits_stat);
