@@ -388,6 +388,7 @@ FileManager::ConfigManager::ConfigManager(const char *fileName_, const char *con
 FileManager::ConfigManager::~ConfigManager()
 {
   ats_free(fileName);
+  ats_free(configName);
 }
 
 //
