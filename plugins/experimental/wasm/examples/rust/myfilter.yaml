@@ -20,5 +20,5 @@ config:
     code:
       local:
         filename: /usr/local/var/wasm/myfilter.wasm
-    runtime: envoy.wasm.runtime.wamr
+    runtime: ats.wasm.runtime.wamr
     vmId: test

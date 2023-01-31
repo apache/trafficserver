@@ -13,6 +13,6 @@ config:
     code:
       local:
         filename: /usr/local/var/wasm/plugin.wasm
-    runtime: envoy.wasm.runtime.wamr
+    runtime: ats.wasm.runtime.wamr
     vmId: "coraza-filter_vm_id"
     allow_precompiled: true

@@ -19,7 +19,14 @@
 #include "ts/ts.h"
 #include <yaml-cpp/yaml.h>
 #include "ats_wasm.h"
+
+#ifdef WAMR
 #include "include/proxy-wasm/wamr.h"
+#endif
+
+#ifdef WASMEDGE
+#include "include/proxy-wasm/wasmedge.h"
+#endif
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -414,13 +421,37 @@ read_configuration()
     return false;
   }
 
-  auto wasm                      = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWamrVm(), // VM
-                                               vm_id,                      // vm_id
-                                               vm_configuration,           // vm_configuration
-                                               "",                         // vm_key,
-                                               envs,                       // envs
-                                               cap_maps                    // allowed capabilities
-  );
+  std::shared_ptr<ats_wasm::Wasm> wasm;
+  if (runtime == "ats.wasm.runtime.wasmedge") {
+#ifdef WASMEDGE
+    wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWasmEdgeVm(), // VM
+                                            vm_id,                      // vm_id
+                                            vm_configuration,           // vm_configuration
+                                            "",                         // vm_key,
+                                            envs,                       // envs
+                                            cap_maps                    // allowed capabilities
+    );
+#else
+    TSError("[wasm][%s] wasm unable to use WasmEdge runtime", __FUNCTION__);
+    return false;
+#endif
+  } else if (runtime == "ats.wasm.runtime.wamr") {
+#ifdef WAMR
+    wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWamrVm(), // VM
+                                            vm_id,                      // vm_id
+                                            vm_configuration,           // vm_configuration
+                                            "",                         // vm_key,
+                                            envs,                       // envs
+                                            cap_maps                    // allowed capabilities
+    );
+#else
+    TSError("[wasm][%s] wasm unable to use WAMR runtime", __FUNCTION__);
+    return false;
+#endif
+  } else {
+    TSError("[wasm][%s] wasm unable to use %s runtime", __FUNCTION__, runtime.c_str());
+    return false;
+  }
   wasm->wasm_vm()->integration() = std::make_unique<ats_wasm::ATSWasmVmIntegration>();
 
   auto plugin = std::make_shared<proxy_wasm::PluginBase>(name,          // name

@@ -83,7 +83,7 @@ if HAS_OTEL
 include experimental/otel_tracer/Makefile.inc
 endif
 
-if HAS_WAMR
+if HAS_WASM
 include experimental/wasm/Makefile.inc
 endif
 
