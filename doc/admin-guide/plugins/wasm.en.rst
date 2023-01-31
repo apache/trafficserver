@@ -39,7 +39,8 @@ The plugin uses the library and header files from the Proxy-Wasm project.
 * https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/72ce32f7b11f9190edf874028255e1309e41690f
 * https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/tree/fd0be8405db25de0264bdb78fae3a82668c03782
 
-Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAMR is supported)
+Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAMR and
+WasmEdge are supported)
 
 The plugin creates a root context when ATS starts and a new context will be created out of the root context for each
 transaction. ATS plugin events will trigger the corresponding functions in the WebAssembly module to be executed through
@@ -49,8 +50,9 @@ so.
 Compiling the Plugin
 ====================
 
-* WAMR runtime needs CMake
-* Compile and install WAMR
+* The plugin requires either WAMR or WasmEdge
+
+**Compile and install WAMR (CMake is required)**
 
 ::
 
@@ -65,7 +67,19 @@ Compiling the Plugin
   make
   sudo make install
 
-* Configure ATS to compile with experimental plugins
+**Install WasmEdge**
+
+::
+
+  wget https://github.com/WasmEdge/WasmEdge/archive/refs/tags/proxy-wasm/0.11.2.tar.gz
+  tar zxvf 0.11.2.tar.gz
+  cd WasmEdge-proxy-wasm-0.11.2/utils
+  ./install.sh
+
+* Copy contents from ~/.wasmedge/include to /usr/local/include
+* Copy contents from ~/.wasmedge/lib to /usr/local/lib
+
+**Configure ATS to compile with experimental plugins**
 
 ::
 
@@ -78,12 +92,15 @@ Examples
 ========
 
 Follow the C++, Rust and TinyGo examples in the examples directory. Instructions are included on how to compile and use
-generated wasm modules with the plugin.
+generated wasm modules with the plugin. 
+
+Runtime can be chosen by changing the ``runtime`` field inside the yaml configuration file for the plugin.
+``ats.wasm.runtime.wamr`` is for WAMR while ``ats.wasm.runtime.wasmedge`` is for WasmEdge.
 
 TODO
 ====
 
-* Currently only the WAMR runtime is supported. We should also support V8, Wasmtime, and WasmEdge.
+* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime.
 * Need to support functionality for retrieving and setting request/response body
 * Need to support functionality for making async request call
 * Need to support L4 lifecycle handler functions
