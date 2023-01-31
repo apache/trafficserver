@@ -31,52 +31,74 @@ our `download page <https://trafficserver.apache.org/downloads>`_ to see the
 current supported versions.
 
 
-For details on the actual developer release process, See
-
 Versions, compatibility and schedules
 -------------------------------------
 
-1. We promise to make 1 major release every two years, but the RM and
+1. We aim to make 1 major release every two years, but the RM and
    community can of course make more as necessary.
-2. We only make releases off the LTS branches, which are cut every 2 years
-   off the master branch.
-3. Master is always open, for any type of change (including incompatible
-   changes). But don't break compatibility just for fun!
+2. We cut LTS major and minor releases striaght off the master branch.
+   We will make release branches in a timely manner before making any
+   release candidates.
+3. Master is always open for compatible changes.
 4. Master is always stable, i.e. commits should be properly tested and
    reviewed before committed to master.
-5. All releases are stable releases, following strict Semantic Versioning.
-6. Minor and patch releases are made at the discretion of the community and
+5. Incompatible changes must be made on the current ``-dev`` branch.
+6. All releases are stable releases, following strict Semantic Versioning.
+7. Minor and patch releases are made at the discretion of the community and
    the RM.
-7. Minor releases can include new (small / safe) features, but must be
+8. Minor releases can include new (small / safe) features, but must be
    compatible within the LTS major version.
-8. The LTS cycle, 4 years, does not reset when we make a minor release.
-9. The goal is that within a major LTS version, only one minor version is
-   continuously supported. For example, if we have made a v9.1.2, and the
-   RM makes a v9.2.0 release, do not expect any more releases of v9.1.x.
-   The exception here would be serious issues, or security problems.
+9. The LTS cycle, approximately 4 years, does not reset when we make a minor
+   release.
+10. The goal is that within a major LTS version, only one minor version is
+    continuously supported. For example, if we have made a v9.1.2, and the
+    RM makes a v9.2.0 release, do not expect any more releases of v9.1.x.
+    The exception here would be serious issues, or security problems.
+
+Branch Management
+-----------------
+
+As of `v10.0.0`` and forward, we will cut all major and minor branches off
+the main branch (master). The ``-Dev`` branch will be used for incompatible
+changes, and will be merged into master when the next major release is
+in progress.
+
+.. figure:: images/branch_mgmt.png
+   :align: left
+
+The implication of this new process is that we will no longer cherry pick
+PRs from master to a release branch. Rather, each major and minor release
+is taken whole sale from the master branch. For managing your PRs, this means:
+
+1. You do not need to nominate your PR for a backport to a minor release, unless
+   the release branch has been cut. A goal here is that the release branches
+   are stable in preparation of the minor release, while master is still open.
+2. An exception for this are the older LTS releases and minor critical fixes.
+   For such changes, always nominate your PR for backport to those Projects.
+3. The default ``Milestone`` changes for every major and minor release. For
+   example, if the current LTS release is `10.0.1`, the milestone for all new
+   PRs will be `10.1.0` going forward.
+4. We will create tags on the master branch regularly, for coordinating testing
+   efforts. These are not releases!
+5. We will regularly (weekly) merge master to the current ``-Dev`` branch,
+   to keep them in sync.
+
+It is absolutely critical that everyone sets the ``Milestone`` and ``Project``
+fields appropriate in this process. This is how we will manage the releases!
 
 Current Release Schedule and support
 ------------------------------------
 
+Master is currently targeted for our first `v10.0.x` release. When this branch
+is created, the new process kicks in and ``Milestones`` must follow the
+next minor release number (e.g. `10.1.0`).
+
 .. figure:: images/roadmap.png
-   :align: center
+   :align: left
 
 **Note:** These are examples, only the first minor release number of each
 major LTS branch is guaranteed to be made. The dates for point releases
 are also for illustration.
-
-How?
-----
-
-As you can see, we no longer make any sort of development releases. Also,
-there's no longer a backport voting process! The latter means that all
-developers and users must make a higher commitment to reviewing changes as
-they go into master and the incompatible release branch. Other than that,
-it's pretty much business as usual, but easier for everyone involved.
-This git branch diagram shows an example how the git tree will be managed:
-
-.. figure:: images/git-versions.svg
-   :align: center
 
 Burning release numbers, or how our release process works
 ---------------------------------------------------------
@@ -109,9 +131,9 @@ Release Managers
 =======  =======  =========  ===========  =========
 Version  Primary  Secondary  1st Release  Supported
 =======  =======  =========  ===========  =========
-8.x      Evan     Leif       8/2018         1/2022
-9.x      Leif     Bryan      1/2020         1/2024
-10.x     TBD      TBD        1/2022         1/2026
+8.x      Evan     Leif       8/2018         3/2023
+9.x      Evan     Bryan      1/2020         3/2025
+10.x     Leif     Bryan      3/2023         3/2027
 =======  =======  =========  ===========  =========
 
 
