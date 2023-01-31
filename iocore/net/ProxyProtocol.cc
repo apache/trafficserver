@@ -356,6 +356,7 @@ proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
     bw.fill(len);
   }
 
+  Debug("proxyprotocol_v1", "Proxy Protocol v1: %.*s", static_cast<int>(bw.size()), bw.data());
   bw.write("\r\n");
 
   return bw.size();
@@ -441,6 +442,7 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
   // Set len field (number of following bytes part of the header) in the hdr
   uint16_t len = htons(bw.size() - PPv2_CONNECTION_HEADER_LEN);
   memcpy(buf + len_field_offset, &len, sizeof(uint16_t));
+  Debug("proxyprotocol_v2", "Proxy Protocol v2 of %zu bytes", bw.size());
   return bw.size();
 }
 
