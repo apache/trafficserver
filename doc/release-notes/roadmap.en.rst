@@ -36,7 +36,7 @@ Versions, compatibility and schedules
 
 1. We aim to make 1 major release every two years, but the RM and
    community can of course make more as necessary.
-2. We cut LTS major and minor releases striaght off the master branch.
+2. We cut LTS major and minor releases straight off the master branch.
    We will make release branches in a timely manner before making any
    release candidates.
 3. Master is always open for compatible changes.
