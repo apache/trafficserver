@@ -1963,6 +1963,11 @@ HttpSM::state_http_server_open(int event, void *data)
       _netvc->do_io_write(nullptr, 0, nullptr);
       _netvc->do_io_close();
       _netvc = nullptr;
+    } else {
+      // We set this to 0 because otherwise
+      // HttpTransact::retry_server_connection_not_open will raise an assertion
+      // if the value is the default UNKNOWN_INTERNAL_ERROR.
+      t_state.cause_of_death_errno = 0;
     }
 
     /* If we get this error in transparent mode, then we simply can't bind to the 4-tuple to make the connection.  There's no hope
