@@ -21,12 +21,9 @@
   limitations under the License.
  */
 
-#include <cstdio>
 #include <atomic>
 #include <string_view>
-#include <tuple>
-#include <unordered_map>
-#include <string_view>
+#include <string>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
@@ -1362,7 +1359,7 @@ APIHook::prev() const
 int
 APIHook::invoke(int event, void *edata) const
 {
-  if ((event == EVENT_IMMEDIATE) || (event == EVENT_INTERVAL) || event == TS_EVENT_HTTP_TXN_CLOSE) {
+  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
     if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }
@@ -1372,6 +1369,20 @@ APIHook::invoke(int event, void *edata) const
     // If we cannot get the lock, the caller needs to restructure to handle rescheduling
     ink_release_assert(0);
   }
+  return m_cont->handleEvent(event, edata);
+}
+
+int
+APIHook::blocking_invoke(int event, void *edata) const
+{
+  if (event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == TS_EVENT_HTTP_TXN_CLOSE) {
+    if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
+      ink_assert(!"not reached");
+    }
+  }
+
+  WEAK_SCOPED_MUTEX_LOCK(lock, m_cont->mutex, this_ethread());
+
   return m_cont->handleEvent(event, edata);
 }
 
@@ -9636,23 +9647,20 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 tsapi TSReturnCode
 TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_len)
 {
-  TSReturnCode retval          = TS_SUCCESS;
+  TSReturnCode retval = TS_SUCCESS;
+  std::string const secret_name_str{secret_name, unsigned(secret_name_length)};
   SSLConfigParams *load_params = SSLConfig::load_acquire();
   SSLConfigParams *params      = SSLConfig::acquire();
   if (load_params != nullptr) { // Update the current data structure
     Debug("ssl.cert_update", "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
-    if (!load_params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
-      retval = TS_ERROR;
-    }
-    load_params->updateCTX(std::string(secret_name, secret_name_length));
+    load_params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
+    load_params->updateCTX(secret_name_str);
     SSLConfig::load_release(load_params);
   }
   if (params != nullptr) {
     Debug("ssl.cert_update", "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
-    if (!params->secrets.setSecret(std::string(secret_name, secret_name_length), secret_data, secret_data_len)) {
-      retval = TS_ERROR;
-    }
-    params->updateCTX(std::string(secret_name, secret_name_length));
+    params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
+    params->updateCTX(secret_name_str);
     SSLConfig::release(params);
   }
   return retval;
@@ -9670,32 +9678,34 @@ TSSslSecretUpdate(const char *secret_name, int secret_name_length)
   return retval;
 }
 
-tsapi TSReturnCode
-TSSslSecretGet(const char *secret_name, int secret_name_length, const char **secret_data_return, int *secret_data_len)
+tsapi char *
+TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data_length)
 {
+  sdk_assert(secret_name != nullptr);
+  sdk_assert(secret_data_length != nullptr);
+
   bool loading            = true;
-  TSReturnCode retval     = TS_SUCCESS;
   SSLConfigParams *params = SSLConfig::load_acquire();
   if (params == nullptr) {
     params  = SSLConfig::acquire();
     loading = false;
   }
-  std::string_view secret_data;
-  if (!params->secrets.getSecret(std::string(secret_name, secret_name_length), secret_data)) {
-    retval = TS_ERROR;
-  }
-  if (secret_data_return) {
-    *secret_data_return = secret_data.data();
-  }
-  if (secret_data_len) {
-    *secret_data_len = secret_data.size();
+  std::string const secret_data = params->secrets.getSecret(std::string(secret_name, secret_name_length));
+  char *data{nullptr};
+  if (secret_data.empty()) {
+    *secret_data_length = 0;
+
+  } else {
+    data = static_cast<char *>(ats_malloc(secret_data.size()));
+    memcpy(data, secret_data.data(), secret_data.size());
+    *secret_data_length = secret_data.size();
   }
   if (loading) {
     SSLConfig::load_release(params);
   } else {
     SSLConfig::release(params);
   }
-  return retval;
+  return data;
 }
 
 /**

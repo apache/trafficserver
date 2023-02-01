@@ -213,6 +213,13 @@ APIHook::invoke(int, void *) const
   return 0;
 }
 
+int
+APIHook::blocking_invoke(int, void *) const
+{
+  ink_assert(false);
+  return 0;
+}
+
 APIHook *
 APIHooks::head() const
 {
