@@ -55,6 +55,7 @@ void
 HQSession::remove_transaction(HQTransaction *trans)
 {
   this->_transaction_list.remove(trans);
+  delete trans;
 
   return;
 }
