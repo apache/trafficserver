@@ -26,7 +26,7 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/include/wccp \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) @SWOC_INCLUDES@
 
 if BUILD_TEST_TOOLS
 bin_PROGRAMS = jtest/jtest

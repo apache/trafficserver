@@ -649,7 +649,7 @@ dir_bucket_loop_check(CacheDirEntry *start_dir, CacheDirEntry *seg)
 
   while (p2) {
     // p1 moves by one entry per iteration
-    assert(p1);
+    ink_assert(p1);
     p1 = next_dir(p1, seg);
     // p2 moves by two entries per iteration
     p2 = next_dir(p2, seg);
@@ -762,7 +762,7 @@ Stripe::dir_check()
           ++seg_empty;
           --seg_buckets_in_use;
           // this should only happen on the first dir in a bucket
-          assert(nullptr == next_dir(e, seg));
+          ink_assert(nullptr == next_dir(e, seg));
           break;
         } else {
           int e_idx = e - seg;
@@ -857,7 +857,7 @@ Stripe::dir_check()
         // The size markings are redundant. Low values (less than DIR_SHIFT_WIDTH) for larger
         // base block sizes should never be used. Such entries should use the next smaller base block size.
         if (b > 0 && s < 1 << DIR_BLOCK_SHIFT(1)) {
-          assert(frag_demographics[s][b] == 0);
+          ink_assert(frag_demographics[s][b] == 0);
           continue;
         }
         printf(" %8d[%2d:%1d]:%06d", (s + 1) * block_size, s, b, frag_demographics[s][b]);

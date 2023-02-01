@@ -36,9 +36,10 @@
 
 #include "hdrs/HTTP.h"
 #include "ProxyConfig.h"
-#include "tscore/IpMap.h"
-#include "tscpp/util/TextView.h"
-#include "tscore/ts_file.h"
+#include "swoc/TextView.h"
+#include "swoc/swoc_file.h"
+#include "swoc/swoc_ip.h"
+#include "swoc/Errata.h"
 
 // forward declare in name only so it can be a friend.
 struct IpAllowUpdate;
@@ -53,7 +54,7 @@ class IpAllow : public ConfigInfo
 {
   friend struct IpAllowUpdate;
 
-  using MethodNames = std::vector<std::string>;
+  using MethodNames = swoc::MemSpan<swoc::TextView>;
 
   static constexpr uint32_t ALL_METHOD_MASK = ~0; // Mask for all methods.
 
@@ -65,40 +66,54 @@ class IpAllow : public ConfigInfo
     /// Present only to make Vec<> happy, do not use.
     Record()              = default;
     Record(Record &&that) = default;
+    /** Construct from mask.
+     *
+     * @param method_mask Bit mask of allowed methods.
+     */
     explicit Record(uint32_t method_mask);
+
+    /** Construct from values.
+     *
+     * @param method_mask Well known method mask.
+     * @param line Source line in configuration file.
+     * @param nonstandard_methods Allowed methods that are not well known.
+     * @param deny_nonstandard_methods Denied methods that are not well known.
+     */
     Record(uint32_t method_mask, int line, MethodNames &&nonstandard_methods, bool deny_nonstandard_methods);
 
-    uint32_t _method_mask{0};
-    int _src_line{0};
-    MethodNames _nonstandard_methods;
-    bool _deny_nonstandard_methods{false};
+    uint32_t _method_mask{0};              ///< Well known method mask.
+    int _src_line{0};                      ///< Configuration file sourc line.
+    MethodNames _nonstandard_methods;      ///< Allowed methods that are not well known.
+    bool _deny_nonstandard_methods{false}; ///< Denied methods that are not well known.
   };
 
 public:
   using self_type     = IpAllow; ///< Self reference type.
   using scoped_config = ConfigProcessor::scoped_config<self_type, self_type>;
+  using IpMap         = swoc::IPSpace<Record const *>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
   enum match_key_t { SRC_ADDR, DST_ADDR };
-  /// Token strings for configuration
-  static constexpr ts::TextView OPT_MATCH_SRC{"src_ip"};
-  static constexpr ts::TextView OPT_MATCH_DST{"dest_ip"};
-  static constexpr ts::TextView OPT_ACTION_TAG{"action"};
-  static constexpr ts::TextView OPT_ACTION_ALLOW{"ip_allow"};
-  static constexpr ts::TextView OPT_ACTION_DENY{"ip_deny"};
-  static constexpr ts::TextView OPT_METHOD{"method"};
-  static constexpr ts::TextView OPT_METHOD_ALL{"all"};
 
-  static constexpr ts::TextView YAML_TAG_ROOT{"ip_allow"};
-  static constexpr ts::TextView YAML_TAG_IP_ADDRS{"ip_addrs"};
-  static constexpr ts::TextView YAML_TAG_APPLY{"apply"};
-  static constexpr ts::TextView YAML_VALUE_APPLY_IN{"in"};
-  static constexpr ts::TextView YAML_VALUE_APPLY_OUT{"out"};
-  static constexpr ts::TextView YAML_TAG_ACTION{"action"};
-  static constexpr ts::TextView YAML_VALUE_ACTION_ALLOW{"allow"};
-  static constexpr ts::TextView YAML_VALUE_ACTION_DENY{"deny"};
-  static constexpr ts::TextView YAML_TAG_METHODS{"methods"};
-  static constexpr ts::TextView YAML_VALUE_METHODS_ALL{"all"};
+  /// Token strings for configuration
+  static constexpr swoc::TextView OPT_MATCH_SRC{"src_ip"};
+  static constexpr swoc::TextView OPT_MATCH_DST{"dest_ip"};
+  static constexpr swoc::TextView OPT_ACTION_TAG{"action"};
+  static constexpr swoc::TextView OPT_ACTION_ALLOW{"ip_allow"};
+  static constexpr swoc::TextView OPT_ACTION_DENY{"ip_deny"};
+  static constexpr swoc::TextView OPT_METHOD{"method"};
+  static constexpr swoc::TextView OPT_METHOD_ALL{"all"};
+
+  static const inline std::string YAML_TAG_ROOT{"ip_allow"};
+  static const inline std::string YAML_TAG_IP_ADDRS{"ip_addrs"};
+  static const inline std::string YAML_TAG_APPLY{"apply"};
+  static const inline std::string YAML_VALUE_APPLY_IN{"in"};
+  static const inline std::string YAML_VALUE_APPLY_OUT{"out"};
+  static const inline std::string YAML_TAG_ACTION{"action"};
+  static const inline std::string YAML_VALUE_ACTION_ALLOW{"allow"};
+  static const inline std::string YAML_VALUE_ACTION_DENY{"deny"};
+  static const inline std::string YAML_TAG_METHODS{"methods"};
+  static const inline std::string YAML_VALUE_METHODS_ALL{"all"};
 
   static constexpr const char *MODULE_NAME = "IPAllow";
 
@@ -121,6 +136,11 @@ public:
 
     void clear(); ///< Drop data and config reference.
 
+    /** Convert well known string index to mask.
+     *
+     * @param wksidx Well known string index.
+     * @return A mask for that method.
+     */
     static uint32_t MethodIdxToMask(int wksidx);
 
     /// Check if the ACL is valid (i.e. not uninitialized or missing).
@@ -149,8 +169,9 @@ public:
 
   void Print() const;
 
-  static ACL match(sockaddr const *ip, match_key_t key);
-  static ACL match(IpEndpoint const *ip, match_key_t key);
+  static ACL match(swoc::IPAddr const &addr, match_key_t key);
+  static ACL match(swoc::IPEndpoint const *addr, match_key_t key);
+  static ACL match(sockaddr const *sa, match_key_t key);
 
   static void startup();
   static void reconfigure();
@@ -180,27 +201,31 @@ public:
    */
   static bool isAcceptCheckEnabled();
 
-  const ts::file::path &get_config_file() const;
+  const swoc::file::path &get_config_file() const;
 
 private:
   static size_t configid;               ///< Configuration ID for update management.
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
   static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
 
-  void PrintMap(const IpMap *map) const;
+  void DebugMap(IpMap const &map) const;
 
-  int BuildTable();
-  int ATSBuildTable(const std::string &);
-  int YAMLBuildTable(const std::string &);
-  bool YAMLLoadEntry(const YAML::Node &);
-  bool YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, void *mark);
-  bool YAMLLoadMethod(const YAML::Node &node, Record &rec);
+  swoc::Errata BuildTable();
+  swoc::Errata YAMLBuildTable(const std::string &);
+  swoc::Errata YAMLLoadEntry(const YAML::Node &);
+  swoc::Errata YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, Record const *mark);
+  swoc::Errata YAMLLoadMethod(const YAML::Node &node, Record &rec);
 
-  ts::file::path config_file; ///< Path to configuration file.
+  /// Copy @a src to the local arena and review a view of the copy.
+  swoc::TextView localize(swoc::TextView src);
+
+  swoc::file::path config_file; ///< Path to configuration file.
   IpMap _src_map;
   IpMap _dst_map;
-  std::vector<Record> _src_acls;
-  std::vector<Record> _dst_acls;
+  /// Storage for records.
+  swoc::MemArena _arena;
+
+  friend swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, IpAllow::IpMap const &map);
 };
 
 // ------ Record methods --------
@@ -321,9 +346,15 @@ IpAllow::isAcceptCheckEnabled()
 }
 
 inline auto
-IpAllow::match(IpEndpoint const *ip, match_key_t key) -> ACL
+IpAllow::match(swoc::IPEndpoint const *addr, match_key_t key) -> ACL
 {
-  return self_type::match(&ip->sa, key);
+  return self_type::match(swoc::IPAddr(&addr->sa), key);
+}
+
+inline auto
+IpAllow::match(sockaddr const *sa, match_key_t key) -> ACL
+{
+  return self_type::match(swoc::IPAddr(sa), key);
 }
 
 inline auto
@@ -332,7 +363,7 @@ IpAllow::makeAllowAllACL() -> ACL
   return {&ALLOW_ALL_RECORD, nullptr};
 }
 
-inline const ts::file::path &
+inline const swoc::file::path &
 IpAllow::get_config_file() const
 {
   return config_file;

@@ -1,0 +1,14 @@
+{
+   "id":"6ec0e08a-c9e4-4d95-b65b-294eacd7f13d",
+   "jsonrpc":"2.0",
+   "method":"admin_lookup_records",
+   "params":[
+      {
+         "record_name":"some.invalid.record.name",
+         "rec_types":[
+            "1",
+            "16"
+         ]
+      }
+   ]
+}

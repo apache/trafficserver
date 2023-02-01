@@ -391,9 +391,7 @@ BaseLogFile::display(FILE *fd)
  * instance of Diags is ready, we cannot simply call something like Debug().
  * However, we still need to log the creation of BaseLogFile, since the
  * information is still useful. This function will print out log messages
- * into traffic.out if we happen to be bootstrapping Diags. Since
- * traffic_manager redirects stdout/stderr into traffic.out, that
- * redirection is inherited by way of exec()/fork() all the way here.
+ * into traffic.out if we happen to be bootstrapping Diags.
  *
  * TODO use Debug() for non bootstrap instances
  */

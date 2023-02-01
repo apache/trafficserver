@@ -206,7 +206,7 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const LogFormat &rhs)
-  : RefCountObj(rhs),
+  : RefCountObj(),
     m_interval_sec(0),
     m_interval_next(0),
     m_agg_marshal_space(nullptr),

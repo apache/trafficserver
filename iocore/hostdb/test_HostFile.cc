@@ -127,14 +127,15 @@ TEST_CASE("HostFile", "[hostdb]")
 // NOTE(cmcfarlen): need this destructor defined so we don't have to link in the entire project for this test
 HostDBHash::~HostDBHash() {}
 
-#include "tscore/Scalar.h"
+#include "swoc/Scalar.h"
 
 HostDBRecord *
 HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_name_size)
 {
-  const ts::Scalar<8> qn_size = ts::round_up(query_name.size() + 1);
-  const ts::Scalar<8> r_size  = ts::round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
-  auto ptr                    = malloc(r_size);
+  const swoc::Scalar<8, ssize_t> qn_size = swoc::round_up(query_name.size() + 1);
+  const swoc::Scalar<8, ssize_t> r_size =
+    swoc::round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
+  auto ptr = malloc(r_size);
   memset(ptr, 0, r_size);
   auto self = static_cast<self_type *>(ptr);
   new (self) self_type();

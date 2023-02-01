@@ -111,7 +111,7 @@ main(int argc, const char **argv)
   http_init();
   hpack_huffman_init();
 
-  Http3Config::startup();
+  ts::Http3Config::startup();
 
   QUICClient client(&config);
   eventProcessor.schedule_in(&client, 1, ET_NET);

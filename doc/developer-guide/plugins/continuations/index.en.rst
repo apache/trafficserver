@@ -54,7 +54,7 @@ one of the following:
    transactions uses ``TSContDataSet/Get``
 
 -  uses ``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, or
-   ``TSContSchedule`` APIs
+   ``TSContScheduleOnPool`` APIs
 
 Before being activated, a caller must grab the continuation's mutex.
 This requirement makes it possible for a continuation's handler function

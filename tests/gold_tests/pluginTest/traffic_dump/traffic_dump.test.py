@@ -38,7 +38,7 @@ server = Test.MakeVerifierServerProcess(
 
 
 # Define ATS and configure it.
-ts = Test.MakeATSProcess("ts", command='traffic_manager', enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 
 ts.addSSLfile("ssl/server.pem")

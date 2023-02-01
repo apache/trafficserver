@@ -396,7 +396,7 @@ Http3FrameFactory::create_null_frame()
 Http3FrameUPtr
 Http3FrameFactory::create(const uint8_t *buf, size_t len)
 {
-  Http3Config::scoped_config params;
+  ts::Http3Config::scoped_config params;
   Http3Frame *frame   = nullptr;
   Http3FrameType type = Http3Frame::type(buf, len);
 

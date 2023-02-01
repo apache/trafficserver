@@ -50,6 +50,8 @@
 
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
+extern std::function<PoolableSession *()> create_h1_server_session;
+extern std::map<int, std::function<ProxySession *()>> ProtocolSessionCreateMap;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
@@ -221,6 +223,8 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
   }
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);
@@ -247,11 +251,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
     quic->enableProtocols(port.m_session_protocol_preference);
 
-    // HTTP/0.9 over QUIC draft-27 (for interop only, will be removed)
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC_D27, new Http3SessionAccept(accept_opt));
+    // HTTP/0.9 over QUIC draft-29 (for interop only, will be removed)
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC_D29, new Http3SessionAccept(accept_opt));
 
-    // HTTP/3 draft-27
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3_D27, new Http3SessionAccept(accept_opt));
+    // HTTP/3 draft-29
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3_D29, new Http3SessionAccept(accept_opt));
 
     // HTTP/0.9 over QUIC (for interop only, will be removed)
     quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));

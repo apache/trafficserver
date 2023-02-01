@@ -29,7 +29,7 @@ traffic_logcat_traffic_logcat_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	@SWOC_INCLUDES@ $(TS_INCLUDES)
 
 traffic_logcat_traffic_logcat_LDFLAGS = \
 	$(AM_LDFLAGS) \
@@ -50,6 +50,6 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 traffic_logcat_traffic_logcat_LDADD += \
-	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@LIBPROFILER@ -lm

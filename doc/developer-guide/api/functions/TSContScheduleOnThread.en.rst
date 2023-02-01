@@ -33,7 +33,19 @@ Synopsis
 Description
 ===========
 
-Mostly the same as :func:`TSContSchedule`. Schedules :arg:`contp` on :arg:`ethread`.
+Schedules :arg:`contp` to run :arg:`timeout` milliseconds in the future, on the thread specified by
+:arg:`ethread`. The :arg:`timeout` is an approximation, meaning it will be at least :arg:`timeout`
+milliseconds but possibly more. Resolutions finer than roughly 5 milliseconds will not be effective.
+Note that :arg:`contp` is required to have a mutex, which is provided to :func:`TSContCreate`.
+
+The return value can be used to cancel the scheduled event via :func:`TSActionCancel`. This is
+effective until the continuation :arg:`contp` is being dispatched. However, if it is scheduled on
+another thread this can be problematic to be correctly timed. The return value can be checked with
+:func:`TSActionDone` to see if the continuation ran before the return, which is possible if
+:arg:`timeout` is `0`.
+
+If :arg:`contp` has no thread affinity set, the thread it is now scheduled on will be set
+as its thread affinity thread.
 
 Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
 Calling it from raw non-EThreads can result in unpredictable behavior.
@@ -41,6 +53,5 @@ Calling it from raw non-EThreads can result in unpredictable behavior.
 See Also
 ========
 
-:doc:`TSContSchedule.en`
-:doc:`TSContScheduleEvery.en`
 :doc:`TSContScheduleOnPool.en`
+:doc:`TSContScheduleEveryOnPool.en`

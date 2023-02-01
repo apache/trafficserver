@@ -1,0 +1,64 @@
+{
+  "$schema":"http://json-schema.org/draft-04/schema#",
+  "title":"Params field RPC Record request definition.",
+  "description":"This is the definition expected for a RPC record request. This should be used to obtain information regarding a particular record(s) from Traffic Server Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "type":"array",
+  "items":{
+     "type":"object",
+     "properties":{
+        "record_name":{
+           "type":"string",
+           "note":[
+              "if requesting a regex, then use record_name_regex instead, only one can be used in the same object."
+           ]
+        },
+        "record_name_regex":{
+           "type":"string"
+        },
+        "rec_types":{
+           "type":"array",
+           "items":{
+              "anyOf":[
+                 {
+                    "type":"integer",
+                    "enum":[
+                       1,
+                       2,
+                       4,
+                       16,
+                       32,
+                       63
+                    ]
+                 },
+                 {
+                    "type":"string",
+                    "enum":[
+                       "1",
+                       "2",
+                       "4",
+                       "16",
+                       "32",
+                       "63"
+                    ]
+                 }
+              ],
+              "note":[
+                 "Config=1, Process=2, Node=4, Local=16, Plugin=32, All=63."
+              ]
+           }
+        }
+     },
+     "oneOf":[
+        {
+           "required":[
+              "record_name_regex"
+           ]
+        },
+        {
+           "required":[
+              "record_name"
+           ]
+        }
+     ]
+  }
+}

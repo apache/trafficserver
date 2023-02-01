@@ -51,6 +51,14 @@ HQSession::add_transaction(HQTransaction *trans)
   return;
 }
 
+void
+HQSession::remove_transaction(HQTransaction *trans)
+{
+  this->_transaction_list.remove(trans);
+
+  return;
+}
+
 const char *
 HQSession::get_protocol_string() const
 {

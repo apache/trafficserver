@@ -210,7 +210,7 @@ class Http2GoawayFrame : public Http2TxFrame
 {
 public:
   Http2GoawayFrame(Http2Goaway p)
-    : Http2TxFrame({HTTP2_GOAWAY_LEN, HTTP2_FRAME_TYPE_GOAWAY, HTTP2_FRAME_NO_FLAG, HTTP2_CONNECTION_CONTROL_STRTEAM}), _params(p)
+    : Http2TxFrame({HTTP2_GOAWAY_LEN, HTTP2_FRAME_TYPE_GOAWAY, HTTP2_FRAME_NO_FLAG, HTTP2_CONNECTION_CONTROL_STREAM}), _params(p)
   {
   }
 

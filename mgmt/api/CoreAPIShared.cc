@@ -27,7 +27,6 @@
 #include "tscore/ink_memory.h"
 
 #include "CoreAPIShared.h"
-#include "MgmtSocket.h"
 
 // Forward declarations, used to be in the CoreAPIShared.h include file but
 // that doesn't make any sense since these are both statically declared. /leif
@@ -277,88 +276,4 @@ poll_write(int fd, int timeout)
   }
 
   return err;
-}
-
-/**********************************************************************
- * Events
- **********************************************************************/
-/**********************************************************************
- * get_event_id
- *
- * Purpose: Given the event_name, returns the event's corresponding
- *          event id
- * Note: this conversion is based on list defined in Alarms.h and
- *       the identical list defined in CoreAPIShared.cc
- *********************************************************************/
-int
-get_event_id(const char *event_name)
-{
-  if (strcmp("MGMT_ALARM_PROXY_PROCESS_DIED", event_name) == 0) {
-    return MGMT_ALARM_PROXY_PROCESS_DIED;
-  } else if (strcmp("MGMT_ALARM_PROXY_PROCESS_BORN", event_name) == 0) {
-    return MGMT_ALARM_PROXY_PROCESS_BORN;
-  } else if (strcmp("MGMT_ALARM_PROXY_CONFIG_ERROR", event_name) == 0) {
-    return MGMT_ALARM_PROXY_CONFIG_ERROR;
-  } else if (strcmp("MGMT_ALARM_PROXY_SYSTEM_ERROR", event_name) == 0) {
-    return MGMT_ALARM_PROXY_SYSTEM_ERROR;
-  } else if (strcmp("MGMT_ALARM_PROXY_CACHE_ERROR", event_name) == 0) {
-    return MGMT_ALARM_PROXY_CACHE_ERROR;
-  } else if (strcmp("MGMT_ALARM_PROXY_CACHE_WARNING", event_name) == 0) {
-    return MGMT_ALARM_PROXY_CACHE_WARNING;
-  } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_ERROR", event_name) == 0) {
-    return MGMT_ALARM_PROXY_LOGGING_ERROR;
-  } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_WARNING", event_name) == 0) {
-    return MGMT_ALARM_PROXY_LOGGING_WARNING;
-  } else if (strcmp("MGMT_ALARM_CONFIG_UPDATE_FAILED", event_name) == 0) {
-    return MGMT_ALARM_CONFIG_UPDATE_FAILED;
-  }
-
-  return -1;
-}
-
-/**********************************************************************
- * get_event_id
- *
- * Purpose: based on alarm_id, determine the corresponding alarm name
- * Note:    allocates memory for the name returned
- *********************************************************************/
-char *
-get_event_name(int id)
-{
-  char name[MAX_EVENT_NAME_SIZE];
-
-  memset(name, 0, MAX_EVENT_NAME_SIZE);
-  switch (id) {
-  case MGMT_ALARM_PROXY_PROCESS_DIED:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_PROCESS_DIED", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_PROCESS_BORN:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_PROCESS_BORN", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_CONFIG_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_CONFIG_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_SYSTEM_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_SYSTEM_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_CACHE_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_CACHE_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_CACHE_WARNING:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_CACHE_WARNING", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_LOGGING_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOGGING_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_LOGGING_WARNING:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
-    break;
-  case MGMT_ALARM_CONFIG_UPDATE_FAILED:
-    ink_strlcpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
-    break;
-  default:
-    return nullptr;
-  }
-
-  return ats_strdup(name);
 }

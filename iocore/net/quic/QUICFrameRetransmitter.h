@@ -31,6 +31,7 @@ class QUICFrameGenerator;
 struct QUICFrameInformation {
   QUICFrameType type;
   QUICEncryptionLevel level;
+  QUICStreamId stream_id;
 
   uint8_t data[128] = {};
 };

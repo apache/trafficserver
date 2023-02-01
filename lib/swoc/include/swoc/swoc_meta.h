@@ -65,18 +65,18 @@ namespace swoc { inline namespace SWOC_VERSION_NS { namespace meta {
 template <unsigned N> struct CaseTag : /** @cond DOXYGEN_FAIL */ public CaseTag<N - 1> /** @endcond */ {
   constexpr CaseTag() {}
 
-  static constexpr unsigned value = N;
+  static constexpr unsigned value = N; ///< Case tag value.
 };
 
-/// Anchor the hierarchy.
+/// Case hierarchy anchor.
 template <> struct CaseTag<0> {
   constexpr CaseTag() {}
 
-  static constexpr unsigned value = 0;
+  static constexpr unsigned value = 0; ///< Case tag value.
 };
 
-/** This is the final case - it forces the super class hierarchy.
- * After defining the cases using the indexed case arguments, this is used to to perform the call.
+/** This is the final case - it forces the class hierarchy.
+ * After defining the cases using the indexed case arguments, this is used to perform the call.
  * To increase the hierarchy depth, change the template argument to a larger number.
  */
 static constexpr CaseTag<9> CaseArg{};

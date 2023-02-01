@@ -268,13 +268,13 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
 
   this->_read_buffer_reader->consume(nbytes);
 
-  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
+  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     return -1;
   }
 
   // If we know up front that the payload is too long, nuke this connection.
-  if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+  if (this->current_hdr.length > this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR;
     return -1;
   }
@@ -356,10 +356,10 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
     if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-      SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
+      const char *peer_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
+      SiteThrottledWarning("HTTP/2 session error peer_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
-                           client_ip, this->get_connection_id(), this->connection_state.get_stream_error_rate(),
+                           peer_ip, this->get_connection_id(), this->connection_state.get_stream_error_rate(),
                            Http2::stream_error_rate_threshold);
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }

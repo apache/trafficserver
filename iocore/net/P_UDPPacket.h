@@ -42,7 +42,8 @@ public:
 
   SLINK(UDPPacketInternal, alink); // atomic link
   // packet scheduling stuff: keep it a doubly linked list
-  uint64_t pktLength = 0;
+  uint64_t pktLength    = 0;
+  uint16_t segment_size = 0;
 
   int reqGenerationNum     = 0;
   ink_hrtime delivery_time = 0; // when to deliver packet
@@ -162,7 +163,7 @@ UDPPacket::getConnection()
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf)
+new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -171,7 +172,8 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &bu
   p->delivery_time         = when;
   if (to)
     ats_ip_copy(&p->to, to);
-  p->chain = buf;
+  p->chain        = buf;
+  p->segment_size = segment_size;
   return p;
 }
 

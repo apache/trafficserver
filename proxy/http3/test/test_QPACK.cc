@@ -65,11 +65,19 @@ private:
 };
 
 // TODO: QUICUnidirectionalStream should be used if there
+#if HAVE_QUICHE_H
+class TestQUICStream : public QUICStreamImpl
+#else
 class TestQUICStream : public QUICBidirectionalStream
+#endif
 {
 public:
   TestQUICStream(QUICStreamId sid)
+#if HAVE_QUICHE_H
+    : QUICStreamImpl(new MockQUICConnectionInfoProvider(), sid)
+#else
     : QUICBidirectionalStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid, 65536, 65536)
+#endif
   {
   }
 

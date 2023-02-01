@@ -36,7 +36,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # Set up ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=1)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 # Set up ssl files
 ts.addSSLfile("ssl/server1.pem")

@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure.
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 # default root
 request_header_chk = {"headers":

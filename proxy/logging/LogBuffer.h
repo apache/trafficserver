@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
+#include "tscore/ink_atomic.h"
 #include "tscore/Diags.h"
 #include "LogFormat.h"
 #include "LogLimits.h"

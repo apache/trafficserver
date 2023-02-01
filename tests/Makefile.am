@@ -19,6 +19,7 @@ include $(top_srcdir)/build/tidy.mk
 
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =
+pkglib_LTLIBRARIES =
 
 SUBDIRS =
 
@@ -39,6 +40,7 @@ include gold_tests/pluginTest/TSVConnFd/Makefile.inc
 include gold_tests/timeout/Makefile.inc
 include gold_tests/tls/Makefile.inc
 include tools/plugins/Makefile.inc
+include gold_tests/jsonrpc/plugins/Makefile.inc
 
 TESTS = $(check_PROGRAMS)
 

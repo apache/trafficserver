@@ -21,6 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 check_PROGRAMS = test_librecords test_librecords_on_eventsystem
 
 AM_CPPFLAGS += \
+        -I$(abs_top_srcdir)/lib/swoc/include \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/iocore/utils \
 	-I$(abs_top_srcdir)/mgmt \
@@ -28,18 +29,16 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	@SWOC_INCLUDES@\
 	$(TS_INCLUDES)
 
-noinst_LIBRARIES = librecords_lm.a librecords_p.a
+noinst_LIBRARIES = librecords_p.a
 
 librecords_COMMON = \
-	I_RecAlarms.h \
 	I_RecCore.h \
 	I_RecDefs.h \
-	I_RecEvents.h \
 	I_RecHttp.h \
 	I_RecMutex.h \
-	I_RecSignals.h \
 	P_RecCore.cc \
 	P_RecCore.h \
 	P_RecDefs.h \
@@ -55,12 +54,6 @@ librecords_COMMON = \
 	RecMutex.cc \
 	RecRawStats.cc \
 	RecUtils.cc
-
-librecords_lm_a_SOURCES = \
-	$(librecords_COMMON) \
-	I_RecLocal.h \
-	P_RecLocal.h \
-	RecLocal.cc
 
 librecords_p_a_SOURCES = \
 	$(librecords_COMMON) \
@@ -84,7 +77,7 @@ test_librecords_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ @LIBCAP@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include

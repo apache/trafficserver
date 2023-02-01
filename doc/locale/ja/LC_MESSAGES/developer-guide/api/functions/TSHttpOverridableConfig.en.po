@@ -290,10 +290,6 @@ msgstr ""
 msgid ":ts:cv:`proxy.config.http.down_server.cache_time`"
 msgstr ""
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:119
-msgid ":ts:cv:`proxy.config.http.down_server.abort_threshold`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:120
 msgid ":ts:cv:`proxy.config.http.cache.fuzz.time`"
 msgstr ""

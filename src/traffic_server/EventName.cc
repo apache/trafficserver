@@ -29,7 +29,6 @@
 #include "I_Cache.h"
 #include "I_Net.h"
 #include "I_HostDB.h"
-#include "BaseManager.h"
 #include "P_RefCountCache.h"
 
 /*-------------------------------------------------------------------------
@@ -44,100 +43,5 @@
 const char *
 event_int_to_string(int event, int blen, char *buffer)
 {
-  switch (event) {
-  case -1:
-    return "<no event>";
-  case VC_EVENT_READ_READY:
-    return "VC_EVENT_READ_READY";
-  case VC_EVENT_WRITE_READY:
-    return "VC_EVENT_WRITE_READY";
-  case VC_EVENT_READ_COMPLETE:
-    return "VC_EVENT_READ_COMPLETE";
-  case VC_EVENT_WRITE_COMPLETE:
-    return "VC_EVENT_WRITE_COMPLETE";
-  case VC_EVENT_EOS:
-    return "VC_EVENT_EOS";
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-    return "VC_EVENT_INACTIVITY_TIMEOUT";
-  case VC_EVENT_ACTIVE_TIMEOUT:
-    return "VC_EVENT_ACTIVE_TIMEOUT";
-
-  case NET_EVENT_OPEN:
-    return "NET_EVENT_OPEN";
-  case NET_EVENT_OPEN_FAILED:
-    return "NET_EVENT_OPEN_FAILED";
-  case NET_EVENT_ACCEPT:
-    return "NET_EVENT_ACCEPT";
-  case NET_EVENT_ACCEPT_SUCCEED:
-    return "NET_EVENT_ACCEPT_SUCCEED";
-  case NET_EVENT_ACCEPT_FAILED:
-    return "NET_EVENT_ACCEPT_FAILED";
-
-  case EVENT_HOST_DB_LOOKUP:
-    return "EVENT_HOST_DB_LOOKUP";
-  case EVENT_HOST_DB_GET_RESPONSE:
-    return "EVENT_HOST_DB_GET_RESPONSE";
-
-  case DNS_EVENT_EVENTS_START:
-    return "DNS_EVENT_EVENTS_START";
-
-  case REFCOUNT_CACHE_EVENT_SYNC:
-    return "REFCOUNT_CACHE_EVENT_SYNC";
-
-  case CACHE_EVENT_LOOKUP:
-    return "CACHE_EVENT_LOOKUP";
-  case CACHE_EVENT_LOOKUP_FAILED:
-    return "CACHE_EVENT_LOOKUP_FAILED";
-  case CACHE_EVENT_OPEN_READ:
-    return "CACHE_EVENT_OPEN_READ";
-  case CACHE_EVENT_OPEN_READ_FAILED:
-    return "CACHE_EVENT_OPEN_READ_FAILED";
-  case CACHE_EVENT_OPEN_WRITE:
-    return "CACHE_EVENT_OPEN_WRITE";
-  case CACHE_EVENT_OPEN_WRITE_FAILED:
-    return "CACHE_EVENT_OPEN_WRITE_FAILED";
-  case CACHE_EVENT_REMOVE:
-    return "CACHE_EVENT_REMOVE";
-  case CACHE_EVENT_REMOVE_FAILED:
-    return "CACHE_EVENT_REMOVE_FAILED";
-  case CACHE_EVENT_UPDATE:
-    return "CACHE_EVENT_UPDATE";
-  case CACHE_EVENT_UPDATE_FAILED:
-    return "CACHE_EVENT_UPDATE_FAILED";
-  case CACHE_EVENT_LINK:
-    return "CACHE_EVENT_LINK";
-  case CACHE_EVENT_LINK_FAILED:
-    return "CACHE_EVENT_LINK_FAILED";
-  case CACHE_EVENT_DEREF:
-    return "CACHE_EVENT_DEREF";
-  case CACHE_EVENT_DEREF_FAILED:
-    return "CACHE_EVENT_DEREF_FAILED";
-  case CACHE_EVENT_RESPONSE:
-    return "CACHE_EVENT_RESPONSE";
-  case CACHE_EVENT_RESPONSE_MSG:
-    return "CACHE_EVENT_RESPONSE_MSG";
-
-  case MGMT_EVENT_SHUTDOWN:
-    return "MGMT_EVENT_SHUTDOWN";
-  case MGMT_EVENT_RESTART:
-    return "MGMT_EVENT_RESTART";
-  case MGMT_EVENT_BOUNCE:
-    return "MGMT_EVENT_BOUNCE";
-  case MGMT_EVENT_CONFIG_FILE_UPDATE:
-    return "MGMT_EVENT_CONFIG_FILE_UPDATE";
-  case MGMT_EVENT_CLEAR_STATS:
-    return "MGMT_EVENT_CLEAR_STATS";
-  case MGMT_EVENT_HOST_STATUS_UP:
-    return "MGMT_EVENT_HOST_STATUS_UP";
-  case MGMT_EVENT_HOST_STATUS_DOWN:
-    return "MGMT_EVENT_HOST_STATUS_DOWN";
-
-  default:
-    if (buffer != nullptr) {
-      snprintf(buffer, blen, "%d", event);
-      return buffer;
-    } else {
-      return "UNKNOWN_EVENT";
-    }
-  }
+  return "UNKNOWN_EVENT";
 }

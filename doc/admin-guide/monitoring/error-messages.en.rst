@@ -118,11 +118,6 @@ Alarm Messages
    Check your custom log configuration file; there could be syntax
    errors. Refer to :ref:`admin-logging-fields` for correct custom log format fields.
 
-``vip_config binary is not setuid root, manager will be unable to enable virtual ip addresses``
-   The :program:`traffic_manager` process is not able to set virtual IP
-   addresses. You must ``setuid root`` for the ``vip_config`` file in
-   the Traffic Server ``bin`` directory.
-
 .. _body-factory:
 
 HTML Messages Sent to Clients

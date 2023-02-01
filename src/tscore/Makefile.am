@@ -35,21 +35,24 @@ lib_LTLIBRARIES = libtscore.la
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
+        @SWOC_INCLUDES@ \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
-libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
+libtscore_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 libtscore_la_LIBADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ \
 	@LIBOBJS@ \
 	@LIBPCRE@ \
 	@OPENSSL_LIBS@ \
 	@LIBRESOLV@ \
 	@LIBCAP@ \
+	@HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@SWOC_LIBS@ \
 	-lc
 
 libtscore_la_SOURCES = \
@@ -149,23 +152,23 @@ ParseRulesCType: CompileParseRules
 	LSAN_OPTIONS='detect_leaks=0' ./CompileParseRules
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
+test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBSS@ @LIBPCRE@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
+test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@
 
 test_geometry_SOURCES = test_geometry.cc
-test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
+test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
 
 test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
-test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@ @OPENSSL_LIBS@
+test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @OPENSSL_LIBS@
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @SWOC_LIBS@ @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -191,7 +194,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
-	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_Throttler.cc \
 	unit_tests/test_Tokenizer.cc \

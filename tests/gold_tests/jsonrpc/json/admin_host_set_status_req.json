@@ -1,0 +1,11 @@
+{
+   "id": "c6d56fba-0cbd-11eb-926d-001fc69cc946",
+   "jsonrpc": "2.0",
+   "method": "admin_host_set_status",
+   "params": {
+      "operation": "$operation",
+      "host": ["$host"],
+      "reason": "manual",
+      "time": "100"
+   }
+}

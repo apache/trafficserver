@@ -54,7 +54,7 @@ using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
 using ts::CacheDirEntry;
-using ts::MemSpan;
+using swoc::MemSpan;
 using ts::Doc;
 
 enum { SILENT = 0, NORMAL, VERBOSE } Verbosity = NORMAL;

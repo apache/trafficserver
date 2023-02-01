@@ -35,7 +35,6 @@ CONFIG proxy.config.http.insert_response_via_str INT 0
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/parent.config.en.html
 ##############################################################################
 CONFIG proxy.config.http.parent_proxy.retry_time INT 300
-CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
 CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 
@@ -60,7 +59,6 @@ CONFIG proxy.config.http.connect_attempts_max_retries INT 3
 CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
 CONFIG proxy.config.http.connect_attempts_timeout INT 30
-CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
 CONFIG proxy.config.http.down_server.cache_time INT 60
 
 ##############################################################################

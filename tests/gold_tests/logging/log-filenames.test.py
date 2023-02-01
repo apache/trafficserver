@@ -35,8 +35,7 @@ class LogFilenamesTest:
     # The default log names for the various system logs.
     default_log_data = {
         'diags': 'diags.log',
-        'error': 'error.log',
-        'manager': 'manager.log'
+        'error': 'error.log'
     }
 
     def __init__(self, description, log_data=default_log_data):
@@ -50,11 +49,11 @@ class LogFilenamesTest:
             MakeATSProcess extension.
         '''
         self.__description = description
-        self.ts = self.__configure_traffic_manager(log_data)
+        self.ts = self.__configure_traffic_server(log_data)
         self.tr = self.__configure_traffic_TestRun(description)
         self.__configure_await_TestRun(self.sentinel_log_path)
 
-    def __configure_traffic_manager(self, log_data):
+    def __configure_traffic_server(self, log_data):
         ''' Common ATS configuration logic.
 
         Args:
@@ -62,12 +61,11 @@ class LogFilenamesTest:
             MakeATSProcess extension.
 
         Return:
-            The traffic_manager process.
+            The traffic_server process.
         '''
         self._ts_name = f"ts{LogFilenamesTest.__ts_counter}"
         LogFilenamesTest.__ts_counter += 1
-        self.ts = Test.MakeATSProcess(self._ts_name, command="traffic_manager",
-                                      use_traffic_out=False, log_data=log_data)
+        self.ts = Test.MakeATSProcess(self._ts_name, use_traffic_out=False, log_data=log_data)
         self.ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 0,
             'proxy.config.diags.debug.tags': 'log',
@@ -90,7 +88,7 @@ class LogFilenamesTest:
             logging:
               formats:
                 - name: url_and_return_code
-                  format: "%<cqu>: %<pssc>"
+                  format: "%<pqu>: %<pssc>"
               logs:
                 - filename: {self.sentinel_log_filename}
                   format: url_and_return_code
@@ -159,13 +157,9 @@ class LogFilenamesTest:
         return self.custom_log_path
 
     def set_log_expectations(self):
-        ''' Configure sanity checks for each of the log types (manager, error,
+        ''' Configure sanity checks for each of the log types (diags, error,
         etc.) to verify they are emitting the expected content.
         '''
-        manager_path = self.ts.Disk.manager_log.AbsPath
-        self.ts.Disk.manager_log.Content += Testers.ContainsExpression(
-            "Launching ts process",
-            f"{manager_path} should contain traffic_manager log messages")
 
         diags_path = self.ts.Disk.diags_log.AbsPath
         self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
@@ -185,46 +179,32 @@ class LogFilenamesTest:
 
 class DefaultNamedTest(LogFilenamesTest):
     ''' Verify that if custom names are not configured, then the default
-    'diags.log', 'manager.log', and 'error.log' are written to.
+    'diags.log' and 'error.log' are written to.
     '''
 
     def __init__(self):
         super().__init__('default log filename configuration')
-
-        # For these tests, more important than the listening port is the
-        # existence of the log files. In particular, it can take a few seconds
-        # for traffic_manager to open diags.log.
-        self.diags_log = self.ts.Disk.diags_log.AbsPath
-        self.ts.Ready = When.FileExists(self.diags_log)
 
         self.configure_named_custom_log('my_custom_log')
         self.set_log_expectations()
 
 
 class CustomNamedTest(LogFilenamesTest):
-    ''' Verify that the user can assign custom filenames to manager.log, etc.
+    ''' Verify that the user can assign custom filenames to diags.log, etc.
     '''
 
     def __init__(self):
         log_data = {
             'diags': 'my_diags.log',
-            'error': 'my_error.log',
-            'manager': 'my_manager.log'
+            'error': 'my_error.log'
         }
         super().__init__('specify log filename configuration', log_data)
 
-        # Configure custom names for manager.log, etc.
+        # Configure custom names for diags.log, etc.
         self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'my_manager.log',
             'proxy.config.diags.logfile.filename': 'my_diags.log',
             'proxy.config.error.logfile.filename': 'my_error.log',
         })
-
-        # For these tests, more important than the listening port is the
-        # existence of the log files. In particular, it can take a few seconds
-        # for traffic_manager to open diags.log.
-        self.diags_log = self.ts.Disk.diags_log.AbsPath
-        self.ts.Ready = When.FileExists(self.diags_log)
 
         self.configure_named_custom_log('my_custom_log')
         self.set_log_expectations()
@@ -238,14 +218,12 @@ class stdoutTest(LogFilenamesTest):
 
         log_data = {
             'diags': 'stdout',
-            'error': 'stdout',
-            'manager': 'stdout'
+            'error': 'stdout'
         }
         super().__init__('specify logs to go to stdout', log_data)
 
-        # Configure custom names for manager.log, etc.
+        # Configure custom names for diags.log, etc.
         self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'stdout',
             'proxy.config.diags.logfile.filename': 'stdout',
             'proxy.config.error.logfile.filename': 'stdout',
         })
@@ -267,14 +245,12 @@ class stderrTest(LogFilenamesTest):
 
         log_data = {
             'diags': 'stderr',
-            'error': 'stderr',
-            'manager': 'stderr'
+            'error': 'stderr'
         }
         super().__init__('specify logs to go to stderr', log_data)
 
-        # Configure custom names for manager.log, etc.
+        # Configure custom names for diags.log, etc.
         self.ts.Disk.records_config.update({
-            'proxy.node.config.manager_log_filename': 'stderr',
             'proxy.config.diags.logfile.filename': 'stderr',
             'proxy.config.error.logfile.filename': 'stderr',
         })

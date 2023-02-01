@@ -26,8 +26,6 @@
 #include <cstring>
 #include <cstdio>
 
-#define NEW_APIS 1
-
 typedef struct {
   int TXN, SSN, VCONN, GLB;
   TSCont contp;
@@ -65,15 +63,9 @@ cont_global(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   TSVConn vconnp = TSHttpSsnClientVConnGet(ssnp);
 
-#if NEW_APIS
   TSUserArgSet(txnp, gIX.TXN, (void *)"Transaction Data");
   TSUserArgSet(ssnp, gIX.SSN, (void *)"Session Data");
   TSUserArgSet(vconnp, gIX.VCONN, (void *)"VConn Data");
-#else
-  TSHttpTxnArgSet(txnp, gIX.TXN, (void *)"Transaction Data");
-  TSHttpSsnArgSet(ssnp, gIX.SSN, (void *)"Session Data");
-  TSVConnArgSet(vconnp, gIX.VCONN, (void *)"VConn Data");
-#endif
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
@@ -91,16 +83,10 @@ cont_remap(TSCont contp, TSEvent event, void *edata)
   TSVConn vconnp = TSHttpSsnClientVConnGet(ssnp);
 
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdrs)) {
-#if NEW_APIS
     set_header(bufp, hdrs, "X-Arg-GLB", static_cast<const char *>(TSUserArgGet(nullptr, ix->GLB)));
     set_header(bufp, hdrs, "X-Arg-TXN", static_cast<const char *>(TSUserArgGet(txnp, ix->TXN)));
     set_header(bufp, hdrs, "X-Arg-SSN", static_cast<const char *>(TSUserArgGet(ssnp, ix->SSN)));
     set_header(bufp, hdrs, "X-Arg-VCONN", static_cast<const char *>(TSUserArgGet(vconnp, ix->VCONN)));
-#else
-    set_header(bufp, hdrs, "X-Arg-TXN", static_cast<const char *>(TSHttpTxnArgGet(txnp, ix->TXN)));
-    set_header(bufp, hdrs, "X-Arg-SSN", static_cast<const char *>(TSHttpSsnArgGet(ssnp, ix->SSN)));
-    set_header(bufp, hdrs, "X-Arg-VCONN", static_cast<const char *>(TSVConnArgGet(vconnp, ix->VCONN)));
-#endif
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -120,7 +106,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
-#if NEW_APIS
   if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "User args tests TXN", &gIX.TXN)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve TXN arg.", PLUGIN_NAME);
     return;
@@ -134,18 +119,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve GLB arg.", PLUGIN_NAME);
     return;
   }
-#else
-  if (TS_SUCCESS != TSHttpTxnArgIndexReserve(PLUGIN_NAME, "User args tests TXN", &gIX.TXN)) {
-    TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve TXN arg.", PLUGIN_NAME);
-    return;
-  } else if (TS_SUCCESS != TSHttpSsnArgIndexReserve(PLUGIN_NAME, "User args tests SSN", &gIX.SSN)) {
-    TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve SSN arg.", PLUGIN_NAME);
-    return;
-  } else if (TS_SUCCESS != TSVConnArgIndexReserve(PLUGIN_NAME, "User args tests VCONN", &gIX.VCONN)) {
-    TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve VCONN arg.", PLUGIN_NAME);
-    return;
-  }
-#endif
 
   // Setup the global slot value
   TSUserArgSet(nullptr, gIX.GLB, (void *)"Global Data");
@@ -184,7 +157,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   ix->contp = TSContCreate(cont_remap, nullptr);
   TSContDataSet(ix->contp, static_cast<void *>(ix));
 
-#if NEW_APIS
   if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, PLUGIN_NAME, &ix->TXN, nullptr)) {
     TSError("[%s] Failed to lookup TXN arg.", PLUGIN_NAME);
     return TS_ERROR;
@@ -198,18 +170,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     TSError("[%s] Failed to lookup GLB arg.", PLUGIN_NAME);
     return TS_ERROR;
   }
-#else
-  if (TS_SUCCESS != TSHttpTxnArgIndexNameLookup(PLUGIN_NAME, &ix->TXN, nullptr)) {
-    TSError("[%s] Failed to lookup TXN arg.", PLUGIN_NAME);
-    return TS_ERROR;
-  } else if (TS_SUCCESS != TSHttpSsnArgIndexNameLookup(PLUGIN_NAME, &ix->SSN, nullptr)) {
-    TSError("[%s] Failed to lookup SSN arg.", PLUGIN_NAME);
-    return TS_ERROR;
-  } else if (TS_SUCCESS != TSVConnArgIndexNameLookup(PLUGIN_NAME, &ix->VCONN, nullptr)) {
-    TSError("[%s] Failed to lookup VCONN arg.", PLUGIN_NAME);
-    return TS_ERROR;
-  }
-#endif
 
   *ih = static_cast<void *>(ix);
   return TS_SUCCESS;

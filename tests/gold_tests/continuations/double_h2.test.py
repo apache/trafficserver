@@ -26,9 +26,10 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", enable_tls=True, command="traffic_manager", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
+
 
 Test.testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: double_h2.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}

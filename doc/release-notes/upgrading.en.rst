@@ -31,6 +31,24 @@ The following features, configurations and plugins are either removed or depreca
 version of ATS. Deprecated features should be avoided, with the expectation that they will be
 removed in the next major release of ATS.
 
+* Removed TS API
+
+  * TSHttpTxnArgSet
+  * TSHttpTxnArgGet
+  * TSHttpSsnArgSet
+  * TSHttpSsnArgGet
+  * TSVConnArgSet
+  * TSVConnArgGet
+  * TSHttpTxnArgIndexReserve
+  * TSHttpTxnArgIndexNameLookup
+  * TSHttpTxnArgIndexLookup
+  * TSHttpSsnArgIndexReserve
+  * TSHttpSsnArgIndexNameLookup
+  * TSHttpSsnArgIndexLookup
+  * TSVConnArgIndexReserve
+  * TSVConnArgIndexNameLookup
+  * TSVConnArgIndexLookup
+
 
 API Changes
 -----------

@@ -52,7 +52,7 @@ Work flow:
 #. Compiler defaults in layout class
 
 Right now, the following programs are integrated with the runroot logic:
-**traffic_server**, **traffic_manager**, **traffic_ctl**, **traffic_layout**, **traffic_crashlog**, **traffic_logcat**, **traffic_logstat**.
+**traffic_server**, **traffic_ctl**, **traffic_layout**, **traffic_crashlog**, **traffic_logcat**, **traffic_logstat**.
 
 The YAML file
 =============

@@ -36,7 +36,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http'
 })
 
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache-info')
 
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)

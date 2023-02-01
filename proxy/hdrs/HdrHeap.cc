@@ -137,7 +137,7 @@ new_HdrStrHeap(int requested_size)
     alloc_size = HdrStrHeap::DEFAULT_SIZE;
     sh         = static_cast<HdrStrHeap *>(THREAD_ALLOC(strHeapAllocator, this_ethread()));
   } else {
-    alloc_size = ts::round_up<HdrStrHeap::DEFAULT_SIZE * 2>(alloc_size);
+    alloc_size = swoc::round_up<HdrStrHeap::DEFAULT_SIZE * 2>(alloc_size);
     sh         = static_cast<HdrStrHeap *>(ats_malloc(alloc_size));
   }
 
@@ -184,7 +184,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   ink_assert(m_writeable);
 
-  nbytes = HdrHeapMarshalBlocks{ts::round_up(nbytes)};
+  nbytes = HdrHeapMarshalBlocks{swoc::round_up(nbytes)};
 
   if (nbytes > static_cast<int>(HDR_MAX_ALLOC_SIZE)) {
     ink_assert(!"alloc too big");
@@ -580,7 +580,7 @@ HdrHeap::marshal_length()
     }
   }
 
-  len = HdrHeapMarshalBlocks(ts::round_up(len));
+  len = HdrHeapMarshalBlocks(swoc::round_up(len));
   return len;
 }
 
@@ -802,7 +802,7 @@ HdrHeap::marshal(char *buf, int len)
 
   // Add up the total bytes used
   used = ptr_heap_size + str_size + HDR_HEAP_HDR_SIZE;
-  used = HdrHeapMarshalBlocks(ts::round_up(used));
+  used = HdrHeapMarshalBlocks(swoc::round_up(used));
 
 #ifdef HDR_HEAP_CHECKSUMS
   {
@@ -976,7 +976,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
 
   m_magic = HDR_BUF_MAGIC_ALIVE;
 
-  unmarshal_size = HdrHeapMarshalBlocks(ts::round_up(unmarshal_size));
+  unmarshal_size = HdrHeapMarshalBlocks(swoc::round_up(unmarshal_size));
   return unmarshal_size;
 }
 

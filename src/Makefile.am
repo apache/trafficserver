@@ -33,13 +33,14 @@ endif
 include traffic_cache_tool/Makefile.inc
 include traffic_via/Makefile.inc
 include traffic_top/Makefile.inc
-include traffic_manager/Makefile.inc
 include traffic_server/Makefile.inc
 include traffic_logstats/Makefile.inc
 include traffic_crashlog/Makefile.inc
-include traffic_ctl/Makefile.inc
 include traffic_layout/Makefile.inc
 include traffic_logcat/Makefile.inc
+include traffic_ctl/Makefile.inc
+
+
 
 if ENABLE_QUIC
 include traffic_quic/Makefile.inc

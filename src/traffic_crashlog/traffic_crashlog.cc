@@ -134,7 +134,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 {
   FILE *fp;
   char *logname;
-  TSMgmtError mgmterr;
   crashlog_target target;
   pid_t parent = getppid();
 
@@ -195,13 +194,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", static_cast<long>(target_pid),
        debug_mode ? "true" : "false", syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
-  mgmterr = TSInit(nullptr, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
-  if (mgmterr != TS_ERR_OKAY) {
-    char *msg = TSGetErrorMessage(mgmterr);
-    Warning("failed to initialize management API: %s", msg);
-    TSfree(msg);
-  }
-
   ink_zero(target);
   target.pid       = static_cast<pid_t>(target_pid);
   target.timestamp = timestamp();
@@ -247,9 +239,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_write_registers(fp, target);
 
   fprintf(fp, "\n");
-  crashlog_write_backtrace(fp, target);
-
-  fprintf(fp, "\n");
   crashlog_write_procstatus(fp, target);
 
   fprintf(fp, "\n");
@@ -257,9 +246,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   fprintf(fp, "\n");
   crashlog_write_regions(fp, target);
-
-  fprintf(fp, "\n");
-  crashlog_write_records(fp, target);
 
   Error("wrote crash log to %s", logname);
 

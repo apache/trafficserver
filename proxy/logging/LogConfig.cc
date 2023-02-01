@@ -99,7 +99,7 @@ LogConfig::setup_default_values()
   logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 }
 
-void LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
+void LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
@@ -565,19 +565,6 @@ LogConfig::register_stat_callbacks()
 }
 
 /*-------------------------------------------------------------------------
-  LogConfig::register_mgmt_callbacks
-
-  This static function is called by Log::init to register the mgmt callback
-  function for each of the logging mgmt messages.
-  -------------------------------------------------------------------------*/
-
-void
-LogConfig::register_mgmt_callbacks()
-{
-  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables);
-}
-
-/*-------------------------------------------------------------------------
   LogConfig::space_to_write
 
   This function returns true if there is enough disk space to write the
@@ -642,7 +629,6 @@ LogConfig::update_space_used()
   if (!logfile_dir) {
     const char *msg = "Logging directory not specified";
     Error("%s", msg);
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "%s", msg);
     m_log_directory_inaccessible = true;
     return;
   }
@@ -656,7 +642,6 @@ LogConfig::update_space_used()
   if (err < 0) {
     const char *msg = "Error accessing logging directory %s: %s.";
     Error(msg, logfile_dir, strerror(errno));
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
     m_log_directory_inaccessible = true;
     return;
   }
@@ -665,7 +650,6 @@ LogConfig::update_space_used()
   if (ld == nullptr) {
     const char *msg = "Error opening logging directory %s to perform a space check: %s.";
     Error(msg, logfile_dir, strerror(errno));
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
     m_log_directory_inaccessible = true;
     return;
   }
@@ -788,7 +772,6 @@ LogConfig::update_space_used()
     if (m_space_used >= max_space) {
       if (!m_disk_full) {
         m_disk_full = true;
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, DISK_IS_CONFIG_FULL_MESSAGE);
         Warning(DISK_IS_CONFIG_FULL_MESSAGE);
       }
     }
@@ -798,7 +781,6 @@ LogConfig::update_space_used()
     else if (m_partition_space_left <= 0) {
       if (!m_partition_full) {
         m_partition_full = true;
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, DISK_IS_ACTUAL_FULL_MESSAGE);
         Warning(DISK_IS_ACTUAL_FULL_MESSAGE);
       }
     }
@@ -808,13 +790,11 @@ LogConfig::update_space_used()
     else if (m_space_used + headroom >= max_space) {
       if (!m_disk_low) {
         m_disk_low = true;
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, DISK_IS_CONFIG_LOW_MESSAGE);
         Warning(DISK_IS_CONFIG_LOW_MESSAGE);
       }
     } else {
       if (!m_partition_low) {
         m_partition_low = true;
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, DISK_IS_ACTUAL_LOW_MESSAGE);
         Warning(DISK_IS_ACTUAL_LOW_MESSAGE);
       }
     }

@@ -44,7 +44,7 @@ class LogFile : public LogBufferSink, public RefCountObj
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size = 4 * 9216,
           size_t max_line_size = 9216, int pipe_buffer_size = 0, LogEscapeType escape_type = LOG_ESCAPE_NONE);
-  LogFile(const LogFile &);
+  LogFile(const LogFile &) = delete;
   ~LogFile() override;
 
   enum {

@@ -212,7 +212,7 @@ following format object:
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<pquc> %<caun> %<phr>/%<shn> %<psct>'
 
 Hourly Rotated Squid Proxy Logs
 ===============================
@@ -225,7 +225,7 @@ policy.
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<pquc> %<caun> %<phr>/%<shn> %<psct>'
 
    logs:
    - mode: ascii
@@ -290,7 +290,7 @@ for them to a UNIX pipe that the alerting software can constantly read from.
 
    filters:
    - name: canaryfilter
-     accept: cqup MATCH "/nightmare/scenario/dont/touch"
+     accept: pqup MATCH "/nightmare/scenario/dont/touch"
 
    logs:
    - mode: ascii_pipe

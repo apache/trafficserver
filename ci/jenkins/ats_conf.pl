@@ -27,7 +27,6 @@ my $recedit = new Apache::TS::Config::Records(file => "etc/trafficserver/records
 
 $recedit->append(line => "");
 $recedit->append(line => "# My local stuff");
-$recedit->append(line => "CONFIG proxy.config.proxy_binary_opts STRING -M --disable_freelist");
 #$recedit->append(line => "CONFIG proxy.config.crash_log_helper STRING /home/admin/bin/invoker_wrap.sh");
 
 # Port setup

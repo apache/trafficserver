@@ -94,16 +94,20 @@ private:
   const QUICConfigParams *_params;
 };
 
+#if HAVE_QUICHE_H
+QUICContext::QUICContext(QUICConnectionInfoProvider *info) : _connection_info(info) {}
+#else
 QUICContext::QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
                          QUICPathManager *path_manager)
-  : _key_info(key_info),
-    _connection_info(info),
+  : _connection_info(info),
+    _key_info(key_info),
     _rtt_provider(rtt),
     _path_manager(path_manager),
     _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
     _cc_config(std::make_unique<QUICCCConfigQCP>(_config))
 {
 }
+#endif
 
 QUICConnectionInfoProvider *
 QUICContext::connection_info() const
@@ -117,6 +121,8 @@ QUICContext::config() const
   return _config;
 }
 
+#if HAVE_QUICHE_H
+#else
 QUICPacketProtectionKeyInfoProvider *
 QUICContext::key_info() const
 {
@@ -146,3 +152,4 @@ QUICContext::path_manager() const
 {
   return _path_manager;
 }
+#endif

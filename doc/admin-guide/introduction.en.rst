@@ -165,27 +165,13 @@ bindings in memory, DNS traffic is reduced.
 |TS| Processes
 --------------
 
-|TS| contains two processes that work together to serve
-requests and manage, control, and monitor the health of the system.
+|TS| contains a single processes to serve requests, manage administrative
+calls(JSONRPC) and handle configuration.
 
 #. The :program:`traffic_server` process is the transaction processing engine
    of |TS|. It is responsible for accepting connections,
    processing protocol requests, and serving documents from the cache or
    origin server.
-
-#. The :program:`traffic_manager` process is the command and control facility
-   of the |TS|, responsible for launching, monitoring, and
-   reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
-   process is also responsible for the proxy autoconfiguration port, the
-   statistics interface, and virtual IP failover.
-
-   If the :program:`traffic_manager` process detects a :program:`traffic_server`
-   process failure, it instantly restarts the process but also maintains
-   a connection queue of all incoming requests. All incoming connections
-   that arrive in the several seconds before full server restart are
-   saved in the connection queue and processed in first-come,
-   first-served order. This connection queueing shields users from any
-   server restart downtime.
 
 Administration Tools
 --------------------
@@ -201,9 +187,9 @@ Administration Tools
    changes you make through :program:`traffic_ctl` are
    automatically made to the configuration files as well.
 
--  Finally, there is a clean C API which can be put to good use from a
-   multitude of languages. The |TS| Admin Client demonstrates
-   this for Perl.
+-  Finally, there is a JSONRPC 2.0 interface which provides access to the JSONRPC 2.0
+   Administrative endpoint which allow you to implement your own tool by just using
+   JSON or YAML. Check :ref:`jsonrpc-node` for more information.
 
 Traffic Analysis Options
 ========================

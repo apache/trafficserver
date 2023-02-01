@@ -79,7 +79,6 @@ extern "C" int plock(int);
 #include "RecordsConfig.h"
 #include "records/I_RecProcess.h"
 #include "Transform.h"
-#include "ProcessManager.h"
 #include "ProxyConfig.h"
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
@@ -104,6 +103,15 @@ extern "C" int plock(int);
 #include "tscore/ink_config.h"
 #include "P_SSLClientUtils.h"
 
+// Mgmt Admin public handlers
+#include "RpcAdminPubHandlers.h"
+
+// Json Rpc stuffs
+#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/server/RPCServer.h"
+
+#include "config/FileManager.h"
+
 #if TS_USE_QUIC == 1
 #include "Http3.h"
 #include "Http3Config.h"
@@ -121,16 +129,11 @@ extern "C" int plock(int);
 //
 #define DEFAULT_COMMAND_FLAG 0
 
-#define DEFAULT_REMOTE_MANAGEMENT_FLAG 0
 #define DEFAULT_DIAGS_LOG_FILENAME "diags.log"
 static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 
 static const long MAX_LOGIN = ink_login_name_max();
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan<void>);
-static void mgmt_drain_callback(ts::MemSpan<void>);
-static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
-static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
@@ -160,7 +163,6 @@ extern int fds_limit;
 
 static char command_string[512] = "";
 static char conf_dir[512]       = "";
-int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 static char bind_stdout[512]    = "";
 static char bind_stderr[512]    = "";
 
@@ -220,7 +222,6 @@ static ArgumentDescription argument_descriptions[] = {
 #endif
 
   {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", nullptr},
-  {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", nullptr},
   {"command", 'C',
    "Maintenance Command to Execute\n"
    "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, verify_global_plugin, verify_remap_plugin, help",
@@ -251,7 +252,11 @@ struct AutoStopCont : public Continuation {
       hook = hook->next();
     }
 
-    pmgmt->stop();
+    // if the jsonrpc feature was disabled, the object will not be created.
+    if (jsonrpcServer != nullptr) {
+      jsonrpcServer->stop_thread();
+    }
+
     TSSystemState::shut_down_event_system();
     delete this;
     return EVENT_CONT;
@@ -306,12 +311,10 @@ public:
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
         RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
         TSSystemState::drain(true);
-        if (!remote_management_flag) {
-          // Close listening sockets here only if TS is running standalone
-          RecInt close_sockets = 0;
-          if (RecGetRecordInt("proxy.config.restart.stop_listening", &close_sockets) == REC_ERR_OKAY && close_sockets) {
-            stop_HttpProxyServer();
-          }
+        // Close listening sockets here only if TS is running standalone
+        RecInt close_sockets = 0;
+        if (RecGetRecordInt("proxy.config.restart.stop_listening", &close_sockets) == REC_ERR_OKAY && close_sockets) {
+          stop_HttpProxyServer();
         }
       }
 
@@ -378,29 +381,45 @@ public:
 class DiagsLogContinuation : public Continuation
 {
 public:
-  DiagsLogContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&DiagsLogContinuation::periodic); }
+  DiagsLogContinuation() : Continuation(new_ProxyMutex())
+  {
+    SET_HANDLER(&DiagsLogContinuation::periodic);
+
+    char *configured_traffic_out_name(REC_ConfigReadString("proxy.config.output.logfile"));
+    traffic_out_name = std::string(configured_traffic_out_name);
+    ats_free(configured_traffic_out_name);
+  }
+
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     Debug("log", "in DiagsLogContinuation, checking on diags.log");
 
-    // First, let us update the rolling config values for diagslog. We
-    // do not need to update the config values for outputlog because
-    // traffic_server never actually rotates outputlog. outputlog is always
-    // rotated in traffic_manager. The reason being is that it is difficult
-    // to send a notification from TS to TM, informing TM that outputlog has
-    // been rolled. It is much easier sending a notification (in the form
-    // of SIGUSR2) from TM -> TS.
-    int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-    int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-    int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-    diags()->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+    // First, let us update the rolling config values for diagslog.
+    int diags_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
+    int diags_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
+    int diags_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+    diags()->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int,
+                                  diags_log_roll_size);
 
     if (diags()->should_roll_diagslog()) {
       Note("Rolled %s", diags_log_filename);
     }
+
+    int output_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec"));
+    int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
+    int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
+    diags()->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
+                                   output_log_roll_size);
+
+    if (diags()->should_roll_outputlog()) {
+      Note("Rolled %s", traffic_out_name.c_str());
+    }
     return EVENT_CONT;
   }
+
+private:
+  std::string traffic_out_name;
 };
 
 class MemoryLimit : public Continuation
@@ -651,28 +670,10 @@ initialize_process_manager()
 {
   mgmt_use_syslog();
 
-  // Temporary Hack to Enable Communication with LocalManager
-  if (getenv("PROXY_REMOTE_MGMT")) {
-    remote_management_flag = true;
-  }
-
-  if (remote_management_flag) {
-    // We are being managed by traffic_manager, TERM ourselves if it goes away.
-    EnableDeathSignal(SIGTERM);
-  }
-
-  RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags());
+  RecProcessInit(RECM_STAND_ALONE, diags());
   LibRecordsConfigInit();
 
-  // Start up manager
-  pmgmt = new ProcessManager(remote_management_flag);
-
-  // Lifecycle callbacks can potentially be invoked from this thread, so force thread initialization
-  // to make the TS API work.
-  pmgmt->start(TSThreadInit, TSThreadDestroy);
-
-  RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
-  pmgmt->reconfigure();
+  RecProcessInitMessage(RECM_STAND_ALONE);
   check_config_directories();
 
   //
@@ -687,6 +688,45 @@ initialize_process_manager()
                         RECP_NON_PERSISTENT);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr,
                         RECP_NON_PERSISTENT);
+}
+
+extern void initializeRegistry();
+
+static void
+initialize_file_manager()
+{
+  initializeRegistry();
+}
+
+std::tuple<bool, std::string>
+initialize_jsonrpc_server()
+{
+  std::tuple<bool, std::string> ok{true, {}};
+  auto filePath = RecConfigReadConfigPath("proxy.config.jsonrpc.filename", ts::filename::JSONRPC);
+
+  auto serverConfig = rpc::config::RPCConfig{};
+  serverConfig.load_from_file(filePath);
+  if (!serverConfig.is_enabled()) {
+    Debug("rpc.init", "JSONRPC Disabled");
+    return ok;
+  }
+
+  // create and start the server.
+  try {
+    jsonrpcServer = new rpc::RPCServer{serverConfig};
+    jsonrpcServer->start_thread(TSThreadInit, TSThreadDestroy);
+  } catch (std::exception const &ex) {
+    // Only the constructor throws, so if we are here there should be no
+    // jsonrpcServer object.
+    ink_assert(jsonrpcServer == nullptr);
+    std::string msg;
+    return {false, ts::bwprint(msg, "Server failed: '{}'", ex.what())};
+  }
+  // Register admin handlers.
+  rpc::admin::register_admin_jsonrpc_handlers();
+  Debug("rpc.init", "JSONRPC. Public admin handlers registered.");
+
+  return ok;
 }
 
 #define CMD_ERROR -2      // serious error, exit maintenance mode
@@ -894,7 +934,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   // initialize logging since a plugin
   // might call TS_ERROR which needs
   // log_rsb to be init'ed
-  Log::init(DEFAULT_REMOTE_MANAGEMENT_FLAG);
+  Log::init();
 
   if (*conf_dir) {
     fprintf(stderr, "NOTE: VERIFY config dir: %s...\n\n", conf_dir);
@@ -1209,7 +1249,7 @@ check_fd_limit()
              "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
              "using throttle of %d",
              fds_throttle, THROTTLE_FD_HEADROOM, fds_limit, new_fds_throttle);
-    SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, msg);
+    Warning("%s", msg);
   }
 }
 
@@ -1372,16 +1412,10 @@ struct ShowStats : public Continuation {
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
     last_rb += d_rb;
-    NET_READ_DYN_SUM(net_calls_to_readfromnet_afterpoll_stat, sval);
-    int64_t d_r = sval - last_r;
-    last_r += d_r;
 
     NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
     int64_t d_wb = sval - last_wb;
     last_wb += d_wb;
-    NET_READ_DYN_SUM(net_calls_to_writetonet_afterpoll_stat, sval);
-    int64_t d_w = sval - last_w;
-    last_w += d_w;
 
     NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
     int64_t d_nrb = sval - last_nrb;
@@ -1401,9 +1435,8 @@ struct ShowStats : public Continuation {
     NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     int64_t d_p = cval - last_p;
     last_p += d_p;
-    printf("%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64
-           "\n",
-           d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
+    printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
+           d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;
     fprintf(fp, "immediate_events_time_dist\n");
@@ -1782,6 +1815,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Local process manager
   initialize_process_manager();
 
+  // Initialize file manager for TS.
+  initialize_file_manager();
+
   // Set the core limit for the process
   init_core_size();
   init_system();
@@ -1792,14 +1828,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Restart syslog now that we have configuration info
   syslog_log_configure();
 
-  // Register stats if standalone
-  if (DEFAULT_REMOTE_MANAGEMENT_FLAG == remote_management_flag) {
-    RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
-    RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
-    RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
-    RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
-    RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
-  }
+  // Register stats
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 1, RECP_NON_PERSISTENT);
+  RecSetRecordInt("proxy.node.restarts.proxy.start_time", time(nullptr), REC_SOURCE_DEFAULT);
 
   // init huge pages
   int enabled;
@@ -1894,6 +1930,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
+  // JSONRPC server and handlers
+  if (auto &&[ok, msg] = initialize_jsonrpc_server(); !ok) {
+    Warning("JSONRPC server could not be started.\n  Why?: '%s' ... Continuing without it.", msg.c_str());
+  }
+
   // setup callback for tracking remap included files
   load_remap_file_cb = load_config_file_callback;
 
@@ -1903,7 +1944,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
 #if TS_USE_QUIC == 1
-  Http3Config::startup();
+  ts::Http3Config::startup();
 #endif
 
   /* Set up the machine with the outbound address if that's set,
@@ -1931,9 +1972,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
                         RECP_NON_PERSISTENT);
-
-  // pmgmt->start() must occur after initialization of Diags but
-  // before calling RecProcessInit()
 
   REC_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
@@ -2072,7 +2110,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
-    HostStatus::instance().loadHostStatusFromStats();
+    HostStatus::instance().loadFromPersistentStore();
     netProcessor.init_socks();
     ParentConfig::startup();
     SplitDNSConfig::startup();
@@ -2091,10 +2129,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
-      SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
+      Warning("bad hostdb or storage configuration, hostdb disabled");
 
     // initialize logging (after event and net processor)
-    Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
+    Log::init(Log::NO_REMOTE_MANAGEMENT);
 
     (void)parsePluginConfig();
 
@@ -2114,8 +2152,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #if TS_USE_QUIC == 1
     quic_NetProcessor.start(-1, stacksize);
 #endif
-    pmgmt->registerPluginCallbacks(global_config_cbs);
-
+    FileManager::instance().registerConfigPluginCallbacks(global_config_cbs);
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 
@@ -2123,6 +2160,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     if (!num_of_udp_threads) {
       REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     }
+
+    udpNet.register_event_type();
     if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
       eventProcessor.thread_group[ET_UDP]._afterStartCallback = init_HttpProxyServer;
@@ -2195,18 +2234,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
 
-    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, &mgmt_restart_shutdown_callback);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, &mgmt_restart_shutdown_callback);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_DRAIN, &mgmt_drain_callback);
-
-    // Callback for various storage commands. These all go to the same function so we
-    // pass the event code along so it can do the right thing. We cast that to <int> first
-    // just to be safe because the value is a #define, not a typed value.
-    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](ts::MemSpan<void> span) -> void {
-      mgmt_storage_device_cmd_callback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, span.view());
-    });
-    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, &mgmt_lifecycle_msg_callback);
-
     ink_set_thread_name("[TS_MAIN]");
 
     Note("traffic server running");
@@ -2241,59 +2268,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   delete main_thread;
 }
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan<void>)
-{
-  sync_cache_dir_on_shutdown();
-}
-
-static void
-mgmt_drain_callback(ts::MemSpan<void> span)
-{
-  char *arg = span.rebind<char>().data();
-  TSSystemState::drain(span.size() == 2 && arg[0] == '1');
-  RecSetRecordInt("proxy.node.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
-}
-
-static void
-mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg)
-{
-  // data is the device name to control
-  CacheDisk *d = cacheProcessor.find_by_path(arg.data(), int(arg.size()));
-
-  if (d) {
-    switch (cmd) {
-    case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
-      Debug("server", "Marking %.*s offline", int(arg.size()), arg.data());
-      cacheProcessor.mark_storage_offline(d, /* admin */ true);
-      break;
-    }
-  }
-}
-
-static void
-mgmt_lifecycle_msg_callback(ts::MemSpan<void> span)
-{
-  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
-  TSPluginMsg msg;
-  MgmtInt op;
-  MgmtMarshallString tag;
-  MgmtMarshallData payload;
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA};
-
-  if (mgmt_message_parse(span.data(), span.size(), fields, countof(fields), &op, &tag, &payload) == -1) {
-    Error("Plugin message - RPC parsing error - message discarded.");
-  } else {
-    msg.tag       = tag;
-    msg.data      = payload.ptr;
-    msg.data_size = payload.len;
-    while (hook) {
-      TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.
-      hook->invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
-      hook = hook->next();
-    }
-  }
-}
-
 static void
 init_ssl_ctx_callback(void *ctx, bool server)
 {
@@ -2310,13 +2284,13 @@ init_ssl_ctx_callback(void *ctx, bool server)
 static void
 load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild(ts::filename::SSL_MULTICERT, ssl_file);
+  FileManager::instance().configFileChild(ts::filename::SSL_MULTICERT, ssl_file);
 }
 
 void
 load_config_file_callback(const char *parent_file, const char *remap_file)
 {
-  pmgmt->signalConfigFileChild(parent_file, remap_file);
+  FileManager::instance().configFileChild(parent_file, remap_file);
 }
 
 static void

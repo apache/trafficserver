@@ -676,7 +676,6 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_max_retries_dead_server = 3;
   MgmtInt connect_attempts_rr_retries              = 3;
   MgmtInt connect_attempts_timeout                 = 30;
-  MgmtInt post_connect_attempts_timeout            = 1800;
 
   MgmtInt connect_dead_policy = 2;
 
@@ -687,12 +686,10 @@ struct OverridableHttpConfigParams {
   MgmtInt parent_retry_time                = 300;
   MgmtInt parent_fail_threshold            = 10;
   MgmtInt per_parent_connect_attempts      = 2;
-  MgmtInt parent_connect_timeout           = 30;
   MgmtByte enable_parent_timeout_markdowns = 0;
   MgmtByte disable_parent_markdowns        = 0;
 
   ts_seconds down_server_timeout{300};
-  MgmtInt client_abort_threshold = 1000;
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries = -1;
@@ -739,6 +736,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
   HostResData host_res_data;
@@ -842,7 +840,6 @@ public:
 
   MgmtByte send_100_continue_response = 0;
   MgmtByte disallow_post_100_continue = 0;
-  MgmtByte keepalive_internal_vc      = 0;
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
@@ -927,6 +924,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);
   ats_free(oride.ssl_client_sni_policy);
+  ats_free(oride.ssl_client_alpn_protocols);
   ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;

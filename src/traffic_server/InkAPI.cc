@@ -22,6 +22,8 @@
  */
 
 #include <atomic>
+#include <tuple>
+#include <unordered_map>
 #include <string_view>
 #include <string>
 
@@ -74,6 +76,8 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
+
+#include "rpc/jsonrpc/JsonRPC.h"
 
 #include "ts/ts.h"
 
@@ -748,6 +752,20 @@ static TSReturnCode
 sdk_sanity_check_stat_id(int id)
 {
   if (id < 0 || id >= api_rsb->max_stats) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+static TSReturnCode
+sdk_sanity_check_rpc_handler_options(const TSRPCHandlerOptions *opt)
+{
+  if (nullptr == opt) {
+    return TS_ERROR;
+  }
+
+  if (opt->auth.restricted < 0 || opt->auth.restricted > 1) {
     return TS_ERROR;
   }
 
@@ -4636,40 +4654,6 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, TSHRTime timeout)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  /* ensure we are on a EThread */
-  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    eth = this_ethread();
-    i->setThreadAffinity(eth);
-  }
-
-  TSAction action;
-  if (timeout == 0) {
-    action = reinterpret_cast<TSAction>(eth->schedule_imm(i));
-  } else {
-    action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
-  }
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
 TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
@@ -4743,35 +4727,6 @@ TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
   } else {
     action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
   }
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
-TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  /* ensure we are on a EThread */
-  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    eth = this_ethread();
-    i->setThreadAffinity(eth);
-  }
-
-  TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
 
   /* This is a hack. Should be handled in ink_types */
   action = (TSAction)((uintptr_t)action | 0x1);
@@ -5735,16 +5690,19 @@ TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
 }
 
 TSReturnCode
-TSHttpTxnAborted(TSHttpTxn txnp)
+TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(client_abort != nullptr);
 
-  HttpSM *sm = (HttpSM *)txnp;
+  *client_abort = false;
+  HttpSM *sm    = (HttpSM *)txnp;
   switch (sm->t_state.squid_codes.log_code) {
   case SQUID_LOG_ERR_CLIENT_ABORT:
   case SQUID_LOG_ERR_CLIENT_READ_ERROR:
   case SQUID_LOG_TCP_SWAPFAIL:
     // check for client abort and cache read error
+    *client_abort = true;
     return TS_SUCCESS;
   default:
     break;
@@ -6412,122 +6370,6 @@ TSUserArgGet(void *data, int arg_idx)
   }
 }
 
-// -------------
-/* These are deprecated as of v9.0.0, and will be removed in v10.0.0 */
-TSReturnCode
-TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx)
-{
-  return TSUserArgIndexReserve(TS_USER_ARGS_TXN, name, description, arg_idx);
-}
-
-TSReturnCode
-TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description)
-{
-  return TSUserArgIndexLookup(TS_USER_ARGS_TXN, arg_idx, name, description);
-}
-
-TSReturnCode
-TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
-{
-  return TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, name, arg_idx, description);
-}
-
-TSReturnCode
-TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx)
-{
-  return TSUserArgIndexReserve(TS_USER_ARGS_SSN, name, description, arg_idx);
-}
-
-TSReturnCode
-TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description)
-{
-  return TSUserArgIndexLookup(TS_USER_ARGS_SSN, arg_idx, name, description);
-}
-
-TSReturnCode
-TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
-{
-  return TSUserArgIndexNameLookup(TS_USER_ARGS_SSN, name, arg_idx, description);
-}
-
-TSReturnCode
-TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx)
-{
-  return TSUserArgIndexReserve(TS_USER_ARGS_VCONN, name, description, arg_idx);
-}
-
-TSReturnCode
-TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description)
-{
-  return TSUserArgIndexLookup(TS_USER_ARGS_VCONN, arg_idx, name, description);
-}
-
-TSReturnCode
-TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
-{
-  return TSUserArgIndexNameLookup(TS_USER_ARGS_VCONN, name, arg_idx, description);
-}
-
-void
-TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-
-  sm->set_user_arg(arg_idx, arg);
-}
-
-void *
-TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return sm->get_user_arg(arg_idx);
-}
-
-void
-TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
-{
-  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-
-  cs->set_user_arg(arg_idx, arg);
-}
-
-void *
-TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
-{
-  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  return cs->get_user_arg(arg_idx);
-}
-
-void
-TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
-  sdk_assert(user_args);
-
-  user_args->set_user_arg(arg_idx, arg);
-}
-
-void *
-TSVConnArgGet(TSVConn connp, int arg_idx)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
-  sdk_assert(user_args);
-
-  return user_args->get_user_arg(arg_idx);
-}
-
-/* End deprecated Arg functions. */
-
 void
 TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
 {
@@ -6546,72 +6388,6 @@ TSHttpTxnStatusGet(TSHttpTxn txnp)
   return static_cast<TSHttpStatus>(sm->t_state.http_return_code);
 }
 
-#if TS_VERSION_MAJOR < 10
-/* control channel for HTTP */
-TSReturnCode
-TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlTypeExperimental cntl, void *data)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *)txnp;
-
-  switch (cntl) {
-  case TS_HTTP_CNTL_GET_LOGGING_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
-
-    intptr_t *rptr = static_cast<intptr_t *>(data);
-
-    if (sm->t_state.api_info.logging_enabled) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
-
-    return TS_SUCCESS;
-  }
-
-  case TS_HTTP_CNTL_SET_LOGGING_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.logging_enabled = (bool)data;
-      return TS_SUCCESS;
-    }
-    break;
-
-  case TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE: {
-    if (data == nullptr) {
-      return TS_ERROR;
-    }
-
-    intptr_t *rptr = static_cast<intptr_t *>(data);
-
-    if (sm->t_state.api_info.retry_intercept_failures) {
-      *rptr = (intptr_t)TS_HTTP_CNTL_ON;
-    } else {
-      *rptr = (intptr_t)TS_HTTP_CNTL_OFF;
-    }
-
-    return TS_SUCCESS;
-  }
-
-  case TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE:
-    if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return TS_ERROR;
-    } else {
-      sm->t_state.api_info.retry_intercept_failures = (bool)data;
-      return TS_SUCCESS;
-    }
-  default:
-    return TS_ERROR;
-  }
-
-  return TS_ERROR;
-}
-
-#endif
 TSReturnCode
 TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
 {
@@ -8157,25 +7933,7 @@ TSMatcherLineValue(TSMatcherLine ml, int element)
 TSReturnCode
 TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
 {
-  TSMgmtInt result;
-  char *buffer;
-
-  // is this a valid integer?
-  if (TSMgmtIntGet(var_name, &result) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
-
-  // construct a buffer
-  int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
-
-  buffer = static_cast<char *>(alloca(buffer_size));
-  snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, MGMT_INT, value);
-
-  // tell manager to set the configuration; note that this is not
-  // transactional (e.g. we return control to the plugin before the
-  // value is committed to disk by the manager)
-  RecSignalManager(MGMT_SIGNAL_PLUGIN_SET_CONFIG, buffer);
-
+  Warning("This API is no longer supported.");
   return TS_SUCCESS;
 }
 
@@ -8864,15 +8622,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
-  case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
-    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     conv = &HostDBDownServerCacheTimeConv;
     ret  = &overridableHttpConfig->down_server_timeout;
-    break;
-  case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
-    ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, conv);
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, conv);
@@ -9019,6 +8771,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_SSL_CERT_FILEPATH:
   case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
+  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     // String, must be handled elsewhere
     break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
@@ -9044,9 +8797,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
     ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
     break;
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);
@@ -9095,12 +8845,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
-#if TS_VERSION_MAJOR < 10
-
-  // The following is not used in 9.2.x, but preserved for ABI compatibility.
-  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
-
-#endif
     break;
   }
 
@@ -9280,6 +9024,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
@@ -10402,6 +10151,15 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }
 
+tsapi void *
+TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(plugin_info));
+  RemapPluginInfo *info = reinterpret_cast<RemapPluginInfo *>(plugin_info);
+
+  return info->dlh();
+}
+
 TSReturnCode
 TSHostnameIsSelf(const char *hostname, size_t hostname_len)
 {
@@ -10488,4 +10246,88 @@ TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl)
   sdk_assert(dbg_ctl != nullptr);
 
   DbgCtl::_rm_reference();
+}
+
+namespace rpc
+{
+extern std::mutex g_rpcHandlingMutex;
+extern std::condition_variable g_rpcHandlingCompletion;
+extern ts::Rv<YAML::Node> g_rpcHandlerResponseData;
+extern bool g_rpcHandlerProcessingCompleted;
+} // namespace rpc
+
+tsapi TSRPCProviderHandle
+TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_version, size_t yamlcpp_lib_len)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(provider_name) == TS_SUCCESS);
+
+  // We want to make sure that plugins are using the same yaml library version as we use internally. Plugins have to cast the TSYaml
+  // to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure the
+  // version is the same.
+  if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
+    return nullptr;
+  }
+
+  rpc::RPCRegistryInfo *info = new rpc::RPCRegistryInfo();
+  info->provider             = {provider_name, provider_len};
+
+  return (TSRPCProviderHandle)info;
+}
+
+tsapi TSReturnCode
+TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info,
+                           const TSRPCHandlerOptions *opt)
+{
+  sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
+
+  if (!rpc::add_method_handler_from_plugin(
+        {name, name_len},
+        [callback](std::string_view const &id, const YAML::Node &params) -> void {
+          std::string msgId{id.data(), id.size()};
+          callback(msgId.c_str(), (TSYaml)&params);
+        },
+        (const rpc::RPCRegistryInfo *)info, *opt)) {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
+tsapi TSReturnCode
+TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback, TSRPCProviderHandle info,
+                                 const TSRPCHandlerOptions *opt)
+{
+  sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
+
+  if (!rpc::add_notification_handler(
+        {name, name_len}, [callback](const YAML::Node &params) -> void { callback((TSYaml)&params); },
+        (const rpc::RPCRegistryInfo *)info, *opt)) {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
+tsapi TSReturnCode
+TSRPCHandlerDone(TSYaml resp)
+{
+  Debug("rpc.api", ">> Handler seems to be done");
+  std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
+  auto data                            = *(YAML::Node *)resp;
+  rpc::g_rpcHandlerResponseData        = data;
+  rpc::g_rpcHandlerProcessingCompleted = true;
+  rpc::g_rpcHandlingCompletion.notify_one();
+  Debug("rpc.api", ">> all set.");
+  return TS_SUCCESS;
+}
+
+tsapi TSReturnCode
+TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
+{
+  Debug("rpc.api", ">> Handler seems to be done with an error");
+  std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
+  rpc::g_rpcHandlerResponseData        = ts::Errata{}.push(1, ec, std::string{descr, descr_len});
+  rpc::g_rpcHandlerProcessingCompleted = true;
+  rpc::g_rpcHandlingCompletion.notify_one();
+  Debug("rpc.api", ">> error  flagged.");
+  return TS_SUCCESS;
 }

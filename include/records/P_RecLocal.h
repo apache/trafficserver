@@ -22,5 +22,3 @@
  */
 
 #pragma once
-
-#include "I_RecLocal.h"

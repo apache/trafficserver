@@ -50,12 +50,12 @@ First we need to create a runroot. It can be created simply by calling command `
 A runroot will be created in ``/path/to/runroot``, available for other programs to use.
 If the path is not specified, the current working directory will be used.
 
-For example, to run traffic_manager, using the runroot, there are several ways:
-    #. ``/path/to/runroot/bin/traffic_manager``
-    #. ``traffic_manager --run-root=/path/to/runroot``
-    #. ``traffic_manager --run-root=/path/to/runroot/runroot.yaml``
-    #. Set :envvar:`TS_RUNROOT` to ``/path/to/runroot`` and run ``traffic_manager``
-    #. Run ``traffic_manager`` with ``/path/to/runroot`` as current working directory
+For example, to run traffic_server, using the runroot, there are several ways:
+    #. ``/path/to/runroot/bin/traffic_server``
+    #. ``traffic_server --run-root=/path/to/runroot``
+    #. ``traffic_server --run-root=/path/to/runroot/runroot.yaml``
+    #. Set :envvar:`TS_RUNROOT` to ``/path/to/runroot`` and run ``traffic_server``
+    #. Run ``traffic_server`` with ``/path/to/runroot`` as current working directory
 
 .. Note::
 

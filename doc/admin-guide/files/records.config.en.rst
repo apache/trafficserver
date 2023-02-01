@@ -152,7 +152,7 @@ not be affected by future configuration changes made in
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
-   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_manager &
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_server &
    $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
@@ -189,25 +189,21 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
 
-   The name of the executable that runs the :program:`traffic_server` process.
+ .. important::
 
-   If you want to set Environment Variables for :program:`traffic_server` process, use a wrapper script like below. ::
-
-     CONFIG proxy.config.proxy_binary STRING start_traffic_server.sh
-
-   ::
-
-     #!/bin/sh
-     export ASAN_OPTIONS=detect_leaks=1
-     /opt/ats/bin/traffic_server "$@"
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
-   The :ref:`command-line options <traffic_server>` for starting |TS|.
+   .. important::
+
+      This is now deprecated
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
-   The name of the executable that runs the :program:`traffic_manager` process.
+   .. important::
+
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
    :units: bytes
@@ -217,8 +213,9 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
-   The script executed before the :program:`traffic_manager` process spawns
-   the :program:`traffic_server` process.
+   .. important::
+
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -231,7 +228,7 @@ System Variables
 
    This is used for log rolling configuration so |TS| knows the path of the
    output file that should be rolled. This configuration takes the name of the
-   file receiving :program:`traffic_server` and :program:`traffic_manager`
+   file receiving :program:`traffic_server`
    process output that is set via the ``--bind_stdout`` and ``--bind_stderr``
    :ref:`command-line options <traffic_server>`.
    :ts:cv:`proxy.config.output.logfile` is used only to identify the name of
@@ -389,8 +386,9 @@ Thread Variables
 .. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
    :reloadable:
 
-   This setting specifies the number of active client connections
-   for use by :option:`traffic_ctl server restart --drain`.
+   .. important::
+
+      Deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.restart.stop_listening INT 0
    :reloadable:
@@ -568,16 +566,14 @@ Network
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
 
-Local Manager
-=============
+Management
+==========
 
 .. ts:cv:: CONFIG proxy.node.config.manager_log_filename STRING manager.log
 
-   The name of the file to which :program:`traffic_manager` logs will be emitted.
+   .. important::
 
-   If this is set to ``stdout`` or ``stderr``, then all :program:`traffic_manager`
-   logging will go to the stdout or stderr stream, respectively.
-
+      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
@@ -603,44 +599,8 @@ Local Manager
 
 .. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 0
 
-   This setting specifies whether the management API should be restricted to
-   root processes. If this is set to ``0``, then on platforms that support
-   passing process credentials, non-root processes will be allowed to make
-   read-only management API calls. Any management API calls that modify server
-   state (eg. setting a configuration variable) will still be restricted to
-   root processes.
-
-   This setting is not reloadable, since it is must be applied when
-   :program:`traffic_manager` initializes.
-
-.. ts:cv:: CONFIG proxy.config.track_config_files INT 1
-
-   Enables (``1``) or disables (``0``) tracking configuration file updates.
-   This setting is enabled by default, meaning that configuration files are monitored for changes.
-   Having tracking enabled is a dependency for :option:`traffic_ctl config status` to function. However,
-   tracking the files is implemented via a frequent call to ``stat()`` which may be problematic
-   in some deployments. If the call to ``stat()`` on configuration files causes problems, then
-   it can be avoided by setting this value to ``0`` at the cost of disabling the config status feature
-   for :program:`traffic_ctl`.
-
-   This setting is not reloadable, since it is must be applied when
-   :program:`traffic_manager` initializes.
-
-.. ts:cv:: CONFIG proxy.node.config.manager_exponential_sleep_ceiling INT 60
-
-   In case of :program:`traffic_manager` is unable to start :program:`traffic_server`,
-   this setting specifies the maximum amount of seconds that the :program:`traffic_manager`
-   process should wait until it tries again to restart :program:`traffic_server`.
-   In case of :program:`traffic_manager` failing to start :program:`traffic_server`, it will
-   retry exponentially until it reaches the ceiling time.
-
-.. ts:cv:: CONFIG proxy.node.config.manager_retry_cap INT 5
-
-   This setting specifies the number of times that :program:`traffic_manager` will retry
-   to restart :program:`traffic_server` once the  maximum ceiling time is reached.
-
-.. note::
-   If set to ``0``, no cap will take place.
+   This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
+   out about the new admin API mechanism.
 
 Alarm Configuration
 ===================
@@ -1333,14 +1293,6 @@ Parent Proxy Configuration
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for parent cache connection attempts.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
    :overridable:
@@ -1636,14 +1588,8 @@ Origin Server Connect Attempts
 
    Set a limit for the number of concurrent connections to an upstream server group. A value of
    ``0`` disables checking. If a transaction attempts to connect to a group which already has the
-   maximum number of concurrent connections the transaction either rechecks after a delay or a 503
+   maximum number of concurrent connections a 503
    (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
-
-   Number of transactions that can be delayed concurrently
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_size`.
-
-   How long to delay before rechecking
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_delay`.
 
    Upstream server group definition
       See :ts:cv:`proxy.config.http.per_server.connection.match`.
@@ -1678,26 +1624,6 @@ Origin Server Connect Attempts
    This setting is independent of the :ts:cv:`setting for upstream session sharing matching
    <proxy.config.http.server_session_sharing.match>`.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
-   :reloadable:
-
-   Controls the number of transactions that can be waiting on an upstream server group.
-
-   ``-1``
-      Unlimited.
-
-   ``0``
-      Never wait. If the connection maximum has been reached immediately respond with an error.
-
-   A positive number
-      If there are less than this many waiting transactions, delay this transaction and try again. Otherwise respond immediately with an error.
-
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_delay INT 100
-   :reloadable:
-   :units: milliseconds
-
-   If a transaction is delayed due to too many connections in an upstream server group, delay this amount of time before checking again.
-
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
@@ -1728,15 +1654,6 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
    ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
-.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
-   request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -3910,7 +3827,7 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
    :reloadable:
    :overridable:
 
@@ -4062,6 +3979,51 @@ Client-Related Configuration
 
    Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.alpn_protocols STRING ""
+   :overridable:
+
+   Sets the ALPN string that |TS| will send to the origin in the ClientHello of TLS handshakes.
+   Configuring this to an empty string (the default configuration) means that the ALPN extension
+   will not be sent as a part of the TLS ClientHello.
+
+   Configuring the ALPN string provides a mechanism to control origin-side HTTP protocol
+   negotiation. Configuring this requires an understanding of the ALPN TLS protocol extension. See
+   `RFC 7301 <https://www.rfc-editor.org/rfc/rfc7301.html>`_ for details about the ALPN protocol.
+   See the official `IANA ALPN protocol registration
+   <https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>`_
+   for the official list of ALPN protocol names. As a summary, the ALPN string is a comma-separated
+   (no spaces) list of protocol names that the TLS client (|TS| in this case) supports. On the TLS
+   server side (origin side in this case), the names are compared in order to the list of protocols
+   supported by the origin. The first match is used, thus the ALPN list should be listed in
+   decreasing order of preference. If no match is found, the TLS server is expected (per the RFC) to
+   fail the TLS handshake with a fatal "no_application_protocol" alert.
+
+   Currently, |TS| supports the following ALPN protocol names:
+
+    - ``http/1.0``
+    - ``http/1.1``
+
+   Here are some example configurations and the consequences of each:
+
+   ================================ ======================================================================
+   Value                            Description
+   ================================ ======================================================================
+   ``""``                           No ALPN extension is sent by |TS| in origin-side TLS handshakes.
+                                    |TS| will assume an HTTP/1.1 connection in this case.
+   ``"http/1.1"``                   Only HTTP/1.1 is advertized by |TS|. Thus, the origin will
+                                    either negotiate HTTP/1.1, or it will fail the handshake if that
+                                    is not supported by the origin.
+   ``"http/1.1,http/1.0"``          Both HTTP/1.1 and HTTP/1.0 are supported by |TS|, but HTTP/1.1
+                                    is preferred.
+   ``"h2,http/1.1,http/1.0"``       HTTP/2 is preferred by |TS| over HTTP/1.1 and HTTP/1.0. Thus, if the
+                                    origin supports HTTP/2, it will be used for the connection. If
+                                    not, it will fall back to HTTP/1.1 or, if that is not supported,
+                                    HTTP/1.0. (HTTP/2 to origin is currently not supported by |TS|.)
+   ``"h2"``                         |TS| only advertizes HTTP/2 support. Thus, the origin will
+                                    either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
+                                    is currently not supported by |TS|.)
+   ================================ ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
    Enables the use of OpenSSL async job during the TLS handshake.  Traffic
@@ -4202,7 +4164,40 @@ HTTP/2 Configuration
    :reloadable:
    :units: bytes
 
-   The initial window size for inbound connections.
+   The initial HTTP/2 stream window size for inbound connections that |TS| as a
+   receiver advertises to the peer. See IETF RFC 9113 section 5.2 for details
+   concerning HTTP/2 flow control. See
+   :ts:cv:`proxy.config.http2.flow_control.policy_in` for how HTTP/2 stream and
+   session windows are maintained over the lifetime of HTTP/2 sessions.
+
+.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_in INT 0
+   :reloadable:
+
+   Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
+   stream and session windows for inbound connections. See IETF RFC 9113
+   section 5.2 for details concerning HTTP/2 flow control.
+
+   ===== ===========================================================================================
+   Value Description
+   ===== ===========================================================================================
+   ``0`` Session and stream receive windows are initialized and maintained at the value as specified
+         in :ts:cv:`proxy.config.http2.initial_window_size_in` over the lifetime of HTTP/2
+         sessions.
+   ``1`` Session receive windows are initialized to the value of the product of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and
+         :ts:cv:`proxy.config.http2.max_concurrent_streams_in` and are maintained as such over the
+         lifetime of HTTP/2 sessions. Stream windows are initialized to the value of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and are maintained as such over the
+         lifetime of each HTTP/2 stream.
+   ``2`` Session receive windows are initialized to the value of the product of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` and
+         :ts:cv:`proxy.config.http2.max_concurrent_streams_in` and are maintained as such over the
+         lifetime of HTTP/2 sessions. Stream windows are initialized to the value of
+         :ts:cv:`proxy.config.http2.initial_window_size_in` but are dynamically adjusted to the
+         session window size divided by the number of concurrent streams over the lifetime of HTTP/2
+         sessions. That is, stream window sizes dynamically adjust to fill the session window in
+         a way that shares the window equally among all concurrent streams.
+   ===== ===========================================================================================
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:
@@ -4601,6 +4596,19 @@ removed in the future without prior notice.
    This is just for debugging. Do not change it from the default value unless
    you really understand what this is.
 
+UDP Configuration
+=====================
+
+.. ts:cv:: CONFIG proxy.config.udp.threads INT 0
+
+   Specifies the number of UDP threads to run. By default 0 threads are dedicated to UDP,
+   which results in effectively disabling UDP support.
+
+.. ts:cv:: CONFIG proxy.config.udp.enable_gso INT 0
+
+   Enables (``1``) or disables (``0``) UDP GSO. When enabled, |TS| tries to use UDP GSO,
+   and disables it automatically if it causes send errors.
+
 Plug-in Configuration
 =====================
 
@@ -4692,7 +4700,7 @@ SOCKS Processor
 
    Enables (1) or disables (0) the SOCKS proxy option. As a SOCKS
    proxy, |TS| receives SOCKS traffic (usually on port
-   1080) and forwards all requests directly to the SOCKS server.
+   1)    and forwards all requests directly to the SOCKS server.
 
 .. ts:cv::  CONFIG proxy.config.socks.accept_port INT 1080
 

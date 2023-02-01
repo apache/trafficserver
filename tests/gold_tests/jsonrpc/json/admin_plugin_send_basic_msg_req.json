@@ -1,0 +1,9 @@
+{
+   "id":"dd0ac6ad-1afc-4db6-b584-a2a02990940f",
+   "jsonrpc":"2.0",
+   "method":"admin_plugin_send_basic_msg",
+   "params":{
+      "tag":"some_tag",
+      "data":"some_data"
+   }
+}

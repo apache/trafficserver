@@ -325,15 +325,7 @@ HttpSM::get_server_connect_timeout()
   if (t_state.api_txn_connect_timeout_value != -1) {
     retval = HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value);
   } else {
-    int connect_timeout;
-    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-      connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-    } else if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.txn_conf->parent_connect_timeout;
-    } else {
-      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-    }
-    retval = HRTIME_SECONDS(connect_timeout);
+    retval = HRTIME_SECONDS(t_state.txn_conf->connect_attempts_timeout);
   }
   return retval;
 }
@@ -1674,7 +1666,7 @@ plugins required to work with sni_routing.
 // void HttpSM::handle_api_return()
 //
 //   Figures out what to do after calling api callouts
-//    have finished.  This messy and I would like
+//    have finished.  This is messy and I would like
 //    to come up with a cleaner way to handle the api
 //    return.  The way we are doing things also makes a
 //    mess of set_next_state()
@@ -1827,9 +1819,20 @@ HttpSM::handle_api_return()
 PoolableSession *
 HttpSM::create_server_session(NetVConnection *netvc)
 {
-  HttpTransact::State &s  = this->t_state;
-  PoolableSession *retval = httpServerSessionAllocator.alloc();
+  // Figure out what protocol was negotiated
+  int proto_index      = SessionProtocolNameRegistry::INVALID;
+  auto const *sslnetvc = dynamic_cast<ALPNSupport *>(netvc);
+  if (sslnetvc) {
+    proto_index = sslnetvc->get_negotiated_protocol_id();
+  }
+  // No ALPN occurred. Assume it was HTTP/1.x and hope for the best
+  if (proto_index == SessionProtocolNameRegistry::INVALID) {
+    proto_index = TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
+  }
 
+  PoolableSession *retval = ProxySession::create_outbound_session(proto_index);
+
+  HttpTransact::State &s       = this->t_state;
   retval->sharing_pool         = static_cast<TSServerSessionSharingPoolType>(s.http_config_param->server_session_sharing_pool);
   retval->sharing_match        = static_cast<TSServerSessionSharingMatchMask>(s.txn_conf->server_session_sharing_match);
   MIOBuffer *netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -3679,7 +3682,14 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_server, event);
 
-  server_request_body_bytes = c->bytes_written;
+  // If is_using_post_buffer has been used, then this handler gets called
+  // twice, once with the buffered request body bytes and a second time with
+  // the (now) zero length user agent buffer. See wait_for_full_body where
+  // these bytes are read. Don't clobber the server_request_body_bytes with
+  // zero on that second read.
+  if (server_request_body_bytes == 0) {
+    server_request_body_bytes = c->bytes_written;
+  }
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -5195,33 +5205,11 @@ HttpSM::do_http_server_open(bool raw)
 
       ink_assert(pending_action.empty()); // in case of reschedule must not have already pending.
 
-      // If the queue is disabled, reschedule.
-      if (t_state.http_config_param->global_outbound_conntrack.queue_size < 0) {
-        ct_state.enqueue();
-        ct_state.rescheduled();
-        pending_action = eventProcessor.schedule_in(
-          this, HRTIME_MSECONDS(t_state.http_config_param->global_outbound_conntrack.queue_delay.count()));
-      } else if (t_state.http_config_param->global_outbound_conntrack.queue_size > 0) { // queue enabled, check for a slot
-        auto wcount = ct_state.enqueue();
-        if (wcount < t_state.http_config_param->global_outbound_conntrack.queue_size) {
-          ct_state.rescheduled();
-          SMDebug("http", "%s", lbw().print("queued for {}\0", t_state.current.server->dst_addr).data());
-          pending_action = eventProcessor.schedule_in(
-            this, HRTIME_MSECONDS(t_state.http_config_param->global_outbound_conntrack.queue_delay.count()));
-        } else {              // the queue is full
-          ct_state.dequeue(); // release the queue slot
-          ct_state.blocked(); // note the blockage.
-          HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
-          send_origin_throttled_response();
-        }
-      } else { // queue size is 0, always block.
-        ct_state.blocked();
-        HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
-        ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
-                              debug_on && is_debug_tag_set("http") ? "http" : nullptr);
-        send_origin_throttled_response();
-      }
-
+      ct_state.blocked();
+      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
+                            debug_on && is_debug_tag_set("http") ? "http" : nullptr);
+      send_origin_throttled_response();
       return;
     } else {
       ct_state.Note_Unblocked(&t_state.txn_conf->outbound_conntrack, ccount, &t_state.current.server->dst_addr.sa);
@@ -5342,6 +5330,16 @@ HttpSM::do_http_server_open(bool raw)
   opt.set_ssl_client_cert_name(t_state.txn_conf->ssl_client_cert_filename);
   opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
   opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
+  if (is_private()) {
+    // If the connection to origin is private, don't try to negotiate higher overhead protocols.
+    opt.alpn_protocols_array_size = -1;
+    SMDebug("ssl_alpn", "Clear ALPN for private session");
+  } else if (t_state.txn_conf->ssl_client_alpn_protocols != nullptr) {
+    opt.alpn_protocols_array_size = MAX_ALPN_STRING;
+    SMDebug("ssl_alpn", "Setting ALPN to: %s", t_state.txn_conf->ssl_client_alpn_protocols);
+    convert_alpn_to_wire_format(t_state.txn_conf->ssl_client_alpn_protocols, opt.alpn_protocols_array,
+                                opt.alpn_protocols_array_size);
+  }
 
   if (tls_upstream) {
     SMDebug("http", "calling sslNetProcessor.connect_re");
@@ -5960,10 +5958,17 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
-    client_request_body_bytes =
+    int64_t num_body_bytes =
       post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
 
-    ua_txn->get_remote_reader()->consume(client_request_body_bytes);
+    // If is_using_post_buffer has been used, then client_request_body_bytes
+    // will have already been set in wait_for_full_body and there will be
+    // zero bytes in this user agent buffer. We don't want to clobber
+    // client_request_body_bytes with a zero value here in those cases.
+    if (client_request_body_bytes == 0) {
+      client_request_body_bytes = num_body_bytes;
+    }
+    ua_txn->get_remote_reader()->consume(num_body_bytes);
     p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT,
                             "user agent post");
   }
@@ -5997,6 +6002,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     ink_release_assert(0);
     break;
   }
+
+  this->setup_client_request_plugin_agents(p);
 
   // The user agent may support chunked (HTTP/1.1) or not (HTTP/2)
   // In either case, the server will support chunked (HTTP/1.1)
@@ -6765,7 +6772,7 @@ HttpSM::setup_transfer_from_transform()
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel             = true;
 
-  this->setup_plugin_agents(p, client_response_hdr_bytes);
+  this->setup_client_response_plugin_agents(p, client_response_hdr_bytes);
 
   if (t_state.client_info.receive_chunked_response) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
@@ -6888,7 +6895,7 @@ HttpSM::setup_server_transfer()
   ua_entry->in_tunnel     = true;
   server_entry->in_tunnel = true;
 
-  this->setup_plugin_agents(p, client_response_hdr_bytes);
+  this->setup_client_response_plugin_agents(p, client_response_hdr_bytes);
 
   // If the incoming server response is chunked and the client does not
   // expect a chunked response, then dechunk it.  Otherwise, if the
@@ -7036,13 +7043,29 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 }
 
 void
-HttpSM::setup_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
+HttpSM::setup_client_response_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
 {
-  APIHook *agent           = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
-  has_active_plugin_agents = agent != nullptr;
+  APIHook *agent                    = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+  has_active_response_plugin_agents = agent != nullptr;
   while (agent) {
     INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent", num_header_bytes);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "response plugin agent",
+                        num_header_bytes);
+    // We don't put these in the SM VC table because the tunnel
+    // will clean them up in do_io_close().
+    agent = agent->next();
+  }
+}
+
+void
+HttpSM::setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
+{
+  APIHook *agent                   = txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK);
+  has_active_request_plugin_agents = agent != nullptr;
+  while (agent) {
+    INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "request plugin agent",
+                        num_header_bytes);
     // We don't put these in the SM VC table because the tunnel
     // will clean them up in do_io_close().
     agent = agent->next();
@@ -7068,12 +7091,26 @@ HttpSM::plugin_agents_cleanup()
   // If this is set then all of the plugin agent VCs were put in
   // the VC table and cleaned up there. This handles the case where
   // something went wrong early.
-  if (!has_active_plugin_agents) {
-    APIHook *agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
-    while (agent) {
-      INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-      contp->do_io_close();
-      agent = agent->next();
+  if (!has_active_response_plugin_agents) {
+    std::vector<APIHook *> agent_lists;
+    agent_lists.push_back(txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK));
+    for (auto &agent : agent_lists) {
+      while (agent) {
+        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+        contp->do_io_close();
+        agent = agent->next();
+      }
+    }
+  }
+  if (!has_active_request_plugin_agents) {
+    std::vector<APIHook *> agent_lists;
+    agent_lists.push_back(txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK));
+    for (auto &agent : agent_lists) {
+      while (agent) {
+        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+        contp->do_io_close();
+        agent = agent->next();
+      }
     }
   }
 }

@@ -24,8 +24,7 @@ Verify ip_allow filtering behavior.
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager",
-                         enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 server = Test.MakeOriginServer("server", ssl=True)
 
 testName = ""
@@ -95,11 +94,11 @@ ts.Disk.records_config.update({
 })
 
 format_string = ('%<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
-                 '%<cqhm> %<cquc> %<phr>/%<pqsn> %<psct> %<{Y-RID}pqh> '
+                 '%<cqhm> %<pquc> %<phr>/%<pqsn> %<psct> %<{Y-RID}pqh> '
                  '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
                  'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
                  'sftcls=%<{x-safet-classification}cqh> '
-                 'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<cqus>')
+                 'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> scheme=%<pqus>')
 
 ts.Disk.logging_yaml.AddLines(
     ''' logging:

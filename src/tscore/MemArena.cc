@@ -29,6 +29,9 @@
 #include "tscore/ink_assert.h"
 
 using namespace ts;
+template <typename T> using MemSpan = swoc::MemSpan<T>;
+using swoc::round_down;
+using swoc::round_up;
 
 void
 MemArena::Block::operator delete(void *ptr)

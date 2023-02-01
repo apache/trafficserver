@@ -396,9 +396,13 @@ TransformationPlugin::produce(std::string_view data)
   if (state_->type_ == REQUEST_TRANSFORMATION) {
     state_->request_xform_output_.append(data.data(), data.length());
     return data.size();
-  } else if (state_->type_ == SINK_TRANSFORMATION) {
-    LOG_DEBUG("produce TransformationPlugin=%p tshttptxn=%p : This is a sink transform. Not producing any output", this,
-              state_->txn_);
+  } else if (state_->type_ == CLIENT_RESPONSE_SINK_TRANSFORMATION) {
+    LOG_DEBUG("produce TransformationPlugin=%p tshttptxn=%p : This is a client response sink transform. Not producing any output",
+              this, state_->txn_);
+    return 0;
+  } else if (state_->type_ == CLIENT_REQUEST_SINK_TRANSFORMATION) {
+    LOG_DEBUG("produce TransformationPlugin=%p tshttptxn=%p : This is a client request sink transform. Not producing any output",
+              this, state_->txn_);
     return 0;
   } else {
     return doProduce(data);
@@ -408,7 +412,7 @@ TransformationPlugin::produce(std::string_view data)
 size_t
 TransformationPlugin::setOutputComplete()
 {
-  if (state_->type_ == SINK_TRANSFORMATION) {
+  if (state_->type_ == CLIENT_RESPONSE_SINK_TRANSFORMATION || state_->type_ == CLIENT_REQUEST_SINK_TRANSFORMATION) {
     // There's no output stream for a sink transform, so we do nothing
     //
     // Warning: don't try to shutdown the VConn, since the default implementation (DummyVConnection)

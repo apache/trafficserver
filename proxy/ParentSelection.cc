@@ -598,7 +598,6 @@ ParentRecord::DefaultInit(char *val)
 {
   const char *errPtr;
   char *errBuf;
-  bool alarmAlready = false;
 
   this->go_direct       = true;
   this->ignore_query    = false;
@@ -609,7 +608,7 @@ ParentRecord::DefaultInit(char *val)
   if (errPtr != nullptr) {
     errBuf = static_cast<char *>(ats_malloc(1024));
     snprintf(errBuf, 1024, "%s %s for default parent proxy", modulePrefix, errPtr);
-    SignalError(errBuf, alarmAlready);
+    Error("%s", errBuf);
     ats_free(errBuf);
     return false;
   } else {

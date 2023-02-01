@@ -1,0 +1,11 @@
+{
+   "id":"5dee0f4d-94b9-4132-a6d8-f7924d3a6dac",
+   "jsonrpc":"2.0",
+   "method":"admin_lookup_records",
+   "params":[
+      {
+         "rec_types": [2, 4, 32],
+         "record_name_regex": "$record_name_regex"
+      }
+   ]
+}

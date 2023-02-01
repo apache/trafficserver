@@ -72,6 +72,8 @@ Enumeration Members
 
    .. c:enumerator:: TS_HTTP_RESPONSE_CLIENT_HOOK
 
+   .. c:enumerator:: TS_HTTP_REQUEST_CLIENT_HOOK
+
    .. c:enumerator:: TS_SSL_FIRST_HOOK
 
    .. c:enumerator:: TS_VCONN_START_HOOK

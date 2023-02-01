@@ -27,7 +27,7 @@ Test.ContinueOnFail = False
 Test.testName = "money_trace remap"
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 # configure origin server
 server = Test.MakeOriginServer("server")
