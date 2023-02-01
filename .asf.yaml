@@ -29,8 +29,8 @@ github:
     squash: true
     # Disable rebase button:
     rebase: false
-    # Enable merge button:
-    merge: true
+    # Disable merge button:
+    merge: false
   collaborators:
     - mtorluemke
     - c-taylor
