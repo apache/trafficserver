@@ -30,6 +30,8 @@
  ****************************************************************************/
 #pragma once
 
+#include <atomic>
+
 #include <openssl/rand.h>
 
 #include "tscore/ink_inet.h"
@@ -165,6 +167,11 @@ struct SSLConfigParams : public ConfigInfo {
   void cleanup();
   void reset();
   void SSLConfigInit(IpMap *global);
+
+private:
+  // c_str() of string passed to in-progess call to updateCTX().
+  //
+  mutable std::atomic<char const *> secret_for_updateCTX{nullptr};
 };
 
 /////////////////////////////////////////////////////////////

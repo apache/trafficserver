@@ -739,6 +739,24 @@ cleanup_bio(BIO *&biop)
 void
 SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 {
+  Debug("ssl_config_updateCTX", "Update cert %s, %p", cert_secret_name.c_str(), this);
+
+  // Instances of SSLConfigParams should access by one thread at a time only.  secret_for_updateCTX is accessed
+  // atomically as a fail-safe.
+  //
+  char const *expected = nullptr;
+  if (!secret_for_updateCTX.compare_exchange_strong(expected, cert_secret_name.c_str())) {
+    if (is_debug_tag_set("ssl_config_updateCTX")) {
+      // As a fail-safe, handle it if secret_for_updateCTX doesn't or no longer points to a null-terminated string.
+      //
+      char const *s{expected};
+      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {
+      }
+      Debug("ssl_config_updateCTX", "Update cert, indirect recusive call caused by call for %.*s", int(s - expected), expected);
+    }
+    return;
+  }
+
   // Clear the corresponding client CTXs.  They will be lazy loaded later
   Debug("ssl_load", "Update cert %s", cert_secret_name.c_str());
   this->clearCTX(cert_secret_name);
@@ -746,6 +764,8 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
   // Update the server cert
   SSLMultiCertConfigLoader loader(this);
   loader.update_ssl_ctx(cert_secret_name);
+
+  secret_for_updateCTX = nullptr;
 }
 
 void
@@ -800,8 +820,8 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
 
     // Set public and private keys
     if (!client_cert.empty()) {
-      std::string_view secret_data;
-      std::string_view secret_key_data;
+      std::string secret_data;
+      std::string secret_key_data;
 
       // Fetch the client_cert data
       std::string completeSecretPath{Layout::get()->relative_to(this->clientCertPathOnly, client_cert)};

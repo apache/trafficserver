@@ -19,6 +19,8 @@
   limitations under the License.
  */
 
+#pragma once
+
 #include <string>
 #include <string_view>
 #include <mutex>
@@ -28,14 +30,13 @@ class SSLSecret
 {
 public:
   SSLSecret() {}
-  bool getSecret(const std::string &name, std::string_view &data) const;
-  bool setSecret(const std::string &name, const char *data, int data_len);
-  bool getOrLoadSecret(const std::string &name, const std::string &name2, std::string_view &data, std::string_view &data2);
+  std::string getSecret(const std::string &name) const;
+  void setSecret(const std::string &name, std::string_view data);
+  void getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data, std::string &data2);
 
 private:
-  const std::string *getSecretItem(const std::string &name) const;
-  bool loadSecret(const std::string &name, const std::string &name2, std::string &data_item, std::string &data_item2);
-  bool loadFile(const std::string &name, std::string &data_item);
+  void loadSecret(const std::string &name1, const std::string &name2, std::string &data_item, std::string &data_item2);
+  std::string loadFile(const std::string &name);
 
   std::unordered_map<std::string, std::string> secret_map;
   mutable std::recursive_mutex secret_map_mutex;
