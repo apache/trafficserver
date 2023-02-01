@@ -47,7 +47,7 @@ RUN apt-get -y install \
 
 ENV PREFIX=/opt/h3tools
 ENV PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:$PREFIX/lib64/pkgconfig
-ENV LDFLAGS="-Wl,-rpath,$PREFIX/lib -Wl,-rpath,$PREFIX/lib64 -L$PREFIX/lib" 
+ENV LDFLAGS="-Wl,-rpath,$PREFIX/lib -Wl,-rpath,$PREFIX/lib64 -L$PREFIX/lib"
 ENV CFLAGS="-O3 -DNDEBUG"
 ENV CXXFLAGS="-O3 -DNDEBUG"
 
