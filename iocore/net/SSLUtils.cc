@@ -1053,8 +1053,8 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
     pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if (nullptr == pkey) {
-      Debug("ssl_load", "failed to load server private key from %s",
-            (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+      Debug("ssl_load", "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
+            secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       return false;
     }
     if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
@@ -2285,8 +2285,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   }
 
   for (size_t i = 0; i < data.cert_names_list.size(); i++) {
-    std::string_view secret_data;
-    std::string_view secret_key_data;
+    std::string secret_data;
+    std::string secret_key_data;
     params->secrets.getOrLoadSecret(data.cert_names_list[i], data.key_list.size() > i ? data.key_list[i] : "", secret_data,
                                     secret_key_data);
     if (secret_data.empty()) {
@@ -2445,8 +2445,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
 
   for (size_t i = 0; i < cert_names_list.size(); i++) {
     std::string keyPath = (i < key_list.size()) ? key_list[i] : "";
-    std::string_view secret_data;
-    std::string_view secret_key_data;
+    std::string secret_data;
+    std::string secret_key_data;
     params->secrets.getOrLoadSecret(cert_names_list[i], keyPath, secret_data, secret_key_data);
     if (secret_data.empty()) {
       SSLError("failed to load certificate secret for %s with key path %s", cert_names_list[i].c_str(),
@@ -2482,6 +2482,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     }
 
     if (secret_key_data.empty()) {
+      Note("Empty private key for public key %.*s", int(secret_data.size()), secret_data.data());
       secret_key_data = secret_data;
     }
     if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {

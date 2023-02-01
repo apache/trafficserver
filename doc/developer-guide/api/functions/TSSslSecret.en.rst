@@ -11,6 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
+
 .. include:: /common.defs
 
 .. default-domain:: c
@@ -27,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSSslSecretSet(const char * secret_name, int secret_name_length, const char * secret_data, int secret_data_len)
+.. function:: TSReturnCode TSSslSecretSet(const char * secret_name, int secret_name_length, const char * secret_data, int secret_data_length)
 
 Description
 ===========
@@ -48,12 +49,16 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSSslSecretGet(const char * secret_name, int secret_name_length, const char ** secret_data_return, int * secret_data_len)
+.. function:: char * TSSslSecretGet(const char * secret_name, int secret_name_length, int * secret_data_length)
 
 Description
 ===========
 
-:func:`TSSslSecretGet` fetches the named secret from the current secret map. TS_ERROR is returned if there is no entry for the secret.
+:func:`TSSslSecretGet` fetches the named secret from the current secret map.  If there is no secret with the
+given name, the returned pointer will be null, and the :arg:`secret_data_length` output paramter will be set to zero.  If
+the returned pointer is not null, it points to a buffer containing the secret data.  The :arg:`secret_data_length` output
+parameter will be set to the length of the secret data.  The buffer containing the data must be freed by
+calling :func:`TSfree`.
 
 TSSslSecretUpdate
 *****************
