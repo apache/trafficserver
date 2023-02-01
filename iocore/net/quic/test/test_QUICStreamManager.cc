@@ -37,8 +37,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICConnection connection;
-  MockQUICApplication mock_app(&connection);
-  app_map.set_default(&mock_app);
+  app_map.set_default(new MockQUICApplication(&connection));
   MockQUICConnectionInfoProvider cinfo_provider;
   QUICStreamManagerImpl sm(&context, &app_map);
 
@@ -101,8 +100,7 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICConnection connection;
-  MockQUICApplication mock_app(&connection);
-  app_map.set_default(&mock_app);
+  app_map.set_default(new MockQUICApplication(&connection));
   MockQUICConnectionInfoProvider cinfo_provider;
   QUICStreamManagerImpl sm(&context, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp  = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
@@ -127,8 +125,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICConnection connection;
-  MockQUICApplication mock_app(&connection);
-  app_map.set_default(&mock_app);
+  app_map.set_default(new MockQUICApplication(&connection));
   QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
@@ -182,8 +179,8 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICConnection connection;
-  MockQUICApplication mock_app(&connection);
-  app_map.set_default(&mock_app);
+  auto mock_app = new MockQUICApplication(&connection);
+  app_map.set_default(mock_app);
   QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {
@@ -232,12 +229,12 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 
   // total_offset should be a integer in unit of octets
   uint8_t frame_buf[4096];
-  mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 0);
+  mock_app->send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 0);
   sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0, 0, nullptr);
   CHECK(sm.total_offset_sent() == 1024);
 
   // total_offset should be a integer in unit of octets
-  mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
+  mock_app->send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
   sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0, 0, nullptr);
   CHECK(sm.total_offset_sent() == 2048);
 
@@ -250,8 +247,7 @@ TEST_CASE("QUICStreamManager_max_streams", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICConnection connection;
-  MockQUICApplication mock_app(&connection);
-  app_map.set_default(&mock_app);
+  app_map.set_default(new MockQUICApplication(&connection));
   QUICStreamManagerImpl sm(&context, &app_map);
 
   uint8_t local_tp_buf[] = {

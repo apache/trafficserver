@@ -1649,7 +1649,6 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
   max_frame_size = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
   bool probing                   = false;
-  int frame_count                = 0;
   size_t len                     = 0;
   Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   Ptr<IOBufferBlock> last_block  = first_block;
@@ -1688,7 +1687,6 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
           break;
         }
 
-        ++frame_count;
         probing |= frame->is_probing_frame();
         if (frame->is_flow_controlled()) {
           int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
