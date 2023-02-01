@@ -285,7 +285,7 @@ SSLConfigParams::initialize()
 #endif
 
 #ifdef SSL_OP_NO_COMPRESSION
-  ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
+  ssl_ctx_options        |= SSL_OP_NO_COMPRESSION;
   ssl_client_ctx_options |= SSL_OP_NO_COMPRESSION;
 #else
   sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
@@ -293,23 +293,23 @@ SSLConfigParams::initialize()
 
 // Enable ephemeral DH parameters for the case where we use a cipher with DH forward security.
 #ifdef SSL_OP_SINGLE_DH_USE
-  ssl_ctx_options |= SSL_OP_SINGLE_DH_USE;
+  ssl_ctx_options        |= SSL_OP_SINGLE_DH_USE;
   ssl_client_ctx_options |= SSL_OP_SINGLE_DH_USE;
 #endif
 
 #ifdef SSL_OP_SINGLE_ECDH_USE
-  ssl_ctx_options |= SSL_OP_SINGLE_ECDH_USE;
+  ssl_ctx_options        |= SSL_OP_SINGLE_ECDH_USE;
   ssl_client_ctx_options |= SSL_OP_SINGLE_ECDH_USE;
 #endif
 
   // Enable all SSL compatibility workarounds.
-  ssl_ctx_options |= SSL_OP_ALL;
+  ssl_ctx_options        |= SSL_OP_ALL;
   ssl_client_ctx_options |= SSL_OP_ALL;
 
 // According to OpenSSL source, applications must enable this if they support the Server Name extension. Since
 // we do, then we ought to enable this. Httpd also enables this unconditionally.
 #ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
-  ssl_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
+  ssl_ctx_options        |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
   ssl_client_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 #endif
 

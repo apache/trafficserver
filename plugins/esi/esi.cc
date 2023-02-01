@@ -61,21 +61,21 @@ struct OptionInfo {
 static HandlerManager *gHandlerManager = nullptr;
 static Utils::HeaderValueList gAllowlistCookies;
 
-#define DEBUG_TAG "plugin_esi"
-#define PROCESSOR_DEBUG_TAG "plugin_esi_processor"
-#define GZIP_DEBUG_TAG "plugin_esi_gzip"
-#define GUNZIP_DEBUG_TAG "plugin_esi_gunzip"
-#define PARSER_DEBUG_TAG "plugin_esi_parser"
-#define FETCHER_DEBUG_TAG "plugin_esi_fetcher"
-#define VARS_DEBUG_TAG "plugin_esi_vars"
+#define DEBUG_TAG             "plugin_esi"
+#define PROCESSOR_DEBUG_TAG   "plugin_esi_processor"
+#define GZIP_DEBUG_TAG        "plugin_esi_gzip"
+#define GUNZIP_DEBUG_TAG      "plugin_esi_gunzip"
+#define PARSER_DEBUG_TAG      "plugin_esi_parser"
+#define FETCHER_DEBUG_TAG     "plugin_esi_fetcher"
+#define VARS_DEBUG_TAG        "plugin_esi_vars"
 #define HANDLER_MGR_DEBUG_TAG "plugin_esi_handler_mgr"
-#define EXPR_DEBUG_TAG VARS_DEBUG_TAG
+#define EXPR_DEBUG_TAG        VARS_DEBUG_TAG
 
-#define MIME_FIELD_XESI "X-Esi"
+#define MIME_FIELD_XESI     "X-Esi"
 #define MIME_FIELD_XESI_LEN 5
 
 #define HTTP_VALUE_PRIVATE_EXPIRES "-1"
-#define HTTP_VALUE_PRIVATE_CC "max-age=0, private"
+#define HTTP_VALUE_PRIVATE_CC      "max-age=0, private"
 
 enum DataType {
   DATA_TYPE_RAW_ESI     = 0,
@@ -1595,12 +1595,12 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
-      {const_cast<char *>("packed-node-support"), no_argument, nullptr, 'n'},
-      {const_cast<char *>("private-response"), no_argument, nullptr, 'p'},
-      {const_cast<char *>("disable-gzip-output"), no_argument, nullptr, 'z'},
-      {const_cast<char *>("first-byte-flush"), no_argument, nullptr, 'b'},
-      {const_cast<char *>("handler-filename"), required_argument, nullptr, 'f'},
-      {nullptr, 0, nullptr, 0},
+      {const_cast<char *>("packed-node-support"), no_argument,       nullptr, 'n'},
+      {const_cast<char *>("private-response"),    no_argument,       nullptr, 'p'},
+      {const_cast<char *>("disable-gzip-output"), no_argument,       nullptr, 'z'},
+      {const_cast<char *>("first-byte-flush"),    no_argument,       nullptr, 'b'},
+      {const_cast<char *>("handler-filename"),    required_argument, nullptr, 'f'},
+      {nullptr,                                   0,                 nullptr, 0  },
     };
 
     int longindex = 0;

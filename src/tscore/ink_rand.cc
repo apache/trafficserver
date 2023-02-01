@@ -57,11 +57,11 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
 
-#define NN 312
-#define MM 156
+#define NN       312
+#define MM       156
 #define MATRIX_A 0xB5026F5AA96619E9ULL
-#define UM 0xFFFFFFFF80000000ULL /* Most significant 33 bits */
-#define LM 0x7FFFFFFFULL         /* Least significant 31 bits */
+#define UM       0xFFFFFFFF80000000ULL /* Most significant 33 bits */
+#define LM       0x7FFFFFFFULL         /* Least significant 31 bits */
 
 static uint64_t mag01[2] = {0ULL, MATRIX_A};
 

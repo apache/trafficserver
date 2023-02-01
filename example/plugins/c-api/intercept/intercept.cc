@@ -43,7 +43,7 @@
 // request. You can enable extensive logging with the "intercept" diagnostic tag.
 
 #define PLUGIN_NAME "intercept"
-#define PORT 60000
+#define PORT        60000
 
 #define VDEBUG(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
 
@@ -164,7 +164,8 @@ static const char *
 InterceptProxySideVC(const InterceptState *istate, TSVConn vc)
 {
   return (istate->client.vc && vc == istate->client.vc) ? "<client>" :
-                                                          (istate->server.vc && vc == istate->server.vc) ? "<server>" : "<unknown>";
+         (istate->server.vc && vc == istate->server.vc) ? "<server>" :
+                                                          "<unknown>";
 }
 
 static bool
@@ -244,9 +245,9 @@ InterceptTransferData(InterceptIO *from, InterceptIO *to)
     while (ptr && remain) {
       int64_t nbytes;
 
-      nbytes = TSIOBufferWrite(to->writeio.iobuf, ptr, remain);
-      remain -= nbytes;
-      ptr += nbytes;
+      nbytes   = TSIOBufferWrite(to->writeio.iobuf, ptr, remain);
+      remain   -= nbytes;
+      ptr      += nbytes;
       consumed += nbytes;
     }
   }

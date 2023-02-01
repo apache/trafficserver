@@ -28,10 +28,10 @@
 class SSLNetVConnection;
 
 // Log an SSL error.
-#define SSLError(fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, nullptr, fmt, ##__VA_ARGS__)
+#define SSLError(fmt, ...)       SSLDiagnostic(MakeSourceLocation(), false, nullptr, fmt, ##__VA_ARGS__)
 #define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
-#define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, nullptr, fmt, ##__VA_ARGS__)
+#define SSLDebug(fmt, ...)       SSLDiagnostic(MakeSourceLocation(), true, nullptr, fmt, ##__VA_ARGS__)
 #define SSLVCDebug(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
 void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);

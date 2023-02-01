@@ -397,8 +397,8 @@ VolumeAllocator::allocateFor(Span &span)
   for (auto &v : _av) {
     auto delta = v._config._alloc - v._size;
     if (delta > 0) {
-      v._deficit = (delta.count() * SCALE) / v._config._alloc.count();
-      v._shares  = delta.count() * v._deficit;
+      v._deficit   = (delta.count() * SCALE) / v._config._alloc.count();
+      v._shares    = delta.count() * v._deficit;
       total_shares += v._shares;
     } else {
       v._shares = 0;
@@ -418,11 +418,11 @@ VolumeAllocator::allocateFor(Span &span)
       // Not sure why this is needed. But a large and empty volume can dominate the shares
       // enough to get more than it actually needs if the other volume are relative small or full.
       // I need to do more math to see if the weighting can be adjusted to not have this happen.
-      n = std::min(n, delta);
-      v._size += n;
-      span_used += n;
+      n            = std::min(n, delta);
+      v._size      += n;
+      span_used    += n;
       total_shares -= v._shares;
-      Errata z = _cache.allocStripe(&span, v._config._idx, round_up(n));
+      Errata z     = _cache.allocStripe(&span, v._config._idx, round_up(n));
       if (Verbosity >= NORMAL) {
         std::cout << "           " << n << " to volume " << v._config._idx << std::endl;
       }
@@ -786,11 +786,11 @@ Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
           stripe->_type    = 1;
           return stripe;
         } else {
-          Stripe *ns = new Stripe(this, stripe->_start, len);
+          Stripe *ns     = new Stripe(this, stripe->_start, len);
           stripe->_start += len;
-          stripe->_len -= len;
-          ns->_vol_idx = vol_idx;
-          ns->_type    = 1;
+          stripe->_len   -= len;
+          ns->_vol_idx   = vol_idx;
+          ns->_type      = 1;
           _stripes.insert(spot, ns);
           return ns;
         }
@@ -956,17 +956,17 @@ Cache::build_stripe_hash_table()
   for (auto &elt : globalVec_stripe) {
     // printf("stripe length %" PRId64 "\n", elt->_len.count());
     rtable_entries[i] = static_cast<int64_t>(elt->_len) / Vol_hash_alloc_size;
-    rtable_size += rtable_entries[i];
-    uint64_t x = elt->hash_id.fold();
+    rtable_size       += rtable_entries[i];
+    uint64_t x        = elt->hash_id.fold();
     // seed random number generator
     rnd[i] = static_cast<unsigned int>(x);
-    total += elt->_len;
+    total  += elt->_len;
     i++;
   }
   i = 0;
   for (auto &elt : globalVec_stripe) {
     forvol[i] = total ? static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total : 0;
-    used += forvol[i];
+    used      += forvol[i];
     gotvol[i] = 0;
     i++;
   }

@@ -132,7 +132,7 @@ public:
     ~ACL();
 
     self_type &operator=(const self_type &) = delete;
-    self_type &operator                     =(self_type &&that) noexcept;
+    self_type &operator=(self_type &&that) noexcept;
 
     void clear(); ///< Drop data and config reference.
 

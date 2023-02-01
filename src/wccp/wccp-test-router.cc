@@ -70,7 +70,10 @@ main(int argc, char **argv)
   static int const OPT_MD5     = 259; ///< MD5 key.
 
   static option OPTIONS[] = {
-    {"address", 1, 0, OPT_ADDRESS}, {"md5", 1, 0, OPT_MD5}, {"help", 0, 0, OPT_HELP}, {0, 0, 0, 0} // required terminator.
+    {"address", 1, 0, OPT_ADDRESS},
+    {"md5",     1, 0, OPT_MD5    },
+    {"help",    0, 0, OPT_HELP   },
+    {0,         0, 0, 0          }  // required terminator.
   };
 
   in_addr ip_addr = {INADDR_ANY};

@@ -216,10 +216,10 @@ http2_parse_frame_header(IOVec iov, Http2FrameHeader &hdr)
   memcpy_and_advance(hdr.flags, ptr);
   memcpy_and_advance(streamid.bytes, ptr);
 
-  hdr.length = ntohl(length_and_type.value) >> 8;
-  hdr.type   = ntohl(length_and_type.value) & 0xff;
+  hdr.length        = ntohl(length_and_type.value) >> 8;
+  hdr.type          = ntohl(length_and_type.value) & 0xff;
   streamid.bytes[0] &= 0x7f; // Clear the high reserved bit
-  hdr.streamid = ntohl(streamid.value);
+  hdr.streamid      = ntohl(streamid.value);
 
   return true;
 }
@@ -339,7 +339,7 @@ http2_parse_priority_parameter(IOVec iov, Http2Priority &priority)
 
   priority.exclusive_flag = dependency.bytes[0] & 0x80;
 
-  dependency.bytes[0] &= 0x7f; // Clear the highest bit for exclusive flag
+  dependency.bytes[0]        &= 0x7f; // Clear the highest bit for exclusive flag
   priority.stream_dependency = ntohl(dependency.value);
 
   memcpy_and_advance(priority.weight, ptr);

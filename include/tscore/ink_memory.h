@@ -165,7 +165,9 @@ make_iovec(PtrType ptr, SizeType sz)
   return iov;
 }
 
-template <typename PtrType, unsigned N> static inline IOVec make_iovec(PtrType (&array)[N])
+template <typename PtrType, unsigned N>
+static inline IOVec
+make_iovec(PtrType (&array)[N])
 {
   IOVec iov = {&array[0], static_cast<size_t>(sizeof(array))};
   return iov;
@@ -382,7 +384,7 @@ protected:
   value_type _r; ///< Resource.
 private:
   ats_scoped_resource(self const &) = delete; ///< Copy constructor not permitted.
-  self &operator=(self const &) = delete;     ///< Self assignment not permitted.
+  self &operator=(self const &)     = delete; ///< Self assignment not permitted.
 };
 
 namespace detail

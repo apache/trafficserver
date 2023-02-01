@@ -217,7 +217,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->active_marked_down = time(0);
         host_stat->active_down_time   = down_time;
-        host_stat->reasons |= Reason::ACTIVE;
+        host_stat->reasons            |= Reason::ACTIVE;
       } else {
         host_stat->active_marked_down = 0;
         host_stat->active_down_time   = 0;
@@ -231,7 +231,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->local_marked_down = time(0);
         host_stat->local_down_time   = down_time;
-        host_stat->reasons |= Reason::LOCAL;
+        host_stat->reasons           |= Reason::LOCAL;
       } else {
         host_stat->local_marked_down = 0;
         host_stat->local_down_time   = 0;
@@ -245,7 +245,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->manual_marked_down = time(0);
         host_stat->manual_down_time   = down_time;
-        host_stat->reasons |= Reason::MANUAL;
+        host_stat->reasons            |= Reason::MANUAL;
       } else {
         host_stat->manual_marked_down = 0;
         host_stat->manual_down_time   = 0;
@@ -259,7 +259,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
             HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->self_detect_marked_down = time(0);
-        host_stat->reasons |= Reason::SELF_DETECT;
+        host_stat->reasons                 |= Reason::SELF_DETECT;
       } else {
         host_stat->self_detect_marked_down = 0;
         if (host_stat->reasons & Reason::SELF_DETECT) {

@@ -76,7 +76,7 @@ public:
   Http2ConnectionState();
 
   // noncopyable
-  Http2ConnectionState(const Http2ConnectionState &) = delete;
+  Http2ConnectionState(const Http2ConnectionState &)            = delete;
   Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
 
   ProxyError rx_error_code;

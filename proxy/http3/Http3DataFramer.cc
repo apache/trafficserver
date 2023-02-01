@@ -43,7 +43,7 @@ Http3DataFramer::generate_frame()
   }
 
   if (payload_len) {
-    frame = Http3FrameFactory::create_data_frame(reader, payload_len);
+    frame                    = Http3FrameFactory::create_data_frame(reader, payload_len);
     this->_source_vio->ndone += payload_len;
   }
 

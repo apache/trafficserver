@@ -29,21 +29,23 @@ TEST_CASE("ValidateURL", "[proxy][validurl]")
   static const struct {
     const char *const text;
     bool valid;
-  } http_validate_hdr_field_test_case[] = {{"yahoo", true},
-                                           {"yahoo.com", true},
-                                           {"yahoo.wow.com", true},
-                                           {"yahoo.wow.much.amaze.com", true},
-                                           {"209.131.52.50", true},
-                                           {"192.168.0.1", true},
-                                           {"localhost", true},
-                                           {"3ffe:1900:4545:3:200:f8ff:fe21:67cf", true},
-                                           {"fe80:0:0:0:200:f8ff:fe21:67cf", true},
-                                           {"fe80::200:f8ff:fe21:67cf", true},
-                                           {"<svg onload=alert(1)>", false}, // Sample host header XSS attack
-                                           {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
-                                           {"\"\t\n", false},
-                                           {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))", false},
-                                           {":):(:O!!!!!!", false}};
+  } http_validate_hdr_field_test_case[] = {
+    {"yahoo",                                               true },
+    {"yahoo.com",                                           true },
+    {"yahoo.wow.com",                                       true },
+    {"yahoo.wow.much.amaze.com",                            true },
+    {"209.131.52.50",                                       true },
+    {"192.168.0.1",                                         true },
+    {"localhost",                                           true },
+    {"3ffe:1900:4545:3:200:f8ff:fe21:67cf",                 true },
+    {"fe80:0:0:0:200:f8ff:fe21:67cf",                       true },
+    {"fe80::200:f8ff:fe21:67cf",                            true },
+    {"<svg onload=alert(1)>",                               false}, // Sample host header XSS attack
+    {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
+    {"\"\t\n",                                              false},
+    {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))",                    false},
+    {":):(:O!!!!!!",                                        false}
+  };
   for (auto i : http_validate_hdr_field_test_case) {
     const char *const txt = i.text;
     if (validate_host_name({txt}) != i.valid) {
@@ -58,9 +60,18 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
   static const struct {
     std::string_view text;
     bool valid;
-  } scheme_test_cases[] = {{"http", true},      {"https", true},      {"example", true},    {"example.", true},
-                           {"example++", true}, {"example--.", true}, {"++example", false}, {"--example", false},
-                           {".example", false}, {"example://", false}};
+  } scheme_test_cases[] = {
+    {"http",       true },
+    {"https",      true },
+    {"example",    true },
+    {"example.",   true },
+    {"example++",  true },
+    {"example--.", true },
+    {"++example",  false},
+    {"--example",  false},
+    {".example",   false},
+    {"example://", false}
+  };
 
   for (auto i : scheme_test_cases) {
     // it's pretty hard to debug with
@@ -86,30 +97,32 @@ TEST_CASE("ParseRulesStrictURI", "[proxy][parseuri]")
   const struct {
     const char *const uri;
     bool valid;
-  } http_strict_uri_parsing_test_case[] = {{"//index.html", true},
-                                           {"/home", true},
-                                           {"/path/data?key=value#id", true},
-                                           {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
-                                           {"/abcdefghijklmnopqrstuvwxyz", true},
-                                           {"/abcde fghijklmnopqrstuvwxyz", false},
-                                           {"/abcde\tfghijklmnopqrstuvwxyz", false},
-                                           {"/abcdefghijklmnopqrstuvwxyz", false},
-                                           {"/0123456789", true},
-                                           {":/?#[]@", true},
-                                           {"!$&'()*+,;=", true},
-                                           {"-._~", true},
-                                           {"%", true},
-                                           {"\n", false},
-                                           {"\"", false},
-                                           {"<", false},
-                                           {">", false},
-                                           {"\\", false},
-                                           {"^", false},
-                                           {"`", false},
-                                           {"{", false},
-                                           {"|", false},
-                                           {"}", false},
-                                           {"é", false}};
+  } http_strict_uri_parsing_test_case[] = {
+    {"//index.html",                  true },
+    {"/home",                         true },
+    {"/path/data?key=value#id",       true },
+    {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ",   true },
+    {"/abcdefghijklmnopqrstuvwxyz",   true },
+    {"/abcde fghijklmnopqrstuvwxyz",  false},
+    {"/abcde\tfghijklmnopqrstuvwxyz", false},
+    {"/abcdefghijklmnopqrstuvwxyz",  false},
+    {"/0123456789",                   true },
+    {":/?#[]@",                       true },
+    {"!$&'()*+,;=",                   true },
+    {"-._~",                          true },
+    {"%",                             true },
+    {"\n",                            false},
+    {"\"",                            false},
+    {"<",                             false},
+    {">",                             false},
+    {"\\",                            false},
+    {"^",                             false},
+    {"`",                             false},
+    {"{",                             false},
+    {"|",                             false},
+    {"}",                             false},
+    {"é",                            false}
+  };
 
   for (auto i : http_strict_uri_parsing_test_case) {
     const char *const uri = i.uri;
@@ -125,30 +138,32 @@ TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
   const struct {
     const char *const uri;
     bool valid;
-  } http_mostly_strict_uri_parsing_test_case[] = {{"//index.html", true},
-                                                  {"/home", true},
-                                                  {"/path/data?key=value#id", true},
-                                                  {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
-                                                  {"/abcdefghijklmnopqrstuvwxyz", true},
-                                                  {"/abcde fghijklmnopqrstuvwxyz", false},
-                                                  {"/abcde\tfghijklmnopqrstuvwxyz", false},
-                                                  {"/abcdefghijklmnopqrstuvwxyz", false},
-                                                  {"/0123456789", true},
-                                                  {":/?#[]@", true},
-                                                  {"!$&'()*+,;=", true},
-                                                  {"-._~", true},
-                                                  {"%", true},
-                                                  {"\n", false},
-                                                  {"\"", true},
-                                                  {"<", true},
-                                                  {">", true},
-                                                  {"\\", true},
-                                                  {"^", true},
-                                                  {"`", true},
-                                                  {"{", true},
-                                                  {"|", true},
-                                                  {"}", true},
-                                                  {"é", false}}; // Non-printable ascii
+  } http_mostly_strict_uri_parsing_test_case[] = {
+    {"//index.html",                  true },
+    {"/home",                         true },
+    {"/path/data?key=value#id",       true },
+    {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ",   true },
+    {"/abcdefghijklmnopqrstuvwxyz",   true },
+    {"/abcde fghijklmnopqrstuvwxyz",  false},
+    {"/abcde\tfghijklmnopqrstuvwxyz", false},
+    {"/abcdefghijklmnopqrstuvwxyz",  false},
+    {"/0123456789",                   true },
+    {":/?#[]@",                       true },
+    {"!$&'()*+,;=",                   true },
+    {"-._~",                          true },
+    {"%",                             true },
+    {"\n",                            false},
+    {"\"",                            true },
+    {"<",                             true },
+    {">",                             true },
+    {"\\",                            true },
+    {"^",                             true },
+    {"`",                             true },
+    {"{",                             true },
+    {"|",                             true },
+    {"}",                             true },
+    {"é",                            false}
+  }; // Non-printable ascii
 
   for (auto i : http_mostly_strict_uri_parsing_test_case) {
     const char *const uri = i.uri;

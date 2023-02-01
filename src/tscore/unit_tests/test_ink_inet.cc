@@ -43,18 +43,18 @@ TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
   };
 
   constexpr ip_parse_spec names[] = {
-    {{"::"}, {"::"}, {nullptr}, {nullptr}},
-    {{"[::1]:99"}, {"::1"}, {"99"}, {nullptr}},
-    {{"127.0.0.1:8080"}, {"127.0.0.1"}, {"8080"}, {nullptr}},
-    {{"127.0.0.1:8080-Bob"}, {"127.0.0.1"}, {"8080"}, {"-Bob"}},
-    {{"127.0.0.1:"}, {"127.0.0.1"}, {nullptr}, {":"}},
-    {{"foo.example.com"}, {"foo.example.com"}, {nullptr}, {nullptr}},
-    {{"foo.example.com:99"}, {"foo.example.com"}, {"99"}, {nullptr}},
-    {{"ffee::24c3:3349:3cee:0143"}, {"ffee::24c3:3349:3cee:0143"}, {nullptr}, {nullptr}},
+    {{"::"},                                   {"::"},                                   {nullptr}, {nullptr}},
+    {{"[::1]:99"},                             {"::1"},                                  {"99"},    {nullptr}},
+    {{"127.0.0.1:8080"},                       {"127.0.0.1"},                            {"8080"},  {nullptr}},
+    {{"127.0.0.1:8080-Bob"},                   {"127.0.0.1"},                            {"8080"},  {"-Bob"} },
+    {{"127.0.0.1:"},                           {"127.0.0.1"},                            {nullptr}, {":"}    },
+    {{"foo.example.com"},                      {"foo.example.com"},                      {nullptr}, {nullptr}},
+    {{"foo.example.com:99"},                   {"foo.example.com"},                      {"99"},    {nullptr}},
+    {{"ffee::24c3:3349:3cee:0143"},            {"ffee::24c3:3349:3cee:0143"},            {nullptr}, {nullptr}},
     {{"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {"fe80:88b5:4a:20c:29ff:feae:1c33:8080"}, {nullptr}, {nullptr}},
-    {{"[ffee::24c3:3349:3cee:0143]"}, {"ffee::24c3:3349:3cee:0143"}, {nullptr}, {nullptr}},
-    {{"[ffee::24c3:3349:3cee:0143]:80"}, {"ffee::24c3:3349:3cee:0143"}, {"80"}, {nullptr}},
-    {{"[ffee::24c3:3349:3cee:0143]:8080x"}, {"ffee::24c3:3349:3cee:0143"}, {"8080"}, {"x"}},
+    {{"[ffee::24c3:3349:3cee:0143]"},          {"ffee::24c3:3349:3cee:0143"},            {nullptr}, {nullptr}},
+    {{"[ffee::24c3:3349:3cee:0143]:80"},       {"ffee::24c3:3349:3cee:0143"},            {"80"},    {nullptr}},
+    {{"[ffee::24c3:3349:3cee:0143]:8080x"},    {"ffee::24c3:3349:3cee:0143"},            {"8080"},  {"x"}    },
   };
 
   for (auto const &s : names) {

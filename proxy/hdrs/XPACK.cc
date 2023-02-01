@@ -55,7 +55,7 @@ xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf
         return XPACK_ERROR_COMPRESSION_ERROR;
       }
       dst += added_value << m;
-      m += 7;
+      m   += 7;
     } while (*p & 0x80);
   }
 
@@ -127,7 +127,7 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
     *(p++) = value;
   } else {
     *(p++) = (1 << n) - 1;
-    value -= (1 << n) - 1;
+    value  -= (1 << n) - 1;
     while (value >= 128) {
       if (p >= buf_end) {
         return -1;

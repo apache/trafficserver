@@ -29,7 +29,7 @@
 
 using std::string_view;
 
-#define REMEMBER(e, r) history.push_back(MakeSourceLocation(), e, r)
+#define REMEMBER(e, r)        history.push_back(MakeSourceLocation(), e, r)
 #define SM_REMEMBER(sm, e, r) sm->history.push_back(MakeSourceLocation(), e, r)
 
 // State Machine mock

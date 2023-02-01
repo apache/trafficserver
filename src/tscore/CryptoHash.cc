@@ -88,7 +88,7 @@ ink_code_to_hex_str(char *dest, uint8_t const *hash)
     *(d + 5) = hex_digits[hash[i + 2] & 15];
     *(d + 6) = hex_digits[hash[i + 3] >> 4];
     *(d + 7) = hex_digits[hash[i + 3] & 15];
-    d += 8;
+    d        += 8;
   }
   *d = '\0';
   return (dest);

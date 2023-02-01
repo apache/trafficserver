@@ -32,9 +32,9 @@
 
 #ifndef _NH_UNIT_TESTS_
 #define NH_Debug(tag, ...) Debug(tag, __VA_ARGS__)
-#define NH_Error(...) DiagsError(DL_Error, __VA_ARGS__)
-#define NH_Note(...) DiagsError(DL_Note, __VA_ARGS__)
-#define NH_Warn(...) DiagsError(DL_Warning, __VA_ARGS__)
+#define NH_Error(...)      DiagsError(DL_Error, __VA_ARGS__)
+#define NH_Note(...)       DiagsError(DL_Note, __VA_ARGS__)
+#define NH_Warn(...)       DiagsError(DL_Warning, __VA_ARGS__)
 #define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
 #else
 #include "unit-tests/nexthop_test_stubs.h"
@@ -125,7 +125,7 @@ struct HostRecord : public ATSConsistentHashNode, public HostRecordCfg {
   explicit HostRecord(HostRecordCfg &&o) : HostRecordCfg(std::move(o)) {}
 
   // No copying or moving.
-  HostRecord(const HostRecord &) = delete;
+  HostRecord(const HostRecord &)            = delete;
   HostRecord &operator=(const HostRecord &) = delete;
 
   // locks the record when marking this host down.

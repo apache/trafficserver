@@ -44,7 +44,7 @@ struct remap_line {
 };
 
 #define PLUGIN_NAME "headeradd_remap"
-#define EXTERN extern "C"
+#define EXTERN      extern "C"
 
 EXTERN void
 ParseArgIntoNv(const char *arg, char **n, char **v)

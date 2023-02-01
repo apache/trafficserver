@@ -199,41 +199,40 @@ static int delay_listen_for_cache = 0;
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
-  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
-  {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", nullptr},
-  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", nullptr},
-  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", nullptr},
-  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
-  {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
-   "PROXY_DPRINTF_LEVEL", nullptr},
-  {"maxRecords", 'm', "Max number of librecords metrics and configurations (default & minimum: 1600)", "I", &max_records_entries,
-   "PROXY_MAX_RECORDS", nullptr},
+  {"net_threads",       'n', "Number of Net Threads",                                                                               "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr},
+  {"udp_threads",       'U', "Number of UDP Threads",                                                                               "I",     &num_of_udp_threads,             "PROXY_UDP_THREADS",       nullptr},
+  {"accept_thread",     'a', "Use an Accept Thread",                                                                                "T",     &num_accept_threads,             "PROXY_ACCEPT_THREAD",     nullptr},
+  {"accept_till_done",  'b', "Accept Till Done",                                                                                    "T",     &accept_till_done,               "PROXY_ACCEPT_TILL_DONE",  nullptr},
+  {"httpport",          'p', "Port descriptor for HTTP Accept",                                                                     "S*",    &http_accept_port_descriptor,    "PROXY_HTTP_ACCEPT_PORT",  nullptr},
+  {"disable_freelist",  'f', "Disable the freelist memory allocator",                                                               "T",     &cmd_disable_freelist,           "PROXY_DPRINTF_LEVEL",     nullptr},
+  {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator",                                             "T",     &cmd_disable_pfreelist,
+   "PROXY_DPRINTF_LEVEL",                                                                                                                                                                                nullptr},
+  {"maxRecords",        'm', "Max number of librecords metrics and configurations (default & minimum: 1600)",                       "I",     &max_records_entries,
+   "PROXY_MAX_RECORDS",                                                                                                                                                                                  nullptr},
 
 #if TS_HAS_TESTS
-  {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},
-  {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", nullptr},
-  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", nullptr},
-#endif // TS_HAS_TESTS
+  {"regression",        'R', "Regression Level (quick:1..long:3)",                                                                  "I",     &regression_level,               "PROXY_REGRESSION",        nullptr},
+  {"regression_test",   'r', "Run Specific Regression Test",                                                                        "S512",  regression_test,                 "PROXY_REGRESSION_TEST",   nullptr},
+  {"regression_list",   'l', "List Regression Tests",                                                                               "T",     &regression_list,                "PROXY_REGRESSION_LIST",   nullptr},
+#endif  // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
-  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags, "PROXY_DEBUG_TAGS", nullptr},
-  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, "PROXY_BEHAVIOR_TAGS", nullptr},
+  {"debug_tags",        'T', "Vertical-bar-separated Debug Tags",                                                                   "S1023", error_tags,                      "PROXY_DEBUG_TAGS",        nullptr},
+  {"action_tags",       'B', "Vertical-bar-separated Behavior Tags",                                                                "S1023", action_tags,                     "PROXY_BEHAVIOR_TAGS",     nullptr},
 #endif
 
-  {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", nullptr},
-  {"command", 'C',
+  {"interval",          'i', "Statistics Interval",                                                                                 "I",     &show_statistics,                "PROXY_STATS_INTERVAL",    nullptr},
+  {"command",           'C',
    "Maintenance Command to Execute\n"
-   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, verify_global_plugin, verify_remap_plugin, help",
-   "S511", &command_string, "PROXY_COMMAND_STRING", nullptr},
-  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_CONFIG_CONFIG_DIR", nullptr},
-  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", nullptr},
-  {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", nullptr},
-  {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
-  {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
-  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
-  {"block", '-', "block for debug attach", "T", &cmd_block, nullptr, nullptr},
+   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, verify_global_plugin, verify_remap_plugin, help", "S511",  &command_string,                 "PROXY_COMMAND_STRING",    nullptr},
+  {"conf_dir",          'D', "config dir to verify",                                                                                "S511",  &conf_dir,                       "PROXY_CONFIG_CONFIG_DIR", nullptr},
+  {"clear_hostdb",      'k', "Clear HostDB on Startup",                                                                             "F",     &auto_clear_hostdb_flag,         "PROXY_CLEAR_HOSTDB",      nullptr},
+  {"clear_cache",       'K', "Clear Cache on Startup",                                                                              "F",     &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE",       nullptr},
+  {"bind_stdout",       '-', "Regular file to bind stdout to",                                                                      "S512",  &bind_stdout,                    "PROXY_BIND_STDOUT",       nullptr},
+  {"bind_stderr",       '-', "Regular file to bind stderr to",                                                                      "S512",  &bind_stderr,                    "PROXY_BIND_STDERR",       nullptr},
+  {"accept_mss",        '-', "MSS for client connections",                                                                          "I",     &accept_mss,                     nullptr,                   nullptr},
+  {"poll_timeout",      't', "poll timeout in milliseconds",                                                                        "I",     &poll_timeout,                   nullptr,                   nullptr},
+  {"block",             '-', "block for debug attach",                                                                              "T",     &cmd_block,                      nullptr,                   nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -729,11 +728,11 @@ initialize_jsonrpc_server()
   return ok;
 }
 
-#define CMD_ERROR -2      // serious error, exit maintenance mode
-#define CMD_FAILED -1     // error, but recoverable
-#define CMD_OK 0          // ok, or minor (user) error
-#define CMD_HELP 1        // ok, print help
-#define CMD_IN_PROGRESS 2 // task not completed. don't exit
+#define CMD_ERROR       -2 // serious error, exit maintenance mode
+#define CMD_FAILED      -1 // error, but recoverable
+#define CMD_OK          0  // ok, or minor (user) error
+#define CMD_HELP        1  // ok, print help
+#define CMD_IN_PROGRESS 2  // task not completed. don't exit
 
 static int
 cmd_list(char * /* cmd ATS_UNUSED */)
@@ -1010,7 +1009,7 @@ load_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string 
   }
   case plugin_type_t::REMAP: {
     auto temporary_directory = fs::temp_directory_path();
-    temporary_directory /= fs::path(std::string("verify_plugin_") + std::to_string(getpid()));
+    temporary_directory      /= fs::path(std::string("verify_plugin_") + std::to_string(getpid()));
     std::error_code ec;
     if (!fs::create_directories(temporary_directory, ec)) {
       std::ostringstream error_os;
@@ -1104,15 +1103,14 @@ static const struct CMD {
   int (*f)(char *);
   bool no_process_lock; /// If set this command doesn't need a process level lock.
 } commands[] = {
-  {"list", "List cache configuration",
+  {"list",                 "List cache configuration",
    "LIST\n"
    "\n"
    "FORMAT: list\n"
    "\n"
    "List the sizes of the Host Database and Cache Index,\n"
-   "and the storage available to the cache.\n",
-   cmd_list, false},
-  {"check", "Check the cache (do not make any changes)",
+   "and the storage available to the cache.\n",                        cmd_list,                 false},
+  {"check",                "Check the cache (do not make any changes)",
    "CHECK\n"
    "\n"
    "FORMAT: check\n"
@@ -1120,58 +1118,51 @@ static const struct CMD {
    "Check the cache for inconsistencies or corruption.\n"
    "CHECK does not make any changes to the data stored in\n"
    "the cache. CHECK requires a scan of the contents of the\n"
-   "cache and may take a long time for large caches.\n",
-   cmd_check, true},
-  {"clear", "Clear the entire cache",
+   "cache and may take a long time for large caches.\n",               cmd_check,                true },
+  {"clear",                "Clear the entire cache",
    "CLEAR\n"
    "\n"
    "FORMAT: clear\n"
    "\n"
    "Clear the entire cache.  All data in the cache is\n"
    "lost and the cache is reconfigured based on the current\n"
-   "description of database sizes and available storage.\n",
-   cmd_clear, false},
-  {"clear_cache", "Clear the document cache",
+   "description of database sizes and available storage.\n",           cmd_clear,                false},
+  {"clear_cache",          "Clear the document cache",
    "CLEAR_CACHE\n"
    "\n"
    "FORMAT: clear_cache\n"
    "\n"
    "Clear the document cache.  All documents in the cache are\n"
    "lost and the cache is reconfigured based on the current\n"
-   "description of database sizes and available storage.\n",
-   cmd_clear, false},
-  {"clear_hostdb", "Clear the hostdb cache",
+   "description of database sizes and available storage.\n",           cmd_clear,                false},
+  {"clear_hostdb",         "Clear the hostdb cache",
    "CLEAR_HOSTDB\n"
    "\n"
    "FORMAT: clear_hostdb\n"
    "\n"
    "Clear the entire hostdb cache.  All host name resolution\n"
-   "information is lost.\n",
-   cmd_clear, false},
-  {CMD_VERIFY_CONFIG, "Verify the config",
+   "information is lost.\n",                                           cmd_clear,                false},
+  {CMD_VERIFY_CONFIG,      "Verify the config",
    "\n"
    "\n"
    "FORMAT: verify_config\n"
    "\n"
-   "Load the config and verify traffic_server comes up correctly. \n",
-   cmd_verify, true},
+   "Load the config and verify traffic_server comes up correctly. \n", cmd_verify,               true },
   {"verify_global_plugin", "Verify a global plugin's shared object file",
    "VERIFY_GLOBAL_PLUGIN\n"
    "\n"
    "FORMAT: verify_global_plugin [global_plugin_so_file]\n"
    "\n"
    "Load a global plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",
-   cmd_verify_global_plugin, false},
-  {"verify_remap_plugin", "Verify a remap plugin's shared object file",
+   "minimal plugin API requirements. \n",                              cmd_verify_global_plugin, false},
+  {"verify_remap_plugin",  "Verify a remap plugin's shared object file",
    "VERIFY_REMAP_PLUGIN\n"
    "\n"
    "FORMAT: verify_remap_plugin [remap_plugin_so_file]\n"
    "\n"
    "Load a remap plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",
-   cmd_verify_remap_plugin, false},
-  {"help", "Obtain a short description of a command (e.g. 'help clear')",
+   "minimal plugin API requirements. \n",                              cmd_verify_remap_plugin,  false},
+  {"help",                 "Obtain a short description of a command (e.g. 'help clear')",
    "HELP\n"
    "\n"
    "FORMAT: help [command_name]\n"
@@ -1179,8 +1170,7 @@ static const struct CMD {
    "EXAMPLES: help help\n"
    "          help commit\n"
    "\n"
-   "Provide a short description of a command (like this).\n",
-   cmd_help, false},
+   "Provide a short description of a command (like this).\n",          cmd_help,                 false},
 };
 
 static int
@@ -1411,30 +1401,30 @@ struct ShowStats : public Continuation {
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
-    last_rb += d_rb;
+    last_rb      += d_rb;
 
     NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
     int64_t d_wb = sval - last_wb;
-    last_wb += d_wb;
+    last_wb      += d_wb;
 
     NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
     int64_t d_nrb = sval - last_nrb;
-    last_nrb += d_nrb;
-    int64_t d_nr = cval - last_nr;
-    last_nr += d_nr;
+    last_nrb      += d_nrb;
+    int64_t d_nr  = cval - last_nr;
+    last_nr       += d_nr;
 
     NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
     int64_t d_nwb = sval - last_nwb;
-    last_nwb += d_nwb;
-    int64_t d_nw = cval - last_nw;
-    last_nw += d_nw;
+    last_nwb      += d_nwb;
+    int64_t d_nw  = cval - last_nw;
+    last_nw       += d_nw;
 
     NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
     int64_t d_o = sval;
 
     NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     int64_t d_p = cval - last_p;
-    last_p += d_p;
+    last_p      += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
            d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE

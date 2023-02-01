@@ -60,7 +60,10 @@ ts::BufferWriter &
 SourceLocation::print(ts::BufferWriter &w, ts::BWFSpec const &) const
 {
   if (this->valid()) {
-    ts::TextView base{ts::TextView{file, strlen(file)}.take_suffix_at('/')};
+    ts::TextView base{
+      ts::TextView{file, strlen(file)}
+      .take_suffix_at('/')
+    };
     w.print("{}:{}{}", base, line, ts::bwf::OptionalAffix(func, ")"_sv, " ("_sv));
   };
   return w;

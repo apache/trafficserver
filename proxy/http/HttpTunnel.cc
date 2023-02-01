@@ -223,9 +223,9 @@ ChunkedHandler::transfer_bytes()
 
     if (moved > 0) {
       chunked_reader->consume(moved);
-      bytes_left = bytes_left - moved;
+      bytes_left     = bytes_left - moved;
       dechunked_size += moved;
-      total_moved += moved;
+      total_moved    += moved;
     } else {
       break;
     }

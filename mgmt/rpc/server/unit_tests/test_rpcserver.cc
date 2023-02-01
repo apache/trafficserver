@@ -148,7 +148,7 @@ getTemporaryDir()
 {
   std::error_code ec;
   fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
-  tmpDir /= "sandbox_XXXXXX";
+  tmpDir          /= "sandbox_XXXXXX";
 
   char dirNameTemplate[tmpDir.string().length() + 1];
   sprintf(dirNameTemplate, "%s", tmpDir.c_str());
@@ -216,7 +216,9 @@ private:
   {
     const std::size_t size = std::distance(from, to);
     if (size <= N) {
-      return {std::string{from, to}};
+      return {
+        std::string{from, to}
+      };
     }
     std::size_t index{0};
     std::array<std::string, N> ret;
@@ -293,9 +295,9 @@ std::string
 random_string(std::string::size_type length)
 {
   auto randchar = []() -> char {
-    const char charset[] = "0123456789"
-                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "abcdefghijklmnopqrstuvwxyz";
+    const char charset[]   = "0123456789"
+                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                             "abcdefghijklmnopqrstuvwxyz";
     const size_t max_index = (sizeof(charset) - 1);
     return charset[rand() % max_index];
   };

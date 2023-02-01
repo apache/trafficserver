@@ -26,8 +26,8 @@
 void test_done();
 
 #define TEST_DONE() test_done();
-#define T_DONE 1
-#define T_CONT 1
+#define T_DONE      1
+#define T_CONT      1
 
 #define DEFAULT_URL "http://www.scw00.com/"
 

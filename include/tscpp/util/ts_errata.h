@@ -37,4 +37,5 @@ static constexpr swoc::Errata::Severity ERRATA_EMERGENCY{DL_Emergency};
 
 // This is treated as an array so must numerically match with @c DiagsLevel
 static constexpr std::array<swoc::TextView, 9> Severity_Names{
-  {"Diag", "Debug", "Status", "Note", "Warn", "Error", "Fatal", "Alert", "Emergency"}};
+  {"Diag", "Debug", "Status", "Note", "Warn", "Error", "Fatal", "Alert", "Emergency"}
+};

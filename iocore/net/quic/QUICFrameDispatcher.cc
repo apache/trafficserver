@@ -27,7 +27,7 @@
 static constexpr char tag[]   = "quic_net";
 static constexpr char v_tag[] = "v_quic_net";
 
-#define QUICDebug(fmt, ...) Debug(tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
+#define QUICDebug(fmt, ...)  Debug(tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 #define QUICVDebug(fmt, ...) Debug(v_tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 
 //

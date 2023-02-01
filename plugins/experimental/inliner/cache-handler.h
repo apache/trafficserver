@@ -93,7 +93,7 @@ namespace inliner
           size = std::min(size, l);
           std::copy(pointer, pointer + size, std::back_inserter(content_));
           length += size;
-          l -= size;
+          l      -= size;
         }
       }
 
@@ -198,7 +198,7 @@ namespace inliner
         size = std::min(size, l);
         o.append(pointer, size);
         length += size;
-        l -= size;
+        l      -= size;
       }
     }
 
@@ -244,7 +244,7 @@ namespace inliner
       h.reader_ = nullptr;
     }
 
-    CacheHandler(const CacheHandler &) = delete;
+    CacheHandler(const CacheHandler &)            = delete;
     CacheHandler &operator=(const CacheHandler &) = delete;
 
     void
@@ -320,11 +320,11 @@ namespace inliner
       const std::string::const_iterator b1 = b.begin(), b2 = b.end(), i = std::find(b1, b2, '/');
 
       std::string request = "GET ";
-      request += std::string(i, b2);
-      request += " HTTP/1.1\r\n";
-      request += "Host: ";
-      request += std::string(b1, i);
-      request += "\r\n\r\n";
+      request             += std::string(i, b2);
+      request             += " HTTP/1.1\r\n";
+      request             += "Host: ";
+      request             += std::string(b1, i);
+      request             += "\r\n\r\n";
 
       ats::io::IO *const io = new io::IO();
 

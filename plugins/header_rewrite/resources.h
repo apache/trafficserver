@@ -56,7 +56,7 @@ public:
   ~Resources() { destroy(); }
 
   // noncopyable
-  Resources(const Resources &) = delete;
+  Resources(const Resources &)      = delete;
   void operator=(const Resources &) = delete;
 
   void gather(const ResourceIDs ids, TSHttpHookID hook);

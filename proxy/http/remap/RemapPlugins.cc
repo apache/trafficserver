@@ -87,7 +87,10 @@ RemapPlugins::run_single_remap()
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
   bool zret                    = true; // default - last iteration.
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
-        _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
+        _cur == 1 ? "st" :
+        _cur == 2 ? "nd" :
+        _cur == 3 ? "rd" :
+                    "th");
 
   if (0 == _cur) {
     Debug("url_rewrite", "setting the remapped url by copying from mapping rule");

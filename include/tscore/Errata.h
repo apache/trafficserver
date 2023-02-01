@@ -194,7 +194,7 @@ public:
       to strings and concatenated to form the message text.
       @return A reference to this object.
   */
-  template <typename... Args> self &push(Id id, Code code, Args const &... args);
+  template <typename... Args> self &push(Id id, Code code, Args const &...args);
 
   /** Push a nested status.
       @a err becomes the top item.
@@ -403,7 +403,7 @@ struct Errata::Message {
   template <typename... Args>
   Message(Id id,     ///< Message Id.
           Code code, ///< Message Code.
-          Args const &... text);
+          Args const &...text);
 
   /// Reset to the message to default state.
   self &clear();
@@ -470,7 +470,7 @@ struct Errata::Message {
 
   static SuccessTest const DEFAULT_SUCCESS_TEST;
 
-  template <typename... Args> static std::string stringify(Args const &... items);
+  template <typename... Args> static std::string stringify(Args const &...items);
 
   Id m_id     = 0;            ///< Message ID.
   Code m_code = Default_Code; ///< Message code.
@@ -740,7 +740,7 @@ inline Errata::Message::Message(std::string const &text) : m_text(text) {}
 inline Errata::Message::Message(Id id, std::string const &text) : m_id(id), m_text(text) {}
 inline Errata::Message::Message(Id id, Code code, std::string const &text) : m_id(id), m_code(code), m_text(text) {}
 template <typename... Args>
-Errata::Message::Message(Id id, Code code, Args const &... text) : m_id(id), m_code(code), m_text(stringify(text...))
+Errata::Message::Message(Id id, Code code, Args const &...text) : m_id(id), m_code(code), m_text(stringify(text...))
 {
 }
 
@@ -804,7 +804,7 @@ Errata::Message::set(Errata const &err)
 
 template <typename... Args>
 std::string
-Errata::Message::stringify(Args const &... items)
+Errata::Message::stringify(Args const &...items)
 {
   std::ostringstream s;
   (void)(int[]){0, ((s << items), 0)...};
@@ -871,7 +871,7 @@ Errata::push(Id id, Code code, std::string const &text)
 
 template <typename... Args>
 auto
-Errata::push(Id id, Code code, Args const &... args) -> self &
+Errata::push(Id id, Code code, Args const &...args) -> self &
 {
   this->push(Message(id, code, args...));
   return *this;

@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-#define PreWarmSMDebug(fmt, ...) Debug("prewarm_sm", "[%p] " fmt, this, ##__VA_ARGS__);
+#define PreWarmSMDebug(fmt, ...)  Debug("prewarm_sm", "[%p] " fmt, this, ##__VA_ARGS__);
 #define PreWarmSMVDebug(fmt, ...) Debug("v_prewarm_sm", "[%p] " fmt, this, ##__VA_ARGS__);
 
 ClassAllocator<PreWarmSM> preWarmSMAllocator("preWarmSMAllocator");

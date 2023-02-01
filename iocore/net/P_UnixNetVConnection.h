@@ -105,7 +105,7 @@ public:
   const char *protocol_contains(std::string_view tag) const override;
 
   // noncopyable
-  UnixNetVConnection(const NetVConnection &) = delete;
+  UnixNetVConnection(const NetVConnection &)            = delete;
   UnixNetVConnection &operator=(const NetVConnection &) = delete;
 
   /////////////////////////

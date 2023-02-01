@@ -34,10 +34,12 @@
 bool
 BgFetchConfig::parseOptions(int argc, const char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("log"), required_argument, nullptr, 'l'},
-                                          {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-                                          {const_cast<char *>("allow-304"), no_argument, nullptr, 'a'},
-                                          {nullptr, no_argument, nullptr, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("log"),       required_argument, nullptr, 'l' },
+    {const_cast<char *>("config"),    required_argument, nullptr, 'c' },
+    {const_cast<char *>("allow-304"), no_argument,       nullptr, 'a' },
+    {nullptr,                         no_argument,       nullptr, '\0'}
+  };
 
   while (true) {
     int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);

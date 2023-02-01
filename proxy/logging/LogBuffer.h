@@ -34,7 +34,7 @@ class LogObject;
 class LogConfig;
 class LogBufferIterator;
 
-#define LOG_SEGMENT_COOKIE 0xaceface
+#define LOG_SEGMENT_COOKIE  0xaceface
 #define LOG_SEGMENT_VERSION 2
 
 #if defined(linux)
@@ -109,7 +109,7 @@ union LB_State {
   struct {
     uint32_t offset;           // buffer offset(bytes in buffer)
     uint16_t num_entries;      // number of entries in buffer
-    uint16_t full : 1;         // not accepting more checkouts
+    uint16_t full        : 1;  // not accepting more checkouts
     uint16_t num_writers : 15; // number of writers
   } s;
 };
@@ -232,7 +232,7 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogBuffer(const LogBuffer &rhs) = delete;
+  LogBuffer(const LogBuffer &rhs)            = delete;
   LogBuffer &operator=(const LogBuffer &rhs) = delete;
 
 private:
@@ -291,7 +291,7 @@ public:
 
   // noncopyable
   // -- member functions not allowed --
-  LogBufferIterator(const LogBufferIterator &) = delete;
+  LogBufferIterator(const LogBufferIterator &)            = delete;
   LogBufferIterator &operator=(const LogBufferIterator &) = delete;
 
 private:

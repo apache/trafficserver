@@ -244,7 +244,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
 
       TSIOBufferWrite(transform_ctx->output.buffer, res, res_len);
       transform_ctx->total += res_len;
-      write_down = 1;
+      write_down           = 1;
     }
 
     lua_pop(L, top);

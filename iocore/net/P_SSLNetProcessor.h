@@ -68,7 +68,7 @@ public:
   NetVConnection *allocate_vc(EThread *t) override;
 
   // noncopyable
-  SSLNetProcessor(const SSLNetProcessor &) = delete;
+  SSLNetProcessor(const SSLNetProcessor &)            = delete;
   SSLNetProcessor &operator=(const SSLNetProcessor &) = delete;
 };
 

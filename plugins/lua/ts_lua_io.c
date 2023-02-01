@@ -35,7 +35,7 @@ IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
     if (need > 0) {
       memcpy((char *)buf + n, start, need);
       length -= need;
-      n += need;
+      n      += need;
     }
 
     if (length == 0) {

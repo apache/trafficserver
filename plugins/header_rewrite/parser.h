@@ -36,7 +36,7 @@ public:
   Parser(){};
 
   // noncopyable
-  Parser(const Parser &) = delete;
+  Parser(const Parser &)         = delete;
   void operator=(const Parser &) = delete;
 
   bool
@@ -113,7 +113,7 @@ public:
 
   // noncopyable
   HRWSimpleTokenizer(const HRWSimpleTokenizer &) = delete;
-  void operator=(const HRWSimpleTokenizer &) = delete;
+  void operator=(const HRWSimpleTokenizer &)     = delete;
 
   const std::vector<std::string> &
   get_tokens() const

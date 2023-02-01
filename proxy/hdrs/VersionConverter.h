@@ -67,47 +67,42 @@ private:
 
   static constexpr convert_function _convert_functions[2][N_VERSIONS][N_VERSIONS] = {
     {
-      // Request
+     // Request
       {
         // From 1
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_req_from_1_to_2,
         &VersionConverter::_convert_req_from_1_to_2,
-      },
-      {
+      }, {
         // From 2
         &VersionConverter::_convert_req_from_2_to_1,
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_nop,
-      },
-      {
+      }, {
         // From 3
         &VersionConverter::_convert_req_from_2_to_1,
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_nop,
-      },
-    },
+      }, },
     {
-      // Response
+     // Response
       {
         // From 1
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_res_from_1_to_2,
         &VersionConverter::_convert_res_from_1_to_2,
-      },
-      {
+      }, {
         // From 2
         &VersionConverter::_convert_res_from_2_to_1,
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_nop,
-      },
-      {
+      },        {
         // From 3
         &VersionConverter::_convert_res_from_2_to_1,
         &VersionConverter::_convert_nop,
         &VersionConverter::_convert_nop,
-      },
-    }};
+      }, }
+  };
 
   static constexpr std::string_view connection_specific_header_fields[] = {
     "Connection", "Keep-Alive", "Proxy-Connection", "Transfer-Encoding", "Upgrade",

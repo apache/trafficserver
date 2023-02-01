@@ -29,10 +29,10 @@
 #include "SSLDiags.h"
 
 /* Stats should only be accessed using these macros */
-#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1)
-#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, nullptr, (int)x, -1)
+#define SSL_INCREMENT_DYN_STAT(x)        RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1)
+#define SSL_DECREMENT_DYN_STAT(x)        RecIncrRawStat(ssl_rsb, nullptr, (int)x, -1)
 #define SSL_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(ssl_rsb, x, count)
-#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, nullptr, (int)x, y)
+#define SSL_INCREMENT_DYN_STAT_EX(x, y)  RecIncrRawStat(ssl_rsb, nullptr, (int)x, y)
 #define SSL_CLEAR_DYN_STAT(x)            \
   do {                                   \
     RecSetRawStatSum(ssl_rsb, (x), 0);   \

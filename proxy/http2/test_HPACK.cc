@@ -44,13 +44,14 @@ static char cmd_input_dir[512]  = "";
 static char cmd_output_dir[512] = "";
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, nullptr, nullptr},
-  {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
-   "PROXY_DPRINTF_LEVEL", nullptr},
-  {"input_dir", 'i', "input dir", "S511", &cmd_input_dir, nullptr, nullptr},
-  {"output_dir", 'o', "output dir", "S511", &cmd_output_dir, nullptr, nullptr},
+  {"disable_freelist",  'f', "Disable the freelist memory allocator",                   "T",    &cmd_disable_freelist,  nullptr, nullptr},
+  {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T",    &cmd_disable_pfreelist,
+   "PROXY_DPRINTF_LEVEL",                                                                                                        nullptr},
+  {"input_dir",         'i', "input dir",                                               "S511", &cmd_input_dir,         nullptr, nullptr},
+  {"output_dir",        'o', "output dir",                                              "S511", &cmd_output_dir,        nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION()
+};
 
 const static uint32_t INITIAL_TABLE_SIZE = 4096;
 

@@ -60,8 +60,8 @@ extern UDPNetProcessorInternal udpNetInternal;
 
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
-#define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
-#define N_SLOTS 2048
+#define SLOT_TIME      HRTIME_MSECONDS(SLOT_TIME_MSEC)
+#define N_SLOTS        2048
 
 constexpr int UDP_PERIOD    = 9;
 constexpr int UDP_NH_PERIOD = UDP_PERIOD + 1;

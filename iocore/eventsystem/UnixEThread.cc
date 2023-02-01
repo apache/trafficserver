@@ -39,7 +39,7 @@
 
 struct AIOCallback;
 
-#define NO_HEARTBEAT -1
+#define NO_HEARTBEAT                  -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 
 // !! THIS MUST BE IN THE ENUM ORDER !!
@@ -351,13 +351,13 @@ EThread::execute()
 EThread::Metrics::Slice &
 EThread::Metrics::Slice::operator+=(Slice const &that)
 {
-  this->_events._max = std::max(this->_events._max, that._events._max);
-  this->_events._min = std::min(this->_events._min, that._events._min);
+  this->_events._max   = std::max(this->_events._max, that._events._max);
+  this->_events._min   = std::min(this->_events._min, that._events._min);
   this->_events._total += that._events._total;
   this->_duration._min = std::min(this->_duration._min, that._duration._min);
   this->_duration._max = std::max(this->_duration._max, that._duration._max);
-  this->_count += that._count;
-  this->_wait += that._wait;
+  this->_count         += that._count;
+  this->_wait          += that._wait;
   return *this;
 }
 
@@ -389,6 +389,6 @@ EThread::Metrics::summarize(Metrics &global)
   // Only summarize if there's no outstanding decay.
   if (0 == _decay_count) {
     global._loop_timing += _loop_timing;
-    global._api_timing += _api_timing;
+    global._api_timing  += _api_timing;
   }
 }

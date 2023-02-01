@@ -46,31 +46,33 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     int expected_result;
     int expected_bytes_consumed;
   };
-  static const std::array<Test, 23> tests = {{
-    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
-    {"GET", PARSE_RESULT_ERROR, 3},
-    {"GET /index.html", PARSE_RESULT_ERROR, 15},
-    {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
-    {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
-    {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
-    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
-    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
-    {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-    {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},
-    {"CONNECT foo.example HTTP/1.1\r\n", PARSE_RESULT_DONE, 30},
-    {"GET foo.example HTTP/1.1\r\n", PARSE_RESULT_ERROR, 26},
-    {"", PARSE_RESULT_ERROR, 0},
-  }};
+  static const std::array<Test, 23> tests = {
+    {
+     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
+     {"GET", PARSE_RESULT_ERROR, 3},
+     {"GET /index.html", PARSE_RESULT_ERROR, 15},
+     {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
+     {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
+     {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
+     {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
+     {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+     {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},
+     {"CONNECT foo.example HTTP/1.1\r\n", PARSE_RESULT_DONE, 30},
+     {"GET foo.example HTTP/1.1\r\n", PARSE_RESULT_ERROR, 26},
+     {"", PARSE_RESULT_ERROR, 0},
+     }
+  };
 
   HTTPParser parser;
 
@@ -104,11 +106,13 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
     bool shares_input;
     int expected_result;
   };
-  constexpr std::array<Fragment, 3> const fragments = {{
-    {message.substr(0, 11), true, PARSE_RESULT_CONT},
-    {message.substr(11, 11), true, PARSE_RESULT_CONT},
-    {message.substr(22), false, PARSE_RESULT_OK},
-  }};
+  constexpr std::array<Fragment, 3> const fragments = {
+    {
+     {message.substr(0, 11), true, PARSE_RESULT_CONT},
+     {message.substr(11, 11), true, PARSE_RESULT_CONT},
+     {message.substr(22), false, PARSE_RESULT_OK},
+     }
+  };
 
   MIMEScanner scanner;
   ts::TextView output; // only set on last call
@@ -539,28 +543,28 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       std::string_view line;
       ParseResult expected;
     } test_cases[] = {
-      ////
-      // Field Name
-      {"Content-Length: 10\r\n", PARSE_RESULT_CONT},
+  ////
+  // Field Name
+      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
       {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
-      ////
-      // Field Value
-      // SP
-      {"Content-Length: 10\r\n", PARSE_RESULT_CONT},
-      // HTAB
-      {"Foo: ab\td/cd\r\n", PARSE_RESULT_CONT},
-      // VCHAR
-      {"Foo: ab\x21/cd\r\n", PARSE_RESULT_CONT},
-      {"Foo: ab\x7e/cd\r\n", PARSE_RESULT_CONT},
-      // DEL
-      {"Foo: ab\x7f/cd\r\n", PARSE_RESULT_ERROR},
-      // obs-text
-      {"Foo: ab\x80/cd\r\n", PARSE_RESULT_CONT},
-      {"Foo: ab\xff/cd\r\n", PARSE_RESULT_CONT},
-      // control char
+ ////
+  // Field Value
+  // SP
+      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
+ // HTAB
+      {"Foo: ab\td/cd\r\n",          PARSE_RESULT_CONT },
+ // VCHAR
+      {"Foo: ab\x21/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\x7e/cd\r\n",         PARSE_RESULT_CONT },
+ // DEL
+      {"Foo: ab\x7f/cd\r\n",         PARSE_RESULT_ERROR},
+ // obs-text
+      {"Foo: ab\x80/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\xff/cd\r\n",         PARSE_RESULT_CONT },
+ // control char
       {"Content-Length: 10\x0b\r\n", PARSE_RESULT_ERROR},
       {"Content-Length:\x0b 10\r\n", PARSE_RESULT_ERROR},
-      {"Foo: ab\x1d/cd\r\n", PARSE_RESULT_ERROR},
+      {"Foo: ab\x1d/cd\r\n",         PARSE_RESULT_ERROR},
     };
 
     MIMEHdr hdr;
@@ -587,26 +591,26 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       const char *fast;
       const char *slow;
     } dates[] = {
-      {"Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"},
-      {"Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"},
-      {"Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"},
+      {"Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"   },
+      {"Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"   },
+      {"Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"  },
       {"Wed, 09 Nov 1994 08:49:37 GMT", "Wednesday, 09-Nov-1994 08:49:37 GMT"},
-      {"Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT"},
-      {"Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"},
-      {"Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT"},
-      {"Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"},
-      {"Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"},
-      {"Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"},
-      {"Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"},
-      {"Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"},
-      {"Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"},
-      {"Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"},
-      {"Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"},
-      {"Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"},
-      {"Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"},
-      {"Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"},
-      {"Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"},
-      {nullptr, nullptr},
+      {"Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT" },
+      {"Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"   },
+      {"Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT" },
+      {"Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"   },
+      {"Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"   },
+      {"Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"   },
+      {"Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"   },
+      {"Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"   },
+      {"Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"   },
+      {"Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"   },
+      {"Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"   },
+      {"Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"   },
+      {"Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"   },
+      {"Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"   },
+      {"Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"   },
+      {nullptr,                         nullptr                              },
     };
 
     int i;
@@ -1057,48 +1061,38 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     } tests[] = {
       {"GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
-       "\r\n",
-       "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+       "\r\n",                           "GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n"},
+       "\r\n",                           "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                          "HTTP/1.0 200 OK\r\n"
+       "\r\n"                                                                         },
       {"GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
        "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
-       "\r\n",
-       "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+       "\r\n",                           "GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
        "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n"},
+       "\r\n",                           "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                          "HTTP/1.0 200 OK\r\n"
+       "\r\n"                                                                         },
       {"GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
        "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; "
        "sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
-       "\r\n",
-       "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+       "\r\n",                           "GET http://foo.com/bar.txt HTTP/1.0\r\n"
        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
        "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; "
        "sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
-       "\r\n"},
+       "\r\n",                           "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                          "HTTP/1.0 200 OK\r\n"
+       "\r\n"                                                                         },
       {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
        "Referer: chocolate fribble\r\n", // missing final CRLF
        "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
        "Referer: chocolate fribble\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n", "HTTP/1.0 200 OK\r\n"
        "MIME-Version: 1.0\r\n"
        "Server: WebSTAR/2.1 ID/30013\r\n"
        "Content-Type: text/html\r\n"
@@ -1113,25 +1107,23 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
        "\r\n"},
       {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-       "Referer: \r\n", // missing final CRLF
+       "Referer: \r\n",                  // missing final CRLF
        "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
        "Referer: \r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                  "HTTP/1.0 200 OK\r\n"
        "MIME-Version: 1.0\r\n"
        "Server: WebSTAR/2.1 ID/30013\r\n"
        "Content-Type: text/html\r\n"
        "Content-Length: 939\r\n"
        "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                 "HTTP/1.0 200 OK\r\n"
        "MIME-Version: 1.0\r\n"
        "Server: WebSTAR/2.1 ID/30013\r\n"
        "Content-Type: text/html\r\n"
        "Content-Length: 939\r\n"
        "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
-       "\r\n"},
+       "\r\n"                                                                },
       {"GET http://www.news.com:80/ HTTP/1.0\r\n"
        "Proxy-Connection: Keep-Alive\r\n"
        "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
@@ -1142,8 +1134,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
        "Accept-Charset: iso-8859-1, *, utf-8\r\n"
        "Client-ip: D1012148\r\n"
        "Foo: abcdefghijklmnopqrtu\r\n"
-       "\r\n",
-       "GET http://www.news.com:80/ HTTP/1.0\r\n"
+       "\r\n",                           "GET http://www.news.com:80/ HTTP/1.0\r\n"
        "Proxy-Connection: Keep-Alive\r\n"
        "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
        "Pragma: no-cache\r\n"
@@ -1153,15 +1144,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
        "Accept-Charset: iso-8859-1, *, utf-8\r\n"
        "Client-ip: D1012148\r\n"
        "Foo: abcdefghijklmnopqrtu\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                           "HTTP/1.0 200 OK\r\n"
        "Content-Length: 16428\r\n"
        "Content-Type: text/html\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                          "HTTP/1.0 200 OK\r\n"
        "Content-Length: 16428\r\n"
        "Content-Type: text/html\r\n"
-       "\r\n"},
+       "\r\n"                                                                         },
       {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
        "Referer: http://people.netscape.com/jwz/index.html\r\n"
@@ -1170,8 +1159,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
        "Pragma: no-cache\r\n"
        "Host: people.netscape.com\r\n"
        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-       "\r\n",
-       "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+       "\r\n",                           "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
        "Referer: http://people.netscape.com/jwz/index.html\r\n"
        "Proxy-Connection: Keep-Alive\r\n"
@@ -1179,15 +1167,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
        "Pragma: no-cache\r\n"
        "Host: people.netscape.com\r\n"
        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                           "HTTP/1.0 200 OK\r\n"
        "Content-Length: 16428\r\n"
        "Content-Type: text/html\r\n"
-       "\r\n",
-       "HTTP/1.0 200 OK\r\n"
+       "\r\n",                                                                          "HTTP/1.0 200 OK\r\n"
        "Content-Length: 16428\r\n"
        "Content-Type: text/html\r\n"
-       "\r\n"},
+       "\r\n"                                                                         },
     };
 
     int ntests = sizeof(tests) / sizeof(tests[0]);
@@ -1418,21 +1404,23 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       char const *response;
     };
 
-    RequestResponse rr[] = {{request0, response0},
-                            {request09, response09},
-                            {request1, response1},
-                            {request_no_colon, response_no_colon},
-                            {request_no_val, response_no_colon},
-                            {request_leading_space, response0},
-                            {request_multi_fblock, response0},
-                            {request_padding, response0},
-                            {request_09p, response0},
-                            {request_09ht, response0},
-                            {request_11, response0},
-                            {request_unterminated, response_unterminated},
-                            {request_blank, response_blank},
-                            {request_blank2, response_blank2},
-                            {request_blank3, response_blank3}};
+    RequestResponse rr[] = {
+      {request0,              response0            },
+      {request09,             response09           },
+      {request1,              response1            },
+      {request_no_colon,      response_no_colon    },
+      {request_no_val,        response_no_colon    },
+      {request_leading_space, response0            },
+      {request_multi_fblock,  response0            },
+      {request_padding,       response0            },
+      {request_09p,           response0            },
+      {request_09ht,          response0            },
+      {request_11,            response0            },
+      {request_unterminated,  response_unterminated},
+      {request_blank,         response_blank       },
+      {request_blank2,        response_blank2      },
+      {request_blank3,        response_blank3      }
+    };
 
     int err;
     HTTPHdr req_hdr, rsp_hdr;
@@ -1721,29 +1709,29 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       int L;
       int I;
     } test_cases[] = {
-      {"en", "*", 1.0, 1, 1},
-      {"en", "fr", 0.0, 0, 0},
-      {"en", "de, fr, en;q=0.7", 0.7, 2, 3},
-      {"en-cockney", "de, fr, en;q=0.7", 0.7, 2, 3},
-      {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4},
-      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
-      {"en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3},
-      {"en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4},
-      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3},
-      {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3},
-      {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4},
-      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3},
-      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
-      {"en-cockney", "de, fr, en-american", 0.0, 0, 0},
-      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3},
-      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
-      {"en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
-      {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5},
-      {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6},
-      {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
-      {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
-      {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
-      {nullptr, nullptr, 0.0, 0, 0},
+      {"en",         "*",                                      1.0, 1,  1},
+      {"en",         "fr",                                     0.0, 0,  0},
+      {"en",         "de, fr, en;q=0.7",                       0.7, 2,  3},
+      {"en-cockney", "de, fr, en;q=0.7",                       0.7, 2,  3},
+      {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7",      0.7, 2,  4},
+      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7",     0.8, 10, 3},
+      {"en-cockney", "de, fr, en;q=0.8, en;q=0.7",             0.8, 2,  3},
+      {"en-cockney", "de, fr, en;q=0.7, en;q=0.8",             0.8, 2,  4},
+      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8",             0.8, 2,  3},
+      {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8",     0.7, 10, 3},
+      {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7",     0.7, 10, 4},
+      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8",     0.8, 10, 3},
+      {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7",     0.8, 10, 3},
+      {"en-cockney", "de, fr, en-american",                    0.0, 0,  0},
+      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *",          0.8, 2,  3},
+      {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9",    0.8, 2,  3},
+      {"en-foobar",  "de, fr, en;q=0.8, en;q=0.8, *;q=0.9",    0.8, 2,  3},
+      {"oo-foobar",  "de, fr, en;q=0.8, en;q=0.8, *;q=0.9",    0.9, 1,  5},
+      {"oo-foobar",  "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1,  6},
+      {"oo-foobar",  "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1,  5},
+      {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en",    0.9, 2,  2},
+      {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en",    0.9, 2,  3},
+      {nullptr,      nullptr,                                  0.0, 0,  0},
     };
 
     int i, I, L;
@@ -1776,33 +1764,33 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       float Q;
       int I;
     } test_cases[] = {
-      {"iso-8859-1", "*", 1.0, 1},
-      {"iso-8859-1", "iso-8859-2", 0.0, 0},
-      {"iso-8859-1", "iso-8859", 0.0, 0},
-      {"iso-8859-1", "iso-8859-12", 0.0, 0},
-      {"iso-8859-1", "koi-8-r", 0.0, 0},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.8, euc-jp;q=0.7", 0.8, 3},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.8, 4},
-      {"euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.9, 1},
-      {"EUC-JP", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp, euc-jp;q=0.8", 1.0, 4},
-      {"euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, EUC-JP, euc-jp;q=0.8", 1.0, 4},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar", 0.0, 0},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *", 1.0, 4},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.543", 0.543, 4},
-      {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.0", 0.0, 4},
-      {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.0", 0.0, 3},
-      {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.5", 0.5, 5},
-      {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *;q=0.0", 0.5, 3},
-      {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *, *;q=0.0", 1.0, 5},
-      {"euc-jp", "shift_jis, euc-jp;hi-there;q=0.5, iso-2022-jp", 0.5, 2},
-      {"euc-jp", "shift_jis, euc-jp;hi-there;q= 0.5, iso-2022-jp", 0.5, 2},
-      {"euc-jp", "shift_jis, euc-jp;hi-there;q = 0.5, iso-2022-jp", 0.5, 2},
-      {"euc-jp", "shift_jis, euc-jp;hi-there ; q = 0.5, iso-2022-jp", 0.5, 2},
-      {"euc-jp", "shift_jis, euc-jp;hi-there ;; q = 0.5, iso-2022-jp", 0.5, 2},
-      {"euc-jp", "shift_jis, euc-jp;hi-there ;; Q = 0.5, iso-2022-jp", 0.5, 2},
-      {nullptr, nullptr, 0.0, 0},
+      {"iso-8859-1", "*",                                                                1.0,   1},
+      {"iso-8859-1", "iso-8859-2",                                                       0.0,   0},
+      {"iso-8859-1", "iso-8859",                                                         0.0,   0},
+      {"iso-8859-1", "iso-8859-12",                                                      0.0,   0},
+      {"iso-8859-1", "koi-8-r",                                                          0.0,   0},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp;q=0.7",                             0.7,   3},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp;q=0.7",                             0.7,   3},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp;q=0.8, euc-jp;q=0.7",               0.8,   3},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8",               0.8,   4},
+      {"euc-jp",     "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.9,   1},
+      {"EUC-JP",     "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp, euc-jp;q=0.8",       1.0,   4},
+      {"euc-jp",     "euc-jp;q=0.9, shift_jis, iso-2022-jp, EUC-JP, euc-jp;q=0.8",       1.0,   4},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp-foobar",                            0.0,   0},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp-foobar, *",                         1.0,   4},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.543",                 0.543, 4},
+      {"euc-jp",     "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.0",                   0.0,   4},
+      {"euc-jp",     "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.0",          0.0,   3},
+      {"euc-jp",     "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.5",          0.5,   5},
+      {"euc-jp",     "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *;q=0.0",          0.5,   3},
+      {"euc-jp",     "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *, *;q=0.0",       1.0,   5},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there;q=0.5, iso-2022-jp",                    0.5,   2},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there;q= 0.5, iso-2022-jp",                   0.5,   2},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there;q = 0.5, iso-2022-jp",                  0.5,   2},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there ; q = 0.5, iso-2022-jp",                0.5,   2},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there ;; q = 0.5, iso-2022-jp",               0.5,   2},
+      {"euc-jp",     "shift_jis, euc-jp;hi-there ;; Q = 0.5, iso-2022-jp",               0.5,   2},
+      {nullptr,      nullptr,                                                            0.0,   0},
     };
 
     int i, I;
@@ -1853,10 +1841,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {"foo, bar,", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
       {"foo, bar, ", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
       {
-        ",foo,bar,",
-        4,
-        {{0, 0}, {1, 3}, {5, 3}, {9, 0}},
-      },
+       ",foo,bar,", 4,
+       {{0, 0}, {1, 3}, {5, 3}, {9, 0}},
+       },
     };
 
     HTTPHdr hdr;
@@ -1912,43 +1899,43 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       const char *slice;
       const char *new_raw;
     } tests[] = {
-      {"a,b,c", 0, "fred", "fred, b, c"},
-      {"a,b,c", 1, "fred", "a, fred, c"},
-      {"a,b,c", 2, "fred", "a, b, fred"},
-      {"a,b,c", 3, "fred", "a,b,c"},
-      {"", 0, "", ""},
-      {"", 0, "foo", "foo"},
-      {"", 1, "foo", ""},
-      {" ", 0, "", ""},
-      {" ", 0, "foo", "foo"},
-      {" ", 1, "foo", " "},
-      {",", 0, "foo", "foo, "},
-      {",", 1, "foo", ", foo"},
-      {",,", 0, "foo", "foo, , "},
-      {",,", 1, "foo", ", foo, "},
-      {",,", 2, "foo", ", , foo"},
-      {"foo", 0, "abc", "abc"},
-      {"foo", 1, "abc", "foo"},
-      {"foo", 0, "abc,", "abc,"},
-      {"foo", 0, ",abc", ",abc"},
-      {",,", 1, ",,,", ", ,,,, "},
-      {" a , b , c", 0, "fred", "fred, b, c"},
-      {" a , b , c", 1, "fred", "a, fred, c"},
-      {" a , b , c", 2, "fred", "a, b, fred"},
-      {" a , b , c", 3, "fred", " a , b , c"},
-      {"    a   ,   b ", 0, "fred", "fred, b"},
-      {"    a   ,   b ", 1, "fred", "a, fred"},
-      {"    a   , b ", 1, "fred", "a, fred"},
-      {"    a   ,b ", 1, "fred", "a, fred"},
-      {"a, , , , e, , g,", 0, "fred", "fred, , , , e, , g, "},
-      {"a, , , , e, , g,", 1, "fred", "a, fred, , , e, , g, "},
-      {"a, , , , e, , g,", 2, "fred", "a, , fred, , e, , g, "},
-      {"a, , , , e, , g,", 5, "fred", "a, , , , e, fred, g, "},
-      {"a, , , , e, , g,", 7, "fred", "a, , , , e, , g, fred"},
-      {"a, , , , e, , g,", 8, "fred", "a, , , , e, , g,"},
-      {"a, \"boo,foo\", c", 0, "wawa", "wawa, \"boo,foo\", c"},
-      {"a, \"boo,foo\", c", 1, "wawa", "a, wawa, c"},
-      {"a, \"boo,foo\", c", 2, "wawa", "a, \"boo,foo\", wawa"},
+      {"a,b,c",             0, "fred", "fred, b, c"           },
+      {"a,b,c",             1, "fred", "a, fred, c"           },
+      {"a,b,c",             2, "fred", "a, b, fred"           },
+      {"a,b,c",             3, "fred", "a,b,c"                },
+      {"",                  0, "",     ""                     },
+      {"",                  0, "foo",  "foo"                  },
+      {"",                  1, "foo",  ""                     },
+      {" ",                 0, "",     ""                     },
+      {" ",                 0, "foo",  "foo"                  },
+      {" ",                 1, "foo",  " "                    },
+      {",",                 0, "foo",  "foo, "                },
+      {",",                 1, "foo",  ", foo"                },
+      {",,",                0, "foo",  "foo, , "              },
+      {",,",                1, "foo",  ", foo, "              },
+      {",,",                2, "foo",  ", , foo"              },
+      {"foo",               0, "abc",  "abc"                  },
+      {"foo",               1, "abc",  "foo"                  },
+      {"foo",               0, "abc,", "abc,"                 },
+      {"foo",               0, ",abc", ",abc"                 },
+      {",,",                1, ",,,",  ", ,,,, "              },
+      {" a , b , c",        0, "fred", "fred, b, c"           },
+      {" a , b , c",        1, "fred", "a, fred, c"           },
+      {" a , b , c",        2, "fred", "a, b, fred"           },
+      {" a , b , c",        3, "fred", " a , b , c"           },
+      {"    a   ,   b ",    0, "fred", "fred, b"              },
+      {"    a   ,   b ",    1, "fred", "a, fred"              },
+      {"    a   , b ",      1, "fred", "a, fred"              },
+      {"    a   ,b ",       1, "fred", "a, fred"              },
+      {"a, , , , e, , g,",  0, "fred", "fred, , , , e, , g, " },
+      {"a, , , , e, , g,",  1, "fred", "a, fred, , , e, , g, "},
+      {"a, , , , e, , g,",  2, "fred", "a, , fred, , e, , g, "},
+      {"a, , , , e, , g,",  5, "fred", "a, , , , e, fred, g, "},
+      {"a, , , , e, , g,",  7, "fred", "a, , , , e, , g, fred"},
+      {"a, , , , e, , g,",  8, "fred", "a, , , , e, , g,"     },
+      {"a, \"boo,foo\", c", 0, "wawa", "wawa, \"boo,foo\", c" },
+      {"a, \"boo,foo\", c", 1, "wawa", "a, wawa, c"           },
+      {"a, \"boo,foo\", c", 2, "wawa", "a, \"boo,foo\", wawa" },
     };
 
     HTTPHdr hdr;
@@ -2003,42 +1990,42 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
         int len;
       } pieces[3];
     } tests[] = {
-      {"", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
-      {",", 2, {{0, 0}, {1, 0}, {-1, 0}}},
-      {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}}},
-      {", ", 2, {{0, 0}, {1, 0}, {-1, 0}}},
-      {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}}},
-      {"abc,", 2, {{0, 3}, {4, 0}, {-1, 0}}},
-      {"abc, ", 2, {{0, 3}, {4, 0}, {-1, 0}}},
-      {"", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
-      {" ", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
-      {"  ", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
-      {"a", 1, {{0, 1}, {-1, 0}, {-1, 0}}},
-      {" a", 1, {{1, 1}, {-1, 0}, {-1, 0}}},
-      {"  a  ", 1, {{2, 1}, {-1, 0}, {-1, 0}}},
-      {"abc,defg", 2, {{0, 3}, {4, 4}, {-1, 0}}},
-      {" abc,defg", 2, {{1, 3}, {5, 4}, {-1, 0}}},
-      {" abc, defg", 2, {{1, 3}, {6, 4}, {-1, 0}}},
-      {" abc , defg", 2, {{1, 3}, {7, 4}, {-1, 0}}},
-      {" abc , defg ", 2, {{1, 3}, {7, 4}, {-1, 0}}},
-      {" abc , defg, ", 3, {{1, 3}, {7, 4}, {12, 0}}},
-      {" abc , defg ,", 3, {{1, 3}, {7, 4}, {13, 0}}},
-      {", abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}},
-      {" ,abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}},
-      {"a,b", 2, {{0, 1}, {2, 1}, {-1, 0}}},
-      {"a,,b", 3, {{0, 1}, {2, 0}, {3, 1}}},
-      {"a, ,b", 3, {{0, 1}, {2, 0}, {4, 1}}},
-      {"a ,,b", 3, {{0, 1}, {3, 0}, {4, 1}}},
-      {",", 2, {{0, 0}, {1, 0}, {-1, 0}}},
-      {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}}},
-      {", ", 2, {{0, 0}, {1, 0}, {-1, 0}}},
-      {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}}},
-      {"a,b,", 3, {{0, 1}, {2, 1}, {4, 0}}},
-      {"a,b, ", 3, {{0, 1}, {2, 1}, {4, 0}}},
-      {"a,b,  ", 3, {{0, 1}, {2, 1}, {4, 0}}},
-      {"a,b,  c", 3, {{0, 1}, {2, 1}, {6, 1}}},
-      {"a,b,  c ", 3, {{0, 1}, {2, 1}, {6, 1}}},
-      {"a,\"b,c\",d", 3, {{0, 1}, {3, 3}, {8, 1}}},
+      {"",              1, {{0, 0}, {-1, 0}, {-1, 0}}},
+      {",",             2, {{0, 0}, {1, 0}, {-1, 0}} },
+      {" ,",            2, {{0, 0}, {2, 0}, {-1, 0}} },
+      {", ",            2, {{0, 0}, {1, 0}, {-1, 0}} },
+      {" , ",           2, {{0, 0}, {2, 0}, {-1, 0}} },
+      {"abc,",          2, {{0, 3}, {4, 0}, {-1, 0}} },
+      {"abc, ",         2, {{0, 3}, {4, 0}, {-1, 0}} },
+      {"",              1, {{0, 0}, {-1, 0}, {-1, 0}}},
+      {" ",             1, {{0, 0}, {-1, 0}, {-1, 0}}},
+      {"  ",            1, {{0, 0}, {-1, 0}, {-1, 0}}},
+      {"a",             1, {{0, 1}, {-1, 0}, {-1, 0}}},
+      {" a",            1, {{1, 1}, {-1, 0}, {-1, 0}}},
+      {"  a  ",         1, {{2, 1}, {-1, 0}, {-1, 0}}},
+      {"abc,defg",      2, {{0, 3}, {4, 4}, {-1, 0}} },
+      {" abc,defg",     2, {{1, 3}, {5, 4}, {-1, 0}} },
+      {" abc, defg",    2, {{1, 3}, {6, 4}, {-1, 0}} },
+      {" abc , defg",   2, {{1, 3}, {7, 4}, {-1, 0}} },
+      {" abc , defg ",  2, {{1, 3}, {7, 4}, {-1, 0}} },
+      {" abc , defg, ", 3, {{1, 3}, {7, 4}, {12, 0}} },
+      {" abc , defg ,", 3, {{1, 3}, {7, 4}, {13, 0}} },
+      {", abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}  },
+      {" ,abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}  },
+      {"a,b",           2, {{0, 1}, {2, 1}, {-1, 0}} },
+      {"a,,b",          3, {{0, 1}, {2, 0}, {3, 1}}  },
+      {"a, ,b",         3, {{0, 1}, {2, 0}, {4, 1}}  },
+      {"a ,,b",         3, {{0, 1}, {3, 0}, {4, 1}}  },
+      {",",             2, {{0, 0}, {1, 0}, {-1, 0}} },
+      {" ,",            2, {{0, 0}, {2, 0}, {-1, 0}} },
+      {", ",            2, {{0, 0}, {1, 0}, {-1, 0}} },
+      {" , ",           2, {{0, 0}, {2, 0}, {-1, 0}} },
+      {"a,b,",          3, {{0, 1}, {2, 1}, {4, 0}}  },
+      {"a,b, ",         3, {{0, 1}, {2, 1}, {4, 0}}  },
+      {"a,b,  ",        3, {{0, 1}, {2, 1}, {4, 0}}  },
+      {"a,b,  c",       3, {{0, 1}, {2, 1}, {6, 1}}  },
+      {"a,b,  c ",      3, {{0, 1}, {2, 1}, {6, 1}}  },
+      {"a,\"b,c\",d",   3, {{0, 1}, {3, 3}, {8, 1}}  },
     };
 
     int i, j, ntests, offset;

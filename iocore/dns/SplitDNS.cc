@@ -407,7 +407,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
 
   for (int i = 0; i < numTok; i++) {
     const char *current = pTok[i];
-    int cnt             = sz += strlen(current);
+    int cnt = sz += strlen(current);
 
     if (MAXDNAME - 1 < sz) {
       break;

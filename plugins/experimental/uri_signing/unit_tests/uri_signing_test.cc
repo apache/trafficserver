@@ -362,7 +362,10 @@ TEST_CASE("2", "[JWSFromURLTest]")
                                 "URISigningPackage", NULL));
   }
 
-  SECTION("Empty string as URL") { REQUIRE(!jws_parsing_helper("", "URISigningPackage", NULL)); }
+  SECTION("Empty string as URL")
+  {
+    REQUIRE(!jws_parsing_helper("", "URISigningPackage", NULL));
+  }
 
   SECTION("Empty package name to parser")
   {
@@ -432,41 +435,95 @@ TEST_CASE("3", "[RemoveDotSegmentsTest]")
 {
   INFO("TEST 3, Test Removal of Dot Segments From Paths");
 
-  SECTION("../bar test") { REQUIRE(remove_dot_helper("../bar", "bar")); }
+  SECTION("../bar test")
+  {
+    REQUIRE(remove_dot_helper("../bar", "bar"));
+  }
 
-  SECTION("./bar test") { REQUIRE(remove_dot_helper("./bar", "bar")); }
+  SECTION("./bar test")
+  {
+    REQUIRE(remove_dot_helper("./bar", "bar"));
+  }
 
-  SECTION(".././bar test") { REQUIRE(remove_dot_helper(".././bar", "bar")); }
+  SECTION(".././bar test")
+  {
+    REQUIRE(remove_dot_helper(".././bar", "bar"));
+  }
 
-  SECTION("./../bar test") { REQUIRE(remove_dot_helper("./../bar", "bar")); }
+  SECTION("./../bar test")
+  {
+    REQUIRE(remove_dot_helper("./../bar", "bar"));
+  }
 
-  SECTION("/foo/./bar test") { REQUIRE(remove_dot_helper("/foo/./bar", "/foo/bar")); }
+  SECTION("/foo/./bar test")
+  {
+    REQUIRE(remove_dot_helper("/foo/./bar", "/foo/bar"));
+  }
 
-  SECTION("/bar/./ test") { REQUIRE(remove_dot_helper("/bar/./", "/bar/")); }
+  SECTION("/bar/./ test")
+  {
+    REQUIRE(remove_dot_helper("/bar/./", "/bar/"));
+  }
 
-  SECTION("/. test") { REQUIRE(remove_dot_helper("/.", "/")); }
+  SECTION("/. test")
+  {
+    REQUIRE(remove_dot_helper("/.", "/"));
+  }
 
-  SECTION("/bar/. test") { REQUIRE(remove_dot_helper("/bar/.", "/bar/")); }
+  SECTION("/bar/. test")
+  {
+    REQUIRE(remove_dot_helper("/bar/.", "/bar/"));
+  }
 
-  SECTION("/foo/../bar test") { REQUIRE(remove_dot_helper("/foo/../bar", "/bar")); }
+  SECTION("/foo/../bar test")
+  {
+    REQUIRE(remove_dot_helper("/foo/../bar", "/bar"));
+  }
 
-  SECTION("/bar/../ test") { REQUIRE(remove_dot_helper("/bar/../", "/")); }
+  SECTION("/bar/../ test")
+  {
+    REQUIRE(remove_dot_helper("/bar/../", "/"));
+  }
 
-  SECTION("/.. test") { REQUIRE(remove_dot_helper("/..", "/")); }
+  SECTION("/.. test")
+  {
+    REQUIRE(remove_dot_helper("/..", "/"));
+  }
 
-  SECTION("/bar/.. test") { REQUIRE(remove_dot_helper("/bar/..", "/")); }
+  SECTION("/bar/.. test")
+  {
+    REQUIRE(remove_dot_helper("/bar/..", "/"));
+  }
 
-  SECTION("/foo/bar/.. test") { REQUIRE(remove_dot_helper("/foo/bar/..", "/foo/")); }
+  SECTION("/foo/bar/.. test")
+  {
+    REQUIRE(remove_dot_helper("/foo/bar/..", "/foo/"));
+  }
 
-  SECTION("Single . test") { REQUIRE(remove_dot_helper(".", "")); }
+  SECTION("Single . test")
+  {
+    REQUIRE(remove_dot_helper(".", ""));
+  }
 
-  SECTION("Single .. test") { REQUIRE(remove_dot_helper("..", "")); }
+  SECTION("Single .. test")
+  {
+    REQUIRE(remove_dot_helper("..", ""));
+  }
 
-  SECTION("Test foo/bar/.. test") { REQUIRE(remove_dot_helper("foo/bar/..", "foo/")); }
+  SECTION("Test foo/bar/.. test")
+  {
+    REQUIRE(remove_dot_helper("foo/bar/..", "foo/"));
+  }
 
-  SECTION("Test Empty Path Segment") { REQUIRE(remove_dot_helper("", "")); }
+  SECTION("Test Empty Path Segment")
+  {
+    REQUIRE(remove_dot_helper("", ""));
+  }
 
-  SECTION("Test mixed operations") { REQUIRE(remove_dot_helper("/foo/bar/././something/../foobar", "/foo/bar/foobar")); }
+  SECTION("Test mixed operations")
+  {
+    REQUIRE(remove_dot_helper("/foo/bar/././something/../foobar", "/foo/bar/foobar"));
+  }
   fprintf(stderr, "\n");
 }
 
@@ -474,11 +531,20 @@ TEST_CASE("4", "[NormalizeTest]")
 {
   INFO("TEST 4, Test Normalization of URIs");
 
-  SECTION("Testing passing too small of a URI to normalize") { REQUIRE(!normalize_uri_helper("ht", NULL)); }
+  SECTION("Testing passing too small of a URI to normalize")
+  {
+    REQUIRE(!normalize_uri_helper("ht", NULL));
+  }
 
-  SECTION("Testing passing non http/https protocol") { REQUIRE(!normalize_uri_helper("ht:", NULL)); }
+  SECTION("Testing passing non http/https protocol")
+  {
+    REQUIRE(!normalize_uri_helper("ht:", NULL));
+  }
 
-  SECTION("Passing a uri with half encoded value at end") { REQUIRE(!normalize_uri_helper("http://www.foobar.co%4", NULL)); }
+  SECTION("Passing a uri with half encoded value at end")
+  {
+    REQUIRE(!normalize_uri_helper("http://www.foobar.co%4", NULL));
+  }
 
   SECTION("Passing a uri with half encoded value in the middle")
   {
@@ -555,13 +621,25 @@ TEST_CASE("4", "[NormalizeTest]")
                                  "https://foo:something@kellogstester.com/here"));
   }
 
-  SECTION("Testing empty hostname with userinfon") { REQUIRE(!normalize_uri_helper("https://foo:something@", NULL)); }
+  SECTION("Testing empty hostname with userinfon")
+  {
+    REQUIRE(!normalize_uri_helper("https://foo:something@", NULL));
+  }
 
-  SECTION("Testing empty uri after http://") { REQUIRE(!normalize_uri_helper("http://", NULL)); }
+  SECTION("Testing empty uri after http://")
+  {
+    REQUIRE(!normalize_uri_helper("http://", NULL));
+  }
 
-  SECTION("Testing http:///////") { REQUIRE(!normalize_uri_helper("http:///////", NULL)); }
+  SECTION("Testing http:///////")
+  {
+    REQUIRE(!normalize_uri_helper("http:///////", NULL));
+  }
 
-  SECTION("Testing empty uri after http://?/") { REQUIRE(!normalize_uri_helper("http://?/", NULL)); }
+  SECTION("Testing empty uri after http://?/")
+  {
+    REQUIRE(!normalize_uri_helper("http://?/", NULL));
+  }
   fprintf(stderr, "\n");
 }
 
@@ -575,9 +653,15 @@ TEST_CASE("5", "[RegexTests]")
                         "http://kelloggsTester.souza.local/KellogsDir/some_manifest.m3u8"));
   }
 
-  SECTION("Back references are not supported") { REQUIRE(!match_regex("(b*a)\\1$", "bbbbba")); }
+  SECTION("Back references are not supported")
+  {
+    REQUIRE(!match_regex("(b*a)\\1$", "bbbbba"));
+  }
 
-  SECTION("Escape a special character") { REQUIRE(match_regex("money\\$", "money$bags")); }
+  SECTION("Escape a special character")
+  {
+    REQUIRE(match_regex("money\\$", "money$bags"));
+  }
 
   SECTION("Dollar sign")
   {
@@ -591,7 +675,10 @@ TEST_CASE("5", "[RegexTests]")
     REQUIRE(!match_regex("(abab){2}", "abab"));
   }
 
-  SECTION("Alternation") { REQUIRE(match_regex("cat|dog", "dog")); }
+  SECTION("Alternation")
+  {
+    REQUIRE(match_regex("cat|dog", "dog"));
+  }
   fprintf(stderr, "\n");
 }
 

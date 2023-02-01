@@ -146,11 +146,11 @@ public:
   }
 
 protected: // For unit test.
-  JsonRPCManager()                       = default;
-  JsonRPCManager(JsonRPCManager const &) = delete;
-  JsonRPCManager(JsonRPCManager &&)      = delete;
+  JsonRPCManager()                                  = default;
+  JsonRPCManager(JsonRPCManager const &)            = delete;
+  JsonRPCManager(JsonRPCManager &&)                 = delete;
   JsonRPCManager &operator=(JsonRPCManager const &) = delete;
-  JsonRPCManager &operator=(JsonRPCManager &&) = delete;
+  JsonRPCManager &operator=(JsonRPCManager &&)      = delete;
 
   ///
   /// @brief Remove handler from the registered method handlers. Test only.

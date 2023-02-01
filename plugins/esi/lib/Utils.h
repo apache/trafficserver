@@ -71,7 +71,7 @@ namespace Utils
         ;
       for (j = (data_len - 1); ((j > i) && isspace(data[j])); --j)
         ;
-      data += i;
+      data     += i;
       data_len = j - i + 1;
     }
   }

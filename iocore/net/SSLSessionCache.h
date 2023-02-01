@@ -32,7 +32,7 @@
 #include <mutex>
 #include <tscpp/util/TsSharedMutex.h>
 
-#define SSL_MAX_SESSION_SIZE 256
+#define SSL_MAX_SESSION_SIZE      256
 #define SSL_MAX_ORIG_SESSION_SIZE 4096
 
 struct ssl_session_cache_exdata {
@@ -102,7 +102,7 @@ struct SSLSessionID : public TSSslSessionID {
       if (buflen > 2) { // we have enough space for 3 bytes, 2 hex and 1 null terminator
         snprintf(cur_pos, 3 /* including a null terminator */, "%02hhX", static_cast<unsigned char>(bytes[i]));
         cur_pos += 2;
-        buflen -= 2;
+        buflen  -= 2;
       } else { // not enough space for any more hex bytes, just null terminate
         *cur_pos = '\0';
         break;
@@ -176,7 +176,7 @@ public:
   SSLSessionCache();
   ~SSLSessionCache();
 
-  SSLSessionCache(const SSLSessionCache &) = delete;
+  SSLSessionCache(const SSLSessionCache &)            = delete;
   SSLSessionCache &operator=(const SSLSessionCache &) = delete;
 
 private:

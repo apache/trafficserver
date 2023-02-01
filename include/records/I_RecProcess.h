@@ -125,8 +125,8 @@ inline int
 RecIncrRawStat(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
-  tlp->sum += incr;
-  tlp->count += 1;
+  tlp->sum        += incr;
+  tlp->count      += 1;
   return REC_ERR_OKAY;
 }
 
@@ -134,8 +134,8 @@ inline int
 RecDecrRawStat(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t decr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
-  tlp->sum -= decr;
-  tlp->count += 1;
+  tlp->sum        -= decr;
+  tlp->count      += 1;
   return REC_ERR_OKAY;
 }
 
@@ -143,7 +143,7 @@ inline int
 RecIncrRawStatSum(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
-  tlp->sum += incr;
+  tlp->sum        += incr;
   return REC_ERR_OKAY;
 }
 
@@ -151,6 +151,6 @@ inline int
 RecIncrRawStatCount(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
-  tlp->count += incr;
+  tlp->count      += incr;
   return REC_ERR_OKAY;
 }

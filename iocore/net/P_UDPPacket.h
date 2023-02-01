@@ -110,7 +110,7 @@ UDPPacket::getPktLength() const
   b            = p->chain.get();
   while (b) {
     p->pktLength += b->read_avail();
-    b = b->next.get();
+    b            = b->next.get();
   }
   return p->pktLength;
 }

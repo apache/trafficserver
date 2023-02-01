@@ -72,7 +72,7 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
     while (b) {
       memcpy(this->_payload.get() + written, b->start(), b->read_avail());
       written += b->read_avail();
-      b = b->next.get();
+      b       = b->next.get();
     }
   }
 

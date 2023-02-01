@@ -58,19 +58,19 @@ struct NetVCOptions;
 //
 
 #define NON_BLOCKING_CONNECT true
-#define BLOCKING_CONNECT false
-#define CONNECT_WITH_TCP true
-#define CONNECT_WITH_UDP false
-#define NON_BLOCKING true
-#define BLOCKING false
-#define BIND_RANDOM_PORT true
-#define BIND_ANY_PORT false
-#define ENABLE_MC_LOOPBACK true
-#define DISABLE_MC_LOOPBACK false
-#define BC_NO_CONNECT true
-#define BC_CONNECT false
-#define BC_NO_BIND true
-#define BC_BIND false
+#define BLOCKING_CONNECT     false
+#define CONNECT_WITH_TCP     true
+#define CONNECT_WITH_UDP     false
+#define NON_BLOCKING         true
+#define BLOCKING             false
+#define BIND_RANDOM_PORT     true
+#define BIND_ANY_PORT        false
+#define ENABLE_MC_LOOPBACK   true
+#define DISABLE_MC_LOOPBACK  false
+#define BC_NO_CONNECT        true
+#define BC_CONNECT           false
+#define BC_NO_BIND           true
+#define BC_BIND              false
 
 ///////////////////////////////////////////////////////////////////////
 //

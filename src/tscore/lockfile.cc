@@ -85,7 +85,7 @@ Lockfile::Open(pid_t *holding_pid)
       }
 
       size -= err;
-      t += err;
+      t    += err;
     }
 
     *t = '\0';

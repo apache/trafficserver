@@ -46,12 +46,12 @@ config_from_args(int const argc, char const *argv[], PluginType const ptype)
   Config *const conf = new Config;
 
   static const struct option longopt[] = {
-    {const_cast<char *>("passthru"), required_argument, nullptr, 'a'},
-    {const_cast<char *>("create-if-none"), required_argument, nullptr, 'c'},
+    {const_cast<char *>("passthru"),           required_argument, nullptr, 'a'},
+    {const_cast<char *>("create-if-none"),     required_argument, nullptr, 'c'},
     {const_cast<char *>("global-skip-header"), required_argument, nullptr, 'g'},
-    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("pregen-header"), required_argument, nullptr, 'p'},
-    {nullptr, 0, nullptr, 0},
+    {const_cast<char *>("header"),             required_argument, nullptr, 'h'},
+    {const_cast<char *>("pregen-header"),      required_argument, nullptr, 'p'},
+    {nullptr,                                  0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1' so this hack is needed

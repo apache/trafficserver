@@ -112,7 +112,7 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
     ssl_sess_ptr += sizeof(int64_t);
 
     // Length
-    ret = *reinterpret_cast<int32_t *>(ssl_sess_ptr);
+    ret          = *reinterpret_cast<int32_t *>(ssl_sess_ptr);
     ssl_sess_ptr += sizeof(int32_t);
 
     len_all = ret + sizeof(int64_t) + sizeof(int32_t);

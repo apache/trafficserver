@@ -28,7 +28,7 @@
 #include "PluginVC.h"
 #include "ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
 
-#define DEBUG_TAG "FetchSM"
+#define DEBUG_TAG             "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 
 ClassAllocator<FetchSM> FetchSMAllocator("FetchSMAllocator");
@@ -393,7 +393,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
       if ((bytes_used > 0) && (bytes_used <= read_avail)) {
         memcpy(info, buf, bytes_used);
-        info += bytes_used;
+        info         += bytes_used;
         client_bytes += bytes_used;
       }
     } else {
@@ -421,8 +421,8 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       if ((read_done > 0) && ((read_done <= read_avail))) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
-        read_avail -= read_done;
-        info += read_done;
+        read_avail   -= read_done;
+        info         += read_done;
         client_bytes += read_done;
       }
     }
@@ -456,8 +456,8 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       if ((read_done > 0) && (read_done <= read_avail)) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
-        read_avail -= read_done;
-        info += read_done;
+        read_avail   -= read_done;
+        info         += read_done;
         client_bytes += read_done;
       }
     }

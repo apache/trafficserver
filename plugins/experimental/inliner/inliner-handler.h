@@ -54,7 +54,7 @@ namespace inliner
 
     Handler(const TSIOBufferReader, ats::io::IOSinkPointer &&);
 
-    Handler(const Handler &) = delete;
+    Handler(const Handler &)            = delete;
     Handler &operator=(const Handler &) = delete;
 
     void parse();

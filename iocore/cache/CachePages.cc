@@ -164,7 +164,7 @@ struct ShowCache : public ShowCont {
   }
 };
 
-#define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
+#define STREQ_PREFIX(_x, _s)         (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
 
 Action *
@@ -385,10 +385,10 @@ ShowCache::handleCacheEvent(int event, Event *e)
         CHECK_SHOW(show("<tr><td>Request Header</td><td><PRE>"));
         offset = 0;
         do {
-          used = 0;
-          tmp  = offset;
-          done = cached_request->print(b, 4095, &used, &tmp);
-          offset += used;
+          used    = 0;
+          tmp     = offset;
+          done    = cached_request->print(b, 4095, &used, &tmp);
+          offset  += used;
           b[used] = '\0';
           CHECK_SHOW(show("%s", b));
         } while (!done);
@@ -398,10 +398,10 @@ ShowCache::handleCacheEvent(int event, Event *e)
         CHECK_SHOW(show("<tr><td>Response Header</td><td><PRE>"));
         offset = 0;
         do {
-          used = 0;
-          tmp  = offset;
-          done = cached_response->print(b, 4095, &used, &tmp);
-          offset += used;
+          used    = 0;
+          tmp     = offset;
+          done    = cached_response->print(b, 4095, &used, &tmp);
+          offset  += used;
           b[used] = '\0';
           CHECK_SHOW(show("%s", b));
         } while (!done);

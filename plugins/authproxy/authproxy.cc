@@ -105,42 +105,49 @@ StateContinue(AuthRequestContext *, void *)
 }
 
 // State table for sending the auth proxy response to the client.
-static const StateTransition StateTableSendResponse[] = {{TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateAuthProxySendResponse, nullptr},
-                                                         {TS_EVENT_NONE, nullptr, nullptr}};
+static const StateTransition StateTableSendResponse[] = {
+  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateAuthProxySendResponse, nullptr},
+  {TS_EVENT_NONE,                   nullptr,                    nullptr}
+};
 
 // State table for reading the proxy response body content.
 static const StateTransition StateTableProxyReadContent[] = {
-  {TS_EVENT_VCONN_READ_READY, StateAuthProxyReadContent, StateTableProxyReadContent},
-  {TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadContent, StateTableProxyReadContent},
-  {TS_EVENT_VCONN_EOS, StateAuthProxyCompleteContent, StateTableProxyReadContent},
-  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse},
-  {TS_EVENT_ERROR, StateUnauthorized, nullptr},
-  {TS_EVENT_IMMEDIATE, StateAuthorized, nullptr},
-  {TS_EVENT_NONE, nullptr, nullptr}};
+  {TS_EVENT_VCONN_READ_READY,       StateAuthProxyReadContent,     StateTableProxyReadContent},
+  {TS_EVENT_VCONN_READ_COMPLETE,    StateAuthProxyReadContent,     StateTableProxyReadContent},
+  {TS_EVENT_VCONN_EOS,              StateAuthProxyCompleteContent, StateTableProxyReadContent},
+  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue,                 StateTableSendResponse    },
+  {TS_EVENT_ERROR,                  StateUnauthorized,             nullptr                   },
+  {TS_EVENT_IMMEDIATE,              StateAuthorized,               nullptr                   },
+  {TS_EVENT_NONE,                   nullptr,                       nullptr                   }
+};
 
 // State table for reading the auth proxy response header.
 static const StateTransition StateTableProxyReadHeader[] = {
-  {TS_EVENT_VCONN_READ_READY, StateAuthProxyReadHeaders, StateTableProxyReadHeader},
-  {TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadHeaders, StateTableProxyReadHeader},
-  {TS_EVENT_HTTP_READ_REQUEST_HDR, StateAuthProxyCompleteHeaders, StateTableProxyReadHeader},
-  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse},
-  {TS_EVENT_HTTP_CONTINUE, StateAuthProxyReadContent, StateTableProxyReadContent},
-  {TS_EVENT_VCONN_EOS, StateUnauthorized, nullptr}, // XXX Should we check headers on EOS?
-  {TS_EVENT_ERROR, StateUnauthorized, nullptr},
-  {TS_EVENT_IMMEDIATE, StateAuthorized, nullptr},
-  {TS_EVENT_NONE, nullptr, nullptr}};
+  {TS_EVENT_VCONN_READ_READY,       StateAuthProxyReadHeaders,     StateTableProxyReadHeader },
+  {TS_EVENT_VCONN_READ_COMPLETE,    StateAuthProxyReadHeaders,     StateTableProxyReadHeader },
+  {TS_EVENT_HTTP_READ_REQUEST_HDR,  StateAuthProxyCompleteHeaders, StateTableProxyReadHeader },
+  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue,                 StateTableSendResponse    },
+  {TS_EVENT_HTTP_CONTINUE,          StateAuthProxyReadContent,     StateTableProxyReadContent},
+  {TS_EVENT_VCONN_EOS,              StateUnauthorized,             nullptr                   }, // XXX Should we check headers on EOS?
+  {TS_EVENT_ERROR,                  StateUnauthorized,             nullptr                   },
+  {TS_EVENT_IMMEDIATE,              StateAuthorized,               nullptr                   },
+  {TS_EVENT_NONE,                   nullptr,                       nullptr                   }
+};
 
 // State table for sending the request to the auth proxy.
 static const StateTransition StateTableProxyRequest[] = {
-  {TS_EVENT_VCONN_WRITE_READY, StateAuthProxyWriteReady, StateTableProxyRequest},
+  {TS_EVENT_VCONN_WRITE_READY,    StateAuthProxyWriteReady,    StateTableProxyRequest   },
   {TS_EVENT_VCONN_WRITE_COMPLETE, StateAuthProxyWriteComplete, StateTableProxyReadHeader},
-  {TS_EVENT_ERROR, StateUnauthorized, nullptr},
-  {TS_EVENT_NONE, nullptr, nullptr}};
+  {TS_EVENT_ERROR,                StateUnauthorized,           nullptr                  },
+  {TS_EVENT_NONE,                 nullptr,                     nullptr                  }
+};
 
 // Initial state table.
-static const StateTransition StateTableInit[] = {{TS_EVENT_HTTP_POST_REMAP, StateAuthProxyConnect, StateTableProxyRequest},
-                                                 {TS_EVENT_ERROR, StateUnauthorized, nullptr},
-                                                 {TS_EVENT_NONE, nullptr, nullptr}};
+static const StateTransition StateTableInit[] = {
+  {TS_EVENT_HTTP_POST_REMAP, StateAuthProxyConnect, StateTableProxyRequest},
+  {TS_EVENT_ERROR,           StateUnauthorized,     nullptr               },
+  {TS_EVENT_NONE,            nullptr,               nullptr               }
+};
 
 struct AuthRequestContext {
   TSHttpTxn txn = nullptr; // Original client transaction we are authorizing.
@@ -723,13 +730,13 @@ AuthParseOptions(int argc, const char **argv)
   // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
   // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
   static const struct option longopt[] = {
-    {const_cast<char *>("auth-host"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("auth-port"), required_argument, nullptr, 'p'},
-    {const_cast<char *>("auth-transform"), required_argument, nullptr, 't'},
-    {const_cast<char *>("force-cacheability"), no_argument, nullptr, 'c'},
-    {const_cast<char *>("cache-internal"), no_argument, nullptr, 'i'},
+    {const_cast<char *>("auth-host"),             required_argument, nullptr, 'h'},
+    {const_cast<char *>("auth-port"),             required_argument, nullptr, 'p'},
+    {const_cast<char *>("auth-transform"),        required_argument, nullptr, 't'},
+    {const_cast<char *>("force-cacheability"),    no_argument,       nullptr, 'c'},
+    {const_cast<char *>("cache-internal"),        no_argument,       nullptr, 'i'},
     {const_cast<char *>("forward-header-prefix"), required_argument, nullptr, 'f'},
-    {nullptr, 0, nullptr, 0},
+    {nullptr,                                     0,                 nullptr, 0  },
   };
 
   AuthOptions *options = AuthNew<AuthOptions>();

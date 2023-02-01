@@ -74,5 +74,5 @@ void _RecDebug(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...);
 
 void RecDebugOff();
 
-#define RecLog(level, fmt, ...) _RecLog(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
+#define RecLog(level, fmt, ...)   _RecLog(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
 #define RecDebug(level, fmt, ...) _RecDebug(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)

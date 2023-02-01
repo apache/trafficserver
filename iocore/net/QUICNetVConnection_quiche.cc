@@ -28,7 +28,7 @@
 
 static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
 
-#define QUICConDebug(fmt, ...) Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICConDebug(fmt, ...)  Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 #define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");

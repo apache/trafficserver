@@ -61,7 +61,7 @@ Http2DataFrame::write_to(MIOBuffer *iobuffer) const
     // Fill current IOBufferBlock as much as possible to reduce SSL_write() calls
     while (written < this->_payload_len) {
       int64_t read_len = std::min(this->_payload_len - written, this->_reader->block_read_avail());
-      written += iobuffer->write(this->_reader->start(), read_len);
+      written          += iobuffer->write(this->_reader->start(), read_len);
       this->_reader->consume(read_len);
     }
     len += written;

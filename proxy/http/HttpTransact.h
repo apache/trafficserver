@@ -60,10 +60,10 @@
       offset = 0;                                               \
       if ((H)->valid()) {                                       \
         do {                                                    \
-          used = 0;                                             \
-          tmp  = offset;                                        \
-          done = (H)->print(b, 4095, &used, &tmp);              \
-          offset += used;                                       \
+          used    = 0;                                          \
+          tmp     = offset;                                     \
+          done    = (H)->print(b, 4095, &used, &tmp);           \
+          offset  += used;                                      \
           b[used] = '\0';                                       \
           fprintf(stderr, "%s", b);                             \
         } while (!done);                                        \
@@ -217,7 +217,7 @@ const int32_t HTTP_UNDEFINED_CL = -1;
 //
 //////////////////////////////////////////////////////////////////////////////
 #define SET_VIA_STRING(I, S) s->via_string[I] = S;
-#define GET_VIA_STRING(I) (s->via_string[I])
+#define GET_VIA_STRING(I)    (s->via_string[I])
 
 class HttpTransact
 {

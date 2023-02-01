@@ -259,10 +259,14 @@ LRUPolicy::stats_add(const char *remap_id)
 {
   std::string_view remap_identifier                 = remap_id;
   const std::tuple<std::string_view, int *> stats[] = {
-    {"cache_hits", &_cache_hits_id}, {"freelist_size", &_freelist_size_id},
-    {"lru_size", &_lru_size_id},     {"lru_hit", &_lru_hit_id},
-    {"lru_miss", &_lru_miss_id},     {"lru_vacated", &_lru_vacated_id},
-    {"promoted", &_promoted_id},     {"total_requests", &_total_requests_id},
+    {"cache_hits",     &_cache_hits_id    },
+    {"freelist_size",  &_freelist_size_id },
+    {"lru_size",       &_lru_size_id      },
+    {"lru_hit",        &_lru_hit_id       },
+    {"lru_miss",       &_lru_miss_id      },
+    {"lru_vacated",    &_lru_vacated_id   },
+    {"promoted",       &_promoted_id      },
+    {"total_requests", &_total_requests_id},
   };
 
   if (nullptr == remap_id) {

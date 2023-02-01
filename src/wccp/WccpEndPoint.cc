@@ -29,13 +29,13 @@
 namespace wccp
 {
 #if defined IP_RECVDSTADDR
-#define DSTADDR_SOCKOPT IP_RECVDSTADDR
+#define DSTADDR_SOCKOPT  IP_RECVDSTADDR
 #define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_addr)))
-#define dstaddr(x) (CMSG_DATA(x))
+#define dstaddr(x)       (CMSG_DATA(x))
 #elif defined IP_PKTINFO
-#define DSTADDR_SOCKOPT IP_PKTINFO
+#define DSTADDR_SOCKOPT  IP_PKTINFO
 #define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_pktinfo)))
-#define dstaddr(x) (&(((struct in_pktinfo *)(CMSG_DATA(x)))->ipi_addr))
+#define dstaddr(x)       (&(((struct in_pktinfo *)(CMSG_DATA(x)))->ipi_addr))
 #else
 #error "can't determine socket option"
 #endif
@@ -480,7 +480,7 @@ CacheImpl::GroupData::cullRouters(time_t now)
 CacheImpl::GroupData &
 CacheImpl::GroupData::viewChanged(time_t now)
 {
-  m_generation += 1;
+  m_generation      += 1;
   m_generation_time = now;
   m_assign_info.setActive(false); // invalidate current assignment.
   m_assignment_pending = m_routers.size() && m_caches.size();
@@ -678,7 +678,7 @@ CacheImpl::housekeeping()
         if (0 <= zret) {
           logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].", group.m_svc.getSvcId(),
                ip_addr_to_str(sspot->m_addr), group.m_generation, now, here_i_am.getCount());
-          sspot->m_xmit = now;
+          sspot->m_xmit  = now;
           sspot->m_count += 1;
         } else
           logf(LVL_DEBUG, "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].", zret, strerror(errno),

@@ -90,7 +90,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
         _debugLog(_debug_tag, "[%s] Got value [%.*s] for variable [%.*s]", __FUNCTION__, var_value.size(), var_value.data(),
                   var_size, expr + var_start_index);
         last_variable_expanded = (var_value.size() > 0);
-        _value += var_value;
+        _value                 += var_value;
       } else {
         _debugLog(_debug_tag, "[%s] Parsing out empty variable", __FUNCTION__);
       }

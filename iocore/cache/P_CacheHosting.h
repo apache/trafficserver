@@ -166,7 +166,7 @@ public:
     }
 
   private:
-    ScopedReader(const ScopedReader &) = delete;
+    ScopedReader(const ScopedReader &)            = delete;
     ScopedReader &operator=(const ScopedReader &) = delete;
 
     ReplaceablePtr<T> *ptr;
@@ -198,14 +198,14 @@ public:
     }
 
   private:
-    ScopedWriter(const ScopedWriter &) = delete;
+    ScopedWriter(const ScopedWriter &)            = delete;
     ScopedWriter &operator=(const ScopedWriter &) = delete;
 
     ReplaceablePtr<T> *ptr;
   };
 
 private:
-  ReplaceablePtr(const ReplaceablePtr &) = delete;
+  ReplaceablePtr(const ReplaceablePtr &)            = delete;
   ReplaceablePtr &operator=(const ReplaceablePtr &) = delete;
 
   std::unique_ptr<T> h = nullptr;

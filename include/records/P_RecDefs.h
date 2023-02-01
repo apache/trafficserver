@@ -30,27 +30,27 @@
 // We need at least this many internal record entries for our configurations and metrics. Any
 // additional slots in librecords will be allocated to the plugin metrics. These should be
 // updated if we change the internal librecords size significantly.
-#define REC_INTERNAL_RECORDS 1100
+#define REC_INTERNAL_RECORDS    1100
 #define REC_DEFAULT_API_RECORDS 1400
 
 #define REC_CONFIG_UPDATE_INTERVAL_MS 3000
-#define REC_REMOTE_SYNC_INTERVAL_MS 5000
+#define REC_REMOTE_SYNC_INTERVAL_MS   5000
 
 #define REC_RAW_STAT_SYNC_INTERVAL_MS 5000
-#define REC_STAT_UPDATE_INTERVAL_MS 10000
+#define REC_STAT_UPDATE_INTERVAL_MS   10000
 
 //-------------------------------------------------------------------------
 // Record Items
 //-------------------------------------------------------------------------
 
-#define REC_LOCAL_UPDATE_REQUIRED 1
+#define REC_LOCAL_UPDATE_REQUIRED   1
 #define REC_PROCESS_UPDATE_REQUIRED (REC_LOCAL_UPDATE_REQUIRED << 1)
-#define REC_UPDATE_REQUIRED (REC_LOCAL_UPDATE_REQUIRED | REC_PROCESS_UPDATE_REQUIRED)
+#define REC_UPDATE_REQUIRED         (REC_LOCAL_UPDATE_REQUIRED | REC_PROCESS_UPDATE_REQUIRED)
 
 #define REC_DISK_SYNC_REQUIRED 1
 #define REC_PEER_SYNC_REQUIRED (REC_DISK_SYNC_REQUIRED << 1)
 #define REC_INC_CONFIG_VERSION (REC_PEER_SYNC_REQUIRED << 1)
-#define REC_SYNC_REQUIRED (REC_DISK_SYNC_REQUIRED | REC_PEER_SYNC_REQUIRED)
+#define REC_SYNC_REQUIRED      (REC_DISK_SYNC_REQUIRED | REC_PEER_SYNC_REQUIRED)
 
 enum RecEntryT {
   RECE_NULL,

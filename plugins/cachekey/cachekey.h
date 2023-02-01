@@ -69,7 +69,7 @@ public:
   bool finalize() const;
 
   // noncopyable
-  CacheKey(const CacheKey &) = delete;            // disallow
+  CacheKey(const CacheKey &)            = delete; // disallow
   CacheKey &operator=(const CacheKey &) = delete; // disallow
 
 private:

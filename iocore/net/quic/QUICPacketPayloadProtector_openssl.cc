@@ -67,7 +67,7 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
       return false;
     }
     cipher_len += len;
-    b = b->next;
+    b          = b->next;
   }
 
   if (!EVP_EncryptFinal_ex(aead_ctx, cipher + cipher_len, &len)) {

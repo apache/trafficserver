@@ -551,7 +551,7 @@ HttpProxyPort::print(char *out, size_t n)
   bool need_colon_p = false;
 
   if (m_inbound_ip.isValid()) {
-    zret += snprintf(out + zret, n - zret, "%s=[%s]", OPT_INBOUND_IP_PREFIX, m_inbound_ip.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_INBOUND_IP_PREFIX, m_inbound_ip.toString(ipb, sizeof(ipb)));
     need_colon_p = true;
   }
   if (zret >= n) {
@@ -562,7 +562,7 @@ HttpProxyPort::print(char *out, size_t n)
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip4.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip4.toString(ipb, sizeof(ipb)));
     need_colon_p = true;
   }
   if (zret >= n) {
@@ -573,7 +573,7 @@ HttpProxyPort::print(char *out, size_t n)
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip6.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip6.toString(ipb, sizeof(ipb)));
     need_colon_p = true;
   }
   if (zret >= n) {
@@ -584,7 +584,7 @@ HttpProxyPort::print(char *out, size_t n)
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret += snprintf(out + zret, n - zret, "%d", m_port);
+    zret         += snprintf(out + zret, n - zret, "%d", m_port);
     need_colon_p = true;
   }
   if (zret >= n) {
@@ -692,7 +692,7 @@ HttpProxyPort::print(char *out, size_t n)
     for (int k = 0; k < SessionProtocolSet::MAX; ++k) {
       if (sp_set.contains(k)) {
         auto name{globalSessionProtocolNameRegistry.nameFor(k)};
-        zret += snprintf(out + zret, n - zret, "%s%.*s", sep_p ? ";" : "", static_cast<int>(name.size()), name.data());
+        zret  += snprintf(out + zret, n - zret, "%s%.*s", sep_p ? ";" : "", static_cast<int>(name.size()), name.data());
         sep_p = true;
       }
     }
@@ -900,7 +900,7 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
     }
 
     auto const protocol_wire_format = globalSessionProtocolNameRegistry.convert_openssl_alpn_wire_format(protocol_index);
-    computed_alpn_array_len += protocol_wire_format.size();
+    computed_alpn_array_len         += protocol_wire_format.size();
     if (computed_alpn_array_len > orig_wire_format_buffer_len) {
       // We have exceeded the size of the output buffer.
       Error("The output ALPN length (%d bytes) is larger than the output buffer size of %d bytes", computed_alpn_array_len,

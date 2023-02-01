@@ -113,10 +113,15 @@ http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], Mgmt
 ////////////////////////////////////////////////////////////////
 /// Session sharing match types.
 static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] = {
-  {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"}, {TS_SERVER_SESSION_SHARING_MATCH_IP, "ip"},
-  {TS_SERVER_SESSION_SHARING_MATCH_HOST, "host"}, {TS_SERVER_SESSION_SHARING_MATCH_HOST, "hostsni"},
-  {TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both"}, {TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY, "hostonly"},
-  {TS_SERVER_SESSION_SHARING_MATCH_SNI, "sni"},   {TS_SERVER_SESSION_SHARING_MATCH_CERT, "cert"}};
+  {TS_SERVER_SESSION_SHARING_MATCH_NONE,     "none"    },
+  {TS_SERVER_SESSION_SHARING_MATCH_IP,       "ip"      },
+  {TS_SERVER_SESSION_SHARING_MATCH_HOST,     "host"    },
+  {TS_SERVER_SESSION_SHARING_MATCH_HOST,     "hostsni" },
+  {TS_SERVER_SESSION_SHARING_MATCH_BOTH,     "both"    },
+  {TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY, "hostonly"},
+  {TS_SERVER_SESSION_SHARING_MATCH_SNI,      "sni"     },
+  {TS_SERVER_SESSION_SHARING_MATCH_CERT,     "cert"    }
+};
 
 bool
 HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
@@ -167,7 +172,8 @@ http_config_enum_mask_read(const char *name, MgmtByte &value)
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
   {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"},
-  {TS_SERVER_SESSION_SHARING_POOL_HYBRID, "hybrid"}};
+  {TS_SERVER_SESSION_SHARING_POOL_HYBRID, "hybrid"}
+};
 
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
@@ -1401,13 +1407,13 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.max_payload_iobuf_index, "proxy.config.payload.io.max_buffer_index");
   HttpEstablishStaticConfigLongLong(c.max_msg_iobuf_index, "proxy.config.msg.io.max_buffer_index");
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# See RecordsConfig definition.
-  //#
-  //##############################################################################
+  // ##############################################################################
+  // #
+  // # Redirection
+  // #
+  // # See RecordsConfig definition.
+  // #
+  // ##############################################################################
   HttpEstablishStaticConfigByte(c.oride.redirect_use_orig_cache_key, "proxy.config.http.redirect_use_orig_cache_key");
   HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
@@ -1941,8 +1947,8 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
   // SELF
   // We must store the self address class separately instead of adding the addresses to our map.
   // The addresses Trafficserver will use depend on configurations that are loaded here, so they are not available yet.
-  action = configMapping.find(AddressClass::SELF) != configMapping.end() ? configMapping[AddressClass::SELF] :
-                                                                           configMapping[AddressClass::DEFAULT];
+  action      = configMapping.find(AddressClass::SELF) != configMapping.end() ? configMapping[AddressClass::SELF] :
+                                                                                configMapping[AddressClass::DEFAULT];
   self_action = action;
 
   // IpMap::fill only marks things that are not already marked.

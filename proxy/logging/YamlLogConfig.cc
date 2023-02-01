@@ -105,9 +105,12 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   return true;
 }
 
-TsEnumDescriptor ROLLING_MODE_TEXT = {{{"none", 0}, {"time", 1}, {"size", 2}, {"both", 3}, {"any", 4}}};
-TsEnumDescriptor ROLLING_MODE_LUA  = {
-  {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}};
+TsEnumDescriptor ROLLING_MODE_TEXT = {
+  {{"none", 0}, {"time", 1}, {"size", 2}, {"both", 3}, {"any", 4}}
+};
+TsEnumDescriptor ROLLING_MODE_LUA = {
+  {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}
+};
 
 std::set<std::string> valid_log_object_keys = {"filename",
                                                "format",
@@ -165,8 +168,8 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   if (node["mode"]) {
     std::string mode = node["mode"].as<std::string>();
     file_type        = (0 == strncasecmp(mode.c_str(), "bin", 3) || (1 == mode.size() && mode[0] == 'b') ?
-                   LOG_FILE_BINARY :
-                   (0 == strcasecmp(mode.c_str(), "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
+                          LOG_FILE_BINARY :
+                          (0 == strcasecmp(mode.c_str(), "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
   }
 
   int obj_rolling_enabled      = cfg->rolling_enabled;

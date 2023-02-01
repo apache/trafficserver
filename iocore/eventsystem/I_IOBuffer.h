@@ -58,11 +58,11 @@ enum AllocType {
   DEFAULT_ALLOC,
 };
 
-#define DEFAULT_BUFFER_NUMBER 128
-#define DEFAULT_HUGE_BUFFER_NUMBER 32
-#define MAX_MIOBUFFER_READERS 5
-#define DEFAULT_BUFFER_ALIGNMENT 8192 // should be disk/page size
-#define DEFAULT_BUFFER_BASE_SIZE 128
+#define DEFAULT_BUFFER_NUMBER               128
+#define DEFAULT_HUGE_BUFFER_NUMBER          32
+#define MAX_MIOBUFFER_READERS               5
+#define DEFAULT_BUFFER_ALIGNMENT            8192 // should be disk/page size
+#define DEFAULT_BUFFER_BASE_SIZE            128
 #define DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK 0 // ensure we retain existing behavior
 
 ////////////////////////////////////////////////
@@ -71,43 +71,43 @@ enum AllocType {
 // still work if it uses BUFFER_SIZE_INDEX_2K //
 // instead.                                   //
 ////////////////////////////////////////////////
-#define BUFFER_SIZE_INDEX_128 0
-#define BUFFER_SIZE_INDEX_256 1
-#define BUFFER_SIZE_INDEX_512 2
-#define BUFFER_SIZE_INDEX_1K 3
-#define BUFFER_SIZE_INDEX_2K 4
-#define BUFFER_SIZE_INDEX_4K 5
-#define BUFFER_SIZE_INDEX_8K 6
-#define BUFFER_SIZE_INDEX_16K 7
-#define BUFFER_SIZE_INDEX_32K 8
-#define BUFFER_SIZE_INDEX_64K 9
+#define BUFFER_SIZE_INDEX_128  0
+#define BUFFER_SIZE_INDEX_256  1
+#define BUFFER_SIZE_INDEX_512  2
+#define BUFFER_SIZE_INDEX_1K   3
+#define BUFFER_SIZE_INDEX_2K   4
+#define BUFFER_SIZE_INDEX_4K   5
+#define BUFFER_SIZE_INDEX_8K   6
+#define BUFFER_SIZE_INDEX_16K  7
+#define BUFFER_SIZE_INDEX_32K  8
+#define BUFFER_SIZE_INDEX_64K  9
 #define BUFFER_SIZE_INDEX_128K 10
 #define BUFFER_SIZE_INDEX_256K 11
 #define BUFFER_SIZE_INDEX_512K 12
-#define BUFFER_SIZE_INDEX_1M 13
-#define BUFFER_SIZE_INDEX_2M 14
-#define MAX_BUFFER_SIZE_INDEX 14
-#define DEFAULT_BUFFER_SIZES (MAX_BUFFER_SIZE_INDEX + 1)
+#define BUFFER_SIZE_INDEX_1M   13
+#define BUFFER_SIZE_INDEX_2M   14
+#define MAX_BUFFER_SIZE_INDEX  14
+#define DEFAULT_BUFFER_SIZES   (MAX_BUFFER_SIZE_INDEX + 1)
 
 #define BUFFER_SIZE_FOR_INDEX(_i) (DEFAULT_BUFFER_BASE_SIZE * (1 << (_i)))
 #define DEFAULT_SMALL_BUFFER_SIZE BUFFER_SIZE_INDEX_512
 #define DEFAULT_LARGE_BUFFER_SIZE BUFFER_SIZE_INDEX_4K
-#define DEFAULT_TS_BUFFER_SIZE BUFFER_SIZE_INDEX_8K
-#define DEFAULT_MAX_BUFFER_SIZE BUFFER_SIZE_FOR_INDEX(MAX_BUFFER_SIZE_INDEX)
-#define MIN_IOBUFFER_SIZE BUFFER_SIZE_INDEX_128
-#define MAX_IOBUFFER_SIZE (DEFAULT_BUFFER_SIZES - 1)
+#define DEFAULT_TS_BUFFER_SIZE    BUFFER_SIZE_INDEX_8K
+#define DEFAULT_MAX_BUFFER_SIZE   BUFFER_SIZE_FOR_INDEX(MAX_BUFFER_SIZE_INDEX)
+#define MIN_IOBUFFER_SIZE         BUFFER_SIZE_INDEX_128
+#define MAX_IOBUFFER_SIZE         (DEFAULT_BUFFER_SIZES - 1)
 
 #define BUFFER_SIZE_ALLOCATED(_i) (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_i) || BUFFER_SIZE_INDEX_IS_XMALLOCED(_i))
 
-#define BUFFER_SIZE_NOT_ALLOCATED DEFAULT_BUFFER_SIZES
-#define BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index) (_size_index < 0)
+#define BUFFER_SIZE_NOT_ALLOCATED                        DEFAULT_BUFFER_SIZES
+#define BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index)      (_size_index < 0)
 #define BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index) (((uint64_t)_size_index) < DEFAULT_BUFFER_SIZES)
-#define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index) (_size_index >= DEFAULT_BUFFER_SIZES)
+#define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index)       (_size_index >= DEFAULT_BUFFER_SIZES)
 
-#define BUFFER_SIZE_FOR_XMALLOC(_size) (-(_size))
+#define BUFFER_SIZE_FOR_XMALLOC(_size)            (-(_size))
 #define BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(_size) (-(_size))
 
-#define BUFFER_SIZE_FOR_CONSTANT(_size) (_size - DEFAULT_BUFFER_SIZES)
+#define BUFFER_SIZE_FOR_CONSTANT(_size)            (_size - DEFAULT_BUFFER_SIZES)
 #define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size + DEFAULT_BUFFER_SIZES)
 
 extern FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
@@ -235,7 +235,7 @@ public:
   IOBufferData() : _size_index(BUFFER_SIZE_NOT_ALLOCATED) {}
 
   // noncopyable, declaration only
-  IOBufferData(const IOBufferData &) = delete;
+  IOBufferData(const IOBufferData &)            = delete;
   IOBufferData &operator=(const IOBufferData &) = delete;
 };
 
@@ -478,7 +478,7 @@ public:
   IOBufferBlock();
 
   // noncopyable
-  IOBufferBlock(const IOBufferBlock &) = delete;
+  IOBufferBlock(const IOBufferBlock &)            = delete;
   IOBufferBlock &operator=(const IOBufferBlock &) = delete;
 };
 
@@ -1280,7 +1280,7 @@ struct MIOBufferAccessor {
 #endif
 
   // noncopyable
-  MIOBufferAccessor(const MIOBufferAccessor &) = delete;
+  MIOBufferAccessor(const MIOBufferAccessor &)            = delete;
   MIOBufferAccessor &operator=(const MIOBufferAccessor &) = delete;
 
 private:
@@ -1319,7 +1319,7 @@ public:
 };
 
 /// MIOBuffer allocator/deallocator
-#define new_MIOBuffer MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
+#define new_MIOBuffer       MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_empty_MIOBuffer Empty_MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
 extern void free_MIOBuffer(MIOBuffer *mio);
 //////////////////////////////////////////////////////////////////////
@@ -1368,7 +1368,7 @@ public:
 };
 
 // TODO: remove new_xmalloc_IOBufferData. Because ats_xmalloc() doesn't exist anymore.
-#define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
+#define new_IOBufferData                  IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
 
 extern int64_t iobuffer_size_to_index(int64_t size, int64_t max);
@@ -1414,7 +1414,7 @@ IOBufferChain::operator+=(self_type const &that)
   else {
     _tail->next = that._head;
     _tail       = that._tail;
-    _len += that._len;
+    _len        += that._len;
   }
   return *this;
 }

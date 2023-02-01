@@ -53,7 +53,7 @@ class Http1ServerSession : public PoolableSession
 
 public:
   Http1ServerSession();
-  Http1ServerSession(self_type const &) = delete;
+  Http1ServerSession(self_type const &)   = delete;
   self_type &operator=(self_type const &) = delete;
   ~Http1ServerSession()                   = default;
 

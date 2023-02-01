@@ -47,7 +47,7 @@
 #include "tscore/PendingAction.h"
 
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
-#define HTTP_API_ERROR (INK_API_EVENT_EVENTS_START + 1)
+#define HTTP_API_ERROR    (INK_API_EVENT_EVENTS_START + 1)
 
 // The default size for http header buffers when we don't
 //   need to include extra space for the document

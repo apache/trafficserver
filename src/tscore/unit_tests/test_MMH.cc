@@ -93,15 +93,15 @@ TEST_CASE("MMH", "[libts][MMH]")
   int l                  = sizeof(MMH_x);
   unsigned char *s1      = (unsigned char *)ats_malloc(l + sizeof(uint32_t));
   unsigned char *free_s1 = s1;
-  s1 += 1;
+  s1                     += 1;
   memcpy(s1, s, l);
   unsigned char *s2      = (unsigned char *)ats_malloc(l + sizeof(uint32_t));
   unsigned char *free_s2 = s2;
-  s2 += 2;
+  s2                     += 2;
   memcpy(s2, s, l);
   unsigned char *s3      = (unsigned char *)ats_malloc(l + sizeof(uint32_t));
   unsigned char *free_s3 = s3;
-  s3 += 3;
+  s3                     += 3;
   memcpy(s3, s, l);
 
   printf("test alignment\n");

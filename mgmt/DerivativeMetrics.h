@@ -35,6 +35,6 @@ public:
   void Update();
 
   // Don't allow copy and assign
-  DerivativeMetrics(DerivativeMetrics const &) = delete;
+  DerivativeMetrics(DerivativeMetrics const &)            = delete;
   DerivativeMetrics &operator=(DerivativeMetrics const &) = delete;
 };

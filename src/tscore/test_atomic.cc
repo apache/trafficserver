@@ -33,7 +33,7 @@
 
 #ifndef LONG_ATOMICLIST_TEST
 
-#define MAX_ALIST_TEST 10
+#define MAX_ALIST_TEST  10
 #define MAX_ALIST_ARRAY 100000
 InkAtomicList al[MAX_ALIST_TEST];
 void *al_test[MAX_ALIST_TEST][MAX_ALIST_ARRAY];
@@ -60,9 +60,9 @@ testalist(void *ame)
 
 #ifdef LONG_ATOMICLIST_TEST
 /************************************************************************/
-#define MAX_ATOMIC_LISTS (4 * 1024)
+#define MAX_ATOMIC_LISTS   (4 * 1024)
 #define MAX_ITEMS_PER_LIST (1 * 1024)
-#define MAX_TEST_THREADS 64
+#define MAX_TEST_THREADS   64
 static InkAtomicList alists[MAX_ATOMIC_LISTS];
 struct listItem *items[MAX_ATOMIC_LISTS * MAX_ITEMS_PER_LIST];
 

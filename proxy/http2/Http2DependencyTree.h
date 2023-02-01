@@ -71,7 +71,7 @@ public:
     }
   }
 
-  Node(const Node &) = delete;
+  Node(const Node &)            = delete;
   Node &operator=(const Node &) = delete;
 
   LINK(Node, link);

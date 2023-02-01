@@ -211,7 +211,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
       if (saved > buffer_size) {
         b->fill(buffer_size);
         saved -= buffer_size;
-        b = b->next.get();
+        b     = b->next.get();
       } else {
         b->fill(saved);
         saved      = 0;
@@ -975,8 +975,8 @@ sendPackets:
       goto next_pkt;
     }
 
-    bytesUsed += pktLen;
-    bytesThisPipe -= pktLen;
+    bytesUsed           += pktLen;
+    bytesThisPipe       -= pktLen;
     packets[npackets++] = p;
   next_pkt:
     if (bytesThisPipe < 0 && npackets == N_MAX_PACKETS) {
@@ -1223,7 +1223,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
             std::min(packet->segment_size, static_cast<uint16_t>(packet->chain.get()->end() - static_cast<char *>(iov->iov_base)));
           msg->msg_iov    = iov;
           msg->msg_iovlen = iov_len;
-          offset += iov->iov_len;
+          offset          += iov->iov_len;
           vlen++;
         }
         ink_assert(offset == packet->chain.get()->size());

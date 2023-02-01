@@ -1246,10 +1246,9 @@ struct IpAddr {
   bool
   operator==(self const &that) const
   {
-    return _family == AF_INET ?
-             (that._family == AF_INET && _addr._ip4 == that._addr._ip4) :
-             _family == AF_INET6 ? (that._family == AF_INET6 && 0 == memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE)) :
-                                   (_family == AF_UNSPEC && that._family == AF_UNSPEC);
+    return _family == AF_INET  ? (that._family == AF_INET && _addr._ip4 == that._addr._ip4) :
+           _family == AF_INET6 ? (that._family == AF_INET6 && 0 == memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE)) :
+                                 (_family == AF_UNSPEC && that._family == AF_UNSPEC);
   }
 
   /// Inequality.

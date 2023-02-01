@@ -146,10 +146,10 @@ tmr_create(struct timeval *nowP, TimerProc *timer_proc, ClientData client_data, 
     t->time = *nowP;
   else
     (void)gettimeofday(&t->time, (struct timezone *)0);
-  t->time.tv_sec += msecs / 1000L;
+  t->time.tv_sec  += msecs / 1000L;
   t->time.tv_usec += (msecs % 1000L) * 1000L;
   if (t->time.tv_usec >= 1000000L) {
-    t->time.tv_sec += t->time.tv_usec / 1000000L;
+    t->time.tv_sec  += t->time.tv_usec / 1000000L;
     t->time.tv_usec %= 1000000L;
   }
   t->hash = hash(t);
@@ -232,10 +232,10 @@ tmr_run(struct timeval *nowP)
       (t->timer_proc)(t->client_data, nowP);
       if (t->periodic) {
         /* Reschedule. */
-        t->time.tv_sec += t->msecs / 1000L;
+        t->time.tv_sec  += t->msecs / 1000L;
         t->time.tv_usec += (t->msecs % 1000L) * 1000L;
         if (t->time.tv_usec >= 1000000L) {
-          t->time.tv_sec += t->time.tv_usec / 1000000L;
+          t->time.tv_sec  += t->time.tv_usec / 1000000L;
           t->time.tv_usec %= 1000000L;
         }
         l_resort(t);
@@ -249,10 +249,10 @@ tmr_reset(struct timeval *nowP, Timer *t)
 {
   mstimeout_cache = -1;
   t->time         = *nowP;
-  t->time.tv_sec += t->msecs / 1000L;
+  t->time.tv_sec  += t->msecs / 1000L;
   t->time.tv_usec += (t->msecs % 1000L) * 1000L;
   if (t->time.tv_usec >= 1000000L) {
-    t->time.tv_sec += t->time.tv_usec / 1000000L;
+    t->time.tv_sec  += t->time.tv_usec / 1000000L;
     t->time.tv_usec %= 1000000L;
   }
   l_resort(t);

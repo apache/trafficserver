@@ -251,7 +251,7 @@ public:
         }
         data->prev = nullptr;
         data->next = nullptr;
-        size -= 1;
+        size       -= 1;
       }
     }
     TSMutexUnlock(list_mutex);
@@ -569,9 +569,13 @@ TSPluginInit(int argc, const char *argv[])
 
   // Read options from plugin.config
   static const struct option longopts[] = {
-    {"sign-cert", required_argument, nullptr, 'c'},   {"sign-key", required_argument, nullptr, 'k'},
-    {"sign-serial", required_argument, nullptr, 'r'}, {"max", required_argument, nullptr, 'm'},
-    {"store", required_argument, nullptr, 's'},       {nullptr, no_argument, nullptr, 0}};
+    {"sign-cert",   required_argument, nullptr, 'c'},
+    {"sign-key",    required_argument, nullptr, 'k'},
+    {"sign-serial", required_argument, nullptr, 'r'},
+    {"max",         required_argument, nullptr, 'm'},
+    {"store",       required_argument, nullptr, 's'},
+    {nullptr,       no_argument,       nullptr, 0  }
+  };
 
   int opt = 0;
   while (opt >= 0) {

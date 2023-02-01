@@ -95,16 +95,18 @@ TSPluginInit(int argc, char const *argv[])
   std::string client_ip_filter;
 
   /// Commandline options
-  static const struct option longopts[] = {{"dump_body", no_argument, nullptr, 'b'},
-                                           {"logdir", required_argument, nullptr, 'l'},
-                                           {"sample", required_argument, nullptr, 's'},
-                                           {"limit", required_argument, nullptr, 'm'},
-                                           {"sensitive-fields", required_argument, nullptr, 'f'},
-                                           {"sni-filter", required_argument, nullptr, 'n'},
-                                           {"client_ipv4", required_argument, nullptr, '4'},
-                                           {"client_ipv6", required_argument, nullptr, '6'},
-                                           {nullptr, no_argument, nullptr, 0}};
-  int opt                               = 0;
+  static const struct option longopts[] = {
+    {"dump_body",        no_argument,       nullptr, 'b'},
+    {"logdir",           required_argument, nullptr, 'l'},
+    {"sample",           required_argument, nullptr, 's'},
+    {"limit",            required_argument, nullptr, 'm'},
+    {"sensitive-fields", required_argument, nullptr, 'f'},
+    {"sni-filter",       required_argument, nullptr, 'n'},
+    {"client_ipv4",      required_argument, nullptr, '4'},
+    {"client_ipv6",      required_argument, nullptr, '6'},
+    {nullptr,            no_argument,       nullptr, 0  }
+  };
+  int opt = 0;
   while (opt >= 0) {
     opt = getopt_long(argc, const_cast<char *const *>(argv), "bf:l:s:m:n:4:6", longopts, nullptr);
     switch (opt) {

@@ -54,7 +54,7 @@ public:
   };
 
   // noncopyable
-  SSLNextProtocolSet(const SSLNextProtocolSet &) = delete;            // disabled
+  SSLNextProtocolSet(const SSLNextProtocolSet &)            = delete; // disabled
   SSLNextProtocolSet &operator=(const SSLNextProtocolSet &) = delete; // disabled
 
 private:

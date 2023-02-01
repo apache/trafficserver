@@ -300,7 +300,7 @@ namespace io
 
     assert(operation->buffer_ != nullptr);
     const Node::Result result = data_->process(operation->buffer_);
-    operation->bytes_ += result.first;
+    operation->bytes_         += result.first;
     operation->process();
     if (result.second && data_.unique()) {
       data_.reset();
@@ -446,7 +446,7 @@ namespace io
     for (; it != end; ++it) {
       assert(*it != nullptr);
       const Node::Result result = (*it)->process(b);
-      length += result.first;
+      length                    += result.first;
       if (!result.second || !it->unique()) {
         break;
       }

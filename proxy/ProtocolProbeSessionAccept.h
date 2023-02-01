@@ -50,7 +50,7 @@ public:
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
 
   // noncopyable
-  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &) = delete;            // disabled
+  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &)            = delete; // disabled
   ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
 
   IpMap *proxy_protocol_ipmap = nullptr;

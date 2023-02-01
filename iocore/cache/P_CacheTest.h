@@ -26,9 +26,9 @@
 #include "P_Cache.h"
 #include "RegressionSM.h"
 
-#define MAX_HOSTS_POSSIBLE 256
+#define MAX_HOSTS_POSSIBLE    256
 #define PINNED_DOC_TABLE_SIZE 16
-#define PINNED_DOC_TABLES 246
+#define PINNED_DOC_TABLES     246
 
 struct PinnedDocEntry {
   CacheKey key;
@@ -127,22 +127,24 @@ struct CacheTestSM : public RegressionSM {
 };
 
 // It is 2010 and C++ STILL doesn't have closures, a technology of the 1950s, unbelievable
-#define CACHE_SM(_t, _sm, _f)                                               \
-  struct CacheTestSM__##_sm : public CacheTestSM {                          \
-    void                                                                    \
-    make_request_internal() override _f                                     \
-                                                                            \
-      CacheTestSM__##_sm(RegressionTest *t)                                 \
-      : CacheTestSM(t, #_sm)                                                \
-    {                                                                       \
-    }                                                                       \
-                                                                            \
-    CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) {} \
-    RegressionSM *                                                          \
-    clone() override                                                        \
-    {                                                                       \
-      return new CacheTestSM__##_sm(*this);                                 \
-    }                                                                       \
+#define CACHE_SM(_t, _sm, _f)                                            \
+  struct CacheTestSM__##_sm : public CacheTestSM {                       \
+    void                                                                 \
+    make_request_internal() override _f                                  \
+                                                                         \
+      CacheTestSM__##_sm(RegressionTest *t)                              \
+      : CacheTestSM(t, #_sm)                                             \
+    {                                                                    \
+    }                                                                    \
+                                                                         \
+    CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) \
+    {                                                                    \
+    }                                                                    \
+    RegressionSM *                                                       \
+    clone() override                                                     \
+    {                                                                    \
+      return new CacheTestSM__##_sm(*this);                              \
+    }                                                                    \
   } _sm(_t);
 
 void force_link_CacheTest();

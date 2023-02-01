@@ -77,56 +77,56 @@
 #include <array>
 
 #if defined(openbsd)
-#define NS_INT16SZ INT16SZ
-#define NS_INT32SZ INT32SZ
+#define NS_INT16SZ   INT16SZ
+#define NS_INT32SZ   INT32SZ
 #define NS_CMPRSFLGS INDIR_MASK
-#define NS_GET16 GETSHORT
-#define NS_GET32 GETLONG
-#define NS_PUT16 PUTSHORT
-#define NS_PUT32 PUTLONG
+#define NS_GET16     GETSHORT
+#define NS_GET32     GETLONG
+#define NS_PUT16     PUTSHORT
+#define NS_PUT32     PUTLONG
 #endif
 
 #ifndef T_DNAME
 #define T_DNAME ns_t_dname
 #endif
-#define INK_RES_F_VC 0x00000001       /*%< socket is TCP */
-#define INK_RES_F_CONN 0x00000002     /*%< socket is connected */
-#define INK_RES_F_EDNS0ERR 0x00000004 /*%< EDNS0 caused errors */
-#define INK_RES_F__UNUSED 0x00000008  /*%< (unused) */
-#define INK_RES_F_LASTMASK 0x000000F0 /*%< ordinal server of last res_nsend */
-#define INK_RES_F_LASTSHIFT 4         /*%< bit position of LASTMASK "flag" */
+#define INK_RES_F_VC         0x00000001 /*%< socket is TCP */
+#define INK_RES_F_CONN       0x00000002 /*%< socket is connected */
+#define INK_RES_F_EDNS0ERR   0x00000004 /*%< EDNS0 caused errors */
+#define INK_RES_F__UNUSED    0x00000008 /*%< (unused) */
+#define INK_RES_F_LASTMASK   0x000000F0 /*%< ordinal server of last res_nsend */
+#define INK_RES_F_LASTSHIFT  4          /*%< bit position of LASTMASK "flag" */
 #define INK_RES_GETLAST(res) (((res)._flags & INK_RES_F_LASTMASK) >> INK_RES_F_LASTSHIFT)
 
 /* res_findzonecut2() options */
 #define INK_RES_EXHAUSTIVE 0x00000001 /*%< always do all queries */
-#define INK_RES_IPV4ONLY 0x00000002   /*%< IPv4 only */
-#define INK_RES_IPV6ONLY 0x00000004   /*%< IPv6 only */
+#define INK_RES_IPV4ONLY   0x00000002 /*%< IPv4 only */
+#define INK_RES_IPV6ONLY   0x00000004 /*%< IPv6 only */
 
 /*%
  *  * Resolver options (keep these in synch with res_debug.c, please)
  [amc] Most of these are never used. AFAICT it's RECURSE and DEBUG only.
  *   */
-#define INK_RES_INIT 0x00000001           /*%< address initialized */
-#define INK_RES_DEBUG 0x00000002          /*%< print debug messages */
-#define INK_RES_AAONLY 0x00000004         /*%< authoritative answers only (!IMPL)*/
-#define INK_RES_USEVC 0x00000008          /*%< use virtual circuit */
-#define INK_RES_PRIMARY 0x00000010        /*%< query primary server only (!IMPL) */
-#define INK_RES_IGNTC 0x00000020          /*%< ignore truncation errors */
-#define INK_RES_RECURSE 0x00000040        /*%< recursion desired */
-#define INK_RES_DEFNAMES 0x00000080       /*%< use default domain name */
-#define INK_RES_STAYOPEN 0x00000100       /*%< Keep TCP socket open */
-#define INK_RES_DNSRCH 0x00000200         /*%< search up local domain tree */
-#define INK_RES_INSECURE1 0x00000400      /*%< type 1 security disabled */
-#define INK_RES_INSECURE2 0x00000800      /*%< type 2 security disabled */
-#define INK_RES_NOALIASES 0x00001000      /*%< shuts off HOSTALIASES feature */
-#define INK_RES_USE_INET6 0x00002000      /*%< use/map IPv6 in gethostbyname() */
-#define INK_RES_ROTATE 0x00004000         /*%< rotate ns list after each query */
+#define INK_RES_INIT        0x00000001    /*%< address initialized */
+#define INK_RES_DEBUG       0x00000002    /*%< print debug messages */
+#define INK_RES_AAONLY      0x00000004    /*%< authoritative answers only (!IMPL)*/
+#define INK_RES_USEVC       0x00000008    /*%< use virtual circuit */
+#define INK_RES_PRIMARY     0x00000010    /*%< query primary server only (!IMPL) */
+#define INK_RES_IGNTC       0x00000020    /*%< ignore truncation errors */
+#define INK_RES_RECURSE     0x00000040    /*%< recursion desired */
+#define INK_RES_DEFNAMES    0x00000080    /*%< use default domain name */
+#define INK_RES_STAYOPEN    0x00000100    /*%< Keep TCP socket open */
+#define INK_RES_DNSRCH      0x00000200    /*%< search up local domain tree */
+#define INK_RES_INSECURE1   0x00000400    /*%< type 1 security disabled */
+#define INK_RES_INSECURE2   0x00000800    /*%< type 2 security disabled */
+#define INK_RES_NOALIASES   0x00001000    /*%< shuts off HOSTALIASES feature */
+#define INK_RES_USE_INET6   0x00002000    /*%< use/map IPv6 in gethostbyname() */
+#define INK_RES_ROTATE      0x00004000    /*%< rotate ns list after each query */
 #define INK_RES_NOCHECKNAME 0x00008000    /*%< do not check names for sanity. */
-#define INK_RES_KEEPTSIG 0x00010000       /*%< do not strip TSIG records */
-#define INK_RES_BLAST 0x00020000          /*%< blast all recursive servers */
-#define INK_RES_NSID 0x00040000           /*%< request name server ID */
-#define INK_RES_NOTLDQUERY 0x00100000     /*%< don't unqualified name as a tld */
-#define INK_RES_USE_DNSSEC 0x00200000     /*%< use DNSSEC using OK bit in OPT */
+#define INK_RES_KEEPTSIG    0x00010000    /*%< do not strip TSIG records */
+#define INK_RES_BLAST       0x00020000    /*%< blast all recursive servers */
+#define INK_RES_NSID        0x00040000    /*%< request name server ID */
+#define INK_RES_NOTLDQUERY  0x00100000    /*%< don't unqualified name as a tld */
+#define INK_RES_USE_DNSSEC  0x00200000    /*%< use DNSSEC using OK bit in OPT */
 /* #define INK_RES_DEBUG2   0x00400000 */ /* nslookup internal */
 /* KAME extensions: use higher bit to avoid conflict with ISC use */
 #define INK_RES_USE_DNAME 0x10000000 /*%< use DNAME */
@@ -134,19 +134,19 @@
 
 #define INK_RES_DEFAULT (INK_RES_RECURSE | INK_RES_DEFNAMES | INK_RES_DNSRCH)
 
-#define INK_MAXNS 32           /*%< max # name servers we'll track */
-#define INK_MAXDFLSRCH 3       /*%< # default domain levels to try */
-#define INK_MAXDNSRCH 6        /*%< max # domains in search path */
-#define INK_LOCALDOMAINPARTS 2 /*%< min levels in name that is "local" */
-#define INK_RES_TIMEOUT 5      /*%< min. seconds between retries */
-#define INK_RES_TIMEOUT 5      /*%< min. seconds between retries */
-#define INK_RES_MAXNDOTS 15    /*%< should reflect bit field size */
-#define INK_RES_MAXRETRANS 30  /*%< only for resolv.conf/RES_OPTIONS */
-#define INK_RES_MAXRETRY 5     /*%< only for resolv.conf/RES_OPTIONS */
-#define INK_RES_DFLRETRY 2     /*%< Default #/tries. */
-#define INK_RES_MAXTIME 65535  /*%< Infinity, in milliseconds. */
+#define INK_MAXNS            32    /*%< max # name servers we'll track */
+#define INK_MAXDFLSRCH       3     /*%< # default domain levels to try */
+#define INK_MAXDNSRCH        6     /*%< max # domains in search path */
+#define INK_LOCALDOMAINPARTS 2     /*%< min levels in name that is "local" */
+#define INK_RES_TIMEOUT      5     /*%< min. seconds between retries */
+#define INK_RES_TIMEOUT      5     /*%< min. seconds between retries */
+#define INK_RES_MAXNDOTS     15    /*%< should reflect bit field size */
+#define INK_RES_MAXRETRANS   30    /*%< only for resolv.conf/RES_OPTIONS */
+#define INK_RES_MAXRETRY     5     /*%< only for resolv.conf/RES_OPTIONS */
+#define INK_RES_DFLRETRY     2     /*%< Default #/tries. */
+#define INK_RES_MAXTIME      65535 /*%< Infinity, in milliseconds. */
 
-#define INK_NS_TYPE_ELT 0x40 /*%< EDNS0 extended label type */
+#define INK_NS_TYPE_ELT             0x40 /*%< EDNS0 extended label type */
 #define INK_DNS_LABELTYPE_BITSTRING 0x41
 
 /// IP family preference for DNS resolution.
@@ -209,7 +209,7 @@ struct HostResData {
   do {                                                                   \
     const u_char *t_cp = (const u_char *)(cp);                           \
     (s)                = ((uint16_t)t_cp[0] << 8) | ((uint16_t)t_cp[1]); \
-    (cp) += NS_INT16SZ;                                                  \
+    (cp)               += NS_INT16SZ;                                    \
   } while (0)
 #endif
 
@@ -218,7 +218,7 @@ struct HostResData {
   do {                                                                                                                           \
     const u_char *t_cp = (const u_char *)(cp);                                                                                   \
     (l)                = ((uint32_t)t_cp[0] << 24) | ((uint32_t)t_cp[1] << 16) | ((uint32_t)t_cp[2] << 8) | ((uint32_t)t_cp[3]); \
-    (cp) += NS_INT32SZ;                                                                                                          \
+    (cp)               += NS_INT32SZ;                                                                                            \
   } while (0)
 #endif
 
@@ -229,7 +229,7 @@ struct HostResData {
     u_char *t_cp = (u_char *)(cp); \
     *t_cp++      = t_s >> 8;       \
     *t_cp        = t_s;            \
-    (cp) += NS_INT16SZ;            \
+    (cp)         += NS_INT16SZ;    \
   } while (0)
 #endif
 
@@ -242,7 +242,7 @@ struct HostResData {
     *t_cp++      = t_l >> 16;      \
     *t_cp++      = t_l >> 8;       \
     *t_cp        = t_l;            \
-    (cp) += NS_INT32SZ;            \
+    (cp)         += NS_INT32SZ;    \
   } while (0)
 #endif
 

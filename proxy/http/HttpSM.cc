@@ -64,8 +64,8 @@
 #include <logging/Log.h>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
-#define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
-#define MIN_CONFIG_BUFFER_SIZE_INDEX 5       // 4K
+#define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
+#define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
 
 #define hsm_release_assert(EX)              \
   {                                         \
@@ -2367,9 +2367,9 @@ HttpSM::state_hostdb_lookup(int event, void *data)
 
     char const *host_name = t_state.dns_info.is_srv() ? t_state.dns_info.record->name() : t_state.dns_info.lookup_name;
     HostDBProcessor::Options opt;
-    opt.port  = t_state.dns_info.is_srv() ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.host_order_port();
-    opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
-                                                                                 HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
+    opt.port           = t_state.dns_info.is_srv() ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.host_order_port();
+    opt.flags          = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
+                                                                                          HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
     opt.host_res_style = ats_host_res_from(ua_txn->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
 
@@ -3443,7 +3443,7 @@ HttpSM::tunnel_handler_ua_push(int event, HttpTunnelProducer *p)
   STATE_ENTER(&HttpSM::tunnel_handler_ua_push, event);
 
   pushed_response_body_bytes += p->bytes_read;
-  client_request_body_bytes += p->bytes_read;
+  client_request_body_bytes  += p->bytes_read;
 
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -4237,12 +4237,11 @@ HttpSM::do_hostdb_lookup()
     pending_action = hostDBProcessor.getSRVbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_srv_info, d, 0, opt);
     if (pending_action.empty()) {
       char const *host_name = t_state.dns_info.resolved_p ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
-      opt.port              = t_state.dns_info.resolved_p ?
-                   t_state.dns_info.srv_port :
-                   t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
-                                                            t_state.hdr_info.client_request.port_get();
-      opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
-                                                                                   HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
+      opt.port              = t_state.dns_info.resolved_p            ? t_state.dns_info.srv_port :
+                              t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
+                                                                       t_state.hdr_info.client_request.port_get();
+      opt.flags   = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
+                                                                                     HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
       opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
       opt.host_res_style =
         ats_host_res_from(ua_txn->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
@@ -4272,9 +4271,9 @@ HttpSM::do_hostdb_lookup()
     }
 
     HostDBProcessor::Options opt;
-    opt.port  = server_port;
-    opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
-                                                                                 HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
+    opt.port    = server_port;
+    opt.flags   = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
+                                                                                   HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
 
     opt.host_res_style = ats_host_res_from(ua_txn->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
@@ -4415,8 +4414,8 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     return;
   }
 
-  ranges = new RangeRecord[n_values];
-  value += 6; // skip leading 'bytes='
+  ranges    = new RangeRecord[n_values];
+  value     += 6; // skip leading 'bytes='
   value_len -= 6;
 
   // assume range_in_cache
@@ -6168,7 +6167,7 @@ HttpSM::write_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
     int tmp              = dumpoffset;
 
     ink_assert(block->write_avail() > 0);
-    done = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
+    done       = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
     ink_assert(bufindex > 0);
     b->fill(bufindex);
@@ -6319,7 +6318,7 @@ HttpSM::setup_server_send_request()
   // the plugin decided to append a message to the request
   if (t_state.api_server_request_body_set) {
     SMDebug("http", "appending msg of %" PRId64 " bytes to request %s", msg_len, t_state.internal_msg_buffer);
-    hdr_length += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
+    hdr_length                += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
     server_request_body_bytes = msg_len;
   }
 

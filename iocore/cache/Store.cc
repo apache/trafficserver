@@ -613,8 +613,8 @@ try_alloc(Store &target, Span *source, unsigned int start_blocks, bool one_only 
         source->offset += a;
       }
       source->blocks -= a;
-      ds = d;
-      blocks -= a;
+      ds             = d;
+      blocks         -= a;
       if (one_only) {
         break;
       }

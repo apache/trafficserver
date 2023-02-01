@@ -35,58 +35,48 @@
 static const std::vector<DerivativeSum> sum_metrics = {
   // Total bytes of client request body + headers
   {"proxy.process.http.user_agent_total_request_bytes",
-   RECD_INT,
-   {"proxy.process.http.user_agent_request_document_total_size", "proxy.process.http.user_agent_request_header_total_size"}},
-  // Total bytes of client response body + headers
+   RECD_INT,                                                              {"proxy.process.http.user_agent_request_document_total_size", "proxy.process.http.user_agent_request_header_total_size"}      },
+ // Total bytes of client response body + headers
   {"proxy.process.http.user_agent_total_response_bytes",
-   RECD_INT,
-   {"proxy.process.http.user_agent_response_document_total_size", "proxy.process.http.user_agent_response_header_total_size"}},
-  // Total bytes of origin server request body + headers
+   RECD_INT,                                                              {"proxy.process.http.user_agent_response_document_total_size", "proxy.process.http.user_agent_response_header_total_size"}    },
+ // Total bytes of origin server request body + headers
   {"proxy.process.http.origin_server_total_request_bytes",
-   RECD_INT,
-   {"proxy.process.http.origin_server_request_document_total_size", "proxy.process.http.origin_server_request_header_total_size"}},
-  // Total bytes of origin server response body + headers
+   RECD_INT,                                                              {"proxy.process.http.origin_server_request_document_total_size", "proxy.process.http.origin_server_request_header_total_size"}},
+ // Total bytes of origin server response body + headers
   {"proxy.process.http.origin_server_total_response_bytes",
-   RECD_INT,
-   {"proxy.process.http.origin_server_response_document_total_size",
-    "proxy.process.http.origin_server_response_header_total_size"}},
-  // Total bytes of client request and response (total traffic to and from clients)
+   RECD_INT,                                                              {"proxy.process.http.origin_server_response_document_total_size",
+    "proxy.process.http.origin_server_response_header_total_size"}                                                                                                                          },
+ // Total bytes of client request and response (total traffic to and from clients)
   {"proxy.process.user_agent_total_bytes",
-   RECD_INT,
-   {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}},
-  // Total bytes of origin/parent request and response
+   RECD_INT,                                                              {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}                   },
+ // Total bytes of origin/parent request and response
   {"proxy.process.origin_server_total_bytes",
-   RECD_INT,
-   {"proxy.process.http.origin_server_total_request_bytes", "proxy.process.http.origin_server_total_response_bytes",
-    "proxy.process.http.parent_proxy_request_total_bytes", "proxy.process.http.parent_proxy_response_total_bytes"}},
-  // Total requests which are cache hits
+   RECD_INT,                                                              {"proxy.process.http.origin_server_total_request_bytes", "proxy.process.http.origin_server_total_response_bytes",
+    "proxy.process.http.parent_proxy_request_total_bytes", "proxy.process.http.parent_proxy_response_total_bytes"}                                                                          },
+ // Total requests which are cache hits
   {"proxy.process.cache_total_hits",
-   RECD_COUNTER,
-   {"proxy.process.http.cache_hit_fresh", "proxy.process.http.cache_hit_revalidated", "proxy.process.http.cache_hit_ims",
-    "proxy.process.http.cache_hit_stale_served"}},
-  // Total requests which are cache misses
+   RECD_COUNTER,                                                          {"proxy.process.http.cache_hit_fresh", "proxy.process.http.cache_hit_revalidated", "proxy.process.http.cache_hit_ims",
+    "proxy.process.http.cache_hit_stale_served"}                                                                                                                                        },
+ // Total requests which are cache misses
   {"proxy.process.cache_total_misses",
-   RECD_COUNTER,
-   {"proxy.process.http.cache_miss_cold", "proxy.process.http.cache_miss_changed", "proxy.process.http.cache_miss_client_no_cache",
-    "proxy.process.http.cache_miss_ims", "proxy.process.http.cache_miss_client_not_cacheable"}},
-  // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
-  {"proxy.process.cache_total_requests", RECD_COUNTER, {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}},
-  // Total cache requests bytes which are cache hits
+   RECD_COUNTER,                                                          {"proxy.process.http.cache_miss_cold", "proxy.process.http.cache_miss_changed", "proxy.process.http.cache_miss_client_no_cache",
+    "proxy.process.http.cache_miss_ims", "proxy.process.http.cache_miss_client_not_cacheable"}                                                                                          },
+ // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
+  {"proxy.process.cache_total_requests",                    RECD_COUNTER, {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}                                                        },
+ // Total cache requests bytes which are cache hits
   {"proxy.process.cache_total_hits_bytes",
-   RECD_INT,
-   {"proxy.process.http.tcp_hit_user_agent_bytes_stat", "proxy.process.http.tcp_refresh_hit_user_agent_bytes_stat",
-    "proxy.process.http.tcp_ims_hit_user_agent_bytes_stat"}},
-  // Total cache requests bytes which are cache misses
+   RECD_INT,                                                              {"proxy.process.http.tcp_hit_user_agent_bytes_stat", "proxy.process.http.tcp_refresh_hit_user_agent_bytes_stat",
+    "proxy.process.http.tcp_ims_hit_user_agent_bytes_stat"}                                                                                                                                 },
+ // Total cache requests bytes which are cache misses
   {"proxy.process.cache_total_misses_bytes",
-   RECD_INT,
-   {"proxy.process.http.tcp_miss_user_agent_bytes_stat", "proxy.process.http.tcp_expired_miss_user_agent_bytes_stat",
-    "proxy.process.http.tcp_refresh_miss_user_agent_bytes_stat", "proxy.process.http.tcp_ims_miss_user_agent_bytes_stat"}},
-  // Total request bytes, both hits and misses
-  {"proxy.process.cache_total_bytes", RECD_INT, {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}},
-  // Total of all server connections (sum of origins and parent connections)
+   RECD_INT,                                                              {"proxy.process.http.tcp_miss_user_agent_bytes_stat", "proxy.process.http.tcp_expired_miss_user_agent_bytes_stat",
+    "proxy.process.http.tcp_refresh_miss_user_agent_bytes_stat", "proxy.process.http.tcp_ims_miss_user_agent_bytes_stat"}                                                                   },
+ // Total request bytes, both hits and misses
+  {"proxy.process.cache_total_bytes",                       RECD_INT,     {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}                                            },
+ // Total of all server connections (sum of origins and parent connections)
   {"proxy.process.current_server_connections",
-   RECD_INT,
-   {"proxy.process.http.current_server_connections", "proxy.process.http.current_parent_proxy_connections"}}};
+   RECD_INT,                                                              {"proxy.process.http.current_server_connections", "proxy.process.http.current_parent_proxy_connections"}                      }
+};
 
 // The constructor is responsible for registering the new metrics. ToDo: At some point we could
 // in theory expand this to support some sort of configuration, and then replace the hardcoded metrics
@@ -125,11 +115,11 @@ DerivativeMetrics::Update()
     for (auto &&metric : metric_parts) {
       switch (type) {
       case RECD_INT:
-        error = RecGetRecordInt(metric, &int_val);
+        error       = RecGetRecordInt(metric, &int_val);
         sum.rec_int += int_val;
         break;
       case RECD_COUNTER:
-        error = RecGetRecordCounter(metric, &counter_val);
+        error           = RecGetRecordCounter(metric, &counter_val);
         sum.rec_counter += counter_val;
         break;
       default:

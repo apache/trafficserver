@@ -412,7 +412,7 @@ substituteForHTMLChars(const char *buffer)
       break;
     default:
       *safeCurrent = *inCurrent;
-      safeCurrent += 1;
+      safeCurrent  += 1;
       break;
     }
 

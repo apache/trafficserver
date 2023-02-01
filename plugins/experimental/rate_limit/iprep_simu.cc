@@ -83,8 +83,13 @@ parseArgs(int argc, char **argv)
   CmdConfigs options;
   int c;
   constexpr struct option long_options[] = {
-    {"help", no_argument, NULL, 'h'},       {"buckets", required_argument, NULL, 'b'},   {"perma", required_argument, NULL, 'p'},
-    {"size", required_argument, NULL, 's'}, {"threshold", required_argument, NULL, 't'}, {NULL, 0, NULL, 0}};
+    {"help",      no_argument,       NULL, 'h'},
+    {"buckets",   required_argument, NULL, 'b'},
+    {"perma",     required_argument, NULL, 'p'},
+    {"size",      required_argument, NULL, 's'},
+    {"threshold", required_argument, NULL, 't'},
+    {NULL,        0,                 NULL, 0  }
+  };
 
   // Make sure the optional values have been set
 
@@ -208,9 +213,9 @@ main(int argc, char *argv[])
     for (uint32_t size = options.start_size; size <= options.end_size; size += options.incr_size) {
       for (uint32_t buckets = options.start_buckets; buckets <= options.end_buckets; buckets += options.incr_buckets) {
         for (uint32_t threshold = options.start_threshold; threshold <= options.end_threshold;
-             threshold += options.incr_threshold) {
+             threshold          += options.incr_threshold) {
           for (uint32_t permablock = options.start_permablock; permablock <= options.end_permablock;
-               permablock += options.incr_permablock) {
+               permablock          += options.incr_permablock) {
             // Setup the buckets and metrics for this loop
             IpReputation::SieveLru ipt(buckets, size);
 

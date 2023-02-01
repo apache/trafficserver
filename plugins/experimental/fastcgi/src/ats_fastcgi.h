@@ -18,12 +18,12 @@
 
 #pragma once
 
-#define PLUGIN_VENDOR "Apache Software Foundation"
+#define PLUGIN_VENDOR  "Apache Software Foundation"
 #define PLUGIN_SUPPORT "dev@trafficserver.apache.org"
 
 #define ATS_MODULE_FCGI_NAME "ats_fastcgi"
 #define ATS_MOD_FCGI_VERSION "ats_fastcgi"
-#define ATS_FCGI_PROFILER true
+#define ATS_FCGI_PROFILER    true
 
 #include "fcgi_config.h"
 #include <atscppapi/GlobalPlugin.h>

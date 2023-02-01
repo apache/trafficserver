@@ -63,8 +63,8 @@
 #define DISK_IS_ACTUAL_LOW_MESSAGE "Access logging to local log directory suspended - partition space is low."
 
 #define PARTITION_HEADROOM_MB 10
-#define DIAGS_LOG_FILENAME "diags.log"
-#define MANAGER_LOG_FILENAME "manager.log"
+#define DIAGS_LOG_FILENAME    "diags.log"
+#define MANAGER_LOG_FILENAME  "manager.log"
 
 void
 LogConfig::setup_default_values()
@@ -99,7 +99,8 @@ LogConfig::setup_default_values()
   logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 }
 
-void LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
+void
+LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
@@ -740,7 +741,7 @@ LogConfig::update_space_used()
                 victim->rolled_log_path.c_str(), victim->size);
 
           // Update after successful unlink;
-          m_space_used -= victim->size;
+          m_space_used           -= victim->size;
           m_partition_space_left += victim->size;
         }
       }

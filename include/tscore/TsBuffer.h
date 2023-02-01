@@ -433,7 +433,7 @@ ConstBuffer::operator++()
 inline ConstBuffer &
 ConstBuffer::operator+=(size_t n)
 {
-  _ptr += n;
+  _ptr  += n;
   _size -= n;
   return *this;
 }
@@ -465,7 +465,7 @@ ConstBuffer::splitOn(char const *p)
   if (this->contains(p)) {
     size_t n = p - _ptr;
     zret.set(_ptr, n);
-    _ptr = p + 1;
+    _ptr  = p + 1;
     _size -= n + 1;
   }
   return zret;

@@ -40,7 +40,7 @@
 static constexpr char debug_tag[]   = "quic_sec";
 static constexpr char v_debug_tag[] = "v_quic_sec";
 
-#define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
+#define QUICDebug(fmt, ...)       Debug(debug_tag, fmt, ##__VA_ARGS__)
 #define QUICQCDebug(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 // ["local dcid" - "local scid"]

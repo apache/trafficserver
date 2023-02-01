@@ -46,7 +46,7 @@ public:
   SSLNextProtocolSet *getProtoSet();
 
   // noncopyable
-  QUICNextProtocolAccept(const QUICNextProtocolAccept &) = delete;
+  QUICNextProtocolAccept(const QUICNextProtocolAccept &)            = delete;
   QUICNextProtocolAccept &operator=(const QUICNextProtocolAccept &) = delete;
 
 private:

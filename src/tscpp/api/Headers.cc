@@ -699,10 +699,10 @@ Headers::wireStr()
   string retval;
   for (auto &&iter : *this) {
     HeaderField hf = iter;
-    retval += hf.name().str();
-    retval += ": ";
-    retval += hf.values(", ");
-    retval += "\r\n";
+    retval         += hf.name().str();
+    retval         += ": ";
+    retval         += hf.values(", ");
+    retval         += "\r\n";
   }
   return retval;
 }

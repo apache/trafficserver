@@ -692,7 +692,7 @@ protected:
                                  */
   unsigned int m_unassigned : 1;
   unsigned int m_reserved_1 : 1; ///< Reserved (unused).
-  unsigned int m_is_mask : 1;    ///< Set -> mask, Clear -> hash.
+  unsigned int m_is_mask    : 1; ///< Set -> mask, Clear -> hash.
   unsigned int m_reserved_2 : 6; ///< Reserved (unused).
                                  /** Trailing elements common to all cache ID variants.
                                      Unfortunately, although @c weight and @c status are common, they are

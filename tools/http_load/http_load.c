@@ -107,7 +107,7 @@ static sip *sips;
 static int num_sips, max_sips;
 
 /* Protocol symbols. */
-#define PROTO_HTTP 0
+#define PROTO_HTTP  0
 #define PROTO_HTTPS 1
 
 /* Connection states */
@@ -298,12 +298,12 @@ main(int argc, char **argv)
 {
   int argn;
   int start;
-#define START_NONE 0
+#define START_NONE     0
 #define START_PARALLEL 1
-#define START_RATE 2
+#define START_RATE     2
   int start_parallel = -1, start_rate = -1;
   int end;
-#define END_NONE 0
+#define END_NONE    0
 #define END_FETCHES 1
 #define END_SECONDS 2
   int end_fetches = -1, end_seconds = -1;
@@ -649,7 +649,7 @@ read_url_file(char *url_file)
 
   char hdr_buf[2048];
   int hdr_bytes = 0;
-  hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
+  hdr_bytes     += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
   if (cookie)
     hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Cookie: %s\r\n", cookie);
   if (do_accept_gzip)
@@ -673,7 +673,7 @@ read_url_file(char *url_file)
     /* Check for room in urls. */
     if (num_urls >= max_urls) {
       max_urls *= 2;
-      urls = (url *)realloc_check((void *)urls, max_urls * sizeof(url));
+      urls     = (url *)realloc_check((void *)urls, max_urls * sizeof(url));
     }
 
     /* Add to table. */
@@ -732,9 +732,9 @@ read_url_file(char *url_file)
         req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Host: %s\r\n", urls[num_urls].hostname);
     }
     if (unique_id == 1) {
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "X-ID: ");
+      req_bytes                       += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "X-ID: ");
       urls[num_urls].unique_id_offset = req_bytes;
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "%09u\r\n", 0);
+      req_bytes                       += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "%09u\r\n", 0);
     }
 
     // add the common hdr here
@@ -899,7 +899,7 @@ read_sip_file(char *sip_file)
     /* Check for room in sips. */
     if (num_sips >= max_sips) {
       max_sips *= 2;
-      sips = (sip *)realloc_check((void *)sips, max_sips * sizeof(sip));
+      sips     = (sip *)realloc_check((void *)sips, max_sips * sizeof(sip));
     }
 
     /* Add to table. */
@@ -2835,8 +2835,8 @@ close_connection(int cnum)
                 connect_usecs = max_connect_usecs;
     */
     total_connect_usecs += connect_usecs;
-    max_connect_usecs = max(max_connect_usecs, connect_usecs);
-    min_connect_usecs = min(min_connect_usecs, connect_usecs);
+    max_connect_usecs   = max(max_connect_usecs, connect_usecs);
+    min_connect_usecs   = min(min_connect_usecs, connect_usecs);
     ++connects_completed;
   }
   if (connections[cnum].did_response) {
@@ -2846,8 +2846,8 @@ close_connection(int cnum)
                 response_usecs = max_response_usecs;
     */
     total_response_usecs += response_usecs;
-    max_response_usecs = max(max_response_usecs, response_usecs);
-    min_response_usecs = min(min_response_usecs, response_usecs);
+    max_response_usecs   = max(max_response_usecs, response_usecs);
+    min_response_usecs   = min(min_response_usecs, response_usecs);
     ++responses_completed;
   }
   if (connections[cnum].http_status >= 0 && connections[cnum].http_status <= 999) {

@@ -30,22 +30,22 @@
   "S" /* S=9e2828d570a4bee3c964f698b0985ee58b9f6b64 means 9e2828d570a4bee3c964f698b0985ee58b9f6b64 is the sig \
          This one has to be the last one of the string */
 
-#define CIP_STRLEN 20
-#define EXP_STRLEN 16
-#define PAR_STRLEN 16
-#define MAX_PARTS 32
+#define CIP_STRLEN   20
+#define EXP_STRLEN   16
+#define PAR_STRLEN   16
+#define MAX_PARTS    32
 #define MAX_SEGMENTS 64
 
 #define MAX_HTTP_REQUEST_SIZE 8192 //
 
-#define MAX_SIG_SIZE 20
+#define MAX_SIG_SIZE  20
 #define SHA1_SIG_SIZE 20
-#define MD5_SIG_SIZE 16
+#define MD5_SIG_SIZE  16
 
-#define MAX_REQ_LEN 8192
-#define MAX_KEY_LEN 256
-#define MAX_KEY_NUM 16
+#define MAX_REQ_LEN   8192
+#define MAX_KEY_LEN   256
+#define MAX_KEY_NUM   16
 #define MAX_QUERY_LEN 4096
 
 #define USIG_HMAC_SHA1 1
-#define USIG_HMAC_MD5 2
+#define USIG_HMAC_MD5  2

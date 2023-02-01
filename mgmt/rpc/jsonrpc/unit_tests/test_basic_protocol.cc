@@ -600,7 +600,7 @@ TEST_CASE("Call method with invalid ID", "[invalid_id]")
   {
     std::string req = R"([{"id": "", "jsonrpc": "2.0", "method": "will_not_pass_the_validation"},)"
                       R"({"id": {}, "jsonrpc": "2.0", "method": "will_not_pass_the_validation"}])";
-    auto resp = rpc.handle_call(req);
+    auto resp       = rpc.handle_call(req);
     std::string expected =
       R"([{"jsonrpc": "2.0", "error": {"code": 11, "message": "Use of an empty string as id is discouraged"}}, )"
       R"({"jsonrpc": "2.0", "error": {"code": 7, "message": "Invalid id type"}}])";

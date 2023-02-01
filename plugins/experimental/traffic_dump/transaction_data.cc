@@ -129,7 +129,7 @@ TransactionData::get_sensitive_field_description()
     if (!is_first) {
       sensitive_fields_string += ", ";
     }
-    is_first = false;
+    is_first                = false;
     sensitive_fields_string += field;
   }
   return sensitive_fields_string;
@@ -201,7 +201,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
   result += R"("version":")";
   if (http_version.empty()) {
     int version = TSHttpHdrVersionGet(buffer, hdr_loc);
-    result += std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version));
+    result      += std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version));
   } else {
     result += http_version;
   }
@@ -244,12 +244,12 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     // 2. "status":(string)
     result += R"("status":)" + std::to_string(TSHttpHdrStatusGet(buffer, hdr_loc));
     // 3. "reason":(string)
-    cp = TSHttpHdrReasonGet(buffer, hdr_loc, &len);
+    cp     = TSHttpHdrReasonGet(buffer, hdr_loc, &len);
     result += ',' + traffic_dump::json_entry("reason", cp, len);
   }
 
   // "headers": [[name(string), value(string)]]
-  result += R"(,"headers":{"encoding":"esc_json", "fields": [)";
+  result           += R"(,"headers":{"encoding":"esc_json", "fields": [)";
   TSMLoc field_loc = TSMimeHdrFieldGet(buffer, hdr_loc, 0);
   while (field_loc) {
     TSMLoc next_field_loc;
@@ -262,7 +262,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
       value = TSMimeHdrFieldValueStringGet(buffer, hdr_loc, field_loc, -1, &value_len);
       std::string_view value_view{value, static_cast<size_t>(value_len)};
       std::string_view new_value = replace_sensitive_fields(name_view, value_view);
-      result += traffic_dump::json_entry_array(name_view, new_value);
+      result                     += traffic_dump::json_entry_array(name_view, new_value);
     }
 
     next_field_loc = TSMimeHdrFieldNext(buffer, hdr_loc, field_loc);
@@ -278,7 +278,7 @@ std::string
 TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t num_body_bytes, std::string_view http_version)
 {
   std::string result = write_message_node_no_content(buffer, hdr_loc, http_version);
-  result += write_content_node(num_body_bytes);
+  result             += write_content_node(num_body_bytes);
   return result + "}";
 }
 
@@ -286,7 +286,7 @@ std::string
 TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, std::string_view body, std::string_view http_version)
 {
   std::string result = write_message_node_no_content(buffer, hdr_loc, http_version);
-  result += write_content_node(body);
+  result             += write_content_node(body);
   return result + "}";
 }
 
@@ -437,8 +437,8 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     // The uuid is a header field for each message in the transaction. Use the
     // "all" node to apply to each message.
     std::string_view name = "uuid";
-    txnData->_txn_json += R"(,"all":{"headers":{"fields":[)" + json_entry_array(name, uuid_view);
-    txnData->_txn_json += "]}}";
+    txnData->_txn_json    += R"(,"all":{"headers":{"fields":[)" + json_entry_array(name, uuid_view);
+    txnData->_txn_json    += "]}}";
     break;
   }
 

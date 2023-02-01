@@ -73,7 +73,7 @@ struct HttpIoBuffer {
   }
 
   // noncopyable
-  HttpIoBuffer(const HttpIoBuffer &) = delete;            // delete
+  HttpIoBuffer(const HttpIoBuffer &)            = delete; // delete
   HttpIoBuffer &operator=(const HttpIoBuffer &) = delete; // delete
 };
 
@@ -91,7 +91,7 @@ struct HttpHeader {
   TSMLoc header;
 
   // noncopyable
-  HttpHeader(const HttpHeader &) = delete;            // delete
+  HttpHeader(const HttpHeader &)            = delete; // delete
   HttpHeader &operator=(const HttpHeader &) = delete; // delete
 };
 

@@ -40,7 +40,8 @@ public:
 static RegisterContextFactory register_ExampleContext(CONTEXT_FACTORY(ExampleContext), ROOT_FACTORY(ExampleRootContext),
                                                       "myproject");
 
-bool ExampleRootContext::onStart(size_t)
+bool
+ExampleRootContext::onStart(size_t)
 {
   logInfo(std::string("onStart"));
 

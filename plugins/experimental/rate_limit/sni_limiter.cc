@@ -142,20 +142,20 @@ bool
 SniRateLimiter::initialize(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
-    {const_cast<char *>("prefix"), required_argument, nullptr, 'p'},
-    {const_cast<char *>("tag"), required_argument, nullptr, 't'},
-    // These are all for the IP reputation system. ToDo: These should be global rather than per SNI ?
-    {const_cast<char *>("iprep_maxage"), required_argument, nullptr, 'a'},
-    {const_cast<char *>("iprep_buckets"), required_argument, nullptr, 'B'},
-    {const_cast<char *>("iprep_bucketsize"), required_argument, nullptr, 'S'},
-    {const_cast<char *>("iprep_permablock_limit"), required_argument, nullptr, 'L'},
-    {const_cast<char *>("iprep_permablock_pressure"), required_argument, nullptr, 'P'},
-    {const_cast<char *>("iprep_permablock_maxage"), required_argument, nullptr, 'A'},
-    // EOF
-    {nullptr, no_argument, nullptr, '\0'},
+    {const_cast<char *>("limit"),                     required_argument, nullptr, 'l' },
+    {const_cast<char *>("queue"),                     required_argument, nullptr, 'q' },
+    {const_cast<char *>("maxage"),                    required_argument, nullptr, 'm' },
+    {const_cast<char *>("prefix"),                    required_argument, nullptr, 'p' },
+    {const_cast<char *>("tag"),                       required_argument, nullptr, 't' },
+ // These are all for the IP reputation system. ToDo: These should be global rather than per SNI ?
+    {const_cast<char *>("iprep_maxage"),              required_argument, nullptr, 'a' },
+    {const_cast<char *>("iprep_buckets"),             required_argument, nullptr, 'B' },
+    {const_cast<char *>("iprep_bucketsize"),          required_argument, nullptr, 'S' },
+    {const_cast<char *>("iprep_permablock_limit"),    required_argument, nullptr, 'L' },
+    {const_cast<char *>("iprep_permablock_pressure"), required_argument, nullptr, 'P' },
+    {const_cast<char *>("iprep_permablock_maxage"),   required_argument, nullptr, 'A' },
+ // EOF
+    {nullptr,                                         no_argument,       nullptr, '\0'},
   };
 
   TSDebug(PLUGIN_NAME, "Initializing an SNI Rate Limiter");

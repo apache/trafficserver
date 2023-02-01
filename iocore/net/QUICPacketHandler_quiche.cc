@@ -237,7 +237,11 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     if (params->stateless_retry() && token_len == 0) {
       QUICConnectionId new_cid;
       new_cid.randomize();
-      QUICRetryToken retry_token = {udp_packet->from, {dcid, static_cast<uint8_t>(dcid_len)}, new_cid};
+      QUICRetryToken retry_token = {
+        udp_packet->from,
+        {dcid, static_cast<uint8_t>(dcid_len)},
+        new_cid
+      };
       Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
       udp_payload->alloc(iobuffer_size_to_index(DEFAULT_MAX_DATAGRAM_SIZE, BUFFER_SIZE_INDEX_2K));
       ssize_t written =

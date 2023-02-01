@@ -634,7 +634,8 @@ public:
     return EVP_GCM_TLS_TAG_LEN;
   }
 
-  const size_t *encryption_iv_len(QUICKeyPhase) const override
+  const size_t *
+  encryption_iv_len(QUICKeyPhase) const override
   {
     static size_t dummy = 12;
     return &dummy;
@@ -713,7 +714,10 @@ public:
       _padder(NetVConnectionContext_t::NET_VCONNECTION_UNSET)
   {
   }
-  void rcv_frame(std::shared_ptr<const QUICFrame>) {}
+  void
+  rcv_frame(std::shared_ptr<const QUICFrame>)
+  {
+  }
 
   void
   on_packet_sent(QUICPacketUPtr packet)
@@ -742,14 +746,14 @@ public:
   write_to_stream(const uint8_t *buf, size_t len)
   {
     this->_total_sending_data_len += len;
-    this->_sending_data_len += len;
+    this->_sending_data_len       += len;
   }
 
   int64_t
   write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) override
   {
     this->_total_receiving_data_len += data_length;
-    this->_receiving_data_len += data_length;
+    this->_receiving_data_len       += data_length;
     return data_length;
   }
   bool
@@ -789,7 +793,7 @@ protected:
   Ptr<IOBufferBlock>
   _read(size_t len) override
   {
-    this->_sending_data_len -= len;
+    this->_sending_data_len  -= len;
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
     block->fill(len);

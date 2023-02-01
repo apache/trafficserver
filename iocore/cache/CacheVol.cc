@@ -23,7 +23,7 @@
 
 #include "P_Cache.h"
 
-#define SCAN_BUF_SIZE RECOVERY_SIZE
+#define SCAN_BUF_SIZE              RECOVERY_SIZE
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
 
 Action *
@@ -211,9 +211,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   // If there is data in the buffer before the start that is from a partial object read previously
   // Fix things as if we read it this time.
   if (scan_fix_buffer_offset) {
-    io.aio_result += scan_fix_buffer_offset;
-    io.aiocb.aio_nbytes += scan_fix_buffer_offset;
-    io.aiocb.aio_offset -= scan_fix_buffer_offset;
+    io.aio_result          += scan_fix_buffer_offset;
+    io.aiocb.aio_nbytes    += scan_fix_buffer_offset;
+    io.aiocb.aio_offset    -= scan_fix_buffer_offset;
     io.aiocb.aio_buf       = static_cast<char *>(io.aiocb.aio_buf) - scan_fix_buffer_offset;
     scan_fix_buffer_offset = 0;
   }
@@ -351,7 +351,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     off_t partial_object_len = io.aiocb.aio_nbytes - (reinterpret_cast<char *>(doc) - buf->data());
     // Copy partial object to beginning of the buffer.
     memmove(buf->data(), reinterpret_cast<char *>(doc), partial_object_len);
-    io.aiocb.aio_offset += io.aiocb.aio_nbytes;
+    io.aiocb.aio_offset    += io.aiocb.aio_nbytes;
     io.aiocb.aio_nbytes    = SCAN_BUF_SIZE - partial_object_len;
     io.aiocb.aio_buf       = buf->data() + partial_object_len;
     scan_fix_buffer_offset = partial_object_len;

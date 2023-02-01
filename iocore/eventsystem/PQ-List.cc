@@ -37,7 +37,7 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
   uint32_t todo_buckets  = check_buckets ^ last_check_buckets;
   last_check_time        = now;
   last_check_buckets     = check_buckets;
-  todo_buckets &= ((1 << (N_PQ_LIST - 1)) - 1);
+  todo_buckets           &= ((1 << (N_PQ_LIST - 1)) - 1);
   while (todo_buckets) {
     k++;
     todo_buckets >>= 1;

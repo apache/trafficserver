@@ -127,8 +127,11 @@ InitTracer(std::string url, std::string service_name, double rate)
   processors.push_back(std::move(processor));
 
   // Set service name
-  opentelemetry::sdk::resource::ResourceAttributes attributes = {{"service.name", service_name}, {"version", (uint32_t)1}};
-  auto resource                                               = opentelemetry::sdk::resource::Resource::Create(attributes);
+  opentelemetry::sdk::resource::ResourceAttributes attributes = {
+    {"service.name", service_name},
+    {"version",      (uint32_t)1 }
+  };
+  auto resource = opentelemetry::sdk::resource::Resource::Create(attributes);
 
   auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
                                                            std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(

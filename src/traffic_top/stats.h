@@ -496,7 +496,7 @@ public:
   {
     // move past global
     size_t pos = response.find(constant::global);
-    pos += sizeof(constant::global) - 1;
+    pos        += sizeof(constant::global) - 1;
 
     // find parts of the line
     while (true) {

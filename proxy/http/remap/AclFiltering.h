@@ -70,10 +70,10 @@ public:
   acl_filter_rule *next = nullptr;
   char *filter_name     = nullptr; // optional filter name
   unsigned int allow_flag : 1,     // action allow deny
-    src_ip_valid : 1,              // src_ip range valid
-    in_ip_valid : 1,
-    active_queue_flag : 1, // filter is in active state (used by .useflt directive)
-    internal : 1;          // filter internal HTTP requests
+    src_ip_valid          : 1,     // src_ip range valid
+    in_ip_valid           : 1,
+    active_queue_flag     : 1, // filter is in active state (used by .useflt directive)
+    internal              : 1; // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
   int argc = 0;                    // argument counter (only for filter defs)

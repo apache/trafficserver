@@ -26,10 +26,10 @@
 
 #include "I_SplitDNS.h"
 
-#define SRV_COST (RRFIXEDSZ + 0)
-#define SRV_WEIGHT (RRFIXEDSZ + 2)
-#define SRV_PORT (RRFIXEDSZ + 4)
-#define SRV_SERVER (RRFIXEDSZ + 6)
+#define SRV_COST    (RRFIXEDSZ + 0)
+#define SRV_WEIGHT  (RRFIXEDSZ + 2)
+#define SRV_PORT    (RRFIXEDSZ + 4)
+#define SRV_SERVER  (RRFIXEDSZ + 6)
 #define SRV_FIXEDSZ (RRFIXEDSZ + 6)
 
 EventType ET_DNS = ET_CALL;
@@ -1135,7 +1135,7 @@ DNSHandler::get_query_id()
         return q1;
       }
     }
-    i <<= 6;
+    i  <<= 6;
     q2 &= 0x3F;
     while (query_id_in_use(i + q2)) {
       ++q2;
@@ -1662,8 +1662,8 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         n = rname_len + 1;
       }
       buf->ent.h_name = reinterpret_cast<char *>(bp);
-      bp += n;
-      buflen -= n;
+      bp              += n;
+      buflen          -= n;
     }
     //
     // Configure HostEnt data structure
@@ -1701,7 +1701,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
         int strlen = dn_skipname(here, eom);
-        here += strlen + QFIXEDSZ;
+        here       += strlen + QFIXEDSZ;
       }
     }
     //
@@ -1737,18 +1737,18 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           ++error;
           break;
         }
-        cp += n;
-        *ap++ = bp;
-        n     = strlen(reinterpret_cast<char *>(bp)) + 1;
-        bp += n;
+        cp     += n;
+        *ap++  = bp;
+        n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+        bp     += n;
         buflen -= n;
-        n = strlen(reinterpret_cast<char *>(tbuf)) + 1;
+        n      = strlen(reinterpret_cast<char *>(tbuf)) + 1;
         if (n > buflen) {
           ++error;
           break;
         }
         ink_strlcpy(reinterpret_cast<char *>(bp), reinterpret_cast<char *>(tbuf), buflen);
-        bp += n;
+        bp     += n;
         buflen -= n;
         if (is_debug_tag_set("dns")) {
           switch (type) {
@@ -1779,27 +1779,27 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         if (!answer) {
           buf->ent.h_name = reinterpret_cast<char *>(bp);
           Debug("dns", "received PTR name = %s", bp);
-          n = strlen(reinterpret_cast<char *>(bp)) + 1;
-          bp += n;
+          n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+          bp     += n;
           buflen -= n;
         } else if (ap < &buf->host_aliases[DNS_MAX_ALIASES - 1]) {
           *ap++ = bp;
           Debug("dns", "received PTR alias = %s", bp);
-          n = strlen(reinterpret_cast<char *>(bp)) + 1;
-          bp += n;
+          n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+          bp     += n;
           buflen -= n;
         }
       } else if (type == T_SRV) {
         if (buf->srv_hosts.hosts.size() >= hostdb_round_robin_max_count) {
           break;
         }
-        cp         = here; /* hack */
-        int strlen = dn_skipname(cp, eom);
-        cp += strlen;
+        cp                           = here; /* hack */
+        int strlen                   = dn_skipname(cp, eom);
+        cp                           += strlen;
         const unsigned char *srv_off = cp;
-        cp += SRV_FIXEDSZ;
-        cp += dn_skipname(cp, eom);
-        here = cp; /* hack */
+        cp                           += SRV_FIXEDSZ;
+        cp                           += dn_skipname(cp, eom);
+        here                         = cp; /* hack */
 
         SRV srv;
 
@@ -1837,13 +1837,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           buf->ent.h_name     = reinterpret_cast<char *>(bp);
           nn                  = strlen(reinterpret_cast<char *>(bp)) + 1;
           Debug("dns", "received %s name = %s", QtypeName(type), bp);
-          bp += nn;
+          bp     += nn;
           buflen -= nn;
         }
         // attempt to use the original buffer (if it is word aligned)
         if (!(((uintptr_t)cp) % sizeof(unsigned int))) {
           *hap++ = cp;
-          cp += n;
+          cp     += n;
         } else {
           ip_text_buffer ip_string;
           bp = static_cast<unsigned char *>(align_pointer_forward(bp, sizeof(int)));

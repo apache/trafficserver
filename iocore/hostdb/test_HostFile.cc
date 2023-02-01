@@ -148,7 +148,7 @@ HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_n
   // where in our block of memory we are
   int offset = sizeof(self_type);
   memcpy(self->apply_offset<void>(offset), query_name);
-  offset += qn_size;
+  offset          += qn_size;
   self->rr_offset = offset;
   self->rr_count  = rr_count;
   // Construct the info instances to a valid state.

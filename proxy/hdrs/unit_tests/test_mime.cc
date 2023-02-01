@@ -203,17 +203,19 @@ TEST_CASE("MimeParsers", "[proxy][mimeparsers]")
   const char *end;
   int value;
 
-  static const std::vector<std::pair<const char *, int>> tests = {{"0", 0},
-                                                                  {"1234", 1234},
-                                                                  {"-1234", -1234},
-                                                                  {"2147483647", 2147483647},
-                                                                  {"-2147483648", 2147483648},
-                                                                  {"2147483648", INT_MAX},
-                                                                  {"-2147483649", INT_MIN},
-                                                                  {"2147483647", INT_MAX},
-                                                                  {"-2147483648", INT_MIN},
-                                                                  {"999999999999", INT_MAX},
-                                                                  {"-999999999999", INT_MIN}};
+  static const std::vector<std::pair<const char *, int>> tests = {
+    {"0",             0         },
+    {"1234",          1234      },
+    {"-1234",         -1234     },
+    {"2147483647",    2147483647},
+    {"-2147483648",   2147483648},
+    {"2147483648",    INT_MAX   },
+    {"-2147483649",   INT_MIN   },
+    {"2147483647",    INT_MAX   },
+    {"-2147483648",   INT_MIN   },
+    {"999999999999",  INT_MAX   },
+    {"-999999999999", INT_MIN   }
+  };
 
   for (const auto &it : tests) {
     auto [buf, val] = it;

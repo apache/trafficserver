@@ -114,7 +114,7 @@ struct PassthruIO {
   }
 
   // noncopyable
-  PassthruIO(const PassthruIO &) = delete;
+  PassthruIO(const PassthruIO &)            = delete;
   PassthruIO &operator=(const PassthruIO &) = delete;
 };
 
@@ -158,7 +158,7 @@ struct PassthruSession {
   }
 
   // noncopyable
-  PassthruSession(const PassthruSession &) = delete;
+  PassthruSession(const PassthruSession &)            = delete;
   PassthruSession &operator=(const PassthruSession &) = delete;
 };
 

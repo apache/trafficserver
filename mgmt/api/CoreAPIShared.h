@@ -36,10 +36,10 @@
 
 // used by TSReadFromUrl
 #define HTTP_DIVIDER "\r\n\r\n"
-#define URL_BUFSIZE 65536 // the max. length of URL obtainable (in bytes)
-#define URL_TIMEOUT 5000  // the timeout value for send/recv HTTP in ms
-#define HTTP_PORT 80
-#define BUFSIZE 1024
+#define URL_BUFSIZE  65536 // the max. length of URL obtainable (in bytes)
+#define URL_TIMEOUT  5000  // the timeout value for send/recv HTTP in ms
+#define HTTP_PORT    80
+#define BUFSIZE      1024
 
 // used by TSReadFromUrl
 TSMgmtError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);

@@ -182,7 +182,10 @@ UrlRewrite::PrintStore(const MappingsStore &store) const
 
   if (!store.regex_list.empty()) {
     printf("    Regex mappings:\n");
-    forl_LL(RegexMapping, list_iter, store.regex_list) { list_iter->url_map->Print(); }
+    forl_LL(RegexMapping, list_iter, store.regex_list)
+    {
+      list_iter->url_map->Print();
+    }
   }
 }
 
@@ -352,10 +355,12 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   const struct {
     const char *const field;
     const int len;
-  } url_headers[N_URL_HEADERS] = {{MIME_FIELD_LOCATION, MIME_LEN_LOCATION},
-                                  {MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION},
-                                  {"URI", 3},
-                                  {"Destination", 11}};
+  } url_headers[N_URL_HEADERS] = {
+    {MIME_FIELD_LOCATION,         MIME_LEN_LOCATION        },
+    {MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION},
+    {"URI",                       3                        },
+    {"Destination",               11                       }
+  };
 
   if (unlikely(num_rules_reverse == 0)) {
     ink_assert(reverse_mappings.empty());

@@ -2111,7 +2111,7 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
   // where in our block of memory we are
   int offset = sizeof(self_type);
   memcpy(self->apply_offset<void>(offset), query_name);
-  offset += qn_size;
+  offset          += qn_size;
   self->rr_offset = offset;
   self->rr_count  = rr_count;
   // Construct the info instances to a valid state.
@@ -2178,8 +2178,8 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
     }
 
     if (target.data.srv.srv_priority <= p) {
-      p = target.data.srv.srv_priority;
-      weight += target.data.srv.srv_weight;
+      p              = target.data.srv.srv_priority;
+      weight         += target.data.srv.srv_weight;
       live[live_n++] = &target;
     } else {
       break;

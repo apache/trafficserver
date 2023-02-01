@@ -42,7 +42,7 @@ enum BlockState {
 };
 
 struct Data {
-  Data(Data const &) = delete;
+  Data(Data const &)            = delete;
   Data &operator=(Data const &) = delete;
 
   Config *const m_config;

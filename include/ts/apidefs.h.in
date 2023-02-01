@@ -136,14 +136,14 @@ extern "C" {
 /* clang-format on */
 
 #define TS_HTTP_VERSION(a, b) ((((a)&0xFFFF) << 16) | ((b)&0xFFFF))
-#define TS_HTTP_MINOR(v) ((v)&0xFFFF)
-#define TS_HTTP_MAJOR(v) (((v) >> 16) & 0xFFFF)
+#define TS_HTTP_MINOR(v)      ((v)&0xFFFF)
+#define TS_HTTP_MAJOR(v)      (((v) >> 16) & 0xFFFF)
 
 #ifndef TS_RES_MEM_PATH
 #define __TS_RES_PATH(x) #x
-#define _TS_RES_PATH(x) __TS_RES_PATH(x)
-#define TS_RES_PATH(x) x __FILE__ ":" _TS_RES_PATH(__LINE__)
-#define TS_RES_MEM_PATH TS_RES_PATH("memory/")
+#define _TS_RES_PATH(x)  __TS_RES_PATH(x)
+#define TS_RES_PATH(x)   x __FILE__ ":" _TS_RES_PATH(__LINE__)
+#define TS_RES_MEM_PATH  TS_RES_PATH("memory/")
 #endif
 
 #ifndef TS_DEPRECATED
@@ -1459,7 +1459,7 @@ typedef enum {
   TS_UUID_V5,
 } TSUuidVersion;
 
-#define TS_UUID_STRING_LEN 36
+#define TS_UUID_STRING_LEN   36
 #define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 

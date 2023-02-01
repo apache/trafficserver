@@ -65,7 +65,7 @@ ink_atoi64(const char *str, const char **end)
   } else {
     if (unlikely(*str == '-')) {
       negative = 1;
-      str += 1;
+      str      += 1;
     }
 
     /*
@@ -163,7 +163,7 @@ ink_atoi64(const char *str, int len)
   } else {
     if (unlikely(*str == '-')) {
       negative = 1;
-      str += 1;
+      str      += 1;
     }
 
     /*

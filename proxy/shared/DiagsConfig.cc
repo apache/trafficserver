@@ -50,11 +50,16 @@ DiagsConfig::reconfigure_diags()
     const char *config_name;
     DiagsLevel level;
   } output_records[] = {
-    {"proxy.config.diags.output.diag", DL_Diag},           {"proxy.config.diags.output.debug", DL_Debug},
-    {"proxy.config.diags.output.status", DL_Status},       {"proxy.config.diags.output.note", DL_Note},
-    {"proxy.config.diags.output.warning", DL_Warning},     {"proxy.config.diags.output.error", DL_Error},
-    {"proxy.config.diags.output.fatal", DL_Fatal},         {"proxy.config.diags.output.alert", DL_Alert},
-    {"proxy.config.diags.output.emergency", DL_Emergency}, {nullptr, DL_Undefined},
+    {"proxy.config.diags.output.diag",      DL_Diag     },
+    {"proxy.config.diags.output.debug",     DL_Debug    },
+    {"proxy.config.diags.output.status",    DL_Status   },
+    {"proxy.config.diags.output.note",      DL_Note     },
+    {"proxy.config.diags.output.warning",   DL_Warning  },
+    {"proxy.config.diags.output.error",     DL_Error    },
+    {"proxy.config.diags.output.fatal",     DL_Fatal    },
+    {"proxy.config.diags.output.alert",     DL_Alert    },
+    {"proxy.config.diags.output.emergency", DL_Emergency},
+    {nullptr,                               DL_Undefined},
   };
 
   if (!callbacks_established) {

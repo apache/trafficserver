@@ -81,7 +81,7 @@ public:
   virtual ~ProxySession();
 
   // noncopyable
-  ProxySession(ProxySession &) = delete;
+  ProxySession(ProxySession &)                  = delete;
   ProxySession &operator=(const ProxySession &) = delete;
 
   static int64_t next_connection_id();

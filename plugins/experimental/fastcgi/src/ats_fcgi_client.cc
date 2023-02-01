@@ -149,7 +149,7 @@ FCGIClientRequest::GenerateFcgiRequestHeaders()
   if (endsWith(requestScript, "/")) {
     ats_plugin::FcgiPluginConfig *gConfig = InterceptGlobal::plugin_data->getGlobalConfigObj();
     index                                 = gConfig->getHtml();
-    requestScript += index;
+    requestScript                         += index;
   }
 
   fcgiReqHeader["DOCUMENT_ROOT"]     = InterceptGlobal::plugin_data->getGlobalConfigObj()->getDocumentRootDir();
@@ -233,7 +233,7 @@ FCGIClientRequest::createBeginRequest()
   int len = 0, nb = 0;
 
   for (const auto &it : state_->requestHeaders) {
-    nb = serializeNameValue(state_->pBuffInc, it);
+    nb  = serializeNameValue(state_->pBuffInc, it);
     len += nb;
   }
 
@@ -245,7 +245,7 @@ FCGIClientRequest::createBeginRequest()
   state_->pBuffInc += sizeof(FCGI_Header);
 
   for (const auto &it : state_->requestHeaders) {
-    nb = serializeNameValue(state_->pBuffInc, it);
+    nb               = serializeNameValue(state_->pBuffInc, it);
     state_->pBuffInc += nb;
   }
 
@@ -402,7 +402,7 @@ FCGIClientRequest::fcgiProcessContent(uchar **beg_buf, uchar *end_buf, FCGIRecor
   offset            = rec->offset;
 
   if (*state == fcgi_state_padding) {
-    *state = fcgi_state_done;
+    *state   = fcgi_state_done;
     *beg_buf += (size_t)((int)rec->length - (int)offset + (int)h->paddingLength);
     return FCGI_PROCESS_DONE;
   }
@@ -420,18 +420,18 @@ FCGIClientRequest::fcgiProcessContent(uchar **beg_buf, uchar *end_buf, FCGIRecor
 
   if (tot_len <= nb) {
     rec->offset += tot_len;
-    *state = fcgi_state_done;
-    *beg_buf += tot_len;
+    *state      = fcgi_state_done;
+    *beg_buf    += tot_len;
     return FCGI_PROCESS_DONE;
   } else if (con_len <= nb) {
     /* Have to still skip all or some of padding */
-    *state = fcgi_state_padding;
+    *state      = fcgi_state_padding;
     rec->offset += nb;
-    *beg_buf += nb;
+    *beg_buf    += nb;
     return FCGI_PROCESS_AGAIN;
   } else {
     rec->offset += nb;
-    *beg_buf += nb;
+    *beg_buf    += nb;
     return FCGI_PROCESS_AGAIN;
   }
 

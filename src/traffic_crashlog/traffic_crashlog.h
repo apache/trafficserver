@@ -39,10 +39,10 @@
 
 // Printf format for memory addresses.
 #if SIZEOF_VOIDP == 8
-#define ADDRFMT "0x%016" PRIx64
+#define ADDRFMT     "0x%016" PRIx64
 #define ADDRCAST(x) ((uint64_t)(x))
 #elif SIZEOF_VOIDP == 4
-#define ADDRFMT "0x%08" PRIx32
+#define ADDRFMT     "0x%08" PRIx32
 #define ADDRCAST(x) ((uint32_t)(x))
 #else
 #error unsupported pointer size

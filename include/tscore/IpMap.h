@@ -201,7 +201,7 @@ public:
   ~IpMap(); ///< Destructor.
 
   self_type &operator=(self_type const &that) = delete;
-  self_type &operator                         =(self_type &&that);
+  self_type &operator=(self_type &&that);
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.

@@ -30,7 +30,7 @@
 
 #define JSONError(err) PluginError("json-err: %s:%d:%d: %s", (err).source, (err).line, (err).column, (err).text)
 
-#define AUTH_DENY 0
+#define AUTH_DENY  0
 #define AUTH_ALLOW 1
 struct auth_directive {
   char auth;

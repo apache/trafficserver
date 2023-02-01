@@ -28,13 +28,13 @@
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
-#define TS_LUA_STATS_TIMEOUT 5000   // 5s -- convert to configurable
-#define TS_LUA_STATS_BUFFER_SIZE 10 // stats buffer
+#define TS_LUA_STATS_TIMEOUT     5000 // 5s -- convert to configurable
+#define TS_LUA_STATS_BUFFER_SIZE 10   // stats buffer
 
-#define TS_LUA_IND_STATE 0
+#define TS_LUA_IND_STATE    0
 #define TS_LUA_IND_GC_BYTES 1
-#define TS_LUA_IND_THREADS 2
-#define TS_LUA_IND_SIZE 3
+#define TS_LUA_IND_THREADS  2
+#define TS_LUA_IND_SIZE     3
 
 static uint64_t ts_lua_http_next_id   = 0;
 static uint64_t ts_lua_g_http_next_id = 0;
@@ -184,7 +184,7 @@ collectStats(ts_lua_plugin_stats *const plugin_stats)
       ts_lua_ctx_stats *const stats = main_ctx->stats;
 
       TSMutexLock(stats->mutexp);
-      gc_kb_total += stats->gc_kb;
+      gc_kb_total   += stats->gc_kb;
       threads_total += stats->threads;
       TSMutexUnlock(stats->mutexp);
     }
@@ -347,8 +347,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
     {"inline", required_argument, 0, 'i'},
-    {"ljgc", required_argument, 0, 'g'},
-    {0, 0, 0, 0},
+    {"ljgc",   required_argument, 0, 'g'},
+    {0,        0,                 0, 0  },
   };
 
   argc--;
@@ -779,10 +779,10 @@ TSPluginInit(int argc, const char *argv[])
   int jit                              = 1;
   int reload                           = 0;
   static const struct option longopt[] = {
-    {"states", required_argument, 0, 's'},
-    {"jit", required_argument, 0, 'j'},
-    {"enable-reload", no_argument, 0, 'r'},
-    {0, 0, 0, 0},
+    {"states",        required_argument, 0, 's'},
+    {"jit",           required_argument, 0, 'j'},
+    {"enable-reload", no_argument,       0, 'r'},
+    {0,               0,                 0, 0  },
   };
 
   for (;;) {

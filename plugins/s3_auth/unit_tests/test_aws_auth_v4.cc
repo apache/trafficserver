@@ -42,7 +42,7 @@ TEST_CASE("uriEncode(): encode unreserved chars", "[s3_auth]")
                     "abcdefghijklmnopqrstuvwxyz"
                     "0123456789"
                     "-._~";
-  String encoded = uriEncode(in, /* isObjectName */ false);
+  String encoded  = uriEncode(in, /* isObjectName */ false);
 
   CHECK(in.length() == encoded.length());
   CHECK_FALSE(encoded.compare("ABCDEFGHIJKLMNOPQRSTUVWXYZ"

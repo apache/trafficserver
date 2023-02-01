@@ -44,9 +44,9 @@ packString(const char *str, int32_t str_len, string &buffer)
 inline void
 unpackString(const char *&packed_data, const char *&item, int32_t &item_len)
 {
-  item_len = *(reinterpret_cast<const int32_t *>(packed_data));
+  item_len    = *(reinterpret_cast<const int32_t *>(packed_data));
   packed_data += sizeof(int32_t);
-  item = item_len ? packed_data : nullptr;
+  item        = item_len ? packed_data : nullptr;
   packed_data += item_len;
 }
 
@@ -54,7 +54,7 @@ template <typename T>
 inline void
 unpackItem(const char *&packed_data, T &item)
 {
-  item = *(reinterpret_cast<const T *>(packed_data));
+  item        = *(reinterpret_cast<const T *>(packed_data));
   packed_data += sizeof(T);
 }
 
@@ -62,7 +62,7 @@ void
 DocNode::pack(string &buffer) const
 {
   int32_t orig_buf_size = buffer.size();
-  buffer += DOCNODE_VERSION;
+  buffer                += DOCNODE_VERSION;
   buffer.append(sizeof(int32_t), ' '); // reserve space for length
   buffer.append(reinterpret_cast<const char *>(&type), sizeof(type));
   packString(data, data_len, buffer);

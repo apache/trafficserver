@@ -49,17 +49,17 @@ TEST_CASE("range to/from string - valid", "[AWS][slice][utility]")
   };
 
   std::vector<Range> const exps = {
-    Range{0, 1023 + 1},      //
-    Range{1, 1024 + 1},      //
-    Range{11, 11 + 1},       //
-    Range{1, Range::maxval}, //
-    Range{3, 17 + 1},        //
-    Range{3, 17 + 1},        //
-    Range{3, 17 + 1},        //
-    Range{3, 11 + 1},        //
-    Range{3, 11 + 1},        //
-    Range{0, 1},             //
-    Range{-20, 0}            //
+    Range{0,   1023 + 1     }, //
+    Range{1,   1024 + 1     }, //
+    Range{11,  11 + 1       }, //
+    Range{1,   Range::maxval}, //
+    Range{3,   17 + 1       }, //
+    Range{3,   17 + 1       }, //
+    Range{3,   17 + 1       }, //
+    Range{3,   11 + 1       }, //
+    Range{3,   11 + 1       }, //
+    Range{0,   1            }, //
+    Range{-20, 0            }  //
   };
 
   for (size_t index = 0; index < teststrings.size(); ++index) {

@@ -26,8 +26,8 @@
 #include "tscore/SourceLocation.h"
 #include "tscore/ink_memory.h"
 
-#define NO_REENTRANT 99999
-#define NO_EVENT NO_REENTRANT
+#define NO_REENTRANT         99999
+#define NO_EVENT             NO_REENTRANT
 #define HISTORY_DEFAULT_SIZE 65
 
 struct HistoryEntry {

@@ -35,31 +35,31 @@ struct CacheVC;
 
 // Constants
 
-#define DIR_TAG_WIDTH 12
-#define DIR_MASK_TAG(_t) ((_t) & ((1 << DIR_TAG_WIDTH) - 1))
-#define SIZEOF_DIR 10
+#define DIR_TAG_WIDTH         12
+#define DIR_MASK_TAG(_t)      ((_t) & ((1 << DIR_TAG_WIDTH) - 1))
+#define SIZEOF_DIR            10
 #define ESTIMATED_OBJECT_SIZE 8000
 
-#define MAX_DIR_SEGMENTS (32 * (1 << 16))
-#define DIR_DEPTH 4
+#define MAX_DIR_SEGMENTS        (32 * (1 << 16))
+#define DIR_DEPTH               4
 #define MAX_ENTRIES_PER_SEGMENT (1 << 16)
 #define MAX_BUCKETS_PER_SEGMENT (MAX_ENTRIES_PER_SEGMENT / DIR_DEPTH)
-#define DIR_SIZE_WIDTH 6
-#define DIR_BLOCK_SIZES 4
-#define DIR_BLOCK_SHIFT(_i) (3 * (_i))
-#define DIR_BLOCK_SIZE(_i) (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
+#define DIR_SIZE_WIDTH          6
+#define DIR_BLOCK_SIZES         4
+#define DIR_BLOCK_SHIFT(_i)     (3 * (_i))
+#define DIR_BLOCK_SIZE(_i)      (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
 #define DIR_SIZE_WITH_BLOCK(_i) ((1 << DIR_SIZE_WIDTH) * DIR_BLOCK_SIZE(_i))
-#define DIR_OFFSET_BITS 40
-#define DIR_OFFSET_MAX ((((off_t)1) << DIR_OFFSET_BITS) - 1)
+#define DIR_OFFSET_BITS         40
+#define DIR_OFFSET_MAX          ((((off_t)1) << DIR_OFFSET_BITS) - 1)
 
-#define SYNC_MAX_WRITE (2 * 1024 * 1024)
-#define SYNC_DELAY HRTIME_MSECONDS(500)
+#define SYNC_MAX_WRITE     (2 * 1024 * 1024)
+#define SYNC_DELAY         HRTIME_MSECONDS(500)
 #define DO_NOT_REMOVE_THIS 0
 
 // Debugging Options
 
-//#define DO_CHECK_DIR_FAST
-//#define DO_CHECK_DIR
+// #define DO_CHECK_DIR_FAST
+// #define DO_CHECK_DIR
 
 // Macros
 
@@ -92,7 +92,7 @@ struct CacheVC;
 #define dir_write_valid(_d, _e) \
   (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_write_valid(_d, _e))
 #define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && _d->vol_in_phase_agg_buf_valid(_e))
-#define dir_is_empty(_e) (!dir_offset(_e))
+#define dir_is_empty(_e)          (!dir_offset(_e))
 #define dir_clear(_e) \
   do {                \
     (_e)->w[0] = 0;   \
@@ -124,15 +124,15 @@ struct Dir {
   // USE MACROS TO PREVENT UNALIGNED LOADS
   // bits are numbered from lowest in u16 to highest
   // always index as u16 to avoid byte order issues
-  unsigned int offset : 24;      // (0,1:0-7) 16M * 512 = 8GB
-  unsigned int big : 2;          // (1:8-9) 512 << (3 * big)
-  unsigned int size : 6;         // (1:10-15) 6**2 = 64, 64*512 = 32768 .. 64*256=16MB
-  unsigned int tag : 12;         // (2:0-11) 2048 / 8 entries/bucket = .4%
-  unsigned int phase : 1;        // (2:12)
-  unsigned int head : 1;         // (2:13) first segment in a document
-  unsigned int pinned : 1;       // (2:14)
-  unsigned int token : 1;        // (2:15)
-  unsigned int next : 16;        // (3)
+  unsigned int offset      : 24; // (0,1:0-7) 16M * 512 = 8GB
+  unsigned int big         : 2;  // (1:8-9) 512 << (3 * big)
+  unsigned int size        : 6;  // (1:10-15) 6**2 = 64, 64*512 = 32768 .. 64*256=16MB
+  unsigned int tag         : 12; // (2:0-11) 2048 / 8 entries/bucket = .4%
+  unsigned int phase       : 1;  // (2:12)
+  unsigned int head        : 1;  // (2:13) first segment in a document
+  unsigned int pinned      : 1;  // (2:14)
+  unsigned int token       : 1;  // (2:15)
+  unsigned int next        : 16; // (3)
   unsigned int offset_high : 16; // 8GB * 65k = 0.5PB (4)
 #else
   uint16_t w[5];
@@ -146,10 +146,10 @@ struct FreeDir {
 #if DO_NOT_REMOVE_THIS
   // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO
   // USE MACROS TO PREVENT UNALIGNED LOADS
-  unsigned int offset : 24; // 0: empty
-  unsigned int reserved : 8;
-  unsigned int prev : 16;        // (2)
-  unsigned int next : 16;        // (3)
+  unsigned int offset      : 24; // 0: empty
+  unsigned int reserved    : 8;
+  unsigned int prev        : 16; // (2)
+  unsigned int next        : 16; // (3)
   unsigned int offset_high : 16; // 0: empty
 #else
   uint16_t w[5];
@@ -165,12 +165,12 @@ struct FreeDir {
     (_e)->w[1] = (uint16_t)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00)); \
     (_e)->w[4] = (uint16_t)((_o) >> 24);                                    \
   } while (0)
-#define dir_bit(_e, _w, _b) ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
+#define dir_bit(_e, _w, _b)         ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
 #define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (uint16_t)(((_e)->w[_w] & ~(1 << (_b))) | (((_v) ? 1 : 0) << (_b)))
-#define dir_big(_e) ((uint32_t)((((_e)->w[1]) >> 8) & 0x3))
-#define dir_set_big(_e, _v) (_e)->w[1] = (uint16_t)(((_e)->w[1] & 0xFCFF) | (((uint16_t)(_v)) & 0x3) << 8)
-#define dir_size(_e) ((uint32_t)(((_e)->w[1]) >> 10))
-#define dir_set_size(_e, _v) (_e)->w[1] = (uint16_t)(((_e)->w[1] & ((1 << 10) - 1)) | ((_v) << 10))
+#define dir_big(_e)                 ((uint32_t)((((_e)->w[1]) >> 8) & 0x3))
+#define dir_set_big(_e, _v)         (_e)->w[1] = (uint16_t)(((_e)->w[1] & 0xFCFF) | (((uint16_t)(_v)) & 0x3) << 8)
+#define dir_size(_e)                ((uint32_t)(((_e)->w[1]) >> 10))
+#define dir_set_size(_e, _v)        (_e)->w[1] = (uint16_t)(((_e)->w[1] & ((1 << 10) - 1)) | ((_v) << 10))
 #define dir_set_approx_size(_e, _s)                   \
   do {                                                \
     if ((_s) <= DIR_SIZE_WITH_BLOCK(0)) {             \
@@ -197,16 +197,16 @@ struct FreeDir {
 #define dir_tag(_e) ((uint32_t)((_e)->w[2] & ((1 << DIR_TAG_WIDTH) - 1)))
 #define dir_set_tag(_e, _t) \
   (_e)->w[2] = (uint16_t)(((_e)->w[2] & ~((1 << DIR_TAG_WIDTH) - 1)) | ((_t) & ((1 << DIR_TAG_WIDTH) - 1)))
-#define dir_phase(_e) dir_bit(_e, 2, 12)
-#define dir_set_phase(_e, _v) dir_set_bit(_e, 2, 12, _v)
-#define dir_head(_e) dir_bit(_e, 2, 13)
-#define dir_set_head(_e, _v) dir_set_bit(_e, 2, 13, _v)
-#define dir_pinned(_e) dir_bit(_e, 2, 14)
+#define dir_phase(_e)          dir_bit(_e, 2, 12)
+#define dir_set_phase(_e, _v)  dir_set_bit(_e, 2, 12, _v)
+#define dir_head(_e)           dir_bit(_e, 2, 13)
+#define dir_set_head(_e, _v)   dir_set_bit(_e, 2, 13, _v)
+#define dir_pinned(_e)         dir_bit(_e, 2, 14)
 #define dir_set_pinned(_e, _v) dir_set_bit(_e, 2, 14, _v)
 // Bit 2:15 is unused.
-#define dir_next(_e) (_e)->w[3]
+#define dir_next(_e)         (_e)->w[3]
 #define dir_set_next(_e, _o) (_e)->w[3] = (uint16_t)(_o)
-#define dir_prev(_e) (_e)->w[2]
+#define dir_prev(_e)         (_e)->w[2]
 #define dir_set_prev(_e, _o) (_e)->w[2] = (uint16_t)(_o)
 
 // INKqa11166 - Cache can not store 2 HTTP alternates simultaneously.

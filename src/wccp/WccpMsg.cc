@@ -307,8 +307,8 @@ MaskAssignElt::getVarSize() const
   MaskValueSetElt const *set = reinterpret_cast<MaskValueSetElt const *>(this + 1);
   while (n--) {
     size_t k = set->getSize();
-    zret += k;
-    set = reinterpret_cast<MaskValueSetElt const *>(reinterpret_cast<char const *>(set) + k);
+    zret     += k;
+    set      = reinterpret_cast<MaskValueSetElt const *>(reinterpret_cast<char const *>(set) + k);
   }
   return zret;
 }

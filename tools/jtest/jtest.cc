@@ -90,20 +90,20 @@
 
 #define SERVER_BUFSIZE 4096
 #define CLIENT_BUFSIZE 2048
-#define MAX_BUFSIZE (65536 + 4096)
+#define MAX_BUFSIZE    (65536 + 4096)
 
 //
 // Constants
 //
-#define MAXFDS 65536
-#define HEADER_DONE -1
-#define POLL_GROUP_SIZE 800
-#define MAX_RESPONSE_LENGTH 1000000
-#define HEADER_SIZE 10000
-#define POLL_TIMEOUT 10
+#define MAXFDS               65536
+#define HEADER_DONE          -1
+#define POLL_GROUP_SIZE      800
+#define MAX_RESPONSE_LENGTH  1000000
+#define HEADER_SIZE          10000
+#define POLL_TIMEOUT         10
 #define STATE_FTP_DATA_READY 0xFAD
-#define MAX_DEFERED_URLS 10000
-#define DEFERED_URLS_BLOCK 2000
+#define MAX_DEFERED_URLS     10000
+#define DEFERED_URLS_BLOCK   2000
 
 #define MAX_REQUEST_BODY_LENGTH MAX_RESPONSE_LENGTH
 
@@ -245,77 +245,78 @@ static int post_support        = 0;
 static int post_size           = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"proxy_port", 'p', "Proxy Port", "I", &proxy_port, "JTEST_PROXY_PORT", nullptr},
-  {"proxy_host", 'P', "Proxy Host", "S80", &proxy_host, "JTEST_PROXY_HOST", nullptr},
-  {"server_port", 's', "Server Port (0:auto select)", "I", &server_port, "JTEST_SERVER_PORT", nullptr},
-  {"server_host", 'S', "Server Host (null:localhost)", "S80", &local_host, "JTEST_SERVER_HOST", nullptr},
-  {"server_speed", 'r', "Server Bytes Per Second (0:unlimit)", "I", &server_speed, "JTEST_SERVER_SPEED", nullptr},
-  {"server_delay", 'w', "Server Initial Delay (msec)", "I", &server_delay, "JTEST_SERVER_INITIAL_DELAY", nullptr},
-  {"clients", 'c', "Clients", "I", &nclients, "JTEST_CLIENTS", nullptr},
-  {"client_speed", 'R', "Client Bytes Per Second (0:unlimit)", "I", &client_speed, "JTEST_CLIENT_SPEED", nullptr},
-  {"sbuffersize", 'b', "Server Buffer Size", "I", &sbuffersize, "JTEST_SERVER_BUFSIZE", nullptr},
-  {"cbuffersize", 'B', "Client Buffer Size", "I", &cbuffersize, "JTEST_CLIENT_BUFSIZE", nullptr},
-  {"average_over", 'a', "Seconds to Average Over", "I", &average_over, "JTEST_AVERAGE_OVER", nullptr},
-  {"hitrate", 'z', "Hit Rate", "D", &hitrate, "JTEST_HITRATE", nullptr},
-  {"hotset", 'Z', "Hotset Size", "I", &hotset, "JTEST_HOTSET", nullptr},
-  {"interval", 'i', "Reporting Interval (seconds)", "I", &interval, "JTEST_INTERVAL", nullptr},
-  {"keepalive", 'k', "Keep-Alive Length", "I", &keepalive, "JTEST_KEEPALIVE", nullptr},
-  {"keepalive_cons", 'K', "# Keep-Alive Connections (0:unlimit)", "I", &keepalive_cons, "JTEST_KEEPALIVE_CONNECTIONS", nullptr},
-  {"docsize", 'L', "Document Size (-1:varied)", "I", &docsize, "JTEST_DOCSIZE", nullptr},
-  {"skeepalive", 'j', "Server Keep-Alive (0:unlimit)", "I", &server_keepalive, "JTEST_SERVER_KEEPALIVE", nullptr},
-  {"show_urls", 'x', "Show URLs before they are accessed", "F", &show_before, "JTEST_SHOW_URLS", nullptr},
-  {"show_headers", 'X', "Show Headers", "F", &show_headers, "JTEST_SHOW_HEADERS", nullptr},
-  {"ftp", 'f', "FTP Requests", "F", &ftp, "JTEST_FTP", nullptr},
-  {"ftp_mdtm_err_rate", ' ', "FTP MDTM 550 Error Rate", "D", &ftp_mdtm_err_rate, "JTEST_FTP_MDTM_ERR_RATE", nullptr},
-  {"ftp_mdtm_rate", ' ', "FTP MDTM Update Rate (sec, 0:never)", "I", &ftp_mdtm_rate, "JTEST_FTP_MDTM_RATE", nullptr},
-  {"fullpage", 'l', "Full Page (Images)", "F", &fullpage, "JTEST_FULLPAGE", nullptr},
-  {"follow", 'F', "Follow Links", "F", &follow_arg, "JTEST_FOLLOW", nullptr},
-  {"same_host", 'J', "Only follow URLs on same host", "F", &follow_same_arg, "JTEST_FOLLOW_SAME", nullptr},
-  {"test_time", 't', "run for N seconds (0:unlimited)", "I", &test_time, "TEST_TIME", nullptr},
-  {"urls", 'u', "URLs from File", "S256", urls_file, "JTEST_URLS", nullptr},
-  {"urlsdump", 'U', "URLs to File", "S256", urlsdump_file, "JTEST_URLS_DUMP", nullptr},
-  {"hostrequest", 'H', "Host Request(1=yes,2=transparent)", "I", &hostrequest, "JTEST_HOST_REQUEST", nullptr},
-  {"check_content", 'C', "Check returned content", "F", &check_content, "JTEST_CHECK_CONTENT", nullptr},
-  {"nocheck_length", ' ', "Don't check returned length", "F", &nocheck_length, "JTEST_NOCHECK_LENGTH", nullptr},
-  {"obey_redirects", 'm', "Obey Redirects", "f", &obey_redirects, "JTEST_OBEY_REDIRECTS", nullptr},
-  {"embed URL", 'M', "Embed URL in synth docs", "f", &embed_url, "JTEST_EMBED_URL", nullptr},
-  {"url_hash_entries", 'q', "URL Hash Table Size (-1:use file size)", "I", &url_hash_entries, "JTEST_URL_HASH_ENTRIES", nullptr},
-  {"url_hash_filename", 'Q', "URL Hash Table Filename", "S256", url_hash_filename, "JTEST_URL_HASH_FILENAME", nullptr},
-  {"only_clients", 'y', "Only Clients", "F", &only_clients, "JTEST_ONLY_CLIENTS", nullptr},
-  {"only_server", 'Y', "Only Server", "F", &only_server, "JTEST_ONLY_SERVER", nullptr},
-  {"bandwidth_test", 'A', "Bandwidth Test", "I", &bandwidth_test, "JTEST_BANDWIDTH_TEST", nullptr},
-  {"drop_after_CL", 'T', "Drop after Content-Length", "F", &drop_after_CL, "JTEST_DROP", nullptr},
-  {"verbose", 'v', "Verbose Flag", "F", &verbose, "JTEST_VERBOSE", nullptr},
-  {"verbose_errors", 'E', "Verbose Errors Flag", "f", &verbose_errors, "JTEST_VERBOSE_ERRORS", nullptr},
-  {"drand", 'D', "Random Number Seed", "I", &drand_seed, "JTEST_DRAND", nullptr},
-  {"ims_rate", 'I', "IMS Not-Changed Rate", "D", &ims_rate, "JTEST_IMS_RATE", nullptr},
-  {"client_abort_rate", 'g', "Client Abort Rate", "D", &client_abort_rate, "JTEST_CLIENT_ABORT_RATE", nullptr},
-  {"server_abort_rate", 'G', "Server Abort Rate", "D", &server_abort_rate, "JTEST_SERVER_ABORT_RATE", nullptr},
-  {"extra_headers", 'n', "Number of Extra Headers", "I", &extra_headers, "JTEST_EXTRA_HEADERS", nullptr},
-  {"alternates", 'N', "Number of Alternates", "I", &alternates, "JTEST_ALTERNATES", nullptr},
-  {"client_rate", 'e', "Clients Per Sec", "I", &client_rate, "JTEST_CLIENT_RATE", nullptr},
-  {"abort_retry_speed", 'o', "Abort/Retry Speed", "I", &abort_retry_speed, "JTEST_ABORT_RETRY_SPEED", nullptr},
-  {"abort_retry_bytes", ' ', "Abort/Retry Threshold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
-   nullptr},
-  {"abort_retry_secs", ' ', "Abort/Retry Threshold (secs)", "I", &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS", nullptr},
-  {"reload_rate", 'W', "Reload Rate", "D", &reload_rate, "JTEST_RELOAD_RATE", nullptr},
-  {"compd_port", 'O', "Compd port", "I", &compd_port, "JTEST_COMPD_PORT", nullptr},
-  {"compd_suite", '1', "Compd Suite", "F", &compd_suite, "JTEST_COMPD_SUITE", nullptr},
-  {"vary_user_agent", '2', "Vary on User-Agent (use w/ alternates)", "I", &vary_user_agent, "JTEST_VARY_ON_USER_AGENT", nullptr},
-  {"content_type", '3', "Server Content-Type (1 html, 2 jpeg)", "I", &server_content_type, "JTEST_CONTENT_TYPE", nullptr},
-  {"request_extension", '4', "Request Extn (1\".html\" 2\".jpeg\" 3\"/\")", "I", &request_extension, "JTEST_REQUEST_EXTENSION",
-   nullptr},
-  {"no_cache", '5', "Send Server no-cache", "I", &no_cache, "JTEST_NO_CACHE", nullptr},
-  {"zipf_bucket", '7', "Bucket size (of 1M buckets) for Zipf", "I", &zipf_bucket_size, "JTEST_ZIPF_BUCKET_SIZE", nullptr},
-  {"zipf", '8', "Use a Zipf distribution with this alpha (say 1.2)", "D", &zipf, "JTEST_ZIPF", nullptr},
-  {"evo_rate", '9', "Evolving Hotset Rate (evolutions/hour)", "D", &evo_rate, "JTEST_EVOLVING_HOTSET_RATE", nullptr},
-  {"debug", 'd', "Debug Flag", "F", &debug, "JTEST_DEBUG", nullptr},
-  {"range_mode", ' ', "Range Mode", "I", &range_mode, "JTEST_RANGE_MODE", nullptr},
-  {"post_support", ' ', "POST Mode (0 disable(default), 1 random, 2 specified size by post_size)", "I", &post_support,
-   "JTEST_POST_MODE", nullptr},
-  {"post_size", ' ', "POST SIZE", "I", &post_size, "JTEST_POST_SIZE", nullptr},
+  {"proxy_port",        'p', "Proxy Port",                                                              "I",    &proxy_port,          "JTEST_PROXY_PORT",                   nullptr},
+  {"proxy_host",        'P', "Proxy Host",                                                              "S80",  &proxy_host,          "JTEST_PROXY_HOST",                   nullptr},
+  {"server_port",       's', "Server Port (0:auto select)",                                             "I",    &server_port,         "JTEST_SERVER_PORT",                  nullptr},
+  {"server_host",       'S', "Server Host (null:localhost)",                                            "S80",  &local_host,          "JTEST_SERVER_HOST",                  nullptr},
+  {"server_speed",      'r', "Server Bytes Per Second (0:unlimit)",                                     "I",    &server_speed,        "JTEST_SERVER_SPEED",                 nullptr},
+  {"server_delay",      'w', "Server Initial Delay (msec)",                                             "I",    &server_delay,        "JTEST_SERVER_INITIAL_DELAY",         nullptr},
+  {"clients",           'c', "Clients",                                                                 "I",    &nclients,            "JTEST_CLIENTS",                      nullptr},
+  {"client_speed",      'R', "Client Bytes Per Second (0:unlimit)",                                     "I",    &client_speed,        "JTEST_CLIENT_SPEED",                 nullptr},
+  {"sbuffersize",       'b', "Server Buffer Size",                                                      "I",    &sbuffersize,         "JTEST_SERVER_BUFSIZE",               nullptr},
+  {"cbuffersize",       'B', "Client Buffer Size",                                                      "I",    &cbuffersize,         "JTEST_CLIENT_BUFSIZE",               nullptr},
+  {"average_over",      'a', "Seconds to Average Over",                                                 "I",    &average_over,        "JTEST_AVERAGE_OVER",                 nullptr},
+  {"hitrate",           'z', "Hit Rate",                                                                "D",    &hitrate,             "JTEST_HITRATE",                      nullptr},
+  {"hotset",            'Z', "Hotset Size",                                                             "I",    &hotset,              "JTEST_HOTSET",                       nullptr},
+  {"interval",          'i', "Reporting Interval (seconds)",                                            "I",    &interval,            "JTEST_INTERVAL",                     nullptr},
+  {"keepalive",         'k', "Keep-Alive Length",                                                       "I",    &keepalive,           "JTEST_KEEPALIVE",                    nullptr},
+  {"keepalive_cons",    'K', "# Keep-Alive Connections (0:unlimit)",                                    "I",    &keepalive_cons,      "JTEST_KEEPALIVE_CONNECTIONS",        nullptr},
+  {"docsize",           'L', "Document Size (-1:varied)",                                               "I",    &docsize,             "JTEST_DOCSIZE",                      nullptr},
+  {"skeepalive",        'j', "Server Keep-Alive (0:unlimit)",                                           "I",    &server_keepalive,    "JTEST_SERVER_KEEPALIVE",             nullptr},
+  {"show_urls",         'x', "Show URLs before they are accessed",                                      "F",    &show_before,         "JTEST_SHOW_URLS",                    nullptr},
+  {"show_headers",      'X', "Show Headers",                                                            "F",    &show_headers,        "JTEST_SHOW_HEADERS",                 nullptr},
+  {"ftp",               'f', "FTP Requests",                                                            "F",    &ftp,                 "JTEST_FTP",                          nullptr},
+  {"ftp_mdtm_err_rate", ' ', "FTP MDTM 550 Error Rate",                                                 "D",    &ftp_mdtm_err_rate,   "JTEST_FTP_MDTM_ERR_RATE",            nullptr},
+  {"ftp_mdtm_rate",     ' ', "FTP MDTM Update Rate (sec, 0:never)",                                     "I",    &ftp_mdtm_rate,       "JTEST_FTP_MDTM_RATE",                nullptr},
+  {"fullpage",          'l', "Full Page (Images)",                                                      "F",    &fullpage,            "JTEST_FULLPAGE",                     nullptr},
+  {"follow",            'F', "Follow Links",                                                            "F",    &follow_arg,          "JTEST_FOLLOW",                       nullptr},
+  {"same_host",         'J', "Only follow URLs on same host",                                           "F",    &follow_same_arg,     "JTEST_FOLLOW_SAME",                  nullptr},
+  {"test_time",         't', "run for N seconds (0:unlimited)",                                         "I",    &test_time,           "TEST_TIME",                          nullptr},
+  {"urls",              'u', "URLs from File",                                                          "S256", urls_file,            "JTEST_URLS",                         nullptr},
+  {"urlsdump",          'U', "URLs to File",                                                            "S256", urlsdump_file,        "JTEST_URLS_DUMP",                    nullptr},
+  {"hostrequest",       'H', "Host Request(1=yes,2=transparent)",                                       "I",    &hostrequest,         "JTEST_HOST_REQUEST",                 nullptr},
+  {"check_content",     'C', "Check returned content",                                                  "F",    &check_content,       "JTEST_CHECK_CONTENT",                nullptr},
+  {"nocheck_length",    ' ', "Don't check returned length",                                             "F",    &nocheck_length,      "JTEST_NOCHECK_LENGTH",               nullptr},
+  {"obey_redirects",    'm', "Obey Redirects",                                                          "f",    &obey_redirects,      "JTEST_OBEY_REDIRECTS",               nullptr},
+  {"embed URL",         'M', "Embed URL in synth docs",                                                 "f",    &embed_url,           "JTEST_EMBED_URL",                    nullptr},
+  {"url_hash_entries",  'q', "URL Hash Table Size (-1:use file size)",                                  "I",    &url_hash_entries,    "JTEST_URL_HASH_ENTRIES",             nullptr},
+  {"url_hash_filename", 'Q', "URL Hash Table Filename",                                                 "S256", url_hash_filename,    "JTEST_URL_HASH_FILENAME",            nullptr},
+  {"only_clients",      'y', "Only Clients",                                                            "F",    &only_clients,        "JTEST_ONLY_CLIENTS",                 nullptr},
+  {"only_server",       'Y', "Only Server",                                                             "F",    &only_server,         "JTEST_ONLY_SERVER",                  nullptr},
+  {"bandwidth_test",    'A', "Bandwidth Test",                                                          "I",    &bandwidth_test,      "JTEST_BANDWIDTH_TEST",               nullptr},
+  {"drop_after_CL",     'T', "Drop after Content-Length",                                               "F",    &drop_after_CL,       "JTEST_DROP",                         nullptr},
+  {"verbose",           'v', "Verbose Flag",                                                            "F",    &verbose,             "JTEST_VERBOSE",                      nullptr},
+  {"verbose_errors",    'E', "Verbose Errors Flag",                                                     "f",    &verbose_errors,      "JTEST_VERBOSE_ERRORS",               nullptr},
+  {"drand",             'D', "Random Number Seed",                                                      "I",    &drand_seed,          "JTEST_DRAND",                        nullptr},
+  {"ims_rate",          'I', "IMS Not-Changed Rate",                                                    "D",    &ims_rate,            "JTEST_IMS_RATE",                     nullptr},
+  {"client_abort_rate", 'g', "Client Abort Rate",                                                       "D",    &client_abort_rate,   "JTEST_CLIENT_ABORT_RATE",            nullptr},
+  {"server_abort_rate", 'G', "Server Abort Rate",                                                       "D",    &server_abort_rate,   "JTEST_SERVER_ABORT_RATE",            nullptr},
+  {"extra_headers",     'n', "Number of Extra Headers",                                                 "I",    &extra_headers,       "JTEST_EXTRA_HEADERS",                nullptr},
+  {"alternates",        'N', "Number of Alternates",                                                    "I",    &alternates,          "JTEST_ALTERNATES",                   nullptr},
+  {"client_rate",       'e', "Clients Per Sec",                                                         "I",    &client_rate,         "JTEST_CLIENT_RATE",                  nullptr},
+  {"abort_retry_speed", 'o', "Abort/Retry Speed",                                                       "I",    &abort_retry_speed,   "JTEST_ABORT_RETRY_SPEED",            nullptr},
+  {"abort_retry_bytes", ' ', "Abort/Retry Threshold (bytes)",                                           "I",    &abort_retry_bytes,   "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
+   nullptr                                                                                                                                                                         },
+  {"abort_retry_secs",  ' ', "Abort/Retry Threshold (secs)",                                            "I",    &abort_retry_secs,    "JTEST_ABORT_RETRY_THRESHHOLD_SECS",  nullptr},
+  {"reload_rate",       'W', "Reload Rate",                                                             "D",    &reload_rate,         "JTEST_RELOAD_RATE",                  nullptr},
+  {"compd_port",        'O', "Compd port",                                                              "I",    &compd_port,          "JTEST_COMPD_PORT",                   nullptr},
+  {"compd_suite",       '1', "Compd Suite",                                                             "F",    &compd_suite,         "JTEST_COMPD_SUITE",                  nullptr},
+  {"vary_user_agent",   '2', "Vary on User-Agent (use w/ alternates)",                                  "I",    &vary_user_agent,     "JTEST_VARY_ON_USER_AGENT",           nullptr},
+  {"content_type",      '3', "Server Content-Type (1 html, 2 jpeg)",                                    "I",    &server_content_type, "JTEST_CONTENT_TYPE",                 nullptr},
+  {"request_extension", '4', "Request Extn (1\".html\" 2\".jpeg\" 3\"/\")",                             "I",    &request_extension,   "JTEST_REQUEST_EXTENSION",
+   nullptr                                                                                                                                                                         },
+  {"no_cache",          '5', "Send Server no-cache",                                                    "I",    &no_cache,            "JTEST_NO_CACHE",                     nullptr},
+  {"zipf_bucket",       '7', "Bucket size (of 1M buckets) for Zipf",                                    "I",    &zipf_bucket_size,    "JTEST_ZIPF_BUCKET_SIZE",             nullptr},
+  {"zipf",              '8', "Use a Zipf distribution with this alpha (say 1.2)",                       "D",    &zipf,                "JTEST_ZIPF",                         nullptr},
+  {"evo_rate",          '9', "Evolving Hotset Rate (evolutions/hour)",                                  "D",    &evo_rate,            "JTEST_EVOLVING_HOTSET_RATE",         nullptr},
+  {"debug",             'd', "Debug Flag",                                                              "F",    &debug,               "JTEST_DEBUG",                        nullptr},
+  {"range_mode",        ' ', "Range Mode",                                                              "I",    &range_mode,          "JTEST_RANGE_MODE",                   nullptr},
+  {"post_support",      ' ', "POST Mode (0 disable(default), 1 random, 2 specified size by post_size)", "I",    &post_support,
+   "JTEST_POST_MODE",                                                                                                                                                       nullptr},
+  {"post_size",         ' ', "POST SIZE",                                                               "I",    &post_size,           "JTEST_POST_SIZE",                    nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION()
+};
 int n_argument_descriptions = countof(argument_descriptions);
 
 struct FD {
@@ -344,11 +345,11 @@ struct FD {
   int next;
   int nalternate  = 0;
   unsigned int ip = 0;
-  unsigned int binary : 1;
-  unsigned int ims : 1;
-  unsigned int range : 1;
+  unsigned int binary        : 1;
+  unsigned int ims           : 1;
+  unsigned int range         : 1;
   unsigned int drop_after_CL : 1;
-  unsigned int client_abort : 1;
+  unsigned int client_abort  : 1;
   unsigned int jg_compressed : 1;
   int *count;
   int bytes;
@@ -530,7 +531,7 @@ append_string(char *dest, const char *src, int *offset_ptr, int max_len)
   }
   memcpy(dest + *offset_ptr, src, num);
   dest[*offset_ptr + num] = '\0';
-  (*offset_ptr) += num;
+  (*offset_ptr)           += num;
 }
 
 // End Library functions
@@ -675,10 +676,10 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
   char *url_end   = nullptr;
   if (!strncasecmp(url_start, "GET ", sizeof("GET ") - 1)) {
     url_start += sizeof("GET ") - 1;
-    url_end = (char *)memchr(url_start, ' ', 70);
+    url_end   = (char *)memchr(url_start, ' ', 70);
   } else if (!strncasecmp(url_start, "POST ", sizeof("POST ") - 1)) {
     url_start += sizeof("POST ") - 1;
-    url_end = (char *)memchr(url_start, ' ', 70);
+    url_end   = (char *)memchr(url_start, ' ', 70);
   } else {
     url_end = (char *)memchr(url_start, 0, 70);
   }
@@ -804,21 +805,21 @@ send_response(int sock)
     if (verbose) {
       printf("wrote %d %d\n", sock, err);
     }
-    new_tbytes += err;
+    new_tbytes       += err;
     fd[sock].req_pos += err;
-    fd[sock].bytes += err;
+    fd[sock].bytes   += err;
     if (fd[sock].req_pos >= len) {
       fd[sock].req_pos = -1;
     } else {
       return 0;
     }
     fd[sock].response += url_len;
-    fd[sock].length -= url_len;
+    fd[sock].length   -= url_len;
     if (fd[sock].range) {
       fd[sock].range_bytes -= url_len;
     }
     total_server_response_header_bytes += print_len - url_len;
-    total_server_response_body_bytes += url_len;
+    total_server_response_body_bytes   += url_len;
   }
 
   /* then the response */
@@ -856,11 +857,11 @@ send_response(int sock)
       ink_assert(err <= (int)(fd[sock].range_end - fd[sock].range_start + 1));
     }
 
-    new_tbytes += err;
+    new_tbytes                       += err;
     total_server_response_body_bytes += err;
-    fd[sock].response += err;
-    fd[sock].length -= err;
-    fd[sock].bytes += err;
+    fd[sock].response                += err;
+    fd[sock].length                  -= err;
+    fd[sock].bytes                   += err;
   }
 
   if (fast(sock, server_speed, fd[sock].bytes)) {
@@ -1095,9 +1096,9 @@ parse_header(int sock, int err)
   if (verbose) {
     printf("read %d got %d\n", sock, err);
   }
-  total_proxy_request_bytes += err;
-  new_tbytes += err;
-  fd[sock].req_pos += err;
+  total_proxy_request_bytes             += err;
+  new_tbytes                            += err;
+  fd[sock].req_pos                      += err;
   fd[sock].req_header[fd[sock].req_pos] = 0;
   char *buffer                          = fd[sock].req_header;
   for (i = fd[sock].req_pos - err; i < fd[sock].req_pos; i++) {
@@ -1257,9 +1258,9 @@ send_compd_response(int sock)
       printf("write %d %d\n", sock, err);
     }
 
-    new_tbytes += err;
-    fd[sock].req_pos += err;
-    fd[sock].bytes += err;
+    new_tbytes        += err;
+    fd[sock].req_pos  += err;
+    fd[sock].bytes    += err;
     fd[sock].response = response_buffer + (((fd[sock].length * 2) / 3) % 256);
   }
 
@@ -1287,10 +1288,10 @@ send_compd_response(int sock)
       printf("wrote %d %d\n", sock, err);
     }
 
-    new_tbytes += err;
+    new_tbytes                       += err;
     total_server_response_body_bytes += err;
-    fd[sock].req_pos += err;
-    fd[sock].bytes += err;
+    fd[sock].req_pos                 += err;
+    fd[sock].bytes                   += err;
   }
 
   if (fd[sock].req_pos >= ((fd[sock].length * 2) / 3) + 4) {
@@ -1333,8 +1334,8 @@ read_compd_request(int sock)
         printf("read %d got %d\n", sock, err);
       }
       total_proxy_request_bytes += err;
-      new_tbytes += err;
-      fd[sock].req_pos += err;
+      new_tbytes                += err;
+      fd[sock].req_pos          += err;
       if (fd[sock].req_pos < 4) {
         return 0;
       }
@@ -1376,8 +1377,8 @@ read_compd_request(int sock)
       return -1;
     }
     total_proxy_request_bytes += err;
-    new_tbytes += err;
-    fd[sock].req_pos += err;
+    new_tbytes                += err;
+    fd[sock].req_pos          += err;
   }
 
   if (fd[sock].req_pos >= fd[sock].length + 4) {
@@ -1423,8 +1424,8 @@ read_ftp_request(int sock)
     if (verbose) {
       printf("read %d got %d\n", sock, err);
     }
-    new_tbytes += err;
-    fd[sock].req_pos += err;
+    new_tbytes                            += err;
+    fd[sock].req_pos                      += err;
     fd[sock].req_header[fd[sock].req_pos] = 0;
     char *buffer                          = fd[sock].req_header, *n;
     int res                               = 0;
@@ -2086,7 +2087,7 @@ Lagain : {
     return nullptr;
   }
   start += taglen;
-  len -= taglen;
+  len   -= taglen;
 } // block
 
   while (ParseRules::is_ws(*start) && (end - start > 1)) {
@@ -2278,9 +2279,9 @@ verify_content(int sock, char *buf, int done)
       // to confound the fingerprinting code
       if (l - left < 64) {
         int skip = 64 - (l - left);
-        left -= skip;
-        done -= skip;
-        buf += skip;
+        left     -= skip;
+        done     -= skip;
+        buf      += skip;
         if (done < 0) {
           done = 0;
         }
@@ -2401,23 +2402,23 @@ read_response(int sock)
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
 
-    b1latency += (int)elapsed_from_start(sock);
-    new_cbytes += err;
-    new_tbytes += err;
+    b1latency        += (int)elapsed_from_start(sock);
+    new_cbytes       += err;
+    new_tbytes       += err;
     fd[sock].req_pos += err;
-    fd[sock].bytes += err;
-    fd[sock].active = ink_get_hrtime_internal();
-    int total_read  = fd[sock].req_pos;
-    char *p         = fd[sock].req_header;
-    char *cl        = nullptr;
-    int cli         = 0;
+    fd[sock].bytes   += err;
+    fd[sock].active  = ink_get_hrtime_internal();
+    int total_read   = fd[sock].req_pos;
+    char *p          = fd[sock].req_header;
+    char *cl         = nullptr;
+    int cli          = 0;
     while ((p = strchr(p, '\n'))) {
       if (verbose) {
         printf("read header end? [%s]\n", p);
       }
       if (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')) {
         int off = 1 + (p[1] == '\r' ? 2 : 1);
-        p += off;
+        p       += off;
         strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
         fd[sock].response_header[p - fd[sock].req_header] = '\0';
         int lbody                                         = fd[sock].req_pos - (p - fd[sock].req_header);
@@ -2444,9 +2445,9 @@ read_response(int sock)
             return read_response_error(sock);
           }
         }
-        total_proxy_response_body_bytes += lbody;
+        total_proxy_response_body_bytes   += lbody;
         total_proxy_response_header_bytes += p - fd[sock].req_header;
-        fd[sock].length -= lbody;
+        fd[sock].length                   -= lbody;
         ink_assert(fd[sock].length >= 0);
         fd[sock].req_pos = -1;
         if (fd[sock].length && ts::Random::drandom() < client_abort_rate) {
@@ -2596,10 +2597,10 @@ read_response(int sock)
       return read_response_error(sock);
     }
     total_proxy_response_body_bytes += err;
-    new_cbytes += err;
-    new_tbytes += err;
-    fd[sock].response_remaining += err;
-    fd[sock].bytes += err;
+    new_cbytes                      += err;
+    new_tbytes                      += err;
+    fd[sock].response_remaining     += err;
+    fd[sock].bytes                  += err;
     follow_links(sock);
     if (fd[sock].length != INT_MAX) {
       fd[sock].length -= err;
@@ -2629,7 +2630,7 @@ Ldone:
   }
   new_ops++;
   double thislatency = elapsed_from_start(sock);
-  latency += (int)thislatency;
+  latency            += (int)thislatency;
   lat_ops++;
   if (fd[sock].keepalive > 0) {
     fd[sock].reset();
@@ -2675,10 +2676,10 @@ write_request(int sock)
       printf("write %d %d\n", sock, err);
     }
 
-    new_tbytes += err;
+    new_tbytes                 += err;
     total_client_request_bytes += err;
-    fd[sock].req_pos += err;
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].req_pos           += err;
+    fd[sock].active            = ink_get_hrtime_internal();
 
     if (fd[sock].req_pos >= fd[sock].length) {
       if (verbose) {
@@ -2718,10 +2719,10 @@ write_request(int sock)
       printf("write %d %d\n", sock, err);
     }
 
-    new_tbytes += err;
+    new_tbytes                 += err;
     total_client_request_bytes += err;
-    fd[sock].req_pos += err;
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].req_pos           += err;
+    fd[sock].active            = ink_get_hrtime_internal();
 
     if (fd[sock].req_pos >= fd[sock].post_size) {
       if (verbose) {
@@ -2775,7 +2776,7 @@ write_ftp_response(int sock)
     printf("write %d %d\n", sock, err);
   }
 
-  new_tbytes += err;
+  new_tbytes       += err;
   fd[sock].req_pos += err;
 
   if (fd[sock].req_pos >= fd[sock].length) {
@@ -2918,10 +2919,10 @@ make_random_url(int sock, double *dr, double *h)
     unsigned long long int doc_len_int = doc * 0x14A4D0FB0E93E3A7LL;
     unsigned long int x                = doc_len_int;
     double y                           = (double)x;
-    y /= 0x100000000LL; // deterministic random number between 0 and 1.0
-    fd[sock].response_length = gen_bfc_dist(y);
-    *dr                      = doc;
-    range_mode               = 0;
+    y                                  /= 0x100000000LL; // deterministic random number between 0 and 1.0
+    fd[sock].response_length           = gen_bfc_dist(y);
+    *dr                                = doc;
+    range_mode                         = 0;
   }
 }
 
@@ -3249,14 +3250,14 @@ interval_report()
   }
 }
 
-#define URL_HASH_ENTRIES url_hash_entries
-#define BYTES_PER_ENTRY 3
+#define URL_HASH_ENTRIES   url_hash_entries
+#define BYTES_PER_ENTRY    3
 #define ENTRIES_PER_BUCKET 16
-#define OVERFLOW_ENTRIES 1024 // many many
+#define OVERFLOW_ENTRIES   1024 // many many
 
-#define BUCKETS (URL_HASH_ENTRIES / ENTRIES_PER_BUCKET)
+#define BUCKETS          (URL_HASH_ENTRIES / ENTRIES_PER_BUCKET)
 #define BYTES_PER_BUCKET (BYTES_PER_ENTRY * ENTRIES_PER_BUCKET)
-#define URL_HASH_BYTES (BYTES_PER_ENTRY * (URL_HASH_ENTRIES + OVERFLOW_ENTRIES))
+#define URL_HASH_BYTES   (BYTES_PER_ENTRY * (URL_HASH_ENTRIES + OVERFLOW_ENTRIES))
 
 // NOTE: change to match BYTES_PER_ENTRY
 #define ENTRY_TAG(_x) (((unsigned int)_x[0] << 16) + ((unsigned int)_x[1] << 8) + (unsigned int)_x[2])
@@ -3912,8 +3913,8 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   while ((ptr < end - 1) && !fail) {
     if (*(ptr + 0) == '/') {
       if (*(ptr + 1) == '/') {
-        host1 = ptr + 2;
-        ptr += 2; /* skip "//" */
+        host1       = ptr + 2;
+        ptr         += 2; /* skip "//" */
         host_exists = 1;
         fail        = true;
       } else {
@@ -4481,10 +4482,10 @@ ink_web_decompose_url_into_structure(const char *url, InkWebURLComponents *c)
 
 /* types of path segment */
 #define NORMAL 0
-#define DOT 1
+#define DOT    1
 #define DOTDOT 2
-#define ZAP 3
-#define ERROR 4
+#define ZAP    3
+#define ERROR  4
 
 /* We statically allocate this many - if we need more, we dynamically */
 /* allocate them. */
@@ -4712,8 +4713,8 @@ ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
               *(dest++) = '%';
               *(dest++) = hexdigits[dig1];
               *(dest++) = hexdigits[dig2];
-              dcount += 3;
-              src += 2;
+              dcount    += 3;
+              src       += 2;
             } else {
               ink_warning("ink_web_unescapify_string had to truncate:%s", src_in);
               quit = 1;

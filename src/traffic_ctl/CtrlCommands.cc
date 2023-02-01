@@ -32,8 +32,9 @@ using Codec = yamlcpp_json_emitter;
 const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
   {"pretty", BasePrinter::Options::OutputFormat::PRETTY},
   {"legacy", BasePrinter::Options::OutputFormat::LEGACY},
-  {"json", BasePrinter::Options::OutputFormat::JSON},
-  {"rpc", BasePrinter::Options::OutputFormat::RPC}};
+  {"json",   BasePrinter::Options::OutputFormat::JSON  },
+  {"rpc",    BasePrinter::Options::OutputFormat::RPC   }
+};
 
 BasePrinter::Options::OutputFormat
 parse_format(ts::Arguments *args)
@@ -199,7 +200,9 @@ void
 ConfigCommand::config_set()
 {
   auto const &data = get_parsed_arguments()->get(SET_STR);
-  ConfigSetRecordRequest request{{data[0], data[1]}};
+  ConfigSetRecordRequest request{
+    {data[0], data[1]}
+  };
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
 
   _printer->write_output(response);
@@ -290,7 +293,9 @@ void
 HostCommand::status_get()
 {
   auto const &data = get_parsed_arguments()->get(STATUS_STR);
-  HostGetStatusRequest request{{std::begin(data), std::end(data)}};
+  HostGetStatusRequest request{
+    {std::begin(data), std::end(data)}
+  };
 
   auto response = invoke_rpc(request);
 
@@ -301,10 +306,12 @@ void
 HostCommand::status_down()
 {
   auto hosts = get_parsed_arguments()->get(DOWN_STR);
-  HostSetStatusRequest request{{HostSetStatusRequest::Params::Op::DOWN,
-                                {std::begin(hosts), std::end(hosts)},
-                                get_parsed_arguments()->get(REASON_STR).value(),
-                                "0"}};
+  HostSetStatusRequest request{
+    {HostSetStatusRequest::Params::Op::DOWN,
+     {std::begin(hosts), std::end(hosts)},
+     get_parsed_arguments()->get(REASON_STR).value(),
+     "0"}
+  };
   auto response = invoke_rpc(request);
   _printer->write_output(response);
 }
@@ -313,10 +320,12 @@ void
 HostCommand::status_up()
 {
   auto hosts = get_parsed_arguments()->get(UP_STR);
-  HostSetStatusRequest request{{HostSetStatusRequest::Params::Op::UP,
-                                {std::begin(hosts), std::end(hosts)},
-                                get_parsed_arguments()->get(REASON_STR).value(),
-                                "0"}};
+  HostSetStatusRequest request{
+    {HostSetStatusRequest::Params::Op::UP,
+     {std::begin(hosts), std::end(hosts)},
+     get_parsed_arguments()->get(REASON_STR).value(),
+     "0"}
+  };
 
   auto response = invoke_rpc(request);
   _printer->write_output(response);

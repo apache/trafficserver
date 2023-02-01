@@ -365,7 +365,7 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
     return static_cast<int>(maxlen);
   }
   ink_strlcpy(path, rootpath, pathsz);
-  path += rootlen;
+  path   += rootlen;
   pathsz -= rootlen;
   if (*(path - 1) != '/') {
     *(path++) = '/';

@@ -25,8 +25,8 @@
 #include <ts/ts.h>
 #include <utility>
 
-#define PLUGIN_NAME "ats_fastcgi"
-#define PLUGIN_VENDOR "Apache Software Foundation"
+#define PLUGIN_NAME    "ats_fastcgi"
+#define PLUGIN_VENDOR  "Apache Software Foundation"
 #define PLUGIN_SUPPORT "dev@trafficserver.apache.org"
 #pragma once
 namespace ats_plugin

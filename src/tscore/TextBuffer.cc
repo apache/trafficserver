@@ -106,7 +106,7 @@ TextBuffer::copyFrom(const void *source, unsigned num_bytes)
   memcpy(nextAdd, source, num_bytes);
   spaceLeft -= num_bytes;
 
-  nextAdd += num_bytes;
+  nextAdd    += num_bytes;
   nextAdd[0] = '\0';
 
   return num_bytes;
@@ -139,7 +139,7 @@ TextBuffer::enlargeBuffer(unsigned N)
     if (newSpace != nullptr) {
       nextAdd     = newSpace + static_cast<unsigned>(nextAdd - bufferStart);
       bufferStart = newSpace;
-      spaceLeft += addedSize;
+      spaceLeft   += addedSize;
       currentSize = newSize;
     } else {
       // Out of Memory, Sigh
@@ -179,7 +179,7 @@ TextBuffer::rawReadFromFile(int fd)
     // Error on read
     return readSize;
   } else {
-    nextAdd = nextAdd + readSize;
+    nextAdd   = nextAdd + readSize;
     spaceLeft -= readSize;
     return readSize;
   }
@@ -225,7 +225,7 @@ TextBuffer::readFromFD(int fd)
   } else {
     nextAdd    = nextAdd + readSize;
     nextAdd[0] = '\0';
-    spaceLeft -= readSize + 1;
+    spaceLeft  -= readSize + 1;
     return readSize;
   }
 }
@@ -250,8 +250,8 @@ TextBuffer::vformat(const char *fmt, va_list ap)
       // count does not include the NUL, we can just increment and the next format will
       // overwrite the previous NUL.
       this->spaceLeft -= num;
-      this->nextAdd += num;
-      done = true;
+      this->nextAdd   += num;
+      done            = true;
     } else {
       if (enlargeBuffer(num + 1) == -1) {
         return;

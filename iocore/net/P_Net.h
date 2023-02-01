@@ -62,9 +62,9 @@ enum Net_Stats {
 
 struct RecRawStatBlock;
 extern RecRawStatBlock *net_rsb;
-#define SSL_HANDSHAKE_WANT_READ 6
-#define SSL_HANDSHAKE_WANT_WRITE 7
-#define SSL_HANDSHAKE_WANT_ACCEPT 8
+#define SSL_HANDSHAKE_WANT_READ    6
+#define SSL_HANDSHAKE_WANT_WRITE   7
+#define SSL_HANDSHAKE_WANT_ACCEPT  8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 
 #define NET_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, 1)
@@ -88,7 +88,7 @@ extern RecRawStatBlock *net_rsb;
   } while (0);
 
 // For global access
-#define NET_SUM_GLOBAL_DYN_STAT(_x, _r) RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
+#define NET_SUM_GLOBAL_DYN_STAT(_x, _r)   RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
 #define NET_READ_GLOBAL_DYN_SUM(_x, _sum) RecGetGlobalRawStatSum(net_rsb, _x, &_sum)
 
 #include "tscore/ink_platform.h"

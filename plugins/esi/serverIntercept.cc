@@ -183,7 +183,7 @@ handleRead(SContData *cont_data, bool &read_complete)
         cont_data->body.append(data, data_len);
       }
       consumed += data_len;
-      block = TSIOBufferBlockNext(block);
+      block    = TSIOBufferBlockNext(block);
     }
   }
 

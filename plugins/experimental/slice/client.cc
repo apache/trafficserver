@@ -59,7 +59,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     char rangestr[1024];
     int rangelen             = sizeof(rangestr);
     bool const hasRange      = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
-                                             0); // <-- first range only
+                                                  0); // <-- first range only
     Config const *const conf = data->m_config;
     if (hasRange) {
       // write parsed header into slicer meta tag

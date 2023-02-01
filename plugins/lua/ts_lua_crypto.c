@@ -22,8 +22,8 @@
 #include "ts_lua_string.h"
 #include "ts_lua_util.h"
 
-#define TS_LUA_MD5_DIGEST_LENGTH 16
-#define TS_LUA_SHA1_DIGEST_LENGTH 20
+#define TS_LUA_MD5_DIGEST_LENGTH    16
+#define TS_LUA_SHA1_DIGEST_LENGTH   20
 #define TS_LUA_SHA256_DIGEST_LENGTH 32
 
 static int ts_lua_md5(lua_State *L);

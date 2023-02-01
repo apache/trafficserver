@@ -267,7 +267,7 @@ CacheControlHeader::update(TSMBuffer bufp, TSMLoc hdr_loc)
         if (strncasecmp(val, TS_HTTP_VALUE_MAX_AGE, TS_HTTP_LEN_MAX_AGE) == 0) {
           unsigned int max_age = 0;
           char *ptr            = const_cast<char *>(val);
-          ptr += TS_HTTP_LEN_MAX_AGE;
+          ptr                  += TS_HTTP_LEN_MAX_AGE;
           while ((*ptr == ' ') || (*ptr == '\t')) {
             ptr++;
           }
@@ -356,7 +356,7 @@ TSPluginInit(int argc, const char *argv[])
     int c;
     static const struct option longopts[] = {
       {"max-files", required_argument, nullptr, 'f'},
-      {nullptr, 0, nullptr, 0},
+      {nullptr,     0,                 nullptr, 0  },
     };
 
     int longindex = 0;
@@ -652,7 +652,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
                 common_prefix_path      = common_prefix;
                 common_prefix_path_size = i;
                 ++i; // go beyond the ':'
-                common_prefix += i;
+                common_prefix      += i;
                 common_prefix_size -= i;
                 break;
               }
@@ -866,7 +866,7 @@ readInterceptRequest(InterceptData &int_data)
         int_data.read_complete = true;
       }
       consumed += data_len;
-      block = TSIOBufferBlockNext(block);
+      block    = TSIOBufferBlockNext(block);
     }
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);

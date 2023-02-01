@@ -54,7 +54,7 @@ request_body_get(TSHttpTxn txnp, int *len)
     char_data = TSIOBufferBlockReadStart(block, post_buffer_reader, &data_len);
     memcpy(ret + consumed, char_data, data_len);
     consumed += data_len;
-    block = TSIOBufferBlockNext(block);
+    block    = TSIOBufferBlockNext(block);
   }
   TSIOBufferReaderFree(post_buffer_reader);
 

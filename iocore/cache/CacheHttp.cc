@@ -143,16 +143,16 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
         url = u.string_get(&arena);
         if (url) {
           snprintf(p, buf_size, "[%s] ", url);
-          tmp = strlen(p);
-          p += tmp;
+          tmp      = strlen(p);
+          p        += tmp;
           buf_size -= tmp;
         }
       }
 
       if (temps || !(data[i].alternate.object_key_get() == zero_key)) {
         snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(), CacheKey(data[i].alternate.object_key_get()).toHexStr(buf));
-        tmp = strlen(p);
-        p += tmp;
+        tmp      = strlen(p);
+        p        += tmp;
         buf_size -= tmp;
       }
     }
@@ -186,8 +186,8 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
 
   for (int i = 0; i < xcount; i++) {
     int tmp = data[i].alternate.marshal(buf, length);
-    length -= tmp;
-    buf += tmp;
+    length  -= tmp;
+    buf     += tmp;
     count++;
   }
 
@@ -212,7 +212,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_p
       return -1;
     }
     info.m_alt = (HTTPCacheAlt *)buf;
-    buf += tmp;
+    buf        += tmp;
 
     data(xcount).alternate = info;
     xcount++;

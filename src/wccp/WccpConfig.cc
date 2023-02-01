@@ -72,15 +72,29 @@ typedef std::vector<CfgString> CfgOpts;
 
 #define N_OPTS(x) (sizeof(x) / sizeof(*x))
 
-CfgString FORWARD_OPTS[]    = {{"gre", false}, {"l2", false}};
+CfgString FORWARD_OPTS[] = {
+  {"gre", false},
+  {"l2",  false}
+};
 size_t const N_FORWARD_OPTS = sizeof(FORWARD_OPTS) / sizeof(*FORWARD_OPTS);
 
-CfgString RETURN_OPTS[]    = {{"gre", false}, {"l2", false}};
+CfgString RETURN_OPTS[] = {
+  {"gre", false},
+  {"l2",  false}
+};
 size_t const N_RETURN_OPTS = sizeof(RETURN_OPTS) / sizeof(*RETURN_OPTS);
 
-CfgString ASSIGN_OPTS[] = {{"hash", false}, {"mask", false}};
+CfgString ASSIGN_OPTS[] = {
+  {"hash", false},
+  {"mask", false}
+};
 
-CfgString HASH_OPTS[] = {{"src_ip", false}, {"dst_ip", false}, {"src_port", false}, {"dst_port", false}};
+CfgString HASH_OPTS[] = {
+  {"src_ip",   false},
+  {"dst_ip",   false},
+  {"src_port", false},
+  {"dst_port", false}
+};
 
 ts::Errata::Code
 code_max(ts::Errata const &err)

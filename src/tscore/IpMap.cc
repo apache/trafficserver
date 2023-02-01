@@ -760,7 +760,10 @@ namespace detail
     return w;
   }
 
-  template <typename N> IpMapBase<N>::~IpMapBase() { this->clear(); }
+  template <typename N> IpMapBase<N>::~IpMapBase()
+  {
+    this->clear();
+  }
 
   //----------------------------------------------------------------------------
   using Ip4Span = Interval<in_addr_t, in_addr_t>;

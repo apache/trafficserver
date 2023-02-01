@@ -32,10 +32,10 @@ enum class QUICStats {
   count,
 };
 
-#define QUIC_INCREMENT_DYN_STAT(x) RecIncrRawStat(quic_rsb, nullptr, (int)x, 1)
-#define QUIC_DECREMENT_DYN_STAT(x) RecIncrRawStat(quic_rsb, nullptr, (int)x, -1)
+#define QUIC_INCREMENT_DYN_STAT(x)        RecIncrRawStat(quic_rsb, nullptr, (int)x, 1)
+#define QUIC_DECREMENT_DYN_STAT(x)        RecIncrRawStat(quic_rsb, nullptr, (int)x, -1)
 #define QUIC_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(quic_rsb, x, count)
-#define QUIC_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(quic_rsb, nullptr, (int)x, y)
+#define QUIC_INCREMENT_DYN_STAT_EX(x, y)  RecIncrRawStat(quic_rsb, nullptr, (int)x, y)
 #define QUIC_CLEAR_DYN_STAT(x)            \
   do {                                    \
     RecSetRawStatSum(quic_rsb, (x), 0);   \

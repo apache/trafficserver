@@ -74,8 +74,8 @@
 // (another 20-60 bytes on average, depending on the negotiated ciphersuite [2]).
 // All in all: 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
 // For larger records, the size is determined by TLS protocol record size
-#define SSL_DEF_TLS_RECORD_SIZE 1300  // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
-#define SSL_MAX_TLS_RECORD_SIZE 16383 // 2^14 - 1
+#define SSL_DEF_TLS_RECORD_SIZE           1300  // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
+#define SSL_MAX_TLS_RECORD_SIZE           16383 // 2^14 - 1
 #define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
 #define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
 
@@ -315,7 +315,7 @@ public:
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
 
   // noncopyable
-  SSLNetVConnection(const SSLNetVConnection &) = delete;
+  SSLNetVConnection(const SSLNetVConnection &)            = delete;
   SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
   bool protocol_mask_set = false;

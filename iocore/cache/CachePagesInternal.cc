@@ -56,7 +56,7 @@ extern Vol **gvol;
 // Stat Pages
 ShowCacheInternal *theshowcacheInternal = nullptr;
 
-#define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
+#define STREQ_PREFIX(_x, _s)         (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
 
 Action *

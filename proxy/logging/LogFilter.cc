@@ -92,7 +92,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
     while (*end && *end != '>') {
       end++;
     }
-    *end = '\0';
+    *end      = '\0';
     field_str += 2;
     Debug("log", "... now field symbol is %s", field_str);
   }

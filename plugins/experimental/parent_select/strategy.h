@@ -48,8 +48,8 @@ extern const std::string_view active_health_check;
 extern const std::string_view passive_health_check;
 
 #define PL_NH_Debug(tag, fmt, ...) TSDebug(tag, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
-#define PL_NH_Error(fmt, ...) TSError("(%s) [%s:%d]: " fmt, PLUGIN_NAME, __FILE__, __LINE__, ##__VA_ARGS__)
-#define PL_NH_Note(fmt, ...) TSDebug(PL_NH_DEBUG_TAG, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+#define PL_NH_Error(fmt, ...)      TSError("(%s) [%s:%d]: " fmt, PLUGIN_NAME, __FILE__, __LINE__, ##__VA_ARGS__)
+#define PL_NH_Note(fmt, ...)       TSDebug(PL_NH_DEBUG_TAG, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 
 constexpr const char *policy_strings[] = {"PL_NH_UNDEFINED", "PL_NH_FIRST_LIVE", "PL_NH_RR_STRICT",
                                           "PL_NH_RR_IP",     "PL_NH_RR_LATCHED", "PL_NH_CONSISTENT_HASH"};

@@ -51,10 +51,10 @@
 #define TCPI_PLUGIN_SUPPORTED 1
 #endif
 
-#define TCPI_HOOK_SSN_START 0x01u
-#define TCPI_HOOK_TXN_START 0x02u
+#define TCPI_HOOK_SSN_START     0x01u
+#define TCPI_HOOK_TXN_START     0x02u
 #define TCPI_HOOK_SEND_RESPONSE 0x04u
-#define TCPI_HOOK_TXN_CLOSE 0x10u
+#define TCPI_HOOK_TXN_CLOSE     0x10u
 
 // Log format headers. These are emitted once at the start of a log file. Note that we
 // carefully order the fields so the field ordering is compatible. This lets you change
@@ -286,11 +286,13 @@ parse_hook_list(const char *hook_list)
   const struct hookmask {
     const char *name;
     unsigned mask;
-  } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START},
-               {"txn_start", TCPI_HOOK_TXN_START},
-               {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
-               {"txn_close", TCPI_HOOK_TXN_CLOSE},
-               {nullptr, 0u}};
+  } hooks[] = {
+    {"ssn_start",     TCPI_HOOK_SSN_START    },
+    {"txn_start",     TCPI_HOOK_TXN_START    },
+    {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
+    {"txn_close",     TCPI_HOOK_TXN_CLOSE    },
+    {nullptr,         0u                     }
+  };
 
   str = TSstrdup(hook_list);
 
@@ -299,7 +301,7 @@ parse_hook_list(const char *hook_list)
 
     for (const struct hookmask *m = hooks; m->name != nullptr; ++m) {
       if (strcmp(m->name, tok) == 0) {
-        mask |= m->mask;
+        mask  |= m->mask;
         match = true;
         break;
       }
@@ -317,19 +319,19 @@ parse_hook_list(const char *hook_list)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const char usage[] = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT] "
-                              "[--rolling-enabled=VALUE] [--rolling-offset-hr=HOUR] [--rolling-interval-sec=SECONDS] "
-                              "[--rolling-size=MB]";
+  static const char usage[]             = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT] "
+                                          "[--rolling-enabled=VALUE] [--rolling-offset-hr=HOUR] [--rolling-interval-sec=SECONDS] "
+                                          "[--rolling-size=MB]";
   static const struct option longopts[] = {
-    {const_cast<char *>("sample-rate"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("log-file"), required_argument, nullptr, 'f'},
-    {const_cast<char *>("log-level"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("hooks"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("rolling-enabled"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("rolling-offset-hr"), required_argument, nullptr, 'H'},
+    {const_cast<char *>("sample-rate"),          required_argument, nullptr, 'r'},
+    {const_cast<char *>("log-file"),             required_argument, nullptr, 'f'},
+    {const_cast<char *>("log-level"),            required_argument, nullptr, 'l'},
+    {const_cast<char *>("hooks"),                required_argument, nullptr, 'h'},
+    {const_cast<char *>("rolling-enabled"),      required_argument, nullptr, 'e'},
+    {const_cast<char *>("rolling-offset-hr"),    required_argument, nullptr, 'H'},
     {const_cast<char *>("rolling-interval-sec"), required_argument, nullptr, 'S'},
-    {const_cast<char *>("rolling-size"), required_argument, nullptr, 'M'},
-    {nullptr, 0, nullptr, 0},
+    {const_cast<char *>("rolling-size"),         required_argument, nullptr, 'M'},
+    {nullptr,                                    0,                 nullptr, 0  },
   };
 
   TSPluginRegistrationInfo info;

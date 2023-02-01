@@ -26,7 +26,7 @@
 #define PLUGIN_NAME "psi"
 
 #define MAGIC_ALIVE 0xfeedbabe
-#define MAGIC_DEAD 0xdeadbeef
+#define MAGIC_DEAD  0xdeadbeef
 
 /* If more than MAX_JOBS_ALARM are present in queue, the plugin
    will log error messages. This should be tuned based on your application */

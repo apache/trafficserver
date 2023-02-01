@@ -97,6 +97,6 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogAccessTest(const LogAccessTest &rhs) = delete;
+  LogAccessTest(const LogAccessTest &rhs)      = delete;
   LogAccessTest &operator=(LogAccessTest &rhs) = delete;
 };

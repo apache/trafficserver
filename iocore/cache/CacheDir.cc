@@ -978,7 +978,7 @@ sync_cache_dir_on_shutdown()
         continue;
       }
       d->header->last_write_pos = d->header->write_pos;
-      d->header->write_pos += d->agg_buf_pos;
+      d->header->write_pos      += d->agg_buf_pos;
       ink_assert(d->header->write_pos == d->header->agg_pos);
       d->agg_buf_pos = 0;
       d->header->write_serial++;
@@ -1286,14 +1286,14 @@ Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this para
       ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
       seg_chain_max = std::max(seg_chain_max, h);
     }
-    int fl_size = dir_freelist_length(this, s);
-    in_use += seg_in_use;
-    empty += seg_empty;
-    stale += seg_stale;
-    free += fl_size;
-    buckets_in_use += seg_buckets_in_use;
+    int fl_size      = dir_freelist_length(this, s);
+    in_use           += seg_in_use;
+    empty            += seg_empty;
+    stale            += seg_stale;
+    free             += fl_size;
+    buckets_in_use   += seg_buckets_in_use;
     max_chain_length = std::max(max_chain_length, seg_chain_max);
-    bytes_in_use += seg_bytes_in_use;
+    bytes_in_use     += seg_bytes_in_use;
 
     printf("  - Segment-%d | Entries: used=%d stale=%d free=%d disk-bytes=%d Buckets: used=%d empty=%d max=%d avg=%.2f dups=%d\n",
            s, seg_in_use, seg_stale, fl_size, seg_bytes_in_use, seg_buckets_in_use, seg_empty, seg_chain_max,

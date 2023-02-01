@@ -35,13 +35,13 @@ enum ws_frametype {
 };
 typedef enum ws_frametype WS_FRAMETYPE;
 
-#define WS_RSV1 0x40
-#define WS_RSV2 0x20
-#define WS_RSV3 0x10
-#define WS_MASKED 0x80
-#define WS_OPCODE 0x0F
-#define WS_FIN 0x80
-#define WS_LENGTH 0x7F
+#define WS_RSV1      0x40
+#define WS_RSV2      0x20
+#define WS_RSV3      0x10
+#define WS_MASKED    0x80
+#define WS_OPCODE    0x0F
+#define WS_FIN       0x80
+#define WS_LENGTH    0x7F
 #define WS_16BIT_LEN 126
 #define WS_64BIT_LEN 127
 

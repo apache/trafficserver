@@ -131,10 +131,10 @@ BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
         }
         _fill = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
         _fill += (isdigit(d1) ? d1 - '0' : tolower(d1) - 'a' + 10) << 4;
-        sz += 4;
+        sz    += 4;
       } else if (sz.size() > 1 && Align::NONE != (_align = align_of(sz[1]))) {
         _fill = *sz;
-        sz += 2;
+        sz    += 2;
       } else if (Align::NONE != (_align = align_of(*sz))) {
         ++sz;
       }
@@ -285,7 +285,7 @@ namespace bw_fmt
           *dst++ = spec._fill;
         }
         // Right fill.
-        dst += size;
+        dst  += size;
         last = dst + delta / 2; // round down
         if (last > limit) {
           last = limit;
@@ -324,7 +324,8 @@ namespace bw_fmt
     char UPPER_DIGITS[]                                 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     char LOWER_DIGITS[]                                 = "0123456789abcdefghijklmnopqrstuvwxyz";
     static const std::array<uint64_t, 11> POWERS_OF_TEN = {
-      {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
+      {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}
+    };
   } // namespace
 
   /// Templated radix based conversions. Only a small number of radix are supported
@@ -340,7 +341,7 @@ namespace bw_fmt
     if (n) {
       while (n) {
         *--out = digits[n % RADIX];
-        n /= RADIX;
+        n      /= RADIX;
       }
     } else {
       *--out = '0';
@@ -757,142 +758,77 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
   // Hand rolled, might not be totally compliant everywhere, but probably close enough.
   // The long string will be locally accurate.
   // Clang requires the double braces. Why, Turing only knows.
-  static const std::array<std::string_view, 134> SHORT_NAME = {{
-    "SUCCESS: ",
-    "EPERM: ",
-    "ENOENT: ",
-    "ESRCH: ",
-    "EINTR: ",
-    "EIO: ",
-    "ENXIO: ",
-    "E2BIG ",
-    "ENOEXEC: ",
-    "EBADF: ",
-    "ECHILD: ",
-    "EAGAIN: ",
-    "ENOMEM: ",
-    "EACCES: ",
-    "EFAULT: ",
-    "ENOTBLK: ",
-    "EBUSY: ",
-    "EEXIST: ",
-    "EXDEV: ",
-    "ENODEV: ",
-    "ENOTDIR: ",
-    "EISDIR: ",
-    "EINVAL: ",
-    "ENFILE: ",
-    "EMFILE: ",
-    "ENOTTY: ",
-    "ETXTBSY: ",
-    "EFBIG: ",
-    "ENOSPC: ",
-    "ESPIPE: ",
-    "EROFS: ",
-    "EMLINK: ",
-    "EPIPE: ",
-    "EDOM: ",
-    "ERANGE: ",
-    "EDEADLK: ",
-    "ENAMETOOLONG: ",
-    "ENOLCK: ",
-    "ENOSYS: ",
-    "ENOTEMPTY: ",
-    "ELOOP: ",
-    "EWOULDBLOCK: ",
-    "ENOMSG: ",
-    "EIDRM: ",
-    "ECHRNG: ",
-    "EL2NSYNC: ",
-    "EL3HLT: ",
-    "EL3RST: ",
-    "ELNRNG: ",
-    "EUNATCH: ",
-    "ENOCSI: ",
-    "EL2HTL: ",
-    "EBADE: ",
-    "EBADR: ",
-    "EXFULL: ",
-    "ENOANO: ",
-    "EBADRQC: ",
-    "EBADSLT: ",
-    "EDEADLOCK: ",
-    "EBFONT: ",
-    "ENOSTR: ",
-    "ENODATA: ",
-    "ETIME: ",
-    "ENOSR: ",
-    "ENONET: ",
-    "ENOPKG: ",
-    "EREMOTE: ",
-    "ENOLINK: ",
-    "EADV: ",
-    "ESRMNT: ",
-    "ECOMM: ",
-    "EPROTO: ",
-    "EMULTIHOP: ",
-    "EDOTDOT: ",
-    "EBADMSG: ",
-    "EOVERFLOW: ",
-    "ENOTUNIQ: ",
-    "EBADFD: ",
-    "EREMCHG: ",
-    "ELIBACC: ",
-    "ELIBBAD: ",
-    "ELIBSCN: ",
-    "ELIBMAX: ",
-    "ELIBEXEC: ",
-    "EILSEQ: ",
-    "ERESTART: ",
-    "ESTRPIPE: ",
-    "EUSERS: ",
-    "ENOTSOCK: ",
-    "EDESTADDRREQ: ",
-    "EMSGSIZE: ",
-    "EPROTOTYPE: ",
-    "ENOPROTOOPT: ",
-    "EPROTONOSUPPORT: ",
-    "ESOCKTNOSUPPORT: ",
-    "EOPNOTSUPP: ",
-    "EPFNOSUPPORT: ",
-    "EAFNOSUPPORT: ",
-    "EADDRINUSE: ",
-    "EADDRNOTAVAIL: ",
-    "ENETDOWN: ",
-    "ENETUNREACH: ",
-    "ENETRESET: ",
-    "ECONNABORTED: ",
-    "ECONNRESET: ",
-    "ENOBUFS: ",
-    "EISCONN: ",
-    "ENOTCONN: ",
-    "ESHUTDOWN: ",
-    "ETOOMANYREFS: ",
-    "ETIMEDOUT: ",
-    "ECONNREFUSED: ",
-    "EHOSTDOWN: ",
-    "EHOSTUNREACH: ",
-    "EALREADY: ",
-    "EINPROGRESS: ",
-    "ESTALE: ",
-    "EUCLEAN: ",
-    "ENOTNAM: ",
-    "ENAVAIL: ",
-    "EISNAM: ",
-    "EREMOTEIO: ",
-    "EDQUOT: ",
-    "ENOMEDIUM: ",
-    "EMEDIUMTYPE: ",
-    "ECANCELED: ",
-    "ENOKEY: ",
-    "EKEYEXPIRED: ",
-    "EKEYREVOKED: ",
-    "EKEYREJECTED: ",
-    "EOWNERDEAD: ",
-    "ENOTRECOVERABLE: ",
-    "ERFKILL: ",
-    "EHWPOISON: ",
-  }};
+  static const std::array<std::string_view, 134> SHORT_NAME = {
+    {
+     "SUCCESS: ", "EPERM: ",
+     "ENOENT: ", "ESRCH: ",
+     "EINTR: ", "EIO: ",
+     "ENXIO: ", "E2BIG ",
+     "ENOEXEC: ", "EBADF: ",
+     "ECHILD: ", "EAGAIN: ",
+     "ENOMEM: ", "EACCES: ",
+     "EFAULT: ", "ENOTBLK: ",
+     "EBUSY: ", "EEXIST: ",
+     "EXDEV: ", "ENODEV: ",
+     "ENOTDIR: ", "EISDIR: ",
+     "EINVAL: ", "ENFILE: ",
+     "EMFILE: ", "ENOTTY: ",
+     "ETXTBSY: ", "EFBIG: ",
+     "ENOSPC: ", "ESPIPE: ",
+     "EROFS: ", "EMLINK: ",
+     "EPIPE: ", "EDOM: ",
+     "ERANGE: ", "EDEADLK: ",
+     "ENAMETOOLONG: ", "ENOLCK: ",
+     "ENOSYS: ", "ENOTEMPTY: ",
+     "ELOOP: ", "EWOULDBLOCK: ",
+     "ENOMSG: ", "EIDRM: ",
+     "ECHRNG: ", "EL2NSYNC: ",
+     "EL3HLT: ", "EL3RST: ",
+     "ELNRNG: ", "EUNATCH: ",
+     "ENOCSI: ", "EL2HTL: ",
+     "EBADE: ", "EBADR: ",
+     "EXFULL: ", "ENOANO: ",
+     "EBADRQC: ", "EBADSLT: ",
+     "EDEADLOCK: ", "EBFONT: ",
+     "ENOSTR: ", "ENODATA: ",
+     "ETIME: ", "ENOSR: ",
+     "ENONET: ", "ENOPKG: ",
+     "EREMOTE: ", "ENOLINK: ",
+     "EADV: ", "ESRMNT: ",
+     "ECOMM: ", "EPROTO: ",
+     "EMULTIHOP: ", "EDOTDOT: ",
+     "EBADMSG: ", "EOVERFLOW: ",
+     "ENOTUNIQ: ", "EBADFD: ",
+     "EREMCHG: ", "ELIBACC: ",
+     "ELIBBAD: ", "ELIBSCN: ",
+     "ELIBMAX: ", "ELIBEXEC: ",
+     "EILSEQ: ", "ERESTART: ",
+     "ESTRPIPE: ", "EUSERS: ",
+     "ENOTSOCK: ", "EDESTADDRREQ: ",
+     "EMSGSIZE: ", "EPROTOTYPE: ",
+     "ENOPROTOOPT: ", "EPROTONOSUPPORT: ",
+     "ESOCKTNOSUPPORT: ", "EOPNOTSUPP: ",
+     "EPFNOSUPPORT: ", "EAFNOSUPPORT: ",
+     "EADDRINUSE: ", "EADDRNOTAVAIL: ",
+     "ENETDOWN: ", "ENETUNREACH: ",
+     "ENETRESET: ", "ECONNABORTED: ",
+     "ECONNRESET: ", "ENOBUFS: ",
+     "EISCONN: ", "ENOTCONN: ",
+     "ESHUTDOWN: ", "ETOOMANYREFS: ",
+     "ETIMEDOUT: ", "ECONNREFUSED: ",
+     "EHOSTDOWN: ", "EHOSTUNREACH: ",
+     "EALREADY: ", "EINPROGRESS: ",
+     "ESTALE: ", "EUCLEAN: ",
+     "ENOTNAM: ", "ENAVAIL: ",
+     "EISNAM: ", "EREMOTEIO: ",
+     "EDQUOT: ", "ENOMEDIUM: ",
+     "EMEDIUMTYPE: ", "ECANCELED: ",
+     "ENOKEY: ", "EKEYEXPIRED: ",
+     "EKEYREVOKED: ", "EKEYREJECTED: ",
+     "EOWNERDEAD: ", "ENOTRECOVERABLE: ",
+     "ERFKILL: ", "EHWPOISON: ",
+     }
+  };
   // This provides convenient safe access to the errno short name array.
   auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
   static const BWFormat number_fmt{"[{}]"sv}; // numeric value format.

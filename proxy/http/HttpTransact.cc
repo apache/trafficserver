@@ -463,7 +463,7 @@ update_cache_control_information_from_config(HttpTransact::State *s)
 {
   getCacheControl(&s->cache_control, &s->request_data, s->txn_conf);
 
-  s->cache_info.directives.does_config_permit_lookup &= (s->cache_control.never_cache == false);
+  s->cache_info.directives.does_config_permit_lookup  &= (s->cache_control.never_cache == false);
   s->cache_info.directives.does_config_permit_storing &= (s->cache_control.never_cache == false);
 
   s->cache_info.directives.does_client_permit_storing =
@@ -2518,7 +2518,7 @@ HttpTransact::issue_revalidate(State *s)
       const char *etag = c_resp->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &length);
       if (nullptr != etag) {
         if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
-          etag += 2;
+          etag   += 2;
           length -= 2;
         }
         s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
@@ -7859,11 +7859,11 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
             int len;
             uint64_t presence;
           } fields[] = {
-            {MIME_FIELD_ETAG, MIME_LEN_ETAG, MIME_PRESENCE_ETAG},
+            {MIME_FIELD_ETAG,             MIME_LEN_ETAG,             MIME_PRESENCE_ETAG            },
             {MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION, MIME_PRESENCE_CONTENT_LOCATION},
-            {MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES, MIME_PRESENCE_EXPIRES},
-            {MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, MIME_PRESENCE_CACHE_CONTROL},
-            {MIME_FIELD_VARY, MIME_LEN_VARY, MIME_PRESENCE_VARY},
+            {MIME_FIELD_EXPIRES,          MIME_LEN_EXPIRES,          MIME_PRESENCE_EXPIRES         },
+            {MIME_FIELD_CACHE_CONTROL,    MIME_LEN_CACHE_CONTROL,    MIME_PRESENCE_CACHE_CONTROL   },
+            {MIME_FIELD_VARY,             MIME_LEN_VARY,             MIME_PRESENCE_VARY            },
           };
 
           for (size_t i = 0; i < countof(fields); i++) {

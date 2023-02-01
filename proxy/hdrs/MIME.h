@@ -73,19 +73,19 @@ enum MimeParseState {
 #define MIME_HDR_SANITY_CHECK (void)
 #endif
 
-#define MIME_FIELD_SLOT_READINESS_EMPTY 0
+#define MIME_FIELD_SLOT_READINESS_EMPTY    0
 #define MIME_FIELD_SLOT_READINESS_DETACHED 1
-#define MIME_FIELD_SLOT_READINESS_LIVE 2
-#define MIME_FIELD_SLOT_READINESS_DELETED 3
+#define MIME_FIELD_SLOT_READINESS_LIVE     2
+#define MIME_FIELD_SLOT_READINESS_DELETED  3
 
 #define MIME_FIELD_SLOT_FLAGS_DUP_HEAD (1 << 0)
-#define MIME_FIELD_SLOT_FLAGS_COOKED (1 << 1)
+#define MIME_FIELD_SLOT_FLAGS_COOKED   (1 << 1)
 
 #define MIME_FIELD_BLOCK_SLOTS 16
 
-#define MIME_FIELD_SLOTNUM_BITS 4
-#define MIME_FIELD_SLOTNUM_MASK ((1 << MIME_FIELD_SLOTNUM_BITS) - 1)
-#define MIME_FIELD_SLOTNUM_MAX (MIME_FIELD_SLOTNUM_MASK - 1)
+#define MIME_FIELD_SLOTNUM_BITS    4
+#define MIME_FIELD_SLOTNUM_MASK    ((1 << MIME_FIELD_SLOTNUM_BITS) - 1)
+#define MIME_FIELD_SLOTNUM_MAX     (MIME_FIELD_SLOTNUM_MASK - 1)
 #define MIME_FIELD_SLOTNUM_UNKNOWN MIME_FIELD_SLOTNUM_MAX
 
 /***********************************************************************
@@ -97,16 +97,16 @@ enum MimeParseState {
 struct MIMEHdrImpl;
 
 struct MIMEField {
-  const char *m_ptr_name;              // 4
-  const char *m_ptr_value;             // 4
-  MIMEField *m_next_dup;               // 4
-  int16_t m_wks_idx;                   // 2
-  uint16_t m_len_name;                 // 2
-  uint32_t m_len_value : 24;           // 3
-  uint8_t m_n_v_raw_printable : 1;     // 1/8
-  uint8_t m_n_v_raw_printable_pad : 3; // 3/8
-  uint8_t m_readiness : 2;             // 2/8
-  uint8_t m_flags : 2;                 // 2/8
+  const char *m_ptr_name;               // 4
+  const char *m_ptr_value;              // 4
+  MIMEField *m_next_dup;                // 4
+  int16_t m_wks_idx;                    // 2
+  uint16_t m_len_name;                  // 2
+  uint32_t m_len_value            : 24; // 3
+  uint8_t m_n_v_raw_printable     : 1;  // 1/8
+  uint8_t m_n_v_raw_printable_pad : 3;  // 3/8
+  uint8_t m_readiness             : 2;  // 2/8
+  uint8_t m_flags                 : 2;  // 2/8
 
   bool
   is_dup_head() const
@@ -1237,7 +1237,7 @@ public:
   void set_server(const char *server_id_tag, int server_id_tag_size);
 
   // No gratuitous copies & refcounts!
-  MIMEHdr(const MIMEHdr &m) = delete;
+  MIMEHdr(const MIMEHdr &m)            = delete;
   MIMEHdr &operator=(const MIMEHdr &m) = delete;
 
 private:

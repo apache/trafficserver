@@ -45,9 +45,9 @@
   consist of a list of LogObjects.
   -------------------------------------------------------------------------*/
 
-#define LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION ".log"
+#define LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION  ".log"
 #define LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION ".blog"
-#define LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION ".pipe"
+#define LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION   ".pipe"
 
 #define FLUSH_ARRAY_SIZE (512 * 4)
 
@@ -288,7 +288,7 @@ private:
   LogBuffer *_checkout_write(size_t *write_offset, size_t write_size);
 
   // noncopyable
-  LogObject(const LogObject &) = delete;
+  LogObject(const LogObject &)            = delete;
   LogObject &operator=(const LogObject &) = delete;
 
 private:

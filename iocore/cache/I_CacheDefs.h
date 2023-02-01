@@ -25,12 +25,12 @@
 
 #include "tscore/CryptoHash.h"
 
-#define CACHE_INIT_FAILED -1
+#define CACHE_INIT_FAILED  -1
 #define CACHE_INITIALIZING 0
-#define CACHE_INITIALIZED 1
+#define CACHE_INITIALIZED  1
 
 #define CACHE_ALT_INDEX_DEFAULT -1
-#define CACHE_ALT_REMOVED -2
+#define CACHE_ALT_REMOVED       -2
 
 static const uint8_t CACHE_DB_MAJOR_VERSION = 24;
 static const uint8_t CACHE_DB_MINOR_VERSION = 2;
@@ -45,19 +45,19 @@ static const uint8_t CACHE_DIR_MINOR_VERSION = 0;
 #define CACHE_DB_FDS 128
 
 // opcodes
-#define CACHE_OPEN_READ 1
-#define CACHE_OPEN_READ_BUFFER 2
-#define CACHE_OPEN_READ_LONG 3
-#define CACHE_OPEN_READ_BUFFER_LONG 4
-#define CACHE_OPEN_WRITE 5
-#define CACHE_OPEN_WRITE_BUFFER 6
-#define CACHE_OPEN_WRITE_LONG 7
+#define CACHE_OPEN_READ              1
+#define CACHE_OPEN_READ_BUFFER       2
+#define CACHE_OPEN_READ_LONG         3
+#define CACHE_OPEN_READ_BUFFER_LONG  4
+#define CACHE_OPEN_WRITE             5
+#define CACHE_OPEN_WRITE_BUFFER      6
+#define CACHE_OPEN_WRITE_LONG        7
 #define CACHE_OPEN_WRITE_BUFFER_LONG 8
-#define CACHE_UPDATE 9
-#define CACHE_REMOVE 10
-#define CACHE_LINK 11
-#define CACHE_DEREF 12
-#define CACHE_LOOKUP_OP 13
+#define CACHE_UPDATE                 9
+#define CACHE_REMOVE                 10
+#define CACHE_LINK                   11
+#define CACHE_DEREF                  12
+#define CACHE_LOOKUP_OP              13
 
 enum CacheType {
   CACHE_NONE_TYPE = 0, // for empty disk fragments
@@ -130,7 +130,7 @@ struct HttpCacheKey {
 };
 
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
-#define CACHE_EXPECTED_SIZE 32768
+#define CACHE_EXPECTED_SIZE         32768
 
 /* uses of the CacheKey
    word(0) - cache partition segment

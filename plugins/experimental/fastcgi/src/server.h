@@ -54,7 +54,7 @@ public:
 class ThreadData
 {
 public:
-  ThreadData(ThreadData const &) = delete;
+  ThreadData(ThreadData const &)     = delete;
   void operator=(ThreadData const &) = delete;
 
   ThreadData(Server *server) : _server(server)
@@ -93,7 +93,7 @@ class Server
 {
 public:
   static Server *server();
-  Server(Server const &) = delete;
+  Server(Server const &)         = delete;
   void operator=(Server const &) = delete;
 
   Server();

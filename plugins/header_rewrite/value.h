@@ -44,7 +44,7 @@ public:
   ~Value() override;
 
   // noncopyable
-  Value(const Value &) = delete;
+  Value(const Value &)          = delete;
   void operator=(const Value &) = delete;
 
   void set_value(const std::string &val);

@@ -876,7 +876,7 @@ RangeTransform::transform_to_range()
       if (toskip > 0) {
         reader->consume(toskip);
         *done_byte += toskip;
-        avail = reader->read_avail();
+        avail      = reader->read_avail();
       }
     }
 
@@ -890,7 +890,7 @@ RangeTransform::transform_to_range()
       m_output_buf->write(reader, tosend);
       reader->consume(tosend);
 
-      m_done += tosend;
+      m_done     += tosend;
       *done_byte += tosend;
     }
 

@@ -85,8 +85,8 @@
  *   The double-colons delimit flags, of which none are used in this example.
  */
 #define MAX_CONFIG_LINE 1024
-#define MAX_RX_MATCH 10
-#define WHITESPACE " \t\r\n"
+#define MAX_RX_MATCH    10
+#define WHITESPACE      " \t\r\n"
 
 #include <cstdint>
 
@@ -408,7 +408,7 @@ public:
 
     if (len_spec) {
       match_len = 0;
-      len_spec += 4;
+      len_spec  += 4;
       while (isdigit(*len_spec)) {
         match_len = 10 * match_len + (*len_spec++ - '0');
       }
@@ -479,7 +479,7 @@ public:
     }
 
     to_spec += 3;
-    delim = *to_spec;
+    delim   = *to_spec;
     if (isalnum(delim)) {
       len = strcspn(to_spec, WHITESPACE);
     } else {
@@ -635,9 +635,9 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
       //        so we could use TSIOBufferCopy ?
       n = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, start);
       assert(n > 0); // FIXME - handle error
-      bytes_read += n;
+      bytes_read          += n;
       contdata->bytes_out += n;
-      start -= n;
+      start               -= n;
     }
 
     /* omit deleted bytes */
@@ -654,10 +654,10 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   /* data after the last edit */
   if (bytes_read < buflen - keep) {
-    n = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, buflen - bytes_read - keep);
-    contdata->bytes_in += n;
+    n                   = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, buflen - bytes_read - keep);
+    contdata->bytes_in  += n;
     contdata->bytes_out += n;
-    bytes_read += n;
+    bytes_read          += n;
   }
   /* reset buf to what we've not processed */
   contdata->contbuf = buf + bytes_read;

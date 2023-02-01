@@ -25,9 +25,9 @@
 #pragma once
 
 /* STEK - Session Ticket Encryption Key stuff */
-#define STEK_MAX_LIFETIME 86400                                   // 24 hours max - should rotate STEK
+#define STEK_MAX_LIFETIME                 86400                   // 24 hours max - should rotate STEK
 #define STEK_NOT_CHANGED_WARNING_INTERVAL (2 * STEK_MAX_LIFETIME) // warn on non-stek rotate every X secs.
-#define STEK_MAX_ENC_SIZE 512
+#define STEK_MAX_ENC_SIZE                 512
 
 #define SSL_KEY_LEN 16
 

@@ -76,7 +76,7 @@
 #include "P_Net.h"
 #include "tscore/Regression.h"
 
-#define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
+#define PVC_LOCK_RETRY_TIME      HRTIME_MSECONDS(10)
 #define MIN_BLOCK_TRANSFER_BYTES 128
 
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
@@ -549,7 +549,7 @@ PluginVC::process_write_side()
     return;
   }
 
-  write_state.vio.ndone += added;
+  write_state.vio.ndone            += added;
   other_side->read_state.vio.ndone += added;
 
   Debug("pvc", "[%u] %s: process_write_side and process_read_side from other side; added %" PRId64 "", core_obj->id, PVC_TYPE,

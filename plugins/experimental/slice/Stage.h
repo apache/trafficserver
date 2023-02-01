@@ -115,7 +115,7 @@ struct Channel {
 
 struct Stage // upstream or downstream (server or client)
 {
-  Stage(Stage const &) = delete;
+  Stage(Stage const &)            = delete;
   Stage &operator=(Stage const &) = delete;
 
   TSVConn m_vc{nullptr};

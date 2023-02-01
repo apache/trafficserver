@@ -19,7 +19,7 @@
 #include "ts_lua_util.h"
 
 #define TS_LUA_MAX_PACKAGE_PATH_LEN 256
-#define TS_LUA_MAX_PACKAGE_NUM 64
+#define TS_LUA_MAX_PACKAGE_NUM      64
 
 typedef struct {
   size_t len;

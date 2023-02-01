@@ -98,7 +98,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
       break;
     }
 
-    buf += ret;
+    buf       += ret;
     read_size += ret;
   }
 
@@ -381,7 +381,7 @@ processDurationString(char *str, int *seconds)
       }
 
       result += (multiplier * tmp);
-      s = current + 1;
+      s      = current + 1;
     }
     current++;
   }
@@ -511,7 +511,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
             ink_assert(bytesCopy > 0);
 
             copyForward += bytesCopy;
-            copyFrom = s + 1;
+            copyFrom    = s + 1;
           } else {
             copyForward = s;
             copyFrom    = s + 1;

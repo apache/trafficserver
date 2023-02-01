@@ -298,7 +298,7 @@ utils::internal::consumeFromTSIOBufferReader(TSIOBufferReader reader)
         char_data = TSIOBufferBlockReadStart(block, reader, &data_len);
         str.append(char_data, data_len);
         consumed += data_len;
-        block = TSIOBufferBlockNext(block);
+        block    = TSIOBufferBlockNext(block);
       }
     }
     TSIOBufferReaderConsume(reader, consumed);

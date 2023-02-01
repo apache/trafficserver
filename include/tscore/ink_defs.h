@@ -71,14 +71,14 @@ countof(const T (&)[N])
 #define countof(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
 #endif
 
-#define SOCKOPT_ON ((char *)&on)
+#define SOCKOPT_ON  ((char *)&on)
 #define SOCKOPT_OFF ((char *)&off)
 
 #ifndef ABS
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 #endif
 
-#define ATS_UNUSED __attribute__((unused))
+#define ATS_UNUSED         __attribute__((unused))
 #define ATS_WARN_IF_UNUSED __attribute__((warn_unused_result))
 #define ATS_UNUSED_RETURN(x) \
   if (x) {                   \

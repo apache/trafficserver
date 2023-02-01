@@ -35,18 +35,18 @@
 #endif
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
-#define REQUIRED_SHRINK 0.8      // must get to this size or keep original buffer (with padding)
-#define HISTORY_HYSTERIA 10      // extra temporary history
-#define ENTRY_OVERHEAD 256       // per-entry overhead to consider when computing cache value/size
-#define LZMA_BASE_MEMLIMIT (64 * 1024 * 1024)
-//#define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
+#define REQUIRED_SHRINK      0.8 // must get to this size or keep original buffer (with padding)
+#define HISTORY_HYSTERIA     10  // extra temporary history
+#define ENTRY_OVERHEAD       256 // per-entry overhead to consider when computing cache value/size
+#define LZMA_BASE_MEMLIMIT   (64 * 1024 * 1024)
+// #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
-#define REQUEUE_HITS(_h) ((_h) ? ((_h)-1) : 0)
+#define REQUEUE_HITS(_h)              ((_h) ? ((_h)-1) : 0)
 #define CACHE_VALUE_HITS_SIZE(_h, _s) ((float)((_h) + 1) / ((_s) + ENTRY_OVERHEAD))
-#define CACHE_VALUE(_x) CACHE_VALUE_HITS_SIZE((_x)->hits, (_x)->size)
+#define CACHE_VALUE(_x)               CACHE_VALUE_HITS_SIZE((_x)->hits, (_x)->size)
 
 #define AVERAGE_VALUE_OVER 100
-#define REQUEUE_LIMIT 100
+#define REQUEUE_LIMIT      100
 
 struct RamCacheCLFUSEntry {
   CryptoHash key;
@@ -57,10 +57,10 @@ struct RamCacheCLFUSEntry {
   uint32_t compressed_len;
   union {
     struct {
-      uint32_t compressed : 3; // compression type
+      uint32_t compressed     : 3; // compression type
       uint32_t incompressible : 1;
-      uint32_t lru : 1;
-      uint32_t copy : 1; // copy-in-copy-out
+      uint32_t lru            : 1;
+      uint32_t copy           : 1; // copy-in-copy-out
     } flag_bits;
     uint32_t flags;
   };
@@ -219,7 +219,7 @@ check_accounting(RamCacheCLFUS *c)
   while (y) {
     x++;
     xsize += y->size + ENTRY_OVERHEAD;
-    y = y->lru_link.next;
+    y     = y->lru_link.next;
   }
   y = c->lru[1].head;
   while (y) {
@@ -294,7 +294,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           data->_mem_type    = DEFAULT_ALLOC;
           if (!e->flag_bits.copy) { // don't bother if we have to copy anyway
             int64_t delta = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
-            this->_bytes += delta;
+            this->_bytes  += delta;
             CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
             e->size = e->compressed_len;
             check_accounting(this);
@@ -527,7 +527,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         ats_free(b);
         e->compressed_len = l;
         int64_t delta     = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
-        this->_bytes += delta;
+        this->_bytes      += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = l;
       } else {
@@ -536,7 +536,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         bb                      = static_cast<char *>(ats_malloc(e->len));
         memcpy(bb, e->data->data(), e->len);
         int64_t delta = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
-        this->_bytes += delta;
+        this->_bytes  += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = e->len;
         l       = e->len;
@@ -562,7 +562,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
   return;
 }
 
-void RamCacheCLFUS::_requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
+void
+RamCacheCLFUS::_requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
 {
   RamCacheCLFUSEntry *victim = nullptr;
   while ((victim = victims.dequeue())) {
@@ -601,7 +602,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       this->_lru[e->flag_bits.lru].remove(e);
       this->_lru[e->flag_bits.lru].enqueue(e);
       int64_t delta = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
-      this->_bytes += delta;
+      this->_bytes  += delta;
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
       if (!copy) {
         e->size = size;
@@ -722,7 +723,7 @@ Linsert:
     e->data->_mem_type = DEFAULT_ALLOC;
   }
   e->flag_bits.copy = copy;
-  this->_bytes += size + ENTRY_OVERHEAD;
+  this->_bytes      += size + ENTRY_OVERHEAD;
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
   e->size = size;
   this->_objects++;

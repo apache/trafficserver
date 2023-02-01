@@ -105,7 +105,7 @@ public:
   }
 
   // noncopyable
-  Statement(const Statement &) = delete;
+  Statement(const Statement &)      = delete;
   void operator=(const Statement &) = delete;
 
   // Which hook are we adding this statement to?

@@ -93,7 +93,7 @@ namespace io
       assert(reader != nullptr);
     }
 
-    ReaderSize(const ReaderSize &) = delete;
+    ReaderSize(const ReaderSize &)            = delete;
     ReaderSize &operator=(const ReaderSize &) = delete;
     void *operator new(const std::size_t)     = delete;
   };
@@ -103,7 +103,7 @@ namespace io
     const size_t offset;
 
     ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != nullptr); }
-    ReaderOffset(const ReaderOffset &) = delete;
+    ReaderOffset(const ReaderOffset &)            = delete;
     ReaderOffset &operator=(const ReaderOffset &) = delete;
     void *operator new(const std::size_t)         = delete;
   };
@@ -156,7 +156,7 @@ namespace io
     ~WriteOperation();
 
     // noncopyable
-    WriteOperation(const WriteOperation &) = delete;
+    WriteOperation(const WriteOperation &)            = delete;
     WriteOperation &operator=(const WriteOperation &) = delete;
 
     WriteOperation &operator<<(const TSIOBufferReader);
@@ -193,7 +193,7 @@ namespace io
     ~IOSink();
 
     // noncopyable
-    IOSink(const IOSink &) = delete;
+    IOSink(const IOSink &)            = delete;
     IOSink &operator=(const IOSink &) = delete;
 
     template <class T>
@@ -210,7 +210,7 @@ namespace io
 
     template <class... A>
     static IOSinkPointer
-    Create(A &&... a)
+    Create(A &&...a)
     {
       return IOSinkPointer(new IOSink(WriteOperation::Create(std::forward<A>(a)...)));
     }
@@ -256,7 +256,7 @@ namespace io
     }
 
     // noncopyable
-    BufferNode(const BufferNode &) = delete;
+    BufferNode(const BufferNode &)            = delete;
     BufferNode &operator=(const BufferNode &) = delete;
     BufferNode &operator<<(const TSIOBufferReader);
     BufferNode &operator<<(const ReaderSize &);
@@ -273,7 +273,7 @@ namespace io
 
     template <class T> Data(T &&t) : root_(std::forward<T>(t)), first_(false) {}
     // noncopyable
-    Data(const Data &) = delete;
+    Data(const Data &)            = delete;
     Data &operator=(const Data &) = delete;
 
     Node::Result process(const TSIOBuffer) override;
@@ -284,9 +284,9 @@ namespace io
 
     ~Sink();
 
-    template <class... A> Sink(A &&... a) : data_(std::forward<A>(a)...) {}
+    template <class... A> Sink(A &&...a) : data_(std::forward<A>(a)...) {}
     // noncopyable
-    Sink(const Sink &) = delete;
+    Sink(const Sink &)            = delete;
     Sink &operator=(const Sink &) = delete;
 
     SinkPointer branch();

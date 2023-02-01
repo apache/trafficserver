@@ -171,7 +171,10 @@ TEST_CASE("simple new and free", "")
   // go 100 times in default (--benchmark-samples)
   char name[16];
   snprintf(name, sizeof(name), "nthreads = %d", nthreads);
-  BENCHMARK(name) { return setup_test_case_1(nthreads); };
+  BENCHMARK(name)
+  {
+    return setup_test_case_1(nthreads);
+  };
 }
 } // namespace
 

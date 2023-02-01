@@ -72,25 +72,27 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
     const char *scheme;
     const char *req;
     bool result;
-  } requests[] = {// missing host header
-                  {"http", "GET / HTTP/1.1\r\n\r\n", false},
-                  // good get request
-                  {"http", "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
-                  // good trace request
-                  {"http", "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
-                  // content len < 0
-                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-                  // valid content len
-                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-                  // Content Length missing
-                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-                  {nullptr, nullptr, false}};
+  } requests[] = {
+  // missing host header
+    {"http",  "GET / HTTP/1.1\r\n\r\n",                                         false},
+ // good get request
+    {"http",  "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        true },
+ // good trace request
+    {"http",  "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                      true },
+ // content len < 0
+    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n",  false},
+ // valid content len
+    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
+    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
+    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n",  true },
+ // Content Length missing
+    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
+    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
+    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        false},
+    {nullptr, nullptr,                                                          false}
+  };
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
@@ -112,9 +114,11 @@ REGRESSION_TEST(HttpTransact_handle_trace_and_options_requests)(RegressionTest *
     const char *scheme;
     const char *req;
     bool result;
-  } requests[] = {// good trace request
-                  {"http", "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true},
-                  {nullptr, nullptr, false}};
+  } requests[] = {
+  // good trace request
+    {"http",  "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true },
+    {nullptr, nullptr,                                                                   false}
+  };
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 

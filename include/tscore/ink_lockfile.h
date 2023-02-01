@@ -26,9 +26,9 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_string.h"
 
-#define COP_LOCK "cop.lock"
+#define COP_LOCK     "cop.lock"
 #define MANAGER_LOCK "manager.lock"
-#define SERVER_LOCK "server.lock"
+#define SERVER_LOCK  "server.lock"
 
 class Lockfile
 {

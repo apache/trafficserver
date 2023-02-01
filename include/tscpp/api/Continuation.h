@@ -76,7 +76,7 @@ public:
   }
 
   // No copying.
-  Continuation(const Continuation &) = delete;
+  Continuation(const Continuation &)            = delete;
   Continuation &operator=(const Continuation &) = delete;
 
   // Moving allowed.

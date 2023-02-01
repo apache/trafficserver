@@ -478,8 +478,8 @@ ink_freelists_dump(FILE *f)
             static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size), static_cast<uint64_t>(fll->fl->used),
             fll->fl->type_size, fll->fl->chunk_size, fll->fl->hugepages_failure, fll->fl->name ? fll->fl->name : "<unknown>");
     total_allocated += static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size);
-    total_used += static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size);
-    fll = fll->next;
+    total_used      += static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size);
+    fll             = fll->next;
   }
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
   fprintf(f, "-----------------------------------------------------------------------------------------\n");

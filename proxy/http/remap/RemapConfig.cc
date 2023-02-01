@@ -375,26 +375,26 @@ struct remap_directive {
 
 static const remap_directive directives[] = {
 
-  {".definefilter", parse_define_directive},
-  {".deffilter", parse_define_directive},
-  {".defflt", parse_define_directive},
+  {".definefilter",     parse_define_directive    },
+  {".deffilter",        parse_define_directive    },
+  {".defflt",           parse_define_directive    },
 
-  {".deletefilter", parse_delete_directive},
-  {".delfilter", parse_delete_directive},
-  {".delflt", parse_delete_directive},
+  {".deletefilter",     parse_delete_directive    },
+  {".delfilter",        parse_delete_directive    },
+  {".delflt",           parse_delete_directive    },
 
-  {".usefilter", parse_activate_directive},
-  {".activefilter", parse_activate_directive},
-  {".activatefilter", parse_activate_directive},
-  {".useflt", parse_activate_directive},
+  {".usefilter",        parse_activate_directive  },
+  {".activefilter",     parse_activate_directive  },
+  {".activatefilter",   parse_activate_directive  },
+  {".useflt",           parse_activate_directive  },
 
-  {".unusefilter", parse_deactivate_directive},
+  {".unusefilter",      parse_deactivate_directive},
   {".deactivatefilter", parse_deactivate_directive},
-  {".unactivefilter", parse_deactivate_directive},
-  {".deuseflt", parse_deactivate_directive},
-  {".unuseflt", parse_deactivate_directive},
+  {".unactivefilter",   parse_deactivate_directive},
+  {".deuseflt",         parse_deactivate_directive},
+  {".unuseflt",         parse_deactivate_directive},
 
-  {".include", parse_include_directive},
+  {".include",          parse_include_directive   },
 };
 
 const char *
@@ -746,7 +746,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   ink_assert((unsigned)argc < countof(new_argv));
 
   if (jump_to_argc != 0) {
-    argc -= jump_to_argc;
+    argc  -= jump_to_argc;
     int i = 0;
     while (argv[i + jump_to_argc]) {
       new_argv[i] = argv[i + jump_to_argc];
@@ -1078,7 +1078,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     //   the beginning of the string
     if ((tmp = (map_from_start = map_from)) != nullptr && length > 2 && tmp[length - 1] == '/' && tmp[length - 2] == '/') {
       new_mapping->unique = true;
-      length -= 2;
+      length              -= 2;
     }
 
     new_mapping->fromURL.create(nullptr);

@@ -117,10 +117,23 @@ testParseRange()
     "bytes 0-1023/146515" // this should be rejected (Content-range)
   };                      // invalid
 
-  std::vector<Range> const exps = {Range{0, 1023 + 1}, Range{1, 1024 + 1}, Range{11, 11 + 1}, Range{1, Range::maxval},
-                                   Range{-1, -1},      Range{3, 17 + 1},   Range{3, 17 + 1},  Range{3, 17 + 1},
-                                   Range{3, 11 + 1},   Range{3, 11 + 1},   Range{0, 1},       Range{-20, 0},
-                                   Range{-1, -1},      Range{-1, -1},      Range{-1, -1}};
+  std::vector<Range> const exps = {
+    Range{0,   1023 + 1     },
+    Range{1,   1024 + 1     },
+    Range{11,  11 + 1       },
+    Range{1,   Range::maxval},
+    Range{-1,  -1           },
+    Range{3,   17 + 1       },
+    Range{3,   17 + 1       },
+    Range{3,   17 + 1       },
+    Range{3,   11 + 1       },
+    Range{3,   11 + 1       },
+    Range{0,   1            },
+    Range{-20, 0            },
+    Range{-1,  -1           },
+    Range{-1,  -1           },
+    Range{-1,  -1           }
+  };
 
   std::vector<bool> const expsres = {true, true, true, true, false, true, true, true, true, true, true, true, false, false, false};
 

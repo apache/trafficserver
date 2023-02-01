@@ -61,7 +61,7 @@ namespace details
         auto &fld = pair_fld.second;
         if (fld.align == processing_align) {
           fld.field_offset = acc_offset;
-          acc_offset += fld.size;
+          acc_offset       += fld.size;
         } else if (fld.align < processing_align) {
           next_align = std::max(next_align, fld.align);
         }

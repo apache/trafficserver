@@ -133,9 +133,9 @@ public:
   const char *data_end() const;
 
   /// Assignment.
-  self_type &operator                    =(super_type const &that);
+  self_type &operator=(super_type const &that);
   template <size_t N> self_type &operator=(const char (&s)[N]);
-  self_type &operator                    =(const std::string &s);
+  self_type &operator=(const std::string &s);
 
   /// Explicitly set the view.
   self_type &assign(char const *ptr, size_t n);
@@ -1197,7 +1197,10 @@ namespace literals
    * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
    * so hopefully someday this can be removed.
    */
-  constexpr ts::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
+  constexpr ts::TextView operator"" _tv(const char *s, size_t n)
+  {
+    return {s, n};
+  }
 } // namespace literals
 
 /** Functor for STL containers that need caseless comparisons of standard string types.

@@ -37,7 +37,7 @@
 // Should be plugin code.
 #include <ts/ts.h>
 #define L_Assert TSAssert
-#define L_Fatal TSFatal
+#define L_Fatal  TSFatal
 #endif
 
 #ifdef X
@@ -67,7 +67,7 @@ public:
 
   // No copying or moving.
   //
-  shared_mutex(shared_mutex const &) = delete;
+  shared_mutex(shared_mutex const &)            = delete;
   shared_mutex &operator=(shared_mutex const &) = delete;
 
   void

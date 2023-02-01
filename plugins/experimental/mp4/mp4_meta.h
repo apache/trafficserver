@@ -28,7 +28,7 @@
 
 #include <ts/ts.h>
 
-#define MP4_MAX_TRAK_NUM 6
+#define MP4_MAX_TRAK_NUM    6
 #define MP4_MAX_BUFFER_SIZE (10 * 1024 * 1024)
 #define MP4_MIN_BUFFER_SIZE 1024
 

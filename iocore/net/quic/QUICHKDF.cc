@@ -40,8 +40,8 @@ QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t se
   int hkdf_label_len = 0;
 
   // length field
-  hkdf_label[0] = (length >> 8) & 0xFF;
-  hkdf_label[1] = length & 0xFF;
+  hkdf_label[0]  = (length >> 8) & 0xFF;
+  hkdf_label[1]  = length & 0xFF;
   hkdf_label_len += 2;
 
   // label (prefix + Label) field

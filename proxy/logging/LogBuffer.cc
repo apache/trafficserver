@@ -414,23 +414,23 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
 
   if (fmt->name()) {
     m_header->fmt_name_offset = header_len;
-    header_len += add_header_str(fmt->name(), &m_buffer[header_len], m_size - header_len);
+    header_len                += add_header_str(fmt->name(), &m_buffer[header_len], m_size - header_len);
   }
   if (fmt->fieldlist()) {
     m_header->fmt_fieldlist_offset = header_len;
-    header_len += add_header_str(fmt->fieldlist(), &m_buffer[header_len], m_size - header_len);
+    header_len                     += add_header_str(fmt->fieldlist(), &m_buffer[header_len], m_size - header_len);
   }
   if (fmt->printf_str()) {
     m_header->fmt_printf_offset = header_len;
-    header_len += add_header_str(fmt->printf_str(), &m_buffer[header_len], m_size - header_len);
+    header_len                  += add_header_str(fmt->printf_str(), &m_buffer[header_len], m_size - header_len);
   }
   if (cfg->hostname) {
     m_header->src_hostname_offset = header_len;
-    header_len += add_header_str(cfg->hostname, &m_buffer[header_len], m_size - header_len);
+    header_len                    += add_header_str(cfg->hostname, &m_buffer[header_len], m_size - header_len);
   }
   if (m_owner->get_base_filename()) {
     m_header->log_filename_offset = header_len;
-    header_len += add_header_str(m_owner->get_base_filename(), &m_buffer[header_len], m_size - header_len);
+    header_len                    += add_header_str(m_owner->get_base_filename(), &m_buffer[header_len], m_size - header_len);
   }
   // update the rest of the header fields; make sure the header_len is
   // correctly aligned, so that the first record will start on a legal
@@ -542,8 +542,8 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
         }
 
         bytes_written += res;
-        lastField = field;
-        field     = fieldlist->next(field);
+        lastField     = field;
+        field         = fieldlist->next(field);
       } else {
         ts::LocalBufferWriter<10 * 1024> bw;
         if (auto bs = fieldlist->badSymbols(); bs.size() > 0) {

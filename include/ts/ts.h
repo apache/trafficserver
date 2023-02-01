@@ -38,13 +38,13 @@ extern "C" {
 
 /* --------------------------------------------------------------------------
    Memory */
-#define TSmalloc(s) _TSmalloc((s), TS_RES_MEM_PATH)
-#define TSrealloc(p, s) _TSrealloc((p), (s), TS_RES_MEM_PATH)
-#define TSstrdup(p) _TSstrdup((p), -1, TS_RES_MEM_PATH)
-#define TSstrndup(p, n) _TSstrdup((p), (n), TS_RES_MEM_PATH)
+#define TSmalloc(s)        _TSmalloc((s), TS_RES_MEM_PATH)
+#define TSrealloc(p, s)    _TSrealloc((p), (s), TS_RES_MEM_PATH)
+#define TSstrdup(p)        _TSstrdup((p), -1, TS_RES_MEM_PATH)
+#define TSstrndup(p, n)    _TSstrdup((p), (n), TS_RES_MEM_PATH)
 #define TSstrlcpy(d, s, l) _TSstrlcpy((d), (s), (l))
 #define TSstrlcat(d, s, l) _TSstrlcat((d), (s), (l))
-#define TSfree(p) _TSfree(p)
+#define TSfree(p)          _TSfree(p)
 
 tsapi void *_TSmalloc(size_t size, const char *path);
 tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);

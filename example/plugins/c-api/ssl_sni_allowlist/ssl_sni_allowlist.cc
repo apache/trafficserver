@@ -32,7 +32,7 @@
 #include <openssl/ssl.h>
 
 #define PLUGIN_NAME "ssl_sni_allowlist"
-#define PCP "[" PLUGIN_NAME "] "
+#define PCP         "[" PLUGIN_NAME "] "
 
 namespace
 {

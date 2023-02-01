@@ -354,7 +354,7 @@ HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const read
       int64_t const bytes_parsed(ptr - bstart);
 
       consumed += bytes_parsed;
-      avail -= bytes_parsed;
+      avail    -= bytes_parsed;
 
       if (TS_PARSE_CONT == parse_res) {
         block = TSIOBufferBlockNext(block);
