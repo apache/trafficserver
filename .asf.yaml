@@ -11,6 +11,11 @@ github:
     - cdn
     - cache
     - apache
+    - http/2
+    - http/3
+    - quic
+    - forwardproxy
+    - reverseproxy
     - hacktoberfest
   features:
     # Enable wiki for documentation
@@ -24,14 +29,11 @@ github:
     squash: true
     # Disable rebase button:
     rebase: false
-    # Disable merge button:
-    merge: false
+    # Enable merge button:
+    merge: true
   collaborators:
     - mtorluemke
     - c-taylor
-    - moonchen
-    - cmcfarlen
-    - serrislew
     - etapia
   protected_branches:
     master:
