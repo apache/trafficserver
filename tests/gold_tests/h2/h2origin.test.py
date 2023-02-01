@@ -30,7 +30,7 @@ ts = Test.MakeATSProcess("ts", enable_tls="true")
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
-replay_file = "replay/"
+replay_file = "replay_h2origin/"
 server = Test.MakeVerifierServerProcess("h2-origin", replay_file)
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

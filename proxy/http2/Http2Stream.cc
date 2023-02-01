@@ -486,9 +486,9 @@ Http2Stream::do_io_close(int /* flags */)
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("do_io_close");
 
-    // if (this->is_state_writeable()) { // Let the other end know we are going away
-    //  this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
-    //}
+    if (this->is_state_writeable()) { // Let the other end know we are going away
+      this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    }
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
     // remaining IO operations back to client should be abandoned.  The SM-side buffers backing these operations will be deleted
@@ -551,6 +551,10 @@ Http2Stream::initiating_close()
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("initiating_close client_window=%" PRId64 " session_window=%" PRId64, _peer_rwnd,
                      this->get_connection_state().get_peer_rwnd());
+
+    if (this->is_state_writeable()) { // Let the other end know we are going away
+      this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    }
 
     // Set the state of the connection to closed
     // TODO - these states should be combined

@@ -1,0 +1,54 @@
+meta:
+  version: '1.0'
+sessions:
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+    version: 4
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [:method, POST]
+            - [:scheme, https]
+            - [:authority, example.data.com]
+            - [:path, /a/path]
+            - [Content-Type, text/html]
+            - [Content-Length, '11']
+            - [uuid, 1]
+      - DATA:
+          content:
+            encoding: plain
+            data: client_test
+            size: 11
+      - RST_STREAM:
+          error-code: INTERNAL_ERROR
+
+    proxy-request:
+      content:
+        encoding: plain
+        data: client_test
+        verify: {as: equal}
+
+    server-response:
+      headers:
+        fields:
+        - [:status, 200]
+        - [Content-Type, text/html]
+        - [Content-Length, '11']
+      content:
+        encoding: plain
+        data: server_test
+        size: 11
+
+    proxy-response:
+      content:
+        encoding: plain
+        data: server_test
+        verify: {as: equal}

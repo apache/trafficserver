@@ -621,9 +621,10 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
   }
 
   if (stream != nullptr) {
-    Http2StreamDebug(this->session, stream_id, "RST_STREAM: Error Code: %u", rst_stream.error_code);
+    Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM: Error Code: %u", rst_stream.error_code);
 
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
+    stream->signal_read_event(VC_EVENT_EOS);
     stream->initiating_close();
   }
 
@@ -2392,6 +2393,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
     }
   }
 
+  Http2StreamDebug(session, id, "Sending RST_STREAM: Error Code: %u", static_cast<uint32_t>(ec));
   Http2RstStreamFrame rst_stream(id, static_cast<uint32_t>(ec));
   this->session->xmit(rst_stream);
 }
