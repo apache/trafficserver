@@ -123,7 +123,6 @@ TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {
 TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_disable_h2,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
@@ -167,9 +166,6 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.fqdn = node[TS_fqdn].as<std::string>();
     } else {
       return false; // servername must be present
-    }
-    if (node[TS_disable_h2]) {
-      item.offer_h2 = false;
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();

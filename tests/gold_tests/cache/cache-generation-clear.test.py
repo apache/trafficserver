@@ -23,7 +23,7 @@ Test that incrementing the cache generation acts like a cache clear
 '''
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts")
 
 # setup some config file for this server
 ts.Disk.records_config.update({
@@ -31,7 +31,8 @@ ts.Disk.records_config.update({
     'proxy.config.http.cache.generation': -1,  # Start with cache turned off
     'proxy.config.config_update_interval_ms': 1,
 })
-ts.Disk.plugin_config.AddLine('xdebug.so')
+
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation')
 ts.Disk.remap_config.AddLines([
     'map /default/ http://127.0.0.1/ @plugin=generator.so',
     # line 2
@@ -62,7 +63,7 @@ tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
 # Call traffic_ctrl to set new generation
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'traffic_ctl --debug config set proxy.config.http.cache.generation 77'
+tr.Processes.Default.Command = f'traffic_ctl --debug config set proxy.config.http.cache.generation 77'
 tr.Processes.Default.ForceUseShell = False
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env  # set the environment for traffic_control to run in

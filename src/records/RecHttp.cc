@@ -26,11 +26,14 @@
 #include "tscore/ink_defs.h"
 #include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"
+#include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
 #include <string_view>
 #include <unordered_set>
 #include <tscore/IpMapConf.h>
+
+using ts::TextView;
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -44,8 +47,8 @@ const char *const TS_ALPN_PROTOCOL_HTTP_1_1      = IP_PROTO_TAG_HTTP_1_1.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_2_0      = IP_PROTO_TAG_HTTP_2_0.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_3        = IP_PROTO_TAG_HTTP_3.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_QUIC     = IP_PROTO_TAG_HTTP_QUIC.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_3_D27    = IP_PROTO_TAG_HTTP_3_D27.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D27 = IP_PROTO_TAG_HTTP_QUIC_D27.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_3_D29    = IP_PROTO_TAG_HTTP_3_D29.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29 = IP_PROTO_TAG_HTTP_QUIC_D29.data();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
@@ -55,8 +58,8 @@ const char *const TS_PROTO_TAG_HTTP_1_1      = TS_ALPN_PROTOCOL_HTTP_1_1;
 const char *const TS_PROTO_TAG_HTTP_2_0      = TS_ALPN_PROTOCOL_HTTP_2_0;
 const char *const TS_PROTO_TAG_HTTP_3        = TS_ALPN_PROTOCOL_HTTP_3;
 const char *const TS_PROTO_TAG_HTTP_QUIC     = TS_ALPN_PROTOCOL_HTTP_QUIC;
-const char *const TS_PROTO_TAG_HTTP_3_D27    = TS_ALPN_PROTOCOL_HTTP_3_D27;
-const char *const TS_PROTO_TAG_HTTP_QUIC_D27 = TS_ALPN_PROTOCOL_HTTP_QUIC_D27;
+const char *const TS_PROTO_TAG_HTTP_3_D29    = TS_ALPN_PROTOCOL_HTTP_3_D29;
+const char *const TS_PROTO_TAG_HTTP_QUIC_D29 = TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
 const char *const TS_PROTO_TAG_TLS_1_3       = IP_PROTO_TAG_TLS_1_3.data();
 const char *const TS_PROTO_TAG_TLS_1_2       = IP_PROTO_TAG_TLS_1_2.data();
 const char *const TS_PROTO_TAG_TLS_1_1       = IP_PROTO_TAG_TLS_1_1.data();
@@ -75,8 +78,8 @@ int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1      = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0      = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_3        = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC     = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27    = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_3_D29    = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D29 = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
@@ -720,10 +723,10 @@ ts_session_protocol_well_known_name_indices_init()
   TS_ALPN_PROTOCOL_INDEX_HTTP_1_1   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
   TS_ALPN_PROTOCOL_INDEX_HTTP_2_0   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
   TS_ALPN_PROTOCOL_INDEX_HTTP_3     = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3_D27});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_3_D29 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3_D29});
   TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27 =
-    globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC_D27});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D29 =
+    globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC_D29});
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -737,8 +740,8 @@ ts_session_protocol_well_known_name_indices_init()
 
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
-  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27);
-  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27);
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3_D29);
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D29);
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
@@ -747,8 +750,8 @@ ts_session_protocol_well_known_name_indices_init()
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_2_0);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_3);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC);
-  TSProtoTags.insert(TS_PROTO_TAG_HTTP_3_D27);
-  TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC_D27);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_3_D29);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC_D29);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_1);
@@ -840,4 +843,88 @@ ts::TextView
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
   return 0 <= idx && idx < m_n ? m_names[idx] : TextView{};
+}
+
+bool
+convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_format_buffer, int &wire_format_buffer_len)
+{
+  // TODO: once the protocols_sv is switched to be a TextView (see the TODO
+  // comment in this functions doxygen comment), then rename the input
+  // parameter to be simply `protocols` and remove this next line.
+  TextView protocols(protocols_sv);
+  // Callers expect wire_format_buffer_len to be zero'd out in the event of an
+  // error. To simplify the error handling from doing this on every return, we
+  // simply zero them out here at the start.
+  auto const orig_wire_format_buffer_len = wire_format_buffer_len;
+  memset(wire_format_buffer, 0, wire_format_buffer_len);
+  wire_format_buffer_len = 0;
+
+  if (protocols.empty()) {
+    return false;
+  }
+
+  // Parse the comma separated protocol string into a list of protocol names.
+  std::vector<std::string_view> alpn_protocols;
+  TextView protocol;
+  int computed_alpn_array_len = 0;
+
+  while (protocols) {
+    protocol = protocols.take_prefix_at(',').trim_if(&isspace);
+    if (protocol.empty()) {
+      Error("Empty protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocols.size()), protocols.data());
+      return false;
+    }
+    if (protocol.size() > 255) {
+      // The length has to fit in one byte.
+      Error("A protocol name larger than 255 bytes in configured ALPN list: \"%.*s\"", static_cast<int>(protocols.size()),
+            protocols.data());
+      return false;
+    }
+    // Check whether we recognize the protocol.
+    auto const protocol_index = globalSessionProtocolNameRegistry.indexFor(protocol);
+    if (protocol_index == SessionProtocolNameRegistry::INVALID) {
+      Error("Unknown protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()), protocol.data());
+      return false;
+    }
+    // We currently only support HTTP/1.x protocols toward the origin.
+    if (!HTTP_PROTOCOL_SET.contains(protocol_index)) {
+      Error("Unsupported non-HTTP/1.x protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
+            protocol.data());
+      return false;
+    }
+    // But not HTTP/0.9.
+    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9) {
+      Error("Unsupported \"http/0.9\" protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
+            protocol.data());
+      return false;
+    }
+
+    auto const protocol_wire_format = globalSessionProtocolNameRegistry.convert_openssl_alpn_wire_format(protocol_index);
+    computed_alpn_array_len += protocol_wire_format.size();
+    if (computed_alpn_array_len > orig_wire_format_buffer_len) {
+      // We have exceeded the size of the output buffer.
+      Error("The output ALPN length (%d bytes) is larger than the output buffer size of %d bytes", computed_alpn_array_len,
+            orig_wire_format_buffer_len);
+      return false;
+    }
+
+    alpn_protocols.push_back(protocol_wire_format);
+  }
+  if (alpn_protocols.empty()) {
+    Error("No protocols specified in ALPN list: \"%.*s\"", static_cast<int>(protocols.size()), protocols.data());
+    return false;
+  }
+
+  // All checks pass and the protocols are parsed. Write the result to the
+  // output buffer.
+  auto *end = wire_format_buffer;
+  for (auto &protocol : alpn_protocols) {
+    auto const len = protocol.size();
+    memcpy(end, protocol.data(), len);
+    end += len;
+  }
+  wire_format_buffer_len = computed_alpn_array_len;
+  Debug("ssl_alpn", "Successfully converted ALPN list to wire format: \"%.*s\"", static_cast<int>(protocols.size()),
+        protocols.data());
+  return true;
 }

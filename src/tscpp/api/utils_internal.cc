@@ -235,8 +235,10 @@ utils::internal::convertInternalTransformationTypeToTsHook(TransformationPlugin:
     return TS_HTTP_RESPONSE_TRANSFORM_HOOK;
   case TransformationPlugin::REQUEST_TRANSFORMATION:
     return TS_HTTP_REQUEST_TRANSFORM_HOOK;
-  case TransformationPlugin::SINK_TRANSFORMATION:
+  case TransformationPlugin::CLIENT_RESPONSE_SINK_TRANSFORMATION:
     return TS_HTTP_RESPONSE_CLIENT_HOOK;
+  case TransformationPlugin::CLIENT_REQUEST_SINK_TRANSFORMATION:
+    return TS_HTTP_REQUEST_CLIENT_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;

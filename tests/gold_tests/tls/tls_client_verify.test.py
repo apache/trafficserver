@@ -22,7 +22,7 @@ Test.Summary = '''
 Test various options for requiring certificate from client for mutual authentication TLS
 '''
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server")
@@ -76,7 +76,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: testformat
-      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+      format: '%<pssc> %<pquc> %<pscert> %<cscert>'
   logs:
     - mode: ascii
       format: testformat

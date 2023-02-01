@@ -356,13 +356,13 @@ Http3Transaction::state_stream_open(int event, void *edata)
     this->_info.read_vio->reenable();
     break;
   case VC_EVENT_READ_COMPLETE:
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_process_read_vio();
     if (!this->_header_handler->is_complete()) {
       // Delay processing READ_COMPLETE
       this_ethread()->schedule_imm(this, VC_EVENT_READ_COMPLETE);
       break;
     }
-    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    this->_process_read_vio();
     this->_data_handler->finalize();
     // always signal regardless of progress
     this->_signal_read_event();
@@ -450,7 +450,7 @@ Http3Transaction::is_response_body_sent() const
 int64_t
 Http3Transaction::_process_read_vio()
 {
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+  if (this->_info.read_vio->cont == nullptr || this->_info.read_vio->op == VIO::NONE) {
     return 0;
   }
 
@@ -463,17 +463,18 @@ Http3Transaction::_process_read_vio()
     return 0;
   }
 
-  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_info.read_vio->mutex, this_ethread());
 
   uint64_t nread = 0;
   this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), *this->_info.read_vio->get_reader(), nread);
+  this->_info.read_vio->ndone += nread;
   return nread;
 }
 
 int64_t
 Http3Transaction::_process_write_vio()
 {
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+  if (this->_info.write_vio->cont == nullptr || this->_info.write_vio->op == VIO::NONE) {
     return 0;
   }
 
@@ -486,15 +487,15 @@ Http3Transaction::_process_write_vio()
     return 0;
   }
 
-  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_info.write_vio->mutex, this_ethread());
 
   size_t nwritten = 0;
   bool all_done   = false;
   this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(), nwritten,
                                         all_done);
-  this->_info.write_vio->nbytes += nwritten;
+  this->_sent_bytes += nwritten;
   if (all_done) {
-    this->_info.write_vio->done();
+    this->_info.write_vio->nbytes = this->_sent_bytes;
   }
 
   return nwritten;

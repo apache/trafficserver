@@ -46,7 +46,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: "client_url=%<cqu> cache_result: code=%<crc> subcode=%<crsc>"
+      format: "client_url=%<pqu> cache_result: code=%<crc> subcode=%<crsc>"
   logs:
     - filename: the_log
       format: custom

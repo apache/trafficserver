@@ -41,10 +41,12 @@ namespace filename
   constexpr const char *SSL_MULTICERT = "ssl_multicert.config";
   constexpr const char *SPLITDNS      = "splitdns.config";
   constexpr const char *SNI           = "sni.yaml";
+  constexpr const char *JSONRPC       = "jsonrpc.yaml";
 
   ///////////////////////////////////////////////////////////////////
   // Various other file names
   constexpr const char *RECORDS_STATS = "records.snap";
+  constexpr const char *HOST_RECORDS  = "host_records.yaml";
 
 } // namespace filename
 } // namespace ts

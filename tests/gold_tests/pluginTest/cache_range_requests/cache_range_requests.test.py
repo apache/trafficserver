@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 Test.testName = "cache_range_requests"
 
 # Define and configure ATS
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 # Define and configure origin server
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
@@ -223,7 +223,7 @@ ts.Disk.remap_config.AddLines([
 ])
 
 # cache debug
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-parentselection-key')
 
 # minimal configuration
 ts.Disk.records_config.update({

@@ -37,4 +37,4 @@ pre-start script
 	fi
 end script
 
-exec @exp_bindir@/traffic_manager
+exec @exp_bindir@/traffic_server

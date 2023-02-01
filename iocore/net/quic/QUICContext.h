@@ -72,17 +72,24 @@ public:
 class QUICContext
 {
 public:
+#if HAVE_QUICHE_H
+  QUICContext(QUICConnectionInfoProvider *info);
+#else
   QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
               QUICPathManager *path_manager);
+#endif
 
   virtual ~QUICContext(){};
   virtual QUICConnectionInfoProvider *connection_info() const;
   virtual QUICConfig::scoped_config config() const;
+#if HAVE_QUICHE_H
+#else
   virtual QUICLDConfig &ld_config() const;
   virtual QUICPacketProtectionKeyInfoProvider *key_info() const;
   virtual QUICCCConfig &cc_config() const;
   virtual QUICRTTProvider *rtt_provider() const;
   virtual QUICPathManager *path_manager() const;
+#endif
 
   // register a callback which will be called when specified event happen.
   void
@@ -183,13 +190,16 @@ protected:
 
 private:
   QUICConfig::scoped_config _config;
+  QUICConnectionInfoProvider *_connection_info = nullptr;
+#if HAVE_QUICHE_H
+#else
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
-  QUICConnectionInfoProvider *_connection_info   = nullptr;
   QUICRTTProvider *_rtt_provider                 = nullptr;
   QUICPathManager *_path_manager                 = nullptr;
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;
+#endif
 
   std::vector<std::shared_ptr<QUICCallback>> _callbacks;
 };

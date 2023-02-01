@@ -20,8 +20,7 @@ Verify support of external log rotation via SIGUSR2.
 import os
 import sys
 
-
-TRAFFIC_MANAGER_PID_SCRIPT = 'ts_process_handler.py'
+TS_PID_SCRIPT = 'ts_process_handler.py'
 
 
 class Sigusr2Test:
@@ -34,12 +33,12 @@ class Sigusr2Test:
 
     def __init__(self):
         self.server = self.__configure_server()
-        self.ts = self.__configure_traffic_manager()
+        self.ts = self.__configure_traffic_server()
 
-    def __configure_traffic_manager(self):
+    def __configure_traffic_server(self):
         self._ts_name = "sigusr2_ts{}".format(Sigusr2Test.__ts_counter)
         Sigusr2Test.__ts_counter += 1
-        self.ts = Test.MakeATSProcess(self._ts_name, command="traffic_manager")
+        self.ts = Test.MakeATSProcess(self._ts_name)
         self.ts.Disk.records_config.update({
             'proxy.config.http.wait_for_cache': 1,
             'proxy.config.diags.debug.enabled': 1,
@@ -51,20 +50,13 @@ class Sigusr2Test:
             'proxy.config.log.auto_delete_rolled_files': 0,
         })
 
-        # For this test, more important than the listening port is the existence of the
-        # log files. In particular, it can take a few seconds for traffic_manager to
-        # open diags.log.
         self.diags_log = self.ts.Disk.diags_log.AbsPath
-        self.ts.Ready = When.FileExists(self.diags_log)
 
         # Add content handles for the rotated logs.
         self.rotated_diags_log = self.diags_log + "_old"
         self.ts.Disk.File(self.rotated_diags_log, id="diags_log_old")
 
         self.log_dir = os.path.dirname(self.diags_log)
-        self.manager_log = os.path.join(self.log_dir, "manager.log")
-        self.rotated_manager_log = self.manager_log + "_old"
-        self.ts.Disk.File(self.rotated_manager_log, id="manager_log_old")
 
         self.ts.Disk.remap_config.AddLine(
             'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(
@@ -74,7 +66,7 @@ class Sigusr2Test:
             logging:
               formats:
                 - name: has_path
-                  format: "%<cqu>: %<sssc>"
+                  format: "%<pqu>: %<sssc>"
               logs:
                 - filename: test_rotation
                   format: has_path
@@ -105,10 +97,10 @@ class Sigusr2Test:
 
     def get_sigusr2_signal_command(self):
         """
-        Return the command that will send a USR2 signal to the traffic manager
+        Return the command that will send a USR2 signal to the traffic server
         process.
         """
-        return (f"{sys.executable} {TRAFFIC_MANAGER_PID_SCRIPT} --parent "
+        return (f"{sys.executable} {TS_PID_SCRIPT} "
                 f"--signal SIGUSR2 {self._ts_name}")
 
 
@@ -116,43 +108,30 @@ Test.Summary = '''
 Verify support of external log rotation via SIGUSR2.
 '''
 
-Test.Setup.CopyAs(TRAFFIC_MANAGER_PID_SCRIPT, Test.RunDirectory)
+Test.Setup.CopyAs(TS_PID_SCRIPT, Test.RunDirectory)
 
 #
 # Test 1: Verify SIGUSR2 behavior for system logs.
 #
-tr1 = Test.AddTestRun("Verify system logs (manager.log, etc.) can be rotated")
+tr1 = Test.AddTestRun("Verify system logs can be rotated")
 
-# Configure Traffic Manager/Server.
+# Configure Server.
 diags_test = Sigusr2Test()
 
 # Configure our rotation processes.
 rotate_diags_log = tr1.Processes.Process("rotate_diags_log", "mv {} {}".format(
     diags_test.diags_log, diags_test.rotated_diags_log))
-rotate_manager_log = tr1.Processes.Process("rotate_manager_log", "mv {} {}".format(
-    diags_test.manager_log, diags_test.rotated_manager_log))
 
-# Configure the signaling of SIGUSR2 to traffic_manager.
+# Configure the signaling of SIGUSR2 to traffic_server.
 tr1.Processes.Default.Command = diags_test.get_sigusr2_signal_command()
 tr1.Processes.Default.Return = 0
 tr1.Processes.Default.Ready = When.FileExists(diags_test.diags_log)
 
 # Configure process order.
 tr1.Processes.Default.StartBefore(rotate_diags_log)
-rotate_diags_log.StartBefore(rotate_manager_log)
-rotate_manager_log.StartBefore(diags_test.ts)
+rotate_diags_log.StartBefore(diags_test.ts)
 tr1.StillRunningAfter = diags_test.ts
 tr1.StillRunningAfter = diags_test.server
-
-# manager.log should have been rotated. Check for the expected content in the
-# old file and the newly created file.
-diags_test.ts.Disk.manager_log_old.Content += Testers.ContainsExpression(
-    "received SIGUSR2, rotating the logs",
-    "manager.log_old should explain that SIGUSR2 was passed to it")
-
-diags_test.ts.Disk.manager_log.Content += Testers.ContainsExpression(
-    "Reseated manager.log",
-    "The new manager.log should indicate the newly opened manager.log")
 
 # diags.log should have been rotated. The old one had the reference to traffic
 # server running, this new one shouldn't. But it should indicate that the new
@@ -215,7 +194,7 @@ tr2.Processes.Default.Return = 0
 #   1. curl /first. The entry should be logged to current log which will be _old.
 #   2. mv the log to _old.
 #   3. curl /second. The entry should end up in _old log.
-#   4. Send a SIGUSR2 to traffic_manager. The log should be recreated.
+#   4. Send a SIGUSR2 to traffic_server. The log should be recreated.
 #   5. curl /third. The entry should end up in the new, non-old, log file.
 #
 tr2.Processes.Default.StartBefore(third_curl_ready)

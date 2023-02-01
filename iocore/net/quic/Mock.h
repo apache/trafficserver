@@ -27,16 +27,27 @@
 
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
+#if HAVE_QUICHE_H
+#include "QUICStreamManager_quiche.h"
+#else
+#include "QUICStreamManager_native.h"
+#endif
 #include "QUICLossDetector.h"
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPinger.h"
 #include "QUICPadder.h"
 #include "QUICEvents.h"
 #include "QUICPacketProtectionKeyInfo.h"
+#include "QUICPathManager.h"
 #include "QUICPinger.h"
 #include "QUICPadder.h"
 #include "QUICHandshakeProtocol.h"
 #include "QUICStreamAdapter.h"
+#if HAVE_QUICHE_H
+#include "QUICStream_quiche.h"
+#else
+#include "QUICStream_native.h"
+#endif
 
 class MockQUICContext;
 
@@ -238,12 +249,13 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   }
 };
 
-class MockQUICStreamManager : public QUICStreamManager
+class MockQUICStreamManager : public QUICStreamManagerImpl
 {
 public:
-  MockQUICStreamManager(QUICContext *context) : QUICStreamManager(context, nullptr) {}
+  MockQUICStreamManager(QUICContext *context) : QUICStreamManagerImpl(context, nullptr) {}
 
   // Override
+#ifndef HAVE_QUICHE_H
   virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
@@ -252,6 +264,7 @@ public:
 
     return nullptr;
   }
+#endif
 
   // for Test
   int
@@ -650,6 +663,7 @@ public:
   {
     return _config;
   }
+#ifndef HAVE_QUICHE_H
   virtual QUICRTTProvider *
   rtt_provider() const override
   {
@@ -679,6 +693,7 @@ public:
   {
     return _path_manager.get();
   }
+#endif
 
 private:
   QUICConfig::scoped_config _config;
@@ -1069,7 +1084,7 @@ public:
 
   QUICFrame *
   generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                 size_t current_packet_size, uint32_t seq_num) override
+                 size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());

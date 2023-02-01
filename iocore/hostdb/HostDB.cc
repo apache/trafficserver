@@ -29,6 +29,7 @@
 #include "tscore/ts_file.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/bwf_std_format.h"
+#include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 #include "HostFile.h"
 
 #include <utility>
@@ -41,6 +42,8 @@
 
 using ts::TextView;
 using std::chrono::duration_cast;
+using swoc::round_down;
+using swoc::round_up;
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;
@@ -2091,9 +2094,9 @@ HostDBRecord::free()
 HostDBRecord *
 HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_size)
 {
-  const ts::Scalar<8> qn_size = ts::round_up(query_name.size() + 1);
-  const ts::Scalar<8> r_size  = ts::round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
-  int iobuffer_index          = iobuffer_size_to_index(r_size, hostdb_max_iobuf_index);
+  const swoc::Scalar<8, ssize_t> qn_size = round_up(query_name.size() + 1);
+  const swoc::Scalar<8, ssize_t> r_size  = round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
+  int iobuffer_index                     = iobuffer_size_to_index(r_size, hostdb_max_iobuf_index);
   ink_release_assert(iobuffer_index >= 0);
   auto ptr = ioBufAllocator[iobuffer_index].alloc_void();
   memset(ptr, 0, r_size);

@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 Test.testName = "cache_range_requests_cachekey_global"
 
 # Define and configure ATS, enable traffic_ctl config reload
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 # Define and configure origin server
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
@@ -152,7 +152,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.plugin_config.AddLines([
     'cachekey.so --include-headers=Range --static-prefix=foo',
     'cache_range_requests.so --no-modify-cachekey',
-    'xdebug.so',
+    'xdebug.so --enable=x-cache,x-cache-key,x-parentselection-key',
 ])
 
 # minimal configuration

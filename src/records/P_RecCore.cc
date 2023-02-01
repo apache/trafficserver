@@ -39,228 +39,6 @@
 RecModeT g_mode_type = RECM_NULL;
 
 //-------------------------------------------------------------------------
-// send_reset_message
-//-------------------------------------------------------------------------
-static RecErrT
-send_reset_message(RecRecord *record)
-{
-  RecMessage *m;
-
-  rec_mutex_acquire(&(record->lock));
-  m = RecMessageAlloc(RECG_RESET);
-  m = RecMessageMarshal_Realloc(m, record);
-  RecDebug(DL_Note, "[send] RECG_RESET [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-  RecMessageSend(m);
-  RecMessageFree(m);
-  rec_mutex_release(&(record->lock));
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// send_set_message
-//-------------------------------------------------------------------------
-static RecErrT
-send_set_message(RecRecord *record)
-{
-  RecMessage *m;
-
-  rec_mutex_acquire(&(record->lock));
-  m = RecMessageAlloc(RECG_SET);
-  m = RecMessageMarshal_Realloc(m, record);
-  RecDebug(DL_Note, "[send] RECG_SET [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-  RecMessageSend(m);
-  RecMessageFree(m);
-  rec_mutex_release(&(record->lock));
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// send_register_message
-//-------------------------------------------------------------------------
-RecErrT
-send_register_message(RecRecord *record)
-{
-  RecMessage *m;
-
-  rec_mutex_acquire(&(record->lock));
-  m = RecMessageAlloc(RECG_REGISTER);
-  m = RecMessageMarshal_Realloc(m, record);
-  RecDebug(DL_Note, "[send] RECG_REGISTER [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-  RecMessageSend(m);
-  RecMessageFree(m);
-  rec_mutex_release(&(record->lock));
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// send_push_message
-//-------------------------------------------------------------------------
-RecErrT
-send_push_message()
-{
-  RecRecord *r;
-  RecMessage *m;
-  int i, num_records;
-  bool send_msg = false;
-
-  m           = RecMessageAlloc(RECG_PUSH);
-  num_records = g_num_records;
-  for (i = 0; i < num_records; i++) {
-    r = &(g_records[i]);
-    rec_mutex_acquire(&(r->lock));
-    if (i_am_the_record_owner(r->rec_type)) {
-      if (r->sync_required & REC_PEER_SYNC_REQUIRED) {
-        m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
-        send_msg = true;
-      }
-    }
-    rec_mutex_release(&(r->lock));
-  }
-  if (send_msg) {
-    RecDebug(DL_Note, "[send] RECG_PUSH [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-    RecMessageSend(m);
-  }
-  RecMessageFree(m);
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// send_pull_message
-//-------------------------------------------------------------------------
-RecErrT
-send_pull_message(RecMessageT msg_type)
-{
-  RecRecord *r;
-  RecMessage *m;
-  int i, num_records;
-
-  m = RecMessageAlloc(msg_type);
-  switch (msg_type) {
-  case RECG_PULL_REQ:
-    // We're requesting all of the records from our peer.  No payload
-    // here, just send the message.
-    RecDebug(DL_Note, "[send] RECG_PULL_REQ [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-    break;
-
-  case RECG_PULL_ACK:
-    // Respond to a RECG_PULL_REQ message from our peer.  Send ALL
-    // records!  Also be sure to send a response even if it has no
-    // payload.  Our peer may be blocking and waiting for a response!
-    num_records = g_num_records;
-    for (i = 0; i < num_records; i++) {
-      r = &(g_records[i]);
-      if (i_am_the_record_owner(r->rec_type) || (REC_TYPE_IS_STAT(r->rec_type) && !(r->registered)) ||
-          (REC_TYPE_IS_STAT(r->rec_type) && (r->stat_meta.persist_type == RECP_NON_PERSISTENT))) {
-        rec_mutex_acquire(&(r->lock));
-        m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
-        rec_mutex_release(&(r->lock));
-      }
-    }
-    RecDebug(DL_Note, "[send] RECG_PULL_ACK [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
-    break;
-
-  default:
-    RecMessageFree(m);
-    return REC_ERR_FAIL;
-  }
-
-  RecMessageSend(m);
-  RecMessageFree(m);
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// recv_message_cb
-//-------------------------------------------------------------------------
-RecErrT
-recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
-{
-  RecRecord *r;
-  RecMessageItr itr;
-
-  switch (msg_type) {
-  case RECG_SET:
-
-    RecDebug(DL_Note, "[recv] RECG_SET [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
-      do {
-        if (REC_TYPE_IS_STAT(r->rec_type)) {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT);
-        } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), nullptr, REC_SOURCE_EXPLICIT);
-        }
-      } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
-    }
-    break;
-
-  case RECG_RESET:
-
-    RecDebug(DL_Note, "[recv] RECG_RESET [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
-      do {
-        if (REC_TYPE_IS_STAT(r->rec_type)) {
-          RecResetStatRecord(r->name);
-        } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), nullptr, REC_SOURCE_EXPLICIT);
-        }
-      } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
-    }
-    break;
-
-  case RECG_REGISTER:
-    RecDebug(DL_Note, "[recv] RECG_REGISTER [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
-      do {
-        if (REC_TYPE_IS_STAT(r->rec_type)) {
-          RecRegisterStat(r->rec_type, r->name, r->data_type, r->data_default, r->stat_meta.persist_type);
-        } else if (REC_TYPE_IS_CONFIG(r->rec_type)) {
-          RecRegisterConfig(r->rec_type, r->name, r->data_type, r->data_default, r->config_meta.update_type,
-                            r->config_meta.check_type, r->config_meta.check_expr, r->config_meta.source,
-                            r->config_meta.access_type);
-        }
-      } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
-    }
-    break;
-
-  case RECG_PUSH:
-    RecDebug(DL_Note, "[recv] RECG_PUSH [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
-      do {
-        RecForceInsert(r);
-      } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
-    }
-    break;
-
-  case RECG_PULL_ACK:
-    RecDebug(DL_Note, "[recv] RECG_PULL_ACK [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
-      do {
-        RecForceInsert(r);
-      } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
-    }
-    break;
-
-  case RECG_PULL_REQ:
-    RecDebug(DL_Note, "[recv] RECG_PULL_REQ [%d bytes]", sizeof(RecMessageHdr) + msg->o_end - msg->o_start);
-    send_pull_message(RECG_PULL_ACK);
-    break;
-
-  default:
-    ink_assert(!"Unexpected RecG type");
-    return REC_ERR_FAIL;
-  }
-
-  return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
 #define REC_REGISTER_STAT_XXX(A, B)                                                                                           \
@@ -271,8 +49,6 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
   if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                   \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                 \
       r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                           \
-    } else {                                                                                                                  \
-      send_register_message(r);                                                                                               \
     }                                                                                                                         \
     return REC_ERR_OKAY;                                                                                                      \
   } else {                                                                                                                    \
@@ -314,8 +90,6 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
       nullptr) {                                                                                                                \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
       r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
-    } else {                                                                                                                    \
-      send_register_message(r);                                                                                                 \
     }                                                                                                                           \
     return REC_ERR_OKAY;                                                                                                        \
   } else {                                                                                                                      \
@@ -400,23 +174,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         }
       }
       rec_mutex_release(&(r1->lock));
-    } else {
-      // We don't need to ats_strdup() here as we will make copies of any
-      // strings when we marshal them into our RecMessage buffer.
-      RecRecord r2;
-
-      RecRecordInit(&r2);
-      r2.rec_type  = rec_type;
-      r2.name      = name;
-      r2.data_type = (data_type != RECD_NULL) ? data_type : r1->data_type;
-      r2.data      = *data;
-      if (REC_TYPE_IS_STAT(r2.rec_type) && (data_raw != nullptr)) {
-        r2.stat_meta.data_raw = *data_raw;
-      } else if (REC_TYPE_IS_CONFIG(r2.rec_type)) {
-        r2.config_meta.source = source;
-      }
-      err = send_set_message(&r2);
-      RecRecordFree(&r2);
     }
   } else {
     // Add the record but do not set the 'registered' flag, as this
@@ -437,9 +194,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     }
     if (i_am_the_record_owner(r1->rec_type)) {
       r1->sync_required = r1->sync_required | REC_PEER_SYNC_REQUIRED;
-    } else {
-      err = send_set_message(r1);
     }
+    // else, error if  from rec_type?
     g_records_ht.emplace(name, r1);
   }
 
@@ -697,24 +453,13 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
 static RecErrT
 reset_stat_record(RecRecord *rec)
 {
-  RecErrT err;
+  RecErrT err = REC_ERR_FAIL;
 
   if (i_am_the_record_owner(rec->rec_type)) {
     rec_mutex_acquire(&(rec->lock));
     ++(rec->version);
     err = RecDataSet(rec->data_type, &(rec->data), &(rec->data_default)) ? REC_ERR_OKAY : REC_ERR_FAIL;
     rec_mutex_release(&(rec->lock));
-  } else {
-    RecRecord r2;
-
-    RecRecordInit(&r2);
-    r2.rec_type  = rec->rec_type;
-    r2.name      = rec->name;
-    r2.data_type = rec->data_type;
-    r2.data      = rec->data_default;
-
-    err = send_reset_message(&r2);
-    RecRecordFree(&r2);
   }
 
   return err;
@@ -789,24 +534,6 @@ RecSetSyncRequired(char *name, bool lock)
       }
       rec_mutex_release(&(r1->lock));
       err = REC_ERR_OKAY;
-    } else {
-      // No point of doing the following because our peer will
-      // set the value with RecDataSet. However, since
-      // r2.name == r1->name, the sync_required bit will not be
-      // set.
-
-      /*
-         RecRecord r2;
-
-         RecRecordInit(&r2);
-         r2.rec_type  = r1->rec_type;
-         r2.name      = r1->name;
-         r2.data_type = r1->data_type;
-         r2.data      = r1->data_default;
-
-         err = send_set_message(&r2);
-         RecRecordFree(&r2);
-       */
     }
   }
 

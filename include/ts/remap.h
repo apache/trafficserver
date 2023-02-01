@@ -38,6 +38,7 @@ extern "C" {
 typedef struct _tsremap_api_info {
   unsigned long size;            /* in: sizeof(struct _tsremap_api_info) */
   unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
+  TSRemapPluginInfo plugin_info; /* in: Pointer to the internal RemapPluginInst */
 } TSRemapInterface;
 
 typedef struct _tm_remap_request_info {

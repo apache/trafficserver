@@ -29,7 +29,7 @@
 
 // using namespace ct;
 
-constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = ts::round_up(sizeof(HTTPCacheAlt));
+constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = swoc::round_up(sizeof(HTTPCacheAlt));
 
 namespace ct
 {
@@ -125,7 +125,7 @@ CacheScan::unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset)
 {
   Errata zret;
   HDR_UNMARSHAL_PTR(mf->m_next, MIMEFieldBlockImpl, offset);
-  ts::MemSpan mf_mem(reinterpret_cast<char *>(mf), mf->m_length);
+  swoc::MemSpan mf_mem(reinterpret_cast<char *>(mf), mf->m_length);
   for (uint32_t index = 0; index < mf->m_freetop; index++) {
     MIMEField *field = &(mf->m_field_slots[index]);
 
@@ -248,7 +248,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   hh->m_magic = HDR_BUF_MAGIC_ALIVE;
 
-  return HdrHeapMarshalBlocks(ts::round_up(hh->unmarshal_size()));
+  return HdrHeapMarshalBlocks(swoc::round_up(hh->unmarshal_size()));
 }
 
 Errata
@@ -344,7 +344,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
 // check if the url looks valid
 bool
-CacheScan::check_url(ts::MemSpan<char> &mem, URLImpl *url)
+CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 {
   bool in_bound = false; // boolean to check if address in bound
   if (!url->m_ptr_scheme) {
@@ -365,7 +365,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
 
   char *start            = const_cast<char *>(buf);
   RefCountObj *block_ref = nullptr;
-  ts::MemSpan<char> doc_mem(const_cast<char *>(buf), length);
+  swoc::MemSpan<char> doc_mem(const_cast<char *>(buf), length);
 
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;

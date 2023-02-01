@@ -28,10 +28,7 @@
 #include "tscore/Diags.h"
 
 #include "I_RecDefs.h"
-#include "I_RecAlarms.h"
-#include "I_RecSignals.h"
-#include "I_RecEvents.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 struct RecRecord;
 
@@ -176,22 +173,6 @@ RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = tru
 RecErrT RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
 RecErrT RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
-//------------------------------------------------------------------------
-// Signal and Alarms
-//------------------------------------------------------------------------
-
-// RecSignalManager always sends a management signal up to traffic_manager.
-void RecSignalManager(int id, const char *, size_t);
-
-static inline void
-RecSignalManager(int id, const char *str)
-{
-  RecSignalManager(id, str, strlen(str) + 1);
-}
-
-// Format a message, and send it to the manager and to the Warning diagnostic.
-void RecSignalWarning(int sig, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
-
 /// Generate a warning if any configuration name/value is not registered.
 void RecConfigWarnIfUnregistered();
 
@@ -300,9 +281,3 @@ RecErrT RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 RecErrT RecSetSyncRequired(char *name, bool lock = true);
-
-//------------------------------------------------------------------------
-// Manager Callback
-//------------------------------------------------------------------------
-using RecManagerCb = std::function<void(ts::MemSpan<void>)>;
-int RecRegisterManagerCb(int _signal, RecManagerCb const &_fn);

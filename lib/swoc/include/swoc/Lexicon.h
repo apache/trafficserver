@@ -40,12 +40,12 @@ what(std::string_view const &fmt, Args &&... args) {
 } // namespace detail
 
 /// Policy template use to specify the hash function for the integral type of @c Lexicon.
-/// The default is to cast to the required hash value type, which is usually sufficient.
-/// In some cases the cast doesn't work and this must be specialized.
+/// The default is @c std::hash but that can be overridden by specializing this method.
 template <typename E>
-uintmax_t
+size_t
 Lexicon_Hash(E e) {
-  return static_cast<uintmax_t>(e);
+  static constexpr std::hash<E> hasher;
+  return hasher(e);
 }
 
 /** A bidirectional mapping between names and enumeration values.
@@ -77,6 +77,15 @@ protected:
   struct Item;
 
 public:
+  /// An association of an enumeration value and a name.
+  /// @ note Used for initializer lists that have just a primary value.
+  using Pair = std::tuple<E, std::string_view>;
+
+  /// Index in @c Pair for the enumeration value.
+  static constexpr auto VALUE_IDX = 0;
+  /// Index in @c Pair for name.
+  static constexpr auto NAME_IDX = 1;
+
   /** A function to be called if a value is not found to provide a default name.
    * @param value The value.
    * @return A name for the value.
@@ -102,9 +111,6 @@ public:
    */
   using DefaultHandler = std::variant<std::monostate, E, std::string_view, UnknownNameHandler, UnknownValueHandler>;
 
-  /// Used for initializer lists that have just a primary value.
-  using Pair = std::tuple<E, std::string_view>;
-
   /// Element of an initializer list that contains secondary names.
   struct Definition {
     const E &value;                                       ///< Value for definition.
@@ -124,7 +130,7 @@ public:
    * The first value is the primary value and is required. Subsequent values are optional
    * and become secondary values.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -140,7 +146,7 @@ public:
    *
    * Each item in the intializers must be a @c Pair, that is a name and a value.
    *
-   * The default handlers are optional can be be omitted. If so, exceptions are thrown when values
+   * The default handlers are optional can be omitted. If so, exceptions are thrown when values
    * or names not in the @c Lexicon are used. See @c set_default for more details.
    *
    * @see set_default.
@@ -153,7 +159,7 @@ public:
    * @param handler_1 A default handler.
    * @param handler_2 A default handler.
    *
-   * @a handler_2 is optional can be be omitted. The argument values are the same as for
+   * @a handler_2 is optional can be omitted. The argument values are the same as for
    * @c set_default.
    *
    * @see set_default.
@@ -167,7 +173,7 @@ public:
    * @param value Value to look up.
    * @return The name for @a value.
    */
-  std::string_view operator[](E value) const;
+  std::string_view operator[](E const& value) const;
 
   /** Get the value for a @a name.
    *
@@ -229,42 +235,58 @@ public:
   /// Get the number of values with definitions.
   size_t count() const;
 
-  /** Iterator over pairs of values and primary name pairs.
-   * Value is a 2-tuple of the enumeration type and the primary name.
-   */
-  class const_iterator {
-    using self_type = const_iterator;
-
+protected:
+  /// Common features of container iterators.
+  class base_iterator {
+    using self_type = base_iterator;
   public:
-    using value_type        = const Pair;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-    using difference_type   = ptrdiff_t;
-    using iterator_category = std::bidirectional_iterator_tag;
-
-    /// Default constructor.
-    const_iterator() = default;
-
-    /// Copy constructor.
-    const_iterator(self_type const &that) = default;
-
-    /// Move construcgtor.
-    const_iterator(self_type &&that) = default;
-
+    using value_type        = const Pair; ///< Iteration value.
+    using pointer           = value_type *; ///< Pointer to iteration value.
+    using reference         = value_type &; ///< Reference to iteration value.
+    using difference_type   = ptrdiff_t; ///< Type of difference between iterators.
+    using iterator_category = std::bidirectional_iterator_tag; ///< Concepts for iterator.
+    /// Default constructor (invalid iterator)
+    base_iterator() = default;
     /// Dereference.
     reference operator*() const;
-
     /// Dereference.
     pointer operator->() const;
+    /// Equality.
+    bool operator==(self_type const &that) const;
+    /// Inequality.
+    bool operator!=(self_type const &that) const;
+
+  protected:
+    base_iterator(Item const * item) : _item(item) {}
+
+    const Item *_item{nullptr};                      ///< Current location in the container.
+  };
+
+public:
+
+  /** Iterator over pairs of values and primary name pairs.
+   *  The value type is a @c Pair with the value and name.
+   */
+  class value_iterator : public base_iterator {
+    using super_type = base_iterator;
+    using self_type = value_iterator;
+
+  public:
+    using value_type        = typename super_type::value_type;
+    using pointer           = typename super_type::pointer;
+    using reference         = typename super_type::reference;
+
+    /// Default constructor.
+    value_iterator() = default;
+
+    /// Copy constructor.
+    value_iterator(self_type const &that) = default;
+
+    /// Move constructor.
+    value_iterator(self_type &&that) = default;
 
     /// Assignment.
     self_type &operator=(self_type const &that) = default;
-
-    /// Equality.
-    bool operator==(self_type const &that) const;
-
-    /// Inequality.
-    bool operator!=(self_type const &that) const;
 
     /// Increment.
     self_type &operator++();
@@ -279,18 +301,50 @@ public:
     self_type operator--(int);
 
   protected:
-    const_iterator(const Item *item); ///< Internal constructor.
-
-    /// Update the internal values after changing the iterator location.
-    void update();
-
-    const Item *_item{nullptr};                      ///< Current location in the container.
-    typename std::remove_const<value_type>::type _v; ///< Synthesized value for dereference.
+    value_iterator(const Item *item) : super_type(item) {}; ///< Internal constructor.
 
     friend Lexicon;
   };
 
-  // Only constant iterator allowed, values cannot be modified.
+  class name_iterator : public base_iterator {
+  private:
+    using self_type = name_iterator;
+    using super_type = base_iterator;
+  public:
+    /// Default constructor.
+    name_iterator() = default;
+
+    /// Copy constructor.
+    name_iterator(self_type const &that) = default;
+
+    /// Move constructor.
+    name_iterator(self_type &&that) = default;
+
+    /// Assignment.
+    self_type &operator=(self_type const &that) = default;
+
+    /// Increment.
+    self_type &operator++();
+
+    /// Increment.
+    self_type operator++(int);
+
+    /// Decrement.
+    self_type &operator--();
+
+    /// Decrement.
+    self_type operator--(int);
+
+  protected:
+    name_iterator(const Item *item) : super_type(item) {}; ///< Internal constructor.
+
+    friend Lexicon;
+  };
+
+  /// Iterator over values (each with a primary name).
+  using const_iterator = value_iterator;
+  /// Iterator over values.
+  /// @note All iteration is over constant pairs, no modification is possible.
   using iterator = const_iterator;
 
   /// Iteration begin.
@@ -298,6 +352,34 @@ public:
 
   /// Iteration end.
   const_iterator end() const;
+
+  /// Iteration over names - every value/name pair.
+  name_iterator begin_names() const { return { _by_name.begin() }; }
+  /// Iteration over names - every value/name pair.
+  name_iterator end_names() const { return { _by_name.end() }; }
+
+  /// @cond INTERNAL
+  // Helper struct to return to enable container iteration for names.
+  struct ByNameHelper {
+    self_type const & _lexicon;
+    ByNameHelper(self_type const & self) : _lexicon(self) {}
+    name_iterator begin() const { return _lexicon.begin_names(); }
+    name_iterator end() const { return _lexicon.end_names(); }
+  };
+  /// @endcond
+
+  /** Enable container iteration by name.
+   * The return value is a tempoary of indeterminate type that provides @c begin and @c end methods which
+   * return name based iterators for @a this. This is useful for container based iteration. E.g. to iterate
+   * over all of the value/name pairs,
+   * @code
+   * for ( auto const & pair : lexicon.by_names()) {
+   *   // code
+   * }
+   * @endcode
+   * @return Temporary.
+   */
+  ByNameHelper by_names() const { return { *this }; }
 
 protected:
   /// Handle providing a default name.
@@ -307,18 +389,21 @@ protected:
 
   /// Visitor functor for handling @c NameDefault.
   struct NameDefaultVisitor {
-    E _value;
+    E _value; ///< Value to use for default.
 
+    /// Visitor - invalid value type.
     std::string_view
     operator()(std::monostate const &) const {
-      throw std::domain_error(detail::what("Lexicon: invalid enumeration value {}", static_cast<int>(_value)).data());
+      throw std::domain_error("Lexicon: invalid enumeration value");
     }
 
+    /// Visitor - literal string.
     std::string_view
     operator()(std::string_view const &name) const {
       return name;
     }
 
+    /// Visitor - string generator.
     std::string_view
     operator()(UnknownValueHandler const &handler) const {
       return handler(_value);
@@ -327,18 +412,21 @@ protected:
 
   /// Visitor functor for handling @c ValueDefault.
   struct ValueDefaultVisitor {
-    std::string_view _name;
+    std::string_view _name; ///< Name of visited pair.
 
+    /// Vistor - invalid value.
     E
     operator()(std::monostate const &) const {
       throw std::domain_error(detail::what("Lexicon: Unknown name \"{}\"", _name).data());
     }
 
+    /// Visitor - value.
     E
     operator()(E const &value) const {
       return value;
     }
 
+    /// Visitor - value generator.
     E
     operator()(UnknownNameHandler const &handler) const {
       return handler(_name);
@@ -356,40 +444,33 @@ protected:
      */
     Item(E value, std::string_view name);
 
-    E _value;               ///< Definition value.
-    std::string_view _name; ///< Definition name
+    Pair _payload; ///< Enumeration and name.
 
-    /// Intrusive linkage for name lookup.
+    /// @cond INTERNAL_DETAIL
+    // Intrusive list linkage support.
     struct NameLinkage {
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
       static Item *&next_ptr(Item *);
-
       static Item *&prev_ptr(Item *);
-
       static std::string_view key_of(Item *);
-
       static uint32_t hash_of(std::string_view s);
-
       static bool equal(std::string_view const &lhs, std::string_view const &rhs);
     } _name_link;
 
-    /// Intrusive linkage for value lookup.
+    // Intrusive linkage for value lookup.
     struct ValueLinkage {
       Item *_next{nullptr};
       Item *_prev{nullptr};
 
       static Item *&next_ptr(Item *);
-
       static Item *&prev_ptr(Item *);
-
       static E key_of(Item *);
-
-      static uintmax_t hash_of(E);
-
+      static size_t hash_of(E);
       static bool equal(E lhs, E rhs);
     } _value_link;
+    /// @endcond
   };
 
   /// Copy @a name in to local storage.
@@ -411,8 +492,9 @@ protected:
 // ----
 // Item
 
-template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _value(value), _name(name) {}
+template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _payload(value, name) {}
 
+/// @cond INTERNAL_DETAIL
 template <typename E>
 auto
 Lexicon<E>::Item::NameLinkage::next_ptr(Item *item) -> Item *& {
@@ -440,13 +522,13 @@ Lexicon<E>::Item::ValueLinkage::prev_ptr(Item *item) -> Item *& {
 template <typename E>
 std::string_view
 Lexicon<E>::Item::NameLinkage::key_of(Item *item) {
-  return item->_name;
+  return std::get<NAME_IDX>(item->_payload);
 }
 
 template <typename E>
 E
 Lexicon<E>::Item::ValueLinkage::key_of(Item *item) {
-  return item->_value;
+  return std::get<VALUE_IDX>(item->_payload);
 }
 
 template <typename E>
@@ -456,9 +538,8 @@ Lexicon<E>::Item::NameLinkage::hash_of(std::string_view s) {
 }
 
 template <typename E>
-uintmax_t
+size_t
 Lexicon<E>::Item::ValueLinkage::hash_of(E value) {
-  // In almost all cases, the values will be (roughly) sequential, so an identity hash works well.
   return Lexicon_Hash<E>(value);
 }
 
@@ -473,6 +554,7 @@ bool
 Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
   return lhs == rhs;
 }
+/// @endcond
 
 // -------
 // Lexicon
@@ -517,10 +599,9 @@ Lexicon<E>::localize(std::string_view const &name) {
 
 template <typename E>
 std::string_view
-Lexicon<E>::operator[](E value) const {
-  auto spot = _by_value.find(value);
-  if (spot != _by_value.end()) {
-    return spot->_name;
+Lexicon<E>::operator[](E const& value) const {
+  if ( auto spot = _by_value.find(value) ; spot != _by_value.end()) {
+    return std::get<NAME_IDX>(spot->_payload);
   }
   return std::visit(NameDefaultVisitor{value}, _name_default);
 }
@@ -528,9 +609,8 @@ Lexicon<E>::operator[](E value) const {
 template <typename E>
 E
 Lexicon<E>::operator[](std::string_view const &name) const {
-  auto spot = _by_name.find(name);
-  if (spot != _by_name.end()) {
-    return spot->_value;
+  if ( auto spot = _by_name.find(name) ; spot != _by_name.end()) {
+    return std::get<VALUE_IDX>(spot->_payload);
   }
   return std::visit(ValueDefaultVisitor{name}, _value_default);
 }
@@ -541,7 +621,7 @@ Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names
   if (names.size() < 1) {
     throw std::invalid_argument("A defined value must have at least a primary name");
   }
-  for (auto name : names) {
+  for (auto const& name : names) {
     if (_by_name.find(name) != _by_name.end()) {
       throw std::invalid_argument(detail::what("Duplicate name '{}' in Lexicon", name));
     }
@@ -566,7 +646,7 @@ Lexicon<E>::define(E value, Args &&... names) -> self_type & {
 template <typename E>
 auto
 Lexicon<E>::define(const Pair &pair) -> self_type & {
-  return this->define(std::get<0>(pair), {std::get<1>(pair)});
+  return this->define(std::get<VALUE_IDX>(pair), {std::get<NAME_IDX>(pair)});
 }
 
 template <typename E>
@@ -618,54 +698,39 @@ Lexicon<E>::end() const -> const_iterator {
 // Iterators
 
 template <typename E>
-void
-Lexicon<E>::const_iterator::update() {
-  std::get<0>(_v) = _item->_value;
-  std::get<1>(_v) = _item->_name;
-}
-
-template <typename E> Lexicon<E>::const_iterator::const_iterator(const Item *item) : _item(item) {
-  if (_item) {
-    this->update();
-  };
+auto
+Lexicon<E>::base_iterator::operator*() const -> reference {
+  return _item->_payload;
 }
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator*() const -> reference {
-  return _v;
-}
-
-template <typename E>
-auto
-Lexicon<E>::const_iterator::operator->() const -> pointer {
-  return &_v;
+Lexicon<E>::base_iterator::operator->() const -> pointer {
+  return &(_item->_payload);
 }
 
 template <typename E>
 bool
-Lexicon<E>::const_iterator::operator==(self_type const &that) const {
+Lexicon<E>::base_iterator::operator==(self_type const &that) const {
   return _item == that._item;
 }
 
 template <typename E>
 bool
-Lexicon<E>::const_iterator::operator!=(self_type const &that) const {
+Lexicon<E>::base_iterator::operator!=(self_type const &that) const {
   return _item != that._item;
 }
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator++() -> self_type & {
-  if (nullptr != (_item = _item->_value_link._next)) {
-    this->update();
-  }
+Lexicon<E>::value_iterator::operator++() -> self_type & {
+  super_type::_item = super_type::_item->_value_link._next;
   return *this;
 }
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator++(int) -> self_type {
+Lexicon<E>::value_iterator::operator++(int) -> self_type {
   self_type tmp{*this};
   ++*this;
   return tmp;
@@ -673,16 +738,44 @@ Lexicon<E>::const_iterator::operator++(int) -> self_type {
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator--() -> self_type & {
-  if (nullptr != (_item = _item->_value_link->_prev)) {
-    this->update();
-  }
+Lexicon<E>::value_iterator::operator--() -> self_type & {
+  super_type::_item = super_type::_item->_value_link->_prev;
   return *this;
 }
 
 template <typename E>
 auto
-Lexicon<E>::const_iterator::operator--(int) -> self_type {
+Lexicon<E>::value_iterator::operator--(int) -> self_type {
+  self_type tmp;
+  ++*this;
+  return tmp;
+}
+
+template <typename E>
+auto
+Lexicon<E>::name_iterator::operator++() -> self_type & {
+  super_type::_item = super_type::_item->_name_link._next;
+  return *this;
+}
+
+template <typename E>
+auto
+Lexicon<E>::name_iterator::operator++(int) -> self_type {
+  self_type tmp{*this};
+  ++*this;
+  return tmp;
+}
+
+template <typename E>
+auto
+Lexicon<E>::name_iterator::operator--() -> self_type & {
+  super_type::_item = super_type::_item->_name_link->_prev;
+  return *this;
+}
+
+template <typename E>
+auto
+Lexicon<E>::name_iterator::operator--(int) -> self_type {
   self_type tmp;
   ++*this;
   return tmp;

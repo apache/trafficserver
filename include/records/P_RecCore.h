@@ -84,10 +84,6 @@ RecErrT RecReadConfigFile();
 //-------------------------------------------------------------------------
 
 bool i_am_the_record_owner(RecT rec_type);
-RecErrT send_push_message();
-RecErrT send_pull_message(RecMessageT msg_type);
-RecErrT send_register_message(RecRecord *record);
-RecErrT recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
 RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);

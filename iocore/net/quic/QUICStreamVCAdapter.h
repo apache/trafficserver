@@ -72,6 +72,7 @@ public:
   }
   ~IOInfo()
   {
+    adapter.do_io_close();
     free_MIOBuffer(this->read_buffer);
     free_MIOBuffer(this->write_buffer);
   }

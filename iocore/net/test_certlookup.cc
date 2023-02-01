@@ -43,11 +43,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
   box = REGRESSION_TEST_PASSED;
 
-  assert(wild != nullptr);
-  assert(notwild != nullptr);
-  assert(b_notwild != nullptr);
-  assert(foo != nullptr);
-  assert(all_com != nullptr);
+  ink_assert(wild != nullptr);
+  ink_assert(notwild != nullptr);
+  ink_assert(b_notwild != nullptr);
+  ink_assert(foo != nullptr);
+  ink_assert(all_com != nullptr);
 
   box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
   // Insert the same SSL_CTX instance under another name too

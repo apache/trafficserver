@@ -649,6 +649,30 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv) {
 }
 
 BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
+  using namespace swoc::literals;
+  bwf::Spec ptr_spec{spec};
+  ptr_spec._radix_lead_p = true;
+
+  if (ptr == nullptr) {
+    if (spec._type == 's' || spec._type == 'S') {
+      ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
+      ptr_spec._ext  = ""_sv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
+    } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
+      return w; // print nothing if there is no format character override.
+    }
+  }
+
+  if (ptr_spec._type == bwf::Spec::DEFAULT_TYPE || ptr_spec._type == 'p') {
+    ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
+  } else if (ptr_spec._type == 'P') {
+    ptr_spec._type = 'X'; // P means upper hex, overriding other specializations.
+  }
+  return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
+}
+
+BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
   char fmt_type      = spec._type;
   const char *digits = bwf::UPPER_DIGITS;
@@ -672,7 +696,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'X' == spec._type ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
+    const char *digits =  ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
     TextView view{span.view()};
     bool space_p = false;
@@ -918,67 +942,6 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Pattern const &pattern) {
   }
   return w;
 }
-
-// --- IP address support ---
-
-#if 0
-BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr)
-{
-  bwf::Spec local_spec{spec}; // Format for address elements and port.
-  bool addr_p{true};
-  bool family_p{false};
-
-  if (spec._ext.size()) {
-    if (spec._ext.front() == '=') {
-      local_spec._ext.remove_prefix(1);
-    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
-      local_spec._ext.remove_prefix(2);
-    }
-  }
-  if (local_spec._ext.size()) {
-    addr_p = false;
-    for (char c : local_spec._ext) {
-      switch (c) {
-        case 'a':
-        case 'A':
-          addr_p = true;
-          break;
-        case 'f':
-        case 'F':
-          family_p = true;
-          break;
-      }
-    }
-  }
-
-  if (addr_p) {
-    if (addr.isIp4()) {
-      bwformat(w, spec, addr._addr._ip4);
-    } else if (addr.isIp6()) {
-      bwformat(w, spec, addr._addr._ip6);
-    } else {
-      w.print("*Not IP address [{}]*", addr.family());
-    }
-  }
-
-  if (family_p) {
-    local_spec._min = 0;
-    if (addr_p) {
-      w.write(' ');
-    }
-    if (spec.has_numeric_type()) {
-      bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
-    } else {
-      bwformat(w, local_spec, addr.family());
-    }
-  }
-  return w;
-}
-#endif
-
-namespace {
-} // namespace
 
 }} // namespace swoc::SWOC_VERSION_NS
 

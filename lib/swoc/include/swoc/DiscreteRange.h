@@ -22,36 +22,75 @@ namespace detail {
 /// A set of metafunctions to get extrema from a metric type.
 /// These probe for a static member and falls back to @c std::numeric_limits.
 /// @{
+
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ *
+ * Use @c std::numeric_limits.
+ */
 template <typename M>
 constexpr auto
 maximum(meta::CaseTag<0>) -> M {
   return std::numeric_limits<M>::max();
 }
 
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ *
+ * Use @c M::MAX
+ */
 template <typename M>
 constexpr auto
 maximum(meta::CaseTag<1>) -> decltype(M::MAX) {
   return M::MAX;
 }
 
+/** Maximum value.
+ *
+ * @tparam M Metric type.
+ * @return Maximum value for @a M.
+ */
 template <typename M>
 constexpr M
 maximum() {
   return maximum<M>(meta::CaseArg);
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ *
+ * Use @c std::numeric_limits
+ */
 template <typename M>
 constexpr auto
 minimum(meta::CaseTag<0>) -> M {
   return std::numeric_limits<M>::min();
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ *
+ * Use @c M::MIN
+ */
 template <typename M>
 constexpr auto
 minimum(meta::CaseTag<1>) -> decltype(M::MIN) {
   return M::MIN;
 }
 
+/** Minimum value.
+ *
+ * @tparam M Metric type.
+ * @return Minimum value for @a M
+ */
 template <typename M>
 constexpr M
 minimum() {
@@ -773,34 +812,27 @@ public:
   /** Find the payload at @a metric.
    *
    * @param metric The metric for which to search.
-   * @return The payload for @a metric if found, @c nullptr if not found.
+   * @return An iterator for the item or the @c end iterator if not.
    */
   iterator find(METRIC const &metric);
+
+  /** Find the payload at @a metric.
+   *
+   * @param metric The metric for which to search.
+   * @return An iterator for the item or the @c end iterator if not.
+   */
+  const_iterator find(METRIC const &metric) const;
 
   /// @return The number of distinct ranges.
   size_t count() const;
 
-  iterator
-  begin() {
-    return _list.begin();
-  }
-
-  iterator
-  end() {
-    return _list.end();
-  }
+  iterator begin() { return _list.begin(); }
+  iterator end() { return _list.end(); }
+  const_iterator begin() const { return _list.begin(); }
+  const_iterator end() const { return _list.end(); }
 
   /// Remove all ranges.
-  void
-  clear() {
-    for (auto &node : _list) {
-      std::destroy_at(&node.payload());
-    }
-    _list.clear();
-    _root = nullptr;
-    _arena.clear();
-    _fa.clear();
-  }
+  void clear();
 
 protected:
   /** Find the lower bound range for @a target.
@@ -921,6 +953,13 @@ DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) -> iterator {
     }
   }
   return this->end();
+}
+
+template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) const -> const_iterator
+{
+  return const_cast<self_type *>(this)->find(metric);
 }
 
 template <typename METRIC, typename PAYLOAD>
@@ -1478,6 +1517,19 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const &range, U 
   }
 
   return *this;
+}
+
+template <typename METRIC, typename PAYLOAD>
+void
+DiscreteSpace<METRIC, PAYLOAD>::clear()
+{
+  for (auto &node : _list) {
+    std::destroy_at(&node.payload());
+  }
+  _list.clear();
+  _root = nullptr;
+  _arena.clear();
+  _fa.clear();
 }
 
 }} // namespace swoc::SWOC_VERSION_NS

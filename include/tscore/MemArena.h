@@ -27,8 +27,9 @@
 #include <mutex>
 #include <memory>
 #include <utility>
-#include "tscpp/util/MemSpan.h"
-#include "tscore/Scalar.h"
+#include "ink_assert.h"
+#include "swoc/MemSpan.h"
+#include "swoc/Scalar.h"
 #include "tscore/IntrusivePtr.h"
 
 /// Apache Traffic Server commons.
@@ -78,14 +79,14 @@ protected:
     size_t remaining() const;
 
     /// Span of unallocated storage.
-    MemSpan<void> remnant();
+    swoc::MemSpan<void> remnant();
 
     /** Allocate @a n bytes from this block.
      *
      * @param n Number of bytes to allocate.
      * @return The span of memory allocated.
      */
-    MemSpan<void> alloc(size_t n);
+    swoc::MemSpan<void> alloc(size_t n);
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -127,9 +128,9 @@ public:
       @a n bytes.
 
       @param n number of bytes to allocate.
-      @return a MemSpan of the allocated memory.
+      @return a swoc::MemSpan of the allocated memory.
    */
-  MemSpan<void> alloc(size_t n);
+  swoc::MemSpan<void> alloc(size_t n);
 
   /** Allocate and initialize a block of memory.
 
@@ -183,7 +184,7 @@ public:
   size_t remaining() const;
 
   /// @returns the remaining contiguous space in the active generation.
-  MemSpan<void> remnant() const;
+  swoc::MemSpan<void> remnant() const;
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -208,12 +209,12 @@ protected:
    */
   BlockPtr make_block(size_t n);
 
-  using Page      = ts::Scalar<4096>; ///< Size for rounding block sizes.
-  using Paragraph = ts::Scalar<16>;   ///< Minimum unit of memory allocation.
+  using Page      = swoc::Scalar<4096>; ///< Size for rounding block sizes.
+  using Paragraph = swoc::Scalar<16>;   ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.
-  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
+  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{swoc::round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
   size_t _active_reserved  = 0; ///< Total current reserved memory.
@@ -259,11 +260,11 @@ MemArena::Block::remaining() const
   return size - allocated;
 }
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::Block::alloc(size_t n)
 {
   ink_assert(n <= this->remaining());
-  MemSpan<void> zret = this->remnant().prefix(n);
+  swoc::MemSpan<void> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
 }
@@ -277,7 +278,7 @@ MemArena::make(Args &&... args)
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::Block::remnant()
 {
   return {this->data() + allocated, this->remaining()};
@@ -301,10 +302,10 @@ MemArena::remaining() const
   return _active ? _active->remaining() : 0;
 }
 
-inline MemSpan<void>
+inline swoc::MemSpan<void>
 MemArena::remnant() const
 {
-  return _active ? _active->remnant() : MemSpan<void>{};
+  return _active ? _active->remnant() : swoc::MemSpan<void>{};
 }
 
 inline size_t

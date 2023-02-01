@@ -24,14 +24,18 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
-class QUICBidirectionalStream : public QUICStream, public QUICTransferProgressProvider
+class QUICBidirectionalStream : public QUICStreamBase, public QUICTransferProgressProvider
 {
 public:
   QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                           uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
   QUICBidirectionalStream()
-    : QUICStream(), _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _state(nullptr, nullptr, nullptr, nullptr)
+    : QUICStreamBase(),
+      _remote_flow_controller(0, 0),
+      _local_flow_controller(nullptr, 0, 0),
+      _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
 
@@ -40,7 +44,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame) override;

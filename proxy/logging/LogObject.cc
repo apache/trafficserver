@@ -987,7 +987,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
       const char *se  = strerror(errno);
 
       Error(msg, filename, se);
-      LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
       retVal = ERROR_ACCESSING_LOG_FILE;
     }
   } else {
@@ -1020,7 +1019,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
         const char *msg = "Cannot solve filename conflicts for log file %s";
 
         Error(msg, filename);
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
         retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
       } else {
         // Either the meta file could not be read, or the new object's
@@ -1041,7 +1039,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
             char *se        = strerror(errno);
 
             Error(msg, filename, se);
-            LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
             retVal    = ERROR_DETERMINING_FILE_INFO;
             roll_file = false;
           } else {
@@ -1083,7 +1080,6 @@ LogObjectManager::_filename_resolution_abort(const char *filename)
                     "conflicts (filename or log format): %s";
   const char *err = strerror(errno);
   Error(msg, filename, err);
-  LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, err);
 }
 
 bool
@@ -1121,7 +1117,6 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int 
       const char *msg = "Cannot solve filename conflicts for log file %s";
 
       Error(msg, filename);
-      LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
       retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
     }
   }

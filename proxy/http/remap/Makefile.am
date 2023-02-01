@@ -29,6 +29,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
@@ -75,7 +76,7 @@ COMMON_PLUGINDSO_LDADDS = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
@@ -142,6 +143,7 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 
@@ -173,6 +175,7 @@ test_NextHopRoundRobin_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 
@@ -204,6 +207,7 @@ test_NextHopConsistentHash_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@HWLOC_LIBS@
 

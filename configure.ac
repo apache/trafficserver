@@ -547,13 +547,12 @@ AM_CONDITIONAL([BUILD_IMAGE_MAGICK_PLUGINS], [test "x${enable_image_magick_plugi
 
 AC_MSG_CHECKING([whether to install example plugins])
 AC_ARG_ENABLE([example-plugins],
-  [AS_HELP_STRING([--enable-example-plugins],[build and install example plugins])],
+  [AS_HELP_STRING([--enable-example-plugins],[Build and install example plugins])],
   [],
   [enable_example_plugins=no]
 )
 AC_MSG_RESULT([$enable_example_plugins])
 AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
-
 
 #
 # Test tools. The test tools are always built, but not always installed. Installing
@@ -1402,6 +1401,7 @@ AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_fadvise posix_madvise posix
 AC_CHECK_FUNCS([port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
 AC_CHECK_FUNCS([strsignal psignal psiginfo accept4])
+AC_CHECK_FUNCS([sendmmsg])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
 AC_CHECK_HEADERS([sys/eventfd.h], [
@@ -1436,6 +1436,16 @@ TS_CHECK_BROTLI
 
 # Check for optional luajit library
 TS_CHECK_LUAJIT
+
+# Check for optional quiche library
+TS_CHECK_QUICHE
+if test "${has_quiche}" = "1"; then
+enable_quic=yes
+## Doing these again for Quiche
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+TS_ARG_ENABLE_VAR([use], [quic])
+AC_SUBST(use_quic)
+fi
 
 # Check for optional WAVM library
 TS_CHECK_WAVM
@@ -1886,11 +1896,6 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
 # We should only build traffic_top if we have curses
 AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
-
-AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
-AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
-AC_SUBST(has_mysql)
-AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
 
 AC_CHECK_HEADERS([kclangc.h], [
   AC_CHECK_LIB([kyotocabinet], [kcdbopen], [
@@ -2377,6 +2382,8 @@ AC_CONFIG_FILES([
   mgmt/api/Makefile
   mgmt/api/include/Makefile
   mgmt/utils/Makefile
+  mgmt/rpc/Makefile
+  mgmt/config/Makefile
   plugins/Makefile
   proxy/Makefile
   proxy/hdrs/Makefile

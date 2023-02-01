@@ -32,6 +32,7 @@
 
 #include "I_EThread.h"
 #include "I_EventProcessor.h"
+#include "tscore/ink_atomic.h"
 #include <execinfo.h>
 
 const ink_hrtime DELAY_FOR_RETRY = HRTIME_MSECONDS(10);

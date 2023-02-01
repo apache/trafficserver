@@ -17,23 +17,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = utils api
+SUBDIRS = utils api config rpc
 
 # Decoder ring:
 # 	libmgmt_c.la 	Configuration records (defaults).
-# 	libmgmt_lm.la	libmgmt for Local Manager applications (traffic_manager)
 # 	libmgmt_p.la	libmgmt for Process Manager applications (everything else)
-noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
+noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/hdrs \
+        @SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
 
@@ -42,38 +41,15 @@ libmgmt_c_la_SOURCES = \
 	RecordsConfig.h
 
 libmgmt_COMMON = \
-	BaseManager.cc \
-	BaseManager.h \
 	MgmtDefs.h \
 	RecordsConfigUtils.cc
 
 libmgmt_p_la_SOURCES = \
 	$(libmgmt_COMMON) \
-	ProcessManager.cc \
-	ProcessManager.h \
 	ProxyConfig.cc \
 	ProxyConfig.h \
 	YamlCfg.cc \
 	YamlCfg.h
-
-libmgmt_lm_la_SOURCES = \
-	$(libmgmt_COMMON) \
-	Alarms.cc \
-	Alarms.h \
-	DerivativeMetrics.cc \
-	DerivativeMetrics.h \
-	FileManager.cc \
-	FileManager.h \
-	LocalManager.cc \
-	LocalManager.h \
-	ConfigManager.cc \
-	ConfigManager.h \
-	WebMgmtUtils.cc \
-	WebMgmtUtils.h
-
-libmgmt_lm_la_LIBADD = \
-	libmgmt_c.la \
-	$(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
 	libmgmt_c.la \

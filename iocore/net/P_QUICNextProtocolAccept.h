@@ -1,6 +1,6 @@
 /** @file
 
-  QUICNextProtocolAccept
+  A brief file description
 
   @section license License
 
@@ -23,37 +23,10 @@
 
 #pragma once
 
-#include "P_QUICNetVConnection.h"
-#include "P_SSLNextProtocolSet.h"
-#include "I_IOBuffer.h"
+#include "tscore/ink_config.h"
 
-class QUICNextProtocolAccept : public SessionAccept
-{
-public:
-  QUICNextProtocolAccept();
-  ~QUICNextProtocolAccept();
-
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
-
-  // Register handler as an endpoint for the specified protocol. Neither
-  // handler nor protocol are copied, so the caller must guarantee their
-  // lifetime is at least as long as that of the acceptor.
-  bool registerEndpoint(const char *protocol, Continuation *handler);
-
-  void enableProtocols(const SessionProtocolSet &protos);
-
-  SLINK(QUICNextProtocolAccept, link);
-  SSLNextProtocolSet *getProtoSet();
-
-  // noncopyable
-  QUICNextProtocolAccept(const QUICNextProtocolAccept &) = delete;            // disabled
-  QUICNextProtocolAccept &operator=(const QUICNextProtocolAccept &) = delete; // disabled
-
-private:
-  int mainEvent(int event, void *netvc) override;
-
-  SSLNextProtocolSet protoset;
-  SessionProtocolSet protoenabled;
-
-  friend struct QUICNextProtocolTrampoline;
-};
+#if HAVE_QUICHE_H
+#include "P_QUICNextProtocolAccept_quiche.h"
+#else
+#include "P_QUICNextProtocolAccept_native.h"
+#endif

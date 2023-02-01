@@ -41,6 +41,15 @@ configuration option, ``--header``. E.g.
 
 This overrides the default ``X-Debug`` header name.
 
+All the debug headers are disabled by default, and you need to enable them
+selectively by passing header names to ``--enable`` option.
+
+    --enable=x-remap,x-cache
+
+This enables ``X-Remap`` and ``X-Cache``. If a client's request has
+``X-Debug: x-remap, x-cache, probe``, XDebug will only injects ``X-Reamp`` and
+``X-Cache``.
+
 
 Debugging Headers
 =================

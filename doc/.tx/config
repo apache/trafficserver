@@ -427,11 +427,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/mp4.en.po
 source_file = _build/locale/pot/admin-guide/plugins/mp4.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--mysql_remap_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/mysql_remap.en.po
-source_file = _build/locale/pot/admin-guide/plugins/mysql_remap.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--regex_remap_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/regex_remap.en.po
 source_file = _build/locale/pot/admin-guide/plugins/regex_remap.en.pot
@@ -697,9 +692,9 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContMute
 source_file = _build/locale/pot/developer-guide/api/functions/TSContMutexGet.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSContSchedule_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContSchedule.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSContSchedule.en.pot
+[apache-traffic-server-6x.developer-guide--api--functions--TSContScheduleOnPool_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContScheduleOnPool.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContScheduleOnPool.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSDebug_en]

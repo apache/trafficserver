@@ -9,7 +9,7 @@
 
 #include "swoc/swoc_version.h"
 
-namespace SWOC_NAMESPACE {
+namespace swoc { inline namespace SWOC_VERSION_NS {
 class BufferWriter;
 class FixedBufferWriter;
 template <size_t N> class LocalBufferWriter;
@@ -18,4 +18,4 @@ namespace bwf {
 struct Spec;
 class Format;
 } // namespace bwf
-} // namespace SWOC_NAMESPACE
+}} // namespace swoc

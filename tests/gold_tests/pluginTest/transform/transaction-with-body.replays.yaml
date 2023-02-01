@@ -1,36 +1,227 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 meta:
   version: "1.0"
 
 sessions:
 - transactions:
+
+  #---------------------------------------------------------------------------
+  # Verify that Content-Length response bodies can be consumed.
+  #---------------------------------------------------------------------------
   - client-request:
-      method: "GET"
+      method: "POST"
       version: "1.1"
-      url: "/test/http11"
+      url: "/test/http11_response"
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 1 ]
-        - [ Content-Length, 20 ]
-        # The example plugin only prints bodies with responses to requests
-        # containing The TS-Agent header.
-        - [ TS-Agent, 1 ]
+        - [ uuid, 10 ]
+        - [ X-Dump-Response, 1 ]
+        - [ Content-Length, 31 ]
       content:
-        data: "http1.1_request_body"
+        data: "http1.1_request_body_not_dumped"
 
     proxy-request:
       headers:
         fields:
-        - [ TS-Agent, { as: present } ]
+        - [ X-Dump-Response, { as: present } ]
 
     server-response:
       status: 200
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 21 ]
+        - [ Content-Length, 31 ]
       content:
-        data: "http1.1_response_body"
+        data: "http1.1_cl_response_body_dumped"
+
+    proxy-response:
+      status: 200
+
+  #---------------------------------------------------------------------------
+  # Verify that chunked response bodies can be consumed.
+  #---------------------------------------------------------------------------
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/test/http11_response"
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 11 ]
+        - [ X-Dump-Response, 1 ]
+        - [ Content-Length, 31 ]
+      content:
+        data: "http1.1_request_body_not_dumped"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Dump-Response, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        data: "http1.1_chunked_response_body_dumped"
+
+    proxy-response:
+      status: 200
+
+  #---------------------------------------------------------------------------
+  # Verify that Content-Length request bodies can be consumed.
+  #---------------------------------------------------------------------------
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/test/http11_request"
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 12 ]
+        # The example plugin only prints bodies with responses to requests
+        # containing The TS-Agent header.
+        - [ X-Dump-Request, 1 ]
+        - [ Content-Length, 30 ]
+      content:
+        data: "http1.1_cl_request_body_dumped"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Dump-Request, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        data: "http1.1_response_body_not_dumped"
+
+    proxy-response:
+      status: 200
+
+  #---------------------------------------------------------------------------
+  # Verify that chunked request bodies can be consumed.
+  #---------------------------------------------------------------------------
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/test/http11_request"
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 13 ]
+        # The example plugin only prints bodies with responses to requests
+        # containing The TS-Agent header.
+        - [ X-Dump-Request, 1 ]
+        - [ Transfer-Encoding, chunked ]
+      content:
+        data: "http1.1_chunked_request_body_dumped"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Dump-Request, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        data: "http1.1_response_body_not_dumped"
+
+    proxy-response:
+      status: 200
+
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  #---------------------------------------------------------------------------
+  # Verify that HTTP/2 response bodies can be consumed.
+  #---------------------------------------------------------------------------
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /test/http2_response ]
+        - [ uuid, 20 ]
+        - [ X-Dump-Response, 1 ]
+      content:
+        data: "http2_request_body_not_dumped"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Dump-Response, { as: present } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+      content:
+        data: "http2_response_body_dumped"
+
+    proxy-response:
+      status: 200
+
+  #---------------------------------------------------------------------------
+  # Verify that HTTP/2 request bodies can be consumed.
+  #---------------------------------------------------------------------------
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /test/http2_response ]
+        - [ uuid, 21 ]
+        - [ X-Dump-Request, 1 ]
+      content:
+        data: "http2_request_body_dumped"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Dump-Request, { as: present } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+      content:
+        data: "http2_response_body_not_dumped"
 
     proxy-response:
       status: 200

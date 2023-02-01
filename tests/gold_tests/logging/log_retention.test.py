@@ -50,7 +50,7 @@ class TestLogRetention:
     __ts_counter = 0
     __server_is_started = False
 
-    def __init__(self, records_config, run_description, command="traffic_manager"):
+    def __init__(self, records_config, run_description, command="traffic_server"):
         """
         Create a TestLogRetention instance.
         """
@@ -101,7 +101,7 @@ class TestLogRetention:
         cls.__server = server
         return cls.__server
 
-    def __create_ts(self, records_config, command="traffic_manager"):
+    def __create_ts(self, records_config, command="traffic_server"):
         """
         Create an ATS process.
 

@@ -31,7 +31,7 @@
 #include "ProxyConfig.h"
 #include "LogObject.h"
 #include "RolledLogDeleter.h"
-#include "tscpp/util/MemSpan.h"
+#include "swoc/MemSpan.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -116,7 +116,6 @@ public:
 
   static void register_config_callbacks();
   static void register_stat_callbacks();
-  static void register_mgmt_callbacks();
 
   bool space_to_write(int64_t bytes_to_write) const;
 
@@ -137,7 +136,7 @@ public:
   void read_configuration_variables();
 
   // CVR This is the mgmt callback function, hence all the strange arguments
-  static void reconfigure_mgmt_variables(ts::MemSpan<void>);
+  static void reconfigure_mgmt_variables(swoc::MemSpan<void>);
 
   int
   get_max_space_mb() const

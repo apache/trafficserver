@@ -1998,12 +1998,10 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
       if (!DISK_BAD(d)) {
         snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
-        RecSignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
         snprintf(message, sizeof(message), "too many errors accessing disk %s [%d/%d]: declaring disk bad", d->path, d->num_errors,
                  cache_config_max_disk_errors);
         Warning("%s", message);
-        RecSignalManager(REC_SIGNAL_CACHE_ERROR, message);
         cacheProcessor.mark_storage_offline(d); // take it out of service
       }
       break;

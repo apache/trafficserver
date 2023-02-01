@@ -39,6 +39,7 @@ Configuration Files
    storage.config.en
    strategies.yaml.en
    volume.config.en
+   jsonrpc.yaml.en
 
 :doc:`cache.config.en`
    Defines if, how, and for what durations |TS| caches objects, based on
@@ -86,6 +87,9 @@ Configuration Files
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.
+
+:doc:`jsonrpc.yaml.en`
+    Defines some of the configurable arguments of the jsonrpc endpoint.
 
 .. note::
 

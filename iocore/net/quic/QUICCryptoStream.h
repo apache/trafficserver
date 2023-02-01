@@ -24,6 +24,7 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
 /**
  * @brief QUIC Crypto stream
@@ -33,7 +34,7 @@
  * - no flow control
  * - no state (never closed)
  */
-class QUICCryptoStream : public QUICStream
+class QUICCryptoStream : public QUICStreamBase
 {
 public:
   QUICCryptoStream();
@@ -42,7 +43,6 @@ public:
   int state_stream_open(int event, void *data);
 
   const QUICConnectionInfoProvider *info() const;
-  QUICOffset final_offset() const;
   void reset_send_offset();
   void reset_recv_offset();
 
@@ -55,7 +55,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
 private:
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;

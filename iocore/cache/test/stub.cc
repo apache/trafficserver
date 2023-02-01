@@ -179,11 +179,6 @@ HostStatus::getHostStatus(const std::string_view name)
   return nullptr;
 }
 
-void
-HostStatus::createHostStat(const std::string_view name, const char *data)
-{
-}
-
 HostStatus::HostStatus() {}
 
 HostStatus::~HostStatus() {}

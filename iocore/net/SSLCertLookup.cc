@@ -148,7 +148,7 @@ namespace
  * @param dst Output buffer.
  */
 inline void
-transform_lower(std::string_view src, ts::MemSpan<char> dst)
+transform_lower(std::string_view src, swoc::MemSpan<char> dst)
 {
   if (src.size() > dst.size() - 1) { // clip @a src, reserving space for the terminal nul.
     src = std::string_view{src.data(), dst.size() - 1};

@@ -4,9 +4,6 @@ Apache-TS version 3.4.0
 Apache::TS - a set of perl interfaces to manage an Apache Traffic Server
              instance. This includes the following sub-modules
 
-    Apache::TS::AdminClient - access the statistics and configuration
-     			      settings stored within Apache Traffic Server
-
     Apache::TS::Config - Manage Apache Traffic Server configs
 
     Apache::TS::Config::Records - Manage records.config settings.

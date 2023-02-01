@@ -33,6 +33,9 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/HTTPVersion.h"
+
+#include "swoc/MemSpan.h"
+
 #include "I_EventSystem.h"
 #include "SRV.h"
 
@@ -389,7 +392,7 @@ public:
   ts::TextView name_view() const;
 
   /// Get the array of info instances.
-  ts::MemSpan<HostDBInfo> rr_info();
+  swoc::MemSpan<HostDBInfo> rr_info();
 
   /** Find a host record by IP address.
    *
@@ -790,7 +793,7 @@ HostDBRecord::refresh_ip()
   ip_timestamp = hostdb_current_timestamp;
 }
 
-inline ts::MemSpan<HostDBInfo>
+inline swoc::MemSpan<HostDBInfo>
 HostDBRecord::rr_info()
 {
   return {this->apply_offset<HostDBInfo>(rr_offset), rr_count};

@@ -135,7 +135,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   if (opt->local_ip.isValid()) {
     con->setBinding(opt->local_ip, opt->local_port);
   }
-  con->bindToThread(packet_handler);
+  con->bindToThread(packet_handler, t);
 
   PollCont *pc       = get_UDPPollCont(con->ethread);
   PollDescriptor *pd = pc->pollDescriptor;
@@ -219,9 +219,6 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   *na->action_        = cont;
   na->action_->server = &na->server;
   na->init_accept();
-
-  SCOPED_MUTEX_LOCK(lock, na->mutex, this_ethread());
-  udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, fd, 1048576, 1048576);
 
   return na->action_.get();
 }

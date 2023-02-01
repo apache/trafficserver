@@ -41,13 +41,13 @@ QUICRetryIntegrityTag::compute(uint8_t *out, QUICVersion version, QUICConnection
   const uint8_t *key;
   const uint8_t *nonce;
   switch (version) {
-  case 0xff00001d: // Draft-29
+  case 0x00000001: // Version 1
     key   = KEY_FOR_RETRY_INTEGRITY_TAG;
     nonce = NONCE_FOR_RETRY_INTEGRITY_TAG;
     break;
-  case 0xff00001b: // Draft-27
-    key   = KEY_FOR_RETRY_INTEGRITY_TAG_D27;
-    nonce = NONCE_FOR_RETRY_INTEGRITY_TAG_D27;
+  case 0xff00001d: // Draft-29
+    key   = KEY_FOR_RETRY_INTEGRITY_TAG_D29;
+    nonce = NONCE_FOR_RETRY_INTEGRITY_TAG_D29;
     break;
   default:
     key   = KEY_FOR_RETRY_INTEGRITY_TAG;

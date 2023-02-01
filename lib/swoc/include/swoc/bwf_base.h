@@ -118,7 +118,7 @@ protected:
     static constexpr uint8_t UPPER_TYPE_CHAR   = 0x20; ///< Upper case flag.
     static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
     static constexpr uint8_t SIGN_CHAR         = 0x80; ///< Is sign character.
-  } _prop;
+  } _prop; ///< Character property map.
 };
 
 /** Format string support.
@@ -172,8 +172,15 @@ public:
   struct FormatExtractor {
     const std::vector<Spec> &_fmt; ///< Parsed format string.
     int _idx = 0;                  ///< Element index.
+    /// @return @c true if more format string, @c false if none.
     explicit operator bool() const;
 
+    /** Extract next formatting elements.
+     *
+     * @param literal_v [out] The next literal.
+     * @param spec [out] The next format specifier.
+     * @return @c true if @a spec was filled out, @c false if no specifier was found.
+     */
     bool operator()(std::string_view &literal_v, Spec &spec);
   };
 
@@ -278,8 +285,9 @@ protected:
   /// Copy @a name in to local storage and return a view of it.
   std::string_view localize(std::string_view const &name);
 
+  /// Name to name generator.
   using Map = std::unordered_map<std::string_view, Generator>;
-  Map _map;              ///< Mapping of name -> generator
+  Map _map;              ///< Defined generators.
   MemArena _arena{1024}; ///< Local name storage.
 };
 
@@ -341,6 +349,7 @@ public:
 
   using super_type::super_type; // inherit @c super_type constructors.
 
+  /// Specialized binding for names in an instance of @c ContextNames
   class Binding : public NameBinding {
   public:
     /** Override of virtual method to provide an implementation.
@@ -358,12 +367,17 @@ public:
     }
 
   protected:
+    /** Constructor.
+     *
+     * @param names Names to define for the binding.
+     * @param ctx Binding context.
+     */
     Binding(ContextNames const &names, context_type &ctx) : _ctx(ctx), _names(names) {}
 
     context_type &_ctx;         ///< Context for generators.
     ContextNames const &_names; ///< Base set of names.
 
-    friend ContextNames;
+    friend class ContextNames;
   };
 
   /** Assign the external generator @a bg to @a name.
@@ -900,34 +914,38 @@ BufferWriter::aux_span() {
 
 // ---- Formatting for specific types.
 
-// Must be first because it is used by other formatters, and is not inline.
+/** Output a @c string_view.
+ *
+ * @param w Output
+ * @param spec Format specifier
+ * @param sv View to format.
+ * @return @a w
+ *
+ * @internal Must be first because it is used by other formatters, and is not inline.
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv);
 
-// Pointers that are not specialized.
-inline BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
-  using namespace swoc::literals;
-  bwf::Spec ptr_spec{spec};
-  ptr_spec._radix_lead_p = true;
+/** Format non-specialized pointers.
+ *
+ * @param w Output
+ * @param spec Format specifier.
+ * @param ptr Pointer to format.
+ * @return @a w
+ *
+ * Non-specialized pointers are formatted simply as pointers, rather than the pointed to data.
+ */
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr);
 
-  if (ptr == nullptr) {
-    if (spec._type == 's' || spec._type == 'S') {
-      ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
-      ptr_spec._ext  = ""_sv; // clear any extension.
-      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
-    } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
-      return w; // print nothing if there is no format character override.
-    }
-  }
-
-  if (ptr_spec._type == bwf::Spec::DEFAULT_TYPE || ptr_spec._type == 'p') {
-    ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
-  } else if (ptr_spec._type == 'P') {
-    ptr_spec._type = 'X'; // P means upper hex, overriding other specializations.
-  }
-  return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
-}
-
+/** Format a generic (void) memory span.
+ *
+ * @param w Output
+ * @param spec Format specifier.
+ * @param span Span to format.
+ * @return @a w
+ *
+ * The format is by default "N:ptr" where N is the size and ptr is a hex formatter pointer. If the
+ * format is "x" or "X" the span content is dumped as contiguous hex.
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span);
 
 template <typename T>
@@ -1194,6 +1212,13 @@ As_Hex(T const &t) {
 
 } // namespace bwf
 
+/** Format a hex dump.
+ *
+ * @param w The output.
+ * @param spec Format specifier.
+ * @param hex Hex dump wrapper.
+ * @return @a w
+ */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex);
 
 }} // namespace swoc::SWOC_VERSION_NS

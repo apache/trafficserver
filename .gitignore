@@ -67,6 +67,7 @@ src/traffic_cache_tool/traffic_cache_tool
 src/traffic_cop/traffic_cop
 src/traffic_crashlog/traffic_crashlog
 src/traffic_ctl/traffic_ctl
+src/traffic_ctl_jsonrpc/traffic_ctl
 src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
@@ -155,6 +156,7 @@ plugins/esi/vars_test
 
 plugins/experimental/uri_signing/test_uri_signing
 
+mgmt/rpc/overridable_txn_vars.cc
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
 mgmt/tools/traffic_net_config
@@ -204,6 +206,7 @@ tools/escape_mapper/escape_mapper
 BUILDS
 DEBUG
 RELEASE
+cmake-build-*
 
 # lcov generated files.
 *.gcda

@@ -259,14 +259,12 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
   }
 
   // Check if CIDs in TP match with the ones in packets
-  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-    uint16_t cid_buf_len;
-    const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
-    QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
-    if (cid_in_tp != this->_initial_source_cid_received) {
-      this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
-      return false;
-    }
+  uint16_t cid_buf_len;
+  const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
+  QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
+  if (cid_in_tp != this->_initial_source_cid_received) {
+    this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
+    return false;
   }
 
   this->_remote_transport_parameters = tp;
@@ -285,22 +283,20 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
   }
 
   // Check if CIDs in TP match with the ones in packets
-  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-    uint16_t cid_buf_len;
-    const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
+  uint16_t cid_buf_len;
+  const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
+  QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
+  if (cid_in_tp != this->_initial_source_cid_received) {
+    this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
+    return false;
+  }
+
+  if (!this->_retry_source_cid_received.is_zero()) {
+    cid_buf = tp->getAsBytes(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, cid_buf_len);
     QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
-    if (cid_in_tp != this->_initial_source_cid_received) {
+    if (cid_in_tp != this->_retry_source_cid_received) {
       this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
       return false;
-    }
-
-    if (!this->_retry_source_cid_received.is_zero()) {
-      cid_buf = tp->getAsBytes(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, cid_buf_len);
-      QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
-      if (cid_in_tp != this->_retry_source_cid_received) {
-        this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
-        return false;
-      }
     }
   }
 
@@ -399,14 +395,14 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level, size_t current_pac
 
 QUICFrame *
 QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                              size_t current_packet_size, uint32_t seq_num)
+                              size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner)
 {
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
     // CRYPTO
     frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size,
-                                                                          current_packet_size, seq_num);
+                                                                          current_packet_size, seq_num, nullptr);
     if (frame) {
       return frame;
     }
@@ -439,15 +435,11 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     tp->set(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, this->_qc->retry_source_connection_id(),
             this->_qc->retry_source_connection_id().length());
   } else {
-    if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-      tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->original_connection_id(),
-              this->_qc->original_connection_id().length());
-    }
+    tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->original_connection_id(),
+            this->_qc->original_connection_id().length());
   }
-  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-    tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connection_id(),
-            this->_qc->initial_source_connection_id().length());
-  }
+  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connection_id(),
+          this->_qc->initial_source_connection_id().length());
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {

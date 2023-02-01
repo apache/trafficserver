@@ -55,7 +55,7 @@ if test "$has_libswoc" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
 
-  SWOC_LIBS=-lswoc
+  SWOC_LIBS=-ltsswoc
   if test "$libswoc_base_dir" != "/usr"; then
     SWOC_INCLUDES=-I${swoc_include}
     SWOC_LDFLAGS=-L${swoc_ldflags}
@@ -75,7 +75,7 @@ fi
 [
   has_libswoc=no
   SWOC_INCLUDES=-I\${abs_top_srcdir}/lib/swoc/include
-  SWOC_LIBS=-lswoc
+  SWOC_LIBS=-ltsswoc
   SWOC_LDFLAGS=-L\${abs_top_builddir}/lib/swoc
 ])
 

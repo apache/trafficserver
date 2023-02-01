@@ -35,7 +35,7 @@ public:
   ~QUICStreamFactory() {}
 
   // create a bidistream, send only stream or receive only stream
-  QUICStream *create(QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
+  QUICStreamBase *create(QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   // delete stream by stream type
   void delete_stream(QUICStream *stream);

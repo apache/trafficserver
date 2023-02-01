@@ -59,7 +59,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     // Check initial state
     uint8_t frame_buffer[1024] = {0};
     CHECK(g.lost_frame_count == 0);
-    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0, 0);
+    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0, 0, nullptr);
 
     uint8_t raw[4];
     size_t len             = 0;
@@ -274,7 +274,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afm.update(level, pn9, payload_len, false);
     afm.update(level, pn10, payload_len, false);
     uint8_t buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICFrame *x = afm.generate_frame(buf, level, 2048, 2048, 0, 0);
+    QUICFrame *x = afm.generate_frame(buf, level, 2048, 2048, 0, 0, nullptr);
     frame        = static_cast<QUICAckFrame *>(x);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     detector.handle_frame(level, *frame);

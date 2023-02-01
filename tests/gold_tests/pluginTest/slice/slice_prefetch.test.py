@@ -36,7 +36,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%Range}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 block_bytes_1 = 7
 block_bytes_2 = 5
@@ -101,7 +101,7 @@ ts.Disk.remap_config.AddLines([
     ' @plugin=cache_range_requests.so',
 ])
 
-ts.Disk.plugin_config.AddLine('xdebug.so')
+ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.logging_yaml.AddLines([
     'logging:',
     '  formats:',

@@ -2068,7 +2068,7 @@ HTTPCacheAlt::copy_frag_offsets_from(HTTPCacheAlt *src)
   }
 }
 
-const int HTTP_ALT_MARSHAL_SIZE = HdrHeapMarshalBlocks{ts::round_up(sizeof(HTTPCacheAlt))};
+const int HTTP_ALT_MARSHAL_SIZE = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPCacheAlt))};
 
 void
 HTTPInfo::create()

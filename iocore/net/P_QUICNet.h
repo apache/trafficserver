@@ -65,8 +65,12 @@ private:
   Que(UDPPacketInternal, link) _longInQueue;
 
 private:
+#if HAVE_QUICHE_H
+  void _process_packet(QUICPollEvent *e, NetHandler *nh);
+#else
   void _process_short_header_packet(QUICPollEvent *e, NetHandler *nh);
   void _process_long_header_packet(QUICPollEvent *e, NetHandler *nh);
+#endif
 };
 
 static inline QUICPollCont *

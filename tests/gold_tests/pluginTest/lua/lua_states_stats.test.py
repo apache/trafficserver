@@ -28,7 +28,7 @@ Test.ContinueOnFail = True
 # Define default ATS
 server = Test.MakeOriginServer("server")
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts")
 
 Test.testName = "Lua states and stats"
 

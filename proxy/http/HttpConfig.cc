@@ -28,7 +28,6 @@
 #include <cstring>
 #include "HttpConfig.h"
 #include "HTTP.h"
-#include "ProcessManager.h"
 #include "ProxyConfig.h"
 #include "P_Net.h"
 #include "records/P_RecUtils.h"
@@ -1256,13 +1255,11 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
-  HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.oride.parent_retry_time, "proxy.config.http.parent_proxy.retry_time");
   HttpEstablishStaticConfigLongLong(c.oride.parent_fail_threshold, "proxy.config.http.parent_proxy.fail_threshold");
   HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts,
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
-  HttpEstablishStaticConfigLongLong(c.oride.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
   HttpEstablishStaticConfigByte(c.oride.enable_parent_timeout_markdowns,
                                 "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns");
@@ -1345,8 +1342,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
 
-  HttpEstablishStaticConfigByte(c.keepalive_internal_vc, "proxy.config.http.keepalive_internal_vc");
-
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
@@ -1421,6 +1416,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
 
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
+  HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_alpn_protocols, "proxy.config.ssl.client.alpn_protocols");
   HttpEstablishStaticConfigByte(c.scheme_proto_mismatch_policy, "proxy.config.ssl.client.scheme_proto_mismatch_policy");
 
   OutboundConnTrack::config_init(&c.global_outbound_conntrack, &c.oride.outbound_conntrack);
@@ -1466,19 +1462,10 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections    = m_master.server_max_connections;
-  params->max_websocket_connections = m_master.max_websocket_connections;
-  params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
-  params->global_outbound_conntrack = m_master.global_outbound_conntrack;
-
-  // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
-  if (params->global_outbound_conntrack.queue_size > 0 &&
-      !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
-    Warning("'%s' is set, but neither '%s' nor '%s' are "
-            "set, please correct your %s",
-            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
-  }
+  params->server_max_connections                = m_master.server_max_connections;
+  params->max_websocket_connections             = m_master.max_websocket_connections;
+  params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
+  params->global_outbound_conntrack             = m_master.global_outbound_conntrack;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
   params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
   params->oride.tunnel_activity_check_period    = m_master.oride.tunnel_activity_check_period;
@@ -1560,12 +1547,10 @@ HttpConfig::reconfigure()
   params->oride.connect_attempts_rr_retries     = m_master.oride.connect_attempts_rr_retries;
   params->oride.connect_attempts_timeout        = m_master.oride.connect_attempts_timeout;
   params->oride.connect_dead_policy             = m_master.oride.connect_dead_policy;
-  params->oride.post_connect_attempts_timeout   = m_master.oride.post_connect_attempts_timeout;
   params->oride.parent_connect_attempts         = m_master.oride.parent_connect_attempts;
   params->oride.parent_retry_time               = m_master.oride.parent_retry_time;
   params->oride.parent_fail_threshold           = m_master.oride.parent_fail_threshold;
   params->oride.per_parent_connect_attempts     = m_master.oride.per_parent_connect_attempts;
-  params->oride.parent_connect_timeout          = m_master.oride.parent_connect_timeout;
   params->oride.parent_failures_update_hostdb   = m_master.oride.parent_failures_update_hostdb;
   params->oride.enable_parent_timeout_markdowns = m_master.oride.enable_parent_timeout_markdowns;
   params->oride.disable_parent_markdowns        = m_master.oride.disable_parent_markdowns;
@@ -1649,7 +1634,6 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
-  params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
   if (params->oride.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
@@ -1717,7 +1701,8 @@ HttpConfig::reconfigure()
   params->http_host_sni_policy = m_master.http_host_sni_policy;
   params->scheme_proto_mismatch_policy = m_master.scheme_proto_mismatch_policy;
 
-  params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
   params->negative_caching_list = m_master.negative_caching_list;
 

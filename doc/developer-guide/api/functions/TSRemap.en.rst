@@ -39,6 +39,7 @@ Synopsis
 .. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuff, int errbuff_size)
 .. function:: void TSRemapDeleteInstance(void * )
 .. function:: void TSRemapOSResponse(void * ih, TSHttpTxn rh, int os_response_type)
+.. function:: void* TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
 
 Description
 ===========
@@ -63,6 +64,9 @@ will call the entry point each time a plugin is specified in a remap
 rule. When a remap plugin instance is no longer required, Traffic Server
 will call :func:`TSRemapDeleteInstance`. At that point, it's safe to remove
 any data or continuations associated with that instance.
+
+The function :func:`TSRemapDLHandleGet` will return the handle created for
+the loaded plugin, as returned by `dlopen()`.
 
 :func:`TSRemapDoRemap` is called for each HTTP transaction. This is a mandatory
 entry point. In this function, the remap plugin may examine and modify

@@ -57,8 +57,6 @@
 #include <netdb.h>
 
 #include "records/P_RecProcess.h"
-// REC_SIGNAL_LOGGING_ERROR    is defined in I_RecSignals.h
-// REC_SIGNAL_LOGGING_WARNING  is defined in I_RecSignals.h
 
 #include "LogUtils.h"
 #include "LogLimits.h"
@@ -206,46 +204,6 @@ LogUtils::timestamp_to_time_str(long timestamp)
     last_timestamp = timestamp;
   }
   return timebuf;
-}
-
-/*-------------------------------------------------------------------------
-  LogUtils::manager_alarm
-
-  This routine provides a convenient abstraction for sending the traffic
-  server manager process an alarm.  The logging system can send
-  LOG_ALARM_N_TYPES different types of alarms, as defined in LogUtils.h.
-  Subsequent alarms of the same type will override the previous alarm
-  entry.
-  -------------------------------------------------------------------------*/
-
-void
-LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
-{
-  char msg_buf[LOG_MAX_FORMATTED_LINE];
-
-  ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
-
-  if (msg == nullptr) {
-    snprintf(msg_buf, sizeof(msg_buf), "No Message");
-  } else {
-    va_list ap;
-    va_start(ap, msg);
-    vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
-    va_end(ap);
-  }
-
-  switch (alarm_type) {
-  case LogUtils::LOG_ALARM_ERROR:
-    RecSignalManager(REC_SIGNAL_LOGGING_ERROR, msg_buf);
-    break;
-
-  case LogUtils::LOG_ALARM_WARNING:
-    RecSignalManager(REC_SIGNAL_LOGGING_WARNING, msg_buf);
-    break;
-
-  default:
-    ink_assert(false);
-  }
 }
 
 /*-------------------------------------------------------------------------

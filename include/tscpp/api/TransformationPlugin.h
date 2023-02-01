@@ -84,10 +84,12 @@ public:
    * The available types of Transformations.
    */
   enum Type {
-    REQUEST_TRANSFORMATION = 0, /**< Transform the Request body content */
-    RESPONSE_TRANSFORMATION,    /**< Transform the Response body content */
-    SINK_TRANSFORMATION         /**< Sink transformation, meaning you get a separate stream of the Response
-                                     body content that does not get hooked up to a downstream input */
+    REQUEST_TRANSFORMATION = 0,          /**< Transform the Request body content */
+    RESPONSE_TRANSFORMATION,             /**< Transform the Response body content */
+    CLIENT_RESPONSE_SINK_TRANSFORMATION, /**< Sink transformation, meaning you get a separate stream of the Response
+                                              body content that does not get hooked up to a downstream input */
+    CLIENT_REQUEST_SINK_TRANSFORMATION,  /**< Sink transformation, meaning you get a separate stream of the Request
+                                              body content that does not get hooked up to a downstream input */
   };
 
   /**

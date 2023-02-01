@@ -27,5 +27,4 @@ Core Architecture
 
    heap.en
    hostdb.en
-   rpc.en
    url_rewrite_architecture.en.rst

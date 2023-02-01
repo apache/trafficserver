@@ -62,8 +62,8 @@ request to itself with the ``tunnel_route`` host and port as the upstream. That 
 connection is treated as if the user agent had sent a
 ``CONNECT`` to the upstream and forwards the "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" to it. In addition to the method appearing
-as ``CONNECT``, be aware that logs printing the URL via the ``<%cquc>`` field format will show the
-scheme in the URL as ``tunnel``. The scheme as printed via ``<%cqus>``, however, will show the
+as ``CONNECT``, be aware that logs printing the URL via the ``<%pquc>`` field format will show the
+scheme in the URL as ``tunnel``. The scheme as printed via ``<%pqus>``, however, will show the
 scheme used in the original client request.
 
 Example

@@ -24,22 +24,22 @@ TESTS = $(check_PROGRAMS)
 
 lib_LTLIBRARIES = libtscpputil.la
 
-AM_CPPFLAGS += -I$(abs_top_srcdir)/include
+AM_CPPFLAGS += -I$(abs_top_srcdir)/include @SWOC_INCLUDES@
 
-libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
+libtscpputil_la_LIBADD = @SWOC_LIBS@
 
 libtscpputil_la_SOURCES = \
-	TextView.cc string_view_util.cc
+	ts_diags.cc ts_ip.cc TextView.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/tests/include @SWOC_INCLUDES@
 
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscpputil_LDADD = libtscpputil.la
+test_tscpputil_LDADD = libtscpputil.la @SWOC_LIBS@
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_LocalBuffer.cc \
-	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_Strerror.cc \
 	unit_tests/test_TextView.cc \

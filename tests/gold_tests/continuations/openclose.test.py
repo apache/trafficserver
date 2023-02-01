@@ -23,7 +23,7 @@ Test transactions and sessions, making sure they open and close in the proper or
 '''
 
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_cache=False)
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
@@ -70,6 +70,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
+
 
 # Signal that all the curl processes have completed
 tr = Test.AddTestRun("Curl Done")

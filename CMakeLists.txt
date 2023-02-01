@@ -32,6 +32,7 @@ include_directories(
         include
         tests/include
         lib
+        lib/swoc/include
         lib/yamlcpp/include
         proxy
         proxy/hdrs
@@ -72,7 +73,6 @@ CC_EXEC(traffic_ctl src/traffic_ctl)
 CC_EXEC(traffic_layout src/traffic_layout)
 CC_EXEC(traffic_logcat src/traffic_logcat)
 CC_EXEC(traffic_logstats src/traffic_logstats)
-CC_EXEC(traffic_manager src/traffic_manager)
 CC_EXEC(traffic_server src/traffic_server)
 target_sources(traffic_server PRIVATE src/shared/overridable_txn_vars.cc)
 CC_EXEC(traffic_top src/traffic_top)

@@ -24,8 +24,9 @@
 #pragma once
 
 #include "QUICStream.h"
+#include "QUICStream_native.h"
 
-class QUICSendStream : public QUICStream
+class QUICSendStream : public QUICStreamBase
 {
 public:
   QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data);
@@ -39,7 +40,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
@@ -66,7 +67,7 @@ private:
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 };
 
-class QUICReceiveStream : public QUICStream, public QUICTransferProgressProvider
+class QUICReceiveStream : public QUICStreamBase, public QUICTransferProgressProvider
 {
 public:
   QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
@@ -81,7 +82,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num, QUICFrameGenerator *owner) override;
 
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;

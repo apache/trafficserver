@@ -21,7 +21,7 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts")
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
@@ -109,13 +109,14 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: testformat
-      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+      format: '%<pssc> %<pquc> %<pscert> %<cscert>'
   logs:
     - mode: ascii
       format: testformat
       filename: squid
 '''.split("\n")
 )
+
 
 # Should succeed
 tr = Test.AddTestRun("Connect with first client cert to first server")

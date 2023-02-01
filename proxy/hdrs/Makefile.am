@@ -22,6 +22,7 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhdrs.a
@@ -58,6 +59,7 @@ load_http_hdr_SOURCES = \
 	load_http_hdr.cc
 
 load_http_hdr_LDADD = -L. -lhdrs \
+        @SWOC_LIBS@ \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
@@ -88,7 +90,7 @@ test_proxy_hdrs_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -107,7 +109,7 @@ test_hdr_heap_LDADD = -L. -lhdrs \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 
 test_Huffmancode_LDADD = \

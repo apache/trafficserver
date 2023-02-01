@@ -25,22 +25,9 @@
 
 #include <atomic>
 
-#include "ProcessManager.h"
 #include "I_Tasks.h"
 
 class ProxyMutex;
-
-//
-// Macros that spin waiting for the data to be bound
-//
-#define SignalManager(_n, _d) pmgmt->signalManager(_n, (char *)_d)
-#define SignalWarning(_n, _s) \
-  {                           \
-    Warning("%s", _s);        \
-    SignalManager(_n, _s);    \
-  }
-
-#define RegisterMgmtCallback(_signal, _fn, _data) pmgmt->registerMgmtCallback(_signal, _fn, _data)
 
 #define MAX_CONFIGS 100
 

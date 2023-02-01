@@ -32,11 +32,12 @@ traffic_quic_traffic_quic_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http3 \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/shared \
-	$(TS_INCLUDES) \
+	$(TS_INCLUDES) @SWOC_INCLUDES@ \
 	@OPENSSL_INCLUDES@ @YAMLCPP_INCLUDES@
 
 traffic_quic_traffic_quic_LDFLAGS = \
 	$(AM_LDFLAGS) \
+	@SWOC_LIBS@ \
 	@OPENSSL_LDFLAGS@ \
 	@BORINGOCSP_LDFLAGS@
 
@@ -59,8 +60,13 @@ traffic_quic_traffic_quic_LDADD = \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	@HWLOC_LIBS@ \
+	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@BORINGOCSP_LIBS@ \
 	@LIBPCRE@
 
+if USE_QUICHE
+traffic_quic_traffic_quic_LDADD += \
+  $(QUICHE_LIB)
+endif

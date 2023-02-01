@@ -35,8 +35,6 @@ man_pages = [
         u'Traffic Server log spooler', None, '8'),
     ('appendices/command-line/traffic_logstats.en', 'traffic_logstats',
         u'Traffic Server analyzer', None, '8'),
-    ('appendices/command-line/traffic_manager.en', 'traffic_manager',
-        u'Traffic Server process manager', None, '8'),
     ('appendices/command-line/traffic_server.en', 'traffic_server',
         u'Traffic Server', None, '8'),
     ('appendices/command-line/traffic_top.en', 'traffic_top',

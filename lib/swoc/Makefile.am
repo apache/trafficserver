@@ -16,19 +16,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
-
 lib_LTLIBRARIES = libtsswoc.la
 
 library_includedir=$(includedir)/swoc
 
-AM_CPPFLAGS += -I$(abs_top_srcdir)/include -I$(abs_top_srcdir)/lib/swoc/include
+AM_CPPFLAGS += @SWOC_INCLUDES@
 
-libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
-
+libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -release 1.4.0
 libtsswoc_la_SOURCES = \
-	src/ArenaWriter.cc  src/bw_format.cc  src/bw_ip_format.cc  src/Errata.cc  src/MemArena.cc  src/RBTree.cc  src/swoc_file.cc  src/swoc_ip.cc  src/TextView.cc
+	src/ArenaWriter.cc  src/bw_format.cc  src/bw_ip_format.cc  src/Errata.cc  src/MemArena.cc  src/RBTree.cc  src/swoc_file.cc  src/swoc_ip.cc  src/TextView.cc src/string_view_util.cc
 
+if EXPORT_SWOC_HEADERS
 library_include_HEADERS = \
         include/swoc/ArenaWriter.h \
         include/swoc/BufferWriter.h \
@@ -41,6 +39,10 @@ library_include_HEADERS = \
         include/swoc/Errata.h \
         include/swoc/IntrusiveDList.h \
         include/swoc/IntrusiveHashMap.h \
+        include/swoc/IPAddr.h \
+        include/swoc/IPEndpoint.h \
+        include/swoc/IPRange.h \
+        include/swoc/IPSrv.h \
         include/swoc/Lexicon.h \
         include/swoc/MemArena.h \
         include/swoc/MemSpan.h \
@@ -50,9 +52,11 @@ library_include_HEADERS = \
         include/swoc/swoc_ip.h \
         include/swoc/swoc_meta.h \
         include/swoc/swoc_version.h\
+        include/swoc/string_view_util.h \
         include/swoc/TextView.h \
         include/swoc/Vectray.h \
         include/swoc/HashFNV.h
+endif
 
 clean-local:
 

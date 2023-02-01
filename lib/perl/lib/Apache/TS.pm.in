@@ -50,17 +50,19 @@ Apache::TS - a collection of Perl interfaces to manage Apache Traffic Server ins
 =head1 SYNOPSIS
 
   #!/usr/bin/perl
-  use Apache::TS::AdminClient;
+  use Apache::TS::Config::Records;
 
-  my $cli = Apache::TS::AdminClient->new(%input);
-  my $string = $cli->get_stat("proxy.config.product_company");
-  print "$string\n";
+  my $recedit = new Apache::TS::Config::Records(file => "etc/trafficserver/records.config.default");
+  # Threads
+  $recedit->set(conf => "proxy.config.exec_thread.autoconfig", val => "0");
+  # ...
+  # Write it all out
+  $recedit->write(file => "etc/trafficserver/records.config");
 
 
 =head1 DESCRIPTION
 
 This is the main module for Apache::TS, in includes the following sub-modules
-  Apache::TS::AdminClient
   Apache::TS::Config
   Apache::TS::Config::Records
 

@@ -59,6 +59,7 @@ struct RBNode {
   /// @return The color of the node.
   Color color() const;
 
+  /// @return The left most descendant of @a this, or @a null ptr if no left child.
   self_type *left_most_descendant() const;
 
   /** Reverse a direction
@@ -182,11 +183,12 @@ struct RBNode {
 
   /// Support for @c IntrusiveDList
   struct Linkage {
+    /// @return Reference to internal pointer to the next element.
     static self_type *&
     next_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_next);
     }
-
+    /// @return Reference to the internal pointer to the previoius element.
     static self_type *&
     prev_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_prev);

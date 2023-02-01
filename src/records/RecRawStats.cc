@@ -267,8 +267,6 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   r->rsb_id = id; // This is the index within the RSB raw block for this stat, used for lookups by name.
   if (i_am_the_record_owner(r->rec_type)) {
     r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;
-  } else {
-    send_register_message(r);
   }
 
   // store a pointer to our record->stat_meta.data_raw in our rsb

@@ -1,0 +1,8 @@
+{
+   "id":"9893668b-8c58-477e-a962-39904247557b",
+   "jsonrpc":"2.0",
+   "method":"$method",
+   "params":[
+      "$device"
+   ]
+}

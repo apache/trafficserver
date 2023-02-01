@@ -26,6 +26,8 @@
 #include "ProxySession.h"
 #include "TLSBasicSupport.h"
 
+std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
+
 ProxySession::ProxySession() : VConnection(nullptr) {}
 
 ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
@@ -77,7 +79,8 @@ static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
   TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE, // TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
   TS_EVENT_HTTP_PRE_REMAP,             // TS_HTTP_PRE_REMAP_HOOK
   TS_EVENT_HTTP_POST_REMAP,            // TS_HTTP_POST_REMAP_HOOK
-  TS_EVENT_NONE,                       // TS_HTTP_RESPONSE_CLIENT_HOOK
+  TS_EVENT_HTTP_RESPONSE_CLIENT,       // TS_HTTP_RESPONSE_CLIENT_HOOK
+  TS_EVENT_HTTP_REQUEST_CLIENT,        // TS_HTTP_REQUEST_CLIENT_HOOK
   TS_EVENT_NONE,                       // TS_HTTP_LAST_HOOK
 };
 
@@ -319,4 +322,12 @@ bool
 ProxySession::support_sni() const
 {
   return _vc ? _vc->support_sni() : false;
+}
+
+PoolableSession *
+ProxySession::create_outbound_session(int protocol_index)
+{
+  auto iter = ProtocolSessionCreateMap.find(protocol_index);
+  ink_release_assert(iter != ProtocolSessionCreateMap.end());
+  return iter->second();
 }

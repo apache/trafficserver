@@ -49,7 +49,6 @@ char *timestamp_to_netscape_str(long timestamp);
 char *timestamp_to_date_str(long timestamp);
 char *timestamp_to_time_str(long timestamp);
 unsigned ip_from_host(char *host);
-void manager_alarm(AlarmType alarm_type, const char *msg, ...) TS_PRINTFLIKE(2, 3);
 void strip_trailing_newline(char *buf);
 char *escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
                    const unsigned char *map = nullptr);
