@@ -113,7 +113,7 @@ SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, s
   {
     std::scoped_lock lock(secret_map_mutex);
     std::string *const data1ptr = &(secret_map[name1]);
-    std::string *const data2ptr = [&]() -> std::string *const {
+    std::string *const data2ptr = [&]() -> std::string * {
       if (name2.empty()) {
         data2.clear();
         return &data2;
