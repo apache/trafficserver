@@ -170,7 +170,7 @@ public:
   */
   static ink_hrtime get_hrtime_updated();
 
-  Thread(const Thread &) = delete;
+  Thread(const Thread &)            = delete;
   Thread &operator=(const Thread &) = delete;
   virtual ~Thread();
 

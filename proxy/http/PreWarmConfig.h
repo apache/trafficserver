@@ -27,7 +27,7 @@ struct PreWarmConfigParams : public ConfigInfo {
   PreWarmConfigParams();
 
   // noncopyable
-  PreWarmConfigParams(const HttpConfigParams &) = delete;
+  PreWarmConfigParams(const HttpConfigParams &)            = delete;
   PreWarmConfigParams &operator=(const HttpConfigParams &) = delete;
 
   // Config Params

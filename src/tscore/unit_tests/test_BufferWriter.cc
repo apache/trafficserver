@@ -80,8 +80,16 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     {
       return 0;
     }
-    X &clip(size_t) override { return *this; }
-    X &extend(size_t) override { return *this; }
+    X &
+    clip(size_t) override
+    {
+      return *this;
+    }
+    X &
+    extend(size_t) override
+    {
+      return *this;
+    }
     std::ostream &
     operator>>(std::ostream &stream) const override
     {

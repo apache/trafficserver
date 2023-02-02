@@ -26,20 +26,20 @@
 #include "I_EventSystem.h"
 #include "tscore/PendingAction.h"
 
-#define MAX_NAMED 32
-#define DEFAULT_DNS_RETRIES 5
-#define MAX_DNS_RETRIES 9
-#define DEFAULT_DNS_TIMEOUT 30
-#define MAX_DNS_IN_FLIGHT 2048
+#define MAX_NAMED                       32
+#define DEFAULT_DNS_RETRIES             5
+#define MAX_DNS_RETRIES                 9
+#define DEFAULT_DNS_TIMEOUT             30
+#define MAX_DNS_IN_FLIGHT               2048
 #define MAX_DNS_TCP_CONTINUOUS_FAILURES 10
-#define DEFAULT_FAILOVER_NUMBER (DEFAULT_DNS_RETRIES + 1)
-#define DEFAULT_FAILOVER_PERIOD (DEFAULT_DNS_TIMEOUT + 30)
+#define DEFAULT_FAILOVER_NUMBER         (DEFAULT_DNS_RETRIES + 1)
+#define DEFAULT_FAILOVER_PERIOD         (DEFAULT_DNS_TIMEOUT + 30)
 // how many seconds before FAILOVER_PERIOD to try the primary with
 // a well known address
 #define DEFAULT_FAILOVER_TRY_PERIOD (DEFAULT_DNS_TIMEOUT + 1)
-#define DEFAULT_DNS_SEARCH 1
-#define FAILOVER_SOON_RETRY 5
-#define NO_NAMESERVER_SELECTED -1
+#define DEFAULT_DNS_SEARCH          1
+#define FAILOVER_SOON_RETRY         5
+#define NO_NAMESERVER_SELECTED      -1
 
 //
 // Config
@@ -58,13 +58,13 @@ extern unsigned int dns_sequence_number;
 // Constants
 //
 
-#define DNS_PERIOD HRTIME_MSECONDS(100)
-#define DNS_DELAY_PERIOD HRTIME_MSECONDS(10)
+#define DNS_PERIOD                         HRTIME_MSECONDS(100)
+#define DNS_DELAY_PERIOD                   HRTIME_MSECONDS(10)
 #define DNS_SEQUENCE_NUMBER_RESTART_OFFSET 4000
-#define DNS_PRIMARY_RETRY_PERIOD HRTIME_SECONDS(5)
-#define DNS_PRIMARY_REOPEN_PERIOD HRTIME_SECONDS(60)
-#define BAD_DNS_RESULT (reinterpret_cast<HostEnt *>((uintptr_t)-1))
-#define DEFAULT_NUM_TRY_SERVER 8
+#define DNS_PRIMARY_RETRY_PERIOD           HRTIME_SECONDS(5)
+#define DNS_PRIMARY_REOPEN_PERIOD          HRTIME_SECONDS(60)
+#define BAD_DNS_RESULT                     (reinterpret_cast<HostEnt *>((uintptr_t)-1))
+#define DEFAULT_NUM_TRY_SERVER             8
 
 // these are from nameser.h
 #ifndef HFIXEDSZ

@@ -123,11 +123,19 @@ public:
 
   // Not useful in this derived class.
   //
-  self_type &clip(size_t) override { return *this; }
+  self_type &
+  clip(size_t) override
+  {
+    return *this;
+  }
 
   // Not useful in this derived class.
   //
-  self_type &extend(size_t) override { return *this; }
+  self_type &
+  extend(size_t) override
+  {
+    return *this;
+  }
 
   // This must not be called for this derived class.
   //

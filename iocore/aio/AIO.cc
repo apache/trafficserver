@@ -549,7 +549,7 @@ DiskHandler::DiskHandler()
   }
 
   if (aio_io_uring_sq_poll_ms > 0) {
-    p.flags |= IORING_SETUP_SQPOLL;
+    p.flags          |= IORING_SETUP_SQPOLL;
     p.sq_thread_idle = aio_io_uring_sq_poll_ms;
   }
 

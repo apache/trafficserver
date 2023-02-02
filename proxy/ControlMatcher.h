@@ -289,12 +289,12 @@ private:
   IpMap ip_map; // Data structure to do lookups
 };
 
-#define ALLOW_HOST_TABLE 1 << 0
-#define ALLOW_IP_TABLE 1 << 1
-#define ALLOW_REGEX_TABLE 1 << 2
+#define ALLOW_HOST_TABLE       1 << 0
+#define ALLOW_IP_TABLE         1 << 1
+#define ALLOW_REGEX_TABLE      1 << 2
 #define ALLOW_HOST_REGEX_TABLE 1 << 3
-#define ALLOW_URL_TABLE 1 << 4
-#define DONT_BUILD_TABLE 1 << 5 // for testing
+#define ALLOW_URL_TABLE        1 << 4
+#define DONT_BUILD_TABLE       1 << 5 // for testing
 
 template <class Data, class MatchResult> class ControlMatcher
 {

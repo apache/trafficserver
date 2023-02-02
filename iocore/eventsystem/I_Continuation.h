@@ -84,7 +84,8 @@ continuation_handler_void_ptr(int (C::*fp)(int, T *))
 
 // Overload for nullptr.
 //
-constexpr ContinuationHandler continuation_handler_void_ptr(std::nullptr_t)
+constexpr ContinuationHandler
+continuation_handler_void_ptr(std::nullptr_t)
 {
 #undef X
 #if !defined(__GNUC__)

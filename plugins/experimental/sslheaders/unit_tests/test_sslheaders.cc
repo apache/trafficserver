@@ -79,7 +79,7 @@ make_pem_header(const char *pem)
   remain    = strlen(hdr);
 
   for (char *nl; (nl = static_cast<char *>(memchr(ptr, '\n', remain))); ptr = nl) {
-    *nl = ' ';
+    *nl    = ' ';
     remain -= nl - ptr;
   }
 

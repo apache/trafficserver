@@ -49,7 +49,8 @@ static const std::array<const std::string_view, 6> FILTER_HEADERS{
    {TS_MIME_FIELD_IF_MODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_MODIFIED_SINCE)},
    {TS_MIME_FIELD_IF_NONE_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_NONE_MATCH)},
    {TS_MIME_FIELD_IF_RANGE, static_cast<size_t>(TS_MIME_LEN_IF_RANGE)},
-   {TS_MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_UNMODIFIED_SINCE)}}};
+   {TS_MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_UNMODIFIED_SINCE)}}
+};
 
 ///////////////////////////////////////////////////////////////////////////
 // Hold the global background fetch state. This is currently shared across all
@@ -60,8 +61,8 @@ using OutstandingRequests = std::unordered_map<std::string, bool>;
 class BgFetchState
 {
 public:
-  BgFetchState()                     = default;
-  BgFetchState(BgFetchState const &) = delete;
+  BgFetchState()                       = default;
+  BgFetchState(BgFetchState const &)   = delete;
   void operator=(BgFetchState const &) = delete;
 
   static BgFetchState &

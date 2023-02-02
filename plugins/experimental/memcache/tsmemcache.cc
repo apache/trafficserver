@@ -34,7 +34,7 @@
   - cleanup creader dependency in stream_event
  */
 
-#define REALTIME_MAXDELTA 60 * 60 * 24 * 30
+#define REALTIME_MAXDELTA       60 * 60 * 24 * 30
 #define STRCMP_REST(_c, _s, _e) (((_e) - (_s)) < (int)sizeof(_c) || STRCMP(_s, _c) || !isspace((_s)[sizeof(_c) - 1]))
 
 ClassAllocator<MC> theMCAllocator("MC");
@@ -1132,7 +1132,7 @@ MC::ascii_set(char *s, char *e)
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
-    s += 7;
+    s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
     }
@@ -1165,7 +1165,7 @@ MC::ascii_delete(char *s, char *e)
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
-    s += 7;
+    s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
     }
@@ -1199,7 +1199,7 @@ MC::ascii_incr_decr(char *s, char *e)
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
-    s += 7;
+    s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
     }

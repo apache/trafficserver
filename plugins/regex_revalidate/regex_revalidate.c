@@ -38,11 +38,11 @@
 #include <pcre.h>
 #endif
 
-#define CONFIG_TMOUT 60000
-#define FREE_TMOUT 300000
-#define OVECTOR_SIZE 30
+#define CONFIG_TMOUT      60000
+#define FREE_TMOUT        300000
+#define OVECTOR_SIZE      30
 #define LOG_ROLL_INTERVAL 86400
-#define LOG_ROLL_OFFSET 0
+#define LOG_ROLL_OFFSET   0
 
 static const char *const PLUGIN_NAME = "regex_revalidate";
 static const char *const DEFAULT_DIR = "var/trafficserver"; /* Not perfect, but no better API) */
@@ -682,11 +682,13 @@ TSPluginInit(int argc, const char *argv[])
   init_plugin_state_t(pstate);
 
   int c;
-  static const struct option longopts[] = {{"config", required_argument, NULL, 'c'},
-                                           {"log", required_argument, NULL, 'l'},
-                                           {"disable-timed-reload", no_argument, NULL, 'd'},
-                                           {"state-file", required_argument, NULL, 'f'},
-                                           {NULL, 0, NULL, 0}};
+  static const struct option longopts[] = {
+    {"config",               required_argument, NULL, 'c'},
+    {"log",                  required_argument, NULL, 'l'},
+    {"disable-timed-reload", no_argument,       NULL, 'd'},
+    {"state-file",           required_argument, NULL, 'f'},
+    {NULL,                   0,                 NULL, 0  }
+  };
 
   while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:", longopts, NULL)) != -1) {
     switch (c) {

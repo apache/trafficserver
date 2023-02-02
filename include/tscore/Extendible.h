@@ -53,10 +53,19 @@
 
 //////////////////////////////////////////
 /// SUPPORT MACRO
-#define DEF_EXT_NEW_DEL(cls)                                               \
-  void *operator new(size_t sz) { return ats_malloc(ext::sizeOf<cls>()); } \
-  void *operator new(size_t sz, void *ptr) { return ptr; }                 \
-  void operator delete(void *ptr) { free(ptr); }
+#define DEF_EXT_NEW_DEL(cls)               \
+  void *operator new(size_t sz)            \
+  {                                        \
+    return ats_malloc(ext::sizeOf<cls>()); \
+  }                                        \
+  void *operator new(size_t sz, void *ptr) \
+  {                                        \
+    return ptr;                            \
+  }                                        \
+  void operator delete(void *ptr)          \
+  {                                        \
+    free(ptr);                             \
+  }
 
 //////////////////////////////////////////
 /// HELPER CLASSES
@@ -233,9 +242,9 @@ private:
 // define the static schema per derived type
 template <typename Derived_t> details::Schema Extendible<Derived_t>::schema;
 
-//####################################################
-//####################################################
-// UTILITY Functions
+// ####################################################
+// ####################################################
+//  UTILITY Functions
 
 //////////////////////////////////////////////////////
 /// HexToString function for serializing untyped C storage
@@ -269,9 +278,9 @@ serializeField(std::ostream &os, Field_t const &f)
     os << f;
   }
 }
-//####################################################
-//####################################################
-//####################################################
+// ####################################################
+// ####################################################
+// ####################################################
 
 /////////////////////////////////////////////////////////////////////
 // FieldId
@@ -283,7 +292,7 @@ public:
   bool isValid() const;
   FieldId(ext::details::FieldDesc const &);
   FieldId() {}
-  FieldId(FieldId const &) = default;
+  FieldId(FieldId const &)            = default;
   FieldId &operator=(FieldId const &) = default;
 };
 
@@ -448,10 +457,10 @@ FieldId<Derived_t, Field_t>::isValid() const
   return desc != nullptr;
 }
 
-//####################################################
-//####################################################
-//####################################################
-// Functional API for Extendible Field Access
+// ####################################################
+// ####################################################
+// ####################################################
+//  Functional API for Extendible Field Access
 //
 
 ////////////////////////////////////////////////////
@@ -637,7 +646,7 @@ namespace details
 // allocate and initialize an extendible data structure
 template <typename Derived_t, typename... Args>
 Derived_t *
-create(Args &&... args)
+create(Args &&...args)
 {
   // don't instantiate until all Fields are finalized.
   ink_assert(ext::details::areFieldsFinalized());

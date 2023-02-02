@@ -126,13 +126,13 @@ Layout::runroot_setup()
   // If some path values are not in runroot.yaml, we give it a default value instead of error out.
   prefix      = dir_map[LAYOUT_PREFIX].empty() ? runroot_file.substr(0, runroot_file.find_last_of('/')) : dir_map[LAYOUT_PREFIX];
   exec_prefix = dir_map[LAYOUT_EXEC_PREFIX].empty() ? prefix : dir_map[LAYOUT_EXEC_PREFIX];
-  bindir = dir_map[LAYOUT_BINDIR].empty() ? layout_relative(prefix, TS_BUILD_BINDIR) : bindir = dir_map[LAYOUT_BINDIR];
-  sbindir    = dir_map[LAYOUT_SBINDIR].empty() ? layout_relative(prefix, TS_BUILD_SBINDIR) : dir_map[LAYOUT_SBINDIR];
-  sysconfdir = dir_map[LAYOUT_SYSCONFDIR].empty() ? layout_relative(prefix, TS_BUILD_SYSCONFDIR) : dir_map[LAYOUT_SYSCONFDIR];
-  datadir    = dir_map[LAYOUT_DATADIR].empty() ? layout_relative(prefix, TS_BUILD_DATADIR) : dir_map[LAYOUT_DATADIR];
-  includedir = dir_map[LAYOUT_INCLUDEDIR].empty() ? layout_relative(prefix, TS_BUILD_INCLUDEDIR) : dir_map[LAYOUT_INCLUDEDIR];
-  libdir     = dir_map[LAYOUT_LIBDIR].empty() ? layout_relative(prefix, TS_BUILD_LIBDIR) : dir_map[LAYOUT_LIBDIR];
-  libexecdir = dir_map[LAYOUT_LIBEXECDIR].empty() ? layout_relative(prefix, TS_BUILD_LIBEXECDIR) : dir_map[LAYOUT_LIBEXECDIR];
+  bindir      = dir_map[LAYOUT_BINDIR].empty() ? layout_relative(prefix, TS_BUILD_BINDIR) : bindir = dir_map[LAYOUT_BINDIR];
+  sbindir     = dir_map[LAYOUT_SBINDIR].empty() ? layout_relative(prefix, TS_BUILD_SBINDIR) : dir_map[LAYOUT_SBINDIR];
+  sysconfdir  = dir_map[LAYOUT_SYSCONFDIR].empty() ? layout_relative(prefix, TS_BUILD_SYSCONFDIR) : dir_map[LAYOUT_SYSCONFDIR];
+  datadir     = dir_map[LAYOUT_DATADIR].empty() ? layout_relative(prefix, TS_BUILD_DATADIR) : dir_map[LAYOUT_DATADIR];
+  includedir  = dir_map[LAYOUT_INCLUDEDIR].empty() ? layout_relative(prefix, TS_BUILD_INCLUDEDIR) : dir_map[LAYOUT_INCLUDEDIR];
+  libdir      = dir_map[LAYOUT_LIBDIR].empty() ? layout_relative(prefix, TS_BUILD_LIBDIR) : dir_map[LAYOUT_LIBDIR];
+  libexecdir  = dir_map[LAYOUT_LIBEXECDIR].empty() ? layout_relative(prefix, TS_BUILD_LIBEXECDIR) : dir_map[LAYOUT_LIBEXECDIR];
   localstatedir =
     dir_map[LAYOUT_LOCALSTATEDIR].empty() ? layout_relative(prefix, TS_BUILD_LOCALSTATEDIR) : dir_map[LAYOUT_LOCALSTATEDIR];
   runtimedir = dir_map[LAYOUT_RUNTIMEDIR].empty() ? layout_relative(prefix, TS_BUILD_RUNTIMEDIR) : dir_map[LAYOUT_RUNTIMEDIR];

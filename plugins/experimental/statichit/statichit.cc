@@ -660,13 +660,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {{"file-path", required_argument, nullptr, 'f'},
-                                          {"mime-type", required_argument, nullptr, 'm'},
-                                          {"max-age", required_argument, nullptr, 'a'},
-                                          {"failure-code", required_argument, nullptr, 'c'},
-                                          {"success-code", required_argument, nullptr, 's'},
-                                          {"disable-exact", no_argument, nullptr, 'd'},
-                                          {nullptr, no_argument, nullptr, '\0'}};
+  static const struct option longopt[] = {
+    {"file-path",     required_argument, nullptr, 'f' },
+    {"mime-type",     required_argument, nullptr, 'm' },
+    {"max-age",       required_argument, nullptr, 'a' },
+    {"failure-code",  required_argument, nullptr, 'c' },
+    {"success-code",  required_argument, nullptr, 's' },
+    {"disable-exact", no_argument,       nullptr, 'd' },
+    {nullptr,         no_argument,       nullptr, '\0'}
+  };
 
   std::string filePath;
   std::string mimeType = "text/plain";

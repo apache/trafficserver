@@ -107,12 +107,12 @@ ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash)
 static inline void
 MMH_update(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab);
+  uint32_t *b   = reinterpret_cast<uint32_t *>(ab);
   ctx->state[0] += b[0] * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b[1] * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b[2] * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b[3] * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -120,15 +120,15 @@ MMH_updateb1(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 1);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 << 8) + (b1 >> 24);
-  b1 = (b1 << 8) + (b2 >> 24);
-  b2 = (b2 << 8) + (b3 >> 24);
-  b3 = (b3 << 8) + (b4 >> 24);
+  b0            = (b0 << 8) + (b1 >> 24);
+  b1            = (b1 << 8) + (b2 >> 24);
+  b2            = (b2 << 8) + (b3 >> 24);
+  b3            = (b3 << 8) + (b4 >> 24);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -136,15 +136,15 @@ MMH_updateb2(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 2);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 << 16) + (b1 >> 16);
-  b1 = (b1 << 16) + (b2 >> 16);
-  b2 = (b2 << 16) + (b3 >> 16);
-  b3 = (b3 << 16) + (b4 >> 16);
+  b0            = (b0 << 16) + (b1 >> 16);
+  b1            = (b1 << 16) + (b2 >> 16);
+  b2            = (b2 << 16) + (b3 >> 16);
+  b3            = (b3 << 16) + (b4 >> 16);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -152,15 +152,15 @@ MMH_updateb3(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 3);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 << 24) + (b1 >> 8);
-  b1 = (b1 << 24) + (b2 >> 8);
-  b2 = (b2 << 24) + (b3 >> 8);
-  b3 = (b3 << 24) + (b4 >> 8);
+  b0            = (b0 << 24) + (b1 >> 8);
+  b1            = (b1 << 24) + (b2 >> 8);
+  b2            = (b2 << 24) + (b3 >> 8);
+  b3            = (b3 << 24) + (b4 >> 8);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -168,15 +168,15 @@ MMH_updatel1(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 1);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 >> 8) + (b1 << 24);
-  b1 = (b1 >> 8) + (b2 << 24);
-  b2 = (b2 >> 8) + (b3 << 24);
-  b3 = (b3 >> 8) + (b4 << 24);
+  b0            = (b0 >> 8) + (b1 << 24);
+  b1            = (b1 >> 8) + (b2 << 24);
+  b2            = (b2 >> 8) + (b3 << 24);
+  b3            = (b3 >> 8) + (b4 << 24);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -184,15 +184,15 @@ MMH_updatel2(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 2);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 >> 16) + (b1 << 16);
-  b1 = (b1 >> 16) + (b2 << 16);
-  b2 = (b2 >> 16) + (b3 << 16);
-  b3 = (b3 >> 16) + (b4 << 16);
+  b0            = (b0 >> 16) + (b1 << 16);
+  b1            = (b1 >> 16) + (b2 << 16);
+  b2            = (b2 >> 16) + (b3 << 16);
+  b3            = (b3 >> 16) + (b4 << 16);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 static inline void
@@ -200,15 +200,15 @@ MMH_updatel3(MMH_CTX *ctx, unsigned char *ab)
 {
   uint32_t *b = reinterpret_cast<uint32_t *>(ab - 3);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
-  b0 = (b0 >> 24) + (b1 << 8);
-  b1 = (b1 >> 24) + (b2 << 8);
-  b2 = (b2 >> 24) + (b3 << 8);
-  b3 = (b3 >> 24) + (b4 << 8);
+  b0            = (b0 >> 24) + (b1 << 8);
+  b1            = (b1 >> 24) + (b2 << 8);
+  b2            = (b2 >> 24) + (b3 << 8);
+  b3            = (b3 >> 24) + (b4 << 8);
   ctx->state[0] += b0 * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b1 * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b2 * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
   ctx->state[3] += b3 * MMH_x[(ctx->blocks + 3) % MMH_X_SIZE];
-  ctx->blocks += 4;
+  ctx->blocks   += 4;
 }
 
 int
@@ -221,7 +221,7 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
     if (input_length >= l) {
       memcpy(ctx->buffer + ctx->buffer_size, in, l);
       ctx->buffer_size = 0;
-      in += l;
+      in               += l;
       if (ctx->buffer_size & 0x0f) {
         return 0;
       }
@@ -286,7 +286,7 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
   }
 Lstore:
   if (end - in) {
-    int oldbs = ctx->buffer_size;
+    int oldbs        = ctx->buffer_size;
     ctx->buffer_size += static_cast<int>(end - in);
 #ifndef TEST
     ink_assert(ctx->buffer_size < 16);

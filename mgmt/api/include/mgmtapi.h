@@ -44,9 +44,9 @@ extern "C" {
 
 #ifndef TS_RES_MEM_PATH
 #define __TS_RES_PATH(x) #x
-#define _TS_RES_PATH(x) __TS_RES_PATH(x)
-#define TS_RES_PATH(x) x __FILE__ ":" _TS_RES_PATH(__LINE__)
-#define TS_RES_MEM_PATH TS_RES_PATH("memory/")
+#define _TS_RES_PATH(x)  __TS_RES_PATH(x)
+#define TS_RES_PATH(x)   x __FILE__ ":" _TS_RES_PATH(__LINE__)
+#define TS_RES_MEM_PATH  TS_RES_PATH("memory/")
 #endif
 
 #define TM_OPT_BIND_STDOUT "bind_stdout"
@@ -228,11 +228,11 @@ typedef void (*TSDisconnectFunc)(void *data);
 /***************************************************************************
  * API Memory Management
  ***************************************************************************/
-#define TSmalloc(s) _TSmalloc((s), TS_RES_MEM_PATH)
+#define TSmalloc(s)     _TSmalloc((s), TS_RES_MEM_PATH)
 #define TSrealloc(p, s) _TSrealloc((p), (s), TS_RES_MEM_PATH)
-#define TSstrdup(p) _TSstrdup((p), -1, TS_RES_MEM_PATH)
+#define TSstrdup(p)     _TSstrdup((p), -1, TS_RES_MEM_PATH)
 #define TSstrndup(p, n) _TSstrdup((p), (n), TS_RES_MEM_PATH)
-#define TSfree(p) _TSfree(p)
+#define TSfree(p)       _TSfree(p)
 
 tsapi void *_TSmalloc(size_t size, const char *path);
 tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);

@@ -50,7 +50,7 @@ namespace ts
 {
 /* INK_ALIGN() is only to be used to align on a power of 2 boundary */
 #define INK_ALIGN(size, boundary) (((size) + ((boundary)-1)) & ~((boundary)-1))
-#define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), 8192)
+#define ROUND_TO_STORE_BLOCK(_x)  INK_ALIGN((_x), 8192)
 #define dir_clear(_e) \
   do {                \
     (_e)->w[0] = 0;   \
@@ -177,9 +177,9 @@ struct Doc {
 #endif
   uint32_t hlen;         ///< Length of this header.
   uint32_t doc_type : 8; ///< Doc type - indicates the format of this structure and its content.
-  uint32_t v_major : 8;  ///< Major version number.
-  uint32_t v_minor : 8;  ///< Minor version number.
-  uint32_t unused : 8;   ///< Unused, forced to zero.
+  uint32_t v_major  : 8; ///< Major version number.
+  uint32_t v_minor  : 8; ///< Minor version number.
+  uint32_t unused   : 8; ///< Unused, forced to zero.
   uint32_t sync_serial;
   uint32_t write_serial;
   uint32_t pinned; // pinned until
@@ -368,13 +368,13 @@ constexpr int CACHE_BLOCK_SIZE          = (1 << CACHE_BLOCK_SHIFT); // 512, smal
 
 namespace ct
 {
-#define dir_big(_e) ((uint32_t)((((_e)->w[1]) >> 8) & 0x3))
+#define dir_big(_e)         ((uint32_t)((((_e)->w[1]) >> 8) & 0x3))
 #define dir_bit(_e, _w, _b) ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
-#define dir_size(_e) ((uint32_t)(((_e)->w[1]) >> 10))
+#define dir_size(_e)        ((uint32_t)(((_e)->w[1]) >> 10))
 #define dir_approx_size(_e) ((dir_size(_e) + 1) * DIR_BLOCK_SIZE(dir_big(_e)))
-#define dir_head(_e) dir_bit(_e, 2, 13)
-#define DIR_MASK_TAG(_t) ((_t) & ((1 << DIR_TAG_WIDTH) - 1))
-#define dir_tag(_e) ((uint32_t)((_e)->w[2] & ((1 << DIR_TAG_WIDTH) - 1)))
+#define dir_head(_e)        dir_bit(_e, 2, 13)
+#define DIR_MASK_TAG(_t)    ((_t) & ((1 << DIR_TAG_WIDTH) - 1))
+#define dir_tag(_e)         ((uint32_t)((_e)->w[2] & ((1 << DIR_TAG_WIDTH) - 1)))
 #define dir_offset(_e) \
   ((int64_t)(((uint64_t)(_e)->w[0]) | (((uint64_t)((_e)->w[1] & 0xFF)) << 16) | (((uint64_t)(_e)->w[4]) << 24)))
 
@@ -385,10 +385,10 @@ namespace ct
     (_e)->w[4] = (uint16_t)((_o) >> 24);                                    \
   } while (0)
 
-#define dir_next(_e) (_e)->w[3]
-#define dir_phase(_e) dir_bit(_e, 2, 12)
-#define DIR_BLOCK_SHIFT(_i) (3 * (_i))
-#define DIR_BLOCK_SIZE(_i) (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
+#define dir_next(_e)         (_e)->w[3]
+#define dir_phase(_e)        dir_bit(_e, 2, 12)
+#define DIR_BLOCK_SHIFT(_i)  (3 * (_i))
+#define DIR_BLOCK_SIZE(_i)   (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
 #define dir_set_prev(_e, _o) (_e)->w[2] = (uint16_t)(_o)
 #define dir_set_next(_e, _o) (_e)->w[3] = (uint16_t)(_o)
 

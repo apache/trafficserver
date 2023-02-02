@@ -99,7 +99,7 @@ QUICStreamManagerImpl::create_uni_stream(QUICStreamId &new_stream_id)
 {
   QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_uni);
   if (error == nullptr) {
-    new_stream_id = this->_next_stream_id_uni;
+    new_stream_id             = this->_next_stream_id_uni;
     this->_next_stream_id_uni += QUIC_STREAM_TYPES;
   }
 
@@ -118,7 +118,7 @@ QUICStreamManagerImpl::create_bidi_stream(QUICStreamId &new_stream_id)
 {
   QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_bidi);
   if (error == nullptr) {
-    new_stream_id = this->_next_stream_id_bidi;
+    new_stream_id              = this->_next_stream_id_bidi;
     this->_next_stream_id_bidi += QUIC_STREAM_TYPES;
   }
 

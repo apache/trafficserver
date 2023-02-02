@@ -36,7 +36,7 @@ inline void
 append(string &out, T data)
 {
   for (unsigned int i = 0; i < sizeof(data); ++i) {
-    out += static_cast<char>(data & 0xff);
+    out  += static_cast<char>(data & 0xff);
     data = data >> 8;
   }
 }
@@ -94,12 +94,12 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
     if (block.data && (block.data_len > 0)) {
       zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
       zstrm.avail_in = block.data_len;
-      in_data_size += block.data_len;
+      in_data_size   += block.data_len;
       deflate_result = runDeflateLoop(zstrm, 0, cdata);
       if (deflate_result != Z_OK) {
         break; // break out of the blocks iteration
       }
-      crc = crc32(crc, reinterpret_cast<const Bytef *>(block.data), block.data_len);
+      crc            = crc32(crc, reinterpret_cast<const Bytef *>(block.data), block.data_len);
       total_data_len += block.data_len;
     }
   }
@@ -134,7 +134,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
     Utils::ERROR_LOG("[%s] Header check failed!", __FUNCTION__);
     return false;
   }
-  data += GZIP_HEADER_SIZE;
+  data     += GZIP_HEADER_SIZE;
   data_len -= (GZIP_HEADER_SIZE + GZIP_TRAILER_SIZE);
   buf_list.clear();
   z_stream zstrm;
@@ -173,7 +173,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
       break;
     }
     unzipped_data_size += curr_buf_size;
-    crc = crc32(crc, reinterpret_cast<const Bytef *>(raw_buf), curr_buf_size);
+    crc                = crc32(crc, reinterpret_cast<const Bytef *>(raw_buf), curr_buf_size);
 
     // push empty object onto list and add data to in-list object to
     // avoid data copy for temporary

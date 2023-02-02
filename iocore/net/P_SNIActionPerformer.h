@@ -233,7 +233,7 @@ public:
   }
 
   // No copying or moving.
-  VerifyClient(VerifyClient const &) = delete;
+  VerifyClient(VerifyClient const &)            = delete;
   VerifyClient &operator=(VerifyClient const &) = delete;
 };
 

@@ -56,7 +56,7 @@ MIOBufferWriter::write(const void *data_, size_t length)
     std::memcpy(iobbPtr->end(), data, writeSize);
     iobbPtr->fill(writeSize);
 
-    data += writeSize;
+    data   += writeSize;
     length -= writeSize;
 
     _numWritten += writeSize;

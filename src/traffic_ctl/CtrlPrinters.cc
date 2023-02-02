@@ -197,10 +197,10 @@ ConfigSetPrinter::write_output(YAML::Node const &result)
 {
   // we match the legacy format, the only one supported for now.
   static const std::unordered_map<std::string, std::string> Update_Type_To_String_Message = {
-    {"0", "Set {}"},                                                                                           // UNDEFINED
+    {"0", "Set {}"                                                                                          }, // UNDEFINED
     {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
-    {"2", "Set {}, restart required"},                                                                         // RESTART_TS
-    {"3", "Set {}, restart required"} // RESTART TM, we take care of this in case we get it from TS.
+    {"2", "Set {}, restart required"                                                                        }, // RESTART_TS
+    {"3", "Set {}, restart required"                                                                        }  // RESTART TM, we take care of this in case we get it from TS.
   };
   std::string text;
   try {

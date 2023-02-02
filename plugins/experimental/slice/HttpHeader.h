@@ -149,7 +149,7 @@ private:
 };
 
 struct TxnHdrMgr {
-  TxnHdrMgr(TxnHdrMgr const &) = delete;
+  TxnHdrMgr(TxnHdrMgr const &)            = delete;
   TxnHdrMgr &operator=(TxnHdrMgr const &) = delete;
 
   TSMBuffer m_buffer{nullptr};
@@ -187,7 +187,7 @@ struct TxnHdrMgr {
 };
 
 struct HdrMgr {
-  HdrMgr(HdrMgr const &) = delete;
+  HdrMgr(HdrMgr const &)            = delete;
   HdrMgr &operator=(HdrMgr const &) = delete;
 
   TSMBuffer m_buffer{nullptr};

@@ -98,7 +98,7 @@ public:
   ~Variables() override { _releaseCookieJar(); };
 
   // noncopyable
-  Variables(const Variables &) = delete;            // non-copyable
+  Variables(const Variables &)            = delete; // non-copyable
   Variables &operator=(const Variables &) = delete; // non-copyable
 
 private:

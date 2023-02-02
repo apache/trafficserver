@@ -47,13 +47,13 @@
 #define NB_THREADS 3
 
 #define PSI_FILENAME_MAX_SIZE 512
-#define PSI_PATH_MAX_SIZE 256
-#define PSI_PATH "include"
+#define PSI_PATH_MAX_SIZE     256
+#define PSI_PATH              "include"
 
-#define PSI_START_TAG "<!--include="
+#define PSI_START_TAG     "<!--include="
 #define PSI_START_TAG_LEN 12
 
-#define PSI_END_TAG "-->"
+#define PSI_END_TAG     "-->"
 #define PSI_END_TAG_LEN 3
 
 #define MIME_FIELD_XPSI "X-Psi"

@@ -67,8 +67,8 @@
 #include <unordered_map>
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
-#define HTTP_BODY_SET_MAGIC 0xB0DFAC55
-#define HTTP_BODY_FACTORY_MAGIC 0xB0DFACFF
+#define HTTP_BODY_SET_MAGIC      0xB0DFAC55
+#define HTTP_BODY_FACTORY_MAGIC  0xB0DFACFF
 
 ////////////////////////////////////////////////////////////////////////
 //

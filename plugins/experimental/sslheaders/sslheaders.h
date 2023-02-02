@@ -70,10 +70,10 @@ struct SslHdrExpansion {
   ExpansionField field = SSL_HEADERS_FIELD_NONE;
 
   // noncopyable but movable
-  SslHdrExpansion(const SslHdrExpansion &) = delete;
+  SslHdrExpansion(const SslHdrExpansion &)            = delete;
   SslHdrExpansion &operator=(const SslHdrExpansion &) = delete;
   SslHdrExpansion(SslHdrExpansion &&)                 = default;
-  SslHdrExpansion &operator=(SslHdrExpansion &&) = default;
+  SslHdrExpansion &operator=(SslHdrExpansion &&)      = default;
 };
 
 struct SslHdrInstance {
@@ -87,7 +87,7 @@ struct SslHdrInstance {
   TSCont cont;
 
   // noncopyable
-  SslHdrInstance(const SslHdrInstance &) = delete;
+  SslHdrInstance(const SslHdrInstance &)            = delete;
   SslHdrInstance &operator=(const SslHdrInstance &) = delete;
 };
 

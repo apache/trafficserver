@@ -111,20 +111,20 @@ constexpr struct XHeader {
   std::string_view name;
   unsigned int flag;
 } header_flags[] = {
-  {HEADER_NAME_X_CACHE_KEY, XHEADER_X_CACHE_KEY},
-  {HEADER_NAME_X_MILESTONES, XHEADER_X_MILESTONES},
-  {HEADER_NAME_X_CACHE, XHEADER_X_CACHE},
-  {HEADER_NAME_X_GENERATION, XHEADER_X_GENERATION},
+  {HEADER_NAME_X_CACHE_KEY,      XHEADER_X_CACHE_KEY     },
+  {HEADER_NAME_X_MILESTONES,     XHEADER_X_MILESTONES    },
+  {HEADER_NAME_X_CACHE,          XHEADER_X_CACHE         },
+  {HEADER_NAME_X_GENERATION,     XHEADER_X_GENERATION    },
   {HEADER_NAME_X_TRANSACTION_ID, XHEADER_X_TRANSACTION_ID},
-  {HEADER_NAME_X_DUMP_HEADERS, XHEADER_X_DUMP_HEADERS},
-  {HEADER_NAME_X_REMAP, XHEADER_X_REMAP},
-  {HEADER_NAME_X_PROBE_HEADERS, XHEADER_X_PROBE_HEADERS},
-  {HEADER_NAME_X_PSELECT_KEY, XHEADER_X_PSELECT_KEY},
-  {HEADER_NAME_X_CACHE_INFO, XHEADER_X_CACHE_INFO},
-  {HEADER_NAME_X_EFFECTIVE_URL, XHEADER_X_EFFECTIVE_URL},
-  {HEADER_NAME_VIA, XHEADER_VIA},
-  {HEADER_NAME_DIAGS, XHEADER_DIAGS},
-  {HEADER_NAME_ALL, XHEADER_ALL},
+  {HEADER_NAME_X_DUMP_HEADERS,   XHEADER_X_DUMP_HEADERS  },
+  {HEADER_NAME_X_REMAP,          XHEADER_X_REMAP         },
+  {HEADER_NAME_X_PROBE_HEADERS,  XHEADER_X_PROBE_HEADERS },
+  {HEADER_NAME_X_PSELECT_KEY,    XHEADER_X_PSELECT_KEY   },
+  {HEADER_NAME_X_CACHE_INFO,     XHEADER_X_CACHE_INFO    },
+  {HEADER_NAME_X_EFFECTIVE_URL,  XHEADER_X_EFFECTIVE_URL },
+  {HEADER_NAME_VIA,              XHEADER_VIA             },
+  {HEADER_NAME_DIAGS,            XHEADER_DIAGS           },
+  {HEADER_NAME_ALL,              XHEADER_ALL             },
 };
 
 static TSCont XInjectHeadersCont  = nullptr;
@@ -300,29 +300,29 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   // The set of milestones we can publish. Some milestones happen after
   // this hook, so we skip those ...
   static const milestone milestones[] = {
-    {TS_MILESTONE_UA_BEGIN, "UA-BEGIN"},
-    {TS_MILESTONE_UA_FIRST_READ, "UA-FIRST-READ"},
-    {TS_MILESTONE_UA_READ_HEADER_DONE, "UA-READ-HEADER-DONE"},
-    {TS_MILESTONE_UA_BEGIN_WRITE, "UA-BEGIN-WRITE"},
-    {TS_MILESTONE_UA_CLOSE, "UA-CLOSE"},
-    {TS_MILESTONE_SERVER_FIRST_CONNECT, "SERVER-FIRST-CONNECT"},
-    {TS_MILESTONE_SERVER_CONNECT, "SERVER-CONNECT"},
-    {TS_MILESTONE_SERVER_CONNECT_END, "SERVER-CONNECT-END"},
-    {TS_MILESTONE_SERVER_BEGIN_WRITE, "SERVER-BEGIN-WRITE"},
-    {TS_MILESTONE_SERVER_FIRST_READ, "SERVER-FIRST-READ"},
+    {TS_MILESTONE_UA_BEGIN,                "UA-BEGIN"               },
+    {TS_MILESTONE_UA_FIRST_READ,           "UA-FIRST-READ"          },
+    {TS_MILESTONE_UA_READ_HEADER_DONE,     "UA-READ-HEADER-DONE"    },
+    {TS_MILESTONE_UA_BEGIN_WRITE,          "UA-BEGIN-WRITE"         },
+    {TS_MILESTONE_UA_CLOSE,                "UA-CLOSE"               },
+    {TS_MILESTONE_SERVER_FIRST_CONNECT,    "SERVER-FIRST-CONNECT"   },
+    {TS_MILESTONE_SERVER_CONNECT,          "SERVER-CONNECT"         },
+    {TS_MILESTONE_SERVER_CONNECT_END,      "SERVER-CONNECT-END"     },
+    {TS_MILESTONE_SERVER_BEGIN_WRITE,      "SERVER-BEGIN-WRITE"     },
+    {TS_MILESTONE_SERVER_FIRST_READ,       "SERVER-FIRST-READ"      },
     {TS_MILESTONE_SERVER_READ_HEADER_DONE, "SERVER-READ-HEADER-DONE"},
-    {TS_MILESTONE_SERVER_CLOSE, "SERVER-CLOSE"},
-    {TS_MILESTONE_CACHE_OPEN_READ_BEGIN, "CACHE-OPEN-READ-BEGIN"},
-    {TS_MILESTONE_CACHE_OPEN_READ_END, "CACHE-OPEN-READ-END"},
-    {TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN, "CACHE-OPEN-WRITE-BEGIN"},
-    {TS_MILESTONE_CACHE_OPEN_WRITE_END, "CACHE-OPEN-WRITE-END"},
-    {TS_MILESTONE_DNS_LOOKUP_BEGIN, "DNS-LOOKUP-BEGIN"},
-    {TS_MILESTONE_DNS_LOOKUP_END, "DNS-LOOKUP-END"},
-    // SM_START is deliberately excluded because as all the times are printed relative to it
-    // it would always be zero.
-    {TS_MILESTONE_SM_FINISH, "SM-FINISH"},
-    {TS_MILESTONE_PLUGIN_ACTIVE, "PLUGIN-ACTIVE"},
-    {TS_MILESTONE_PLUGIN_TOTAL, "PLUGIN-TOTAL"},
+    {TS_MILESTONE_SERVER_CLOSE,            "SERVER-CLOSE"           },
+    {TS_MILESTONE_CACHE_OPEN_READ_BEGIN,   "CACHE-OPEN-READ-BEGIN"  },
+    {TS_MILESTONE_CACHE_OPEN_READ_END,     "CACHE-OPEN-READ-END"    },
+    {TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,  "CACHE-OPEN-WRITE-BEGIN" },
+    {TS_MILESTONE_CACHE_OPEN_WRITE_END,    "CACHE-OPEN-WRITE-END"   },
+    {TS_MILESTONE_DNS_LOOKUP_BEGIN,        "DNS-LOOKUP-BEGIN"       },
+    {TS_MILESTONE_DNS_LOOKUP_END,          "DNS-LOOKUP-END"         },
+ // SM_START is deliberately excluded because as all the times are printed relative to it
+  // it would always be zero.
+    {TS_MILESTONE_SM_FINISH,               "SM-FINISH"              },
+    {TS_MILESTONE_PLUGIN_ACTIVE,           "PLUGIN-ACTIVE"          },
+    {TS_MILESTONE_PLUGIN_TOTAL,            "PLUGIN-TOTAL"           },
   };
 
   TSMLoc dst = TS_NULL_MLOC;
@@ -833,9 +833,11 @@ updateAllowedHeaders(const char *optarg)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("header"), required_argument, nullptr, 'h'},
-                                          {const_cast<char *>("enable"), required_argument, nullptr, 'e'},
-                                          {nullptr, no_argument, nullptr, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("header"), required_argument, nullptr, 'h' },
+    {const_cast<char *>("enable"), required_argument, nullptr, 'e' },
+    {nullptr,                      no_argument,       nullptr, '\0'}
+  };
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = (char *)"xdebug";

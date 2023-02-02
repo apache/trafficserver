@@ -198,6 +198,6 @@ public:
   int mainEvent(int event, void *netvc) override;
 
   // noncopyable
-  HttpSessionAccept(const HttpSessionAccept &) = delete;
+  HttpSessionAccept(const HttpSessionAccept &)            = delete;
   HttpSessionAccept &operator=(const HttpSessionAccept &) = delete;
 };

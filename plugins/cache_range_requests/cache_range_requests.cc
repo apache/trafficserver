@@ -36,7 +36,7 @@
 #include <string>
 #include <string_view>
 
-#define PLUGIN_NAME "cache_range_requests"
+#define PLUGIN_NAME         "cache_range_requests"
 #define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
@@ -105,13 +105,13 @@ create_pluginconfig(int argc, char *const argv[])
   }
 
   static const struct option longopts[] = {
-    {const_cast<char *>("consider-ims"), no_argument, nullptr, 'c'},
-    {const_cast<char *>("ims-header"), required_argument, nullptr, 'i'},
-    {const_cast<char *>("no-modify-cachekey"), no_argument, nullptr, 'n'},
-    {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
-    {const_cast<char *>("verify-cacheability"), no_argument, nullptr, 'v'},
-    {const_cast<char *>("cache-complete-responses"), no_argument, nullptr, 'r'},
-    {nullptr, 0, nullptr, 0},
+    {const_cast<char *>("consider-ims"),             no_argument,       nullptr, 'c'},
+    {const_cast<char *>("ims-header"),               required_argument, nullptr, 'i'},
+    {const_cast<char *>("no-modify-cachekey"),       no_argument,       nullptr, 'n'},
+    {const_cast<char *>("ps-cachekey"),              no_argument,       nullptr, 'p'},
+    {const_cast<char *>("verify-cacheability"),      no_argument,       nullptr, 'v'},
+    {const_cast<char *>("cache-complete-responses"), no_argument,       nullptr, 'r'},
+    {nullptr,                                        0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1'

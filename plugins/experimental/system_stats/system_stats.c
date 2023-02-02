@@ -41,14 +41,14 @@
 #include <limits.h>
 
 #define PLUGIN_NAME "system_stats"
-#define DEBUG_TAG PLUGIN_NAME
+#define DEBUG_TAG   PLUGIN_NAME
 
 // Time in MS to grab the system stats
 #define SYSTEM_STATS_TIMEOUT 5000
 
 // Load Average Strings
-#define LOAD_AVG_ONE_MIN "plugin." PLUGIN_NAME ".loadavg.one"
-#define LOAD_AVG_FIVE_MIN "plugin." PLUGIN_NAME ".loadavg.five"
+#define LOAD_AVG_ONE_MIN     "plugin." PLUGIN_NAME ".loadavg.one"
+#define LOAD_AVG_FIVE_MIN    "plugin." PLUGIN_NAME ".loadavg.five"
 #define LOAD_AVG_FIFTEEN_MIN "plugin." PLUGIN_NAME ".loadavg.fifteen"
 
 // Process Strings
@@ -58,7 +58,7 @@
 // with NET_STATS.infname.RX/TX.standard_net_stats field
 #define NET_STATS "plugin." PLUGIN_NAME ".net."
 
-#define NET_STATS_DIR "/sys/class/net"
+#define NET_STATS_DIR  "/sys/class/net"
 #define STATISTICS_DIR "statistics"
 
 // Used for matching to slave (old name) and lower (new name) symlinks

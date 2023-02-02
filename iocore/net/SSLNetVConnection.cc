@@ -58,19 +58,19 @@ using namespace std::literals;
 #define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, nullptr)
 #endif
 
-#define SSL_READ_ERROR_NONE 0
-#define SSL_READ_ERROR 1
-#define SSL_READ_READY 2
-#define SSL_READ_COMPLETE 3
-#define SSL_READ_WOULD_BLOCK 4
-#define SSL_READ_EOS 5
-#define SSL_HANDSHAKE_WANT_READ 6
-#define SSL_HANDSHAKE_WANT_WRITE 7
-#define SSL_HANDSHAKE_WANT_ACCEPT 8
+#define SSL_READ_ERROR_NONE        0
+#define SSL_READ_ERROR             1
+#define SSL_READ_READY             2
+#define SSL_READ_COMPLETE          3
+#define SSL_READ_WOULD_BLOCK       4
+#define SSL_READ_EOS               5
+#define SSL_HANDSHAKE_WANT_READ    6
+#define SSL_HANDSHAKE_WANT_WRITE   7
+#define SSL_HANDSHAKE_WANT_ACCEPT  8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
-#define SSL_WRITE_WOULD_BLOCK 10
-#define SSL_WAIT_FOR_HOOK 11
-#define SSL_WAIT_FOR_ASYNC 12
+#define SSL_WRITE_WOULD_BLOCK      10
+#define SSL_WAIT_FOR_HOOK          11
+#define SSL_WAIT_FOR_ASYNC         12
 
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
@@ -610,8 +610,8 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           NetState *s            = &this->read;
           MIOBufferAccessor &buf = s->vio.buffer;
           int64_t r              = buf.writer()->write(this->handShakeHolder);
-          s->vio.nbytes += r;
-          s->vio.ndone += r;
+          s->vio.nbytes          += r;
+          s->vio.ndone           += r;
 
           // Clean up the handshake buffers
           this->free_handshake_buffers();
@@ -847,7 +847,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   } while (num_really_written == try_to_write && total_written < towrite);
 
   if (total_written > 0) {
-    sslLastWriteTime = now;
+    sslLastWriteTime  = now;
     sslTotalBytesSent += total_written;
   }
   redoWriteSize = 0;
@@ -859,7 +859,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       Debug("ssl", "SSL_write-SSL_ERROR_NONE");
       break;
     case SSL_ERROR_WANT_READ:
-      needs |= EVENTIO_READ;
+      needs              |= EVENTIO_READ;
       num_really_written = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
@@ -871,7 +871,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       if (SSL_ERROR_WANT_WRITE == err) {
         redoWriteSize = l;
       }
-      needs |= EVENTIO_WRITE;
+      needs              |= EVENTIO_WRITE;
       num_really_written = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;

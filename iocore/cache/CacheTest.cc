@@ -219,8 +219,8 @@ CacheTestSM::fill_buffer()
 {
   int64_t avail = buffer->write_avail();
   CacheKey k    = key;
-  k.b[1] += content_salt;
-  int64_t sk = static_cast<int64_t>(sizeof(key));
+  k.b[1]        += content_salt;
+  int64_t sk    = static_cast<int64_t>(sizeof(key));
   while (avail > 0) {
     int64_t l = avail;
     if (l > sk) {
@@ -246,7 +246,7 @@ CacheTestSM::check_buffer()
 {
   int64_t avail = buffer_reader->read_avail();
   CacheKey k    = key;
-  k.b[1] += content_salt;
+  k.b[1]        += content_salt;
   char b[sizeof(key)];
   int64_t sk  = static_cast<int64_t>(sizeof(key));
   int64_t pos = cvio->ndone - buffer_reader->read_avail();
@@ -266,7 +266,7 @@ CacheTestSM::check_buffer()
       return 0;
     }
     buffer_reader->consume(l);
-    pos += l;
+    pos   += l;
     avail -= l;
   }
   return 1;

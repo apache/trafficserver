@@ -105,7 +105,7 @@ Arena::str_alloc(size_t len)
 
   while (tmp >= 128) {
     size += 1;
-    tmp /= 128;
+    tmp  /= 128;
   }
 
   mem = (unsigned char *)alloc(size, 1);
@@ -116,7 +116,7 @@ Arena::str_alloc(size_t len)
 
   while (tmp >= 128) {
     *p-- = (unsigned char)(255 - (tmp % 128));
-    tmp /= 128;
+    tmp  /= 128;
   }
   *p = (unsigned char)tmp;
 

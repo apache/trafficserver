@@ -378,7 +378,10 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 
       plugin->done();
 
-      THEN("expect it to run") { CHECK(1 == debugObject->doneCalled); }
+      THEN("expect it to run")
+      {
+        CHECK(1 == debugObject->doneCalled);
+      }
       cleanupSandBox(plugin);
     }
   }

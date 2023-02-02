@@ -59,7 +59,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
   uint8_t block_off = 0;
 
   if (!finalized) {
-    m = (unsigned char *)data;
+    m         = (unsigned char *)data;
     total_len += len;
 
     if (len + block_buffer_len < SIP_BLOCK_SIZE) {

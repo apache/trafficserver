@@ -76,7 +76,7 @@ ServerIntercept::streamReqBody(const string &data)
   TSDebug(PLUGIN_NAME, "[ServerIntercept:%s] bodyCount: %d", __FUNCTION__, bodyCount++);
   if (!Server::server()->writeRequestBody(_request_id, data)) {
     dataBuffered = true;
-    clientBody += data;
+    clientBody   += data;
   }
 }
 

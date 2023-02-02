@@ -496,13 +496,13 @@ BaseMetaInfo::_read_from_file()
           t = tok.getNext();
           if (t) {
             _creation_time = static_cast<time_t>(ink_atoi64(t));
-            _flags |= VALID_CREATION_TIME;
+            _flags         |= VALID_CREATION_TIME;
           }
         } else if (strcmp(t, "object_signature") == 0) {
           t = tok.getNext();
           if (t) {
             _log_object_signature = ink_atoi64(t);
-            _flags |= VALID_SIGNATURE;
+            _flags                |= VALID_SIGNATURE;
             log_log_trace("BaseMetaInfo::_read_from_file\n"
                           "\tfilename = %s\n"
                           "\tsignature string = %s\n"

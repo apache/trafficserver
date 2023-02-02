@@ -88,7 +88,11 @@ namespace bwf
   namespace detail
   {
     // Special case conversions - these handle nullptr because the @c std::string_view spec is stupid.
-    inline std::string_view FirstOfConverter(std::nullptr_t) { return std::string_view{}; }
+    inline std::string_view
+    FirstOfConverter(std::nullptr_t)
+    {
+      return std::string_view{};
+    }
     inline std::string_view
     FirstOfConverter(char const *s)
     {
@@ -106,7 +110,7 @@ namespace bwf
   /// All arguments must be convertible to @c std::string.
   template <typename... Args>
   std::string_view
-  FirstOf(Args &&... args)
+  FirstOf(Args &&...args)
   {
     std::array<std::string_view, sizeof...(args)> strings{{detail::FirstOfConverter(args)...}};
     for (auto &s : strings) {

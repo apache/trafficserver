@@ -224,7 +224,7 @@ public:
   static AcceptOptions const DEFAULT_ACCEPT_OPTIONS;
 
   // noncopyable
-  NetProcessor(const NetProcessor &) = delete;
+  NetProcessor(const NetProcessor &)            = delete;
   NetProcessor &operator=(const NetProcessor &) = delete;
 
 private:

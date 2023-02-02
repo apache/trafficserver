@@ -817,7 +817,7 @@ public:
   }
 
   // noncopyable
-  NetVConnection(const NetVConnection &) = delete;
+  NetVConnection(const NetVConnection &)            = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
 
   ProxyProtocolVersion

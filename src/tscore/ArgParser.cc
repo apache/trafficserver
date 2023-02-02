@@ -348,7 +348,7 @@ ArgParser::Command::output_option() const
     if (!it.second.short_option.empty()) {
       msg = it.second.short_option + ", ";
     }
-    msg += it.first;
+    msg          += it.first;
     unsigned num = it.second.arg_num;
     if (num != 0) {
       if (num == 1) {

@@ -128,68 +128,70 @@ constexpr int HPACK_STATIC_TABLE_OFFSET[26] = {
   TS_HPACK_STATIC_TABLE_ENTRY_NUM,
 };
 
-constexpr HpackHeaderField STATIC_TABLE[] = {{"", ""},
-                                             {":authority", ""},
-                                             {":method", "GET"},
-                                             {":method", "POST"},
-                                             {":path", "/"},
-                                             {":path", "/index.html"},
-                                             {":scheme", "http"},
-                                             {":scheme", "https"},
-                                             {":status", "200"},
-                                             {":status", "204"},
-                                             {":status", "206"},
-                                             {":status", "304"},
-                                             {":status", "400"},
-                                             {":status", "404"},
-                                             {":status", "500"},
-                                             {"accept-charset", ""},
-                                             {"accept-encoding", "gzip, deflate"},
-                                             {"accept-language", ""},
-                                             {"accept-ranges", ""},
-                                             {"accept", ""},
-                                             {"access-control-allow-origin", ""},
-                                             {"age", ""},
-                                             {"allow", ""},
-                                             {"authorization", ""},
-                                             {"cache-control", ""},
-                                             {"content-disposition", ""},
-                                             {"content-encoding", ""},
-                                             {"content-language", ""},
-                                             {"content-length", ""},
-                                             {"content-location", ""},
-                                             {"content-range", ""},
-                                             {"content-type", ""},
-                                             {"cookie", ""},
-                                             {"date", ""},
-                                             {"etag", ""},
-                                             {"expect", ""},
-                                             {"expires", ""},
-                                             {"from", ""},
-                                             {"host", ""},
-                                             {"if-match", ""},
-                                             {"if-modified-since", ""},
-                                             {"if-none-match", ""},
-                                             {"if-range", ""},
-                                             {"if-unmodified-since", ""},
-                                             {"last-modified", ""},
-                                             {"link", ""},
-                                             {"location", ""},
-                                             {"max-forwards", ""},
-                                             {"proxy-authenticate", ""},
-                                             {"proxy-authorization", ""},
-                                             {"range", ""},
-                                             {"referer", ""},
-                                             {"refresh", ""},
-                                             {"retry-after", ""},
-                                             {"server", ""},
-                                             {"set-cookie", ""},
-                                             {"strict-transport-security", ""},
-                                             {"transfer-encoding", ""},
-                                             {"user-agent", ""},
-                                             {"vary", ""},
-                                             {"via", ""},
-                                             {"www-authenticate", ""}};
+constexpr HpackHeaderField STATIC_TABLE[] = {
+  {"",                            ""             },
+  {":authority",                  ""             },
+  {":method",                     "GET"          },
+  {":method",                     "POST"         },
+  {":path",                       "/"            },
+  {":path",                       "/index.html"  },
+  {":scheme",                     "http"         },
+  {":scheme",                     "https"        },
+  {":status",                     "200"          },
+  {":status",                     "204"          },
+  {":status",                     "206"          },
+  {":status",                     "304"          },
+  {":status",                     "400"          },
+  {":status",                     "404"          },
+  {":status",                     "500"          },
+  {"accept-charset",              ""             },
+  {"accept-encoding",             "gzip, deflate"},
+  {"accept-language",             ""             },
+  {"accept-ranges",               ""             },
+  {"accept",                      ""             },
+  {"access-control-allow-origin", ""             },
+  {"age",                         ""             },
+  {"allow",                       ""             },
+  {"authorization",               ""             },
+  {"cache-control",               ""             },
+  {"content-disposition",         ""             },
+  {"content-encoding",            ""             },
+  {"content-language",            ""             },
+  {"content-length",              ""             },
+  {"content-location",            ""             },
+  {"content-range",               ""             },
+  {"content-type",                ""             },
+  {"cookie",                      ""             },
+  {"date",                        ""             },
+  {"etag",                        ""             },
+  {"expect",                      ""             },
+  {"expires",                     ""             },
+  {"from",                        ""             },
+  {"host",                        ""             },
+  {"if-match",                    ""             },
+  {"if-modified-since",           ""             },
+  {"if-none-match",               ""             },
+  {"if-range",                    ""             },
+  {"if-unmodified-since",         ""             },
+  {"last-modified",               ""             },
+  {"link",                        ""             },
+  {"location",                    ""             },
+  {"max-forwards",                ""             },
+  {"proxy-authenticate",          ""             },
+  {"proxy-authorization",         ""             },
+  {"range",                       ""             },
+  {"referer",                     ""             },
+  {"refresh",                     ""             },
+  {"retry-after",                 ""             },
+  {"server",                      ""             },
+  {"set-cookie",                  ""             },
+  {"strict-transport-security",   ""             },
+  {"transfer-encoding",           ""             },
+  {"user-agent",                  ""             },
+  {"vary",                        ""             },
+  {"via",                         ""             },
+  {"www-authenticate",            ""             }
+};
 
 constexpr std::string_view HPACK_HDR_FIELD_COOKIE        = STATIC_TABLE[TS_HPACK_STATIC_TABLE_COOKIE].name;
 constexpr std::string_view HPACK_HDR_FIELD_AUTHORIZATION = STATIC_TABLE[TS_HPACK_STATIC_TABLE_AUTHORIZATION].name;
@@ -612,7 +614,7 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
   }
 
   *p |= 0x80;
-  p += len;
+  p  += len;
 
   Debug("hpack_encode", "Encoded field: %d", index);
   return p - buf_start;
@@ -658,7 +660,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
     return -1;
   }
   *p |= flag;
-  p += len;
+  p  += len;
 
   // Value String
   len = xpack_encode_string(p, buf_end, header.value.data(), header.value.size());
@@ -913,7 +915,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
-      cursor += read_bytes;
+      cursor               += read_bytes;
       header_field_started = true;
       break;
     case HpackField::INDEXED_LITERAL:
@@ -927,7 +929,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
         has_http2_violation = true;
         read_bytes          = -read_bytes;
       }
-      cursor += read_bytes;
+      cursor               += read_bytes;
       header_field_started = true;
       break;
     case HpackField::TABLESIZE_UPDATE:

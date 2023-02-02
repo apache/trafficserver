@@ -112,7 +112,7 @@ TEST_CASE("AcidPtr Isolation")
   CHECK(*p.getPtr() == 40);
   {
     AcidCommitPtr<int> w = p;
-    *w += 1;
+    *w                   += 1;
     CHECK(*p.getPtr() == 40); // new value not committed until end of scope
   }
   CHECK(*p.getPtr() == 41);
@@ -132,12 +132,12 @@ TEST_CASE("AcidPtr persistence")
   {
     AcidCommitPtr<int> w = p;
     r2                   = p.getPtr();
-    *w += 1; // update p at end of scope
+    *w                   += 1; // update p at end of scope
   }
   r3 = p.getPtr();
   {
     *AcidCommitPtr<int>(p) += 1; // leaves scope immediately if not named.
-    r4 = p.getPtr();
+    r4                     = p.getPtr();
   }
   CHECK(*r1 == 40); // references to data are still valid, but inconsistent. (todo: rename AcidPtr to AiPtr?)
   CHECK(*r2 == 40);
@@ -155,7 +155,7 @@ TEST_CASE("AcidPtr Abort")
   CHECK(*p.getPtr() == 40);
   {
     AcidCommitPtr<int> w = p;
-    *w += 1;
+    *w                   += 1;
     w.abort();
     CHECK(w == nullptr);
   }

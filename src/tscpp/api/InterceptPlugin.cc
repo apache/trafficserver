@@ -246,7 +246,7 @@ InterceptPlugin::doRead()
         consume(string(data, num_body_bytes_in_block), InterceptPlugin::REQUEST_BODY);
       }
       consumed += data_len;
-      block = TSIOBufferBlockNext(block);
+      block    = TSIOBufferBlockNext(block);
     }
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);
@@ -287,7 +287,7 @@ InterceptPlugin::handleEvent(int abstract_event, void *edata)
     state_->input_.buffer_ = TSIOBufferCreate();
     state_->input_.reader_ = TSIOBufferReaderAlloc(state_->input_.buffer_);
     state_->input_.vio_    = TSVConnRead(state_->net_vc_, state_->cont_, state_->input_.buffer_,
-                                      INT64_MAX /* number of bytes to read - high value initially */);
+                                         INT64_MAX /* number of bytes to read - high value initially */);
 
     state_->hdr_buf_ = TSMBufferCreate();
     state_->hdr_loc_ = TSHttpHdrCreate(state_->hdr_buf_);

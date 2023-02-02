@@ -66,7 +66,7 @@ public:
   ProxySession *get_proxy_session() override;
 
   // noncopyable
-  Http2ClientSession(Http2ClientSession &) = delete;
+  Http2ClientSession(Http2ClientSession &)                  = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
 
 private:

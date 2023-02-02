@@ -92,7 +92,7 @@ protected:
   String _name;                 /**< @brief multi-pattern name */
 
   // noncopyable
-  MultiPattern(const MultiPattern &) = delete;            // disallow
+  MultiPattern(const MultiPattern &)            = delete; // disallow
   MultiPattern &operator=(const MultiPattern &) = delete; // disallow
 };
 
@@ -115,7 +115,7 @@ public:
   }
 
   // noncopyable
-  NonMatchingMultiPattern(const NonMatchingMultiPattern &) = delete;            // disallow
+  NonMatchingMultiPattern(const NonMatchingMultiPattern &)            = delete; // disallow
   NonMatchingMultiPattern &operator=(const NonMatchingMultiPattern &) = delete; // disallow
 };
 
@@ -132,7 +132,7 @@ public:
   void add(MultiPattern *pattern);
 
   // noncopyable
-  Classifier(const Classifier &) = delete;            // disallow
+  Classifier(const Classifier &)            = delete; // disallow
   Classifier &operator=(const Classifier &) = delete; // disallow
 
 private:

@@ -113,19 +113,19 @@ Config::fromArgs(int const argc, char const *const argv[])
 
   // standard parsing
   constexpr struct option longopts[] = {
-    {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
-    {const_cast<char *>("crr-ims-header"), required_argument, nullptr, 'c'},
-    {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
-    {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
-    {const_cast<char *>("ref-relative"), no_argument, nullptr, 'l'},
-    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
-    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("skip-header"), required_argument, nullptr, 's'},
-    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
-    {const_cast<char *>("prefetch-count"), required_argument, nullptr, 'f'},
-    {const_cast<char *>("strip-range-for-head"), no_argument, nullptr, 'h'},
-    {nullptr, 0, nullptr, 0},
+    {const_cast<char *>("blockbytes"),           required_argument, nullptr, 'b'},
+    {const_cast<char *>("crr-ims-header"),       required_argument, nullptr, 'c'},
+    {const_cast<char *>("disable-errorlog"),     no_argument,       nullptr, 'd'},
+    {const_cast<char *>("exclude-regex"),        required_argument, nullptr, 'e'},
+    {const_cast<char *>("include-regex"),        required_argument, nullptr, 'i'},
+    {const_cast<char *>("ref-relative"),         no_argument,       nullptr, 'l'},
+    {const_cast<char *>("pace-errorlog"),        required_argument, nullptr, 'p'},
+    {const_cast<char *>("remap-host"),           required_argument, nullptr, 'r'},
+    {const_cast<char *>("skip-header"),          required_argument, nullptr, 's'},
+    {const_cast<char *>("blockbytes-test"),      required_argument, nullptr, 't'},
+    {const_cast<char *>("prefetch-count"),       required_argument, nullptr, 'f'},
+    {const_cast<char *>("strip-range-for-head"), no_argument,       nullptr, 'h'},
+    {nullptr,                                    0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1' so this hack is needed

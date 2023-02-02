@@ -51,12 +51,12 @@
 
 #define PLUGIN_NAME "server-transform"
 
-#define STATE_BUFFER 1
-#define STATE_CONNECT 2
-#define STATE_WRITE 3
+#define STATE_BUFFER      1
+#define STATE_CONNECT     2
+#define STATE_WRITE       3
 #define STATE_READ_STATUS 4
-#define STATE_READ 5
-#define STATE_BYPASS 6
+#define STATE_READ        5
+#define STATE_BYPASS      6
 
 typedef struct {
   int state;

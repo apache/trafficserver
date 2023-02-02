@@ -317,7 +317,7 @@ ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
             } else if (cidr <= 32) {
               lower = upper = addr;
               if (cidr < 32) {
-                in_addr_t mask = htonl(INADDR_BROADCAST << (32 - cidr));
+                in_addr_t mask   = htonl(INADDR_BROADCAST << (32 - cidr));
                 lower._addr._ip4 &= mask;
                 upper._addr._ip4 |= ~mask;
               }
@@ -345,7 +345,7 @@ ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
             } else if (cidr <= 128) { // lower bytes changed, upper bytes unaffected.
               lower = upper = addr;
               if (cidr < 128) {
-                mask = htobe64(~static_cast<uint64_t>(0) << (128 - cidr));
+                mask                = htobe64(~static_cast<uint64_t>(0) << (128 - cidr));
                 lower._addr._u64[1] &= mask;
                 upper._addr._u64[1] |= ~mask;
               }

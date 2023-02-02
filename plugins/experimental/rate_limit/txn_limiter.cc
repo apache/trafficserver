@@ -107,16 +107,16 @@ bool
 TxnRateLimiter::initialize(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
-    {const_cast<char *>("error"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
-    {const_cast<char *>("prefix"), required_argument, nullptr, 'p'},
-    {const_cast<char *>("tag"), required_argument, nullptr, 't'},
-    // EOF
-    {nullptr, no_argument, nullptr, '\0'},
+    {const_cast<char *>("limit"),  required_argument, nullptr, 'l' },
+    {const_cast<char *>("queue"),  required_argument, nullptr, 'q' },
+    {const_cast<char *>("error"),  required_argument, nullptr, 'e' },
+    {const_cast<char *>("retry"),  required_argument, nullptr, 'r' },
+    {const_cast<char *>("header"), required_argument, nullptr, 'h' },
+    {const_cast<char *>("maxage"), required_argument, nullptr, 'm' },
+    {const_cast<char *>("prefix"), required_argument, nullptr, 'p' },
+    {const_cast<char *>("tag"),    required_argument, nullptr, 't' },
+ // EOF
+    {nullptr,                      no_argument,       nullptr, '\0'},
   };
 
   while (true) {

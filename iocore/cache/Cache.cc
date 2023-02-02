@@ -945,14 +945,14 @@ CacheProcessor::cacheInitialized()
             CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)gvol[i]->dirlen());
           }
           vol_total_cache_bytes = gvol[i]->len - gvol[i]->dirlen();
-          total_cache_bytes += vol_total_cache_bytes;
+          total_cache_bytes     += vol_total_cache_bytes;
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
 
           vol_total_direntries = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
-          total_direntries += vol_total_direntries;
+          total_direntries     += vol_total_direntries;
           CACHE_VOL_SUM_DYN_STAT(cache_direntries_total_stat, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
@@ -995,14 +995,14 @@ CacheProcessor::cacheInitialized()
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           vol_total_cache_bytes = gvol[i]->len - gvol[i]->dirlen();
-          total_cache_bytes += vol_total_cache_bytes;
+          total_cache_bytes     += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
           CACHE_VOL_SUM_DYN_STAT(cache_stripes_stat, 1); // Count the cache stripes
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           vol_total_direntries = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
-          total_direntries += vol_total_direntries;
+          total_direntries     += vol_total_direntries;
           CACHE_VOL_SUM_DYN_STAT(cache_direntries_total_stat, vol_total_direntries);
 
           vol_used_direntries = dir_entries_used(gvol[i]);
@@ -1462,15 +1462,15 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       }
       ink_assert(done == to_check);
 
-      got_len = io.aiocb.aio_nbytes - done;
+      got_len     = io.aiocb.aio_nbytes - done;
       recover_pos += io.aiocb.aio_nbytes;
-      s = static_cast<char *>(io.aiocb.aio_buf) + done;
-      e = s + got_len;
+      s           = static_cast<char *>(io.aiocb.aio_buf) + done;
+      e           = s + got_len;
     } else {
-      got_len = io.aiocb.aio_nbytes;
+      got_len     = io.aiocb.aio_nbytes;
       recover_pos += io.aiocb.aio_nbytes;
-      s = static_cast<char *>(io.aiocb.aio_buf);
-      e = s + got_len;
+      s           = static_cast<char *>(io.aiocb.aio_buf);
+      e           = s + got_len;
     }
   }
   // examine what we got
@@ -1526,7 +1526,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
           // case 2
           if (doc->sync_serial > last_sync_serial && doc->sync_serial <= header->sync_serial + 1) {
             last_sync_serial = doc->sync_serial;
-            s += round_to_approx_size(doc->len);
+            s                += round_to_approx_size(doc->len);
             continue;
           }
           // case 3 - we have already recovered some data and
@@ -1561,7 +1561,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       }
       // doc->magic == DOC_MAGIC && doc->sync_serial == last_sync_serial
       last_write_serial = doc->write_serial;
-      s += round_to_approx_size(doc->len);
+      s                 += round_to_approx_size(doc->len);
     }
 
     /* if (s > e) then we gone through RECOVERY_SIZE; we need to
@@ -1803,7 +1803,7 @@ build_vol_hash_table(CacheHostRecord *cp)
     }
     mapping[map] = i;
     p[map++]     = cp->vols[i];
-    total += (cp->vols[i]->len >> STORE_BLOCK_SHIFT);
+    total        += (cp->vols[i]->len >> STORE_BLOCK_SHIFT);
   }
 
   num_vols -= bad_vols;
@@ -1829,11 +1829,11 @@ build_vol_hash_table(CacheHostRecord *cp)
 
   // estimate allocation
   for (int i = 0; i < num_vols; i++) {
-    forvol[i] = (VOL_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
-    used += forvol[i];
+    forvol[i]         = (VOL_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
+    used              += forvol[i];
     rtable_entries[i] = p[i]->len / VOL_HASH_ALLOC_SIZE;
-    rtable_size += rtable_entries[i];
-    gotvol[i] = 0;
+    rtable_size       += rtable_entries[i];
+    gotvol[i]         = 0;
   }
   // spread around the excess
   int extra = VOL_HASH_TABLE_SIZE - used;
@@ -1926,8 +1926,8 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
 
   for (p = 0; p < gnvol; p++) {
     if (d->fd == gvol[p]->fd) {
-      total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
-      used_dir_delete += dir_entries_used(gvol[p]);
+      total_dir_delete   += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
+      used_dir_delete    += dir_entries_used(gvol[p]);
       total_bytes_delete += gvol[p]->len - gvol[p]->dirlen();
     }
   }
@@ -1953,10 +1953,10 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
     if (theCache) {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
       if (!hosttable->gen_host_rec.vol_hash_table) {
-        unsigned int caches_ready = 0;
-        caches_ready              = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
-        caches_ready              = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
-        caches_ready              = ~caches_ready;
+        unsigned int caches_ready   = 0;
+        caches_ready                = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+        caches_ready                = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
+        caches_ready                = ~caches_ready;
         CacheProcessor::cache_ready &= caches_ready;
         Warning("all volumes for http cache are corrupt, http cache disabled");
       }
@@ -2504,8 +2504,8 @@ cplist_init()
       while (p) {
         if (p->vol_number == dp[j]->vol_number) {
           ink_assert(p->scheme == (int)dp[j]->dpb_queue.head->b->type);
-          p->size += dp[j]->size;
-          p->num_vols += dp[j]->num_volblocks;
+          p->size         += dp[j]->size;
+          p->num_vols     += dp[j]->num_volblocks;
           p->disk_vols[i] = dp[j];
           break;
         }
@@ -2669,7 +2669,7 @@ fillExclusiveDisks(CacheVol *cp)
           cp->disk_vols[i] = gdisks[i]->get_diskvol(volume_number);
         }
         size_diff -= dpb->len;
-        cp->size += dpb->len;
+        cp->size  += dpb->len;
         cp->num_vols++;
       } else {
         Debug("cache_init", "create_volume failed");
@@ -2721,10 +2721,10 @@ cplist_reconfigure()
       }
 
       ink_assert(gdisks[i]->header->num_volumes == 1);
-      DiskVol **dp = gdisks[i]->disk_vols;
-      gnvol += dp[0]->num_volblocks;
-      cp->size += dp[0]->size;
-      cp->num_vols += dp[0]->num_volblocks;
+      DiskVol **dp     = gdisks[i]->disk_vols;
+      gnvol            += dp[0]->num_volblocks;
+      cp->size         += dp[0]->size;
+      cp->num_vols     += dp[0]->num_volblocks;
       cp->disk_vols[i] = dp[0];
     }
   } else {
@@ -2830,7 +2830,7 @@ cplist_reconfigure()
         cp_list.enqueue(new_cp);
         cp_list_len++;
         config_vol->cachep = new_cp;
-        gnvol += new_cp->num_vols;
+        gnvol              += new_cp->num_vols;
         continue;
       }
       //    else
@@ -2896,7 +2896,7 @@ cplist_reconfigure()
               cp->disk_vols[disk_no] = gdisks[disk_no]->get_diskvol(volume_number);
             }
             size_diff -= dpb->len;
-            cp->size += dpb->len;
+            cp->size  += dpb->len;
             cp->num_vols++;
           } else {
             break;
@@ -2944,9 +2944,9 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
   int i = curr_vol;
   while (size_in_blocks > 0) {
     if (gdisks[i]->free_space >= (sp[i] + blocks_per_vol)) {
-      sp[i] += blocks_per_vol;
+      sp[i]          += blocks_per_vol;
       size_in_blocks -= blocks_per_vol;
-      full_disks = 0;
+      full_disks     = 0;
     } else {
       full_disks += 1;
       if (full_disks == gndisks) {

@@ -45,7 +45,7 @@ Http2FrequencyCounter::increment(uint16_t amount)
   }
 
   this->_count[counter_index] += amount;
-  this->_last_update = hrtime_sec;
+  this->_last_update          = hrtime_sec;
 }
 
 uint32_t

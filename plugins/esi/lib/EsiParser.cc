@@ -138,7 +138,7 @@ EsiParser::_searchData(const string &data, size_t start_pos, const char *str, in
       }
     } else {
       i_data -= i_str;
-      i_str = 0;
+      i_str  = 0;
     }
     ++i_data;
   }
@@ -334,7 +334,7 @@ EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_li
       }
     }
 
-    curr_pos += node_info->tag_suffix_len;
+    curr_pos      += node_info->tag_suffix_len;
     search_result = _searchData(data, curr_pos, node_info->closing_tag, node_info->closing_tag_len, end_pos);
 
     if ((search_result == NO_MATCH) || (search_result == PARTIAL_MATCH)) {

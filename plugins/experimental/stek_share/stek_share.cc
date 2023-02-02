@@ -198,7 +198,7 @@ set_server_info(int argc, const char *argv[])
     }
 
     std::string cluster_list_str = "";
-    cluster_list_str += "\nSTEK Share Cluster Server List:";
+    cluster_list_str             += "\nSTEK Share Cluster Server List:";
     for (auto it = server_list.begin(); it != server_list.end(); ++it) {
       YAML::Node server_info = it->as<YAML::Node>();
       if (server_info["server_id"] && server_info["address"] && server_info["port"]) {
@@ -207,7 +207,7 @@ set_server_info(int argc, const char *argv[])
         int port                                  = server_info["port"].as<int>();
         std::string endpoint                      = address + ":" + std::to_string(port);
         stek_share_server.server_list_[server_id] = endpoint;
-        cluster_list_str += "\n  " + std::to_string(server_id) + ", " + endpoint;
+        cluster_list_str                          += "\n  " + std::to_string(server_id) + ", " + endpoint;
       } else {
         TSDebug(PLUGIN, "Wrong server list format.");
         return -1;
@@ -302,8 +302,8 @@ print_status()
   // For debugging
   nuraft::ptr<nuraft::log_store> ls = stek_share_server.smgr_->load_log_store();
   std::string status_str            = "";
-  status_str += "\n  Server ID: " + std::to_string(stek_share_server.server_id_);
-  status_str += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance_->get_leader());
+  status_str                        += "\n  Server ID: " + std::to_string(stek_share_server.server_id_);
+  status_str                        += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance_->get_leader());
   status_str += "\n  Raft log range: " + std::to_string(ls->start_index()) + " - " + std::to_string((ls->next_slot() - 1));
   status_str += "\n  Last committed index: " + std::to_string(stek_share_server.raft_instance_->get_committed_log_idx());
   TSDebug(PLUGIN, "%s", status_str.c_str());

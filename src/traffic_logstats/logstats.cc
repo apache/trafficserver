@@ -635,29 +635,30 @@ struct CommandLineArgs {
 static CommandLineArgs cl;
 
 static ArgumentDescription argument_descriptions[] = {
-  {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, nullptr, nullptr},
-  {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, nullptr, nullptr},
-  {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, nullptr, nullptr},
-  {"max_origins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
-  {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, nullptr, nullptr},
-  {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, nullptr, nullptr},
-  {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, nullptr, nullptr},
-  {"concise", 'C', "Eliminate metrics that can be inferred from other values", "T", &cl.concise, nullptr, nullptr},
-  {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, nullptr, nullptr},
-  {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, nullptr, nullptr},
-  {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, nullptr, nullptr},
-  {"summary", 's', "Only produce the summary", "T", &cl.summary, nullptr, nullptr},
-  {"json", 'j', "Produce JSON formatted output", "T", &cl.json, nullptr, nullptr},
-  {"cgi", 'c', "Produce HTTP headers suitable as a CGI", "T", &cl.cgi, nullptr, nullptr},
-  {"min_hits", 'm', "Minimum total hits for an Origin", "L", &cl.min_hits, nullptr, nullptr},
-  {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, nullptr, nullptr},
-  {"line_len", 'l', "Output line length", "I", &cl.line_len, nullptr, nullptr},
-  {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, nullptr, nullptr},
-  {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, nullptr, nullptr},
-  {"no_format_check", 'n', "Don't validate the log format field names", "T", &cl.no_format_check, nullptr, nullptr},
+  {"log_file",        'f', "Specific logfile to parse",                                "S1023", cl.log_file,         nullptr, nullptr},
+  {"origin_list",     'o', "Only show stats for listed Origins",                       "S4095", cl.origin_list,      nullptr, nullptr},
+  {"origin_file",     'O', "File listing Origins to show",                             "S1023", cl.origin_file,      nullptr, nullptr},
+  {"max_origins",     'M', "Max number of Origins to show",                            "I",     &cl.max_origins,     nullptr, nullptr},
+  {"urls",            'u', "Produce JSON stats for URLs, argument is LRU size",        "I",     &cl.urls,            nullptr, nullptr},
+  {"show_urls",       'U', "Only show max this number of URLs",                        "I",     &cl.show_urls,       nullptr, nullptr},
+  {"as_object",       'A', "Produce URL stats as a JSON object instead of array",      "T",     &cl.as_object,       nullptr, nullptr},
+  {"concise",         'C', "Eliminate metrics that can be inferred from other values", "T",     &cl.concise,         nullptr, nullptr},
+  {"incremental",     'i', "Incremental log parsing",                                  "T",     &cl.incremental,     nullptr, nullptr},
+  {"statetag",        'S', "Name of the state file to use",                            "S1023", cl.state_tag,        nullptr, nullptr},
+  {"tail",            't', "Parse the last <sec> seconds of log",                      "I",     &cl.tail,            nullptr, nullptr},
+  {"summary",         's', "Only produce the summary",                                 "T",     &cl.summary,         nullptr, nullptr},
+  {"json",            'j', "Produce JSON formatted output",                            "T",     &cl.json,            nullptr, nullptr},
+  {"cgi",             'c', "Produce HTTP headers suitable as a CGI",                   "T",     &cl.cgi,             nullptr, nullptr},
+  {"min_hits",        'm', "Minimum total hits for an Origin",                         "L",     &cl.min_hits,        nullptr, nullptr},
+  {"max_age",         'a', "Max age for log entries to be considered",                 "I",     &cl.max_age,         nullptr, nullptr},
+  {"line_len",        'l', "Output line length",                                       "I",     &cl.line_len,        nullptr, nullptr},
+  {"debug_tags",      'T', "Colon-Separated Debug Tags",                               "S1023", &error_tags,         nullptr, nullptr},
+  {"report_per_user", 'r', "Report stats per user instead of host",                    "T",     &cl.report_per_user, nullptr, nullptr},
+  {"no_format_check", 'n', "Don't validate the log format field names",                "T",     &cl.no_format_check, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
-  RUNROOT_ARGUMENT_DESCRIPTION()};
+  RUNROOT_ARGUMENT_DESCRIPTION()
+};
 
 static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-binshv]";
 
@@ -1308,8 +1309,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
     while ((field = fieldlist->next(field))) {
       switch (state) {
       case P_STATE_ELAPSED:
-        state   = P_STATE_IP;
-        elapsed = *((int64_t *)(read_from));
+        state     = P_STATE_IP;
+        elapsed   = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1331,8 +1332,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         break;
 
       case P_STATE_RESULT:
-        state  = P_STATE_CODE;
-        result = *((int64_t *)(read_from));
+        state     = P_STATE_CODE;
+        result    = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((result < 32) || (result > 255)) {
           flag  = 1;
@@ -1353,8 +1354,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
       case P_STATE_SIZE:
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
-        state = P_STATE_METHOD;
-        size  = *((int64_t *)(read_from));
+        state     = P_STATE_METHOD;
+        size      = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1365,19 +1366,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         // Small optimization for common (3-4 char) cases
         switch (*reinterpret_cast<int *>(read_from)) {
         case GET_AS_INT:
-          method = METHOD_GET;
+          method    = METHOD_GET;
           read_from += LogAccess::round_strlen(3 + 1);
           break;
         case PUT_AS_INT:
-          method = METHOD_PUT;
+          method    = METHOD_PUT;
           read_from += LogAccess::round_strlen(3 + 1);
           break;
         case HEAD_AS_INT:
-          method = METHOD_HEAD;
+          method    = METHOD_HEAD;
           read_from += LogAccess::round_strlen(4 + 1);
           break;
         case POST_AS_INT:
-          method = METHOD_POST;
+          method    = METHOD_POST;
           read_from += LogAccess::round_strlen(4 + 1);
           break;
         default:
@@ -1418,12 +1419,12 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           if (HTTP_AS_INT == *reinterpret_cast<int *>(tok)) {
             tok += 4;
             if (':' == *tok) {
-              scheme = SCHEME_HTTP;
-              tok += 3;
+              scheme  = SCHEME_HTTP;
+              tok     += 3;
               tok_len = strlen(tok) + 7;
             } else if ('s' == *tok) {
-              scheme = SCHEME_HTTPS;
-              tok += 4;
+              scheme  = SCHEME_HTTPS;
+              tok     += 4;
               tok_len = strlen(tok) + 8;
             } else {
               tok_len = strlen(tok) + 4;
@@ -1744,7 +1745,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           }
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
-        flag = 0; // We exited this state without errors
+        flag      = 0; // We exited this state without errors
         break;
 
       case P_STATE_END:

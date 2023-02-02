@@ -206,6 +206,6 @@ struct OneWayTunnel : public Continuation {
   bool free_vcs             = true;
 
   // noncopyable
-  OneWayTunnel(const OneWayTunnel &) = delete;
+  OneWayTunnel(const OneWayTunnel &)            = delete;
   OneWayTunnel &operator=(const OneWayTunnel &) = delete;
 };

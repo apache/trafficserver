@@ -90,16 +90,16 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   if (record->data_type == RECD_STRING) {
     if (record->data.rec_string) {
       rec_data_str_len = strlen(record->data.rec_string) + 1;
-      msg_ele_size += rec_data_str_len;
+      msg_ele_size     += rec_data_str_len;
     }
     if (record->data_default.rec_string) {
       rec_data_def_str_len = strlen(record->data_default.rec_string) + 1;
-      msg_ele_size += rec_data_def_str_len;
+      msg_ele_size         += rec_data_def_str_len;
     }
   }
   if (REC_TYPE_IS_CONFIG(record->rec_type) && (record->config_meta.check_expr)) {
     rec_cfg_chk_len = strlen(record->config_meta.check_expr) + 1;
-    msg_ele_size += rec_cfg_chk_len;
+    msg_ele_size    += rec_cfg_chk_len;
   }
   // XXX: this is NOT 8 byte alignment
   // msg_ele_size = 5;
@@ -131,19 +131,19 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_name_len);
     memcpy(p, record->name, rec_name_len);
     r->name = (char *)((uintptr_t)p - (uintptr_t)r);
-    p += rec_name_len;
+    p       += rec_name_len;
   }
   if (rec_data_str_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_str_len);
     memcpy(p, record->data.rec_string, rec_data_str_len);
     r->data.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
-    p += rec_data_str_len;
+    p                  += rec_data_str_len;
   }
   if (rec_data_def_str_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_def_str_len);
     memcpy(p, record->data_default.rec_string, rec_data_def_str_len);
     r->data_default.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
-    p += rec_data_def_str_len;
+    p                          += rec_data_def_str_len;
   }
   if (rec_cfg_chk_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_cfg_chk_len);
@@ -190,8 +190,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
       return REC_ERR_FAIL;
     }
     itr->ele_hdr = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
-    itr->next += 1;
-    eh = itr->ele_hdr;
+    itr->next    += 1;
+    eh           = itr->ele_hdr;
   }
 
   ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);

@@ -71,7 +71,8 @@ const MgmtConverter OutboundConnTrack::MATCH_CONV{
   }};
 
 const std::array<std::string_view, static_cast<int>(OutboundConnTrack::MATCH_BOTH) + 1> OutboundConnTrack::MATCH_TYPE_NAME{
-  {"ip"sv, "port"sv, "host"sv, "both"sv}};
+  {"ip"sv, "port"sv, "host"sv, "both"sv}
+};
 
 // Make sure the clock is millisecond resolution or finer.
 static_assert(OutboundConnTrack::Group::Clock::period::num == 1);

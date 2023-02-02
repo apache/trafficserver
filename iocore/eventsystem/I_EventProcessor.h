@@ -247,7 +247,7 @@ public:
 
   EventProcessor();
   ~EventProcessor() override;
-  EventProcessor(const EventProcessor &) = delete;
+  EventProcessor(const EventProcessor &)            = delete;
   EventProcessor &operator=(const EventProcessor &) = delete;
 
   /**

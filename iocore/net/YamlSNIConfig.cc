@@ -117,10 +117,18 @@ YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
 
 VerifyClient::~VerifyClient() {}
 
-TsEnumDescriptor LEVEL_DESCRIPTOR         = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
-TsEnumDescriptor POLICY_DESCRIPTOR        = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
-TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
-TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
+TsEnumDescriptor LEVEL_DESCRIPTOR = {
+  {{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}
+};
+TsEnumDescriptor POLICY_DESCRIPTOR = {
+  {{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}
+};
+TsEnumDescriptor PROPERTIES_DESCRIPTOR = {
+  {{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}
+};
+TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {
+  {{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}
+};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_client,

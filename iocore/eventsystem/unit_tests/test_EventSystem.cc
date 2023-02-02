@@ -32,7 +32,7 @@
 #include "diags.i"
 
 #define TEST_TIME_SECOND 60
-#define TEST_THREADS 2
+#define TEST_THREADS     2
 
 TEST_CASE("EventSystem", "[iocore]")
 {

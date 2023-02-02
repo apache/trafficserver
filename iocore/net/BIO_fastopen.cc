@@ -181,18 +181,20 @@ fastopen_ctrl(BIO *bio, int cmd, long larg, void *ptr)
 }
 
 #ifndef HAVE_BIO_METH_NEW
-static const BIO_METHOD fastopen_methods[] = {{
-  .type          = BIO_TYPE_SOCKET,
-  .name          = "fastopen",
-  .bwrite        = fastopen_bwrite,
-  .bread         = fastopen_bread,
-  .bputs         = nullptr,
-  .bgets         = nullptr,
-  .ctrl          = fastopen_ctrl,
-  .create        = fastopen_create,
-  .destroy       = fastopen_destroy,
-  .callback_ctrl = nullptr,
-}};
+static const BIO_METHOD fastopen_methods[] = {
+  {
+   .type          = BIO_TYPE_SOCKET,
+   .name          = "fastopen",
+   .bwrite        = fastopen_bwrite,
+   .bread         = fastopen_bread,
+   .bputs         = nullptr,
+   .bgets         = nullptr,
+   .ctrl          = fastopen_ctrl,
+   .create        = fastopen_create,
+   .destroy       = fastopen_destroy,
+   .callback_ctrl = nullptr,
+   }
+};
 #else
 static const BIO_METHOD *fastopen_methods = [] {
   BIO_METHOD *methods = BIO_meth_new(BIO_TYPE_SOCKET, "fastopen");

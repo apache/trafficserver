@@ -310,7 +310,7 @@ QUICAckFrameManager::QUICAckFrameCreator::_create_ack_frame(uint8_t *buf)
     } else {
       uint64_t delay = this->_calculate_delay();
       ack_frame      = QUICFrameFactory::create_ack_frame(buf, largest_ack_number, delay, length - 1,
-                                                     this->_ack_manager->issue_frame_id(), this->_ack_manager);
+                                                          this->_ack_manager->issue_frame_id(), this->_ack_manager);
     }
 
     gap             = last_ack_number - pn;

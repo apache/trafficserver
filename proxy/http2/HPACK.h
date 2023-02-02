@@ -115,7 +115,7 @@ public:
   ~HpackDynamicTable();
 
   // noncopyable
-  HpackDynamicTable(HpackDynamicTable &) = delete;
+  HpackDynamicTable(HpackDynamicTable &)                  = delete;
   HpackDynamicTable &operator=(const HpackDynamicTable &) = delete;
 
   const MIMEField *get_header_field(uint32_t index) const;
@@ -148,7 +148,7 @@ public:
   ~HpackIndexingTable() {}
 
   // noncopyable
-  HpackIndexingTable(HpackIndexingTable &) = delete;
+  HpackIndexingTable(HpackIndexingTable &)                  = delete;
   HpackIndexingTable &operator=(const HpackIndexingTable &) = delete;
 
   HpackLookupResult lookup(const HpackHeaderField &header) const;

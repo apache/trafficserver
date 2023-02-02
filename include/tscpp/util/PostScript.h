@@ -54,7 +54,7 @@ public:
   }
 
   // No copying or moving.
-  PostScript(const PostScript &) = delete;
+  PostScript(const PostScript &)            = delete;
   PostScript &operator=(const PostScript &) = delete;
 
 private:

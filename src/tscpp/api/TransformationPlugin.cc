@@ -364,7 +364,7 @@ TransformationPlugin::doProduce(std::string_view data)
   }
 
   // Finally we can copy this data into the output_buffer
-  int64_t bytes_written = TSIOBufferWrite(state_->output_buffer_, data.data(), write_length);
+  int64_t bytes_written  = TSIOBufferWrite(state_->output_buffer_, data.data(), write_length);
   state_->bytes_written_ += bytes_written; // So we can set BytesDone on outputComplete().
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p write to TSIOBuffer %" PRId64 " bytes total bytes written %" PRId64, this,
             state_->txn_, bytes_written, state_->bytes_written_);

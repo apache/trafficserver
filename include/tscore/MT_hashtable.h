@@ -31,9 +31,9 @@
  ****************************************************************************/
 #pragma once
 
-#define MT_HASHTABLE_PARTITION_BITS 6
-#define MT_HASHTABLE_PARTITIONS (1 << MT_HASHTABLE_PARTITION_BITS)
-#define MT_HASHTABLE_PARTITION_MASK (MT_HASHTABLE_PARTITIONS - 1)
+#define MT_HASHTABLE_PARTITION_BITS    6
+#define MT_HASHTABLE_PARTITIONS        (1 << MT_HASHTABLE_PARTITION_BITS)
+#define MT_HASHTABLE_PARTITION_MASK    (MT_HASHTABLE_PARTITIONS - 1)
 #define MT_HASHTABLE_MAX_CHAIN_AVG_LEN 4
 template <class key_t, class data_t> struct HashTableEntry {
   key_t key;

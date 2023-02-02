@@ -257,9 +257,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char *id                             = argv[0]; /* The ID is default to the "from" URL, so save it */
   PurgeInstance *purge                 = TSmalloc(sizeof(PurgeInstance));
   static const struct option longopt[] = {
-    {(char *)"id", required_argument, NULL, 'i'},     {(char *)"secret", required_argument, NULL, 's'},
-    {(char *)"header", required_argument, NULL, 'h'}, {(char *)"state-file", required_argument, NULL, 'f'},
-    {(char *)"allow-get", no_argument, NULL, 'a'},    {NULL, no_argument, NULL, '\0'},
+    {(char *)"id",         required_argument, NULL, 'i' },
+    {(char *)"secret",     required_argument, NULL, 's' },
+    {(char *)"header",     required_argument, NULL, 'h' },
+    {(char *)"state-file", required_argument, NULL, 'f' },
+    {(char *)"allow-get",  no_argument,       NULL, 'a' },
+    {NULL,                 no_argument,       NULL, '\0'},
   };
 
   memset(purge, 0, sizeof(PurgeInstance));

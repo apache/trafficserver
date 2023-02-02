@@ -66,8 +66,8 @@ enum {
 };
 
 struct HdrHeapObjImpl {
-  uint32_t m_type : 8;
-  uint32_t m_length : 20;
+  uint32_t m_type      : 8;
+  uint32_t m_length    : 20;
   uint32_t m_obj_flags : 4;
 };
 
@@ -472,7 +472,7 @@ public:
 
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!
-  HdrHeapSDKHandle(const HdrHeapSDKHandle &r) = delete;
+  HdrHeapSDKHandle(const HdrHeapSDKHandle &r)            = delete;
   HdrHeapSDKHandle &operator=(const HdrHeapSDKHandle &r) = delete;
 };
 

@@ -73,11 +73,11 @@ public:
     bool upper{true};
     for (; *in; ++in) {
       if (islower(*in)) {
-        s += upper ? toupper(*in) : *in;
+        s     += upper ? toupper(*in) : *in;
         upper = !upper;
 
       } else if (isupper(*in)) {
-        s += upper ? *in : tolower(*in);
+        s     += upper ? *in : tolower(*in);
         upper = !upper;
 
       } else {

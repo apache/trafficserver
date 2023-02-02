@@ -118,9 +118,9 @@ QUICNewRenoCongestionController::_congestion_event(ink_hrtime sent_time)
   // start of the previous congestion recovery period.
   if (!this->_in_congestion_recovery(sent_time)) {
     this->_congestion_recovery_start_time = Thread::get_hrtime();
-    this->_congestion_window *= this->_k_loss_reduction_factor;
-    this->_congestion_window = std::max(this->_congestion_window, this->_k_minimum_window);
-    this->_ssthresh          = this->_congestion_window;
+    this->_congestion_window              *= this->_k_loss_reduction_factor;
+    this->_congestion_window              = std::max(this->_congestion_window, this->_k_minimum_window);
+    this->_ssthresh                       = this->_congestion_window;
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::RECOVERY);
     this->_context.trigger(QUICContext::CallbackEvent::METRICS_UPDATE, this->_congestion_window, this->_bytes_in_flight,
                            this->_ssthresh);

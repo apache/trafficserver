@@ -62,7 +62,7 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
 
     // Update some ruleset state based on this new condition
     _last |= c->last();
-    _ids = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
+    _ids  = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
 
     return true;
   }

@@ -35,7 +35,7 @@
 #include <deque>
 
 #define PLUGIN_NAME "ssl-preaccept"
-#define PCP "[" PLUGIN_NAME "] "
+#define PCP         "[" PLUGIN_NAME "] "
 
 namespace
 {

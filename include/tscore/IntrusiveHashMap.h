@@ -302,14 +302,15 @@ protected:
   size_t _expansion_limit{DEFAULT_EXPANSION_LIMIT};            ///< Limit value for expansion.
 
   // noncopyable
-  IntrusiveHashMap(const IntrusiveHashMap &) = delete;
+  IntrusiveHashMap(const IntrusiveHashMap &)            = delete;
   IntrusiveHashMap &operator=(const IntrusiveHashMap &) = delete;
 
   // Hash table size prime list.
-  static constexpr std::array<size_t, 29> PRIME = {{1,        3,        7,         13,        31,       61,      127,     251,
-                                                    509,      1021,     2039,      4093,      8191,     16381,   32749,   65521,
-                                                    131071,   262139,   524287,    1048573,   2097143,  4194301, 8388593, 16777213,
-                                                    33554393, 67108859, 134217689, 268435399, 536870909}};
+  static constexpr std::array<size_t, 29> PRIME = {
+    {1, 3, 7, 13, 31, 61, 127, 251, 509, 1021,
+     2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139, 524287, 1048573,
+     2097143, 4194301, 8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909}
+  };
 };
 
 template <typename H>

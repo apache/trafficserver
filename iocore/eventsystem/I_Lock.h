@@ -27,7 +27,7 @@
 #include "tscore/Diags.h"
 #include "I_Thread.h"
 
-#define MAX_LOCK_TIME HRTIME_MSECONDS(200)
+#define MAX_LOCK_TIME               HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
 
 /*------------------------------------------------------*\
@@ -111,10 +111,10 @@
 #endif
 
 #ifdef DEBUG
-#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
+#define MUTEX_TAKE_LOCK(_m, _t)         Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
 #define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(MakeSourceLocation(), nullptr, _m, _t)
 #else
-#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(_m, _t)
+#define MUTEX_TAKE_LOCK(_m, _t)         Mutex_lock(_m, _t)
 #define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(_m, _t)
 #endif // DEBUG
 

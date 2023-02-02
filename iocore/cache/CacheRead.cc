@@ -777,7 +777,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   b->_buf_end = b->_end;
   vio.buffer.writer()->append_block(b);
   vio.ndone += bytes;
-  doc_pos += bytes;
+  doc_pos   += bytes;
   if (vio.ntodo() <= 0) {
     return calluser(VC_EVENT_READ_COMPLETE);
   } else {
@@ -1137,9 +1137,10 @@ CacheVC::openReadStartHead(int event, Event *e)
                "first alt=%d[%s]",
                key.slice32(0), uml, doc->hlen, doc->len, sizeof(Doc), doc->v_major, doc->v_minor, vector.count(), alt_length,
                alt->m_magic,
-               (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ?
-                  "alive" :
-                  CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial" : CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead" : "bogus"));
+               (CACHE_ALT_MAGIC_ALIVE == alt->m_magic     ? "alive" :
+                CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial" :
+                CACHE_ALT_MAGIC_DEAD == alt->m_magic      ? "dead" :
+                                                            "bogus"));
           dir_delete(&key, vol, &dir);
         }
         err = ECACHE_BAD_META_DATA;

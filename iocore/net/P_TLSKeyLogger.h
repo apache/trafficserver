@@ -34,7 +34,7 @@
 class TLSKeyLogger
 {
 public:
-  TLSKeyLogger(const TLSKeyLogger &) = delete;
+  TLSKeyLogger(const TLSKeyLogger &)            = delete;
   TLSKeyLogger &operator=(const TLSKeyLogger &) = delete;
 
   ~TLSKeyLogger()

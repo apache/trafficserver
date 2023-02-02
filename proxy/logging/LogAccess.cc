@@ -34,7 +34,7 @@ extern AppVersionInfo appVersionInfo;
 
 char INVALID_STR[] = "!INVALID_STR!";
 
-#define HIDDEN_CONTENT_TYPE "@Content-Type"
+#define HIDDEN_CONTENT_TYPE     "@Content-Type"
 #define HIDDEN_CONTENT_TYPE_LEN 13
 
 // should be at least 22 bytes to always accommodate a converted
@@ -207,8 +207,8 @@ LogAccess::marshal_record(char *record, char *buf)
 
 #define LOG_INTEGER RECD_INT
 #define LOG_COUNTER RECD_COUNTER
-#define LOG_FLOAT RECD_FLOAT
-#define LOG_STRING RECD_STRING
+#define LOG_FLOAT   RECD_FLOAT
+#define LOG_STRING  RECD_STRING
 
   RecDataT stype = RECD_NULL;
   bool found     = false;
@@ -456,7 +456,7 @@ LogAccess::unmarshal_int(char **buf)
   int64_t val;
 
   // TODO: this used to do nthol, do we need to worry? TS-1156.
-  val = *(reinterpret_cast<int64_t *>(*buf));
+  val  = *(reinterpret_cast<int64_t *>(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -497,7 +497,7 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
 
   do {
     *p-- = '0' + (val % 10);
-    val /= 10;
+    val  /= 10;
   } while (val);
 
   while (dest - p < field_width) {
@@ -530,7 +530,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
 
   for (int i = 0; i < static_cast<int>(sizeof(int64_t) * 2); i++) {
     *p-- = table[val & 0xf];
-    val >>= 4;
+    val  >>= 4;
   }
   while (dest - p < field_width) {
     *p-- = leading_char;
@@ -898,7 +898,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   if (res1 < 0) {
     return -1;
   }
-  p += res1;
+  p        += res1;
   *p++     = '.';
   int res2 = unmarshal_int_to_str(buf, p, 128 - http_len - res1 - 1);
   if (res2 < 0) {
@@ -934,13 +934,13 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice,
   if (res1 < 0) {
     return -1;
   }
-  p += res1;
+  p        += res1;
   *p++     = ' ';
   int res2 = unmarshal_str(buf, p, len - res1 - 1, slice, escape_type);
   if (res2 < 0) {
     return -1;
   }
-  p += res2;
+  p        += res2;
   *p++     = ' ';
   int res3 = unmarshal_http_version(buf, p, len - res1 - res2 - 2);
   if (res3 < 0) {
@@ -1000,7 +1000,7 @@ LogAccess::unmarshal_ip(char **buf, IpEndpoint *dest)
   } else {
     ats_ip_invalidate(dest);
   }
-  len = INK_ALIGN_DEFAULT(len);
+  len  = INK_ALIGN_DEFAULT(len);
   *buf += len;
   return len;
 }
@@ -1149,7 +1149,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
 
   char *val_buf = *buf;
   int val_len   = static_cast<int>(::strlen(val_buf));
-  *buf += MARSHAL_RECORD_LENGTH; // this is how it was stored
+  *buf          += MARSHAL_RECORD_LENGTH; // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
     return val_len;
@@ -1606,7 +1606,7 @@ LogAccess::validate_unmapped_url_path()
 
       if (c && (len = static_cast<int>(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
-          len += 3; // Skip "://"
+          len                                += 3; // Skip "://"
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
@@ -1657,10 +1657,10 @@ LogAccess::marshal_client_req_text(char *buf)
 
   if (buf) {
     int offset = 0;
-    offset += marshal_client_req_http_method(&buf[offset]);
-    offset += marshal_client_req_url(&buf[offset]);
-    offset += marshal_client_req_http_version(&buf[offset]);
-    len = offset;
+    offset     += marshal_client_req_http_method(&buf[offset]);
+    offset     += marshal_client_req_url(&buf[offset]);
+    offset     += marshal_client_req_http_version(&buf[offset]);
+    len        = offset;
   }
   return len;
 }
@@ -3012,7 +3012,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
           buf += actual_len;
         }
         running_len += actual_len;
-        fld = fld->m_next_dup;
+        fld         = fld->m_next_dup;
 
         // Dups need to be comma separated.  So if there's another
         // dup, then add a comma and a space ...
@@ -3034,7 +3034,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
         buf++;
       }
       running_len += 1;
-      padded_len = round_strlen(running_len);
+      padded_len  = round_strlen(running_len);
 
 // Note: marshal_string fills the padding to
 //  prevent purify UMRs so we do it here too
@@ -3114,7 +3114,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
           buf += new_len;
         }
         running_len += new_len;
-        fld = fld->m_next_dup;
+        fld         = fld->m_next_dup;
 
         // Dups need to be comma separated.  So if there's another
         // dup, then add a comma and an escapified space ...
@@ -3137,7 +3137,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
         buf++;
       }
       running_len += 1;
-      padded_len = round_strlen(running_len);
+      padded_len  = round_strlen(running_len);
 
 // Note: marshal_string fills the padding to
 //  prevent purify UMRs so we do it here too

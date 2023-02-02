@@ -27,7 +27,7 @@
 
 #include <termios.h>
 
-#define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
+#define STATE_VIO_OFFSET   ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
 // Global
@@ -243,7 +243,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
             a = togo;
           }
           tiovec[niov].iov_len = a;
-          rattempted += a;
+          rattempted           += a;
           niov++;
           if (a >= togo) {
             break;
@@ -691,7 +691,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
     read.vio.cont   = nullptr;
-    f.shutdown |= NetEvent::SHUTDOWN_READ;
+    f.shutdown      |= NetEvent::SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
     SocketManager::shutdown((this)->con.fd, 1);
@@ -699,7 +699,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
     write.vio.cont   = nullptr;
-    f.shutdown |= NetEvent::SHUTDOWN_WRITE;
+    f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
     SocketManager::shutdown((this)->con.fd, 2);

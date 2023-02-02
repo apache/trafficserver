@@ -42,7 +42,7 @@ inline void
 append(string &out, T data)
 {
   for (unsigned int i = 0; i < sizeof(data); ++i) {
-    out += static_cast<char>(data & 0xff);
+    out  += static_cast<char>(data & 0xff);
     data = data >> 8;
   }
 }
@@ -102,7 +102,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
 
       return false;
     }
-    _crc = crc32(_crc, reinterpret_cast<const Bytef *>(data), data_len);
+    _crc               = crc32(_crc, reinterpret_cast<const Bytef *>(data), data_len);
     _total_data_length += data_len;
   }
   _downstream_length += cdata.size() - initial_cdata_size;
@@ -148,7 +148,7 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   append(cdata, static_cast<uint32_t>(_crc));
   append(cdata, static_cast<int32_t>(_total_data_length));
   _downstream_length += cdata.size() - initial_cdata_size;
-  downstream_length = _downstream_length;
+  downstream_length  = _downstream_length;
   return true;
 }
 

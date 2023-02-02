@@ -291,4 +291,4 @@ private:
 /* Define user friendly names for supported hash functions and cryptographic signature schemes */
 #define WDN_HASH_SHA256 "HMAC-SHA-256"
 #define WDN_HASH_SHA512 "HMAC-SHA-512"
-#define WDN_RSA_PSS "RSA_PSS"
+#define WDN_RSA_PSS     "RSA_PSS"

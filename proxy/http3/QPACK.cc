@@ -27,110 +27,111 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 
-#define QPACKDebug(fmt, ...) Debug("qpack", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define QPACKDebug(fmt, ...)   Debug("qpack", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 #define QPACKDTDebug(fmt, ...) Debug("qpack", "" fmt, ##__VA_ARGS__)
 
 // qpack-05 Appendix A.
 const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {
-  {":authority", ""},
-  {":path", "/"},
-  {"age", "0"},
-  {"content-disposition", ""},
-  {"content-length", "0"},
-  {"cookie", ""},
-  {"date", ""},
-  {"etag", ""},
-  {"if-modified-since", ""},
-  {"if-none-match", ""},
-  {"last-modified", ""},
-  {"link", ""},
-  {"location", ""},
-  {"referer", ""},
-  {"set-cookie", ""},
-  {":method", "CONNECT"},
-  {":method", "DELETE"},
-  {":method", "GET"},
-  {":method", "HEAD"},
-  {":method", "OPTIONS"},
-  {":method", "POST"},
-  {":method", "PUT"},
-  {":scheme", "http"},
-  {":scheme", "https"},
-  {":status", "103"},
-  {":status", "200"},
-  {":status", "304"},
-  {":status", "404"},
-  {":status", "503"},
-  {"accept", "*/*"},
-  {"accept", "application/dns-message"},
-  {"accept-encoding", "gzip, deflate, br"},
-  {"accept-ranges", "bytes"},
-  {"access-control-allow-headers", "cache-control"},
-  {"access-control-allow-headers", "content-type"},
-  {"access-control-allow-origin", "*"},
-  {"cache-control", "max-age=0"},
-  {"cache-control", "max-age=2592000"},
-  {"cache-control", "max-age=604800"},
-  {"cache-control", "no-cache"},
-  {"cache-control", "no-store"},
-  {"cache-control", "public, max-age=31536000"},
-  {"content-encoding", "br"},
-  {"content-encoding", "gzip"},
-  {"content-type", "application/dns-message"},
-  {"content-type", "application/javascript"},
-  {"content-type", "application/json"},
-  {"content-type", "application/x-www-form-urlencoded"},
-  {"content-type", "image/gif"},
-  {"content-type", "image/jpeg"},
-  {"content-type", "image/png"},
-  {"content-type", "text/css"},
-  {"content-type", "text/html; charset=utf-8"},
-  {"content-type", "text/plain"},
-  {"content-type", "text/plain;charset=utf-8"},
-  {"range", "bytes=0-"},
-  {"strict-transport-security", "max-age=31536000"},
-  {"strict-transport-security", "max-age=31536000; includesubdomains"},
-  {"strict-transport-security", "max-age=31536000; includesubdomains; preload"},
-  {"vary", "accept-encoding"},
-  {"vary", "origin"},
-  {"x-content-type-options", "nosniff"},
-  {"x-xss-protection", "1; mode=block"},
-  {":status", "100"},
-  {":status", "204"},
-  {":status", "206"},
-  {":status", "302"},
-  {":status", "400"},
-  {":status", "403"},
-  {":status", "421"},
-  {":status", "425"},
-  {":status", "500"},
-  {"accept-language", ""},
-  {"access-control-allow-credentials", "FALSE"},
-  {"access-control-allow-credentials", "TRUE"},
-  {"access-control-allow-headers", "*"},
-  {"access-control-allow-methods", "get"},
-  {"access-control-allow-methods", "get, post, options"},
-  {"access-control-allow-methods", "options"},
-  {"access-control-expose-headers", "content-length"},
-  {"access-control-request-headers", "content-type"},
-  {"access-control-request-method", "get"},
-  {"access-control-request-method", "post"},
-  {"alt-svc", "clear"},
-  {"authorization", ""},
-  {"content-security-policy", "script-src 'none'; object-src 'none'; base-uri 'none'"},
-  {"early-data", "1"},
-  {"expect-ct", ""},
-  {"forwarded", ""},
-  {"if-range", ""},
-  {"origin", ""},
-  {"purpose", "prefetch"},
-  {"server", ""},
-  {"timing-allow-origin", "*"},
-  {"upgrade-insecure-requests", "1"},
-  {"user-agent", ""},
-  {"x-forwarded-for", ""},
-  {"x-frame-options", "deny"},
-  {"x-frame-options", "sameorigin"}};
+  {":authority",                       ""                                                     },
+  {":path",                            "/"                                                    },
+  {"age",                              "0"                                                    },
+  {"content-disposition",              ""                                                     },
+  {"content-length",                   "0"                                                    },
+  {"cookie",                           ""                                                     },
+  {"date",                             ""                                                     },
+  {"etag",                             ""                                                     },
+  {"if-modified-since",                ""                                                     },
+  {"if-none-match",                    ""                                                     },
+  {"last-modified",                    ""                                                     },
+  {"link",                             ""                                                     },
+  {"location",                         ""                                                     },
+  {"referer",                          ""                                                     },
+  {"set-cookie",                       ""                                                     },
+  {":method",                          "CONNECT"                                              },
+  {":method",                          "DELETE"                                               },
+  {":method",                          "GET"                                                  },
+  {":method",                          "HEAD"                                                 },
+  {":method",                          "OPTIONS"                                              },
+  {":method",                          "POST"                                                 },
+  {":method",                          "PUT"                                                  },
+  {":scheme",                          "http"                                                 },
+  {":scheme",                          "https"                                                },
+  {":status",                          "103"                                                  },
+  {":status",                          "200"                                                  },
+  {":status",                          "304"                                                  },
+  {":status",                          "404"                                                  },
+  {":status",                          "503"                                                  },
+  {"accept",                           "*/*"                                                  },
+  {"accept",                           "application/dns-message"                              },
+  {"accept-encoding",                  "gzip, deflate, br"                                    },
+  {"accept-ranges",                    "bytes"                                                },
+  {"access-control-allow-headers",     "cache-control"                                        },
+  {"access-control-allow-headers",     "content-type"                                         },
+  {"access-control-allow-origin",      "*"                                                    },
+  {"cache-control",                    "max-age=0"                                            },
+  {"cache-control",                    "max-age=2592000"                                      },
+  {"cache-control",                    "max-age=604800"                                       },
+  {"cache-control",                    "no-cache"                                             },
+  {"cache-control",                    "no-store"                                             },
+  {"cache-control",                    "public, max-age=31536000"                             },
+  {"content-encoding",                 "br"                                                   },
+  {"content-encoding",                 "gzip"                                                 },
+  {"content-type",                     "application/dns-message"                              },
+  {"content-type",                     "application/javascript"                               },
+  {"content-type",                     "application/json"                                     },
+  {"content-type",                     "application/x-www-form-urlencoded"                    },
+  {"content-type",                     "image/gif"                                            },
+  {"content-type",                     "image/jpeg"                                           },
+  {"content-type",                     "image/png"                                            },
+  {"content-type",                     "text/css"                                             },
+  {"content-type",                     "text/html; charset=utf-8"                             },
+  {"content-type",                     "text/plain"                                           },
+  {"content-type",                     "text/plain;charset=utf-8"                             },
+  {"range",                            "bytes=0-"                                             },
+  {"strict-transport-security",        "max-age=31536000"                                     },
+  {"strict-transport-security",        "max-age=31536000; includesubdomains"                  },
+  {"strict-transport-security",        "max-age=31536000; includesubdomains; preload"         },
+  {"vary",                             "accept-encoding"                                      },
+  {"vary",                             "origin"                                               },
+  {"x-content-type-options",           "nosniff"                                              },
+  {"x-xss-protection",                 "1; mode=block"                                        },
+  {":status",                          "100"                                                  },
+  {":status",                          "204"                                                  },
+  {":status",                          "206"                                                  },
+  {":status",                          "302"                                                  },
+  {":status",                          "400"                                                  },
+  {":status",                          "403"                                                  },
+  {":status",                          "421"                                                  },
+  {":status",                          "425"                                                  },
+  {":status",                          "500"                                                  },
+  {"accept-language",                  ""                                                     },
+  {"access-control-allow-credentials", "FALSE"                                                },
+  {"access-control-allow-credentials", "TRUE"                                                 },
+  {"access-control-allow-headers",     "*"                                                    },
+  {"access-control-allow-methods",     "get"                                                  },
+  {"access-control-allow-methods",     "get, post, options"                                   },
+  {"access-control-allow-methods",     "options"                                              },
+  {"access-control-expose-headers",    "content-length"                                       },
+  {"access-control-request-headers",   "content-type"                                         },
+  {"access-control-request-method",    "get"                                                  },
+  {"access-control-request-method",    "post"                                                 },
+  {"alt-svc",                          "clear"                                                },
+  {"authorization",                    ""                                                     },
+  {"content-security-policy",          "script-src 'none'; object-src 'none'; base-uri 'none'"},
+  {"early-data",                       "1"                                                    },
+  {"expect-ct",                        ""                                                     },
+  {"forwarded",                        ""                                                     },
+  {"if-range",                         ""                                                     },
+  {"origin",                           ""                                                     },
+  {"purpose",                          "prefetch"                                             },
+  {"server",                           ""                                                     },
+  {"timing-allow-origin",              "*"                                                    },
+  {"upgrade-insecure-requests",        "1"                                                    },
+  {"user-agent",                       ""                                                     },
+  {"x-forwarded-for",                  ""                                                     },
+  {"x-frame-options",                  "deny"                                                 },
+  {"x-frame-options",                  "sameorigin"                                           }
+};
 
 QPACK::QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_table_size, uint16_t max_blocking_streams)
   : QUICApplication(qc),
@@ -322,7 +323,7 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
   prefix->end()[0] = 0x0;
   if (base_index < largest_reference) {
     prefix->end()[0] |= 0x80;
-    delta = largest_reference - base_index;
+    delta            = largest_reference - base_index;
   } else {
     delta = base_index - largest_reference;
   }
@@ -890,7 +891,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  pos += ret;
+  pos                        += ret;
   uint16_t largest_reference = tmp;
 
   uint64_t delta_base_index;
@@ -1348,7 +1349,7 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
       break;
     }
     available += this->_entries[tail].name_len + this->_entries[tail].value_len;
-    tail = (tail + 1) % this->_max_entries;
+    tail      = (tail + 1) % this->_max_entries;
   }
   if (available < required_len) {
     // We can't insert a new entry because some stream(s) refer an entry that need to be evicted
@@ -1368,7 +1369,7 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
   this->_entries_head                 = (this->_entries_head + 1) % this->_max_entries;
   this->_entries[this->_entries_head] = {++this->_entries_inserted, this->_storage->write(name, name_len, value, value_len),
                                          name_len, value_len, 0};
-  this->_available -= required_len;
+  this->_available                    -= required_len;
 
   QPACKDTDebug("Insert Entry: entry=%u, index=%u, size=%u", this->_entries_head, this->_entries_inserted, name_len + value_len);
   QPACKDTDebug("Available size: %u", this->_available);
@@ -1657,7 +1658,7 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  index = tmp;
+  index    = tmp;
   read_len += ret;
 
   // Value
@@ -1665,7 +1666,7 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
     return -1;
   }
   value_len = tmp;
-  read_len += ret;
+  read_len  += ret;
 
   reader.consume(read_len);
 
@@ -1695,7 +1696,7 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
     return -1;
   }
   value_len = tmp;
-  read_len += ret;
+  read_len  += ret;
 
   reader.consume(read_len);
 
@@ -1716,7 +1717,7 @@ QPACK::_read_duplicate(IOBufferReader &reader, uint16_t &index)
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  index = tmp;
+  index    = tmp;
   read_len += ret;
 
   reader.consume(read_len);
@@ -1761,7 +1762,7 @@ QPACK::_read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_co
     return -1;
   }
   insert_count = tmp;
-  read_len += ret;
+  read_len     += ret;
 
   reader.consume(read_len);
 

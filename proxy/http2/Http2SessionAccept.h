@@ -46,7 +46,7 @@ struct Http2SessionAccept : public SessionAccept {
   int mainEvent(int event, void *netvc) override;
 
   // noncopyable
-  Http2SessionAccept(const Http2SessionAccept &) = delete;
+  Http2SessionAccept(const Http2SessionAccept &)            = delete;
   Http2SessionAccept &operator=(const Http2SessionAccept &) = delete;
 
 private:

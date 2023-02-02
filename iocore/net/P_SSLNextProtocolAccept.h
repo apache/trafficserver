@@ -49,7 +49,7 @@ public:
   SSLNextProtocolSet *getProtoSet();
 
   // noncopyable
-  SSLNextProtocolAccept(const SSLNextProtocolAccept &) = delete;            // disabled
+  SSLNextProtocolAccept(const SSLNextProtocolAccept &)            = delete; // disabled
   SSLNextProtocolAccept &operator=(const SSLNextProtocolAccept &) = delete; // disabled
 
 private:

@@ -642,7 +642,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *cp = strstr(query, CIP_QSTRING "=");
   const char *pp = NULL;
   if (cp != NULL) {
-    cp += (strlen(CIP_QSTRING) + 1);
+    cp                        += (strlen(CIP_QSTRING) + 1);
     struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
     if (ip == NULL) {
       TSError("Can't get client ip address.");
@@ -709,7 +709,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // Algorithm
   cp = strstr(query, ALG_QSTRING "=");
   if (cp != NULL) {
-    cp += strlen(ALG_QSTRING) + 1;
+    cp        += strlen(ALG_QSTRING) + 1;
     algorithm = atoi(cp);
     // The check for a valid algorithm is later.
     TSDebug(PLUGIN_NAME, "Algorithm: %d", algorithm);
@@ -720,7 +720,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // Key index
   cp = strstr(query, KIN_QSTRING "=");
   if (cp != NULL) {
-    cp += strlen(KIN_QSTRING) + 1;
+    cp       += strlen(KIN_QSTRING) + 1;
     keyindex = atoi(cp);
     if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
       err_log(url, "Invalid key index");
@@ -735,7 +735,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *parts = NULL;
   cp                = strstr(query, PAR_QSTRING "=");
   if (cp != NULL) {
-    cp += strlen(PAR_QSTRING) + 1;
+    cp    += strlen(PAR_QSTRING) + 1;
     parts = cp; // NOTE parts is not NULL terminated it is terminated by "&" of next param
     has_path_params == false ? (cp = strstr(parts, "&")) : (cp = strstr(parts, ";"));
     if (cp) {
@@ -751,7 +751,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *signature = NULL;
   cp                    = strstr(query, SIG_QSTRING "=");
   if (cp != NULL) {
-    cp += strlen(SIG_QSTRING) + 1;
+    cp        += strlen(SIG_QSTRING) + 1;
     signature = cp;
     if ((algorithm == USIG_HMAC_SHA1 && strlen(signature) < SHA1_SIG_SIZE) ||
         (algorithm == USIG_HMAC_MD5 && strlen(signature) < MD5_SIG_SIZE)) {

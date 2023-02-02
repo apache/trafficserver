@@ -128,7 +128,7 @@ public:
   void
   increment_space_used(int bytes)
   {
-    m_space_used += bytes;
+    m_space_used           += bytes;
     m_partition_space_left -= bytes;
   }
 
@@ -227,6 +227,6 @@ private:
 
   // noncopyable
   // -- member functions not allowed --
-  LogConfig(const LogConfig &) = delete;
+  LogConfig(const LogConfig &)            = delete;
   LogConfig &operator=(const LogConfig &) = delete;
 };

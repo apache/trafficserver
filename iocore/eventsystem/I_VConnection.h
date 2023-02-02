@@ -36,8 +36,8 @@
 // Data Types
 //
 #define VCONNECTION_CACHE_DATA_BASE 0
-#define VCONNECTION_NET_DATA_BASE 100
-#define VCONNECTION_API_DATA_BASE 200
+#define VCONNECTION_NET_DATA_BASE   100
+#define VCONNECTION_API_DATA_BASE   200
 
 //
 // Event signals
@@ -57,7 +57,7 @@
 */
 #define VC_EVENT_WRITE_READY (VC_EVENT_EVENTS_START + 1)
 
-#define VC_EVENT_READ_COMPLETE (VC_EVENT_EVENTS_START + 2)
+#define VC_EVENT_READ_COMPLETE  (VC_EVENT_EVENTS_START + 2)
 #define VC_EVENT_WRITE_COMPLETE (VC_EVENT_EVENTS_START + 3)
 
 /**
@@ -398,7 +398,8 @@ struct DummyVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS
                 "cannot use default implementation");
   }
 
-  void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */) override
+  void
+  do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */) override
   {
     ink_assert(!"VConnection::do_io_shutdown -- "
                 "cannot use default implementation");

@@ -38,8 +38,10 @@ struct test_t {
   std::array<subject_match_t, 4> tests;
 };
 
-std::array<test_t, 2> test_data{{{{"^foo"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, true}, {{"foobarbaz"}, true}}}},
-                                 {{"foo$"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, false}, {{"foobarbaz"}, false}}}}}};
+std::array<test_t, 2> test_data{
+  {{{"^foo"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, true}, {{"foobarbaz"}, true}}}},
+   {{"foo$"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, false}, {{"foobarbaz"}, false}}}}}
+};
 
 TEST_CASE("Regex", "[libts][Regex]")
 {

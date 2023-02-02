@@ -110,7 +110,7 @@ public:
   LINK(LogFilter, link); // so we can create a LogFilterList
 
   // noncopyable
-  LogFilter(const LogFilter &rhs) = delete;
+  LogFilter(const LogFilter &rhs)      = delete;
   LogFilter &operator=(LogFilter &rhs) = delete;
 
 private:
@@ -295,7 +295,7 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogFilterList(const LogFilterList &rhs) = delete;
+  LogFilterList(const LogFilterList &rhs)            = delete;
   LogFilterList &operator=(const LogFilterList &rhs) = delete;
 
 private:
@@ -422,12 +422,12 @@ updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos,
   char buf_dest_to_field[buf_dest_len + 1];
   char *temp_text = buf_dest_to_field;
   memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
-  temp_text += (pattern_str - buf_dest);
+  temp_text             += (pattern_str - buf_dest);
   const char *value_str = strchr(pattern_str, '=');
   if (value_str) {
     value_str++;
     memcpy(temp_text, pattern_str, (value_str - pattern_str));
-    temp_text += (value_str - pattern_str);
+    temp_text                  += (value_str - pattern_str);
     const char *next_param_str = strchr(value_str, '&');
     if (next_param_str) {
       for (int i = 0; i < (next_param_str - value_str); i++) {

@@ -141,7 +141,7 @@ struct RecordLookupRequest : ClientRequest {
   }
   template <typename... Args>
   void
-  emplace_rec(Args &&... p)
+  emplace_rec(Args &&...p)
   {
     super::params.push_back(Params{std::forward<Args>(p)...});
   }

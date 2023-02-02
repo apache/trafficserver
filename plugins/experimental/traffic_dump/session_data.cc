@@ -47,31 +47,35 @@ char const constexpr *const json_closing = "]}]}";
  * A mapping from IP_PROTO_TAG to the string describing the JSON protocol node.
  */
 std::unordered_map<std::string_view, std::string> tag_to_node = {
-  {IP_PROTO_TAG_IPV4, R"("name":"ip","version":"4")"},
-  {IP_PROTO_TAG_IPV6, R"("name":"ip","version":"6")"},
+  {IP_PROTO_TAG_IPV4,      R"("name":"ip","version":"4")"    },
+  {IP_PROTO_TAG_IPV6,      R"("name":"ip","version":"6")"    },
 
-  {IP_PROTO_TAG_TCP, R"("name":"tcp")"},
-  {IP_PROTO_TAG_UDP, R"("name":"udp")"},
+  {IP_PROTO_TAG_TCP,       R"("name":"tcp")"                 },
+  {IP_PROTO_TAG_UDP,       R"("name":"udp")"                 },
 
-  {IP_PROTO_TAG_QUIC, R"("name:":"quic")"},
+  {IP_PROTO_TAG_QUIC,      R"("name:":"quic")"               },
 
-  {IP_PROTO_TAG_TLS_1_0, R"("name":"tls","version":"1.0")"},
-  {IP_PROTO_TAG_TLS_1_1, R"("name":"tls","version":"1.1")"},
-  {IP_PROTO_TAG_TLS_1_2, R"("name":"tls","version":"1.2")"},
-  {IP_PROTO_TAG_TLS_1_3, R"("name":"tls","version":"1.3")"},
+  {IP_PROTO_TAG_TLS_1_0,   R"("name":"tls","version":"1.0")" },
+  {IP_PROTO_TAG_TLS_1_1,   R"("name":"tls","version":"1.1")" },
+  {IP_PROTO_TAG_TLS_1_2,   R"("name":"tls","version":"1.2")" },
+  {IP_PROTO_TAG_TLS_1_3,   R"("name":"tls","version":"1.3")" },
 
-  {IP_PROTO_TAG_HTTP_0_9, R"("name":"http","version":"0.9")"},
-  {IP_PROTO_TAG_HTTP_1_0, R"("name":"http","version":"1.0")"},
-  {IP_PROTO_TAG_HTTP_1_1, R"("name":"http","version":"1.1")"},
-  {IP_PROTO_TAG_HTTP_2_0, R"("name":"http","version":"2")"},
+  {IP_PROTO_TAG_HTTP_0_9,  R"("name":"http","version":"0.9")"},
+  {IP_PROTO_TAG_HTTP_1_0,  R"("name":"http","version":"1.0")"},
+  {IP_PROTO_TAG_HTTP_1_1,  R"("name":"http","version":"1.1")"},
+  {IP_PROTO_TAG_HTTP_2_0,  R"("name":"http","version":"2")"  },
 
   {IP_PROTO_TAG_HTTP_QUIC, R"("name":"http","version":"0.9")"},
-  {IP_PROTO_TAG_HTTP_3, R"("name":"http","version":"3")"},
+  {IP_PROTO_TAG_HTTP_3,    R"("name":"http","version":"3")"  },
 };
 
 std::unordered_map<std::string_view, std::string> http_tag_to_version = {
-  {IP_PROTO_TAG_HTTP_0_9, "0.9"}, {IP_PROTO_TAG_HTTP_1_0, "1.0"},  {IP_PROTO_TAG_HTTP_1_1, "1.1"},
-  {IP_PROTO_TAG_HTTP_2_0, "2"},   {IP_PROTO_TAG_HTTP_QUIC, "0.9"}, {IP_PROTO_TAG_HTTP_3, "3"},
+  {IP_PROTO_TAG_HTTP_0_9,  "0.9"},
+  {IP_PROTO_TAG_HTTP_1_0,  "1.0"},
+  {IP_PROTO_TAG_HTTP_1_1,  "1.1"},
+  {IP_PROTO_TAG_HTTP_2_0,  "2"  },
+  {IP_PROTO_TAG_HTTP_QUIC, "0.9"},
+  {IP_PROTO_TAG_HTTP_3,    "3"  },
 };
 
 /** Create a TLS characteristics node.
@@ -334,7 +338,7 @@ SessionData::write_to_disk_no_lock(std::string_view content)
     if (TS_SUCCESS == TSAIOWrite(log_fd, write_offset, pBuf, content.size(), aio_cont)) {
       // Update offset within file and aio events count
       write_offset += content.size();
-      aio_count += 1;
+      aio_count    += 1;
 
       return TS_SUCCESS;
     }

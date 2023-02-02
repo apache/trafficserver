@@ -267,7 +267,7 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogFieldList(const LogFieldList &rhs) = delete;
+  LogFieldList(const LogFieldList &rhs)            = delete;
   LogFieldList &operator=(const LogFieldList &rhs) = delete;
 
 private:

@@ -953,8 +953,8 @@ FileImpl::fwrite(const void *buf, size_t length)
     memcpy(&m_buf[m_bufpos], p, avail);
 
     m_bufpos += avail;
-    p += avail;
-    length -= avail;
+    p        += avail;
+    length   -= avail;
 
     if ((length > 0) && (m_bufpos > 0)) {
       if (fflush() <= 0) {

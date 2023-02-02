@@ -27,19 +27,19 @@
 
 extern int cache_config_max_disk_errors;
 
-#define DISK_BAD(_x) ((_x)->num_errors >= cache_config_max_disk_errors)
+#define DISK_BAD(_x)           ((_x)->num_errors >= cache_config_max_disk_errors)
 #define DISK_BAD_SIGNALLED(_x) (_x->num_errors > cache_config_max_disk_errors)
-#define SET_DISK_BAD(_x) (_x->num_errors = cache_config_max_disk_errors)
-#define SET_DISK_OKAY(_x) (_x->num_errors = 0)
+#define SET_DISK_BAD(_x)       (_x->num_errors = cache_config_max_disk_errors)
+#define SET_DISK_OKAY(_x)      (_x->num_errors = 0)
 
-#define VOL_BLOCK_SIZE (1024 * 1024 * 128)
-#define MIN_VOL_SIZE VOL_BLOCK_SIZE
-#define ROUND_DOWN_TO_VOL_BLOCK(_x) (((_x) & ~(VOL_BLOCK_SIZE - 1)))
-#define VOL_BLOCK_SHIFT 27
+#define VOL_BLOCK_SIZE                (1024 * 1024 * 128)
+#define MIN_VOL_SIZE                  VOL_BLOCK_SIZE
+#define ROUND_DOWN_TO_VOL_BLOCK(_x)   (((_x) & ~(VOL_BLOCK_SIZE - 1)))
+#define VOL_BLOCK_SHIFT               27
 #define ROUND_DOWN_TO_STORE_BLOCK(_x) (((_x) >> STORE_BLOCK_SHIFT) << STORE_BLOCK_SHIFT)
 
 #define STORE_BLOCKS_PER_VOL (VOL_BLOCK_SIZE / STORE_BLOCK_SIZE)
-#define DISK_HEADER_MAGIC 0xABCD1237
+#define DISK_HEADER_MAGIC    0xABCD1237
 
 /* each disk vol block has a corresponding Vol object */
 struct CacheDisk;

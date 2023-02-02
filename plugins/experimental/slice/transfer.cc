@@ -39,8 +39,8 @@ transfer_content_bytes(Data *const data)
     if (0 < toskip) {
       TSIOBufferReaderConsume(reader, toskip);
       data->m_blockskip -= toskip;
-      avail -= toskip;
-      consumed += toskip;
+      avail             -= toskip;
+      consumed          += toskip;
     }
   }
 
@@ -55,7 +55,7 @@ transfer_content_bytes(Data *const data)
       data->m_bytessent += copied;
       TSIOBufferReaderConsume(reader, copied);
 
-      avail -= copied;
+      avail    -= copied;
       consumed += copied;
     }
   }

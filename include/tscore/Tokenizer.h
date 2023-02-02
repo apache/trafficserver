@@ -103,10 +103,10 @@
 
 #include "tscore/ink_apidefs.h"
 
-#define COPY_TOKS (1u << 0)
-#define SHARE_TOKS (1u << 1)
+#define COPY_TOKS        (1u << 0)
+#define SHARE_TOKS       (1u << 1)
 #define ALLOW_EMPTY_TOKS (1u << 2)
-#define ALLOW_SPACES (1u << 3)
+#define ALLOW_SPACES     (1u << 3)
 
 #define TOK_NODE_ELEMENTS 16
 

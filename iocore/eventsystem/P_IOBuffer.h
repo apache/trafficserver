@@ -94,7 +94,7 @@ iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
     }
 
     IOBufferBlock *new_buf = src->clone();
-    new_buf->_start += offset;
+    new_buf->_start        += offset;
     new_buf->_buf_end = new_buf->_end = new_buf->_start + bytes;
 
     if (!start_buf) {
@@ -105,7 +105,7 @@ iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
       current_buf       = new_buf;
     }
 
-    len -= bytes;
+    len    -= bytes;
     src    = src->next.get();
     offset = 0;
   }
@@ -132,8 +132,8 @@ iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t wr
     }
 
     if (len >= max_bytes) {
-      b = b->next.get();
-      len -= max_bytes;
+      b      = b->next.get();
+      len    -= max_bytes;
       offset = 0;
     } else {
       offset = offset + len;
@@ -142,7 +142,7 @@ iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t wr
   }
 
   *poffset = offset;
-  *plen -= write;
+  *plen    -= write;
   return b;
 }
 
@@ -431,7 +431,7 @@ IOBufferReader::skip_empty_blocks()
 {
   while (block->next && block->next->read_avail() && start_offset >= block->size()) {
     start_offset -= block->size();
-    block = block->next;
+    block        = block->next;
   }
 }
 
@@ -564,7 +564,7 @@ IOBufferReader::consume(int64_t n)
   int64_t r = block->read_avail();
   int64_t s = start_offset;
   while (r <= s && block->next && block->next->read_avail()) {
-    s -= r;
+    s            -= r;
     start_offset = s;
     block        = block->next;
     r            = block->read_avail();

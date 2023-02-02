@@ -142,7 +142,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
       const char *p = TSIOBufferBlockReadStart(block, r, &size);
       assert(p != nullptr);
       const int i = parseSize(p, size);
-      size -= i;
+      size        -= i;
       TSIOBufferReaderConsume(r, i);
       if (state_ == State::kEnd) {
         assert(size_ == 0);
@@ -167,7 +167,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
         break;
       } else {
         length += size;
-        size_ -= size;
+        size_  -= size;
       }
     }
     block = TSIOBufferBlockNext(block);

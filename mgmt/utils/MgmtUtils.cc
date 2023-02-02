@@ -117,7 +117,7 @@ mgmt_writeline(int soc, const char *data, int nbytes)
       return nwritten;
     }
     nleft -= nwritten;
-    tmp += nwritten;
+    tmp   += nwritten;
   }
 
   while (n != 1) {
@@ -173,8 +173,8 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
     }
 
     bytes_to_read -= err;
-    bytes_read += err;
-    p += err;
+    bytes_read    += err;
+    p             += err;
   }
 
   return bytes_read;
@@ -212,8 +212,8 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
     }
 
     bytes_to_write -= err;
-    bytes_written += err;
-    p += err;
+    bytes_written  += err;
+    p              += err;
   }
 
   return bytes_written;

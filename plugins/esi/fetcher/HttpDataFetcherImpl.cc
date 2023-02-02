@@ -112,7 +112,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   event_ids.success_event_id = _curr_event_id_base;
   event_ids.failure_event_id = _curr_event_id_base + 1;
   event_ids.timeout_event_id = _curr_event_id_base + 2;
-  _curr_event_id_base += 3;
+  _curr_event_id_base        += 3;
 
   TSFetchUrl(http_req, length, reinterpret_cast<sockaddr *>(&_client_addr), _contp, AFTER_BODY, event_ids);
   if (http_req != buff) {

@@ -126,12 +126,12 @@ main(int argc, char **argv)
 
   static option OPTIONS[] = {
     {"address", 1, nullptr, OPT_ADDRESS},
-    {"router", 1, nullptr, OPT_ROUTER},
+    {"router",  1, nullptr, OPT_ROUTER },
     {"service", 1, nullptr, OPT_SERVICE},
-    {"debug", 0, nullptr, OPT_DEBUG},
-    {"daemon", 0, nullptr, OPT_DAEMON},
-    {"help", 0, nullptr, OPT_HELP},
-    {nullptr, 0, nullptr, 0} // required terminator.
+    {"debug",   0, nullptr, OPT_DEBUG  },
+    {"daemon",  0, nullptr, OPT_DAEMON },
+    {"help",    0, nullptr, OPT_HELP   },
+    {nullptr,   0, nullptr, 0          }  // required terminator.
   };
 
   in_addr ip_addr     = {INADDR_ANY};

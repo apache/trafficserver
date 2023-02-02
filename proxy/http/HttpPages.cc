@@ -97,10 +97,10 @@ HttpPagesHandler::dump_hdr(HTTPHdr *hdr, const char *desc)
     int done;
     offset = 0;
     do {
-      used = 0;
-      tmp  = offset;
-      done = hdr->print(b, 4095, &used, &tmp);
-      offset += used;
+      used    = 0;
+      tmp     = offset;
+      done    = hdr->print(b, 4095, &used, &tmp);
+      offset  += used;
       b[used] = '\0';
       resp_add(b);
     } while (!done);

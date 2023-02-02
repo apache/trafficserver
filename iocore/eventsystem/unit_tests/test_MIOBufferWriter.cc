@@ -119,7 +119,7 @@ genData(int numBytes)
   std::string s(numBytes, ' ');
 
   for (int i{0}; i < numBytes; ++i) {
-    s[i] = genData;
+    s[i]    = genData;
     genData += 7;
   }
 

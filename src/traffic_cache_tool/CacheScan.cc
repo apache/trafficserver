@@ -314,7 +314,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
       zret.push(0, 0, "HTTPInfo::request unmarshal failed");
       return zret;
     }
-    len -= tmp;
+    len                                    -= tmp;
     alt->m_request_hdr.m_heap              = heap;
     alt->m_request_hdr.m_http              = hh;
     alt->m_request_hdr.m_mime              = hh->m_fields_impl;

@@ -103,7 +103,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
       std::string prebody = getPreBody(txn);
       TSIOBufferWrite(data->output_buffer.get(), prebody.data(), prebody.length()); // write prebody
       data->wrote_prebody = true;
-      data->nbytes += prebody.length();
+      data->nbytes        += prebody.length();
     }
 
     TSIOBuffer src_buf = TSVIOBufferGet(src_vio);
@@ -133,7 +133,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
       // End of src vio
       // Write post body content and update output VIO
       data->wrote_body = true;
-      data->nbytes += TSVIONDoneGet(src_vio);
+      data->nbytes     += TSVIONDoneGet(src_vio);
       writePostBody(txn, data);
       TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_COMPLETE, src_vio);
     }

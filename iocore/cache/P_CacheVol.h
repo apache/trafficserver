@@ -25,45 +25,45 @@
 
 #include <atomic>
 
-#define CACHE_BLOCK_SHIFT 9
-#define CACHE_BLOCK_SIZE (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
+#define CACHE_BLOCK_SHIFT        9
+#define CACHE_BLOCK_SIZE         (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
 #define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), STORE_BLOCK_SIZE)
 #define ROUND_TO_CACHE_BLOCK(_x) INK_ALIGN((_x), CACHE_BLOCK_SIZE)
-#define ROUND_TO_SECTOR(_p, _x) INK_ALIGN((_x), _p->sector_size)
-#define ROUND_TO(_x, _y) INK_ALIGN((_x), (_y))
+#define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
+#define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
 // Vol (volumes)
-#define VOL_MAGIC 0xF1D0F00D
-#define START_BLOCKS 16 // 8k, STORE_BLOCK_SIZE
-#define START_POS ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define AGG_SIZE (4 * 1024 * 1024)     // 4MB
-#define AGG_HIGH_WATER (AGG_SIZE / 2)  // 2MB
-#define EVACUATION_SIZE (2 * AGG_SIZE) // 8MB
-#define MAX_VOL_SIZE ((off_t)512 * 1024 * 1024 * 1024 * 1024)
-#define MAX_VOL_BLOCKS (MAX_VOL_SIZE / CACHE_BLOCK_SIZE)
-#define MAX_FRAG_SIZE (AGG_SIZE - sizeof(Doc)) // true max
-#define LEAVE_FREE DEFAULT_MAX_BUFFER_SIZE
-#define PIN_SCAN_EVERY 16 // scan every 1/16 of disk
-#define VOL_HASH_TABLE_SIZE 32707
-#define VOL_HASH_EMPTY 0xFFFF
-#define VOL_HASH_ALLOC_SIZE (8 * 1024 * 1024) // one chance per this unit
-#define LOOKASIDE_SIZE 256
-#define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
-#define RECOVERY_SIZE EVACUATION_SIZE                // 8MB
-#define AIO_NOT_IN_PROGRESS -1
-#define AIO_AGG_WRITE_IN_PROGRESS -2
-#define AUTO_SIZE_RAM_CACHE -1                               // 1-1 with directory size
+#define VOL_MAGIC                    0xF1D0F00D
+#define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
+#define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
+#define AGG_SIZE                     (4 * 1024 * 1024) // 4MB
+#define AGG_HIGH_WATER               (AGG_SIZE / 2)    // 2MB
+#define EVACUATION_SIZE              (2 * AGG_SIZE)    // 8MB
+#define MAX_VOL_SIZE                 ((off_t)512 * 1024 * 1024 * 1024 * 1024)
+#define MAX_VOL_BLOCKS               (MAX_VOL_SIZE / CACHE_BLOCK_SIZE)
+#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc)) // true max
+#define LEAVE_FREE                   DEFAULT_MAX_BUFFER_SIZE
+#define PIN_SCAN_EVERY               16 // scan every 1/16 of disk
+#define VOL_HASH_TABLE_SIZE          32707
+#define VOL_HASH_EMPTY               0xFFFF
+#define VOL_HASH_ALLOC_SIZE          (8 * 1024 * 1024) // one chance per this unit
+#define LOOKASIDE_SIZE               256
+#define EVACUATION_BUCKET_SIZE       (2 * EVACUATION_SIZE) // 16MB
+#define RECOVERY_SIZE                EVACUATION_SIZE       // 8MB
+#define AIO_NOT_IN_PROGRESS          -1
+#define AIO_AGG_WRITE_IN_PROGRESS    -2
+#define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
 
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
-#define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
+#define dir_evac_bucket(_e)        dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
   dir_offset_evac_bucket((_d->offset_to_vol_offset(_o)
 
 // Documents
 
-#define DOC_MAGIC ((uint32_t)0x5F129B13)
-#define DOC_CORRUPT ((uint32_t)0xDEADBABE)
+#define DOC_MAGIC       ((uint32_t)0x5F129B13)
+#define DOC_CORRUPT     ((uint32_t)0xDEADBABE)
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 struct Cache;
@@ -102,10 +102,10 @@ struct EvacuationBlock {
   union {
     unsigned int init;
     struct {
-      unsigned int done : 1;          // has been evacuated
-      unsigned int pinned : 1;        // check pinning timeout
+      unsigned int done          : 1; // has been evacuated
+      unsigned int pinned        : 1; // check pinning timeout
       unsigned int evacuate_head : 1; // check pinning timeout
-      unsigned int unused : 29;
+      unsigned int unused        : 29;
     } f;
   };
 
@@ -291,9 +291,9 @@ struct Doc {
 #endif
   uint32_t hlen;         ///< Length of this header.
   uint32_t doc_type : 8; ///< Doc type - indicates the format of this structure and its content.
-  uint32_t v_major : 8;  ///< Major version number.
-  uint32_t v_minor : 8;  ///< Minor version number.
-  uint32_t unused : 8;   ///< Unused, forced to zero.
+  uint32_t v_major  : 8; ///< Major version number.
+  uint32_t v_minor  : 8; ///< Minor version number.
+  uint32_t unused   : 8; ///< Unused, forced to zero.
   uint32_t sync_serial;
   uint32_t write_serial;
   uint32_t pinned; // pinned until

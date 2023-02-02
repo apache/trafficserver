@@ -41,7 +41,7 @@ namespace cache
     }
 
     Key() : key_(TSCacheKeyCreate()) { assert(key_ != nullptr); }
-    Key(const Key &) = delete;
+    Key(const Key &)            = delete;
     Key &operator=(const Key &) = delete;
 
     explicit Key(const std::string &s) : key_(TSCacheKeyCreate())
@@ -64,7 +64,7 @@ namespace cache
 
     T t_;
 
-    template <class... A> Read(A &&... a) : t_(std::forward<A>(a)...) {}
+    template <class... A> Read(A &&...a) : t_(std::forward<A>(a)...) {}
     static int
     handle(TSCont c, TSEvent e, void *d)
     {
@@ -91,7 +91,7 @@ namespace cache
 
   template <class T, class... A>
   void
-  fetch(const std::string &k, A &&... a)
+  fetch(const std::string &k, A &&...a)
   {
     const Key key(k);
     const TSCont continuation = TSContCreate(Read<T>::handle, TSMutexCreate());

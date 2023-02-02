@@ -31,8 +31,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define TSREMAP_VMAJOR 3 /* major version number */
-#define TSREMAP_VMINOR 0 /* minor version number */
+#define TSREMAP_VMAJOR  3 /* major version number */
+#define TSREMAP_VMINOR  0 /* minor version number */
 #define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16) | TSREMAP_VMINOR)
 
 typedef struct _tsremap_api_info {

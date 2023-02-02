@@ -102,7 +102,7 @@ private:
   std::shared_ptr<T> data_ptr;
 
 public:
-  AcidPtr(const AcidPtr &) = delete;
+  AcidPtr(const AcidPtr &)            = delete;
   AcidPtr &operator=(const AcidPtr &) = delete;
 
   AcidPtr() : data_ptr(new T()) {}
@@ -165,8 +165,8 @@ private:
   AcidPtr<T> &data;           // data location
 
 public:
-  AcidCommitPtr()                      = delete;
-  AcidCommitPtr(const AcidCommitPtr &) = delete;
+  AcidCommitPtr()                                    = delete;
+  AcidCommitPtr(const AcidCommitPtr &)               = delete;
   AcidCommitPtr &operator=(const AcidCommitPtr<T> &) = delete;
 
   AcidCommitPtr(AcidPtr<T> &data_ptr) : commit_lock(AcidCommitMutexGet(&data_ptr)), data(data_ptr)

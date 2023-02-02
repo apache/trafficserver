@@ -301,7 +301,7 @@ public:
   EThread();
   EThread(ThreadType att, int anid);
   EThread(ThreadType att, Event *e);
-  EThread(const EThread &) = delete;
+  EThread(const EThread &)            = delete;
   EThread &operator=(const EThread &) = delete;
   ~EThread() override;
 

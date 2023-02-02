@@ -53,8 +53,11 @@ protected:
 
 using QLogEventUPtr = std::unique_ptr<QLogEvent>;
 
-#define SET(field, type) \
-  void set_##field(type v) { this->_node[#field] = v; }
+#define SET(field, type)     \
+  void set_##field(type v)   \
+  {                          \
+    this->_node[#field] = v; \
+  }
 
 // enum class PacketType : uint8_t { initial, handshake, zerortt, onertt, retry, version_negotiation, unknown };
 using PacketType = std::string;
@@ -148,7 +151,7 @@ namespace Connectivity
       }
     }
 
-#define _SET(a, b) SET_FUNC(ServerListening, a, b)
+#define _SET(a, b)    SET_FUNC(ServerListening, a, b)
 #define _APPEND(a, b) APPEND_FUNC(ServerListening, a, b)
     _SET(port_v4, int)
     _SET(port_v6, int)
@@ -184,7 +187,7 @@ namespace Connectivity
       set_dst_port(dport);
     }
 
-#define _SET(a, b) SET_FUNC(ConnectionStarted, a, b)
+#define _SET(a, b)    SET_FUNC(ConnectionStarted, a, b)
 #define _APPEND(a, b) APPEND_FUNC(ConnectionStarted, a, b)
     _SET(quic_version, std::string);
     _SET(src_cid, std::string);
@@ -223,7 +226,7 @@ namespace Connectivity
       }
     }
 
-#define _SET(a, b) SET_FUNC(ConnectionIdUpdated, a, b)
+#define _SET(a, b)    SET_FUNC(ConnectionIdUpdated, a, b)
 #define _APPEND(a, b) APPEND_FUNC(ConnectionIdUpdated, a, b)
 
     _SET(src_old, std::string);
@@ -501,7 +504,7 @@ namespace Transport
       set_packet_type(type).set_header(h).set_trigger(tr);
     }
 
-#define _SET(a, b) SET_FUNC(PacketEvent, a, b)
+#define _SET(a, b)    SET_FUNC(PacketEvent, a, b)
 #define _APPEND(a, b) APPEND_FUNC(PacketEvent, a, b)
     _SET(packet_type, PacketType)
     _SET(header, PacketHeader)

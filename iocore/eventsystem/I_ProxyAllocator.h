@@ -50,7 +50,7 @@ struct ProxyAllocator {
 
 template <class CAlloc, typename... Args>
 typename CAlloc::Value_type *
-thread_alloc(CAlloc &a, ProxyAllocator &l, Args &&... args)
+thread_alloc(CAlloc &a, ProxyAllocator &l, Args &&...args)
 {
   if (!cmd_disable_pfreelist && l.freelist) {
     void *v    = l.freelist;
@@ -70,14 +70,14 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 // Potentially empty variable arguments -- non-standard GCC way
 //
-#define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
+#define THREAD_ALLOC(_a, _t, ...)      thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
 #define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
 
 #else
 
 // Potentially empty variable arguments -- Standard C++20 way
 //
-#define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
+#define THREAD_ALLOC(_a, _t, ...)      thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
 #define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
 
 #endif

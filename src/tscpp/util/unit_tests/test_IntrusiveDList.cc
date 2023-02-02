@@ -86,7 +86,7 @@ class Container
 public:
   ~Container();
 
-  template <typename... Args> self_type &debug(std::string_view fmt, Args &&... args);
+  template <typename... Args> self_type &debug(std::string_view fmt, Args &&...args);
 
   size_t count() const;
   self_type &clear();
@@ -121,7 +121,7 @@ Container::count() const
 
 template <typename... Args>
 auto
-Container::debug(std::string_view fmt, Args &&... args) -> self_type &
+Container::debug(std::string_view fmt, Args &&...args) -> self_type &
 {
   Message *msg = new Message;
   ts::bwprintv(msg->_text, fmt, std::forward_as_tuple(args...));

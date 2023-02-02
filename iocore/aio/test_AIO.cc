@@ -190,8 +190,8 @@ dump_summary()
     double ops_sec = (dev[i]->seq_reads + dev[i]->seq_writes + dev[i]->rand_reads) / secs;
     printf("%s: #sr:%d #sw:%d #rr:%d %0.1f secs %0.1f ops/sec\n", dev[i]->path, dev[i]->seq_reads, dev[i]->seq_writes,
            dev[i]->rand_reads, secs, ops_sec);
-    total_secs += secs;
-    total_seq_reads += dev[i]->seq_reads;
+    total_secs       += secs;
+    total_seq_reads  += dev[i]->seq_reads;
     total_seq_writes += dev[i]->seq_writes;
     total_rand_reads += dev[i]->rand_reads;
   }
@@ -199,12 +199,12 @@ dump_summary()
   printf("aggregate results\n");
   printf("-----------------\n");
   total_secs /= orig_n_accessors;
-  float sr = (total_seq_reads * seq_read_size) / total_secs;
-  sr /= 1024.0 * 1024.0;
-  float sw = (total_seq_writes * seq_write_size) / total_secs;
-  sw /= 1024.0 * 1024.0;
-  float rr = (total_rand_reads * rand_read_size) / total_secs;
-  rr /= 1024.0 * 1024.0;
+  float sr   = (total_seq_reads * seq_read_size) / total_secs;
+  sr         /= 1024.0 * 1024.0;
+  float sw   = (total_seq_writes * seq_write_size) / total_secs;
+  sw         /= 1024.0 * 1024.0;
+  float rr   = (total_rand_reads * rand_read_size) / total_secs;
+  rr         /= 1024.0 * 1024.0;
   printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_read\n", total_seq_reads, sr, total_seq_reads / total_secs,
          total_seq_reads / total_secs / n_disk_path);
   printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_write\n", total_seq_writes, sw,
@@ -270,7 +270,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   off_t max_hotset_offset = (static_cast<off_t>(hotset_size)) * 1024 * 1024; // MB-GB
   off_t seq_read_point    = (static_cast<off_t> MIN_OFFSET);
   off_t seq_write_point   = (static_cast<off_t> MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
-  seq_write_point += (id % n_disk_path) * (max_offset / (threads_per_disk * 4));
+  seq_write_point         += (id % n_disk_path) * (max_offset / (threads_per_disk * 4));
   if (seq_write_point > max_offset) {
     seq_write_point = MIN_OFFSET;
   }

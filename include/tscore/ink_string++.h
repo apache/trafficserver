@@ -84,9 +84,9 @@ struct Str {
  *                                                                     *
  ***********************************************************************/
 
-#define STRLIST_BASE_HEAP_SIZE 128
+#define STRLIST_BASE_HEAP_SIZE     128
 #define STRLIST_OVERFLOW_HEAP_SIZE 1024
-#define STRLIST_BASE_CELLS 5
+#define STRLIST_BASE_CELLS         5
 
 struct StrListOverflow;
 
@@ -181,7 +181,7 @@ StrList::base_heap_alloc(int size)
   char *p;
 
   if (size <= (base_heap_size - base_heap_used)) {
-    p = &(base_heap[base_heap_used]);
+    p              = &(base_heap[base_heap_used]);
     base_heap_used += size;
     return ((void *)p);
   } else {

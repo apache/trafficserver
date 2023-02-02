@@ -35,7 +35,7 @@
 #include "stek.h"
 #include "common.h"
 
-#define SSL_AES_KEY_SUFFIX "_aes_key"
+#define SSL_AES_KEY_SUFFIX  "_aes_key"
 #define SSL_HMAC_KEY_SUFFIX "_hmac_key"
 
 #define STEK_MAX_ENC_SIZE 512

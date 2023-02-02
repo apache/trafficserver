@@ -102,7 +102,7 @@ enum {
 
 #define HTTP2_INCREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, 1);
 #define HTTP2_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, -1);
-#define HTTP2_SUM_THREAD_DYN_STAT(_s, _t, _v) RecIncrRawStat(http2_rsb, _t, (int)_s, _v);
+#define HTTP2_SUM_THREAD_DYN_STAT(_s, _t, _v)   RecIncrRawStat(http2_rsb, _t, (int)_s, _v);
 extern RecRawStatBlock *http2_rsb; // Container for statistics.
 
 // [RFC 7540] 6.9.1. The Flow Control Window

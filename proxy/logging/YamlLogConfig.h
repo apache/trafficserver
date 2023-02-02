@@ -39,7 +39,7 @@ private:
 
   LogObject *decodeLogObject(const YAML::Node &node);
 
-  YamlLogConfig(const YamlLogConfig &) = delete;
+  YamlLogConfig(const YamlLogConfig &)            = delete;
   YamlLogConfig &operator=(const YamlLogConfig &) = delete;
 
   LogConfig *cfg;

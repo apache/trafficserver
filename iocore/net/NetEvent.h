@@ -119,7 +119,7 @@ public:
     unsigned int flags = 0;
     struct {
       unsigned int got_local_addr : 1;
-      unsigned int shutdown : 2;
+      unsigned int shutdown       : 2;
     } f;
   };
 };

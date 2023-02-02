@@ -99,8 +99,8 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
 // This is weird, but see the following:
 //   http://stackoverflow.com/questions/5641427/how-to-make-preprocessor-generate-a-string-for-line-keyword
 #define STRINGIFY0(x) #x
-#define STRINGIFY(x) STRINGIFY0(x)
-#define LINE_NO STRINGIFY(__LINE__)
+#define STRINGIFY(x)  STRINGIFY0(x)
+#define LINE_NO       STRINGIFY(__LINE__)
 
 /**
  * A helper macro to get access to the Diag messages available in traffic server. These can be enabled

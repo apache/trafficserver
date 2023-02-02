@@ -34,12 +34,14 @@ TEST_CASE("AppVersionInfo", "[libts][version]")
   AppVersionInfo info;
 
   const char *errMsgFormat = "wrong build number, expected '%s', got '%s'\n";
-  const char *bench[][3]   = {// date, time, resulting build number
-                            {"Oct  4 1957", "19:28:34", BUILD_NUMBER},
-                            {"Oct  4 1957", "19:28:34", "100419"},
-                            {"Apr  4 1957", "09:08:04", "040409"},
-                            {" 4 Apr 1957", "09:08:04", "??????"},
-                            {"Apr  4 1957", "09-08-04", "??????"}};
+  const char *bench[][3]   = {
+  // date, time, resulting build number
+    {"Oct  4 1957", "19:28:34", BUILD_NUMBER},
+    {"Oct  4 1957", "19:28:34", "100419"    },
+    {"Apr  4 1957", "09:08:04", "040409"    },
+    {" 4 Apr 1957", "09:08:04", "??????"    },
+    {"Apr  4 1957", "09-08-04", "??????"    }
+  };
 
   int benchSize = sizeof(bench) / sizeof(bench[0]);
 

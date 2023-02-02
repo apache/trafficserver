@@ -902,12 +902,12 @@ ssl_private_key_validate_exec(const char *cmdLine)
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-#define ssl_malloc(size, file, line) ssl_malloc(size)
-#define ssl_realloc(ptr, size, file, line) ssl_realloc(ptr, size)
-#define ssl_free(ptr, file, line) ssl_free(ptr)
-#define ssl_track_malloc(size, file, line) ssl_track_malloc(size)
+#define ssl_malloc(size, file, line)             ssl_malloc(size)
+#define ssl_realloc(ptr, size, file, line)       ssl_realloc(ptr, size)
+#define ssl_free(ptr, file, line)                ssl_free(ptr)
+#define ssl_track_malloc(size, file, line)       ssl_track_malloc(size)
 #define ssl_track_realloc(ptr, size, file, line) ssl_track_realloc(ptr, size)
-#define ssl_track_free(ptr, file, line) ssl_track_free(ptr)
+#define ssl_track_free(ptr, file, line)          ssl_track_free(ptr)
 #endif
 
 void *
@@ -1459,7 +1459,7 @@ SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
   }
 
   int additional_cache_flags = 0;
-  additional_cache_flags |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
+  additional_cache_flags     |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
 
   switch (params->ssl_session_cache) {
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:

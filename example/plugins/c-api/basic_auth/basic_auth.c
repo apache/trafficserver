@@ -52,8 +52,8 @@ base64_decode(const char *input)
     *output++ = decode(0) << 2 | decode(1) >> 4;
     *output++ = decode(1) << 4 | decode(2) >> 2;
     *output++ = decode(2) << 6 | decode(3);
-    len -= 4;
-    input += 4;
+    len       -= 4;
+    input     += 4;
   }
 
   /*
@@ -139,7 +139,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
   *password = '\0';
-  password += 1;
+  password  += 1;
 
   if (!authorized(user, password)) {
     TSError("[%s] %s:%s not authorized", PLUGIN_NAME, user, password);

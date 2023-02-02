@@ -99,7 +99,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion versi
     // Read ID
     if (!QUICVariableInt::decode(param_id, l, p, len)) {
       len -= l;
-      p += l;
+      p   += l;
     } else {
       has_error = true;
       break;
@@ -115,7 +115,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion versi
     // Read length of value
     if (!QUICVariableInt::decode(param_len, l, p, len)) {
       len -= l;
-      p += l;
+      p   += l;
     } else {
       has_error = true;
       break;
@@ -125,7 +125,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion versi
     if (len >= param_len) {
       this->_parameters.insert(std::make_pair(param_id, new Value(p, param_len)));
       len -= param_len;
-      p += param_len;
+      p   += param_len;
     } else {
       has_error = true;
       break;

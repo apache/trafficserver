@@ -35,7 +35,7 @@
 
 /* TODO use native aiocb where possible */
 
-#define LIO_READ 0x1
+#define LIO_READ  0x1
 #define LIO_WRITE 0x2
 
 struct ink_aiocb {

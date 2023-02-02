@@ -217,9 +217,9 @@ RegressionTest::main(int /* argc */, const char **argv, int level)
   int regression_level       = level;
 
   const ArgumentDescription argument_descriptions[] = {
-    {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},
-    {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", nullptr},
-    {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", nullptr},
+    {"regression",      'R', "Regression Level (quick:1..long:3)", "I",    &regression_level, "PROXY_REGRESSION",      nullptr},
+    {"regression_test", 'r', "Run Specific Regression Test",       "S512", regression_test,   "PROXY_REGRESSION_TEST", nullptr},
+    {"regression_list", 'l', "List Regression Tests",              "T",    &regression_list,  "PROXY_REGRESSION_LIST", nullptr},
   };
 
   AppVersionInfo version;

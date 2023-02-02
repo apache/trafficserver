@@ -84,7 +84,7 @@ union IpEndpoint;
   -------------------------------------------------------------------------*/
 
 // DEFAULT_STR_LEN MUST be less than INK_MIN_ALIGN
-#define DEFAULT_STR "-"
+#define DEFAULT_STR     "-"
 #define DEFAULT_STR_LEN 1
 
 extern char INVALID_STR[];
@@ -341,7 +341,7 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogAccess(const LogAccess &rhs) = delete;      // no copies
+  LogAccess(const LogAccess &rhs)      = delete; // no copies
   LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
 
 private:

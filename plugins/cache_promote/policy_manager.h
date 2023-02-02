@@ -41,7 +41,7 @@ public:
   void releasePolicy(PromotionPolicy *policy);
 
   // Don't allow copy-constructors.
-  PolicyManager(PolicyManager const &) = delete;
+  PolicyManager(PolicyManager const &)  = delete;
   void operator=(PolicyManager const &) = delete;
 
 private:

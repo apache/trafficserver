@@ -20,10 +20,10 @@
 #include "ts_lua_io.h"
 #include "ts_lua_fetch.h"
 
-#define TS_LUA_EVENT_FETCH_OVER 20010
-#define TS_LUA_FETCH_CLIENT_ADDRPORT "127.0.0.1:33333"
+#define TS_LUA_EVENT_FETCH_OVER          20010
+#define TS_LUA_FETCH_CLIENT_ADDRPORT     "127.0.0.1:33333"
 #define TS_LUA_FETCH_CLIENT_ADDRPORT_LEN 15
-#define TS_LUA_FETCH_USER_AGENT "TS Fetcher/1.0"
+#define TS_LUA_FETCH_USER_AGENT          "TS Fetcher/1.0"
 
 static int ts_lua_fetch(lua_State *L);
 static int ts_lua_fetch_multi(lua_State *L);

@@ -684,7 +684,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
 
       if (strcasecmp(tmp, "volume") == 0) { // match volume
-        tmp += 7;                           // size of string volume including null
+        tmp           += 7;                 // size of string volume including null
         volume_number = atoi(tmp);
 
         if (volume_seen[volume_number]) {
@@ -705,17 +705,17 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         tmp += 7;                                  // size of string scheme including null
 
         if (!strcasecmp(tmp, "http")) {
-          tmp += 4;
+          tmp    += 4;
           scheme = CACHE_HTTP_TYPE;
         } else if (!strcasecmp(tmp, "mixt")) {
-          tmp += 4;
+          tmp    += 4;
           scheme = CACHE_RTSP_TYPE;
         } else {
           err = "Unexpected end of line";
           break;
         }
       } else if (strcasecmp(tmp, "size") == 0) { // match size
-        tmp += 5;
+        tmp  += 5;
         size = atoi(tmp);
 
         while (ParseRules::is_digit(*tmp)) {
@@ -738,10 +738,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
         tmp += 9;
         if (!strcasecmp(tmp, "false")) {
-          tmp += 5;
+          tmp              += 5;
           ramcache_enabled = false;
         } else if (!strcasecmp(tmp, "true")) {
-          tmp += 4;
+          tmp              += 4;
           ramcache_enabled = true;
         } else {
           err = "Unexpected end of line";
@@ -790,7 +790,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 }
 
 /* Test the cache volume with different configurations */
-#define MEGS_128 (128 * 1024 * 1024)
+#define MEGS_128              (128 * 1024 * 1024)
 #define ROUND_TO_VOL_SIZE(_x) (((_x) + (MEGS_128 - 1)) & ~(MEGS_128 - 1))
 extern CacheDisk **gdisks;
 extern Queue<CacheVol> cp_list;
@@ -875,7 +875,7 @@ create_config(RegressionTest *t, int num)
       off_t vol_blocks = gdisks[i]->num_usable_blocks;
       /* round down the blocks to the nearest
          multiple of STORE_BLOCKS_PER_VOL */
-      vol_blocks = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
+      vol_blocks  = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
       total_space += vol_blocks;
     }
 
@@ -920,7 +920,7 @@ create_config(RegressionTest *t, int num)
       off_t vol_blocks = gdisks[i]->num_usable_blocks;
       /* round down the blocks to the nearest
          multiple of STORE_BLOCKS_PER_VOL */
-      vol_blocks = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
+      vol_blocks  = (vol_blocks / STORE_BLOCKS_PER_VOL) * STORE_BLOCKS_PER_VOL;
       total_space += vol_blocks;
 
       if (num == 2) {

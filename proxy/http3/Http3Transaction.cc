@@ -661,7 +661,7 @@ Http09Transaction::_process_read_vio()
       if (len < 2 || buf[len - 1] != '\n') {
         return 0;
       }
-      nread += len;
+      nread                             += len;
       this->_client_req_header_complete = true;
 
       // Check "CRLF" or "LF"
@@ -752,7 +752,7 @@ Http09Transaction::_process_write_vio()
 
       reader->consume(bytes_written);
       this->_write_vio.ndone += bytes_written;
-      total_written += bytes_written;
+      total_written          += bytes_written;
     }
 
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler

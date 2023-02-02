@@ -27,7 +27,7 @@
 
 #include <unistd.h>
 
-#define THREADS 1
+#define THREADS        1
 #define DIAGS_LOG_FILE "diags.log"
 
 // Create a new temp directory and return it
@@ -177,9 +177,9 @@ generate_key(HTTPInfo &info)
 void
 CacheWriteTest::fill_data()
 {
-  size_t size = std::min(WRITE_LIMIT, this->_size);
-  auto n      = this->_write_buffer->write(this->_cursor, size);
-  this->_size -= n;
+  size_t size   = std::min(WRITE_LIMIT, this->_size);
+  auto n        = this->_write_buffer->write(this->_cursor, size);
+  this->_size   -= n;
   this->_cursor += n;
 }
 

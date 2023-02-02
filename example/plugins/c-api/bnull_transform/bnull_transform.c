@@ -41,7 +41,7 @@
 
 #define PLUGIN_NAME "bnull_transform"
 
-#define TS_NULL_MUTEX NULL
+#define TS_NULL_MUTEX     NULL
 #define STATE_BUFFER_DATA 0
 #define STATE_OUTPUT_DATA 1
 

@@ -64,7 +64,10 @@ public:
   void reenable(VIO *vio) override;
   void transaction_done() override;
 
-  void do_io_shutdown(ShutdownHowTo_t) override {}
+  void
+  do_io_shutdown(ShutdownHowTo_t) override
+  {
+  }
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
@@ -246,7 +249,7 @@ Http2Stream::is_write_vio_done() const
 inline void
 Http2Stream::update_sent_count(unsigned num_bytes)
 {
-  bytes_sent += num_bytes;
+  bytes_sent            += num_bytes;
   this->write_vio.ndone += num_bytes;
 }
 

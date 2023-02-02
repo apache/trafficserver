@@ -229,7 +229,7 @@ struct HostStatus {
 
 private:
   HostStatus();
-  HostStatus(const HostStatus &obj) = delete;
+  HostStatus(const HostStatus &obj)         = delete;
   HostStatus &operator=(HostStatus const &) = delete;
 
   // next hop status, key is hostname or ip string, data is HostStatRec

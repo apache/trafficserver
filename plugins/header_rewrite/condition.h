@@ -56,7 +56,7 @@ public:
   }
 
   // noncopyable
-  Condition(const Condition &) = delete;
+  Condition(const Condition &)      = delete;
   void operator=(const Condition &) = delete;
 
   // Inline this, it's critical for speed (and only used twice)

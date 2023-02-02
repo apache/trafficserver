@@ -267,8 +267,8 @@ load_buffer(int fd, hdr_type h_type)
         fprintf(stderr, "Corrupted data file\n");
         exit(1);
       }
-      cur_ptr  = (int *)(hdr_heap + bytes_read);
-      *cur_ptr = el;
+      cur_ptr    = (int *)(hdr_heap + bytes_read);
+      *cur_ptr   = el;
       bytes_read += 4;
     }
     cur_line++;

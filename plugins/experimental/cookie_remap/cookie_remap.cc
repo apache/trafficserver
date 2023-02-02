@@ -98,7 +98,7 @@ public:
 
   // No copying/moving.
   //
-  UrlComponents(UrlComponents const &) = delete;
+  UrlComponents(UrlComponents const &)            = delete;
   UrlComponents &operator=(UrlComponents const &) = delete;
 
   ~UrlComponents()
@@ -1053,9 +1053,9 @@ sub_lookup(char const *targ, int targ_len)
     if (count <= 0) {
       break;
     }
-    targ += opt->comp.size();
+    targ     += opt->comp.size();
     targ_len -= opt->comp.size();
-    opt = reinterpret_cast<CompNext const *>(reinterpret_cast<char const *>(opt->next) + offsetof(decltype(sub), o1));
+    opt      = reinterpret_cast<CompNext const *>(reinterpret_cast<char const *>(opt->next) + offsetof(decltype(sub), o1));
   }
   return count;
 }

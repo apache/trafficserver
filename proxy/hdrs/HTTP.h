@@ -673,7 +673,7 @@ protected:
   static Arena *const USE_HDR_HEAP_MAGIC;
 
   // No gratuitous copies!
-  HTTPHdr(const HTTPHdr &m) = delete;
+  HTTPHdr(const HTTPHdr &m)            = delete;
   HTTPHdr &operator=(const HTTPHdr &m) = delete;
 
 private:

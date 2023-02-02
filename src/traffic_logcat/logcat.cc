@@ -26,7 +26,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/runroot.h"
 
-#define PROGRAM_NAME "traffic_logcat"
+#define PROGRAM_NAME       "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 65536
 
 #include <poll.h>
@@ -57,18 +57,19 @@ int auto_clear_cache_flag = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
 
-  {"output_file", 'o', "Specify output file", "S1023", &output_file, NULL, NULL},
-  {"auto_filenames", 'a', "Automatically generate output names", "T", &auto_filenames, NULL, NULL},
-  {"follow", 'f', "Follow the log file as it grows", "T", &follow_flag, NULL, NULL},
-  {"clf", 'C', "Convert to Common Logging Format", "T", &clf_flag, NULL, NULL},
-  {"elf", 'E', "Convert to Extended Logging Format", "T", &elf_flag, NULL, NULL},
-  {"squid", 'S', "Convert to Squid Logging Format", "T", &squid_flag, NULL, NULL},
-  {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", error_tags, NULL, NULL},
-  {"overwrite_output", 'w', "Overwrite existing output file(s)", "T", &overwrite_existing_file, NULL, NULL},
-  {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL, NULL},
+  {"output_file",      'o', "Specify output file",                 "S1023", &output_file,             NULL, NULL},
+  {"auto_filenames",   'a', "Automatically generate output names", "T",     &auto_filenames,          NULL, NULL},
+  {"follow",           'f', "Follow the log file as it grows",     "T",     &follow_flag,             NULL, NULL},
+  {"clf",              'C', "Convert to Common Logging Format",    "T",     &clf_flag,                NULL, NULL},
+  {"elf",              'E', "Convert to Extended Logging Format",  "T",     &elf_flag,                NULL, NULL},
+  {"squid",            'S', "Convert to Squid Logging Format",     "T",     &squid_flag,              NULL, NULL},
+  {"debug_tags",       'T', "Colon-Separated Debug Tags",          "S1023", error_tags,               NULL, NULL},
+  {"overwrite_output", 'w', "Overwrite existing output file(s)",   "T",     &overwrite_existing_file, NULL, NULL},
+  {"elf2",             '2', "Convert to Extended2 Logging Format", "T",     &elf2_flag,               NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
-  RUNROOT_ARGUMENT_DESCRIPTION()};
+  RUNROOT_ARGUMENT_DESCRIPTION()
+};
 
 /*
  * Gets the inode number of a given file

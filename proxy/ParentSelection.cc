@@ -32,7 +32,7 @@
 #include "I_Machine.h"
 #include "tscore/Filenames.h"
 
-#define MAX_SIMPLE_RETRIES 5
+#define MAX_SIMPLE_RETRIES             5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
 using P_table = ControlMatcher<ParentRecord, ParentResult>;
@@ -418,8 +418,8 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
       }
     }
 
-    str += token;
-    str += ";";
+    str   += token;
+    str   += ";";
     token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
   }
   strncpy(buf, str.c_str(), len);
@@ -1132,7 +1132,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "fruit_basket.net");
     FP;
-    red += verify(result, PARENT_SPECIFIED, "red", 37412);
+    red    += verify(result, PARENT_SPECIFIED, "red", 37412);
     orange += verify(result, PARENT_SPECIFIED, "orange", 37412);
     yellow += verify(result, PARENT_SPECIFIED, "yellow", 37412);
   }

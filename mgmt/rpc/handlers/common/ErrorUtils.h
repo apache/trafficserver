@@ -51,7 +51,7 @@ static constexpr int ERRATA_DEFAULT_ID{1};
 
 template <typename... Args>
 static inline ts::Errata
-make_errata(int code, std::string_view fmt, Args &&... args)
+make_errata(int code, std::string_view fmt, Args &&...args)
 {
   std::string text;
   return ts::Errata{}.push(ERRATA_DEFAULT_ID, code, ts::bwprint(text, fmt, std::forward<Args>(args)...));

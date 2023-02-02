@@ -150,7 +150,7 @@ Http2CommonSession::set_half_close_local_flag(bool flag)
 int64_t
 Http2CommonSession::xmit(const Http2TxFrame &frame, bool flush)
 {
-  int64_t len = frame.write_to(this->write_buffer);
+  int64_t len                      = frame.write_to(this->write_buffer);
   this->_pending_sending_data_size += len;
   // Force flush for some cases
   if (!flush) {
@@ -259,7 +259,7 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
 
   // Check whether data is read from early data
   if (this->read_from_early_data > 0) {
-    this->read_from_early_data -= this->read_from_early_data > nbytes ? nbytes : this->read_from_early_data;
+    this->read_from_early_data      -= this->read_from_early_data > nbytes ? nbytes : this->read_from_early_data;
     this->cur_frame_from_early_data = true;
   }
 

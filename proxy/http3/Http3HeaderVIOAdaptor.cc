@@ -128,7 +128,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
       writer->add_block();
       block = writer->get_current_block();
     }
-    done = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
+    done       = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
     writer->fill(bufindex);
     if (!done) {

@@ -32,7 +32,7 @@ public:
 
   bool create(const string &strCookie);
 
-  CookieJar(const CookieJar &) = delete;
+  CookieJar(const CookieJar &)            = delete;
   CookieJar &operator=(const CookieJar &) = delete;
 
   bool get_full(const string &cookie_name, string &val);

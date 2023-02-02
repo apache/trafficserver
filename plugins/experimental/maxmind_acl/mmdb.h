@@ -44,7 +44,7 @@
 #include <pcre.h>
 #endif
 
-#define PLUGIN_NAME "maxmind_acl"
+#define PLUGIN_NAME  "maxmind_acl"
 #define CONFIG_TMOUT 60000
 
 typedef struct {

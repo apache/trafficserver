@@ -77,7 +77,7 @@ public:
 
   uint32_t m_clean : 1;
   /// Whether the URI had an absolutely empty path, not even an initial '/'.
-  uint32_t m_path_is_empty : 1;
+  uint32_t m_path_is_empty       : 1;
   uint32_t m_normalization_flags : 2; // Only valid if both m_clean and m_ptr_printed_sting are non-zero.
   // 8 bytes + 4 bits, will result in padding
 
@@ -346,7 +346,7 @@ public:
 public:
   static char *unescapify(Arena *arena, const char *str, int length);
   // No gratuitous copies!
-  URL(const URL &u) = delete;
+  URL(const URL &u)            = delete;
   URL &operator=(const URL &u) = delete;
 
 private:

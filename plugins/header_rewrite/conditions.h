@@ -31,7 +31,7 @@
 #include "matcher.h"
 #include "value.h"
 #include "lulu.h"
-//#include <mdbm.h>
+// #include <mdbm.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Condition declarations.
@@ -44,7 +44,7 @@ public:
   ConditionTrue() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue"); }
 
   // noncopyable
-  ConditionTrue(const ConditionTrue &) = delete;
+  ConditionTrue(const ConditionTrue &)  = delete;
   void operator=(const ConditionTrue &) = delete;
 
   void
@@ -97,7 +97,7 @@ public:
 
   // noncopyable
   ConditionStatus(const ConditionStatus &) = delete;
-  void operator=(const ConditionStatus &) = delete;
+  void operator=(const ConditionStatus &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -117,7 +117,7 @@ public:
 
   // noncopyable
   ConditionMethod(const ConditionMethod &) = delete;
-  void operator=(const ConditionMethod &) = delete;
+  void operator=(const ConditionMethod &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -136,7 +136,7 @@ public:
 
   // noncopyable
   ConditionRandom(const ConditionRandom &) = delete;
-  void operator=(const ConditionRandom &) = delete;
+  void operator=(const ConditionRandom &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -157,7 +157,7 @@ public:
 
   // noncopyable
   ConditionAccess(const ConditionAccess &) = delete;
-  void operator=(const ConditionAccess &) = delete;
+  void operator=(const ConditionAccess &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -180,7 +180,7 @@ public:
 
   // noncopyable
   ConditionCookie(const ConditionCookie &) = delete;
-  void operator=(const ConditionCookie &) = delete;
+  void operator=(const ConditionCookie &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -254,7 +254,7 @@ public:
 
   // noncopyable
   ConditionHeader(const ConditionHeader &) = delete;
-  void operator=(const ConditionHeader &) = delete;
+  void operator=(const ConditionHeader &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -277,7 +277,7 @@ public:
   explicit ConditionUrl(const UrlType type) : _type(type) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl"); }
 
   // noncopyable
-  ConditionUrl(const ConditionUrl &) = delete;
+  ConditionUrl(const ConditionUrl &)   = delete;
   void operator=(const ConditionUrl &) = delete;
 
   void initialize(Parser &p) override;
@@ -315,7 +315,7 @@ public:
   }
 
   // noncopyable
-  ConditionDBM(const ConditionDBM &) = delete;
+  ConditionDBM(const ConditionDBM &)   = delete;
   void operator=(const ConditionDBM &) = delete;
 
   void initialize(Parser &p) override;
@@ -354,7 +354,7 @@ public:
   explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
 
   // noncopyable
-  ConditionIp(const ConditionIp &) = delete;
+  ConditionIp(const ConditionIp &)    = delete;
   void operator=(const ConditionIp &) = delete;
 
   void initialize(Parser &p) override;
@@ -378,7 +378,7 @@ public:
 
   // noncopyable
   ConditionTransactCount(const ConditionTransactCount &) = delete;
-  void operator=(const ConditionTransactCount &) = delete;
+  void operator=(const ConditionTransactCount &)         = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -396,7 +396,7 @@ public:
   explicit ConditionNow() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
 
   // noncopyable
-  ConditionNow(const ConditionNow &) = delete;
+  ConditionNow(const ConditionNow &)   = delete;
   void operator=(const ConditionNow &) = delete;
 
   void initialize(Parser &p) override;
@@ -418,7 +418,7 @@ public:
   explicit ConditionGeo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo"); }
 
   // noncopyable
-  ConditionGeo(const ConditionGeo &) = delete;
+  ConditionGeo(const ConditionGeo &)   = delete;
   void operator=(const ConditionGeo &) = delete;
 
   void initialize(Parser &p) override;
@@ -455,7 +455,7 @@ public:
   explicit ConditionId() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
 
   // noncopyable
-  ConditionId(const ConditionId &) = delete;
+  ConditionId(const ConditionId &)    = delete;
   void operator=(const ConditionId &) = delete;
 
   void initialize(Parser &p) override;
@@ -482,7 +482,7 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCidr");
   };
 
-  ConditionCidr(self &) = delete;
+  ConditionCidr(self &)   = delete;
   self &operator=(self &) = delete;
 
   void initialize(Parser &p) override;
@@ -511,7 +511,7 @@ class ConditionInbound : public Condition
 public:
   explicit ConditionInbound() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionInbound"); };
   ConditionInbound(self &) = delete;
-  self &operator=(self &) = delete;
+  self &operator=(self &)  = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -536,7 +536,7 @@ public:
 
   // noncopyable
   ConditionStringLiteral(const ConditionStringLiteral &) = delete;
-  void operator=(const ConditionStringLiteral &) = delete;
+  void operator=(const ConditionStringLiteral &)         = delete;
 
   void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
@@ -557,7 +557,7 @@ public:
 
   // noncopyable
   ConditionSessionTransactCount(const ConditionSessionTransactCount &) = delete;
-  void operator=(const ConditionSessionTransactCount &) = delete;
+  void operator=(const ConditionSessionTransactCount &)                = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -576,7 +576,7 @@ public:
 
   // noncopyable
   ConditionTcpInfo(const ConditionTcpInfo &) = delete;
-  void operator=(const ConditionTcpInfo &) = delete;
+  void operator=(const ConditionTcpInfo &)   = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;

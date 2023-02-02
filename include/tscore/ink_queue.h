@@ -121,10 +121,10 @@ union head_p {
 
 #ifdef DEBUG
 #define FROM_PTR(_x) (void *)(((uintptr_t)_x) + 1)
-#define TO_PTR(_x) (void *)(((uintptr_t)_x) - 1)
+#define TO_PTR(_x)   (void *)(((uintptr_t)_x) - 1)
 #else
 #define FROM_PTR(_x) ((void *)(_x))
-#define TO_PTR(_x) ((void *)(_x))
+#define TO_PTR(_x)   ((void *)(_x))
 #endif
 
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
@@ -161,7 +161,7 @@ union head_p {
   ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 48)))
 #endif
 
-#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
 #elif defined(__aarch64__)
 /* Layout of FREELIST_POINTER
@@ -180,7 +180,7 @@ union head_p {
   ((void *)((((intptr_t)(_x).data) & 0x000FFFFFFFFFFFFFLL) | ((~((((intptr_t)(_x).data) >> 63) - 1)) << 52)))
 #endif
 
-#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
+#define FREELIST_VERSION(_x)                     ((((intptr_t)(_x).data) & 0x7FF0000000000000LL) >> 52)
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x800FFFFFFFFFFFFFLL) | (((_v)&0x7FFLL) << 52))
 #else
 #error "unsupported processor"

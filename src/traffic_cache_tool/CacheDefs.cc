@@ -809,14 +809,14 @@ Stripe::dir_check()
       ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
       seg_chain_max = std::max(seg_chain_max, h);
     }
-    int fl_size = dir_freelist_length(s);
-    in_use += seg_in_use;
-    empty += seg_empty;
-    stale += seg_stale;
-    free += fl_size;
-    buckets_in_use += seg_buckets_in_use;
+    int fl_size      = dir_freelist_length(s);
+    in_use           += seg_in_use;
+    empty            += seg_empty;
+    stale            += seg_stale;
+    free             += fl_size;
+    buckets_in_use   += seg_buckets_in_use;
     max_chain_length = std::max(max_chain_length, seg_chain_max);
-    bytes_in_use += seg_bytes_in_use;
+    bytes_in_use     += seg_bytes_in_use;
 
     printf("  - Segment-%d | Entries: used=%d stale=%d free=%d disk-bytes=%d Buckets: used=%d empty=%d max=%d avg=%.2f dups=%d\n",
            s, seg_in_use, seg_stale, fl_size, seg_bytes_in_use, seg_buckets_in_use, seg_empty, seg_chain_max,
@@ -913,8 +913,8 @@ Stripe::loadMeta()
     delta              = Bytes(data.rebind<char>().data() - stripe_buff2);
     _meta[A][HEAD]     = *meta;
     _meta_pos[A][HEAD] = round_down(pos + Bytes(delta));
-    pos += round_up(SBSIZE);
-    _directory._skip = Bytes(SBSIZE); // first guess, updated in @c updateLiveData when the header length is computed.
+    pos                += round_up(SBSIZE);
+    _directory._skip   = Bytes(SBSIZE); // first guess, updated in @c updateLiveData when the header length is computed.
     // Search for Footer A. Nothing for it except to grub through the disk.
     // The searched data is cached so it's available for directory parsing later if needed.
     while (pos < limit) {
@@ -957,7 +957,7 @@ Stripe::loadMeta()
 
       // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
       pos += delta;
-      n = Bytes(pread(fd, stripe_buff, ts::CacheStoreBlocks::SCALE, pos));
+      n   = Bytes(pread(fd, stripe_buff, ts::CacheStoreBlocks::SCALE, pos));
       data.assign(stripe_buff, n);
       meta = static_cast<StripeMeta *>(data.data());
       if (this->validateMeta(meta)) {

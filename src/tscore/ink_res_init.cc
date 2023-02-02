@@ -94,7 +94,8 @@
 #endif
 
 HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {
-  {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE}};
+  {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE}
+};
 
 HostResPreferenceOrder host_res_default_preference_order;
 
@@ -115,7 +116,7 @@ ink_res_nclose(ink_res_state statp)
   if (statp->_vcsock >= 0) {
     (void)close(statp->_vcsock);
     statp->_vcsock = -1;
-    statp->_flags &= ~(INK_RES_F_VC | INK_RES_F_CONN);
+    statp->_flags  &= ~(INK_RES_F_VC | INK_RES_F_CONN);
   }
 }
 

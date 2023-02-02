@@ -113,7 +113,7 @@ GzipDeflateTransformation::consume(std::string_view data)
       return;
     }
 
-    int bytes_to_write = buffer_size - state_->z_stream_.avail_out;
+    int bytes_to_write      = buffer_size - state_->z_stream_.avail_out;
     state_->bytes_produced_ += bytes_to_write;
 
     LOG_DEBUG("Iteration %d: Deflate compressed %ld bytes to %d bytes, producing output...", iteration, data.size(),
@@ -146,7 +146,7 @@ GzipDeflateTransformation::handleInputComplete()
 
     status = deflate(&state_->z_stream_, Z_FINISH);
 
-    int bytes_to_write = buffer_size - state_->z_stream_.avail_out;
+    int bytes_to_write      = buffer_size - state_->z_stream_.avail_out;
     state_->bytes_produced_ += bytes_to_write;
 
     if (status == Z_OK || status == Z_STREAM_END) {

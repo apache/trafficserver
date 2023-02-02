@@ -215,7 +215,7 @@ public:
 
   // noncopyable
   // -- member functions that are not allowed --
-  LogFormatList(const LogFormatList &rhs) = delete;
+  LogFormatList(const LogFormatList &rhs)            = delete;
   LogFormatList &operator=(const LogFormatList &rhs) = delete;
 
 private:

@@ -240,7 +240,7 @@ public:
   /** Allocates objects of the templated type.  Arguments are forwarded to the constructor for the object. */
   template <typename... Args>
   C *
-  alloc(Args &&... args)
+  alloc(Args &&...args)
   {
     void *ptr = this->alloc_void();
 

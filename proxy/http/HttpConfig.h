@@ -383,9 +383,9 @@ enum CacheOpenWriteFailAction_t {
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
-#define HTTP_INCREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, this_ethread(), (int)x, 1)
-#define HTTP_DECREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, this_ethread(), (int)x, -1)
-#define HTTP_SUM_DYN_STAT(x, y) RecIncrRawStat(http_rsb, this_ethread(), (int)x, (int64_t)y)
+#define HTTP_INCREMENT_DYN_STAT(x)     RecIncrRawStat(http_rsb, this_ethread(), (int)x, 1)
+#define HTTP_DECREMENT_DYN_STAT(x)     RecIncrRawStat(http_rsb, this_ethread(), (int)x, -1)
+#define HTTP_SUM_DYN_STAT(x, y)        RecIncrRawStat(http_rsb, this_ethread(), (int)x, (int64_t)y)
 #define HTTP_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(http_rsb, x, y)
 
 #define HTTP_CLEAR_DYN_STAT(x)          \
@@ -394,7 +394,7 @@ extern RecRawStatBlock *http_rsb;
     RecSetRawStatCount(http_rsb, x, 0); \
   } while (0);
 
-#define HTTP_READ_DYN_SUM(x, S) RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
+#define HTTP_READ_DYN_SUM(x, S)        RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
 #define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, (int)x, &S)
 
 /////////////////////////////////////////////////////////////
@@ -468,9 +468,13 @@ enum class Action {
 };
 
 static std::map<std::string, AddressClass> address_class_map = {
-  {"default", AddressClass::DEFAULT},     {"private", AddressClass::PRIVATE},     {"loopback", AddressClass::LOOPBACK},
-  {"multicast", AddressClass::MULTICAST}, {"linklocal", AddressClass::LINKLOCAL}, {"routable", AddressClass::ROUTABLE},
-  {"self", AddressClass::SELF},
+  {"default",   AddressClass::DEFAULT  },
+  {"private",   AddressClass::PRIVATE  },
+  {"loopback",  AddressClass::LOOPBACK },
+  {"multicast", AddressClass::MULTICAST},
+  {"linklocal", AddressClass::LINKLOCAL},
+  {"routable",  AddressClass::ROUTABLE },
+  {"self",      AddressClass::SELF     },
 };
 
 static std::map<std::string, Action> action_map = {
@@ -864,7 +868,7 @@ public:
   /////////////////////////////////////
   // operator = and copy constructor //
   /////////////////////////////////////
-  HttpConfigParams(const HttpConfigParams &) = delete;
+  HttpConfigParams(const HttpConfigParams &)            = delete;
   HttpConfigParams &operator=(const HttpConfigParams &) = delete;
 };
 

@@ -50,7 +50,7 @@ public:
   virtual ~Matcher() { TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher"); }
 
   // noncopyable
-  Matcher(const Matcher &) = delete;
+  Matcher(const Matcher &)        = delete;
   void operator=(const Matcher &) = delete;
 
   MatcherOps

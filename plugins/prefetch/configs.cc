@@ -54,20 +54,22 @@ isTrue(const char *arg)
 bool
 PrefetchConfig::init(int argc, char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("front"), optional_argument, nullptr, 'f'},
-                                          {const_cast<char *>("api-header"), optional_argument, nullptr, 'h'},
-                                          {const_cast<char *>("next-header"), optional_argument, nullptr, 'n'},
-                                          {const_cast<char *>("fetch-policy"), optional_argument, nullptr, 'p'},
-                                          {const_cast<char *>("fetch-count"), optional_argument, nullptr, 'c'},
-                                          {const_cast<char *>("fetch-path-pattern"), optional_argument, nullptr, 'e'},
-                                          {const_cast<char *>("fetch-query"), optional_argument, nullptr, 'q'},
-                                          {const_cast<char *>("fetch-max"), optional_argument, nullptr, 'x'},
-                                          {const_cast<char *>("replace-host"), optional_argument, nullptr, 'r'},
-                                          {const_cast<char *>("name-space"), optional_argument, nullptr, 's'},
-                                          {const_cast<char *>("metrics-prefix"), optional_argument, nullptr, 'm'},
-                                          {const_cast<char *>("exact-match"), optional_argument, nullptr, 'y'},
-                                          {const_cast<char *>("log-name"), optional_argument, nullptr, 'l'},
-                                          {nullptr, 0, nullptr, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("front"),              optional_argument, nullptr, 'f'},
+    {const_cast<char *>("api-header"),         optional_argument, nullptr, 'h'},
+    {const_cast<char *>("next-header"),        optional_argument, nullptr, 'n'},
+    {const_cast<char *>("fetch-policy"),       optional_argument, nullptr, 'p'},
+    {const_cast<char *>("fetch-count"),        optional_argument, nullptr, 'c'},
+    {const_cast<char *>("fetch-path-pattern"), optional_argument, nullptr, 'e'},
+    {const_cast<char *>("fetch-query"),        optional_argument, nullptr, 'q'},
+    {const_cast<char *>("fetch-max"),          optional_argument, nullptr, 'x'},
+    {const_cast<char *>("replace-host"),       optional_argument, nullptr, 'r'},
+    {const_cast<char *>("name-space"),         optional_argument, nullptr, 's'},
+    {const_cast<char *>("metrics-prefix"),     optional_argument, nullptr, 'm'},
+    {const_cast<char *>("exact-match"),        optional_argument, nullptr, 'y'},
+    {const_cast<char *>("log-name"),           optional_argument, nullptr, 'l'},
+    {nullptr,                                  0,                 nullptr, 0  }
+  };
 
   bool status = true;
   optind      = 0;

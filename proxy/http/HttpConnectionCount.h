@@ -54,7 +54,7 @@ class OutboundConnTrack
 
 public:
   // Non-copyable.
-  OutboundConnTrack(const self_type &) = delete;
+  OutboundConnTrack(const self_type &)    = delete;
   self_type &operator=(const self_type &) = delete;
 
   /// Definition of an upstream server group equivalence class.

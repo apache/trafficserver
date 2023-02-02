@@ -41,7 +41,7 @@
 
 // Helper macro to convert integer defines into string literals
 #define _TS_STR(x) #x
-#define TS_STR(x) _TS_STR(x)
+#define TS_STR(x)  _TS_STR(x)
 
 /* clang-format off */
 #define BUILD_MACHINE "@build_machine@"

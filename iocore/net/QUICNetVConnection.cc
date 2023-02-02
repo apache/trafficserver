@@ -54,10 +54,10 @@ static constexpr uint8_t QUANTUM_TEST_VALUE[1200] = {'Q'};
 
 #define QUICConDebug(fmt, ...) Debug(QUIC_DEBUG_TAG.data(), "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-#define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICConVDebug(fmt, ...)   Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 #define QUICConVVVDebug(fmt, ...) Debug("vvv_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-#define QUICFCDebug(fmt, ...) Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICFCDebug(fmt, ...)  Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 #define QUICFCVDebug(fmt, ...) Debug("v_quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICError(fmt, ...)                                           \
@@ -1442,7 +1442,7 @@ QUICNetVConnection::_state_closing_receive_packet()
 
     if (this->_state_closing_recv_packet_window < STATE_CLOSING_MAX_RECV_PKT_WIND &&
         this->_state_closing_recv_packet_count >= this->_state_closing_recv_packet_window) {
-      this->_state_closing_recv_packet_count = 0;
+      this->_state_closing_recv_packet_count  = 0;
       this->_state_closing_recv_packet_window <<= 1;
 
       this->_schedule_packet_write_ready(true);
@@ -1697,7 +1697,7 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
           ink_assert(ret == 0);
         }
         last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
-        len += size_added;
+        len        += size_added;
 
         // FIXME ACK frame should have priority
         if (frame->type() == QUICFrameType::STREAM) {

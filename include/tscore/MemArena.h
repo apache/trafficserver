@@ -145,7 +145,7 @@ public:
       deleted, the memory will all be reclaimed when the Arena is destroyed. In general it is a bad idea
       to make objects in the Arena that own memory that is not also in the Arena.
   */
-  template <typename T, typename... Args> T *make(Args &&... args);
+  template <typename T, typename... Args> T *make(Args &&...args);
 
   /** Freeze reserved memory.
 
@@ -265,13 +265,13 @@ MemArena::Block::alloc(size_t n)
 {
   ink_assert(n <= this->remaining());
   swoc::MemSpan<void> zret = this->remnant().prefix(n);
-  allocated += n;
+  allocated                += n;
   return zret;
 }
 
 template <typename T, typename... Args>
 T *
-MemArena::make(Args &&... args)
+MemArena::make(Args &&...args)
 {
   return new (this->alloc(sizeof(T)).data()) T(std::forward<Args>(args)...);
 }

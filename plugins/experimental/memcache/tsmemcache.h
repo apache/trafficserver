@@ -34,19 +34,19 @@
 #include "tscore/ink_hrtime.h"
 #include "tscore/CryptoHash.h"
 
-#define TSMEMCACHE_VERSION "1.0.0"
-#define TSMEMCACHE_MAX_CMD_SIZE (128 * 1024 * 1024) // silly large
-#define TSMEMCACHE_MAX_KEY_LEN 250
-#define TSMEMCACHE_TMP_CMD_BUFFER_SIZE 320
-#define TSMEMCACHE_HEADER_MAGIC 0x8765ACDC
+#define TSMEMCACHE_VERSION              "1.0.0"
+#define TSMEMCACHE_MAX_CMD_SIZE         (128 * 1024 * 1024) // silly large
+#define TSMEMCACHE_MAX_KEY_LEN          250
+#define TSMEMCACHE_TMP_CMD_BUFFER_SIZE  320
+#define TSMEMCACHE_HEADER_MAGIC         0x8765ACDC
 #define TSMEMCACHE_RETRY_WRITE_INTERVAL HRTIME_MSECONDS(20)
 
 #define TSMEMCACHE_WRITE_SYNC 0 // not yet
 
 #define TSMEMCACHE_EVENT_GOT_ITEM 100000
-#define TSMEMCACHE_EVENT_GOT_KEY 100001
-#define TSMEMCACHE_STREAM_DONE 100002
-#define TSMEMCACHE_TUNNEL_DONE 100003
+#define TSMEMCACHE_EVENT_GOT_KEY  100001
+#define TSMEMCACHE_STREAM_DONE    100002
+#define TSMEMCACHE_TUNNEL_DONE    100003
 
 #define CHECK_RET(_e, _r) \
   do {                    \
@@ -54,7 +54,7 @@
     if (ret != _r)        \
       return _r;          \
   } while (0)
-#define WRITE(_s) write(_s "", sizeof(_s "") - 1)
+#define WRITE(_s)  write(_s "", sizeof(_s "") - 1)
 #define STRLEN(_s) (sizeof(_s "") - 1)
 
 class NetVConnection;
@@ -62,7 +62,7 @@ class NetVConnection;
 struct MCCacheHeader {
   uint32_t magic;
   uint32_t flags;
-  uint32_t nkey : 8;
+  uint32_t nkey     : 8;
   uint32_t reserved : 24;
   uint32_t exptime; // seconds offset from settime
   uint64_t settime;
@@ -104,14 +104,14 @@ struct MCAccept : public Continuation {
     SET_HANDLER(_h);                           \
   } while (0)
 
-#define TS_POP_HANDLER handler = handler_stack[--ihandler_stack]
-#define TS_POP_CALL(_event, _data) handleEvent((TS_POP_HANDLER, _event), _data)
+#define TS_POP_HANDLER                 handler = handler_stack[--ihandler_stack]
+#define TS_POP_CALL(_event, _data)     handleEvent((TS_POP_HANDLER, _event), _data)
 #define TS_SET_CALL(_h, _event, _data) handleEvent((SET_HANDLER(_h), _event), _data)
-#define ASCII_RESPONSE(_s) ascii_response((_s "\r\n"), sizeof(_s "\r\n") - 1)
-#define ASCII_ERROR() ascii_response(("ERROR\r\n"), sizeof("ERROR\r\n") - 1)
-#define ASCII_CLIENT_ERROR(_s) ascii_response(("CLIENT_ERROR: " _s "\r\n"), sizeof("CLIENT_ERROR: " _s "\r\n") - 1)
-#define ASCII_SERVER_ERROR(_s) ascii_response(("SERVER_ERROR: " _s "\r\n"), sizeof("SERVER_ERROR: " _s "\r\n") - 1)
-#define STRCMP(_s, _const_string) strncmp(_s, _const_string "", sizeof(_const_string) - 1)
+#define ASCII_RESPONSE(_s)             ascii_response((_s "\r\n"), sizeof(_s "\r\n") - 1)
+#define ASCII_ERROR()                  ascii_response(("ERROR\r\n"), sizeof("ERROR\r\n") - 1)
+#define ASCII_CLIENT_ERROR(_s)         ascii_response(("CLIENT_ERROR: " _s "\r\n"), sizeof("CLIENT_ERROR: " _s "\r\n") - 1)
+#define ASCII_SERVER_ERROR(_s)         ascii_response(("SERVER_ERROR: " _s "\r\n"), sizeof("SERVER_ERROR: " _s "\r\n") - 1)
+#define STRCMP(_s, _const_string)      strncmp(_s, _const_string "", sizeof(_const_string) - 1)
 
 struct MC : Continuation {
   Action *pending_action;
@@ -140,15 +140,15 @@ struct MC : Continuation {
   char tmp_cmd_buffer[TSMEMCACHE_TMP_CMD_BUFFER_SIZE];
   union {
     struct {
-      unsigned int noreply : 1;
-      unsigned int return_cas : 1;
-      unsigned int set_add : 1;
-      unsigned int set_cas : 1;
-      unsigned int set_append : 1;
+      unsigned int noreply     : 1;
+      unsigned int return_cas  : 1;
+      unsigned int set_add     : 1;
+      unsigned int set_cas     : 1;
+      unsigned int set_append  : 1;
       unsigned int set_prepend : 1;
       unsigned int set_replace : 1;
-      unsigned int set_incr : 1;
-      unsigned int set_decr : 1;
+      unsigned int set_incr    : 1;
+      unsigned int set_decr    : 1;
     } f;
     unsigned int ff;
   };

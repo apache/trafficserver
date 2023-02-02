@@ -41,8 +41,8 @@
 
 #define LOGFILE_ROLLED_EXTENSION ".old"
 #define LOGFILE_SEPARATOR_STRING "_"
-#define LOGFILE_DEFAULT_PERMS (0644)
-#define LOGFILE_ROLL_MAXPATHLEN 4096
+#define LOGFILE_DEFAULT_PERMS    (0644)
+#define LOGFILE_ROLL_MAXPATHLEN  4096
 #define BASELOGFILE_DEBUG_MODE \
   0 // change this to 1 to enable debug messages
     // TODO find a way to enable this from autotools
@@ -166,7 +166,7 @@ class BaseLogFile
 {
 public:
   // member functions
-  BaseLogFile()        = delete;
+  BaseLogFile()                               = delete;
   BaseLogFile &operator=(const BaseLogFile &) = delete;
   BaseLogFile(const char *name);
   BaseLogFile(const char *name, uint64_t sig);

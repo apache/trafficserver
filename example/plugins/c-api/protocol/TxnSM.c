@@ -939,7 +939,7 @@ get_info_from_buffer(TSIOBufferReader the_reader)
     if (read_done > 0) {
       TSIOBufferReaderConsume(the_reader, read_done);
       read_avail -= read_done;
-      info += read_done;
+      info       += read_done;
     }
   }
 

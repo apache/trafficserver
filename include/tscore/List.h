@@ -150,9 +150,15 @@ template <class C> struct Link : public SLink<C> {
     static _c *&next_link(_c *c);            \
     static _c *&prev_link(_c *c);            \
   };
-#define LINK_DEFINITION(_c, _f)                                           \
-  inline _c *&Link##_##_c##_##_f::next_link(_c *c) { return c->_f.next; } \
-  inline _c *&Link##_##_c##_##_f::prev_link(_c *c) { return c->_f.prev; }
+#define LINK_DEFINITION(_c, _f)                    \
+  inline _c *&Link##_##_c##_##_f::next_link(_c *c) \
+  {                                                \
+    return c->_f.next;                             \
+  }                                                \
+  inline _c *&Link##_##_c##_##_f::prev_link(_c *c) \
+  {                                                \
+    return c->_f.prev;                             \
+  }
 //
 //      List descriptor for singly-linked list of objects of type C.
 //
@@ -186,9 +192,9 @@ public:
   SLL() : head(nullptr) {}
   SLL(C *c) : head(c) {}
 };
-#define SList(_c, _f) SLL<_c, _c::Link##_##_f>
+#define SList(_c, _f)           SLL<_c, _c::Link##_##_f>
 #define SListM(_c, _m, _ml, _l) SLL<_c, _c::Link##_##_ml##_##_l>
-#define forl_LL(_c, _p, _l) for (_c *_p = (_l).head; _p; _p = (_l).next(_p))
+#define forl_LL(_c, _p, _l)     for (_c *_p = (_l).head; _p; _p = (_l).next(_p))
 
 template <class C, class L>
 inline void
@@ -344,7 +350,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
   const_iterator end() const;
 };
 
-#define DList(_c, _f) DLL<_c, _c::Link##_##_f>
+#define DList(_c, _f)           DLL<_c, _c::Link##_##_f>
 #define DListM(_c, _m, _ml, _l) DLL<_c, _c::Link##_##_ml##_##_l>
 
 template <class C, class L>
@@ -552,7 +558,7 @@ public:
 
   Queue() : tail(nullptr) {}
 };
-#define Que(_c, _f) Queue<_c, _c::Link##_##_f>
+#define Que(_c, _f)           Queue<_c, _c::Link##_##_f>
 #define QueM(_c, _m, _mf, _f) Queue<_c, _c::Link##_##_mf##_##_f>
 
 template <class C, class L>
@@ -722,7 +728,7 @@ template <class C, class L = typename C::Link_link> struct CountQueue : public Q
   inline void append(CountQueue<C, L> &q);
   inline void append_clear(CountQueue<C, L> &q);
 };
-#define CountQue(_c, _f) CountQueue<_c, _c::Link##_##_f>
+#define CountQue(_c, _f)           CountQueue<_c, _c::Link##_##_f>
 #define CountQueM(_c, _m, _mf, _f) CountQueue<_c, _c::Link##_##_mf##_##_f>
 
 template <class C, class L>
@@ -939,7 +945,7 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
   AtomicSLL();
 };
 
-#define ASLL(_c, _l) AtomicSLL<_c, _c::Link##_##_l>
+#define ASLL(_c, _l)           AtomicSLL<_c, _c::Link##_##_l>
 #define ASLLM(_c, _m, _ml, _l) AtomicSLL<_c, _c::Link##_##_ml##_##_l>
 
 template <class C, class L> inline AtomicSLL<C, L>::AtomicSLL()

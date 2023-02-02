@@ -302,7 +302,10 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-static const struct option longopt[] = {{"geo-db-path", required_argument, nullptr, 'm'}, {nullptr, no_argument, nullptr, '\0'}};
+static const struct option longopt[] = {
+  {"geo-db-path", required_argument, nullptr, 'm' },
+  {nullptr,       no_argument,       nullptr, '\0'}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the InkAPI plugin for the global hooks we support.

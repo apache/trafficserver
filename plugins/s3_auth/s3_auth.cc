@@ -1115,16 +1115,16 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("access_key"), required_argument, nullptr, 'a'},
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-    {const_cast<char *>("secret_key"), required_argument, nullptr, 's'},
-    {const_cast<char *>("version"), required_argument, nullptr, 'v'},
-    {const_cast<char *>("virtual_host"), no_argument, nullptr, 'h'},
-    {const_cast<char *>("v4-include-headers"), required_argument, nullptr, 'i'},
-    {const_cast<char *>("v4-exclude-headers"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("v4-region-map"), required_argument, nullptr, 'm'},
-    {const_cast<char *>("session_token"), required_argument, nullptr, 't'},
-    {nullptr, no_argument, nullptr, '\0'},
+    {const_cast<char *>("access_key"),         required_argument, nullptr, 'a' },
+    {const_cast<char *>("config"),             required_argument, nullptr, 'c' },
+    {const_cast<char *>("secret_key"),         required_argument, nullptr, 's' },
+    {const_cast<char *>("version"),            required_argument, nullptr, 'v' },
+    {const_cast<char *>("virtual_host"),       no_argument,       nullptr, 'h' },
+    {const_cast<char *>("v4-include-headers"), required_argument, nullptr, 'i' },
+    {const_cast<char *>("v4-exclude-headers"), required_argument, nullptr, 'e' },
+    {const_cast<char *>("v4-region-map"),      required_argument, nullptr, 'm' },
+    {const_cast<char *>("session_token"),      required_argument, nullptr, 't' },
+    {nullptr,                                  no_argument,       nullptr, '\0'},
   };
 
   S3Config *s3          = new S3Config(true); // true == this config gets the continuation

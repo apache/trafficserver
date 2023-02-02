@@ -30,7 +30,7 @@
 #include <openssl/ssl.h>
 
 #define PLUGIN_NAME "verify_cert"
-#define PCP "[" PLUGIN_NAME "] "
+#define PCP         "[" PLUGIN_NAME "] "
 
 namespace
 {

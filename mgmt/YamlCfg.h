@@ -64,7 +64,7 @@ namespace Yaml
 
     // No copy/move.
     //
-    Map(Map const &) = delete;
+    Map(Map const &)            = delete;
     Map &operator=(Map const &) = delete;
 
   private:

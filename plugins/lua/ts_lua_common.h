@@ -32,47 +32,47 @@
 #include <ts/remap.h>
 #include "ts_lua_coroutine.h"
 
-#define TS_LUA_FUNCTION_REMAP "do_remap"
-#define TS_LUA_FUNCTION_OS_RESPONSE "do_os_response"
+#define TS_LUA_FUNCTION_REMAP                 "do_remap"
+#define TS_LUA_FUNCTION_OS_RESPONSE           "do_os_response"
 #define TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE "do_cache_lookup_complete"
-#define TS_LUA_FUNCTION_SEND_REQUEST "do_send_request"
-#define TS_LUA_FUNCTION_READ_RESPONSE "do_read_response"
-#define TS_LUA_FUNCTION_SEND_RESPONSE "do_send_response"
-#define TS_LUA_FUNCTION_READ_REQUEST "do_read_request"
-#define TS_LUA_FUNCTION_TXN_START "do_txn_start"
-#define TS_LUA_FUNCTION_PRE_REMAP "do_pre_remap"
-#define TS_LUA_FUNCTION_POST_REMAP "do_post_remap"
-#define TS_LUA_FUNCTION_OS_DNS "do_os_dns"
-#define TS_LUA_FUNCTION_READ_CACHE "do_read_cache"
-#define TS_LUA_FUNCTION_TXN_CLOSE "do_txn_close"
+#define TS_LUA_FUNCTION_SEND_REQUEST          "do_send_request"
+#define TS_LUA_FUNCTION_READ_RESPONSE         "do_read_response"
+#define TS_LUA_FUNCTION_SEND_RESPONSE         "do_send_response"
+#define TS_LUA_FUNCTION_READ_REQUEST          "do_read_request"
+#define TS_LUA_FUNCTION_TXN_START             "do_txn_start"
+#define TS_LUA_FUNCTION_PRE_REMAP             "do_pre_remap"
+#define TS_LUA_FUNCTION_POST_REMAP            "do_post_remap"
+#define TS_LUA_FUNCTION_OS_DNS                "do_os_dns"
+#define TS_LUA_FUNCTION_READ_CACHE            "do_read_cache"
+#define TS_LUA_FUNCTION_TXN_CLOSE             "do_txn_close"
 
-#define TS_LUA_FUNCTION_G_SEND_REQUEST "do_global_send_request"
-#define TS_LUA_FUNCTION_G_READ_REQUEST "do_global_read_request"
-#define TS_LUA_FUNCTION_G_SEND_RESPONSE "do_global_send_response"
-#define TS_LUA_FUNCTION_G_READ_RESPONSE "do_global_read_response"
+#define TS_LUA_FUNCTION_G_SEND_REQUEST          "do_global_send_request"
+#define TS_LUA_FUNCTION_G_READ_REQUEST          "do_global_read_request"
+#define TS_LUA_FUNCTION_G_SEND_RESPONSE         "do_global_send_response"
+#define TS_LUA_FUNCTION_G_READ_RESPONSE         "do_global_read_response"
 #define TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE "do_global_cache_lookup_complete"
-#define TS_LUA_FUNCTION_G_TXN_START "do_global_txn_start"
-#define TS_LUA_FUNCTION_G_PRE_REMAP "do_global_pre_remap"
-#define TS_LUA_FUNCTION_G_POST_REMAP "do_global_post_remap"
-#define TS_LUA_FUNCTION_G_OS_DNS "do_global_os_dns"
-#define TS_LUA_FUNCTION_G_READ_CACHE "do_global_read_cache"
-#define TS_LUA_FUNCTION_G_TXN_CLOSE "do_global_txn_close"
+#define TS_LUA_FUNCTION_G_TXN_START             "do_global_txn_start"
+#define TS_LUA_FUNCTION_G_PRE_REMAP             "do_global_pre_remap"
+#define TS_LUA_FUNCTION_G_POST_REMAP            "do_global_post_remap"
+#define TS_LUA_FUNCTION_G_OS_DNS                "do_global_os_dns"
+#define TS_LUA_FUNCTION_G_READ_CACHE            "do_global_read_cache"
+#define TS_LUA_FUNCTION_G_TXN_CLOSE             "do_global_txn_close"
 
 #define TS_LUA_DEBUG_TAG "ts_lua"
 
 #define TS_LUA_EVENT_COROUTINE_CONT 20000
 
-#define TS_LUA_MAX_SCRIPT_FNAME_LENGTH 1024
-#define TS_LUA_MAX_CONFIG_VARS_COUNT 256
+#define TS_LUA_MAX_SCRIPT_FNAME_LENGTH     1024
+#define TS_LUA_MAX_CONFIG_VARS_COUNT       256
 #define TS_LUA_MAX_SHARED_DICT_NAME_LENGTH 128
-#define TS_LUA_MAX_SHARED_DICT_COUNT 32
-#define TS_LUA_MAX_URL_LENGTH 32768
-#define TS_LUA_MAX_OVEC_SIZE (3 * 32)
-#define TS_LUA_MAX_RESIDENT_PCRE 64
-#define TS_LUA_MAX_STR_LENGTH 32768
+#define TS_LUA_MAX_SHARED_DICT_COUNT       32
+#define TS_LUA_MAX_URL_LENGTH              32768
+#define TS_LUA_MAX_OVEC_SIZE               (3 * 32)
+#define TS_LUA_MAX_RESIDENT_PCRE           64
+#define TS_LUA_MAX_STR_LENGTH              32768
 
-#define TS_LUA_MIN_ALIGN sizeof(void *)
-#define TS_LUA_MEM_ALIGN(size) (((size) + ((TS_LUA_MIN_ALIGN)-1)) & ~((TS_LUA_MIN_ALIGN)-1))
+#define TS_LUA_MIN_ALIGN         sizeof(void *)
+#define TS_LUA_MEM_ALIGN(size)   (((size) + ((TS_LUA_MIN_ALIGN)-1)) & ~((TS_LUA_MIN_ALIGN)-1))
 #define TS_LUA_ALIGN_COUNT(size) (size / TS_LUA_MIN_ALIGN)
 
 #define TS_LUA_MAKE_VAR_ITEM(X) \
@@ -92,7 +92,7 @@ typedef struct {
   void *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
 
   unsigned int _first : 1; // create current instance for 1st ts_lua_main_ctx
-  unsigned int _last : 1;  // create current instance for the last ts_lua_main_ctx
+  unsigned int _last  : 1; // create current instance for the last ts_lua_main_ctx
 
   int remap;
   int states;
@@ -162,10 +162,10 @@ typedef struct {
   ts_lua_http_ctx *hctx;
 
   int64_t to_flush;
-  unsigned int reuse : 1;
+  unsigned int reuse         : 1;
   unsigned int recv_complete : 1;
   unsigned int send_complete : 1;
-  unsigned int all_ready : 1;
+  unsigned int all_ready     : 1;
 } ts_lua_http_intercept_ctx;
 
 #define TS_LUA_RELEASE_IO_HANDLE(ih)    \

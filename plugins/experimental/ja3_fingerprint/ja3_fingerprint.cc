@@ -97,7 +97,7 @@ custom_get_ja3_prefixed(int unit, const unsigned char *&data, int len, std::stri
       if (!first) {
         result += '-';
       }
-      first = false;
+      first  = false;
       result += std::to_string(tmp);
     }
   }
@@ -147,8 +147,8 @@ custom_get_ja3(SSL *s)
 
   // Get version
   int version = (((int)p[0]) << 8) | (int)p[1];
-  ja3 += std::to_string(version) + ',';
-  p += 2;
+  ja3         += std::to_string(version) + ',';
+  p           += 2;
 
   // Skip client random
   p += SSL3_RANDOM_SIZE;
@@ -174,7 +174,7 @@ custom_get_ja3(SSL *s)
   std::string eclist, ecpflist;
 
   // Skip length blob
-  p += 2;
+  p          += 2;
   bool first = true;
   while (p < d + n) {
     // Each extension blob is comprised of [2bytes] type + [2bytes] size + [size bytes] data
@@ -203,7 +203,7 @@ custom_get_ja3(SSL *s)
         ja3 += '-';
       }
       first = false;
-      ja3 += std::to_string(type);
+      ja3   += std::to_string(type);
     }
   }
 
@@ -222,7 +222,7 @@ custom_get_ja3(SSL *s)
 
   // Get version
   unsigned int version = SSL_client_hello_get0_legacy_version(s);
-  ja3 += std::to_string(version) + ',';
+  ja3                  += std::to_string(version) + ',';
 
   // Get cipher suites
   len = SSL_client_hello_get0_ciphers(s, &p);
@@ -234,7 +234,7 @@ custom_get_ja3(SSL *s)
   std::string eclist, ecpflist;
   if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {
     // Skip first 2 bytes since we already have length
-    p += 2;
+    p   += 2;
     len -= 2;
     custom_get_ja3_prefixed(2, p, len, eclist);
   }
@@ -253,7 +253,7 @@ custom_get_ja3(SSL *s)
           ja3 += '-';
         }
         first = false;
-        ja3 += std::to_string(type);
+        ja3   += std::to_string(type);
       }
     }
     OPENSSL_free(o);
@@ -400,7 +400,11 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
 static bool
 read_config_option(int argc, const char *argv[], int &raw, int &log)
 {
-  const struct option longopts[] = {{"ja3raw", no_argument, &raw, 1}, {"ja3log", no_argument, &log, 1}, {nullptr, 0, nullptr, 0}};
+  const struct option longopts[] = {
+    {"ja3raw", no_argument, &raw,    1},
+    {"ja3log", no_argument, &log,    1},
+    {nullptr,  0,           nullptr, 0}
+  };
 
   int opt = 0;
   while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {

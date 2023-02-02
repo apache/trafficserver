@@ -396,7 +396,7 @@ RemapRegex::compile(const char *&error, int &erroffset)
 
   // POOMA - also dependent on actual stack size. Crashes with previous value of 2047,
   _extra->match_limit_recursion = 1750;
-  _extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+  _extra->flags                 |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 
   if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
     error = "call to pcre_fullinfo() failed";
@@ -458,7 +458,7 @@ RemapRegex::compile(const char *&error, int &erroffset)
 
         _sub_ix[_num_subs]  = ix;
         _sub_pos[_num_subs] = (str - _subst);
-        str += 2;
+        str                 += 2;
         ++_num_subs;
       } else { // Not a valid substitution character, so just ignore it
         ++str;
@@ -483,7 +483,7 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
 
     if (ix < 10) {
       lengths[ix] = ovector[2 * ix + 1] - ovector[2 * ix]; // -1 - -1 == 0
-      len += lengths[ix];
+      len         += lengths[ix];
     } else {
       int tmp_len;
 
@@ -597,7 +597,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
           p1 += len;
         }
       }
-      p2 += (_sub_pos[i] - prev + 2);
+      p2   += (_sub_pos[i] - prev + 2);
       prev = _sub_pos[i] + 2;
 
       if (lowercase_substitutions == true || ix == SUB_LOWER_PATH) {
@@ -609,7 +609,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
     }
 
     memcpy(p1, p2, _subst_len - (p2 - _subst));
-    p1 += _subst_len - (p2 - _subst);
+    p1  += _subst_len - (p2 - _subst);
     *p1 = 0; // Make sure it's NULL terminated (for safety).
     return p1 - dest;
   } else {

@@ -336,10 +336,10 @@ TSPluginInit(int argc, const char *argv[])
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
-      {const_cast<char *>("url"), required_argument, nullptr, 'u'},
-      {const_cast<char *>("service-name"), required_argument, nullptr, 's'},
+      {const_cast<char *>("url"),           required_argument, nullptr, 'u'},
+      {const_cast<char *>("service-name"),  required_argument, nullptr, 's'},
       {const_cast<char *>("sampling-rate"), required_argument, nullptr, 'r'},
-      {nullptr, 0, nullptr, 0},
+      {nullptr,                             0,                 nullptr, 0  },
     };
 
     int longindex = 0;

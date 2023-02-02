@@ -225,7 +225,7 @@ namespace inliner
       } else if (c == '/' || c == '>') {
         return true;
       } else if (isValidValue(c)) {
-        state_ = Attribute::kUnquotedValue;
+        state_                   = Attribute::kUnquotedValue;
         attributes.back().second += c;
       }
       break;
@@ -293,9 +293,9 @@ namespace inliner
           const size_t p = c - b;
           if (p > 0 && tag_ == Tag::kTagIMG) {
             done += bypass(p, o);
-            o += p;
-            l -= p;
-            b = c;
+            o    += p;
+            l    -= p;
+            b    = c;
           }
         } else if (tag_ == Tag::kTagInvalid) {
           state_ = State::kTagBypass;

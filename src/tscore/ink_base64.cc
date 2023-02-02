@@ -53,7 +53,7 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
     *obuf++ = _codes[inBuffer[2] & 077];
 
     inBufferSize -= 3;
-    inBuffer += 3;
+    inBuffer     += 3;
   }
 
   /*
@@ -105,7 +105,7 @@ ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, si
 #undef DECODE
 #endif
 
-#define DECODE(x) printableToSixBit[(unsigned char)x]
+#define DECODE(x)     printableToSixBit[(unsigned char)x]
 #define MAX_PRINT_VAL 63
 
 /* Converts a printable character to it's six bit representation */
@@ -143,9 +143,9 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
     buf[1] = static_cast<unsigned char>(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
     buf[2] = static_cast<unsigned char>(DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
 
-    buf += 3;
-    inBuffer += 4;
-    decodedBytes += 3;
+    buf               += 3;
+    inBuffer          += 4;
+    decodedBytes      += 3;
     inputBytesDecoded += 4;
   }
 

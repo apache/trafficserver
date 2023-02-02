@@ -30,7 +30,7 @@
 #include "tscpp/api/RemapPlugin.h"
 #include "tscpp/api/TransactionPlugin.h"
 
-#define PLUGIN_NAME "server_push_preload"
+#define PLUGIN_NAME   "server_push_preload"
 #define PRELOAD_PARAM "rel=preload"
 #define NOPUSH_OPTION "nopush"
 

@@ -26,9 +26,9 @@
 
 #include "tscore/ink_platform.h"
 
-#define PROCESSOR_RECONFIGURE 0x01
-#define PROCESSOR_CHECK 0x02
-#define PROCESSOR_FIX 0x04
+#define PROCESSOR_RECONFIGURE   0x01
+#define PROCESSOR_CHECK         0x02
+#define PROCESSOR_FIX           0x04
 #define PROCESSOR_IGNORE_ERRORS 0x08
 
 class Processor;
@@ -107,7 +107,7 @@ public:
   }
 
   // noncopyable, prevent unauthorized copies (Not implemented)
-  Processor(const Processor &) = delete;
+  Processor(const Processor &)            = delete;
   Processor &operator=(const Processor &) = delete;
 
 protected:

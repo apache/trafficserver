@@ -28,9 +28,9 @@
 
 #ifdef MAP_HUGETLB
 #define MEMINFO_PATH "/proc/meminfo"
-#define LINE_SIZE 256
-#define TOKEN "Hugepagesize:"
-#define TOKEN_SIZE (strlen(TOKEN))
+#define LINE_SIZE    256
+#define TOKEN        "Hugepagesize:"
+#define TOKEN_SIZE   (strlen(TOKEN))
 
 static int hugepage_size = -1;
 static bool hugepage_enabled;

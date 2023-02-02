@@ -132,7 +132,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if (argc > 1) {
     int c;
-    static const struct option longopts[] = {{"rate", required_argument, NULL, 'r'}, {NULL, 0, NULL, 0}};
+    static const struct option longopts[] = {
+      {"rate", required_argument, NULL, 'r'},
+      {NULL,   0,                 NULL, 0  }
+    };
 
     // The "-" in optstring is required to prevent permutation of argv, which
     // makes the plugin loader crashy

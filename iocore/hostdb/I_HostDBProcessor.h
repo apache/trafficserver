@@ -40,12 +40,12 @@
 #include "SRV.h"
 
 // Event returned on a lookup
-#define EVENT_HOST_DB_LOOKUP (HOSTDB_EVENT_EVENTS_START + 0)
-#define EVENT_HOST_DB_IP_REMOVED (HOSTDB_EVENT_EVENTS_START + 1)
+#define EVENT_HOST_DB_LOOKUP       (HOSTDB_EVENT_EVENTS_START + 0)
+#define EVENT_HOST_DB_IP_REMOVED   (HOSTDB_EVENT_EVENTS_START + 1)
 #define EVENT_HOST_DB_GET_RESPONSE (HOSTDB_EVENT_EVENTS_START + 2)
 
-#define EVENT_SRV_LOOKUP (SRV_EVENT_EVENTS_START + 0)
-#define EVENT_SRV_IP_REMOVED (SRV_EVENT_EVENTS_START + 1)
+#define EVENT_SRV_LOOKUP       (SRV_EVENT_EVENTS_START + 0)
+#define EVENT_SRV_IP_REMOVED   (SRV_EVENT_EVENTS_START + 1)
 #define EVENT_SRV_GET_RESPONSE (SRV_EVENT_EVENTS_START + 2)
 
 //
@@ -105,10 +105,10 @@ class HostDBRecord;
 
 /// Information for an SRV record.
 struct SRVInfo {
-  unsigned int srv_offset : 16; ///< Memory offset from @c HostDBInfo to name.
-  unsigned int srv_weight : 16;
+  unsigned int srv_offset   : 16; ///< Memory offset from @c HostDBInfo to name.
+  unsigned int srv_weight   : 16;
   unsigned int srv_priority : 16;
-  unsigned int srv_port : 16;
+  unsigned int srv_port     : 16;
   unsigned int key;
 };
 
@@ -849,7 +849,8 @@ ResolveInfo::mark_active_server_dead(ts_time now)
   return active != nullptr && active->mark_down(now);
 }
 
-inline bool ResolveInfo::set_active(std::nullptr_t)
+inline bool
+ResolveInfo::set_active(std::nullptr_t)
 {
   active     = nullptr;
   resolved_p = false;

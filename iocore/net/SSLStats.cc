@@ -51,8 +51,8 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
         shared_SSL_CTX ctx = cc->getCtx();
         if (ctx) {
           sessions += SSL_CTX_sess_accept_good(ctx.get());
-          hits += SSL_CTX_sess_hits(ctx.get());
-          misses += SSL_CTX_sess_misses(ctx.get());
+          hits     += SSL_CTX_sess_hits(ctx.get());
+          misses   += SSL_CTX_sess_misses(ctx.get());
           timeouts += SSL_CTX_sess_timeouts(ctx.get());
         }
       }

@@ -218,7 +218,7 @@ public:
   }
 
   // noncopyable, non-assignable
-  UrlMappingContainer(const UrlMappingContainer &orig) = delete;
+  UrlMappingContainer(const UrlMappingContainer &orig)           = delete;
   UrlMappingContainer &operator=(const UrlMappingContainer &rhs) = delete;
 
 private:

@@ -72,7 +72,7 @@ namespace Yaml
             msg += ", ";
           }
           first = false;
-          msg += key;
+          msg   += key;
         }
       }
       throw YAML::ParserException(_map.Mark(), msg + " invalid in this map");

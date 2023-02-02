@@ -194,7 +194,7 @@ runroot_handler(const char **argv, bool json)
   // if --run-root is provided
   if (!arg.empty() && arg != prefix) {
     // 1. pass in path
-    prefix += "=";
+    prefix            += "=";
     std::string value = arg.substr(prefix.size(), arg.size() - 1);
     path              = get_yaml_path(value);
     if (!path.empty()) {

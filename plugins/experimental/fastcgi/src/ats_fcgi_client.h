@@ -40,8 +40,8 @@ typedef unsigned char uchar;
 #define PRINT_OPAQUE_STRUCT(p) print_mem((p), sizeof(*(p)))
 
 #define FCGI_PROCESS_AGAIN 1
-#define FCGI_PROCESS_DONE 2
-#define FCGI_PROCESS_ERR 3
+#define FCGI_PROCESS_DONE  2
+#define FCGI_PROCESS_ERR   3
 
 namespace ats_plugin
 {

@@ -46,8 +46,8 @@ const char PLUGIN_NAME[] = "cache_fill";
 class BgFetchState
 {
 public:
-  BgFetchState()                     = default;
-  BgFetchState(BgFetchState const &) = delete;
+  BgFetchState()                       = default;
+  BgFetchState(BgFetchState const &)   = delete;
   void operator=(BgFetchState const &) = delete;
 
   static BgFetchState &

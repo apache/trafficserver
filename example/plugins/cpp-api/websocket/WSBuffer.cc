@@ -52,7 +52,7 @@
 #endif
 
 #define BASE64_ENCODE_DSTLEN(_length) ((_length * 8) / 6 + 4)
-#define WS_DIGEST_MAX BASE64_ENCODE_DSTLEN(20)
+#define WS_DIGEST_MAX                 BASE64_ENCODE_DSTLEN(20)
 
 static const std::string magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
@@ -146,7 +146,7 @@ WSBuffer::read_buffered_message(std::string &message, int &code)
   if (final) {
     message = msg_buf_;
     message += ws_buf_.substr(pos, msg_len);
-    code = frame;
+    code    = frame;
   } else {
     msg_buf_ += ws_buf_.substr(pos, msg_len);
   }
@@ -222,13 +222,13 @@ WSBuffer::get_frame(size_t len, int code)
 
   int len_len;
   if (len <= 125) {
-    frame += char(len);
+    frame   += char(len);
     len_len = 0;
   } else if (len <= UINT16_MAX) {
-    frame += char(WS_16BIT_LEN);
+    frame   += char(WS_16BIT_LEN);
     len_len = 2;
   } else {
-    frame += char(WS_64BIT_LEN);
+    frame   += char(WS_64BIT_LEN);
     len_len = 8;
   }
   // Convert length to big-endian bytes.

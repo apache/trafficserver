@@ -146,7 +146,7 @@ Histogram<R, S>::operator()(raw_type sample) -> self_type &
   if (sample < LOWER_BOUND) {
     idx = sample;                    // sample -> bucket is identity in the underflow range.
   } else if (sample < UPPER_BOUND) { // not overflow bucket.
-    idx -= N_SPAN_BUCKETS;           // bottom bucket in the range.
+    idx       -= N_SPAN_BUCKETS;     // bottom bucket in the range.
     auto mask = MSB_MASK;            // Mask to probe for bit set.
     // Shift needed after finding the MSB to put the span bits in the LSBs.
     unsigned normalize_shift_count = N_RANGE_BITS - 1;

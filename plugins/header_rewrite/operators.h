@@ -39,7 +39,7 @@ public:
 
   // noncopyable
   OperatorSetConfig(const OperatorSetConfig &) = delete;
-  void operator=(const OperatorSetConfig &) = delete;
+  void operator=(const OperatorSetConfig &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -61,7 +61,7 @@ public:
 
   // noncopyable
   OperatorSetStatus(const OperatorSetStatus &) = delete;
-  void operator=(const OperatorSetStatus &) = delete;
+  void operator=(const OperatorSetStatus &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -82,7 +82,7 @@ public:
 
   // noncopyable
   OperatorSetStatusReason(const OperatorSetStatusReason &) = delete;
-  void operator=(const OperatorSetStatusReason &) = delete;
+  void operator=(const OperatorSetStatusReason &)          = delete;
 
   void initialize(Parser &p) override;
 
@@ -101,7 +101,7 @@ public:
 
   // noncopyable
   OperatorSetDestination(const OperatorSetDestination &) = delete;
-  void operator=(const OperatorSetDestination &) = delete;
+  void operator=(const OperatorSetDestination &)         = delete;
 
   void initialize(Parser &p) override;
 
@@ -121,7 +121,7 @@ public:
 
   // noncopyable
   OperatorRMDestination(const OperatorRMDestination &) = delete;
-  void operator=(const OperatorRMDestination &) = delete;
+  void operator=(const OperatorRMDestination &)        = delete;
 
   void initialize(Parser &p) override;
 
@@ -139,7 +139,7 @@ public:
 
   // noncopyable
   OperatorSetRedirect(const OperatorSetRedirect &) = delete;
-  void operator=(const OperatorSetRedirect &) = delete;
+  void operator=(const OperatorSetRedirect &)      = delete;
 
   void initialize(Parser &p) override;
 
@@ -169,7 +169,7 @@ public:
   OperatorNoOp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorNoOp"); }
 
   // noncopyable
-  OperatorNoOp(const OperatorNoOp &) = delete;
+  OperatorNoOp(const OperatorNoOp &)   = delete;
   void operator=(const OperatorNoOp &) = delete;
 
 protected:
@@ -183,7 +183,7 @@ public:
 
   // noncopyable
   OperatorSetTimeoutOut(const OperatorSetTimeoutOut &) = delete;
-  void operator=(const OperatorSetTimeoutOut &) = delete;
+  void operator=(const OperatorSetTimeoutOut &)        = delete;
 
   void initialize(Parser &p) override;
 
@@ -210,7 +210,7 @@ public:
 
   // noncopyable
   OperatorSkipRemap(const OperatorSkipRemap &) = delete;
-  void operator=(const OperatorSkipRemap &) = delete;
+  void operator=(const OperatorSkipRemap &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -229,7 +229,7 @@ public:
 
   // noncopyable
   OperatorRMHeader(const OperatorRMHeader &) = delete;
-  void operator=(const OperatorRMHeader &) = delete;
+  void operator=(const OperatorRMHeader &)   = delete;
 
 protected:
   void exec(const Resources &res) const override;
@@ -242,7 +242,7 @@ public:
 
   // noncopyable
   OperatorAddHeader(const OperatorAddHeader &) = delete;
-  void operator=(const OperatorAddHeader &) = delete;
+  void operator=(const OperatorAddHeader &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -260,7 +260,7 @@ public:
 
   // noncopyable
   OperatorSetHeader(const OperatorSetHeader &) = delete;
-  void operator=(const OperatorSetHeader &) = delete;
+  void operator=(const OperatorSetHeader &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -278,7 +278,7 @@ public:
 
   // noncopyable
   OperatorCounter(const OperatorCounter &) = delete;
-  void operator=(const OperatorCounter &) = delete;
+  void operator=(const OperatorCounter &)  = delete;
 
   void initialize(Parser &p) override;
 
@@ -297,7 +297,7 @@ public:
 
   // noncopyable
   OperatorRMCookie(const OperatorRMCookie &) = delete;
-  void operator=(const OperatorRMCookie &) = delete;
+  void operator=(const OperatorRMCookie &)   = delete;
 
 protected:
   void exec(const Resources &res) const override;
@@ -310,7 +310,7 @@ public:
 
   // noncopyable
   OperatorAddCookie(const OperatorAddCookie &) = delete;
-  void operator=(const OperatorAddCookie &) = delete;
+  void operator=(const OperatorAddCookie &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -328,7 +328,7 @@ public:
 
   // noncopyable
   OperatorSetCookie(const OperatorSetCookie &) = delete;
-  void operator=(const OperatorSetCookie &) = delete;
+  void operator=(const OperatorSetCookie &)    = delete;
 
   void initialize(Parser &p) override;
 
@@ -358,7 +358,7 @@ public:
 
   // noncopyable
   OperatorSetConnDSCP(const OperatorSetConnDSCP &) = delete;
-  void operator=(const OperatorSetConnDSCP &) = delete;
+  void operator=(const OperatorSetConnDSCP &)      = delete;
 
   void initialize(Parser &p) override;
 
@@ -377,7 +377,7 @@ public:
 
   // noncopyable
   OperatorSetConnMark(const OperatorSetConnMark &) = delete;
-  void operator=(const OperatorSetConnMark &) = delete;
+  void operator=(const OperatorSetConnMark &)      = delete;
 
   void initialize(Parser &p) override;
 
@@ -396,7 +396,7 @@ public:
 
   // noncopyable
   OperatorSetDebug(const OperatorSetDebug &) = delete;
-  void operator=(const OperatorSetDebug &) = delete;
+  void operator=(const OperatorSetDebug &)   = delete;
 
   void initialize(Parser &p) override;
 
@@ -412,7 +412,7 @@ public:
 
   // noncopyable
   OperatorSetBody(const OperatorSetBody &) = delete;
-  void operator=(const OperatorSetBody &) = delete;
+  void operator=(const OperatorSetBody &)  = delete;
 
   void initialize(Parser &p) override;
 
@@ -431,7 +431,7 @@ public:
 
   // noncopyable
   OperatorSetHttpCntl(const OperatorSetHttpCntl &) = delete;
-  void operator=(const OperatorSetHttpCntl &) = delete;
+  void operator=(const OperatorSetHttpCntl &)      = delete;
 
   void initialize(Parser &p) override;
 

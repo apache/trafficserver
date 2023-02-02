@@ -46,7 +46,7 @@ public:
   }
 
   // noncopyable
-  RuleSet(const RuleSet &) = delete;
+  RuleSet(const RuleSet &)        = delete;
   void operator=(const RuleSet &) = delete;
 
   // No reason to inline these

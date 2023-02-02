@@ -236,7 +236,7 @@ KvpAccessToken::parse(const StringView token)
 
   /* Now identify the pay-load which was signed */
   payloadSize += _tokenConfig.messageDigestName.size() + _tokenConfig.kvDelimiter.size();
-  _payload = _token.substr(0, payloadSize);
+  _payload    = _token.substr(0, payloadSize);
 
   DEBUG_OUT("payload:'" << _payload << "'");
 

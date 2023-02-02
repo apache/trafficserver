@@ -595,11 +595,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {{"csv", no_argument, nullptr, 'c'},
-                                          {"integer-counters", no_argument, NULL, 'i'},
-                                          {"wrap-counters", no_argument, NULL, 'w'},
-                                          {"max-age", required_argument, nullptr, 'a'},
-                                          {nullptr, no_argument, nullptr, '\0'}};
+  static const struct option longopt[] = {
+    {"csv",              no_argument,       nullptr, 'c' },
+    {"integer-counters", no_argument,       NULL,    'i' },
+    {"wrap-counters",    no_argument,       NULL,    'w' },
+    {"max-age",          required_argument, nullptr, 'a' },
+    {nullptr,            no_argument,       nullptr, '\0'}
+  };
 
   HTTPStatsConfig *cfg = new HTTPStatsConfig;
 

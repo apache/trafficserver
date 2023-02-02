@@ -49,11 +49,11 @@
 #include <brotli/encode.h>
 #endif
 
-#define PLUGIN_NAME "stats_over_http"
-#define FREE_TMOUT 300000
+#define PLUGIN_NAME     "stats_over_http"
+#define FREE_TMOUT      300000
 #define STR_BUFFER_SIZE 1024
 
-#define SYSTEM_RECORD_TYPE (0x100)
+#define SYSTEM_RECORD_TYPE   (0x100)
 #define DEFAULT_RECORD_TYPES (SYSTEM_RECORD_TYPE | TS_RECORDTYPE_PROCESS | TS_RECORDTYPE_PLUGIN)
 
 static const swoc::IP4Range DEFAULT_IP{swoc::IP4Addr::MIN, swoc::IP4Addr::MAX};
@@ -77,7 +77,7 @@ static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimi
 static const int WINDOW_BITS_DEFLATE = 15;
 static const int WINDOW_BITS_GZIP    = 16;
 #define DEFLATE_MODE WINDOW_BITS_DEFLATE
-#define GZIP_MODE (WINDOW_BITS_DEFLATE | WINDOW_BITS_GZIP)
+#define GZIP_MODE    (WINDOW_BITS_DEFLATE | WINDOW_BITS_GZIP)
 
 // brotli compression quality 1-11. Testing proved level '6'
 #if HAVE_BROTLI_ENCODE_H
@@ -466,7 +466,7 @@ gzip_out_stats(stats_state *my_state)
   int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
   TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
 
-  my_state->output_bytes -= toconsume;
+  my_state->output_bytes    -= toconsume;
   my_state->zstrm.avail_in  = inputbytes;
   my_state->zstrm.avail_out = sizeof(outputbuf);
   my_state->zstrm.next_in   = (Bytef *)inputbuf;
@@ -665,9 +665,11 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   static const char usage[]             = PLUGIN_NAME ".so [--integer-counters] [PATH]";
-  static const struct option longopts[] = {{(char *)("integer-counters"), no_argument, nullptr, 'i'},
-                                           {(char *)("wrap-counters"), no_argument, nullptr, 'w'},
-                                           {nullptr, 0, nullptr, 0}};
+  static const struct option longopts[] = {
+    {(char *)("integer-counters"), no_argument, nullptr, 'i'},
+    {(char *)("wrap-counters"),    no_argument, nullptr, 'w'},
+    {nullptr,                      0,           nullptr, 0  }
+  };
   TSCont main_cont, config_cont;
   config_holder_t *config_holder;
 
