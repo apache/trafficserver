@@ -46,7 +46,7 @@ Description
 
 :func:`TSMgmtStringCreate` registers :arg:`name` as a configuration name and sets its various properties. If :arg:`check_type` is :member:`TS_RECORDCHECK_STR` then :arg:`check_reg` must be point to a valid regular expression to use to check the string value.
 
-If a plugin uses a value from :file:`records.config` that is not built in to |TS| it must use this function or the value will be inaccessible and a warning for that name will be generated.
+If a plugin uses a value from :file:`records.yaml` that is not built in to |TS| it must use this function or the value will be inaccessible and a warning for that name will be generated.
 
 Return Values
 =============

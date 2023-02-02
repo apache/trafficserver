@@ -54,7 +54,7 @@ Apache::TS - a collection of Perl interfaces to manage Apache Traffic Server ins
 
   my $recedit = new Apache::TS::Config::Records(file => "etc/trafficserver/records.config.default");
   # Threads
-  $recedit->set(conf => "proxy.config.exec_thread.autoconfig", val => "0");
+  $recedit->set(conf => "proxy.config.exec_thread.autoconfig.enabled", val => "0");
   # ...
   # Write it all out
   $recedit->write(file => "etc/trafficserver/records.config");

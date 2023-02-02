@@ -106,7 +106,7 @@ proxy mode.
 If you want to run in reverse proxy only mode (wherein Traffic Server
 does not serve requests that fail to match a map rule), then you must
 set the configuration variable :ts:cv:`proxy.config.url_remap.remap_required`
-to ``1`` in :file:`records.config`.
+to ``1`` in :file:`records.yaml`.
 
 How do I enable forward proxy mode
 ----------------------------------
@@ -407,7 +407,7 @@ generated, verify the following:
 
 - Make sure you're looking in the correct directory. By default, Traffic
   Server creates log files in the ``logs`` directory. This can be modified
-  by changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`.
+  by changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.yaml`.
 
 - Check that the log directory has read/write permissions for the Traffic
   Server user account. If the log directory does not have the correct
@@ -415,9 +415,9 @@ generated, verify the following:
   open or create log files.
 
 - Check that logging is enabled by checking the value of the
-  :ts:cv:`proxy.config.log.logging_enabled` variable in :file:`records.config`.
+  :ts:cv:`proxy.config.log.logging_enabled` variable in :file:`records.yaml`.
 
-- Check that a log format is enabled. In :file:`records.config`, select
+- Check that a log format is enabled. In :file:`records.yaml`, select
   the standard or custom format by editing variables in the Logging Config
   section.
 
@@ -449,7 +449,7 @@ Service Overload
 
 If necessary, you can adjust the maximum number of connections supported
 by Traffic Server by editing :ts:cv:`proxy.config.net.connections_throttle` in
-:file:`records.config`.
+:file:`records.yaml`.
 
 .. note::
 
@@ -495,7 +495,7 @@ By default, Traffic Server will timeout after 30 seconds when contacting
 origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
-in :file:`records.config` to a larger value.
+in :file:`records.yaml` to a larger value.
 
 Log entries for some transactions are skipped
 ---------------------------------------------

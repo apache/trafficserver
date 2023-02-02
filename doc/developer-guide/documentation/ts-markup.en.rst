@@ -55,7 +55,7 @@ argument (the default value). ::
 
     :ts:cv: <scope> <variable name> <data type> <value>
 
-This corresponds exactly to the line in :file:`records.config`.
+This corresponds exactly to the line in :file:`records.yaml`.
 
 Definition
 ~~~~~~~~~~

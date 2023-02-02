@@ -23,7 +23,7 @@ Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess('ts-1_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 1,
     'proxy.config.accept_threads': 0,
@@ -41,7 +41,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-1_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 1,
     'proxy.config.accept_threads': 1,
@@ -58,7 +58,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-1_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 1,
     'proxy.config.accept_threads': 10,
@@ -75,7 +75,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 2,
     'proxy.config.accept_threads': 0,
@@ -92,7 +92,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 2,
     'proxy.config.accept_threads': 1,
@@ -109,7 +109,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-2_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 2,
     'proxy.config.accept_threads': 10,
@@ -126,7 +126,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 32,
     'proxy.config.accept_threads': 0,
@@ -143,7 +143,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 32,
     'proxy.config.accept_threads': 1,
@@ -160,7 +160,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-32_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 32,
     'proxy.config.accept_threads': 10,
@@ -177,7 +177,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 100,
     'proxy.config.accept_threads': 0,
@@ -194,7 +194,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-1_accept-2_task-8_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 100,
     'proxy.config.accept_threads': 1,
@@ -211,7 +211,7 @@ tr.Processes.Default.StartBefore(ts)
 
 ts = Test.MakeATSProcess('ts-100_exec-10_accept-10_task-32_aio')
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 100,
     'proxy.config.accept_threads': 10,

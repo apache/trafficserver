@@ -598,7 +598,7 @@ a single unit of the multiplier.
 
 .. _target-fragment-size:
 
-The target fragment size can set with the :file:`records.config` value
+The target fragment size can set with the :file:`records.yaml` value
 :ts:cv:`proxy.config.cache.target_fragment_size`.
 
 This value should be chosen so that it is a multiple of a
@@ -715,11 +715,11 @@ as appropriate in the sections on the relevant operations.
 The set of things which can affect cacheability are:
 
 * Built in constraints.
-* Settings in :file:`records.config`.
+* Settings in :file:`records.yaml`.
 * Settings in :file:`cache.config`.
 * Plugin operations.
 
-The initial internal checks, along with their :file:`records.config`
+The initial internal checks, along with their :file:`records.yaml`
 overrides[#cacheability-overrides]_, are done in ``HttpTransact::is_request_cache_lookupable``.
 
 The checks that are done are:
@@ -746,7 +746,7 @@ The checks that are done are:
 
    Range Request
       Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in
-      :file:`records.config` is non-zero. This does not mean the range request
+      :file:`records.yaml` is non-zero. This does not mean the range request
       can be cached, only that it might be satisfiable from the cache. In
       addition, :ts:cv:`proxy.config.http.cache.range.write`
       can be set to try to force a write on a range request. This
@@ -814,7 +814,7 @@ information. This will always contain the HTTP headers for all
    serving an object from cache in one transaction while it is being written in
    another. Several settings are needed for it to be used. See
    :ref:`admin-configuration-reducing-origin-requests`. It must
-   specifically enabled in :file:`records.config` and if not, a cache read will
+   specifically enabled in :file:`records.yaml` and if not, a cache read will
    fail if the object is currently be written or updated.
 
 At this point an alternate for the object is selected. This is done by comparing
@@ -841,7 +841,7 @@ After these checks the object age is calculated by ``HttpTransactHeaders::calcul
 and then any configured fuzzing is applied. The limits to this age based on
 available data is calculated by ``HttpTransact::calculate_document_freshness_limit``.
 
-How this age is used is determined by the :file:`records.config` setting for
+How this age is used is determined by the :file:`records.yaml` setting for
 :ts:cv:`proxy.config.http.cache.when_to_revalidate`. If this is ``0`` then the
 built calculations are used which compare the freshness limits with document
 age, modified by any of the client supplied cache control values (``max-age``,
@@ -1090,7 +1090,7 @@ appropriate evacuation bucket.
 
 .. [#cache-mult-value]
 
-   The comment in earlier versions of the :file:`records.config` documentation
+   The comment in earlier versions of the :file:`records.yaml` documentation
    which indicated that this value must be a power of two were, unfortunately,
    mistaken and have been corrected.
 

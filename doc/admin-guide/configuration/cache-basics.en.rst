@@ -171,7 +171,7 @@ To specify an absolute freshness limit:
 
 #. Edit the variables :ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`
    and :ts:cv:`proxy.config.http.cache.heuristic_max_lifetime` in
-   :file:`records.config`.
+   :file:`records.yaml`.
 
 #. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
@@ -190,7 +190,7 @@ explicit expiration information).
 To configure Traffic Server to cache objects with specific headers:
 
 #. Change the value for :ts:cv:`proxy.config.http.cache.required_headers`
-   in :file:`records.config`.
+   in :file:`records.yaml`.
 
 #. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
@@ -276,7 +276,7 @@ can set specific revalidation rules in :file:`cache.config`.
 To configure revalidation options
 
 #. Edit the variable :ts:cv:`proxy.config.http.cache.when_to_revalidate`
-   in :file:`records.config`.
+   in :file:`records.yaml`.
 
 #. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
@@ -298,7 +298,7 @@ must configure Traffic Server to accept ``PUSH`` requests.
 #. Edit :file:`ip_allow.yaml` to allow ``PUSH`` from the appropriate addresses.
 
 #. Update :ts:cv:`proxy.config.http.push_method_enabled` in
-   :file:`records.config`::
+   :file:`records.yaml`::
 
         CONFIG proxy.config.http.push_method_enabled INT 1
 
@@ -348,7 +348,7 @@ if it is indeed cacheable.
 
 To set cache pinning rules:
 
-#. Enable :ts:cv:`proxy.config.cache.permit.pinning` in :file:`records.config`::
+#. Enable :ts:cv:`proxy.config.cache.permit.pinning` in :file:`records.yaml`::
 
         CONFIG proxy.config.cache.permit.pinning INT 1
 
@@ -411,7 +411,7 @@ You can configure Traffic Server to honor both of these client directives with
 the following:
 
 #. Edit :ts:cv:`proxy.config.http.cache.ignore_client_no_cache` in
-   :file:`records.config`. ::
+   :file:`records.yaml`. ::
 
         CONFIG proxy.config.http.cache.ignore_client_no_cache INT 0
 
@@ -454,7 +454,7 @@ in most cases.
 To configure Traffic Server to ignore server ``no-cache`` headers:
 
 #. Edit :ts:cv:`proxy.config.http.cache.ignore_server_no_cache` in
-   :file:`records.config`. ::
+   :file:`records.yaml`. ::
 
         CONFIG proxy.config.http.cache.ignore_server_no_cache INT 1
 
@@ -480,7 +480,7 @@ To configure Traffic Server to ignore server ``WWW-Authenticate``
 headers:
 
 #. Edit :ts:cv:`proxy.config.http.cache.ignore_authentication` in
-   :file:`records.config`. ::
+   :file:`records.yaml`. ::
 
         CONFIG proxy.config.http.cache.ignore_authentication INT 1
 
@@ -517,7 +517,7 @@ detailed below.
 
 To disable HTTP object caching manually:
 
-#. Set :ts:cv:`proxy.config.http.cache.http` to ``0`` in :file:`records.config`. ::
+#. Set :ts:cv:`proxy.config.http.cache.http` to ``0`` in :file:`records.yaml`. ::
 
         CONFIG proxy.config.http.cache.http INT 0
 
@@ -537,7 +537,7 @@ To configure Traffic Server's cache behaviour in regard to dynamic
 content:
 
 #. Edit :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic` in
-   :file:`records.config`. To disable caching, set the variable to ``0``,
+   :file:`records.yaml`. To disable caching, set the variable to ``0``,
    and to explicitly permit caching use ``1``. ::
 
         CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 0
@@ -572,7 +572,7 @@ You can reconfigure Traffic Server to:
 To configure how Traffic Server caches cookied content:
 
 #. Edit :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies` in
-   :file:`records.config`.
+   :file:`records.yaml`.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
@@ -622,7 +622,7 @@ object (the default is 3).
 
 To alter the limit on the number of alternates:
 
-#. Edit :ts:cv:`proxy.config.cache.limits.http.max_alts` in :file:`records.config`. ::
+#. Edit :ts:cv:`proxy.config.cache.limits.http.max_alts` in :file:`records.yaml`. ::
 
     CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
@@ -712,7 +712,7 @@ content being unique to different client requests, ATS will not enable
 read-while-writer functionality until it has determined that it will be able
 to cache the object.
 
-The following settings must be made in :file:`records.config` to enable
+The following settings must be made in :file:`records.yaml` to enable
 read-while-writer functionality in ATS::
 
     CONFIG proxy.config.cache.enable_read_while_writer INT 1

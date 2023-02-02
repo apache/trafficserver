@@ -40,7 +40,7 @@ Enabling Logs
 By default, |TS| creates both error and event log files and
 records system information in system log files. You can disable event
 logging and/or error logging by setting the configuration variable
-:ts:cv:`proxy.config.log.logging_enabled` in :file:`records.config`
+:ts:cv:`proxy.config.log.logging_enabled` in :file:`records.yaml`
 to one of the following values:
 
 ===== =========================================================================

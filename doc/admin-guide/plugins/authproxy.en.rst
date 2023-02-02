@@ -33,7 +33,7 @@ lookup state if a document is found in the cache. This will have
 the effect of serving the document without consulting the ``AuthProxy``
 plugin. you can disable this behavior by setting
 :ts:cv:`proxy.config.http.doc_in_cache_skip_dns` to ``0`` in
-:file:`records.config`.
+:file:`records.yaml`.
 
 Note that the authorization request will need to match a remap rule
 (which, as a standalone remap rule, does not need to call the

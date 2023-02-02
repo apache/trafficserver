@@ -53,7 +53,7 @@ msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:34
 msgid ""
-"Add the path to your plugin shared library to the :file:`records.config` "
+"Add the path to your plugin shared library to the :file:`records.yaml` "
 "file."
 msgstr ""
 

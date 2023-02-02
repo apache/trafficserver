@@ -683,7 +683,7 @@ set-config
 Allows you to override the value of a |TS| configuration variable for the
 current connection. The variables specified by ``<name>`` must be overridable.
 For details on available |TS| configuration variables, consult the
-documentation for :file:`records.config`. You can read more about overridable
+documentation for :file:`records.yaml`. You can read more about overridable
 configuration variables in the developer's documentation for
 :ref:`ts-overridable-config`.
 

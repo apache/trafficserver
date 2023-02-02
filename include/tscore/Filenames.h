@@ -26,7 +26,7 @@ namespace ts
 namespace filename
 {
   constexpr const char *STORAGE = "storage.config";
-  constexpr const char *RECORDS = "records.config";
+  constexpr const char *RECORDS = "records.yaml";
   constexpr const char *VOLUME  = "volume.config";
   constexpr const char *PLUGIN  = "plugin.config";
 

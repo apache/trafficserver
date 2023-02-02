@@ -60,7 +60,7 @@ Types
 
    .. macro:: TS_MGMT_SOURCE_EXPLICIT
 
-      The value has been set in :file:`records.config`. Note this value is returned even if the
+      The value has been set in :file:`records.yaml`. Note this value is returned even if the
       variable was explicitly set to the default value.
 
    .. macro:: TS_MGMT_SOURCE_ENV

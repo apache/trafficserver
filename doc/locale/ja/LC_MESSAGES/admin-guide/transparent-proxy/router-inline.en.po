@@ -129,7 +129,7 @@ msgid ""
 "To configure Traffic Server set the following values in :file:`records."
 "config`"
 msgstr ""
-"Traffic Server を設定するために次の値を :file:`records.config` に設定してく"
+"Traffic Server を設定するために次の値を :file:`records.yaml` に設定してく"
 "ださい。"
 
 #: ../../admin-guide/transparent-proxy/router-inline.en.rst:81

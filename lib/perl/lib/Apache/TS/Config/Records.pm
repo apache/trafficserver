@@ -259,7 +259,7 @@ You probably shouldn't modify this array.
 Modify one configuration value, with the provided value. Both the conf
 name and the value are required. Example:
 
-  $r->set(conf => "proxy.config.exec_thread.autoconfig",
+  $r->set(conf => "proxy.config.exec_thread.autoconfig.enabled",
           val => "0");
 
 conf is short for "config", val is short for "value", and all are
@@ -270,7 +270,7 @@ acceptable.
 Remove a specified configuration, the mandatory option is conf (or
 "config"). Example:
 
-  $r->remove(conf => "proxy.config.exec_thread.autoconfig");
+  $r->remove(conf => "proxy.config.exec_thread.autoconfig.enabled");
 
 =item append
 

@@ -105,7 +105,7 @@ msgid "To set log management options, follow the steps below:"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:74
-msgid "In the :file:`records.config` file, edit the following variables"
+msgid "In the :file:`records.yaml` file, edit the following variables"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:76
@@ -388,7 +388,7 @@ msgid ""
 "You can fine-tune log file rolling settings for a custom log file in the :"
 "ref:`LogObject` specification in :file:`logging.config`. The custom log "
 "file uses the rolling settings in its :ref:`LogObject`, which override the "
-"default settings you specify in Traffic Manager or :file:`records.config` "
+"default settings you specify in Traffic Manager or :file:`records.yaml` "
 "described above."
 msgstr ""
 

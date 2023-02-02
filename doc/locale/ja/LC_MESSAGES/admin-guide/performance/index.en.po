@@ -217,7 +217,7 @@ msgstr ""
 msgid ""
 "|TS| itself, of course, has many options you may want to consider adjusting "
 "to achieve optimal performance in your environment. Many of these settings "
-"are recorded in :file:`records.config` and may be adjusted with the :option:"
+"are recorded in :file:`records.yaml` and may be adjusted with the :option:"
 "`traffic_ctl config set` command line utility while the server is operating."
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 #: ../../../admin-guide/performance/index.en.rst:185
 msgid ""
 "By default, |TS| creates one thread per CPU core on the host system. This "
-"may be adjusted with the following settings in :file:`records.config`:"
+"may be adjusted with the following settings in :file:`records.yaml`:"
 msgstr ""
 
 #: ../../../admin-guide/performance/index.en.rst:188
@@ -257,7 +257,7 @@ msgid ""
 "adjust the thread affinity configuration to take advantage of cache "
 "pipelines and faster memory access, as well as preventing possibly costly "
 "thread migrations across sockets. This is adjusted with :ts:cv:`proxy."
-"config.exec_thread.affinity` in :file:`records.config`. ::"
+"config.exec_thread.affinity` in :file:`records.yaml`. ::"
 msgstr ""
 
 #: ../../../admin-guide/performance/index.en.rst:204
@@ -290,7 +290,7 @@ msgstr ""
 #: ../../../admin-guide/performance/index.en.rst:226
 msgid ""
 "While all of the timeouts described below may be set globally for your |TS| "
-"instance using :file:`records.config`, many of them are also overridable on "
+"instance using :file:`records.yaml`, many of them are also overridable on "
 "a per-transaction basis by plugins (including :ref:`admin-plugins-conf-"
 "remap`). This allows the possibility for adjusting timeout value for "
 "individual subsets of your cache."

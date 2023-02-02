@@ -61,7 +61,7 @@ below:
 
        traffic_server -T"my-plugin"
 
-Sets the following variables in :file:`records.config` (in the Traffic Server
+Sets the following variables in :file:`records.yaml` (in the Traffic Server
 ``config`` directory):
 
 ::

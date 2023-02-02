@@ -146,7 +146,7 @@ example, if the rolling interval is six hours and the offset hour is ``0``
 
 To set log file rolling options and/or configure |TS| to roll log files when
 they reach a certain size, adjust the following settings in
-:file:`records.config`:
+:file:`records.yaml`:
 
 #. Enable log rolling with :ts:cv:`proxy.config.log.rolling_enabled`. ::
 
@@ -177,7 +177,7 @@ they reach a certain size, adjust the following settings in
 You can fine-tune log file rolling settings for individual log files in the
 ``log.*`` specification in :file:`logging.yaml`. The custom log file uses the
 rolling settings provided in the relevant ``log`` function call, which override
-the default settings you specify in Traffic Manager or :file:`records.config`
+the default settings you specify in Traffic Manager or :file:`records.yaml`
 described above.
 
 .. _admin-logging-retention:
@@ -237,7 +237,7 @@ Setting Log File Management Options
 
 To set log management options, follow the steps below:
 
-#. In the :file:`records.config` file, edit the following variables
+#. In the :file:`records.yaml` file, edit the following variables
 
    -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
    -  :ts:cv:`proxy.config.log.max_space_mb_headroom`

@@ -34,6 +34,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include <swoc/Errata.h>
+
 // records, record hash-table, and hash-table rwlock
 extern RecRecord *g_records;
 extern std::unordered_map<std::string, RecRecord *> g_records_ht;
@@ -41,7 +43,7 @@ extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
 extern RecModeT g_mode_type;
 
-// records.config items
+// records.yaml items
 extern const char *g_rec_config_fpath;
 extern std::unordered_set<std::string> g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
@@ -78,6 +80,7 @@ RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data
 RecErrT RecReadStatsFile();
 RecErrT RecSyncStatsFile();
 RecErrT RecReadConfigFile();
+swoc::Errata RecReadYamlConfigFile();
 
 //-------------------------------------------------------------------------
 // Misc

@@ -42,6 +42,7 @@ microserver = ">=1.0.6"
 
 jsonschema = "*"
 python-jose = "*"
+pyyaml ="*"
 
 # The latest version of Werkzeug (2.1.0) breaks httpbin because it removes
 # deprecated function `BaseResponse` that httpbin directly or indirectly

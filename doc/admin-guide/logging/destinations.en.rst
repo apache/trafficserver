@@ -46,7 +46,7 @@ Log Directory Configuration
 All local logging output is stored within a single base directory.
 Individual log file configurations may optionally append
 subdirectories to this base path. This location is adjusted with
-:ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`.
+:ts:cv:`proxy.config.log.logfile_dir` in :file:`records.yaml`.
 
 This configuration may specify either an absolute path on the host (if it
 begins with ``/``) or a path relative to the |TS| installation directory (any

@@ -58,7 +58,7 @@ test_RefCountCache_SOURCES = \
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
-	@SWOC_LDFLAGS@ @OPENSSL_LDFLAGS@
+	@SWOC_LDFLAGS@ @OPENSSL_LDFLAGS@ @YAMLCPP_LDFLAGS@
 
 test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
@@ -74,11 +74,12 @@ test_CPP_FLAGS = \
 test_LD_ADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@SWOC_LIBS@ @HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 

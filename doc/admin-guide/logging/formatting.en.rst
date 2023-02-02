@@ -856,7 +856,7 @@ Line Length
 
 The maximum line size for a log entry can be configured via the following
 parameters, the details of which are documented in the linked
-:file:`records.config` descriptions:
+:file:`records.yaml` descriptions:
 
 - :ts:cv:`proxy.config.log.max_line_size`
 - :ts:cv:`proxy.config.log.ascii_buffer_size`

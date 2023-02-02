@@ -111,7 +111,7 @@ The :file:`sni.yaml` contents would be
    - tunnel_route: app-server-56:4443
      fqdn: service-2.example.com
 
-In addition to this, in the :file:`records.config` file, edit ``connect_ports`` like so:
+In addition to this, in the :file:`records.yaml` file, edit ``connect_ports`` like so:
 
    -  :ts:cv:`proxy.config.http.connect_ports`: ``443 4443`` to allow |TS| to connect
       to the destination port

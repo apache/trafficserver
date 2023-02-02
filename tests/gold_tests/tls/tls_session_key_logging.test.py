@@ -68,7 +68,11 @@ class TlsKeyloggingTest:
 
         # Remove the keylog_file configuration automatically configured via the
         # trafficserver AuTest extension.
-        del self.ts.Disk.records_config['proxy.config.ssl.keylog_file']
+        self.ts.Disk.records_config.update(
+            '''
+        ssl:
+            keylog_file: null
+        ''')
 
         if enable_secrets_logging:
             self.ts.Disk.records_config.update({

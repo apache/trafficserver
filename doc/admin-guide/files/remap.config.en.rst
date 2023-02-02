@@ -269,7 +269,7 @@ Client Request                   Translated Request
 ``http://www.x.com/Widgets``     ``http://server.hoster.com/x/Widgets``
 ================================ =====================================
 
- 
+
 
 ================================ ======================================= =============================
 Client Request                   Origin Server Header                    Translated Request
@@ -280,7 +280,7 @@ Client Request                   Origin Server Header                    Transla
 When acting as a reverse proxy for multiple servers, Traffic Server is
 unable to route to URLs from older browsers that do not send the
 ``Host:`` header. As a solution, set the variable :ts:cv:`proxy.config.header.parse.no_host_url_redirect`
-in the :file:`records.config` file to the URL to which Traffic Server will redirect
+in the :file:`records.yaml` file to the URL to which Traffic Server will redirect
 requests without host headers.
 
 Redirect Mapping Rules

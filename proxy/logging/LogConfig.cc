@@ -242,7 +242,7 @@ LogConfig::read_configuration_variables()
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    char *configured_name(REC_ConfigReadString("proxy.config.output.logfile"));
+    char *configured_name(REC_ConfigReadString("proxy.config.output.logfile.name"));
     const char *traffic_logname = configured_name ? configured_name : "traffic.out";
     val                         = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
     register_rolled_log_auto_delete(traffic_logname, val);

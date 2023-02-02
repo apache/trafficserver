@@ -28,7 +28,7 @@ ts = Test.MakeATSProcess('ts')
 Test.testName = 'Test TSContThreadAffinity APIs'
 
 ts.Disk.records_config.update({
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     'proxy.config.exec_thread.autoconfig.scale': 1.5,
     'proxy.config.exec_thread.limit': 32,
     'proxy.config.accept_threads': 1,

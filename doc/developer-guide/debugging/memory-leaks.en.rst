@@ -24,7 +24,7 @@ Memory Leaks
 
 Memory leaks in a plugin can be detected using e.g. an MRTG graph
 related to memory - you can use memory dump information. Enable
-``mem dump`` in :file:`records.config` as follows:
+``mem dump`` in :file:`records.yaml` as follows:
 
 ::
 

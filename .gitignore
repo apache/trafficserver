@@ -52,7 +52,7 @@ config.cache
 config.status
 config.nice
 
-configs/records.config.default
+configs/records.yaml.default
 configs/storage.config.default
 
 doc/_build

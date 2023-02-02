@@ -61,6 +61,7 @@ traffic_server_traffic_server_SOURCES = \
 	shared/overridable_txn_vars.cc \
 	traffic_server/traffic_server.cc
 
+
 if BUILD_TESTS
 traffic_server_traffic_server_SOURCES += \
 	traffic_server/InkAPITest.cc
@@ -74,6 +75,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/iocore/dns/libinkdns.a \
 	$(top_builddir)/iocore/hostdb/libinkhostdb.a \

@@ -37,6 +37,7 @@ import sphinx
 import os
 import subprocess
 import re
+import yaml
 
 # 2/3 compat logic
 try:
@@ -47,6 +48,17 @@ try:
 except NameError:
     def is_string_type(s):
         return isinstance(s, str)
+
+
+def get_code(data):
+
+    def float_representer(dumper, value):
+        return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
+
+    # We want to show that the !!float should be set!
+    yaml.add_representer(float, float_representer)
+
+    return yaml.dump(data)
 
 
 class TSConfVar(std.Target):
@@ -67,11 +79,75 @@ class TSConfVar(std.Target):
         'deprecated': rst.directives.flag,
         'overridable': rst.directives.flag,
         'units': rst.directives.unchanged,
+        'legacy': rst.directives.flag,
     }
     required_arguments = 3
     optional_arguments = 1  # default is optional, special case if omitted
     final_argument_whitespace = True
     has_content = True
+
+    def __generate_code(self, cv_name, cv_default, cv_type):
+        def add_object(config, var, value, type=None):
+            def get_value(type, value):
+
+                def have_multipliers(value, mps):
+                    for m in mps:
+                        if value.endswith(m):
+                            return True
+
+                    return False
+
+                if value is None or value == 'nullptr' or value == 'NULL':
+                    return None
+
+                # We want to make the type right when inserting the element into the dict.
+                if type == 'FLOAT':
+                    return float(value)
+                elif type == 'INT':
+                    # We need to make it YAML compliant as this will be an int, so if contains
+                    # any special character like hex or a multiplier, then we make a string. ATS will
+                    # parse it as string anyway.
+                    if value.startswith('0x') or have_multipliers(value, ['K', 'M', 'G', 'T']):
+                        return str(value)
+                    else:
+                        return int(value)
+                elif type == 'STRING':
+                    return str(value)
+
+                return None
+
+            obj = {}
+            key = ''
+            index = var.find('.')
+            if index < 0:  # last part
+                config[var] = get_value(type, value)
+            else:
+                key = var[:index]
+                if key not in config:
+                    config[key] = {}
+
+                add_object(config[key], var[index + 1:], value, type=type)
+
+        name = cv_name
+        if name.startswith("proxy.config."):
+            name = name[len("proxy.config."):]
+        elif name.startswith("local.config."):
+            name = name[len("local.config."):]
+
+        ts = {}
+        config = {}
+
+        # Build the object
+        add_object(config, name, cv_default, cv_type)
+        ts['ts'] = config
+        code = get_code(ts)
+        literal = nodes.literal_block(code, code)
+        literal['linenos'] = True
+        literal['force'] = True
+        literal['language'] = 'yaml'
+        literal['caption'] = 'records.yaml'
+
+        return literal
 
     def make_field(self, tag, value):
         field = nodes.field()
@@ -140,6 +216,15 @@ class TSConfVar(std.Target):
         if ('deprecated' in self.options):
             fl.append(self.make_field('Deprecated', 'Yes'))
 
+        # add yaml rep if record is not legacy.
+        code_block = None
+        code_block_title = None
+        if 'legacy' not in self.options:
+            code_block = self.__generate_code(cv_name, cv_default, cv_type)
+            code_block_title = sphinx.addnodes.compact_paragraph(text="yaml-rep:")
+            self.add_name(code_block_title)
+            self.add_name(code_block)
+
         # Get any contained content
         nn = nodes.compound()
         self.state.nested_parse(self.content, self.content_offset, nn)
@@ -156,8 +241,10 @@ class TSConfVar(std.Target):
             indexnode['entries'].append(
                 ('single', _('%s') % cv_name, nodes.make_id(cv_name), '')
             )
-
-        return [indexnode, node, fl, nn]
+        if code_block is None:
+            return [indexnode, node, fl, nn]
+        else:
+            return [indexnode, node, fl, code_block_title, code_block, nn]
 
 
 class TSConfVarRef(XRefRole):

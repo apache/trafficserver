@@ -83,7 +83,7 @@ test_LDADD = \
   @HWLOC_LIBS@ @SWOC_LIBS@
 
 test_libhttp3_CPPFLAGS = $(test_CPPFLAGS)
-test_libhttp3_LDFLAGS = @AM_LDFLAGS@
+test_libhttp3_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@
 test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
@@ -92,7 +92,7 @@ test_libhttp3_SOURCES = \
   ./Http3Frame.cc
 
 test_qpack_CPPFLAGS = $(test_CPPFLAGS)
-test_qpack_LDFLAGS = @AM_LDFLAGS@
+test_qpack_LDFLAGS = @AM_LDFLAGS@ @YAMLCPP_LDFLAGS@
 test_qpack_LDADD = $(test_LDADD)
 test_qpack_SOURCES = \
   ./test/main_qpack.cc \

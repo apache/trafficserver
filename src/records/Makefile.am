@@ -29,6 +29,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/ \
+	@YAMLCPP_INCLUDES@\
 	@SWOC_INCLUDES@\
 	$(TS_INCLUDES)
 
@@ -46,6 +48,7 @@ librecords_COMMON = \
 	P_RecMessage.h \
 	P_RecUtils.h \
 	RecConfigParse.cc \
+	RecYAMLDecoder.cc \
 	RecCore.cc \
 	RecDebug.cc \
 	RecFile.cc \
@@ -77,7 +80,7 @@ test_librecords_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
@@ -93,7 +96,7 @@ test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@HWLOC_LIBS@ @LIBCAP@
+	@HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)

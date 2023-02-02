@@ -330,7 +330,7 @@ msgid ""
 "and :ts:cv:`proxy.config.http.cache.heuristic_max_lifetime` in :file:"
 "`records.config`."
 msgstr ""
-":file:`records.config` 内の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` 内の :ts:cv:`proxy.config.http.cache."
 "heuristic_min_lifetime` 変数と :ts:cv:`proxy.config.http.cache."
 "heuristic_max_lifetime` 変数を編集してください。"
 
@@ -368,7 +368,7 @@ msgid ""
 "Change the value for :ts:cv:`proxy.config.http.cache.required_headers` in :"
 "file:`records.config`."
 msgstr ""
-":file:`records.config` 内の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` 内の :ts:cv:`proxy.config.http.cache."
 "required_headers` の値を変更してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:198
@@ -583,7 +583,7 @@ msgid ""
 "Edit the variable :ts:cv:`proxy.config.http.cache.when_to_revalidate` in :"
 "file:`records.config`."
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "when_to_revalidate` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:286
@@ -625,7 +625,7 @@ msgid ""
 "Update :ts:cv:`proxy.config.http.push_method_enabled` in :file:`records."
 "config`::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.push_method_enabled` を"
+":file:`records.yaml` の :ts:cv:`proxy.config.http.push_method_enabled` を"
 "更新してください ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:305
@@ -716,7 +716,7 @@ msgid ""
 "Enable :ts:cv:`proxy.config.cache.permit.pinning` in :file:`records."
 "config`::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.cache.permit.pinning` を有効"
+":file:`records.yaml` の :ts:cv:`proxy.config.cache.permit.pinning` を有効"
 "にしてください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:355
@@ -834,7 +834,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_client_no_cache` in :file:"
 "`records.config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "ignore_client_no_cache` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:416
@@ -915,7 +915,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_server_no_cache` in :file:"
 "`records.config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "ignore_server_no_cache ` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:460
@@ -963,7 +963,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_authentication` in :file:"
 "`records.config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "ignore_authentication ` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:486
@@ -1038,7 +1038,7 @@ msgid ""
 "Set :ts:cv:`proxy.config.http.cache.http` to ``0`` in :file:`records."
 "config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.enabled` を ``0`` に設定"
+":file:`records.yaml` の :ts:cv:`proxy.config.http.enabled` を ``0`` に設定"
 "してください ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:523
@@ -1072,7 +1072,7 @@ msgid ""
 "`records.config`. To disable caching, set the variable to ``0``, and to "
 "explicitly permit caching use ``1``. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "cache_urls_that_look_dynamic` を編集してください。キャッシュを無効にするに"
 "は ``0`` に設定し、明示的にキャッシュを許可するには ``1`` に設定してくださ"
 "い。 ::"
@@ -1118,7 +1118,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies` in :file:"
 "`records.config`."
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
 "cache_responses_to_cookies` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:571
@@ -1183,8 +1183,8 @@ msgid "To configure how Traffic Server caches alternates:"
 msgstr "Traffic Server が代替をキャッシュするように設定するには :"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:605
-msgid "Edit the following variables in :file:`records.config`:"
-msgstr ":file:`records.config` の次の変数を編集してください :"
+msgid "Edit the following variables in :file:`records.yaml`:"
+msgstr ":file:`records.yaml` の次の変数を編集してください :"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:616
 msgid ""
@@ -1229,7 +1229,7 @@ msgid ""
 "Edit :ts:cv:`proxy.config.cache.limits.http.max_alts` in :file:`records."
 "config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.cache.limits.http.max_alts` "
+":file:`records.yaml` の :ts:cv:`proxy.config.cache.limits.http.max_alts` "
 "を編集してください ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:645
@@ -1257,7 +1257,7 @@ msgid ""
 "Set :ts:cv:`proxy.config.http.congestion_control.enabled` to ``1`` in :file:"
 "`records.config`. ::"
 msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.http.congestion_control."
+":file:`records.yaml` の :ts:cv:`proxy.config.http.congestion_control."
 "enabled` を ``1`` にセットしてください ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:659
@@ -1504,10 +1504,10 @@ msgstr ""
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:758
 msgid ""
-"The following settings must be made in :file:`records.config` to enable "
+"The following settings must be made in :file:`records.yaml` to enable "
 "read-while-writer functionality in ATS::"
 msgstr ""
-"ATS で read-while-writer 機能を有効にするには :file:`records.config` で以下"
+"ATS で read-while-writer 機能を有効にするには :file:`records.yaml` で以下"
 "の設定を行う必要があります ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:766
@@ -1592,10 +1592,10 @@ msgstr ""
 #: ../../../admin-guide/configuration/cache-basics.en.rst:809
 msgid ""
 "Traffic Server can be set to attempt to revalidate an object before it "
-"becomes stale in cache. :file:`records.config` contains the settings::"
+"becomes stale in cache. :file:`records.yaml` contains the settings::"
 msgstr ""
 "Traffic Server はキャッシュが新鮮でなくなる前に、オブジェクトの再確認を試み"
-"るように設定することもできす。:file:`records.config` に次の設定があります ::"
+"るように設定することもできす。:file:`records.yaml` に次の設定があります ::"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:816
 msgid ""

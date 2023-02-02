@@ -33,6 +33,9 @@
 #include "records/P_RecUtils.h"
 #include "records/P_RecMessage.h"
 #include "records/P_RecCore.h"
+#include "records/RecYAMLDecoder.h"
+
+#include "swoc/bwf_std.h"
 
 #include <fstream>
 
@@ -399,6 +402,21 @@ RecReadConfigFile()
   ink_rwlock_unlock(&g_records_rwlock);
 
   return REC_ERR_OKAY;
+}
+
+swoc::Errata
+RecReadYamlConfigFile()
+{
+  RecDebug(DL_Debug, "Reading '%s'", g_rec_config_fpath);
+
+  // lock our hash table
+  ink_rwlock_wrlock(&g_records_rwlock); // review this lock maybe it should be done inside the API
+
+  // Parse the actual file and hash the values.
+  auto ret = RecYAMLConfigFileParse(g_rec_config_fpath, SetRecordFromYAMLNode);
+
+  ink_rwlock_unlock(&g_records_rwlock);
+  return ret;
 }
 
 //-------------------------------------------------------------------------

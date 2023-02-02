@@ -250,12 +250,12 @@ SSLConfigParams::initialize()
   }
 
 #ifdef SSL_OP_NO_TLSv1_3
-  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3");
+  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3.enabled");
   if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
   }
 
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3");
+  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3.enabled");
   if (!option) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
   }
@@ -334,14 +334,15 @@ SSLConfigParams::initialize()
 
   REC_ReadConfigStringAlloc(ssl_server_ca_cert_filename, "proxy.config.ssl.CA.cert.filename");
   REC_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.path");
+
   set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
-  REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache");
+  REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache.enabled");
   REC_ReadConfigInteger(ssl_origin_session_cache_size, "proxy.config.ssl.origin_session_cache.size");
-  REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
+  REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache.value");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
   REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
   REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");

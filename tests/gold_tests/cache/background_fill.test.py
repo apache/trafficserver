@@ -27,7 +27,7 @@ Test.ContinueOnFail = True
 
 class BackgroundFillTest:
     """
-    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.config.en.html#proxy-config-http-background-fill-completed-threshold
+    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-background-fill-completed-threshold
     """
 
     class State(Enum):

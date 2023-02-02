@@ -31,7 +31,7 @@ msgstr ""
 
 #: ../../appendices/command-line/traffic_crashlog.en.rst:91
 msgid ""
-":manpage:`records.config(5)`, :manpage:`traffic_manager(8)`, :manpage:"
+":manpage:`records.yaml(5)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
 msgstr ""
 

@@ -1,0 +1,22 @@
+ts:
+  exec_thread:
+    autoconfig:
+      enabled: 1
+  hostdb:
+    enabled: 1
+  output:
+    logfile:
+      name: traffic.out
+  ssl:
+    TLSv1_3:
+      enabled: 0
+    client:
+      TLSv1_3:
+        enabled: 0
+    origin_session_cache:
+      enabled: 0
+    session_cache:
+      value: 0
+  tunnel:
+    prewarm:
+      enabled: 0

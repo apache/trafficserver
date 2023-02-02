@@ -104,7 +104,7 @@ test_jsonrpcserver_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_jsonrpcserver_LDFLAGS = \
-	@AM_LDFLAGS@
+	@AM_LDFLAGS@  @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 
 test_jsonrpcserver_SOURCES = \
 	server/unit_tests/unit_test_main.cc \
@@ -122,8 +122,9 @@ test_jsonrpcserver_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@YAMLCPP_LIBS@ @HWLOC_LIBS@
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 
 ###########################################################################################

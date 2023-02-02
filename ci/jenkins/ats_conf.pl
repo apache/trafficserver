@@ -33,7 +33,7 @@ $recedit->append(line => "# My local stuff");
 $recedit->set(conf => "proxy.config.http.server_ports", val => "80 80:ipv6 443:ssl 443:ipv6:ssl");
 
 # Threads
-$recedit->set(conf => "proxy.config.exec_thread.autoconfig", val => "0");
+$recedit->set(conf => "proxy.config.exec_thread.autoconfig.enabled", val => "0");
 $recedit->set(conf => "proxy.config.exec_thread.limit", val => "8");
 $recedit->set(conf => "proxy.config.cache.threads_per_disk", val => "8");
 $recedit->set(conf => "proxy.config.accept_threads", val => "0");
@@ -42,7 +42,7 @@ $recedit->set(conf => "proxy.config.exec_thread.affinity", val => "1");
 # TLS
 $recedit->set(conf => "proxy.config.ssl.hsts_max_age", val => "17280000");
 #$recedit->set(conf => "proxy.config.ssl.max_record_size", val => "-1");
-$recedit->set(conf => "proxy.config.ssl.session_cache", val => "2");
+$recedit->set(conf => "proxy.config.ssl.session_cache.value", val => "2");
 $recedit->set(conf => "proxy.config.ssl.ocsp.enabled", val => "1");
 $recedit->set(conf => "proxy.config.http2.stream_priority_enabled", val => "1");
 $recedit->set(conf => "proxy.config.ssl.max_record_size", val => "-1");
