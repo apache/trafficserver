@@ -24,7 +24,9 @@ ts = Test.MakeATSProcess("ts")
 ts.Disk.remap_config.AddLine(f"")  # empty file
 ts.Disk.records_config.update({'proxy.config.url_remap.min_rules_required': 1})
 ts.ReturnCode = 33  # expect to Emergency fail due to empty "remap.config".
+ts.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.config failed to load")
 
 tr = Test.AddTestRun("test")
-tr.Processes.Default.Command = "echo"
-tr.Processes.Default.StartAfter(ts, ready=When.FileExists(ts.Disk.diags_log))
+tr.Processes.Default.Command = "echo howdy"
+tr.TimeOut = 5
+tr.Processes.Default.StartBefore(ts)
