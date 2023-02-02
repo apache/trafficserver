@@ -34,7 +34,9 @@
 #include <swoc/Errata.h>
 #include <swoc/BufferWriter.h>
 
-static std::array<std::string_view, 5> Node_Type_to_Str{{"Undefined", "Null", "Scalar", "Sequence", "Map"}};
+static std::array<std::string_view, 5> Node_Type_to_Str{
+  {"Undefined", "Null", "Scalar", "Sequence", "Map"}
+};
 namespace
 {
 constexpr std::string_view CONFIG_RECORD_PREFIX{"proxy.config"};
