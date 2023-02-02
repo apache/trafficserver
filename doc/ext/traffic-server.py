@@ -52,11 +52,11 @@ except NameError:
 
 def get_code(data):
 
-    def float_representer(dumper, value):
-        return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
+    # if needed we can add a type representer,
+    # def float_representer(dumper, value):
+    #     return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
 
-    # We want to show that the !!float should be set!
-    yaml.add_representer(float, float_representer)
+    # yaml.add_representer(float, float_representer)
 
     return yaml.dump(data)
 
