@@ -45,7 +45,9 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'printf "Fatal Shutdown Test"'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
+tr.Timeout = 5
+
 ts.ReturnCode = 70
-ts.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
+ts.Ready = When.FileContains(ts.Disk.traffic_out.Name, "testing fatal shutdown")
 ts.Disk.traffic_out.Content = Testers.ExcludesExpression('failed to shutdown', 'should NOT contain "failed to shutdown"')
 ts.Disk.diags_log.Content = Testers.IncludesExpression('testing fatal shutdown', 'should contain "testing fatal shutdown"')
