@@ -22,50 +22,94 @@
 records.yaml
 ************
 
+.. important::
+
+   From ATS 10 we have moved from the old ``records.config`` format style in flavour of the new
+   YAML style. Please check :ref:`rec-config-to-yaml` for information about migrating from the
+   old style to the new YAML base config.
+
+
 The :file:`records.yaml` file (by default, located in
-``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
-the |TS| software. Many of the variables in :file:`records.yaml` are set
+``/usr/local/etc/trafficserver/``) is a YAML base configuration file used by
+the |TS| software. Many of the fields in :file:`records.yaml` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.yaml`, run the command :option:`traffic_ctl config reload`
 to apply the changes.
 
-Note: The configuration directory, containing the ``SYSCONFDIR`` value specified at build time
-relative to the installation prefix, contains |TS| configuration files.
-The ``$TS_ROOT`` environment variable can be used alter the installation prefix at run time.
-The directory must allow read/write access for configuration reloads.
+.. note::
 
-Format
-======
+   The configuration directory, containing the ``SYSCONFDIR`` value specified at build time
+   relative to the installation prefix, contains |TS| configuration files.
+   The ``$TS_ROOT`` environment variable can be used alter the installation prefix at run time.
+   The directory must allow read/write access for configuration reloads.
 
-Each variable has the following format::
 
-   CONFIG variable_name DATATYPE variable_value
+YAML structure
+==============
+
+All fields are located inside the ``ts`` root node.
+
+
+.. code-block:: yaml
+   :linenos:
+
+   ts:
+     diags:
+      debug:
+         enabled: 0
+         tags: http|dns
+    # ...
+    # rest of the fields.
+    # ...
+
+
+.. important::
+
+   Internally, ATS uses record names as :ref:`configuration-variables`.
+
 
 Data Type
 ---------
 
-A variable's type is defined by the ``DATATYPE`` and must be one of:
+There is no need to manually set the record type, it can be done if desired.
+The types accepted are:
 
 ========== ====================================================================
 Type       Description
 ========== ====================================================================
-``FLOAT``  Floating point, expressed as a decimal number without units or
+``float``  Floating point, expressed as a decimal number without units or
            exponents.
-``INT``    Integers, expressed with or without unit prefixes (as described
+``int``    Integers, expressed with or without unit prefixes (as described
            below).
-``STRING`` String of characters up to the first newline. No quoting necessary.
+``str``    String of characters up to the first newline. No quoting necessary.
 ========== ====================================================================
+
+Non core records
+~~~~~~~~~~~~~~~~
+
+Records that aren't part of the core ATS needs to set the field type, this for now
+is the only way to know the field type.
+
+We expect non core records to set the type (!!int, !!float, etc).
+
+.. code-block:: yaml
+
+   ts:
+      plugin_x:
+         my_field_1: !!int '1'
+         my_field_2: !!float '1.2'
+         my_field_3: 'my string'
 
 Values
 ------
 
-The *variable_value* must conform to the variable's type. For ``STRING``, this
+The *field_value* must conform to the variable's type. For ``str``, this
 is simply any character data until the first newline.
 
-For integer (``INT``) variables, values are expressed as any normal integer,
+For integer (``int``) fields, values are expressed as any normal integer,
 e.g. ``32768``. They can also be expressed using more human readable values
 using standard unit prefixes, e.g. ``32K``. The following prefixes are
-supported for all ``INT`` type configurations:
+supported for all ``int`` type configurations:
 
 ====== ============ ===========================================================
 Prefix Description  Equivalent in Bytes
@@ -76,7 +120,7 @@ Prefix Description  Equivalent in Bytes
 ``T``  Terabytes    1,099,511,627,776 bytes (1024\ :sup:`4`)
 ====== ============ ===========================================================
 
-Floating point variables (``FLOAT``) must be expressed as a regular decimal
+Floating point variables (``float``) must be expressed as a regular decimal
 number. Unit prefixes are not supported, nor are alternate notations (scientific,
 exponent, etc.).
 
@@ -104,36 +148,72 @@ Overridable
 
 A variable marked as *Overridable* can be changed on a per-remap basis using
 plugins (like the :ref:`admin-plugins-conf-remap`), affecting operations within
-the current transaction only.
+the current transaction only. Remap config files still uses the legacy ``records.config``
+style.
 
 Examples
 ========
 
-In the following example, the variable `proxy.config.proxy_name`_ is
-a ``STRING`` datatype with the value ``my_server``. This means that the
-name of the |TS| proxy is ``my_server``. ::
+In the following example, the field `proxy_name` is a ``str`` datatype with the
+value ``my_server``. This means that the name of the |TS| proxy is ``my_server``.
 
-   CONFIG proxy.config.proxy_name STRING my_server
+   .. code-block:: yaml
+      :linenos:
 
-If the server name should be ``that_server`` the line would be ::
+      ts:
+         proxy_name: my_server
 
-   CONFIG proxy.config.proxy_name STRING that_server
 
-In the following example, the variable ``proxy.config.arm.enabled`` is
-a yes/no flag. A value of ``0`` (zero) disables the option; a value of
-``1`` enables the option. ::
+If the server name should be ``that_server`` the line would be:
 
-   CONFIG proxy.config.arm.enabled INT 0
+   .. code-block:: yaml
+      :linenos:
 
-In the following example, the variable sets the time to wait for a
-DNS response to 10 seconds. ::
+      ts:
+         proxy_name: that_server
 
-   CONFIG proxy.config.hostdb.lookup_timeout INT 10
+
+In the following example, the field is a yes/no flag. A value of ``0`` (zero)
+disables the option; a value of ``1`` enables the option.
+
+   .. code-block:: yaml
+      :linenos:
+
+      ts:
+         arm:
+            enabled: 0
+
+In the following example, the field sets the time to wait for a
+DNS response to 10 seconds.
+
+   .. code-block:: yaml
+      :linenos:
+
+      ts:
+         hostdb:
+            lookup_timeout: 10
+
+In the following example the field sets the field with a ``float`` value.
+
+   .. code-block:: yaml
+      :linenos:
+
+      ts:
+         exec_thread:
+            autoconfig:
+               scale: 1.0
+
 
 The last examples configures a 64GB RAM cache, using a human readable
-prefix. ::
+prefix.
 
-   CONFIG proxy.config.cache.ram_cache.size INT 64G
+   .. code-block:: yaml
+      :linenos:
+
+      ts:
+         cache:
+            ram_cache:
+               size: 64G
 
 Environment Overrides
 =====================

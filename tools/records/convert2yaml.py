@@ -277,7 +277,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='records.config to YAML/JSON convert tool')
     parser.add_argument('-f', '--file', help='records.config input file.')
     parser.add_argument('-n', '--node', help="Include 'proxy.node' variables in the parser.", action='store_true')
-    parser.add_argument('-t', '--typerepr', help="Use type representers (list)", required=False, default=[''])
+    parser.add_argument('-t', '--typerepr', help="Use type representer (list)", required=False, default=[''])
     parser.add_argument('-s', '--schema', help="Validate the output using a json schema file.")
     parser.add_argument('-S', '--save2', help="Save to file.", required=True)
     parser.add_argument(
