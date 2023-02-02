@@ -234,7 +234,7 @@ IPCSocketServer::accept(std::error_code &ec) const
   }
 
   if (ret < 0) {
-    // seems that we have reched the max retries.
+    // seems that we have reached the max retries.
     ec = InternalError::MAX_TRANSIENT_ERRORS_HANDLED;
   }
 

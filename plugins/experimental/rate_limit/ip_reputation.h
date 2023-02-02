@@ -84,7 +84,7 @@ using HashMap = std::unordered_map<KeyClass, SieveBucket::iterator>; // The hash
 class SieveLru
 {
 public:
-  SieveLru() : _lock(TSMutexCreate()){}; // The unitialized version
+  SieveLru() : _lock(TSMutexCreate()){}; // The uninitialized version
   SieveLru(uint32_t num_buckets, uint32_t size);
   ~SieveLru()
   {

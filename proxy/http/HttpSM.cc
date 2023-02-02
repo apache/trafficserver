@@ -4162,7 +4162,7 @@ HttpSM::check_sni_host()
               this->t_state.client_connection_enabled = false;
             }
           } else {
-            SMDebug("ssl_sni", "SNI/hostname sucessfully match sni=%s host=%.*s", sni_value, host_len, host_name);
+            SMDebug("ssl_sni", "SNI/hostname successfully match sni=%s host=%.*s", sni_value, host_len, host_name);
           }
         } else {
           SMDebug("ssl_sni", "No SNI/hostname check configured for host=%.*s", host_len, host_name);
@@ -7002,7 +7002,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
     ua_raw_buffer_reader = nullptr;
   }
 
-  // if pre-warmed connection is used and it has data from origin server, foward it to ua
+  // if pre-warmed connection is used and it has data from origin server, forward it to ua
   if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
     ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
     client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());

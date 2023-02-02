@@ -57,7 +57,7 @@ public:
 
 private:
   // ToDo: These should be moved to global configurations to have one shared IP Reputation.
-  // today the configuration of this is so klunky, that there is no easy way to make it "global".
+  // today the configuration of this is so clunky, that there is no easy way to make it "global".
   std::chrono::seconds _iprep_max_age       = std::chrono::seconds::zero(); // Max age in the SieveLRUs for regular buckets
   std::chrono::seconds _iprep_perma_max_age = std::chrono::seconds::zero(); // Max age in the SieveLRUs for perma-block buckets
   uint32_t _iprep_num_buckets               = 10;                           // Number of buckets. ToDo: leave this at 10 always

@@ -55,7 +55,7 @@ Description
 ===========
 
 :func:`TSSslSecretGet` fetches the named secret from the current secret map.  If there is no secret with the
-given name, the returned pointer will be null, and the :arg:`secret_data_length` output paramter will be set to zero.  If
+given name, the returned pointer will be null, and the :arg:`secret_data_length` output parameter will be set to zero.  If
 the returned pointer is not null, it points to a buffer containing the secret data.  The :arg:`secret_data_length` output
 parameter will be set to the length of the secret data.  The buffer containing the data must be freed by
 calling :func:`TSfree`.

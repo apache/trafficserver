@@ -214,7 +214,7 @@ ts.Disk.remap_config.AddLine(
 ## Setting up DNS
 ### Test.MakeDNServer(name, default=None)
  * name - A name for this instance of the DNS.
- * default - if a list argument is provided, uDNS will reply with the list contents instead of NXDOMAIN if a DNS can't be found for a partcular entry
+ * default - if a list argument is provided, uDNS will reply with the list contents instead of NXDOMAIN if a DNS can't be found for a particular entry
 
  This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the appropriate IP addresses if the requested domain is in uDNS' mappings.
 

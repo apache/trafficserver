@@ -453,7 +453,7 @@ public:
       static constexpr unsigned N_STAT_ID = unsigned(STAT_ID::LOOP_TIME_MAX) + 1;
 
       /// Statistic name stems.
-      /// These will be qualfied by time scale.
+      /// These will be qualified by time scale.
       static char const *const STAT_NAME[N_STAT_ID];
 
       Slice() = default;

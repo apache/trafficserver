@@ -97,5 +97,5 @@ extern void tmr_cancel(Timer *timer);
 /* Clean up the timers package, freeing any unused storage. */
 extern void tmr_cleanup(void);
 
-/* Cancel all timers and free storage, usually in preparation for exitting. */
+/* Cancel all timers and free storage, usually in preparation for exiting. */
 extern void tmr_destroy(void);

@@ -70,7 +70,7 @@ public:
   /** Execute the regular expression.
    *
    * @param str String to match against.
-   * @return @c true if the patter matched, @a false if not.
+   * @return @c true if the pattern matched, @a false if not.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
@@ -81,7 +81,7 @@ public:
    * @param str String to match against.
    * @param ovector Capture results.
    * @param ovecsize Number of elements in @a ovector.
-   * @return @c true if the patter matched, @a false if not.
+   * @return @c true if the pattern matched, @a false if not.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    *

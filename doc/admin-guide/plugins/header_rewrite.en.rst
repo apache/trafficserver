@@ -838,7 +838,7 @@ The available controllers are:
 ================ ====================================================================
 Controller       Description
 ================ ====================================================================
-LOGGING          Turns off logging for the transction (default: ``on``)
+LOGGING          Turns off logging for the transaction (default: ``on``)
 INTERCEPT_RETRY  Allow intercepts to be retried (default: ``off``)
 RESP_CACHEABLE   Force the response to be cacheable (default: ``off``)
 REQ_CACHEABLE    Force the request to be cacheable (default: ``off``)

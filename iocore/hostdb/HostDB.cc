@@ -1467,7 +1467,7 @@ HostDBContinuation::updateHostFileConfig()
 
 //
 // Background event
-// Increment the hostdb_current_timestamp which funcions as our cached version
+// Increment the hostdb_current_timestamp which functions as our cached version
 // of ts_clock::now().  Might do other stuff here, like move records to the
 // current position in the cluster.
 int

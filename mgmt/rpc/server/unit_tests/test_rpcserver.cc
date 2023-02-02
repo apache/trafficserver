@@ -156,7 +156,7 @@ getTemporaryDir()
   return fs::path(mkdtemp(dirNameTemplate));
 }
 
-// Handy class to avoid manually disconecting the socket.
+// Handy class to avoid manually disconnecting the socket.
 // TODO: should it also connect?
 struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   using super = shared::rpc::IPCSocketClient;

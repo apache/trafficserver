@@ -323,11 +323,11 @@ The following errors could be generated when requesting record from the server.
 
    .. enumerator:: RECORD_WRITE_ERROR = 2006
 
-      Generic error while writting the record. ie: RecResetStatRecord() returns  REC_ERR_OKAY
+      Generic error while writing the record. ie: RecResetStatRecord() returns  REC_ERR_OKAY
 
    .. enumerator:: REQUESTED_TYPE_MISMATCH = 2007
 
-      The requested record's type does not match againts the passed type list.
+      The requested record's type does not match against the passed type list.
 
    .. enumerator:: INVALID_INCOMING_DATA = 2008
 

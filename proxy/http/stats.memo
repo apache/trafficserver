@@ -7,7 +7,7 @@ Date:   Feb 13, 1997
         +----------------+
 
 
-Proxy Schems:
+Proxy Schemes:
 -------------
   Name          :  SchemeEnabled
   Type          :  A bit vector. a bit per scheme.

@@ -251,7 +251,7 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
   TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, txn_contp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, txn_contp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
-  // add send respose hook for local reply if needed
+  // add send response hook for local reply if needed
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp);
 
   TSContDataSet(txn_contp, context);

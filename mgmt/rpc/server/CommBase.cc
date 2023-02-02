@@ -37,7 +37,7 @@ CommInternalErrorCategory::message(int ev) const
 {
   switch (static_cast<rpc::comm::InternalError>(ev)) {
   case rpc::comm::InternalError::MAX_TRANSIENT_ERRORS_HANDLED:
-    return {"We've reach the maximun attempt on transient errors."};
+    return {"We've reach the maximum attempt on transient errors."};
   case rpc::comm::InternalError::POLLIN_ERROR:
     return {"We haven't got a POLLIN flag back while waiting"};
   case rpc::comm::InternalError::PARTIAL_READ:

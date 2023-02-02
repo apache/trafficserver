@@ -153,7 +153,7 @@ def parse_pp_v1(pp_bytes: bytes) -> int:
     :param pp_bytes: The bytes containing the Proxy Protocol string. There may
     be more bytes than the Proxy Protocol string.
 
-    :returns: The number of bytes occupied by the proxy v1 protcol.
+    :returns: The number of bytes occupied by the proxy v1 protocol.
     """
     # Proxy Protocol v1 string ends with CRLF.
     end = pp_bytes.find(b'\r\n')
@@ -282,7 +282,7 @@ def accept_pp_connection(sock: socket.socket, address: str, internal_port: int) 
                 break
 
             if len(received_data) > 108:
-                # The spec gaurantees that the prefix will be no more than
+                # The spec guarantees that the prefix will be no more than
                 # 108 bytes.
                 logging.info("No Proxy Protocol string found.")
                 break
@@ -291,7 +291,7 @@ def accept_pp_connection(sock: socket.socket, address: str, internal_port: int) 
             # the rest of the content.
             for_internal = received_data[pp_length:]
             logging.debug(
-                f"Stripped the prefix, now thare are {len(for_internal)} "
+                f"Stripped the prefix, now there are {len(for_internal)} "
                 "bytes for the internal server.")
         else:
             for_internal = received_data

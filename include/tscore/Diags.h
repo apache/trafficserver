@@ -170,7 +170,7 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
 }
 
 // printf-line debug output.  First parameter must be DbgCtl instance. Assumes debug control is enabled, and
-// debug output globablly enabled.
+// debug output globally enabled.
 //
 #define DbgPrint(CTL, ...)                                                             \
   do {                                                                                 \

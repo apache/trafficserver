@@ -156,7 +156,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
 
     if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
-      // unkown scheme, validate the scheme
+      // unknown scheme, validate the scheme
       if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
         return PARSE_RESULT_ERROR;
       }

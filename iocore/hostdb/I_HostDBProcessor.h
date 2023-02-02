@@ -341,7 +341,7 @@ public:
   ts_time ip_timestamp;
 
   /// Valid duration of the DNS response data.
-  /// In the code this functions as the TTL in HostDB calcuations, but may not
+  /// In the code this functions as the TTL in HostDB calculations, but may not
   /// be the response's TTL based upon configuration such as
   /// proxy.config.hostdb.ttl_mode.
   ts_seconds ip_timeout_interval;
@@ -466,7 +466,7 @@ public:
    * @return The current index.
    *
    * @note The internal index may be out of range due to concurrency constraints - this insures the
-   * returned valu is in range.
+   * returned value is in range.
    */
   unsigned short rr_idx() const;
 

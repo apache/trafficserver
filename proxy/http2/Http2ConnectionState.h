@@ -229,7 +229,7 @@ private:
   /** Receive and process a SETTINGS frame with the ACK flag set.
    *
    * This function will process any settings updates that have now been
-   * acknowleged by the peer.
+   * acknowledged by the peer.
    */
   void _process_incoming_settings_ack_frame();
 
@@ -337,7 +337,7 @@ private:
     /** Returns the settings parameters that were configured via the SETTINGS frame
      * associated with this instance.
      *
-     * @return The settigns parameters that were configured at the time the
+     * @return The settings parameters that were configured at the time the
      * associated SETTINGS frame was sent. @note that this is not just the
      * values in the SETTINGS frame, but those values along with all the local
      * settings that were in place but not explicitly configured via the frame.

@@ -174,7 +174,7 @@ This version has several major architectural changes from the previous version.
    provides a noticeable simplification of the code.
 
 *  Single and multiple address results are treated identically - a singleton is simply a multiple
-   of size 1. This yeilds a major simplification of the implementation.
+   of size 1. This yields a major simplification of the implementation.
 
 *  Connections are throttled to dead upstreams, allowing only a single connection attempt per fail
    window timing until a connection succeeds.

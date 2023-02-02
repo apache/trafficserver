@@ -82,7 +82,7 @@ std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string const &name,
 /// @brief Get a Record as a YAML node using regex as name.
 ///
 /// @param regex The regex that will be used to lookup records.
-/// @param recType The record type we want to match againts the retrieved records. This could be either a single value or a bitwise
+/// @param recType The record type we want to match against the retrieved records. This could be either a single value or a bitwise
 /// value.
 /// @return std::tuple<YAML::Node, std::error_code>
 ///

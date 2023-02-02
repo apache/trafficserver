@@ -1250,7 +1250,7 @@ TS_CHECK_CRYPTO
 # Check for OpenSSL Version
 TS_CHECK_CRYPTO_VERSION
 
-# Check for OpenSSL Version 3 and add compatiblity define if needed
+# Check for OpenSSL Version 3 and add compatibility define if needed
 TS_CHECK_OPENSSL3
 AM_CONDITIONAL([OPENSSL_IS_OPENSSL3], [test -n "$openssl_is_openssl3"])
 
