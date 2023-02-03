@@ -190,17 +190,25 @@ def get_value(type, value):
     return None
 
 
-def add_object(config, var, value, type=None):
+def add_object(config, var, value, type, track_info):
     key = ''
     index = var.find('.')
     if index < 0:  # last part
+        if isinstance(config, dict) == False:
+            line, rec = track_info
+            raise Exception(
+                f"We cannot continue with '{rec}' at line '{line}' as a value node will be overridden.\nPlease check your config.")
+        elif var in config and isinstance(config[var], dict):
+            line, rec = track_info
+            raise Exception(
+                f"We cannot continue with '{rec}' at line '{line}' as an existing YAML map will be overridden.\nPlease check your config.")
         config[var] = get_value(type, value)
     else:
         key = var[:index]
         if key not in config:
             config[key] = {}
 
-        add_object(config[key], var[index + 1:], value, type=type)
+        add_object(config[key], var[index + 1:], value, type, track_info)
 
 
 def fix_record_names(file):
@@ -247,6 +255,7 @@ def handle_file_input(args):
             type = s[2]
             value = s[3]
 
+            track_info = (idx + 1, name)  # in case we want to show any error. rec name is always handy.
             # We ignore the prefix and work away from  there.
             if name.startswith("proxy.config."):
                 name = name[len("proxy.config."):]
@@ -256,7 +265,7 @@ def handle_file_input(args):
                 name = name[len("proxy."):]
 
             # Build the object
-            add_object(config, name, value[:-1], type)
+            add_object(config, name, value[:-1], type, track_info)
             idx = idx + 1
 
     ts = {}
@@ -286,6 +295,7 @@ if __name__ == '__main__':
         help="Be quiet, do not output anything, except for errors",
         required=False,
         action='store_true')
+    parser.add_argument('-e', '--error', help="Show traceback", required=False, action='store_true', default=False)
     kk = parser.add_mutually_exclusive_group(required=True)
     kk.add_argument('-j', '--json', help="Output as json", action='store_true')
     kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true')
@@ -302,9 +312,10 @@ if __name__ == '__main__':
             print_summary()
 
     except Exception as e:
-        print("Something went wrong: {}".format(e))
+        print("Something went wrong:\n{}".format(e))
 
-        print(traceback.format_exc())
+        if args.error:
+            print(f"\n{traceback.format_exc()}")
         sys.exit(1)
 
     sys.exit(0)

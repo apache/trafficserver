@@ -41,3 +41,20 @@ tr.Processes.Default.Command = f'python3 convert2yaml.py -f old_records.config -
 tr.Processes.Default.Stream = 'gold/renamed_records.out'
 f = tr.Disk.File(f"generated{file_suffix}.yaml")
 f.Content = "gold/renamed_records.yaml"
+
+
+tr = Test.AddTestRun("Test errors when trying to override values ")
+tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy('legacy_config/override_value.config')
+tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_value.config --save2 generated{file_suffix}.yaml --yaml -m'
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "We cannot continue with 'proxy.config.ssl.client.verify.server.policy' at line '3' as a value node will be overridden",
+    "Error should be present")
+
+tr = Test.AddTestRun("Test errors when trying to override maps")
+tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy('legacy_config/override_map.config')
+tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_map.config --save2 generated{file_suffix}.yaml --yaml -m'
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' as an existing YAML map will be overridden.",
+    "Error should be present")
