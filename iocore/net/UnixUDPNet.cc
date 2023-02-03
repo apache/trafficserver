@@ -1167,8 +1167,19 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
 #else
   msgvec_size = sizeof(struct mmsghdr) * n * 64;
 #endif
-  msgvec = static_cast<struct mmsghdr *>(alloca(msgvec_size));
+  // The sizeof(struct msghdr) is 56 bytes or so. It can be too big to stack (alloca).
+  IOBufferBlock *tmp = new_IOBufferBlock();
+  tmp->alloc(iobuffer_size_to_index(msgvec_size, BUFFER_SIZE_INDEX_1M));
+  msgvec = reinterpret_cast<struct mmsghdr *>(tmp->buf());
   memset(msgvec, 0, msgvec_size);
+
+  // The sizeof(struct iove) is 16 bytes or so. It can be too big to stack (alloca).
+  int iovec_size      = sizeof(struct iovec) * n * 64;
+  IOBufferBlock *tmp2 = new_IOBufferBlock();
+  tmp2->alloc(iobuffer_size_to_index(iovec_size, BUFFER_SIZE_INDEX_1M));
+  struct iovec *iovec = reinterpret_cast<struct iovec *>(tmp2->buf());
+  memset(iovec, 0, iovec_size);
+  int iovec_used = 0;
 
   int vlen = 0;
   int fd   = p[0]->conn->getFd();
@@ -1194,7 +1205,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
         u                   = static_cast<union udp_segment_hdr *>(alloca(sizeof(union udp_segment_hdr)));
         msg->msg_control    = u->buf;
         msg->msg_controllen = sizeof(u->buf);
-        iov                 = static_cast<struct iovec *>(alloca(sizeof(struct iovec)));
+        iov                 = &iovec[iovec_used++];
         iov_len             = 1;
         iov->iov_base       = packet->chain.get()->start();
         iov->iov_len        = packet->chain.get()->size();
@@ -1216,7 +1227,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
           msg              = &msgvec[vlen].msg_hdr;
           msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
           msg->msg_namelen = ats_ip_size(packet->to);
-          iov              = static_cast<struct iovec *>(alloca(sizeof(struct iovec)));
+          iov              = &iovec[iovec_used++];
           iov_len          = 1;
           iov->iov_base    = packet->chain.get()->start() + offset;
           iov->iov_len =
@@ -1235,7 +1246,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
       msg              = &msgvec[vlen].msg_hdr;
       msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
       msg->msg_namelen = ats_ip_size(packet->to);
-      iov              = static_cast<struct iovec *>(alloca(sizeof(struct iovec) * 64));
+      iov              = &iovec[iovec_used++];
       iov_len          = 0;
       for (IOBufferBlock *b = packet->chain.get(); b != nullptr; b = b->next.get()) {
         iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
@@ -1291,6 +1302,8 @@ UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
     }
 #endif
   }
+  tmp->free();
+  tmp2->free();
 
   return res;
 #else
