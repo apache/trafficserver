@@ -18,6 +18,8 @@
 
 Test.Summary = 'Test old config ATS startup'
 
+Test.SkipIf(Condition.true("Don't require records.yaml just yet")
+
 ts = Test.MakeATSProcess("ts")
 ts.Disk.MakeConfigFile('records.config').AddLine('dummy file!')
 
