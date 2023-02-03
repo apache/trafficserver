@@ -54,6 +54,14 @@
 // Process Strings
 #define CURRENT_PROCESSES "plugin." PLUGIN_NAME ".current_processes"
 
+// Memory/Swap Strings
+#define TOTAL_RAM  "plugin." PLUGIN_NAME ".total_ram"
+#define FREE_RAM   "plugin." PLUGIN_NAME ".free_ram"
+#define SHARED_RAM "plugin." PLUGIN_NAME ".shared_ram"
+#define BUFFER_RAM "plugin." PLUGIN_NAME ".buffer_ram"
+#define TOTAL_SWAP "plugin." PLUGIN_NAME ".total_swap"
+#define FREE_SWAP  "plugin." PLUGIN_NAME ".free_swap"
+
 // Base net stats name, full name needs to populated
 // with NET_STATS.infname.RX/TX.standard_net_stats field
 #define NET_STATS "plugin." PLUGIN_NAME ".net."
@@ -256,6 +264,12 @@ getStats(TSMutex stat_creation_mutex)
   statSet(LOAD_AVG_FIVE_MIN, info.loads[1], stat_creation_mutex);
   statSet(LOAD_AVG_FIFTEEN_MIN, info.loads[2], stat_creation_mutex);
   statSet(CURRENT_PROCESSES, info.procs, stat_creation_mutex);
+  statSet(TOTAL_RAM, info.totalram, stat_creation_mutex);
+  statSet(FREE_RAM, info.freeram, stat_creation_mutex);
+  statSet(SHARED_RAM, info.sharedram, stat_creation_mutex);
+  statSet(BUFFER_RAM, info.bufferram, stat_creation_mutex);
+  statSet(TOTAL_SWAP, info.totalswap, stat_creation_mutex);
+  statSet(FREE_SWAP, info.freeswap, stat_creation_mutex);
 #endif // #ifdef HAVE_SYS_SYSINFO_H
   netStatsInfo(stat_creation_mutex);
 
