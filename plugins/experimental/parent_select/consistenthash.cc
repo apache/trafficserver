@@ -161,7 +161,7 @@ PLNextHopConsistentHash::PLNextHopConsistentHash(const std::string_view name, co
       p->group_index = host_groups[i][j]->group_index;
       p->host_index  = host_groups[i][j]->host_index;
       hash_ring->insert(p, p->weight, &hash);
-      PL_NH_Debug(PL_NH_DEBUG_TAG, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, stategy: %s", i, j,
+      PL_NH_Debug(PL_NH_DEBUG_TAG, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, strategy: %s", i, j,
                   p->name, p->hostname.c_str(), strategy_name.c_str());
     }
     hash.clear();

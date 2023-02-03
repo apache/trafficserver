@@ -2831,7 +2831,7 @@ tsapi TSReturnCode TSRPCHandlerDone(TSYaml resp);
  * call.
  * @param code Error code.
  * @param descr A text with a description of the error.
- * @param descr_len The length of the descrition string.
+ * @param descr_len The length of the description string.
  * @note The @c code and @c descr will be part of the @c 'data' field in the jsonrpc error response.
  * @return TS_SUCCESS if no issues. TS_ERROR otherwise.
  */

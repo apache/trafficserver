@@ -1,6 +1,6 @@
 /** @file
 
-  TLSSEarlyDataSupport.cc provides implmentations for
+  TLSSEarlyDataSupport.cc provides implementations for
   TLSEarlyDataSupport methods
 
   @section license License

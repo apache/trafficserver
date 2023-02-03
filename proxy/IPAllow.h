@@ -82,7 +82,7 @@ class IpAllow : public ConfigInfo
     Record(uint32_t method_mask, int line, MethodNames &&nonstandard_methods, bool deny_nonstandard_methods);
 
     uint32_t _method_mask{0};              ///< Well known method mask.
-    int _src_line{0};                      ///< Configuration file sourc line.
+    int _src_line{0};                      ///< Configuration file source line.
     MethodNames _nonstandard_methods;      ///< Allowed methods that are not well known.
     bool _deny_nonstandard_methods{false}; ///< Denied methods that are not well known.
   };

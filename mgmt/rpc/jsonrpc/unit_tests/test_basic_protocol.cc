@@ -108,7 +108,7 @@ TEST_CASE("Register/call method", "[method]")
 {
   JsonRpcUnitTest rpc;
 
-  SECTION("Registring the method")
+  SECTION("Registering the method")
   {
     REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
 
@@ -128,7 +128,7 @@ TEST_CASE("Register/call method - respond with errors (data field)", "[method][e
 {
   JsonRpcUnitTest rpc;
 
-  SECTION("Registring the method")
+  SECTION("Registering the method")
   {
     REQUIRE(rpc.add_method_handler("test_callback_ok_or_error", &test_callback_ok_or_error));
 
@@ -148,7 +148,7 @@ TEST_CASE("Register/call notification", "[notifications]")
 {
   JsonRpcUnitTest rpc;
 
-  SECTION("Registring the notification")
+  SECTION("Registering the notification")
   {
     REQUIRE(rpc.add_notification_handler("test_nofitication", &test_nofitication));
 

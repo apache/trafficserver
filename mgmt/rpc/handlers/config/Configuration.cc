@@ -107,7 +107,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 {
   ts::Rv<YAML::Node> resp;
 
-  // we need the type and the udpate type for now.
+  // we need the type and the update type for now.
   using LookupContext = std::tuple<RecDataT, RecCheckT, const char *, RecUpdateT>;
 
   for (auto const &kv : params) {

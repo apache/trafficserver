@@ -63,7 +63,7 @@
  *       sized array and a constant time index (class charIndex).  The constant
  *       time index is only used to from the root domain to the first
  *       level partition (ie: .com). The fixed array is used for subsequent
- *       paritions until the fan out exceeds the arrays fixed size at which
+ *       partitions until the fan out exceeds the arrays fixed size at which
  *       time, the fixed array is converted to a hash table
  *
  *   ip table - supports ip ranges.  A single ip address is treated as

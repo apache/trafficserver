@@ -2630,7 +2630,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2872
 msgid ""
-"**description:** This function can be used to retireve the value of control "
+"**description:** This function can be used to retrieve the value of control "
 "channel."
 msgstr ""
 
@@ -2662,7 +2662,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2921
 msgid ""
-"**description:** This function can be used to retireve the various "
+"**description:** This function can be used to retrieve the various "
 "milestone times. They are how long the transaction took to traverse "
 "portions of the HTTP state machine. Each milestone value is a fractional "
 "number of seconds since the beginning of the transaction."

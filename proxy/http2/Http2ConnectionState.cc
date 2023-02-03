@@ -576,7 +576,7 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
     Warning("Setting frame for zombied session %" PRId64, this->session->get_connection_id());
   }
 
-  // Update SETTIGNS frame count per minute
+  // Update SETTINGS frame count per minute
   this->increment_received_settings_frame_count();
   // Close this connection if its SETTINGS frame count exceeds a limit
   if (this->get_received_settings_frame_count() > Http2::max_settings_frames_per_minute) {
@@ -1365,7 +1365,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   uint32_t initial_stream_window_target = initial_stream_window;
   if (is_client_streamid && this->_has_dynamic_stream_window()) {
     // For dynamic stream windows, the peer's idea of what the window size is
-    // may be different than what we are configuring. Our calulated server
+    // may be different than what we are configuring. Our calculated server
     // receive window is always maintained at what the peer has acknowledged so
     // far. This prevents us from enforcing window sizes that have been
     // adjusted by SETTINGS frames which the peer has not received yet. So we

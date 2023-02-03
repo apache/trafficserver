@@ -188,7 +188,7 @@ private:
     L_Fatal("%s(%p) failed: %s (%d)", func_name, ptr, Strerror(errnum).c_str(), errnum);
   }
 
-  // In debug builds, make sure shared vs. exlusive locks and unlocks are properly paired.
+  // In debug builds, make sure shared vs. exclusive locks and unlocks are properly paired.
   //
   X(std::atomic<bool> _exclusive{false};)
   X(std::atomic<int> _shared{0};)

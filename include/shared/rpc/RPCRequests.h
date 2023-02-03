@@ -34,7 +34,7 @@
 namespace shared::rpc
 {
 struct JSONRPCRequest {
-  std::string jsonrpc{"2.0"}; //!< Always 2.0 as this is the only version that teh server supports.
+  std::string jsonrpc{"2.0"}; //!< Always 2.0 as this is the only version that the server supports.
   std::string method;         //!< remote method name.
   std::string id;             //!< optional, only needed for method calls.
   YAML::Node params;          //!< This is defined by each remote API.
@@ -49,7 +49,7 @@ struct JSONRPCRequest {
 };
 
 struct JSONRPCResponse {
-  std::string id;      //!< Always 2.0 as this is the only version that teh server supports.
+  std::string id;      //!< Always 2.0 as this is the only version that the server supports.
   std::string jsonrpc; //!< Always 2.0
   YAML::Node result; //!< Server's response, this could be decoded by using the YAML::convert mechanism. This depends solely on the
                      //!< server's data. Check docs and schemas.

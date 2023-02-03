@@ -545,6 +545,6 @@ extern void ts_session_protocol_well_known_name_indices_init();
  *
  * TODO: ideally this would take a ts::TextView for @a protocols, but currently
  * ts::TextView does not have a char* constructor while std::string_view does.
- * Once that is added, this can be seemlessly switched to a ts::TextView.
+ * Once that is added, this can be seamlessly switched to a ts::TextView.
  */
 bool convert_alpn_to_wire_format(std::string_view protocols, unsigned char *wire_format_buffer, int &wire_format_buffer_len);

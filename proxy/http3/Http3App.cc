@@ -201,7 +201,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
 
     auto ret = this->_remote_uni_stream_map.insert(std::make_pair(adapter->stream().id(), type));
     if (!ret.second) {
-      // A stream for the type is already exisits
+      // A stream for the type is already exists
       // TODO Return an error
     }
   } else {

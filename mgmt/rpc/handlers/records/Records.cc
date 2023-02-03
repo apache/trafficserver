@@ -89,7 +89,7 @@ template <> struct convert<RequestRecordElement> {
       return false;
     }
 
-    // TODO: Add "type" paramater to just say, `config`, `metric`. May be handier.
+    // TODO: Add "type" parameter to just say, `config`, `metric`. May be handier.
 
     if (auto n = node[utils::RECORD_TYPES_KEY]) {
       // if it's empty should be ok, will get all of them.

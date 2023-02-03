@@ -254,7 +254,7 @@ Recv_from_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_VCONN_READ_READY:
     break;
 
-  // My best guess is that this event is triggered when all the bytes reqeusted in the read VIO have been received.
+  // My best guess is that this event is triggered when all the bytes requested in the read VIO have been received.
   // This should not happen for this class because the number bytes for the read VIO is INT64_MAX, effectively
   // infinite.
   //
@@ -391,7 +391,7 @@ Send_to_vconn::send(void const *data, int64_t n_bytes)
 
   if (start_vio) {
     // Note that the VConn implementor is required to lock the mutex of the given continuation when reading data
-    // with the given I/O buffer reader.  The same mutex must be locked when writting into the I/O buffer being
+    // with the given I/O buffer reader.  The same mutex must be locked when writing into the I/O buffer being
     // read.
     //
     nonNullPtrDbg(TSVConnWrite(_vconn, _cont.get(), _io_buf_reader.get(), bs));

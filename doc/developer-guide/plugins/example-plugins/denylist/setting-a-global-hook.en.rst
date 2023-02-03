@@ -33,6 +33,6 @@ Above, ``TS_HTTP_OS_DNS_HOOK`` is the ID for the origin server DNS
 lookup hook and ``contp`` is the parent continuation created earlier.
 
 This means that the Denylist plugin is called at every origin server
-DNS lookup. When it is called, the handler functio ``denylist_plugin``
+DNS lookup. When it is called, the handler function ``denylist_plugin``
 receives ``TS_EVENT_HTTP_OS_DNS`` and calls ``handle_dns`` to see if the
 request is forbidden.

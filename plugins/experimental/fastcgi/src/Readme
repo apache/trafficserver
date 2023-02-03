@@ -47,7 +47,7 @@ OR Build and install using Makefile utility:
 # 1. ATS_SRC		--either set or export env variable path to traffic server src directory
 # 2. ATS_EXEC       --either set or export env variable path to traffic server exec directory
 
-  Afterwords command, $> make && sudo -E make install
+  Afterwards command, $> make && sudo -E make install
   For example:
   make ATS_SRC=/home/oschaaf/code/apache/trafficserver ATS_EXEC=/usr/local/ CPPFLAGS=-std=c++11
 

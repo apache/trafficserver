@@ -78,7 +78,7 @@ continuation_handler_void_ptr(int (C::*fp)(int, T *))
   // with multiple inheritance of the C templated type. Make sure that for type
   // C the Continuation parent is listed first (either directly or indirectly
   // via the inheritance tree) before any other parent in the multiple class
-  // heirarchy of C.
+  // hierarchy of C.
   return static_cast<ContinuationHandler>(fp2);
 }
 

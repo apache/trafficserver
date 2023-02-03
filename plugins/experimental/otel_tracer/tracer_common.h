@@ -84,7 +84,7 @@ public:
 };
 
 // this object is created using placement new therefore all destructors needs
-// to be called explictly inside Destruct method
+// to be called explicitly inside Destruct method
 struct ExtraRequestData {
   nostd::shared_ptr<trace::Span> span;
 

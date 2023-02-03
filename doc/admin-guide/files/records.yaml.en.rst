@@ -550,7 +550,7 @@ Network
    ``default_inactivity_timeout`` is a connection level concept. This is not
    necessarily a problem, but it does mean that care must be taken when
    applying the override to consider that all transactions in the connection
-   which has this timeout overriden will be impacted by the override. For
+   which has this timeout overridden will be impacted by the override. For
    instance, if the default inactivity timeout is being overridden via a
    :ref:`admin-plugins-conf-remap` rule in :file:`remap.config`, then all
    transactions for that connection will be impacted by the override, not just
@@ -4090,7 +4090,7 @@ Client-Related Configuration
    ================================ ======================================================================
    ``""``                           No ALPN extension is sent by |TS| in origin-side TLS handshakes.
                                     |TS| will assume an HTTP/1.1 connection in this case.
-   ``"http/1.1"``                   Only HTTP/1.1 is advertized by |TS|. Thus, the origin will
+   ``"http/1.1"``                   Only HTTP/1.1 is advertised by |TS|. Thus, the origin will
                                     either negotiate HTTP/1.1, or it will fail the handshake if that
                                     is not supported by the origin.
    ``"http/1.1,http/1.0"``          Both HTTP/1.1 and HTTP/1.0 are supported by |TS|, but HTTP/1.1
@@ -4099,7 +4099,7 @@ Client-Related Configuration
                                     origin supports HTTP/2, it will be used for the connection. If
                                     not, it will fall back to HTTP/1.1 or, if that is not supported,
                                     HTTP/1.0. (HTTP/2 to origin is currently not supported by |TS|.)
-   ``"h2"``                         |TS| only advertizes HTTP/2 support. Thus, the origin will
+   ``"h2"``                         |TS| only advertises HTTP/2 support. Thus, the origin will
                                     either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
                                     is currently not supported by |TS|.)
    ================================ ======================================================================

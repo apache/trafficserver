@@ -105,7 +105,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds interval)
       // Common loading function for creating a record from the address vector.
       auto loader = [](ts::TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
         HostDBRecord::Handle record{HostDBRecord::alloc(key, v.size())};
-        record->af_family = v.front().family(); // @a v is presumed family homogenous
+        record->af_family = v.front().family(); // @a v is presumed family homogeneous
         auto rr_info      = record->rr_info();
         auto spot         = v.begin();
         for (auto &item : rr_info) {
