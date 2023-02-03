@@ -38,6 +38,7 @@ class Http3HeaderFramer : public Http3FrameGenerator
 {
 public:
   Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
+  ~Http3HeaderFramer();
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame() override;
