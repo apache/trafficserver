@@ -25,10 +25,11 @@ namespace ts
 {
 namespace filename
 {
-  constexpr const char *STORAGE = "storage.config";
-  constexpr const char *RECORDS = "records.yaml";
-  constexpr const char *VOLUME  = "volume.config";
-  constexpr const char *PLUGIN  = "plugin.config";
+  constexpr const char *STORAGE        = "storage.config";
+  constexpr const char *RECORDS        = "records.yaml";
+  constexpr const char *RECORDS_LEGACY = "records.config";
+  constexpr const char *VOLUME         = "volume.config";
+  constexpr const char *PLUGIN         = "plugin.config";
 
   // These still need to have their corresponding records.config settings removed.
   constexpr const char *LOGGING       = "logging.yaml";

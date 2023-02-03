@@ -217,18 +217,19 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    bool file_exists = true;
+    bool file_exists    = true;
+    bool config_is_yaml = true;
 
     ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
-
-    // Make sure there is no legacy file, if so we fail. This is to avoid issues with someone not knowing
-    // that we now are using records.yaml
-    ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
+    // Check which config format we are using
+    ts::file::path old_config{RecConfigReadConfigPath(nullptr, ts::filename::RECORDS_LEGACY)};
     if (ts::file::exists(old_config)) {
-      RecLog(DL_Warning, "Found a legacy config file. %s", old_config.c_str());
-      return REC_ERR_FAIL;
+      RecLog(DL_Warning, "Legacy config files are deprecated. %s", old_config.c_str());
+      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS_LEGACY));
+      config_is_yaml     = false;
+    } else {
+      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
     }
 
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
@@ -237,11 +238,15 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     }
 
     if (file_exists) {
-      auto err = RecReadYamlConfigFile();
-      RecLog(DL_Note, "records parsing completed.");
-      if (!err.empty()) {
-        std::string text;
-        RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
+      if (config_is_yaml) {
+        auto err = RecReadYamlConfigFile();
+        RecLog(DL_Note, "records parsing completed.");
+        if (!err.empty()) {
+          std::string text;
+          RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
+        }
+      } else {
+        RecReadConfigFile();
       }
     } else {
       RecLog(DL_Note, "%s does not exist.", g_rec_config_fpath);

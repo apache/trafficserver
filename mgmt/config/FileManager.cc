@@ -59,6 +59,9 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
       std::string str;
       ret.push(1, ts::bwprint(str, "Error reading {}. {}", fileName));
     }
+  } else if (fileName == ts::filename::RECORDS_LEGACY) {
+    RecReadConfigFile();
+    RecConfigWarnIfUnregistered();
   } else {
     RecT rec_type;
     char *data = const_cast<char *>(configName.c_str());
