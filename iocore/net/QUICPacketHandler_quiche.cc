@@ -287,8 +287,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       const uint8_t *quic_trace_id;
       size_t quic_trace_id_len = 0;
       quiche_conn_trace_id(quiche_con, &quic_trace_id, &quic_trace_id_len);
-      sprintf(qlog_filepath, "%s/%.*s.sqlog", Layout::get()->relative(params->qlog_dir()).c_str(),
-              static_cast<int>(quic_trace_id_len), quic_trace_id);
+      snprintf(qlog_filepath, PATH_MAX, "%s/%.*s.sqlog", Layout::get()->relative(params->qlog_dir()).c_str(),
+               static_cast<int>(quic_trace_id_len), quic_trace_id);
       quiche_conn_set_qlog_path(quiche_con, qlog_filepath, "ats", "");
     }
 
