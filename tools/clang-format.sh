@@ -46,7 +46,11 @@ function main() {
   CURL=${CURL:-curl}
 
   # Default to sha256sum, but honor the env variable just in case
-  SHASUM=${SHASUM:-sha256sum}
+  if [ $(which sha256sum) ] ; then
+    SHASUM=${SHASUM:-sha256sum}
+  else
+    SHASUM=${SHASUM:-shasum -a 256}
+  fi
 
   ARCHIVE=$ROOT/$(basename ${URL})
 
