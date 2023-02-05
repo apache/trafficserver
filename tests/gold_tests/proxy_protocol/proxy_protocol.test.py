@@ -108,6 +108,32 @@ logging:
         tr.StillRunningAfter = self.httpbin
         tr.StillRunningAfter = self.ts
 
+    def addTestCase3(self):
+        """
+        Verify ATS with :pp: server_ports designation can handle a connection
+        without Proxy Protocol.
+        """
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = f"curl -vs --http1.1 http://localhost:{self.ts.Variables.proxy_protocol_port}/get | {self.json_printer}"
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/test_case_3_stdout.gold"
+        tr.Processes.Default.Streams.stderr = "gold/test_case_3_stderr.gold"
+        tr.StillRunningAfter = self.httpbin
+        tr.StillRunningAfter = self.ts
+
+    def addTestCase4(self):
+        """
+        Verify ATS with :pp:ssl server_ports designation can handle a TLS
+        connection without Proxy Protocol.
+        """
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = f"curl -vsk --http1.1 https://localhost:{self.ts.Variables.proxy_protocol_ssl_port}/get | {self.json_printer}"
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/test_case_4_stdout.gold"
+        tr.Processes.Default.Streams.stderr = "gold/test_case_4_stderr.gold"
+        tr.StillRunningAfter = self.httpbin
+        tr.StillRunningAfter = self.ts
+
     def addTestCase99(self):
         """
         check access log
@@ -126,6 +152,8 @@ logging:
         self.addTestCase0()
         self.addTestCase1()
         self.addTestCase2()
+        self.addTestCase3()
+        self.addTestCase4()
         self.addTestCase99()
 
 

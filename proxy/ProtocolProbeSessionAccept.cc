@@ -124,10 +124,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       if (netvc->has_proxy_protocol(reader)) {
         Debug("proxyprotocol", "ioCompletionEvent: http has proxy protocol header");
       } else {
-        Debug("proxyprotocol",
-              "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - "
-              "closing connection");
-        goto done;
+        Debug("proxyprotocol", "ioCompletionEvent: proxy protocol was enabled, but Proxy Protocol header was not present");
       }
     } // end of Proxy Protocol processing
 

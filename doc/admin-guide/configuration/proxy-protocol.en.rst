@@ -33,11 +33,13 @@ TLS connections.
 
     The current implementation doesn't support TLV fields of Version 2.
 
-The Proxy Protocol must be enabled on each port.  See
+The Proxy Protocol must be enabled on each port for which connections with the
+Proxy Protocol header are expected.  See
 :ts:cv:`proxy.config.http.server_ports` for information on how to enable the
-Proxy Protocol on a port.  Once enabled, all incoming requests must be prefaced
-with the PROXY v1/v2 header.  Any request not preface by this header will be
-dropped.
+Proxy Protocol on a port.  Once enabled, incoming requests may be prefaced with
+either the PROXY v1 or v2 header. Any request not prefaced by this header will
+be handled according to the other directives in the associated port
+configuration.
 
 As a security measure, an optional list of trusted IP addresses may be
 configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
@@ -45,7 +47,9 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
    .. important::
 
        If the allowlist is configured, requests will only be accepted from these
-       IP addresses and must be prefaced with the PROXY v1/v2 header.
+       IP addresses for all ports designated for Proxy Protocol in the
+       :ts:cv:`proxy.config.http.server_ports` configuration, regardless of whether
+       the connections have the Proxy Protocol header.
 
 1. HTTP Forwarded Header
 

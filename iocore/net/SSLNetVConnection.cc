@@ -453,6 +453,7 @@ SSLNetVConnection::read_raw_data()
                              "proxy protocol is enabled on this port - processing all connections");
     }
 
+    auto const stored_r = r;
     if (this->has_proxy_protocol(buffer, &r)) {
       Debug("proxyprotocol", "ssl has proxy protocol header");
       if (is_debug_tag_set("proxyprotocol")) {
@@ -463,8 +464,11 @@ SSLNetVConnection::read_raw_data()
         Debug("proxyprotocol", "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
       }
     } else {
-      Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
-                             "transaction - closing connection");
+      Debug("proxyprotocol", "proxy protocol was enabled, but Proxy Protocol header was not present");
+      // We are flexible with the Proxy Protocol designation. Maybe not all
+      // connections include Proxy Protocol. Revert to the stored value of r so
+      // we can process the bytes that are on the wire (likely a CLIENT_HELLO).
+      r = stored_r;
     }
   } // end of Proxy Protocol processing
 

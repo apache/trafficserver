@@ -465,7 +465,7 @@ proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
   } else {
     // if we don't have the PROXY preface, we don't have a ProxyProtocol header
     // TODO: print hexdump of buffer safely
-    Debug("proxyprotocol", "failed to find ProxyProtocol preface");
+    Debug("proxyprotocol", "failed to find ProxyProtocol preface in the first %zu bytes", tv.size());
   }
 
   return len;
