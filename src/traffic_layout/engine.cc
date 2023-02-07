@@ -29,7 +29,7 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_defs.h"
 #include "records/I_RecProcess.h"
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "engine.h"
 #include "file_system.h"
 #include "info.h"

@@ -28,7 +28,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;

@@ -28,7 +28,7 @@
 
 #include "tscore/ink_platform.h"
 #include "records/I_RecProcess.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "LogObject.h"
 #include "RolledLogDeleter.h"
 #include "swoc/MemSpan.h"

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 
 namespace ts
 {

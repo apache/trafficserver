@@ -28,7 +28,7 @@
 #include <cstring>
 #include "HttpConfig.h"
 #include "HTTP.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "P_Net.h"
 #include "records/P_RecUtils.h"
 #include <records/I_RecHttp.h>

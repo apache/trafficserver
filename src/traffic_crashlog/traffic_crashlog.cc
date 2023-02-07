@@ -28,7 +28,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/ink_syslog.h"
 #include "records/I_RecProcess.h"
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
 

@@ -27,7 +27,7 @@
 #include "HttpTransact.h"
 #include "HttpBodyFactory.h"
 #include "HttpTransactHeaders.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "Http1ServerSession.h"
 #include "HttpDebugNames.h"
 #include "HttpSessionManager.h"

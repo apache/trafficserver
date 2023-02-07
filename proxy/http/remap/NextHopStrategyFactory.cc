@@ -29,7 +29,7 @@
 #include "NextHopStrategyFactory.h"
 #include "NextHopConsistentHash.h"
 #include "NextHopRoundRobin.h"
-#include <YamlCfg.h>
+#include <tscpp/util/YamlCfg.h>
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {

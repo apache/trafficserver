@@ -28,7 +28,7 @@
 #include "I_Net.h"
 #include "HTTP.h"
 #include "tscore/List.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "I_Cache.h"
 #include "I_Tasks.h"
 #include "Plugin.h"

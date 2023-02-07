@@ -34,7 +34,7 @@
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "Transform.h"
 #include "Milestones.h"
 #include "ts/remap.h"

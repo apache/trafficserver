@@ -101,7 +101,6 @@ test_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/src/tscore/libtscore.la \

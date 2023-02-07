@@ -56,7 +56,7 @@
 #include "SSLDiags.h"
 #include "SSLInternal.h"
 #include "TLSBasicSupport.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "Plugin.h"
 #include "LogObject.h"
 #include "LogConfig.h"
@@ -70,7 +70,7 @@
 #include "I_Tasks.h"
 
 #include "P_OCSPStapling.h"
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "records/I_RecDefs.h"
 #include "records/I_RecCore.h"
 #include "I_Machine.h"

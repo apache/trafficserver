@@ -32,7 +32,7 @@
 #include <dlfcn.h>
 #include "P_EventSystem.h"
 #include "P_Cache.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "ReverseProxy.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"

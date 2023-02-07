@@ -23,7 +23,7 @@
  */
 
 #include "UrlRewrite.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "ReverseProxy.h"
 #include "RemapConfig.h"
 #include "tscore/I_Layout.h"

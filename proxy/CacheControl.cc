@@ -36,7 +36,7 @@
 #include "ControlMatcher.h"
 #include "Main.h"
 #include "P_EventSystem.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "P_Cache.h"

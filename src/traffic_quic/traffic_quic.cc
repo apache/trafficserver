@@ -26,7 +26,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
 
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"

@@ -35,7 +35,7 @@
 #include <strings.h>
 #include <memory>
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "SNIActionPerformer.h"
 #include "YamlSNIConfig.h"
 

@@ -68,7 +68,9 @@ libinkevent_a_SOURCES = \
 	Thread.cc \
 	UnixEThread.cc \
 	UnixEvent.cc \
-	UnixEventProcessor.cc
+	UnixEventProcessor.cc \
+	ConfigProcessor.cc \
+	ConfigProcessor.h
 
 check_PROGRAMS = test_IOBuffer \
 	test_EventSystem \
