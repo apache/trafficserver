@@ -4684,7 +4684,7 @@ UDP Configuration
    Specifies the number of UDP threads to run. By default 0 threads are dedicated to UDP,
    which results in effectively disabling UDP support.
 
-.. ts:cv:: CONFIG proxy.config.udp.enable_gso INT 0
+.. ts:cv:: CONFIG proxy.config.udp.enable_gso INT 1
 
    Enables (``1``) or disables (``0``) UDP GSO. When enabled, |TS| tries to use UDP GSO,
    and disables it automatically if it causes send errors.
