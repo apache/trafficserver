@@ -40,9 +40,12 @@ HQSession::~HQSession()
 {
   // Transactions should be deleted first before HQSesson gets deleted.
   // Delete remaining transactions just to prevent leaks.
-  for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
+  HQTransaction *t = this->_transaction_list.head;
+  while (t) {
     ink_assert(t);
-    delete t;
+    auto x = t;
+    t      = static_cast<HQTransaction *>(t->link.next);
+    delete x;
   }
 }
 
