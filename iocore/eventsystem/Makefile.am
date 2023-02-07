@@ -96,7 +96,6 @@ test_CPP_FLAGS = \
 test_LD_ADD = \
 	libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

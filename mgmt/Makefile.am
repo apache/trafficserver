@@ -19,10 +19,6 @@
 
 SUBDIRS = utils api config rpc
 
-# Decoder ring:
-# 	libmgmt_p.la	libmgmt for Process Manager applications (everything else)
-noinst_LTLIBRARIES = libmgmt_p.la
-
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
@@ -34,15 +30,6 @@ AM_CPPFLAGS += \
         @SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
-
-libmgmt_COMMON = \
-	MgmtDefs.h
-
-libmgmt_p_la_SOURCES = \
-	$(libmgmt_COMMON)
-
-libmgmt_p_la_LIBADD = \
-	$(top_builddir)/mgmt/utils/libutils_p.la
 
 include $(top_srcdir)/build/tidy.mk
 
