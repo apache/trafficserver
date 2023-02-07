@@ -979,7 +979,7 @@ sendPackets:
     bytesThisPipe       -= pktLen;
     packets[npackets++] = p;
   next_pkt:
-    if (bytesThisPipe < 0 && npackets == N_MAX_PACKETS) {
+    if (bytesThisPipe < 0 || npackets == N_MAX_PACKETS) {
       break;
     }
   }
