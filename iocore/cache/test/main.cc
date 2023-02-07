@@ -116,11 +116,11 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
 
   REQUIRE(url != nullptr);
 
-  p += snprintf(p, sizeof(buf), "GET %s HTTP/1.1\n", url);
-  p += snprintf(p, sizeof(buf), "User-Agent: curl/7.47.0\n");
-  p += snprintf(p, sizeof(buf), "Accept: %s\n", content_type);
-  p += snprintf(p, sizeof(buf), "Vary: Content-type\n");
-  p += snprintf(p, sizeof(buf), "Proxy-Connection: Keep-Alive\n\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "GET %s HTTP/1.1\n", url);
+  p += snprintf(p, sizeof(buf) - (p - buf), "User-Agent: curl/7.47.0\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "Accept: %s\n", content_type);
+  p += snprintf(p, sizeof(buf) - (p - buf), "Vary: Content-type\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "Proxy-Connection: Keep-Alive\n\n");
 
   req.create(HTTP_TYPE_REQUEST);
   http_parser_init(&parser);
@@ -142,10 +142,10 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
   }
 
   p = buf;
-  p += snprintf(p, sizeof(buf), "HTTP/1.1 200 OK\n");
-  p += snprintf(p, sizeof(buf), "Content-Type: %s\n", content_type);
-  p += snprintf(p, sizeof(buf), "Expires: Fri, 15 Mar 2219 08:55:45 GMT\n");
-  p += snprintf(p, sizeof(buf), "Last-Modified: Thu, 14 Mar 2019 08:47:40 GMT\n\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "HTTP/1.1 200 OK\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "Content-Type: %s\n", content_type);
+  p += snprintf(p, sizeof(buf) - (p - buf), "Expires: Fri, 15 Mar 2219 08:55:45 GMT\n");
+  p += snprintf(p, sizeof(buf) - (p - buf), "Last-Modified: Thu, 14 Mar 2019 08:47:40 GMT\n\n");
 
   resp.create(HTTP_TYPE_RESPONSE);
   http_parser_init(&parser);
