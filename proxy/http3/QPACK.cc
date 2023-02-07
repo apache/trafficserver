@@ -148,7 +148,11 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_tab
   this->_decoder_stream_sending_instructions_reader = this->_decoder_stream_sending_instructions->alloc_reader();
 }
 
-QPACK::~QPACK() {}
+QPACK::~QPACK()
+{
+  free_MIOBuffer(_encoder_stream_sending_instructions);
+  free_MIOBuffer(_decoder_stream_sending_instructions);
+}
 
 void
 QPACK::on_new_stream(QUICStream &stream)

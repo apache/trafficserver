@@ -33,6 +33,13 @@ public:
   void set(QUICStreamId id, QUICApplication *app);
   void set_default(QUICApplication *app);
   QUICApplication *get(QUICStreamId id);
+  ~QUICApplicationMap()
+  {
+    for (auto it = _map.begin(); it != _map.end(); ++it) {
+      delete it->second;
+    }
+    delete _default_app;
+  }
 
 private:
   std::map<QUICStreamId, QUICApplication *> _map;

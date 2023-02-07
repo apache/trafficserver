@@ -77,6 +77,7 @@ QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
   }
 
   // Note: We should free QUICPollEvent here since vc could be freed from other thread.
+  p->free();
   e->free();
 }
 #else
