@@ -24,9 +24,19 @@ ts = Test.MakeATSProcess("ts")
 ts.Disk.remap_config.AddLine(f"")  # empty file
 ts.Disk.records_config.update({'proxy.config.url_remap.min_rules_required': 1})
 ts.ReturnCode = 33  # expect to Emergency fail due to empty "remap.config".
-ts.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.config failed to load")
+ts.Ready = 0
 
 tr = Test.AddTestRun("test")
+
+# We have to wait upon TS to emit the expected log message, but it cannot be
+# the ts Ready criteria because autest might detect the process going away
+# before it detects the log message. So we add a separate process that waits
+# upon the log message.
+watcher = Test.Processes.Process("watcher")
+watcher.Command = "sleep 1"
+watcher.Ready = When.FileContains(ts.Disk.diags_log.Name, "remap.config failed to load")
+watcher.StartBefore(ts)
+
 tr.Processes.Default.Command = "echo howdy"
 tr.TimeOut = 5
-tr.Processes.Default.StartBefore(ts)
+tr.Processes.Default.StartBefore(watcher)
