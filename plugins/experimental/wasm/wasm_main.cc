@@ -425,11 +425,11 @@ read_configuration()
   if (runtime == "ats.wasm.runtime.wasmedge") {
 #ifdef WASMEDGE
     wasm = std::make_shared<ats_wasm::Wasm>(proxy_wasm::createWasmEdgeVm(), // VM
-                                            vm_id,                      // vm_id
-                                            vm_configuration,           // vm_configuration
-                                            "",                         // vm_key,
-                                            envs,                       // envs
-                                            cap_maps                    // allowed capabilities
+                                            vm_id,                          // vm_id
+                                            vm_configuration,               // vm_configuration
+                                            "",                             // vm_key,
+                                            envs,                           // envs
+                                            cap_maps                        // allowed capabilities
     );
 #else
     TSError("[wasm][%s] wasm unable to use WasmEdge runtime", __FUNCTION__);
