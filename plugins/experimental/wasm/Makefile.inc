@@ -17,8 +17,26 @@
 AM_CPPFLAGS += @YAMLCPP_INCLUDES@
 
 experimental_wasm_wasm_la_CPPFLAGS = -I$(srcdir)/experimental/wasm/lib -I$(srcdir)/experimental/wasm $(AM_CPPFLAGS)
+
+if HAS_WAMR
+experimental_wasm_wasm_la_CPPFLAGS += -DWAMR
+endif
+
+if HAS_WASMEDGE
+experimental_wasm_wasm_la_CPPFLAGS += -DWASMEDGE
+endif
+
 experimental_wasm_wasm_la_LDFLAGS = = $(AM_LDFLAGS)
-experimental_wasm_wasm_la_LIBADD = $(WAMR_LIBS)
+
+experimental_wasm_wasm_la_LIBADD =
+
+if HAS_WAMR
+experimental_wasm_wasm_la_LIBADD += $(WAMR_LIBS)
+endif
+
+if HAS_WASMEDGE
+experimental_wasm_wasm_la_LIBADD += $(WASMEDGE_LIBS)
+endif
 
 pkglib_LTLIBRARIES += experimental/wasm/wasm.la
 
@@ -51,9 +69,20 @@ experimental_wasm_wasm_la_SOURCES = \
   experimental/wasm/ats_context.cc \
   experimental/wasm/ats_context.h \
   experimental/wasm/wasm_main.cc \
-  experimental/wasm/lib/src/wamr/wamr.cc \
-  experimental/wasm/lib/src/wamr/types.h \
-  experimental/wasm/lib/include/proxy-wasm/wamr.h \
   experimental/wasm/lib/src/common/types.h \
   experimental/wasm/lib/include/proxy-wasm/word.h
+
+if HAS_WASMEDGE
+experimental_wasm_wasm_la_SOURCES += \
+  experimental/wasm/lib/src/wasmedge/wasmedge.cc \
+  experimetnal/wasm/lib/src/wasmedge/types.h \
+  experimental/wasm/lib/include/proxy-wasm/wasmedge.h
+endif
+
+if HAS_WAMR
+experimental_wasm_wasm_la_SOURCES += \
+  experimental/wasm/lib/src/wamr/wamr.cc \
+  experimetnal/wasm/lib/src/wamr/types.h \
+  experimental/wasm/lib/include/proxy-wasm/wamr.h
+endif
 

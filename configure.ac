@@ -1856,12 +1856,15 @@ AC_CHECK_HEADERS([opentelemetry/trace/provider.h], [
 AM_CONDITIONAL([HAS_OTEL], [test "x${has_otel}" = "x1" ])
 AC_LANG_POP([C++])
 
+# check for wasm
+has_wasm=0
 # Checking if wamr is available
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS([wasm_c_api.h], [
   AC_CHECK_LIB([iwasm], [main], [
     AC_SUBST([WAMR_LIBS], [" -liwasm "])
     AC_SUBST(has_wamr, 1)
+    has_wasm=1
   ], [
     AC_SUBST([WAMR_LIBS], [""])
     AC_SUBST(has_wamr, 0)
@@ -1870,6 +1873,26 @@ AC_CHECK_HEADERS([wasm_c_api.h], [
 
 AM_CONDITIONAL([HAS_WAMR], [test "x${has_wamr}" = "x1" ])
 AC_LANG_POP([C++])
+
+# Checking if wamedge is available
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS([wasmedge/wasmedge.h], [
+  AC_CHECK_LIB([wasmedge], [main], [
+    AC_SUBST([WASMEDGE_LIBS], [" -lwasmedge "])
+    AC_SUBST(has_wasmedge, 1)
+    has_wasm=1
+  ], [
+    AC_SUBST([WASMEDGE_LIBS], [""])
+    AC_SUBST(has_wasmedge, 0)
+  ])
+])
+
+AM_CONDITIONAL([HAS_WASMEDGE], [test "x${has_wasmedge}" = "x1" ])
+AC_LANG_POP([C++])
+
+# check for wasm
+AC_SUBST(has_wasm)
+AM_CONDITIONAL([HAS_WASM], [test "x${has_wasm}" = "x1" ])
 
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
