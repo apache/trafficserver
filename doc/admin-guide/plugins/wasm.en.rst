@@ -92,7 +92,7 @@ Examples
 ========
 
 Follow the C++, Rust and TinyGo examples in the examples directory. Instructions are included on how to compile and use
-generated wasm modules with the plugin. 
+generated wasm modules with the plugin.
 
 Runtime can be chosen by changing the ``runtime`` field inside the yaml configuration file for the plugin.
 ``ats.wasm.runtime.wamr`` is for WAMR while ``ats.wasm.runtime.wasmedge`` is for WasmEdge.
