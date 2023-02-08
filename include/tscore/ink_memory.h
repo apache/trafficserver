@@ -119,7 +119,7 @@ static inline size_t __attribute__((const)) ats_pagesize()
   long ret  = sysconf(_SC_PAGESIZE);
   page_size = (size_t)((ret > -1) ? ret : 8192);
 #elif defined(HAVE_GETPAGESIZE)
-  page_size = (size_t)getpagesize()
+  page_size = (size_t)getpagesize();
 #else
   page_size = (size_t)8192;
 #endif
