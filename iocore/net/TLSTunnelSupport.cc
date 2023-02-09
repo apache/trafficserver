@@ -63,11 +63,12 @@ TLSTunnelSupport::_clear()
 }
 
 void
-TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SNIRoutingType type,
+TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
                                          YamlSNIConfig::TunnelPreWarm prewarm)
 {
-  _tunnel_type    = type;
-  _tunnel_prewarm = prewarm;
+  _tunnel_type     = type;
+  _tunnel_prewarm  = prewarm;
+  _port_is_dynamic = port_is_dynamic;
 
   if (std::string_view host, port; swoc::IPEndpoint::tokenize(destination, &host, &port)) {
     _tunnel_port = swoc::svtou(port);

@@ -172,6 +172,11 @@ tunnel_route              Inbound   Destination as an FQDN and port, separated b
                                     Protocol <proxy-protocol>` for more information on Proxy Protocol and how it is
                                     configured for |TS|.
 
+                                    For each of these tunnel targets, unless the port is explicitly specified in the target
+                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
+                                    specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for
+                                    the tunnel to succeed.
+
 forward_route             Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
                                     This is similar to tunnel_route, but it terminates the TLS connection and forwards the
@@ -319,7 +324,8 @@ Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``
 ``bar.some.bob.yahoo``.
 
 Establish a blind tunnel to the backend server, connecting to the server's port with the destination port specified
-in the Proxy Protocol from the inbound connection.
+in the Proxy Protocol from the inbound connection. Remember to add any expected values for ``{proxy_protocol_port}`` to
+the :ts:cv:`proxy.config.http.connect_ports` list.
 
 .. code-block:: yaml
 

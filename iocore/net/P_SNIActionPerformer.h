@@ -117,10 +117,11 @@ public:
     }
 
     // Replace wildcards with matched groups.
-    fix_destination[OpId::MATCH_GROUPS] = [&](std::string_view destination, const Context &ctx,
-                                              SSLNetVConnection *) -> std::string {
+    fix_destination[OpId::MATCH_GROUPS] = [&](std::string_view destination, const Context &ctx, SSLNetVConnection *,
+                                              bool &port_is_dynamic) -> std::string {
+      port_is_dynamic = false;
       if ((destination.find_first_of('$') != std::string::npos) && ctx._fqdn_wildcard_captured_groups) {
-        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
+        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups, port_is_dynamic);
         return fixed_dst;
       }
       return {};
@@ -128,7 +129,8 @@ public:
 
     // Use local port for the tunnel.
     fix_destination[OpId::MAP_WITH_RECV_PORT] = [&, var_start_pos](std::string_view destination, const Context &ctx,
-                                                                   SSLNetVConnection *vc) -> std::string {
+                                                                   SSLNetVConnection *vc, bool &port_is_dynamic) -> std::string {
+      port_is_dynamic = true;
       if (vc) {
         if (var_start_pos != std::string::npos) {
           const auto local_port = vc->get_local_port();
@@ -142,7 +144,9 @@ public:
 
     // Use the Proxy Protocol port for the tunnel.
     fix_destination[OpId::MAP_WITH_PROXY_PROTOCOL_PORT] = [&, var_start_pos](std::string_view destination, const Context &ctx,
-                                                                             SSLNetVConnection *vc) -> std::string {
+                                                                             SSLNetVConnection *vc,
+                                                                             bool &port_is_dynamic) -> std::string {
+      port_is_dynamic = true;
       if (vc) {
         if (var_start_pos != std::string::npos) {
           const auto local_port = vc->get_proxy_protocol_dst_port();
@@ -164,12 +168,13 @@ public:
     const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
       if (fnArrIndex < 0) {
-        ssl_netvc->set_tunnel_destination(destination, type, tunnel_prewarm);
+        ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       } else {
         // Dispatch to the correct tunnel destination port function.
-        const auto &fixed_dst = fix_destination[fnArrIndex](destination, ctx, ssl_netvc);
-        ssl_netvc->set_tunnel_destination(fixed_dst, type, tunnel_prewarm);
+        bool port_is_dynamic  = false;
+        const auto &fixed_dst = fix_destination[fnArrIndex](destination, ctx, ssl_netvc, port_is_dynamic);
+        ssl_netvc->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       }
 
@@ -200,8 +205,9 @@ private:
    * groups could be at any order.
    */
   std::string
-  replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups) const
+  replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups, bool &port_is_dynamic) const
   {
+    port_is_dynamic = false;
     if (dst.empty() || groups.empty()) {
       return std::string{dst};
     }
@@ -212,7 +218,11 @@ private:
     // We need to split the tunnel string and place each corresponding match on the
     // configured one, so we need to first, get the match, then get the match number
     // making sure that it does exist in the captured group.
+    bool is_writing_port = false;
     for (auto c = std::begin(dst); c != end; c++, pos++) {
+      if (*c == ':') {
+        is_writing_port = true;
+      }
       if (*c == '$') {
         // find the next '.' so we can get the group number.
         const auto dot            = dst.find('.', pos);
@@ -236,6 +246,9 @@ private:
         if ((group_index - 1) < groups.size()) {
           // place the captured group.
           real_dst += groups[group_index - 1];
+          if (is_writing_port) {
+            port_is_dynamic = true;
+          }
           // if it was the last match, then ...
           if (dot == std::string::npos && to == std::string::npos) {
             // that's it.
@@ -261,9 +274,10 @@ private:
                                   /// call it with the relevant data
 
   // callback array.
-  std::array<std::function<std::string(std::string_view,   // destination view
-                                       const Context &,    // Context
-                                       SSLNetVConnection * // Net vc to get the port.
+  std::array<std::function<std::string(std::string_view,    // destination view
+                                       const Context &,     // Context
+                                       SSLNetVConnection *, // Net vc to get the port.
+                                       bool &               // Whether the port is derived from information on the wire.
                                        )>,
              OpId::MAX>
     fix_destination;

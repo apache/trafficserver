@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
+
 Test.Summary = '''
 Test tunneling based on SNI
 '''
@@ -25,14 +27,24 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
+# The following server will listen on a port that is not in the connect_ports
+# list.
+server_forbidden = Test.MakeOriginServer("forbidden", ssl=True)
 dns = Test.MakeDNServer("dns")
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_pp_header = {
+    "headers": "GET /proxy_protocol HTTP/1.1\r\nHost: proxy.protocol.port.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
 response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "bar ok"}
+response_pp_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "pp ok"}
 server_foo.addResponse("sessionlog.json", request_foo_header, response_foo_header)
+server_foo.addResponse("sessionlog.json", request_pp_header, response_pp_header)
 server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
+server_forbidden.addResponse("sessionlog.json", request_pp_header, response_pp_header)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/signed-foo.pem")
@@ -60,19 +72,17 @@ ts.Disk.ssl_multicert_config.AddLine(
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
                                'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-                               'proxy.config.http.connect_ports': '{0} {1} {2} {3}'.format(ts.Variables.ssl_port,
-                                                                                           server_foo.Variables.SSL_Port,
-                                                                                           server_bar.Variables.SSL_Port,
-                                                                                           ts.Variables.proxy_protocol_ssl_port),
+                               'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,
+                                                                                       server_foo.Variables.SSL_Port,
+                                                                                       server_bar.Variables.SSL_Port),
                                'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
                                'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
                                'proxy.config.exec_thread.autoconfig.scale': 1.0,
                                'proxy.config.url_remap.pristine_host_hdr': 1,
                                'proxy.config.diags.debug.enabled': 1,
-                               'proxy.config.diags.debug.tags': 'http|ssl_sni',
+                               'proxy.config.diags.debug.tags': 'http|ssl_sni|proxyprotocol',
                                'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
                                'proxy.config.dns.resolv_conf': 'NULL'})
-
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
@@ -103,6 +113,9 @@ tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server_foo
+tr.StillRunningAfter = server_bar
+tr.StillRunningAfter = dns
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
     "Not Found on Accelerato", "Should not try to remap on Traffic Server")
@@ -171,7 +184,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
-tr = Test.AddTestRun("test inbound_local_port")
+tr = Test.AddTestRun("test {inbound_local_port}")
 tr.Processes.Default.Command = "curl -vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(
     ts.Variables.ssl_port)
 # The tunnel connecting to the outgoing port which is the same as the incoming
@@ -186,25 +199,42 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Verify a CONNECT request is handled")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Direct self loop detected", "The loop should be detected")
 
-tr = Test.AddTestRun("test proxy_protocol_port")
+tr = Test.AddTestRun("test {proxy_protocol_port}")
+tr.Setup.Copy('proxy_protocol_client.py')
 tr.Processes.Default.Command = (
-    "curl -vvv -k --http1.1 --haproxy-protocol "
-    f"--resolve 'proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port}:127.0.0.1' "
-    f"https://proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port}"
+    f'{sys.executable} proxy_protocol_client.py '
+    f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
+    f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
+    f'2 --https'
 )
-# The tunnel connecting to the outgoing port which is the same as the incoming
-# port (per the Proxy Protocol configuration) will result in ATS connecting
-# back to itself. This will result in a connection close and a non-zero return
-# code from curl. In production, the server will listen on the same port as ATS
-# but have a different IP.
-tr.ReturnCode = 35
+tr.ReturnCode = 0
+tr.TimeOut = 5
 tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    "HTTP/1.1 200 OK",
+    "Verify a successful response is received")
+
+tr = Test.AddTestRun("test proxy_protocol_port - not in connect_ports")
+tr.Processes.Default.StartBefore(server_forbidden)
+tr.Setup.Copy('proxy_protocol_client.py')
+# Note that server_forbidden is listing on a port that is not in the
+# connect_ports list. Therefore the tunnel should be rejected.
+rejected_port = server_forbidden.Variables.SSL_Port
+tr.Processes.Default.Command = (
+    f'{sys.executable} proxy_protocol_client.py '
+    f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
+    f'127.0.0.1 127.0.0.1 60123 {rejected_port} '
+    f'2 --https'
+)
+tr.ReturnCode = 1
+tr.TimeOut = 5
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    "ssl.SSLEOFError",
+    "Verify a the handshake failed")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"CONNECT tunnel://backend.proxy.protocol.port.com:{ts.Variables.proxy_protocol_ssl_port} HTTP/1.1",
-    "Verify a CONNECT request is handled")
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "HTTP/1.1 400 Direct self loop detected",
-    "The loop should be detected")
+    f"Rejected a tunnel to port {rejected_port} not in connect_ports",
+    "Verify the tunnel was rejected")
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")
