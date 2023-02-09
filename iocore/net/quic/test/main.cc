@@ -29,7 +29,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/Diags.h"
 
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
 
