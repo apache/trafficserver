@@ -116,7 +116,6 @@ test_jsonrpcserver_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@
 
