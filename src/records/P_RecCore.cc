@@ -139,7 +139,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
   // FIXME: Most of the time we set, we don't actually need to wrlock
   // since we are not modifying the g_records_ht.
   if (lock) {
-    ink_rwlock_wrlock(&g_records_rwlock);
+    g_records_rwlock.lock();
   }
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     r1 = it->second;
@@ -199,7 +199,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
 
 Ldone:
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock();
   }
 
   return err;
@@ -279,7 +279,7 @@ RecReadStatsFile()
   ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
-  ink_rwlock_wrlock(&g_records_rwlock);
+  std::lock_guard lock(g_records_rwlock);
 
   CheckSnapFileVersion(snap_fpath);
 
@@ -318,7 +318,6 @@ RecReadStatsFile()
     }
   }
 
-  ink_rwlock_unlock(&g_records_rwlock);
   ats_free(m);
 
   return REC_ERR_OKAY;
@@ -380,13 +379,10 @@ RecReadConfigFile()
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
 
   // lock our hash table
-  ink_rwlock_wrlock(&g_records_rwlock);
+  std::lock_guard lock(g_records_rwlock);
 
   // Parse the actual file and hash the values.
   RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry);
-
-  // release our hash table
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return REC_ERR_OKAY;
 }
@@ -397,12 +393,12 @@ RecReadYamlConfigFile()
   RecDebug(DL_Debug, "Reading '%s'", g_rec_config_fpath);
 
   // lock our hash table
-  ink_rwlock_wrlock(&g_records_rwlock); // review this lock maybe it should be done inside the API
+  // review this lock maybe it should be done inside the API
+  std::lock_guard lock(g_records_rwlock);
 
   // Parse the actual file and hash the values.
   auto ret = RecYAMLConfigFileParse(g_rec_config_fpath, SetRecordFromYAMLNode);
 
-  ink_rwlock_unlock(&g_records_rwlock);
   return ret;
 }
 
@@ -416,7 +412,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
   int i, num_records;
   RecUpdateT update_type = RECU_NULL;
 
-  ink_rwlock_rdlock(&g_records_rwlock);
+  ts::bravo::shared_lock lock(g_records_rwlock);
 
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
@@ -449,8 +445,6 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
     }
     rec_mutex_release(&(r->lock));
   }
-
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return update_type;
 }
@@ -527,7 +521,7 @@ RecSetSyncRequired(char *name, bool lock)
   // FIXME: Most of the time we set, we don't actually need to wrlock
   // since we are not modifying the g_records_ht.
   if (lock) {
-    ink_rwlock_wrlock(&g_records_rwlock);
+    g_records_rwlock.lock();
   }
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     r1 = it->second;
@@ -543,7 +537,7 @@ RecSetSyncRequired(char *name, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock();
   }
 
   return err;

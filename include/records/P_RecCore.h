@@ -26,6 +26,7 @@
 #include "tscore/ink_thread.h"
 #include "tscore/ink_rwlock.h"
 #include "tscore/TextBuffer.h"
+#include "tscpp/util/Bravo.h"
 
 #include "I_RecCore.h"
 #include "P_RecDefs.h"
@@ -39,7 +40,7 @@
 // records, record hash-table, and hash-table rwlock
 extern RecRecord *g_records;
 extern std::unordered_map<std::string, RecRecord *> g_records_ht;
-extern ink_rwlock g_records_rwlock;
+extern ts::bravo::shared_mutex g_records_rwlock;
 extern int g_num_records;
 
 // records.yaml items

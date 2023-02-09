@@ -54,13 +54,13 @@ struct scoped_cond_lock {
   scoped_cond_lock(bool lock = false) : _lock(lock)
   {
     if (_lock) {
-      ink_rwlock_wrlock(&g_records_rwlock);
+      g_records_rwlock.lock();
     }
   }
   ~scoped_cond_lock()
   {
     if (_lock) {
-      ink_rwlock_unlock(&g_records_rwlock);
+      g_records_rwlock.unlock();
     }
   }
   bool _lock{false};

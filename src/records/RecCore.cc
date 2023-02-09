@@ -35,6 +35,8 @@
 #include "tscore/I_Layout.h"
 #include "tscpp/util/ts_errata.h"
 
+#include <mutex>
+
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
 int max_records_entries = REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS;
@@ -43,7 +45,7 @@ static bool g_initialized = false;
 
 RecRecord *g_records = nullptr;
 std::unordered_map<std::string, RecRecord *> g_records_ht;
-ink_rwlock g_records_rwlock;
+ts::bravo::shared_mutex g_records_rwlock;
 int g_num_records = 0;
 
 //-------------------------------------------------------------------------
@@ -208,9 +210,6 @@ RecCoreInit(Diags *_diags)
   // initialize record array for our internal stats (this can be reallocated later)
   g_records = static_cast<RecRecord *>(ats_malloc(max_records_entries * sizeof(RecRecord)));
 
-  // initialize record rwlock
-  ink_rwlock_init(&g_records_rwlock);
-
   // read stats
   RecReadStatsFile();
 
@@ -329,7 +328,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 {
   RecErrT err = REC_ERR_FAIL;
 
-  ink_rwlock_rdlock(&g_records_rwlock);
+  ts::bravo::shared_lock lock(g_records_rwlock);
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
@@ -370,8 +369,6 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
     rec_mutex_release(&(r->lock));
   }
 
-  ink_rwlock_unlock(&g_records_rwlock);
-
   return err;
 }
 
@@ -407,8 +404,9 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
 {
   RecErrT err = REC_ERR_OKAY;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
@@ -428,7 +426,7 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
     err = REC_ERR_FAIL;
   }
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
   return err;
 }
@@ -490,8 +488,9 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -504,7 +503,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -545,8 +544,9 @@ RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -559,7 +559,7 @@ RecGetRecordType(const char *name, RecT *rec_type, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -570,8 +570,9 @@ RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -588,7 +589,7 @@ RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -599,8 +600,9 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   *persist_type = RECP_NULL;
@@ -617,7 +619,7 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -628,8 +630,9 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock, bool ch
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -651,7 +654,7 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock, bool ch
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -662,8 +665,9 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -680,7 +684,7 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -691,8 +695,9 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -709,7 +714,7 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -720,8 +725,9 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -738,7 +744,7 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -749,8 +755,9 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
   RecErrT err;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -789,7 +796,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -800,8 +807,9 @@ RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -814,7 +822,7 @@ RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -825,8 +833,9 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -839,7 +848,7 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -850,8 +859,9 @@ RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -864,7 +874,7 @@ RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -878,7 +888,7 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 {
   RecRecord *r = nullptr;
 
-  ink_rwlock_wrlock(&g_records_rwlock);
+  std::lock_guard lock(g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, persist_type)) != nullptr) {
     // If the persistence type we found in the records hash is not the same as the persistence
     // type we are registering, then that means that it changed between the previous software
@@ -895,7 +905,6 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     ink_assert(!"Can't register record!");
     RecDebug(DL_Warning, "failed to register '%s' record", name);
   }
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
 }
@@ -910,7 +919,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
   RecRecord *r;
   bool updated_p;
 
-  ink_rwlock_wrlock(&g_records_rwlock);
+  std::lock_guard lock(g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL, &updated_p)) != nullptr) {
     // Note: do not modify 'record->config_meta.update_required'
     r->config_meta.update_type = update_type;
@@ -925,7 +934,6 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
       r->config_meta.source = source;
     }
   }
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
 }
@@ -938,8 +946,9 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 {
   RecErrT err = REC_ERR_OKAY;
 
+  ts::bravo::Token token = 0;
   if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
+    g_records_rwlock.lock_shared(token);
   }
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
@@ -960,7 +969,7 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
   }
 
   if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    g_records_rwlock.unlock_shared(token);
   }
 
   return err;
@@ -975,7 +984,7 @@ RecForceInsert(RecRecord *record)
   RecRecord *r = nullptr;
   bool r_is_a_new_record;
 
-  ink_rwlock_wrlock(&g_records_rwlock);
+  std::lock_guard lock(g_records_rwlock);
 
   if (auto it = g_records_ht.find(record->name); it != g_records_ht.end()) {
     r                 = it->second;
@@ -986,7 +995,6 @@ RecForceInsert(RecRecord *record)
   } else {
     r_is_a_new_record = true;
     if ((r = RecAlloc(record->rec_type, record->name, record->data_type)) == nullptr) {
-      ink_rwlock_unlock(&g_records_rwlock);
       return nullptr;
     }
   }
@@ -1016,8 +1024,6 @@ RecForceInsert(RecRecord *record)
   } else {
     rec_mutex_release(&(r->lock));
   }
-
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
 }

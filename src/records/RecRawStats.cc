@@ -23,6 +23,9 @@ Record statistics support
 
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
+
+#include "tscpp/util/Bravo.h"
+
 #include <string_view>
 
 //-------------------------------------------------------------------------
@@ -309,7 +312,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
 {
   int err = REC_ERR_FAIL;
 
-  ink_rwlock_rdlock(&g_records_rwlock);
+  ts::bravo::shared_lock lock(g_records_rwlock);
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
 
@@ -334,8 +337,6 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
     }
     rec_mutex_release(&(r->lock));
   }
-
-  ink_rwlock_unlock(&g_records_rwlock);
 
   return err;
 }
