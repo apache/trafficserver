@@ -500,6 +500,9 @@ private:
   ssl_error_t _ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten);
   ssl_error_t _ssl_connect();
   ssl_error_t _ssl_accept();
+
+  void _in_context_tunnel() override;
+  void _out_context_tunnel() override;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

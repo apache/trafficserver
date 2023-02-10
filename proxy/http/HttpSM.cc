@@ -7216,6 +7216,8 @@ HttpSM::setup_push_transfer_to_cache()
 void
 HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 {
+  ink_assert(server_entry->vc != nullptr);
+
   HttpTunnelConsumer *c_ua;
   HttpTunnelConsumer *c_os;
   HttpTunnelProducer *p_ua;
@@ -7302,6 +7304,9 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
     c_os = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
                                "http server - tunnel");
   }
+
+  _ua.get_entry()->vc->make_tunnel_endpoint();
+  server_entry->vc->make_tunnel_endpoint();
 
   // Make the tunnel aware that the entries are bi-directional
   tunnel.chain(c_os, p_os);

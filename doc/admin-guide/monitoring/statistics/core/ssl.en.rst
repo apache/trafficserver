@@ -238,6 +238,66 @@ SSL/TLS
 
    A gauge of current active SNI Routing Tunnels.
 
+.. ts:stat:: global proxy.process.tunnel.total_client_connections_tls_tunnel integer
+   :type: counter
+
+   Total number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``tunnel_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.current_client_connections_tls_tunnel integer
+   :type: counter
+
+   Current number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``tunnel_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.total_client_connections_tls_forward integer
+   :type: counter
+
+   Total number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``forward_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.current_client_connections_tls_forward integer
+   :type: counter
+
+   Current number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``forward_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.total_client_connections_tls_partial_blind integer
+   :type: counter
+
+   Total number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``partial_blind_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.current_client_connections_tls_partial_blind integer
+   :type: counter
+
+   Current number of TCP connections for TLS tunnels where the far end is the client
+   created based on a ``partial_blind_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.total_client_connections_tls_http integer
+   :type: counter
+
+   Total number of TLS connections for tunnels where the far end is the client
+   initiated with an HTTP request.
+
+.. ts:stat:: global proxy.process.tunnel.current_client_connections_tls_http integer
+   :type: counter
+
+   Current number of TLS connections for tunnels where the far end is the client
+   initiated with an HTTP request.
+
+.. ts:stat:: global proxy.process.tunnel.total_server_connections_tls integer
+   :type: counter
+
+   Total number of TCP connections for TLS tunnels where the far end is the server
+   created based on a ``partial_blind_route`` key in a table in the :file:`sni.yaml` file.
+
+.. ts:stat:: global proxy.process.tunnel.current_server_connections_tls integer
+   :type: counter
+
+   Current number of TCP connections for TLS tunnels where the far end is the server
+   created based on a ``partial_blind_route`` key in a table in the :file:`sni.yaml` file.
+
 .. _pre-warming-tls-tunnel-stats:
 
 Pre-warming TLS Tunnel

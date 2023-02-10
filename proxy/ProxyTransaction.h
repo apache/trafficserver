@@ -136,6 +136,8 @@ public:
 
   bool support_sni() const;
 
+  void make_tunnel_endpoint() override;
+
   /// Variables
   //
   HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
