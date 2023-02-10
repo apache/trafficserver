@@ -27,7 +27,6 @@ add_library(records_lm STATIC
         RecMutex.cc
         RecRawStats.cc
         RecUtils.cc
-        RecLocal.cc
 )
 target_include_directories(records_lm PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt

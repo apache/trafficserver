@@ -17,12 +17,12 @@
 
 
 add_library(tscpputil SHARED
-        string_view_util.cc
-        TextView.cc)
+        TextView.cc
+        YamlCfg.cc
+        )
 
 add_executable(test_tscpputil
         unit_tests/test_LocalBuffer.cc
-        unit_tests/test_MemSpan.cc
         unit_tests/test_PostScript.cc
         unit_tests/test_TextView.cc
         unit_tests/test_Strerror.cc

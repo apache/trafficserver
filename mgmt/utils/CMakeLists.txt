@@ -17,17 +17,13 @@
 
 
 add_library(utils_lm STATIC
-        MgmtMarshall.cc
         MgmtSocket.cc
         MgmtUtils.cc
         ExpandingArray.cc
-        MgmtLocalCleanup.cc
 )
 add_library(utils_p STATIC
-        MgmtMarshall.cc
         MgmtSocket.cc
         MgmtUtils.cc
-        MgmtProcessCleanup.cc
 )
 include_directories(
         ${IOCORE_INCLUDE_DIRS}

@@ -23,7 +23,7 @@
 #
 #######################
 
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.20)
 project(ats)
 
 enable_testing()
@@ -130,5 +130,5 @@ add_subdirectory(src/tscore)
 add_subdirectory(src/records)
 add_subdirectory(iocore)
 add_subdirectory(proxy)
-add_subdirectory(mgmt)
+add_subdirectory(mgmt/utils)
 add_subdirectory(src/traffic_server)
