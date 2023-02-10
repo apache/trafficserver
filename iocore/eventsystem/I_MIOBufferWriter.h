@@ -36,7 +36,7 @@
 #include "tscore/BufferWriter.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
-#include <I_IOBuffer.h>
+#include "I_IOBuffer.h"
 #endif
 
 /** BufferWriter interface on top of IOBuffer blocks.
