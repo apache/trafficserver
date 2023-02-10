@@ -101,6 +101,8 @@ TS_ENABLE_LAYOUT(TrafficServer, [cachedir docdir])
 # Reparse the configure arguments so we can override the layout.
 TS_PARSE_ARGUMENTS
 
+AC_PATH_PROG(PKG_CONFIG, pkg-config)
+
 #
 # Host detection
 #
@@ -1476,7 +1478,7 @@ TS_CHECK_YAML_HEADERS_EXPORT
 AM_CONDITIONAL([EXPORT_YAML_HEADERS], [test x"$enable_yaml_headers" = x"yes"])
 
 TS_CHECK_LIBSWOC
-AM_CONDITIONAL([BUILD_SWOC], [test x"$has_libswoc" = x"no"])
+AM_CONDITIONAL([BUILD_SWOC], [test "$has_libswoc" = "no"])
 
 TS_CHECK_SWOC_HEADERS_EXPORT
 AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test x"$enable_swoc_headers" = x"yes"])

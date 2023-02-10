@@ -22,7 +22,6 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/swoc/include \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http/remap \
@@ -30,8 +29,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES) \
-	@YAMLCPP_INCLUDES@
+	$(TS_INCLUDES) @SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 EXTRA_DIST = LogStandalone.cc
 
