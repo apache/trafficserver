@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #include "tscore/ink_config.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "StatPages.h"
 #include "HdrUtils.h"
 #include "tscore/MatcherUtils.h"

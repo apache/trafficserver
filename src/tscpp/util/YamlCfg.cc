@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "YamlCfg.h"
+#include "tscpp/util/YamlCfg.h"
 
 #include <algorithm>
 #include <string>
@@ -59,7 +59,7 @@ namespace Yaml
   Map::done()
   {
     if (!_bad && (_used_key.size() != _map.size())) {
-      ink_assert(_used_key.size() < _map.size());
+      // ink_assert(_used_key.size() < _map.size());
 
       std::string msg{(_map.size() - _used_key.size()) > 1 ? "keys " : "key "};
       bool first{true};

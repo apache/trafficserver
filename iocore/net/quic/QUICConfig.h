@@ -25,7 +25,7 @@
 
 #include <openssl/ssl.h>
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "P_SSLCertLookup.h"
 
 class QUICConfigParams : public ConfigInfo

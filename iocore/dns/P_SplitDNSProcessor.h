@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 
 #include "tscore/HostLookup.h"
 

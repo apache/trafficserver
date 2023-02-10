@@ -33,7 +33,7 @@
 #pragma once
 
 #include "I_Cache.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "URL.h"
 #include "HTTP.h"
 #include "HttpConfig.h"

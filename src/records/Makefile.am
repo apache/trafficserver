@@ -24,9 +24,6 @@ AM_CPPFLAGS += \
         -I$(abs_top_srcdir)/lib/swoc/include \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/iocore/utils \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/api/include \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/ \
@@ -56,7 +53,9 @@ librecords_COMMON = \
 	RecMessage.cc \
 	RecMutex.cc \
 	RecRawStats.cc \
-	RecUtils.cc
+	RecUtils.cc \
+	RecordsConfig.cc \
+	RecordsConfigUtils.cc
 
 librecords_p_a_SOURCES = \
 	$(librecords_COMMON) \
@@ -75,7 +74,6 @@ test_librecords_SOURCES = \
 
 test_librecords_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
@@ -91,7 +89,6 @@ test_librecords_on_eventsystem_SOURCES = \
 
 test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \

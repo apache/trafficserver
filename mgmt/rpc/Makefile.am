@@ -33,8 +33,6 @@ check_PROGRAMS = test_jsonrpc test_jsonrpcserver
 
 TESTS = $(check_PROGRAMS)
 
-# TODO: Remove libmgmt_p.la This can only be removed once we remove the ProcessManager dependency and the librecords
-#       Message stuff between TM and TS
 # TODO: handlers - mgmt/utils needed as ProcessManager.h is included in many pleaces, we should be able to remove it once
 #       we move away from TM
 
@@ -65,8 +63,6 @@ test_jsonrpc_SOURCES = \
 	jsonrpc/unit_tests/unit_test_main.cc \
 	jsonrpc/unit_tests/test_basic_protocol.cc
 
-# TODO: Remove libmgmt_p.la
-
 test_jsonrpc_LDADD = \
 	libjsonrpc_protocol.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
@@ -76,8 +72,8 @@ test_jsonrpc_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/mgmt/utils/libutils_p.la \
 	@YAMLCPP_LIBS@ @HWLOC_LIBS@
 
 
@@ -121,9 +117,8 @@ test_jsonrpcserver_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/mgmt/libmgmt_c.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/mgmt/utils/libutils_p.la \
 	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 

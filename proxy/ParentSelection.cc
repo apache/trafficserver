@@ -25,7 +25,7 @@
 #include "ParentConsistentHash.h"
 #include "ParentRoundRobin.h"
 #include "ControlMatcher.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "HostStatus.h"
 #include "HTTP.h"
 #include "HttpTransact.h"

@@ -23,7 +23,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 
 #if TS_USE_REMOTE_UNWINDING
 #define MGMT_CRASHLOG_HELPER "traffic_crashlog"

@@ -37,7 +37,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/IpMap.h"
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 
 #include "SSLSessionCache.h"
 #include "YamlSNIConfig.h"

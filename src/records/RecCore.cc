@@ -27,7 +27,7 @@
 #include "tscore/Filenames.h"
 #include "tscore/ts_file.h"
 
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "records/P_RecFile.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecUtils.h"

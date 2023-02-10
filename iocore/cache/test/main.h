@@ -31,7 +31,7 @@
 #include "tscore/Diags.h"
 #include "tscore/TSSystemState.h"
 
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "records/I_RecProcess.h"
 #include "P_AIO.h"
 #include "P_CacheDisk.h"

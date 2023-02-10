@@ -135,7 +135,6 @@ RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int
 // be sure to set 'lock' to 'false' as the hash-table rwlock has
 // already been taken out for the callback.
 
-// RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
 RecErrT RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true);

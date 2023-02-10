@@ -34,7 +34,7 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ts_file.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"

@@ -27,7 +27,7 @@
 
 #include "tscore/Diags.h"
 
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 
 #include <string_view>
 

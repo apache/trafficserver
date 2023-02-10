@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include <memory>
 
 // A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated

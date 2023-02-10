@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
 #include "records/I_RecProcess.h"

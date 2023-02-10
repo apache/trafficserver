@@ -40,10 +40,8 @@
 #include "P_SSLNetVConnection.h"
 #include "BIO_fastopen.h"
 #include "SSLStats.h"
-#include "SSLInternal.h"
 #include "P_ALPNSupport.h"
 
-#include <climits>
 #include <string>
 #include <cstring>
 

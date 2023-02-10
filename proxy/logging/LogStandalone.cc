@@ -38,7 +38,7 @@
 
 #include "MgmtUtils.h"
 // Needs LibRecordsConfigInit()
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 
 #define LOG_FILENAME_SIZE 255
 

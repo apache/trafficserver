@@ -25,7 +25,7 @@
 
 #include "HttpSM.h"
 #include "I_Machine.h"
-#include "YamlCfg.h"
+#include "tscpp/util/YamlCfg.h"
 #include "NextHopConsistentHash.h"
 
 // hash_key strings.

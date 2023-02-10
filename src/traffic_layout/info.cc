@@ -27,7 +27,7 @@
 #include "tscore/Filenames.h"
 #include "tscore/BufferWriter.h"
 #include "records/I_RecProcess.h"
-#include "RecordsConfig.h"
+#include "records/I_RecordsConfig.h"
 #include "info.h"
 
 #if TS_USE_HWLOC

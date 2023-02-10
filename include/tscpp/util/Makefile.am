@@ -26,4 +26,5 @@ library_include_HEADERS = \
 	PostScript.h \
 	Strerror.h \
 	TextView.h \
-	TsSharedMutex.h
+	TsSharedMutex.h \
+        YamlCfg.h

@@ -59,7 +59,7 @@
 
 */
 
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "P_Net.h"
 #include "TransformInternal.h"
 #include "HdrUtils.h"

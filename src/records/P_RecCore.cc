@@ -24,9 +24,6 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 
-#include "tscore/TextBuffer.h"
-#include "tscore/Tokenizer.h"
-#include "tscore/ink_defs.h"
 #include "tscore/ink_string.h"
 
 #include "records/P_RecFile.h"

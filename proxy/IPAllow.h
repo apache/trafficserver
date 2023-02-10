@@ -35,7 +35,7 @@
 #include <vector>
 
 #include "hdrs/HTTP.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "swoc/TextView.h"
 #include "swoc/swoc_file.h"
 #include "swoc/swoc_ip.h"

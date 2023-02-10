@@ -49,7 +49,7 @@
 #include "tscore/Regex.h"
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
-#include "ProxyConfig.h"
+#include "ConfigProcessor.h"
 #include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
 
