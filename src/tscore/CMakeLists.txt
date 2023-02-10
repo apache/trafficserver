@@ -135,7 +135,6 @@ add_executable(test_tscore
         unit_tests/test_Ptr.cc
         unit_tests/test_Random.cc
         unit_tests/test_Regex.cc
-        unit_tests/test_Scalar.cc
         unit_tests/test_Throttler.cc
         unit_tests/test_Tokenizer.cc
         unit_tests/test_Version.cc
