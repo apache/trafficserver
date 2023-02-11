@@ -6371,12 +6371,11 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   // But we do have to check that we are not tunneling to a dynamic port that is
   // not in the connect_ports list.
   if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-    if (!is_port_in_range(incoming_request->url_get()->port_get(), s->http_config_param->connect_ports)) {
+    if (s->tunnel_port_is_dynamic &&
+        !is_port_in_range(incoming_request->url_get()->port_get(), s->http_config_param->connect_ports)) {
       TxnDebug("http_trans", "Rejected a tunnel to port %d not in connect_ports", incoming_request->url_get()->port_get());
       return false;
-      ;
     }
-
     return true;
   }
 
