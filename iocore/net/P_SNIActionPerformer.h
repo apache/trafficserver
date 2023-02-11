@@ -38,6 +38,7 @@
 #include "swoc/TextView.h"
 
 #include "tscore/ink_inet.h"
+#include "swoc/TextView.h"
 
 #include <vector>
 
@@ -242,7 +243,7 @@ private:
           real_dst += *c;
           continue;
         }
-        const std::size_t group_index = std::stoi(std::string{number_str});
+        const std::size_t group_index = swoc::svtoi(std::string{number_str});
         if ((group_index - 1) < groups.size()) {
           // place the captured group.
           real_dst += groups[group_index - 1];
