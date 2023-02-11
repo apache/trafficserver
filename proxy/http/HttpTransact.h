@@ -813,7 +813,7 @@ public:
       return *p;
     }
 
-    /** Whether a tunnel is requested to a port which has ben dynamically
+    /** Whether a tunnel is requested to a port which has been dynamically
      * determined by parsing traffic content.
      *
      * Dynamically determined ports require verification against the

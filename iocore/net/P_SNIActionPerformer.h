@@ -100,8 +100,8 @@ class TunnelDestination : public ActionItem
     MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
     MAX                           // Always at the end and do not change the value of the above items.
   };
-  const std::string MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
-  const std::string MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
+  static constexpr std::string_view MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
+  static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
 
 public:
   TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
@@ -225,7 +225,7 @@ private:
 
   std::string destination;
 
-  /// The start position of a tunnel destination variable.
+  /// The start position of a tunnel destination variable, such as '{proxy_protocol_port}'.
   size_t var_start_pos{0};
   SNIRoutingType type                         = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
@@ -234,7 +234,7 @@ private:
   OpId fnArrIndex{OpId::DEFAULT}; /// On creation, we decide which function needs to be called, set the index and then we
                                   /// call it with the relevant data
 
-  // callback array.
+  /// tunnel_route destination callback array.
   static std::array<std::function<std::string(std::string_view,    // destination view
                                               size_t,              // The start position for any relevant tunnel_route variable.
                                               const Context &,     // Context
