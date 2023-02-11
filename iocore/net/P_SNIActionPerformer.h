@@ -168,7 +168,7 @@ public:
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
     const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
-      if (fnArrIndex < 0) {
+      if (fnArrIndex == OpId::DEFAULT) {
         ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       } else {
