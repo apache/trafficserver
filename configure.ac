@@ -687,8 +687,7 @@ ifdef([AC_PROG_SED], [], [
 ])
 
 
-# Various OS specific setup. Note that on Solaris, 32-bit is always the
-# default, even on a box that with 64-bit architecture.
+# Various OS specific setup.
 # This also sets up a "normalized" variable and define $host_os_def.
 case $host_os in
   linux*)
@@ -714,16 +713,6 @@ case $host_os in
     ;;
   openbsd*)
     host_os_def="openbsd"
-    ;;
-  solaris*)
-    host_os_def="solaris"
-    case "`isalist`" in
-      *amd64*)
-        TS_ADDTO(AM_CFLAGS, [-m64])
-        TS_ADDTO(AM_CXXFLAGS, [-m64])
-        TS_ADDTO(LUAJIT_LDFLAGS, [-m64])
-        ;;
-    esac
     ;;
   *)
     AM_LDFLAGS="-rdynamic"
@@ -911,16 +900,6 @@ case $host_os_def in
     ])
 
     ;; # freebsd|kfreebsd)
-
-  solaris)
-    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
-      debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
-    ])
-
-    ;; # solaris)
 
   *)
     # Not sure what platform this is, but take a stab at some general GCC options ...
@@ -2420,7 +2399,6 @@ AC_CONFIG_FILES([
   rc/trafficserver
   rc/trafficserver.conf
   rc/trafficserver.service
-  rc/trafficserver.xml
   src/tscpp/util/Makefile
   src/tscore/Makefile
   src/records/Makefile

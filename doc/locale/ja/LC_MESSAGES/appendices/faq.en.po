@@ -42,13 +42,11 @@ msgstr ""
 #: ../../../appendices/faq.en.rst:31
 msgid ""
 "Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as "
-"loopback device. This is accomplished with :manpage:`losetup(8)` on Linux, :"
-"manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on "
-"FreeBSD."
+"loopback device. This is accomplished with :manpage:`losetup(8)` on Linux,
+and :manpage:`mdconfig(8)` on FreeBSD."
 msgstr ""
 "ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成し、"
-"それをループバックデバイスとしてマウントしてください。これは Linux 上では  :"
-"manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:`lofiadm(1m)` 、"
+"それをループバックデバイスとしてマウントしてください。これは Linux 上では :manpage:`lofiadm(1m)` 、"
 "FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
 
 #: ../../../appendices/faq.en.rst:36

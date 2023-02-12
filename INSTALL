@@ -18,13 +18,9 @@ BUILD AND INSTALLATION
 Configure & Build from Git source tree:
     $ autoreconf -if  # generate the configure script and Makefile.in files
 
-On Linux and macOS:
+On Linux, macOS and FreeBSD:
     $ ./configure [--prefix=PREFIX]
     $ make
-
-On OpenSolaris and FreeBSD:
-    $ ./configure [--prefix=PREFIX]
-    $ gmake
 
 To install:
     $ sudo make install

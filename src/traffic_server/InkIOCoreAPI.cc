@@ -30,13 +30,8 @@
 #include "tscore/ink_platform.h"
 #include "ts/ts.h"
 #include "ts/InkAPIPrivateIOCore.h"
-#if defined(solaris) && !defined(__GNUC__)
-#include "P_EventSystem.h" // I_EventSystem.h
-#include "P_Net.h"         // I_Net.h
-#else
 #include "I_EventSystem.h"
 #include "I_Net.h"
-#endif
 #include "I_Cache.h"
 #include "I_HostDB.h"
 

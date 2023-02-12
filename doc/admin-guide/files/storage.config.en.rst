@@ -121,17 +121,6 @@ cache file with::
     When using on-filesystem cache disk storage, you can only have one such
     directory specified. This will be addressed in a future version.
 
-
-Solaris Example
----------------
-
-The following example is for the Solaris operating system::
-
-   /dev/rdsk/c0t0d0s5
-   /dev/rdsk/c0t0d1s5
-
-.. note:: Size is optional. If not specified, the entire partition is used.
-
 Linux Example
 -------------
 .. note::

@@ -25,11 +25,6 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_defs.h"
 
-/* Solaris considers SIOCGIFCONF obsolete and only defines it if
- * BSD compatibility activated. */
-#if defined(solaris)
-#define BSD_COMP
-#endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>

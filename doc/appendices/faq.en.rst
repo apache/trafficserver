@@ -29,8 +29,7 @@ How do you create a raw disk for the cache if all your disks have mounted file s
 ---------------------------------------------------------------------------------------
 
 Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as loopback device.
-This is accomplished with :manpage:`losetup(8)` on Linux, :manpage:`lofiadm(1m)` on Solaris
-and Illumos, and :manpage:`mdconfig(8)` on FreeBSD.
+This is accomplished with :manpage:`losetup(8)` on Linux, and :manpage:`mdconfig(8)` on FreeBSD.
 
 How do disk I/O errors affect the cache and what does Traffic Server do when a cache disk fails?
 ------------------------------------------------------------------------------------------------
