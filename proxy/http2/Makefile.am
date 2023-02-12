@@ -77,7 +77,6 @@ test_libhttp2_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@
 
 if OS_LINUX
@@ -129,7 +128,6 @@ test_HPACK_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@
 
 test_HPACK_SOURCES = \

@@ -99,7 +99,6 @@ test_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 test_EventSystem_SOURCES = unit_tests/test_EventSystem.cc

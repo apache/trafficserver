@@ -20,8 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 # Note that hdrs is targeted from ../Makefile.am
 noinst_LIBRARIES = \
-	libdiagsconfig.a \
-	libUglyLogStubs.a
+	libdiagsconfig.a
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
@@ -41,8 +40,5 @@ AM_CPPFLAGS += \
 libdiagsconfig_a_SOURCES = \
 	DiagsConfig.cc
 
-libUglyLogStubs_a_SOURCES = \
-	UglyLogStubs.cc
-
-clang-tidy-local: $(libdiagsconfig_a_SOURCES) $(libUglyLogStubs_a_SOURCES)
+clang-tidy-local: $(libdiagsconfig_a_SOURCES)
 	$(CXX_Clang_Tidy)

@@ -44,6 +44,9 @@
 #include "LogUtils.h"
 #include "Log.h"
 
+// This is needed to avoid library dependency ugliness
+int fds_limit = 8000;
+
 // logcat-specific command-line flags
 static int squid_flag              = 0;
 static int follow_flag             = 0;

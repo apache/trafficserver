@@ -76,7 +76,6 @@ test_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
   @HWLOC_LIBS@ @SWOC_LIBS@

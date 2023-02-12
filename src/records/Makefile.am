@@ -77,7 +77,6 @@ test_librecords_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -92,7 +91,6 @@ test_librecords_on_eventsystem_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))

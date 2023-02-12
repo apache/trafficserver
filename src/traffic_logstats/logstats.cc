@@ -59,6 +59,9 @@
 
 using namespace std;
 
+// This is needed to avoid library dependency ugliness
+int fds_limit = 8000;
+
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_NAME "traffic_logstats"
 
