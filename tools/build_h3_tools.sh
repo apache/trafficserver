@@ -64,15 +64,16 @@ set -x
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
 echo "Building quiche"
+QUICHE_BASE=${BASE:-"/opt/quiche"}
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
 cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
-sudo mkdir -p /opt/quiche/lib/pkgconfig
-sudo mkdir -p /opt/quiche/include
-sudo cp target/release/libquiche.a /opt/quiche/lib/
-sudo cp target/release/libquiche.so /opt/quiche/lib/
-sudo cp quiche/include/quiche.h /opt/quiche/include/
-sudo cp target/release/quiche.pc /opt/quiche/lib/pkgconfig
+sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
+sudo mkdir -p ${QUICHE_BASE}/include
+sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
+sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
+sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
+sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
 cd ..
 
 # OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
@@ -114,7 +115,7 @@ echo "Building ngtcp2..."
 if [ ! -d ngtcp2 ]; then
   git clone https://github.com/ngtcp2/ngtcp2.git
   cd ngtcp2
-  git checkout -b v0.12.0 v0.12.0
+  git checkout -b v0.13.1 v0.13.1
   cd ..
 fi
 cd ngtcp2
@@ -135,7 +136,7 @@ echo "Building nghttp2 ..."
 if [ ! -d nghttp2 ]; then
   git clone https://github.com/tatsuhiro-t/nghttp2.git
   cd nghttp2
-  git checkout -b v1.51.0 v1.51.0
+  git checkout -b v1.52.0 v1.52.0
   cd ..
 fi
 cd nghttp2
