@@ -33,6 +33,9 @@
 using std::cout;
 using std::endl;
 
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"
+
 // Necessary for AIO
 int net_config_poll_timeout = 10;
 

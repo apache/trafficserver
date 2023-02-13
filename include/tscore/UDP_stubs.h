@@ -21,43 +21,16 @@
  *  limitations under the License.
  */
 
-#include "catch.hpp"
+// This is needed to avoid library dependency ugliness.
+// ToDo: This would be good to eliminate in the libraries...
+#include "I_NetVConnection.h"
+#include "P_UDPConnection.h"
+#include "P_UDPPacket.h"
 
-#include "P_QUICNetVConnection.h"
-#include <memory>
-
-#include "tscore/UDP_stubs.h"
-
-TEST_CASE("QUICAddrVerifyState", "[quic]")
+void
+UDPConnection::Release()
 {
-  QUICAddrVerifyState state;
-
-  // without consuming
-  CHECK(state.windows() == 0);
-  state.fill(10240);
-  CHECK(state.windows() == 10240 * 3);
-
-  // consume
-  CHECK(state.windows() == 10240 * 3);
-  state.consume(10240);
-  CHECK(state.windows() == 10240 * 2);
-  state.consume(10240);
-  CHECK(state.windows() == 10240);
-  state.consume(10240);
-  CHECK(state.windows() == 0);
-
-  // fill
-  state.fill(1);
-  CHECK(state.windows() == 3);
-  state.consume(1);
-  CHECK(state.windows() == 2);
-  state.consume(1);
-  CHECK(state.windows() == 1);
-  state.consume(1);
-  CHECK(state.windows() == 0);
-
-  // fill overflow
-  state.fill(UINT32_MAX);
-  state.fill(2);
-  CHECK(state.windows() == UINT32_MAX);
 }
+
+ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
+int fds_limit = 8000;

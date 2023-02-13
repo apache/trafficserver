@@ -34,7 +34,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-        @SWOC_INCLUDES@ \
+	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@BORINGOCSP_INCLUDES@ \
@@ -71,7 +71,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/proxy/http2/libhttp2.a \
-        $(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
@@ -91,14 +91,14 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
 	$(top_builddir)/mgmt/config/libconfigmanager.la \
 	$(top_builddir)/mgmt/rpc/librpcpublichandlers.la \
-        $(top_builddir)/mgmt/utils/libutils_p.la \
+	$(top_builddir)/mgmt/utils/libutils_p.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \
 	@LIBZ@ \
 	@LIBLZMA@ \
 	@LIBPROFILER@ \
-        @SWOC_LIBS@ \
+	@SWOC_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@BORINGOCSP_LIBS@ \

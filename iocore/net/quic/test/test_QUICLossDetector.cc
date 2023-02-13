@@ -32,6 +32,8 @@
 #include "Mock.h"
 #include "tscore/ink_hrtime.h"
 
+#include "tscore/UDP_stubs.h"
+
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
   MockQUICPacketProtectionKeyInfo pp_key_info;

@@ -30,6 +30,8 @@
 #include "quic/QUICFrame.h"
 #include "quic/Mock.h"
 
+#include "tscore/UDP_stubs.h"
+
 MockQUICContext context;
 
 TEST_CASE("QUICStreamManager_NewStream", "[quic]")

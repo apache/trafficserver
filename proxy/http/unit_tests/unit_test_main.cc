@@ -28,3 +28,6 @@
 #include "tscore/I_Version.h"
 
 AppVersionInfo appVersionInfo;
+
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"

@@ -39,6 +39,7 @@
 #include "MgmtUtils.h"
 // Needs LibRecordsConfigInit()
 #include "records/I_RecordsConfig.h"
+#include "I_Machine.h"
 
 #define LOG_FILENAME_SIZE 255
 
@@ -202,8 +203,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   1) does not call initialize_process_manager
   2) initializes the diags with use_records = false
-  3) does not call Machine::init()
-  4) assumes multiple copies of the application can run, so does not
+  3) assumes multiple copies of the application can run, so does not
      do lock checking
   -------------------------------------------------------------------------*/
 
@@ -214,6 +214,10 @@ init_log_standalone_basic(const char *pgm_name)
 
   snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
+
+  // Makes the logging library happy. ToDo: This should be eliminated when
+  // the cross dependencies aren't ugly.
+  Machine::init("localhost", nullptr);
 
   init_system(false);
   const bool use_records = false;

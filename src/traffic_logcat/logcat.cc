@@ -44,20 +44,8 @@
 #include "LogUtils.h"
 #include "Log.h"
 
-// This is needed to avoid library dependency ugliness.
-// ToDo: This would be good to eliminate in the libraries...
-#include "I_NetVConnection.h"
-#include "P_UDPConnection.h"
-#include "P_UDPPacket.h"
-
-void
-UDPConnection::Release()
-{
-}
-
-ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
-
-int fds_limit = 8000;
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"
 
 // logcat-specific command-line flags
 static int squid_flag              = 0;

@@ -27,6 +27,8 @@
 #include "quic/Mock.h"
 #include <memory>
 
+#include "tscore/UDP_stubs.h"
+
 static constexpr int DEFAULT_RTT = 1 * HRTIME_SECOND;
 
 class MockRTTProvider : public QUICRTTProvider
