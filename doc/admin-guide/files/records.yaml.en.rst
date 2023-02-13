@@ -4937,7 +4937,7 @@ Sockets
    specifies the timeout used for the polling mechanism used. This timeout is
    always in milliseconds (ms). This is the timeout to ``epoll_wait()`` on
    Linux platforms, and to ``kevent()`` on BSD type OSs. The default value is
-   ``10`` on all platforms or 30 on Solaris.
+   ``10`` on all platforms.
 
    Changing this configuration can reduce CPU usage on an idle system, since
    periodic tasks gets processed at these intervals. On busy servers, this

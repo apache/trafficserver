@@ -430,11 +430,6 @@ ink_file_is_mmappable(mode_t st_mode)
   }
 #endif
 
-#if defined(solaris)
-  // All file types on Solaris can be mmap(2)'ed.
-  return true;
-#endif
-
   return false;
 }
 
@@ -462,14 +457,6 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
 #if !defined(DIOCGMEDIASIZE) || !defined(DIOCGSECTORSIZE)
   errno = ENOTSUP;
 #endif
-
-#elif defined(solaris)
-  struct stat sbuf;
-
-  if (fstat(fd, &sbuf) == 0) {
-    geometry.totalsz = sbuf.st_size;
-    geometry.blocksz = sbuf.st_blksize;
-  }
 
 #elif defined(linux)
   ioctl_arg_t arg;

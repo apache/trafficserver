@@ -430,13 +430,6 @@ NetHandler::process_ready_list()
       ne->net_read_io(this, this->thread);
     } else if (!ne->read.enabled) {
       read_ready_list.remove(ne);
-#if defined(solaris)
-      if (ne->read.triggered && ne->write.enabled) {
-        ne->ep.modify(-EVENTIO_READ);
-        ne->ep.refresh(EVENTIO_WRITE);
-        ne->writeReschedule(this);
-      }
-#endif
     }
   }
   while ((ne = write_ready_list.dequeue())) {
@@ -447,13 +440,6 @@ NetHandler::process_ready_list()
       ne->net_write_io(this, this->thread);
     } else if (!ne->write.enabled) {
       write_ready_list.remove(ne);
-#if defined(solaris)
-      if (ne->write.triggered && ne->read.enabled) {
-        ne->ep.modify(-EVENTIO_WRITE);
-        ne->ep.refresh(EVENTIO_READ);
-        ne->readReschedule(this);
-      }
-#endif
     }
   }
 #else  /* !USE_EDGE_TRIGGER */

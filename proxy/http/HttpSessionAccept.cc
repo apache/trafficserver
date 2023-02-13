@@ -80,16 +80,6 @@ HttpSessionAccept::mainEvent(int event, void *data)
   // EVENT_ERROR //
   /////////////////
   if (((long)data) == -ECONNABORTED) {
-    /////////////////////////////////////////////////
-    // Under Solaris, when accept() fails and sets //
-    // errno to EPROTO, it means the client has    //
-    // sent a TCP reset before the connection has  //
-    // been accepted by the server...  Note that   //
-    // in 2.5.1 with the Internet Server Supplement//
-    // and also in 2.6 the errno for this case has //
-    // changed from EPROTO to ECONNABORTED.        //
-    /////////////////////////////////////////////////
-
     // FIX: add time to user_agent_hangup
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }

@@ -91,9 +91,7 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
     }
   }
 #elif TS_USE_PORT
-/* Solaris ports requires no crutches to do cross thread signaling.
- * We'll just port_send the event straight over the port.
- */
+/* We'll just port_send the event straight over the port. */
 #else
   ink_release_assert(pipe(evpipe) >= 0);
   fcntl(evpipe[0], F_SETFD, FD_CLOEXEC);

@@ -204,22 +204,6 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         printf(";;\ttimeout=%d\n", statp->retrans);
       }
 #endif
-#ifdef SOLARIS2
-    } else if (!strncmp(cp, "retrans:", sizeof("retrans:") - 1)) {
-      /*
-       * For backward compatibility, 'retrans' is
-       * supported as an alias for 'timeout', though
-       * without an imposed maximum.
-       */
-      statp->retrans = atoi(cp + sizeof("retrans:") - 1);
-    } else if (!strncmp(cp, "retry:", sizeof("retry:") - 1)) {
-      /*
-       * For backward compatibility, 'retry' is
-       * supported as an alias for 'attempts', though
-       * without an imposed maximum.
-       */
-      statp->retry = atoi(cp + sizeof("retry:") - 1);
-#endif /* SOLARIS2 */
     } else if (!strncmp(cp, "attempts:", sizeof("attempts:") - 1)) {
       i = atoi(cp + sizeof("attempts:") - 1);
       if (i <= INK_RES_MAXRETRY) {
@@ -332,25 +316,6 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   statp->pfcode  = 0;
   statp->_vcsock = -1;
   statp->_flags  = 0;
-
-#ifdef SOLARIS2
-  /*
-   * The old libresolv derived the defaultdomain from NIS/NIS+.
-   * We want to keep this behaviour
-   */
-  {
-    char buf[sizeof(statp->defdname)], *cp;
-    int ret;
-
-    if ((ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf))) > 0 && (unsigned int)ret <= sizeof(buf)) {
-      if (buf[0] == '+')
-        buf[0] = '.';
-      cp = strchr(buf, '.');
-      cp = (cp == nullptr) ? buf : (cp + 1);
-      ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
-    }
-  }
-#endif /* SOLARIS2 */
 
   /* Allow user to override the local domain definition */
   if ((cp = getenv("LOCALDOMAIN")) != nullptr) {

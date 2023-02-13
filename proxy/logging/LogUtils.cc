@@ -116,11 +116,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
     //
     struct tm res;
     struct tm *tms = ink_localtime_r((const time_t *)&timestamp, &res);
-#if defined(solaris)
-    long zone = (tms->tm_isdst > 0) ? altzone : timezone;
-#else
-    long zone = -tms->tm_gmtoff; // double negative!
-#endif
+    long zone      = -tms->tm_gmtoff; // double negative!
     int offset;
     char sign;
 

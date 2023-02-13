@@ -2302,11 +2302,8 @@ thread_create_handler(void * /* arg ATS_UNUSED */)
   return nullptr;
 }
 
-// Fix me: Solaris threads/Win2K threads tests
-
 // Argument data passed to thread init functions
 //  cannot be allocated on the stack.
-
 REGRESSION_TEST(SDK_API_TSThread)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus           = REGRESSION_TEST_INPROGRESS;

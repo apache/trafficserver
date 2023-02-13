@@ -154,29 +154,6 @@
     cachedir:      ${localstatedir}/cache
 </Layout>
 
-
-#   Solaris 8 Layout
-<Layout Solaris>
-    prefix:        /usr/trafficserver
-    exec_prefix:   ${prefix}
-    bindir:        ${exec_prefix}/bin
-    sbindir:       ${exec_prefix}/bin
-    libdir:        ${exec_prefix}/lib
-    libexecdir:    ${exec_prefix}/libexec
-    infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
-    sysconfdir:    /etc+
-    datadir:       /var+
-    docdir:        ${prefix}/share/doc+
-    installbuilddir: ${datadir}/build
-    includedir:    ${prefix}/include
-    localstatedir: ${prefix}
-    runtimedir:    /var/run+
-    logdir:        ${datadir}/logs
-    cachedir:      ${datadir}/cache
-</Layout>
-
-
 # Debian layout
 <Layout Debian>
     prefix:        /usr

@@ -39,15 +39,6 @@
 #elif defined(linux)
 #define OS_Linux
 #define ARCH "Linux"
-#elif defined(sun)
-#define OS_Solaris
-#define ARCH "Solaris"
-#elif defined(__osf__)
-#define OS_DigitalUnix
-#define ARCH "DigitalUnix"
-#elif defined(__svr4__)
-#define OS_SysV
-#define ARCH "SysV"
 #else
 #define OS_UNKNOWN
 #define ARCH "UNKNOWN"
@@ -107,26 +98,3 @@
 #define HAVE_SCANDIR
 #define HAVE_INT64T
 #endif /* OS_Linux */
-
-#ifdef OS_Solaris
-#define HAVE_SETSID
-#define HAVE_WAITPID
-#define HAVE_SIGSET
-#define HAVE_INT64T
-#endif /* OS_Solaris */
-
-#ifdef OS_DigitalUnix
-#define HAVE_SETSID
-#define HAVE_SETLOGIN
-#define HAVE_WAITPID
-#define HAVE_SCANDIR
-#define HAVE_TM_GMTOFF
-#define NO_SNPRINTF
-/* # define HAVE_INT64T */ /* Digital Unix 4.0d doesn't have int64_t */
-#endif                     /* OS_DigitalUnix */
-
-#ifdef OS_SysV
-#define HAVE_SETSID
-#define HAVE_WAITPID
-#define HAVE_SIGSET
-#endif /* OS_Solaris */

@@ -20,7 +20,7 @@ dnl
 
 dnl
 dnl Check on IN6_IS_ADDR_UNSPECIFIED. We can't just check if it is defined
-dnl because some releases of FreeBSD and Solaris define it incorrectly.
+dnl because some releases of FreeBSD define it incorrectly.
 dnl
 AC_DEFUN([TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED], [
 AC_CACHE_CHECK([IN6_IS_ADDR_UNSPECIFIED macro works], ac_cv_macro_in6_is_addr_unspecified,

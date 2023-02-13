@@ -221,14 +221,6 @@ msgstr ""
 "ファイルシステム上のキャッシュディスクストレージを使用する際、指定されたディ"
 "レクトリを一つのみ持てます。これは将来のバージョンで対応される予定です。 "
 
-#: ../../../admin-guide/files/storage.config.en.rst:122
-msgid "Solaris Example"
-msgstr "Solaris の例"
-
-#: ../../../admin-guide/files/storage.config.en.rst:124
-msgid "The following example is for the Solaris operating system::"
-msgstr "以下の例は、Solaris オペレーティングシステム用のものです。::"
-
 #: ../../../admin-guide/files/storage.config.en.rst:129
 msgid "Size is optional. If not specified, the entire partition is used."
 msgstr ""

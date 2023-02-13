@@ -28,11 +28,6 @@
 #include "tscore/ink_uuid.h"
 #include "LogObject.h"
 
-#if defined(solaris)
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include "P_Net.h"
 
 int fds_limit = 8000;

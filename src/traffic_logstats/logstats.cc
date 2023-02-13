@@ -38,11 +38,6 @@
 #include "hdrs/HTTP.h"
 
 #include <sys/utsname.h>
-#if defined(solaris)
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include <iostream>
 #include <fstream>
 #include <sstream>

@@ -229,11 +229,7 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
           ifr->ifr_name);
     return 0;
   } else {
-#if defined(solaris) || defined(hpux)
-    return ifr->ifr_metric;
-#else
     return ifr->ifr_mtu;
-#endif
   }
 }
 

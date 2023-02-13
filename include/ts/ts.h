@@ -1862,15 +1862,6 @@ tsapi struct sockaddr const *TSNetVConnRemoteAddrGet(TSVConn vc);
     If the connection is not successful, contp is called back with
     the event TS_EVENT_NET_CONNECT_FAILED.
 
-    Note: on Solaris, it is possible to receive TS_EVENT_NET_CONNECT
-    even if the connection failed, because of the implementation of
-    network sockets in the underlying operating system. There is an
-    exception: if a plugin tries to open a connection to a port on
-    its own host machine, then TS_EVENT_NET_CONNECT is sent only
-    if the connection is successfully opened. In general, however,
-    your plugin needs to look for an TS_EVENT_VCONN_WRITE_READY to
-    be sure that the connection is successfully opened.
-
     @return something allows you to check if the connection is complete,
       or cancel the attempt to connect.
 
