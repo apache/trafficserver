@@ -514,7 +514,10 @@ class YAMLFile(File):
             execute=False,
             runtime=True)
         self.__root_tag = root_tag
-        self.__content = {}
+        # We support multiple docs in the same file, every time append_to_document
+        # is called, a new item will be created in the following list. At the end
+        # all of them will be written in the same stream.
+        self.__content = [{}]
 
         self.WriteCustomOn(self._do_write)
 
@@ -531,17 +534,28 @@ class YAMLFile(File):
             with open(name, 'w') as f:
                 yaml.add_representer(float, float_representer)
                 yaml.add_representer(int, int_representer)
-                updated_content = {}
-                if self.__root_tag:
-                    updated_content[self.__root_tag] = self.__content
-                else:
-                    updated_content = self.__content
+                docs = []
+                for content in self.__content:
+                    updated_content = {}
 
-                yaml.dump(updated_content, f)
+                    if self.__root_tag:
+                        updated_content[self.__root_tag] = content
+                    else:
+                        updated_content = content
+
+                    docs.append(updated_content)
+
+                yaml.dump_all(docs, f)
 
         return (True,
                 "Writing config file {0}".format(os.path.split(self.Name)[-1]),
                 "Success")
+
+    def __transform_content(self, content):
+        if isinstance(content, str):  # from new style
+            return yaml.load(content, Loader=yaml.Loader)
+        else:
+            return content  # Already an object.
 
     def __update(self, content, out):
         for key, value in content.items():
@@ -556,13 +570,13 @@ class YAMLFile(File):
                 out[key] = value
 
     def update(self, content):
-        data = {}
-        if isinstance(content, str):  # from new style
-            data = yaml.load(content, Loader=yaml.Loader)
-        else:
-            data = content  # Already an object.
+        self.__update(self.__transform_content(content), self.__content[0])
 
-        self.__update(data, self.__content)
+    def append_to_document(self, content):
+        # We want to append a new doc in the same YAML stream.
+        new_doc = {}
+        self.__update(self.__transform_content(content), new_doc)
+        self.__content.append(new_doc)
 
 
 class RecordsYAML(YAMLFile):
@@ -599,7 +613,7 @@ class RecordsYAML(YAMLFile):
 
             self._make_obj_from_legacy_record(config[key], var[index + 1:], value)
 
-    def __legacy_update(self, obj):
+    def __legacy_update(self, obj, new_doc=False):
         config = {}
         for name, value in obj.items():
             ori_name = name
@@ -612,7 +626,10 @@ class RecordsYAML(YAMLFile):
             # unwrap the record and make it a YAML field.
             self._make_obj_from_legacy_record(config, name, value)
 
-        super(RecordsYAML, self).update(config)
+        if new_doc:
+            super(RecordsYAML, self).append_to_document(config)
+        else:
+            super(RecordsYAML, self).update(config)
 
     def update(self, data):
         if isinstance(data, dict):
@@ -627,7 +644,18 @@ class RecordsYAML(YAMLFile):
             '''
             super(RecordsYAML, self).update(data)
 
-
+    def append_to_document(self, data):
+        if isinstance(data, dict):
+            '''
+            If the data is already parsed or (more likely) is a legacy objects
+            we still support it, so update from the passed object.
+            '''
+            self.__legacy_update(data, new_doc=True)
+        else:
+            '''
+            We also support plain YAML(str) to be passed on. Base class will load from the yaml parser.
+            '''
+            super(RecordsYAML, self).append_to_document(data)
 ##########################################################################
 
 

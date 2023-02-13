@@ -268,9 +268,14 @@ swoc::Errata
 RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler)
 {
   try {
-    auto root = YAML::LoadFile(path);
-    if (auto ret = ParseRecordsFromYAML(root, handler); !ret.empty()) {
-      return ret;
+    auto nodes = YAML::LoadAllFromFile(path);
+    // We will parse each doc from the stream, subsequently config node will overwrite
+    // the value for previously loaded records. This would work similar to the old
+    // records.config which a later CONFIG variable would overwrite a previous one.
+    for (auto const &root : nodes) {
+      if (auto ret = ParseRecordsFromYAML(root, handler); !ret.empty()) {
+        return ret;
+      }
     }
   } catch (std::exception const &ex) {
     return swoc::Errata(ERRATA_ERROR, "Error parsing {}. {}", path, ex.what());
