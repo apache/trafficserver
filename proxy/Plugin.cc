@@ -189,7 +189,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   }
 
   plugin_reg_current = nullptr;
-
+  Note("plugin '%s' finished loading", path);
   return true;
 }
 
