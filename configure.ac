@@ -2443,10 +2443,10 @@ AC_MSG_NOTICE([Build option summary:
     CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
     LDFLAGS:            $LDFLAGS
-    AM@&t@_CFLAGS:      $AM_CFLAGS
-    AM@&t@_CXXFLAGS:    $AM_CXXFLAGS
-    AM@&t@_CPPFLAGS:    $AM_CPPFLAGS
-    AM@&t@_LDFLAGS:     $AM_LDFLAGS
+    AM@&t@_CFLAGS:          $AM_CFLAGS
+    AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
+    AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
+    AM@&t@_LDFLAGS:         $AM_LDFLAGS
     TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
