@@ -27,6 +27,9 @@ add_library(records_lm STATIC
         RecMutex.cc
         RecRawStats.cc
         RecUtils.cc
+        RecYAMLDecoder.cc
+        RecordsConfig.cc
+        RecordsConfigUtils.cc
 )
 target_include_directories(records_lm PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt
@@ -48,6 +51,9 @@ add_library(records_p STATIC
         RecRawStats.cc
         RecUtils.cc
         RecProcess.cc
+        RecYAMLDecoder.cc
+        RecordsConfig.cc
+        RecordsConfigUtils.cc
         )
 target_include_directories(records_p PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt

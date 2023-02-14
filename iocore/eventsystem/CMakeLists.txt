@@ -33,5 +33,6 @@ target_sources(inkevent PRIVATE
         UnixEThread.cc
         UnixEvent.cc
         UnixEventProcessor.cc
+        ConfigProcessor.cc
         )
 target_include_directories(inkevent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
