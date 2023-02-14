@@ -19,10 +19,8 @@
 
 # yamlcpp shadows a bunch of variables but we don't want to hear bout it
 add_compile_options(-Wno-shadow)
-message("before yaml ${PROJECT_VERSION}")
 add_subdirectory(yamlcpp)
 set(YAML_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include PARENT_SCOPE)
-message("after yaml ${PROJECT_VERSION} - ${YAML_CPP_PROJECT_VERSION}")
 add_subdirectory(fastlz)
 add_subdirectory(swoc)
 set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
