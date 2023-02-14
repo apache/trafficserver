@@ -32,7 +32,7 @@ Quick install:
 
 
 Edge cache debugging
-	To enable the TSDebug verbose logging, change records.config to have:
+	To enable the TSDebug verbose logging, change records.yaml to have:
 
 		CONFIG proxy.config.diags.debug.enabled INT 1
 		CONFIG proxy.config.diags.debug.tags STRING url_sig

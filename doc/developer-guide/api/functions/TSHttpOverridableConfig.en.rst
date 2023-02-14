@@ -63,7 +63,7 @@ Configurations
 
 Testing :enumerator:`TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE`.
 
-The following configurations (from ``records.config``) are overridable:
+The following configurations (from ``records.yaml``) are overridable:
 
 ========================================================================  ====================================================================
 TSOverridableConfigKey Value                                              Configuration Value

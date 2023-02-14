@@ -1775,7 +1775,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  // Bootstrap syslog.  Since we haven't read records.config
+  // Bootstrap syslog.  Since we haven't read records.yaml
   //   yet we do not know where
   openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
@@ -1885,7 +1885,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   EThread *main_thread = new EThread;
   main_thread->set_specific();
 
-  // Re-initialize diagsConfig based on records.config configuration
+  // Re-initialize diagsConfig based on records.yaml configuration
   REC_ReadConfigString(diags_log_filename, "proxy.config.diags.logfile.filename", sizeof(diags_log_filename));
   if (strnlen(diags_log_filename, sizeof(diags_log_filename)) == 0) {
     strncpy(diags_log_filename, DEFAULT_DIAGS_LOG_FILENAME, sizeof(diags_log_filename));
@@ -1994,7 +1994,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
 
   // This has some special semantics, in that providing this configuration on
-  // command line has higher priority than what is set in records.config.
+  // command line has higher priority than what is set in records.yaml.
   if (-1 != poll_timeout) {
     net_config_poll_timeout = poll_timeout;
   } else {

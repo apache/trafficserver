@@ -72,7 +72,7 @@ private:
   uint8_t _ack_delay_exponent = 3;
 
   // Recovery A.2. Constants of Interest
-  // Values will be loaded from records.config via QUICConfig at constructor
+  // Values will be loaded from records.yaml via QUICConfig at constructor
   uint32_t _k_packet_threshold = 0;
   float _k_time_threshold      = 0.0;
   // kGranularity, kInitialRtt are defined in QUICRTTMeasure

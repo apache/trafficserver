@@ -34,7 +34,7 @@
 RecRawStatBlock *net_rsb = nullptr;
 
 // All in milli-seconds
-int net_config_poll_timeout = -1; // This will get set via either command line or records.config.
+int net_config_poll_timeout = -1; // This will get set via either command line or records.yaml.
 int net_event_period        = 10;
 int net_accept_period       = 10;
 int net_retry_delay         = 10;

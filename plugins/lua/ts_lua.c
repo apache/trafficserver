@@ -45,7 +45,7 @@ static ts_lua_main_ctx *ts_lua_g_main_ctx_array = NULL;
 static pthread_key_t lua_g_state_key;
 static pthread_key_t lua_state_key;
 
-// records.config entry injected by plugin
+// records.yaml entry injected by plugin
 static char const *const ts_lua_mgmt_state_str   = "proxy.config.plugin.lua.max_states";
 static char const *const ts_lua_mgmt_state_regex = "^[1-9][0-9]*$";
 
@@ -112,7 +112,7 @@ create_lua_vms()
 {
   ts_lua_main_ctx *ctx_array = NULL;
 
-  // Inject the setting into records.config
+  // Inject the setting into records.yaml
   static bool ts_mgt_int_inserted = false;
   if (!ts_mgt_int_inserted) {
     if (TS_SUCCESS == TSMgmtIntCreate(TS_RECORDTYPE_CONFIG, ts_lua_mgmt_state_str, TS_LUA_MAX_STATE_COUNT,

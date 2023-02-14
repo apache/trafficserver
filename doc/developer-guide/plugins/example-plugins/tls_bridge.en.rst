@@ -70,29 +70,56 @@ ingress |TS|, and the peer |TS| connects to the service. The Peer could in theor
 connect on to a further |TS| instance, acting as the ingress to that peer, but that doesn't seem a
 useful case.
 
-#. Disable caching on |TS| in ``records.config``::
+#. Disable caching on |TS| in ``records.yaml``:
 
-      CONFIG proxy.config.http.cache.http INT 0
+.. code-block:: yaml
+   :linenos:
+   :emphasize-lines: 4
+
+   ts:
+      http:
+         cache:
+            http: 0
 
 #. Configure the ports.
 
    *  The Peer |TS| must be listening on an SSL enabled proxy port. For instance, if the proxy port
-      for the Peer is 4443, then configuration in ``records.config`` would have::
+      for the Peer is 4443, then configuration in ``records.yaml`` would have:
 
-         CONFIG proxy.config.http.server_ports STRING 4443:ssl
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 3
+
+      ts:
+      http:
+         server_ports: 4443:ssl
+
 
    *  The Ingress |TS| must allow ``CONNECT`` to the Peer proxy port. This would be set in
-      ``records.config`` by::
+      ``records.yaml`` by:
 
-         CONFIG proxy.config.http.connect_ports STRING 4443
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 3
+
+      ts:
+         http:
+            connect_ports: 4443
+
 
       The Ingress |TS| also needs ``proxy.config.http.server_ports`` configured to have proxy ports
       to which the Client can connect.
 
 #. By default |TS| requires remap in order to allow to outbound request to the peer. To disable this
-   requirement and allow all connections, use the setting ::
+   requirement and allow all connections, use the setting:
 
-      CONFIG proxy.config.url_remap.remap_required INT 0
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 3
+
+      ts:
+        url_remap:
+           remap_required: 0
 
    In this case |TS| will act as an open proxy which is unlikely to be a good idea. Therefore if
    this approach is used |TS| will need to run in a restricted environment or use access control
@@ -116,24 +143,60 @@ useful case.
    supported by the two |TS| instances. This rule serves to allows the ``CONNECT`` sent from the
    ingress to cause a tunnel connection from the peer to the service.
 
-#. Configure the Ingress |TS| to verify the Peer server certificate::
+#. Configure the Ingress |TS| to verify the Peer server certificate:
 
-      CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 6
+
+      ts:
+         ssl:
+            client:
+               verify:
+               server:
+                  policy: ENFORCED
 
 #. Configure Certificate Authority used by the Ingress |TS| to verify the Peer server certificate.
    If this is a directory, all of the certificates in the directory are treated as Certificate
-   Authorities. ::
+   Authorities.
 
-      CONFIG proxy.config.ssl.client.CA.cert.filename STRING </path/to/CA_certificate_file_name>
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 6
 
-#. Configure the Ingress |TS| to provide a client certificate::
+      ts:
+         ssl:
+            client:
+               CA:
+               cert:
+                  filename: </path/to/CA_certificate_file_name>
 
-      CONFIG proxy.config.ssl.client.cert.path STRING </path/to/certificate/dir>
-      CONFIG proxy.config.ssl.client.cert.filename STRING <server_certificate_file_name>
 
-#. Configure the Peer |TS| to verify the Ingress client certificate::
+#. Configure the Ingress |TS| to provide a client certificate:
 
-      CONFIG proxy.config.ssl.client.certification_level INT 2
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 5-6
+
+      ts:
+         ssl:
+            client:
+               cert:
+                 filename: <server_certificate_file_name>
+                 path: </path/to/certificate/dir>
+
+
+#. Configure the Peer |TS| to verify the Ingress client certificate:
+
+   .. code-block:: yaml
+      :linenos:
+      :emphasize-lines: 4
+
+      ts:
+         ssl:
+            client:
+               certification_level: 2
+
 
 #. Enable the |Name| plugin in ``plugin.config``. The plugin is configured by arguments in
    ``plugin.config``. These are arguments are in pairs of a *destination* and a *peer*. The

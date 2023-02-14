@@ -167,7 +167,7 @@ trupdate = Test.AddTestRun("Update client cert file in place")
 trupdate.StillRunningAfter = ts
 trupdate.StillRunningAfter = server
 trupdate.StillRunningAfter = server2
-# in the config/ssl directory for records.config
+# in the config/ssl directory for records.yaml
 trupdate.Setup.CopyAs("ssl/signed-foo.pem", ".", "{0}/signed2-foo.pem".format(ts.Variables.SSLDir))
 trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/; touch {1}'.format(
     shortdir, snipath)

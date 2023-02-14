@@ -88,14 +88,14 @@ struct dirent;
   are changed in the config file, using log::change_configuration().
 
   to add a new config variable:
-     1. add a line in records.config for the new config variable.
-        the name in records.config should be "proxy.config.log.xxx".
+     1. add a line in records.yaml for the new config variable.
+        the name in records.yaml should be "proxy.config.log.xxx".
      2. create a member variable to store the current value.
         the name of the member variable should be "xxx".
      3. if the member variable is a string, add a delete for it in the
         destructor, logconfig::~logconfig.
      4. initialize the member variable in logconfig::setup_default_values
-     5. update the member variable from the records.config file
+     5. update the member variable from the records.yaml file
         in logconfig::read_configuration_variables() using a call to
         configreadinteger or configreadstring.
      6. add a line in the logconfig::register_config_callbacks() function

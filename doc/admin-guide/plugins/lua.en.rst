@@ -149,11 +149,16 @@ If it is used as remap plugin, we can write the following in remap.config to def
 
 The maximum number of allowed states is set to 256 which is also the
 default states value.  The default value can be globally changed by
-adding a configuration option to records.config.
+adding a configuration option to records.yaml.
 
-::
+.. code-block:: yaml
+   :linenos:
+   :emphasize-lines: 4
 
-    CONFIG proxy.config.plugin.lua.max_states INT 64
+   ts:
+      plugin:
+        lua:
+          max_states: 64
 
 Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not
 reloadable since it must be applied when all the lua states are first initialized.
@@ -296,9 +301,19 @@ Here is an example:
        ts.debug('I am in do_remap now.')
        ts.debug("scw", "hello world")
 
-We should write this TAG in records.config(If TAG is missing, default TAG will be set):
+We should write this TAG in :ts:cv:`proxy.config.diags.debug.tags` in records.yaml. (If TAG is missing, default TAG will be set):
 
-``CONFIG proxy.config.diags.debug.tags STRING TAG``
+
+.. code-block:: yaml
+   :linenos:
+   :emphasize-lines: 4
+
+   ts:
+     diags:
+       debug:
+         tags: TAG
+
+
 
 :ref:`TOP <admin-plugins-ts-lua>`
 

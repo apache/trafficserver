@@ -29,7 +29,7 @@
 extern int max_records_entries;
 
 enum RecordRequiredType {
-  RR_NULL,    // config is _not_ required to be defined in records.config
+  RR_NULL,    // config is _not_ required to be defined in records.yaml
   RR_REQUIRED // config _is_ required to be defined in record.config
 };
 
@@ -40,7 +40,7 @@ struct RecordElement {
   RecDataT value_type;         // type of the record value (INT, FLOAT, etc)
   const char *value;           // default value for the record
   RecUpdateT update;           // action necessary to change a configuration
-  RecordRequiredType required; // is records required to be in records.config?
+  RecordRequiredType required; // is records required to be in records.yaml?
   RecCheckT check;
   const char *regex;
   RecAccessT access; // access level of the record

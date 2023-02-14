@@ -72,7 +72,7 @@ Server user is in the group which owns the device file.  However, some
 operating systems have stronger requirements - see the following examples for
 more information.
 
-As with standard ``records.config`` integers, human readable prefixes are also
+As with standard ``records.yaml`` integers, human readable prefixes are also
 supported. They include
 
    - ``K`` Kilobytes (1024 bytes)

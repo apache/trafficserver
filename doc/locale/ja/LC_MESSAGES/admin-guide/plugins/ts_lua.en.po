@@ -404,7 +404,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:165
 msgid ""
-"The debug tag is **ts_lua** and we should write this in records.config:"
+"The debug tag is **ts_lua** and we should write this in records.yaml:"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:167

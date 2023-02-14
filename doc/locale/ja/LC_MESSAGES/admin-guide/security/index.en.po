@@ -315,7 +315,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:209
 msgid ""
 "If you are using a client certificate, you must add its location to :file:"
-"`records.config` in the setting :ts:cv:`proxy.config.ssl.client.cert.path` "
+"`records.yaml` in the setting :ts:cv:`proxy.config.ssl.client.cert.path` "
 "and :ts:cv:`proxy.config.ssl.client.cert.filename`. ::"
 msgstr ""
 
@@ -331,7 +331,7 @@ msgstr ""
 msgid ""
 "Enable or disable, per your security policy, server SSL certificate "
 "verification using :ts:cv:`proxy.config.ssl.client.verify.server` in :file:"
-"`records.config`. ::"
+"`records.yaml`. ::"
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:230

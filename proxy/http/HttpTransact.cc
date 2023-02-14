@@ -3622,7 +3622,7 @@ HttpTransact::handle_response_from_parent(State *s)
 
     s->current.server->connect_result = ENOTCONN;
     // only mark the parent down in hostdb if the configuration allows it and the parent,
-    // is not congested, see proxy.config.http.parent_proxy.mark_down_hostdb in records.config.
+    // is not congested, see proxy.config.http.parent_proxy.mark_down_hostdb in records.yaml.
     if (s->txn_conf->parent_failures_update_hostdb && s->current.state != OUTBOUND_CONGESTION) {
       s->state_machine->do_hostdb_update_if_necessary();
     }
@@ -5183,7 +5183,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
   TxnDebug("http_trans", "server_info->http_version %d.%d, check_hostdb %d", server_info->http_version.get_major(),
            server_info->http_version.get_minor(), check_hostdb);
 
-  // Set keep_alive info based on the records.config setting
+  // Set keep_alive info based on the records.yaml setting
   server_info->keep_alive = s->txn_conf->keep_alive_enabled_out ? HTTP_KEEPALIVE : HTTP_NO_KEEPALIVE;
 
   return check_hostdb;

@@ -26,7 +26,7 @@
  *
  * This plugin demonstrates:
  *
- *  - Using TSMgmtStringCreate() to add custom records into records.config.
+ *  - Using TSMgmtStringCreate() to add custom records into records.yaml.
  *  - Listening on a custom socket with TSPortDescriptorAccept().
  *  - Using TSHttpConnectWithPluginId() and the VConn API to proxy HTTP traffic.
  */

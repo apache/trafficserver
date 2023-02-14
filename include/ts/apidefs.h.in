@@ -899,7 +899,7 @@ typedef enum {
 } TSOverridableConfigKey;
 
 /* The TASK pool of threads is the primary method of off-loading continuations from the
-   net-threads. Configure this with proxy.config.task_threads in records.config. */
+   net-threads. Configure this with proxy.config.task_threads in records.yaml. */
 typedef enum {
   TS_THREAD_POOL_NET,
   TS_THREAD_POOL_TASK,

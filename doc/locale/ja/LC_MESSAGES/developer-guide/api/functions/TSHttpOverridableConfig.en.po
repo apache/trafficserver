@@ -85,7 +85,7 @@ msgstr "設定"
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:64
 msgid ""
-"The following configurations (from ``records.config``) are overridable."
+"The following configurations (from ``records.yaml``) are overridable."
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:66

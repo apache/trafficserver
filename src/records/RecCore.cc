@@ -166,7 +166,7 @@ link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void 
 
 // mimic Config.cc::config_string_alloc_cb
 // cookie e.g. is the DEFAULT_xxx_str value which this function keeps up to date with
-// the latest default applied during a config update from records.config
+// the latest default applied during a config update from records
 static int
 link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {

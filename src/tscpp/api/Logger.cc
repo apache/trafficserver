@@ -61,7 +61,7 @@ struct atscppapi::LoggerState : noncopyable {
 namespace
 {
 // Since the TSTextLog API doesn't support override the log file sizes (I will add this to TS api at some point)
-// we will use the roll size specified by default in records.config.
+// we will use the roll size specified by default in records.yaml.
 const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
 } // namespace
 

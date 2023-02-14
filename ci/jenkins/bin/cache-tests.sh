@@ -18,7 +18,6 @@
 
 PREFIX="${ATS_BUILD_BASEDIR}/install"
 REMAP="${PREFIX}/etc/trafficserver/remap.config"
-RECORDS="${PREFIX}/etc/trafficserver/records.config"
 
 TWEAK=""
 [ "1" == "$enable_tweak" ] && TWEAK="-tweak"
@@ -58,9 +57,10 @@ ${PREFIX}/bin/trafficserver stop
 
 # Now run it again, maybe, with the tweaked configs
 if [ "" != "$TWEAK" ]; then
-#    echo "CONFIG proxy.config.http.cache.required_headers INT 1" >> $RECORDS
-    echo "CONFIG proxy.config.http.negative_caching_enabled INT 1" >> $RECORDS
     ${PREFIX}/bin/trafficserver start
+    sleep 5
+    ${PREFIX}/bin/traffic_ctl config set proxy.config.http.negative_caching_enabled 1
+    sleep 5
     cd /home/jenkins/cache-tests
     npm run --silent cli --base=http://127.0.0.1:8080 > /CA/cache-tests/${ATS_BRANCH}${TWEAK}.json
     echo "TWEAKED RESULTS"

@@ -48,7 +48,7 @@ msgid ""
 "By default, Traffic Server writes all event log files in the ``logs`` "
 "directory located in the directory where you installed |TS|. To change this "
 "location, adjust the value of :ts:cv:`proxy.config.log.logfile_dir` in :"
-"file:`records.config`. You will need to either restart |TS| or run the "
+"file:`records.yaml`. You will need to either restart |TS| or run the "
 "command :option:`traffic_ctl config reload` for changes to take effect."
 msgstr ""
 
@@ -359,7 +359,7 @@ msgstr ""
 msgid ""
 "To set log file rolling options and/or configure |TS| to roll log files "
 "when they reach a certain size, adjust the following settings in :file:"
-"`records.config`:"
+"`records.yaml`:"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:197

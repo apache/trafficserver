@@ -292,7 +292,7 @@ HttpVCTable::cleanup_all()
 
 /*
  * Helper functions to ensure that the parallel
- * API set timeouts are set consistently with the records.config settings
+ * API set timeouts are set consistently with the records.yaml settings
  */
 ink_hrtime
 HttpSM::get_server_inactivity_timeout()

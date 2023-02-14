@@ -297,7 +297,7 @@ struct LoggingFlushContinuation : public Continuation {
   Define the available logging fields.
   This used to be part of the init() function, but now is separate so that
   standalone programs that do not require more services (e.g., that do not
-  need to read records.config) can just call init_fields.
+  need to read records.yaml) can just call init_fields.
 
   Note that the LogFields are added to the list with the copy flag false so
   that the LogFieldList destructor will reclaim this memory.

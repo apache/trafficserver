@@ -65,7 +65,7 @@ private:
                              const QUICSentPacketInfoUPtr &largest_lost_packet, ink_hrtime period) const;
 
   // Recovery B.1. Constants of interest
-  // Values will be loaded from records.config via QUICConfig at constructor
+  // Values will be loaded from records.yaml via QUICConfig at constructor
   uint32_t _k_initial_window                  = 0;
   uint32_t _k_minimum_window                  = 0;
   float _k_loss_reduction_factor              = 0.0;

@@ -172,7 +172,7 @@ Pre-warming TLS Tunnel
 =============================== ========================================================================================
 Key                             Meaning
 =============================== ========================================================================================
-tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm` in records.config.
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm` in records.yaml.
 
 tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
 

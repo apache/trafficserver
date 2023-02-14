@@ -164,7 +164,7 @@ tr2.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/../signed-bar.pem'.format(ts.Variables.SSLDir))
 tr2.Disk.sni_yaml.AddLine(
     '  client_key: {0}/../signed-bar.key'.format(ts.Variables.SSLDir))
-# recreate the records.config with the cert filename changed
+# recreate the records.yaml with the cert filename changed
 tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
 tr2.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -240,9 +240,9 @@ trupdate = Test.AddTestRun("Update client cert file in place")
 trupdate.StillRunningAfter = ts
 trupdate.StillRunningAfter = server
 trupdate.StillRunningAfter = server2
-# Make a meaningless config change on the path so the records.config reload logic will trigger
+# Make a meaningless config change on the path so the records.yaml reload logic will trigger
 trupdate.Setup.CopyAs("ssl/signed2-bar.pem", ".", "{0}/signed-bar.pem".format(ts.Variables.SSLDir))
-# in the config/ssl directory for records.config
+# in the config/ssl directory for records.yaml
 trupdate.Setup.CopyAs("ssl/signed-foo.pem", ".", "{0}/signed2-foo.pem".format(ts.Variables.SSLDir))
 trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/../; touch {1}; touch {2}'.format(
     ts.Variables.SSLDir, snipath, recordspath)

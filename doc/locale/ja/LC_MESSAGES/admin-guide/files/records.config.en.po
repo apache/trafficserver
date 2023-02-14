@@ -28,8 +28,8 @@ msgstr ""
 "Generated-By: Babel 2.2.0\n"
 
 #: ../../../admin-guide/files/records.yaml.en.rst:23
-msgid "records.config"
-msgstr "records.config"
+msgid "records.yaml"
+msgstr "records.yaml"
 
 #: ../../../admin-guide/files/records.yaml.en.rst:25
 msgid ""
@@ -346,7 +346,7 @@ msgstr "設定変数"
 #: ../../../admin-guide/files/records.yaml.en.rst:179
 msgid ""
 "The following list describes the configuration variables available in the :"
-"file:`records.config` file."
+"file:`records.yaml` file."
 msgstr ""
 "次の一覧では :file:`records.yaml` ファイル内で利用可能な設定変数について説"
 "明します。"
@@ -3958,7 +3958,7 @@ msgstr ""
 #: ../../../admin-guide/files/records.yaml.en.rst:2599
 msgid ""
 "The following defaults (with the format``CONFIG proxy.config.log.[format]."
-"[default]`` have been removed from ``records.config``. They can be accessed "
+"[default]`` have been removed from ``records.yaml``. They can be accessed "
 "by editing :file:`logging.config`."
 msgstr ""
 
@@ -4382,7 +4382,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.yaml.en.rst:2881
 msgid ""
-"The current default, included in the ``records.config.default`` example "
+"The current default, included in the ``records.yaml.default`` example "
 "configuration is:"
 msgstr ""
 

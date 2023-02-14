@@ -65,7 +65,7 @@ class TSConfVar(std.Target):
     """
     Description of a traffic server configuration variable.
 
-    Argument is the variable as defined in records.config.
+    Argument is the variable as defined in records.yaml.
 
     Descriptive text should follow, indented.
 
@@ -454,7 +454,7 @@ class TrafficServerDomain(Domain):
     def resolve_xref(self, env, src_doc, builder, obj_type, target, node, cont_node):
         dst_doc = self.find_doc(target, obj_type)
         if (dst_doc):
-            return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.config')
+            return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.yaml')
 
     # Python 2/3 compat - iteritems is 2, items is 3
     # Although perhaps the lists are small enough items could be used in Python 2.
