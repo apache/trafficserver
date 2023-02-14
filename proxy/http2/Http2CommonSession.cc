@@ -369,6 +369,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     // Return if there was an error
     if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
+      this->connection_state.restart_receiving(nullptr);
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
@@ -387,6 +388,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 
     if (this->_should_do_something_else()) {
       if (this->_reenable_event == nullptr) {
+        this->connection_state.restart_receiving(nullptr);
         vio->disable();
         this->_reenable_event = this->get_mutex()->thread_holding->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1),
                                                                                HTTP2_SESSION_EVENT_REENABLE, vio);
@@ -397,6 +399,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 
   // If the client hasn't shut us down, reenable
   if (!this->get_proxy_session()->is_peer_closed()) {
+    this->connection_state.restart_receiving(nullptr);
     vio->reenable();
   }
   return 0;

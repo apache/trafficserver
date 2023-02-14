@@ -89,6 +89,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   Http2StreamDebug(this->session, id, "Received DATA frame");
 
+  // Update connection window size, before any stream specific handling
+  this->decrement_local_rwnd(payload_length);
+
   if (this->get_zombie_event()) {
     Warning("Data frame for zombied session %" PRId64, this->session->get_connection_id());
   }
@@ -174,7 +177,8 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   }
 
   // Check whether Window Size is acceptable
-  if (!this->_local_rwnd_is_shrinking && this->get_local_rwnd() < payload_length) {
+  // compare to 0 because we already decreased the connection rwnd with payload_length
+  if (!this->_local_rwnd_is_shrinking && this->get_local_rwnd() < 0) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data this->local_rwnd < payload_length");
   }
@@ -183,8 +187,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                       "recv data stream->local_rwnd < payload_length");
   }
 
-  // Update Window size
-  this->decrement_local_rwnd(payload_length);
+  // Update stream window size
   stream->decrement_local_rwnd(payload_length);
 
   if (is_debug_tag_set("http2_con")) {
@@ -316,9 +319,17 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     }
   }
 
-  // Ignoring HEADERS frame on a closed stream.  The HdrHeap has gone away and it will core.
+  // HEADERS frame on a closed stream.  The HdrHeap has gone away and it will core.
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    Http2StreamDebug(session, stream_id, "Replaced closed stream");
+    free_stream_after_decoding = true;
+    stream                     = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), session->get_proxy_session(), stream_id,
+                                                   peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), true, false);
+    if (!stream) {
+      // This happening is possibly catastrophic, the HPACK tables can be out of sync
+      // Maybe this is a connection level error?
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
   }
 
   Http2HeadersParameter params;
