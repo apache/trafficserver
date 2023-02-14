@@ -31,9 +31,7 @@ records.yaml
 
 The :file:`records.yaml` file (by default, located in
 ``/usr/local/etc/trafficserver/``) is a YAML base configuration file used by
-the |TS| software. Many of the fields in :file:`records.yaml` are set
-automatically when you set configuration options with :option:`traffic_ctl config set`. After you
-modify :file:`records.yaml`, run the command :option:`traffic_ctl config reload`
+the |TS| software. After you modify :file:`records.yaml`, run the command :option:`traffic_ctl config reload`
 to apply the changes.
 
 .. note::
@@ -47,7 +45,8 @@ to apply the changes.
 YAML structure
 ==============
 
-All fields are located inside the ``ts`` root node.
+All fields are located inside the ``ts`` root node. ATS supports reading multiple documents from
+the same YAML stream, subsequent documents overrides earlier fields.
 
 
 .. code-block:: yaml
