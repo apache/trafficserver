@@ -1433,7 +1433,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
     // Time to work on periodic events??
     //
-    now = Thread::get_hrtime() / HRTIME_SECOND;
+    now = Thread::get_hrtime_updated() / HRTIME_SECOND;
     if (now >= last_time + periodic_tasks_interval) {
       Debug("log-preproc", "periodic tasks for %" PRId64, (int64_t)now);
       periodic_tasks(now);
