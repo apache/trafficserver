@@ -24,11 +24,16 @@
 #include "CtrlCommands.h"
 #include "jsonrpc/CtrlRPCRequests.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
+#include "utils/yaml_utils.h"
+#include "swoc/TextView.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_base.h"
+
 namespace
 {
 /// We use yamlcpp as codec implementation.
 using Codec = yamlcpp_json_emitter;
-
+} // namespace
 const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
   {"pretty", BasePrinter::Options::OutputFormat::PRETTY},
   {"legacy", BasePrinter::Options::OutputFormat::LEGACY},
@@ -59,7 +64,6 @@ parse_print_opts(ts::Arguments *args)
 {
   return {parse_format(args)};
 }
-} // namespace
 
 //------------------------------------------------------------------------------------------------------------------------------------
 CtrlCommand::CtrlCommand(ts::Arguments *args) : _arguments(args) {}
@@ -75,7 +79,7 @@ CtrlCommand::execute()
 }
 
 std::string
-CtrlCommand::invoke_rpc(std::string const &request)
+RPCAccessor::invoke_rpc(std::string const &request)
 {
   if (_printer->print_rpc_message()) {
     std::string text;
@@ -96,7 +100,7 @@ CtrlCommand::invoke_rpc(std::string const &request)
 }
 
 shared::rpc::JSONRPCResponse
-CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request)
+RPCAccessor::invoke_rpc(shared::rpc::ClientRequest const &request)
 {
   std::string encodedRequest = Codec::encode(request);
   std::string resp           = invoke_rpc(encodedRequest);
@@ -104,7 +108,7 @@ CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request)
 }
 
 void
-CtrlCommand::invoke_rpc(shared::rpc::ClientRequest const &request, std::string &resp)
+RPCAccessor::invoke_rpc(shared::rpc::ClientRequest const &request, std::string &resp)
 {
   std::string encodedRequest = Codec::encode(request);
   resp                       = invoke_rpc(encodedRequest);
@@ -207,6 +211,7 @@ ConfigCommand::config_set()
 
   _printer->write_output(response);
 }
+
 void
 ConfigCommand::config_reload()
 {

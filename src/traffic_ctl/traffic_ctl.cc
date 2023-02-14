@@ -28,6 +28,7 @@
 #include "tscore/ArgParser.h"
 
 #include "CtrlCommands.h"
+#include "FileConfigCommand.h"
 
 constexpr int CTRL_EX_OK            = 0;
 constexpr int CTRL_EX_ERROR         = 2;
@@ -78,6 +79,9 @@ main(int argc, const char **argv)
     .add_option("--records", "", "Emit output in records.config format");
   config_command.add_command("get", "Get one or more configuration values", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config get [OPTIONS] RECORD [RECORD ...]")
+    .add_option("--cold", "-c",
+                "Save the value in a configuration file. This does not save the value in TS. Local file change only",
+                "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
     .add_option("--records", "", "Emit output in records.config format");
   config_command
     .add_command("match", "Get configuration matching a regular expression", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
@@ -88,6 +92,14 @@ main(int argc, const char **argv)
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config status");
   config_command.add_command("set", "Set a configuration value", "", 2, [&]() { command->execute(); })
+    .add_option("--cold", "-c",
+                "Save the value in a configuration file. This does not save the value in TS. Local file change only",
+                "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
+    .add_option("--update", "-u", "Update a configuration value. [only relevant if --cold set]")
+    .add_option(
+      "--type", "-t",
+      "Add type tag to the yaml field. This is needed if the record is not registered inside ATS. [only relevant if --cold set]",
+      "", 1)
     .add_example_usage("traffic_ctl config set RECORD VALUE");
 
   config_command.add_command("registry", "Show configuration file registry", [&]() { command->execute(); })
@@ -173,7 +185,12 @@ main(int argc, const char **argv)
     Layout::create();
 
     if (args.get("config")) {
-      command = std::make_shared<ConfigCommand>(&args);
+      if (args.get("cold")) {
+        // We allow to just change a config file
+        command = std::make_shared<FileConfigCommand>(&args);
+      } else {
+        command = std::make_shared<ConfigCommand>(&args);
+      }
     } else if (args.get("metric")) {
       command = std::make_shared<MetricCommand>(&args);
     } else if (args.get("server")) {

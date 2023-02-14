@@ -1,0 +1,8 @@
+# Document modified by traffic_ctl ``
+#``
+---
+ts:
+  cache:
+    limits:
+      http:
+        max_alts: 3

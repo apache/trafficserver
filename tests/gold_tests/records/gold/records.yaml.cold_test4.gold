@@ -1,0 +1,10 @@
+ts:
+``
+# Document modified by traffic_ctl ``
+#``
+---
+ts:
+  cache:
+    limits:
+      http:
+        max_alts: !<tag:yaml.org,2002:int> 1
