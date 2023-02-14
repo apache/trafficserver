@@ -108,7 +108,6 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@

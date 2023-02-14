@@ -32,6 +32,9 @@
 #include "HttpSM.h"
 #include "nexthop_test_stubs.h"
 
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"
+
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 void
 HttpSM::cleanup()
@@ -214,14 +217,3 @@ HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsi
   this->hosts_statuses[std::string(host)]->local_down_time = down_time;
   NH_Debug("next_hop", "setting host status for '%.*s' to %s", host.size(), host.data(), HostStatusNames[status]);
 }
-
-#include "I_UDPConnection.h"
-
-void
-UDPConnection::Release()
-{
-}
-
-#include "P_UDPPacket.h"
-ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
-// for UDPPacketInternal::free()

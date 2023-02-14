@@ -59,6 +59,9 @@
 
 using namespace std;
 
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"
+
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_NAME "traffic_logstats"
 

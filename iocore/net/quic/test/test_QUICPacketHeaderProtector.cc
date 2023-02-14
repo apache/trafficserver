@@ -29,6 +29,8 @@
 #include "QUICGlobals.h"
 #include "Mock.h"
 
+#include "tscore/UDP_stubs.h"
+
 struct PollCont;
 #include "P_UDPConnection.h"
 #include "P_UnixNet.h"

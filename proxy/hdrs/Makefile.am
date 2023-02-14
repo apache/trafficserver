@@ -88,7 +88,6 @@ test_proxy_hdrs_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 
@@ -106,7 +105,6 @@ test_hdr_heap_LDADD = -L. -lhdrs \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 

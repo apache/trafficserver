@@ -29,6 +29,8 @@
 #include "quic/QUICStreamState.h"
 #include "quic/Mock.h"
 
+#include "tscore/UDP_stubs.h"
+
 // Unidirectional (sending)
 TEST_CASE("QUICSendStreamState", "[quic]")
 {

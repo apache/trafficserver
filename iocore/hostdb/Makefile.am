@@ -76,7 +76,6 @@ test_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)

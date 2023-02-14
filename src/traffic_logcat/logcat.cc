@@ -44,6 +44,9 @@
 #include "LogUtils.h"
 #include "Log.h"
 
+// ToDo: It would be nice to decouple these UDP dependencies ...
+#include "tscore/UDP_stubs.h"
+
 // logcat-specific command-line flags
 static int squid_flag              = 0;
 static int follow_flag             = 0;

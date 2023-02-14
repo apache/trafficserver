@@ -74,7 +74,6 @@ COMMON_PLUGINDSO_LDADDS = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)

@@ -28,6 +28,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#include "tscore/UDP_stubs.h"
+
 TEST_CASE("QUICPathValidator", "[quic]")
 {
   MockQUICConnectionInfoProvider cinfo_provider;
