@@ -53,7 +53,6 @@ public:
   /**
      Add IOBufferBlock (chain) to end of packet.
      @param block block chain to add.
-
    */
   void append_block(IOBufferBlock *block);
 
@@ -65,7 +64,27 @@ public:
   LINK(UDPPacket, link);
 
   // Factory (static) methods
+
+  /**
+     Create a new packet to be sent over UDPConnection.  Packet has no
+     destination or data.
+  */
   static UDPPacket *new_UDPPacket();
+
+  /**
+     Create a new packet to be sent over UDPConnection. This actually
+     copies data from a buffer.
+
+     @param to  address of where to send packet
+     @param when ink_hrtime relative to ink_get_hrtime_internal()
+     @param buf IOBufferBlock chain of data to use
+     @param segment_size Segment size
+  */
   static UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0);
+
+  /**
+     Create a new packet to be delivered to application.
+     Internal function only
+  */
   static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block);
 };
