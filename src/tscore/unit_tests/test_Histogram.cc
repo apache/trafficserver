@@ -35,15 +35,15 @@ TEST_CASE("Histogram Basic", "[libts][histogram]")
   h(12);
   REQUIRE(h[10] == 1);
 
-  REQUIRE(h.lower_bound(0) == 0);
-  REQUIRE(h.lower_bound(3) == 3);
-  REQUIRE(h.lower_bound(4) == 4);
-  REQUIRE(h.lower_bound(8) == 8);
-  REQUIRE(h.lower_bound(9) == 10);
-  REQUIRE(h.lower_bound(12) == 16);
-  REQUIRE(h.lower_bound(13) == 20);
-  REQUIRE(h.lower_bound(16) == 32);
-  REQUIRE(h.lower_bound(17) == 40);
+  REQUIRE(h.min_for_bucket(0) == 0);
+  REQUIRE(h.min_for_bucket(3) == 3);
+  REQUIRE(h.min_for_bucket(4) == 4);
+  REQUIRE(h.min_for_bucket(8) == 8);
+  REQUIRE(h.min_for_bucket(9) == 10);
+  REQUIRE(h.min_for_bucket(12) == 16);
+  REQUIRE(h.min_for_bucket(13) == 20);
+  REQUIRE(h.min_for_bucket(16) == 32);
+  REQUIRE(h.min_for_bucket(17) == 40);
 
   for (auto x : {0, 1, 4, 6, 19, 27, 36, 409, 16000, 1097}) {
     h(x);
@@ -51,6 +51,6 @@ TEST_CASE("Histogram Basic", "[libts][histogram]")
   REQUIRE(h[0] == 1);
   REQUIRE(h[1] == 1);
   REQUIRE(h[2] == 0);
-  REQUIRE(h[12] == 1); // sample 19 shoud be here.
+  REQUIRE(h[12] == 1); // sample 19 should be here.
   REQUIRE(h[14] == 1); // sample 27 should be here.
 };
