@@ -76,6 +76,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   QUICConfig::startup();
   QUICCertConfig::startup();
   QUICCertConfig::scoped_config certs;
+  QUICConfig::scoped_config params;
   SSLCertContext *context = certs->get(0);
 
   quiche_enable_debug_logging(debug_log, NULL);
@@ -95,8 +96,8 @@ QUICNetProcessor::start(int, size_t stacksize)
   quiche_config_set_initial_max_stream_data_bidi_local(this->_quiche_config, 1000000);
   quiche_config_set_initial_max_stream_data_bidi_remote(this->_quiche_config, 1000000);
   quiche_config_set_initial_max_stream_data_uni(this->_quiche_config, 1000000);
-  quiche_config_set_initial_max_streams_bidi(this->_quiche_config, 100);
-  quiche_config_set_initial_max_streams_uni(this->_quiche_config, 100);
+  quiche_config_set_initial_max_streams_bidi(this->_quiche_config, params->initial_max_streams_bidi_in());
+  quiche_config_set_initial_max_streams_uni(this->_quiche_config, params->initial_max_streams_uni_in());
   quiche_config_set_cc_algorithm(this->_quiche_config, QUICHE_CC_RENO);
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
