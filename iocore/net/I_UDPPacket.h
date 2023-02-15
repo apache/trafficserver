@@ -32,6 +32,7 @@
 #pragma once
 
 #include "I_UDPConnection.h"
+
 /** @name UDPPacket
     UDP packet functions used by UDPConnection
  */
@@ -42,13 +43,47 @@
 class UDPPacket
 {
 public:
-  virtual ~UDPPacket() {}
-  virtual void free(); // fast deallocate
-  void setContinuation(Continuation *c);
-  void setConnection(UDPConnection *c);
-  UDPConnection *getConnection();
-  IOBufferBlock *getIOBlockChain();
-  int64_t getPktLength() const;
+  UDPPacket();
+  ~UDPPacket();
+  void free(); // fast deallocate
+
+  void
+  setContinuation(Continuation *c)
+  {
+    cont = c;
+  }
+
+  void
+  setConnection(UDPConnection *c)
+  {
+    /*Code reviewed by Case Larsen.  Previously, we just had
+       ink_assert(!conn).  This prevents tunneling of packets
+       correctly---that is, you get packets from a server on a udp
+       conn. and want to send it to a player on another connection, the
+       assert will prevent that.  The "if" clause enables correct
+       handling of the connection ref. counts in such a scenario. */
+
+    if (conn) {
+      if (conn == c)
+        return;
+      conn->Release();
+      conn = nullptr;
+    }
+    conn = c;
+    conn->AddRef();
+  }
+
+  UDPConnection *
+  getConnection()
+  {
+    return conn;
+  }
+  IOBufferBlock *
+  getIOBlockChain()
+  {
+    return chain.get();
+  };
+  int64_t getPktLength();
 
   /**
      Add IOBufferBlock (chain) to end of packet.
@@ -62,6 +97,20 @@ public:
   int from_size;
 
   LINK(UDPPacket, link);
+  SLINK(UDPPacket, alink); // atomic link
+  // packet scheduling stuff: keep it a doubly linked list
+  uint64_t pktLength    = 0;
+  uint16_t segment_size = 0;
+
+  int reqGenerationNum     = 0;
+  ink_hrtime delivery_time = 0; // when to deliver packet
+
+  Ptr<IOBufferBlock> chain;
+  Continuation *cont  = nullptr; // callback on error
+  UDPConnection *conn = nullptr; // connection where packet should be sent to.
+
+  int in_the_priority_queue = 0;
+  int in_heap               = 0;
 
   // Factory (static) methods
 

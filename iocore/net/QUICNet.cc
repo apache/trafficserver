@@ -28,7 +28,7 @@
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 
 void
-QUICPollEvent::init(QUICConnection *con, UDPPacketInternal *packet)
+QUICPollEvent::init(QUICConnection *con, UDPPacket *packet)
 {
   this->con    = con;
   this->packet = packet;
@@ -64,7 +64,7 @@ QUICPollCont::~QUICPollCont() {}
 void
 QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p   = e->packet;
+  UDPPacket *p           = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;
@@ -158,7 +158,7 @@ QUICPollCont::pollEvent(int, Event *)
   Queue<QUICPollEvent> result;
   while ((e = aq.pop())) {
     QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(e->con);
-    UDPPacketInternal *p    = e->packet;
+    UDPPacket *p            = e->packet;
     if (qvc != nullptr && qvc->in_closed_queue) {
       p->free();
       e->free();

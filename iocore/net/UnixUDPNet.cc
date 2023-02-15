@@ -45,30 +45,19 @@
 
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
-ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
+ClassAllocator<UDPPacket> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
-
-void
-UDPPacketInternal::free()
-{
-  chain = nullptr;
-  if (conn)
-    conn->Release();
-  conn = nullptr;
-  udpPacketAllocator.free(this);
-}
 
 UDPPacket *
 UDPPacket::new_UDPPacket()
 {
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
-  return p;
+  return udpPacketAllocator.alloc();
 }
 
 UDPPacket *
 UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size)
 {
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
+  UDPPacket *p = udpPacketAllocator.alloc();
 
   p->in_the_priority_queue = 0;
   p->in_heap               = 0;
@@ -83,7 +72,7 @@ UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBuffe
 UDPPacket *
 UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block)
 {
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
+  UDPPacket *p = udpPacketAllocator.alloc();
 
   p->in_the_priority_queue = 0;
   p->in_heap               = 0;
@@ -95,14 +84,14 @@ UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Pt
   return p;
 }
 
-UDPPacketInternal::UDPPacketInternal()
+UDPPacket::UDPPacket()
 
 {
   memset(&from, '\0', sizeof(from));
   memset(&to, '\0', sizeof(to));
 }
 
-UDPPacketInternal::~UDPPacketInternal()
+UDPPacket::~UDPPacket()
 {
   chain = nullptr;
 }
@@ -110,7 +99,7 @@ UDPPacketInternal::~UDPPacketInternal()
 void
 UDPPacket::append_block(IOBufferBlock *block)
 {
-  UDPPacketInternal *p = static_cast<UDPPacketInternal *>(this);
+  UDPPacket *p = this;
 
   if (block) {
     if (p->chain) { // append to end
@@ -126,9 +115,9 @@ UDPPacket::append_block(IOBufferBlock *block)
 }
 
 int64_t
-UDPPacket::getPktLength() const
+UDPPacket::getPktLength()
 {
-  UDPPacketInternal *p = const_cast<UDPPacketInternal *>(static_cast<const UDPPacketInternal *>(this));
+  UDPPacket *p = this;
   IOBufferBlock *b;
 
   p->pktLength = 0;
@@ -143,48 +132,11 @@ UDPPacket::getPktLength() const
 void
 UDPPacket::free()
 {
-  static_cast<UDPPacketInternal *>(this)->free();
-}
-
-void
-UDPPacket::setContinuation(Continuation *c)
-{
-  static_cast<UDPPacketInternal *>(this)->cont = c;
-}
-
-void
-UDPPacket::setConnection(UDPConnection *c)
-{
-  /*Code reviewed by Case Larsen.  Previously, we just had
-     ink_assert(!conn).  This prevents tunneling of packets
-     correctly---that is, you get packets from a server on a udp
-     conn. and want to send it to a player on another connection, the
-     assert will prevent that.  The "if" clause enables correct
-     handling of the connection ref. counts in such a scenario. */
-
-  UDPConnectionInternal *&conn = static_cast<UDPPacketInternal *>(this)->conn;
-
-  if (conn) {
-    if (conn == c)
-      return;
+  chain = nullptr;
+  if (conn)
     conn->Release();
-    conn = nullptr;
-  }
-  conn = static_cast<UDPConnectionInternal *>(c);
-  conn->AddRef();
-}
-
-IOBufferBlock *
-UDPPacket::getIOBlockChain()
-{
-  ink_assert(dynamic_cast<UDPPacketInternal *>(this) != nullptr);
-  return static_cast<UDPPacketInternal *>(this)->chain.get();
-}
-
-UDPConnection *
-UDPPacket::getConnection()
-{
-  return static_cast<UDPPacketInternal *>(this)->conn;
+  conn = nullptr;
+  udpPacketAllocator.free(this);
 }
 
 //
@@ -393,7 +345,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
-    uc->inQueue.push((UDPPacketInternal *)p);
+    uc->inQueue.push((UDPPacket *)p);
 
     // reload the unused block
     chain      = next_chain;
@@ -1038,10 +990,10 @@ UDPQueue::service(UDPNetHandler *nh)
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
   ink_hrtime pktSendTime;
-  UDPPacketInternal *p = nullptr;
+  UDPPacket *p = nullptr;
 
-  SList(UDPPacketInternal, alink) aq(outQueue.popall());
-  Queue<UDPPacketInternal> stk;
+  SList(UDPPacket, alink) aq(outQueue.popall());
+  Queue<UDPPacket> stk;
   while ((p = aq.pop())) {
     stk.push(p);
   }
@@ -1079,7 +1031,7 @@ UDPQueue::service(UDPNetHandler *nh)
 void
 UDPQueue::SendPackets()
 {
-  UDPPacketInternal *p;
+  UDPPacket *p;
   static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
   ink_hrtime now                    = Thread::get_hrtime_updated();
   ink_hrtime send_threshold_time    = now + SLOT_TIME;
@@ -1094,7 +1046,7 @@ UDPQueue::SendPackets()
 #else
   constexpr int N_MAX_PACKETS = 1024;
 #endif
-  UDPPacketInternal *packets[N_MAX_PACKETS];
+  UDPPacket *packets[N_MAX_PACKETS];
   int nsent;
   int npackets;
 
@@ -1148,7 +1100,7 @@ sendPackets:
 }
 
 void
-UDPQueue::SendUDPPacket(UDPPacketInternal *p)
+UDPQueue::SendUDPPacket(UDPPacket *p)
 {
   struct msghdr msg;
   struct iovec iov[32];
@@ -1283,11 +1235,11 @@ void
 UDPQueue::send(UDPPacket *p)
 {
   // XXX: maybe fastpath for immediate send?
-  outQueue.push((UDPPacketInternal *)p);
+  outQueue.push((UDPPacket *)p);
 }
 
 int
-UDPQueue::SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n)
+UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
 {
 #ifdef HAVE_SENDMMSG
   struct mmsghdr *msgvec;

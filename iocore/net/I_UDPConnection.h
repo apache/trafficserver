@@ -100,6 +100,15 @@ public:
   void bindToThread(Continuation *c, EThread *t);
 
   virtual void UDPConnection_is_abstract() = 0;
+
+  // this is for doing packet scheduling: we keep two values so that we can
+  // implement cancel.  The first value tracks the startTime of the last
+  // packet that was sent on this connection; the second value tracks the
+  // startTime of the last packet when we are doing scheduling;  whenever the
+  // associated continuation cancels a packet, we rest lastPktStartTime to be
+  // the same as the lastSentPktStartTime.
+  uint64_t lastSentPktStartTime = 0;
+  uint64_t lastPktStartTime     = 0;
 };
 
 extern UDPConnection *new_UDPConnection(int fd);

@@ -34,9 +34,9 @@
 
 UnixUDPConnection::~UnixUDPConnection()
 {
-  UDPPacketInternal *p = nullptr;
+  UDPPacket *p = nullptr;
 
-  SList(UDPPacketInternal, alink) aq(inQueue.popall());
+  SList(UDPPacket, alink) aq(inQueue.popall());
 
   if (!tobedestroyed) {
     tobedestroyed = 1;
@@ -76,11 +76,11 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     Release();
     return EVENT_CONT;
   } else {
-    UDPPacketInternal *p = nullptr;
-    SList(UDPPacketInternal, alink) aq(inQueue.popall());
+    UDPPacket *p = nullptr;
+    SList(UDPPacket, alink) aq(inQueue.popall());
 
     Debug("udpnet", "UDPConnection::callbackHandler");
-    Queue<UDPPacketInternal> result;
+    Queue<UDPPacket> result;
     while ((p = aq.pop())) {
       result.push(p);
     }
@@ -113,7 +113,7 @@ UDPConnection::bindToThread(Continuation *c, EThread *t)
 Action *
 UDPConnection::send(Continuation *c, UDPPacket *xp)
 {
-  UDPPacketInternal *p    = (UDPPacketInternal *)xp;
+  UDPPacket *p            = (UDPPacket *)xp;
   UnixUDPConnection *conn = (UnixUDPConnection *)this;
 
   if (shouldDestroy()) {

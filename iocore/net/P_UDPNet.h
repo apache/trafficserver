@@ -73,8 +73,8 @@ public:
   virtual ~PacketQueue() {}
   int nPackets                 = 0;
   ink_hrtime lastPullLongTermQ = 0;
-  Queue<UDPPacketInternal> longTermQ;
-  Queue<UDPPacketInternal> bucket[N_SLOTS];
+  Queue<UDPPacket> longTermQ;
+  Queue<UDPPacket> bucket[N_SLOTS];
   ink_hrtime delivery_time[N_SLOTS];
   int now_slot = 0;
 
@@ -93,7 +93,7 @@ public:
   }
 
   void
-  addPacket(UDPPacketInternal *e, ink_hrtime now = 0)
+  addPacket(UDPPacket *e, ink_hrtime now = 0)
   {
     int before = 0;
     int slot;
@@ -136,7 +136,7 @@ public:
     bucket[slot].enqueue(e);
   }
 
-  UDPPacketInternal *
+  UDPPacket *
   firstPacket(ink_hrtime t)
   {
     if (t > delivery_time[now_slot]) {
@@ -146,7 +146,7 @@ public:
     }
   }
 
-  UDPPacketInternal *
+  UDPPacket *
   getFirstPacket()
   {
     nPackets--;
@@ -161,7 +161,7 @@ public:
   }
 
   bool
-  IsCancelledPacket(UDPPacketInternal *p)
+  IsCancelledPacket(UDPPacket *p)
   {
     // discard packets that'll never get sent...
     return ((p->conn->shouldDestroy()) || (p->conn->GetSendGenerationNumber() != p->reqGenerationNum));
@@ -170,12 +170,12 @@ public:
   void
   FreeCancelledPackets(int numSlots)
   {
-    Queue<UDPPacketInternal> tempQ;
+    Queue<UDPPacket> tempQ;
     int i;
 
     for (i = 0; i < numSlots; i++) {
       int s = (now_slot + i) % N_SLOTS;
-      UDPPacketInternal *p;
+      UDPPacket *p;
       while (nullptr != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
           p->free();
@@ -196,8 +196,8 @@ public:
     int s = now_slot;
 
     if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
-      Queue<UDPPacketInternal> tempQ;
-      UDPPacketInternal *p;
+      Queue<UDPPacket> tempQ;
+      UDPPacket *p;
       // pull in all the stuff from long-term slot
       lastPullLongTermQ = t;
       // this is to handle weirdness where someone is trying to queue a
@@ -233,7 +233,7 @@ public:
 
 private:
   void
-  remove(UDPPacketInternal *e)
+  remove(UDPPacket *e)
   {
     nPackets--;
     ink_assert(e->in_the_priority_queue);
@@ -242,11 +242,11 @@ private:
   }
 
 public:
-  UDPPacketInternal *
+  UDPPacket *
   dequeue_ready(ink_hrtime t)
   {
     (void)t;
-    UDPPacketInternal *e = bucket[now_slot].dequeue();
+    UDPPacket *e = bucket[now_slot].dequeue();
     if (e) {
       ink_assert(e->in_the_priority_queue);
       e->in_the_priority_queue = 0;
@@ -288,13 +288,13 @@ class UDPQueue
 
 public:
   // Outgoing UDP Packet Queue
-  ASLL(UDPPacketInternal, alink) outQueue;
+  ASLL(UDPPacket, alink) outQueue;
 
   void service(UDPNetHandler *);
 
   void SendPackets();
-  void SendUDPPacket(UDPPacketInternal *p);
-  int SendMultipleUDPPackets(UDPPacketInternal **p, uint16_t n);
+  void SendUDPPacket(UDPPacket *p);
+  int SendMultipleUDPPackets(UDPPacket **p, uint16_t n);
 
   // Interface exported to the outside world
   void send(UDPPacket *p);
