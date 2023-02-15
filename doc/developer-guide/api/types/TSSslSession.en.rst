@@ -34,6 +34,7 @@ Synopsis
 
    .. member:: size_t len
 
+   .. member:: char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH]
 
 .. type:: TSSslSession
 
@@ -47,3 +48,4 @@ opaque TS object type).
 
 
 :type:`TSSslSession` references the SSL session object.  It can be cast to the OpenSSL type ``SSL_SESSION``.
+
