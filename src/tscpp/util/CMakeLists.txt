@@ -20,6 +20,7 @@ add_library(tscpputil SHARED
         TextView.cc
         YamlCfg.cc
         )
+target_link_libraries(tscpputil PRIVATE yaml-cpp libswoc)
 
 add_executable(test_tscpputil
         unit_tests/test_LocalBuffer.cc
@@ -29,5 +30,5 @@ add_executable(test_tscpputil
         unit_tests/test_ts_meta.cc
         unit_tests/unit_test_main.cc
         )
-target_link_libraries(test_tscpputil PRIVATE tscpputil)
+target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc)
 target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})

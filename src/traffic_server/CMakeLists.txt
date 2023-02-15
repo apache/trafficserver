@@ -24,6 +24,7 @@ add_executable(traffic_server
         InkIOCoreAPI.cc
         SocksProxy.cc
         traffic_server.cc
+        RpcAdminPubHandlers.cc
         ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
 )
 target_include_directories(traffic_server PRIVATE
@@ -38,8 +39,8 @@ target_link_libraries(traffic_server
         http2
         logging
         hdrs
+        configmanager
         diagsconfig
-        mgmt_p
         utils_p
         inkutils
         inkdns
@@ -54,4 +55,8 @@ target_link_libraries(traffic_server
         records_p
         inkevent
         yaml-cpp
+        libswoc
+        jsonrpc_protocol
+        jsonrpc_server
+        rpcpublichandlers
         )

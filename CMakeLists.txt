@@ -108,9 +108,6 @@ include(CTest)
 
 message("Configuring for ${HOST_OS}")
 
-configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
-configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
-
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options(-Wno-invalid-offsetof)
 
@@ -125,10 +122,24 @@ if (OPENSSL_FOUND)
 endif(OPENSSL_FOUND)
 
 add_subdirectory(lib)
+include_directories(
+        ${CMAKE_SOURCE_DIR}/lib/swoc/include
+        ${YAML_CPP_SOURCE_DIR}/include
+)
+
+include(subproject_version)
+
+subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
+
+configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
+configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
+
 add_subdirectory(src/tscpp/util)
 add_subdirectory(src/tscore)
 add_subdirectory(src/records)
 add_subdirectory(iocore)
 add_subdirectory(proxy)
 add_subdirectory(mgmt/utils)
+add_subdirectory(mgmt/config)
+add_subdirectory(mgmt/rpc)
 add_subdirectory(src/traffic_server)

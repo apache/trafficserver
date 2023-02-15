@@ -33,7 +33,7 @@ AM_CPPFLAGS += \
   $(TS_INCLUDES) @SWOC_INCLUDES@ \
   @YAMLCPP_INCLUDES@
 
-# ^^ all the proxy/* is to include the PluginCallbacks.
+# ^^ all the proxy is to include the PluginCallbacks.
 
 noinst_LTLIBRARIES = libconfigmanager.la
 #check_PROGRAMS = test_configfiles

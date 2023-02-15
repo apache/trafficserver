@@ -15,12 +15,18 @@
 #
 #######################
 
-
-
-# yamlcpp shadows a bunch of variables but we don't want to hear bout it
-add_compile_options(-Wno-shadow)
-add_subdirectory(yamlcpp)
-set(YAML_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include PARENT_SCOPE)
-add_subdirectory(fastlz)
-add_subdirectory(swoc)
-set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
+add_library(configmanager STATIC
+        FileManager.cc
+        AddConfigFilesHere.cc
+)
+include_directories(
+        ${CMAKE_SOURCE_DIR}/mgmt
+        ${CMAKE_SOURCE_DIR}/proxy
+        ${CMAKE_SOURCE_DIR}/proxy/hdrs
+        ${CMAKE_SOURCE_DIR}/proxy/http
+        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
+        ${CMAKE_SOURCE_DIR}/iocore/net
+        ${CMAKE_SOURCE_DIR}/iocore/cache
+        ${CMAKE_SOURCE_DIR}/iocore/aio
+        ${CMAKE_SOURCE_DIR}/iocore/dns
+)
