@@ -100,7 +100,7 @@ QUICPacketHandler::_send_packet(const QUICPacket &packet, UDPConnection *udp_con
 void
 QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload)
 {
-  UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
+  UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload);
 
   if (is_debug_tag_set(v_debug_tag)) {
     ip_port_text_buffer ipb;
