@@ -27,8 +27,6 @@
 #include "quic/QUICPacketFactory.h"
 #include "quic/Mock.h"
 
-#include "tscore/UDP_stubs.h"
-
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
   MockQUICPacketProtectionKeyInfo pp_key_info;

@@ -27,8 +27,6 @@
 #include <fstream>
 #include <iomanip>
 
-#include "tscore/UDP_stubs.h"
-
 #ifdef OPENSSL_IS_BORINGSSL
 #include <openssl/base.h>
 #endif

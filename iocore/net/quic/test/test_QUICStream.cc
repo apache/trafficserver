@@ -28,8 +28,6 @@
 #include "quic/QUICStreamVCAdapter.h"
 #include "quic/Mock.h"
 
-#include "tscore/UDP_stubs.h"
-
 TEST_CASE("QUICBidiStream", "[quic]")
 {
   // Test Data
