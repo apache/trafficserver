@@ -301,10 +301,15 @@ Edge Cache Debugging
 
 To include debugging output for this plugin in your |TS| logs, adjust the values
 for :ts:cv:`proxy.config.diags.debug.enabled` and
-:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.yaml` as so::
+:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.yaml` as so:
 
-    CONFIG proxy.config.diags.debug.enabled INT 1
-    CONFIG proxy.config.diags.debug.tags STRING url_sig
+.. code-block:: yaml
+
+   ts:
+     diags:
+       debug:
+         enabled: 1
+         tags: url_sig
 
 Once updated, issue a :option:`traffic_ctl config reload` to make the settings
 active.

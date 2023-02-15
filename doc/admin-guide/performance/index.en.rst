@@ -196,9 +196,13 @@ On multi-socket servers, such as Intel architectures with NUMA, you can adjust
 the thread affinity configuration to take advantage of cache pipelines and
 faster memory access, as well as preventing possibly costly thread migrations
 across sockets. This is adjusted with :ts:cv:`proxy.config.exec_thread.affinity`
-in :file:`records.yaml`. ::
+in :file:`records.yaml`.:
 
-    CONFIG proxy.config.exec_thread.affinity INT 1
+.. code-block:: yaml
+
+   ts:
+     exec_thread:
+       affinity: 1
 
 Thread Stack Size
 ~~~~~~~~~~~~~~~~~
@@ -264,9 +268,12 @@ inactive (have not sent data). Lowering this timeout can ease pressure on the
 proxy if misconfigured or misbehaving clients are opening a large number of
 connections without submitting requests.
 
-::
 
-    CONFIG proxy.config.http.accept_no_activity_timeout INT 120
+.. code-block:: yaml
+
+   ts:
+     http:
+       accept_no_activity_timeout: 120
 
 Background Fill Timeout
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -278,9 +285,11 @@ server connection that was being used. Setting this to zero disables the
 timeout, but modifying the value and enforcing a timeout may help in
 situations where your origin servers stall connections without closing.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.http.background_fill_active_timeout INT 0
+   ts:
+     http:
+       background_fill_active_timeout: 0
 
 DNS Timeouts
 ~~~~~~~~~~~~
@@ -298,10 +307,13 @@ instance from updating its records to reflect external DNS record changes in a
 timely manner (refer to :ts:cv:`proxy.config.hostdb.ttl_mode` for more
 information on when this TTL value will actually be used).
 
-::
 
-    CONFIG proxy.config.hostdb.timeout INT 1440
-    CONFIG proxy.config.hostdb.lookup_timeout INT 30
+.. code-block:: yaml
+
+   ts:
+     hostdb:
+       lookup_timeout: 30
+       timeout: 1440
 
 Keepalive Timeouts
 ~~~~~~~~~~~~~~~~~~
@@ -316,10 +328,12 @@ Both are specified in seconds. Keep in mind that
 effectively an advisory maximum, as the origin server may have its own
 keepalive timeout which (if set lower) will likely take precedence.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
-    CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
+   ts:
+     http:
+       keep_alive_no_activity_timeout_in: 120
+       keep_alive_no_activity_timeout_out: 120
 
 Origin Connection Timeouts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -331,18 +345,24 @@ connection attempt until the origin fully establishes a connection (the connecti
 After the connection is established the value of
 :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` is used to established timeouts on the data over the connection.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.http.connect_attempts_timeout INT 30
+   ts:
+     http:
+       connect_attempts_timeout: 30
 
 Polling Timeout
 ~~~~~~~~~~~~~~~
 
 If you are experiencing unusually or unacceptably high CPU utilization during
 idle workloads, you may consider adjusting the polling timeout with
-:ts:cv:`proxy.config.net.poll_timeout`::
+:ts:cv:`proxy.config.net.poll_timeout`.
 
-    CONFIG proxy.config.net.poll_timeout INT 60
+.. code-block:: yaml
+
+   ts:
+     net:
+       poll_timeout: 60
 
 SOCKS Timeouts
 ~~~~~~~~~~~~~~
@@ -358,12 +378,15 @@ is the timeout for the actual connection attempt on a retry, not the delay
 after which a retry will be performed (the delay is configured with
 :ts:cv:`proxy.config.socks.server_retry_time`).
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.socks.socks_timeout INT 100
-    CONFIG proxy.config.socks.server_connect_timeout INT 10
-    CONFIG proxy.config.socks.server_retry_timeout INT 300
-    CONFIG proxy.config.socks.server_retry_time INT 300
+   ts:
+     socks:
+       server_connect_timeout: 10
+       server_retry_time: 300
+       server_retry_timeout: 300
+       socks_timeout: 100
+
 
 SSL Timeouts
 ~~~~~~~~~~~~
@@ -385,12 +408,17 @@ the remote OCSP responders, in seconds, with
 Lastly, you can control the number of seconds for which SSL sessions will be
 cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.ssl.handshake_timeout_in INT 30
-    CONFIG proxy.config.ssl.ocsp.cache_timeout INT 3600
-    CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
-    CONFIG proxy.config.ssl.session_cache.timeout INT 0
+   ts:
+     ssl:
+       handshake_timeout_in: 30
+       ocsp:
+         cache_timeout: 3600
+         request_timeout: 10
+       session_cache:
+         timeout: 0
+
 
 Transaction Activity Timeouts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -427,12 +455,14 @@ and not transmitting data, for clients and origin servers respectively.
 Unlike the active transaction timeouts, these two inactive transaction timeout
 values prove somewhat more generally applicable.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.http.transaction_active_timeout_in INT 900
-    CONFIG proxy.config.http.transaction_active_timeout_out INT 0
-    CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
-    CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
+   ts:
+     http:
+       transaction_active_timeout_in: 900
+       transaction_active_timeout_out: 0
+       transaction_no_activity_timeout_in: 30
+       transaction_no_activity_timeout_out: 30
 
 WebSocket Timeouts
 ~~~~~~~~~~~~~~~~~~
@@ -443,10 +473,13 @@ length of time a stalled WebSocket connection will remain before |TS| closes
 it. :ts:cv:`proxy.config.websocket.active_timeout` sets the maximum duration
 for all WebSocket connections, regardless of their level of activity.
 
-::
+.. code-block:: yaml
 
-    CONFIG proxy.config.websocket.no_activity_timeout INT 600
-    CONFIG proxy.config.websocket.active_timeout INT 3600
+   ts:
+     websocket:
+       active_timeout: 3600
+       no_activity_timeout: 600
+
 
 Memory Optimization
 -------------------
@@ -481,11 +514,15 @@ client request resulting in an origin request.
 This behavior is controlled by both enabling the feature via
 :ts:cv:`proxy.config.http.negative_caching_enabled` and setting the cache time
 (in seconds) with :ts:cv:`proxy.config.http.negative_caching_lifetime`. Configured
-status code for negative caching can be set with :ts:cv:`proxy.config.http.negative_caching_list`. ::
+status code for negative caching can be set with :ts:cv:`proxy.config.http.negative_caching_list`.
 
-    CONFIG proxy.config.http.negative_caching_enabled INT 1
-    CONFIG proxy.config.http.negative_caching_lifetime INT 10
-    CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
+.. code-block:: yaml
+
+  ts:
+    http:
+      negative_caching_enabled: 1
+      negative_caching_lifetime: 10
+      negative_caching_list: 204 305 403 404 414 500 501 502 503 504
 
 SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~

@@ -57,10 +57,8 @@ ${PREFIX}/bin/trafficserver stop
 
 # Now run it again, maybe, with the tweaked configs
 if [ "" != "$TWEAK" ]; then
+    ${PREFIX}/bin/traffic_ctl config set proxy.config.http.negative_caching_enabled 1 -c $RECORDS
     ${PREFIX}/bin/trafficserver start
-    sleep 5
-    ${PREFIX}/bin/traffic_ctl config set proxy.config.http.negative_caching_enabled 1
-    sleep 5
     cd /home/jenkins/cache-tests
     npm run --silent cli --base=http://127.0.0.1:8080 > /CA/cache-tests/${ATS_BRANCH}${TWEAK}.json
     echo "TWEAKED RESULTS"

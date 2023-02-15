@@ -64,10 +64,14 @@ below:
 Sets the following variables in :file:`records.yaml` (in the Traffic Server
 ``config`` directory):
 
-::
+.. code-block:: yaml
 
-       CONFIG proxy.config.diags.debug.enabled INT 1
-       CONFIG proxy.config.diags.debug.tags STRING debug-tag-name
+   ts:
+     diags:
+       debug:
+         enabled: 1
+         tags: debug-tag-name
+
 
 (Performance will be better if ``enabled`` is set to 3 rather than 1, but,
 using 3, output from ``TSDebug()`` will not be enabled, only from ``TSDbg()``.)

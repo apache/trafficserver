@@ -91,9 +91,13 @@ Instead of specifying the directives and their values in :file:`remap.config`
 as you do with the in-line method, you place all the affected directives in a
 separate text file. The location and name is entirely up to you, but we'll use
 `/etc/trafficserver/cdn_conf_remap.config` here. The contents of this file
-should mirror how configuration directives are written in :file:`records.yaml`::
+should mirror how configuration directives are written in :file:`records.yaml`:
 
-    CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
+.. code-block:: yaml
+
+   ts:
+     url_remap:
+       pristine_host_hdr: 1
 
 Your :file:`remap.config` will then contain remapping rules that point to this
 external file::
