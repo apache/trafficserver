@@ -1607,8 +1607,8 @@ plugins required to work with sni_routing.
       //   jump to an error state so just continue
       api_next = API_RETURN_CONTINUE;
     } else if (t_state.api_http_sm_shutdown) {
-      t_state.api_http_sm_shutdown   = false;
-      t_state.cache_info.object_read = nullptr;
+      t_state.api_http_sm_shutdown = false;
+      t_state.cache_info.set_object_read(nullptr);
       cache_sm.close_read();
       transform_cache_sm.close_read();
       release_server_session();
@@ -1690,7 +1690,7 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
     if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
-      t_state.cache_info.object_read = nullptr;
+      t_state.cache_info.set_object_read(nullptr);
       t_state.request_sent_time      = UNDEFINED_TIME;
       t_state.response_received_time = UNDEFINED_TIME;
       cache_sm.close_read();
@@ -2532,10 +2532,10 @@ HttpSM::state_cache_open_write(int event, void *data)
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
-      if (!t_state.cache_info.object_read ||
+      if (!t_state.cache_info.get_object_read() ||
           (t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
         // cache miss, set wl_state to fail
-        SMDebug("http", "cache object read %p, cache_wl_fail_action %d", t_state.cache_info.object_read,
+        SMDebug("http", "cache object read %p, cache_wl_fail_action %d", t_state.cache_info.get_object_read(),
                 t_state.cache_open_write_fail_action);
         t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
         break;
@@ -2544,18 +2544,18 @@ HttpSM::state_cache_open_write(int event, void *data)
   // INTENTIONAL FALL THROUGH
   // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
-    if (!t_state.cache_info.object_read) {
+    if (!t_state.cache_info.get_object_read()) {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
       // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
       // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
       ink_assert(t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
-      t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+      t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_NONE);
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
       break;
     }
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
-    cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
+    t_state.cache_info.set_object_read(cache_sm.cache_read_vc->get_http_info());
     // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
     if (cache_sm.cache_read_vc->is_ram_cache_hit()) {
       t_state.cache_info.hit_miss_code = SQUID_HIT_RAM;
@@ -2563,11 +2563,11 @@ HttpSM::state_cache_open_write(int event, void *data)
       t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
     }
 
-    ink_assert(t_state.cache_info.object_read != nullptr);
+    ink_assert(t_state.cache_info.get_object_read() != nullptr);
     t_state.source = HttpTransact::SOURCE_CACHE;
     // clear up CACHE_LOOKUP_MISS, let Freshness function decide
     // hit status
-    t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+    t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_NONE);
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
     break;
 
@@ -2618,7 +2618,7 @@ HttpSM::state_cache_open_read(int event, void *data)
   pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   ink_assert(server_entry == nullptr);
-  ink_assert(t_state.cache_info.object_read == nullptr);
+  ink_assert(t_state.cache_info.get_object_read() == nullptr);
 
   switch (event) {
   case CACHE_EVENT_OPEN_READ: {
@@ -2632,7 +2632,7 @@ HttpSM::state_cache_open_read(int event, void *data)
     ink_assert(cache_sm.cache_read_vc != nullptr);
     t_state.source = HttpTransact::SOURCE_CACHE;
 
-    cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
+    t_state.cache_info.set_object_read(cache_sm.cache_read_vc->get_http_info());
     // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
     if (cache_sm.cache_read_vc->is_ram_cache_hit()) {
       t_state.cache_info.hit_miss_code = SQUID_HIT_RAM;
@@ -2640,7 +2640,7 @@ HttpSM::state_cache_open_read(int event, void *data)
       t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
     }
 
-    ink_assert(t_state.cache_info.object_read != nullptr);
+    ink_assert(t_state.cache_info.get_object_read() != nullptr);
     call_transact_and_set_next_state(HttpTransact::HandleCacheOpenRead);
     break;
   }
@@ -2654,9 +2654,9 @@ HttpSM::state_cache_open_read(int event, void *data)
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
-      t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
+      t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_DOC_BUSY);
     } else {
-      t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
+      t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_MISS);
     }
 
     ink_assert(t_state.transact_return_point == nullptr);
@@ -3485,8 +3485,8 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
   switch (event) {
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-    ink_assert(t_state.cache_info.object_read->valid());
-    if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
+    ink_assert(t_state.cache_info.get_object_read()->valid());
+    if (t_state.cache_info.get_object_read()->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
       t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
       p->vc->do_io_close(EHTTP_ERROR);
@@ -4532,11 +4532,11 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     ranges[nr]._end   = end;
     ++nr;
 
-    if (cache_sm.cache_read_vc && t_state.cache_info.object_read) {
+    if (cache_sm.cache_read_vc && t_state.cache_info.get_object_read()) {
       if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer == 2) {
         // write in progress, check if request range not in cache yet
-        HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
-        int frag_offset_cnt                   = t_state.cache_info.object_read->get_frag_offset_count();
+        HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.get_object_read()->get_frag_table();
+        int frag_offset_cnt                   = t_state.cache_info.get_object_read()->get_frag_offset_count();
 
         if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < static_cast<uint64_t>(end))) {
           SMDebug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d" PRId64, end, frag_offset_cnt);
@@ -4601,9 +4601,10 @@ HttpSM::do_range_parse(MIMEField *range_field)
   int num_chars_for_ct   = 0;
   int64_t content_length = 0;
 
-  if (t_state.cache_info.object_read != nullptr) {
-    t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
-    content_length = t_state.cache_info.object_read->object_size_get();
+  if (t_state.cache_info.get_object_read() != nullptr) {
+    t_state.cache_info.get_object_read()->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
+                                                                    &num_chars_for_ct);
+    content_length = t_state.cache_info.get_object_read()->object_size_get();
   } else {
     content_length = t_state.hdr_info.server_response.get_content_length();
     t_state.hdr_info.server_response.value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
@@ -4633,9 +4634,9 @@ HttpSM::do_range_setup_if_necessary()
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
       bool do_transform = false;
 
-      if (!t_state.range_in_cache && t_state.cache_info.object_read) {
+      if (!t_state.range_in_cache && t_state.cache_info.get_object_read()) {
         SMDebug("http_range", "range can't be satisfied from cache, force origin request");
-        t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
+        t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_MISS);
         return;
       }
 
@@ -4671,10 +4672,10 @@ HttpSM::do_range_setup_if_necessary()
           const char *content_type   = nullptr;
           int64_t content_length     = 0;
 
-          if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
-            content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
-                                                                                     &field_content_type_len);
-            content_length = t_state.cache_info.object_read->object_size_get();
+          if (t_state.cache_info.get_object_read() && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
+            content_type = t_state.cache_info.get_object_read()->response_get()->value_get(
+              MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+            content_length = t_state.cache_info.get_object_read()->object_size_get();
           } else {
             // We don't want to transform a range request if the server response has a content encoding.
             if (t_state.hdr_info.server_response.presence(MIME_PRESENCE_CONTENT_ENCODING)) {
@@ -4719,7 +4720,7 @@ HttpSM::do_cache_lookup_and_read()
   HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CACHE_LOOKUP_NONE;
+  t_state.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_NONE);
   t_state.cache_info.lookup_count++;
   // YTS Team, yamsat Plugin
   // Changed the lookup_url to c_url which enables even
@@ -4754,7 +4755,7 @@ void
 HttpSM::do_cache_delete_all_alts(Continuation *cont)
 {
   // Do not delete a non-existent object.
-  ink_assert(t_state.cache_info.object_read);
+  ink_assert(t_state.cache_info.get_object_read());
 
   SMDebug("http_seq", "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
@@ -4769,7 +4770,7 @@ inline void
 HttpSM::do_cache_prepare_write()
 {
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
-  do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, true);
+  do_cache_prepare_action(&cache_sm, t_state.cache_info.get_object_read(), true);
 }
 
 inline void
@@ -4785,11 +4786,11 @@ HttpSM::do_cache_prepare_write_transform()
 void
 HttpSM::do_cache_prepare_update()
 {
-  if (t_state.cache_info.object_read != nullptr && t_state.cache_info.object_read->valid() &&
+  if (t_state.cache_info.get_object_read() != nullptr && t_state.cache_info.get_object_read()->valid() &&
       t_state.cache_info.object_store.valid() && t_state.cache_info.object_store.response_get() != nullptr &&
       t_state.cache_info.object_store.response_get()->valid() &&
       t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
-    t_state.cache_info.object_store.request_set(t_state.cache_info.object_read->request_get());
+    t_state.cache_info.object_store.request_set(t_state.cache_info.get_object_read()->request_get());
     // t_state.cache_info.object_read = NULL;
     // cache_sm.close_read();
 
@@ -4797,7 +4798,7 @@ HttpSM::do_cache_prepare_update()
     ink_assert(cache_sm.cache_write_vc == nullptr);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
     // don't retry read for update
-    do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, false);
+    do_cache_prepare_action(&cache_sm, t_state.cache_info.get_object_read(), false);
   } else {
     t_state.api_modifiable_cached_resp = false;
     call_transact_and_set_next_state(HttpTransact::HandleApiErrorJump);
@@ -6385,7 +6386,7 @@ HttpSM::setup_cache_read_transfer()
 
   ink_assert(cache_sm.cache_read_vc != nullptr);
 
-  doc_size    = t_state.cache_info.object_read->object_size_get();
+  doc_size    = t_state.cache_info.get_object_read()->object_size_get();
   alloc_index = buffer_size_to_index(doc_size + index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX),
                                      t_state.http_config_param->max_payload_iobuf_index);
 
@@ -6439,7 +6440,7 @@ HttpSM::setup_cache_transfer_to_transform()
   // grab this here
   cache_response_hdr_bytes = t_state.hdr_info.cache_response.length_get();
 
-  doc_size                  = t_state.cache_info.object_read->object_size_get();
+  doc_size                  = t_state.cache_info.get_object_read()->object_size_get();
   alloc_index               = buffer_size_to_index(doc_size, t_state.http_config_param->max_payload_iobuf_index);
   MIOBuffer *buf            = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
@@ -7904,7 +7905,7 @@ HttpSM::set_next_state()
   }
   case HttpTransact::SM_ACTION_CACHE_ISSUE_UPDATE: {
     if (t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_ERROR) {
-      t_state.cache_info.object_read = nullptr;
+      t_state.cache_info.set_object_read(nullptr);
       cache_sm.close_read();
     }
     issue_cache_update();
@@ -8106,10 +8107,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   t_state.parent_info.clear();
 
   // Must reset whether the InkAPI has set the destination address
-  //  t_state.dns_info.api_addr_set_p = false;
+  //  t_state.api_server_addr_set = false;
 
   if (t_state.txn_conf->cache_http) {
-    t_state.cache_info.object_read = nullptr;
+    t_state.cache_info.set_object_read(nullptr);
   }
 
   bool noPortInHost = HttpConfig::m_master.redirection_host_no_port;
@@ -8274,7 +8275,7 @@ inline bool
 HttpSM::is_redirect_required()
 {
   bool redirect_required = (enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections) &&
-                            !HttpTransact::is_fresh_cache_hit(t_state.cache_lookup_result));
+                            !HttpTransact::is_fresh_cache_hit(t_state.get_cache_lookup_result()));
 
   SMDebug("http_redirect", "redirect_required: %u", redirect_required);
 

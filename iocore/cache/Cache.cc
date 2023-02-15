@@ -430,10 +430,10 @@ CacheVC::set_data(int /* i ATS_UNUSED */, void * /* data */)
   return true;
 }
 
-void
-CacheVC::get_http_info(CacheHTTPInfo **ainfo)
+CacheHTTPInfo *
+CacheVC::get_http_info()
 {
-  *ainfo = &(this)->alternate;
+  return &(this)->alternate;
 }
 
 // set_http_info must be called before do_io_write

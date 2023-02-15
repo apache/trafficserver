@@ -5272,7 +5272,7 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   sdk_assert(sdk_sanity_check_null_ptr((void *)obj) == TS_SUCCESS);
 
   HttpSM *sm           = (HttpSM *)txnp;
-  HTTPInfo *cached_obj = sm->t_state.cache_info.object_read;
+  HTTPInfo *cached_obj = sm->t_state.cache_info.get_object_read();
 
   // The following check is need to prevent the HttpSM handle copy from going bad
   // Since the cache manages the header buffer, sm->t_state.cache_info.object_read
@@ -5281,7 +5281,7 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     return TS_ERROR;
   }
 
-  HTTPHdr *cached_hdr = sm->t_state.cache_info.object_read->request_get();
+  HTTPHdr *cached_hdr = sm->t_state.cache_info.get_object_read()->request_get();
 
   if (!cached_hdr->valid()) {
     return TS_ERROR;
@@ -5310,7 +5310,7 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   sdk_assert(sdk_sanity_check_null_ptr((void *)obj) == TS_SUCCESS);
 
   HttpSM *sm           = (HttpSM *)txnp;
-  HTTPInfo *cached_obj = sm->t_state.cache_info.object_read;
+  HTTPInfo *cached_obj = sm->t_state.cache_info.get_object_read();
 
   // The following check is need to prevent the HttpSM handle copy from going bad
   // Since the cache manages the header buffer, sm->t_state.cache_info.object_read
@@ -5319,7 +5319,7 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     return TS_ERROR;
   }
 
-  HTTPHdr *cached_hdr = sm->t_state.cache_info.object_read->response_get();
+  HTTPHdr *cached_hdr = sm->t_state.cache_info.get_object_read()->response_get();
 
   if (!cached_hdr->valid()) {
     return TS_ERROR;
@@ -5351,7 +5351,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   HttpSM *sm                 = (HttpSM *)txnp;
   HttpTransact::State *s     = &(sm->t_state);
   HTTPHdr *c_resp            = nullptr;
-  HTTPInfo *cached_obj       = sm->t_state.cache_info.object_read;
+  HTTPInfo *cached_obj       = sm->t_state.cache_info.get_object_read();
   HTTPInfo *cached_obj_store = &(sm->t_state.cache_info.object_store);
 
   if ((!cached_obj) || (!cached_obj->valid())) {
@@ -5385,7 +5385,7 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
 
   HttpSM *sm = (HttpSM *)txnp;
 
-  switch (sm->t_state.cache_lookup_result) {
+  switch (sm->t_state.get_cache_lookup_result()) {
   case HttpTransact::CACHE_LOOKUP_MISS:
   case HttpTransact::CACHE_LOOKUP_DOC_BUSY:
     *lookup_status = TS_CACHE_LOOKUP_MISS;
@@ -5427,16 +5427,16 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm                                   = (HttpSM *)txnp;
-  HttpTransact::CacheLookupResult_t *sm_status = &(sm->t_state.cache_lookup_result);
+  HttpSM *sm             = (HttpSM *)txnp;
+  HttpTransact::State &s = sm->t_state;
 
   // converting from a miss to a hit is not allowed
-  if (*sm_status == HttpTransact::CACHE_LOOKUP_MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
+  if (s.get_cache_lookup_result() == HttpTransact::CACHE_LOOKUP_MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
     return TS_ERROR;
   }
 
   // here is to handle converting a hit to a miss
-  if (cachelookup == TS_CACHE_LOOKUP_MISS && *sm_status != HttpTransact::CACHE_LOOKUP_MISS) {
+  if (cachelookup == TS_CACHE_LOOKUP_MISS && s.get_cache_lookup_result() != HttpTransact::CACHE_LOOKUP_MISS) {
     sm->t_state.api_cleanup_cache_read = true;
     ink_assert(sm->t_state.transact_return_point != nullptr);
     sm->t_state.transact_return_point = HttpTransact::HandleCacheOpenRead;
@@ -5444,13 +5444,13 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 
   switch (cachelookup) {
   case TS_CACHE_LOOKUP_MISS:
-    *sm_status = HttpTransact::CACHE_LOOKUP_MISS;
+    s.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_MISS);
     break;
   case TS_CACHE_LOOKUP_HIT_STALE:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_STALE;
+    s.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_HIT_STALE);
     break;
   case TS_CACHE_LOOKUP_HIT_FRESH:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
+    s.set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_HIT_FRESH);
     break;
   default:
     return TS_ERROR;
@@ -5657,7 +5657,7 @@ TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpTransact::State *s = &(((HttpSM *)txnp)->t_state);
-  HTTPInfo *cached_obj   = s->cache_info.object_read;
+  HTTPInfo *cached_obj   = s->cache_info.get_object_read();
   HTTPHdr *cached_resp;
 
   if (cached_obj == nullptr || !cached_obj->valid()) {
@@ -6667,7 +6667,7 @@ TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm           = (HttpSM *)txnp;
-  HTTPInfo *cached_obj = sm->t_state.cache_info.object_read;
+  HTTPInfo *cached_obj = sm->t_state.cache_info.get_object_read();
 
   if (cached_obj == nullptr || !cached_obj->valid()) {
     return TS_ERROR;

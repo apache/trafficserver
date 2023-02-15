@@ -389,7 +389,7 @@ struct CacheVC : public CacheVConnection {
   void cancel_trigger();
   int64_t get_object_size() override;
   void set_http_info(CacheHTTPInfo *info) override;
-  void get_http_info(CacheHTTPInfo **info) override;
+  CacheHTTPInfo *get_http_info() override;
   /** Get the fragment table.
       @return The address of the start of the fragment table,
       or @c nullptr if there is no fragment table.

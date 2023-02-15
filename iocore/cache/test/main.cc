@@ -281,8 +281,8 @@ CacheReadTest::do_io_read(size_t size)
   if (size == 0) {
     size = this->_size;
   }
-  this->vc->get_http_info(&this->read_http_info);
-  this->vio = this->vc->do_io_read(this, size, this->_read_buffer);
+  this->read_http_info = this->vc->get_http_info();
+  this->vio            = this->vc->do_io_read(this, size, this->_read_buffer);
 }
 
 int

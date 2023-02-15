@@ -539,8 +539,8 @@ find_appropriate_cached_resp(HttpTransact::State *s)
     }
   }
 
-  ink_assert(s->cache_info.object_read != nullptr);
-  return s->cache_info.object_read->response_get();
+  ink_assert(s->cache_info.get_object_read() != nullptr);
+  return s->cache_info.get_object_read()->response_get();
 }
 
 int response_cacheable_indicated_by_cc(HTTPHdr *response, bool ignore_no_store_and_no_cache_directives);
@@ -1797,7 +1797,7 @@ HttpTransact::PPDNSLookup(State *s)
     markParentDown(s);
     // DNS lookup of parent failed, find next parent or o.s.
     if (find_server_and_update_current_info(s) == ResolveInfo::HOST_NONE) {
-      if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
+      if (is_cache_hit(s->get_cache_lookup_result()) && is_stale_cache_response_returnable(s)) {
         s->source = SOURCE_CACHE;
         TxnDebug("http_trans", "All parents are down, serving stale doc to client");
         build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
@@ -1896,7 +1896,7 @@ HttpTransact::OSDNSLookup(State *s)
       char const *log_msg;
 
       // Even with unsuccessful DNS lookup, return stale object from cache if applicable
-      if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
+      if (is_cache_hit(s->get_cache_lookup_result()) && is_stale_cache_response_returnable(s)) {
         s->source = SOURCE_CACHE;
         TxnDebug("http_trans", "[hscno] serving stale doc to client");
         build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
@@ -2032,14 +2032,14 @@ HttpTransact::OSDNSLookup(State *s)
           (((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
             s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED))) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
-      } else if (!s->txn_conf->cache_http || s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_SKIPPED) {
+      } else if (!s->txn_conf->cache_http || s->get_cache_lookup_result() == HttpTransact::CACHE_LOOKUP_SKIPPED) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, LookupSkipOpenServer);
         // DNS Lookup is done after LOOKUP Skipped  and after we get response
         // from the DNS we need to call LookupSkipOpenServer
-      } else if (is_cache_hit(s->cache_lookup_result)) {
+      } else if (is_cache_hit(s->get_cache_lookup_result())) {
         // DNS lookup is done if the content is state need to call handle cache open read hit
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadHit);
-      } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
+      } else if (s->get_cache_lookup_result() == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
       } else if (s->cache_info.action == CACHE_PREPARE_TO_WRITE && s->http_config_param->cache_post_method == 1 &&
@@ -2052,7 +2052,7 @@ HttpTransact::OSDNSLookup(State *s)
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
       } else {
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
-        Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
+        Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->get_cache_lookup_result());
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
     }
@@ -2171,7 +2171,7 @@ HttpTransact::DecideCacheLookup(State *s)
     } else {
       // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache
       // lookup is skipped
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_SKIPPED;
+      s->set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_SKIPPED);
       if (s->force_dns) {
         TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, LookupSkipOpenServer);
       } else {
@@ -2366,18 +2366,18 @@ HttpTransact::HandleCacheOpenRead(State *s)
 
   bool read_successful = true;
 
-  if (s->cache_info.object_read == nullptr) {
+  if (s->cache_info.get_object_read() == nullptr) {
     read_successful = false;
     //
     // If somebody else was writing the document, proceed just like it was
     // a normal cache miss, except don't try to write to the cache
     //
-    if (s->cache_lookup_result == CACHE_LOOKUP_DOC_BUSY) {
-      s->cache_lookup_result = CACHE_LOOKUP_MISS;
-      s->cache_info.action   = CACHE_DO_NO_ACTION;
+    if (s->get_cache_lookup_result() == CACHE_LOOKUP_DOC_BUSY) {
+      s->set_cache_lookup_result(CACHE_LOOKUP_MISS);
+      s->cache_info.action = CACHE_DO_NO_ACTION;
     }
   } else {
-    CacheHTTPInfo *obj = s->cache_info.object_read;
+    CacheHTTPInfo *obj = s->cache_info.get_object_read();
     if (obj->response_get()->type_get() == HTTP_TYPE_UNKNOWN) {
       read_successful = false;
     }
@@ -2547,7 +2547,7 @@ HttpTransact::issue_revalidate(State *s)
 void
 HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
 {
-  CacheHTTPInfo *&obj = s->cache_info.object_read;
+  CacheHTTPInfo *obj = s->cache_info.get_object_read();
 
   ink_release_assert((s->request_sent_time == UNDEFINED_TIME) && (s->response_received_time == UNDEFINED_TIME));
   TxnDebug("http_seq", "Hit in cache");
@@ -2576,22 +2576,22 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   TxnDebug("http_trans", "response_received_time : %" PRId64, (int64_t)s->response_received_time);
   // if the plugin has already decided the freshness, we don't need to
   // do it again
-  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
+  if (s->get_cache_lookup_result() == HttpTransact::CACHE_LOOKUP_NONE) {
     // is the document still fresh enough to be served back to
     // the client without revalidation?
     Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
     switch (freshness) {
     case FRESHNESS_FRESH:
       TxnDebug("http_seq", "Fresh copy");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
+      s->set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_HIT_FRESH);
       break;
     case FRESHNESS_WARNING:
       TxnDebug("http_seq", "Heuristic-based Fresh copy");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_WARNING;
+      s->set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_HIT_WARNING);
       break;
     case FRESHNESS_STALE:
       TxnDebug("http_seq", "Stale in cache");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
+      s->set_cache_lookup_result(HttpTransact::CACHE_LOOKUP_HIT_STALE);
       break;
     default:
       ink_assert(!("what_is_document_freshness has returned unsupported code."));
@@ -2599,8 +2599,9 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     }
   }
 
-  ink_assert(s->cache_lookup_result != HttpTransact::CACHE_LOOKUP_MISS);
-  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE) {
+  auto result = s->get_cache_lookup_result();
+  ink_assert(result != HttpTransact::CACHE_LOOKUP_MISS);
+  if (result == HttpTransact::CACHE_LOOKUP_HIT_STALE) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
@@ -2621,10 +2622,10 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus &pstatus = HostStatus::instance();
   HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-    TxnDebug("http", "%d ", s->cache_lookup_result);
+    auto result = s->get_cache_lookup_result();
+    TxnDebug("http", "%d ", result);
     s->current.state = OUTBOUND_CONGESTION;
-    if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
-        s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH) {
+    if (result == CACHE_LOOKUP_HIT_STALE || result == CACHE_LOOKUP_HIT_WARNING || result == CACHE_LOOKUP_HIT_FRESH) {
       s->cache_info.action = CACHE_DO_SERVE;
     } else {
       s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -2656,7 +2657,7 @@ HttpTransact::need_to_revalidate(State *s)
       return true;
     }
   } else {
-    obj = s->cache_info.object_read;
+    obj = s->cache_info.get_object_read();
   }
 
   // do we have to authenticate with the server before
@@ -2688,9 +2689,9 @@ HttpTransact::need_to_revalidate(State *s)
     break;
   }
 
-  ink_assert(is_cache_hit(s->cache_lookup_result));
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
-      s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+  auto result = s->get_cache_lookup_result();
+  ink_assert(is_cache_hit(result));
+  if (result == CACHE_LOOKUP_HIT_STALE && s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
   } else {
     needs_revalidate = false;
@@ -2749,7 +2750,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
   } else {
-    obj = s->cache_info.object_read;
+    obj = s->cache_info.get_object_read();
   }
 
   if (obj == nullptr || !obj->valid()) {
@@ -2785,7 +2786,8 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     break;
   }
 
-  ink_assert(is_cache_hit(s->cache_lookup_result));
+  auto cache_lookup_result = s->get_cache_lookup_result();
+  ink_assert(is_cache_hit(cache_lookup_result));
 
   // We'll request a revalidation under one of these conditions:
   //
@@ -2795,7 +2797,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   //    proxy.config.http.cache.ignore_server_no_cache is set to 0 (i.e don't ignore no cache -- the default setting)
   //
   // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
-  if ((((s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) ||
+  if ((((cache_lookup_result == CACHE_LOOKUP_HIT_STALE) ||
         ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
        (s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE))) {
     needs_revalidate = true;
@@ -2954,9 +2956,10 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   if (cache_sm.is_readwhilewrite_inprogress())
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
 
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
+  cache_lookup_result = s->get_cache_lookup_result();
+  if (cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
     build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
-  } else if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) {
+  } else if (cache_lookup_result == CACHE_LOOKUP_HIT_STALE) {
     ink_assert(server_up == false);
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
@@ -2995,7 +2998,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
   } else {
-    obj = s->cache_info.object_read;
+    obj = s->cache_info.get_object_read();
   }
   cached_response = obj->response_get();
 
@@ -3152,7 +3155,7 @@ HttpTransact::handle_cache_write_lock(State *s)
         }
       }
       if (likely(ats_field)) {
-        int value = (s->cache_info.object_read) ? 1 : 0;
+        int value = (s->cache_info.get_object_read()) ? 1 : 0;
         TxnDebug("http_error", "Adding Ats-Internal-Messages: %d", value);
         header->field_value_set_int(ats_field, value);
       } else {
@@ -3170,7 +3173,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action      = CACHE_DO_LOOKUP;
-    if (!s->cache_info.object_read) {
+    if (!s->cache_info.get_object_read()) {
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
       //  Cache Lookup
@@ -3263,7 +3266,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     return;
   }
   // reinitialize some variables to reflect cache miss state.
-  s->cache_info.object_read = nullptr;
+  s->cache_info.set_object_read(nullptr);
   s->request_sent_time      = UNDEFINED_TIME;
   s->response_received_time = UNDEFINED_TIME;
   SET_VIA_STRING(VIA_CACHE_RESULT, VIA_CACHE_MISS);
@@ -3474,14 +3477,14 @@ HttpTransact::HandleUpdateCachedObject(State *s)
   if (s->cache_info.write_lock_state == HttpTransact::CACHE_WL_SUCCESS) {
     ink_assert(s->cache_info.object_store.valid());
     ink_assert(s->cache_info.object_store.response_get() != nullptr);
-    ink_assert(s->cache_info.object_read != nullptr);
-    ink_assert(s->cache_info.object_read->valid());
+    ink_assert(s->cache_info.get_object_read() != nullptr);
+    ink_assert(s->cache_info.get_object_read()->valid());
 
     if (!s->cache_info.object_store.request_get()) {
-      s->cache_info.object_store.request_set(s->cache_info.object_read->request_get());
+      s->cache_info.object_store.request_set(s->cache_info.get_object_read()->request_get());
     }
-    s->request_sent_time      = s->cache_info.object_read->request_sent_time_get();
-    s->response_received_time = s->cache_info.object_read->response_received_time_get();
+    s->request_sent_time      = s->cache_info.get_object_read()->request_sent_time_get();
+    s->response_received_time = s->cache_info.get_object_read()->response_received_time_get();
     if (s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE) {
       TRANSACT_RETURN(SM_ACTION_CACHE_ISSUE_UPDATE, HttpTransact::HandleUpdateCachedObjectContinue);
     } else {
@@ -3930,7 +3933,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
   }
 
   if (serve_from_cache) {
-    ink_assert(s->cache_info.object_read != nullptr);
+    ink_assert(s->cache_info.get_object_read() != nullptr);
     ink_assert(s->cache_info.action == CACHE_DO_UPDATE || s->cache_info.action == CACHE_DO_SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
     s->source = SOURCE_CACHE;
@@ -4186,8 +4189,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     // CACHE_DO_DELETE, or CACHE_DO_UPDATE; otherwise, it's an error.
     if (s->api_server_response_ignore && s->cache_info.action == CACHE_DO_UPDATE) {
       s->api_server_response_ignore = false;
-      ink_assert(s->cache_info.object_read);
-      base_response        = s->cache_info.object_read->response_get();
+      ink_assert(s->cache_info.get_object_read());
+      base_response        = s->cache_info.get_object_read()->response_get();
       s->cache_info.action = CACHE_DO_SERVE;
       TxnDebug("http_trans", "[hcoofsr] not merging, cache action changed to: %s",
                HttpDebugNames::get_cache_action_name(s->cache_info.action));
@@ -4196,7 +4199,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if ((s->cache_info.action == CACHE_DO_DELETE) || ((s->cache_info.action == CACHE_DO_UPDATE) && !cacheable)) {
       if (is_request_conditional(&s->hdr_info.client_request)) {
         client_response_code = HttpTransactCache::match_response_to_request_conditionals(
-          &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
+          &s->hdr_info.client_request, s->cache_info.get_object_read()->response_get(), s->response_received_time);
       } else {
         client_response_code = HTTP_STATUS_OK;
       }
@@ -4225,7 +4228,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_SERVE_AND_DELETE;
           s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
         }
-        base_response        = s->cache_info.object_read->response_get();
+        base_response        = s->cache_info.get_object_read()->response_get();
         client_response_code = base_response->status_get();
       }
 
@@ -4234,7 +4237,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       if (is_request_conditional(&s->hdr_info.client_request)) {
         if (s->txn_conf->cache_when_to_revalidate != 4) {
           client_response_code = HttpTransactCache::match_response_to_request_conditionals(
-            &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
+            &s->hdr_info.client_request, s->cache_info.get_object_read()->response_get(), s->response_received_time);
         } else {
           client_response_code = server_response_code;
         }
@@ -4259,7 +4262,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
           auto *client_request  = &s->hdr_info.client_request;
-          auto *cached_response = s->cache_info.object_read->response_get();
+          auto *cached_response = s->cache_info.get_object_read()->response_get();
           if (client_request->presence(MIME_PRESENCE_RANGE) &&
               HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
             s->state_machine->do_range_setup_if_necessary();
@@ -4336,14 +4339,14 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
          server_response_code == HTTP_STATUS_BAD_GATEWAY || server_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE) &&
         s->cache_info.action == CACHE_DO_UPDATE && s->txn_conf->negative_revalidating_enabled &&
         is_stale_cache_response_returnable(s)) {
-      HTTPStatus cached_response_code = s->cache_info.object_read->response_get()->status_get();
+      HTTPStatus cached_response_code = s->cache_info.get_object_read()->response_get()->status_get();
       if (!(cached_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || cached_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
             cached_response_code == HTTP_STATUS_BAD_GATEWAY || cached_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
         TxnDebug("http_trans", "[hcoofsr] negative revalidating: revalidate stale object and serve from cache");
 
         s->cache_info.object_store.create();
         s->cache_info.object_store.request_set(&s->hdr_info.client_request);
-        s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
+        s->cache_info.object_store.response_set(s->cache_info.get_object_read()->response_get());
         base_response   = s->cache_info.object_store.response_get();
         time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_local_time();
         base_response->set_expires(exp_time);
@@ -4359,7 +4362,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
         if (is_request_conditional(&s->hdr_info.client_request) &&
             HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
-                                                                      s->cache_info.object_read->response_get(),
+                                                                      s->cache_info.get_object_read()->response_get(),
                                                                       s->response_received_time) == HTTP_STATUS_NOT_MODIFIED) {
           s->next_action       = SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS;
           client_response_code = HTTP_STATUS_NOT_MODIFIED;
@@ -4372,7 +4375,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
             s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
           }
 
-          client_response_code = s->cache_info.object_read->response_get()->status_get();
+          client_response_code = s->cache_info.get_object_read()->response_get()->status_get();
         }
 
         ink_assert(base_response->valid());
@@ -4413,8 +4416,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if (s->api_server_response_ignore && server_response_code == HTTP_STATUS_OK &&
                server_request_method == HTTP_WKSIDX_HEAD) {
       s->api_server_response_ignore = false;
-      ink_assert(s->cache_info.object_read);
-      base_response        = s->cache_info.object_read->response_get();
+      ink_assert(s->cache_info.get_object_read());
+      base_response        = s->cache_info.get_object_read()->response_get();
       s->cache_info.action = CACHE_DO_SERVE;
       TxnDebug("http_trans",
                "[hcoofsr] ignoring server response, "
@@ -4446,7 +4449,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CACHE_DO_DELETE;
       } else {
-        ink_assert(s->cache_info.object_read != nullptr);
+        ink_assert(s->cache_info.get_object_read() != nullptr);
         s->cache_info.action = CACHE_DO_REPLACE;
 
         auto *client_request = &s->hdr_info.client_request;
@@ -4791,7 +4794,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     ink_assert(cached_hdr != nullptr && cached_hdr->valid());
     s->api_modifiable_cached_resp = false;
   } else {
-    s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
+    s->cache_info.object_store.response_set(s->cache_info.get_object_read()->response_get());
   }
 
   // Delete caching headers from the cached response. If these are
@@ -5919,7 +5922,7 @@ HttpTransact::is_cache_response_returnable(State *s)
   // previous POST request. The only exception is replying a HEAD request with
   // a cached GET request as neither are destructive
   int const client_request_method = s->hdr_info.client_request.method_get_wksidx();
-  int const cached_request_method = s->cache_info.object_read->request_get()->method_get_wksidx();
+  int const cached_request_method = s->cache_info.get_object_read()->request_get()->method_get_wksidx();
   if (client_request_method != cached_request_method &&
       (client_request_method != HTTP_WKSIDX_HEAD || cached_request_method != HTTP_WKSIDX_GET)) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
@@ -5929,7 +5932,7 @@ HttpTransact::is_cache_response_returnable(State *s)
   // If cookies in response and no TTL set, we do not cache the doc
   if ((s->cache_control.ttl_in_cache <= 0) &&
       do_cookies_prevent_caching(static_cast<int>(s->txn_conf->cache_responses_to_cookies), &s->hdr_info.client_request,
-                                 s->cache_info.object_read->response_get(), s->cache_info.object_read->request_get())) {
+                                 s->cache_info.get_object_read()->response_get(), s->cache_info.get_object_read()->request_get())) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_COOKIE);
     return false;
@@ -5951,7 +5954,7 @@ HttpTransact::is_cache_response_returnable(State *s)
 bool
 HttpTransact::is_stale_cache_response_returnable(State *s)
 {
-  HTTPHdr *cached_response = s->cache_info.object_read->response_get();
+  HTTPHdr *cached_response = s->cache_info.get_object_read()->response_get();
 
   // First check if client allows cached response
   // Note does_client_permit_lookup was set to
@@ -5972,8 +5975,8 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   }
   // See how old the document really is.  We don't want create a
   //   stale content museum of documents that are no longer available
-  time_t current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
-                                                                   s->cache_info.object_read->response_received_time_get(),
+  time_t current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.get_object_read()->request_sent_time_get(),
+                                                                   s->cache_info.get_object_read()->response_received_time_get(),
                                                                    cached_response, cached_response->get_date(), s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
@@ -6675,7 +6678,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         //   Otherwise, set the state's machine view  //
         //   of c-l to undefined to turn off K-A      //
         ////////////////////////////////////////////////
-        else if (s->cache_info.object_read->object_size_get() == cl) {
+        else if (s->cache_info.get_object_read()->object_size_get() == cl) {
           s->hdr_info.trust_response_cl = true;
         } else {
           TxnDebug("http_trans", "Content Length header and cache object size mismatch."
@@ -6712,13 +6715,13 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     // object )
     if (s->source == SOURCE_CACHE ||
         (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
-         s->cache_info.object_read != nullptr)) {
+         s->cache_info.get_object_read() != nullptr)) {
       // If there is no content-length header, we can
       //   insert one since the cache knows definitely
       //   how long the object is unless we're in a
       //   read-while-write mode and object hasn't been
       //   written into a cache completely.
-      cl = s->cache_info.object_read->object_size_get();
+      cl = s->cache_info.get_object_read()->object_size_get();
       if (cl == INT64_MAX) { // INT64_MAX cl in cache indicates rww in progress
         header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
         s->hdr_info.trust_response_cl      = false;
@@ -8909,7 +8912,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     // Range: requests.
     header->set_content_length(s->range_output_cl);
   } else {
-    if (s->cache_info.object_read && s->cache_info.object_read->valid()) {
+    if (s->cache_info.get_object_read() && s->cache_info.get_object_read()->valid()) {
       // TODO: It's unclear under which conditions we need to update the Content-Range: header,
       // many times it's already set correctly before calling this. For now, always try do it
       // when we have the information for it available.
@@ -8918,7 +8921,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
       field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
       snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,
-               s->cache_info.object_read->object_size_get());
+               s->cache_info.get_object_read()->object_size_get());
       field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
       header->field_attach(field);
     }

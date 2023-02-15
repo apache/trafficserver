@@ -184,8 +184,8 @@ struct CacheVConnection : public VConnection {
   virtual int set_header(void *ptr, int len)        = 0;
   virtual int get_single_data(void **ptr, int *len) = 0;
 
-  virtual void set_http_info(CacheHTTPInfo *info)  = 0;
-  virtual void get_http_info(CacheHTTPInfo **info) = 0;
+  virtual void set_http_info(CacheHTTPInfo *info) = 0;
+  virtual CacheHTTPInfo *get_http_info()          = 0;
 
   virtual bool is_ram_cache_hit() const   = 0;
   virtual bool set_pin_in_cache(time_t t) = 0;

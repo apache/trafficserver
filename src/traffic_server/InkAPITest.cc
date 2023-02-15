@@ -7455,7 +7455,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedReqGet returns 0");
     } else {
       if ((reqbuf == reinterpret_cast<TSMBuffer>(((HttpSM *)txnp)->t_state.cache_req_hdr_heap_handle)) &&
-          (reqhdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.object_read->request_get())->m_http))) {
+          (reqhdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.get_object_read()->request_get())->m_http))) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_PASS, "ok");
         data->test_passed_txn_cached_req_get = true;
       } else {
@@ -7467,7 +7467,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedRespGet returns 0");
     } else {
       if ((respbuf == reinterpret_cast<TSMBuffer>(((HttpSM *)txnp)->t_state.cache_resp_hdr_heap_handle)) &&
-          (resphdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.object_read->response_get())->m_http))) {
+          (resphdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.get_object_read()->response_get())->m_http))) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_PASS, "ok");
         data->test_passed_txn_cached_resp_get = true;
       } else {

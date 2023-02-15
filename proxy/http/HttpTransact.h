@@ -496,7 +496,6 @@ public:
     HTTPInfo object_store;
     HTTPInfo transform_store;
     CacheDirectives directives;
-    HTTPInfo *object_read             = nullptr;
     int open_read_retries             = 0;
     int open_write_retries            = 0;
     CacheWriteLock_t write_lock_state = CACHE_WL_INIT;
@@ -506,6 +505,31 @@ public:
     URL parent_selection_url_storage;
 
     _CacheLookupInfo() {}
+
+    HTTPInfo *
+    get_object_read() const
+    {
+      return _object_read;
+    }
+
+    void
+    set_object_read(HTTPInfo *info)
+    {
+      _object_read = info;
+      // It's just a number, overflow doesn't matter
+      _object_read_rev++;
+    }
+
+    uint8_t
+    get_object_read_rev()
+    {
+      return _object_read_rev;
+    }
+
+  private:
+    HTTPInfo *_object_read   = nullptr;
+    uint8_t _object_read_rev = 0;
+
   } CacheLookupInfo;
 
   typedef struct _RedirectInfo {
@@ -704,7 +728,6 @@ public:
     std::shared_ptr<NextHopSelectionStrategy> next_hop_strategy = nullptr;
     ParentResult parent_result;
     CacheControlResult cache_control;
-    CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
 
     StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
     StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
@@ -946,9 +969,54 @@ public:
       return txn_conf->connect_attempts_max_retries;
     }
 
+    CacheLookupResult_t
+    get_cache_lookup_result()
+    {
+      bool is_same_revision = this->_cache_lookup_result_rev == this->cache_info.get_object_read_rev();
+      ink_assert(is_same_revision);
+      if (!is_same_revision && this->_cache_lookup_result != HttpTransact::CACHE_LOOKUP_NONE) {
+        // Lookup result is not updated. Pretend it was cache miss.
+        return HttpTransact::CACHE_LOOKUP_MISS;
+      }
+      return this->_cache_lookup_result;
+    }
+
+    void
+    set_cache_lookup_result(CacheLookupResult_t lookup_result)
+    {
+      bool valid = true;
+
+      if (!this->cache_info.get_object_read()) {
+        switch (lookup_result) {
+        case HttpTransact::CACHE_LOOKUP_NONE:
+        case HttpTransact::CACHE_LOOKUP_MISS:
+        case HttpTransact::CACHE_LOOKUP_DOC_BUSY:
+        case HttpTransact::CACHE_LOOKUP_SKIPPED:
+          valid = true;
+          break;
+        default:
+          valid = false;
+          break;
+        }
+      }
+
+      if (valid) {
+        this->_cache_lookup_result = lookup_result;
+      } else {
+        ink_assert(!"Attempt to set an invalid lookup result");
+        // Pretend it was a cache miss
+        this->_cache_lookup_result = CACHE_LOOKUP_MISS;
+      }
+
+      this->_cache_lookup_result_rev = this->cache_info.get_object_read_rev();
+    }
+
   private:
     // Make this a raw byte array, so it will be accessed through the my_txn_conf() member function.
     alignas(OverridableHttpConfigParams) char _my_txn_conf[sizeof(OverridableHttpConfigParams)];
+
+    CacheLookupResult_t _cache_lookup_result = CACHE_LOOKUP_NONE;
+    uint8_t _cache_lookup_result_rev         = 0;
 
   }; // End of State struct.
 
