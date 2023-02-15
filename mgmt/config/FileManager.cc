@@ -368,27 +368,21 @@ FileManager::ConfigManager::ConfigManager(const char *fileName_, const char *con
   }
 
   // Copy the file name.
-  fileName   = ats_strdup(fileName_);
-  configName = ats_strdup(configName_);
+  fileName   = std::string(fileName_);
+  configName = std::string(configName_);
 
   ink_mutex_init(&fileAccessLock);
   // Check to make sure that our configuration file exists
   //
   if (statFile(&fileInfo) < 0) {
-    Debug(logTag, "%s  Unable to load: %s", fileName, strerror(errno));
+    Debug(logTag, "%s  Unable to load: %s", fileName.c_str(), strerror(errno));
 
     if (isRequired) {
-      Debug(logTag, " Unable to open required configuration file %s\n\t failed :%s", fileName, strerror(errno));
+      Debug(logTag, " Unable to open required configuration file %s\n\t failed :%s", fileName.c_str(), strerror(errno));
     }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
   }
-}
-
-FileManager::ConfigManager::~ConfigManager()
-{
-  ats_free(fileName);
-  ats_free(configName);
 }
 
 //
@@ -431,7 +425,7 @@ FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType ho
       fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       // TODO: syslog????
     }
-    Debug(logTag, "User has changed config file %s\n", fileName);
+    Debug(logTag, "User has changed config file %s\n", fileName.c_str());
     result = true;
   } else {
     result = false;
