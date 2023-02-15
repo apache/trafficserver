@@ -38,9 +38,6 @@
 #include "QPACK.h"
 #include "HTTP.h"
 
-// ToDo: It would be nice to decouple these UDP dependencies ...
-#include "tscore/UDP_stubs.h"
-
 #define TEST_THREADS 1
 
 char qifdir[256]  = "./qifs/qifs";

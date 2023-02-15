@@ -447,7 +447,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
-  UDPPacket *packet   = new_UDPPacket();
+  UDPPacket *packet   = UDPPacket::new_UDPPacket();
   UDPConnection *conn = (UDPConnection *)udp;
 
   ats_ip4_set(&packet->to, ip, htons(port));
@@ -492,7 +492,7 @@ INKUDPConnFdGet(INKUDPConn udp)
 INKUDPPacket
 INKUDPPacketCreate()
 {
-  UDPPacket *packet = new_UDPPacket();
+  UDPPacket *packet = UDPPacket::new_UDPPacket();
   return ((INKUDPPacket)packet);
 }
 

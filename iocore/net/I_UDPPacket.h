@@ -63,48 +63,9 @@ public:
   int from_size;
 
   LINK(UDPPacket, link);
+
+  // Factory (static) methods
+  static UDPPacket *new_UDPPacket();
+  static UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0);
+  static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block);
 };
-
-/**
-   Create a new packet to be sent over UDPConnection. This actually
-   copies data from a buffer.
-
-
-   @param to  address of where to send packet
-   @param when ink_hrtime relative to ink_get_hrtime_internal()
-   @param buf if !nullptr, then len bytes copied from buf and made into packet.
-   @param len # of bytes to copy from buf
- */
-extern UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, char *buf = nullptr, int len = 0);
-/**
-   Create a new packet to be sent over UDPConnection. This clones and
-   makes a reference to an existing IOBufferBlock chain.
-
-
-   @param to  address of where to send packet
-   @param when ink_hrtime relative to ink_get_hrtime_internal()
-   @param block if !nullptr, then the IOBufferBlock chain of data to use
-   for packet
-   @param len # of bytes to reference from block
- */
-
-TS_INLINE UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, IOBufferBlock *block = nullptr, int len = 0);
-/**
-   Create a new packet to be sent over UDPConnection.  Packet has no
-   destination or data.
-*/
-extern UDPPacket *new_UDPPacket();
-
-/**
-   Create a new packet to be delivered to application.
-   Internal function only
-*/
-extern UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len);
-
-/**
-   Create a new packet to be delivered to application.
-   Internal function only
-*/
-extern UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, Ptr<IOBufferBlock> &block);
-
-//@}

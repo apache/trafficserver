@@ -32,7 +32,6 @@
 
 #include "tscore/ink_platform.h"
 #include "I_UDPNet.h"
-#include "P_UDPPacket.h"
 
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
