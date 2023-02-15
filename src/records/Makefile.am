@@ -21,7 +21,6 @@ include $(top_srcdir)/build/tidy.mk
 check_PROGRAMS = test_librecords test_librecords_on_eventsystem
 
 AM_CPPFLAGS += \
-        -I$(abs_top_srcdir)/lib/swoc/include \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/iocore/utils \
 	-I$(abs_top_srcdir)/include \
