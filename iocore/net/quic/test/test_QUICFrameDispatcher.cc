@@ -27,8 +27,6 @@
 #include "quic/Mock.h"
 #include <memory>
 
-#include "tscore/UDP_stubs.h"
-
 TEST_CASE("QUICFrameHandler", "[quic]")
 {
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());

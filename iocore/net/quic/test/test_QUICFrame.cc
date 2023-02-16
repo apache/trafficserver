@@ -27,8 +27,6 @@
 #include "quic/QUICFrame.h"
 #include "quic/QUICStream.h"
 
-#include "tscore/UDP_stubs.h"
-
 extern const ink_freelist_ops *freelist_global_ops;
 extern const ink_freelist_ops *freelist_class_ops;
 

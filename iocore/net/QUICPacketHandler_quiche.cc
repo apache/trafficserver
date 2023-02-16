@@ -71,7 +71,7 @@ QUICPacketHandler::close_connection(QUICNetVConnection *conn)
 void
 QUICPacketHandler::send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload, uint16_t segment_size)
 {
-  UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload, segment_size);
+  UDPPacket *udp_packet = UDPPacket::new_UDPPacket(addr, 0, udp_payload, segment_size);
 
   if (is_debug_tag_set(v_debug_tag)) {
     ip_port_text_buffer ipb;

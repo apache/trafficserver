@@ -46,7 +46,7 @@
 class HttpBodyFactory;
 
 // globals the rest of the system depends on
-extern int fds_limit;
+int fds_limit;
 extern int cluster_port_number;
 
 int command_flag                = 0;

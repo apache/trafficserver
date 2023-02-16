@@ -26,8 +26,6 @@
 #include "P_QUICNetVConnection.h"
 #include <memory>
 
-#include "tscore/UDP_stubs.h"
-
 TEST_CASE("QUICAddrVerifyState", "[quic]")
 {
   QUICAddrVerifyState state;

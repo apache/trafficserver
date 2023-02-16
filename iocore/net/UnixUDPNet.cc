@@ -48,6 +48,145 @@ using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
 
+void
+UDPPacketInternal::free()
+{
+  chain = nullptr;
+  if (conn)
+    conn->Release();
+  conn = nullptr;
+  udpPacketAllocator.free(this);
+}
+
+UDPPacket *
+UDPPacket::new_UDPPacket()
+{
+  UDPPacketInternal *p = udpPacketAllocator.alloc();
+  return p;
+}
+
+UDPPacket *
+UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size)
+{
+  UDPPacketInternal *p = udpPacketAllocator.alloc();
+
+  p->in_the_priority_queue = 0;
+  p->in_heap               = 0;
+  p->delivery_time         = when;
+  if (to)
+    ats_ip_copy(&p->to, to);
+  p->chain        = buf;
+  p->segment_size = segment_size;
+  return p;
+}
+
+UDPPacket *
+UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block)
+{
+  UDPPacketInternal *p = udpPacketAllocator.alloc();
+
+  p->in_the_priority_queue = 0;
+  p->in_heap               = 0;
+  p->delivery_time         = 0;
+  ats_ip_copy(&p->from, from);
+  ats_ip_copy(&p->to, to);
+  p->chain = block;
+
+  return p;
+}
+
+UDPPacketInternal::UDPPacketInternal()
+
+{
+  memset(&from, '\0', sizeof(from));
+  memset(&to, '\0', sizeof(to));
+}
+
+UDPPacketInternal::~UDPPacketInternal()
+{
+  chain = nullptr;
+}
+
+void
+UDPPacket::append_block(IOBufferBlock *block)
+{
+  UDPPacketInternal *p = static_cast<UDPPacketInternal *>(this);
+
+  if (block) {
+    if (p->chain) { // append to end
+      IOBufferBlock *last = p->chain.get();
+      while (last->next) {
+        last = last->next.get();
+      }
+      last->next = block;
+    } else {
+      p->chain = block;
+    }
+  }
+}
+
+int64_t
+UDPPacket::getPktLength() const
+{
+  UDPPacketInternal *p = const_cast<UDPPacketInternal *>(static_cast<const UDPPacketInternal *>(this));
+  IOBufferBlock *b;
+
+  p->pktLength = 0;
+  b            = p->chain.get();
+  while (b) {
+    p->pktLength += b->read_avail();
+    b            = b->next.get();
+  }
+  return p->pktLength;
+}
+
+void
+UDPPacket::free()
+{
+  static_cast<UDPPacketInternal *>(this)->free();
+}
+
+void
+UDPPacket::setContinuation(Continuation *c)
+{
+  static_cast<UDPPacketInternal *>(this)->cont = c;
+}
+
+void
+UDPPacket::setConnection(UDPConnection *c)
+{
+  /*Code reviewed by Case Larsen.  Previously, we just had
+     ink_assert(!conn).  This prevents tunneling of packets
+     correctly---that is, you get packets from a server on a udp
+     conn. and want to send it to a player on another connection, the
+     assert will prevent that.  The "if" clause enables correct
+     handling of the connection ref. counts in such a scenario. */
+
+  UDPConnectionInternal *&conn = static_cast<UDPPacketInternal *>(this)->conn;
+
+  if (conn) {
+    if (conn == c)
+      return;
+    conn->Release();
+    conn = nullptr;
+  }
+  conn = static_cast<UDPConnectionInternal *>(c);
+  conn->AddRef();
+}
+
+IOBufferBlock *
+UDPPacket::getIOBlockChain()
+{
+  ink_assert(dynamic_cast<UDPPacketInternal *>(this) != nullptr);
+  return static_cast<UDPPacketInternal *>(this)->chain.get();
+}
+
+UDPConnection *
+UDPPacket::getConnection()
+{
+  return static_cast<UDPPacketInternal *>(this)->conn;
+}
+
 //
 // Global Data
 //
@@ -251,7 +390,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     }
 
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
+    UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
     uc->inQueue.push((UDPPacketInternal *)p);

@@ -32,9 +32,6 @@
 #include "HttpSM.h"
 #include "nexthop_test_stubs.h"
 
-// ToDo: It would be nice to decouple these UDP dependencies ...
-#include "tscore/UDP_stubs.h"
-
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 void
 HttpSM::cleanup()
