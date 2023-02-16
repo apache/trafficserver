@@ -1275,7 +1275,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   int vlen = 0;
   int fd   = p[0]->conn->getFd();
   for (int i = 0; i < n; ++i) {
-    UDPPacketInternal *packet;
+    UDPPacket *packet;
     struct msghdr *msg;
     struct iovec *iov;
     int iov_len;

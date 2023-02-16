@@ -84,7 +84,7 @@ QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p = e->packet;
+  UDPPacket *p = e->packet;
   // FIXME: VC is nullptr ?
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   uint8_t *buf           = reinterpret_cast<uint8_t *>(p->getIOBlockChain()->buf());
@@ -124,7 +124,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p   = e->packet;
+  UDPPacket *p           = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;

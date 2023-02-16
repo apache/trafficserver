@@ -71,7 +71,7 @@ public:
      <b>Callbacks:</b><br>
      cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, UDPConnection *) on error
      <br>
-     cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacketInternal&gt; *) on incoming packets.
+     cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacket&gt; *) on incoming packets.
 
      @return Action* Always returns nullptr.  Can't be
      cancelled via this Action.
