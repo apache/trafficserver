@@ -267,35 +267,11 @@ System Variables
 
    The location of the |TS| ``bin`` directory.
 
-.. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
-
- .. important::
-
-      This is now deprecated. traffic_manager is no longer supported.
-
-.. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
-
-   .. important::
-
-      This is now deprecated
-
-.. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
-
-   .. important::
-
-      This is now deprecated. traffic_manager is no longer supported.
-
 .. ts:cv:: CONFIG proxy.config.memory.max_usage INT 0
    :units: bytes
 
    Throttle incoming connections if resident memory usage exceeds this value.
    Setting the option to 0 disables the feature.
-
-.. ts:cv:: CONFIG proxy.config.env_prep STRING
-
-   .. important::
-
-      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -462,13 +438,6 @@ Thread Variables
    This option specifies the size limit for core files in the event
    that :program:`traffic_server` crashes. ``-1`` means there is
    no limit. A value of ``0`` prevents core dump creation.
-
-.. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
-   :reloadable:
-
-   .. important::
-
-      Deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.restart.stop_listening INT 0
    :reloadable:
@@ -648,12 +617,6 @@ Network
 
 Management
 ==========
-
-.. ts:cv:: CONFIG proxy.node.config.manager_log_filename STRING manager.log
-
-   .. important::
-
-      This is now deprecated. traffic_manager is no longer supported.
 
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 

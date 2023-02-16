@@ -53,8 +53,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.bin_path", RECD_STRING, TS_BUILD_BINDIR, RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.env_prep", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
@@ -122,8 +120,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.thread.default.stacksize", RECD_INT, "1048576", RECU_RESTART_TS, RR_NULL, RECC_INT, "[131072-104857600]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.thread.default.stackguard_pages", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-256]", RECA_READ_ONLY}
-  ,
-  {RECT_CONFIG, "proxy.config.restart.active_client_threshold", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.restart.stop_listening", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

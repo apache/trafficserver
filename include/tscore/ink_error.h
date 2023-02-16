@@ -44,9 +44,6 @@
 // This magic exit code is used to signal that the crashing process cannot
 // be recovered from a restart of said process
 //
-// Originally, this was intended to be used as a backchannel mechanism whereby
-// traffic_server can tell traffic_manager via an exit code to stop trying to restart
-// traffic_server b/c (for example) traffic_server has a bad config file
 #define UNRECOVERABLE_EXIT 33
 
 void ink_emergency_va(const char *fmt, va_list ap) TS_NORETURN;

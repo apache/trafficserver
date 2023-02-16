@@ -33,18 +33,12 @@ class GetPidError(Exception):
         super().__init__(self.message)
 
 
-def get_desired_process(ts_identifier, get_ppid=False):
+def get_ts_process_pid(ts_identifier):
+    processes = []
     for proc in psutil.process_iter(['cmdline']):
         commandline = ' '.join(proc.info['cmdline'])
         if '/traffic_server' in commandline and ts_identifier in commandline:
-            if not get_ppid:
-                return proc
-            parent = proc.parent()
-            with parent.oneshot():
-                if 'traffic_manager' not in parent.cmdline():
-                    raise GetPidError("Found a traffic server process, "
-                                      "but its parent is not traffic_manager")
-                return parent
+            return proc
     raise GetPidError("Could not find a traffic_server process")
 
 
