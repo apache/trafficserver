@@ -345,7 +345,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
-    uc->inQueue.push((UDPPacket *)p);
+    uc->inQueue.push(p);
 
     // reload the unused block
     chain      = next_chain;

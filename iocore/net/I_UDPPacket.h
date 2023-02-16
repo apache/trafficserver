@@ -47,42 +47,10 @@ public:
   ~UDPPacket();
   void free(); // fast deallocate
 
-  void
-  setContinuation(Continuation *c)
-  {
-    cont = c;
-  }
-
-  void
-  setConnection(UDPConnection *c)
-  {
-    /*Code reviewed by Case Larsen.  Previously, we just had
-       ink_assert(!conn).  This prevents tunneling of packets
-       correctly---that is, you get packets from a server on a udp
-       conn. and want to send it to a player on another connection, the
-       assert will prevent that.  The "if" clause enables correct
-       handling of the connection ref. counts in such a scenario. */
-
-    if (conn) {
-      if (conn == c)
-        return;
-      conn->Release();
-      conn = nullptr;
-    }
-    conn = c;
-    conn->AddRef();
-  }
-
-  UDPConnection *
-  getConnection()
-  {
-    return conn;
-  }
-  IOBufferBlock *
-  getIOBlockChain()
-  {
-    return chain.get();
-  };
+  void setContinuation(Continuation *c);
+  void setConnection(UDPConnection *c);
+  UDPConnection *getConnection();
+  IOBufferBlock *getIOBlockChain();
   int64_t getPktLength();
 
   /**
@@ -137,3 +105,44 @@ public:
   */
   static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block);
 };
+
+// Inline definitions
+
+inline void
+UDPPacket::setContinuation(Continuation *c)
+{
+  cont = c;
+}
+
+inline void
+UDPPacket::setConnection(UDPConnection *c)
+{
+  /*Code reviewed by Case Larsen.  Previously, we just had
+     ink_assert(!conn).  This prevents tunneling of packets
+     correctly---that is, you get packets from a server on a udp
+     conn. and want to send it to a player on another connection, the
+     assert will prevent that.  The "if" clause enables correct
+     handling of the connection ref. counts in such a scenario. */
+
+  if (conn) {
+    if (conn == c) {
+      return;
+    }
+    conn->Release();
+    conn = nullptr;
+  }
+  conn = c;
+  conn->AddRef();
+}
+
+inline UDPConnection *
+UDPPacket::getConnection()
+{
+  return conn;
+}
+
+inline IOBufferBlock *
+UDPPacket::getIOBlockChain()
+{
+  return chain.get();
+}
