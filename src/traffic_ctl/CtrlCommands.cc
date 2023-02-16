@@ -20,6 +20,8 @@
  */
 #include <fstream>
 #include <unordered_map>
+#include <chrono>
+#include <thread>
 
 #include "CtrlCommands.h"
 #include "jsonrpc/CtrlRPCRequests.h"
@@ -236,6 +238,9 @@ MetricCommand::MetricCommand(ts::Arguments *args) : RecordCommand(args)
   } else if (args->get(ZERO_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { metric_zero(); };
+  } else if (args->get(MONITOR_STR)) {
+    _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
+    _invoked_func = [&]() { metric_monitor(); };
   }
 }
 
@@ -271,6 +276,86 @@ MetricCommand::metric_zero()
                              {{std::begin(records), std::end(records)}}};
 
   [[maybe_unused]] auto const &response = invoke_rpc(request);
+}
+
+void
+MetricCommand::metric_monitor()
+{
+  ts::ArgumentData const &arg = get_parsed_arguments()->get(MONITOR_STR);
+  std::string err_text;
+
+  //
+  // Note: if any of the string->number fails, the exception will be caught by the invoke function from the ArgParser.
+  //
+  const int32_t count    = std::stoi(get_parsed_arguments()->get("count").value());
+  const int32_t interval = std::stoi(get_parsed_arguments()->get("interval").value());
+  if (count <= 0 || interval <= 0) {
+    throw std::runtime_error(
+      ts::bwprint(err_text, "monitor: invalid input, count({}), interval({}) should be > than '0'", count, interval));
+  }
+
+  // keep track of each metric
+  struct ctx {
+    float min{std::numeric_limits<float>::max()};
+    float max{std::numeric_limits<float>::lowest()};
+    float sum{0.0f};
+    float last{0.0f};
+  };
+
+  // Keep track of the requested metric(s), we support more than one at the same time.
+  std::unordered_map<std::string, ctx> summary;
+
+  for (int idx = 0;; idx++) {
+    // Request will hold all metrics in a single message.
+    shared::rpc::JSONRPCResponse const &resp = record_fetch(arg, shared::rpc::NOT_REGEX, RecordQueryType::METRIC);
+
+    if (resp.is_error()) { // something went wrong in the server, report it.
+      _printer->write_output(resp);
+      return;
+    }
+
+    auto const &response = resp.result.as<shared::rpc::RecordLookUpResponse>();
+    if (response.errorList.size() && response.recordList.size() == 0) {
+      // nothing to be done or report, use '-f rpc'  for details.
+      break;
+    }
+
+    for (auto &&rec : response.recordList) { // requested metric(s)
+      auto &s = summary[rec.name];           // We will update it.
+      // Note: To avoid
+      const float val = std::stof(rec.currentValue);
+
+      s.sum += val;
+      s.max = std::max<float>(s.max, val);
+      s.min = std::min<float>(s.min, val);
+      std::string symbol;
+      if (idx > 0) {
+        if (val > s.last) {
+          symbol = "+";
+        } else if (val < s.last) {
+          symbol = "-";
+        }
+      }
+      s.last = val;
+      _printer->write_output(ts::bwprint(err_text, "{}: {} {}", rec.name, rec.currentValue, symbol));
+    }
+    if (idx == count - 1) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(interval));
+  }
+  if (summary.size() == 0) {
+    // nothing to report.
+    return;
+  }
+
+  _printer->write_output("--- metric monitor statistics ---");
+
+  for (auto &&item : summary) {
+    ctx const &s  = item.second;
+    const int avg = s.sum / count;
+    _printer->write_output(ts::bwprint(err_text, "┌ {}\n└─ min/avg/max = {:.5}/{}/{:.5}", item.first, s.min, avg, s.max));
+  }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 // TODO, let call the super const
