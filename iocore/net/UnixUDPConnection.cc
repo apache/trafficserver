@@ -111,9 +111,8 @@ UDPConnection::bindToThread(Continuation *c, EThread *t)
 }
 
 Action *
-UDPConnection::send(Continuation *c, UDPPacket *xp)
+UDPConnection::send(Continuation *c, UDPPacket *p)
 {
-  UDPPacket *p            = (UDPPacket *)xp;
   UnixUDPConnection *conn = (UnixUDPConnection *)this;
 
   if (shouldDestroy()) {

@@ -164,7 +164,6 @@ libinknet_a_SOURCES = \
 	P_UDPConnection.h \
 	P_UDPIOEvent.h \
 	P_UDPNet.h \
-	P_UDPPacket.h \
 	P_UnixCompletionUtil.h \
 	P_UnixNet.h \
 	P_UnixNetProcessor.h \

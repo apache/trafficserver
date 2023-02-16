@@ -1235,7 +1235,7 @@ void
 UDPQueue::send(UDPPacket *p)
 {
   // XXX: maybe fastpath for immediate send?
-  outQueue.push((UDPPacket *)p);
+  outQueue.push(p);
 }
 
 int
