@@ -350,8 +350,9 @@ getPristineUrlQuery(TSHttpTxn txnp)
   return pristineQuery;
 }
 
-static const StringView CmcdHeader{"Cmcd-Request"};
-static const StringView CmcdNorFieldPrefix{"nor="};
+static constexpr StringView CmcdHeader{"Cmcd-Request"};
+static constexpr StringView CmcdNorFieldPrefix{"nor="};
+static constexpr StringView CmcdNrrFieldPrefix{"nrr="};
 
 /**
  * @brief Look for and return the nor field of any Cmcd-Request header
@@ -361,6 +362,8 @@ static const StringView CmcdNorFieldPrefix{"nor="};
  * @param hdrloc request TSMLoc
  * @return unquoted relative cmcd path from the nor field
  *
+ * If the 'nrr' field is encountered the 'nor' field will be ignored.
+ *
  * sample header:
  * Cmcd-Request: mtp=103600,bl=153500,nor="14_176.mp4a"
  */
@@ -368,6 +371,8 @@ static String
 getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
 {
   String relpath;
+  bool hasnrr = false; // don't prefetch if range request
+
   const TSMLoc cmcdloc = TSMimeHdrFieldFind(buffer, hdrloc, CmcdHeader.data(), CmcdHeader.length());
   if (TS_NULL_MLOC != cmcdloc) {
     // iterate through the fields
@@ -377,7 +382,13 @@ getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
       const char *const fval = TSMimeHdrFieldValueStringGet(buffer, hdrloc, cmcdloc, ind, &flen);
 
       StringView fv(fval, flen);
-      PrefetchDebug("cmcd-request field: %.*s", (int)fv.length(), fv.data());
+      PrefetchDebug("cmcd-request field: '%.*s'", (int)fv.length(), fv.data());
+      if (0 == fv.compare(0, CmcdNrrFieldPrefix.length(), CmcdNrrFieldPrefix)) {
+        PrefetchDebug("cmcd-request nrr field encountered, skipping prefetch!");
+        hasnrr = true;
+        break;
+      }
+
       if (0 == fv.compare(0, CmcdNorFieldPrefix.length(), CmcdNorFieldPrefix)) {
         fv.remove_prefix(CmcdNorFieldPrefix.length());
         if (fv.front() == '"') {
@@ -386,14 +397,29 @@ getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
         if (fv.back() == '"') {
           fv.remove_suffix(1);
         }
-        relpath = fv;
-        break;
+
+        PrefetchDebug("Extracted nor field: '%.*s'", (int)fv.length(), fv.data());
+
+        // Undo any percent encoding
+        char buf[8192];
+        size_t blen = sizeof(buf);
+        if (TS_SUCCESS == TSStringPercentDecode(fv.data(), fv.length(), buf, blen, &blen)) {
+          relpath.assign(buf, blen);
+        } else {
+          PrefetchDebug("Error percent decoding nor field: '%.*s'", (int)fv.length(), fv.data());
+        }
       }
     }
     TSHandleMLocRelease(buffer, hdrloc, cmcdloc);
   } else {
     PrefetchDebug("No Cmcd-Request header found");
   }
+
+  // don't prefetch if range request
+  if (hasnrr) {
+    relpath.clear();
+  }
+
   return relpath;
 }
 
@@ -574,7 +600,8 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
       }
 
       if (data->firstPass() && data->_fetchable && respToTriggerPrefetch(txnp)) {
-        // Configured to handle cmcd-request nor
+        // If configured to handle Cmcd-Request nor field.
+        // This still allows other prefetch configurations to work.
         if (config.isCmcdNor()) {
           PrefetchDebug("Considering cmcd nor request");
 
@@ -591,14 +618,10 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
             PrefetchDebug("Next cmcd nor path: '%s'", nextPath.c_str());
 
-            // ensure we aren't prefetching the current asset
-            if (nextPath != currentPath) {
-              constexpr bool askPermission = false;
-              BgFetch::schedule(state, config, askPermission, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(), nextPath.length(),
-                                data->_cachekey);
-            } else {
-              PrefetchDebug("Next cmcd path same as current path '%s', skipping!", currentPath.c_str());
-            }
+            constexpr bool askPermission = false;
+            constexpr bool removeQuery   = true;
+            BgFetch::schedule(state, config, askPermission, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(), nextPath.length(),
+                              data->_cachekey, removeQuery);
           }
         }
 

@@ -17,6 +17,8 @@
 #  limitations under the License.
 
 import os
+import urllib.parse
+
 Test.Summary = '''
 Test prefetch.so plugin (simple mode).
 '''
@@ -24,14 +26,14 @@ Test prefetch.so plugin (simple mode).
 origin = Test.MakeOriginServer("origin")
 
 asset_name = 'request.txt'
-prefetch_name = 'prefetch.txt'
-prefetch_header = f'Cmcd-Request: foo=12,nor="{prefetch_name}",bar=42'
+pf_name = 'prefetch.txt'
+pf_header = f'Cmcd-Request: foo=12,nor="{pf_name}",bar=42'
 
 request_header = {
     "headers":
     f"GET /tests/{asset_name} HTTP/1.1\r\n"
     "Host: does.not.matter\r\n"  # But cant be omitted
-    f"{prefetch_header}\r\n"
+    f"{pf_header}\r\n"
     "\r\n",
     "timestamp": "1469733493.993",
     "body": ""
@@ -49,13 +51,18 @@ origin.addResponse("sessionlog.json", request_header, response_header)
 
 # query string
 query_name = 'query?this=foo&that'
-query_header = f'Cmcd-Request: nor="{query_name}"'
+query_pf_name = 'query?bar=baz'
+query_pf_header = f'Cmcd-Request: nor="{query_pf_name}"'
+
+# nor field may be percent encoded
+query_pf_perc_name = urllib.parse.quote(query_pf_name)
+query_pf_perc_header = f'Cmcd-Request: nor="{query_pf_perc_name}"'
 
 request_header = {
     "headers":
-    f"GET /tests/query.txt HTTP/1.1\r\n"
+    f"GET /tests/{query_name} HTTP/1.1\r\n"
     "Host: does.not.matter\r\n"  # But cant be omitted
-    f"{query_header}\r\n"
+    f"{query_pf_perc_header}\r\n"
     "\r\n",
     "timestamp": "1469733493.993",
     "body": ""
@@ -71,12 +78,8 @@ response_header = {
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
-# fail tests
-same_name = 'same.txt'
-same_header = f'Cmcd-Request: nor="{same_name}"'
-
 # setup the prefetched assets
-names = [prefetch_name, query_name, same_name]
+names = [pf_name, query_pf_name]
 
 for name in names:
     request_header = {
@@ -141,11 +144,34 @@ response_header = {
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
+# ignore if cmcd-request nrr= found
+crr_name = 'crr.txt'
+crr_header = f'Cmcd-Request: foo=12,nor="{crr_name}",bar=42,nrr="0-"'
+request_header = {
+    "headers":
+    f"GET /tests/{crr_name} HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    f"{crr_header}\r\n"
+    "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header = {
+    "headers":
+    "HTTP/1.1 200 OK\r\n"
+    "Connection: close\r\n"
+    "Cache-control: max-age=60\r\n"
+    "\r\n",
+    "timestamp": "1469733493.993",
+    "body": f"This is the body for {crr_name}\n"
+}
+origin.addResponse("sessionlog.json", request_header, response_header)
+
 # allows for multiple ats on localhost
 dns = Test.MakeDNServer("dns")
 
 # next hop trafficserver instance
-ts1 = Test.MakeATSProcess("ts1", command="traffic_server 2>trace1.log")
+ts1 = Test.MakeATSProcess("ts1")
 ts1.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'prefetch|http',
@@ -156,7 +182,7 @@ ts1.Disk.records_config.update({
 dns.addRecords(records={f"ts1": ["127.0.0.1"]})
 ts1.Disk.remap_config.AddLine(
     f"map / http://127.0.0.1:{origin.Variables.Port}" +
-    " @plugin=cachekey.so @pparam==--remove-all-params=true"
+    " @plugin=cachekey.so @pparam==--sort-params=true"
     " @plugin=prefetch.so @pparam==--front=false"
 )
 
@@ -165,14 +191,14 @@ ts1.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cqup> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
  logs:
   - filename: transaction
     format: custom
 '''.split("\n")
 )
 
-ts0 = Test.MakeATSProcess("ts0", command="traffic_server 2> trace0.log")
+ts0 = Test.MakeATSProcess("ts0")
 ts0.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'prefetch|http',
@@ -184,7 +210,7 @@ ts0.Disk.records_config.update({
 dns.addRecords(records={f"ts0": ["127.0.0.1"]})
 ts0.Disk.remap_config.AddLine(
     f"map http://ts0 http://ts1:{ts1.Variables.port}" +
-    " @plugin=cachekey.so @pparam=--remove-all-params=true"
+    " @plugin=cachekey.so @pparam=--sort-params=true"
     " @plugin=prefetch.so" +
     " @pparam=--front=true" +
     " @pparam=--fetch-policy=simple" +
@@ -196,7 +222,7 @@ ts0.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cqup> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
  logs:
   - filename: transaction
     format: custom
@@ -224,7 +250,7 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.DelayStart = 1
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{prefetch_header}\'"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'"
 )
 tr.Processes.Default.ReturnCode = 0
 
@@ -232,49 +258,49 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.DelayStart = 1
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{prefetch_name}"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}"
 )
 tr.Processes.Default.ReturnCode = 0
 
 # attempt to prefetch again
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{prefetch_header}\'"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'"
 )
 tr.Processes.Default.ReturnCode = 0
 
 # request the prefetched asset
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{prefetch_name}"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}"
 )
 tr.Processes.Default.ReturnCode = 0
 
-# query path
+# prefetch using query params with query prefetch perc encoded
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/query.txt -H \'{query_header}\'"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_name}\' -H \'{query_pf_perc_header}\'"
 )
 tr.Processes.Default.ReturnCode = 0
 
-# request the prefetched asset
+# request the prefetched asset without perc encoding
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_name}\'"
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_pf_name}\'"
 )
 tr.Processes.Default.ReturnCode = 0
 
-# same path (reject)
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{same_name} -H \'{same_header}\'"
-)
-tr.Processes.Default.ReturnCode = 0
-
-# root path
+# ensure root path prefetch works
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{root_name}\' -H \'{root_header}\'"
+)
+tr.Processes.Default.ReturnCode = 0
+
+# ensure request with nrr= field is skipped
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = (
+    f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{crr_name}\' -H \'{crr_header}\'"
 )
 tr.Processes.Default.ReturnCode = 0
 
