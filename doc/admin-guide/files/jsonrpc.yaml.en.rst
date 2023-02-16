@@ -76,7 +76,7 @@ File `jsonrpc.yaml` is a YAML format. The default configuration looks like:
    rpc:
      enabled: true
      unix:
-       restricted_api: true
+       restricted_api: false
 
 
 ===================== ==========================================================
