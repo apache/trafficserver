@@ -82,9 +82,6 @@ def parse_args():
     parser.add_argument(
         '--signal',
         help='Send the given signal to the process.')
-    parser.add_argument(
-        '--parent', action="store_true", default=False,
-        help='Interact with the parent process of the Traffic Server process')
 
     return parser.parse_args()
 
@@ -92,7 +89,7 @@ def parse_args():
 def main():
     args = parse_args()
     try:
-        process = get_desired_process(args.ts_identifier, args.parent)
+        process = get_ts_process_pid(args.ts_identifier)
     except GetPidError as e:
         print(traceback.format_exception(None, e, e.__traceback__),
               file=sys.stderr, flush=True)
