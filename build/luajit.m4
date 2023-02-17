@@ -174,5 +174,6 @@ if test "$has_luajit" -ne 0; then
 AC_SUBST([LUAJIT_DARWIN_LDFLAGS], ["-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"])
 fi
 AM_CONDITIONAL([IS_DARWIN], [test x$(uname) = xDarwin])
+AM_CONDITIONAL([IS_DARWIN_ARM64], [test x$(uname -m) = xarm64])
 
 ])

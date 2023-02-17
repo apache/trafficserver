@@ -94,7 +94,9 @@ traffic_server_traffic_server_LDADD = \
 	-lm
 
 if IS_DARWIN
+if !IS_DARWIN_ARM64
 traffic_server_traffic_server_LDADD += $(LUAJIT_DARWIN_LDFLAGS)
+endif
 endif
 
 if ENABLE_QUIC
