@@ -75,14 +75,14 @@ experimental_wasm_wasm_la_SOURCES = \
 if HAS_WASMEDGE
 experimental_wasm_wasm_la_SOURCES += \
   experimental/wasm/lib/src/wasmedge/wasmedge.cc \
-  experimetnal/wasm/lib/src/wasmedge/types.h \
+  experimental/wasm/lib/src/wasmedge/types.h \
   experimental/wasm/lib/include/proxy-wasm/wasmedge.h
 endif
 
 if HAS_WAMR
 experimental_wasm_wasm_la_SOURCES += \
   experimental/wasm/lib/src/wamr/wamr.cc \
-  experimetnal/wasm/lib/src/wamr/types.h \
+  experimental/wasm/lib/src/wamr/types.h \
   experimental/wasm/lib/include/proxy-wasm/wamr.h
 endif
 

@@ -79,10 +79,10 @@ TEST_CASE("Parsing test", "[parse]")
   parsed_data = parser.parse(argv2);
   REQUIRE(parsed_data.get("init") == true);
   REQUIRE(parsed_data.get("subinitopt") == true);
-  REQUIRE(parsed_data.get("globaly") == true);
-  REQUIRE(parsed_data.get("globaly").size() == 2);
-  REQUIRE(parsed_data.get("globaly")[0] == "y1");
-  REQUIRE(parsed_data.get("globaly")[1] == "y2");
+  REQUIRE(parsed_data.get("globally") == true);
+  REQUIRE(parsed_data.get("globally").size() == 2);
+  REQUIRE(parsed_data.get("globally")[0] == "y1");
+  REQUIRE(parsed_data.get("globally")[1] == "y2");
   REQUIRE(parsed_data.get("subinit_key").size() == 2);
   REQUIRE(parsed_data.get("subinit").size() == false);
   REQUIRE(parsed_data.get("initoption2").size() == 1);

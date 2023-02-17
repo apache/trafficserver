@@ -68,7 +68,7 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 
   if (!response.result.IsNull()) {
     // on you!
-    // Found convinient to let the derived class deal with the specifics.
+    // Found convenient to let the derived class deal with the specifics.
     write_output(response.result);
   }
 }

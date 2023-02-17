@@ -43,7 +43,7 @@ ts.Disk.records_config.update(
 
         # we expect this to fail and report while parsing as the field is not
         # registered nor have a valid type
-        # field2: 0 # we cant test this now as traffic_layout will output the error and setup.cli.ext will fail
+        # field2: 0 # we can't test this now as traffic_layout will output the error and setup.cli.ext will fail
         # to encode json
         field2: 0
 

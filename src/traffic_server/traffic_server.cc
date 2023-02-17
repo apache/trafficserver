@@ -478,7 +478,7 @@ private:
   struct rusage _usage;
 };
 
-/** Gate the emission of the "Traffic Server is fuly initialized" log message.
+/** Gate the emission of the "Traffic Server is fully initialized" log message.
  *
  * This message is intended to be helpful to users who want to know that
  * Traffic Server is not just running but has become fully initialized and is

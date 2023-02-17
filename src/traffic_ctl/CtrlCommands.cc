@@ -407,7 +407,7 @@ DirectRPCCommand::from_file_request()
       }
       std::string const &response = invoke_rpc(content);
       if (_printer->is_json_format()) {
-        // as we have the raw json in here, we cna just directly print it
+        // as we have the raw json in here, we can just directly print it
         _printer->write_output(response);
       } else {
         _printer->write_output(ts::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));

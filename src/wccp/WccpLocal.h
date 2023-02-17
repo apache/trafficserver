@@ -2050,7 +2050,7 @@ public:
       with an appropriate buffer.
       The actual router and cache data must be filled in
       after this call, which will allocate the appropriate spaces
-      in the message layou.
+      in the message layout.
   */
   void fill(detail::cache::GroupData const &group, ///< Service group for message.
             CacheIdBox const &cache_id,            ///< ID to use for this cache.
@@ -2116,7 +2116,7 @@ public:
       with an appropriate buffer.
       The actual router and cache data must be filled in
       after this call, which will allocate the appropriate spaces
-      in the message layou.
+      in the message layout.
   */
   void fill(detail::cache::GroupData const &group, ///< Service group for message.
             SecurityOption sec_opt                 ///< Security option to use.
@@ -2143,7 +2143,7 @@ public:
       with an appropriate buffer.
       The actual router and cache data must be filled in
       after this call, which will allocate the appropriate spaces
-      in the message layou.
+      in the message layout.
   */
   void fill(detail::cache::GroupData const &group, ///< Service group for message.
             SecurityOption sec_opt,                ///< Security option to use.

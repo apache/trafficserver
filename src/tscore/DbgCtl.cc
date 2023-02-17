@@ -128,7 +128,7 @@ DbgCtl::_new_reference(char const *tag)
 
   ctl.tag = tag;
 
-  // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
+  // DbgCtl instances may be declared as static objects in the destructors of objects not destroyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
   // other instances of DbgCtl.  That is why it is important to make sure the reference count is non-zero before
   // constructing _RegistryAccessor.  The _RegistryAccessor constructor is thereby able to assume that, if it creates

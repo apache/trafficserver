@@ -200,7 +200,7 @@ main(int argc, char *argv[])
                                                  "(default: 1)") |
              Opt(opt_enable_hugepage, "yes|no")["--ts-hugepage"]("enable hugepage\n"
                                                                  "(default: no)") |
-             Opt(thread_assiging_order, "n")["--ts-thread-order"]("thread assiging order [0-1]\n"
+             Opt(thread_assiging_order, "n")["--ts-thread-order"]("thread assigning order [0-1]\n"
                                                                   "0: use both of sibling of hyper-thread first (default)\n"
                                                                   "1: use a side of sibling of hyper-thread first") |
              Opt(debug_enabled, "yes|no")["--ts-debug"]("enable debuge mode\n");

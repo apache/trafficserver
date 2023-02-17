@@ -44,7 +44,7 @@ TEST_CASE("CrypoHash", "[libts][CrypoHash]")
   char buffer[(CRYPTO_HASH_SIZE * 2) + 1];
   hash.toHexStr(buffer);
 
-  // Compair to a known hash value
+  // Compare to a known hash value
   if (CryptoContext::Setting == CryptoContext::SHA256) {
     REQUIRE(strlen(buffer) == sha256.size());
     if (strlen(buffer) == sha256.size()) {
