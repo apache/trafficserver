@@ -51,7 +51,7 @@ ink_event_system_init(ts::ModuleVersion v)
     while (n < DEFAULT_BUFFER_SIZES && !src.empty()) {
       ts::TextView token{src.take_prefix_at(' ')};
       auto x = ts::svto_radix<10>(token);
-      if (token.empty() && x <= std::numeric_limits<int>::max()) {
+      if (token.empty() && x != std::numeric_limits<decltype(x)>::max()) {
         chunk_sizes[n++] = x;
       } else {
         break;
