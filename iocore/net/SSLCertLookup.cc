@@ -29,8 +29,10 @@
 #include "tscore/Regex.h"
 #include "tscore/Trie.h"
 #include "tscore/ink_config.h"
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
+
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_base.h"
+
 #include "tscore/TestBox.h"
 
 #include "I_EventSystem.h"
@@ -51,8 +53,9 @@ struct SSLAddressLookupKey {
     // lookup insensitive to address formatting and also allow the longest match semantic to produce
     // different matches if there is a certificate on the port.
 
-    ts::FixedBufferWriter w{key, sizeof(key)};
-    w.print("{}", ts::bwf::Hex_Dump(ip)); // dump as raw hex bytes, don't format as IP address.
+    swoc::FixedBufferWriter w{key, sizeof(key)};
+    w.print("{}", ip.isIp6() ? swoc::bwf::As_Hex(ip.sin6.sin6_addr) :
+                               swoc::bwf::As_Hex(ip.sin.sin_addr)); // dump as raw hex bytes, don't format as IP address.
     if (in_port_t port = ip.host_order_port(); port) {
       sep = static_cast<unsigned char>(w.size());
       w.print(".{:x}", port);

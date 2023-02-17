@@ -33,6 +33,8 @@
 #include "tscpp/util/TextView.h"
 #include "tscore/ink_inet.h"
 
+#include "swoc/TextView.h"
+
 IpAddr const IpAddr::INVALID;
 
 using namespace std::literals;
@@ -178,7 +180,7 @@ ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 int
 ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *port, std::string_view *rest)
 {
-  ts::TextView src(str); /// Easier to work with for parsing.
+  swoc::TextView src(str); /// Easier to work with for parsing.
   // In case the incoming arguments are null, set them here and only check for null once.
   // it doesn't matter if it's all the same, the results will be thrown away.
   std::string_view local;
@@ -223,10 +225,10 @@ ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *por
         ++src;
       }
     } else {
-      ts::TextView::size_type last = src.rfind(':');
-      if (last != ts::TextView::npos && last == src.find(':')) {
+      swoc::TextView::size_type last = src.rfind(':');
+      if (last != swoc::TextView::npos && last == src.find(':')) {
         // Exactly one colon - leave post colon stuff in @a src.
-        *addr   = src.take_prefix_at(last);
+        *addr   = src.take_prefix(last);
         colon_p = true;
       } else { // presume no port, use everything.
         *addr = src;
@@ -234,7 +236,7 @@ ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *por
       }
     }
     if (colon_p) {
-      ts::TextView tmp{src};
+      swoc::TextView tmp{src};
       src.ltrim_if(&ParseRules::is_digit);
 
       if (tmp.data() == src.data()) {               // no digits at all
@@ -304,9 +306,9 @@ ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
       zret = TS_ERROR;
     } else if ('/' == src[idx]) {
       if (TS_SUCCESS == addr.load(src.substr(0, idx))) { // load the address
-        ts::TextView parsed;
+        swoc::TextView parsed;
         src.remove_prefix(idx + 1); // drop address and separator.
-        int cidr = ts::svtoi(src, &parsed);
+        int cidr = swoc::svtoi(src, &parsed);
         if (parsed.size() && 0 <= cidr) { // a cidr that's a positive integer.
           // Special case the cidr sizes for 0, maximum, and for IPv6 64 bit boundaries.
           if (addr.isIp4()) {
@@ -965,14 +967,5 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   }
   return w;
 }
-
-namespace bwf
-{
-  detail::MemDump
-  Hex_Dump(IpEndpoint const &addr)
-  {
-    return detail::MemDump(ats_ip_addr8_cast(&addr), ats_ip_addr_size(&addr));
-  }
-} // namespace bwf
 
 } // namespace ts
