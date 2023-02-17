@@ -539,8 +539,12 @@ QUICNetVConnection::_handle_write_ready()
     quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
     uint64_t s                   = 0;
     while (quiche_stream_iter_next(writable, &s)) {
-      QUICStreamImpl *stream;
-      stream = static_cast<QUICStreamImpl *>(quiche_conn_stream_application_data(this->_quiche_con, s));
+      QUICStreamImpl *stream = static_cast<QUICStreamImpl *>(quiche_conn_stream_application_data(this->_quiche_con, s));
+      if (stream == nullptr) {
+        this->_stream_manager->create_stream(s);
+        stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
+        quiche_conn_stream_init_application_data(this->_quiche_con, s, stream);
+      }
       stream->send_data(this->_quiche_con);
     }
     quiche_stream_iter_free(writable);
