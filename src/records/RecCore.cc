@@ -223,12 +223,13 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
 
-    // Make sure there is no legacy file, if so we fail. This is to avoid issues with someone not knowing
-    // that we now are using records.yaml
+    // Make sure there is no legacy file, if so we drop a BIG WARNING and fail.
+    // This is to avoid issues with someone ignoring that we now use records.yaml
     ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
     if (ts::file::exists(old_config)) {
-      RecLog(DL_Warning, "Found a legacy config file. %s", old_config.c_str());
-      return REC_ERR_FAIL;
+      RecLog(DL_Fatal,
+             "**** Found a legacy config file (%s). Please remove it and migrate to the new YAML format before continuing. ****",
+             old_config.c_str());
     }
 
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
