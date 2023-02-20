@@ -4447,7 +4447,7 @@ HTTP/3 Configuration
 There is no configuration available yet on this release.
 
 QUIC Configuration
-====================
+==================
 
 All configurations for QUIC are still experimental and may be changed or
 removed in the future without prior notice.
@@ -4674,6 +4674,13 @@ removed in the future without prior notice.
 
    This is just for debugging. Do not change it from the default value unless
    you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.active_cid_limit_in INT 2
+   :reloadable:
+
+   Integer value specifying the maximum number of connection IDs from the peer
+   that |TS| is willing to store. The value MUST be at least 2.
+   Transport Parameter.
 
 UDP Configuration
 =====================
