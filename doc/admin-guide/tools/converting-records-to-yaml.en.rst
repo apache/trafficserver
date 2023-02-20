@@ -242,16 +242,14 @@ Now the records parser knows the type of the non core records.
 Final Notes
 ===========
 
-Internally ATS still uses the record style names, querying any record can still
+Internally ATS still uses variables with record style names, querying any record can still
 be done as usual. Either by using the ATS API or by using :program:`traffic_ctl`.
 
 
-This implementation will only accept a ``records.yaml`` config file, if not found the
-defaults will be used. If a ``record.config`` file is found in the config directory
-a warning will be shown, the legacy file should be removed.
-This is done to avoid someone having the legacy file thinking it is the current one.
+ATS only accepts a :file:`records.yaml` config file, if a legacy file ``records.config`` is found
+then ATS will fail to start.
 
 .. code-block:: bash
 
-   traffic_server WARNING: Found a legacy config file. /home/to/ats/config/records.config
+   traffic_server WARNING: **** Found a legacy config file (/your/ats/records.config). Please remove it and migrate to the new YAML format before continuing. ****
 
