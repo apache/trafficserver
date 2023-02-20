@@ -170,8 +170,9 @@ Display the current value of a configuration record.
 .. program:: traffic_ctl config get
 .. option:: --records
 
-   If this flag is provided, :option:`traffic_ctl config get` will emit results in
-   :file:`records.yaml` format.
+   If this flag is provided, :option:`traffic_ctl config get` will emit results in internal ats variable format.
+
+   The option :ref:`--cold <traffic_ctl_config_cold>` is available to get the values from a file.
 
 .. program:: traffic_ctl config
 .. option:: match [--records] REGEX [REGEX...]
@@ -179,7 +180,7 @@ Display the current value of a configuration record.
    :ref:`admin_lookup_records`
 
    Display the current values of all configuration variables whose names match the given regular
-   expression. The ``--records`` flag has the same behavior as :option:`traffic_ctl config get
+   expression. The ``--records`` flag has the same behavior as `traffic_ctl config get
    --records`.
 
 .. program:: traffic_ctl config
@@ -202,6 +203,77 @@ Display the current value of a configuration record.
    Set the named configuration record to the specified value. Refer to the :file:`records.yaml`
    documentation for a list of the configuration variables you can specify. Note that this is not a
    synchronous operation.
+
+   Supports the following options.
+
+
+.. _traffic_ctl_config_cold:
+
+   .. option:: --cold, -c [filename]
+
+
+   This option indicates to `traffic_ctl` that the action should be performed on a configuration file instead of using the ATS RPC
+   facility to store the new value. `traffic_ctl` will save the value in the passed `filename`, if no `filename` passed, then the sysconfig
+   :file:`records.yaml` will be attempted to be used.
+
+   ATS supports parsing multiple documents from the same YAML stream, so if you attempt to set a variable on a document with
+   none, one or multiple documents then a new document will be appended. In case you want to modify an existing field then `-u` option
+   should be passed, so the latest(top to bottom) field will be modified, if there is no variable already set in any of the documents,
+   then the new variable will be set in the latest document of the stream.
+
+   Specifying the file name is not needed as `traffic_ctl` will try to use the build(or the runroot if used) information to figure
+   out the path to the `records.yaml`.
+
+   If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
+
+   This option(only for the config file changes) lets you use the prefix `proxy.config.` or `ts.` for variable names, either would work.
+   If different prefix name is prepend, then traffic_ctl will work away using the provided variable name, this may not be what is intended
+   so, make sure you use the right prefixes.
+
+
+   Appending a new field in a records.yaml file.
+
+   .. code-block:: bash
+
+      $ traffic_ctl config set proxy.config.diags.debug.enabled 1 -c records.yaml
+      $ cat records.yaml
+      ts:
+      ...
+      # Document modified by traffic_ctl Mon Feb 13 23:07:15 2023
+      #
+      ---
+      ts:
+         diags:
+            debug:
+               enabled: 1
+
+   .. note::
+
+      The following options are only considered if ``--cold, -c`` is used, ignored otherwise.
+
+   .. option:: --update -u
+
+      Update latest field present. If there is no variable already set in any of the documents, then the new variable will be set in
+      the latest document.
+
+   .. option:: --type, -t int | float | str
+
+      Inject a tag information on the modified/new field, this is useful when you set a non registered record inside ATS.
+
+      .. code-block:: bash
+
+         $ traffic_ctl config set ts.some.plugin.config.max 100 -t int -c records.yaml
+         $ cat records.yaml
+         ...
+         # Document modified by traffic_ctl Mon Feb 13 23:07:15 2023
+         #
+         ---
+         ts:
+            some:
+               plugin:
+                  config:
+                    max: !<tag:yaml.org,2002:int> 100
+
 
 .. program:: traffic_ctl config
 .. option:: status

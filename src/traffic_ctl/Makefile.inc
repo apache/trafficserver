@@ -30,6 +30,7 @@ traffic_ctl_traffic_ctl_SOURCES = \
 	traffic_ctl/traffic_ctl.cc \
 	traffic_ctl/CtrlPrinters.cc \
 	traffic_ctl/CtrlCommands.cc \
+  traffic_ctl/FileConfigCommand.cc \
 	shared/rpc/IPCSocketClient.cc
 
 traffic_ctl_traffic_ctl_LDADD = \

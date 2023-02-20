@@ -106,3 +106,54 @@ tctl.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     'proxy.config.cache.ram_cache.size: 32212254720',
     'Should hold the configured value.'
 )
+
+
+# The whole idea is to test how ATS handles having multiple docs in the same records.yaml
+# file.
+# Every subsequent document will overwrite the previous one, this tests are meant to
+# exercise that logic.
+
+ts2 = Test.MakeATSProcess("ts2")
+
+# We are adding a new doc at the end of the original one created by the unit test.
+ts2.Disk.records_config.append_to_document(
+    '''
+    diags:
+      debug:
+        enabled: 0
+        tags: rpc|rec
+    '''
+)
+
+# This will append a new doc in the same file, this config value should overwrite
+# the previous one.
+ts2.Disk.records_config.append_to_document(
+    '''
+    diags:
+      debug:
+        tags: filemanager
+    '''
+)
+
+# After all the loading completed we want to have enabled=0 and tags=filemanager
+
+tr = Test.AddTestRun("Start a new ATS instance.")
+tr.Processes.Default.Command = 'echo 1'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(ts2)
+tr.Processes.StillRunningAfter = ts2
+
+tr2 = Test.AddTestRun("Test multiple docs from the same file")
+tr2.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.enabled proxy.config.diags.debug.tags'
+tr2.Processes.Default.Env = ts2.Env
+tr2.Processes.Default.ReturnCode = 0
+
+# Make sure it's what we want.
+tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.enabled: 0',
+    'Config should show debug disabled'
+)
+tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: filemanager',
+    'Config should show a different tag'
+)

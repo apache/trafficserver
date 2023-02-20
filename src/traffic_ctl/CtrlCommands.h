@@ -26,6 +26,30 @@ limitations under the License.
 #include "shared/rpc/RPCClient.h"
 #include "CtrlPrinters.h"
 
+/// @brief Class that provides access to the RPC side of things.
+struct RPCAccessor {
+protected:
+  /// @brief Invoke the remote server. This is the very basic function which does not play or interact with any codec. Request
+  ///        and message should be already en|de coded.
+  /// @param request A string representation of the json/yaml request.
+  /// @return a string with the json/yaml response.
+  /// @note This function does print the raw string if requested by the "--format". No printer involved, standard output.
+  std::string invoke_rpc(std::string const &request);
+
+  /// @brief Function that calls the rpc server. This function takes a json objects and uses the defined coded to convert them to a
+  ///        string. This function will call invoke_rpc(string) overload.
+  /// @param A Client request.
+  /// @return A server response.
+  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
+
+  /// @brief Function that calls the rpc server. The response will not be decoded, it will be a raw string.
+  void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw);
+
+  std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
+private:
+  shared::rpc::RPCClient _rpcClient; //!< RPC socket client implementation.
+};
+
 // ----------------------------------------------------------------------------------------------------------------------------------
 ///
 /// @brief Base Control Command class.
@@ -49,24 +73,6 @@ public:
   virtual void execute();
 
 protected:
-  /// @brief Invoke the remote server. This is the very basic function which does not play or interact with any codec. Request
-  ///        and message should be already en|de coded.
-  /// @param request A string representation of the json/yaml request.
-  /// @return a string with the json/yaml response.
-  /// @note This function does print the raw string if requested by the "--format". No printer involved, standard output.
-  std::string invoke_rpc(std::string const &request);
-
-  /// @brief Function that calls the rpc server. This function takes a json objects and uses the defined coded to convert them to a
-  ///        string. This function will call invoke_rpc(string) overload.
-  /// @param A Client request.
-  /// @return A server response.
-  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
-
-  /// @brief Function that calls the rpc server. The response will not be decoded, it will be a raw string.
-  void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw);
-
-  std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
-
   /// @brief The whole design is that the command will execute the @c _invoked_func once invoked. This function ptr should be
   ///        set by the appropriated derived class base on the passed parameters. The derived class have the option to override
   ///        the execute() function and do something else. Check @c RecordCommand as an example.
@@ -81,7 +87,6 @@ protected:
 
 private:
   ts::Arguments *_arguments = nullptr; //!< parsed traffic_ctl arguments.
-  shared::rpc::RPCClient _rpcClient;   //!< RPC socket client implementation.
 };
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -89,7 +94,7 @@ private:
 /// @brief Record Command Implementation
 ///        Used as base class for any command that needs to access to a TS record.
 ///        If deriving from this class, make sure you implement @c execute_subcommand() and call the _invoked_func yourself.
-class RecordCommand : public CtrlCommand
+class RecordCommand : public CtrlCommand, public RPCAccessor
 {
 public:
   using CtrlCommand::CtrlCommand;
@@ -114,6 +119,8 @@ class ConfigCommand : public RecordCommand
   static inline const std::string DIFF_STR{"diff"};
   static inline const std::string DEFAULTS_STR{"defaults"};
   static inline const std::string SET_STR{"set"};
+  static inline const std::string COLD_STR{"cold"};
+  static inline const std::string APPEND_STR{"append"};
   static inline const std::string STATUS_STR{"status"};
   static inline const std::string RELOAD_STR{"reload"};
   static inline const std::string REGISTRY_STR{"registry"};
@@ -125,6 +132,7 @@ class ConfigCommand : public RecordCommand
   void config_diff();
   void config_status();
   void config_set();
+  void file_config_set();
   void config_reload();
   void config_show_file_registry();
 
@@ -147,7 +155,7 @@ public:
   MetricCommand(ts::Arguments *args);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class HostCommand : public CtrlCommand
+class HostCommand : public CtrlCommand, public RPCAccessor
 {
 public:
   HostCommand(ts::Arguments *args);
@@ -163,7 +171,7 @@ private:
   void status_up();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class PluginCommand : public CtrlCommand
+class PluginCommand : public CtrlCommand, public RPCAccessor
 {
 public:
   PluginCommand(ts::Arguments *args);
@@ -173,7 +181,7 @@ private:
   void plugin_msg();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class DirectRPCCommand : public CtrlCommand
+class DirectRPCCommand : public CtrlCommand, public RPCAccessor
 {
 public:
   DirectRPCCommand(ts::Arguments *args);
@@ -194,7 +202,7 @@ private:
   bool validate_input(std::string const &in) const;
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class ServerCommand : public CtrlCommand
+class ServerCommand : public CtrlCommand, public RPCAccessor
 {
 public:
   ServerCommand(ts::Arguments *args);
@@ -208,7 +216,7 @@ private:
 };
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
-struct StorageCommand : public CtrlCommand {
+struct StorageCommand : public CtrlCommand, public RPCAccessor {
   StorageCommand(ts::Arguments *args);
 
 private:
@@ -219,3 +227,6 @@ private:
   void set_storage_offline();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
+
+BasePrinter::Options::OutputFormat parse_format(ts::Arguments *args);
+BasePrinter::Options parse_print_opts(ts::Arguments *args);
