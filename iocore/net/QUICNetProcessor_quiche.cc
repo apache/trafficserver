@@ -98,6 +98,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   quiche_config_set_initial_max_stream_data_uni(this->_quiche_config, 1000000);
   quiche_config_set_initial_max_streams_bidi(this->_quiche_config, params->initial_max_streams_bidi_in());
   quiche_config_set_initial_max_streams_uni(this->_quiche_config, params->initial_max_streams_uni_in());
+  quiche_config_set_disable_active_migration(this->_quiche_config, params->disable_active_migration());
   quiche_config_set_cc_algorithm(this->_quiche_config, QUICHE_CC_RENO);
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
