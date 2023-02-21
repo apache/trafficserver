@@ -100,4 +100,4 @@ https://github.com/ariya/FastLZ
 ~~
 
 include/tscpp/util/Bravo.h is C++ version of puzpuzpuz/xsync's RBMutex
-Copyright (c) 2021 Andrey Pechkurov
+Copyright (c) 2021 Andrey Pechkurov (MIT License)

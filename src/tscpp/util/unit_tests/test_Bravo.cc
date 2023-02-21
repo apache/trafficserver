@@ -31,7 +31,7 @@
 
 using namespace std::chrono_literals;
 
-TEST_CASE("BRAVO - simple check with try-lock", "[libts][BRAVO]")
+TEST_CASE("BRAVO - simple check", "[libts][BRAVO]")
 {
   SECTION("reader-reader")
   {
@@ -86,6 +86,43 @@ TEST_CASE("BRAVO - simple check with try-lock", "[libts][BRAVO]")
   }
 }
 
+TEST_CASE("BRAVO - multiple try-lock", "[libts][BRAVO]")
+{
+  SECTION("rwrw")
+  {
+    ts::bravo::shared_mutex mutex;
+    int i = 0;
+
+    {
+      ts::bravo::Token token{0};
+      CHECK(mutex.try_lock_shared(token));
+      CHECK(i == 0);
+      mutex.unlock_shared(token);
+    }
+
+    {
+      CHECK(mutex.try_lock());
+      CHECK(++i == 1);
+      mutex.unlock();
+    }
+
+    {
+      ts::bravo::Token token{0};
+      CHECK(mutex.try_lock_shared(token));
+      CHECK(i == 1);
+      mutex.unlock_shared(token);
+    }
+
+    {
+      CHECK(mutex.try_lock());
+      CHECK(++i == 2);
+      mutex.unlock();
+    }
+
+    CHECK(i == 2);
+  }
+}
+
 TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
 {
   SECTION("reader-reader")
@@ -96,21 +133,21 @@ TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
     std::thread t1{[&](ts::bravo::shared_mutex &mutex) {
                      ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(mutex);
                      CHECK(lock.owns_lock() == true);
-                     ++i;
+                     CHECK(i == 0);
                    },
                    std::ref(mutex)};
 
     std::thread t2{[&](ts::bravo::shared_mutex &mutex) {
                      ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(mutex);
                      CHECK(lock.owns_lock() == true);
-                     ++i;
+                     CHECK(i == 0);
                    },
                    std::ref(mutex)};
 
     t1.join();
     t2.join();
 
-    CHECK(i == 2);
+    CHECK(i == 0);
   }
 
   SECTION("reader-writer")
@@ -121,22 +158,22 @@ TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
     std::thread t1{[&](ts::bravo::shared_mutex &mutex) {
                      ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(mutex);
                      CHECK(lock.owns_lock() == true);
+                     CHECK(i == 0);
                      std::this_thread::sleep_for(100ms);
-                     ++i;
                    },
                    std::ref(mutex)};
 
     std::thread t2{[&](ts::bravo::shared_mutex &mutex) {
                      std::this_thread::sleep_for(50ms);
                      std::lock_guard<ts::bravo::shared_mutex> lock(mutex);
-                     ++i;
+                     CHECK(++i == 1);
                    },
                    std::ref(mutex)};
 
     t1.join();
     t2.join();
 
-    CHECK(i == 2);
+    CHECK(i == 1);
   }
 
   SECTION("writer-reader")
@@ -147,7 +184,7 @@ TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
     std::thread t1{[&](ts::bravo::shared_mutex &mutex) {
                      std::lock_guard<ts::bravo::shared_mutex> lock(mutex);
                      std::this_thread::sleep_for(100ms);
-                     ++i;
+                     CHECK(++i == 1);
                    },
                    std::ref(mutex)};
 
@@ -155,14 +192,14 @@ TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
                      std::this_thread::sleep_for(50ms);
                      ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(mutex);
                      CHECK(lock.owns_lock() == true);
-                     ++i;
+                     CHECK(i == 1);
                    },
                    std::ref(mutex)};
 
     t1.join();
     t2.join();
 
-    CHECK(i == 2);
+    CHECK(i == 1);
   }
 
   SECTION("writer-writer")
@@ -173,14 +210,14 @@ TEST_CASE("BRAVO - check with race", "[libts][BRAVO]")
     std::thread t1{[&](ts::bravo::shared_mutex &mutex) {
                      std::lock_guard<ts::bravo::shared_mutex> lock(mutex);
                      std::this_thread::sleep_for(100ms);
-                     ++i;
+                     CHECK(++i == 1);
                    },
                    std::ref(mutex)};
 
     std::thread t2{[&](ts::bravo::shared_mutex &mutex) {
                      std::this_thread::sleep_for(50ms);
                      std::lock_guard<ts::bravo::shared_mutex> lock(mutex);
-                     ++i;
+                     CHECK(++i == 2);
                    },
                    std::ref(mutex)};
 

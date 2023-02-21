@@ -304,8 +304,12 @@ public:
 
     // Slow path
     bool r = _mutex.underlying.try_lock_shared();
-    if (r && _mutex.read_bias.load(std::memory_order_acquire) == false && _now() >= _mutex.inhibit_until) {
-      _mutex.read_bias.store(true, std::memory_order_release);
+    if (r) {
+      // Set RBias if the BRAVO policy allows that
+      if (_mutex.read_bias.load(std::memory_order_acquire) == false && _now() >= _mutex.inhibit_until) {
+        _mutex.read_bias.store(true, std::memory_order_release);
+      }
+
       return true;
     }
 
@@ -321,7 +325,7 @@ public:
     }
 
     Slot &slot = _mutex.readers[token - 1];
-    slot.mu.store(0, std::memory_order_relaxed);
+    slot.mu.store(false, std::memory_order_relaxed);
   }
 
 private:
