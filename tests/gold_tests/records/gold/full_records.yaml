@@ -471,7 +471,6 @@ ts:
   remote_sync_interval_ms: 5000
   res_track_memory: 0
   restart:
-    active_client_threshold: 0
     stop_listening: 0
   reverse_proxy:
     enabled: 1

@@ -31,11 +31,6 @@ General
 
 .. ts:stat:: global proxy.node.config.reconfigure_time integer
 
-.. ts:stat:: global proxy.node.config.restart_required.manager integer
-   :type: flag
-
-   This metric is now deprecated. traffic_manager is no longer supported.
-
 .. ts:stat:: global proxy.node.config.restart_required.proxy integer
    :type: flag
 
@@ -52,12 +47,6 @@ General
 
    Indicates whether any form of HTTP proxying is currently enabled in the
    running instance of |TS|.
-
-.. ts:stat:: global proxy.node.restarts.manager.start_time integer
-   :type: gauge
-   :units: seconds
-
-   This metric is now deprecated. traffic_manager is no longer supported.
 
 .. ts:stat:: global proxy.node.restarts.proxy.cache_ready_time integer
    :type: gauge

@@ -35,7 +35,7 @@
      - supported: TSStatCreate, TSStatIntIncrement/TSStatIntDecrement, TSStatIntGet, TSStatIntSet, TSStatFindName
 
    CAVEAT: The librecords doesn't have APIs for "unregister stats" or "realloc rsb".
-   If you want to register ton of stats, bump -maxRecords option of traffic_manager/traffic_server.
+   If you want to register ton of stats, bump -maxRecords option of traffic_server.
 
  */
 class DynamicStats

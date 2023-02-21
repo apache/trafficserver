@@ -243,10 +243,9 @@ struct ConfigStatusRequest : shared::rpc::RecordLookupRequest {
   using super = shared::rpc::RecordLookupRequest;
   ConfigStatusRequest() : super()
   {
-    static const std::array<std::string, 6> statusFieldsNames = {
-      "proxy.process.version.server.long",        "proxy.node.restarts.proxy.start_time",
-      "proxy.node.config.reconfigure_time",       "proxy.node.config.reconfigure_required",
-      "proxy.node.config.restart_required.proxy", "proxy.node.config.restart_required.manager"};
+    static const std::array<std::string, 5> statusFieldsNames = {
+      "proxy.process.version.server.long", "proxy.node.restarts.proxy.start_time", "proxy.node.config.reconfigure_time",
+      "proxy.node.config.reconfigure_required", "proxy.node.config.restart_required.proxy"};
     for (auto &&recordName : statusFieldsNames) {
       super::emplace_rec(recordName, shared::rpc::NOT_REGEX, shared::rpc::METRIC_REC_TYPES);
     }
