@@ -83,6 +83,11 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "unable to get local issuer certificate",
     "Server certificate not issued by expected signer")
 
+# Pause a little to ensure mtime will be updated
+tr = Test.AddTestRun("Pause a little to ensure mtime will be different")
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
+
 tr = Test.AddTestRun("Update the bar cert to the signed 2 version")
 tr.Setup.CopyAs("ssl/signed2-bar.pem", ".", "{0}/signed-bar.pem".format(ts.Variables.SSLDir))
 # For some reason the Setup.CopyAs does not change the modification time, so we touch
