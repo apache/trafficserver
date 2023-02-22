@@ -41,8 +41,8 @@ ATSUuid::initialize(TSUuidVersion v)
     break;
   case TS_UUID_V4:
     RAND_bytes(_uuid.data, sizeof(_uuid.data));
-    _uuid.clockSeqAndReserved = static_cast<uint8_t>((_uuid.clockSeqAndReserved & 0x3F) | 0x80);
-    _uuid.timeHighAndVersion  = static_cast<uint16_t>((_uuid.timeHighAndVersion & 0x0FFF) | 0x4000);
+    _uuid._rfc4122.clockSeqAndReserved = static_cast<uint8_t>((_uuid._rfc4122.clockSeqAndReserved & 0x3F) | 0x80);
+    _uuid._rfc4122.timeHighAndVersion  = static_cast<uint16_t>((_uuid._rfc4122.timeHighAndVersion & 0x0FFF) | 0x4000);
 
     break;
   }
@@ -66,12 +66,13 @@ ATSUuid::operator=(const ATSUuid &other)
 bool
 ATSUuid::parseString(const char *str)
 {
-  int cnt = sscanf(str, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", &_uuid.timeLow, &_uuid.timeMid,
-                   &_uuid.timeHighAndVersion, &_uuid.clockSeqAndReserved, &_uuid.clockSeqLow, &_uuid.node[0], &_uuid.node[1],
-                   &_uuid.node[2], &_uuid.node[3], &_uuid.node[4], &_uuid.node[5]);
+  int cnt = sscanf(str, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", &_uuid._rfc4122.timeLow,
+                   &_uuid._rfc4122.timeMid, &_uuid._rfc4122.timeHighAndVersion, &_uuid._rfc4122.clockSeqAndReserved,
+                   &_uuid._rfc4122.clockSeqLow, &_uuid._rfc4122.node[0], &_uuid._rfc4122.node[1], &_uuid._rfc4122.node[2],
+                   &_uuid._rfc4122.node[3], &_uuid._rfc4122.node[4], &_uuid._rfc4122.node[5]);
 
   if ((11 == cnt) && _toString(_string)) {
-    switch (_uuid.timeHighAndVersion >> 12) {
+    switch (_uuid._rfc4122.timeHighAndVersion >> 12) {
     case 1:
       _version = TS_UUID_V1;
       break;

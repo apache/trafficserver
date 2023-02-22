@@ -72,37 +72,37 @@ public:
   uint32_t
   getTimeLow() const
   {
-    return _uuid.timeLow;
+    return _uuid._rfc4122.timeLow;
   }
 
   uint16_t
   getTimeMid() const
   {
-    return _uuid.timeMid;
+    return _uuid._rfc4122.timeMid;
   }
 
   uint16_t
   getTimeHighAndVersion() const
   {
-    return _uuid.timeHighAndVersion;
+    return _uuid._rfc4122.timeHighAndVersion;
   }
 
   uint8_t
   getClockSeqAndReserved() const
   {
-    return _uuid.clockSeqAndReserved;
+    return _uuid._rfc4122.clockSeqAndReserved;
   }
 
   uint8_t
   getClockSeqLow() const
   {
-    return _uuid.clockSeqLow;
+    return _uuid._rfc4122.clockSeqLow;
   }
 
   const uint8_t *
   getNode() const
   {
-    return _uuid.node;
+    return _uuid._rfc4122.node;
   }
 
 private:
@@ -118,7 +118,7 @@ private:
       uint8_t clockSeqAndReserved;
       uint8_t clockSeqLow;
       uint8_t node[6];
-    };
+    } _rfc4122;
   } _uuid;
 
   // This is the typically used visible portion of the UUID
@@ -128,9 +128,11 @@ private:
   bool
   _toString(char *buf)
   {
-    int len = snprintf(buf, TS_UUID_STRING_LEN + 1, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
-                       _uuid.timeLow, _uuid.timeMid, _uuid.timeHighAndVersion, _uuid.clockSeqAndReserved, _uuid.clockSeqLow,
-                       _uuid.node[0], _uuid.node[1], _uuid.node[2], _uuid.node[3], _uuid.node[4], _uuid.node[5]);
+    int len =
+      snprintf(buf, TS_UUID_STRING_LEN + 1, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
+               _uuid._rfc4122.timeLow, _uuid._rfc4122.timeMid, _uuid._rfc4122.timeHighAndVersion,
+               _uuid._rfc4122.clockSeqAndReserved, _uuid._rfc4122.clockSeqLow, _uuid._rfc4122.node[0], _uuid._rfc4122.node[1],
+               _uuid._rfc4122.node[2], _uuid._rfc4122.node[3], _uuid._rfc4122.node[4], _uuid._rfc4122.node[5]);
 
     return (len == TS_UUID_STRING_LEN);
   }
