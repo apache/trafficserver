@@ -2,6 +2,7 @@ Changes with Apache Traffic Server 9.2.1
   #9238 - Add slice config to strip Range header for HEAD requests
   #9286 - Skip dns_host_down autest from 9.2.x branch
   #9300 - Fixed issue with SDK_API_HttpParentProxySet_Fail regression test
+  #9303 - Issue 9274: read-while-writer readers can't find fragment inserted
   #9306 - Updated warning message for adding duplicated remap entries
   #9307 - AuTests: update to Proxy Verifier v2.6.0
   #9316 - Update rtd-theme to the latest version
@@ -11,4 +12,7 @@ Changes with Apache Traffic Server 9.2.1
   #9329 - s3_auth: Fix assertion failure of TSActionCancel
   #9330 - Don't send response body on status 204 No Content
   #9333 - Make 204 cacheable again
+  #9337 - s3_auth autest: convert from gold file to file contains
   #9339 - Revert PRs 7667 and 7807
+  #9387 - Update h2disable tests for new curl output
+  #9430 - On arm64 macOS, do not use pagezero linker flag when using luajit
