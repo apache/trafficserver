@@ -37,6 +37,10 @@
 
 #pragma once
 
+#include "DenseThreadId.h"
+
+#include "tscore/Diags.h"
+
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -46,14 +50,6 @@
 
 namespace ts::bravo
 {
-static inline uint32_t
-mix32(uint64_t z)
-{
-  z = (z ^ (z >> 33)) * 0xff51afd7ed558ccdL;
-  z = (z ^ (z >> 33)) * 0xc4ceb9fe1a85ec53L;
-  return static_cast<uint32_t>(z >> 32);
-}
-
 using time_point = std::chrono::time_point<std::chrono::system_clock>;
 
 #ifdef __cpp_lib_hardware_interference_size
@@ -202,9 +198,9 @@ private:
    You can use std::lock_guard for writers but, you can't use std::shared_lock for readers to handle ts::bravo::Token.
    Use ts::bravo::shared_lock for readers.
 
-   SLOT_SIZE needs to be larget than number of threads for lock_shared to go fast-path.
+   Set the SLOT_SIZE larger than DenseThreadId::num_possible_values to go fast-path.
  */
-template <typename T = std::shared_mutex, size_t SLOT_SIZE = 4096, int SLOWDOWN_GUARD = 7> class shared_mutex_impl
+template <typename T = std::shared_mutex, size_t SLOT_SIZE = 256, int SLOWDOWN_GUARD = 7> class shared_mutex_impl
 {
 public:
   shared_mutex_impl()  = default;
@@ -256,7 +252,7 @@ public:
   {
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = _starting_point();
+      size_t index = DenseThreadId::self();
       for (size_t i = 0; i < SLOT_SIZE; ++i) {
         index       = (index + i) % SLOT_SIZE;
         Slot &slot  = _mutex.readers[index];
@@ -285,9 +281,9 @@ public:
   {
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = _starting_point();
+      size_t index = DenseThreadId::self();
       for (size_t i = 0; i < SLOT_SIZE; ++i) {
-        index       += i;
+        index       = (index + i) % SLOT_SIZE;
         Slot &slot  = _mutex.readers[index];
         bool expect = false;
         if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_release, std::memory_order_relaxed)) {
@@ -344,13 +340,6 @@ private:
   _now()
   {
     return std::chrono::system_clock::now();
-  }
-
-  size_t
-  _starting_point()
-  {
-    std::hash<std::thread::id> hasher;
-    return mix32(hasher(std::this_thread::get_id())) % SLOT_SIZE;
   }
 
   /**

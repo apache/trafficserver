@@ -37,7 +37,10 @@ test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include @SWOC_INCLUDES@
 
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscpputil_LDADD = libtscpputil.la @SWOC_LIBS@
+test_tscpputil_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la
+	libtscpputil.la \
+	@SWOC_LIBS@
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_Bravo.cc \
@@ -49,6 +52,7 @@ test_tscpputil_SOURCES = \
 
 benchmark_shared_mutex_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
+benchmark_shared_mutex_LDADD = $(top_builddir)/src/tscore/libtscore.la
 benchmark_shared_mutex_SOURCES = unit_tests/benchmark_shared_mutex.cc
 
 clean-local:
