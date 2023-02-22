@@ -341,6 +341,11 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
 
+# Give ATS some time to process the change
+tr = Test.AddTestRun("Give ATS some time to process the change")
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
+
 tr = Test.AddTestRun("Run some more test traffic with the restricted disk limit.")
 tr.AddVerifierClientProcess(
     "client-2", replay_file, http_ports=[ts.Variables.port],
@@ -364,6 +369,11 @@ tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.unlimit"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
+
+# Give ATS some time to process the change
+tr = Test.AddTestRun("Give ATS some time to process the change")
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Run some more test traffic with no disk limit.")
 tr.AddVerifierClientProcess(
@@ -391,6 +401,11 @@ tr.Processes.Default.Command = "traffic_ctl plugin msg traffic_dump.limit 0"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
+
+# Give ATS some time to process the change
+tr = Test.AddTestRun("Give ATS some time to process the change")
+tr.Processes.Default.Command = "sleep 2"
+tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Run test traffic with newly restricted disk limit.")
 tr.AddVerifierClientProcess(
