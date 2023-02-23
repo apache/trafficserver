@@ -370,7 +370,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         })
 
     if enable_cache:
-        # In records.config, the cache is enabled by default so there's nothing
+        # In records.yaml, the cache is enabled by default so there's nothing
         # we have to do here to functionally enable it. However, the tests that
         # rely upon the cache will not function correctly if ATS starts
         # processing traffic before the cache is ready. Thus we set the

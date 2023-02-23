@@ -135,10 +135,10 @@ msgstr ""
 
 #: ../../../admin-guide/files/storage.config.en.rst:71
 msgid ""
-"As with standard ``records.config`` integers, human readable prefixes are "
+"As with standard ``records.yaml`` integers, human readable prefixes are "
 "also supported. They include"
 msgstr ""
-"標準的な ``records.config`` の数値と同様、ヒューマンリーダブルなプレフィック"
+"標準的な ``records.yaml`` の数値と同様、ヒューマンリーダブルなプレフィック"
 "スもサポートされています。これらには以下のものを含みます。"
 
 #: ../../../admin-guide/files/storage.config.en.rst:74

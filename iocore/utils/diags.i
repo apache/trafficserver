@@ -30,7 +30,7 @@
 //      void reconfigure_diags()
 //
 //      This function extracts the current diags configuration settings from
-//      records.config, and rebuilds the Diags data structures.
+//      records.yaml, and rebuilds the Diags data structures.
 //
 //////////////////////////////////////////////////////////////////////////////
 

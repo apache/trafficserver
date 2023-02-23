@@ -32,10 +32,15 @@ Quick install:
 
 
 Edge cache debugging
-	To enable the TSDebug verbose logging, change records.config to have:
+	To enable the TSDebug verbose logging, change records.yaml to have:
 
-		CONFIG proxy.config.diags.debug.enabled INT 1
-		CONFIG proxy.config.diags.debug.tags STRING url_sig
+  ```yaml
+  ts:
+    diags:
+      debug:
+        enabled: 1
+        tags: url_sig
+  ```
 
 	and do a traffic_ctl config reload; Debug output will go to traffic.out.
 	Failed transactions (signature check fails that is) will be logged

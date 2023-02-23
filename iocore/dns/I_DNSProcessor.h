@@ -89,7 +89,7 @@ struct DNSProcessor : public Processor {
     /// Default: single threaded handler.
     DNSHandler *handler = nullptr;
     /// Query timeout value.
-    /// Default: @c DEFAULT_DNS_TIMEOUT (or as set in records.config)
+    /// Default: @c DEFAULT_DNS_TIMEOUT (or as set in records.yaml)
     int timeout = 0; ///< Timeout value for request.
     /// Host resolution style.
     /// Default: IPv4, IPv6 ( @c HOST_RES_IPV4 )

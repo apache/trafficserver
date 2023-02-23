@@ -267,12 +267,12 @@ public:
   int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
   //
-  // named records.config int variables
+  // named records.yaml int variables
   //
   int marshal_config_int_var(char *config_var, char *buf);
 
   //
-  // named records.config string variables
+  // named records.yaml string variables
   //
   int marshal_config_str_var(char *config_var, char *buf);
 

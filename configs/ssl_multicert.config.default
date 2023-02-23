@@ -13,7 +13,7 @@
 # is the leftmost domain component.
 #
 # The certificate file path, CA path and key path specified in
-# records.config will be used for all certificates, CAs and keys
+# records.yaml will be used for all certificates, CAs and keys
 # specified here.
 #
 # Fields:

@@ -243,13 +243,21 @@ Enable Reverse Proxying
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Within the :file:`records.yaml` configuration file, ensure that the following
-settings have been configured as shown below::
+settings have been configured as shown below:
 
-    CONFIG proxy.config.http.cache.http INT 1
-    CONFIG proxy.config.reverse_proxy.enabled INT 1
-    CONFIG proxy.config.url_remap.remap_required INT 1
-    CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
+.. code-block:: yaml
+
+  ts:
+    http:
+      cache:
+        http: 1
+      server_ports: 8080 8080:ipv6
+    reverse_proxy:
+      enabled: 1
+    url_remap:
+      pristine_host_hdr: 1
+      remap_required: 1
+
 
 :ts:cv:`proxy.config.http.cache.http`
     Enables caching of proxied HTTP requests.
@@ -374,13 +382,21 @@ Final Configurations
 Once completed, the following configuration files for |AW| contain the following
 entries:
 
-:file:`records.yaml`::
+:file:`records.yaml`:
 
-    CONFIG proxy.config.http.cache.http INT 1
-    CONFIG proxy.config.reverse_proxy.enabled INT 1
-    CONFIG proxy.config.url_remap.remap_required INT 1
-    CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 80 80:ipv6
+.. code-block:: yaml
+
+  ts:
+    http:
+      cache:
+        http: 1
+      server_ports: 8080 8080:ipv6
+    reverse_proxy:
+      enabled: 1
+    url_remap:
+      pristine_host_hdr: 1
+      remap_required: 1
+
 
 :file:`remap.config`::
 
@@ -417,10 +433,17 @@ Contrary to a reverse proxy, where you have a defined list of origin servers for
 which you wish to proxy (and optionally cache), a forward proxy is used to
 proxy (and optionally cache) for arbitrary remote hosts. As such, the following
 settings in :file:`records.yaml` are the base configuration for a minimal
-forward proxy::
+forward proxy:
 
-    CONFIG proxy.config.url_remap.remap_required INT 0
-    CONFIG proxy.config.http.cache.http INT 1
+.. code-block:: yaml
+
+   ts:
+     http:
+       cache:
+         http: 1
+     url_remap:
+       remap_required: 0
+
 
 :ts:cv:`proxy.config.url_remap.remap_required`
     Disables the requirement for a remap rule to exist and match the incoming
@@ -430,9 +453,13 @@ forward proxy::
     Enables caching of proxied HTTP requests.
 
 If your installation will be strictly a forwarding proxy, then reverse proxying
-should be explicitly disabled::
+should be explicitly disabled:
 
-    CONFIG proxy.config.reverse_proxy.enabled INT 0
+.. code-block:: yaml
+
+   ts:
+     reverse_proxy:
+       enabled: 0
 
 Explicit Versus Transparent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

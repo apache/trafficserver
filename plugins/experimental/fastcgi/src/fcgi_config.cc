@@ -638,7 +638,7 @@ FcgiPluginConfig::initConfig(const char *fn)
           // Find the configuration name
           tok = strtok_r(nullptr, " \t", &ln);
           if (fcgiHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-            TSError("[ats_fastcgi] File %s, line %d: no records.config name given", fn, line_num);
+            TSError("[ats_fastcgi] File %s, line %d: no records.yaml name given", fn, line_num);
             continue;
           }
 

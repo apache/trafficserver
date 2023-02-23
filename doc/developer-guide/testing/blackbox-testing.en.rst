@@ -113,7 +113,7 @@ A number of file objects are also defined to help test TrafficServer. Files that
 - squid.log
 - error.log
 - diags.log
-- records.config
+- records.yaml
 - cache.config
 - hosting.config
 - ip_allow.yaml
@@ -134,7 +134,7 @@ Example
 
   ts1 = Test.MakeATSProcess("ts1",select_ports=False)
   # uses the setup object in the scope of the process object
-  ts1.Setup.ts.CopyConfig('config/records_8090.config','records.config')
+  ts1.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml')
 
 
 Origin Server

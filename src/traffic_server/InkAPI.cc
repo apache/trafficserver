@@ -9125,7 +9125,7 @@ TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
   return TS_ERROR;
 }
 
-// APIs to register new Mgmt (records.config) entries.
+// APIs to register new Mgmt (records) entries.
 TSReturnCode
 TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default, TSRecordUpdateType update_type,
                    TSRecordCheckType check_type, const char *check_regex, TSRecordAccessType access_type)

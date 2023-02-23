@@ -34,7 +34,7 @@
 //      void reconfigure_diags()
 //
 //      This function extracts the current diags configuration settings from
-//      records.config, and rebuilds the Diags data structures.
+//      records.yaml, and rebuilds the Diags data structures.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -66,7 +66,7 @@ DiagsConfig::reconfigure_diags()
     register_diags_callbacks();
   }
   ////////////////////////////////////////////
-  // extract relevant records.config values //
+  // extract relevant records.yaml values //
   ////////////////////////////////////////////
 
   all_found = true;
@@ -75,7 +75,7 @@ DiagsConfig::reconfigure_diags()
   c.enabled(DiagsTagType_Debug, _diags->base_debug_tags != nullptr ? 1 : 0);
   c.enabled(DiagsTagType_Action, _diags->base_action_tags != nullptr ? 1 : 0);
 
-  // enabled if records.config set
+  // enabled if records.yaml set
 
   e = static_cast<int>(REC_readInteger("proxy.config.diags.debug.enabled", &found));
   if (e && found) {
@@ -137,7 +137,7 @@ DiagsConfig::reconfigure_diags()
     _diags->deactivate_all(DiagsTagType_Action);
 
     //////////////////////////////////////////////////////////////////////
-    // add new tag tables from records.config or command line overrides //
+    // add new tag tables from records.yaml or command line overrides //
     //////////////////////////////////////////////////////////////////////
 
     _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : dt), DiagsTagType_Debug);
@@ -165,7 +165,7 @@ DiagsConfig::reconfigure_diags()
 //
 //      static void *diags_config_callback(void *opaque_token, void *data)
 //
-//      This is the records.config registration callback that is called
+//      This is the records.yaml registration callback that is called
 //      when any diags value is changed.  Each time a diags value changes
 //      the entire diags state is reconfigured.
 //
@@ -243,7 +243,7 @@ DiagsConfig::config_diags_norecords()
     c.enabled(DiagsTagType_Action, 0);
   }
 
-  // Route all outputs to stderr by default until reconfigured with records.config
+  // Route all outputs to stderr by default until reconfigured with records.yaml
   for (auto &o : c.outputs) {
     o.to_stderr = true;
   }
@@ -336,7 +336,7 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
 //      right now, this system kind of sucks, we rebuild the tag tables //
 //      from scratch for *every* proxy.config.diags value that changed; //
 //      dgourley is looking into changing the management API to provide //
-//      a callback each time records.config changed, possibly better.   //
+//      a callback each time records.yaml changed, possibly better.   //
 //
 //////////////////////////////////////////////////////////////////////////////
 void

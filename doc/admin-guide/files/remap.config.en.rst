@@ -343,13 +343,25 @@ redirected to 'redirect-URL'.
 At least one regular expressions must be specified in order to activate
 'deep linking protection'.  There are limitations for the number of referer
 regular expression strings - 2048.  In order to enable the 'deep linking
-protection' feature in Traffic Server, configure records.config with::
+protection' feature in Traffic Server, configure records.yaml with:
 
-    CONFIG proxy.config.http.referer_filter INT 1
+.. code-block:: yaml
+   :linenos:
+   :emphasize-lines: 3
 
-In order to enable run-time formatting for redirect URL, configure::
+   ts:
+     http:
+       referer_filter: 1
 
-    CONFIG proxy.config.http.referer_format_redirect INT 1
+In order to enable run-time formatting for redirect URL, configure:
+
+.. code-block:: yaml
+   :linenos:
+   :emphasize-lines: 3
+
+   ts:
+     http:
+       referer_format_redirect: 1
 
 When run-time formatting for redirect-URL was enabled the following format
 symbols can be used::

@@ -47,11 +47,16 @@ ts:
 # Thread configurations. Docs:
 #    https://docs.trafficserver.apache.org/records.yaml#thread-variables
 ##############################################################################
+  diags:
+    debug:
+      enabled: 0
+      tags: http|dns
+
   exec_thread:
     affinity: 1
     autoconfig:
       enabled: 1
-      scale: 1.13
+      scale: 1.0
     limit: 2
   http:
     accept_no_activity_timeout: 120

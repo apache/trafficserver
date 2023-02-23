@@ -99,7 +99,7 @@ A number of file objects are defined to help with adding values to a given confi
  * diags.log
 
 ##### config files
- * records.config
+ * records.yaml
  * cache.config
  * hosting.config
  * ip_allow.yaml
@@ -121,7 +121,7 @@ Create a server
 ```python
 # don't set ports because a config file will set them
 ts1 = Test.MakeATSProcess("ts1",select_ports=False)
-ts1.Setup.ts.CopyConfig('config/records_8090.config','records.config')
+ts1.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml')
 ```
 
 Create a server and get the dynamic port value
@@ -172,14 +172,14 @@ Copy a file over
 ```python
 ts1 = Test.MakeATSProcess("ts1",select_ports=False)
 # uses the setup object in the scope of the process object
-ts1.Setup.ts.CopyConfig('config/records_8090.config','records.config')
+ts1.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml')
 ```
 ```python
 ts1 = Test.MakeATSProcess("ts1",select_ports=False)
 # uses the Setup in the global process via a variable passing
-Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',ts1)
+Test.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml',ts1)
 # same as above, but uses the dynamic object model form
-Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',Test.Processes.ts1)
+Test.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml',Test.Processes.ts1)
 ```
 
 ## Setting up Origin Server

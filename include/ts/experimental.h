@@ -231,7 +231,7 @@ tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sock
 /**
    Attempt to attach the contp continuation to sockets that have already been
    opened by the traffic manager and defined as belonging to plugins (based on
-   records.config configuration). If a connection is successfully accepted,
+   records.yaml configuration). If a connection is successfully accepted,
    the TS_EVENT_NET_ACCEPT is delivered to the continuation. The event
    data will be a valid TSVConn bound to the accepted connection.
    In order to configure such a socket, add the "plugin" keyword to a port
@@ -239,7 +239,7 @@ tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sock
    Transparency/IP settings can also be defined, but a port cannot have
    both the "ssl" or "plugin" keywords configured.
 
-   Need to update records.config comments on proxy.config.http.server_ports
+   Need to update records.yaml comments on proxy.config.http.server_ports
    when this option is promoted from experimental.
  */
 tsapi TSReturnCode TSPluginDescriptorAccept(TSCont contp);
@@ -325,7 +325,7 @@ tsapi char *TSMatcherLineName(TSMatcherLine ml, int element);
 tsapi char *TSMatcherLineValue(TSMatcherLine ml, int element);
 
 /****************************************************************************
- *  Set a records.config integer variable
+ *  Set a records.yaml integer variable
  ****************************************************************************/
 // DEPRECATED
 tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);

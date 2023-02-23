@@ -390,7 +390,7 @@ A requested object was larger than the maximum size allowed in the
 Traffic Server cache, so Traffic Server provided proxy service for the
 oversized object but did not cache it. To set the object size limit for
 the cache, modify the :ts:cv:`proxy.config.cache.max_doc_size`
-variable in the records.config file. If you do not want to limit the
+variable in the :file:`records.yaml` file. If you do not want to limit the
 size of objects in the cache, then set the document size
 to ``0`` (zero).
 

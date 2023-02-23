@@ -543,11 +543,11 @@ msgid ""
 "At least one regular expressions must be specified in order to activate "
 "'deep linking protection'.  There are limitations for the number of referer "
 "regular expression strings - 2048.  In order to enable the 'deep linking "
-"protection' feature in Traffic Server, configure records.config with::"
+"protection' feature in Traffic Server, configure records.yaml with::"
 msgstr ""
 "'直リンク禁止機能' を動作させるためには少なくとも一つの正規表現が指定されて"
 "いなければ成りません。リファラー正規表現の数には制限があり 2048 です。"
-"Traffic Server で '直リンク禁止機能' を有効化するためには records.config の"
+"Traffic Server で '直リンク禁止機能' を有効化するためには records.yaml の"
 "次の変数を設定してください。"
 
 #: ../../../admin-guide/files/remap.config.en.rst:311

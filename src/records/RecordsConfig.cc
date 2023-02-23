@@ -40,7 +40,7 @@ static const RecordElement RecordsConfig[] =
 {
   //##############################################################################
   //#
-  //# records.config items
+  //# records.yaml items
   //#
   //##############################################################################
   {RECT_CONFIG, "proxy.config.product_company", RECD_STRING, "Apache Software Foundation", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

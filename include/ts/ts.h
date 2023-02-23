@@ -1309,7 +1309,7 @@ tsapi char *TSSslSecretGet(const char *secret_name, int secret_name_length, int 
 
 tsapi TSReturnCode TSSslSecretUpdate(const char *secret_name, int secret_name_length);
 
-/* Create a new SSL context based on the settings in records.config */
+/* Create a new SSL context based on the settings in records.yaml */
 tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi TSReturnCode TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
@@ -2125,7 +2125,7 @@ typedef enum {
   TS_STAT_SYNC_TIMEAVG,
 } TSStatSync;
 
-/* APIs to create new records.config configurations */
+/* APIs to create new records.yaml configurations */
 tsapi TSReturnCode TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default,
                                       TSRecordUpdateType update_type, TSRecordCheckType check_type, const char *check_regex,
                                       TSRecordAccessType access_type);

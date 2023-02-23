@@ -68,11 +68,23 @@ full restart of Traffic Server.
 
 The following is a sample portion of :file:`records.yaml`:
 
-.. figure:: ../static/images/admin/records.jpg
-   :align: center
-   :alt: Sample records.config file
 
-   Sample records.config file
+.. code-block:: yaml
+   :linenos:
+
+   diags:
+      debug:
+         enabled: 0
+         tags: http|dns
+
+   exec_thread:
+      affinity: 1
+      autoconfig:
+         enabled: 1
+         scale: 1.0
+      limit: 2
+
+   Sample records.yaml file
 
 In addition to :file:`records.yaml`,
 Traffic Server provides other configuration files that are used to

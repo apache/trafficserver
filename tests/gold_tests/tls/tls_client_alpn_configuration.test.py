@@ -38,7 +38,7 @@ class TestAlpnFunctionality:
         """Declare the various test Processes.
 
         :param records_config_alpn: The string with which to configure the ATS
-        ALPN via proxy.config.ssl.client.alpn_protocols in the records.config.
+        ALPN via proxy.config.ssl.client.alpn_protocols in the records.yaml.
         If the paramenter is None, then no ALPN configuration will be
         explicitly set and ATS will use the default value.
 
@@ -48,7 +48,7 @@ class TestAlpnFunctionality:
         will be set.
 
         :param alpn_is_malformed: If True, then the configured ALPN string in
-        the records.config will be malformed. The TestRun will be configured to
+        the records.yaml will be malformed. The TestRun will be configured to
         expect a warning and the server will be configured to receive no ALPN.
         """
         self._alpn = records_config_alpn

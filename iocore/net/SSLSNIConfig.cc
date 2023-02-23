@@ -296,7 +296,7 @@ SNIConfig::release(SNIConfigParams *params)
 }
 
 // See if any of the client-side actions would trigger for this combination of servername and client IP
-// host_sni_policy is an in/out parameter.  It starts with the global policy from the records.config
+// host_sni_policy is an in/out parameter.  It starts with the global policy from the records.yaml
 // setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
 // contains a host_sni_policy entry
 bool

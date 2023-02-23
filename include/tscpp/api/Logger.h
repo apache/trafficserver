@@ -105,7 +105,7 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
 /**
  * A helper macro to get access to the Diag messages available in traffic server. These can be enabled
  * via traffic_server -T "tag.*" or since this macro includes the file can you further refine to an
- * individual file or even a particular line! This can also be enabled via records.config.
+ * individual file or even a particular line! This can also be enabled via records.yaml.
  */
 #define TS_DEBUG(tag, fmt, ...)                                                        \
   do {                                                                                 \
@@ -115,7 +115,7 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
 /**
  * A helper macro to get access to the error.log messages available in traffic server. This
  * will also output a DEBUG message visible via traffic_server -T "tag.*", or by enabling the
- * tag in records.config.
+ * tag in records.yaml.
  */
 #define TS_ERROR(tag, fmt, ...)                                                               \
   do {                                                                                        \
@@ -131,7 +131,7 @@ struct LoggerState;
  * @brief Create log files that are automatically rolled and cleaned up as space is required.
  *
  * Log files created using the Logger class will be placed in the same directory as
- * other log files, that directory is specified in records.config. All of the logging
+ * other log files, that directory is specified in records.yaml. All of the logging
  * configuration such as max space available for all logs includes any logs created
  * using the Logger class.
  *

@@ -31,7 +31,7 @@
 #include <cstring>
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
-// in 'records.config'
+// in 'records.yaml'
 
 // debug messages during one-time initialization
 static const char DEBUG_TAG_INIT[] = "ssntxnorder_verify.init";

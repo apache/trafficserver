@@ -219,7 +219,7 @@ This will display the name as a link to the full definition.
 
 In general, a new configuration variable should not be present in the default
 :file:`records.yaml`. If it is added, such defaults should be added to the
-file ``proxy/config/records.config.default.in``. This is used to generate the
+file ``proxy/config/records.yaml.default.in``. This is used to generate the
 default :file:`records.yaml`. Just add the variable to the file in an
 appropriate place with a proper default as this will now override whatever
 default you put in the code for new installs.

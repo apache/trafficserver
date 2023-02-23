@@ -108,13 +108,13 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
 //      This is the constructor for the Diags class.  The constructor takes
 //      two strings called the "base debug tags" (bdt) and the
 //      "base action tags" (bat).  These represent debug/action overrides,
-//      to override the records.config values.  They current come from
+//      to override the records.yaml values.  They current come from
 //      command-line options.
 //
-//      If bdt is not nullptr, and not "", it overrides records.config settings.
-//      If bat is not nullptr, and not "", it overrides records.config settings.
+//      If bdt is not nullptr, and not "", it overrides records.yaml settings.
+//      If bat is not nullptr, and not "", it overrides records.yaml settings.
 //
-//      When the constructor is done, records.config callbacks will be set,
+//      When the constructor is done, records.yaml callbacks will be set,
 //      the initial values read, and the Diags instance will be ready to use.
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -773,7 +773,7 @@ Diags::should_roll_outputlog()
   // If for some reason, someone wants the feature to have stdout pointing to some file on
   // disk, and stderr pointing to a different file on disk, and then also wants both files to
   // rotate according to the (same || different) scheme, it would not be difficult to add
-  // some more config options in records.config and said feature into this function.
+  // some more config options in records.yaml and said feature into this function.
   if (ret_val) {
     ink_assert(!need_consider_stderr);
   }

@@ -408,10 +408,16 @@ ATS的内存是一个历来敏感的话题，内存泄漏也是最最难排查�
 	                  0 |                  0 |     131072 | memory/ioBufAllocator[10]
 	                  0 |                  0 |      65536 | memory/ioBufAllocator[9]
 
-如上所示中结果中，ram在records.config中的相关配置为：
+如上所示中结果中，ram在records.yaml中的相关配置为：
 
-	CONFIG proxy.config.cache.ram_cache.size INT 3221225470
-	CONFIG proxy.config.cache.ram_cache_cutoff INT 41943040
+```yaml
+  ts:
+    cache:
+      ram_cache:
+         size: 3221225470
+      ram_cache_cutoff: 41943040
+```
+
 
 remap.config配置为：
 

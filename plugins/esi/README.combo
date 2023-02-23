@@ -85,7 +85,7 @@ Config sample
   map http://localhost/combo.com http://os.combo.com
   map http://localhost/dir1      http://os1.combo.com
 
-  (note that if pristine_host_hdr is enabled in records.config, the Host header
+  (note that if pristine_host_hdr is enabled in records.yaml, the Host header
    of request to your combo origin server is 'localhost')
 
 Version 1.2.0

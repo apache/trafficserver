@@ -53,17 +53,17 @@ class Http2FlowControlTest:
 
         :param initial_window_size: The value with which to configure the
         proxy.config.http2.initial_window_size_in ATS parameter in the
-        records.config file. If the paramenter is None, then no window size
+        records.yaml file. If the paramenter is None, then no window size
         will be explicitly set and ATS will use the default value.
 
         :param max_concurrent_streams_in: The value with which to configure the
         proxy.config.http2.max_concurrent_streams_in ATS parameter in the
-        records.config file. If the paramenter is None, then no window size
+        records.yaml file. If the paramenter is None, then no window size
         will be explicitly set and ATS will use the default value.
 
         :param flow_control_policy: The value with which to configure the
         proxy.config.http2.flow_control.policy_in ATS parameter the
-        records.config file. If the paramenter is None, then no policy
+        records.yaml file. If the paramenter is None, then no policy
         configuration will be explicitly set and ATS will use the default
         value.
         """

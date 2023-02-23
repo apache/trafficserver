@@ -10,9 +10,12 @@
 #  2) Protect the proxy server, to only allow certain requests.
 #
 #  With the default configurations, at least one remap rule is required. This
-#  can be relaxed with the following configuration in records.config:
+#  can be relaxed with the following configuration in records.yaml:
 #
-#   CONFIG proxy.config.url_remap.remap_required INT 0
+#  ts:
+#    url_remap:
+#      remap_required: 0
+#
 #
 # Be aware, doing so makes the proxy a generic, open-relay!
 #
@@ -96,13 +99,19 @@
 #  At least one regular expressions must be specified in order to activate
 #  'deep linking protection'.  There are limitations for the number of referer
 #  regular expression strings - 2048.  In order to enable the 'deep linking
-#  protection' feature in Traffic Server, configure records.config with:
+#  protection' feature in Traffic Server, configure records.yaml with:
 #
-#    CONFIG proxy.config.http.referer_filter INT 1
+#  ts:
+#    http:
+#      referer_filter: 1
+#
 #
 #  In order to enable run-time formatting for redirect0URL, configure
 #
-#    CONFIG proxy.config.http.referer_format_redirect INT 1
+#  ts:
+#    http:
+#      referer_format_redirect: 1
+#
 #
 #  When run-time formatting for redirect-URL was enabled the following format
 #  symbols can be used:

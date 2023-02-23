@@ -540,7 +540,7 @@ msgstr "HTTP リクエスト用マッピングルールの使用"
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:281
 msgid ""
 "Traffic Server provides several reverse proxy configuration options in :"
-"file:`records.config` that enable you to:"
+"file:`records.yaml` that enable you to:"
 msgstr ""
 "Traffic Server は :file:`records.yaml` でいくつかのリバースプロキシー設定"
 "オプションを提供し次のことを可能にします。"

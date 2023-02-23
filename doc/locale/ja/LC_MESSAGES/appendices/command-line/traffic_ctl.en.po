@@ -191,7 +191,7 @@ msgstr ""
 #: ../../../appendices/command-line/traffic_ctl.en.rst:158
 msgid ""
 "Set the named configuration record to the specified value. Refer to the :"
-"file:`records.config` documentation for a list of the configuration "
+"file:`records.yaml` documentation for a list of the configuration "
 "variables you can specify. Note that this is not a synchronous operation."
 msgstr ""
 

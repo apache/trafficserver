@@ -254,14 +254,14 @@ HttpBodyFactory::reconfigure()
   } // callbacks not setup right
 
   ////////////////////////////////////////////
-  // extract relevant records.config values //
+  // extract relevant records.yaml values //
   ////////////////////////////////////////////
 
   Debug("body_factory", "config variables changed, reconfiguring...");
 
   all_found = true;
 
-  // enable_customizations if records.config set
+  // enable_customizations if records.yaml set
   rec_err               = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
   enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
   all_found             = all_found && (rec_err == REC_ERR_OKAY);

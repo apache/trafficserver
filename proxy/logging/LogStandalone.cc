@@ -198,7 +198,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   init_log_standalone_basic
 
   This routine is similar to init_log_standalone, but it is intended for
-  simple standalone applications that do not read the records.config file
+  simple standalone applications that do not read the records.yaml file
   and that do not need a process manager, thus it:
 
   1) does not call initialize_process_manager

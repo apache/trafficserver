@@ -33,7 +33,7 @@ class ForwardProxyTest:
         :param verify_scheme_matches_protocol: The value with which to
         configure Traffic Server's
         proxy.config.ssl.client.scheme_proto_mismatch_policy. A value of None
-        means that no value will be explicitly set in the records.config.
+        means that no value will be explicitly set in the records.yaml.
         :type verify_scheme_matches_protocol: int or None
         """
         self._scheme_proto_mismatch_policy = verify_scheme_matches_protocol
