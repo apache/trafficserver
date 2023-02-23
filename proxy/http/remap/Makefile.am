@@ -224,7 +224,7 @@ DSO_LDFLAGS = \
 	-export-symbols-regex '^(TSRemapInit|TSRemapDone|TSRemapDoRemap|TSRemapNewInstance|TSRemapDeleteInstance|TSRemapOSResponse|TSRemapPreConfigReload|TSRemapPostConfigReload|TSPluginInit|pluginDsoVersionTest|getPluginDebugObjectTest)$$'
 
 # Build plugins for unit testing the plugin (re)load.
-pkglib_LTLIBRARIES = \
+check_LTLIBRARIES = \
 	unit-tests/plugin_v1.la \
 	unit-tests/plugin_v2.la \
 	unit-tests/plugin_init_fail.la \
