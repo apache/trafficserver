@@ -146,5 +146,5 @@ add_executable(test_tscore
         unit_tests/test_ts_file.cc
         unit_tests/unit_test_main.cc
 )
-target_link_libraries(test_tscore PRIVATE tscore inkevent)
+target_link_libraries(test_tscore PRIVATE tscore inkevent records_p libswoc)
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/iocore/eventsystem ${CATCH_INCLUDE_DIR})
