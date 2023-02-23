@@ -131,7 +131,8 @@ CLANG_FORMAT_DIR_TARGETS = \
 	clang-format-mgmt \
 	clang-format-plugins \
 	clang-format-proxy \
-	clang-format-tools
+	clang-format-tools \
+	clang-format-tests
 
 .PHONY:	$(CLANG_FORMAT_DIR_TARGETS)
 
