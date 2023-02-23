@@ -64,7 +64,11 @@ CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
   TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-  X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+  X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+  X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
   TSDebug(PLUGIN_NAME, "plugin verify_cert verifying client certificate");
   if (cert) {
     debug_certificate("client certificate subject CN is %s", X509_get_subject_name(cert));
