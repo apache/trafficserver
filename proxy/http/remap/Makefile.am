@@ -80,7 +80,10 @@ clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
 
 TESTS = $(check_PROGRAMS)
-check_PROGRAMS =  test_PluginDso test_PluginFactory test_RemapPluginInfo test_NextHopStrategyFactory test_NextHopRoundRobin test_NextHopConsistentHash
+check_PROGRAMS =  test_NextHopStrategyFactory test_NextHopRoundRobin test_NextHopConsistentHash
+
+if EXPENSIVE_TESTS
+check_PROGRAMS += test_PluginFactory test_PluginDso test_RemapPluginInfo
 
 test_PluginDso_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
 test_PluginDso_LIBTOOLFLAGS = --preserve-dup-deps
@@ -123,6 +126,7 @@ test_RemapPluginInfo_SOURCES = \
 	unit-tests/test_RemapPlugin.cc \
 	PluginDso.cc \
 	RemapPluginInfo.cc
+endif
 
 test_NextHopStrategyFactory_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -224,6 +228,8 @@ DSO_LDFLAGS = \
 	-export-symbols-regex '^(TSRemapInit|TSRemapDone|TSRemapDoRemap|TSRemapNewInstance|TSRemapDeleteInstance|TSRemapOSResponse|TSRemapPreConfigReload|TSRemapPostConfigReload|TSPluginInit|pluginDsoVersionTest|getPluginDebugObjectTest)$$'
 
 # Build plugins for unit testing the plugin (re)load.
+if EXPENSIVE_TESTS
+
 pkglib_LTLIBRARIES = \
 	unit-tests/plugin_v1.la \
 	unit-tests/plugin_v2.la \
@@ -265,3 +271,5 @@ unit_tests_plugin_missing_newinstance_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLA
 unit_tests_plugin_testing_calls_la_SOURCES = unit-tests/plugin_testing_calls.cc unit-tests/plugin_testing_common.cc
 unit_tests_plugin_testing_calls_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_testing_calls_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)
+
+endif
