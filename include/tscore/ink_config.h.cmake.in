@@ -38,12 +38,19 @@
 #cmakedefine HAVE_STDINT_H 1
 #cmakedefine HAVE_INTTYPES_H 1
 #cmakedefine HAVE_STRING_H 1
+#cmakedefine HAVE_LINUX_HDREG_H 1
+#cmakedefine HAVE_LINUX_MAJOR_H 1
+#cmakedefine HAVE_SYS_DISK_H 1
+#cmakedefine HAVE_SYS_DISKLABEL_H 1
 #cmakedefine HAVE_SYS_IOCTL_H 1
 #cmakedefine HAVE_SYS_TYPES_H 1
 #cmakedefine HAVE_SYS_STAT_H 1
 #cmakedefine HAVE_SYS_STATVFS_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
+#cmakedefine HAVE_SYS_SYSMACROS_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
+#cmakedefine HAVE_SYS_MOUNT_H 1
+#cmakedefine HAVE_SYS_PARAM_H 1
 #cmakedefine HAVE_UNISTD_H 1
 #cmakedefine HAVE_NETINET_IN_H 1
 #cmakedefine HAVE_NETINET_IN_SYSTM_H 1
@@ -54,6 +61,13 @@
 #cmakedefine HAVE_ARPA_NAMESER_H 1
 #cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
 #cmakedefine HAVE_SIGINFO_H 1
+
+#cmakedefine01 HAVE_GETRESUID
+#cmakedefine01 HAVE_GETRESGID
+#cmakedefine01 HAVE_ACCEPT4
+#cmakedefine01 HAVE_EVENTFD
+
+#cmakedefine01 HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
 
 #cmakedefine HAVE_BIO_METH_NEW 1
 

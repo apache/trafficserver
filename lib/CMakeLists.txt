@@ -19,6 +19,7 @@
 
 # yamlcpp shadows a bunch of variables but we don't want to hear bout it
 add_compile_options(-Wno-shadow)
+set(BUILD_SHARED_LIBS 1)
 add_subdirectory(yamlcpp)
 set(YAML_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include PARENT_SCOPE)
 add_subdirectory(fastlz)

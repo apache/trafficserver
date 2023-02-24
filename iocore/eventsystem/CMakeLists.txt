@@ -16,8 +16,7 @@
 #######################
 
 
-add_library(inkevent)
-target_sources(inkevent PRIVATE
+add_library(inkevent SHARED
         EventSystem.cc
         IOBuffer.cc
         Inline.cc
@@ -34,5 +33,5 @@ target_sources(inkevent PRIVATE
         UnixEvent.cc
         UnixEventProcessor.cc
         ConfigProcessor.cc
-        )
+)
 target_include_directories(inkevent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
