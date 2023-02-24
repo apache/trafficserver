@@ -282,14 +282,16 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
                     &udp_packet->from.sa, udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6),
                     &this->_quiche_config);
 
-    if (params->qlog_dir() != nullptr) {
+    if (params->get_qlog_file_base_name() != nullptr) {
       char qlog_filepath[PATH_MAX];
       const uint8_t *quic_trace_id;
       size_t quic_trace_id_len = 0;
       quiche_conn_trace_id(quiche_con, &quic_trace_id, &quic_trace_id_len);
-      snprintf(qlog_filepath, PATH_MAX, "%s/%.*s.sqlog", Layout::get()->relative(params->qlog_dir()).c_str(),
+      snprintf(qlog_filepath, PATH_MAX, "%s-%.*s.sqlog", Layout::get()->relative(params->get_qlog_file_base_name()).c_str(),
                static_cast<int>(quic_trace_id_len), quic_trace_id);
-      quiche_conn_set_qlog_path(quiche_con, qlog_filepath, "ats", "");
+      if (auto success = quiche_conn_set_qlog_path(quiche_con, qlog_filepath, "Apache Traffic Server", "qlog"); !success) {
+        QUICDebug("quiche_conn_set_qlog_path failed to use %s", qlog_filepath);
+      }
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));

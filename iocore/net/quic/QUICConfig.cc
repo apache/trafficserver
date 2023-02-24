@@ -95,8 +95,9 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
 //
 QUICConfigParams::~QUICConfigParams()
 {
-  this->_server_supported_groups = (char *)ats_free_null(this->_server_supported_groups);
-  this->_client_supported_groups = (char *)ats_free_null(this->_client_supported_groups);
+  this->_server_supported_groups = static_cast<char *>(ats_free_null(this->_server_supported_groups));
+  this->_client_supported_groups = static_cast<char *>(ats_free_null(this->_client_supported_groups));
+  this->_qlog_file_base_name     = static_cast<char *>(ats_free_null(this->_qlog_file_base_name));
 
   SSL_CTX_free(this->_client_ssl_ctx.get());
 };
@@ -117,7 +118,9 @@ QUICConfigParams::initialize()
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
-  REC_ReadConfigStringAlloc(this->_qlog_dir, "proxy.config.quic.qlog_dir");
+
+  // Qlog
+  REC_ReadConfigStringAlloc(this->_qlog_file_base_name, "proxy.config.quic.qlog.file_base");
 
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
@@ -442,9 +445,9 @@ QUICConfigParams::client_session_file() const
 }
 
 const char *
-QUICConfigParams::qlog_dir() const
+QUICConfigParams::get_qlog_file_base_name() const
 {
-  return this->_qlog_dir;
+  return this->_qlog_file_base_name;
 }
 
 //

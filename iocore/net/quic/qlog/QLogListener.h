@@ -99,7 +99,7 @@ public:
   void
   connection_close_callback(QUICCallbackContext &) override
   {
-    this->_log.dump(this->_context.config()->qlog_dir());
+    this->_log.dump(this->_context.config()->get_qlog_file_base_name());
   }
 
   Trace &

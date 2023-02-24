@@ -4415,11 +4415,26 @@ QUIC Configuration
 All configurations for QUIC are still experimental and may be changed or
 removed in the future without prior notice.
 
-.. ts:cv:: CONFIG proxy.config.quic.qlog_dir STRING NULL
+.. ts:cv:: CONFIG proxy.config.quic.qlog.file_base STRING NULL
    :reloadable:
 
-    The qlog is enabled when this configuration is not NULL. And will dump
-    the qlog to this dir.
+   Sets qlog output to a specific base file name.  For a given file base name the file becomes
+   ``{file_base}-{trace id}.sqlog``.
+   Absolute path or relative to the configured prefix can be used.
+   Qlog is emitted  for each connection.
+
+   .. code-block:: yaml
+
+      ts:
+        quic:
+          qlog:
+            file_base: /my/logs/test1
+
+   The above configuration will make |TS| to generate Qlogs with the following format:
+
+.. code-block:: bash
+
+   /my/logs/test1-e9158839e54cb8f34ab00d34236ad5e19a49.sqlog
 
 .. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
    :reloadable:
