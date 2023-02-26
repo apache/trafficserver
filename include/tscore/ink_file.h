@@ -47,7 +47,7 @@
 
 // Darwin keeps statfs(2) in <sys/mount.h> ...
 // Its problematic if linux/mount.h is already included so check for that
-#if HAVE_SYS_MOUNT_H && !defined(_LINUX_MOUNT_H)
+#if __has_include(<sys/mount.h>) && ! defined(_LINUX_MOUNT_H)
 #include <sys/mount.h>
 #endif
 
