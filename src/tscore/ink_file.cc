@@ -52,7 +52,7 @@
 #include <linux/hdreg.h> /* for struct hd_geometry */
 #endif
 
-#if HAVE_SYS_MOUNT_H
+#if __has_include(<sys/mount.h>)
 #include <sys/mount.h> /* for BLKGETSIZE */
 #endif
 
