@@ -2593,11 +2593,11 @@ SSLSessionDup(SSL_SESSION *sess)
     return nullptr;
   }
   uint8_t *buf = static_cast<uint8_t *>(alloca(len));
-  uint8_t **tmp = &buf;
+  uint8_t *tmp = buf;
 
-  i2d_SSL_SESSION(sess, tmp);
-  tmp = &buf;
-  if (d2i_SSL_SESSION(&duplicated, const_cast<const uint8_t **>(tmp), len) == nullptr) {
+  i2d_SSL_SESSION(sess, &tmp);
+  tmp = buf;
+  if (d2i_SSL_SESSION(&duplicated, const_cast<const uint8_t **>(&tmp), len) == nullptr) {
     return nullptr;
   }
 
