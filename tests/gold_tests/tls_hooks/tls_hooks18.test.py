@@ -26,7 +26,6 @@ Test different combinations of TLS handshake hooks to ensure they are applied co
 
 Test.SkipUnless(
     Condition.HasOpenSSLVersion("1.1.1"),
-    Condition.IsOpenSSL()
 )
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
