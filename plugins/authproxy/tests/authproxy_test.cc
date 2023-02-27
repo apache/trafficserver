@@ -34,6 +34,8 @@ TEST_CASE("Util methods", "[authproxy][utility]")
     CHECK(ContainsPrefix(string_view{"abc"}, "") == true);
     CHECK(ContainsPrefix(string_view{""}, "abc") == false);
     CHECK(ContainsPrefix(string_view{"abcdef"}, "abc\0") == true);
-    CHECK(ContainsPrefix(string_view{"abcdef\0"}, "abc\0") == true);
+    CHECK(ContainsPrefix(string_view{"AbCdef\0"}, "abc\0") == true);
+    CHECK(ContainsPrefix(string_view{"abcdef\0"}, "aBc\0") == true);
+    CHECK(ContainsPrefix(string_view{"abc\0"}, "aBcdEf\0") == false);
   }
 }
