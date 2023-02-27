@@ -24,7 +24,8 @@ import traceback
 import yaml
 import tempfile
 import fileinput
-
+import time
+import os.path
 import io
 
 from io import StringIO
@@ -135,6 +136,10 @@ def save_to_file(filename, is_json, typerepr, data):
     def null_representer(dumper, value):
         return dumper.represent_scalar(u'tag:yaml.org,2002:null', str(value), style="'")
 
+    # Make sure we do not wipe out an existing file.
+    if os.path.exists(filename):
+        os.popen(f'cp {filename} {filename}.{int(time.time())}')
+
     with open(filename, 'w') as f:
         if is_json:
             json.dump(data, f, indent=4, sort_keys=True)
@@ -235,9 +240,6 @@ def fix_record_names(file):
 
 
 def handle_file_input(args):
-    if args.file is None:
-        raise Exception("Hey!! there is no file!")
-
     config = {}
 
     # Fix the names first.
@@ -276,7 +278,7 @@ def handle_file_input(args):
         if err:
             raise Exception("Schema failed.")
 
-    save_to_file(args.save2, args.json, args.typerepr, ts)
+    save_to_file(args.output, args.json, args.typerepr, ts)
 
     f.close()
     return
@@ -284,11 +286,11 @@ def handle_file_input(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='records.config to YAML/JSON convert tool')
-    parser.add_argument('-f', '--file', help='records.config input file.')
+    parser.add_argument('-f', '--file', help='records.config input file.', required=False, default="records.config")
     parser.add_argument('-n', '--node', help="Include 'proxy.node' variables in the parser.", action='store_true')
     parser.add_argument('-t', '--typerepr', help="Use type representer (list)", required=False, default=[''])
     parser.add_argument('-s', '--schema', help="Validate the output using a json schema file.")
-    parser.add_argument('-S', '--save2', help="Save to file.", required=True)
+    parser.add_argument('-o', '--output', help="Save to output file.", required=False, default="records.yaml")
     parser.add_argument(
         '-m',
         '--mute',
@@ -296,9 +298,9 @@ if __name__ == '__main__':
         required=False,
         action='store_true')
     parser.add_argument('-e', '--error', help="Show traceback", required=False, action='store_true', default=False)
-    kk = parser.add_mutually_exclusive_group(required=True)
-    kk.add_argument('-j', '--json', help="Output as json", action='store_true')
-    kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true')
+    kk = parser.add_mutually_exclusive_group(required=False)
+    kk.add_argument('-j', '--json', help="Output as json", action='store_true', default=False)
+    kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true', default=True)
     parser.set_defaults(func=handle_file_input)
     args = parser.parse_args()
 
