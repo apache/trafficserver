@@ -113,6 +113,6 @@ void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 inline bool
 ContainsPrefix(const std::string_view str, const std::string &prefix)
 {
-  return str.size() < prefix.size() ? false : (strncmp(str.data(), prefix.data(), prefix.size()) == 0);
+  return str.size() < prefix.size() ? false : (strncasecmp(str.data(), prefix.data(), prefix.size()) == 0);
 }
 // vim: set ts=4 sw=4 et :
