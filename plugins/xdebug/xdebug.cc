@@ -687,6 +687,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       if (value == nullptr || vsize == 0) {
         continue;
       }
+      TSDebug("xdebug", "Validating value: '%.*s'", vsize, value);
 
 #define header_field_eq(name, vptr, vlen) (((int)name.size() == vlen) && (strncasecmp(name.data(), vptr, vlen) == 0))
 
@@ -822,8 +823,10 @@ updateAllowedHeaders(const char *optarg)
     const auto ite = std::find_if(std::begin(header_flags), std::end(header_flags),
                                   [token](const struct XHeader &x) { return x.name.compare(token) == 0; });
     if (ite != std::end(header_flags)) {
+      TSDebug("xdebug", "Enabled allowed header name: %s", token);
       allowedHeaders |= ite->flag;
     } else {
+      TSDebug("xdebug", "Unknown header name: %s", token);
       TSError("[xdebug] Unknown header name: %s", token);
     }
   }
@@ -833,6 +836,8 @@ updateAllowedHeaders(const char *optarg)
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  TSDebug("xdebug", "initializing plugin");
+
   static const struct option longopt[] = {
     {const_cast<char *>("header"), required_argument, nullptr, 'h' },
     {const_cast<char *>("enable"), required_argument, nullptr, 'e' },
@@ -854,6 +859,7 @@ TSPluginInit(int argc, const char *argv[])
 
     switch (opt) {
     case 'h':
+      TSDebug("xdebug", "Setting header: %s", optarg);
       xDebugHeader.str = TSstrdup(optarg);
       break;
     case 'e':

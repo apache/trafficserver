@@ -37,12 +37,16 @@ not be modified or deleted.
 :file:`plugin.config` file. It currently takes a single, optional
 configuration option, ``--header``. E.g.
 
+::
+
     --header=ATS-My-Debug
 
 This overrides the default ``X-Debug`` header name.
 
 All the debug headers are disabled by default, and you need to enable them
 selectively by passing header names to ``--enable`` option.
+
+::
 
     --enable=x-remap,x-cache
 
