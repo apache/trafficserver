@@ -567,7 +567,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       m = true;
       X509_free(cert);
@@ -631,7 +635,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
@@ -665,7 +673,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
@@ -699,7 +711,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);
@@ -784,7 +800,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_certificate(result, X509_get_subject_name(cert));
       X509_free(cert);
@@ -818,7 +838,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_DNS);
       X509_free(cert);
@@ -852,7 +876,11 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn client_conn    = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj = TSVConnSslConnectionGet(client_conn);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-    X509 *cert             = SSL_get_peer_certificate(ssl);
+#ifdef OPENSSL_IS_OPENSSL3
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+    X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
     if (cert != nullptr) {
       print_san_certificate(result, cert, GEN_URI);
       X509_free(cert);

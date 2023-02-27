@@ -154,7 +154,11 @@ private:
   void
   _set()
   {
+#ifdef OPENSSL_IS_OPENSSL3
+    _x509 = (IsClient ? SSL_get1_peer_certificate : SSL_get_certificate)(_ssl);
+#else
     _x509 = (IsClient ? SSL_get_peer_certificate : SSL_get_certificate)(_ssl);
+#endif
   }
 };
 } // end anonymous namespace

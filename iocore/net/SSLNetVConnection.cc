@@ -1350,7 +1350,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
       X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
 
       Debug("ssl", "SSL server handshake completed successfully");
       if (cert) {
@@ -1535,7 +1539,11 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
+#ifdef OPENSSL_IS_OPENSSL3
+      X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
       X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
 
       Debug("ssl", "SSL client handshake completed successfully");
 
