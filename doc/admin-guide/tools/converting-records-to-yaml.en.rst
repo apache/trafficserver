@@ -145,7 +145,7 @@ Converting a file with a detailed output.
 .. code-block:: bash
    :linenos:
 
-   $ python3 convert2yaml.py -f records.config -S records.yaml -y
+   $ python3 convert2yaml.py -f records.config -o records.yaml
    [████████████████████████████████████████] 494/494
 
    ┌■ 8 Renamed records:
@@ -171,12 +171,11 @@ Converting a file with no output. If any, errors are displayed.
 
 .. code-block:: bash
 
-   $ convert2yaml.py -f records.config -S records.yaml -y -m
+   $ convert2yaml.py -f records.config -o records.yaml -m
 
 .. note::
 
    Use -m, --mute to mute the output.
-
 
 Non core records
 ================
@@ -221,7 +220,7 @@ non core records, for instance:
 
 .. code-block:: bash
 
-   $ convert2yaml.py -f records.config -S records.yaml -y -t float,int
+   $ convert2yaml.py -f records.config -o records.yaml -t float,int
 
    $ cat records.yaml
    ts:
