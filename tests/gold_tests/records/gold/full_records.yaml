@@ -462,7 +462,8 @@ ts:
     num_alt_connection_ids: 8
     preferred_address_ipv4: null
     preferred_address_ipv6: null
-    qlog_dir: null
+    qlog:
+      file_base: null
     server:
       quantum_readiness_test_enabled: 0
       stateless_retry_enabled: 0

@@ -477,7 +477,7 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
 
   // register qlog
-  if (this->_context->config()->qlog_dir() != nullptr) {
+  if (this->_context->config()->get_qlog_file_base_name() != nullptr) {
     this->_qlog = std::make_unique<QLog::QLogListener>(*this->_context, this->_original_quic_connection_id.hex());
     this->_qlog->last_trace().set_vantage_point(
       {"ats", QLog::Trace::VantagePointType::server, QLog::Trace::VantagePointType::server});

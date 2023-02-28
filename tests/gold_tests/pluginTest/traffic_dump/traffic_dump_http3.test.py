@@ -55,7 +55,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'traffic_dump|quic',
     'proxy.config.http.insert_age_in_response': 0,
 
-    'proxy.config.quic.qlog_dir': qlog_dir,
+    'proxy.config.quic.qlog.file_base': qlog_dir,
 
     'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
     'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
