@@ -37,6 +37,9 @@ EOF
   if test -n "$CXX"; then
     echo "CXX=\"$CXX\"; export CXX" >> $1
   fi
+  if test -n "$LD"; then
+    echo "LD=\"$LD\"; export LD" >> $1
+  fi
   if test -n "$CFLAGS"; then
     echo "CFLAGS=\"$CFLAGS\"; export CFLAGS" >> $1
   fi
