@@ -144,12 +144,14 @@ class MetricCommand : public RecordCommand
 {
   static inline const std::string CLEAR_STR{"clear"};
   static inline const std::string ZERO_STR{"zero"};
+  static inline const std::string MONITOR_STR{"monitor"};
 
   void metric_get();
   void metric_match();
   void metric_describe();
   void metric_clear();
   void metric_zero();
+  void metric_monitor();
 
 public:
   MetricCommand(ts::Arguments *args);

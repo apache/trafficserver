@@ -330,6 +330,36 @@ traffic_ctl metric
 
    Error output available if ``--format pretty`` is specified.
 
+.. program:: traffic_ctl metric
+.. option:: monitor [-i, -c] METRIC [METRIC...]
+
+   Display the current value of the specified metric(s) using an interval time
+   and a count value. Use ``-i`` to set the interval time between requests, and
+   ``-c`` to set the number of requests the program will send in total per metric.
+   Note that the metric will display `+` or `-` depending on the value of the last
+   metric and the current being shown, if current is greater, then  `+` will be
+   added beside the metric value, `-` if the last value is less than current,
+   and no symbol is the same.
+
+   Example:
+
+   .. code-block:: bash
+
+      $ traffic_ctl  metric monitor proxy.process.eventloop.time.min.10s -i 2 -c 10
+      proxy.process.eventloop.time.min.10s: 4025085
+      proxy.process.eventloop.time.min.10s: 4025085
+      proxy.process.eventloop.time.min.10s: 4025085
+      proxy.process.eventloop.time.min.10s: 4025085
+      proxy.process.eventloop.time.min.10s: 4011194 -
+      proxy.process.eventloop.time.min.10s: 4011194
+      proxy.process.eventloop.time.min.10s: 4011194
+      proxy.process.eventloop.time.min.10s: 4011194
+      proxy.process.eventloop.time.min.10s: 4011194
+      proxy.process.eventloop.time.min.10s: 4018669 +
+      --- metric monitor statistics ---
+      ┌ proxy.process.eventloop.time.min.10s
+      └─ min/avg/max = 4011194/4017498/4025085
+
 .. _traffic-control-command-server:
 
 traffic_ctl server
