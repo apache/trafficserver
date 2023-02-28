@@ -21,103 +21,118 @@ limitations under the License.
 
 #include <deque>
 #include <mutex>
-#include <time.h>
+#include <shared_mutex>
+#include <chrono>
 
 #include <libnuraft/nuraft.hxx>
 
 #include "stek_utils.h"
 
+class PluginConfig
+{
+public:
+  PluginConfig()
+    : server_id(1),
+      address("localhost"),
+      port(25000),
+      endpoint("localhost:25000"),
+      asio_thread_pool_size(4),          // Default ASIO thread pool size: 4.
+      heart_beat_interval(100),          // Default heart beat interval: 100 ms.
+      election_timeout_lower_bound(200), // Default election timeout: 200~400 ms.
+      election_timeout_upper_bound(400),
+      reserved_log_items(5),    // Up to 5 logs will be preserved ahead the last snapshot.
+      snapshot_distance(5),     // Snapshot will be created for every 5 log appends.
+      client_req_timeout(3000), // Client timeout: 3000 ms.
+      key_update_interval(60)   // Generate new STEK every 60 s.
+  {
+  }
+
+  // Server ID.
+  int server_id;
+
+  // Server address.
+  std::string address;
+
+  // Server port.
+  int port;
+
+  // Endpoint: "<address>:<port>".
+  std::string endpoint;
+
+  size_t asio_thread_pool_size;
+
+  int heart_beat_interval;
+
+  int election_timeout_lower_bound;
+  int election_timeout_upper_bound;
+
+  int reserved_log_items;
+
+  int snapshot_distance;
+
+  int client_req_timeout;
+
+  // STEK update interval.
+  std::chrono::seconds key_update_interval;
+
+  // List of servers to auto add.
+  std::map<int, std::string> server_list;
+
+  // TLS related stuff.
+  std::string root_cert_file;
+  std::string server_cert_file;
+  std::string server_key_file;
+  std::string cert_verify_str;
+};
+
 class STEKShareServer
 {
 public:
-  STEKShareServer() : server_id_(1), addr_("localhost"), port_(25000), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr)
+  STEKShareServer() : sm_instance(nullptr), smgr_instance(nullptr), raft_instance(nullptr), current_log_idx(0)
   {
-    last_updated_    = 0;
-    current_log_idx_ = 0;
-
-    // Default ASIO thread pool size: 4.
-    asio_thread_pool_size_ = 4;
-
-    // Default heart beat interval: 100 ms.
-    heart_beat_interval_ = 100;
-
-    // Default election timeout: 200~400 ms.
-    election_timeout_lower_bound_ = 200;
-    election_timeout_upper_bound_ = 400;
-
-    // Up to 5 logs will be preserved ahead the last snapshot.
-    reserved_log_items_ = 5;
-
-    // Snapshot will be created for every 5 log appends.
-    snapshot_distance_ = 5;
-
-    // Client timeout: 3000 ms.
-    client_req_timeout_ = 3000;
-
-    std::memset(ticket_keys_, 0, SSL_TICKET_KEY_SIZE * 2);
+    std::memset(ticket_keys, 0, SSL_TICKET_KEY_SIZE * 2);
   }
 
   void
   reset()
   {
-    sm_.reset();
-    smgr_.reset();
-    raft_instance_.reset();
+    {
+      std::unique_lock lock(sm_mutex);
+      sm_instance.reset();
+    }
+
+    {
+      std::unique_lock lock(smgr_mutex);
+      smgr_instance.reset();
+    }
+
+    {
+      std::unique_lock lock(raft_mutex);
+      raft_instance.reset();
+    }
   }
 
-  // Server ID.
-  int server_id_;
-
-  // Server address.
-  std::string addr_;
-
-  // Server port.
-  int port_;
-
-  // Endpoint: "<addr>:<port>".
-  std::string endpoint_;
-
   // State machine.
-  nuraft::ptr<nuraft::state_machine> sm_;
+  nuraft::ptr<nuraft::state_machine> sm_instance;
+  std::shared_mutex sm_mutex;
 
   // State manager.
-  nuraft::ptr<nuraft::state_mgr> smgr_;
-
-  // Raft launcher.
-  nuraft::raft_launcher launcher_;
+  nuraft::ptr<nuraft::state_mgr> smgr_instance;
+  std::shared_mutex smgr_mutex;
 
   // Raft server instance.
-  nuraft::ptr<nuraft::raft_server> raft_instance_;
+  nuraft::ptr<nuraft::raft_server> raft_instance;
+  std::shared_mutex raft_mutex;
 
-  // List of servers to auto add.
-  std::map<int, std::string> server_list_;
+  // Raft launcher.
+  nuraft::raft_launcher raft_launcher;
 
-  // STEK update interval.
-  int key_update_interval_;
+  std::atomic<bool> config_reloading = false;
 
   // When was STEK last updated.
-  time_t last_updated_;
+  std::chrono::time_point<std::chrono::system_clock> last_updated;
 
-  uint64_t current_log_idx_;
+  uint64_t current_log_idx;
 
-  size_t asio_thread_pool_size_;
-
-  int heart_beat_interval_;
-
-  int election_timeout_lower_bound_;
-  int election_timeout_upper_bound_;
-
-  int reserved_log_items_;
-
-  int snapshot_distance_;
-
-  int client_req_timeout_;
-
-  // TLS related stuff.
-  std::string root_cert_file_;
-  std::string server_cert_file_;
-  std::string server_key_file_;
-  std::string cert_verify_str_;
-
-  ssl_ticket_key_t ticket_keys_[2];
+  ssl_ticket_key_t ticket_keys[2];
 };

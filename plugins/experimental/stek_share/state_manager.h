@@ -44,45 +44,45 @@ public:
   ~STEKShareSMGR() {}
 
   nuraft::ptr<nuraft::cluster_config>
-  load_config()
+  load_config() override
   {
     return saved_config_;
   }
 
   void
-  save_config(const nuraft::cluster_config &config)
+  save_config(const nuraft::cluster_config &config) override
   {
     nuraft::ptr<nuraft::buffer> buf = config.serialize();
     saved_config_                   = nuraft::cluster_config::deserialize(*buf);
   }
 
   void
-  save_state(const nuraft::srv_state &state)
+  save_state(const nuraft::srv_state &state) override
   {
     nuraft::ptr<nuraft::buffer> buf = state.serialize();
     saved_state_                    = nuraft::srv_state::deserialize(*buf);
   }
 
   nuraft::ptr<nuraft::srv_state>
-  read_state()
+  read_state() override
   {
     return saved_state_;
   }
 
   nuraft::ptr<nuraft::log_store>
-  load_log_store()
+  load_log_store() override
   {
     return cur_log_store_;
   }
 
   int32_t
-  server_id()
+  server_id() override
   {
     return my_id_;
   }
 
   void
-  system_exit(const int exit_code)
+  system_exit(const int exit_code) override
   {
   }
 
