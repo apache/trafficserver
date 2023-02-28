@@ -1331,6 +1331,8 @@ AC_CHECK_FUNCS([ \
   X509_get0_signature \
   ERR_get_error_all \
   SHA1 \
+  SHA256_Init \
+  MD5_Init \
   SSL_SESSION_dup \
 ])
 
