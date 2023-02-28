@@ -1,13 +1,18 @@
 HTTP/1.1 200 OK
-Server: ATS/``
+``
 Date: ``
+``
 Age: ``
+``
+Server: ATS/``
 
 {
 ``
   "headers":``{
 ``
-    "Forwarded":``"for=198.51.100.1;by=127.0.0.1;proto=http",
+    "Forwarded": [
+      "for=198.51.100.1;by=127.0.0.1;proto=http"
+    ],
 ``
   },
 ``
