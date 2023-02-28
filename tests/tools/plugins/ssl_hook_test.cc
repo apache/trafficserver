@@ -32,7 +32,7 @@
 #include <strings.h>
 #include <cstring>
 
-#define PN "ssl_hook_test"
+#define PN  "ssl_hook_test"
 #define PCP "[" PN " Plugin] "
 
 int
