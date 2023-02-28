@@ -49,7 +49,7 @@ Conf conf;
 thread_local int counter = 0;
 
 template <typename T, typename S>
-void
+int
 run(T &mutex)
 {
   std::thread list[conf.nthreads];
@@ -78,6 +78,8 @@ run(T &mutex)
   for (int i = 0; i < conf.nthreads; i++) {
     list[i].join();
   }
+
+  return counter;
 }
 
 } // namespace
@@ -90,7 +92,7 @@ TEST_CASE("Micro benchmark of shared_mutex", "")
     {
       std::shared_mutex mutex;
 
-      run<std::shared_mutex, std::shared_lock<std::shared_mutex>>(mutex);
+      return run<std::shared_mutex, std::shared_lock<std::shared_mutex>>(mutex);
     };
   }
 
@@ -99,7 +101,8 @@ TEST_CASE("Micro benchmark of shared_mutex", "")
     BENCHMARK("ts::bravo::shared_mutex")
     {
       ts::bravo::shared_mutex mutex;
-      run<ts::bravo::shared_mutex, ts::bravo::shared_lock<ts::bravo::shared_mutex>>(mutex);
+
+      return run<ts::bravo::shared_mutex, ts::bravo::shared_lock<ts::bravo::shared_mutex>>(mutex);
     };
   }
 }
