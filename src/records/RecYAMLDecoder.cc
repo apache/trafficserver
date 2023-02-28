@@ -90,24 +90,39 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
     rec_type  = found->type;
     data_type = found->value_type;
   } else {
-    std::string field_name = field.node.as<std::string>();
-
     // Not registered in ATS, could be a plugin or an invalid(not registered) records.
     // Externally registered records should have the type set in each field (!!int, !!float, etc), otherwise we will not be able to
     // deduce the type and we could end up doing a bad type cast at the end. So we say if there is no type(tag) specified, then
     // we ignore it.
     auto [dtype, e] = detail::try_deduce_type(field.value_node);
     if (!e.empty()) {
-      errata.note(ERRATA_WARN, "Ignoring field '{}' at Line {}. Not registered and {}", field_name, field.node.Mark().line + 1, e);
+      errata.note(ERRATA_WARN, "Ignoring field '{}' at Line {}. Not registered and {}", field.node.as<std::string>(),
+                  field.node.Mark().line + 1, e);
       // We can't continue without knowing the type.
       return;
     }
     data_type = dtype; // field tags found.
   }
 
-  std::string nvalue    = field.value_node.as<std::string>();
-  std::string value_str = RecConfigOverrideFromEnvironment(record_name.c_str(), nvalue.c_str());
-  RecSourceT source     = (nvalue == value_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
+  // It could happen that a field was set to null. We only care for string type, we want
+  // this to be explicitly set so the librecords can deal with this. For non strings we
+  // will use the default value.
+  //
+  if (YAML::NodeType::Null == field.value_node.Type()) {
+    switch (data_type) {
+    case RecDataT::RECD_INT:
+    case RecDataT::RECD_FLOAT:
+      errata.note(ERRATA_DEBUG, "Field '{}' set to null. Default value will be used", field.node.as<std::string>());
+      return;
+    default:;
+    }
+  }
+
+  std::string field_value = field.value_node.as<std::string>(); // in case of a string, the library will give us the literal
+                                                                // 'null' which is exactly what we want.
+
+  std::string value_str = RecConfigOverrideFromEnvironment(record_name.c_str(), field_value.c_str());
+  RecSourceT source     = (field_value == value_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
   if (source == REC_SOURCE_ENV) {
     errata.note(ERRATA_DEBUG, "'{}' was override with '{}' using an env variable", record_name, value_str);
@@ -191,7 +206,8 @@ flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &err
     }
   } break;
   case YAML::NodeType::Sequence:
-  case YAML::NodeType::Scalar: {
+  case YAML::NodeType::Scalar:
+  case YAML::NodeType::Null: {
     field.append_field_name();
     handler(field, errata);
   } break;
