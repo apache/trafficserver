@@ -46,29 +46,30 @@ struct Conf {
 };
 
 Conf conf;
-thread_local int counter = 0;
-
 template <typename T, typename S>
 int
 run(T &mutex)
 {
   std::thread list[conf.nthreads];
+  int counter = 0;
 
   for (int i = 0; i < conf.nthreads; i++) {
-    new (&list[i]) std::thread{[](T &mutex) {
+    new (&list[i]) std::thread{[&counter](T &mutex) {
+                                 int c = 0;
                                  for (int j = 0; j < conf.nloop; ++j) {
                                    // reader
                                    for (int i = 0; i < conf.nread; ++i) {
                                      S lock(mutex);
                                      // Do not optimize
-                                     ++counter;
+                                     c = counter;
                                    }
 
                                    // writer
                                    for (int i = 0; i < conf.nwrite; ++i) {
                                      std::lock_guard lock(mutex);
                                      // Do not optimize
-                                     ++counter;
+                                     ++c;
+                                     counter = c;
                                    }
                                  }
                                },
