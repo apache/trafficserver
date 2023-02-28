@@ -37,6 +37,8 @@ not be modified or deleted.
 :file:`plugin.config` file. It currently takes a single, optional
 configuration option, ``--header``. E.g.
 
+::
+
     --header=ATS-My-Debug
 
 This overrides the default ``X-Debug`` header name.
