@@ -5,11 +5,11 @@
 > Accept: */*
 ``
 < HTTP/2 200 ``
-< server: ATS/``
-< date: ``
-< content-type: application/octet-stream
 ``
-< content-length: 0``
+< content-type: application/octet-stream
+< date: ``
+< content-length: ``
 < age: ``
 < via: ``ApacheTrafficServer/``
+< server: ATS/``
 ``
