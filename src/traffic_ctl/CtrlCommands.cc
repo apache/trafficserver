@@ -37,10 +37,8 @@ namespace
 using Codec = yamlcpp_json_emitter;
 } // namespace
 const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
-  {"pretty", BasePrinter::Options::OutputFormat::PRETTY},
-  {"legacy", BasePrinter::Options::OutputFormat::LEGACY},
-  {"json",   BasePrinter::Options::OutputFormat::JSON  },
-  {"rpc",    BasePrinter::Options::OutputFormat::RPC   }
+  {"json", BasePrinter::Options::OutputFormat::JSON},
+  {"rpc",  BasePrinter::Options::OutputFormat::RPC }
 };
 
 BasePrinter::Options::OutputFormat
@@ -50,7 +48,7 @@ parse_format(ts::Arguments *args)
     return BasePrinter::Options::OutputFormat::RECORDS;
   }
 
-  BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::LEGACY};
+  BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::NOT_SET};
 
   if (auto data = args->get("format"); data) {
     ts::TextView fmt{data.value()};
@@ -457,7 +455,7 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
     _invoked_func = [&]() { read_from_input(); };
   } else if (get_parsed_arguments()->get(INVOKE_STR)) {
     _invoked_func = [&]() { invoke_method(); };
-    if (printOpts._format == BasePrinter::Options::OutputFormat::LEGACY) {
+    if (printOpts._format == BasePrinter::Options::OutputFormat::NOT_SET) {
       // overwrite this and let it drop json instead.
       printOpts._format = BasePrinter::Options::OutputFormat::RPC;
     }
