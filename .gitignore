@@ -86,6 +86,7 @@ src/tscore/ink_autoconf.h
 src/tscore/ink_autoconf.h.in
 include/tscore/ink_config.h
 include/ts/apidefs.h
+src/tscore/benchmark_shared_mutex
 src/tscore/CompileParseRules
 src/tscore/CompileParseRules.dSYM
 src/tscore/ParseRulesCType
@@ -99,7 +100,6 @@ src/tscore/test_geometry
 src/tscore/test_Regex
 src/tscore/test_X509HostnameValidator
 src/tscore/test_tscore
-src/tscpp/util/benchmark_shared_mutex
 src/tscpp/util/test_tscpputil
 src/records/test_librecords
 src/records/test_librecords_on_eventsystem

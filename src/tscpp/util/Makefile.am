@@ -19,7 +19,6 @@
 include $(top_srcdir)/build/tidy.mk
 
 check_PROGRAMS = test_tscpputil
-noinst_PROGRAMS = benchmark_shared_mutex
 
 TESTS = $(check_PROGRAMS)
 
@@ -38,22 +37,15 @@ test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la
 	libtscpputil.la \
 	@SWOC_LIBS@
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
-	unit_tests/test_Bravo.cc \
 	unit_tests/test_LocalBuffer.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_Strerror.cc \
 	unit_tests/test_TextView.cc \
 	unit_tests/test_ts_meta.cc
-
-benchmark_shared_mutex_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
-benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-benchmark_shared_mutex_LDADD = $(top_builddir)/src/tscore/libtscore.la
-benchmark_shared_mutex_SOURCES = unit_tests/benchmark_shared_mutex.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
