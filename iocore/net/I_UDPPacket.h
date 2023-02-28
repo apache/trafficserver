@@ -41,6 +41,9 @@
  */
 class UDPPacket
 {
+protected:
+  UDPPacket() = default;
+
 public:
   virtual ~UDPPacket() {}
   virtual void free(); // fast deallocate
