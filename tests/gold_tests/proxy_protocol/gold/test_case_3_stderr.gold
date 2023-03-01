@@ -4,7 +4,10 @@
 > User-Agent: curl/``
 ``
 < HTTP/1.1 200 OK
-< Server: ATS/``
+``
 < Date: ``
+``
 < Age: ``
+``
+< Server: ATS/``
 ``

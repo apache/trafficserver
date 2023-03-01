@@ -14,36 +14,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-[[source]]
-name = "pypi"
-url = "https://pypi.org/simple"
-verify_ssl = true
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_server_no_cache is set to 1(meaning the
+# cache-control directives in responses to bypass the cache is ignored)
+meta:
+  version: "1.0"
 
-[dev-packages]
-autopep8 = "*"
-pyflakes = "*"
+sessions:
+  - transactions:
+      # The client is actually curl
+      - client-request:
+          method: "POST"
+          version: "1.1"
+          headers:
+            fields:
+              - [uuid, post]
+              - [Expect, 100-continue]
 
-[packages]
+        proxy-request:
+          method: "POST"
 
-# Keep init.cli.ext updated with this required autest version.
-autest = "==1.10.2"
-
-traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
-hyper = "*"
-dnslib = "*"
-# These are likely to be available via yum/dnf or apt-get
-requests = "*"
-gunicorn = "*"
-psutil = "*"
-
-# Keep init.cli.ext updated with this required microserver version.
-microserver = ">=1.0.6"
-
-jsonschema = "*"
-python-jose = "*"
-pyyaml ="*"
-
-flask = "==2.1.3"
-
-[requires]
-python_version = "3"
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]

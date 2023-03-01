@@ -1,7 +1,9 @@
 {
   ``
   "form": {
-    "key": "value"
+    "key": [
+      "value"
+    ]
   },
   ``
 }
