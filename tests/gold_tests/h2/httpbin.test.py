@@ -96,7 +96,8 @@ test_run.Processes.Default.Streams.stdout = "gold/httpbin_0_stdout.gold"
 test_run.Processes.Default.Streams.stderr = Testers.GoldFile("gold/httpbin_0_stderr.gold", case_insensitive=True)
 test_run.StillRunningAfter = httpbin
 
-# Test Case 1: Empty response body
+# Test Case 1: Attempt an empty response body.
+# This test case requires go-httpbin@v2.6.0 or later.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bytes/0'.format(ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0

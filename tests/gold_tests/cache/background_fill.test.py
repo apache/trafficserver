@@ -92,7 +92,7 @@ class BackgroundFillTest:
         tr.Processes.Default.Command = f"""
 curl -X PURGE --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/drip?duration=4;
 timeout 2 curl --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/drip?duration=4;
-sleep 2;
+sleep 4;
 curl --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/drip?duration=4
 """
         tr.Processes.Default.ReturnCode = 0
@@ -108,7 +108,7 @@ curl --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/drip?duration=4
         tr.Processes.Default.Command = f"""
 curl -X PURGE --http1.1 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4;
 timeout 2 curl --http1.1 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4;
-sleep 2;
+sleep 4;
 curl --http1.1 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4
 """
         tr.Processes.Default.ReturnCode = 0
@@ -124,7 +124,7 @@ curl --http1.1 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration
         tr.Processes.Default.Command = f"""
 curl -X PURGE --http2 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4;
 timeout 2 curl --http2 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4;
-sleep 2;
+sleep 4;
 curl --http2 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4
 """
         tr.Processes.Default.ReturnCode = 0
