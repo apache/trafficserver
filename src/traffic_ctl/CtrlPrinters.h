@@ -21,9 +21,36 @@
 #pragma once
 
 #include <iostream>
+#include <string_view>
 #include <yaml-cpp/yaml.h>
 
 #include "shared/rpc/RPCRequests.h"
+#include <swoc/BufferWriter.h>
+
+/** Format wrapper for floating point time stamps represented as strings.
+ * If the time isn't provided, the current epoch time is used. If the format string isn't
+ * provided a format like "2017 Jun 29 14:11:29" is used.
+ */
+struct FloatDate {
+  std::string_view _src;
+  std::string_view _fmt;
+
+  /** Constructor.
+   *
+   * @param src A string's representation of a floating point timestamp.
+   * @param fmt The format specification for the date string.
+   */
+  FloatDate(std::string_view src, std::string_view fmt) : _src{src}, _fmt{fmt} {}
+};
+
+/** Format a timestamp wrapped in a @c FloatDate.
+ *
+ * @param w Output.
+ * @param spec Format specifier.
+ * @param wrap Timestamp string_view wrapper.
+ * @return @a w
+ */
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, FloatDate const &wrap);
 
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
