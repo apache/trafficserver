@@ -29,6 +29,8 @@
 #include "P_EventSystem.h"
 #include "swoc/Lexicon.h"
 
+#include <optional>
+
 //
 // General Buffer Allocator
 //
@@ -94,7 +96,7 @@ make_buffer_size_parser()
              {13, {"1M", "1024k"}},
              {14, {"2M", "2048k"}}},
             -1
-  }](ts::TextView esize) -> std::optional<int> {
+  }](swoc::TextView esize) -> std::optional<int> {
     int result = l[esize];
     if (result == -1) {
       return std::nullopt;
@@ -106,15 +108,15 @@ make_buffer_size_parser()
 bool
 parse_buffer_chunk_sizes(const char *chunk_sizes_string, int chunk_sizes[DEFAULT_BUFFER_SIZES])
 {
-  const ts::TextView delimiters(", ");
+  const swoc::TextView delimiters(", ");
   if (chunk_sizes_string != nullptr) {
-    ts::TextView src(chunk_sizes_string, ts::TextView::npos);
+    swoc::TextView src(chunk_sizes_string, swoc::TextView::npos);
     auto parser = make_buffer_size_parser();
     int n       = 0;
     while (!src.empty()) {
-      ts::TextView token{src.take_prefix_at(delimiters)};
+      swoc::TextView token{src.take_prefix_at(delimiters)};
 
-      ts::TextView esize = token.take_prefix_at(':');
+      swoc::TextView esize = token.take_prefix_at(':');
       if (!token.empty()) {
         auto parsed = parser(esize);
         if (parsed) {
@@ -134,8 +136,8 @@ parse_buffer_chunk_sizes(const char *chunk_sizes_string, int chunk_sizes[DEFAULT
         return false;
       }
 
-      auto x = ts::svto_radix<10>(token);
-      if (token.empty() && x <= std::numeric_limits<int>::max()) {
+      auto x = swoc::svto_radix<10>(token);
+      if (token.empty() && x != std::numeric_limits<decltype(x)>::max()) {
         chunk_sizes[n++] = x;
       } else {
         Error("Failed to parse chunk size");

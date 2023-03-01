@@ -4966,12 +4966,17 @@ Sockets
    Enable (1) the use of huge pages on supported platforms. (Currently only Linux)
 
    You must also enable hugepages at the OS level. In modern Linux kernels,
-   this can be done by setting ``/proc/sys/vm/nr_overcommit_hugepages`` to a
-   sufficiently large value. It is reasonable to use (system
-   memory/hugepage size) because these pages are only created on demand.
+   this can be done by setting ``/proc/sys/vm/nr_hugepages`` and/or ``/proc/sys/vm/nr_overcommit_hugepages``
+   to a sufficiently large value. Check your system hugepage size (typically 2MB) using
+   ``/proc/meminfo`` (look for ``Hugepagesize``).  The configured number of ``nr_hugepages`` plus
+   ``nr_overcommit_hugepages`` times the hugepage size will be the amount of ram availabe for hugepages.
 
    For more information on the implications of enabling huge pages, see
    `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
+
+   If hugepages are enabled, then the iobuffer allocator and cache directory entries will attempt to allocate
+   hugepages for storage.  If the number of hugepages is exhausted, the allocators will revert back to regular
+   size pages.
 
 .. ts:cv:: CONFIG proxy.config.dump_mem_info_frequency INT 0
    :reloadable:
@@ -5021,30 +5026,6 @@ Sockets
    You might want to adjust these values to reduce the overall number of allocations that ATS needs to make based
    on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
    log the allocator statistics and see how many of each buffer size have been allocated.
-
-.. ts:cv:: CONFIG proxy.config.allocator.iobuf_use_hugepages INT 0
-
-   This setting controls whether huge pages allocations are used to allocate io buffers.  If enabled, and hugepages are
-   not available, this will fall back to normal size pages. Using hugepages for iobuffer can sometimes improve performance
-   by utilizing more of the TLB and reducing TLB misses.
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` IO buffer allocation uses normal pages sizes
-   ``1`` IO buffer allocation uses huge pages
-   ===== ======================================================================
-
-.. ts:cv:: CONFIG proxy.config.cache.dir.enable_hugepages INT 0
-
-   This setting controls whether huge pages allocations are used to allocate memory for cache volume dir entries.
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Use normal pages sizes
-   ``1`` Use huge pages
-   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 

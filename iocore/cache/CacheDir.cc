@@ -1017,7 +1017,7 @@ sync_cache_dir_on_shutdown()
         buf = nullptr;
       }
       buflen = dirlen;
-      if (ats_hugepage_enabled() && cache_config_dir_enable_hugepages) {
+      if (ats_hugepage_enabled()) {
         buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
         buf_huge = true;
       }
@@ -1149,7 +1149,7 @@ Lrestart:
           buf = nullptr;
         }
         buflen = dirlen;
-        if (ats_hugepage_enabled() && cache_config_dir_enable_hugepages) {
+        if (ats_hugepage_enabled()) {
           buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
           buf_huge = true;
         }
