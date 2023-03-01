@@ -64,14 +64,6 @@
 #define EVENTIO_WRITE INK_EVP_OUT
 #define EVENTIO_ERROR (0x010 | 0x002 | 0x020) // ERR PRI HUP
 #endif
-#if TS_USE_PORT
-#ifdef USE_EDGE_TRIGGER_PORT
-#define USE_EDGE_TRIGGER 1
-#endif
-#define EVENTIO_READ  POLLIN
-#define EVENTIO_WRITE POLLOUT
-#define EVENTIO_ERROR (POLLERR | POLLPRI | POLLHUP)
-#endif
 
 struct PollDescriptor;
 typedef PollDescriptor *EventLoop;
@@ -85,7 +77,7 @@ struct NetAccept;
 /// Unified API for setting and clearing kernel and epoll events.
 struct EventIO {
   int fd = -1; ///< file descriptor, often a system port
-#if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
+#if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   int events = 0; ///< a bit mask of enabled events
 #endif
   EventLoop event_loop = nullptr; ///< the assigned event loop
@@ -677,13 +669,6 @@ EventIO::start_common(EventLoop l, int afd, int e)
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   return kevent(l->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
 #endif
-#if TS_USE_PORT
-  events     = e;
-  int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-  Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval,
-        retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-  return retval;
-#endif
 }
 
 TS_INLINE int
@@ -735,38 +720,8 @@ EventIO::modify(int e)
   else
     return 0;
 #endif
-#if TS_USE_PORT
-  int n  = 0;
-  int ne = e;
-  if (e < 0) {
-    if (((-e) & events)) {
-      ne = ~(-e) & events;
-      if ((-e) & EVENTIO_READ)
-        n++;
-      if ((-e) & EVENTIO_WRITE)
-        n++;
-    }
-  } else {
-    if (!(e & events)) {
-      ne = events | e;
-      if (e & EVENTIO_READ)
-        n++;
-      if (e & EVENTIO_WRITE)
-        n++;
-    }
-  }
-  if (n && ne && event_loop) {
-    events     = ne;
-    int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-    Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
-          retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-    return retval;
-  }
-  return 0;
-#else
   (void)e; // ATS_UNUSED
   return 0;
-#endif
 }
 
 TS_INLINE int
@@ -790,28 +745,8 @@ EventIO::refresh(int e)
   else
     return 0;
 #endif
-#if TS_USE_PORT
-  int n  = 0;
-  int ne = e;
-  if ((e & events)) {
-    ne = events | e;
-    if (e & EVENTIO_READ)
-      n++;
-    if (e & EVENTIO_WRITE)
-      n++;
-    if (n && ne && event_loop) {
-      events     = ne;
-      int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
-            retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      return retval;
-    }
-  }
-  return 0;
-#else
   (void)e; // ATS_UNUSED
   return 0;
-#endif
 }
 
 TS_INLINE int
@@ -827,11 +762,6 @@ EventIO::stop()
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     retval    = epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
-#endif
-#if TS_USE_PORT
-    retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
-    Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval < 0 ? strerror(errno) : "ok",
-          event_loop->port_fd, PORT_SOURCE_FD, fd);
 #endif
     event_loop = nullptr;
     return retval;

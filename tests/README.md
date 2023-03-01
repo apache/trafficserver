@@ -306,7 +306,6 @@ ts.Disk.remap_config.AddLine(
  * TS_USE_DIAGS
  * TS_USE_EPOLL
  * TS_USE_KQUEUE
- * TS_USE_PORT
  * TS_USE_POSIX_CAP
  * TS_USE_TPROXY
  * TS_HAS_SO_MARK

@@ -55,9 +55,6 @@ struct PollDescriptor {
 #if TS_USE_KQUEUE
   int kqueue_fd;
 #endif
-#if TS_USE_PORT
-  int port_fd;
-#endif
 
   PollDescriptor() { init(); }
 #if TS_USE_EPOLL
@@ -93,15 +90,6 @@ struct PollDescriptor {
 #define ev_next_event(a, x)
 #endif
 
-#if TS_USE_PORT
-  port_event_t Port_Triggered_Events[POLL_DESCRIPTOR_SIZE];
-#define get_ev_port(a)      ((a)->port_fd)
-#define get_ev_events(a, x) ((a)->Port_Triggered_Events[(x)].portev_events)
-#define get_ev_data(a, x)   ((a)->Port_Triggered_Events[(x)].portev_user)
-#define get_ev_odata(a, x)  ((a)->Port_Triggered_Events[(x)].portev_object)
-#define ev_next_event(a, x)
-#endif
-
   Pollfd *
   alloc()
   {
@@ -130,10 +118,6 @@ private:
 #if TS_USE_KQUEUE
     kqueue_fd = kqueue();
     memset(kq_Triggered_Events, 0, sizeof(kq_Triggered_Events));
-#endif
-#if TS_USE_PORT
-    port_fd = port_create();
-    memset(Port_Triggered_Events, 0, sizeof(Port_Triggered_Events));
 #endif
   }
 };

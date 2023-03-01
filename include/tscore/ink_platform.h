@@ -118,9 +118,6 @@ struct ifafilt;
 #if TS_USE_KQUEUE
 #include <sys/event.h>
 #endif
-#if TS_USE_PORT
-#include <port.h>
-#endif
 
 #ifdef HAVE_VALUES_H
 #include <values.h>

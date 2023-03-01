@@ -65,7 +65,6 @@
 #define TS_USE_DIAGS @use_diags@
 #define TS_USE_EPOLL @use_epoll@
 #define TS_USE_KQUEUE @use_kqueue@
-#define TS_USE_PORT @use_port@
 #define TS_USE_POSIX_CAP @use_posix_cap@
 #define TS_USE_TPROXY @use_tproxy@
 #define TS_HAS_SO_MARK @has_so_mark@

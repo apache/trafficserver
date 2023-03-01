@@ -197,35 +197,6 @@ PollCont::do_poll(ink_hrtime timeout)
     kevent(pollDescriptor->kqueue_fd, nullptr, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
   NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
            poll_timeout, pollDescriptor->result);
-#elif TS_USE_PORT
-  int retval;
-  timespec_t ptimeout;
-  ptimeout.tv_sec  = poll_timeout / 1000;
-  ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
-  unsigned nget    = 1;
-  if ((retval = port_getn(pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) <
-      0) {
-    pollDescriptor->result = 0;
-    switch (errno) {
-    case EINTR:
-    case EAGAIN:
-    case ETIME:
-      if (nget > 0) {
-        pollDescriptor->result = (int)nget;
-      }
-      break;
-    default:
-      ink_assert(!"unhandled port_getn() case:");
-      break;
-    }
-  } else {
-    pollDescriptor->result = (int)nget;
-  }
-  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
-           retval < 0 ? strerror(errno) : "ok", pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
-           POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
-#else
-#error port me
 #endif
 }
 
@@ -235,8 +206,6 @@ net_signal_hook_callback(EThread *thread)
 #if HAVE_EVENTFD
   uint64_t counter;
   ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
-#elif TS_USE_PORT
-/* Nothing to drain or do */
 #else
   char dummy[1024];
   ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
@@ -579,9 +548,6 @@ NetHandler::signalActivity()
 #if HAVE_EVENTFD
   uint64_t counter = 1;
   ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
-#elif TS_USE_PORT
-  PollDescriptor *pd = get_PollDescriptor(thread);
-  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
 #else
   char dummy = 1;
   ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
