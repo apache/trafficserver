@@ -65,6 +65,17 @@ typedef enum {
 class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
+  enum class Service : uint8_t {
+    TLS_ALPN,
+    TLS_Basic,
+    TLS_CertSwitch,
+    TLS_EarlyData,
+    TLS_SNI,
+    TLS_SessionResumption,
+    TLS_Tunnel,
+    N_MAX,
+  };
+
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
@@ -507,6 +518,8 @@ public:
   bool has_proxy_protocol(IOBufferReader *);
   bool has_proxy_protocol(char *, int64_t *);
 
+  void *get_service(enum Service mixin_index) const;
+
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
@@ -526,6 +539,11 @@ protected:
   int write_buffer_empty_event = 0;
   /// NetVConnection Context.
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
+
+  void _set_service(enum Service service, void *instance);
+  void *_services[static_cast<unsigned int>(Service::N_MAX)] = {
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+  };
 };
 
 inline NetVConnection::NetVConnection() : VConnection(nullptr)
@@ -539,4 +557,16 @@ inline void
 NetVConnection::trapWriteBufferEmpty(int event)
 {
   write_buffer_empty_event = event;
+}
+
+inline void *
+NetVConnection::get_service(enum NetVConnection::Service service) const
+{
+  return _services[static_cast<unsigned int>(service)];
+}
+
+inline void
+NetVConnection::_set_service(enum NetVConnection::Service service, void *instance)
+{
+  this->_services[static_cast<unsigned int>(service)] = instance;
 }

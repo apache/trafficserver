@@ -860,7 +860,16 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   return num_really_written;
 }
 
-SSLNetVConnection::SSLNetVConnection() {}
+SSLNetVConnection::SSLNetVConnection()
+{
+  this->_set_service(NetVConnection::Service::TLS_ALPN, static_cast<ALPNSupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_Basic, static_cast<TLSBasicSupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_CertSwitch, static_cast<TLSCertSwitchSupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_EarlyData, static_cast<TLSEarlyDataSupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_SNI, static_cast<TLSSNISupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_SessionResumption, static_cast<TLSSessionResumptionSupport *>(this));
+  this->_set_service(NetVConnection::Service::TLS_Tunnel, static_cast<TLSTunnelSupport *>(this));
+}
 
 void
 SSLNetVConnection::do_io_close(int lerrno)
