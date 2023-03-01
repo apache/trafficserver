@@ -317,6 +317,8 @@ public:
   int redirection_tries = 0;    // To monitor number of redirections
   int64_t transfered_bytes = 0; // Added to calculate POST data
 
+  BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
+
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
   PluginVCCore *plugin_tunnel           = nullptr;
@@ -326,6 +328,9 @@ public:
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
   UrlRewrite *m_remap = nullptr;
+
+  History<HISTORY_DEFAULT_SIZE> history;
+  ProxyTransaction *ua_txn = nullptr;
 
   // _postbuf api
   int64_t postbuf_reader_avail();
@@ -343,59 +348,10 @@ public:
   // based on sni and host name header values
   void check_sni_host();
   SNIRoutingType get_tunnel_type() const;
-
-private:
-  int reentrancy_count = 0;
-
-  HttpTunnel tunnel;
-
-  HttpVCTable vc_table;
-
-public:
-  BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
   void set_http_schedule(Continuation *);
   int get_http_schedule(int event, void *data);
 
-  History<HISTORY_DEFAULT_SIZE> history;
-
-  ProxyTransaction *ua_txn = nullptr;
-
 private:
-  IOBufferReader *ua_raw_buffer_reader = nullptr;
-
-  HttpVCTableEntry *ua_entry     = nullptr;
-  HttpVCTableEntry *server_entry = nullptr;
-  ProxyTransaction *server_txn   = nullptr;
-
-  /* Because we don't want to take a session from a shared pool if we know that it will be private,
-   * but we cannot set it to private until we have an attached server session.
-   * So we use this variable to indicate that
-   * we should create a new connection and then once we attach the session we'll mark it as private.
-   */
-  bool will_be_private_ss = false;
-
-  HttpTransformInfo transform_info;
-  HttpTransformInfo post_transform_info;
-  /** A flag to keep track of whether there are active request plugin agents.
-   *
-   * This is used to guide plugin agent cleanup.
-   */
-  bool has_active_request_plugin_agents = false;
-
-  /** A flag to keep track of whether there are active response plugin agents.
-   *
-   * This is used to guide plugin agent cleanup.
-   */
-  bool has_active_response_plugin_agents = false;
-
-  HttpCacheSM cache_sm;
-  HttpCacheSM transform_cache_sm;
-
-  HttpSMHandler default_handler = nullptr;
-  PendingAction pending_action;
-  Continuation *schedule_cont = nullptr;
-
-  HTTPParser http_parser;
   void start_sub_sm();
 
   int main_handler(int event, void *data);
@@ -548,18 +504,18 @@ public:
   // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
   // Stats & Logging Info
   int client_request_hdr_bytes        = 0;
-  int64_t client_request_body_bytes   = 0;
   int server_request_hdr_bytes        = 0;
-  int64_t server_request_body_bytes   = 0;
   int server_response_hdr_bytes       = 0;
-  int64_t server_response_body_bytes  = 0;
   int client_response_hdr_bytes       = 0;
-  int64_t client_response_body_bytes  = 0;
   int cache_response_hdr_bytes        = 0;
-  int64_t cache_response_body_bytes   = 0;
   int pushed_response_hdr_bytes       = 0;
-  int64_t pushed_response_body_bytes  = 0;
   int server_connection_provided_cert = 0;
+  int64_t client_request_body_bytes   = 0;
+  int64_t server_request_body_bytes   = 0;
+  int64_t server_response_body_bytes  = 0;
+  int64_t client_response_body_bytes  = 0;
+  int64_t cache_response_body_bytes   = 0;
+  int64_t pushed_response_body_bytes  = 0;
   bool client_tcp_reused              = false;
   bool client_ssl_reused              = false;
   bool client_connection_is_ssl       = false;
@@ -568,6 +524,10 @@ public:
   bool server_connection_is_ssl       = false;
   bool is_waiting_for_full_body       = false;
   bool is_using_post_buffer           = false;
+  // hooks_set records whether there are any hooks relevant
+  //  to this transaction.  Used to avoid costly calls
+  //  do_api_callout_internal()
+  bool hooks_set = false;
   std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
   const char *client_protocol     = "-";
   const char *server_protocol     = "-";
@@ -585,20 +545,37 @@ public:
   const char *plugin_tag = nullptr;
   int64_t plugin_id      = 0;
 
-  // hooks_set records whether there are any hooks relevant
-  //  to this transaction.  Used to avoid costly calls
-  //  do_api_callout_internal()
-  bool hooks_set = false;
-
 private:
+  HttpTunnel tunnel;
+
+  HttpVCTable vc_table;
+
+  IOBufferReader *ua_raw_buffer_reader = nullptr;
+
+  HttpVCTableEntry *ua_entry     = nullptr;
+  HttpVCTableEntry *server_entry = nullptr;
+  ProxyTransaction *server_txn   = nullptr;
+
+  HttpTransformInfo transform_info;
+  HttpTransformInfo post_transform_info;
+
+  HttpCacheSM cache_sm;
+  HttpCacheSM transform_cache_sm;
+
+  HttpSMHandler default_handler = nullptr;
+  PendingAction pending_action;
+  Continuation *schedule_cont = nullptr;
+
+  HTTPParser http_parser;
+
   TSHttpHookID cur_hook_id = TS_HTTP_LAST_HOOK;
   APIHook const *cur_hook  = nullptr;
   HttpHookState hook_state;
 
-  //
   // Continuation time keeper
   int64_t prev_hook_start_time = 0;
 
+  int reentrancy_count         = 0;
   int cur_hooks                = 0;
   HttpApiState_t callout_state = HTTP_API_NO_CALLOUT;
 
@@ -613,6 +590,34 @@ private:
   bool terminate_sm         = false;
   bool kill_this_async_done = false;
   bool parse_range_done     = false;
+  bool _from_early_data     = false;
+  /* Because we don't want to take a session from a shared pool if we know that it will be private,
+   * but we cannot set it to private until we have an attached server session.
+   * So we use this variable to indicate that
+   * we should create a new connection and then once we attach the session we'll mark it as private.
+   */
+  bool will_be_private_ss = false;
+
+  /** A flag to keep track of whether there are active request plugin agents.
+   *
+   * This is used to guide plugin agent cleanup.
+   */
+  bool has_active_request_plugin_agents = false;
+
+  /** A flag to keep track of whether there are active response plugin agents.
+   *
+   * This is used to guide plugin agent cleanup.
+   */
+  bool has_active_response_plugin_agents = false;
+
+  int _client_connection_id                   = -1;
+  int _client_transaction_id                  = -1;
+  int _client_transaction_priority_weight     = -1;
+  int _client_transaction_priority_dependence = -1;
+  SNIRoutingType _tunnel_type                 = SNIRoutingType::NONE;
+  PreWarmSM *_prewarm_sm                      = nullptr;
+  PostDataBuffers _postbuf;
+
   void kill_this();
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);
@@ -621,8 +626,6 @@ private:
 
 public:
   LINK(HttpSM, debug_link);
-
-public:
   bool set_server_session_private(bool private_session);
   bool is_dying() const;
 
@@ -635,14 +638,6 @@ public:
   ink_hrtime get_server_active_timeout();
   ink_hrtime get_server_connect_timeout();
   void rewind_state_machine();
-
-private:
-  PostDataBuffers _postbuf;
-  int _client_connection_id = -1, _client_transaction_id = -1;
-  int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
-  bool _from_early_data       = false;
-  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
-  PreWarmSM *_prewarm_sm      = nullptr;
 };
 
 ////
