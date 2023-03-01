@@ -327,8 +327,8 @@ HostDBCache::HostDBCache() {}
 bool
 HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 {
-  std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
-  std::shared_lock<std::shared_mutex> lock{bucket_lock};
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  std::shared_lock<ts::shared_mutex> lock{bucket_lock};
   bool retval                  = false;
   Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
   for (HostDBContinuation *c = q.head; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
@@ -343,9 +343,9 @@ HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 bool
 HostDBCache::remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c)
 {
-  bool retval                    = false;
-  std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
-  std::unique_lock<std::shared_mutex> lock{bucket_lock};
+  bool retval                   = false;
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
   Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
   if (q.in(c)) {
     q.remove(c);
@@ -640,12 +640,12 @@ probe(HostDBHash const &hash, bool ignore_timeout)
   }
 
   // Otherwise HostDB is enabled, so we'll do our thing
-  uint64_t folded_hash           = hash.hash.fold();
-  std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(folded_hash);
+  uint64_t folded_hash          = hash.hash.fold();
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(folded_hash);
 
   Ptr<HostDBRecord> record;
   {
-    std::shared_lock<std::shared_mutex> lock{bucket_lock};
+    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
     // get the record from cache
     record = hostDB.refcountcache->get(folded_hash);
@@ -733,11 +733,11 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
     while (loop) {
       loop = false; // Only loop on explicit set for retry.
       // find the partition lock
-      std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
 
       // If we can get the lock and a level 1 probe succeeds, return
       HostDBRecord::Handle r = probe(hash, false);
-      std::shared_lock<std::shared_mutex> lock{bucket_lock};
+      std::shared_lock<ts::shared_mutex> lock{bucket_lock};
       if (r) {
         // fail, see if we should retry with alternate
         if (hash.db_mark != HOSTDB_MARK_SRV && r->is_failed() && hash.host_name) {
@@ -1177,8 +1177,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     if (!serve_stale) { // implies r != old_r
-      std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      std::unique_lock<std::shared_mutex> lock{bucket_lock};
+      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      std::unique_lock<ts::shared_mutex> lock{bucket_lock};
       auto const duration_till_revalidate = r->expiry_time().time_since_epoch();
       auto const seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
       hostDB.refcountcache->put(r->key, r.get(), r->_record_size, seconds_till_revalidate);
@@ -1259,8 +1259,8 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
-    std::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
-    std::shared_lock<std::shared_mutex> lock{bucket_lock};
+    ts::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
+    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
     IntrusiveHashMap<RefCountCacheLinkage> &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
     for (const auto &it : partMap) {
@@ -1357,8 +1357,8 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 int
 HostDBContinuation::set_check_pending_dns()
 {
-  std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-  std::unique_lock<std::shared_mutex> lock{bucket_lock};
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
@@ -1382,10 +1382,10 @@ void
 HostDBContinuation::remove_and_trigger_pending_dns()
 {
   Queue<HostDBContinuation> qq;
-  HostDBContinuation *c          = nullptr;
-  std::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  HostDBContinuation *c         = nullptr;
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   {
-    std::unique_lock<std::shared_mutex> lock{bucket_lock};
+    std::unique_lock<ts::shared_mutex> lock{bucket_lock};
     Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
     q.remove(this);
     c = q.head;

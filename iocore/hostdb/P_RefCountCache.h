@@ -32,7 +32,7 @@
 #include "tscore/ink_hrtime.h"
 
 #include "tscore/I_Version.h"
-#include <shared_mutex>
+#include "tscpp/util/TsSharedMutex.h"
 #include <unistd.h>
 
 #define REFCOUNT_CACHE_EVENT_SYNC REFCOUNT_CACHE_EVENT_EVENTS_START
@@ -170,7 +170,7 @@ public:
 
   hash_type &get_map();
 
-  std::shared_mutex lock;
+  ts::shared_mutex lock;
 
 private:
   void metric_inc(RefCountCache_Stats metric_enum, int64_t data);
@@ -409,7 +409,7 @@ public:
 
   // Some methods to get some internal state
   int partition_for_key(uint64_t key);
-  std::shared_mutex &lock_for_key(uint64_t key);
+  ts::shared_mutex &lock_for_key(uint64_t key);
   size_t partition_count() const;
   RefCountCachePartition<C> &get_partition(int pnum);
   size_t count() const;
@@ -511,7 +511,7 @@ RefCountCache<C>::get_header()
 }
 
 template <class C>
-std::shared_mutex &
+ts::shared_mutex &
 RefCountCache<C>::lock_for_key(uint64_t key)
 {
   return this->partitions[this->partition_for_key(key)]->lock;
