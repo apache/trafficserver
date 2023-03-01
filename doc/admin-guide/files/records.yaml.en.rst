@@ -4489,12 +4489,16 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
    :reloadable:
 
+   The max idle timeout in milliseconds.
    This value will be advertised as ``idle_timeout`` Transport Parameter.
+   Transport Parameter.
 
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
    :reloadable:
 
+   The max idle timeout in milliseconds.
    This value will be advertised as  ``idle_timeout`` Transport Parameter.
+   Transport Parameter.
 
 .. ts:cv:: CONFIG proxy.config.quic.preferred_address_ipv4 STRING ""
    :reloadable:
@@ -4510,6 +4514,9 @@ removed in the future without prior notice.
 
 .. ts:cv:: CONFIG proxy.config.quic.initial_max_data_in INT 65536
    :reloadable:
+
+   Integer value that contains the initial value for the maximum amount of data
+   that can be sent on the connection.
 
    This value will be advertised as ``initial_max_data`` Transport Parameter.
 
