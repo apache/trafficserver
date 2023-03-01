@@ -84,8 +84,8 @@ struct matcher_line {
   matcher_type type;                 // dest type
   int dest_entry;                    // entry which specifies the destination
   int num_el;                        // Number of elements
-  char *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
   int line_num;                      // config file line number
+  char *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
   matcher_line *next;                // use for linked list
 };
 

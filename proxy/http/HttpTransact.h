@@ -669,20 +669,54 @@ public:
   } ResponseAction;
 
   struct State {
-    HttpTransactMagic_t m_magic = HTTP_TRANSACT_MAGIC_ALIVE;
-
     HttpSM *state_machine = nullptr;
 
+    HttpTransactMagic_t m_magic             = HTTP_TRANSACT_MAGIC_ALIVE;
+    HTTPVersion updated_server_version      = HTTP_INVALID;
+    CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
+    HTTPStatus http_return_code             = HTTP_STATUS_NONE;
+    CacheAuth_t www_auth_content            = CACHE_AUTH_NONE;
+
     Arena arena;
+
+    bool force_dns                    = false;
+    bool is_upgrade_request           = false;
+    bool is_websocket                 = false;
+    bool did_upgrade_succeed          = false;
+    bool client_connection_enabled    = true;
+    bool acl_filtering_performed      = false;
+    bool api_cleanup_cache_read       = false;
+    bool api_server_response_no_store = false;
+    bool api_server_response_ignore   = false;
+    bool api_http_sm_shutdown         = false;
+    bool api_modifiable_cached_resp   = false;
+    bool api_server_request_body_set  = false;
+    bool api_req_cacheable            = false;
+    bool api_resp_cacheable           = false;
+    bool reverse_proxy                = false;
+    bool url_remap_success            = false;
+    bool api_skip_all_remapping       = false;
+    bool already_downgraded           = false;
+    bool transparent_passthrough      = false;
+    bool range_in_cache               = false;
+
+    /// True if the response is cacheable because of negative caching configuration.
+    ///
+    /// This being true implies the following:
+    ///
+    /// * The response code was negative.
+    /// * Negative caching is enabled.
+    /// * The response is considered cacheable because of negative caching
+    ///   configuration.
+    bool is_cacheable_due_to_negative_caching_configuration = false;
+
+    MgmtByte cache_open_write_fail_action = 0;
 
     HttpConfigParams *http_config_param = nullptr;
     CacheLookupInfo cache_info;
     ResolveInfo dns_info;
     RedirectInfo redirect_info;
     OutboundConnTrack::TxnState outbound_conn_track_state;
-    HTTPVersion updated_server_version    = HTTP_INVALID;
-    bool force_dns                        = false;
-    MgmtByte cache_open_write_fail_action = 0;
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
@@ -704,7 +738,6 @@ public:
     std::shared_ptr<NextHopSelectionStrategy> next_hop_strategy = nullptr;
     ParentResult parent_result;
     CacheControlResult cache_control;
-    CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
 
     StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
     StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
@@ -713,11 +746,6 @@ public:
     // We keep this so we can jump back to the upgrade handler after remap is complete
     void (*post_remap_upgrade_return_point)(HttpTransact::State *s) = nullptr; // out
     const char *upgrade_token_wks                                   = nullptr;
-    bool is_upgrade_request                                         = false;
-
-    // Some WebSocket state
-    bool is_websocket        = false;
-    bool did_upgrade_succeed = false;
 
     char *internal_msg_buffer                       = nullptr; // out
     char *internal_msg_buffer_type                  = nullptr; // out
@@ -735,6 +763,13 @@ public:
     /// response reason phrases.
     int cause_of_death_errno = -UNKNOWN_INTERNAL_ERROR; // in
 
+    int api_txn_active_timeout_value      = -1;
+    int api_txn_connect_timeout_value     = -1;
+    int api_txn_dns_timeout_value         = -1;
+    int api_txn_no_activity_timeout_value = -1;
+    int congestion_control_crat           = 0; // Client retry after
+    unsigned int filter_mask              = 0;
+
     ink_time_t client_request_time    = UNDEFINED_TIME; // internal
     ink_time_t request_sent_time      = UNDEFINED_TIME; // internal
     ink_time_t response_received_time = UNDEFINED_TIME; // internal
@@ -742,29 +777,7 @@ public:
 
     char via_string[MAX_VIA_INDICES + 1];
 
-    // new ACL filtering result (calculated immediately after remap)
-    bool client_connection_enabled = true;
-    bool acl_filtering_performed   = false;
-
-    /// True if the response is cacheable because of negative caching configuration.
-    ///
-    /// This being true implies the following:
-    ///
-    /// * The response code was negative.
-    /// * Negative caching is enabled.
-    /// * The response is considered cacheable because of negative caching
-    ///   configuration.
-    bool is_cacheable_due_to_negative_caching_configuration = false;
-    // for authenticated content caching
-    CacheAuth_t www_auth_content = CACHE_AUTH_NONE;
-
     RemapPluginInst *os_response_plugin_inst = nullptr;
-    HTTPStatus http_return_code              = HTTP_STATUS_NONE;
-
-    int api_txn_active_timeout_value      = -1;
-    int api_txn_connect_timeout_value     = -1;
-    int api_txn_dns_timeout_value         = -1;
-    int api_txn_no_activity_timeout_value = -1;
 
     // Used by INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet SDK functions
     // to copy part of HdrHeap (only the writable portion) for cached response headers
@@ -772,14 +785,6 @@ public:
     // These ptrs are deallocate when transaction is over.
     HdrHeapSDKHandle *cache_req_hdr_heap_handle   = nullptr;
     HdrHeapSDKHandle *cache_resp_hdr_heap_handle  = nullptr;
-    bool api_cleanup_cache_read                   = false;
-    bool api_server_response_no_store             = false;
-    bool api_server_response_ignore               = false;
-    bool api_http_sm_shutdown                     = false;
-    bool api_modifiable_cached_resp               = false;
-    bool api_server_request_body_set              = false;
-    bool api_req_cacheable                        = false;
-    bool api_resp_cacheable                       = false;
     UpdateCachedObject_t api_update_cached_object = UPDATE_CACHED_OBJECT_NONE;
     StateMachineAction_t saved_update_next_action = SM_ACTION_UNDEFINED;
     CacheAction_t saved_update_cache_action       = CACHE_DO_UNDEFINED;
@@ -788,16 +793,7 @@ public:
     UrlMappingContainer url_map;
     host_hdr_info hh_info = {nullptr, 0, 0};
 
-    int congestion_control_crat = 0; // Client retry after
-
-    unsigned int filter_mask = 0;
-    char *remap_redirect     = nullptr;
-    bool reverse_proxy       = false;
-    bool url_remap_success   = false;
-
-    bool api_skip_all_remapping = false;
-
-    bool already_downgraded = false;
+    char *remap_redirect = nullptr;
     URL unmapped_url; // unmapped url is the effective url before remap
 
     // Http Range: related variables
@@ -816,9 +812,6 @@ public:
 
       return *p;
     }
-
-    bool transparent_passthrough = false;
-    bool range_in_cache          = false;
 
     ResponseAction response_action;
 

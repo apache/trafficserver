@@ -154,6 +154,8 @@ struct NetVCOptions {
   // Use TCP Fast Open on this socket. The connect(2) call will be omitted.
   bool f_tcp_fastopen = false;
 
+  bool tls_upstream = false;
+
   /// Control use of SOCKS.
   /// Set to @c NO_SOCKS to disable use of SOCKS. Otherwise SOCKS is
   /// used if available.
@@ -226,8 +228,6 @@ struct NetVCOptions {
    * Directory containing CA certs for verifying origin's cert
    */
   const char *ssl_client_ca_cert_path = nullptr;
-
-  bool tls_upstream = false;
 
   unsigned char alpn_protocols_array[MAX_ALPN_STRING];
   int alpn_protocols_array_size = 0;

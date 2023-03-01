@@ -93,14 +93,14 @@ struct RecConfigMeta {
 
 struct RecRecord {
   RecT rec_type;
-  const char *name;
   RecDataT data_type;
+  const char *name;
   RecData data;
   RecData data_default;
   RecMutex lock;
   unsigned char sync_required;
-  uint32_t version;
   bool registered;
+  uint32_t version;
   union {
     RecStatMeta stat_meta;
     RecConfigMeta config_meta;
