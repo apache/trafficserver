@@ -34,7 +34,6 @@ dnslib = "*"
 # These are likely to be available via yum/dnf or apt-get
 requests = "*"
 gunicorn = "*"
-httpbin = "*"
 psutil = "*"
 
 # Keep init.cli.ext updated with this required microserver version.
@@ -44,11 +43,6 @@ jsonschema = "*"
 python-jose = "*"
 pyyaml ="*"
 
-# The latest version of Werkzeug (2.1.0) breaks httpbin because it removes
-# deprecated function `BaseResponse` that httpbin directly or indirectly
-# depends upon. Pinning Wekrzeug for now until httpbin or its dependencies is
-# updated for the changed API.
-Werkzeug = "==2.0.3"
 flask = "==2.1.3"
 
 [requires]
