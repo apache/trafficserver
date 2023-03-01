@@ -32,3 +32,8 @@ Synopsis
 
 Description
 ===========
+Creates a continuation, which can be destroyed with :func:`TSContDestroy`.
+**Note:** when a mutex is passed to a call to this function, it creates a
+reference to the mutex.  The mutex will be destroyed when the number of
+continuations refering to it becomes zero (due to calls to :func:`TSContDestroy`).
+:func:`TSMutexDestroy` must not be called for the mutex.
