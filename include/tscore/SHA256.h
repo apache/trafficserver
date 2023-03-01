@@ -34,8 +34,10 @@
 
 class SHA256Context : public ats::CryptoContextBase
 {
+#ifndef HAVE_SHA256_INIT
 protected:
   EVP_MD_CTX *ctx;
+#endif
 
 public:
   SHA256Context()
@@ -58,7 +60,6 @@ public:
     EVP_MD_CTX_free(_ctx);
 #endif
   }
->>>>>>> 2c1c6d263 (Use deprecated OpenSSL APIs for MD5 and SHA256 if available (#9469))
   /// Update the hash with @a data of @a length bytes.
   bool
   update(void const *data, int length) override
