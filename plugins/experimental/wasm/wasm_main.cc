@@ -68,7 +68,7 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
   bool found = false;
   for (auto it = wasm_config->configs.begin(); it != wasm_config->configs.end(); it++) {
     std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
-    if(wbp.get() == old_wasm) {
+    if (wbp.get() == old_wasm) {
       found                    = true;
       auto *wasm               = static_cast<ats_wasm::Wasm *>(c->wasm());
       uint32_t root_context_id = c->id();
@@ -189,57 +189,56 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
   case TS_EVENT_HTTP_READ_CACHE_HDR:
     break;
 
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    {
-      context->onDone();
-      context->onDelete();
+  case TS_EVENT_HTTP_TXN_CLOSE: {
+    context->onDone();
+    context->onDelete();
 
-      bool found = false;
-      for (auto it = wasm_config->configs.begin(); it != wasm_config->configs.end(); it++) {
-        std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
-        if(wbp.get() == context->wasm()) {
-          found = true;
-        }
-
-        break;
+    bool found = false;
+    for (auto it = wasm_config->configs.begin(); it != wasm_config->configs.end(); it++) {
+      std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
+      if(wbp.get() == context->wasm()) {
+        found = true;
       }
 
-      if (found) {
-        TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has not changed", __FUNCTION__);
-      } else {
-        if (old_wasm->readyShutdown()) {
-          TSDebug(WASM_DEBUG_TAG, "[%s] starting WasmBase Shutdown", __FUNCTION__);
-          old_wasm->startShutdown();
-          if (!old_wasm->readyDelete()) {
-            TSDebug(WASM_DEBUG_TAG, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
-          } else {
-            TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
-            bool advance = true;
-            for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
-              advance = true;
-              TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
-              std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
-              temp                                = wbp;
-              if (wbp.get() == old_wasm) {
-                TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
-                it      = wasm_config->deleted_configs.erase(it);
-                advance = false;
-              }
-            }
-          }
-        } else {
-          TSDebug(WASM_DEBUG_TAG, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
-        }
-
-        TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has changed", __FUNCTION__);
-      }
-
-      delete context;
-
-      TSContDestroy(contp);
-      result = 0;
       break;
     }
+
+    if (found) {
+      TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has not changed", __FUNCTION__);
+    } else {
+      if (old_wasm->readyShutdown()) {
+        TSDebug(WASM_DEBUG_TAG, "[%s] starting WasmBase Shutdown", __FUNCTION__);
+        old_wasm->startShutdown();
+        if (!old_wasm->readyDelete()) {
+          TSDebug(WASM_DEBUG_TAG, "[%s] not ready to delete WasmBase/PluginBase", __FUNCTION__);
+        } else {
+          TSDebug(WASM_DEBUG_TAG, "[%s] remove wasm from deleted_configs", __FUNCTION__);
+          bool advance = true;
+          for (auto it = wasm_config->deleted_configs.begin(); it != wasm_config->deleted_configs.end(); advance ? it++ : it) {
+            advance = true;
+            TSDebug(WASM_DEBUG_TAG, "[%s] looping through deleted_configs", __FUNCTION__);
+            std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
+            temp                                = wbp;
+            if (wbp.get() == old_wasm) {
+              TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
+              it      = wasm_config->deleted_configs.erase(it);
+              advance = false;
+             }
+          }
+        }
+      } else {
+        TSDebug(WASM_DEBUG_TAG, "[%s] not ready to shutdown WasmBase", __FUNCTION__);
+      }
+
+      TSDebug(WASM_DEBUG_TAG, "[%s] config wasm has changed", __FUNCTION__);
+    }
+
+    delete context;
+
+    TSContDestroy(contp);
+    result = 0;
+    break;
+  }
   default:
     break;
   }
@@ -314,7 +313,7 @@ read_configuration()
 {
   std::list<std::pair<std::shared_ptr<ats_wasm::Wasm>, std::shared_ptr<proxy_wasm::PluginBase>>> new_configs = {};
 
-  for (auto const& cfn : wasm_config->config_filenames) {
+  for (auto const &cfn : wasm_config->config_filenames) {
     // PluginBase parameters
     std::string name          = "";
     std::string root_id       = "";
@@ -339,9 +338,10 @@ read_configuration()
         YAML::NodeType::value type   = it->second.Type();
 
         if (node_name != "config" || type != YAML::NodeType::Map) {
-          TSError("[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: Top level nodes must be named config and be of "
-                  "type map",
-                  __FUNCTION__, cfn.c_str());
+          TSError(
+            "[wasm][%s] Invalid YAML Configuration format for wasm: %s, reason: Top level nodes must be named config and be of "
+            "type map",
+            __FUNCTION__, cfn.c_str());
           return false;
         }
 
@@ -442,8 +442,7 @@ read_configuration()
         break;
       }
     } catch (const YAML::Exception &e) {
-      TSError("[wasm][%s] YAML::Exception %s when parsing YAML config file %s for wasm", __FUNCTION__, e.what(),
-              cfn.c_str());
+      TSError("[wasm][%s] YAML::Exception %s when parsing YAML config file %s for wasm", __FUNCTION__, e.what(), cfn.c_str());
       return false;
     }
 
@@ -554,7 +553,6 @@ read_configuration()
       }
       TSMutexUnlock(old_wasm->mutex());
     }
-
   }
 
   return true;
