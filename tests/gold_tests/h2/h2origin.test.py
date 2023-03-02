@@ -37,7 +37,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.exec_thread.autoconfig': 0,
+    'proxy.config.exec_thread.autoconfig.enabled': 0,
     # Allow for more parallelism
     'proxy.config.exec_thread.limit': 4,
     'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
