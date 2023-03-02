@@ -31,14 +31,14 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_assert.h"
 #include "tscore/HostLookup.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include <string_view>
 #include <array>
 #include <memory>
 
 using std::string_view;
-using ts::TextView;
+using swoc::TextView;
 
 namespace
 {
@@ -914,9 +914,10 @@ HostLookup::MatchNext(HostLookupState *s, void **opaque_ptr)
       break;
     }
 
-    string_view token{TextView{s->hostname_stub}.suffix('.')};
-    s->hostname_stub.remove_suffix(std::min(s->hostname_stub.size(), token.size() + 1));
-    cur = FindNextLevel(cur, token, true);
+    TextView name{s->hostname_stub};
+    auto token       = name.take_suffix_at('.');
+    s->hostname_stub = name;
+    cur              = FindNextLevel(cur, token, true);
 
     if (cur == nullptr) {
       break;
