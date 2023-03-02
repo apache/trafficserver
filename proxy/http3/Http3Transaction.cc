@@ -113,8 +113,10 @@ HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   this->_read_vio.vc_server = this;
   this->_read_vio.op        = VIO::READ;
 
-  this->_process_read_vio();
-  this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
+  if (buf) {
+    this->_process_read_vio();
+    this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
+  }
 
   return &this->_read_vio;
 }
