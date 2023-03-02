@@ -157,3 +157,41 @@ tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     'proxy.config.diags.debug.tags: filemanager',
     'Config should show a different tag'
 )
+
+
+ts2.Disk.records_config.append_to_document(
+    '''
+    dns:
+      resolv_conf: NULL
+      nameservers: null
+      local_ipv6: Null
+    ssl:
+      client:
+        cert:
+          filename: ~
+    '''
+)
+
+
+tr3 = Test.AddTestRun("test null string")
+tr3.Processes.Default.Command = 'traffic_ctl config get  proxy.config.dns.resolv_conf proxy.config.dns.local_ipv6 proxy.config.dns.nameservers proxy.config.ssl.client.cert.filename'
+tr3.Processes.Default.Env = ts2.Env
+tr3.Processes.Default.ReturnCode = 0
+
+# Make sure it's what we want.
+tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.dns.resolv_conf: null',
+    'should be set to null'
+)
+tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.dns.nameservers: null',
+    'should be set to null'
+)
+tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.ssl.client.cert.filename: null',
+    'should be set to null'
+)
+tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.dns.local_ipv6: null',
+    'should be set to null'
+)
