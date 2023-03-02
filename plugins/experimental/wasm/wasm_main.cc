@@ -196,7 +196,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
     bool found = false;
     for (auto it = wasm_config->configs.begin(); it != wasm_config->configs.end(); it++) {
       std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
-      if(wbp.get() == context->wasm()) {
+      if (wbp.get() == context->wasm()) {
         found = true;
       }
 
@@ -223,7 +223,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
               TSDebug(WASM_DEBUG_TAG, "[%s] found matching WasmBase", __FUNCTION__);
               it      = wasm_config->deleted_configs.erase(it);
               advance = false;
-             }
+            }
           }
         }
       } else {
