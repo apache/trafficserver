@@ -915,7 +915,7 @@ HostLookup::MatchNext(HostLookupState *s, void **opaque_ptr)
     }
 
     TextView name{s->hostname_stub};
-    auto token       = name.remove_suffix_at('.');
+    auto token       = name.take_suffix_at('.');
     s->hostname_stub = name;
     cur              = FindNextLevel(cur, token, true);
 
