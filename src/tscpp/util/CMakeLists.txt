@@ -19,7 +19,7 @@
 add_library(tscpputil SHARED
         TextView.cc
         YamlCfg.cc
-        )
+        ts_unit_parser.cc)
 target_link_libraries(tscpputil PRIVATE yaml-cpp libswoc)
 
 add_executable(test_tscpputil
@@ -28,6 +28,7 @@ add_executable(test_tscpputil
         unit_tests/test_TextView.cc
         unit_tests/test_Strerror.cc
         unit_tests/test_ts_meta.cc
+	unit_tests/test_time_parser.cc
         unit_tests/unit_test_main.cc
         )
 target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc)
