@@ -96,16 +96,7 @@ BasePrinter::write_output_json(YAML::Node const &node) const
 void
 RecordPrinter::write_output(YAML::Node const &result)
 {
-  auto response = result.as<shared::rpc::RecordLookUpResponse>();
-  if (is_legacy_format()) {
-    write_output_legacy(response);
-  } else {
-    write_output_pretty(response);
-  }
-}
-void
-RecordPrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &response)
-{
+  auto const &response = result.as<shared::rpc::RecordLookUpResponse>();
   std::string text;
   for (auto &&recordInfo : response.recordList) {
     if (!recordInfo.registered) {
@@ -122,11 +113,6 @@ RecordPrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &resp
   }
   // we print errors if found.
   print_record_error_list(response.errorList);
-}
-void
-RecordPrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
-{
-  write_output_legacy(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
@@ -169,19 +155,11 @@ ConfigReloadPrinter::write_output(YAML::Node const &result)
 void
 ConfigShowFileRegistryPrinter::write_output(YAML::Node const &result)
 {
-  if (is_pretty_format()) {
-    this->write_output_pretty(result);
-  } else {
-    if (auto registry = result["config_registry"]) {
-      write_output_json(registry);
-    }
-  }
-}
-
-void
-ConfigShowFileRegistryPrinter::write_output_pretty(YAML::Node const &result)
-{
   if (auto &&registry = result["config_registry"]) {
+    if (is_json_format()) {
+      write_output_json(registry);
+      return;
+    }
     for (auto &&element : registry) {
       std::cout << "┌ " << element["file_path"] << '\n';
       std::cout << "└┬ Config name: " << element["config_record_name"] << '\n';
@@ -195,7 +173,6 @@ ConfigShowFileRegistryPrinter::write_output_pretty(YAML::Node const &result)
 void
 ConfigSetPrinter::write_output(YAML::Node const &result)
 {
-  // we match the legacy format, the only one supported for now.
   static const std::unordered_map<std::string, std::string> Update_Type_To_String_Message = {
     {"0", "Set {}"                                                                                          }, // UNDEFINED
     {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
@@ -223,16 +200,6 @@ void
 RecordDescribePrinter::write_output(YAML::Node const &result)
 {
   auto const &response = result.as<shared::rpc::RecordLookUpResponse>();
-  if (is_legacy_format()) {
-    write_output_legacy(response);
-  } else {
-    write_output_pretty(response);
-  }
-}
-
-void
-RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse const &response)
-{
   std::string text;
   for (auto &&recordInfo : response.recordList) {
     if (!recordInfo.registered) {
@@ -272,13 +239,6 @@ RecordDescribePrinter::write_output_legacy(shared::rpc::RecordLookUpResponse con
   // also print errors.
   print_record_error_list(response.errorList);
 }
-
-void
-RecordDescribePrinter::write_output_pretty(shared::rpc::RecordLookUpResponse const &response)
-{
-  // we default for legacy.
-  write_output_legacy(response);
-}
 //------------------------------------------------------------------------------------------------------------------------------------
 void
 GetHostStatusPrinter::write_output(YAML::Node const &result)
@@ -308,14 +268,6 @@ SetHostStatusPrinter::write_output(YAML::Node const &result)
 void
 CacheDiskStoragePrinter::write_output(YAML::Node const &result)
 {
-  // do nothing.
-  if (!is_legacy_format()) {
-    write_output_pretty(result);
-  }
-}
-void
-CacheDiskStoragePrinter::write_output_pretty(YAML::Node const &result)
-{
   auto my_print = [](auto const &disk) {
     std::cout << "Device: " << disk.path << '\n';
     std::cout << "Status: " << disk.status << '\n';
@@ -334,13 +286,6 @@ CacheDiskStoragePrinter::write_output_pretty(YAML::Node const &result)
 //------------------------------------------------------------------------------------------------------------------------------------
 void
 CacheDiskStorageOfflinePrinter::write_output(YAML::Node const &result)
-{
-  if (!is_legacy_format()) {
-    write_output_pretty(result);
-  }
-}
-void
-CacheDiskStorageOfflinePrinter::write_output_pretty(YAML::Node const &result)
 {
   for (auto &&item : result) {
     if (auto n = item["has_online_storage_left"]) {

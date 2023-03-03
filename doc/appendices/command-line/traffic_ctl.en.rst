@@ -78,17 +78,14 @@ Options
    =================== ========================================================================
    Options             Description
    =================== ========================================================================
-   ``legacy``          Will honour the old :program:`traffic_ctl` output messages. This is the default format type.
-   ``pretty``          <if available> will print a different output, a prettier output. This depends on the implementation,
-                       it's not required to always implement a pretty output
    ``json``            It will show the response message formatted to `JSON`_. This is ideal if you want to redirect the stdout to a different source.
                        It will only stream the json response, no other messages.
+                       This option only applies to the RPC request or response.
    ``rpc``             Show the JSONRPC request and response + the default output.
+                       This option only applies to the RPC request or response.
    =================== ========================================================================
 
    In case of a record request(config) ``--records`` overrides this flag.
-
-   Default: ``legacy``
 
    Example:
 
@@ -148,8 +145,6 @@ traffic_ctl config
    Display all the known information about a configuration record. This includes the current and
    default values, the data type, the record class and syntax checking expression.
 
-   Error output available if  ``--format pretty`` is specified.
-
 .. program:: traffic_ctl config
 .. option:: diff [--records]
 
@@ -164,8 +159,6 @@ traffic_ctl config
    :ref:`admin_lookup_records`
 
 Display the current value of a configuration record.
-
-   Error output available if ``--format pretty`` is specified.
 
 .. program:: traffic_ctl config get
 .. option:: --records
@@ -304,8 +297,6 @@ traffic_ctl metric
 
    Display the current value of the specified statistics.
 
-   Error output available if ``--format pretty`` is specified.
-
 .. program:: traffic_ctl metric
 .. option:: match REGEX [REGEX...]
 
@@ -327,8 +318,6 @@ traffic_ctl metric
    :ref:`admin_lookup_records`
 
    Display all the known information about a metric record.
-
-   Error output available if ``--format pretty`` is specified.
 
 .. program:: traffic_ctl metric
 .. option:: monitor [-i, -c] METRIC [METRIC...]
