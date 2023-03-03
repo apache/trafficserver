@@ -90,8 +90,8 @@ QUICNetProcessor::start(int, size_t stacksize)
   }
 
   quiche_config_set_max_idle_timeout(this->_quiche_config, params->no_activity_timeout_in());
-  quiche_config_set_max_recv_udp_payload_size(this->_quiche_config, 16384);
-  quiche_config_set_max_send_udp_payload_size(this->_quiche_config, 16384);
+  quiche_config_set_max_recv_udp_payload_size(this->_quiche_config, params->get_max_recv_udp_payload_size_in());
+  quiche_config_set_max_send_udp_payload_size(this->_quiche_config, params->get_max_send_udp_payload_size_in());
   quiche_config_set_initial_max_data(this->_quiche_config, params->initial_max_data_in());
   quiche_config_set_initial_max_stream_data_bidi_local(this->_quiche_config, params->initial_max_stream_data_bidi_local_in());
   quiche_config_set_initial_max_stream_data_bidi_remote(this->_quiche_config, params->initial_max_stream_data_bidi_remote_in());

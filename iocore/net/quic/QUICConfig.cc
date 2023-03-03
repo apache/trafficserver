@@ -156,6 +156,10 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
   REC_EstablishStaticConfigInt32U(this->_disable_active_migration, "proxy.config.quic.disable_active_migration");
+  REC_EstablishStaticConfigInt32U(this->_max_recv_udp_payload_size_in, "proxy.config.quic.max_recv_udp_payload_size_in");
+  REC_EstablishStaticConfigInt32U(this->_max_recv_udp_payload_size_out, "proxy.config.quic.max_recv_udp_payload_size_out");
+  REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
+  REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
@@ -364,6 +368,30 @@ bool
 QUICConfigParams::disable_active_migration() const
 {
   return this->_disable_active_migration;
+}
+
+uint32_t
+QUICConfigParams::get_max_recv_udp_payload_size_in() const
+{
+  return this->_max_recv_udp_payload_size_in;
+}
+
+uint32_t
+QUICConfigParams::get_max_recv_udp_payload_size_out() const
+{
+  return this->_max_recv_udp_payload_size_out;
+}
+
+uint32_t
+QUICConfigParams::get_max_send_udp_payload_size_in() const
+{
+  return this->_max_send_udp_payload_size_in;
+}
+
+uint32_t
+QUICConfigParams::get_max_send_udp_payload_size_out() const
+{
+  return this->_max_send_udp_payload_size_out;
 }
 
 const char *
