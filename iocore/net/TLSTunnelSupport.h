@@ -43,7 +43,7 @@ public:
   bool is_upstream_tls() const;
 
   SNIRoutingType get_tunnel_type() const;
-  const char *get_tunnel_host() const;
+  std::string_view get_tunnel_host() const;
   ushort get_tunnel_port() const;
 
   bool has_tunnel_destination() const;
@@ -56,7 +56,7 @@ protected:
 private:
   static int _ex_data_index;
 
-  char *_tunnel_host                           = nullptr;
+  std::string _tunnel_host;
   in_port_t _tunnel_port                       = 0;
   SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
@@ -71,10 +71,10 @@ TLSTunnelSupport::get_tunnel_type() const
 inline bool
 TLSTunnelSupport::has_tunnel_destination() const
 {
-  return _tunnel_host != nullptr;
+  return !_tunnel_host.empty();
 }
 
-inline const char *
+inline std::string_view
 TLSTunnelSupport::get_tunnel_host() const
 {
   return _tunnel_host;
