@@ -220,10 +220,6 @@ is_addr_valid(uint8_t af, ///< Address family (format of data)
 inline void
 hostdb_cont_free(HostDBContinuation *cont)
 {
-  if (cont->pending_action) {
-    cont->pending_action->cancel();
-    cont->pending_action = nullptr;
-  }
   if (cont->timeout) {
     cont->timeout->cancel();
     cont->timeout = nullptr;

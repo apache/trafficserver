@@ -33,6 +33,7 @@
 
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
+#include "tscore/PendingAction.h"
 #include "tscore/TsBuffer.h"
 #include "tscore/ts_file.h"
 
@@ -249,7 +250,7 @@ struct HostDBContinuation : public Continuation {
   char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
   char srv_target_name[MAXDNAME];
   //  void *m_pDS;
-  Action *pending_action = nullptr;
+  PendingAction pending_action;
 
   unsigned int missing   : 1;
   unsigned int force_dns : 1;
