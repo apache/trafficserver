@@ -161,10 +161,10 @@ The following options are available:
 .. option:: --iprep_buckets
 
    The number of LRU buckets to use for the IP reputation. A good number here
-   is 10, but can be configured. The reason for the different buckets is to
-   account for a pseudo-sorted list of IPs on the frequency seen. Too few buckets
-   will not be enough to keep such a sorting, rendering the algorithm useless. To
-   function in our setup, the number of buckets must be less than ``100``.
+   is `10`, which is the default, but can be configured. The reason for the different
+   buckets is to account for a pseudo-sorted list of IPs on the frequency seen. Too
+   few buckets will not be enough to keep such sorting, rendering the algorithm useless.
+   To function in our setup, the number of buckets must be less than ``100``.
 
 .. option:: --iprep_bucketsize
 
@@ -172,6 +172,13 @@ The following options are available:
    value. This is a power of 2, so `15` means the largest LRU can hold `32768` entries.
    Note that this option must be bigger then the `--iprep_buckets` setting, for the
    bucket halfing to function.
+
+   The default here is `0`, which means the IP reputation filter is not enabled!
+
+.. option:: --iprep_percentage
+
+   This is the minimum percentage of the `limit` that the pressure must be at, before
+   we start blocking IPs. The default is `0.9` which means `90%`` of the limit.
 
 .. option:: --iprep_maxage
 
