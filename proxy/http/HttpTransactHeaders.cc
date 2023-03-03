@@ -256,10 +256,10 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
 void
 HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request)
 {
-  if (outgoing_ver == HTTPVersion(1, 0)) {
-    convert_to_1_0_request_header(outgoing_request);
-  } else if (outgoing_ver == HTTPVersion(1, 1)) {
+  if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_request_header(outgoing_request);
+  } else if (outgoing_ver == HTTPVersion(1, 0)) {
+    convert_to_1_0_request_header(outgoing_request);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_request]"
                         "Unsupported Version - passing through");
@@ -271,10 +271,10 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing
 void
 HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response)
 {
-  if (outgoing_ver == HTTPVersion(1, 0)) {
-    convert_to_1_0_response_header(outgoing_response);
-  } else if (outgoing_ver == HTTPVersion(1, 1)) {
+  if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_response_header(outgoing_response);
+  } else if (outgoing_ver == HTTPVersion(1, 0)) {
+    convert_to_1_0_response_header(outgoing_response);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_response]"
                         "Unsupported Version - passing through");
@@ -348,7 +348,6 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response)
   ink_assert(outgoing_response->status_get());
 
   // Set HTTP version to 1.1
-  //    ink_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
   outgoing_response->version_set(HTTPVersion(1, 1));
 }
 
@@ -444,11 +443,9 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
   /* First try turning keep_alive off */
   if (*origin_server_keep_alive) {
     *origin_server_keep_alive = false;
-    // ver.set(outgoing_request->version_get());
   }
 
   if (outgoing_request->version_get() == HTTPVersion(1, 1)) {
-    // ver.set (HTTPVersion (1, 0));
     convert_to_1_0_request_header(outgoing_request);
   } else {
     return false;
