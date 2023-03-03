@@ -94,6 +94,12 @@ static const ink_freelist_ops *default_ops = &freelist_ops;
 static ink_freelist_list *freelists                = nullptr;
 static const ink_freelist_ops *freelist_global_ops = default_ops;
 
+inline void
+dummy_forced_read(void *mem)
+{
+  static_cast<void>(*const_cast<int volatile *>(reinterpret_cast<int *>(mem)));
+}
+
 const InkFreeListOps *
 ink_freelist_malloc_ops()
 {
@@ -184,10 +190,6 @@ ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, u
 
 #define ADDRESS_OF_NEXT(x, offset) ((void **)((char *)x + offset))
 
-#ifdef SANITY
-int fake_global_for_ink_queue = 0;
-#endif
-
 void *
 ink_freelist_new(InkFreeList *f)
 {
@@ -260,7 +262,7 @@ freelist_new(InkFreeList *f)
           ink_abort("ink_freelist_new: bad list");
         }
         if (TO_PTR(FREELIST_POINTER(next))) {
-          fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(next)));
+          dummy_forced_read(TO_PTR(FREELIST_POINTER(next)));
         }
       }
 #endif /* SANITY */
@@ -326,7 +328,7 @@ freelist_free(InkFreeList *f, void *item)
       ink_abort("ink_freelist_free: bad list");
     }
     if (TO_PTR(FREELIST_POINTER(h))) {
-      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
+      dummy_forced_read(TO_PTR(FREELIST_POINTER(h)));
     }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
@@ -391,7 +393,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
       ink_abort("ink_freelist_free: bad list");
     }
     if (TO_PTR(FREELIST_POINTER(h))) {
-      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
+      dummy_forced_read(TO_PTR(FREELIST_POINTER(h)));
     }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
