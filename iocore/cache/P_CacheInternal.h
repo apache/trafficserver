@@ -591,11 +591,7 @@ free_CacheVC(CacheVC *cont)
   }
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
-  /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
-     release build....weird??? For now, null out continuation and mutex
-     of the action separately */
-  cont->io.action.continuation = nullptr;
-  cont->io.action.mutex        = nullptr;
+  cont->io.action = nullptr;
   cont->io.mutex.clear();
   cont->io.aio_result       = 0;
   cont->io.aiocb.aio_nbytes = 0;
