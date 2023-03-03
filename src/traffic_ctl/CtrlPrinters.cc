@@ -25,8 +25,16 @@
 
 #include "jsonrpc/ctrl_yaml_codecs.h"
 #include "tscpp/util/ts_meta.h"
-#include <tscore/BufferWriter.h>
+#include <swoc/bwf_base.h>
+#include <swoc/bwf_ex.h>
+#include <swoc/BufferWriter.h>
 #include "PrintUtils.h"
+
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, FloatDate const &wrap)
+{
+  return bwformat(w, spec, swoc::bwf::Date(static_cast<time_t>(swoc::svtod(wrap._src)), wrap._fmt));
+}
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -107,8 +115,8 @@ RecordPrinter::write_output(YAML::Node const &result)
     if (!_printAsRecords) {
       std::cout << recordInfo.name << ": " << recordInfo.currentValue << '\n';
     } else {
-      std::cout << ts::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
-                               recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
+      std::cout << swoc::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
+                                 recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
     }
   }
   // we print errors if found.
@@ -136,12 +144,12 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
     const bool hasChanged    = (currentValue != defaultValue);
     if (hasChanged) {
       if (!_printAsRecords) {
-        std::cout << ts::bwprint(text, "{} has changed\n", recordInfo.name);
-        std::cout << ts::bwprint(text, "\tCurrent Value: {}\n", currentValue);
-        std::cout << ts::bwprint(text, "\tDefault Value: {}\n", defaultValue);
+        std::cout << swoc::bwprint(text, "{} has changed\n", recordInfo.name);
+        std::cout << swoc::bwprint(text, "\tCurrent Value: {}\n", currentValue);
+        std::cout << swoc::bwprint(text, "\tDefault Value: {}\n", defaultValue);
       } else {
-        std::cout << ts::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
-                                 recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
+        std::cout << swoc::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
+                                   recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
       }
     }
   }
@@ -185,14 +193,41 @@ ConfigSetPrinter::write_output(YAML::Node const &result)
     for (auto &&updatedRec : response.data) {
       if (auto search = Update_Type_To_String_Message.find(updatedRec.updateType);
           search != std::end(Update_Type_To_String_Message)) {
-        std::cout << ts::bwprint(text, search->second, updatedRec.recName) << '\n';
+        std::cout << swoc::bwprint(text, search->second, updatedRec.recName) << '\n';
       } else {
         std::cout << "Oops we don't know how to handle the update status for '" << updatedRec.recName << "' ["
                   << updatedRec.updateType << "]\n";
       }
     }
   } catch (std::exception const &ex) {
-    std::cout << ts::bwprint(text, "Unexpected error found {}", ex.what());
+    std::cout << swoc::bwprint(text, "Unexpected error found {}", ex.what());
+  }
+}
+//-----------------------------------------------------------------------------------------------------------------------------------
+
+void
+ConfigStatusPrinter::write_output(YAML::Node const &result)
+{
+  auto const &response = result.as<shared::rpc::RecordLookUpResponse>();
+  std::string text, recordName;
+  try {
+    for (auto &&recordInfo : response.recordList) {
+      recordName = recordInfo.name;
+      if (recordName == "proxy.process.version.server.long") {
+        std::cout << "Version: " << recordInfo.currentValue << "\n";
+      } else if (recordName == "proxy.node.restarts.proxy.start_time") {
+        std::cout << swoc::bwprint(text, "{}: {}\n", "Started at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
+      } else if (recordName == "proxy.node.config.reconfigure_time") {
+        std::cout << swoc::bwprint(text, "{}: {}\n", "Reconfigured at", FloatDate(recordInfo.currentValue, "%a %d %b %Y %H:%M:%S"));
+      } else if (recordName == "proxy.node.config.reconfigure_required") {
+        std::cout << "Reconfigure required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
+      } else if (recordName == "proxy.node.config.restart_required.proxy") {
+        std::cout << "Restart required: " << ((recordInfo.currentValue == "1") ? "yes" : "no") << "\n";
+      }
+    }
+  } catch (...) {
+    std::cout << recordName << ": <unable to read the value>"
+              << "\n";
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -207,33 +242,33 @@ RecordDescribePrinter::write_output(YAML::Node const &result)
                 << ": Unrecognized configuration value. Record is a configuration name/value but is not registered\n";
       continue;
     }
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Name", recordInfo.name);
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Current Value ", recordInfo.currentValue);
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Default Value ", recordInfo.defaultValue);
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Record Type ", rec_labelof(recordInfo.rclass));
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Data Type ", recordInfo.dataType);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Name", recordInfo.name);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Current Value ", recordInfo.currentValue);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Default Value ", recordInfo.defaultValue);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Record Type ", rec_labelof(recordInfo.rclass));
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Data Type ", recordInfo.dataType);
 
     std::visit(ts::meta::overloaded{
                  [&](shared::rpc::RecordLookUpResponse::RecordParamInfo::ConfigMeta const &meta) {
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Access Control ", rec_accessof(meta.accessType));
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(meta.updateType));
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Status ", meta.updateStatus);
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Source ", rec_sourceof(meta.source));
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Access Control ", rec_accessof(meta.accessType));
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(meta.updateType));
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Update Status ", meta.updateStatus);
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Source ", rec_sourceof(meta.source));
 
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Syntax Check ", meta.checkExpr);
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Syntax Check ", meta.checkExpr);
                  },
                  [&](shared::rpc::RecordLookUpResponse::RecordParamInfo::StatMeta const &meta) {
                    // This may not be what we want, as for a metric we may not need to print all the same info. In that case
                    // just create a new printer for this.
-                   std::cout << ts::bwprint(text, "{:16s}: {}\n", "Persist Type ", meta.persistType);
+                   std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Persist Type ", meta.persistType);
                  },
                },
                recordInfo.meta);
 
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Overridable", (recordInfo.overridable ? "yes" : "no"));
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Version ", recordInfo.version);
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Order ", recordInfo.order);
-    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Raw Stat Block ", recordInfo.rsb);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Overridable", (recordInfo.overridable ? "yes" : "no"));
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Version ", recordInfo.version);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Order ", recordInfo.order);
+    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Raw Stat Block ", recordInfo.rsb);
   }
 
   // also print errors.
