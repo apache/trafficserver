@@ -29,8 +29,8 @@
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
-int RecProcessInit(RecModeT mode_type, Diags *diags = nullptr);
-int RecProcessInitMessage(RecModeT mode_type);
+int RecProcessInit(Diags *diags = nullptr);
+int RecProcessInitMessage();
 int RecProcessStart();
 
 //-------------------------------------------------------------------------

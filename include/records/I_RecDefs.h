@@ -121,13 +121,6 @@ enum RecSourceT {
   REC_SOURCE_ENV       ///< Process environment variable.
 };
 
-enum RecModeT {
-  RECM_NULL,
-  RECM_CLIENT,
-  RECM_SERVER,
-  RECM_STAND_ALONE, ///< The only option now as traffic_manager is no longer supported.
-};
-
 enum RecAccessT {
   RECA_NULL,
   RECA_NO_ACCESS,

@@ -564,10 +564,6 @@ int
 main(int argc, char **argv)
 {
 
-  RecModeT mode_type = RECM_STAND_ALONE;
-  if ((argc == 2) && (strcmp(argv[1], "-M") == 0)) {
-    mode_type = RECM_CLIENT;
-  }
   // Start diags logging
   FILE *log_fp;
   if ((log_fp = fopen("recprocess.log", "a+")) != NULL) {
@@ -584,11 +580,9 @@ main(int argc, char **argv)
   // System initialization.  Note that a pointer to the diags object
   // is passed into librecprocess.a.  If manager isn't running, we
   // need to register our own configs
-  RecProcessInit(mode_type, diags);
-  RecProcessInitMessage(mode_type);
-  if (mode_type == RECM_STAND_ALONE) {
+  RecProcessInit( diags);
+  RecProcessInitMessage();
     RecordsConfigRegister();
-  }
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(4);
   RecProcessStart();

@@ -669,10 +669,10 @@ initialize_process_manager()
 {
   mgmt_use_syslog();
 
-  RecProcessInit(RECM_STAND_ALONE, diags());
+  RecProcessInit(diags());
   LibRecordsConfigInit();
 
-  RecProcessInitMessage(RECM_STAND_ALONE);
+  RecProcessInitMessage();
   check_config_directories();
 
   //

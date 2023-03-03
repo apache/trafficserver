@@ -751,14 +751,6 @@ typedef enum {
   TS_RECORDCHECK_IP,
 } TSRecordCheckType;
 
-/* The values of this enum must match enum RecModeT in I_RecDefs.h */
-typedef enum {
-  TS_RECORDMODE_NULL,
-  TS_RECORDMODE_CLIENT,
-  TS_RECORDMODE_SERVER,
-  TS_RECORDMODE_STAND_ALONE,
-} TSRecordModeType;
-
 /* The values of this enum must match enum RecAccessT in I_RecDefs.h */
 typedef enum {
   TS_RECORDACCESS_NULL,

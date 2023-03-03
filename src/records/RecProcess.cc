@@ -50,18 +50,16 @@ static Event *sync_cont_event;
 bool
 i_am_the_record_owner(RecT rec_type)
 {
-  if (g_mode_type == RECM_STAND_ALONE) {
-    switch (rec_type) {
-    case RECT_CONFIG:
-    case RECT_PROCESS:
-    case RECT_NODE:
-    case RECT_LOCAL:
-    case RECT_PLUGIN:
-      return true;
-    default:
-      ink_assert(!"Unexpected RecT type");
-      return false;
-    }
+  switch (rec_type) {
+  case RECT_CONFIG:
+  case RECT_PROCESS:
+  case RECT_NODE:
+  case RECT_LOCAL:
+  case RECT_PLUGIN:
+    return true;
+  default:
+    ink_assert(!"Unexpected RecT type");
+    return false;
   }
 
   return false;
@@ -166,7 +164,7 @@ struct sync_cont : public Continuation {
 // RecProcessInit
 //-------------------------------------------------------------------------
 int
-RecProcessInit(RecModeT mode_type, Diags *_diags)
+RecProcessInit(Diags *_diags)
 {
   static bool initialized_p = false;
 
@@ -174,9 +172,7 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
     return REC_ERR_OKAY;
   }
 
-  g_mode_type = mode_type;
-
-  if (RecCoreInit(mode_type, _diags) == REC_ERR_FAIL) {
+  if (RecCoreInit(_diags) == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
 
@@ -188,14 +184,13 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
 void
 RecMessageInit()
 {
-  ink_assert(g_mode_type != RECM_NULL);
   message_initialized_p = true;
 }
 //-------------------------------------------------------------------------
 // RecProcessInitMessage
 //-------------------------------------------------------------------------
 int
-RecProcessInitMessage(RecModeT mode_type)
+RecProcessInitMessage()
 {
   static bool initialized_p = false;
 

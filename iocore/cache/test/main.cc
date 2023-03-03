@@ -73,7 +73,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     mime_init();
     Layout::create(temp_prefix());
-    RecProcessInit(RECM_STAND_ALONE);
+    RecProcessInit();
     LibRecordsConfigInit();
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
     ink_assert(GLOBAL_DATA != nullptr);

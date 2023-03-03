@@ -62,7 +62,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags()->show_location = SHOW_LOCATION_DEBUG;
 
     Layout::create();
-    RecProcessInit(RECM_STAND_ALONE);
+    RecProcessInit();
     LibRecordsConfigInit();
 
     QUICConfig::startup();

@@ -89,7 +89,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   {
     Layout::create();
     init_diags("", nullptr);
-    RecProcessInit(RECM_STAND_ALONE);
+    RecProcessInit();
 
     ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
     eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB

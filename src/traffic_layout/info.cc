@@ -149,7 +149,7 @@ print_var(std::string_view const &name, std::string_view const &value, bool json
 void
 produce_layout(bool json)
 {
-  RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
+  RecProcessInit(nullptr /* diags */);
   LibRecordsConfigInit();
 
   if (json) {

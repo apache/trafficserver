@@ -201,10 +201,9 @@ int
 test()
 {
   // Initialize IOBufAllocator
-  RecModeT mode_type = RECM_STAND_ALONE;
   Layout::create();
   init_diags("", nullptr);
-  RecProcessInit(mode_type);
+  RecProcessInit();
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
 
   int ret = 0;

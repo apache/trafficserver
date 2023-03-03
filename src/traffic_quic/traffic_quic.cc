@@ -84,7 +84,7 @@ main(int argc, const char **argv)
   }
 
   init_diags(config.debug_tags, nullptr);
-  RecProcessInit(RECM_STAND_ALONE);
+  RecProcessInit();
   LibRecordsConfigInit();
 
   Debug("quic_client", "Load configs from %s", RecConfigReadConfigDir().c_str());
