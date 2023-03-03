@@ -54,7 +54,7 @@ namespace PreWarm
 // Dst
 //
 struct Dst {
-  Dst(const std::string &h, in_port_t p, SNIRoutingType t, int a) : host(h), port(p), type(t), alpn_index(a) {}
+  Dst(std::string_view h, in_port_t p, SNIRoutingType t, int a) : host(h), port(p), type(t), alpn_index(a) {}
 
   std::string host;
   in_port_t port      = 0;
