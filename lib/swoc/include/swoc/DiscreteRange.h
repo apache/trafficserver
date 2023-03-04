@@ -823,28 +823,67 @@ public:
    */
   const_iterator find(METRIC const &metric) const;
 
+  /** Lower bound.
+   *
+   * @param m Search value.
+   * @return Rightmost range that starts at or before @a m.
+   */
+  iterator lower_bound(METRIC const& m);
+
+  /** Upper bound.
+   *
+   * @param m search value
+   * @return Leftmost range that starts after @a m.
+   */
+  iterator upper_bound(METRIC const& m);
+
+  /** Intersection of @a range with container.
+   *
+   * @param range Search range.
+   * @return Iterator pair that contains all ranges that intersect with @a range.
+   *
+   * @see lower_bound
+   * @see upper_bound
+   */
+  std::pair<iterator, iterator> intersection(range_type const& range);
+
   /// @return The number of distinct ranges.
   size_t count() const;
 
+  /// @return Iterator for the first range.
   iterator begin() { return _list.begin(); }
+  /// @return Iterator past the last node.
   iterator end() { return _list.end(); }
+  /// @return Iterator for the first range.
   const_iterator begin() const { return _list.begin(); }
+  /// @return Iterator past the last node.
   const_iterator end() const { return _list.end(); }
 
   /// Remove all ranges.
   void clear();
 
 protected:
-  /** Find the lower bound range for @a target.
+  /** Find the lower bounding node.
    *
-   * @param target Lower bound value.
+   * @param target Search value.
    * @return The rightmost range that starts at or before @a target, or @c nullptr if all ranges start
    * after @a target.
    */
-  Node *lower_bound(METRIC const &target);
+  Node *lower_node(METRIC const &target);
 
-  /// @return The first node in the tree.
+  /** Find the upper bound node.
+   *
+   * @param target Search value.
+   * @return The leftmoswt range that starts after @a target, or @c nullptr if all ranges start
+   * before @a target.
+   */
+  Node *upper_node(METRIC const &target);
+
+  /// @return First node in the tree.
   Node *head();
+
+  /// @return Last node in the tree.
+  Node *tail();
 
   /** Insert @a node before @a spot.
    *
@@ -860,16 +899,27 @@ protected:
    */
   void insert_after(Node *spot, Node *node);
 
+  /** Add @a node to tree as the first element.
+   *
+   * @param node Node to prepend.
+   *
+   * Invariant - @a node is first in order.
+   */
   void prepend(Node *node);
 
+  /** Add @a node to tree as the last node.
+   *
+   * @param node Node to append.
+   *
+   * Invariant - @a node is last in order.
+   */
   void append(Node *node);
 
-  void
-  remove(Node *node) {
-    _root = static_cast<Node *>(node->remove());
-    _list.erase(node);
-    _fa.destroy(node);
-  }
+  /** Remove node from container and update container.
+   *
+   * @param node Node to remove.
+   */
+  void remove(Node *node);
 };
 
 // ---
@@ -911,6 +961,8 @@ DiscreteSpace<METRIC, PAYLOAD>::Node::structure_fixup() {
 }
 
 // ---
+// Discrete Space
+// ---
 
 template <typename METRIC, typename PAYLOAD> DiscreteSpace<METRIC, PAYLOAD>::~DiscreteSpace() {
   // Destruct all the payloads - the nodes themselves are in the arena and disappear with it.
@@ -929,6 +981,12 @@ template <typename METRIC, typename PAYLOAD>
 auto
 DiscreteSpace<METRIC, PAYLOAD>::head() -> Node * {
   return static_cast<Node *>(_list.head());
+}
+
+template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::tail() -> Node * {
+  return static_cast<Node *>(_list.tail());
 }
 
 template <typename METRIC, typename PAYLOAD>
@@ -964,7 +1022,7 @@ DiscreteSpace<METRIC, PAYLOAD>::find(METRIC const &metric) const -> const_iterat
 
 template <typename METRIC, typename PAYLOAD>
 auto
-DiscreteSpace<METRIC, PAYLOAD>::lower_bound(METRIC const &target) -> Node * {
+DiscreteSpace<METRIC, PAYLOAD>::lower_node(METRIC const &target) -> Node * {
   Node *n    = _root;   // current node to test.
   Node *zret = nullptr; // best node so far.
 
@@ -989,6 +1047,80 @@ DiscreteSpace<METRIC, PAYLOAD>::lower_bound(METRIC const &target) -> Node * {
 }
 
 template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::upper_node(METRIC const &target) -> Node * {
+  Node *n    = _root;   // current node to test.
+  Node *zret = nullptr; // best node so far.
+
+  // Fast check if there is no range past @a target.
+  if (auto ln = _list.tail() ; ln == nullptr || ln->min() <= target) {
+    return nullptr;
+  }
+
+  while (n) {
+    if (target > n->min()) {
+      n = right(n);
+    } else {
+      zret = n; // this is a better candidate.
+      if (n->min() > target) {
+        n = left(n);
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Must be past any intersecting range due to STL iteration being half open.
+  if (zret && (zret->min() <= target)) {
+    zret = next(zret);
+  }
+
+  return zret;
+}
+
+template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::lower_bound(METRIC const &m) -> iterator {
+  auto n = this->lower_node(m);
+  return n ? iterator(n) : this->end();
+}
+
+template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::upper_bound(METRIC const &m) -> iterator {
+  auto n = this->upper_node(m);
+  return n ? iterator(n) : this->end();
+}
+
+template <typename METRIC, typename PAYLOAD>
+auto
+DiscreteSpace<METRIC, PAYLOAD>::intersection(DiscreteSpace::range_type const &range) -> std::pair<iterator, iterator> {
+  // Quick checks for null intersection
+  if (this->head() == nullptr || // empty
+      this->head()->_range.min() > range.max() || // before first range
+      this->tail()->_range.max() < range.min() // after last range
+  ) {
+    return { this->end(), this->end() };
+  }
+  // Invariant - the search range intersects the convex hull of the ranges. This doesn't require the search
+  // range to intersect any of the actual ranges.
+
+  auto * lower = this->lower_node(range.min());
+  auto * upper = this->upper_node(range.max());
+
+  if (lower == nullptr) {
+    lower = this->head();
+  } else if (lower->_range.max() < range.min()) {
+    lower = next(lower); // lower is before @a range so @c next must be at or past.
+    if (lower->_range.min() > range.max()) { // @a range is in an uncolored gap.
+      return { this->end(), this->end() };
+    }
+  }
+
+  return { _list.iterator_for(lower), upper ? _list.iterator_for(upper) : this->end() };
+}
+
+template <typename METRIC, typename PAYLOAD>
 void
 DiscreteSpace<METRIC, PAYLOAD>::prepend(DiscreteSpace::Node *node) {
   if (!_root) {
@@ -1009,6 +1141,14 @@ DiscreteSpace<METRIC, PAYLOAD>::append(DiscreteSpace::Node *node) {
     _root = static_cast<Node *>(_list.tail()->set_child(node, Direction::RIGHT)->rebalance_after_insert());
   }
   _list.append(node);
+}
+
+template <typename METRIC, typename PAYLOAD>
+void
+DiscreteSpace<METRIC, PAYLOAD>::remove(DiscreteSpace::Node *node) {
+  _root = static_cast<Node *>(node->remove());
+  _list.erase(node);
+  _fa.destroy(node);
 }
 
 template <typename METRIC, typename PAYLOAD>
@@ -1046,7 +1186,7 @@ DiscreteSpace<METRIC, PAYLOAD>::insert_after(DiscreteSpace::Node *spot, Discrete
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
 DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
-  Node *n = this->lower_bound(range.min()); // current node.
+  Node *n = this->lower_node(range.min()); // current node.
   while (n) {
     auto nn = next(n);            // cache in case @a n disappears.
     if (n->min() > range.max()) { // cleared the target range, done.
@@ -1077,7 +1217,7 @@ DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
 DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAYLOAD const &payload) {
-  Node *n = this->lower_bound(range.min()); // current node.
+  Node *n = this->lower_node(range.min()); // current node.
   Node *x = nullptr;                        // New node, gets set if we re-use an existing one.
   Node *y = nullptr;                        // Temporary for removing and advancing.
 
@@ -1199,7 +1339,7 @@ template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
 DiscreteSpace<METRIC, PAYLOAD>::fill(DiscreteSpace::range_type const &range, PAYLOAD const &payload) {
   // Rightmost node of interest with n->min() <= min.
-  Node *n = this->lower_bound(range.min());
+  Node *n = this->lower_node(range.min());
   Node *x = nullptr; // New node (if any).
   // Need copies because we will modify these.
   auto min = range.min();
@@ -1327,7 +1467,7 @@ DiscreteSpace<METRIC, PAYLOAD>::blend(DiscreteSpace::range_type const &range, U 
   using unique_node = std::unique_ptr<Node, decltype(node_cleaner)>;
 
   // Rightmost node of interest with n->min() <= range.min().
-  Node *n = this->lower_bound(range.min());
+  Node *n = this->lower_node(range.min());
 
   // This doesn't change, compute outside loop.
   auto range_max_plus_1 = range.max();

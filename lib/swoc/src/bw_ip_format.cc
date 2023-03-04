@@ -208,6 +208,35 @@ bwformat(BufferWriter &w, Spec const &spec, IP6Addr const &addr) {
 }
 
 BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, IP4Srv const& srv) {
+  bwformat(w, spec, srv.addr());
+  if (srv.host_order_port()) {
+    w.print(":{}", srv.host_order_port());
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, IP6Srv const& srv) {
+  auto port = srv.host_order_port();
+  if (port) {
+    w.write('[');
+    bwformat(w, spec, srv.addr());
+    w.print("]:{}", port);
+  } else {
+    bwformat(w, spec, srv.addr());
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, Spec const &spec, IPSrv const& srv) {
+  if (srv.is_ip4()) { bwformat(w, spec, IP4Srv(srv)); }
+  else if (srv.is_ip6()) { bwformat(w, spec, IP6Srv(srv)); }
+  return w;
+}
+
+BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IPAddr const &addr) {
   Spec local_spec{spec}; // Format for address elements and port.
   bool addr_p{true};

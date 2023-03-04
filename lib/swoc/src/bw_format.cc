@@ -648,6 +648,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view sv) {
   return w;
 }
 
+// Generic pointer formatting
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
   using namespace swoc::literals;
@@ -671,6 +672,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
   }
   return bwf::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
 }
+// doc end
 
 BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
@@ -698,7 +700,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits =  ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
-    TextView view{span.view()};
+    TextView view{span.rebind<char>()};
     bool space_p = false;
     while (view) {
       if (space_p)

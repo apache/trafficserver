@@ -80,6 +80,9 @@ public:
    */
   IPMask network_mask() const;
 
+  /// @return The range family.
+  sa_family_t family() const { return AF_INET; }
+
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -103,6 +106,8 @@ public:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IP4Range::networks
  */
 class IP4Range::NetSource {
   using self_type = NetSource; ///< Self reference type.
@@ -216,6 +221,9 @@ public:
    */
   IPMask network_mask() const;
 
+  /// @return The range family.
+  sa_family_t family() const { return AF_INET6; }
+
   class NetSource;
 
   /** Generate a list of networks covering @a this range.
@@ -239,6 +247,8 @@ public:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IP6Range::networks
  */
 class IP6Range::NetSource {
   using self_type = NetSource; ///< Self reference type.
@@ -326,8 +336,9 @@ public:
   IPRange(string_view const &text);
 
   /// Equality
-  bool
-  operator==(self_type const &that) const;
+  bool operator==(self_type const &that) const;
+  /// Inequality
+  bool operator!=(self_type const& that) const;
 
   /// @return @c true if this is an IPv4 range, @c false if not.
   bool
@@ -425,6 +436,8 @@ protected:
 
 /** Network generator class.
  * This generates networks from a range and acts as both a forward iterator and a container.
+ *
+ * @see IPRange::networks
  */
 class IPRange::NetSource {
   using self_type = NetSource; ///< Self reference type.
@@ -540,7 +553,7 @@ public:
   bool operator!=(self_type const &that) const;
 
 protected:
-  IP4Addr _addr; ///< Network address (also lower_bound).
+  IP4Addr _addr; ///< Network address (also lower_node).
   IPMask _mask;  ///< Network mask.
 };
 
@@ -606,7 +619,7 @@ public:
   bool operator!=(self_type const &that) const;
 
 protected:
-  IP6Addr _addr; ///< Network address (also lower_bound).
+  IP6Addr _addr; ///< Network address (also lower_node).
   IPMask _mask;  ///< Network mask.
 };
 
@@ -833,7 +846,7 @@ public:
     const_iterator() = default;
 
     /// Copy constructor.
-    const_iterator(self_type const &that);
+    const_iterator(self_type const &that) = default;
 
     /// Assignment.
     self_type &operator=(self_type const &that);
@@ -897,7 +910,7 @@ public:
    * The value type is a tuple of the IP address range and the @a PAYLOAD. The range is constant
    * and the @a PAYLOAD is a reference. This can be used to update the @a PAYLOAD for this range.
    *
-   * @note Range merges are not trigged by modifications of the @a PAYLOAD via an iterator.
+   * @note Range merges are not triggered by modifications of the @a PAYLOAD via an iterator.
    */
   class iterator : public const_iterator {
     using self_type  = iterator;
@@ -920,7 +933,7 @@ public:
     iterator() = default;
 
     /// Copy constructor.
-    iterator(self_type const &that);
+    iterator(self_type const &that) = default;
 
     /// Assignment.
     self_type &operator=(self_type const &that);
@@ -1041,13 +1054,155 @@ public:
   const_iterator begin(sa_family_t family) const;
 
   /// @return Iterator past the last address of @a family.
-  const_iterator
-  end(sa_family_t family) const;
+  const_iterator end(sa_family_t family) const;
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IP4Range const& r) {
+    auto && [ begin, end ] = _ip4.intersection(r);
+    return { this->iterator_at(begin), this->iterator_at(end) };
+  }
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IP6Range const& r) {
+    auto && [ begin, end ] = _ip6.intersection(r);
+    return { this->iterator_at(begin), this->iterator_at(end) };
+  }
+
+  /** Sequnce of ranges that intersect @a r.
+   *
+   * @param r Search range.
+   * @return Iterator pair covering ranges that intersect @a r.
+   */
+  std::pair<iterator, iterator> intersection(IPRange const& r) {
+    if (r.is_ip4()) {
+      return this->intersection(r.ip4());
+    } else if (r.is_ip6()) {
+      return this->intersection(r.ip6());
+    }
+    return { this->end(), this->end() };
+  }
 
 protected:
   IP4Space _ip4; ///< Sub-space containing IPv4 ranges.
   IP6Space _ip6; ///< sub-space containing IPv6 ranges.
+
+  iterator iterator_at(typename IP4Space::iterator const& spot) {
+    return iterator(spot, _ip6.begin());
+  }
+  iterator iterator_at(typename IP6Space::iterator const& spot) {
+    return iterator(_ip4.end(), spot);
+  }
 };
+
+/** An IPSpace that contains only addresses.
+ *
+ * This is to @c IPSpace as @c std::set is to @c std::map. The @c value_type is removed from the API
+ * and only the keys are visible. This suits use cases where the goal is to track the presence of
+ * addresses without any additional data.
+ *
+ * @note Because there is only one value stored, there is no difference between @c mark and @c fill.
+ */
+class IPRangeSet
+{
+  using self_type = IPRangeSet;
+
+public:
+  /// Default construct empty set.
+  IPRangeSet() = default;
+
+  /** Add addresses to the set.
+   *
+   * @param r Range of addresses to add.
+   * @return @a this
+   *
+   * Identical to @c fill.
+   */
+  self_type &mark(swoc::IPRange const &r);
+
+  /** Add addresses to the set.
+   *
+   * @param r Range of addresses to add.
+   * @return @a this
+   *
+   * Identical to @c mark.
+   */
+  self_type &fill(swoc::IPRange const &r);
+
+  /// @return @c true if @a addr is in the set.
+  bool contains(swoc::IPAddr const &addr) const;
+
+  /// @return Number of ranges in the set.
+  size_t count() const;
+
+  /// Remove all addresses in the set.
+  void clear();
+
+protected:
+  /// Empty struct to use for payload.
+  /// This declares the struct and defines the singleton instance used.
+  static inline constexpr struct Mark {
+    using self_type = Mark;
+    /// @internal @c IPSpace requires equality / inequality operators.
+    /// These make all instance equal to each other.
+    bool operator==(self_type const &that);
+    bool operator!=(self_type const &that);
+  } MARK{};
+
+  /// The address set.
+  swoc::IPSpace<Mark> _addrs;
+};
+
+inline auto
+IPRangeSet::mark(swoc::IPRange const &r) -> self_type &
+{
+  _addrs.mark(r, MARK);
+  return *this;
+}
+
+inline auto
+IPRangeSet::fill(swoc::IPRange const &r) -> self_type &
+{
+  _addrs.mark(r, MARK);
+  return *this;
+}
+
+inline bool
+IPRangeSet::contains(swoc::IPAddr const &addr) const
+{
+  return _addrs.find(addr) != _addrs.end();
+}
+
+inline size_t
+IPRangeSet::count() const
+{
+  return _addrs.count();
+}
+
+inline void
+IPRangeSet::clear()
+{
+  _addrs.clear();
+}
+
+inline bool
+IPRangeSet::Mark::operator==(IPRangeSet::Mark::self_type const &)
+{
+  return true;
+}
+
+inline bool
+IPRangeSet::Mark::operator!=(IPRangeSet::Mark::self_type const &)
+{
+  return false;
+}
 
 template <typename PAYLOAD>
 IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator const &iter4, typename IP6Space::iterator const &iter6)
@@ -1057,10 +1212,6 @@ IPSpace<PAYLOAD>::const_iterator::const_iterator(typename IP4Space::iterator con
   } else if (_iter_6.has_next()) {
     new (&_value) value_type{_iter_6->range(), _iter_6->payload()};
   }
-}
-
-template <typename PAYLOAD> IPSpace<PAYLOAD>::const_iterator::const_iterator(self_type const &that) {
-  *this = that;
 }
 
 template <typename PAYLOAD>
@@ -1160,10 +1311,6 @@ IPSpace<PAYLOAD>::const_iterator::operator!=(self_type const &that) const {
   return _iter_4 != that._iter_4 || _iter_6 != that._iter_6;
 }
 
-template <typename PAYLOAD> IPSpace<PAYLOAD>::iterator::iterator(self_type const &that) {
-  *this = that;
-}
-
 template <typename PAYLOAD>
 auto
 IPSpace<PAYLOAD>::iterator::operator=(self_type const &that) -> self_type & {
@@ -1240,6 +1387,11 @@ IPRange::networks() const -> NetSource {
 inline bool
 IPRange::is(sa_family_t family) const {
   return family == _family;
+}
+
+inline bool
+IPRange::operator!=(const self_type &that) const {
+  return ! (*this == that);
 }
 
 // +++ IPNet +++

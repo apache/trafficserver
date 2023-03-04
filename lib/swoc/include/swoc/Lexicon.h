@@ -592,9 +592,9 @@ template <typename E> Lexicon<E>::Lexicon(DefaultHandler handler_1, DefaultHandl
 template <typename E>
 std::string_view
 Lexicon<E>::localize(std::string_view const &name) {
-  auto span = _arena.alloc(name.size());
-  memcpy(span.data(), name.data(), name.size());
-  return span.view();
+  auto span = _arena.alloc_span<char>(name.size());
+  memcpy(span, name);
+  return { span.data(), span.size() };
 }
 
 template <typename E>
