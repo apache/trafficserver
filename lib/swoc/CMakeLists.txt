@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(Lib-SWOC CXX)
-set(LIBSWOC_VERSION "1.4.4")
+set(LIBSWOC_VERSION "1.4.5")
 set(CMAKE_CXX_STANDARD 17)
 cmake_policy(SET CMP0087 NEW)
 # override "lib64" to be "lib" unless the user explicitly sets it.
@@ -61,7 +61,7 @@ set(CC_FILES
 add_library(libswoc SHARED ${CC_FILES})
 set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-${LIBSWOC_VERSION})
 if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic)
+    target_compile_options(libswoc PRIVATE -fPIC -Wall -Wextra -Werror -Wnon-virtual-dtor -Wpedantic -Wshadow)
 endif()
 
 add_library(libswoc-static STATIC ${CC_FILES})

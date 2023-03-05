@@ -10,7 +10,6 @@
 #pragma once
 
 #include <cstring>
-#include <cstddef>
 #include <type_traits>
 #include <ratio>
 #include <tuple>
@@ -866,6 +865,7 @@ is_span_compatible<T, void const>::count(size_t size) {
 } // namespace detail
 
 // --- Standard memory operations ---
+template class MemSpan<unsigned char>;
 
 template <typename T>
 int
@@ -940,17 +940,22 @@ memset(MemSpan<T> const &dst, T const &value) {
 
 /// @cond INTERNAL_DETAIL
 
-// Optimization for @c char.
-inline MemSpan<char> const &
-memset(MemSpan<char> const &dst, char c) {
-  std::memset(dst.data(), c, dst.size());
-  return dst;
-}
-
-// Optimization for @c unsigned @c char
-inline MemSpan<unsigned char> const &
-memset(MemSpan<unsigned char> const &dst, unsigned char c) {
-  std::memset(dst.data(), c, dst.size());
+/** Specialized @c memset.
+ *
+ * @tparam D Target span type.
+ * @tparam S Source value type.
+ * @param dst Target span.
+ * @param c Source data.
+ * @return @a dst
+ *
+ * If @a D and @a S are size 1 and instances of @a S can convert to @a D this directly calls @c memset.
+ * This handles the various synonyms for a single byte, such as @c char, @c unsigned @c char, @c uint8_t, etc.
+ */
+template < typename D, typename S >
+auto memset(MemSpan<D> const& dst, S c) -> std::enable_if_t<sizeof(D) == 1 && sizeof(S) == 1 && std::is_convertible_v<S,D>, MemSpan<D>>
+{
+  D d = c;
+  std::memset(dst.data(), d, dst.size());
   return dst;
 }
 

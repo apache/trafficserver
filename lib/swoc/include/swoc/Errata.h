@@ -37,14 +37,14 @@
 
 #pragma once
 
-#include "swoc/swoc_version.h"
-
 #include <vector>
 #include <string_view>
 #include <functional>
 #include <atomic>
 #include <optional>
 
+#include "swoc/swoc_version.h"
+#include "swoc/MemSpan.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
