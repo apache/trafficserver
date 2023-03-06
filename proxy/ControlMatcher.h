@@ -86,7 +86,8 @@
 
 #pragma once
 
-#include "tscore/IpMap.h"
+#include <unordered_map>
+
 #include "tscore/Result.h"
 #include "tscore/MatcherUtils.h"
 
@@ -96,7 +97,7 @@
 #include "tscore/Regex.h"
 #include "URL.h"
 
-#include <unordered_map>
+#include <swoc/swoc_ip.h>
 
 #ifdef HAVE_CTYPE_H
 #include <cctype>
@@ -286,7 +287,8 @@ public:
 
 private:
   static void PrintFunc(void *opaque_data);
-  IpMap ip_map; // Data structure to do lookups
+  using AddrMap = swoc::IPSpace<Data *>;
+  AddrMap ip_addrs; // Data structure to do lookups
 };
 
 #define ALLOW_HOST_TABLE       1 << 0

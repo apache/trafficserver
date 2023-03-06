@@ -30,6 +30,8 @@
 
 #include <sys/types.h>
 
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_config.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
@@ -605,9 +607,8 @@ Result
 IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
-  const char *errptr;
   char *match_data;
-  IpEndpoint addr1, addr2;
+  swoc::IPRange addrs;
   Result error = Result::ok();
 
   // Make sure space has been allocated
@@ -624,9 +625,8 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(match_data != nullptr);
 
   // Extract the IP range
-  errptr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
-  if (errptr != nullptr) {
-    return Result::failure("%s %s at %s line %d", matcher_name, errptr, file_name, line_info->line_num);
+  if (!addrs.load(match_data)) {
+    return Result::failure("%s not a valid IP address range at %s line %d", matcher_name, file_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -637,7 +637,7 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
   if (!error.failed()) {
-    ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
+    ip_addrs.mark(addrs, cur_d);
     ++num_el;
   }
 
@@ -651,11 +651,9 @@ template <class Data, class MatchResult>
 void
 IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, MatchResult *result) const
 {
-  void *raw;
-  if (ip_map.contains(addr, &raw)) {
-    Data *cur = static_cast<Data *>(raw);
-    ink_assert(cur != nullptr);
-    cur->UpdateMatch(result, rdata);
+  if (auto &&[range, data]{*ip_addrs.find(swoc::IPAddr(addr))}; !range.empty()) {
+    ink_assert(data != nullptr);
+    data->UpdateMatch(result, rdata);
   }
 }
 
@@ -663,11 +661,11 @@ template <class Data, class MatchResult>
 void
 IpMatcher<Data, MatchResult>::Print() const
 {
-  printf("\tIp Matcher with %d elements, %zu ranges.\n", num_el, ip_map.count());
-  for (auto &spot : ip_map) {
-    char b1[INET6_ADDRSTRLEN], b2[INET6_ADDRSTRLEN];
-    printf("\tRange %s - %s ", ats_ip_ntop(spot.min(), b1, sizeof b1), ats_ip_ntop(spot.max(), b2, sizeof b2));
-    static_cast<Data *>(spot.data())->Print();
+  std::string tmp;
+  std::cout << swoc::bwprint(tmp, "\tIp Matcher with {} elements, {} ranges.", num_el, ip_addrs.count()) << std::endl;
+  for (auto &&[range, data] : ip_addrs) {
+    std::cout << swoc::bwprint(tmp, "Range {}", range);
+    data->Print();
   }
 }
 
