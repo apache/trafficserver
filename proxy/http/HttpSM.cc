@@ -660,8 +660,8 @@ HttpSM::setup_blind_tunnel_port()
   if (!ua_txn->is_outbound_transparent() && (tts = dynamic_cast<TLSTunnelSupport *>(netvc))) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       if (tts->has_tunnel_destination()) {
-        const char *tunnel_host = tts->get_tunnel_host();
-        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
+        auto tunnel_host = tts->get_tunnel_host();
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
         if (tts->get_tunnel_port() > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
         } else {
@@ -1519,8 +1519,8 @@ plugins required to work with sni_routing.
       auto *tts             = dynamic_cast<TLSTunnelSupport *>(netvc);
 
       if (tts && tts->has_tunnel_destination()) {
-        const char *tunnel_host = tts->get_tunnel_host();
-        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
+        auto tunnel_host = tts->get_tunnel_host();
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
         ushort tunnel_port = tts->get_tunnel_port();
         if (tunnel_port > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);

@@ -24,6 +24,9 @@
 
 #include "TLSTunnelSupport.h"
 #include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
+
+#include "swoc/IPEndpoint.h"
 
 int TLSTunnelSupport::_ex_data_index = -1;
 
@@ -57,7 +60,6 @@ TLSTunnelSupport::unbind(SSL *ssl)
 void
 TLSTunnelSupport::_clear()
 {
-  ats_free(_tunnel_host);
 }
 
 void
@@ -67,14 +69,10 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   _tunnel_type    = type;
   _tunnel_prewarm = prewarm;
 
-  ats_free(_tunnel_host);
-
-  auto pos = destination.find(":");
-  if (pos != std::string::npos) {
-    _tunnel_port = std::stoi(destination.substr(pos + 1).data());
-    _tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
+  if (std::string_view host, port; swoc::IPEndpoint::tokenize(destination, &host, &port)) {
+    _tunnel_port = swoc::svtou(port);
+    _tunnel_host = host;
   } else {
-    _tunnel_port = 0;
-    _tunnel_host = ats_strndup(destination.data(), destination.length());
+    Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
   }
 }
