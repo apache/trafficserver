@@ -399,7 +399,6 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 
   // If the client hasn't shut us down, reenable
   if (!this->get_proxy_session()->is_peer_closed()) {
-    this->connection_state.restart_receiving(nullptr);
     vio->reenable();
   }
   return 0;
