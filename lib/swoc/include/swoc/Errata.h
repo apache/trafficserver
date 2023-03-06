@@ -37,14 +37,14 @@
 
 #pragma once
 
-#include "swoc/swoc_version.h"
-
 #include <vector>
 #include <string_view>
 #include <functional>
 #include <atomic>
 #include <optional>
 
+#include "swoc/swoc_version.h"
+#include "swoc/MemSpan.h"
 #include "swoc/MemArena.h"
 #include "swoc/bwf_base.h"
 #include "swoc/IntrusiveDList.h"
@@ -505,8 +505,8 @@ protected:
 
   /// Implementation instance.
   /// @internal Because this is used with a self-containing @c MemArena standard smart pointers do not
-  /// work correctly. Instead the @c reset method must be used to release the memory.
-  /// @see reset
+  /// work correctly. Instead the @c clear method must be used to release the memory.
+  /// @see clear
   Data *_data = nullptr;
 
   /// Force data existence.
@@ -1014,7 +1014,7 @@ Errata::note_sv(std::optional<Severity> severity, std::string_view fmt, std::tup
       span = this->alloc(bw.extent());
       FixedBufferWriter{span}.print_v(fmt, args);
     }
-    this->note_localized(span.view(), severity);
+    this->note_localized(TextView(span), severity);
   }
   return *this;
 }

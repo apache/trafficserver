@@ -29,9 +29,9 @@ std::string_view Errata::DEFAULT_GLUE{"\n", 1};
 
 string_view
 Errata::Data::localize(string_view src) {
-  auto span = _arena.alloc(src.size());
+  auto span = _arena.alloc(src.size()).rebind<char>();
   memcpy(span.data(), src.data(), src.size());
-  return span.view();
+  return { span.data(), span.size() };
 }
 
 /* ----------------------------------------------------------------------- */
@@ -88,7 +88,7 @@ Errata::note_s(std::optional<Severity> severity, std::string_view text) {
   if (!severity.has_value() || *severity >= FILTER_SEVERITY) {
     auto span = this->alloc(text.size());
     memcpy(span, text);
-    this->note_localized(span.view(), severity);
+    this->note_localized(TextView(span), severity);
   }
   return *this;
 }

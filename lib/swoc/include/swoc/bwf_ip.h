@@ -30,6 +30,12 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Addr const &ad
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPAddr const &addr);
 
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Srv const &addr);
+
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Srv const &addr);
+
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IPSrv const &addr);
+
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Range const &range);
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP6Range const &range);

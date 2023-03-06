@@ -802,10 +802,10 @@ SessionProtocolNameRegistry::toIndex(ts::TextView name)
     if (m_n < MAX) {
       // Localize the name by copying it in to the arena.
       auto text = m_arena.alloc(name.size() + 1).rebind<char>();
-      memcpy(text.data(), name.data(), name.size());
+      memcpy(text, name);
       text.end()[-1] = '\0';
-      m_names[m_n]   = text.view();
-      zret           = m_n++;
+      m_names[m_n].assign(text.data(), name.size());
+      zret = m_n++;
     } else {
       ink_release_assert(!"Session protocol name registry overflow");
     }

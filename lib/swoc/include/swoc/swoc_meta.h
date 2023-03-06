@@ -141,7 +141,7 @@ template <typename... Args> vary(Args...) -> vary<Args...>;
  * @c enable_if to enable a function / method only if the argument type is one of a fixed set.
  * @code
  *   template < typename T > auto f(T const& t)
- *     -> std::enable_if_t<swoc::meta::is_any_of<T, int, float, bool>::value, void>
+ *     -> std::enable_if_t<swoc::meta::is_any_of<T, int, float, bool>::value, void>::value
  *   { ... }
  */
 template <typename T, typename... Types> struct is_any_of {

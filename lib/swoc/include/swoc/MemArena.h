@@ -38,6 +38,22 @@ class MemArena
 public:
   static constexpr size_t DEFAULT_ALIGNMENT{1}; ///< Default memory alignment.
 
+  /// Functor for destructing a self contained arena.
+  /// @see MemArena::unique_ptr
+  static inline auto destroyer = std::destroy_at<MemArena>;
+
+  /// Correct type for a unique pointer to an instance.
+  /// Initialization is
+  /// @code
+  ///     MemArena::unique_ptr arena(nullptr, MemArena::destroyer);
+  /// @endcode
+  /// To create the arena on demand
+  /// @code
+  ///    arena.reset(MemArena::construct_self_contained());
+  /// @endcode
+  /// If the unique pointer is to be initialized with an arena, it should probably be a direct member isntead.
+  using unique_ptr = std::unique_ptr<self_type, void (*)(self_type *)>;
+
   /// Simple internal arena block of memory. Maintains the underlying memory.
   struct Block {
     /// A block must have at least this much free space to not be "full".
@@ -175,6 +191,9 @@ public:
    * @a static_block is used as the first block for allocation and is never deleted. This makes
    * it possible to have an instance that allocates from stack memory and only allocates from the
    * heap if the static block becomes full.
+   *
+   * @note There is no default block size because the static block is the initial block. Subsequent
+   * allocations are based on that size.
    */
   explicit MemArena(MemSpan<void> static_block);
 

@@ -543,8 +543,14 @@ public:
   /// @return As IPv4 address - results are undefined if it is not actually IPv4.
   IP4Addr const &ip4() const;
 
+  /// @return As IPv4 address - results are undefined if it is not actually IPv4.
+  explicit operator IP4Addr() const;
+
   /// @return As IPv6 address - results are undefined if it is not actually IPv6.
   IP6Addr const &ip6() const;
+
+  /// @return As IPv6 address - results are undefined if it is not actually IPv6.
+  explicit operator IP6Addr() const;
 
   /// Test for validity.
   bool is_valid() const;
@@ -1257,16 +1263,11 @@ operator!=(sockaddr const *lhs, IPAddr const &rhs) {
   return !(rhs == lhs);
 }
 
-/// Equality.
-inline IP4Addr const &
-IPAddr::ip4() const {
-  return _addr._ip4;
-}
+inline IP4Addr const & IPAddr::ip4() const { return _addr._ip4; }
+inline IPAddr::operator IP4Addr() const { return _addr._ip4; }
 
-inline IP6Addr const &
-IPAddr::ip6() const {
-  return _addr._ip6;
-}
+inline IP6Addr const & IPAddr::ip6() const { return _addr._ip6; }
+inline IPAddr::operator IP6Addr() const { return _addr._ip6; }
 
 inline bool
 IPAddr::operator==(self_type const &that) const {
