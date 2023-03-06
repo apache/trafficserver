@@ -37,7 +37,6 @@
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_memory.h"
-#include "tscpp/util/TextView.h"
 #include "tscore/ts_file.h"
 #include "tscore/I_Layout.h"
 
