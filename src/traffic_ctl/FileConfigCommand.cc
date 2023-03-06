@@ -122,7 +122,7 @@ get_leading_comment()
 std::pair<bool, YAML::Node>
 search_node(swoc::TextView variable, YAML::Node root, bool create)
 {
-  auto const key{variable.take_prefix_at('.').remove_suffix_at('.')};
+  auto const key{variable.take_prefix_at('.')};
   auto const key_str = std::string{key.data(), key.size()};
   if (variable.empty()) {
     if (root.IsMap() && root[key_str]) {
@@ -196,8 +196,8 @@ FlatYAMLAccessor::find_node(swoc::TextView variable)
 void
 FlatYAMLAccessor::make_tree_node(swoc::TextView variable, swoc::TextView value, swoc::TextView tag, YAML::Emitter &out)
 {
-  auto key{variable.take_prefix_at('.').remove_suffix_at('.')};
-  auto key_str = std::string{key.data(), key.size()};
+  auto const key{variable.take_prefix_at('.')};
+  auto const key_str = std::string{key.data(), key.size()};
   if (variable.empty()) {
     out << YAML::BeginMap << YAML::Key << key_str;
     if (!tag.empty()) {
