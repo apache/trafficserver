@@ -7594,10 +7594,12 @@ HttpSM::set_next_state()
       // Make a note the CTA is being used - don't do this case again.
       t_state.dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_CLIENT;
 
-      if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9)) {
-        t_state.dns_info.http_version = HTTP_0_9;
+      if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+        t_state.dns_info.http_version = HTTP_1_1;
       } else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 0)) {
         t_state.dns_info.http_version = HTTP_1_0;
+      } else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9)) {
+        t_state.dns_info.http_version = HTTP_0_9;
       } else {
         t_state.dns_info.http_version = HTTP_1_1;
       }
