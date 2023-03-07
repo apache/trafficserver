@@ -250,7 +250,7 @@ struct OpenDir : public Continuation {
 
   int open_write(CacheVC *c, int allow_if_writers, int max_writers);
   int close_write(CacheVC *c);
-  OpenDirEntry *open_read(const CryptoHash *key);
+  OpenDirEntry *open_read(const CryptoHash *key) const;
   int signal_readers(int event, Event *e);
 
   OpenDir();

@@ -488,7 +488,7 @@ CacheVC::get_pin_in_cache()
 }
 
 int
-Vol::begin_read(CacheVC *cont)
+Vol::begin_read(CacheVC *cont) const
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
   ink_assert(mutex->thread_holding == this_ethread());
@@ -523,7 +523,7 @@ Vol::begin_read(CacheVC *cont)
 }
 
 int
-Vol::close_read(CacheVC *cont)
+Vol::close_read(CacheVC *cont) const
 {
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t == this_ethread());
