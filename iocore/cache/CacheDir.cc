@@ -152,7 +152,7 @@ OpenDir::close_write(CacheVC *cont)
 }
 
 OpenDirEntry *
-OpenDir::open_read(const CryptoHash *key)
+OpenDir::open_read(const CryptoHash *key) const
 {
   unsigned int h = key->slice32(0);
   int b          = h % OPEN_DIR_BUCKETS;
