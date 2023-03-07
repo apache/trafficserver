@@ -108,7 +108,7 @@ class Http2FlowControlTest:
             'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
             'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self._dns.Variables.Port),
 
-            'proxy.config.diags.debug.enabled': 3,
+            'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http',
         })
 
