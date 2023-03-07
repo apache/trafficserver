@@ -45,12 +45,12 @@ CryptoContext::CryptoContext()
   case UNSPECIFIED:
 #if TS_ENABLE_FIPS == 0
   case MD5:
-    static_assert(OBJ_SIZE > sizeof(MD5Context));
+    static_assert(OBJ_SIZE >= sizeof(MD5Context));
     new (_base) MD5Context;
     break;
 #else
   case SHA256:
-    static_assert(OBJ_SIZE > sizeof(SHA256Context));
+    static_assert(OBJ_SIZE >= sizeof(SHA256Context));
     new (_base) SHA256Context;
     break;
 #endif
