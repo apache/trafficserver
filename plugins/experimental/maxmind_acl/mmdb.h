@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <iterator>
 #include <maxminddb.h>
-#include "tscpp/util/ts_ip.h"
+#include "swoc/swoc_ip.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -91,8 +91,8 @@ protected:
   std::unordered_map<std::string, std::vector<plugin_regex>> allow_regex;
   std::unordered_map<std::string, std::vector<plugin_regex>> deny_regex;
 
-  ts::IPAddrSet allow_ip_map;
-  ts::IPAddrSet deny_ip_map;
+  swoc::IPRangeSet allow_ip_map;
+  swoc::IPRangeSet deny_ip_map;
 
   // Anonymous blocking default to off
   bool _anonymous_ip      = false;
