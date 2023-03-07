@@ -60,21 +60,21 @@ are available:
    queued transactions we will allow. When this threshold is reached, all
    additional transactions are immediately served with an error message.
 
-   The queue is effectively disabled if this is set to `0`, which implies
+   The queue is effectively disabled if this is set to ``0``, which implies
    that when the transaction limit is reached, we immediately start serving
    error responses.
 
-   The default queue size is `UINT_MAX`, which is essentially unlimited.
+   The default queue size is ``UINT_MAX``, which is essentially unlimited.
 
 .. option:: --error
 
    An optional HTTP status error code, to be used together with the
-   :option:`--queue` option above. The default is `429`.
+   :option:`--queue` option above. The default is ``429``.
 
 .. option:: --retry
 
-   An optional retry-after value, which if set will cause rejected (e.g. `429`)
-   responses to also include a header `Retry-After`.
+   An optional retry-after value, which if set will cause rejected (e.g. ``429``)
+   responses to also include a header ``Retry-After``.
 
 .. option:: --header
 
@@ -83,12 +83,12 @@ are available:
    header is the delay, in milliseconds. This can be useful to for example
    log the delays for later analysis.
 
-   It is recommended that an `@` header is used here, e.g. `@RateLimit-Delay`,
+   It is recommended that an `@` header is used here, e.g. ``@RateLimit-Delay``,
    since this header will not leave the ATS server instance.
 
 .. option:: --maxage
 
-   An optional `max-age` for how long a transaction can sit in the delay queue.
+   An optional ``max-age`` for how long a transaction can sit in the delay queue.
    The value (default 0) is the age in milliseconds.
 
 .. option:: --prefix
@@ -137,15 +137,15 @@ The following options are available:
    queued transactions we will allow. When this threshold is reached, all
    additional connections are immediately errored out in the TLS handshake.
 
-   The queue is effectively disabled if this is set to `0`, which implies
+   The queue is effectively disabled if this is set to ``0``, which implies
    that when the transaction limit is reached, we immediately start serving
    error responses.
 
-   The default queue size is `UINT_MAX`, which is essentially unlimited.
+   The default queue size is ``UINT_MAX``, which is essentially unlimited.
 
 .. option:: --maxage
 
-   An optional `max-age` for how long a transaction can sit in the delay queue.
+   An optional ``max-age`` for how long a transaction can sit in the delay queue.
    The value (default 0) is the age in milliseconds.
 
 .. option:: --prefix
@@ -161,21 +161,28 @@ The following options are available:
 .. option:: --iprep_buckets
 
    The number of LRU buckets to use for the IP reputation. A good number here
-   is 10, but can be configured. The reason for the different buckets is to
-   account for a pseudo-sorted list of IPs on the frequency seen. Too few buckets
-   will not be enough to keep such a sorting, rendering the algorithm useless. To
-   function in our setup, the number of buckets must be less than ``100``.
+   is ``10``, which is the default, but can be configured. The reason for the different
+   buckets is to account for a pseudo-sorted list of IPs on the frequency seen. Too
+   few buckets will not be enough to keep such sorting, rendering the algorithm useless.
+   To function in our setup, the number of buckets must be less than ``100``.
 
 .. option:: --iprep_bucketsize
 
-   This is the size of the largest LRU bucket (the `entry bucket`), `15` is a good
-   value. This is a power of 2, so `15` means the largest LRU can hold `32768` entries.
-   Note that this option must be bigger then the `--iprep_buckets` setting, for the
+   This is the size of the largest LRU bucket (the ``entry bucket``), ``15`` is a good
+   value. This is a power of 2, so ``15`` means the largest LRU can hold ``32768`` entries.
+   Note that this option must be bigger then the ``--iprep_buckets`` setting, for the
    bucket halfing to function.
+
+   The default here is ``0``, which means the IP reputation filter is not enabled!
+
+.. option:: --iprep_percentage
+
+   This is the minimum percentage of the ``limit`` that the pressure must be at, before
+   we start blocking IPs. The default is ``0.9`` which means ``90%`` of the limit.
 
 .. option:: --iprep_maxage
 
-   This is used for aging out entries out of the LRU, the default is `0` which means
+   This is used for aging out entries out of the LRU, the default is ``0`` which means
    no aging happens. Even with no aging, entries will eventually fall out of buckets
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
@@ -188,12 +195,12 @@ The following options are available:
 .. option:: --iprep_permablock_pressure
 
    This option specifies from which bucket an IP is allowed to move from into the
-   perma block bucket. A good value here is likely `0` or `1`, which is very conservative.
+   perma block bucket. A good value here is likely ``0`` or ``1``, which is very conservative.
 
 .. option:: --iprep_permablock_maxage
 
-   Similar to `--iprep_maxage` above, but only applies to the long term (`perma-block`)
-   bucket. Default is `0`, which means no aging to this bucket is applied.
+   Similar to ``--iprep_maxage`` above, but only applies to the long term (`perma-block`)
+   bucket. Default is ``0``, which means no aging to this bucket is applied.
 
 Metrics
 -------
@@ -258,9 +265,9 @@ for longer term blocking, only the most abusive elements would end up here.
 Examples
 --------
 
-This example shows a simple rate limiting of `128` concurrently active client
-transactions, with a maximum queue size of `256`. The default of HTTP status
-code `429` is used when queue is full: ::
+This example shows a simple rate limiting of ``128`` concurrently active client
+transactions, with a maximum queue size of ``256``. The default of HTTP status
+code ``429`` is used when queue is full: ::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=128 @pparam=--queue=256
@@ -274,7 +281,7 @@ queue, and add a header with the transaction delay if it was queued: ::
       @pparam=--header=@RateLimit-Delay
 
 This final example will limit the active transaction, queue size, and also
-add a `Retry-After` header once the queue is full and we return a `429` error: ::
+add a ``Retry-After`` header once the queue is full and we return a ``429`` error: ::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=1024 \

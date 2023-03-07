@@ -52,7 +52,9 @@ public:
   int32_t
   pressure() const
   {
-    return ((active() - 1) / static_cast<float>(limit) * 100) - (99 - _iprep_num_buckets);
+    int32_t p = ((active() / static_cast<float>(limit) * 100) - _iprep_percent) / (100 - _iprep_percent) * (_iprep_num_buckets + 1);
+
+    return (p >= static_cast<int32_t>(_iprep_num_buckets) ? _iprep_num_buckets : p);
   }
 
 private:
@@ -61,5 +63,6 @@ private:
   std::chrono::seconds _iprep_max_age       = std::chrono::seconds::zero(); // Max age in the SieveLRUs for regular buckets
   std::chrono::seconds _iprep_perma_max_age = std::chrono::seconds::zero(); // Max age in the SieveLRUs for perma-block buckets
   uint32_t _iprep_num_buckets               = 10;                           // Number of buckets. ToDo: leave this at 10 always
-  uint32_t _iprep_size                      = 15;                           // Size of the biggest bucket; 15 == 2^15 == 32768
+  uint32_t _iprep_percent                   = 90;                           // At what percentage of limit we start blocking
+  uint32_t _iprep_size                      = 0;                            // Size of the biggest bucket; 15 == 2^15 == 32768
 };
