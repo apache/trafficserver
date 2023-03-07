@@ -25,10 +25,11 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "swoc/swoc_ip.h"
+
 #include "ts/ts.h"
 
 #include "regex_helper.h"
-#include "ipranges_helper.h"
 #include "lulu.h"
 
 // Possible operators that we support (at least partially)
@@ -223,7 +224,7 @@ public:
   void
   set(const std::string &data)
   {
-    if (!ipHelper.addIpRanges(data)) {
+    if (!extract_ranges(data)) {
       TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
       TSDebug(PLUGIN_NAME, "Invalid IP-range: failed to parse: %s", data.c_str());
       throw std::runtime_error("Malformed IP-range");
@@ -235,7 +236,7 @@ public:
   bool
   test(const sockaddr *addr) const
   {
-    if (ipHelper.ipRangesMatch(addr) > 0) {
+    if (ipHelper.contains(swoc::IPAddr(addr))) {
       if (TSIsDebugTagSet(PLUGIN_NAME)) {
         char text[INET6_ADDRSTRLEN];
 
@@ -248,5 +249,23 @@ public:
   }
 
 private:
-  ipRangesHelper ipHelper;
+  bool
+  extract_ranges(swoc::TextView text)
+  {
+    while (text) {
+      if (swoc::IPRange r; r.load(text.take_prefix_at(','))) {
+        ipHelper.mark(r);
+      }
+    }
+
+    if (ipHelper.count() > 0) {
+      TSDebug(PLUGIN_NAME, "    Added %zu IP ranges while parsing", ipHelper.count());
+      return true;
+    } else {
+      TSDebug(PLUGIN_NAME, "    No IP ranges added, possibly bad input");
+      return false;
+    }
+  }
+
+  swoc::IPRangeSet ipHelper;
 };
