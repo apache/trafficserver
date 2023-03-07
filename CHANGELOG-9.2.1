@@ -16,5 +16,15 @@ Changes with Apache Traffic Server 9.2.1
   #9339 - Revert PRs 7667 and 7807
   #9387 - Update h2disable tests for new curl output
   #9430 - On arm64 macOS, do not use pagezero linker flag when using luajit
+  #9444 - Fix SSLSessionDup for old OpenSSL and BoringSSL
   #9445 - Stabilize autest for traffic_dump
   #9450 - Stabilize autest for tls_check_cert_selection_reload
+  #9453 - Fix parameter parser in ssl_hook_test plugin
+  #9454 - Stabilize autest tls_hook18
+  #9455 - Run autest tls_hooks17 and tls_hooks18 on BoringSSL build
+  #9464 - Adds a --enable-lto option (Link Time Optimization)
+  #9468 - Fixed documentation issue with xdebug plugin to be a literal block
+  #9473 - Use deprecated OpenSSL APIs for MD5 and SHA256 if available (#9469)
+  #9491 - Adds a new percentage option, cleans up pressure calculations
+  #9494 - Properly support multiple instantiation in plugins.config
+  #9508 - 9.2.x: http2_flow_control.test.py: Correctly enable debug logs
