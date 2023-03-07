@@ -42,6 +42,8 @@
 #include <fstream>
 #include <ts/remap.h>
 
+#include "swoc/swoc_ip.h"
+
 #include <tscpp/util/ts_ip.h>
 
 #include "ink_autoconf.h"
@@ -91,7 +93,7 @@ static bool wrap_counters    = false;
 struct config_t {
   unsigned int recordTypes;
   std::string stats_path;
-  ts::IPAddrSet addrs;
+  swoc::IPRangeSet addrs;
 };
 struct config_holder_t {
   char *config_path;
