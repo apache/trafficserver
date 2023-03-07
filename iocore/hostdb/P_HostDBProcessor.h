@@ -33,6 +33,7 @@
 
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
+#include "tscore/PendingAction.h"
 #include "tscore/TsBuffer.h"
 #include "tscore/ts_file.h"
 
@@ -140,6 +141,8 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, 1)
 
+#define HOSTDB_INCREMENT_DYN_STAT_THREAD(_x, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_x, 1)
+
 #define HOSTDB_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, -1)
 
 #define HOSTDB_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, _r)
@@ -178,6 +181,7 @@ struct HostDBCache {
   bool is_pending_dns_for_hash(const CryptoHash &hash);
 
   std::shared_ptr<HostFile> acquire_host_file();
+  bool remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c);
 };
 
 //
@@ -246,7 +250,7 @@ struct HostDBContinuation : public Continuation {
   char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
   char srv_target_name[MAXDNAME];
   //  void *m_pDS;
-  Action *pending_action = nullptr;
+  PendingAction pending_action;
 
   unsigned int missing   : 1;
   unsigned int force_dns : 1;

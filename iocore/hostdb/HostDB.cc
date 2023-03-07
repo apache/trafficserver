@@ -220,11 +220,9 @@ is_addr_valid(uint8_t af, ///< Address family (format of data)
 inline void
 hostdb_cont_free(HostDBContinuation *cont)
 {
-  if (cont->pending_action) {
-    cont->pending_action->cancel();
-  }
   if (cont->timeout) {
     cont->timeout->cancel();
+    cont->timeout = nullptr;
   }
   cont->mutex        = nullptr;
   cont->action.mutex = nullptr;
@@ -325,13 +323,31 @@ HostDBCache::HostDBCache() {}
 bool
 HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 {
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  std::shared_lock<ts::shared_mutex> lock{bucket_lock};
+  bool retval                  = false;
   Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
   for (HostDBContinuation *c = q.head; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash == c->hash.hash) {
-      return true;
+      retval = true;
+      break;
     }
   }
-  return false;
+  return retval;
+}
+
+bool
+HostDBCache::remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c)
+{
+  bool retval                   = false;
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
+  Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
+  if (q.in(c)) {
+    q.remove(c);
+    retval = true;
+  }
+  return retval;
 }
 
 std::shared_ptr<HostFile>
@@ -530,7 +546,8 @@ HostDBContinuation::init(HostDBHash const &the_hash, Options const &opt)
 
   host_res_style     = opt.host_res_style;
   dns_lookup_timeout = opt.timeout;
-  mutex              = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  mutex              = new_ProxyMutex();
+  timeout            = nullptr;
   if (opt.cont) {
     action = opt.cont;
   } else {
@@ -543,15 +560,9 @@ HostDBContinuation::init(HostDBHash const &the_hash, Options const &opt)
 void
 HostDBContinuation::refresh_hash()
 {
-  Ptr<ProxyMutex> old_bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   // We're not pending DNS anymore.
   remove_and_trigger_pending_dns();
   hash.refresh();
-  // Update the mutex if it's from the bucket.
-  // Some call sites modify this after calling @c init so need to check.
-  if (mutex == old_bucket_mutex) {
-    mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-  }
 }
 
 static bool
@@ -615,7 +626,7 @@ db_mark_for(IpAddr const &ip)
 }
 
 HostDBRecord::Handle
-probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
+probe(HostDBHash const &hash, bool ignore_timeout)
 {
   static const Ptr<HostDBRecord> NO_RECORD;
 
@@ -625,29 +636,34 @@ probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
   }
 
   // Otherwise HostDB is enabled, so we'll do our thing
-  ink_assert(this_ethread() == hostDB.refcountcache->lock_for_key(hash.hash.fold())->thread_holding);
-  uint64_t folded_hash = hash.hash.fold();
+  uint64_t folded_hash          = hash.hash.fold();
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(folded_hash);
 
-  // get the record from cache
-  Ptr<HostDBRecord> record = hostDB.refcountcache->get(folded_hash);
-  // If there was nothing in the cache-- this is a miss
-  if (record.get() == nullptr) {
-    return record;
-  }
+  Ptr<HostDBRecord> record;
+  {
+    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
-  // If the dns response was failed, and we've hit the failed timeout, lets stop returning it
-  if (record->is_failed() && record->is_ip_fail_timeout()) {
-    return NO_RECORD;
-    // if we aren't ignoring timeouts, and we are past it-- then remove the record
-  } else if (!ignore_timeout && record->is_ip_timeout() && !record->serve_stale_but_revalidate()) {
-    HOSTDB_INCREMENT_DYN_STAT(hostdb_ttl_expires_stat);
-    return NO_RECORD;
+    // get the record from cache
+    record = hostDB.refcountcache->get(folded_hash);
+    // If there was nothing in the cache-- this is a miss
+    if (record.get() == nullptr) {
+      return record;
+    }
+
+    // If the dns response was failed, and we've hit the failed timeout, lets stop returning it
+    if (record->is_failed() && record->is_ip_fail_timeout()) {
+      return NO_RECORD;
+      // if we aren't ignoring timeouts, and we are past it-- then remove the record
+    } else if (!ignore_timeout && record->is_ip_timeout() && !record->serve_stale_but_revalidate()) {
+      HOSTDB_INCREMENT_DYN_STAT_THREAD(hostdb_ttl_expires_stat, this_ethread());
+      return NO_RECORD;
+    }
   }
 
   // If the record is stale, but we want to revalidate-- lets start that up
   if ((!ignore_timeout && record->is_ip_configured_stale() && record->record_type != HostDBType::HOST) ||
       (record->is_ip_timeout() && record->serve_stale_but_revalidate())) {
-    HOSTDB_INCREMENT_DYN_STAT(hostdb_total_serve_stale_stat);
+    HOSTDB_INCREMENT_DYN_STAT_THREAD(hostdb_total_serve_stale_stat, this_ethread());
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
       Debug("hostdb", "%s",
             ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
@@ -663,6 +679,7 @@ probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
     HostDBContinuation::Options copt;
     copt.host_res_style = record->af_family == AF_INET6 ? HOST_RES_IPV6_ONLY : HOST_RES_IPV4_ONLY;
     c->init(hash, copt);
+    SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
     c->do_dns();
   }
   return record;
@@ -712,36 +729,35 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
     while (loop) {
       loop = false; // Only loop on explicit set for retry.
       // find the partition lock
-      Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      MUTEX_TRY_LOCK(lock2, bucket_mutex, thread);
-      if (lock2.is_locked()) {
-        // If we can get the lock and a level 1 probe succeeds, return
-        HostDBRecord::Handle r = probe(bucket_mutex, hash, false);
-        if (r) {
-          // fail, see if we should retry with alternate
-          if (hash.db_mark != HOSTDB_MARK_SRV && r->is_failed() && hash.host_name) {
-            loop = check_for_retry(hash.db_mark, opt.host_res_style);
-          }
-          if (!loop) {
-            // No retry -> final result. Return it.
-            if (hash.db_mark == HOSTDB_MARK_SRV) {
-              Debug("hostdb", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
-              Debug("dns_srv", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
-            } else if (hash.host_name) {
-              Debug("hostdb", "immediate answer for %.*s", int(hash.host_name.size()), hash.host_name.data());
-            } else {
-              Debug("hostdb", "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
-            }
-            HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-            if (cb_process_result) {
-              (cont->*cb_process_result)(r.get());
-            } else {
-              reply_to_cont(cont, r.get());
-            }
-            return ACTION_RESULT_DONE;
-          }
-          hash.refresh(); // only on reloop, because we've changed the family.
+      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+
+      // If we can get the lock and a level 1 probe succeeds, return
+      HostDBRecord::Handle r = probe(hash, false);
+      std::shared_lock<ts::shared_mutex> lock{bucket_lock};
+      if (r) {
+        // fail, see if we should retry with alternate
+        if (hash.db_mark != HOSTDB_MARK_SRV && r->is_failed() && hash.host_name) {
+          loop = check_for_retry(hash.db_mark, opt.host_res_style);
         }
+        if (!loop) {
+          // No retry -> final result. Return it.
+          if (hash.db_mark == HOSTDB_MARK_SRV) {
+            Debug("hostdb", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
+            Debug("dns_srv", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
+          } else if (hash.host_name) {
+            Debug("hostdb", "immediate answer for %.*s", int(hash.host_name.size()), hash.host_name.data());
+          } else {
+            Debug("hostdb", "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
+          }
+          HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
+          if (cb_process_result) {
+            (cont->*cb_process_result)(r.get());
+          } else {
+            reply_to_cont(cont, r.get());
+          }
+          return ACTION_RESULT_DONE;
+        }
+        hash.refresh(); // only on reloop, because we've changed the family.
       }
     }
   }
@@ -770,7 +786,7 @@ Lretry:
   c->init(hash, copt);
   SET_CONTINUATION_HANDLER(c, &HostDBContinuation::probeEvent);
 
-  thread->schedule_in(c, MUTEX_RETRY_DELAY);
+  c->timeout = thread->schedule_in(c, MUTEX_RETRY_DELAY);
 
   return &c->action;
 }
@@ -903,7 +919,6 @@ HostDBProcessor::iterate(Continuation *cont)
 Ptr<HostDBRecord>
 HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVHosts *srv, Ptr<HostDBRecord> record)
 {
-  ink_assert(this_ethread() == hostDB.refcountcache->lock_for_key(hash.hash.fold())->thread_holding);
   ink_assert(record);
   if (query_name.empty()) {
     if (is_byname()) {
@@ -924,7 +939,6 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     }
 
     record->set_failed();
-    return record;
 
   } else {
     switch (hostdb_ttl_mode) {
@@ -970,7 +984,6 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
 int
 HostDBContinuation::dnsPendingEvent(int event, Event *e)
 {
-  ink_assert(this_ethread() == hostDB.refcountcache->lock_for_key(hash.hash.fold())->thread_holding);
   if (timeout) {
     timeout->cancel(this);
     timeout = nullptr;
@@ -985,8 +998,9 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
     if (!action.cancelled && action.continuation) {
       action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
     }
-    hostDB.pending_dns_for_hash(hash.hash).remove(this);
-    hostdb_cont_free(this);
+    if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
+      hostdb_cont_free(this);
+    }
     return EVENT_DONE;
   } else {
     SET_HANDLER(&HostDBContinuation::probeEvent);
@@ -998,7 +1012,6 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
 int
 HostDBContinuation::dnsEvent(int event, HostEnt *e)
 {
-  ink_assert(this_ethread() == hostDB.refcountcache->lock_for_key(hash.hash.fold())->thread_holding);
   if (timeout) {
     timeout->cancel(this);
     timeout = nullptr;
@@ -1019,7 +1032,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         // That generally means @a this has already been removed from the queue, but just in case...
         hostDB.pending_dns_for_hash(hash.hash).remove(this);
       }
-      hostdb_cont_free(this);
+      if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
+        hostdb_cont_free(this);
+      }
       return EVENT_DONE;
     }
     MUTEX_TRY_LOCK(lock, action.mutex, thread);
@@ -1043,7 +1058,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     ttl = ts_seconds(failed ? 0 : e->ttl);
 
-    Ptr<HostDBRecord> old_r = probe(mutex, hash, false);
+    Ptr<HostDBRecord> old_r = probe(hash, false);
     // If the DNS lookup failed with NXDOMAIN, remove the old record
     if (e && e->isNameError() && old_r) {
       hostDB.refcountcache->erase(old_r->key);
@@ -1158,6 +1173,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     if (!serve_stale) { // implies r != old_r
+      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      std::unique_lock<ts::shared_mutex> lock{bucket_lock};
       auto const duration_till_revalidate = r->expiry_time().time_since_epoch();
       auto const seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
       hostDB.refcountcache->put(r->key, r.get(), r->_record_size, seconds_till_revalidate);
@@ -1172,7 +1189,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       if (failed && check_for_retry(hash.db_mark, host_res_style)) {
         this->refresh_hash(); // family changed if we're doing a retry.
         SET_CONTINUATION_HANDLER(this, &HostDBContinuation::probeEvent);
-        thread->schedule_in(this, MUTEX_RETRY_DELAY);
+        this->timeout = thread->schedule_in(this, MUTEX_RETRY_DELAY);
         return EVENT_CONT;
       }
 
@@ -1201,12 +1218,14 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     // Clean ourselves up
-    hostDB.pending_dns_for_hash(hash.hash).remove(this);
+    bool cleanup_self = hostDB.remove_from_pending_dns_for_hash(hash.hash, this);
 
     // wake up everyone else who is waiting
     remove_and_trigger_pending_dns();
 
-    hostdb_cont_free(this);
+    if (cleanup_self) {
+      hostdb_cont_free(this);
+    }
 
     // all done, or at least scheduled to be all done
     //
@@ -1236,14 +1255,8 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
-    Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
-    MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, t);
-    if (!lock_bucket.is_locked()) {
-      // we couldn't get the bucket lock, let's just reschedule and try later.
-      Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting bucket mutex", event, e);
-      mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
-      return EVENT_CONT;
-    }
+    ts::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
+    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
     IntrusiveHashMap<RefCountCacheLinkage> &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
     for (const auto &it : partMap) {
@@ -1290,7 +1303,8 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   // Separating lock checks here to make sure things don't break
   // when we check if the action is cancelled.
   if (!lock.is_locked()) {
-    timeout = mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+    EThread *thread = this_ethread();
+    timeout         = thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
 
@@ -1313,7 +1327,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!force_dns) {
     // Do the probe
     //
-    Ptr<HostDBRecord> r = probe(mutex, hash, false);
+    Ptr<HostDBRecord> r = probe(hash, false);
 
     if (r) {
       HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
@@ -1339,6 +1353,8 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 int
 HostDBContinuation::set_check_pending_dns()
 {
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
@@ -1361,23 +1377,29 @@ HostDBContinuation::set_check_pending_dns()
 void
 HostDBContinuation::remove_and_trigger_pending_dns()
 {
-  Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
-  q.remove(this);
-  HostDBContinuation *c = q.head;
   Queue<HostDBContinuation> qq;
-  while (c) {
-    HostDBContinuation *n = static_cast<HostDBContinuation *>(c->link.next);
-    if (hash.hash == c->hash.hash) {
-      Debug("hostdb", "dequeuing additional request");
-      q.remove(c);
-      qq.enqueue(c);
+  HostDBContinuation *c         = nullptr;
+  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  {
+    std::unique_lock<ts::shared_mutex> lock{bucket_lock};
+    Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
+    q.remove(this);
+    c = q.head;
+    while (c) {
+      HostDBContinuation *n = static_cast<HostDBContinuation *>(c->link.next);
+      if (hash.hash == c->hash.hash) {
+        Debug("hostdb", "dequeuing additional request");
+        q.remove(c);
+        qq.enqueue(c);
+      }
+      c = n;
     }
-    c = n;
   }
   EThread *thread = this_ethread();
   while ((c = qq.dequeue())) {
     // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
     EThread *affinity_thread = c->getThreadAffinity();
+    SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
     if (!affinity_thread || affinity_thread == thread) {
       c->handleEvent(EVENT_IMMEDIATE, nullptr);
     } else {
@@ -1429,7 +1451,8 @@ HostDBContinuation::do_dns()
   }
 
   if (hostdb_lookup_timeout) {
-    timeout = mutex->thread_holding->schedule_in(this, HRTIME_SECONDS(hostdb_lookup_timeout));
+    EThread *thread = this_ethread();
+    timeout         = thread->schedule_in(this, HRTIME_SECONDS(hostdb_lookup_timeout));
   } else {
     timeout = nullptr;
   }
