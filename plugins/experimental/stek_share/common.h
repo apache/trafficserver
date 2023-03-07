@@ -31,8 +31,9 @@
 #include <mutex>
 #include <deque>
 #include <cmath>
+#include <atomic>
 
-#define PLUGIN "stek_share"
+#define PLUGIN_NAME "stek_share"
 
 class PluginThreads
 {
@@ -64,7 +65,7 @@ public:
   }
 
 private:
-  bool shut_down = false;
+  std::atomic<bool> shut_down = false;
   std::deque<pthread_t> threads_queue;
   std::mutex threads_mutex;
 };

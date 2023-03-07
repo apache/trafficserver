@@ -38,19 +38,19 @@ public:
   ~STEKShareSM() {}
 
   nuraft::ptr<nuraft::buffer>
-  pre_commit(const uint64_t log_idx, nuraft::buffer &data)
+  pre_commit(const uint64_t log_idx, nuraft::buffer &data) override
   {
     return nullptr;
   }
 
   nuraft::ptr<nuraft::buffer>
-  commit(const uint64_t log_idx, nuraft::buffer &data)
+  commit(const uint64_t log_idx, nuraft::buffer &data) override
   {
     // Extract bytes from "data".
     size_t len = 0;
     nuraft::buffer_serializer bs_data(data);
     void *byte_array = bs_data.get_bytes(len);
-    // TSDebug(PLUGIN, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
+    // TSDebug(PLUGIN_NAME, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
     assert(len == SSL_TICKET_KEY_SIZE);
 
@@ -89,23 +89,23 @@ public:
   }
 
   void
-  commit_config(const uint64_t log_idx, nuraft::ptr<nuraft::cluster_config> &new_conf)
+  commit_config(const uint64_t log_idx, nuraft::ptr<nuraft::cluster_config> &new_conf) override
   {
     // Nothing to do with configuration change. Just update committed index.
     last_committed_idx_ = log_idx;
   }
 
   void
-  rollback(const uint64_t log_idx, nuraft::buffer &data)
+  rollback(const uint64_t log_idx, nuraft::buffer &data) override
   {
     // Nothing to do here since we don't have pre-commit.
   }
 
   int
   read_logical_snp_obj(nuraft::snapshot &s, void *&user_snp_ctx, uint64_t obj_id, nuraft::ptr<nuraft::buffer> &data_out,
-                       bool &is_last_obj)
+                       bool &is_last_obj) override
   {
-    // TSDebug(PLUGIN, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
+    // TSDebug(PLUGIN_NAME, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
     is_last_obj = true;
 
@@ -124,9 +124,9 @@ public:
   }
 
   void
-  save_logical_snp_obj(nuraft::snapshot &s, uint64_t &obj_id, nuraft::buffer &data, bool is_first_obj, bool is_last_obj)
+  save_logical_snp_obj(nuraft::snapshot &s, uint64_t &obj_id, nuraft::buffer &data, bool is_first_obj, bool is_last_obj) override
   {
-    // TSDebug(PLUGIN, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
+    // TSDebug(PLUGIN_NAME, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
     size_t len = 0;
     nuraft::buffer_serializer bs_data(data);
@@ -150,9 +150,9 @@ public:
   }
 
   bool
-  apply_snapshot(nuraft::snapshot &s)
+  apply_snapshot(nuraft::snapshot &s) override
   {
-    // TSDebug(PLUGIN, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
+    // TSDebug(PLUGIN_NAME, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
@@ -168,12 +168,12 @@ public:
   }
 
   void
-  free_user_snp_ctx(void *&user_snp_ctx)
+  free_user_snp_ctx(void *&user_snp_ctx) override
   {
   }
 
   nuraft::ptr<nuraft::snapshot>
-  last_snapshot()
+  last_snapshot() override
   {
     // Just return the latest snapshot.
     std::lock_guard<std::mutex> l(snapshot_lock_);
@@ -184,15 +184,15 @@ public:
   }
 
   uint64_t
-  last_commit_index()
+  last_commit_index() override
   {
     return last_committed_idx_;
   }
 
   void
-  create_snapshot(nuraft::snapshot &s, nuraft::async_result<bool>::handler_type &when_done)
+  create_snapshot(nuraft::snapshot &s, nuraft::async_result<bool>::handler_type &when_done) override
   {
-    // TSDebug(PLUGIN, "create snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
+    // TSDebug(PLUGIN_NAME, "create snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
     ssl_ticket_key_t local_stek;
     {
