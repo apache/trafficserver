@@ -209,7 +209,8 @@ libinknet_a_SOURCES = \
 	UnixNetVConnection.cc \
 	UnixUDPConnection.cc \
 	UnixUDPNet.cc \
-	SSLDynlock.cc
+	SSLDynlock.cc \
+	SNIActionPerformer.cc
 
 if ENABLE_QUIC
 if USE_QUICHE
