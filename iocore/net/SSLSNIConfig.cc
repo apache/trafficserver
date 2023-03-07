@@ -37,13 +37,10 @@
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_memory.h"
-#include "tscore/ts_file.h"
 #include "tscore/I_Layout.h"
 
 #include "tscpp/util/TextView.h"
 
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
 #include <sstream>
 #include <utility>
 #include <pcre.h>
