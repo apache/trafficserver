@@ -32,6 +32,7 @@
 // As a global plugin, things works a little different since we don't setup
 // per transaction or via remap.config.
 extern int gVCIdx;
+SniSelector *gSNISelector = nullptr;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -47,27 +48,31 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
+  if (-1 == gVCIdx) {
+    TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
+  }
 
   if (argc > 1) {
     if (!strncasecmp(argv[1], "SNI=", 4)) {
-      TSCont sni_cont       = TSContCreate(sni_limit_cont, nullptr);
-      SniSelector *selector = new SniSelector();
+      if (gSNISelector == nullptr) {
+        TSCont sni_cont = TSContCreate(sni_limit_cont, nullptr);
+        gSNISelector    = new SniSelector();
 
-      TSReleaseAssert(sni_cont);
-      TSContDataSet(sni_cont, selector);
+        TSReleaseAssert(sni_cont);
+        TSContDataSet(sni_cont, gSNISelector);
+
+        TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
+        TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
+      }
 
       // Have to skip the first one, which is considered the 'program' name
       --argc;
       ++argv;
 
-      size_t num_sni = selector->factory(argv[0] + 4, argc, argv);
+      size_t num_sni = gSNISelector->factory(argv[0] + 4, argc, argv);
       TSDebug(PLUGIN_NAME, "Finished loading %zu SNIs", num_sni);
 
-      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
-      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
-
-      selector->setupQueueCont(); // Start the queue processing continuation
+      gSNISelector->setupQueueCont(); // Start the queue processing continuation if needed
     } else if (!strncasecmp(argv[1], "HOST=", 5)) {
       // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
       --argc; // Skip the "HOST" arg of course when parsing the real parameters

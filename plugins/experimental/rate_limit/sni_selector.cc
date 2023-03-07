@@ -135,7 +135,7 @@ SniSelector::factory(const char *sni_list, int argc, const char *argv[])
 void
 SniSelector::setupQueueCont()
 {
-  if (_needs_queue_cont) {
+  if (_needs_queue_cont && !_queue_cont) {
     _queue_cont = TSContCreate(sni_queue_cont, TSMutexCreate());
     TSReleaseAssert(_queue_cont);
     TSContDataSet(_queue_cont, this);
