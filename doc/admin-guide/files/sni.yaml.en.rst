@@ -61,12 +61,17 @@ ip_allow                  Inbound   Specify a list of client IP address, subnets
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
                                     Here is an example list: 192.168.1.0/24,192.168.10.1-4. This would allow connections
                                     from clients in the 19.168.1.0 network or in the range from 192.168.10.1 to 192.168.1.4.
+
                                     Alternatively, the path to a file containing
-                                    the list of comma-separated IP addresses can
-                                    be specified in the form of
-                                    ``@path_to_file``. If a given file path does
-                                    not begin with ``/``, it must be relative to
-                                    the Traffic Server configuration directory.
+                                    the list of IP addresses can be specified in
+                                    the form of ``"@path_to_file"``. The IP
+                                    addresses in the file can be either
+                                    comma-separated or line-separated. If a
+                                    given file path does not begin with ``/``,
+                                    it must be relative to the Traffic Server
+                                    configuration directory. Here is an example
+                                    showing this form of the configuration:
+                                    ``ip_allow: "@ip_dir/example.com.ip.txt"``
 
 verify_server_policy      Outbound  One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
