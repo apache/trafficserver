@@ -138,6 +138,8 @@ struct sync_cont : public Continuation {
   }
 };
 
+void SetupRecRawStatBlockAllocator();
+
 //-------------------------------------------------------------------------
 // RecProcessInit
 //-------------------------------------------------------------------------
@@ -145,6 +147,8 @@ int
 RecProcessInit(Diags *_diags)
 {
   static bool initialized_p = false;
+
+  SetupRecRawStatBlockAllocator();
 
   if (initialized_p) {
     return REC_ERR_OKAY;
