@@ -17,12 +17,15 @@
 
 
 add_library(tscpputil SHARED
+        ts_ip.cc
+        ts_diags.cc
         TextView.cc
         YamlCfg.cc
         )
 target_link_libraries(tscpputil PRIVATE yaml-cpp libswoc)
 
 add_executable(test_tscpputil
+        unit_tests/test_IntrusiveDList.cc
         unit_tests/test_LocalBuffer.cc
         unit_tests/test_PostScript.cc
         unit_tests/test_TextView.cc
