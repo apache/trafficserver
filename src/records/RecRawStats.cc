@@ -29,7 +29,8 @@ Record statistics support
 // RecAllocateRawStatBlock
 //-------------------------------------------------------------------------
 static RecRawStatBlockAllocator raw_stat_block_allocator = nullptr;
-void SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator f)
+void
+SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator f)
 {
   raw_stat_block_allocator = f;
 }

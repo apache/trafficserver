@@ -157,11 +157,11 @@ struct RecRawStatBlock;
 // The implementation of this was moved out of the records library due to a circular dependency this produced.
 // look for the implmenetation of RecRawStatBlockOps in iocore/eventsystem
 struct RecRawStatBlockOps {
-  virtual int raw_stat_clear_sum(RecRawStatBlock *rsb, int id) = 0;
-  virtual int raw_stat_clear_count(RecRawStatBlock *rsb, int id) = 0;
+  virtual int raw_stat_clear_sum(RecRawStatBlock *rsb, int id)                    = 0;
+  virtual int raw_stat_clear_count(RecRawStatBlock *rsb, int id)                  = 0;
   virtual int raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total) = 0;
-  virtual int raw_stat_sync_to_global(RecRawStatBlock *rsb, int id) = 0;
-  virtual int raw_stat_clear(RecRawStatBlock *rsb, int id) = 0;
+  virtual int raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)               = 0;
+  virtual int raw_stat_clear(RecRawStatBlock *rsb, int id)                        = 0;
 };
 
 // WARNING!  It's advised that developers do not modify the contents of
@@ -172,7 +172,7 @@ struct RecRawStatBlock {
   int num_stats;          // number of stats in this block
   int max_stats;          // maximum number of stats for this block
   ink_mutex mutex;
-  RecRawStatBlockOps* ops;
+  RecRawStatBlockOps *ops;
 };
 
 //-------------------------------------------------------------------------

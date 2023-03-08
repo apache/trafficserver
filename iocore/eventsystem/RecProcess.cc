@@ -34,7 +34,7 @@
 #include "records/P_RecFile.h"
 
 // Marks whether the message handler has been initialized.
-static bool g_started             = false;
+static bool g_started = false;
 static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
 static int g_rec_config_update_interval_ms = REC_CONFIG_UPDATE_INTERVAL_MS;

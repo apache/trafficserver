@@ -1317,4 +1317,3 @@ i_am_the_record_owner(RecT rec_type)
 
   return false;
 }
-

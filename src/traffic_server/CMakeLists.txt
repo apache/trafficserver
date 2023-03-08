@@ -25,7 +25,6 @@ add_executable(traffic_server
         SocksProxy.cc
         traffic_server.cc
         RpcAdminPubHandlers.cc
-        RecProcess.cc
         ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
         RecProcess.h)
 target_include_directories(traffic_server PRIVATE

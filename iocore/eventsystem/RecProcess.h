@@ -23,10 +23,8 @@ Public RecProcess declarations
 
 #pragma once
 
-
 #include "records/I_RecDefs.h"
 #include "tscore/Diags.h"
-
 
 //-------------------------------------------------------------------------
 // Initialization/Starting
@@ -40,4 +38,3 @@ int RecProcessStart();
 void RecProcess_set_raw_stat_sync_interval_ms(int ms);
 void RecProcess_set_config_update_interval_ms(int ms);
 void RecProcess_set_remote_sync_interval_ms(int ms);
-

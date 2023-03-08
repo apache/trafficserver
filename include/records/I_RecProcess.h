@@ -30,7 +30,7 @@
 // RawStat Registration
 //-------------------------------------------------------------------------
 
-using RecRawStatBlockAllocator = RecRawStatBlock* (*)(int num_stats);
+using RecRawStatBlockAllocator = RecRawStatBlock *(*)(int num_stats);
 
 void SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator);
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);

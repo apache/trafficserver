@@ -31,8 +31,7 @@
 #include "P_EventSystem.h"
 #include "tscore/hugepages.h"
 
-void
-SetupRecRawStatBlockAllocator();
+void SetupRecRawStatBlockAllocator();
 
 void
 ink_event_system_init(ts::ModuleVersion v)

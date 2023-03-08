@@ -30,8 +30,7 @@ Record statistics support (EThread implementation).
 // raw_stat_get_total
 //-------------------------------------------------------------------------
 
-struct RecRawStatBlockOpsImpl : RecRawStatBlockOps
-{
+struct RecRawStatBlockOpsImpl : RecRawStatBlockOps {
   int raw_stat_clear(RecRawStatBlock *rsb, int id) override;
   int raw_stat_clear_count(RecRawStatBlock *rsb, int id) override;
   int raw_stat_clear_sum(RecRawStatBlock *rsb, int id) override;
@@ -39,7 +38,7 @@ struct RecRawStatBlockOpsImpl : RecRawStatBlockOps
   int raw_stat_sync_to_global(RecRawStatBlock *rsb, int id) override;
 };
 
-RecRawStatBlock*
+RecRawStatBlock *
 RecAllocateRawStatBlockImpl(int num_stats)
 {
   static RecRawStatBlockOpsImpl ops;
@@ -253,4 +252,3 @@ RecRawStatBlockOpsImpl::raw_stat_clear_count(RecRawStatBlock *rsb, int id)
 
   return REC_ERR_OKAY;
 }
-
