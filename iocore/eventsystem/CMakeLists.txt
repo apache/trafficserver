@@ -33,5 +33,6 @@ add_library(inkevent SHARED
         UnixEvent.cc
         UnixEventProcessor.cc
         ConfigProcessor.cc
-)
+        RecRawStatsImpl.cc)
 target_include_directories(inkevent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(inkevent ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc tscore records_p)

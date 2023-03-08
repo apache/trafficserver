@@ -34,7 +34,6 @@
 #include "records/P_RecFile.h"
 
 // Marks whether the message handler has been initialized.
-static bool message_initialized_p = false;
 static bool g_started             = false;
 static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
@@ -43,27 +42,6 @@ static int g_rec_remote_sync_interval_ms   = REC_REMOTE_SYNC_INTERVAL_MS;
 static Event *raw_stat_sync_cont_event;
 static Event *config_update_cont_event;
 static Event *sync_cont_event;
-
-//-------------------------------------------------------------------------
-// i_am_the_record_owner, only used for librecords_p.a
-//-------------------------------------------------------------------------
-bool
-i_am_the_record_owner(RecT rec_type)
-{
-  switch (rec_type) {
-  case RECT_CONFIG:
-  case RECT_PROCESS:
-  case RECT_NODE:
-  case RECT_LOCAL:
-  case RECT_PLUGIN:
-    return true;
-  default:
-    ink_assert(!"Unexpected RecT type");
-    return false;
-  }
-
-  return false;
-}
 
 //-------------------------------------------------------------------------
 // Simple setters for the intervals to decouple this from the proxy
@@ -176,29 +154,6 @@ RecProcessInit(Diags *_diags)
     return REC_ERR_FAIL;
   }
 
-  initialized_p = true;
-
-  return REC_ERR_OKAY;
-}
-
-void
-RecMessageInit()
-{
-  message_initialized_p = true;
-}
-//-------------------------------------------------------------------------
-// RecProcessInitMessage
-//-------------------------------------------------------------------------
-int
-RecProcessInitMessage()
-{
-  static bool initialized_p = false;
-
-  if (initialized_p) {
-    return REC_ERR_OKAY;
-  }
-
-  RecMessageInit();
   initialized_p = true;
 
   return REC_ERR_OKAY;

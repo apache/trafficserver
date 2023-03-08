@@ -32,10 +32,15 @@
 #include "tscore/hugepages.h"
 
 void
+SetupRecRawStatBlockAllocator();
+
+void
 ink_event_system_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(EVENT_SYSTEM_MODULE_INTERNAL_VERSION));
   int iobuffer_advice = 0;
+
+  SetupRecRawStatBlockAllocator();
 
   // For backwards compatibility make sure to allow thread_freelist_size
   // This needs to change in 6.0
