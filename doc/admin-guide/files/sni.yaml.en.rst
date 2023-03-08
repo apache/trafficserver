@@ -71,6 +71,7 @@ ip_allow                  Inbound   Specify a list of client IP address, subnets
                                     it must be relative to the Traffic Server
                                     configuration directory. Here is an example
                                     showing this form of the configuration:
+
                                     ``ip_allow: "@ip_dir/example.com.ip.txt"``
 
 verify_server_policy      Outbound  One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
