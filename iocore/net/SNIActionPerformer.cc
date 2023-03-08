@@ -22,23 +22,22 @@
  */
 
 #include "P_SNIActionPerformer.h"
-#include "tscore/ts_file.h"
-#include "tscpp/util/TextView.h"
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
+#include "swoc/swoc_file.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_std.h"
 
 SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &servername)
 {
-  ts::TextView content{ip_allow_list};
+  swoc::TextView content{ip_allow_list};
   if (content && content[0] == '@') {
     std::error_code ec;
-    ts::file::path path{content.remove_prefix(1)};
-    ts::LocalBufferWriter<1024> w;
+    swoc::file::path path{content.remove_prefix(1)};
     if (path.is_relative()) {
-      path = ts::file::path(Layout::get()->sysconfdir) / path;
+      path = swoc::file::path(Layout::get()->sysconfdir) / path;
     }
-    ip_allow_list = ts::file::load(path, ec);
+    ip_allow_list = swoc::file::load(path, ec);
     if (ec) {
+      swoc::LocalBufferWriter<1024> w;
       w.print("SNIConfig unable to load file {} - {}", path.string(), ec);
       Warning("%.*s", int(w.size()), w.data());
     }
@@ -47,15 +46,15 @@ SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &serverna
 }
 
 void
-SNI_IpAllow::load(ts::TextView content, ts::TextView server_name)
+SNI_IpAllow::load(swoc::TextView content, swoc::TextView server_name)
 {
   IpAddr addr1;
   IpAddr addr2;
-  static constexpr ts::TextView delim{",\n"};
+  static constexpr swoc::TextView delim{",\n"};
   static void *MARK{reinterpret_cast<void *>(1)};
 
   while (!content.ltrim(delim).empty()) {
-    ts::TextView list{content.take_prefix_at(delim)};
+    swoc::TextView list{content.take_prefix_at(delim)};
     if (0 != ats_ip_range_parse(list, addr1, addr2)) {
       Debug("ssl_sni", "%.*s is not a valid format", static_cast<int>(list.size()), list.data());
       break;

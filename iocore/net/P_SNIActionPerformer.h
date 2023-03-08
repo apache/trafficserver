@@ -35,6 +35,7 @@
 #include "P_SSLNetVConnection.h"
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
+#include "swoc/TextView.h"
 
 #include "tscore/ink_inet.h"
 
@@ -308,7 +309,7 @@ protected:
    * @param content A list of IP addresses in text form, separated by commas or newlines.
    * @param server_name Server named, used only for debugging messages.
    */
-  void load(ts::TextView content, ts::TextView server_name);
+  void load(swoc::TextView content, swoc::TextView server_name);
 };
 
 /**
