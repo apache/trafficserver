@@ -195,3 +195,34 @@ tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     'proxy.config.dns.local_ipv6: null',
     'should be set to null'
 )
+
+ts3 = Test.MakeATSProcess("ts3")
+ts3.Disk.records_config.update(
+    '''
+    some_invalid_field_should_not_block_further_docs_from_the_parser_logic: OK
+    '''
+)
+
+ts3.Disk.records_config.append_to_document(
+    '''
+    diags:
+      debug:
+        tags: rpc|rec
+    '''
+)
+
+# We want to make sure that any error in any of the docs will not stop ATS from loading
+# the rest of the nodes.
+tr4 = Test.AddTestRun("test parsing multiple docs with invalid fields.")
+tr4.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.tags'
+tr4.Processes.Default.Env = ts3.Env
+tr.Processes.Default.StartBefore(ts3)
+tr.Processes.StillRunningAfter = ts3
+tr4.Processes.Default.ReturnCode = 0
+
+# This record should be parsed after the invalid field. Value should be the one
+# configured.
+tr4.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: rpc|rec',
+    'should be the configured value'
+)
