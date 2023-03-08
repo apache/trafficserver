@@ -296,7 +296,7 @@ class SNI_IpAllow : public ActionItem
   IpMap ip_map;
 
 public:
-  SNI_IpAllow(std::string &ip_allow_list, const std::string &servername); // end function SNI_IpAllow
+  SNI_IpAllow(std::string &ip_allow_list, const std::string &servername);
 
   int SNIAction(TLSSNISupport *snis, const Context &ctx) const override;
 
