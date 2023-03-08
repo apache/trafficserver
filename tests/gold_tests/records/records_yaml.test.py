@@ -32,6 +32,8 @@ ts.Disk.records_config.update(
       client:
         cert:
           filename: null
+          filenamee: some.txt
+          filenam: some2.txt
     dns:
       nameservers: null
     test:
@@ -69,6 +71,12 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
     f"Unrecognized configuration value '{var2}",
     "Field should be ignored")
 
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Ignoring field 'filenamee'",
+    "Field should be ignored")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Ignoring field 'filenam'",
+    "Field should be ignored")
 
 # 1
 tr = Test.AddTestRun("Query unregistered records.")

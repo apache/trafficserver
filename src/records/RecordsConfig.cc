@@ -1531,7 +1531,7 @@ const RecordElement *
 GetRecordElementByName(std::string_view name)
 {
   for (unsigned i = 0; i < countof(RecordsConfig); ++i) {
-    if (strncmp(RecordsConfig[i].name, name.data(), name.size()) == 0) {
+    if (name.compare(RecordsConfig[i].name) == 0) {
       return &RecordsConfig[i];
     }
   }
