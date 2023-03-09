@@ -41,7 +41,6 @@ extern RecRecord *g_records;
 extern std::unordered_map<std::string, RecRecord *> g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
-extern RecModeT g_mode_type;
 
 // records.yaml items
 extern const char *g_rec_config_fpath;
@@ -52,7 +51,7 @@ extern ink_mutex g_rec_config_lock;
 // Initialization
 //-------------------------------------------------------------------------
 
-int RecCoreInit(RecModeT mode_type, Diags *diags);
+int RecCoreInit(Diags *diags);
 
 //-------------------------------------------------------------------------
 // Registration/Insertion

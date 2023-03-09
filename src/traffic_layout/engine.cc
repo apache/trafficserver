@@ -661,7 +661,7 @@ LayoutEngine::verify_runroot()
   if (arguments.get("with-user")) {
     user = arguments.get("with-user").value();
   } else {
-    RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
+    RecProcessInit(nullptr /* diags */);
     LibRecordsConfigInit();
     if (RecGetRecordString("proxy.config.admin.user_id", user_buf, sizeof(user_buf)) != 0 || strlen(user_buf) == 0) {
       user = user_buf;

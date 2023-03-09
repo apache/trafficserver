@@ -104,7 +104,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
     diags()->dump();
   }
   Layout::create("/opt/ats");
-  RecProcessInit(RECM_STAND_ALONE);
+  RecProcessInit();
 
   size_t stacksize;
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");

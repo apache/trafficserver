@@ -36,8 +36,6 @@
 
 #include <fstream>
 
-RecModeT g_mode_type = RECM_NULL;
-
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
@@ -338,33 +336,25 @@ RecSyncStatsFile()
   bool sync_to_disk;
   ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
-  /*
-   * g_mode_type should be initialized by
-   * RecLocalInit() or RecProcessInit() earlier.
-   */
-  ink_assert(g_mode_type != RECM_NULL);
-
-  if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
-    m            = RecMessageAlloc(RECG_NULL);
-    num_records  = g_num_records;
-    sync_to_disk = false;
-    for (i = 0; i < num_records; i++) {
-      r = &(g_records[i]);
-      rec_mutex_acquire(&(r->lock));
-      if (REC_TYPE_IS_STAT(r->rec_type)) {
-        if (r->stat_meta.persist_type == RECP_PERSISTENT) {
-          m            = RecMessageMarshal_Realloc(m, r);
-          sync_to_disk = true;
-        }
+  m            = RecMessageAlloc(RECG_NULL);
+  num_records  = g_num_records;
+  sync_to_disk = false;
+  for (i = 0; i < num_records; i++) {
+    r = &(g_records[i]);
+    rec_mutex_acquire(&(r->lock));
+    if (REC_TYPE_IS_STAT(r->rec_type)) {
+      if (r->stat_meta.persist_type == RECP_PERSISTENT) {
+        m            = RecMessageMarshal_Realloc(m, r);
+        sync_to_disk = true;
       }
-      rec_mutex_release(&(r->lock));
     }
-    if (sync_to_disk) {
-      RecDebug(DL_Note, "Writing '%s' [%d bytes]", (const char *)snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
-      RecMessageWriteToDisk(m, snap_fpath);
-    }
-    RecMessageFree(m);
+    rec_mutex_release(&(r->lock));
   }
+  if (sync_to_disk) {
+    RecDebug(DL_Note, "Writing '%s' [%d bytes]", (const char *)snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
+    RecMessageWriteToDisk(m, snap_fpath);
+  }
+  RecMessageFree(m);
 
   return REC_ERR_OKAY;
 }

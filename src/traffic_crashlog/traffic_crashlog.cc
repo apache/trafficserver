@@ -165,7 +165,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   runroot_handler(argv);
   Layout::create();
-  RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
+  RecProcessInit(nullptr /* diags */);
   LibRecordsConfigInit();
 
   if (syslog_mode) {

@@ -41,10 +41,8 @@ main()
   setbuf(stdout, nullptr);
   int nproc = ink_number_of_processors();
 
-  RecModeT mode_type = RECM_STAND_ALONE;
-
   init_diags("net_test", nullptr);
-  RecProcessInit(mode_type);
+  RecProcessInit();
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   ink_net_init(NET_SYSTEM_MODULE_PUBLIC_VERSION);
 

@@ -190,7 +190,7 @@ link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData dat
 // RecCoreInit
 //-------------------------------------------------------------------------
 int
-RecCoreInit(RecModeT mode_type, Diags *_diags)
+RecCoreInit(Diags *_diags)
 {
   if (g_initialized) {
     return REC_ERR_OKAY;
@@ -211,42 +211,38 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   ink_rwlock_init(&g_records_rwlock);
 
   // read stats
-  if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    RecReadStatsFile();
-  }
+  RecReadStatsFile();
 
   // read configs
-  if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    bool file_exists = true;
+  bool file_exists = true;
 
-    ink_mutex_init(&g_rec_config_lock);
+  ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
+  g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
 
-    // Make sure there is no legacy file, if so we drop a BIG WARNING and fail.
-    // This is to avoid issues with someone ignoring that we now use records.yaml
-    ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
-    if (ts::file::exists(old_config)) {
-      RecLog(DL_Fatal,
-             "**** Found a legacy config file (%s). Please remove it and migrate to the new YAML format before continuing. ****",
-             old_config.c_str());
+  // Make sure there is no legacy file, if so we drop a BIG WARNING and fail.
+  // This is to avoid issues with someone ignoring that we now use records.yaml
+  ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
+  if (ts::file::exists(old_config)) {
+    RecLog(DL_Fatal,
+           "**** Found a legacy config file (%s). Please remove it and migrate to the new YAML format before continuing. ****",
+           old_config.c_str());
+  }
+
+  if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
+    RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
+    file_exists = false;
+  }
+
+  if (file_exists) {
+    auto err = RecReadYamlConfigFile();
+    RecLog(DL_Note, "records parsing completed.");
+    if (!err.empty()) {
+      std::string text;
+      RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
     }
-
-    if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
-      file_exists = false;
-    }
-
-    if (file_exists) {
-      auto err = RecReadYamlConfigFile();
-      RecLog(DL_Note, "records parsing completed.");
-      if (!err.empty()) {
-        std::string text;
-        RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
-      }
-    } else {
-      RecLog(DL_Note, "%s does not exist.", g_rec_config_fpath);
-    }
+  } else {
+    RecLog(DL_Note, "%s does not exist.", g_rec_config_fpath);
   }
 
   RecLog(DL_Note, "%s finished loading", std::string{g_rec_config_fpath}.c_str());

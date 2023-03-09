@@ -128,8 +128,7 @@ void
 udp_echo_server()
 {
   Layout::create();
-  RecModeT mode_type = RECM_STAND_ALONE;
-  RecProcessInit(mode_type);
+  RecProcessInit();
 
   Thread *main_thread = new EThread();
   main_thread->set_specific();

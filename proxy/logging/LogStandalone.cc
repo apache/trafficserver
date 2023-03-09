@@ -100,10 +100,10 @@ initialize_process_manager()
   // diags should have been initialized by caller, e.g.: sac.cc
   ink_assert(diags());
 
-  RecProcessInit(RECM_STAND_ALONE, diags());
+  RecProcessInit(diags());
   LibRecordsConfigInit();
 
-  RecProcessInitMessage(RECM_STAND_ALONE);
+  RecProcessInitMessage();
 
   //
   // Define version info records

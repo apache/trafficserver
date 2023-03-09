@@ -79,7 +79,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
   {
     Layout::create();
     init_diags("rpc|rpc.test", nullptr);
-    RecProcessInit(RECM_STAND_ALONE);
+    RecProcessInit();
 
     signal(SIGPIPE, SIG_IGN);
 

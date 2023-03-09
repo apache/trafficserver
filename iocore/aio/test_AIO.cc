@@ -412,7 +412,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   Layout::create();
   init_diags("", nullptr);
-  RecProcessInit(RECM_STAND_ALONE);
+  RecProcessInit();
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(ink_number_of_processors());
 

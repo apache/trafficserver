@@ -338,7 +338,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   {
     Layout::create();
     init_diags("", nullptr);
-    RecProcessInit(RECM_STAND_ALONE);
+    RecProcessInit();
 
     LibRecordsConfigInit();
 
