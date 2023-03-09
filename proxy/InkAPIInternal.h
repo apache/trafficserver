@@ -53,8 +53,8 @@ enum CacheInfoMagic {
 struct CacheInfo {
   CryptoHash cache_key;
   CacheFragType frag_type = CACHE_FRAG_TYPE_NONE;
-  char *hostname          = nullptr;
   int len                 = 0;
+  char *hostname          = nullptr;
   time_t pin_in_cache     = 0;
   CacheInfoMagic magic    = CACHE_INFO_MAGIC_ALIVE;
 

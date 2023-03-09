@@ -86,18 +86,18 @@ public:
 
   virtual void set_netvc(NetVConnection *newvc);
 
+  // Keep track of connection limiting and a pointer to the
+  // singleton that keeps track of the connection counts.
+  OutboundConnTrack::Group *conn_track_group = nullptr;
+
+  virtual IOBufferReader *get_remote_reader() = 0;
+
   // Used to determine whether the session is for parent proxy
   // it is session to origin server
   // We need to determine whether a closed connection was to
   // close parent proxy to update the
   // proxy.process.http.current_parent_proxy_connections
   bool to_parent_proxy = false;
-
-  // Keep track of connection limiting and a pointer to the
-  // singleton that keeps track of the connection counts.
-  OutboundConnTrack::Group *conn_track_group = nullptr;
-
-  virtual IOBufferReader *get_remote_reader() = 0;
 
 private:
   // Sessions become if authentication headers

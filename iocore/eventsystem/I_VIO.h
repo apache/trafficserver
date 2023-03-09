@@ -190,6 +190,11 @@ public:
   */
   int op = VIO::NONE;
 
+  // This is a little odd location, but this saves on padding, and an entire cache line
+private:
+  bool _disabled = false;
+
+public:
   /**
     Provides access to the reader or writer for this operation.
 
@@ -215,7 +220,4 @@ public:
 
   */
   Ptr<ProxyMutex> mutex;
-
-private:
-  bool _disabled = false;
 };

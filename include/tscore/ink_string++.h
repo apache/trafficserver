@@ -92,9 +92,9 @@ struct StrListOverflow;
 
 struct StrList {
 public:
-  int count;
   Str *head;
   Str *tail;
+  int count;
 
 public:
   StrList(bool do_copy_when_adding_string = true);
@@ -121,11 +121,11 @@ private:
   void *overflow_heap_alloc(int size);
   void overflow_heap_clean();
 
+  int base_heap_used;
   Str base_cells[STRLIST_BASE_CELLS];
   char base_heap[STRLIST_BASE_HEAP_SIZE];
   int cells_allocated;
   int base_heap_size;
-  int base_heap_used;
   StrListOverflow *overflow_current;
   StrListOverflow *overflow_first;
   bool copy_when_adding_string;

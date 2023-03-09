@@ -1048,8 +1048,8 @@ typedef struct {
 typedef struct TSFetchUrlParams {
   const char *request;
   int request_len;
-  struct sockaddr_storage ip;
   int port;
+  struct sockaddr_storage ip;
   TSCont contp;
   TSFetchEvent events;
   TSFetchWakeUpOptions options;
