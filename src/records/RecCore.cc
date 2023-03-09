@@ -1301,18 +1301,16 @@ RecConfigWarnIfUnregistered()
 bool
 i_am_the_record_owner(RecT rec_type)
 {
-  if (g_mode_type == RECM_STAND_ALONE) {
-    switch (rec_type) {
-    case RECT_CONFIG:
-    case RECT_PROCESS:
-    case RECT_NODE:
-    case RECT_LOCAL:
-    case RECT_PLUGIN:
-      return true;
-    default:
-      ink_assert(!"Unexpected RecT type");
-      return false;
-    }
+  switch (rec_type) {
+  case RECT_CONFIG:
+  case RECT_PROCESS:
+  case RECT_NODE:
+  case RECT_LOCAL:
+  case RECT_PLUGIN:
+    return true;
+  default:
+    ink_assert(!"Unexpected RecT type");
+    return false;
   }
 
   return false;
