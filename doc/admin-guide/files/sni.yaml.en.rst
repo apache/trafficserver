@@ -62,6 +62,18 @@ ip_allow                  Inbound   Specify a list of client IP address, subnets
                                     Here is an example list: 192.168.1.0/24,192.168.10.1-4. This would allow connections
                                     from clients in the 19.168.1.0 network or in the range from 192.168.10.1 to 192.168.1.4.
 
+                                    Alternatively, the path to a file containing
+                                    the list of IP addresses can be specified in
+                                    the form of ``"@path_to_file"``. The IP
+                                    addresses in the file can be either
+                                    comma-separated or line-separated. If a
+                                    given file path does not begin with ``/``,
+                                    it must be relative to the Traffic Server
+                                    configuration directory. Here is an example
+                                    showing this form of the configuration:
+
+                                    ``ip_allow: "@ip_dir/example.com.ip.txt"``
+
 verify_server_policy      Outbound  One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                                     By default this is :ts:cv:`proxy.config.ssl.client.verify.server.policy`.
@@ -86,7 +98,7 @@ verify_client_ca_certs    Both      Specifies an alternate set of certificate au
                                     CA certs.  Otherwise, there should be up to two nested pairs.  The possible keys
                                     are ``file`` and ``dir``.  The value for ``file`` must be a file path for a file
                                     containing CA certs.  The value for ``dir`` must be a file path for an OpenSSL
-                                    X509 hashed directory containing CA certs.  If a given file path does not being
+                                    X509 hashed directory containing CA certs.  If a given file path does not begin
                                     with ``/`` , it must be relative to the |TS| configuration directory.
                                     ``verify_client_ca_certs`` can only be used with capbilities provided by
                                     OpenSSL 1.0.2 or later.

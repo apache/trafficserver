@@ -61,6 +61,7 @@ add_library(inknet STATIC
         UnixUDPConnection.cc
         UnixUDPNet.cc
         SSLDynlock.cc
+	SNIActionPerformer.cc
 )
 target_link_libraries(inknet inkevent records_p)
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
