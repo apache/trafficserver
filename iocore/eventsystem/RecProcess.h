@@ -29,7 +29,7 @@ Public RecProcess declarations
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
-int RecProcessInit(RecModeT mode_type, Diags *diags = nullptr);
+int RecProcessInit(Diags *diags = nullptr);
 int RecProcessStart();
 
 //-------------------------------------------------------------------------
