@@ -52,6 +52,7 @@
 #include "ConfigProcessor.h"
 #include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
+#include "tscpp/util/ts_ip.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
@@ -772,8 +773,9 @@ public:
   };
 
 public:
-  IpAddr inbound_ip4, inbound_ip6;
-  IpAddr outbound_ip4, outbound_ip6;
+  ts::IPAddrPair inbound;
+  // Initialize to any addr (default constructed) because these must always be set.
+  ts::IPAddrPair outbound;
   IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
   IpMap config_proxy_protocol_ipmap;
 

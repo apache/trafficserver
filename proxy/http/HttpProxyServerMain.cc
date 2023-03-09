@@ -168,10 +168,10 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
-    } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {
-      net.local_ip = HttpConfig::m_master.inbound_ip6;
-    } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
-      net.local_ip = HttpConfig::m_master.inbound_ip4;
+    } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound.has_ip6()) {
+      net.local_ip = HttpConfig::m_master.inbound.ip6().network_order();
+    } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound.has_ip4()) {
+      net.local_ip = HttpConfig::m_master.inbound.ip4().network_order();
     }
   }
   return net;
@@ -191,17 +191,8 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
   accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
 
-  if (port.m_outbound_ip4.isValid()) {
-    accept_opt.outbound_ip4 = port.m_outbound_ip4;
-  } else if (HttpConfig::m_master.outbound_ip4.isValid()) {
-    accept_opt.outbound_ip4 = HttpConfig::m_master.outbound_ip4;
-  }
-
-  if (port.m_outbound_ip6.isValid()) {
-    accept_opt.outbound_ip6 = port.m_outbound_ip6;
-  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
-    accept_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
-  }
+  accept_opt.outbound += HttpConfig::m_master.outbound;
+  accept_opt.outbound += port.m_outbound; // top priority, override master and base options.
 
   // OK the way this works is that the fallback for each port is a protocol
   // probe acceptor. For SSL ports, we can stack a NPN+ALPN acceptor in front

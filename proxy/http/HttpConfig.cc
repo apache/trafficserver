@@ -1159,8 +1159,8 @@ HttpConfig::startup()
     c.proxy_hostname[0] = '\0';
   }
 
-  RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
-  RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
+  c.inbound  += RecHttpLoadIp("proxy.local.incoming_ip_to_bind");
+  c.outbound += RecHttpLoadIp("proxy.local.outgoing_ip_to_bind");
   RecHttpLoadIpMap("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ipmap);
   SSLConfigInit(&c.config_proxy_protocol_ipmap);
 
@@ -1450,11 +1450,9 @@ HttpConfig::reconfigure()
 
   params = new HttpConfigParams;
 
-  params->inbound_ip4 = m_master.inbound_ip4;
-  params->inbound_ip6 = m_master.inbound_ip6;
+  params->inbound = m_master.inbound;
 
-  params->outbound_ip4 = m_master.outbound_ip4;
-  params->outbound_ip6 = m_master.outbound_ip6;
+  params->outbound = m_master.outbound;
 
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
