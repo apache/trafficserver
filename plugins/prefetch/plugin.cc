@@ -542,7 +542,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         /* first-pass */
         if (!config.isExactMatch()) {
           data->_fetchable = state->acquire(data->_cachekey);
-          PrefetchDebug("request is %s fetchable", data->_fetchable ? "" : "not");
+          PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
         }
       }
     }
