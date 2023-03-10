@@ -170,6 +170,29 @@ specified with an integer followed by a colon, e.g. ``{8:$2+2}``,
 causing the resulting number to be padded with leading zeroes if it
 has fewer digits than the width.
 
+CMCD (Common Media Client Data) CMCD-Request header with nor field
+------------------------------------------------------------------
+
+If the ``--cmcd-nor`` option is specified the Cmcd-Request header with nor field is handled.
+
+With setup ::
+
+  map http://example.com http://origin.com \
+      @plugin=cachekey.so @pparam=--remove-all-params=true \
+      @plugin=prefetch.so \
+          @pparam=--cmcd-nor=true
+
+If the incoming request is ::
+
+  http://example-seed.com/path/someitem.m4a
+
+with header ::
+
+  Cmcd-Request: nor="otheritem.m4a"
+
+The following URL will be requested to be prefetched ::
+
+  http://example-seed.com/path/otheritem.m4a
 
 Overhead from **next object** prefetch
 --------------------------------------
@@ -238,6 +261,7 @@ Plugin parameters
   - ``true`` - configures the plugin run on the **front-tier**,
   - ``false`` - to be run on the **back-tier**.
 * ``--api-header`` - the header used by the plugin internally, also used to mark a prefetch request to the next tier in dual-tier usage.
+* ``--cmcd-nor`` - prefetch for a Cmcd-Request header with nor field.
 * ``--fetch-policy`` - fetch policy
   - ``simple`` - this policy just makes sure there are no same concurrent prefetches triggered (default and always used in combination with any other policy)
   - ``lru:n`` - this policy uses LRU to identify "hot" objects and triggers prefetch if the object is not found. `n` is the size of the LRU

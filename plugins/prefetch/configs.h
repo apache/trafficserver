@@ -35,8 +35,8 @@ class PrefetchConfig
 {
 public:
   PrefetchConfig()
-    : _apiHeader("X-AppleCDN-Prefetch"),
-      _nextHeader("X-AppleCDN-Prefetch-Next"),
+    : _apiHeader("X-CDN-Prefetch"),
+      _nextHeader("X-CDN-Prefetch-Next"),
       _replaceHost(),
       _namespace("default"),
       _metricsPrefix("prefetch.stats")
@@ -109,6 +109,12 @@ public:
   isExactMatch() const
   {
     return _exactMatch;
+  }
+
+  bool
+  isCmcdNor() const
+  {
+    return _cmcd_nor;
   }
 
   void
@@ -208,5 +214,6 @@ private:
   unsigned _fetchMax   = 0;
   bool _front          = false;
   bool _exactMatch     = false;
+  bool _cmcd_nor       = false;
   MultiPattern _nextPaths;
 };

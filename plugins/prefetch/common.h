@@ -31,6 +31,7 @@
 #include <vector>
 
 typedef std::string String;
+typedef std::string_view StringView;
 typedef std::set<std::string> StringSet;
 typedef std::list<std::string> StringList;
 typedef std::vector<std::string> StringVector;

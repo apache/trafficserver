@@ -1,0 +1,12 @@
+http://ts1:``/tests/request.txt 200 TCP_MISS FIN 33 -
+http://ts1:``/tests/prefetch.txt 200 TCP_MISS - 16 tests/request.txt
+http://ts1:``/tests/prefetch.txt 200 TCP_MISS FIN 34 -
+http://ts1:``/tests/prefetch.txt 200 TCP_HIT - 34 -
+http://ts1:``/tests/query?this=foo&that 200 TCP_MISS FIN 41 -
+http://ts1:``/tests/query?bar=baz 200 TCP_MISS - 16 tests/query
+http://ts1:``/tests/query?bar=baz 200 TCP_MISS FIN 35 -
+http://ts1:``/tests/query?bar=baz 200 TCP_HIT - 35 -
+http://ts1:``/root.txt 200 TCP_MISS FIN 30 -
+http://ts1:``/rooted 200 TCP_MISS - 16 root.txt
+http://ts1:``/rooted 200 TCP_MISS FIN 28 -
+http://ts1:``/crr.txt 404 TCP_MISS - 5 -

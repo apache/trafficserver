@@ -169,13 +169,14 @@ class BgFetch
 {
 public:
   static bool schedule(BgFetchState *state, const PrefetchConfig &config, bool askPermission, TSMBuffer requestBuffer,
-                       TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *path, size_t pathLen, const String &cachekey);
+                       TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *path, size_t pathLen, const String &cachekey,
+                       bool removeQuery = false);
 
 private:
   BgFetch(BgFetchState *state, const PrefetchConfig &config, bool lock);
   ~BgFetch();
   bool init(TSMBuffer requestBuffer, TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *fetchPath, size_t fetchPathLen,
-            const String &cacheKey);
+            const String &cacheKey, bool removeQuery = false);
   void schedule();
   static int handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */);
   bool saveIp(TSHttpTxn txnp);

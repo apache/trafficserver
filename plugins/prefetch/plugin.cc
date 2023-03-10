@@ -20,9 +20,7 @@
  * @file plugin.cc
  * @brief traffic server plugin entry points.
  */
-
 #include <sstream>
-#include <iomanip>
 
 #include "ts/ts.h" /* ATS API */
 
@@ -227,8 +225,12 @@ appendCacheKey(const TSHttpTxn txnp, const TSMBuffer reqBuffer, String &key)
         TSfree(static_cast<void *>(url));
         ret = true;
       }
+    } else {
+      PrefetchDebug("Failure lookup up cache url");
     }
     TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, keyLoc);
+  } else {
+    PrefetchDebug("Failure creating url");
   }
 
   if (!ret) {
@@ -348,6 +350,79 @@ getPristineUrlQuery(TSHttpTxn txnp)
   return pristineQuery;
 }
 
+static constexpr StringView CmcdHeader{"Cmcd-Request"};
+static constexpr StringView CmcdNorFieldPrefix{"nor="};
+static constexpr StringView CmcdNrrFieldPrefix{"nrr="};
+
+/**
+ * @brief Look for and return the nor field of any Cmcd-Request header
+ *
+ * @param txnp HTTP transaction structure
+ * @param buffer request TSMBuffer
+ * @param hdrloc request TSMLoc
+ * @return unquoted relative cmcd path from the nor field
+ *
+ * If the 'nrr' field is encountered the 'nor' field will be ignored.
+ *
+ * sample header:
+ * Cmcd-Request: mtp=103600,bl=153500,nor="14_176.mp4a"
+ */
+static String
+getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
+{
+  String relpath;
+  bool hasnrr = false; // don't prefetch if range request
+
+  const TSMLoc cmcdloc = TSMimeHdrFieldFind(buffer, hdrloc, CmcdHeader.data(), CmcdHeader.length());
+  if (TS_NULL_MLOC != cmcdloc) {
+    // iterate through the fields
+    const int cnt = TSMimeHdrFieldValuesCount(buffer, hdrloc, cmcdloc);
+    for (int ind = 0; ind < cnt; ++ind) {
+      int flen               = 0;
+      const char *const fval = TSMimeHdrFieldValueStringGet(buffer, hdrloc, cmcdloc, ind, &flen);
+
+      StringView fv(fval, flen);
+      PrefetchDebug("cmcd-request field: '%.*s'", (int)fv.length(), fv.data());
+      if (0 == fv.compare(0, CmcdNrrFieldPrefix.length(), CmcdNrrFieldPrefix)) {
+        PrefetchDebug("cmcd-request nrr field encountered, skipping prefetch!");
+        hasnrr = true;
+        break;
+      }
+
+      if (0 == fv.compare(0, CmcdNorFieldPrefix.length(), CmcdNorFieldPrefix)) {
+        fv.remove_prefix(CmcdNorFieldPrefix.length());
+        if (fv.front() == '"') {
+          fv.remove_prefix(1);
+        }
+        if (fv.back() == '"') {
+          fv.remove_suffix(1);
+        }
+
+        PrefetchDebug("Extracted nor field: '%.*s'", (int)fv.length(), fv.data());
+
+        // Undo any percent encoding
+        char buf[8192];
+        size_t blen = sizeof(buf);
+        if (TS_SUCCESS == TSStringPercentDecode(fv.data(), fv.length(), buf, blen, &blen)) {
+          relpath.assign(buf, blen);
+        } else {
+          PrefetchDebug("Error percent decoding nor field: '%.*s'", (int)fv.length(), fv.data());
+        }
+      }
+    }
+    TSHandleMLocRelease(buffer, hdrloc, cmcdloc);
+  } else {
+    PrefetchDebug("No Cmcd-Request header found");
+  }
+
+  // don't prefetch if range request
+  if (hasnrr) {
+    relpath.clear();
+  }
+
+  return relpath;
+}
+
 /**
  * @brief short-cut to set the response .
  */
@@ -425,19 +500,26 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp         = static_cast<TSHttpTxn>(edata);
   PrefetchConfig &config = data->_inst->_config;
   BgFetchState *state    = data->_inst->_state;
-  TSMBuffer reqBuffer;
-  TSMLoc reqHdrLoc;
+  TSMBuffer reqBuffer    = nullptr;
+  TSMLoc reqHdrLoc       = TS_NULL_MLOC;
 
   PrefetchDebug("event: %s (%d)", getEventName(event), event);
 
   TSEvent retEvent = TS_EVENT_HTTP_CONTINUE;
 
-  if ((event == TS_EVENT_HTTP_POST_REMAP || event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ||
-       event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) &&
-      TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
-    PrefetchError("failed to get client request");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-    return 0;
+  // For these cases we need to access the client request
+  switch (event) {
+  case TS_EVENT_HTTP_POST_REMAP:
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
+      PrefetchError("failed to get client request");
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      return 0;
+    }
+    break;
+  default:
+    break;
   }
 
   switch (event) {
@@ -506,69 +588,96 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
     if (data->frontend()) {
       /* front-end instance */
 
-      String currentPath  = getPristineUrlPath(txnp);
-      String currentQuery = getPristineUrlQuery(txnp);
-      bool hasValidQuery  = false;
+      const String currentPath  = getPristineUrlPath(txnp);
+      const String currentQuery = getPristineUrlQuery(txnp);
+      bool hasValidQuery        = false;
 
       // If there is a --fetch-query defined in the config, and that string is found in the querystring, assume it is
       // valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
-      if (!config.getQueryKeyName().empty() && currentQuery.find(config.getQueryKeyName()) != std::string::npos) {
+      if (!config.getQueryKeyName().empty() && currentQuery.find(config.getQueryKeyName()) != String::npos) {
         PrefetchDebug("Setting hasValidQuery to true");
         hasValidQuery = true;
       }
 
-      if (!hasValidQuery && data->firstPass() && data->_fetchable && !config.getNextPath().empty() && respToTriggerPrefetch(txnp)) {
-        /* Trigger all necessary background fetches based on the next path pattern */
+      if (data->firstPass() && data->_fetchable && respToTriggerPrefetch(txnp)) {
+        // If configured to handle Cmcd-Request nor field.
+        // This still allows other prefetch configurations to work.
+        if (config.isCmcdNor()) {
+          PrefetchDebug("Considering cmcd nor request");
 
-        if (!currentPath.empty()) {
-          unsigned total = config.getFetchCount();
-          for (unsigned i = 0; i < total; ++i) {
-            PrefetchDebug("generating prefetch request %d/%d", i + 1, total);
-            String expandedPath;
+          TSAssert(nullptr != reqBuffer);
+          TSAssert(TS_NULL_MLOC != reqHdrLoc);
 
-            if (config.getNextPath().replace(currentPath, expandedPath)) {
-              PrefetchDebug("replaced: %s", expandedPath.c_str());
-              expand(expandedPath);
-              PrefetchDebug("expanded: %s cachekey: %s", expandedPath.c_str(), data->_cachekey.c_str());
+          const String relpath = getCmcdNor(reqBuffer, reqHdrLoc);
+          if (!relpath.empty()) {
+            PrefetchDebug("Current path: '%s'", currentPath.c_str());
+            PrefetchDebug("Parsed cmcd nor relpath: '%s'", relpath.c_str());
 
-              BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, expandedPath.c_str(),
-                                expandedPath.length(), data->_cachekey);
-            } else {
-              /* We should be here only if the pattern replacement fails (match already checked) */
-              PrefetchError("failed to process the pattern");
+            const String::size_type lsi = currentPath.find_last_of("/");
+            const String nextPath       = currentPath.substr(0, lsi + 1) + relpath;
 
-              /* If the first or any matches fails there must be something wrong so don't continue */
+            PrefetchDebug("Next cmcd nor path: '%s'", nextPath.c_str());
+
+            constexpr bool askPermission = false;
+            constexpr bool removeQuery   = true;
+            BgFetch::schedule(state, config, askPermission, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(), nextPath.length(),
+                              data->_cachekey, removeQuery);
+          }
+        }
+
+        if (!hasValidQuery && !config.getNextPath().empty()) {
+          /* Trigger all necessary background fetches based on the next path pattern */
+
+          if (!currentPath.empty()) {
+            const unsigned total = config.getFetchCount();
+            String workingPath   = currentPath;
+            for (unsigned i = 0; i < total; ++i) {
+              PrefetchDebug("generating prefetch request %d/%d", i + 1, total);
+              String expandedPath;
+
+              if (config.getNextPath().replace(workingPath, expandedPath)) {
+                PrefetchDebug("replaced: %s", expandedPath.c_str());
+                expand(expandedPath);
+                PrefetchDebug("expanded: %s cachekey: %s", expandedPath.c_str(), data->_cachekey.c_str());
+
+                BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, expandedPath.c_str(),
+                                  expandedPath.length(), data->_cachekey);
+              } else {
+                /* We should be here only if the pattern replacement fails (match already checked) */
+                PrefetchError("failed to process the pattern");
+
+                /* If the first or any matches fails there must be something wrong so don't continue */
+                break;
+              }
+              workingPath.assign(expandedPath);
+            }
+          } else {
+            PrefetchDebug("failed to get current path");
+          }
+        } else if (hasValidQuery) {
+          /* Trigger all necessary background fetches based on the query string(s) */
+
+          PrefetchDebug("currentQuery: %s", currentQuery.c_str());
+          const size_t lastSlashIndex = currentPath.find_last_of("/");
+          const size_t keyLen         = config.getQueryKeyName().size();
+          unsigned done               = 1;
+          std::istringstream cStringStream(currentQuery);
+          String param;
+
+          while (getline(cStringStream, param, '&')) {
+            if (param.find(config.getQueryKeyName()) != 0) {
+              continue;
+            }
+            if (config.getFetchCount() < done++) {
               break;
             }
-            currentPath.assign(expandedPath);
-          }
-        } else {
-          PrefetchDebug("failed to get current path");
-        }
-      }
-      if (hasValidQuery && data->firstPass() && data->_fetchable && respToTriggerPrefetch(txnp)) {
-        /* Trigger all necessary background fetches based on the query string(s) */
+            String nextFile = param.substr(keyLen + 1); // +1 for the '='
+            String nextPath = currentPath.substr(0, lastSlashIndex + 1) + nextFile;
 
-        PrefetchDebug("currentQuery: %s", currentQuery.c_str());
-        size_t lastSlashIndex = currentPath.find_last_of("/");
-        size_t keyLen         = config.getQueryKeyName().size();
-        unsigned done         = 1;
-        std::istringstream cStringStream(currentQuery);
-        std::string param;
-
-        while (getline(cStringStream, param, '&')) {
-          if (param.find(config.getQueryKeyName()) != 0) {
-            continue;
+            PrefetchDebug("nextPath %s, cacheKey %s", nextPath.c_str(), data->_cachekey.c_str());
+            BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(),
+                              nextPath.length(), data->_cachekey);
           }
-          if (config.getFetchCount() < done++) {
-            break;
-          }
-          std::string nextFile = param.substr(keyLen + 1); // +1 for the '='
-          std::string nextPath = currentPath.substr(0, lastSlashIndex + 1) + nextFile;
-
-          PrefetchDebug("nextPath %s, cacheKey %s", nextPath.c_str(), data->_cachekey.c_str());
-          BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(),
-                            nextPath.length(), data->_cachekey);
         }
       }
     }
@@ -720,7 +829,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       /* Make sure we handle only URLs that match the path pattern on the front-end + first-pass, cancel otherwise */
       bool handleFetch = true;
-      if (front && firstPass) {
+      if (front && firstPass && !config.isCmcdNor()) {
         /* Front-end plug-in instance + first pass. */
         if (config.getNextPath().empty()) {
           /* No next path pattern specified then pass this request untouched. */
