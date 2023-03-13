@@ -168,26 +168,23 @@ public:
   }; ///< What type of hash we really are.
   static HashType Setting;
 
-  ~CryptoContext()
-  {
-    delete _base;
-    _base = nullptr;
-  }
+  ~CryptoContext() { reinterpret_cast<CryptoContextBase *>(_base)->~CryptoContextBase(); }
 
 private:
-  CryptoContextBase *_base = nullptr;
+  static size_t constexpr OBJ_SIZE = 256;
+  char _base[OBJ_SIZE];
 };
 
 inline bool
 CryptoContext::update(void const *data, int length)
 {
-  return _base->update(data, length);
+  return reinterpret_cast<CryptoContextBase *>(_base)->update(data, length);
 }
 
 inline bool
 CryptoContext::finalize(CryptoHash &hash)
 {
-  return _base->finalize(hash);
+  return reinterpret_cast<CryptoContextBase *>(_base)->finalize(hash);
 }
 
 ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash);
