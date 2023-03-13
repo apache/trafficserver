@@ -48,8 +48,8 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
     process.Env['PATH'] = bin_path + os.pathsep + process.ComposeEnv()['PATH']
     process.Setup.Copy(process.Variables.VerifierBinPath, bin_path, CopyLogic.SoftFiles)
 
-    if http_ports is None and https_ports is None:
-        raise ValueError("http_ports and/or https_ports must be supplied.")
+    if http_ports is None and https_ports is None and http3_ports is None:
+        raise ValueError("At least one of the following [http_ports, https_ports, http3_ports] must be supplied.")
 
     # Configure the verifier-client command line arguments.
     command = "verifier-client run "
