@@ -9436,13 +9436,11 @@ TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secr
   if (load_params != nullptr) { // Update the current data structure
     Debug("ssl.cert_update", "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
     load_params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
-    load_params->updateCTX(secret_name_str);
     SSLConfig::load_release(load_params);
   }
   if (params != nullptr) {
     Debug("ssl.cert_update", "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
     params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
-    params->updateCTX(secret_name_str);
     SSLConfig::release(params);
   }
   return retval;
