@@ -40,6 +40,15 @@ EOF
   if test -n "$LD"; then
     echo "LD=\"$LD\"; export LD" >> $1
   fi
+  if test -n "$AR"; then
+    echo "AR=\"$AR\"; export AR" >> $1
+  fi
+  if test -n "$RANLIB"; then
+    echo "RANLIB=\"$RANLIB\"; export RANLIB" >> $1
+  fi
+  if test -n "NM"; then
+    echo "NM=\"$NM\"; export NM" >> $1
+  fi
   if test -n "$CFLAGS"; then
     echo "CFLAGS=\"$CFLAGS\"; export CFLAGS" >> $1
   fi
