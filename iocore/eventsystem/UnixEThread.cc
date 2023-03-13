@@ -90,8 +90,6 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
       Fatal("EThread::EThread: %d=eventfd(0,EFD_NONBLOCK | EFD_CLOEXEC),errno(%d)", evfd, errno);
     }
   }
-#elif TS_USE_PORT
-/* We'll just port_send the event straight over the port. */
 #else
   ink_release_assert(pipe(evpipe) >= 0);
   fcntl(evpipe[0], F_SETFD, FD_CLOEXEC);

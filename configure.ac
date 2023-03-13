@@ -1556,14 +1556,9 @@ AC_ARG_WITH([event-interface],
 
 use_epoll=0
 use_kqueue=0
-use_port=0
 
 AS_IF([test "x$event_interface" = "xauto"], [
-  if test "$ac_cv_func_port_create" = "yes"; then
-    use_port=1
-    have_good_poller=1
-    AC_MSG_NOTICE([Using port event interface])
-  elif test "$ac_cv_func_epoll_ctl" = "yes"; then
+  if test "$ac_cv_func_epoll_ctl" = "yes"; then
     use_epoll=1
     have_good_poller=1
     AC_MSG_NOTICE([Using epoll event interface])
@@ -1580,10 +1575,6 @@ AS_IF([test "x$event_interface" = "xauto"], [
       use_epoll=1
       AC_MSG_RESULT([forced to epoll])
       ;;
-    xport)
-      use_port=1
-      AC_MSG_RESULT([forced to port])
-      ;;
     xkqueue)
       use_kqueue=1
       AC_MSG_RESULT([forced to kqueue])
@@ -1596,8 +1587,6 @@ AS_IF([test "x$event_interface" = "xauto"], [
 
 AC_SUBST(use_epoll)
 AC_SUBST(use_kqueue)
-AC_SUBST(use_port)
-
 
 # Profiler support
 has_profiler=0
