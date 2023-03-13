@@ -15,7 +15,20 @@
 #
 #######################
 
+add_library(inkuring STATIC
+        io_uring.cc
+)
+include_directories(
+        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
+        ${CMAKE_SOURCE_DIR}/iocore/dns
+        ${CMAKE_SOURCE_DIR}/iocore/aio
+        ${CMAKE_SOURCE_DIR}/iocore/io_uring
+        ${CMAKE_SOURCE_DIR}/iocore/net
+        ${CMAKE_SOURCE_DIR}/iocore/cache
+        ${CMAKE_SOURCE_DIR}/iocore/hostdb
+)
 
-add_library(aio)
-target_sources(aio PRIVATE AIO.cc Inline.cc)
-target_include_directories(aio PRIVATE ${CMAKE_SOURCE_DIR}/iocore/eventsystem ${CMAKE_SOURCE_DIR}/iocore/io_uring)
+add_executable(test_iouring
+        unit_tests/test_diskIO.cc)
+target_link_libraries(test_iouring PRIVATE tscore inkuring tscpputil libswoc uring)
+target_include_directories(test_iouring PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})

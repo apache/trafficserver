@@ -68,18 +68,21 @@ typedef struct io_event ink_io_event_t;
 #define aio_buf    u.c.buf
 
 #elif AIO_MODE == AIO_MODE_IO_URING
-#include <liburing.h>
+#include "I_IO_URING.h"
 
 struct AIOCallback;
-struct ink_aiocb {
+struct ink_aiocb : public IOUringCompletionHandler {
   int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_lio_opcode  = 0; /* listio operation */
-  int aio_state       = 0; /* state flag for List I/O */
-  AIOCallback *aio_op = nullptr;
+  int aio_lio_opcode   = 0; /* listio operation */
+  int aio_state        = 0; /* state flag for List I/O */
+  AIOCallback *this_op = nullptr;
+  AIOCallback *aio_op  = nullptr;
+
+  void handle_complete(io_uring_cqe *) override;
 };
 
 #else
@@ -151,41 +154,6 @@ struct DiskHandler : public Continuation {
     }
   }
 };
-#endif
-
-#if AIO_MODE == AIO_MODE_IO_URING
-
-class DiskHandler
-{
-public:
-  DiskHandler();
-  ~DiskHandler();
-
-  io_uring_sqe *
-  next_sqe()
-  {
-    return io_uring_get_sqe(&ring);
-  }
-
-  int set_wq_max_workers(unsigned int bounded, unsigned int unbounded);
-  std::pair<int, int> get_wq_max_workers();
-
-  void submit();
-  void service();
-  void submit_and_wait(int ms);
-
-  int register_eventfd();
-
-  static DiskHandler *local_context();
-  static void set_main_queue(DiskHandler *);
-  static int get_main_queue_fd();
-
-private:
-  io_uring ring;
-
-  void handle_cqe(io_uring_cqe *);
-};
-
 #endif
 
 void ink_aio_init(ts::ModuleVersion version);

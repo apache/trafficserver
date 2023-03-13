@@ -121,3 +121,8 @@ traffic_server_traffic_server_LDADD += \
   $(QUICHE_LIB)
 endif
 endif
+
+if ENABLE_IO_URING
+traffic_server_traffic_server_LDADD += \
+  $(top_builddir)/iocore/io_uring/libinkuring.a
+endif

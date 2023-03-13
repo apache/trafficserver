@@ -17,3 +17,6 @@
 #  limitations under the License.
 
 SUBDIRS = eventsystem net aio dns hostdb utils cache
+if ENABLE_IO_URING
+SUBDIRS += io_uring
+endif

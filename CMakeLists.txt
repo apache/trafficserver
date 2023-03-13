@@ -102,6 +102,7 @@ find_package(OpenSSL)
 # Check for IO faculties
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
+set(CMAKE_REQUIRED_LIBRARIES uring)
 check_symbol_exists(io_uring_queue_init "liburing.h" HAVE_IOURING)
 check_symbol_exists(getresuid unistd.h HAVE_GETRESUID)
 check_symbol_exists(getresgid unistd.h HAVE_GETRESGID)
@@ -111,9 +112,10 @@ check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
 
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
-if (HAVE_IOURING AND USE_IOUIRNG)
-    set(TS_USE_LINUX_IO_URING)
-endif(HAVE_IOURING AND USE_IOUIRNG)
+if (HAVE_IOURING AND USE_IOURING)
+    message(Using io_uring)
+    set(TS_USE_LINUX_IO_URING 1)
+endif(HAVE_IOURING AND USE_IOURING)
 
 # Check ssl functionality
 list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})

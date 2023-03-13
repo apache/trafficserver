@@ -1,4 +1,4 @@
-# Makefile.am for the traffic/iocore/aio hierarchy
+# Makefile.am for traffic/iocore/io_uring
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,50 +18,36 @@
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
-	-I$(abs_top_srcdir)/iocore/io_uring \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	@SWOC_INCLUDES@
 	$(TS_INCLUDES)
 
-TESTS = test_AIO.sample
+noinst_LIBRARIES = libinkuring.a
 
-noinst_LIBRARIES = libinkaio.a
-check_PROGRAMS = test_AIO
+libinkuring_a_SOURCES = \
+	io_uring.cc \
+	I_IO_URING.h \
+	P_IO_URING.h
 
-libinkaio_a_SOURCES = \
-	AIO.cc \
-	I_AIO.h \
-	Inline.cc \
-	P_AIO.h
 
-test_AIO_LDFLAGS = \
+check_PROGRAMS = test_diskIO
+
+test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@
+	@OPENSSL_LDFLAGS@
 
-test_AIO_SOURCES = \
-	test_AIO.cc
-
-test_AIO_CPPFLAGS = \
+test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/proxy/hdrs \
-	-I$(abs_top_srcdir)/proxy/http \
-	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
-	@SWOC_INCLUDES@ @OPENSSL_INCLUDES@
+	-I$(abs_top_srcdir)/tests/include
 
-test_AIO_LDADD = \
-	libinkaio.a \
-	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+test_LD_ADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
+	$(top_builddir)/iocore/io_uring/libinkuring.a \
+	@HWLOC_LIBS@
 
-include $(top_srcdir)/build/tidy.mk
 
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+test_diskIO_SOURCES = unit_tests/test_diskIO.cc
+test_diskIO_CPPFLAGS = $(test_CPP_FLAGS)
+test_diskIO_LDFLAGS = $(test_LD_FLAGS)
+test_diskIO_LDADD = $(test_LD_ADD)
