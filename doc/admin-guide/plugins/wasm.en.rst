@@ -97,6 +97,8 @@ generated wasm modules with the plugin.
 Runtime can be chosen by changing the ``runtime`` field inside the yaml configuration file for the plugin.
 ``ats.wasm.runtime.wamr`` is for WAMR while ``ats.wasm.runtime.wasmedge`` is for WasmEdge.
 
+The plugin can also take more than one yaml file as arguments and can thus load more than one wasm modules.
+
 TODO
 ====
 
@@ -104,7 +106,6 @@ TODO
 * Need to support functionality for retrieving and setting request/response body
 * Need to support functionality for making async request call
 * Need to support L4 lifecycle handler functions
-* Support loading more than one Wasm module
 
 Limitations
 ===========
