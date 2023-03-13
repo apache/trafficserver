@@ -47,7 +47,7 @@ ink_event_system_init(ts::ModuleVersion v)
   char *chunk_sizes_string              = REC_ConfigReadString("proxy.config.allocator.iobuf_chunk_sizes");
   if (chunk_sizes_string && !parse_buffer_chunk_sizes(chunk_sizes_string, chunk_sizes)) {
     // If we can't parse the string then we can't be sure of the chunk sizes so just exit
-    ::exit(1);
+    Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");
   }
 
   bool use_hugepages = ats_hugepage_enabled();
