@@ -27,4 +27,6 @@ library_include_HEADERS = \
 	Strerror.h \
 	TextView.h \
 	TsSharedMutex.h \
+	ts_unit_parser.h \
+	ts_time_parser.h \
         YamlCfg.h

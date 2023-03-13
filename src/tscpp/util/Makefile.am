@@ -30,7 +30,7 @@ libtscpputil_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_V
 libtscpputil_la_LIBADD = @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 libtscpputil_la_SOURCES = \
-	ts_diags.cc ts_ip.cc TextView.cc YamlCfg.cc
+	ts_diags.cc ts_ip.cc TextView.cc YamlCfg.cc ts_unit_parser.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include @SWOC_INCLUDES@
@@ -43,7 +43,9 @@ test_tscpputil_SOURCES = \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_Strerror.cc \
 	unit_tests/test_TextView.cc \
-	unit_tests/test_ts_meta.cc
+	unit_tests/test_ts_meta.cc \
+	unit_tests/test_time_parser.cc
+
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
