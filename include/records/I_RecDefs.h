@@ -155,7 +155,7 @@ struct RecRawStatBlock;
 
 // This defines the interface to the low level stat block operations
 // The implementation of this was moved out of the records library due to a circular dependency this produced.
-// look for the implmenetation of RecRawStatBlockOps in iocore/eventsystem
+// look for the implementation of RecRawStatBlockOps in iocore/eventsystem
 struct RecRawStatBlockOps {
   virtual int raw_stat_clear_sum(RecRawStatBlock *rsb, int id)                    = 0;
   virtual int raw_stat_clear_count(RecRawStatBlock *rsb, int id)                  = 0;
