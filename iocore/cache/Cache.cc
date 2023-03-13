@@ -83,7 +83,6 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-int cache_config_dir_enable_hugepages          = 0;
 
 // Globals
 
@@ -1255,7 +1254,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
         (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
 
   raw_dir = nullptr;
-  if (ats_hugepage_enabled() && cache_config_dir_enable_hugepages) {
+  if (ats_hugepage_enabled()) {
     raw_dir = static_cast<char *>(ats_alloc_hugepage(this->dirlen()));
   }
   if (raw_dir == nullptr) {
@@ -3158,9 +3157,6 @@ ink_cache_init(ts::ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Debug("cache_init", "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
-
-  REC_EstablishStaticConfigInt32(cache_config_dir_enable_hugepages, "proxy.config.cache.dir.enable_hugepages");
-  Debug("cache_init", "proxy.config.cache.dir.enable_hugepages = %d", cache_config_dir_enable_hugepages);
 
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Debug("cache_init", "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);

@@ -45,24 +45,12 @@ ink_event_system_init(ts::ModuleVersion v)
 
   int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
   char *chunk_sizes_string              = REC_ConfigReadString("proxy.config.allocator.iobuf_chunk_sizes");
-  if (chunk_sizes_string != nullptr) {
-    ts::TextView src(chunk_sizes_string, ts::TextView::npos);
-    int n = 0;
-    while (n < DEFAULT_BUFFER_SIZES && !src.empty()) {
-      ts::TextView token{src.take_prefix_at(' ')};
-      auto x = ts::svto_radix<10>(token);
-      if (token.empty() && x != std::numeric_limits<decltype(x)>::max()) {
-        chunk_sizes[n++] = x;
-      } else {
-        break;
-      }
-    }
-    ats_free(chunk_sizes_string);
+  if (chunk_sizes_string && !parse_buffer_chunk_sizes(chunk_sizes_string, chunk_sizes)) {
+    // If we can't parse the string then we can't be sure of the chunk sizes so just exit
+    Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");
   }
 
-  int hugepage_config = REC_ConfigReadInteger("proxy.config.allocator.iobuf_use_hugepages");
-
-  bool use_hugepages = ats_hugepage_enabled() && hugepage_config == 1;
+  bool use_hugepages = ats_hugepage_enabled();
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
   RecBool dont_dump_enabled = true;

@@ -27,6 +27,9 @@
 **************************************************************************/
 #include "tscore/ink_defs.h"
 #include "P_EventSystem.h"
+#include "swoc/Lexicon.h"
+
+#include <optional>
 
 //
 // General Buffer Allocator
@@ -71,6 +74,80 @@ init_buffer_allocators(int iobuffer_advice)
 {
   int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
   init_buffer_allocators(iobuffer_advice, chunk_sizes, false);
+}
+
+auto
+make_buffer_size_parser()
+{
+  return [l = swoc::Lexicon<int>{
+            {{0, {"128"}},
+             {1, {"256"}},
+             {2, {"512"}},
+             {3, {"1k", "1024"}},
+             {4, {"2k", "2048"}},
+             {5, {"4k", "4096"}},
+             {6, {"8k", "8192"}},
+             {7, {"16k"}},
+             {8, {"32k"}},
+             {9, {"64k"}},
+             {10, {"128k"}},
+             {11, {"256k"}},
+             {12, {"512k"}},
+             {13, {"1M", "1024k"}},
+             {14, {"2M", "2048k"}}},
+            -1
+  }](swoc::TextView esize) -> std::optional<int> {
+    int result = l[esize];
+    if (result == -1) {
+      return std::nullopt;
+    }
+    return result;
+  };
+}
+
+bool
+parse_buffer_chunk_sizes(const char *chunk_sizes_string, int chunk_sizes[DEFAULT_BUFFER_SIZES])
+{
+  const swoc::TextView delimiters(", ");
+  if (chunk_sizes_string != nullptr) {
+    swoc::TextView src(chunk_sizes_string, swoc::TextView::npos);
+    auto parser = make_buffer_size_parser();
+    int n       = 0;
+    while (!src.empty()) {
+      swoc::TextView token{src.take_prefix_at(delimiters)};
+
+      swoc::TextView esize = token.take_prefix_at(':');
+      if (!token.empty()) {
+        auto parsed = parser(esize);
+        if (parsed) {
+          n = *parsed;
+        } else {
+          Error("Failed to parse size for %.*s", static_cast<int>(esize.size()), esize.data());
+          return false;
+        }
+      } else {
+        // element didn't have a colon so its just a chunk size
+        token = esize;
+      }
+
+      // Check if n goes out of bounds
+      if (n >= DEFAULT_BUFFER_SIZES) {
+        Error("Invalid IO buffer chunk sizes string");
+        return false;
+      }
+
+      auto x = swoc::svto_radix<10>(token);
+      if (token.empty() && x != std::numeric_limits<decltype(x)>::max()) {
+        chunk_sizes[n++] = x;
+      } else {
+        Error("Failed to parse chunk size");
+        return false;
+      }
+
+      src.ltrim(delimiters);
+    }
+  }
+  return true;
 }
 
 //
