@@ -76,6 +76,11 @@ public:
   uint8_t active_cid_limit_in() const;
   uint8_t active_cid_limit_out() const;
   bool disable_active_migration() const;
+  uint32_t get_max_recv_udp_payload_size_in() const;
+  uint32_t get_max_recv_udp_payload_size_out() const;
+
+  uint32_t get_max_send_udp_payload_size_in() const;
+  uint32_t get_max_send_udp_payload_size_out() const;
 
   // Loss Detection
   uint32_t ld_packet_threshold() const;
@@ -139,6 +144,11 @@ private:
   uint32_t _active_cid_limit_in                     = 0;
   uint32_t _active_cid_limit_out                    = 0;
   uint32_t _disable_active_migration                = 0;
+  uint32_t _max_recv_udp_payload_size_in            = 0;
+  uint32_t _max_recv_udp_payload_size_out           = 0;
+
+  uint32_t _max_send_udp_payload_size_in  = 0;
+  uint32_t _max_send_udp_payload_size_out = 0;
 
   // [draft-17 recovery] 6.4.1.  Constants of interest
   uint32_t _ld_packet_threshold = 3;

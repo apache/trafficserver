@@ -4667,6 +4667,23 @@ removed in the future without prior notice.
    that |TS| is willing to store. The value MUST be at least 2.
    Transport Parameter.
 
+.. ts:cv:: CONFIG proxy.config.quic.max_recv_udp_payload_size_in INT 65527
+
+   This value will be advertised as ``max_udp_payload_size`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_recv_udp_payload_size_out INT 65527
+
+   This value will be advertised as ``max_udp_payload_size`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_send_udp_payload_size_in INT 65527
+
+   Specified the maximum outgoing UDP payload size.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_send_udp_payload_size_out INT 65527
+
+   Specified the maximum outgoing UDP payload size.
+
+
 UDP Configuration
 =====================
 
@@ -4679,6 +4696,7 @@ UDP Configuration
 
    Enables (``1``) or disables (``0``) UDP GSO. When enabled, |TS| tries to use UDP GSO,
    and disables it automatically if it causes send errors.
+
 
 Plug-in Configuration
 =====================
