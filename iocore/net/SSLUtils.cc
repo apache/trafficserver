@@ -261,118 +261,6 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   session_cache->removeSession(sid);
 }
 
-static int
-set_context_cert(SSL *ssl, void *arg)
-{
-  shared_SSL_CTX ctx  = nullptr;
-  SSL_CTX *verify_ctx = nullptr;
-  SSLCertContext *cc  = nullptr;
-  SSLCertificateConfig::scoped_config lookup;
-
-  const char *servername     = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  SSLNetVConnection *netvc   = SSLNetVCAccess(ssl);
-  bool found                 = true;
-  int retval                 = 1;
-  SSLCertContextType ctxType = SSLCertContextType::GENERIC;
-
-  if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "set_context_cert call back on stale netvc");
-    retval = 0; // Error
-    goto done;
-  }
-
-  Debug("ssl_load", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
-
-  // catch the client renegotiation early on
-  if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
-    Debug("ssl_load", "set_context_cert trying to renegotiate from the client");
-    retval = 0; // Error
-    goto done;
-  }
-
-#ifdef OPENSSL_IS_BORINGSSL
-  if (arg != nullptr) {
-    const SSL_CLIENT_HELLO *client_hello = (const SSL_CLIENT_HELLO *)arg;
-    const bool client_ecdsa_capable      = BoringSSLUtils::isClientEcdsaCapable(client_hello);
-    ctxType                              = client_ecdsa_capable ? SSLCertContextType::EC : SSLCertContextType::RSA;
-  }
-#endif
-
-  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
-  // don't find a name-based match at this point, we *do not* want to mess with the context because we've
-  // already made a best effort to find the best match.
-  if (likely(servername)) {
-    cc = lookup->find(servername, ctxType);
-    if (cc) {
-      ctx = cc->getCtx();
-    }
-    if (cc && ctx && SSLCertContextOption::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
-      netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      netvc->setSSLHandShakeComplete(SSL_HANDSHAKE_DONE);
-      retval = -1;
-      goto done;
-    }
-  }
-
-  // If there's no match on the server name, try to match on the peer address.
-  if (ctx == nullptr) {
-    IpEndpoint ip;
-    int namelen = sizeof(ip);
-
-    if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      ip.sa = *(netvc->get_proxy_protocol_dst_addr());
-      ip_port_text_buffer ipb1;
-      ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
-      cc = lookup->find(ip);
-      if (is_debug_tag_set("proxyprotocol")) {
-        IpEndpoint src;
-        ip_port_text_buffer ipb2;
-        int ip_len = sizeof(src);
-
-        if (0 != safe_getpeername(netvc->get_socket(), &src.sa, &ip_len)) {
-          Debug("proxyprotocol", "Failed to get src ip, errno = [%d]", errno);
-          return EVENT_ERROR;
-        }
-        ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-        Debug("proxyprotocol", "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
-      }
-    } else if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
-      cc = lookup->find(ip);
-    }
-    if (cc) {
-      ctx = cc->getCtx();
-    }
-  }
-
-  if (ctx != nullptr) {
-    SSL_set_SSL_CTX(ssl, ctx.get());
-#if TS_HAS_TLS_SESSION_TICKET
-    // Reset the ticket callback if needed
-#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-    SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx.get(), ssl_callback_session_ticket);
-#else
-    SSL_CTX_set_tlsext_ticket_key_cb(ctx.get(), ssl_callback_session_ticket);
-#endif
-#endif
-    // After replacing the SSL_CTX, make sure the overridden ca_cert_file is still set
-    setClientCertCACerts(ssl, netvc->get_ca_cert_file(), netvc->get_ca_cert_dir());
-  } else {
-    found = false;
-  }
-
-  verify_ctx = SSL_get_SSL_CTX(ssl);
-  // set_context_cert found SSL context for ...
-  Debug("ssl_load", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", verify_ctx,
-        servername);
-
-  if (verify_ctx == nullptr) {
-    retval = 0;
-    goto done;
-  }
-done:
-  return retval;
-}
-
 // Callback function for verifying client certificate
 static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
@@ -418,17 +306,19 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
     return SSL_CLIENT_HELLO_ERROR;
   }
 
-  SSLNetVConnection *netvc = SSLNetVCAccess(s);
-  if (!netvc || netvc->ssl != s) {
-    Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
-    return SSL_CLIENT_HELLO_ERROR;
+  SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
+  if (netvc) {
+    if (netvc->ssl != s) {
+      Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+      return SSL_CLIENT_HELLO_ERROR;
+    }
+
+    bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+    if (!reenabled) {
+      return SSL_CLIENT_HELLO_RETRY;
+    }
   }
 
-  bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-
-  if (!reenabled) {
-    return SSL_CLIENT_HELLO_RETRY;
-  }
   return SSL_CLIENT_HELLO_SUCCESS;
 }
 #elif defined(OPENSSL_IS_BORINGSSL)
@@ -452,17 +342,19 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     return ssl_select_cert_error;
   }
 
-  SSLNetVConnection *netvc = SSLNetVCAccess(s);
-  if (!netvc || netvc->ssl != s) {
-    Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
-    return ssl_select_cert_error;
+  SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
+  if (netvc) {
+    if (netvc->ssl != s) {
+      Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+      return ssl_select_cert_error;
+    }
+
+    bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+    if (!reenabled) {
+      return ssl_select_cert_retry;
+    }
   }
 
-  bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-
-  if (!reenabled) {
-    return ssl_select_cert_retry;
-  }
   return ssl_select_cert_success;
 }
 #endif
@@ -474,16 +366,13 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 static int
 ssl_cert_callback(SSL *ssl, void *arg)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  TLSCertSwitchSupport *tcss  = TLSCertSwitchSupport::getInstance(ssl);
+  SSLNetVConnection *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
   bool reenabled;
   int retval = 1;
 
-  if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "ssl_cert_callback call back on stale netvc");
-    return 0;
-  }
-
   // If we are in tunnel mode, don't select a cert.  Pause!
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslnetvc);
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
 #ifdef OPENSSL_IS_BORINGSSL
     return -2; // Retry
@@ -492,22 +381,56 @@ ssl_cert_callback(SSL *ssl, void *arg)
 #endif
   }
 
-  // Do the common certificate lookup only once.  If we pause
-  // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
-    retval = set_context_cert(ssl, arg);
-    if (retval != 1) {
-      return retval;
+  SSLCertContextType ctxType = SSLCertContextType::GENERIC;
+#ifdef OPENSSL_IS_BORINGSSL
+  if (arg != nullptr) {
+    const SSL_CLIENT_HELLO *client_hello = (const SSL_CLIENT_HELLO *)arg;
+    const bool client_ecdsa_capable      = BoringSSLUtils::isClientEcdsaCapable(client_hello);
+    ctxType                              = client_ecdsa_capable ? SSLCertContextType::EC : SSLCertContextType::RSA;
+  }
+#endif
+
+  if (sslnetvc) {
+    // Do the common certificate lookup only once.  If we pause
+    // and restart processing, do not execute the common logic again
+    if (!sslnetvc->calledHooks(TS_EVENT_SSL_CERT)) {
+      retval = sslnetvc->selectCertificate(ssl, ctxType);
+      if (retval != 1) {
+        return retval;
+      }
+    }
+
+    // Call the plugin cert code
+    reenabled = sslnetvc->callHooks(TS_EVENT_SSL_CERT);
+    // If it did not re-enable, return the code to
+    // stop the accept processing
+    if (!reenabled) {
+      retval = -1; // Pause
+    }
+  } else {
+    if (tcss->selectCertificate(ssl, ctxType) == 1) {
+      retval = 1;
+    } else {
+      retval = 0;
     }
   }
 
-  // Call the plugin cert code
-  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
-  // If it did not re-enable, return the code to
-  // stop the accept processing
-  if (!reenabled) {
-    retval = -1; // Pause
+#if TS_HAS_TLS_SESSION_TICKET
+  if (retval == 1) {
+    // After replacing the SSL_CTX, make sure the overridden ca_cert_file is still set
+    if (sslnetvc) {
+      setClientCertCACerts(ssl, sslnetvc->get_ca_cert_file(), sslnetvc->get_ca_cert_dir());
+    }
+
+    // Reset the ticket callback if needed
+    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+    SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx, ssl_callback_session_ticket);
+#else
+    SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
+#endif
   }
+#endif
 
   // Return 1 for success, 0 for error, or -1 to pause
   return retval;
@@ -1020,6 +943,7 @@ SSLInitializeLibrary()
   TLSSNISupport::initialize();
   TLSEarlyDataSupport::initialize();
   TLSTunnelSupport::initialize();
+  TLSCertSwitchSupport::initialize();
 
   open_ssl_initialized = true;
 }

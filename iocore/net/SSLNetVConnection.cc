@@ -225,6 +225,7 @@ SSLNetVConnection::_bindSSLObject()
   TLSSNISupport::bind(this->ssl, this);
   TLSEarlyDataSupport::bind(this->ssl, this);
   TLSTunnelSupport::bind(this->ssl, this);
+  TLSCertSwitchSupport::bind(this->ssl, this);
 }
 
 void
@@ -237,6 +238,7 @@ SSLNetVConnection::_unbindSSLObject()
   TLSSNISupport::unbind(this->ssl);
   TLSEarlyDataSupport::unbind(this->ssl);
   TLSTunnelSupport::unbind(this->ssl);
+  TLSCertSwitchSupport::unbind(this->ssl);
 }
 
 static void
@@ -971,6 +973,7 @@ SSLNetVConnection::clear()
   TLSSessionResumptionSupport::clear();
   TLSSNISupport::_clear();
   TLSTunnelSupport::_clear();
+  TLSCertSwitchSupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslLastWriteTime            = 0;
@@ -1997,6 +2000,77 @@ void
 SSLNetVConnection::_fire_ssl_servername_event()
 {
   this->callHooks(TS_EVENT_SSL_SERVERNAME);
+}
+
+bool
+SSLNetVConnection::_isTryingRenegotiation() const
+{
+  if (SSLConfigParams::ssl_allow_client_renegotiation == false && this->getSSLHandShakeComplete()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+shared_SSL_CTX
+SSLNetVConnection::_lookupContextByName(const std::string &servername, SSLCertContextType ctxType)
+{
+  shared_SSL_CTX ctx = nullptr;
+  SSLCertificateConfig::scoped_config lookup;
+  SSLCertContext *cc = lookup->find(servername, ctxType);
+
+  if (cc) {
+    ctx = cc->getCtx();
+  }
+
+  if (cc && ctx && SSLCertContextOption::OPT_TUNNEL == cc->opt && this->get_is_transparent()) {
+    this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+    this->setSSLHandShakeComplete(SSL_HANDSHAKE_DONE);
+    return nullptr;
+  } else {
+    return ctx;
+  }
+}
+
+shared_SSL_CTX
+SSLNetVConnection::_lookupContextByIP()
+{
+  shared_SSL_CTX ctx = nullptr;
+  SSLCertificateConfig::scoped_config lookup;
+  IpEndpoint ip;
+  int namelen = sizeof(ip);
+
+  // Return null if this vc is already configured as a tunnel
+  if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+    return nullptr;
+  }
+
+  SSLCertContext *cc = nullptr;
+  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+    ip.sa = *(this->get_proxy_protocol_dst_addr());
+    ip_port_text_buffer ipb1;
+    ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
+    cc = lookup->find(ip);
+    if (is_debug_tag_set("proxyprotocol")) {
+      IpEndpoint src;
+      ip_port_text_buffer ipb2;
+      int ip_len = sizeof(src);
+
+      if (0 != safe_getpeername(this->get_socket(), &src.sa, &ip_len)) {
+        Debug("proxyprotocol", "Failed to get src ip, errno = [%d]", errno);
+        return nullptr;
+      }
+      ats_ip_nptop(&src, ipb2, sizeof(ipb2));
+      Debug("proxyprotocol", "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
+    }
+  } else if (0 == safe_getsockname(this->get_socket(), &ip.sa, &namelen)) {
+    cc = lookup->find(ip);
+  }
+  if (cc) {
+    ctx = cc->getCtx();
+  }
+
+  return ctx;
 }
 
 void

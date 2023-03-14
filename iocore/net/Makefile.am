@@ -200,6 +200,7 @@ libinknet_a_SOURCES = \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
 	TLSTunnelSupport.cc \
+	TLSCertSwitchSupport.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \

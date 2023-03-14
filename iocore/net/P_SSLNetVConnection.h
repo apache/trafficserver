@@ -52,6 +52,7 @@
 #include "TLSEarlyDataSupport.h"
 #include "TLSTunnelSupport.h"
 #include "TLSBasicSupport.h"
+#include "TLSCertSwitchSupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
@@ -103,6 +104,7 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public TLSSNISupport,
                           public TLSEarlyDataSupport,
                           public TLSTunnelSupport,
+                          public TLSCertSwitchSupport,
                           public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
@@ -409,6 +411,10 @@ protected:
   }
 
   void _fire_ssl_servername_event() override;
+
+  bool _isTryingRenegotiation() const override;
+  shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
+  shared_SSL_CTX _lookupContextByIP() override;
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
