@@ -322,3 +322,21 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connec
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
+
+tr = Test.AddTestRun("Test Metrics")
+tr.Processes.Default.Command = (
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
+    " 'traffic_ctl metric get" +
+    " proxy.process.http.total_incoming_connections" +
+    " proxy.process.http.total_client_connections" +
+    " proxy.process.http.total_client_connections_ipv4" +
+    " proxy.process.http.total_client_connections_ipv6" +
+    " proxy.process.http.total_server_connections" +
+    " proxy.process.http2.total_client_connections" +
+    " proxy.process.http.connect_requests'" +
+    f" {Test.TestDirectory}/gold/tls-tunnel-metrics.gold"
+)
+# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = ts
