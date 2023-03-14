@@ -2438,6 +2438,9 @@ AC_MSG_NOTICE([Build option summary:
     CXX:                $CXX
     CPP:                $CPP
     LD:                 $LD
+    AR:                 $AR
+    RANLIB:             $RANLIB
+    NM:                 $NM
     CFLAGS:             $CFLAGS
     CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
