@@ -11,8 +11,8 @@ github:
     - cdn
     - cache
     - apache
-    - http/2
-    - http/3
+    - http2
+    - http3
     - quic
     - forwardproxy
     - reverseproxy
