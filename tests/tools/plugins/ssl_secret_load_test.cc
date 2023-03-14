@@ -37,7 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
-#define PN "ssl_secret_load_test"
+#define PN  "ssl_secret_load_test"
 #define PCP "[" PN " Plugin] "
 
 // Map of secret name to last modified time

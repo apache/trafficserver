@@ -41,23 +41,16 @@ namespace
 char PIName[] = PINAME;
 
 atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
-TSDbgCtl const * const dbg_ctl{dbg_ctl_guard.get()};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
 
-enum Test_step
-{
-  BEGIN,
-  GLOBAL_CONT_READ_HDRS,
-  THREAD,
-  TXN_CONT_READ_HDRS,
-  END
-};
+enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT_READ_HDRS, END };
 
-char const *step_cstr(int test_step)
+char const *
+step_cstr(int test_step)
 {
   char const *result{"BAD TEST STEP"};
 
-  switch (test_step)
-  {
+  switch (test_step) {
   case BEGIN:
     result = "BEGIN";
     break;
@@ -83,7 +76,8 @@ char const *step_cstr(int test_step)
 
 int txn_count{0};
 
-void next_step(int curr)
+void
+next_step(int curr)
 {
   static std::atomic<int> test_step{BEGIN};
 
@@ -110,11 +104,9 @@ atscppapi::TxnAuxMgrData mgr_data;
 class Blocking_action
 {
 public:
-
   static void init();
 
 private:
-
   ~Blocking_action()
   {
     // This should either not block, or only block very briefly.
@@ -128,7 +120,7 @@ private:
 
   static int _global_cont_func(TSCont, TSEvent event, void *eventData);
   static int _txn_cont_func(TSCont, TSEvent event, void *eventData);
-  static void * _thread_func(void *vba);
+  static void *_thread_func(void *vba);
 
   TSContUniqPtr _txn_hook_cont{TSContCreate(_txn_cont_func, TSMutexCreate())};
   std::atomic<bool> _cont_mutex_locked{false};
@@ -151,7 +143,8 @@ Blocking_action::init()
   TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, global.get());
 }
 
-int Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
+int
+Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
 {
   TSDbg(dbg_ctl, "entering _global_cont_func()");
 
@@ -159,8 +152,7 @@ int Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
 
   TSHttpTxn txn{static_cast<TSHttpTxn>(eventData)};
 
-  switch (event)
-  {
+  switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     next_step(BEGIN);
 
@@ -177,8 +169,7 @@ int Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
     while (!ba._cont_mutex_locked.load(std::memory_order_acquire)) {
       std::this_thread::yield();
     }
-    }
-    break;
+  } break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     next_step(TXN_CONT_READ_HDRS);
@@ -201,7 +192,8 @@ int Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
   return 0;
 }
 
-void * Blocking_action::_thread_func(void *vba)
+void *
+Blocking_action::_thread_func(void *vba)
 {
   next_step(GLOBAL_CONT_READ_HDRS);
 
@@ -227,7 +219,8 @@ void * Blocking_action::_thread_func(void *vba)
   return nullptr;
 }
 
-int Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
+int
+Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 {
   next_step(THREAD);
 
@@ -256,9 +249,9 @@ TSPluginInit(int n_arg, char const *arg[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = const_cast<char*>(PIName);
-  info.vendor_name = const_cast<char*>("apache");
-  info.support_email = const_cast<char*>("edge@yahooinc.com");
+  info.plugin_name   = const_cast<char *>(PIName);
+  info.vendor_name   = const_cast<char *>("apache");
+  info.support_email = const_cast<char *>("edge@yahooinc.com");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError(PINAME ": failure calling TSPluginRegister.");

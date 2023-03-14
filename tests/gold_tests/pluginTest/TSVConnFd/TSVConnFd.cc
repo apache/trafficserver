@@ -76,7 +76,7 @@ public:
     _io_buffer_reader.reset(nonNullPtrDbg(TSIOBufferReaderAlloc(nonNullPtrDbg(io_buffer))));
   }
 
-  Io_buffer_consume(Io_buffer_consume &&) = default;
+  Io_buffer_consume(Io_buffer_consume &&)            = default;
   Io_buffer_consume &operator=(Io_buffer_consume &&) = default;
 
   // Returns number of bytes available to consume.
@@ -88,7 +88,7 @@ public:
   // destroyed.  Returns null if avail() is zero (because no data is currently available).  Must not be called if
   // attached returns false.  If amount is zero, returns the same value as the last call to consume().
   //
-  char const * consume(std::int64_t amount);
+  char const *consume(std::int64_t amount);
 
 private:
   atscppapi::TSIOBufferReaderUniqPtr _io_buffer_reader;
@@ -146,8 +146,8 @@ Io_buffer_consume::consume(std::int64_t amount)
     return nullptr;
   }
   char const *result = _block_data;
-  _block_data += amount;
-  _block_avail -= amount;
+  _block_data        += amount;
+  _block_avail       -= amount;
 
   return result;
 }
@@ -169,23 +169,27 @@ public:
     nonNullPtrDbg(TSVConnRead(vconn, _cont.get(), _io_buffer.get(), INT64_MAX));
   }
 
-  TSVConn vconn() const { return _vconn; }
+  TSVConn
+  vconn() const
+  {
+    return _vconn;
+  }
 
   virtual ~Recv_from_vconn() {}
 
 protected:
-  enum _Status
-  {
-    IN_PROGRESS,
-    VCONN_SHUTDOWN_FOR_RECEIVING,
-    ERROR
-  };
+  enum _Status { IN_PROGRESS, VCONN_SHUTDOWN_FOR_RECEIVING, ERROR };
 
-  _Status _status() const { return _status_.load(std::memory_order_acquire); }
+  _Status
+  _status() const
+  {
+    return _status_.load(std::memory_order_acquire);
+  }
 
   // Event that caused _status() to be ERROR.
   //
-  TSEvent _error_event() const
+  TSEvent
+  _error_event() const
   {
     TSAssert(_status() == ERROR);
 
@@ -211,17 +215,21 @@ protected:
     return _bc.consume(amount);
   }
 
-  TSMutex _mtx() const { return _mtx_; }
+  TSMutex
+  _mtx() const
+  {
+    return _mtx_;
+  }
 
-  Recv_from_vconn(Recv_from_vconn const &) = delete;
-  Recv_from_vconn & operator = (Recv_from_vconn const &) = delete;
+  Recv_from_vconn(Recv_from_vconn const &)            = delete;
+  Recv_from_vconn &operator=(Recv_from_vconn const &) = delete;
 
 private:
   TSVConn _vconn;
   TSMutex _mtx_{nonNullPtrDbg(TSMutexCreate())};
   atscppapi::TSContUniqPtr _cont{nonNullPtrDbg(TSContCreate(_cont_func, _mtx_))};
   atscppapi::TSIOBufferUniqPtr _io_buffer{nonNullPtrDbg(TSIOBufferCreate())};
-  Io_buffer_consume _bc{nonNullPtrDbg(_io_buffer.get())};  // Order is important here, _bc must be destroyed before _io_buffer.
+  Io_buffer_consume _bc{nonNullPtrDbg(_io_buffer.get())}; // Order is important here, _bc must be destroyed before _io_buffer.
   std::atomic<_Status> _status_{IN_PROGRESS};
   TSEvent _error_event_{TS_EVENT_NONE};
 
@@ -254,11 +262,11 @@ Recv_from_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_VCONN_READ_READY:
     break;
 
-  // My best guess is that this event is triggered when all the bytes requested in the read VIO have been received.
-  // This should not happen for this class because the number bytes for the read VIO is INT64_MAX, effectively
-  // infinite.
-  //
-  // case TS_EVENT_VCONN_READ_COMPLETE:
+    // My best guess is that this event is triggered when all the bytes requested in the read VIO have been received.
+    // This should not happen for this class because the number bytes for the read VIO is INT64_MAX, effectively
+    // infinite.
+    //
+    // case TS_EVENT_VCONN_READ_COMPLETE:
 
   default:
     TSError(PINAME ": VConnection read error event=%d", event);
@@ -281,38 +289,45 @@ public:
     _status.store(bytes_to_send ? IN_PROGRESS : VIO_DONE, std::memory_order_relaxed);
   }
 
-  TSVConn vconn() const { return _vconn; }
+  TSVConn
+  vconn() const
+  {
+    return _vconn;
+  }
 
   // Send some bytes.  If an override of _notify_send_to_vconn() calls _send(), you must lock the mutex returned by mtx()
   // for all calls to send() after the first one.
   //
   void send(void const *data, int64_t n_bytes);
 
-  enum Status
-  {
-    IN_PROGRESS,
-    VIO_DONE,
-    VCONN_SHUTDOWN_FOR_SENDING,
-    ERROR
-  };
+  enum Status { IN_PROGRESS, VIO_DONE, VCONN_SHUTDOWN_FOR_SENDING, ERROR };
 
-  Status status() const { return _status.load(std::memory_order_acquire); }
+  Status
+  status() const
+  {
+    return _status.load(std::memory_order_acquire);
+  }
 
   // Event that caused status() to be ERROR.
   //
-  TSEvent error_event() const
+  TSEvent
+  error_event() const
   {
     TSAssert(status() == ERROR);
 
     return _error_event;
   }
 
-  TSMutex mtx() const { return _mtx; }
+  TSMutex
+  mtx() const
+  {
+    return _mtx;
+  }
 
   virtual ~Send_to_vconn() {}
 
-  Send_to_vconn(Send_to_vconn const &) = delete;
-  Send_to_vconn & operator = (Send_to_vconn const &) = delete;
+  Send_to_vconn(Send_to_vconn const &)            = delete;
+  Send_to_vconn &operator=(Send_to_vconn const &) = delete;
 
 protected:
   // If _notify_send_to_vconn() needs to send, it should call this function (not send()).
@@ -334,7 +349,10 @@ private:
   // This is called when the IOBuffer referred to by _io_buf is empty, or the status is no longer IN_PROGRESS.
   // _send() can be called from within this function.
   //
-  virtual void _notify_send_to_vconn() {}
+  virtual void
+  _notify_send_to_vconn()
+  {
+  }
 };
 
 void
@@ -359,7 +377,7 @@ Send_to_vconn::_send(void const *data, int64_t n_bytes)
     auto size_written = TSIOBufferWrite(_io_buf.get(), data_, size);
     TSAssert(size_written > 0);
     TSAssert(size_written <= size);
-    size -= size_written;
+    size  -= size_written;
     data_ += size_written;
   } while (size);
 
@@ -376,7 +394,7 @@ Send_to_vconn::send(void const *data, int64_t n_bytes)
 
   if (!_cont) {
     start_vio = true;
-    _mtx = nonNullPtrDbg(TSMutexCreate());
+    _mtx      = nonNullPtrDbg(TSMutexCreate());
     _cont.reset(nonNullPtrDbg(TSContCreate(_cont_func, nonNullPtrDbg(_mtx))));
     TSContDataSet(_cont.get(), this);
     _io_buf.reset(nonNullPtrDbg(TSIOBufferCreate()));
@@ -405,8 +423,7 @@ Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
 
   TSAssert(IN_PROGRESS == stv->status());
 
-  switch (event)
-  {
+  switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
     break;
 
@@ -429,7 +446,7 @@ Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
 }
 
 TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
-TSDbgCtl const * const dbg_ctl{dbg_ctl_guard.get()};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
 
 // Delete file whose path is specified in the constructor when the instance is destroyed.
 //
@@ -450,11 +467,8 @@ private:
 class Ramp_test : private Send_to_vconn
 {
 public:
-
-  struct Test_params
-  {
-    struct Half
-    {
+  struct Test_params {
+    struct Half {
       int n_groups_send, n_group_bytes, n_bytes_recv;
     };
 
@@ -471,12 +485,12 @@ private:
   class _Send_recv : private Send_to_vconn, private Recv_from_vconn
   {
   public:
-    _Send_recv(TSVConn vconn_, std::shared_ptr<File_deleter> f_del, int n_groups_send, int n_group_bytes,
-               bool allow_send_error, int n_bytes_recv)
-    : Send_to_vconn{vconn_, n_groups_send * n_group_bytes}, Recv_from_vconn(vconn_), _f_del{f_del}
+    _Send_recv(TSVConn vconn_, std::shared_ptr<File_deleter> f_del, int n_groups_send, int n_group_bytes, bool allow_send_error,
+               int n_bytes_recv)
+      : Send_to_vconn{vconn_, n_groups_send * n_group_bytes}, Recv_from_vconn(vconn_), _f_del{f_del}
     {
-      TSDbg(dbg_ctl, "n_groups_send=%d n_group_bytes=%d allow_send_error=%c, n_bytes_recv=%d inst=%p", n_groups_send,
-            n_group_bytes, allow_send_error ? 'T' : 'F', n_bytes_recv, this);
+      TSDbg(dbg_ctl, "n_groups_send=%d n_group_bytes=%d allow_send_error=%c, n_bytes_recv=%d inst=%p", n_groups_send, n_group_bytes,
+            allow_send_error ? 'T' : 'F', n_bytes_recv, this);
 
       TSReleaseAssert(n_groups_send >= 0);
       TSReleaseAssert(n_group_bytes >= 0);
@@ -488,8 +502,8 @@ private:
       }
 
       _s.n_groups_remaining = n_groups_send;
-      _s.n_group_bytes = n_group_bytes;
-      _s.allow_error = allow_send_error;
+      _s.n_group_bytes      = n_group_bytes;
+      _s.allow_error        = allow_send_error;
 
       if (_s.n_groups_remaining) {
         --_s.n_groups_remaining;
@@ -523,8 +537,7 @@ private:
   private:
     std::shared_ptr<File_deleter> _f_del;
 
-    struct _Send_fields
-    {
+    struct _Send_fields {
       int n_groups_remaining, n_group_bytes;
       bool allow_error;
       std::vector<unsigned char> buf;
@@ -533,8 +546,7 @@ private:
 
     _Send_fields _s;
 
-    struct _Recv_fields
-    {
+    struct _Recv_fields {
       int n_bytes_remaining;
       unsigned char ramp_val{0};
     };
@@ -572,11 +584,9 @@ Ramp_test::_Send_recv::_notify_send_to_vconn()
   if (TSIsDbgCtlSet(dbg_ctl) && (st != Send_to_vconn::IN_PROGRESS)) {
     TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: status=%d inst=%p", int(st), this);
   }
-  switch (st)
-  {
+  switch (st) {
   case Send_to_vconn::IN_PROGRESS: {
     if (_s.n_groups_remaining) {
-
       --_s.n_groups_remaining;
 
       for (int i{0}; i < _s.n_group_bytes; ++i) {
@@ -588,8 +598,7 @@ Ramp_test::_Send_recv::_notify_send_to_vconn()
       TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: done inst=%p", this);
       _done(mtx());
     }
-    }
-    break;
+  } break;
   case Send_to_vconn::VIO_DONE:
   case Send_to_vconn::VCONN_SHUTDOWN_FOR_SENDING:
     _done(mtx());
@@ -597,8 +606,8 @@ Ramp_test::_Send_recv::_notify_send_to_vconn()
 
   case Send_to_vconn::ERROR:
     if (_s.allow_error) {
-      TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p (error expected)",
-            int(error_event()), this);
+      TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p (error expected)", int(error_event()),
+            this);
 
     } else {
       TSFatal(PINAME ": Ramp_test::_Send_recv::_notify_send_to_vconn: error event: %d, inst=%p", int(error_event()), this);
@@ -617,8 +626,7 @@ Ramp_test::_Send_recv::_notify_recv_from_vconn()
   if (TSIsDbgCtlSet(dbg_ctl) && (st != Recv_from_vconn::IN_PROGRESS)) {
     TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: status=%d inst=%p", int(st), this);
   }
-  switch (st)
-  {
+  switch (st) {
   case Recv_from_vconn::IN_PROGRESS: {
     while (_r.n_bytes_remaining) {
       int64_t avail = _avail();
@@ -631,8 +639,8 @@ Ramp_test::_Send_recv::_notify_recv_from_vconn()
 
       while (avail) {
         if (*cp != _r.ramp_val) {
-          TSFatal(PINAME ": Ramp_test::_Send_recv::_notify_recv_from_vconn: recv ramp val=%u expected ramp val=%u",
-                  unsigned(*cp), unsigned(_r.ramp_val));
+          TSFatal(PINAME ": Ramp_test::_Send_recv::_notify_recv_from_vconn: recv ramp val=%u expected ramp val=%u", unsigned(*cp),
+                  unsigned(_r.ramp_val));
         }
         ++cp;
         ++_r.ramp_val;
@@ -643,8 +651,7 @@ Ramp_test::_Send_recv::_notify_recv_from_vconn()
       TSDbg(dbg_ctl, "Ramp_test::_Send_recv::_notify_recv_from_vconn: done inst=%p", this);
       _done(mtx());
     }
-    }
-    break;
+  } break;
 
   case Recv_from_vconn::VCONN_SHUTDOWN_FOR_RECEIVING:
     TSVConnShutdown(Recv_from_vconn::vconn(), true, false);
@@ -664,8 +671,7 @@ auto const Loopback_addr{inet_addr("127.0.0.1")};
 
 int listen_fd, loopback_port;
 
-struct Tcp_loopback
-{
+struct Tcp_loopback {
   int connect_fd, accept_fd;
 };
 
@@ -698,10 +704,8 @@ std::shared_ptr<File_deleter> global_file_deleter;
 void
 Ramp_test::x(Test_params const &p)
 {
-  TSReleaseAssert((p.connect_to_accept.n_groups_send * p.connect_to_accept.n_group_bytes) >=
-                  p.connect_to_accept.n_bytes_recv);
-  TSReleaseAssert((p.accept_to_connect.n_groups_send * p.accept_to_connect.n_group_bytes) >=
-                  p.accept_to_connect.n_bytes_recv);
+  TSReleaseAssert((p.connect_to_accept.n_groups_send * p.connect_to_accept.n_group_bytes) >= p.connect_to_accept.n_bytes_recv);
+  TSReleaseAssert((p.accept_to_connect.n_groups_send * p.accept_to_connect.n_group_bytes) >= p.accept_to_connect.n_bytes_recv);
 
   auto lp{make_loopback()};
 
@@ -710,13 +714,22 @@ Ramp_test::x(Test_params const &p)
 
   // If the receiver does not read even one byte of data, the sender will get an error.
 
-  new _Send_recv{vconn_connect, global_file_deleter, p.connect_to_accept.n_groups_send, p.connect_to_accept.n_group_bytes,
-                 0 == p.connect_to_accept.n_bytes_recv, p.accept_to_connect.n_bytes_recv};
-  new _Send_recv{vconn_accept, global_file_deleter, p.accept_to_connect.n_groups_send, p.accept_to_connect.n_group_bytes,
-                 0 == p.accept_to_connect.n_bytes_recv, p.connect_to_accept.n_bytes_recv};
+  new _Send_recv{vconn_connect,
+                 global_file_deleter,
+                 p.connect_to_accept.n_groups_send,
+                 p.connect_to_accept.n_group_bytes,
+                 0 == p.connect_to_accept.n_bytes_recv,
+                 p.accept_to_connect.n_bytes_recv};
+  new _Send_recv{vconn_accept,
+                 global_file_deleter,
+                 p.accept_to_connect.n_groups_send,
+                 p.accept_to_connect.n_group_bytes,
+                 0 == p.accept_to_connect.n_bytes_recv,
+                 p.connect_to_accept.n_bytes_recv};
 }
 
-int global_cont_func(TSCont cont, TSEvent event, void *event_data)
+int
+global_cont_func(TSCont cont, TSEvent event, void *event_data)
 {
   nonNullPtrRel(cont);
   TSReleaseAssert(TS_EVENT_HTTP_READ_REQUEST_HDR == event);
@@ -725,61 +738,61 @@ int global_cont_func(TSCont cont, TSEvent event, void *event_data)
 
   tp.connect_to_accept.n_groups_send = 100;
   tp.connect_to_accept.n_group_bytes = 200;
-  tp.connect_to_accept.n_bytes_recv = 100 * 200;
+  tp.connect_to_accept.n_bytes_recv  = 100 * 200;
 
   tp.accept_to_connect.n_groups_send = 100;
   tp.accept_to_connect.n_group_bytes = 200;
-  tp.accept_to_connect.n_bytes_recv = 1;
+  tp.accept_to_connect.n_bytes_recv  = 1;
 
   Ramp_test::x(tp);
 
   tp.connect_to_accept.n_groups_send = 100;
   tp.connect_to_accept.n_group_bytes = 200;
-  tp.connect_to_accept.n_bytes_recv = 0;
+  tp.connect_to_accept.n_bytes_recv  = 0;
 
   tp.accept_to_connect.n_groups_send = 100;
   tp.accept_to_connect.n_group_bytes = 200;
-  tp.accept_to_connect.n_bytes_recv = 100 * 200;
+  tp.accept_to_connect.n_bytes_recv  = 100 * 200;
 
   Ramp_test::x(tp);
 
   tp.connect_to_accept.n_groups_send = 100;
   tp.connect_to_accept.n_group_bytes = 200;
-  tp.connect_to_accept.n_bytes_recv = 100 * 200;
+  tp.connect_to_accept.n_bytes_recv  = 100 * 200;
 
   tp.accept_to_connect.n_groups_send = 100;
   tp.accept_to_connect.n_group_bytes = 200;
-  tp.accept_to_connect.n_bytes_recv = 100 * 200;
+  tp.accept_to_connect.n_bytes_recv  = 100 * 200;
 
   Ramp_test::x(tp);
 
   tp.connect_to_accept.n_groups_send = 10;
   tp.connect_to_accept.n_group_bytes = 20;
-  tp.connect_to_accept.n_bytes_recv = 10 * 20;
+  tp.connect_to_accept.n_bytes_recv  = 10 * 20;
 
   tp.accept_to_connect.n_groups_send = 1000;
   tp.accept_to_connect.n_group_bytes = 2000;
-  tp.accept_to_connect.n_bytes_recv = 1000 * 2000;
+  tp.accept_to_connect.n_bytes_recv  = 1000 * 2000;
 
   Ramp_test::x(tp);
 
   tp.connect_to_accept.n_groups_send = 1000;
   tp.connect_to_accept.n_group_bytes = 2000;
-  tp.connect_to_accept.n_bytes_recv = 1000 * 2000;
+  tp.connect_to_accept.n_bytes_recv  = 1000 * 2000;
 
   tp.accept_to_connect.n_groups_send = 10;
   tp.accept_to_connect.n_group_bytes = 20;
-  tp.accept_to_connect.n_bytes_recv = 10 * 20;
+  tp.accept_to_connect.n_bytes_recv  = 10 * 20;
 
   Ramp_test::x(tp);
 
   tp.connect_to_accept.n_groups_send = 3000;
   tp.connect_to_accept.n_group_bytes = 20000;
-  tp.connect_to_accept.n_bytes_recv = 3000 * 20000;
+  tp.connect_to_accept.n_bytes_recv  = 3000 * 20000;
 
   tp.accept_to_connect.n_groups_send = 3000;
   tp.accept_to_connect.n_group_bytes = 20000;
-  tp.accept_to_connect.n_bytes_recv = 3000 * 20000;
+  tp.accept_to_connect.n_bytes_recv  = 3000 * 20000;
 
   Ramp_test::x(tp);
 
@@ -801,9 +814,9 @@ TSPluginInit(int n_arg, char const *arg[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = const_cast<char*>(PIName);
-  info.vendor_name = const_cast<char*>("apache");
-  info.support_email = const_cast<char*>("edge@yahooinc.com");
+  info.plugin_name   = const_cast<char *>(PIName);
+  info.vendor_name   = const_cast<char *>("apache");
+  info.support_email = const_cast<char *>("edge@yahooinc.com");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError(PINAME ": failure calling TSPluginRegister.");
@@ -832,7 +845,7 @@ TSPluginInit(int n_arg, char const *arg[])
   listen_addr.sin_port        = htons(loopback_port);
   listen_addr.sin_family      = AF_INET;
 
-  for (int i{0}; ; ++i) {
+  for (int i{0};; ++i) {
     TSDbg(dbg_ctl, "bind() with TCP port %d", loopback_port);
     int ret = bind(listen_fd, reinterpret_cast<sockaddr *>(&listen_addr), sizeof(listen_addr));
     if (ret >= 0) {

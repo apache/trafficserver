@@ -42,10 +42,10 @@ local_handler(TSCont contp, TSEvent event, void *edata)
                     "This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
                     "<HR>\n"
                     "</BODY>";
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  TSMBuffer bufp = nullptr;
-  TSMLoc hdr_loc = nullptr;
-  TSMLoc url_loc = nullptr;
+  TSHttpTxn txnp  = static_cast<TSHttpTxn>(edata);
+  TSMBuffer bufp  = nullptr;
+  TSMLoc hdr_loc  = nullptr;
+  TSMLoc url_loc  = nullptr;
   ;
   const char *host = nullptr;
   int host_length;

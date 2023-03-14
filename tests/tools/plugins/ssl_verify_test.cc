@@ -33,7 +33,7 @@
 #include <string>
 #include <map>
 
-#define PN "ssl_verify_test"
+#define PN  "ssl_verify_test"
 #define PCP "[" PN " Plugin] "
 
 std::map<std::string, int> bad_names;
