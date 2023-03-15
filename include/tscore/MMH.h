@@ -50,7 +50,7 @@ int ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash
   cost.
 
 */
-class MMHContext : public ats::CryptoContextBase
+class MMHContext : public ats::CryptoContext::Hasher
 {
 protected:
   MMH_CTX _ctx;

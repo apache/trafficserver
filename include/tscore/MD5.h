@@ -31,7 +31,7 @@
 #include <openssl/evp.h>
 #endif
 
-class MD5Context : public ats::CryptoContextBase
+class MD5Context : public ats::CryptoContext::Hasher
 {
 public:
   MD5Context()
@@ -90,4 +90,4 @@ private:
 #endif
 };
 
-typedef CryptoHash INK_MD5;
+using INK_MD5 = CryptoHash;
