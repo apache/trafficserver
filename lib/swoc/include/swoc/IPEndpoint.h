@@ -14,14 +14,17 @@
 #include "swoc/swoc_version.h"
 #include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
+#include "swoc/string_view_util.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
-
-using ::std::string_view;
 
 class IPAddr;
 class IP4Addr;
 class IP6Addr;
+
+class IPSrv;
+class IP4Srv;
+class IP6Srv;
 
 namespace detail {
 extern void *const pseudo_nullptr;
@@ -38,6 +41,7 @@ extern void *const pseudo_nullptr;
  */
 union IPEndpoint {
   using self_type = IPEndpoint; ///< Self reference type.
+  using string_view = std::string_view;
 
   struct sockaddr sa;      ///< Generic address.
   struct sockaddr_in sa4;  ///< IPv4
@@ -51,11 +55,20 @@ union IPEndpoint {
   /// Construct from the @a text representation of an address.
   explicit IPEndpoint(string_view const &text);
 
-  // Construct from @c IPAddr
+  /// Construct from an address.
   explicit IPEndpoint(IPAddr const &addr);
 
-  // Construct from @c sockaddr
-  IPEndpoint(sockaddr const *sa);
+  /// Construct from address and port.
+  explicit IPEndpoint(IPSrv const& srv);
+
+  /// Construct from generic socket address.
+  IPEndpoint(sockaddr const *addr);
+
+  /// Construct from @a sockaddr_in
+  IPEndpoint(sockaddr_in const* sin);
+
+  /// Construct from @a sockaddr_in6
+  IPEndpoint(sockaddr_in6 const * sin6);
 
   /// Copy assignment.
   self_type &operator=(self_type const &that);
@@ -106,8 +119,31 @@ union IPEndpoint {
   */
   self_type &assign(sockaddr const *addr);
 
-  /// Assign from an @a addr and @a host_order_port.
-  self_type &assign(IPAddr const &addr, in_port_t port = 0);
+  /** Assign from IPv4 socket address.
+   *
+   * @param sin IPv4 socket address.
+   * @return @a this
+   */
+  self_type &assign(sockaddr_in const * sin);
+
+  /** Assign from IPv6 socket address.
+   *
+   * @param sin6 IPv6 socket address.
+   * @return @a this
+   */
+  self_type &assign(sockaddr_in6 const * sin6);
+
+  /// Assign from IP address.
+  self_type &assign(IPAddr const &addr);
+
+  /// Assign from IPv4 address.
+  self_type &assign(IP4Addr const& addr);
+
+  /// Assign from IPv4 address.
+  self_type &assign(IP6Addr const& addr);
+
+  /// Assign from IP service (address and port).
+  self_type &assign(IPSrv const& srv);
 
   /// Copy to @a sa.
   const self_type &copy_to(sockaddr *addr) const;
@@ -129,6 +165,18 @@ union IPEndpoint {
 
   /// @return The IP address family.
   sa_family_t family() const;
+
+  /// @return A pointer to a @c sockaddr_in or @c nullptr if not IPv4.
+  sockaddr_in * ip4();
+
+  /// @return A pointer to a @c sockaddr_in or @c nullptr if not IPv4.
+  sockaddr_in const * ip4() const;
+
+  /// @return A pointer to a @c sockaddr_in6 or @c nullptr if not IPv6.
+  sockaddr_in6 * ip6();
+
+  /// @return A pointer to a @c sockaddr_in6 or @c nullptr if not IPv6.
+  sockaddr_in6 const * ip6() const;
 
   /// Set to be the ANY address for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
@@ -190,8 +238,12 @@ inline IPEndpoint::IPEndpoint(IPAddr const &addr) {
   this->assign(addr);
 }
 
-inline IPEndpoint::IPEndpoint(sockaddr const *socketaddr) {
-  this->assign(socketaddr);
+inline IPEndpoint::IPEndpoint(IPSrv const& srv) {
+  this->assign(srv);
+}
+
+inline IPEndpoint::IPEndpoint(sockaddr const *addr) {
+  this->assign(addr);
 }
 
 inline IPEndpoint::IPEndpoint(IPEndpoint::self_type const &that) : self_type(&that.sa) {}
@@ -215,6 +267,18 @@ IPEndpoint::is_valid() const {
 inline IPEndpoint &
 IPEndpoint::operator=(self_type const &that) {
   self_type::assign(&sa, &that.sa);
+  return *this;
+}
+
+inline IPEndpoint &
+IPEndpoint::assign(sockaddr_in const * sin) {
+  std::memcpy(&sa4, sin, sizeof(sockaddr_in));
+  return *this;
+}
+
+inline IPEndpoint &
+IPEndpoint::assign(sockaddr_in6 const * sin6) {
+  std::memcpy(&sa6, sin6, sizeof(sockaddr_in6));
   return *this;
 }
 
@@ -243,6 +307,26 @@ IPEndpoint::is_ip6() const {
 inline sa_family_t
 IPEndpoint::family() const {
   return sa.sa_family;
+}
+
+inline sockaddr_in *
+IPEndpoint::ip4() {
+  return this->is_ip4() ? &sa4 : nullptr;
+}
+
+inline sockaddr_in const *
+IPEndpoint::ip4() const {
+  return this->is_ip4() ? &sa4 : nullptr;
+}
+
+inline sockaddr_in6 *
+IPEndpoint::ip6() {
+  return this->is_ip6() ? &sa6 : nullptr;
+}
+
+inline sockaddr_in6 const *
+IPEndpoint::ip6() const {
+  return this->is_ip6() ? &sa6 : nullptr;
 }
 
 inline in_port_t &
