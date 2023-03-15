@@ -111,53 +111,42 @@ union CryptoHash {
 
 extern CryptoHash const CRYPTO_HASH_ZERO;
 
-/** Protocol class for a crypto hash context.
-
-    A hash of this type is used for strong hashing, such as for URLs.
-*/
-class CryptoContextBase
+class CryptoContext
 {
-  typedef CryptoContextBase self; ///< Self reference type.
 public:
-  /// Destructor (force virtual)
-  virtual ~CryptoContextBase() {}
-  /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const *data, int length) = 0;
-  /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash &hash) = 0;
+  /** Protocol class for a crypto hash context.
 
-  /// Convenience overload.
-  bool finalize(CryptoHash *hash);
+     A hash of this type is used for strong hashing, such as for URLs.
+   */
+  class Hasher
+  {
+    using self_type = Hasher; ///< Self reference type.
+  public:
+    /// Destructor (force virtual)
+    virtual ~Hasher() {}
+    /// Update the hash with @a data of @a length bytes.
+    virtual bool update(void const *data, int length) = 0;
+    /// Finalize and extract the @a hash.
+    virtual bool finalize(CryptoHash &hash) = 0;
+
+    /// Convenience overload.
+    bool finalize(CryptoHash *hash);
+
+  protected:
+    EVP_MD_CTX *_ctx = nullptr;
+  };
+
+  CryptoContext();
+  /// Update the hash with @a data of @a length bytes.
+  bool update(void const *data, int length);
 
   /// Convenience - compute final @a hash for @a data.
   /// @note This is just as fast as the previous style, as a new context must be initialized
   /// every time this is done.
   bool hash_immediate(CryptoHash &hash, void const *data, int length);
 
-protected:
-  EVP_MD_CTX *_ctx = nullptr;
-};
-
-inline bool
-CryptoContextBase::hash_immediate(CryptoHash &hash, void const *data, int length)
-{
-  return this->update(data, length) && this->finalize(hash);
-}
-
-inline bool
-CryptoContextBase::finalize(CryptoHash *hash)
-{
-  return this->finalize(*hash);
-}
-
-class CryptoContext : public CryptoContextBase
-{
-public:
-  CryptoContext();
-  /// Update the hash with @a data of @a length bytes.
-  bool update(void const *data, int length) override;
   /// Finalize and extract the @a hash.
-  bool finalize(CryptoHash &hash) override;
+  bool finalize(CryptoHash &hash);
 
   enum HashType {
     UNSPECIFIED,
@@ -168,7 +157,7 @@ public:
   }; ///< What type of hash we really are.
   static HashType Setting;
 
-  ~CryptoContext() { reinterpret_cast<CryptoContextBase *>(_base)->~CryptoContextBase(); }
+  ~CryptoContext();
 
 private:
   static size_t constexpr OBJ_SIZE = 256;
@@ -176,15 +165,32 @@ private:
 };
 
 inline bool
+CryptoContext::Hasher::finalize(CryptoHash *hash)
+{
+  return this->finalize(*hash);
+}
+
+inline bool
 CryptoContext::update(void const *data, int length)
 {
-  return reinterpret_cast<CryptoContextBase *>(_base)->update(data, length);
+  return reinterpret_cast<Hasher *>(_base)->update(data, length);
 }
 
 inline bool
 CryptoContext::finalize(CryptoHash &hash)
 {
-  return reinterpret_cast<CryptoContextBase *>(_base)->finalize(hash);
+  return reinterpret_cast<Hasher *>(_base)->finalize(hash);
+}
+
+inline bool
+CryptoContext::hash_immediate(CryptoHash &hash, void const *data, int length)
+{
+  return this->update(data, length) && this->finalize(hash);
+}
+
+inline CryptoContext::~CryptoContext()
+{
+  std::destroy_at(reinterpret_cast<Hasher *>(_base));
 }
 
 ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash);

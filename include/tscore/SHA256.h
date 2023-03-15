@@ -31,7 +31,7 @@
 #include <openssl/evp.h>
 #endif
 
-class SHA256Context : public ats::CryptoContextBase
+class SHA256Context : public ats::CryptoContext::Hasher
 {
 public:
   SHA256Context()
