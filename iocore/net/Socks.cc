@@ -30,11 +30,16 @@
   duplicated in UnixNet.cc and NTNetProcessor.cc
 */
 
+#include "swoc/swoc_file.h"
+#include "swoc/bwf_std.h"
+#include "swoc/bwf_ex.h"
+
 #include "P_Net.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_sock.h"
 #include "tscore/InkErrno.h"
-#include "tscore/IpMapConf.h"
+
+using namespace swoc::literals;
 
 socks_conf_struct *g_socks_conf_stuff = nullptr;
 
@@ -460,8 +465,10 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   int socks_config_fd = -1;
   ats_scoped_str config_pathname;
 #ifdef SOCKS_WITH_TS
-  char *tmp;
+  swoc::Errata errata;
 #endif
+  std::error_code ec;
+  std::string config_text;
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
   socks_conf_stuff->socks_needed   = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
@@ -506,28 +513,28 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     goto error;
   }
 
-  socks_config_fd = ::open(config_pathname, O_RDONLY);
-
-  if (socks_config_fd < 0) {
-    Error("SOCKS Config: could not open config file '%s'. SOCKS Turned off", (const char *)config_pathname);
+  config_text = swoc::file::load(swoc::file::path(config_pathname), ec);
+  if (ec) {
+    swoc::bwprint(config_text, "SOCK Config: Disabled, could not open config file \"{}\" {}", config_pathname, ec);
+    Error("%s", config_text.c_str());
     goto error;
   }
-#ifdef SOCKS_WITH_TS
-  tmp = Load_IpMap_From_File(&socks_conf_stuff->ip_map, socks_config_fd, "no_socks");
 
-  if (tmp) {
-    Error("SOCKS Config: Error while reading ip_range: %s.", tmp);
-    ats_free(tmp);
+#ifdef SOCKS_WITH_TS
+  errata = loadSocksIPAddrs(config_text, socks_conf_stuff);
+
+  if (!errata.is_ok()) {
+    swoc::bwprint(config_text, "SOCK Config: Error\n{}", errata);
+    Error("%s", config_text.c_str());
     goto error;
   }
 #endif
 
-  if (loadSocksAuthInfo(socks_config_fd, socks_conf_stuff) != 0) {
+  if (loadSocksAuthInfo(config_text, socks_conf_stuff) != 0) {
     Error("SOCKS Config: Error while reading Socks auth info");
     goto error;
   }
   Debug("Socks", "Socks Turned on");
-  ::close(socks_config_fd);
 
   return;
 error:
@@ -540,52 +547,50 @@ error:
 }
 
 int
-loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
+loadSocksAuthInfo(swoc::TextView content, socks_conf_struct *socks_stuff)
 {
-  char c              = '\0';
-  char line[256]      = {0}; // initialize all chars to nil
-  char user_name[256] = {0};
-  char passwd[256]    = {0};
+  static constexpr swoc::TextView PREFIX = "auth u ";
+  std::string text;
 
-  if (lseek(fd, 0, SEEK_SET) < 0) {
-    Warning("Can not seek on Socks configuration file\n");
-    return -1;
+  while (content.ltrim_if(&isspace)) {
+    auto line = content.take_prefix_at('\n');
+
+    if (line.starts_with(PREFIX)) {
+      line.remove_prefix(PREFIX.size()).ltrim_if(&isspace);
+      auto user_name = line.take_prefix_if(&isspace);
+      auto password  = line.take_prefix_if(&isspace);
+
+      if (!user_name.empty() && !password.empty()) {
+        Debug("Socks", "%s", swoc::bwprint(text, "Read auth credentials \"{}\" : \"{}\"", user_name, password).c_str());
+        swoc::bwprint(socks_stuff->user_name_n_passwd, "{}{}{}{}", char(user_name.size()), user_name, char(password.size()),
+                      password);
+      }
+    }
   }
-
-  bool end_of_file = false;
-  do {
-    int n = 0, rc;
-    while (((rc = read(fd, &c, 1)) == 1) && (c != '\n') && (n < 254)) {
-      line[n++] = c;
-    }
-    if (rc <= 0) {
-      end_of_file = true;
-    }
-    line[n] = '\0';
-
-    // coverity[secure_coding]
-    rc = sscanf(line, " auth u %255s %255s ", user_name, passwd);
-    if (rc >= 2) {
-      int len1 = strlen(user_name);
-      int len2 = strlen(passwd);
-
-      Debug("Socks", "Read user_name(%s) and passwd(%s) from config file", user_name, passwd);
-
-      socks_stuff->user_name_n_passwd_len = len1 + len2 + 2;
-
-      char *ptr = static_cast<char *>(ats_malloc(socks_stuff->user_name_n_passwd_len));
-      ptr[0]    = len1;
-      memcpy(&ptr[1], user_name, len1);
-      ptr[len1 + 1] = len2;
-      memcpy(&ptr[len1 + 2], passwd, len2);
-
-      socks_stuff->user_name_n_passwd = ptr;
-
-      return 0;
-    }
-  } while (!end_of_file);
-
   return 0;
+}
+
+swoc::Errata
+loadSocksIPAddrs(swoc::TextView content, socks_conf_struct *socks_stuff)
+{
+  static constexpr swoc::TextView PREFIX = "no_socks ";
+  std::string text;
+
+  while (content.ltrim_if(&isspace)) {
+    auto line = content.take_prefix_at('\n');
+    if (line.starts_with(PREFIX)) {
+      line.remove_prefix(PREFIX.size());
+      while (line.ltrim_if(&isspace)) {
+        auto token = line.take_prefix_at(',');
+        if (swoc::IPRange r; r.load(token)) {
+          socks_stuff->ip_addrs.mark(r);
+        } else {
+          return swoc::Errata(ERRATA_ERROR, "Invalid IP address range \"{}\"", token);
+        }
+      }
+    }
+  }
+  return {};
 }
 
 int
@@ -593,7 +598,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 {
   // for more info on Socks5 see RFC 1928
   int ret           = 0;
-  char *pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd;
+  char *pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd.data();
 
   switch (event) {
   case SOCKS_AUTH_OPEN:
@@ -672,8 +677,8 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 
   switch (event) {
   case SOCKS_AUTH_OPEN:
-    pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd;
-    pass_len    = netProcessor.socks_conf_stuff->user_name_n_passwd_len;
+    pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd.data();
+    pass_len    = netProcessor.socks_conf_stuff->user_name_n_passwd.length();
     ink_assert(pass_phrase);
 
     p[0] = 1; // version
