@@ -1086,11 +1086,14 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bool f) {
 template <typename... Args>
 std::string &
 bwprint_v(std::string &s, TextView fmt, std::tuple<Args...> const &args) {
-  auto len = s.size(); // remember initial size
-  size_t n = FixedBufferWriter(s.data(), s.size()).print_v(fmt, args).extent();
+  auto const len = s.size(); // remember initial size
+  auto printer = [&]() {
+    return FixedBufferWriter(s.data(), s.capacity()).print_v(fmt, args).extent();
+  };
+  size_t n = printer();
   s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
   if (n > len) { // dropped data, try again.
-    FixedBufferWriter(s.data(), s.size()).print_v(fmt, args);
+    printer();
   }
   return s;
 }
@@ -1103,7 +1106,8 @@ bwprint_v(std::string &s, TextView fmt, std::tuple<Args...> const &args) {
  * @param args Arguments for format string.
  * @return @a s
  *
- * The output is generated to @a s as is. If @a s does not have sufficient space for the output
+ * The output is generated to @a s without resizing, completely replacing any existing text.
+ * If @a s does not have sufficient space for the output
  * it is resized to be sufficient and the output formatted again. The result is that @a s will
  * contain exactly the formatted output.
  *
@@ -1114,6 +1118,36 @@ template <typename... Args>
 std::string &
 bwprint(std::string &s, TextView fmt, Args &&... args) {
   return bwprint_v(s, fmt, std::forward_as_tuple(args...));
+}
+
+/** Generate formatted output to a @c std::string @a s using format @a fmt with arguments @a args.
+ *
+ * @tparam Args Format argument types.
+ * @param s Output string.
+ * @param fmt Format string.
+ * @param args Arguments for format string.
+ * @return @a s
+ *
+ * The output is appended to @a s without resizing. If @a s does not have sufficient space for the output
+ * it is resized to be sufficient and the output formatted again. The result is that @a s will
+ * contain any previous text and the formatted output.
+ */
+template <typename... Args>
+std::string &
+bwappend(std::string &s, TextView fmt, Args &&... args) {
+  auto const len = s.length(); // Text to preserve.
+  auto const capacity = s.capacity(); // Working space.
+  auto printer = [&]() {
+    return FixedBufferWriter(s.data()+len, s.capacity()-len).print(fmt, args...).extent();
+  };
+  // Resize first, otherwise capacity past @a len is cleared on @c resize.
+  s.resize(capacity);
+  auto n = printer() + len; // Get the final length.
+  s.resize(n); // Adjust to correct string length.
+  if (n > capacity) { // dropped data, write it again.
+    printer();
+  }
+  return s;
 }
 
 /// @cond COVARY

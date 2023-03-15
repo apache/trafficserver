@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include <string_view>
+#include <variant> // for std::monostate
+
 #include <swoc/DiscreteRange.h>
 #include <swoc/IPAddr.h>
 
