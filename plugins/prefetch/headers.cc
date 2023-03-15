@@ -120,37 +120,6 @@ getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char
 }
 
 /**
- * @brief Get the header value int
- *
- * @param bufp request's buffer
- * @param hdrLoc request's header location
- * @param header header name
- * @param headerlen header name length
- * @param value buffer for the value
- * @param valuelen length of the buffer for the value
- * @return pointer to the string with the value.
- */
-int
-getHeaderInt(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
-{
-  int val = 0;
-
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
-  while (TS_NULL_MLOC != fieldLoc) {
-    TSMLoc const next = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
-
-    int count = TSMimeHdrFieldValuesCount(bufp, hdrLoc, fieldLoc);
-    for (int i = 0; i < count && 0 == val; ++i) {
-      val = TSMimeHdrFieldValueIntGet(bufp, hdrLoc, fieldLoc, i);
-    }
-    TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
-    fieldLoc = next;
-  }
-
-  return val;
-}
-
-/**
  * @brief Set a header to a specific value.
  *
  * This will avoid going to through a remove / add sequence in case of an existing header but clean.
@@ -191,59 +160,6 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdrLoc, fieldLoc, -1, value, valuelen)) {
-          ret = true;
-        }
-      } else {
-        TSMimeHdrFieldDestroy(bufp, hdrLoc, fieldLoc);
-      }
-      TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
-      fieldLoc = tmp;
-    }
-  }
-
-  return ret;
-}
-
-/**
- * @brief Set a header to a specific value int.
- *
- * This will avoid going to through a remove / add sequence in case of an existing header but clean.
- *
- * @param bufp request's buffer
- * @param hdrLoc request's header location
- * @param header header name
- * @param headerlen header name len
- * @param value the new value
- * @param valuelen length of the value
- * @return true - OK, false - failed
- */
-bool
-setHeaderInt(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, int value)
-{
-  if (!bufp || !hdrLoc || !header || headerlen <= 0) {
-    return false;
-  }
-
-  bool ret        = false;
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
-
-  if (TS_NULL_MLOC == fieldLoc) {
-    // No existing header, so create one
-    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdrLoc, header, headerlen, &fieldLoc)) {
-      if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdrLoc, fieldLoc, -1, value)) {
-        TSMimeHdrFieldAppend(bufp, hdrLoc, fieldLoc);
-        ret = true;
-      }
-      TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
-    }
-  } else {
-    bool first = true;
-
-    while (TS_NULL_MLOC != fieldLoc) {
-      TSMLoc const tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
-      if (first) {
-        first = false;
-        if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdrLoc, fieldLoc, -1, value)) {
           ret = true;
         }
       } else {

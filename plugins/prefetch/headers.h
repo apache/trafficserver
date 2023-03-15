@@ -27,9 +27,6 @@ int removeHeader(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len);
 bool headerExist(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len);
 
 char *getHeader(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int headerlen, char *value, int *valuelen);
-int getHeaderInt(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int headerlen);
-
 bool setHeader(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const char *val, int val_len);
-bool setHeaderInt(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, int const val);
 
 void dumpHeaders(TSMBuffer bufp, TSMLoc hdr_loc);

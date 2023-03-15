@@ -838,24 +838,24 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   PrefetchInstance *inst = static_cast<PrefetchInstance *>(instance);
 
   if (nullptr != inst) {
-    TSMBuffer const reqBuf = rri->requestBufp;
-    TSMLoc const reqHdr    = rri->requestHdrp;
+    const TSMBuffer reqBuf = rri->requestBufp;
+    const TSMLoc reqHdr    = rri->requestHdrp;
 
     PrefetchConfig &config = inst->_config;
 
     int methodLen      = 0;
     const char *method = TSHttpHdrMethodGet(reqBuf, reqHdr, &methodLen);
     if (nullptr != method && methodLen == TS_HTTP_LEN_GET && 0 == memcmp(TS_HTTP_METHOD_GET, method, TS_HTTP_LEN_GET)) {
-      bool const twotier = config.isTwoTier();
+      const bool twotier = config.isTwoTier();
       bool front         = config.isFront();
       bool firstPass     = true;
 
-      String const &apiHeader = config.getApiHeader();
-      bool const hasApiHeader = headerExist(reqBuf, reqHdr, apiHeader.c_str(), apiHeader.length());
+      const String &apiHeader = config.getApiHeader();
+      const bool hasApiHeader = headerExist(reqBuf, reqHdr, apiHeader.c_str(), apiHeader.length());
 
       /* two tier configuration trumps front configuration */
       if (twotier) {
-        String const &tierHeader = config.getTierHeader();
+        const String &tierHeader = config.getTierHeader();
         front                    = !headerExist(reqBuf, reqHdr, tierHeader.data(), tierHeader.length());
       }
 

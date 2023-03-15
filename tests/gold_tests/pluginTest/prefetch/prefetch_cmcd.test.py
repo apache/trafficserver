@@ -183,7 +183,7 @@ dns.addRecords(records={f"ts1": ["127.0.0.1"]})
 ts1.Disk.remap_config.AddLine(
     f"map / http://127.0.0.1:{origin.Variables.Port}" +
     " @plugin=cachekey.so @pparam==--sort-params=true"
-    " @plugin=prefetch.so @pparam==--front=false"
+    " @plugin=prefetch.so @pparam==--two-tier=true"
 )
 
 ts1.Disk.logging_yaml.AddLines(
@@ -191,7 +191,7 @@ ts1.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl>  %<{X-CDN-Prefetch}cqh> %<{X-CDN-Prefetch-Tier}cqh>'
  logs:
   - filename: transaction
     format: custom
@@ -212,7 +212,7 @@ ts0.Disk.remap_config.AddLine(
     f"map http://ts0 http://ts1:{ts1.Variables.port}" +
     " @plugin=cachekey.so @pparam=--sort-params=true"
     " @plugin=prefetch.so" +
-    " @pparam=--front=true" +
+    " @pparam=--two-tier=true" +
     " @pparam=--fetch-policy=simple" +
     " @pparam=--cmcd-nor=true"
 )
@@ -222,13 +222,12 @@ ts0.Disk.logging_yaml.AddLines(
 logging:
  formats:
   - name: custom
-    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>'
+    format: '%<cquuc> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh> %<{X-CDN-Prefetch-Tier}cqh>'
  logs:
   - filename: transaction
     format: custom
 '''.split("\n")
 )
-
 
 # start everything up
 tr = Test.AddTestRun()
@@ -256,7 +255,6 @@ tr.Processes.Default.ReturnCode = 0
 
 # fetch the prefetched asset (only cached on ts1)
 tr = Test.AddTestRun()
-tr.DelayStart = 1
 tr.Processes.Default.Command = (
     f"curl --verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}"
 )

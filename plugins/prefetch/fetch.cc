@@ -518,7 +518,7 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
 
   /* Now set or remove the prefetch API header */
   const String &apiHeader = _config.getApiHeader();
-  bool const hasApiHeader = headerExist(_mbuf, _headerLoc, apiHeader.data(), apiHeader.length());
+  const bool hasApiHeader = headerExist(_mbuf, _headerLoc, apiHeader.data(), apiHeader.length());
 
   if (hasApiHeader) {
     if (removeHeader(_mbuf, _headerLoc, apiHeader.c_str(), apiHeader.length())) {
