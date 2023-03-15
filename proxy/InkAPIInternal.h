@@ -197,14 +197,24 @@ template <typename ID, int N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
   this->clear();
 }
 
+// The APIHooks::clear() method can't be inlined (easily), and we end up calling
+// clear() very frequently (it's used in a number of features). A rough estimate
+// is that we may call APIHooks::clear() as much as 230x per transaction (there's
+// 180 additional APIHooks that should be eliminated in a different PR). This
+// code at least avoids calling this function for a majority of the cases.
+// Before this code, APIHooks::clear() would show up as top 5 in perf top.
 template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::clear()
 {
-  for (auto &h : m_hooks) {
-    h.clear();
+  if (m_hooks_p) {
+    for (auto &h : m_hooks) {
+      if (!h.is_empty()) {
+        h.clear();
+      }
+    }
+    m_hooks_p = false;
   }
-  m_hooks_p = false;
 }
 
 template <typename ID, int N>
