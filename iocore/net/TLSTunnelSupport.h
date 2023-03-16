@@ -45,9 +45,13 @@ public:
   SNIRoutingType get_tunnel_type() const;
   std::string_view get_tunnel_host() const;
   ushort get_tunnel_port() const;
+  bool tunnel_port_is_dynamic() const;
 
   bool has_tunnel_destination() const;
-  void set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm);
+
+  static constexpr bool PORT_IS_DYNAMIC = true;
+  void set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
+                              YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
 protected:
@@ -60,6 +64,10 @@ private:
   in_port_t _tunnel_port                       = 0;
   SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
+
+  /** Whether the tunnel destination port is statically configured or
+   * dynamically derived from runtime information on the wire. */
+  bool _port_is_dynamic = false;
 };
 
 inline SNIRoutingType
@@ -84,6 +92,12 @@ inline ushort
 TLSTunnelSupport::get_tunnel_port() const
 {
   return _tunnel_port;
+}
+
+inline bool
+TLSTunnelSupport::tunnel_port_is_dynamic() const
+{
+  return _port_is_dynamic;
 }
 
 /**

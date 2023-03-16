@@ -813,6 +813,14 @@ public:
       return *p;
     }
 
+    /** Whether a tunnel is requested to a port which has been dynamically
+     * determined by parsing traffic content.
+     *
+     * Dynamically determined ports require verification against the
+     * proxy.config.http.connect_ports.
+     */
+    bool tunnel_port_is_dynamic = false;
+
     ResponseAction response_action;
 
     // Methods

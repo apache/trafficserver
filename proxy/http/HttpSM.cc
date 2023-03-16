@@ -663,6 +663,7 @@ HttpSM::setup_blind_tunnel_port()
         auto tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
         if (tts->get_tunnel_port() > 0) {
+          t_state.tunnel_port_is_dynamic = tts->tunnel_port_is_dynamic();
           t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
