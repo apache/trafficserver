@@ -23,8 +23,9 @@
 
 #pragma once
 
+#include "swoc/swoc_ip.h"
+
 #include "tscore/ink_platform.h"
-#include "tscore/IpMap.h"
 #include "tscore/Ptr.h"
 #include "LogAccess.h"
 #include "LogField.h"
@@ -217,7 +218,7 @@ private:
 class LogFilterIP : public LogFilter
 {
 public:
-  LogFilterIP(const char *name, LogField *field, Action a, Operator o, IpAddr value);
+  LogFilterIP(const char *name, LogField *field, Action a, Operator o, swoc::IPAddr value);
   LogFilterIP(const char *name, LogField *field, Action a, Operator o, size_t num_values, IpAddr *value);
   LogFilterIP(const char *name, LogField *field, Action a, Operator o, char *values);
   LogFilterIP(const LogFilterIP &rhs);
@@ -233,13 +234,10 @@ public:
   LogFilterIP &operator=(LogFilterIP &rhs) = delete;
 
 private:
-  IpMap m_map;
+  swoc::IPRangeSet m_addrs;
 
   /// Initialization common to all constructors.
   void init();
-
-  void displayRanges(FILE *fd);
-  void displayRange(FILE *fd, IpMap::iterator const &iter);
 
   // Checks for a match on this filter.
   bool is_match(LogAccess *lad);
