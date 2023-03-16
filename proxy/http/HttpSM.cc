@@ -3498,6 +3498,11 @@ HttpSM::tunnel_handler_100_continue_ua(int event, HttpTunnelConsumer *c)
     //   real response header is received
     ua_entry->in_tunnel = false;
     c->write_success    = true;
+
+    // remove the buffer reader from the consumer's vc
+    if (c->vc != nullptr) {
+      c->vc->do_io_write();
+    }
   }
 
   return 0;
