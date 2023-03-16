@@ -27,6 +27,8 @@
 
 FROM ubuntu:22.04 AS build
 
+ARG nproc=20
+
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     TZ=US/Central \
@@ -51,47 +53,47 @@ ENV LDFLAGS="-Wl,-rpath,$PREFIX/lib -Wl,-rpath,$PREFIX/lib64 -L$PREFIX/lib"
 ENV CFLAGS="-O3 -DNDEBUG"
 ENV CXXFLAGS="-O3 -DNDEBUG"
 
-RUN git clone https://github.com/jemalloc/jemalloc.git && \
+RUN git clone --branch 5.3.0 https://github.com/jemalloc/jemalloc.git && \
     cd jemalloc && \
     ./autogen.sh && \
     ./configure --prefix=$PREFIX && \
-    make install && \
+    make -j$nproc install && \
     cd ..
 
-RUN git clone https://github.com/ngtcp2/nghttp3.git && \
+RUN git clone --branch v0.9.0 https://github.com/ngtcp2/nghttp3.git && \
     cd nghttp3 && \
     autoreconf -if && \
     ./configure --prefix=$PREFIX --enable-lib-only && \
-    make -j20 install && \
+    make -j$nproc install && \
     cd ..
 
-RUN git clone https://github.com/quictls/openssl.git && \
+RUN git clone --branch openssl-3.0.8-quic1 https://github.com/quictls/openssl.git && \
     cd openssl && \
     ./config enable-tls1_3 --prefix=$PREFIX && \
-    make -j20 && \
+    make -j$nproc && \
     make install_sw && \
     cd ..
 
-RUN git clone https://github.com/ngtcp2/ngtcp2.git && \
+RUN git clone --branch v0.13.1 https://github.com/ngtcp2/ngtcp2.git && \
     cd ngtcp2 && \
     autoreconf -if && \
     ./configure --prefix=$PREFIX --with-jemalloc && \
-    make -j20 install && \
+    make -j$nproc install && \
     cd ..
 
-RUN git clone https://github.com/nghttp2/nghttp2.git && \
+RUN git clone --branch v1.52.0 https://github.com/nghttp2/nghttp2.git && \
     cd nghttp2 && \
     autoreconf -if && \
     ./configure --with-jemalloc=$PREFIX --enable-http3 --with-libngtcp2 --with-libnghttp3 --prefix=$PREFIX && \
-    make -j20 && \
+    make -j$nproc && \
     make install && \
     cd ..
 
-RUN git clone https://github.com/curl/curl.git && \
+RUN git clone --branch curl-7_88_1 https://github.com/curl/curl.git && \
     cd curl && \
     autoreconf -if && \
     ./configure --with-ssl=$PREFIX --with-ngtcp2=$PREFIX --with-nghttp3=$PREFIX --with-nghttp2=$PREFIX --prefix=$PREFIX && \
-    make -j20 && \
+    make -j$nproc && \
     make install && \
     cd ..
 

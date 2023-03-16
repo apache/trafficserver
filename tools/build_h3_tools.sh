@@ -93,7 +93,7 @@ echo "Building nghttp3..."
 if [ ! -d nghttp3 ]; then
   git clone https://github.com/ngtcp2/nghttp3.git
   cd nghttp3
-  git checkout -b v0.8.0 v0.8.0
+  git checkout -b v0.9.0 v0.9.0
   cd ..
 fi
 cd nghttp3
@@ -114,7 +114,7 @@ echo "Building ngtcp2..."
 if [ ! -d ngtcp2 ]; then
   git clone https://github.com/ngtcp2/ngtcp2.git
   cd ngtcp2
-  git checkout -b v0.12.0 v0.12.0
+  git checkout -b v0.13.1 v0.13.1
   cd ..
 fi
 cd ngtcp2
@@ -135,7 +135,7 @@ echo "Building nghttp2 ..."
 if [ ! -d nghttp2 ]; then
   git clone https://github.com/tatsuhiro-t/nghttp2.git
   cd nghttp2
-  git checkout -b v1.51.0 v1.51.0
+  git checkout -b v1.52.0 v1.52.0
   cd ..
 fi
 cd nghttp2
@@ -154,7 +154,7 @@ cd ..
 
 # And finally curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
 cd curl
 autoreconf -i
 ./configure \
