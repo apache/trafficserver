@@ -47,15 +47,20 @@ default_log_data = {
     'manager': 'manager.log'
 }
 
-# 'block_for_debug', if True, causes traffic_server to run with the --block option enabled, and effectively
-# disables timeouts that could be triggered by running traffic_server under a debugger.
-
 
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
                    enable_tls=False, enable_cache=True, enable_quic=False,
                    block_for_debug=False, log_data=default_log_data,
                    use_traffic_out=True, dump_runroot=True,
                    enable_proxy_protocol=False):
+    """Create a traffic server process.
+
+    :param block_for_debug: if True, causes traffic_server to run with the
+    --block option enabled, and effectively disables timeouts that could be
+    triggered by running traffic_server under a debugger. In the debugger,
+    `set cmd_block = 0`, set any desired break points, then `c` to continue
+    to let the test proceed.
+    """
     #####################################
     # common locations
 
