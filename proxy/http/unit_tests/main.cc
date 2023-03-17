@@ -31,8 +31,6 @@
 
 #include "diags.i"
 
-#include "HuffmanCodec.h"
-
 #define TEST_THREADS 1
 
 struct EventProcessorListener : Catch::TestEventListenerBase {

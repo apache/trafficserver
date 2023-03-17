@@ -137,14 +137,15 @@ endif
 test_HttpTransact_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/proxy/http/HttpTransact.o \
+	$(top_builddir)/proxy/http/HttpTransactHeaders.o \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/http/HttpTransact.o \
-  $(top_builddir)/proxy/http/HttpTransactHeaders.o \
-	$(top_builddir)/proxy/hdrs/libhdrs.a
+	@SWOC_LIBS@
 
 test_HttpTransact_SOURCES = \
-  ../../iocore/cache/test/stub.cc \
-  unit_tests/main.cc \
+	../../iocore/cache/test/stub.cc \
+	unit_tests/main.cc \
 	unit_tests/test_HttpTransact.cc
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
