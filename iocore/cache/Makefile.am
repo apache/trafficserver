@@ -116,6 +116,7 @@ test_LDADD = \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@BORINGOCSP_LIBS@ \
 	-lm
 
 check_PROGRAMS = \
