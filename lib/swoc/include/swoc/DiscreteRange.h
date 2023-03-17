@@ -850,6 +850,9 @@ public:
   /// @return The number of distinct ranges.
   size_t count() const;
 
+  /// @return @c true if there are no ranges in the container, @c false otherwise.
+  bool empty() const;
+
   /// @return Iterator for the first range.
   iterator begin() { return _list.begin(); }
   /// @return Iterator past the last node.
@@ -975,6 +978,12 @@ template <typename METRIC, typename PAYLOAD>
 size_t
 DiscreteSpace<METRIC, PAYLOAD>::count() const {
   return _list.count();
+}
+
+template <typename METRIC, typename PAYLOAD>
+bool
+DiscreteSpace<METRIC, PAYLOAD>::empty() const {
+  return _list.empty();
 }
 
 template <typename METRIC, typename PAYLOAD>

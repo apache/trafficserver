@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include <cstddef>
+
 #include "swoc/swoc_version.h"
 #include "swoc/swoc_meta.h"
 #include "swoc/MemSpan.h"
