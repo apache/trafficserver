@@ -105,7 +105,6 @@ libtscore_la_SOURCES = \
 	ink_time.cc \
 	ink_uuid.cc \
 	IpMap.cc \
-	IpMapConf.cc \
 	JeMiAllocator.cc \
 	Layout.cc \
 	llqueue.cc \
