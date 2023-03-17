@@ -159,7 +159,9 @@ test_HttpTransact_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	@LIBZ@ \
-	@LIBLZMA@
+	@LIBLZMA@ \
+	@OPENSSL_LIBS@ \
+	@BORINGOCSP_LIBS@
 
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
