@@ -1055,11 +1055,9 @@ IP6Range::load(std::string_view text) {
 
 IPRange::IPRange(IPAddr const &min, IPAddr const &max) {
   if (min.is_ip4() && max.is_ip4()) {
-    _range._ip4.assign(min.ip4(), max.ip4());
-    _family = AF_INET;
+    this->assign(min.ip4(), max.ip4());
   } else if (min.is_ip6() && max.is_ip6()) {
-    _range._ip6.assign(min.ip6(), max.ip6());
-    _family = AF_INET6;
+    this->assign(min.ip6(), max.ip6());
   }
 }
 
