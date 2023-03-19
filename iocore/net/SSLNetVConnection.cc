@@ -426,8 +426,8 @@ SSLNetVConnection::read_raw_data()
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
-  IpMap *pp_ipmap;
-  pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
+  swoc::IPRangeSet *pp_ipmap;
+  pp_ipmap = SSLConfigParams::proxy_protocol_ip_addrs;
 
   if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
     Debug("proxyprotocol", "proxy protocol is enabled on this port");
@@ -438,8 +438,7 @@ SSLNetVConnection::read_raw_data()
       // proxy source IP, not the Proxy Protocol client ip. Since we are
       // checking the ip of the actual source of this connection, this is
       // what we want now.
-      void *payload = nullptr;
-      if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
+      if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
         Debug("proxyprotocol", "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
         r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
         goto proxy_protocol_bypass;

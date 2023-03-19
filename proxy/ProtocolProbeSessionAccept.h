@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "swoc/swoc_ip.h"
+
 #include "I_SessionAccept.h"
 
 struct ProtocolProbeSessionAcceptEnums {
@@ -53,7 +55,7 @@ public:
   ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &)            = delete; // disabled
   ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
 
-  IpMap *proxy_protocol_ipmap = nullptr;
+  swoc::IPRangeSet *proxy_protocol_ipmap = nullptr;
 
 private:
   int mainEvent(int event, void *netvc) override;

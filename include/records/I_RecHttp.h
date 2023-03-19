@@ -23,13 +23,14 @@
 
 #pragma once
 
+#include "swoc/swoc_ip.h"
+
 #include "tscore/ink_inet.h"
 #include "tscpp/util/ts_ip.h"
 #include "tscore/ink_resolver.h"
 #include "ts/apidefs.h"
 #include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
-#include "tscore/IpMap.h"
 #include "tscore/MemArena.h"
 #include <algorithm>
 #include <array>
@@ -42,9 +43,13 @@
 ts::IPAddrPair RecHttpLoadIp(char const *name);
 
 /// Load up an IpMap with IP addresses from the configuration file.
-void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file.
-                      IpMap &ipmap      ///< [out] IpMap.
-);
+
+/** Load a se of IP address from a configuration variable.
+ *
+ * @param name Variable name
+ * @param addrs Destination address set.
+ */
+void RecHttpLoadIpAddrsFromConfVar(const char *name, swoc::IPRangeSet &addrs);
 
 /** A set of session protocols.
     This depends on using @c SessionProtocolNameRegistry to get the indices.

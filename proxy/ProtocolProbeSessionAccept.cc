@@ -98,15 +98,15 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     // the trusted allowlist for proxy protocol, then check to see if it is
     // present
 
-    IpMap *pp_ipmap;
+    // Haha, can't do @c auto because the @c goto won't work across it.
+    swoc::IPRangeSet *pp_ipmap;
     pp_ipmap = probeParent->proxy_protocol_ipmap;
 
     if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
       Debug("proxyprotocol", "ioCompletionEvent: proxy protocol is enabled on this port");
       if (pp_ipmap->count() > 0) {
         Debug("proxyprotocol", "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
-        void *payload = nullptr;
-        if (!pp_ipmap->contains(netvc->get_remote_addr(), &payload)) {
+        if (!pp_ipmap->contains(swoc::IPAddr(netvc->get_remote_addr()))) {
           Debug("proxyprotocol",
                 "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
           goto done;

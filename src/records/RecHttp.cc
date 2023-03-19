@@ -21,6 +21,8 @@
   limitations under the License.
 */
 
+#include "swoc/swoc_ip.h"
+
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
 #include "tscore/ink_defs.h"
@@ -143,27 +145,22 @@ RecHttpLoadIp(char const *name)
 }
 
 void
-RecHttpLoadIpMap(const char *value_name, IpMap &ipmap)
+RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
 {
   char value[1024];
-  IpAddr laddr;
-  IpAddr raddr;
-  void *payload = nullptr;
 
   if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
-    Debug("config", "RecHttpLoadIpMap: parsing the name [%s] and value [%s] to an IpMap", value_name, value);
-    Tokenizer tokens(", ");
-    int n_addrs = tokens.Initialize(value);
-    for (int i = 0; i < n_addrs; ++i) {
-      const char *val = tokens[i];
-
-      Debug("config", "RecHttpLoadIpMap: marking the value [%s] to an IpMap entry", val);
-      if (0 == ats_ip_range_parse(val, laddr, raddr)) {
-        ipmap.fill(laddr, raddr, payload);
+    Debug("config", "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
+    swoc::TextView text(value);
+    while (text) {
+      auto token = text.take_prefix_at(',');
+      if (swoc::IPRange r; r.load(token)) {
+        Debug("config", "RecHttpLoadIpAddrsFromConfVar: marking the value [%.*s]", int(token.size()), token.data());
+        addrs.mark(r);
       }
     }
   }
-  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", ipmap.count());
+  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", addrs.count());
 }
 
 const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
