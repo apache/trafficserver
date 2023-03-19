@@ -112,7 +112,10 @@ iocore/aio/test_AIO
 iocore/eventsystem/test_IOBuffer
 iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
+iocore/eventsystem/benchmark_ProxyAllocator
+
 iocore/hostdb/test_RefCountCache
+iocore/hostdb/test_HostFile
 
 proxy/hdrs/test_mime
 proxy/hdrs/test_Huffmancode
@@ -146,6 +149,8 @@ plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
 plugins/experimental/traffic_dump/test_*
+plugins/authproxy/authproxy_test
+plugins/prefetch/test_*
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test
@@ -157,6 +162,8 @@ plugins/esi/vars_test
 plugins/experimental/uri_signing/test_uri_signing
 
 mgmt/rpc/overridable_txn_vars.cc
+mgmt/rpc/test_jsonrpc
+mgmt/rpc/test_jsonrpcserver
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
 mgmt/tools/traffic_net_config
