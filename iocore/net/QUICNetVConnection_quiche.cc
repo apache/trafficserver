@@ -149,7 +149,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->closed = 1;
     break;
   default:
-    QUICConDebug("Unhandleed event: %d", event);
+    QUICConDebug("Unhandled event: %d", event);
     break;
   }
 
@@ -180,7 +180,7 @@ QUICNetVConnection::state_established(int event, Event *data)
     this->closed = 1;
     break;
   default:
-    QUICConDebug("Unhandleed event: %d", event);
+    QUICConDebug("Unhandled event: %d", event);
     break;
   }
   return EVENT_DONE;
@@ -593,6 +593,7 @@ QUICNetVConnection::_handle_interval()
     this->_ctable->erase(this->_original_quic_connection_id, this);
 
     if (quiche_conn_is_timed_out(this->_quiche_con)) {
+      QUICConDebug("QUIC Idle timeout detected");
       this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);
       return;
     }
