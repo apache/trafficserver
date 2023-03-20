@@ -79,9 +79,8 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
       } else {
         TSDebug(WASM_DEBUG_TAG, "[%s] can't find period for root context id: %d", __FUNCTION__, root_context_id);
       }
+      break;
     }
-
-    break;
   }
 
   if (!found) {
@@ -198,9 +197,8 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
       std::shared_ptr<ats_wasm::Wasm> wbp = it->first;
       if (wbp.get() == context->wasm()) {
         found = true;
+        break;
       }
-
-      break;
     }
 
     if (found) {
@@ -295,13 +293,26 @@ read_file(const std::string &fn, std::string *s)
 {
   auto fd = open(fn.c_str(), O_RDONLY);
   if (fd < 0) {
+    char *errmsg = strerror(errno);
+    TSError("[wasm][%s] wasm unable to open: %s", __FUNCTION__, errmsg);
     return -1;
   }
   auto n = ::lseek(fd, 0, SEEK_END);
+  if (n < 0) {
+    char *errmsg = strerror(errno);
+    TSError("[wasm][%s] wasm unable to lseek: %s", __FUNCTION__, errmsg);
+    return -1;
+  }
   ::lseek(fd, 0, SEEK_SET);
   s->resize(n);
   auto nn = ::read(fd, const_cast<char *>(&*s->begin()), n);
+  if (nn < 0) {
+    char *errmsg = strerror(errno);
+    TSError("[wasm][%s] wasm unable to read: %s", __FUNCTION__, errmsg);
+    return -1;
+  }
   if (nn != static_cast<ssize_t>(n)) {
+    TSError("[wasm][%s] wasm unable to read: size different from buffer", __FUNCTION__);
     return -1;
   }
   return 0;
