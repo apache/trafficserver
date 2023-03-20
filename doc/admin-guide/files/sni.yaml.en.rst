@@ -59,7 +59,11 @@ fqdn                      Both      Fully Qualified Domain Name. This item is us
 
 ip_allow                  Inbound   Specify a list of client IP address, subnets, or ranges what are allowed to complete
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
-                                    Here is an example list: 192.168.1.0/24,192.168.10.1-4. This would allow connections
+                                    Here is an example list ::
+
+                                       192.168.1.0/24,192.168.10.1-192.168.10.4.
+
+                                    This would allow connections
                                     from clients in the 19.168.1.0 network or in the range from 192.168.10.1 to 192.168.1.4.
 
                                     Alternatively, the path to a file containing
