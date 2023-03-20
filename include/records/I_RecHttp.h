@@ -44,7 +44,7 @@ ts::IPAddrPair RecHttpLoadIp(char const *name);
 
 /// Load up an IpMap with IP addresses from the configuration file.
 
-/** Load a se of IP address from a configuration variable.
+/** Load a set of IP address from a configuration variable.
  *
  * @param name Variable name
  * @param addrs Destination address set.

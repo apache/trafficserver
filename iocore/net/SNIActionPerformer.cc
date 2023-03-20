@@ -81,7 +81,7 @@ SNI_IpAllow::SNIAction(TLSSNISupport *snis, ActionItem::Context const &ctx) cons
     return SSL_TLSEXT_ERR_OK;
   } else {
     swoc::LocalBufferWriter<256> w;
-    w.print("{} is not allowed - denyint connection\0", ip);
+    w.print("{} is not allowed - denying connection\0", ip);
     Debug("ssl_sni", "%s", w.data());
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
