@@ -31,6 +31,7 @@ add_custom_target(ParseRules ALL DEPENDS ParseRulesCType ParseRulesCTypeToUpper 
 
 add_library(tscore SHARED
         AcidPtr.cc
+        AcidPtr.cc
         Arena.cc
         ArgParser.cc
         BaseLogFile.cc
@@ -49,8 +50,6 @@ add_library(tscore SHARED
         HashSip.cc
         HostLookup.cc
         InkErrno.cc
-        IpMap.cc
-        IpMapConf.cc
         JeMiAllocator.cc
         Layout.cc
         LogMessage.cc
