@@ -72,7 +72,7 @@ public:
 class QUICContext
 {
 public:
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
   QUICContext(QUICConnectionInfoProvider *info);
 #else
   QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
@@ -82,7 +82,7 @@ public:
   virtual ~QUICContext(){};
   virtual QUICConnectionInfoProvider *connection_info() const;
   virtual QUICConfig::scoped_config config() const;
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #else
   virtual QUICLDConfig &ld_config() const;
   virtual QUICPacketProtectionKeyInfoProvider *key_info() const;
@@ -191,7 +191,7 @@ protected:
 private:
   QUICConfig::scoped_config _config;
   QUICConnectionInfoProvider *_connection_info = nullptr;
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #else
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
   QUICRTTProvider *_rtt_provider                 = nullptr;

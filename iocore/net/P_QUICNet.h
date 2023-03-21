@@ -65,7 +65,7 @@ private:
   Que(UDPPacketInternal, link) _longInQueue;
 
 private:
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
   void _process_packet(QUICPollEvent *e, NetHandler *nh);
 #else
   void _process_short_header_packet(QUICPollEvent *e, NetHandler *nh);

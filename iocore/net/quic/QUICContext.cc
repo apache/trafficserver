@@ -94,7 +94,7 @@ private:
   const QUICConfigParams *_params;
 };
 
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 QUICContext::QUICContext(QUICConnectionInfoProvider *info) : _connection_info(info) {}
 #else
 QUICContext::QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
@@ -121,7 +121,7 @@ QUICContext::config() const
   return _config;
 }
 
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #else
 QUICPacketProtectionKeyInfoProvider *
 QUICContext::key_info() const

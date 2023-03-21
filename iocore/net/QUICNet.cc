@@ -60,7 +60,7 @@ QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.
 
 QUICPollCont::~QUICPollCont() {}
 
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 void
 QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 {
@@ -168,7 +168,7 @@ QUICPollCont::pollEvent(int, Event *)
   }
 
   while ((e = result.pop())) {
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
     this->_process_packet(e, nh);
 #else
     uint8_t *buf;
