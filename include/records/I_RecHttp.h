@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <array>
 
-/** Load IP addresses from a configuratiojn value.
+/** Load IP addresses from a configuration value.
  *
  * @param name Configuration variable name.
  * @return The results of parsing the value.
