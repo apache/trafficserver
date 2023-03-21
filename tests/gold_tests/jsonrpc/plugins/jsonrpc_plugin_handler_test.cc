@@ -26,8 +26,9 @@
 #include <algorithm>
 #include <fstream>
 
+#include "swoc/swoc_file.h"
+
 #include "yaml-cpp/yaml.h"
-#include "tscore/ts_file.h"
 #include "tscore/Errata.h"
 #include "tscore/I_Layout.h"
 #include "tscore/BufferWriter.h"
@@ -117,7 +118,7 @@ struct HostItem {
 int
 CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 {
-  namespace fs = ts::file;
+  namespace fs = swoc::file;
 
   TSDebug(PLUGIN_NAME, "Working on the update now");
   YAML::Node params = *static_cast<YAML::Node *>(TSContDataGet(contp));
@@ -160,10 +161,10 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
   // Basic stuffs here.
   // We open the file if exist, we update/add the host in the structure. For simplicity we do not delete anything.
-  fs::path sandbox  = ts::file::current_path();
+  fs::path sandbox  = fs::current_path();
   fs::path dumpFile = sandbox / "my_test_plugin_dump.yaml";
   bool newFile{false};
-  if (!ts::file::exists(dumpFile)) {
+  if (!fs::exists(dumpFile)) {
     newFile = true;
   }
 

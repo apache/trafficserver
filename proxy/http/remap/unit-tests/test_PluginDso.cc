@@ -54,7 +54,7 @@ static fs::path runtimePath     = runtimeDir / configPath;
 void
 clean()
 {
-  fs::remove(sandboxDir, ec);
+  fs::remove_all(sandboxDir, ec);
 }
 
 /* Mock used only to make PluginDso concrete enough to be tested */
@@ -120,7 +120,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK(runtimePath == plugin.runtimePath());
         CHECK(fs::exists(runtimePath));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("loading a valid plugin")
@@ -133,14 +133,14 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK(error.empty());
         std::error_code ec;
         fs::file_status fs = fs::status(effectivePath, ec);
-        CHECK(plugin.modTime() == fs::modification_time(fs));
+        CHECK(plugin.modTime() == fs::last_write_time(fs));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("loading a valid plugin but missing runtime dir")
     {
-      CHECK(fs::remove(runtimeDir, ec));
+      CHECK(fs::remove_all(runtimeDir, ec) > 0);
       CHECK_FALSE(fs::exists(runtimePath));
       bool result = plugin.load(error);
 
@@ -149,7 +149,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK_FALSE(true == result);
         CHECK("failed to create a copy: No such file or directory" == error);
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("loading a valid plugin twice in a row")
@@ -167,7 +167,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK_FALSE(true == result);
         CHECK("plugin already loaded" == error);
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("explicitly unloading a valid but not loaded plugin")
@@ -184,7 +184,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK_FALSE(error.empty());
         CHECK_FALSE(fs::exists(runtimePath));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("unloading a valid plugin twice in a row")
@@ -205,7 +205,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK_FALSE(true == result);
         CHECK("no plugin loaded" == error);
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("explicitly unloading a valid and loaded plugin")
@@ -234,7 +234,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         /* Runtime DSO should not be found anymore */
         CHECK_FALSE(fs::exists(runtimePath));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("implicitly unloading a valid and loaded plugin")
@@ -258,7 +258,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         /* Runtime path should be removed after unloading */
         CHECK_FALSE(fs::exists(runtimePath));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
   }
 
@@ -276,7 +276,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK_FALSE(true == result);
         CHECK("empty effective path" == error);
         CHECK(plugin.effectivePath().empty());
-        CHECK(0 == plugin.modTime());
+        CHECK(swoc::file::file_time_type::min() == plugin.modTime());
         CHECK(runtimePath == plugin.runtimePath());
         CHECK_FALSE(fs::exists(runtimePath));
       }
@@ -315,7 +315,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         /* Runtime DSO should not exist since the load failed. */
         CHECK_FALSE(fs::exists(runtimePath));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
   }
 }
@@ -352,7 +352,7 @@ SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
         CHECK(nullptr != s);
         CHECK(error.empty());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("looking for non-existing symbol")
@@ -364,7 +364,7 @@ SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
         CHECK(nullptr == s);
         CHECK_FALSE(error.empty());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("looking for multiple existing symbols")
@@ -380,7 +380,7 @@ SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
           CHECK(error.empty());
         }
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     /* The following version function is used only for unit-testing of the plugin factory functionality */
@@ -394,7 +394,7 @@ SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
         int ver          = version ? version() : -1;
         CHECK(1 == ver);
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
   }
 }

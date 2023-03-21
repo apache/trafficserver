@@ -89,7 +89,7 @@ test_HostFile_CPPFLAGS = \
 	-I$(abs_top_srcdir)/tests/include \
 	-I$(abs_top_srcdir)/proxy/http/remap
 
-test_HostFile_LDADD = $(test_LD_ADD)
+test_HostFile_LDADD = $(test_LD_ADD) @SWOC_LIBS@
 
 test_HostFile_SOURCES = \
 	test_HostFile.cc \

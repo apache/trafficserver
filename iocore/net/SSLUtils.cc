@@ -19,6 +19,7 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
 #include "swoc/Errata.h"
 #include "swoc/bwf_std.h"
 
@@ -33,7 +34,6 @@
 #include "tscore/ink_mutex.h"
 #include "tscore/Filenames.h"
 #include "records/I_RecHttp.h"
-#include "tscore/ts_file.h"
 
 #include "P_Net.h"
 #include "InkAPIInternal.h"
@@ -1973,7 +1973,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   Note("%s loading ...", ts::filename::SSL_MULTICERT);
 
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{params->configFilePath}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
   if (ec) {
     switch (ec.value()) {
     case ENOENT:

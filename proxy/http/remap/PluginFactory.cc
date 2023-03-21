@@ -102,7 +102,7 @@ PluginFactory::~PluginFactory()
   _instList.apply([](RemapPluginInst *pluginInst) -> void { delete pluginInst; });
   _instList.clear();
 
-  fs::remove(_runtimeDir, _ec);
+  fs::remove_all(_runtimeDir, _ec);
 
   PluginDebug(_tag, "destroyed plugin factory %s", getUuid());
   delete _uuid;
@@ -235,7 +235,7 @@ PluginFactory::getEffectivePath(const fs::path &configPath)
 {
   if (configPath.is_absolute()) {
     if (fs::exists(configPath)) {
-      return fs::canonical(configPath.string(), _ec);
+      return fs::canonical(configPath, _ec);
     } else {
       return fs::path();
     }
@@ -308,5 +308,5 @@ PluginFactory::indicatePostReload(bool reloadSuccessful)
 void
 PluginFactory::clean(std::string &error)
 {
-  fs::remove(_runtimeDir, _ec);
+  fs::remove_all(_runtimeDir, _ec);
 }

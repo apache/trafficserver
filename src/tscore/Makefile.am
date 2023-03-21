@@ -122,7 +122,6 @@ libtscore_la_SOURCES = \
 	LogMessage.cc \
 	Throttler.cc \
 	Tokenizer.cc \
-	ts_file.cc \
 	Version.cc \
 	X509HostnameValidator.cc
 
@@ -192,7 +191,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_Throttler.cc \
 	unit_tests/test_Tokenizer.cc \
-	unit_tests/test_ts_file.cc \
 	unit_tests/test_Version.cc \
 	unit_tests/test_Errata.cc \
 	unit_tests/test_MMH.cc \

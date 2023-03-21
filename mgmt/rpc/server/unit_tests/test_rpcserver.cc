@@ -31,8 +31,9 @@
 #include <chrono>
 #include <fstream>
 
+#include "swoc/swoc_file.h"
+
 #include <tscore/BufferWriter.h>
-#include <tscore/ts_file.h>
 #include "ts/ts.h"
 
 #include "rpc/jsonrpc/JsonRPC.h"
@@ -46,7 +47,7 @@
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 
-namespace fs = ts::file;
+namespace fs = swoc::file;
 
 namespace rpc
 {
@@ -556,5 +557,5 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
   REQUIRE(socket->get_conf().lockPathName == lockPathName);
 
   std::error_code ec;
-  REQUIRE(fs::remove(sandboxDir, ec));
+  REQUIRE(fs::remove_all(sandboxDir, ec) > 0);
 }

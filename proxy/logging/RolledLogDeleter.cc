@@ -26,12 +26,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "swoc/swoc_file.h"
+
 #include "RolledLogDeleter.h"
 #include "LogUtils.h"
-#include "tscore/ts_file.h"
 #include "tscpp/util/TextView.h"
 
-namespace fs = ts::file;
+namespace fs = swoc::file;
 
 LogDeletingInfo::LogDeletingInfo(const char *_logname, int _min_count)
   : logname(_logname),
@@ -79,7 +80,7 @@ RolledLogDeleter::register_log_type_for_deletion(std::string_view log_type, int 
 bool
 RolledLogDeleter::consider_for_candidacy(std::string_view log_path, int64_t file_size, time_t modification_time)
 {
-  const fs::path rolled_log_file = fs::filename(log_path);
+  const fs::path rolled_log_file = fs::path(log_path).filename();
   auto iter                      = deleting_info.find(LogUtils::get_unrolled_filename(rolled_log_file.view()));
   if (iter == deleting_info.end()) {
     return false;

@@ -24,8 +24,9 @@
 #include <atomic>
 #include "catch.hpp"
 
+#include "swoc/swoc_file.h"
+
 #include "I_IO_URING.h"
-#include "tscore/ts_file.h"
 
 #include <functional>
 
@@ -33,15 +34,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-ts::file::path
+swoc::file::path
 temp_prefix(const char *basename)
 {
   char buffer[PATH_MAX];
   std::error_code err;
-  auto tmpdir = ts::file::temp_directory_path();
+  auto tmpdir = swoc::file::temp_directory_path();
   snprintf(buffer, sizeof(buffer), "%s/%s.XXXXXX", tmpdir.c_str(), basename);
-  auto prefix = ts::file::path(mkdtemp(buffer));
-  bool result = ts::file::create_directories(prefix, err, 0755);
+  auto prefix = swoc::file::path(mkdtemp(buffer));
+  bool result = swoc::file::create_directories(prefix, err, 0755);
   if (!result) {
     throw std::runtime_error("Failed to create directory");
   }
@@ -51,7 +52,7 @@ temp_prefix(const char *basename)
 }
 
 int
-open_path(const ts::file::path &path, int oflags = O_CREAT | O_RDWR, int mode = 0644)
+open_path(const swoc::file::path &path, int oflags = O_CREAT | O_RDWR, int mode = 0644)
 {
   return open(path.c_str(), oflags, mode);
 }
@@ -126,7 +127,7 @@ TEST_CASE("disk_io", "[io_uring]")
 
   auto tmp = temp_prefix("disk_io");
 
-  REQUIRE(ts::file::exists(tmp));
+  REQUIRE(swoc::file::exists(tmp));
 
   auto apath = tmp / "a";
 

@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "HostFile.h"
 #include "P_HostDBProcessor.h"
 
@@ -80,15 +82,15 @@ HostFile::lookup(const HostDBHash &hash)
 }
 
 std::shared_ptr<HostFile>
-ParseHostFile(ts::file::path const &path, ts_seconds interval)
+ParseHostFile(swoc::file::path const &path, ts_seconds interval)
 {
   std::shared_ptr<HostFile> hf;
 
-  Debug_bw("hostdb", R"(Loading host file "{}")", path);
+  Debug_bw("hostdb", R"(Loading host file "{}")", path.view());
 
   if (!path.empty()) {
     std::error_code ec;
-    std::string content = ts::file::load(path, ec);
+    std::string content = swoc::file::load(path, ec);
     if (!ec) {
       HostAddrMap addr_map;
       AddrHostMap host_map;

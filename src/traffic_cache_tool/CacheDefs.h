@@ -27,14 +27,16 @@
 #include <iostream>
 #include <list>
 
-#include "tscore/I_Version.h"
+#include "swoc/swoc_file.h"
 #include "swoc/Scalar.h"
+
+#include "tscore/I_Version.h"
+#include "tscore/ink_memory.h"
 #include "tscore/Regex.h"
 #include "tscore/Errata.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
-#include "tscore/ts_file.h"
 
 namespace ts::tag
 {
@@ -276,10 +278,10 @@ class DFA;
 // this class matches url of the format : scheme://hostname:port/path;params?query
 
 struct url_matcher {
-  url_matcher(ts::file::path const &path) // file contains a list of regex
+  url_matcher(swoc::file::path const &path) // file contains a list of regex
   {
     std::error_code ec;
-    std::string load_content = ts::file::load(path, ec);
+    std::string load_content = swoc::file::load(path, ec);
     ts::TextView fileContent(load_content);
     if (ec.value() == 0) {
       const char **patterns;
@@ -440,7 +442,7 @@ dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
 
 struct Stripe;
 struct Span {
-  Span(ts::file::path const &path) : _path(path) {}
+  Span(swoc::file::path const &path) : _path(path) {}
   Errata load();
   Errata loadDevice();
   bool isEmpty() const;
@@ -455,7 +457,7 @@ struct Span {
   ts::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
-  ts::file::path _path;     ///< File system location of span.
+  swoc::file::path _path;   ///< File system location of span.
   ats_scoped_fd _fd;        ///< Open file descriptor for span.
   int _vol_idx = 0;         ///< Forced volume.
   CacheStoreBlocks _base;   ///< Offset to first usable byte.

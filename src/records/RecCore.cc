@@ -21,11 +21,12 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tscore/Filenames.h"
-#include "tscore/ts_file.h"
 
 #include "records/I_RecordsConfig.h"
 #include "records/P_RecFile.h"
@@ -222,8 +223,8 @@ RecCoreInit(Diags *_diags)
 
   // Make sure there is no legacy file, if so we drop a BIG WARNING and fail.
   // This is to avoid issues with someone ignoring that we now use records.yaml
-  ts::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
-  if (ts::file::exists(old_config)) {
+  swoc::file::path old_config{RecConfigReadConfigPath(nullptr, "records.config")};
+  if (swoc::file::is_readable(old_config)) {
     RecLog(DL_Fatal,
            "**** Found a legacy config file (%s). Please remove it and migrate to the new YAML format before continuing. ****",
            old_config.c_str());
