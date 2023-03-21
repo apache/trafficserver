@@ -104,6 +104,8 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
   addr.load("172.16.39.255");
   REQUIRE(addr == upper);
 
+  REQUIRE(swoc::IPAddr(addr) == swoc::IPAddr("172.16.39.255"));
+
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("10.169.243.105/23", lower, upper));
   addr.load("10.169.242.0");
   REQUIRE(lower == addr);
