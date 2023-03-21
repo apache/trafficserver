@@ -93,25 +93,32 @@ struct SSLNextProtocolTrampoline : public Continuation {
       return EVENT_ERROR;
     }
 
-    // Cancel the action, so later timeouts and errors don't try to
-    // send the event to the Accept object.  After this point, the accept
-    // object does not care.
-    netvc->set_action(nullptr);
-
-    Continuation *endpoint_cont = netvc->endpoint();
-    if (!endpoint_cont) {
-      // Route to the default endpoint
-      endpoint_cont = npnParent->endpoint;
-    }
-
-    if (endpoint_cont) {
-      // disable read io, send events to endpoint
-      netvc->do_io_read(endpoint_cont, 0, nullptr);
-
-      send_plugin_event(endpoint_cont, NET_EVENT_ACCEPT, netvc);
+    // This wasn't really a TLS connection
+    // Trying to process it as a TCP connection
+    if (netvc == nullptr) {
+      UnixNetVConnection *plain_netvc = dynamic_cast<UnixNetVConnection *>(vio->vc_server);
+      send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, plain_netvc);
     } else {
-      // No handler, what should we do? Best to just kill the VC while we can.
-      netvc->do_io_close();
+      // Cancel the action, so later timeouts and errors don't try to
+      // send the event to the Accept object.  After this point, the accept
+      // object does not care.
+      netvc->set_action(nullptr);
+
+      Continuation *endpoint_cont = netvc->endpoint();
+      if (!endpoint_cont) {
+        // Route to the default endpoint
+        endpoint_cont = npnParent->endpoint;
+      }
+
+      if (endpoint_cont) {
+        // disable read io, send events to endpoint
+        netvc->do_io_read(endpoint_cont, 0, nullptr);
+
+        send_plugin_event(endpoint_cont, NET_EVENT_ACCEPT, netvc);
+      } else {
+        // No handler, what should we do? Best to just kill the VC while we can.
+        netvc->do_io_close();
+      }
     }
 
     delete this;
@@ -132,6 +139,7 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     ink_release_assert(netvc != nullptr);
 
     netvc->setTransparentPassThrough(transparent_passthrough);
+    netvc->setTransparentAllowPlain(transparent_allow_plain);
 
     // Register our protocol set with the VC and kick off a zero-length read to
     // force the SSLNetVConnection to complete the SSL handshake. Don't tell
@@ -167,11 +175,12 @@ SSLNextProtocolAccept::enableProtocols(const SessionProtocolSet &protos)
   this->protoenabled = protos;
 }
 
-SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough)
+SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough, bool transparent_allow_plain)
   : SessionAccept(nullptr),
     buffer(new_empty_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index)),
     endpoint(ep),
-    transparent_passthrough(transparent_passthrough)
+    transparent_passthrough(transparent_passthrough),
+    transparent_allow_plain(transparent_allow_plain)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
 }

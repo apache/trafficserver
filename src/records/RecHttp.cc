@@ -183,6 +183,7 @@ const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
 const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
 const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
 const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
+const char *const HttpProxyPort::OPT_TRANSPARENT_ALLOW_PLAIN = "tr-allow-plain";
 const char *const HttpProxyPort::OPT_SSL                     = "ssl";
 const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
@@ -442,6 +443,12 @@ HttpProxyPort::processOptions(const char *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
+    } else if (0 == strcasecmp(OPT_TRANSPARENT_ALLOW_PLAIN, item)) {
+#if TS_USE_TPROXY
+      m_transparent_allow_plain = true;
+#else
+      Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
+#endif
     } else if (0 == strcasecmp(OPT_MPTCP, item)) {
       if (mptcp_supported()) {
         m_mptcp = true;
@@ -490,6 +497,12 @@ HttpProxyPort::processOptions(const char *opts)
   if (m_transparent_passthrough && !m_inbound_transparent_p) {
     Warning("Port descriptor '%s' has transparent pass-through enabled without inbound transparency, this will be ignored.", opts);
     m_transparent_passthrough = false;
+  }
+
+  // Transparent allow-plain requires tr-in
+  if (m_transparent_allow_plain && !m_inbound_transparent_p) {
+    Warning("Port descriptor '%s' has transparent allow-plain enabled without inbound transparency, this will be ignored.", opts);
+    m_transparent_allow_plain = false;
   }
 
   // Set the default session protocols.
@@ -643,6 +656,10 @@ HttpProxyPort::print(char *out, size_t n)
 
   if (m_transparent_passthrough) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_PASSTHROUGH);
+  }
+
+  if (m_transparent_allow_plain) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_ALLOW_PLAIN);
   }
 
   /* Don't print the IP resolution preferences if the port is outbound
