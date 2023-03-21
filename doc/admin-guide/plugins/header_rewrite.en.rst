@@ -718,8 +718,8 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
-+**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
-+with the ``TXN_DEBUG`` control.
+**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+with the ``TXN_DEBUG`` control.
 
 set-destination
 ~~~~~~~~~~~~~~~
@@ -826,7 +826,7 @@ if necessary.
 
 set-http-cntl
 ~~~~~~~~~~~~~
-;;
+::
 
   set-http-cntl <controller> <flag>
 
