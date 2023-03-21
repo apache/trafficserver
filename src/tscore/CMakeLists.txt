@@ -123,7 +123,6 @@ add_executable(test_tscore
         unit_tests/test_History.cc
         unit_tests/test_IntrusiveHashMap.cc
         unit_tests/test_IntrusivePtr.cc
-        unit_tests/test_IpMap.cc
         unit_tests/test_List.cc
         unit_tests/test_MMH.cc
         unit_tests/test_MT_hashtable.cc
