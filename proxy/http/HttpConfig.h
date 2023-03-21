@@ -39,8 +39,9 @@
 #include <map>
 #include <cctype>
 #include <string_view>
-
 #include <chrono>
+
+#include "swoc/swoc_ip.h"
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
@@ -468,6 +469,8 @@ enum class Action {
   FOLLOW,
 };
 
+using ActionMap = swoc::IPSpace<Action>;
+
 static std::map<std::string, AddressClass> address_class_map = {
   {"default",   AddressClass::DEFAULT  },
   {"private",   AddressClass::PRIVATE  },
@@ -812,7 +815,7 @@ public:
   MgmtInt max_msg_iobuf_index     = BUFFER_SIZE_INDEX_32K;
 
   char *redirect_actions_string                        = nullptr;
-  IpMap *redirect_actions_map                          = nullptr;
+  RedirectEnabled::ActionMap *redirect_actions_map     = nullptr;
   RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
 
   ///////////////////////////////////////////////////////////////////
@@ -897,7 +900,7 @@ public:
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
 
   // parse redirect configuration string
-  static IpMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
+  static RedirectEnabled::ActionMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
 
 public:
   static int m_id;

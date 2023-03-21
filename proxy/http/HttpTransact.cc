@@ -1971,11 +1971,11 @@ HttpTransact::OSDNSLookup(State *s)
       action = s->http_config_param->redirect_actions_self_action;
       TxnDebug("http_trans", "[OSDNSLookup] Self action - %d.", int(action));
     } else {
-      // Make sure the return value from contains is big enough for a void*.
-      intptr_t x{intptr_t(RedirectEnabled::Action::INVALID)};
       ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
-      ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->dns_info.addr, reinterpret_cast<void **>(&x)));
-      action = static_cast<RedirectEnabled::Action>(x);
+      auto &addrs = *(s->http_config_param->redirect_actions_map);
+      auto spot   = addrs.find(swoc::IPAddr(&s->dns_info.addr.sa));
+      ink_release_assert(spot != addrs.end()); // Should always find an entry.
+      action = std::get<1>(*spot);
       TxnDebug("http_trans", "[OSDNSLookup] Mapped action - %d for family %d.", int(action),
                int(s->dns_info.active->data.ip.family()));
     }
