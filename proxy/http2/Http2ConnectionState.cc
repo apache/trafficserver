@@ -2648,13 +2648,12 @@ Http2ConnectionState::increment_peer_rwnd(size_t amount)
   this->_recent_rwnd_increment[this->_recent_rwnd_increment_index] = amount;
   ++this->_recent_rwnd_increment_index;
   this->_recent_rwnd_increment_index %= this->_recent_rwnd_increment.size();
-  // SKH Causing problems with gRPC processing.  Python example resulted in amount 8
-  // double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
-  // double avg = sum / this->_recent_rwnd_increment.size();
-  // if (avg < Http2::min_avg_window_update) {
-  //  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE, this_ethread());
-  //  return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
-  //}
+  double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
+  double avg = sum / this->_recent_rwnd_increment.size();
+  if (avg < Http2::min_avg_window_update) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE, this_ethread());
+    return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+  }
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
