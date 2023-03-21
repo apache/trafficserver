@@ -51,8 +51,7 @@ template <class T> struct CacheArray {
   int pos;
 };
 
-template <class T>
-inline CacheArray<T>::CacheArray(const T *val, int initial_size) : data(nullptr), default_val(val), size(0), pos(-1)
+template <class T> CacheArray<T>::CacheArray(const T *val, int initial_size) : data(nullptr), default_val(val), size(0), pos(-1)
 {
   if (initial_size > 0) {
     int i = 1;
@@ -65,7 +64,7 @@ inline CacheArray<T>::CacheArray(const T *val, int initial_size) : data(nullptr)
   }
 }
 
-template <class T> inline CacheArray<T>::~CacheArray()
+template <class T> CacheArray<T>::~CacheArray()
 {
   if (data) {
     if (data != fast_data) {
@@ -74,25 +73,25 @@ template <class T> inline CacheArray<T>::~CacheArray()
   }
 }
 
-template <class T> inline CacheArray<T>::operator const T *() const
+template <class T> CacheArray<T>::operator const T *() const
 {
   return data;
 }
 
-template <class T> inline CacheArray<T>::operator T *()
+template <class T> CacheArray<T>::operator T *()
 {
   return data;
 }
 
 template <class T>
-inline T &
+T &
 CacheArray<T>::operator[](int idx)
 {
   return data[idx];
 }
 
 template <class T>
-inline T &
+T &
 CacheArray<T>::operator()(int idx)
 {
   if (idx >= size) {
@@ -119,7 +118,7 @@ CacheArray<T>::operator()(int idx)
 }
 
 template <class T>
-inline T *
+T *
 CacheArray<T>::detach()
 {
   T *d;
@@ -131,14 +130,14 @@ CacheArray<T>::detach()
 }
 
 template <class T>
-inline int
+int
 CacheArray<T>::length()
 {
   return pos + 1;
 }
 
 template <class T>
-inline void
+void
 CacheArray<T>::clear()
 {
   if (data) {
@@ -153,7 +152,7 @@ CacheArray<T>::clear()
 }
 
 template <class T>
-inline void
+void
 CacheArray<T>::resize(int new_size)
 {
   if (new_size > size) {
