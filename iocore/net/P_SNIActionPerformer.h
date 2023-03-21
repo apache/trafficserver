@@ -30,15 +30,16 @@
  ****************************************************************************/
 #pragma once
 
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
-#include "swoc/TextView.h"
 
 #include "tscore/ink_inet.h"
-#include "swoc/TextView.h"
 
 #include <vector>
 
@@ -337,7 +338,7 @@ public:
 
 class SNI_IpAllow : public ActionItem
 {
-  IpMap ip_map;
+  swoc::IPRangeSet ip_addrs;
 
 public:
   SNI_IpAllow(std::string &ip_allow_list, const std::string &servername);

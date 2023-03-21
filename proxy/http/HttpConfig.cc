@@ -1143,7 +1143,7 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
 void
 HttpConfig::startup()
 {
-  extern void SSLConfigInit(IpMap * map);
+  extern void SSLConfigInit(swoc::IPRangeSet * addrs);
   http_rsb = RecAllocateRawStatBlock(static_cast<int>(http_stat_count));
   register_stat_callbacks();
 
@@ -1161,8 +1161,8 @@ HttpConfig::startup()
 
   c.inbound  += RecHttpLoadIp("proxy.local.incoming_ip_to_bind");
   c.outbound += RecHttpLoadIp("proxy.local.outgoing_ip_to_bind");
-  RecHttpLoadIpMap("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ipmap);
-  SSLConfigInit(&c.config_proxy_protocol_ipmap);
+  RecHttpLoadIpAddrsFromConfVar("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ip_addrs);
+  SSLConfigInit(&c.config_proxy_protocol_ip_addrs);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");

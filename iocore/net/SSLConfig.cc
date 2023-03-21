@@ -74,7 +74,7 @@ bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
-IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
+swoc::IPRangeSet *SSLConfigParams::proxy_protocol_ip_addrs  = nullptr;
 bool SSLConfigParams::ssl_ktls_enabled                      = false;
 
 const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
@@ -100,9 +100,9 @@ SSLConfigParams::~SSLConfigParams()
 }
 
 void
-SSLConfigInit(IpMap *global)
+SSLConfigInit(swoc::IPRangeSet *global)
 {
-  SSLConfigParams::proxy_protocol_ipmap = global;
+  SSLConfigParams::proxy_protocol_ip_addrs = global;
 }
 
 void

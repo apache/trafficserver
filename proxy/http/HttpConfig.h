@@ -46,7 +46,6 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
-#include "tscore/IpMap.h"
 #include "tscore/Regex.h"
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
@@ -780,7 +779,7 @@ public:
   // Initialize to any addr (default constructed) because these must always be set.
   ts::IPAddrPair outbound;
   IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
-  IpMap config_proxy_protocol_ipmap;
+  swoc::IPRangeSet config_proxy_protocol_ip_addrs;
 
   MgmtInt server_max_connections    = 0;
   MgmtInt max_websocket_connections = -1;
