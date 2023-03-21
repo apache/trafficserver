@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "swoc/MemArena.h"
 #include "swoc/swoc_ip.h"
 
 #include "tscore/ink_inet.h"
@@ -31,7 +32,6 @@
 #include "ts/apidefs.h"
 #include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
-#include "tscore/MemArena.h"
 #include <algorithm>
 #include <array>
 
@@ -222,7 +222,7 @@ public:
 protected:
   int m_n = 0; ///< Index of first unused slot.
   std::array<TextView, MAX> m_names;
-  ts::MemArena m_arena; ///< Storage for non-constant strings.
+  swoc::MemArena m_arena; ///< Storage for non-constant strings.
 };
 
 extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;

@@ -110,7 +110,6 @@ libtscore_la_SOURCES = \
 	llqueue.cc \
 	lockfile.cc \
 	MatcherUtils.cc \
-	MemArena.cc \
 	MMH.cc \
 	ParseRules.cc \
 	Random.cc \
@@ -186,7 +185,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PluginUserArgs.cc \

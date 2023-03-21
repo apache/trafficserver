@@ -55,7 +55,6 @@ add_library(tscore SHARED
         LogMessage.cc
         MMH.cc
         MatcherUtils.cc
-        MemArena.cc
         ParseRules.cc
         Random.cc
         RbTree.cc
@@ -127,7 +126,6 @@ add_executable(test_tscore
         unit_tests/test_List.cc
         unit_tests/test_MMH.cc
         unit_tests/test_MT_hashtable.cc
-        unit_tests/test_MemArena.cc
         unit_tests/test_ParseRules.cc
         unit_tests/test_PluginUserArgs.cc
         unit_tests/test_PriorityQueue.cc
