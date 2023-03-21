@@ -41,13 +41,20 @@ public:
    *
    * @param a4 Address.
    */
-  IPAddrPair(swoc::IP4Addr a4);
+  IPAddrPair(swoc::IP4Addr const &a4);
 
   /** Construct with IPv6 address.
    *
    * @param a6 Address.
    */
-  IPAddrPair(swoc::IP6Addr a6);
+  IPAddrPair(swoc::IP6Addr const &a6);
+
+  /** Construct from two addresses.
+   *
+   * @param addr4 IPv4 address.
+   * @param addr6 IPv6 address.
+   */
+  IPAddrPair(swoc::IP4Addr const &addr4, swoc::IP6Addr const &addr6);
 
   /// @return @c true if either address is present.
   bool has_value() const;
@@ -89,13 +96,23 @@ public:
    */
   self_type &operator=(swoc::IPAddr const &addr);
 
+  /** Additive / union.
+   *
+   * @param that Source value.
+   * @return @a this
+   *
+   * Missing values in @a that are not copied, the original value remains.
+   */
+  self_type &operator+=(self_type const &that);
+
 protected:
   std::optional<swoc::IP4Addr> _ip4;
   std::optional<swoc::IP6Addr> _ip6;
 };
 
-inline IPAddrPair::IPAddrPair(swoc::IP4Addr a4) : _ip4(a4) {}
-inline IPAddrPair::IPAddrPair(swoc::IP6Addr a6) : _ip6(a6) {}
+inline IPAddrPair::IPAddrPair(swoc::IP4Addr const &a4) : _ip4(a4) {}
+inline IPAddrPair::IPAddrPair(swoc::IP6Addr const &a6) : _ip6(a6) {}
+inline IPAddrPair::IPAddrPair(const swoc::IP4Addr &addr4, const swoc::IP6Addr &addr6) : _ip4(addr4), _ip6(addr6) {}
 
 inline bool
 IPAddrPair::has_value() const

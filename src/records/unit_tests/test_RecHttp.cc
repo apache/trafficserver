@@ -92,8 +92,8 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
     REQUIRE(ports[0].m_port == 4443);
     REQUIRE(ports[0].m_family == AF_INET6);
     REQUIRE(ports[0].isSSL() == true);
-    REQUIRE(ports[0].m_outbound_ip6.isValid() == true);
-    REQUIRE(ports[0].m_outbound_ip4.isValid() == true);
+    REQUIRE(ports[0].m_outbound.has_ip6() == true);
+    REQUIRE(ports[0].m_outbound.has_ip4() == true);
     REQUIRE(ports[0].m_inbound_ip.isValid() == false);
     REQUIRE(view.find(":ssl") != TextView::npos);
     REQUIRE(view.find(":proto") == TextView::npos); // it's default, should not have this.

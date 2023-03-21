@@ -1939,16 +1939,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
-  IpEndpoint machine_addr;
+  swoc::IPEndpoint machine_addr;
   ink_zero(machine_addr);
-  if (HttpConfig::m_master.outbound_ip4.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.outbound_ip4);
-  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.outbound_ip6);
-  } else if (HttpConfig::m_master.inbound_ip4.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.inbound_ip4);
-  } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.inbound_ip6);
+  if (HttpConfig::m_master.outbound.has_ip4()) {
+    machine_addr.assign(HttpConfig::m_master.outbound.ip4());
+  } else if (HttpConfig::m_master.outbound.has_ip6()) {
+    machine_addr.assign(HttpConfig::m_master.outbound.ip6());
+  } else if (HttpConfig::m_master.inbound.has_ip4()) {
+    machine_addr.assign(HttpConfig::m_master.inbound.ip4());
+  } else if (HttpConfig::m_master.inbound.has_ip6()) {
+    machine_addr.assign(HttpConfig::m_master.inbound.ip6());
   }
   char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {

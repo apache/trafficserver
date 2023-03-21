@@ -5891,7 +5891,7 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
   HttpSM *sm = (HttpSM *)txnp;
 
   sm->ua_txn->upstream_outbound_options.outbound_port = ats_ip_port_host_order(addr);
-  sm->ua_txn->set_outbound_ip(IpAddr(addr));
+  sm->ua_txn->set_outbound_ip(swoc::IPAddr(addr));
   return TS_SUCCESS;
 }
 

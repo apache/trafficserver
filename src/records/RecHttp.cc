@@ -29,6 +29,8 @@
 #include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_ip.h"
 #include <string_view>
 #include <unordered_set>
 
@@ -103,40 +105,41 @@ mptcp_supported()
   return value != 0;
 }
 
-void
-RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
+ts::IPAddrPair
+RecHttpLoadIp(char const *name)
 {
+  ts::IPAddrPair zret;
   char value[1024];
-  ip4.invalidate();
-  ip6.invalidate();
-  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
+
+  if (REC_ERR_OKAY == RecGetRecordString(name, value, sizeof(value))) {
     Tokenizer tokens(", ");
     int n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
       const char *host = tokens[i];
-      IpEndpoint tmp4, tmp6;
       // For backwards compatibility we need to support the use of host names
       // for the address to bind.
-      if (0 == ats_ip_getbestaddrinfo(host, &tmp4, &tmp6)) {
-        if (ats_is_ip4(&tmp4)) {
-          if (!ip4.isValid()) {
-            ip4 = tmp4;
+      auto addrs = ts::getbestaddrinfo(host);
+      if (addrs.has_value()) {
+        if (addrs.has_ip4()) {
+          if (!zret.has_ip4()) {
+            zret = addrs.ip4();
           } else {
-            Warning("'%s' specifies more than one IPv4 address, ignoring %s.", value_name, host);
+            Warning("'%s' specifies more than one IPv4 address, ignoring %s.", name, host);
           }
         }
-        if (ats_is_ip6(&tmp6)) {
-          if (!ip6.isValid()) {
-            ip6 = tmp6;
+        if (addrs.has_ip6()) {
+          if (!zret.has_ip6()) {
+            zret = addrs.ip6();
           } else {
-            Warning("'%s' specifies more than one IPv6 address, ignoring %s.", value_name, host);
+            Warning("'%s' specifies more than one IPv6 address, ignoring %s.", name, host);
           }
         }
       } else {
-        Warning("'%s' has an value '%s' that is not recognized as an IP address, ignored.", value_name, host);
+        Warning("'%s' has an value '%s' that is not recognized as an IP address, ignored.", name, host);
       }
     }
   }
+  return zret;
 }
 
 void
@@ -392,8 +395,8 @@ HttpProxyPort::processOptions(const char *opts)
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
     } else if (nullptr != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
-      if (0 == ip.load(value)) {
-        this->outboundIp(ip.family()) = ip;
+      if (swoc::IPAddr addr; addr.load(value)) {
+        this->m_outbound = addr;
       } else {
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
@@ -557,22 +560,24 @@ HttpProxyPort::print(char *out, size_t n)
     return n;
   }
 
-  if (m_outbound_ip4.isValid()) {
+  if (m_outbound.has_ip4()) {
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip4.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
+                             swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip4()).data());
     need_colon_p = true;
   }
   if (zret >= n) {
     return n;
   }
 
-  if (m_outbound_ip6.isValid()) {
+  if (m_outbound.has_ip6()) {
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip6.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
+                             swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip6()).data());
     need_colon_p = true;
   }
   if (zret >= n) {

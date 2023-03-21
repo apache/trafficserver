@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_inet.h"
+#include "tscpp/util/ts_ip.h"
 #include "tscore/ink_resolver.h"
 #include "ts/apidefs.h"
 #include "ts/apidefs.h"
@@ -33,11 +34,12 @@
 #include <algorithm>
 #include <array>
 
-/// Load default inbound IP addresses from the configuration file.
-void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
-                   IpAddr &ip4,      ///< [out] IPv4 address.
-                   IpAddr &ip6       ///< [out] Ipv6 address.
-);
+/** Load IP addresses from a configuration value.
+ *
+ * @param name Configuration variable name.
+ * @return The results of parsing the value.
+ */
+ts::IPAddrPair RecHttpLoadIp(char const *name);
 
 /// Load up an IpMap with IP addresses from the configuration file.
 void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file.
@@ -269,9 +271,7 @@ public:
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
-  IpAddr m_outbound_ip4;
-  /// Local address for outbound connections (to origin server).
-  IpAddr m_outbound_ip6;
+  ts::IPAddrPair m_outbound;
   /// Ordered preference for DNS resolution family ( @c FamilyPrefence )
   /// A value of @c PREFER_NONE indicates that entry and subsequent ones
   /// are invalid.
@@ -283,13 +283,6 @@ public:
 
   /// Default constructor.
   HttpProxyPort();
-
-  /** Select the local outbound address object.
-
-      @return The IP address for @a family
-  */
-  IpAddr &outboundIp(uint16_t family ///< IP address family.
-  );
 
   /// Check for SSL port.
   bool isSSL() const;
@@ -466,18 +459,6 @@ inline bool
 HttpProxyPort::isPlugin() const
 {
   return TRANSPORT_PLUGIN == m_type;
-}
-
-inline IpAddr &
-HttpProxyPort::outboundIp(uint16_t family)
-{
-  static IpAddr invalid; // dummy to make compiler happy about return.
-  if (AF_INET == family)
-    return m_outbound_ip4;
-  else if (AF_INET6 == family)
-    return m_outbound_ip6;
-  ink_release_assert(!"Invalid family for outbound address on proxy port.");
-  return invalid; // never happens but compiler insists.
 }
 
 inline bool
