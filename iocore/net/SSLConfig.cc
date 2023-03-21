@@ -578,9 +578,9 @@ SSLCertificateConfig::reconfigure()
     retStatus = false;
   }
 
-  // If there are errors in the certificate configs and we had wanted to exit on error
-  // we won't want to reset the config
-  if (retStatus) {
+  // If the load succeeded, load it. If there is no current configuration, load even a broken
+  // config so that a bad initial load doesn't completely disable TLS.
+  if (retStatus || configid == 0) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;
