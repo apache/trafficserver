@@ -46,7 +46,6 @@ libinkcache_a_SOURCES = \
 	I_Cache.h \
 	I_CacheDefs.h \
 	I_Store.h \
-	Inline.cc \
 	P_Cache.h \
 	P_CacheArray.h \
 	P_CacheDir.h \

@@ -552,7 +552,7 @@ CacheVC *new_DocEvacuator(int nbytes, Vol *d);
 
 // inline Functions
 
-TS_INLINE CacheVC *
+inline CacheVC *
 new_CacheVC(Continuation *cont)
 {
   EThread *t          = cont->mutex->thread_holding;
@@ -572,7 +572,7 @@ new_CacheVC(Continuation *cont)
   return c;
 }
 
-TS_INLINE int
+inline int
 free_CacheVC(CacheVC *cont)
 {
   Debug("cache_free", "free %p", cont);
@@ -625,7 +625,7 @@ free_CacheVC(CacheVC *cont)
   return EVENT_DONE;
 }
 
-TS_INLINE int
+inline int
 CacheVC::calluser(int event)
 {
   recursive++;
@@ -639,7 +639,7 @@ CacheVC::calluser(int event)
   return EVENT_CONT;
 }
 
-TS_INLINE int
+inline int
 CacheVC::callcont(int event)
 {
   recursive++;
@@ -654,7 +654,7 @@ CacheVC::callcont(int event)
   return EVENT_DONE;
 }
 
-TS_INLINE int
+inline int
 CacheVC::do_read_call(CacheKey *akey)
 {
   doc_pos             = 0;
@@ -664,14 +664,14 @@ CacheVC::do_read_call(CacheKey *akey)
   return handleRead(EVENT_CALL, nullptr);
 }
 
-TS_INLINE int
+inline int
 CacheVC::do_write_call()
 {
   PUSH_HANDLER(&CacheVC::handleWrite);
   return handleWrite(EVENT_CALL, nullptr);
 }
 
-TS_INLINE void
+inline void
 CacheVC::cancel_trigger()
 {
   if (trigger) {
@@ -680,7 +680,7 @@ CacheVC::cancel_trigger()
   }
 }
 
-TS_INLINE int
+inline int
 CacheVC::die()
 {
   if (vio.op == VIO::WRITE) {
@@ -707,7 +707,7 @@ CacheVC::die()
   }
 }
 
-TS_INLINE int
+inline int
 CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
 {
   cancel_trigger();
@@ -727,21 +727,21 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
   return EVENT_CONT;
 }
 
-TS_INLINE int
+inline int
 CacheVC::do_write_lock()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
   return handleWriteLock(EVENT_NONE, nullptr);
 }
 
-TS_INLINE int
+inline int
 CacheVC::do_write_lock_call()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
   return handleWriteLock(EVENT_CALL, nullptr);
 }
 
-TS_INLINE bool
+inline bool
 CacheVC::writer_done()
 {
   OpenDirEntry *cod = od;
@@ -762,7 +762,7 @@ CacheVC::writer_done()
   return false;
 }
 
-TS_INLINE int
+inline int
 Vol::close_write(CacheVC *cont)
 {
 #ifdef CACHE_STAT_PAGES
@@ -774,7 +774,7 @@ Vol::close_write(CacheVC *cont)
 }
 
 // Returns 0 on success or a positive error code on failure
-TS_INLINE int
+inline int
 Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   Vol *vol       = this;
@@ -800,7 +800,7 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   return ECACHE_DOC_BUSY;
 }
 
-TS_INLINE int
+inline int
 Vol::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -811,7 +811,7 @@ Vol::close_write_lock(CacheVC *cont)
   return close_write(cont);
 }
 
-TS_INLINE int
+inline int
 Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -822,7 +822,7 @@ Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
   return open_write(cont, allow_if_writers, max_writers);
 }
 
-TS_INLINE OpenDirEntry *
+inline OpenDirEntry *
 Vol::open_read_lock(CryptoHash *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -832,7 +832,7 @@ Vol::open_read_lock(CryptoHash *key, EThread *t)
   return open_dir.open_read(key);
 }
 
-TS_INLINE int
+inline int
 Vol::begin_read_lock(CacheVC *cont)
 {
 // no need for evacuation as the entire document is already in memory
@@ -850,7 +850,7 @@ Vol::begin_read_lock(CacheVC *cont)
   return begin_read(cont);
 }
 
-TS_INLINE int
+inline int
 Vol::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -861,7 +861,7 @@ Vol::close_read_lock(CacheVC *cont)
   return close_read(cont);
 }
 
-TS_INLINE int
+inline int
 dir_delete_lock(CacheKey *key, Vol *d, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
@@ -872,7 +872,7 @@ dir_delete_lock(CacheKey *key, Vol *d, ProxyMutex *m, Dir *del)
   return dir_delete(key, d, del);
 }
 
-TS_INLINE int
+inline int
 dir_insert_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
@@ -883,7 +883,7 @@ dir_insert_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m)
   return dir_insert(key, d, to_part);
 }
 
-TS_INLINE int
+inline int
 dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
 {
   EThread *thread = m->thread_holding;
@@ -894,16 +894,14 @@ dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *over
   return dir_overwrite(key, d, to_part, overwrite, must_overwrite);
 }
 
-void TS_INLINE
-rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)
+void inline rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)
 {
   next_key->b[0] = mutex->thread_holding->generator.random();
   next_key->b[1] = mutex->thread_holding->generator.random();
 }
 
 extern uint8_t CacheKey_next_table[];
-void TS_INLINE
-next_CacheKey(CacheKey *next_key, CacheKey *key)
+void inline next_CacheKey(CacheKey *next_key, CacheKey *key)
 {
   uint8_t *b = (uint8_t *)next_key;
   uint8_t *k = (uint8_t *)key;
@@ -913,8 +911,7 @@ next_CacheKey(CacheKey *next_key, CacheKey *key)
   }
 }
 extern uint8_t CacheKey_prev_table[];
-void TS_INLINE
-prev_CacheKey(CacheKey *prev_key, CacheKey *key)
+void inline prev_CacheKey(CacheKey *prev_key, CacheKey *key)
 {
   uint8_t *b = (uint8_t *)prev_key;
   uint8_t *k = (uint8_t *)key;
@@ -924,7 +921,7 @@ prev_CacheKey(CacheKey *prev_key, CacheKey *key)
   b[0] = CacheKey_prev_table[k[0]];
 }
 
-TS_INLINE unsigned int
+inline unsigned int
 next_rand(unsigned int *p)
 {
   unsigned int seed = *p;
@@ -935,7 +932,7 @@ next_rand(unsigned int *p)
 
 extern ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator;
 
-TS_INLINE CacheRemoveCont *
+inline CacheRemoveCont *
 new_CacheRemoveCont()
 {
   CacheRemoveCont *cache_rm = cacheRemoveContAllocator.alloc();
@@ -945,14 +942,14 @@ new_CacheRemoveCont()
   return cache_rm;
 }
 
-TS_INLINE void
+inline void
 free_CacheRemoveCont(CacheRemoveCont *cache_rm)
 {
   cache_rm->mutex = nullptr;
   cacheRemoveContAllocator.free(cache_rm);
 }
 
-TS_INLINE int
+inline int
 CacheRemoveCont::event_handler(int event, void *data)
 {
   (void)event;
@@ -1018,20 +1015,20 @@ struct Cache {
 extern Cache *theCache;
 extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
-TS_INLINE void
+inline void
 Cache::generate_key(CryptoHash *hash, CacheURL *url)
 {
   url->hash_get(hash);
 }
 
-TS_INLINE void
+inline void
 Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generation)
 {
   key->hostname = url->host_get(&key->hostlen);
   url->hash_get(&key->hash, generation);
 }
 
-TS_INLINE unsigned int
+inline unsigned int
 cache_hash(const CryptoHash &hash)
 {
   uint64_t f         = hash.fold();
