@@ -161,7 +161,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
     // Pure END_STREAM
     if (payload_length == 0) {
-      if (stream->read_enabled()) {
+      if (stream->is_read_enabled()) {
         stream->signal_read_event(VC_EVENT_READ_COMPLETE);
       }
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -224,16 +224,16 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "Write mismatch");
     }
     myreader->consume(num_written);
-    stream->read_update(num_written);
+    stream->update_read_length(num_written);
   }
   myreader->writer()->dealloc_reader(myreader);
 
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
     // TODO: set total written size to read_vio.nbytes
-    stream->read_done();
+    stream->set_read_done();
   }
 
-  if (stream->read_enabled()) {
+  if (stream->is_read_enabled()) {
     if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
       if (this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
         // This final DATA frame for this stream consumed all the bytes for the
@@ -1695,17 +1695,6 @@ Http2ConnectionState::find_stream(Http2StreamId id) const
     ink_assert(s != s->link.next);
   }
   return nullptr;
-}
-
-void
-Http2ConnectionState::start_streams()
-{
-  Http2Stream *s = stream_list.head;
-  while (s) {
-    Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
-    s->reenable_write();
-    s = next;
-  }
 }
 
 void

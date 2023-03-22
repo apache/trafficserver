@@ -12,3 +12,5 @@
 ``
 [``] recv (stream_id=1) :status: 200
 ``
+``; END_STREAM
+``

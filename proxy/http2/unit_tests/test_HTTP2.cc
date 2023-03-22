@@ -99,7 +99,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[128]  = {0};
+    char buf[1024] = {0};
     int bufindex   = 0;
     int dumpoffset = 0;
 
@@ -154,7 +154,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[128]  = {0};
+    char buf[1024] = {0};
     int bufindex   = 0;
     int dumpoffset = 0;
 

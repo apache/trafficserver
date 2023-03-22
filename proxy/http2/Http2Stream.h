@@ -137,8 +137,8 @@ public:
     return &_send_header;
   }
 
-  void read_update(int count);
-  void read_done();
+  void update_read_length(int count);
+  void set_read_done();
 
   void clear_io_events();
 
@@ -169,7 +169,7 @@ public:
   void reset_send_headers();
   MIOBuffer *read_vio_writer() const;
   int64_t read_vio_read_avail();
-  bool read_enabled() const;
+  bool is_read_enabled() const;
 
   //////////////////
   // Variables
@@ -409,7 +409,7 @@ Http2Stream::read_vio_writer() const
 }
 
 inline bool
-Http2Stream::read_enabled() const
+Http2Stream::is_read_enabled() const
 {
   return !this->read_vio.is_disabled();
 }
@@ -422,13 +422,13 @@ Http2Stream::_clear_timers()
 }
 
 inline void
-Http2Stream::read_update(int count)
+Http2Stream::update_read_length(int count)
 {
   read_vio.ndone += count;
 }
 
 inline void
-Http2Stream::read_done()
+Http2Stream::set_read_done()
 {
   read_vio.nbytes = read_vio.ndone;
 }

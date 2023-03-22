@@ -2297,13 +2297,13 @@ HttpSM::cancel_pending_server_connection()
       ConnectingEntry *connecting_entry = ip_iter->second;
       // Found a match
       // Look for our sm in the queue
-      auto entry = connecting_entry->_connect_sms.find(this);
-      if (entry != connecting_entry->_connect_sms.end()) {
-        connecting_entry->_connect_sms.erase(entry);
-        if (connecting_entry->_connect_sms.empty()) {
-          if (connecting_entry->_netvc) {
-            connecting_entry->_netvc->do_io_write(nullptr, 0, nullptr);
-            connecting_entry->_netvc->do_io_close();
+      auto entry = connecting_entry->connect_sms.find(this);
+      if (entry != connecting_entry->connect_sms.end()) {
+        connecting_entry->connect_sms.erase(entry);
+        if (connecting_entry->connect_sms.empty()) {
+          if (connecting_entry->netvc) {
+            connecting_entry->netvc->do_io_write(nullptr, 0, nullptr);
+            connecting_entry->netvc->do_io_close();
           }
           ethread->connecting_pool->m_ip_pool.erase(ip_iter);
           delete connecting_entry;
@@ -2347,12 +2347,12 @@ HttpSM::add_to_existing_request()
   while (!retval && ip_iter != ethread->connecting_pool->m_ip_pool.end() && ip_iter->first == ip) {
     // Check that entry matches sni, hostname, and cert
     if (proposed_hostname == ip_iter->second->hostname && proposed_sni == ip_iter->second->sni &&
-        proposed_cert == ip_iter->second->cert_name && ip_iter->second->_connect_sms.size() < 50) {
+        proposed_cert == ip_iter->second->cert_name && ip_iter->second->connect_sms.size() < 50) {
       // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
       // bytes are received back
       this->t_state.set_connect_fail(EIO);
-      ip_iter->second->_connect_sms.insert(this);
-      Debug("http_connect", "Add entry to connection queue. size=%" PRId64, ip_iter->second->_connect_sms.size());
+      ip_iter->second->connect_sms.insert(this);
+      Debug("http_connect", "Add entry to connection queue. size=%" PRId64, ip_iter->second->connect_sms.size());
       retval = true;
       break;
     }
@@ -5677,13 +5677,13 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry          = new ConnectingEntry();
       new_entry->mutex   = this->mutex;
       new_entry->handler = (ContinuationHandler)&ConnectingEntry::state_http_server_open;
-      new_entry->_ipaddr.assign(&t_state.current.server->dst_addr.sa);
+      new_entry->ipaddr.assign(&t_state.current.server->dst_addr.sa);
       new_entry->hostname  = t_state.current.server->name;
       new_entry->sni       = this->get_outbound_sni();
       new_entry->cert_name = this->get_outbound_cert();
       this->t_state.set_connect_fail(EIO);
-      new_entry->_connect_sms.insert(this);
-      ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->_ipaddr, new_entry));
+      new_entry->connect_sms.insert(this);
+      ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
     }
   }
 

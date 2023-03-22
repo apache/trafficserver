@@ -126,7 +126,6 @@ public:
   void set_stream_id(Http2Stream *stream);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
-  void start_streams();
   bool delete_stream(Http2Stream *stream);
   void release_stream();
   void cleanup_streams();
