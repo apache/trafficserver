@@ -29,6 +29,7 @@
 #include "P_SSLConfig.h"
 #include "SSLStats.h"
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 #include <openssl/core_names.h>
 #endif

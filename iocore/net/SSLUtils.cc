@@ -597,15 +597,21 @@ DH_get_2048_256()
     0x1D, 0xB2, 0x46, 0xC3, 0x2F, 0x63, 0x07, 0x84, 0x90, 0xF0, 0x0E, 0xF8, 0xD6, 0x47, 0xD1, 0x48, 0xD4, 0x79, 0x54, 0x51,
     0x5E, 0x23, 0x27, 0xCF, 0xEF, 0x98, 0xC5, 0x82, 0x66, 0x4B, 0x4C, 0x0F, 0x6C, 0xC4, 0x16, 0x59};
   DH *dh;
+  BIGNUM *p;
+  BIGNUM *g;
 
-  if ((dh = DH_new()) == nullptr)
-    return (nullptr);
-  dh->p = BN_bin2bn(dh2048_p, sizeof(dh2048_p), nullptr);
-  dh->g = BN_bin2bn(dh2048_g, sizeof(dh2048_g), nullptr);
-  if ((dh->p == nullptr) || (dh->g == nullptr)) {
-    DH_free(dh);
-    return (nullptr);
+  if ((dh = DH_new()) == nullptr) {
+    return nullptr;
   }
+  p = BN_bin2bn(dh2048_p, sizeof(dh2048_p), nullptr);
+  g = BN_bin2bn(dh2048_g, sizeof(dh2048_g), nullptr);
+  if (p == nullptr || g == nullptr) {
+    DH_free(dh);
+    BN_free(p);
+    BN_free(g);
+    return nullptr;
+  }
+  DH_set0_pqg(dh, p, nullptr, g);
   return (dh);
 }
 #endif
