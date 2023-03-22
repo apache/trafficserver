@@ -1,10 +1,10 @@
 /** @file
 
-  Event subsystem
+Public RecProcess declarations
 
   @section license License
 
-  Licensed to the Apache Software Foundation (ASF) under one
+    Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
   regarding copyright ownership.  The ASF licenses this file
@@ -19,33 +19,22 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
  */
 
 #pragma once
-#define _I_EventSystem_h
 
-#include "tscore/ink_platform.h"
-#include "ts/apidefs.h"
+#include "records/I_RecDefs.h"
+#include "tscore/Diags.h"
 
-#include "I_IOBuffer.h"
-#include "I_Action.h"
-#include "I_Continuation.h"
-#include "I_EThread.h"
-#include "I_Event.h"
-#include "I_EventProcessor.h"
+//-------------------------------------------------------------------------
+// Initialization/Starting
+//-------------------------------------------------------------------------
+int RecProcessInit(Diags *diags = nullptr);
+int RecProcessStart();
 
-#include "I_Lock.h"
-#include "I_PriorityEventQueue.h"
-#include "I_Processor.h"
-#include "I_ProtectedQueue.h"
-#include "I_Thread.h"
-#include "I_VIO.h"
-#include "I_VConnection.h"
-#include "records/I_RecProcess.h"
-#include "I_SocketManager.h"
-#include "RecProcess.h"
-
-static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
-
-void ink_event_system_init(ts::ModuleVersion version);
+//-------------------------------------------------------------------------
+// Setters for manipulating internal sleep intervals
+//-------------------------------------------------------------------------
+void RecProcess_set_raw_stat_sync_interval_ms(int ms);
+void RecProcess_set_config_update_interval_ms(int ms);
+void RecProcess_set_remote_sync_interval_ms(int ms);

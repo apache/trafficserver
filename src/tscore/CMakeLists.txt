@@ -107,7 +107,7 @@ target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${YAML_INCLUDE_DIRS}
 )
-target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv)
+target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc)
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc

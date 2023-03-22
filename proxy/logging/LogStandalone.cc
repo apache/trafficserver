@@ -40,6 +40,7 @@
 // Needs LibRecordsConfigInit()
 #include "records/I_RecordsConfig.h"
 #include "I_Machine.h"
+#include "RecProcess.h"
 
 #define LOG_FILENAME_SIZE 255
 
@@ -102,8 +103,6 @@ initialize_process_manager()
 
   RecProcessInit(diags());
   LibRecordsConfigInit();
-
-  RecProcessInitMessage();
 
   //
   // Define version info records

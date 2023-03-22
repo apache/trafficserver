@@ -29,6 +29,7 @@
 #include "records/I_RecProcess.h"
 #include "records/I_RecordsConfig.h"
 #include "info.h"
+#include "RecProcess.h"
 
 #if TS_USE_HWLOC
 #include <hwloc.h>

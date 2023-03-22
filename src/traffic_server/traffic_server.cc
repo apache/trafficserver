@@ -77,7 +77,7 @@ extern "C" int plock(int);
 #include "tscore/I_Layout.h"
 #include "I_Machine.h"
 #include "records/I_RecordsConfig.h"
-#include "records/I_RecProcess.h"
+#include "RecProcess.h"
 #include "Transform.h"
 #include "ConfigProcessor.h"
 #include "HttpProxyServerMain.h"
@@ -672,7 +672,6 @@ initialize_process_manager()
   RecProcessInit(diags());
   LibRecordsConfigInit();
 
-  RecProcessInitMessage();
   check_config_directories();
 
   //

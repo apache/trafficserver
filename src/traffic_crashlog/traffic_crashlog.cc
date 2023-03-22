@@ -31,6 +31,7 @@
 #include "records/I_RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
+#include "RecProcess.h"
 
 static int syslog_mode    = false;
 static int debug_mode     = false;

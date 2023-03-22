@@ -63,6 +63,8 @@ libinkevent_a_SOURCES = \
 	Processor.cc \
 	ProtectedQueue.cc \
 	ProxyAllocator.cc \
+    RecProcess.cc \
+    RecRawStatsImpl.cc \
 	SocketManager.cc \
 	Tasks.cc \
 	Thread.cc \
