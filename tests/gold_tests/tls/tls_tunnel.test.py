@@ -220,6 +220,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     "HTTP/1.1 200 OK",
     "Verify a successful response is received")
 
+# This test run causes an exception in proxy_protocol_client.py
+#
 tr = Test.AddTestRun("test proxy_protocol_port - not in connect_ports")
 tr.Processes.Default.StartBefore(server_forbidden)
 tr.Setup.Copy('proxy_protocol_client.py')

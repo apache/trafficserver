@@ -5731,9 +5731,13 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->cache_info.action = CACHE_DO_NO_ACTION;
   }
 
+  bool do_increment_stat = (0 == s->method);
+
   s->method = incoming_request->method_get_wksidx();
 
-  if (s->method == HTTP_WKSIDX_GET) {
+  if (!do_increment_stat) {
+    ;
+  } else if (s->method == HTTP_WKSIDX_GET) {
     HTTP_INCREMENT_DYN_STAT(http_get_requests_stat);
   } else if (s->method == HTTP_WKSIDX_HEAD) {
     HTTP_INCREMENT_DYN_STAT(http_head_requests_stat);

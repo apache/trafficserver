@@ -1049,7 +1049,11 @@ public:
   static bool handle_internal_request(State *s, HTTPHdr *incoming_hdr);
   static bool handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr);
   static void bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request);
+
+  // WARNING:  this function may be called multiple times for the same transaction.
+  //
   static void initialize_state_variables_from_request(State *s, HTTPHdr *obsolete_incoming_request);
+
   static void initialize_state_variables_from_response(State *s, HTTPHdr *incoming_response);
   static bool is_server_negative_cached(State *s);
   static bool is_cache_response_returnable(State *s);
