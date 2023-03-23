@@ -37,14 +37,12 @@ traffic_server_traffic_server_CPPFLAGS = \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
-	@BORINGOCSP_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
         @SWOC_LDFLAGS@ \
-	@YAMLCPP_LDFLAGS@ \
-	@BORINGOCSP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@
 
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \
@@ -101,7 +99,6 @@ traffic_server_traffic_server_LDADD = \
 	@SWOC_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
-	@BORINGOCSP_LIBS@ \
 	@URING_LIBS@ \
 	-lm
 

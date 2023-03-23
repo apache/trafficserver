@@ -9570,7 +9570,6 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
     ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config, nullptr));
-#if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
         if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname, rsp_file)) {
@@ -9578,7 +9577,6 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
         }
       }
     }
-#endif
     SSLConfig::release(config);
   }
   return ret;

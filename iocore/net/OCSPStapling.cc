@@ -21,16 +21,10 @@
 
 #include "P_OCSPStapling.h"
 
-#if TS_USE_TLS_OCSP
-
-#include <openssl/bio.h>
 #include <openssl/ssl.h>
-
-#if TS_HAS_BORINGOCSP
-#include <boringocsp/ocsp.h>
-#else
-#include <openssl/ocsp.h>
-#endif
+#include <openssl/x509v3.h>
+#include <openssl/asn1.h>
+#include <openssl/asn1t.h>
 
 #include "tscore/ink_memory.h"
 #include "P_Net.h"
@@ -46,13 +40,217 @@
 
 extern ClassAllocator<FetchSM> FetchSMAllocator;
 
+// clang-format off
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+// RFC 6960
+using TS_OCSP_CERTID = struct ocsp_cert_id {
+  X509_ALGOR *hashAlgorithm;
+  ASN1_OCTET_STRING *issuerNameHash;
+  ASN1_OCTET_STRING *issuerKeyHash;
+  ASN1_INTEGER *serialNumber;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_CERTID)
+ASN1_SEQUENCE(TS_OCSP_CERTID) = {
+        ASN1_SIMPLE(TS_OCSP_CERTID, hashAlgorithm, X509_ALGOR),
+        ASN1_SIMPLE(TS_OCSP_CERTID, issuerNameHash, ASN1_OCTET_STRING),
+        ASN1_SIMPLE(TS_OCSP_CERTID, issuerKeyHash, ASN1_OCTET_STRING),
+        ASN1_SIMPLE(TS_OCSP_CERTID, serialNumber, ASN1_INTEGER)
+} ASN1_SEQUENCE_END(TS_OCSP_CERTID)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_CERTID)
+TS_OCSP_CERTID * TS_OCSP_CERTID_dup(const TS_OCSP_CERTID *x) \
+{
+  return static_cast<TS_OCSP_CERTID *>(ASN1_item_dup(ASN1_ITEM_rptr(TS_OCSP_CERTID), const_cast<TS_OCSP_CERTID *>(x)));
+}
+
+using TS_OCSP_ONEREQ = struct ocsp_one_request_st {
+  TS_OCSP_CERTID *reqCert;
+  STACK_OF(X509_EXTENSION) *singleRequestExtensions;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_ONEREQ)
+ASN1_SEQUENCE(TS_OCSP_ONEREQ) = {
+        ASN1_SIMPLE(TS_OCSP_ONEREQ, reqCert, TS_OCSP_CERTID),
+        ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_ONEREQ, singleRequestExtensions, X509_EXTENSION, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_ONEREQ)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_ONEREQ)
+
+using TS_OCSP_REQINFO = struct ocsp_req_info_st {
+  ASN1_INTEGER *version;
+  GENERAL_NAME *requestorName;
+  STACK_OF(TS_OCSP_ONEREQ) *requestList;
+  STACK_OF(X509_EXTENSION) *requestExtensions;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_REQINFO)
+ASN1_SEQUENCE(TS_OCSP_REQINFO) = {
+        ASN1_EXP_OPT(TS_OCSP_REQINFO, version, ASN1_INTEGER, 0),
+        ASN1_EXP_OPT(TS_OCSP_REQINFO, requestorName, GENERAL_NAME, 1),
+        ASN1_SEQUENCE_OF(TS_OCSP_REQINFO, requestList, TS_OCSP_ONEREQ),
+        ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_REQINFO, requestExtensions, X509_EXTENSION, 2)
+} ASN1_SEQUENCE_END(TS_OCSP_REQINFO)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_REQINFO)
+
+using TS_OCSP_SIGNATURE = struct ocsp_signature_st {
+    X509_ALGOR *signatureAlgorithm;
+    ASN1_BIT_STRING *signature;
+    STACK_OF(X509) *certs;
+};
+ASN1_SEQUENCE(TS_OCSP_SIGNATURE) = {
+        ASN1_SIMPLE(TS_OCSP_SIGNATURE, signatureAlgorithm, X509_ALGOR),
+        ASN1_SIMPLE(TS_OCSP_SIGNATURE, signature, ASN1_BIT_STRING),
+        ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_SIGNATURE, certs, X509, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_SIGNATURE)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_SIGNATURE)
+
+using TS_OCSP_REQUEST = struct ocsp_req {
+ TS_OCSP_REQINFO *tbsRequest;
+ TS_OCSP_SIGNATURE *optionalSignature;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_REQUEST)
+ASN1_SEQUENCE(TS_OCSP_REQUEST) = {
+        ASN1_SIMPLE(TS_OCSP_REQUEST, tbsRequest, TS_OCSP_REQINFO),
+        ASN1_EXP_OPT(TS_OCSP_REQUEST, optionalSignature, TS_OCSP_SIGNATURE, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_REQUEST)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_REQUEST)
+
+using TS_OCSP_RESPBYTES = struct ocsp_resp_bytes_st {
+  ASN1_OBJECT *responseType;
+  ASN1_OCTET_STRING *response;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_RESPBYTES)
+ASN1_SEQUENCE(TS_OCSP_RESPBYTES) = {
+            ASN1_SIMPLE(TS_OCSP_RESPBYTES, responseType, ASN1_OBJECT),
+            ASN1_SIMPLE(TS_OCSP_RESPBYTES, response, ASN1_OCTET_STRING)
+} ASN1_SEQUENCE_END(TS_OCSP_RESPBYTES)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_RESPBYTES)
+
+using TS_OCSP_RESPONSE = struct ocsp_resp {
+  ASN1_ENUMERATED *responseStatus;
+  TS_OCSP_RESPBYTES  *responseBytes;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_RESPONSE)
+ASN1_SEQUENCE(TS_OCSP_RESPONSE) = {
+        ASN1_SIMPLE(TS_OCSP_RESPONSE, responseStatus, ASN1_ENUMERATED),
+        ASN1_EXP_OPT(TS_OCSP_RESPONSE, responseBytes, TS_OCSP_RESPBYTES, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_RESPONSE)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_RESPONSE)
+
+using TS_OCSP_RESPID = struct ocsp_responder_id_st {
+  int type;
+  union {
+    X509_NAME *byName;
+    ASN1_OCTET_STRING *byKey;
+  } value;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_RESPID)
+ASN1_CHOICE(TS_OCSP_RESPID) = {
+           ASN1_EXP(TS_OCSP_RESPID, value.byName, X509_NAME, 1),
+           ASN1_EXP(TS_OCSP_RESPID, value.byKey, ASN1_OCTET_STRING, 2)
+} ASN1_CHOICE_END(TS_OCSP_RESPID)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_RESPID)
+
+using TS_OCSP_REVOKEDINFO = struct ocsp_revoked_info_st {
+    ASN1_GENERALIZEDTIME *revocationTime;
+    ASN1_ENUMERATED *revocationReason;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_REVOKEDINFO)
+ASN1_SEQUENCE(TS_OCSP_REVOKEDINFO) = {
+        ASN1_SIMPLE(TS_OCSP_REVOKEDINFO, revocationTime, ASN1_GENERALIZEDTIME),
+        ASN1_EXP_OPT(TS_OCSP_REVOKEDINFO, revocationReason, ASN1_ENUMERATED, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_REVOKEDINFO)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_REVOKEDINFO)
+
+using TS_OCSP_CERTSTATUS = struct ocsp_cert_status_st {
+  int type;
+  union {
+      ASN1_NULL *good;
+      TS_OCSP_REVOKEDINFO *revoked;
+      ASN1_NULL *unknown;
+  } value;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_CERTSTATUS)
+ASN1_CHOICE(TS_OCSP_CERTSTATUS) = {
+        ASN1_IMP(TS_OCSP_CERTSTATUS, value.good, ASN1_NULL, 0),
+        ASN1_IMP(TS_OCSP_CERTSTATUS, value.revoked, TS_OCSP_REVOKEDINFO, 1),
+        ASN1_IMP(TS_OCSP_CERTSTATUS, value.unknown, ASN1_NULL, 2)
+} ASN1_CHOICE_END(TS_OCSP_CERTSTATUS)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_CERTSTATUS)
+
+using TS_OCSP_SINGLERESP = struct ocsp_single_response_st {
+  TS_OCSP_CERTID *certId;
+  TS_OCSP_CERTSTATUS *certStatus;
+  ASN1_GENERALIZEDTIME *thisUpdate;
+  ASN1_GENERALIZEDTIME *nextUpdate;
+  STACK_OF(X509_EXTENSION) *singleExtensions;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_SINGLERESP)
+ASN1_SEQUENCE(TS_OCSP_SINGLERESP) = {
+           ASN1_SIMPLE(TS_OCSP_SINGLERESP, certId, TS_OCSP_CERTID),
+           ASN1_SIMPLE(TS_OCSP_SINGLERESP, certStatus, TS_OCSP_CERTSTATUS),
+           ASN1_SIMPLE(TS_OCSP_SINGLERESP, thisUpdate, ASN1_GENERALIZEDTIME),
+           ASN1_EXP_OPT(TS_OCSP_SINGLERESP, nextUpdate, ASN1_GENERALIZEDTIME, 0),
+           ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_SINGLERESP, singleExtensions, X509_EXTENSION, 1)
+} ASN1_SEQUENCE_END(TS_OCSP_SINGLERESP)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_SINGLERESP)
+
+using TS_OCSP_RESPDATA = struct ocsp_response_data_st {
+  ASN1_INTEGER *version;
+  TS_OCSP_RESPID *responderId;
+  ASN1_GENERALIZEDTIME *producedAt;
+  STACK_OF(TS_OCSP_SINGLERESP) *responses;
+  STACK_OF(X509_EXTENSION) *responseExtensions;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_RESPDATA)
+ASN1_SEQUENCE(TS_OCSP_RESPDATA) = {
+           ASN1_EXP_OPT(TS_OCSP_RESPDATA, version, ASN1_INTEGER, 0),
+           ASN1_SIMPLE(TS_OCSP_RESPDATA, responderId, TS_OCSP_RESPID),
+           ASN1_SIMPLE(TS_OCSP_RESPDATA, producedAt, ASN1_GENERALIZEDTIME),
+           ASN1_SEQUENCE_OF(TS_OCSP_RESPDATA, responses, TS_OCSP_SINGLERESP),
+           ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_RESPDATA, responseExtensions, X509_EXTENSION, 1)
+} ASN1_SEQUENCE_END(TS_OCSP_RESPDATA)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_RESPDATA)
+
+using TS_OCSP_BASICRESP = struct ocsp_basic_response_st {
+  TS_OCSP_RESPDATA *tbsResponseData;
+  X509_ALGOR *signatureAlgorithm;
+  ASN1_BIT_STRING *signature;
+  STACK_OF(X509) *certs;
+};
+DECLARE_ASN1_FUNCTIONS(TS_OCSP_BASICRESP)
+ASN1_SEQUENCE(TS_OCSP_BASICRESP) = {
+           ASN1_SIMPLE(TS_OCSP_BASICRESP, tbsResponseData, TS_OCSP_RESPDATA),
+           ASN1_SIMPLE(TS_OCSP_BASICRESP, signatureAlgorithm, X509_ALGOR),
+           ASN1_SIMPLE(TS_OCSP_BASICRESP, signature, ASN1_BIT_STRING),
+           ASN1_EXP_SEQUENCE_OF_OPT(TS_OCSP_BASICRESP, certs, X509, 0)
+} ASN1_SEQUENCE_END(TS_OCSP_BASICRESP)
+IMPLEMENT_ASN1_FUNCTIONS(TS_OCSP_BASICRESP)
+
+DEFINE_STACK_OF(TS_OCSP_ONEREQ)
+DEFINE_STACK_OF(TS_OCSP_SINGLERESP)
+
+; // This is to satisfy clang-format
+// clang-format on
+
 namespace
 {
+
+constexpr int TS_OCSP_RESPONSE_STATUS_SUCCESSFUL = 0;
+// constexpr int TS_OCSP_RESPONSE_STATUS_MALFORMEDREQUEST  = 1;
+// constexpr int TS_OCSP_RESPONSE_STATUS_INTERNALERROR     = 2;
+// constexpr int TS_OCSP_RESPONSE_STATUS_TRYLATER          = 3;
+// 4 is not defined on the spec
+// constexpr int TS_OCSP_RESPONSE_STATUS_SIGREQUIRED       = 5;
+// constexpr int TS_OCSP_RESPONSE_STATUS_UNAUTHORIZED      = 6;
+constexpr int TS_OCSP_CERTSTATUS_GOOD    = 0;
+constexpr int TS_OCSP_CERTSTATUS_REVOKED = 1;
+constexpr int TS_OCSP_CERTSTATUS_UNKNOWN = 2;
+#pragma GCC diagnostic pop
+
+// End of definitions from RFC 6960
 
 // Cached info stored in SSL_CTX ex_info
 struct certinfo {
   unsigned char idx[20]; // Index in session cache SHA1 hash of certificate
-  OCSP_CERTID *cid;      // Certificate ID for OCSP requests or nullptr if ID cannot be determined
+  TS_OCSP_CERTID *cid;   // Certificate ID for OCSP requests or nullptr if ID cannot be determined
   char *uri;             // Responder details
   char *certname;
   char *user_agent;
@@ -198,6 +396,264 @@ private:
   int _result              = 0;
 };
 
+TS_OCSP_CERTID *
+TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_BIT_STRING *issuerKey,
+                    const ASN1_INTEGER *serialNumber)
+{
+  int nid;
+  unsigned int i;
+  X509_ALGOR *alg;
+  TS_OCSP_CERTID *cid = nullptr;
+  unsigned char md[EVP_MAX_MD_SIZE];
+
+  if ((cid = TS_OCSP_CERTID_new()) == nullptr)
+    goto err;
+
+  alg = cid->hashAlgorithm;
+  ASN1_OBJECT_free(alg->algorithm);
+  if ((nid = EVP_MD_type(dgst)) == NID_undef) {
+    Debug("ssl_ocsp", "Unknown NID");
+    goto err;
+  }
+  if ((alg->algorithm = OBJ_nid2obj(nid)) == nullptr)
+    goto err;
+  if ((alg->parameter = ASN1_TYPE_new()) == nullptr)
+    goto err;
+  alg->parameter->type = V_ASN1_NULL;
+
+  if (!X509_NAME_digest(issuerName, dgst, md, &i))
+    goto digerr;
+  if (!(ASN1_OCTET_STRING_set(cid->issuerNameHash, md, i)))
+    goto err;
+
+  /* Calculate the issuerKey hash, excluding tag and length */
+  if (!EVP_Digest(issuerKey->data, issuerKey->length, md, &i, dgst, nullptr))
+    goto err;
+
+  if (!(ASN1_OCTET_STRING_set(cid->issuerKeyHash, md, i)))
+    goto err;
+
+  if (serialNumber) {
+    if (ASN1_STRING_copy(cid->serialNumber, serialNumber) == 0)
+      goto err;
+  }
+  return cid;
+digerr:
+  Debug("ssl_ocsp", "Digest error");
+err:
+  TS_OCSP_CERTID_free(cid);
+  return nullptr;
+}
+
+TS_OCSP_CERTID *
+TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
+{
+  const X509_NAME *iname;
+  const ASN1_INTEGER *serial;
+  ASN1_BIT_STRING *ikey;
+
+  if (!dgst)
+    dgst = EVP_sha1();
+  if (subject) {
+    iname  = X509_get_issuer_name(subject);
+    serial = X509_get0_serialNumber(subject);
+  } else {
+    iname  = X509_get_subject_name(issuer);
+    serial = nullptr;
+  }
+  ikey = X509_get0_pubkey_bitstr(issuer);
+  return TS_OCSP_cert_id_new(dgst, iname, ikey, serial);
+}
+
+int
+TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *nextupd, long nsec, long maxsec)
+{
+  int ret = 1;
+  time_t t_now, t_tmp;
+
+  time(&t_now);
+  /* Check thisUpdate is valid and not more than nsec in the future */
+  if (!ASN1_GENERALIZEDTIME_check(thisupd)) {
+    Debug("ssl_ocsp", "Error in thisUpdate field");
+    ret = 0;
+  } else {
+    t_tmp = t_now + nsec;
+    if (X509_cmp_time(thisupd, &t_tmp) > 0) {
+      Debug("ssl_ocsp", "Status not yet valid");
+      ret = 0;
+    }
+
+    /*
+     * If maxsec specified check thisUpdate is not more than maxsec in
+     * the past
+     */
+    if (maxsec >= 0) {
+      t_tmp = t_now - maxsec;
+      if (X509_cmp_time(thisupd, &t_tmp) < 0) {
+        Debug("ssl_ocsp", "Status too old");
+        ret = 0;
+      }
+    }
+  }
+
+  if (nextupd == nullptr)
+    return ret;
+
+  /* Check nextUpdate is valid and not more than nsec in the past */
+  if (!ASN1_GENERALIZEDTIME_check(nextupd)) {
+    Debug("ssl_ocsp", "Error in nextUpdate field");
+    ret = 0;
+  } else {
+    t_tmp = t_now - nsec;
+    if (X509_cmp_time(nextupd, &t_tmp) < 0) {
+      Debug("ssl_ocsp", "Status expired");
+      ret = 0;
+    }
+  }
+
+  /* Also don't allow nextUpdate to precede thisUpdate */
+  if (ASN1_STRING_cmp(nextupd, thisupd) < 0) {
+    Debug("ssl_ocsp", "nextUpdate precedes thisUpdate");
+    ret = 0;
+  }
+
+  return ret;
+}
+
+TS_OCSP_ONEREQ *
+TS_OCSP_request_add0_id(TS_OCSP_REQUEST *req, TS_OCSP_CERTID *cid)
+{
+  TS_OCSP_ONEREQ *one = nullptr;
+
+  if ((one = TS_OCSP_ONEREQ_new()) == nullptr)
+    return nullptr;
+  TS_OCSP_CERTID_free(one->reqCert);
+  one->reqCert = cid;
+  if (req && !sk_TS_OCSP_ONEREQ_push(req->tbsRequest->requestList, one)) {
+    one->reqCert = nullptr; /* do not free on error */
+    TS_OCSP_ONEREQ_free(one);
+    return nullptr;
+  }
+  return one;
+}
+
+TS_OCSP_BASICRESP *
+TS_OCSP_response_get1_basic(TS_OCSP_RESPONSE *resp)
+{
+  TS_OCSP_RESPBYTES *rb = resp->responseBytes;
+
+  if (rb == nullptr) {
+    Debug("ssl_ocsp", "No response data");
+    return nullptr;
+  }
+  if (OBJ_obj2nid(rb->responseType) != NID_id_pkix_OCSP_basic) {
+    Debug("ssl_ocsp", "Not basic response");
+    return nullptr;
+  }
+
+  return static_cast<TS_OCSP_BASICRESP *>(ASN1_item_unpack(rb->response, ASN1_ITEM_rptr(TS_OCSP_BASICRESP)));
+}
+
+int
+TS_OCSP_id_issuer_cmp(const TS_OCSP_CERTID *a, const TS_OCSP_CERTID *b)
+{
+  int ret;
+  ret = OBJ_cmp(a->hashAlgorithm->algorithm, b->hashAlgorithm->algorithm);
+  if (ret)
+    return ret;
+  ret = ASN1_OCTET_STRING_cmp(a->issuerNameHash, b->issuerNameHash);
+  if (ret)
+    return ret;
+  return ASN1_OCTET_STRING_cmp(a->issuerKeyHash, b->issuerKeyHash);
+}
+
+int
+TS_OCSP_id_cmp(const TS_OCSP_CERTID *a, const TS_OCSP_CERTID *b)
+{
+  int ret;
+  ret = TS_OCSP_id_issuer_cmp(a, b);
+  if (ret)
+    return ret;
+  return ASN1_INTEGER_cmp(a->serialNumber, b->serialNumber);
+}
+
+int
+TS_OCSP_resp_find(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int last)
+{
+  int i;
+  STACK_OF(TS_OCSP_SINGLERESP) * sresp;
+  TS_OCSP_SINGLERESP *single;
+
+  if (bs == nullptr)
+    return -1;
+  if (last < 0)
+    last = 0;
+  else
+    last++;
+  sresp = bs->tbsResponseData->responses;
+  for (i = last; i < static_cast<int>(sk_TS_OCSP_SINGLERESP_num(sresp)); i++) {
+    single = sk_TS_OCSP_SINGLERESP_value(sresp, i);
+    if (!TS_OCSP_id_cmp(id, single->certId))
+      return i;
+  }
+  return -1;
+}
+
+TS_OCSP_SINGLERESP *
+TS_OCSP_resp_get0(TS_OCSP_BASICRESP *bs, int idx)
+{
+  if (bs == nullptr)
+    return nullptr;
+  return sk_TS_OCSP_SINGLERESP_value(bs->tbsResponseData->responses, idx);
+}
+
+int
+TS_OCSP_single_get0_status(TS_OCSP_SINGLERESP *single, int *reason, ASN1_GENERALIZEDTIME **revtime, ASN1_GENERALIZEDTIME **thisupd,
+                           ASN1_GENERALIZEDTIME **nextupd)
+{
+  int ret;
+  TS_OCSP_CERTSTATUS *cst;
+
+  if (single == nullptr)
+    return -1;
+  cst = single->certStatus;
+  ret = cst->type;
+  if (ret == TS_OCSP_CERTSTATUS_REVOKED) {
+    TS_OCSP_REVOKEDINFO *rev = cst->value.revoked;
+
+    if (revtime)
+      *revtime = rev->revocationTime;
+    if (reason) {
+      if (rev->revocationReason)
+        *reason = ASN1_ENUMERATED_get(rev->revocationReason);
+      else
+        *reason = -1;
+    }
+  }
+  if (thisupd != nullptr)
+    *thisupd = single->thisUpdate;
+  if (nextupd != nullptr)
+    *nextupd = single->nextUpdate;
+  return ret;
+}
+
+int
+TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status, int *reason, ASN1_GENERALIZEDTIME **revtime,
+                         ASN1_GENERALIZEDTIME **thisupd, ASN1_GENERALIZEDTIME **nextupd)
+{
+  int i = TS_OCSP_resp_find(bs, id, -1);
+  TS_OCSP_SINGLERESP *single;
+
+  /* Maybe check for multiple responses and give an error? */
+  if (i < 0)
+    return 0;
+  single = TS_OCSP_resp_get0(bs, i);
+  i      = TS_OCSP_single_get0_status(single, reason, revtime, thisupd, nextupd);
+  if (status != nullptr)
+    *status = i;
+  return 1;
+}
+
 } // End of namespace
 
 /*
@@ -297,14 +753,14 @@ end:
 }
 
 static bool
-stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
+stapling_cache_response(TS_OCSP_RESPONSE *rsp, certinfo *cinf)
 {
   unsigned char resp_der[MAX_STAPLING_DER];
   unsigned char *p;
   unsigned int resp_derlen;
 
   p           = resp_der;
-  resp_derlen = i2d_OCSP_RESPONSE(rsp, &p);
+  resp_derlen = i2d_TS_OCSP_RESPONSE(rsp, &p);
 
   if (resp_derlen == 0) {
     Error("stapling_cache_response: cannot decode OCSP response for %s", cinf->certname);
@@ -332,8 +788,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
 {
   scoped_X509 issuer;
   STACK_OF(OPENSSL_STRING) *aia = nullptr;
-  BIO *rsp_bio                  = nullptr;
-  OCSP_RESPONSE *rsp            = nullptr;
+  TS_OCSP_RESPONSE *rsp         = nullptr;
 
   if (!cert) {
     Error("null cert passed in for %s", certname);
@@ -370,14 +825,25 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   cinf->expire_time   = 0;
 
   if (cinf->is_prefetched) {
-#ifndef OPENSSL_IS_BORINGSSL
     Debug("ssl_ocsp", "using OCSP prefetched response file %s", rsp_file);
-    rsp_bio = BIO_new_file(rsp_file, "r");
-    if (rsp_bio) {
-      rsp = d2i_OCSP_RESPONSE_bio(rsp_bio, nullptr);
+    FILE *fp = fopen(rsp_file, "r");
+    if (fp) {
+      fseek(fp, 0, SEEK_END);
+      long rsp_buf_len = ftell(fp);
+      rewind(fp);
+      unsigned char *rsp_buf = static_cast<unsigned char *>(malloc(rsp_buf_len));
+      auto read_len          = fread(rsp_buf, 1, rsp_buf_len, fp);
+      if (read_len == static_cast<size_t>(rsp_buf_len)) {
+        const unsigned char *p = rsp_buf;
+        rsp                    = d2i_TS_OCSP_RESPONSE(nullptr, &p, rsp_buf_len);
+      } else {
+        Error("stapling_refresh_response: failed to read prefetched response file: %s", rsp_file);
+      }
+      free(rsp_buf);
+      fclose(fp);
     }
 
-    if (!rsp_bio || !rsp) {
+    if (!fp || !rsp) {
       Note("cannot get prefetched response for %s from %s", certname, rsp_file);
       goto err;
     }
@@ -387,14 +853,9 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
       goto err;
     } else {
       Debug("ssl_ocsp", "stapling_refresh_response: successful refresh OCSP response");
-      OCSP_RESPONSE_free(rsp);
+      TS_OCSP_RESPONSE_free(rsp);
       rsp = nullptr;
-      BIO_free(rsp_bio);
-      rsp_bio = nullptr;
     }
-#else
-    Warning("failed to set prefetched OCSP response; this functionality not supported by BoringSSL");
-#endif
   }
 
   issuer.reset(stapling_get_issuer(ctx, cert));
@@ -403,7 +864,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
     goto err;
   }
 
-  cinf->cid = OCSP_cert_to_id(nullptr, cert, issuer.get());
+  cinf->cid = TS_OCSP_cert_to_id(nullptr, cert, issuer.get());
   if (!cinf->cid) {
     goto err;
   }
@@ -433,7 +894,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
 
 err:
   if (cinf->cid) {
-    OCSP_CERTID_free(cinf->cid);
+    TS_OCSP_CERTID_free(cinf->cid);
   }
 
   ats_free(cinf->certname);
@@ -447,10 +908,7 @@ err:
   }
 
   if (rsp) {
-    OCSP_RESPONSE_free(rsp);
-  }
-  if (rsp_bio) {
-    BIO_free(rsp_bio);
+    TS_OCSP_RESPONSE_free(rsp);
   }
 
   return false;
@@ -471,55 +929,55 @@ stapling_get_cert_info(SSL_CTX *ctx)
 }
 
 static int
-stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
+stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 {
   int status, reason;
-  OCSP_BASICRESP *bs = nullptr;
+  TS_OCSP_BASICRESP *bs = nullptr;
   ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
-  int response_status = OCSP_response_status(rsp);
+  int response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
 
   // Check to see if response is an error.
   // If so we automatically accept it because it would have expired from the cache if it was time to retry.
-  if (response_status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
+  if (response_status != TS_OCSP_RESPONSE_STATUS_SUCCESSFUL) {
     return SSL_TLSEXT_ERR_NOACK;
   }
 
-  bs = OCSP_response_get1_basic(rsp);
+  bs = TS_OCSP_response_get1_basic(rsp);
   if (bs == nullptr) {
     // If we can't parse response just pass it back to client
     Error("stapling_check_response: cannot parse response for %s", cinf->certname);
     return SSL_TLSEXT_ERR_OK;
   }
-  if (!OCSP_resp_find_status(bs, cinf->cid, &status, &reason, &rev, &thisupd, &nextupd)) {
+  if (!TS_OCSP_resp_find_status(bs, cinf->cid, &status, &reason, &rev, &thisupd, &nextupd)) {
     // If ID not present just pass it back to client
     Error("stapling_check_response: certificate ID not present in response for %s", cinf->certname);
   } else {
-    OCSP_check_validity(thisupd, nextupd, 300, -1);
+    TS_OCSP_check_validity(thisupd, nextupd, 300, -1);
   }
 
   switch (status) {
-  case V_OCSP_CERTSTATUS_GOOD:
+  case TS_OCSP_CERTSTATUS_GOOD:
     break;
-  case V_OCSP_CERTSTATUS_REVOKED:
+  case TS_OCSP_CERTSTATUS_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_ocsp_revoked_cert_stat);
     break;
-  case V_OCSP_CERTSTATUS_UNKNOWN:
+  case TS_OCSP_CERTSTATUS_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_ocsp_unknown_cert_stat);
     break;
   default:
     break;
   }
 
-  OCSP_BASICRESP_free(bs);
+  TS_OCSP_BASICRESP_free(bs);
 
   return SSL_TLSEXT_ERR_OK;
 }
 
-static OCSP_RESPONSE *
-query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int req_timeout)
+static TS_OCSP_RESPONSE *
+query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, int req_timeout)
 {
   ink_hrtime start, end;
-  OCSP_RESPONSE *resp = nullptr;
+  TS_OCSP_RESPONSE *resp = nullptr;
 
   start = Thread::get_hrtime();
   end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
@@ -545,7 +1003,7 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
 
   // Content-Type, Content-Length, Request Body
   if (use_post) {
-    if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(OCSP_REQUEST), (const ASN1_VALUE *)req) != 1) {
+    if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(TS_OCSP_REQUEST), (const ASN1_VALUE *)req) != 1) {
       Error("failed to make a request for OCSP server; uri=%s", uri);
       return nullptr;
     }
@@ -564,7 +1022,7 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
     int len;
     unsigned char *res     = httpreq.get_response_body(&len);
     const unsigned char *p = res;
-    resp                   = reinterpret_cast<OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(OCSP_RESPONSE)));
+    resp = reinterpret_cast<TS_OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(TS_OCSP_RESPONSE)));
 
     if (resp) {
       ats_free(res);
@@ -586,26 +1044,26 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
 }
 
 static bool
-stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
+stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 {
-  bool rv             = true;
-  OCSP_REQUEST *req   = nullptr;
-  OCSP_CERTID *id     = nullptr;
-  int response_status = 0;
+  bool rv              = true;
+  TS_OCSP_REQUEST *req = nullptr;
+  TS_OCSP_CERTID *id   = nullptr;
+  int response_status  = 0;
 
   *prsp = nullptr;
 
   Debug("ssl_ocsp", "stapling_refresh_response: querying responder; uri=%s", cinf->uri);
 
-  req = OCSP_REQUEST_new();
+  req = TS_OCSP_REQUEST_new();
   if (!req) {
     goto err;
   }
-  id = OCSP_CERTID_dup(cinf->cid);
+  id = TS_OCSP_CERTID_dup(cinf->cid);
   if (!id) {
     goto err;
   }
-  if (!OCSP_request_add0_id(req, id)) {
+  if (!TS_OCSP_request_add0_id(req, id)) {
     goto err;
   }
 
@@ -614,8 +1072,8 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     goto done;
   }
 
-  response_status = OCSP_response_status(*prsp);
-  if (response_status == OCSP_RESPONSE_STATUS_SUCCESSFUL) {
+  response_status = ASN1_ENUMERATED_get((*prsp)->responseStatus);
+  if (response_status == TS_OCSP_RESPONSE_STATUS_SUCCESSFUL) {
     Debug("ssl_ocsp", "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
@@ -635,10 +1093,10 @@ err:
 
 done:
   if (req) {
-    OCSP_REQUEST_free(req);
+    TS_OCSP_REQUEST_free(req);
   }
   if (*prsp) {
-    OCSP_RESPONSE_free(*prsp);
+    TS_OCSP_RESPONSE_free(*prsp);
   }
   return rv;
 }
@@ -647,7 +1105,7 @@ void
 ocsp_update()
 {
   shared_SSL_CTX ctx;
-  OCSP_RESPONSE *resp = nullptr;
+  TS_OCSP_RESPONSE *resp = nullptr;
   time_t current_time;
 
   SSLCertificateConfig::scoped_config certLookup;
@@ -756,5 +1214,3 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     return SSL_TLSEXT_ERR_OK;
   }
 }
-
-#endif /* TS_USE_TLS_OCSP */

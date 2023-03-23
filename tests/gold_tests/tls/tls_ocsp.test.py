@@ -23,7 +23,6 @@ Test tls server prefetched OCSP responses
 
 Test.SkipUnless(
     Condition.HasCurlVersion("7.41.0"),  # curl --cert-status option has been introduced in version 7.41.0
-    Condition.IsOpenSSL(),  # functionality tested in this test requires OpenSSL specific APIs
 )
 
 # Define default ATS
@@ -56,7 +55,9 @@ ts.Disk.records_config.update({
     # enable prefetched OCSP responses
     'proxy.config.ssl.ocsp.response.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.ocsp.enabled': 1,
-    'proxy.config.exec_thread.autoconfig.scale': 1.0
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl_ocsp'
 })
 
 
