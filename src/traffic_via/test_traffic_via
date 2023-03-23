@@ -26,12 +26,12 @@ else
     srcdir=$(pwd)
 fi
 
-find $srcdir/tests -type f |
+find $srcdir/traffic_via/tests -type f |
 while read f ; do
     name=$(basename "$f")
     echo "testing $name"
-    ./traffic_via "$name" > "$tmpfile" 2>&1 || true
-    diff -u "$tmpfile" "$srcdir/tests/$name"
+    ./traffic_via/traffic_via "$name" > "$tmpfile" 2>&1 || true
+    diff -u "$tmpfile" "$srcdir/traffic_via/tests/$name"
 done
 
 rm -f $tmpfile

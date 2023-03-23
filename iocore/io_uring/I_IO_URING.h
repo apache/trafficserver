@@ -25,6 +25,7 @@ Linux io_uring helper library
 
 #include <liburing.h>
 #include <utility>
+#include "tscore/ink_hrtime.h"
 
 struct IOUringConfig {
   int queue_entries = 1024;
@@ -63,7 +64,7 @@ public:
 
   void submit();
   void service();
-  void submit_and_wait(int ms);
+  void submit_and_wait(ink_hrtime ms);
 
   int register_eventfd();
 

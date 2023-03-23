@@ -26,6 +26,8 @@ Linux io_uring helper library
 #include <cstring>
 #include <stdexcept>
 
+#include <unistd.h>
+
 #include "I_IO_URING.h"
 #include "tscore/ink_hrtime.h"
 
@@ -76,7 +78,7 @@ IOUringContext::IOUringContext()
 IOUringContext::~IOUringContext()
 {
   if (evfd != -1) {
-    close(evfd);
+    ::close(evfd);
     evfd = -1;
   }
   io_uring_queue_exit(&ring);
@@ -144,14 +146,14 @@ IOUringContext::service()
 }
 
 void
-IOUringContext::submit_and_wait(int ms)
+IOUringContext::submit_and_wait(ink_hrtime t)
 {
-  ink_hrtime t              = ink_hrtime_from_msec(ms);
   timespec ts               = ink_hrtime_to_timespec(t);
   __kernel_timespec timeout = {ts.tv_sec, ts.tv_nsec};
   io_uring_cqe *cqe         = nullptr;
 
-  io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
+  int count = io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
+  io_uring_submissions.fetch_add(count);
   while (cqe) {
     handle_cqe(cqe);
     io_uring_completions++;

@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "tscore/ink_hrtime.h"
 
 ts::file::path
 temp_prefix(const char *basename)
@@ -137,13 +138,13 @@ TEST_CASE("disk_io", "[io_uring]")
   REQUIRE(fd != -1);
 
   io_uring_write(ctx, fd, "hello", 5, [](int result) { REQUIRE(result == 5); });
-  ctx.submit_and_wait(100);
+  ctx.submit_and_wait(100 * HRTIME_MSECOND);
   io_uring_close(ctx, fd, [&fd](int result) {
     REQUIRE(result == 0);
     fd = -1;
   });
 
-  ctx.submit_and_wait(100);
+  ctx.submit_and_wait(100 * HRTIME_MSECOND);
 
   REQUIRE(fd == -1);
 
@@ -156,7 +157,7 @@ TEST_CASE("disk_io", "[io_uring]")
     REQUIRE("hello"sv == std::string_view(buffer, result));
   });
 
-  ctx.submit_and_wait(100);
+  ctx.submit_and_wait(100 * HRTIME_MSECOND);
 }
 
 void
@@ -263,7 +264,7 @@ TEST_CASE("net_io", "[io_uring]")
   uint64_t completions_before = io_uring_completions;
   uint64_t needed             = 2;
   while ((io_uring_completions - completions_before) < needed) {
-    ctx.submit_and_wait(1000);
+    ctx.submit_and_wait(1 * HRTIME_SECOND);
   }
 
   REQUIRE(server.clients == 1);
