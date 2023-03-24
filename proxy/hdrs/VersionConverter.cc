@@ -190,16 +190,25 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     int authority_len;
-    // Set the host header field
-    MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-    if (host == nullptr) {
-      host = header.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
-      header.field_attach(host);
-    }
     const char *authority = field->value_get(&authority_len);
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, authority_len, true);
-    host->value_set(header.m_heap, header.m_mime, authority, authority_len);
-    header.field_delete(field);
+
+    MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+    if (host == nullptr) {
+      // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
+      // Host header field, it SHOULD be the first header in the header section
+      // of a request. We accomplish that by simply renaming the :authority
+      // header as Host.
+      header.field_detach(field);
+      field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST, MIME_LEN_HOST);
+      header.field_attach(field);
+    } else {
+      // There already is a Host header field. Simply set the value of the Host
+      // field to the current value of :authority and delete the :authority
+      // field.
+      host->value_set(header.m_heap, header.m_mime, authority, authority_len);
+      header.field_delete(field);
+    }
   } else {
     return PARSE_RESULT_ERROR;
   }
