@@ -1452,6 +1452,7 @@ enable_quic=yes
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
+AC_SUBST(has_quiche)
 fi
 
 # Check for optional WAVM library

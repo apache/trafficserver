@@ -255,6 +255,7 @@ Condition Testing
         - TS_USE_SET_RBIO
         - TS_USE_TLS13
         - TS_USE_QUIC
+        - TS_HAS_QUICHE
         - TS_USE_LINUX_NATIVE_AIO
         - TS_HAS_SO_PEERCRED
         - TS_USE_REMOTE_UNWINDING
