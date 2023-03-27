@@ -465,7 +465,7 @@ struct CacheVC : public CacheVConnection {
   Event *trigger;
   CacheKey *read_key;
   ContinuationHandler save_handler;
-  uint32_t pin_in_cache;
+  time_t pin_in_cache;
   ink_hrtime start_time;
   int base_stat;
   int recursive;
