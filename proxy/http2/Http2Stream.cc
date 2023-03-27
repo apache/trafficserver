@@ -729,9 +729,8 @@ Http2Stream::update_write_request(bool call_update)
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
   IOBufferReader *vio_reader = write_vio.get_reader();
-  if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0) ||
-                                // If there is no window left, just give up now too until we receive a WINDOW_UPDATE.
-                                std::min(_peer_rwnd, this->get_connection_state().get_peer_rwnd()) == 0)) {
+
+  if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0))) {
     Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%" PRId64
                      " session_window=%" PRId64,
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,

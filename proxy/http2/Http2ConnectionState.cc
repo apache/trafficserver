@@ -87,7 +87,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   uint8_t pad_length            = 0;
   const uint32_t payload_length = frame.header().length;
 
-  Http2StreamDebug(this->session, id, "Received DATA frame");
+  Http2StreamDebug(this->session, id, "Received DATA frame, flags: %d", frame.header().flags);
 
   // Update connection window size, before any stream specific handling
   this->decrement_local_rwnd(payload_length);
@@ -2092,7 +2092,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
                    _peer_rwnd, stream->get_peer_rwnd(), payload_length, flags);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
-  this->session->xmit(data);
+  this->session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(session, stream->get_id(), "END_STREAM");
