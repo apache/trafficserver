@@ -680,7 +680,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   if (!b) {
     goto Ldone;
   }
-  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<uint32_t>(Thread::get_hrtime() / HRTIME_SECOND)) {
+  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<time_t>(Thread::get_hrtime() / HRTIME_SECOND)) {
     goto Ldone;
   }
 
@@ -817,7 +817,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->checksum                        = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
-      doc->pinned = static_cast<uint32_t>(Thread::get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+      doc->pinned = static_cast<time_t>(Thread::get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
     } else {
       dir_set_pinned(&vc->dir, 0);
       doc->pinned = 0;
@@ -1720,7 +1720,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->f.overwrite      = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
   c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
   c->f.sync           = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
-  c->pin_in_cache     = static_cast<uint32_t>(apin_in_cache);
+  c->pin_in_cache     = apin_in_cache;
 
   if ((res = c->vol->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
@@ -1820,7 +1820,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->base_stat = cache_write_active_stat;
   }
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+  c->pin_in_cache = apin_in_cache;
 
   {
     CACHE_TRY_LOCK(lock, c->vol->mutex, cont->mutex->thread_holding);
