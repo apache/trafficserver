@@ -121,6 +121,12 @@ endif(HAVE_IOURING AND USE_IOURING)
 list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
 list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
 check_symbol_exists(BIO_meth_new "openssl/bio.h" HAVE_BIO_METH_NEW)
+check_symbol_exists(BIO_set_data "openssl/bio.h" HAVE_BIO_SET_DATA)
+check_symbol_exists(BIO_get_data "openssl/bio.h" HAVE_BIO_GET_DATA)
+check_symbol_exists(BIO_get_shutdown "openssl/bio.h" HAVE_BIO_GET_SHUTDOWN)
+check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
+check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
+check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 
 # Catch2 for tests
