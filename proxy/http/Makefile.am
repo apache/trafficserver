@@ -41,6 +41,8 @@ noinst_HEADERS = HttpProxyServerMain.h
 noinst_LIBRARIES = libhttp.a
 
 libhttp_a_SOURCES = \
+	ConnectingEntry.cc \
+	ConnectingEntry.h \
 	HttpSessionAccept.cc \
 	HttpSessionAccept.h \
 	HttpBodyFactory.cc \

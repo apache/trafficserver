@@ -51,6 +51,7 @@
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 extern std::function<PoolableSession *()> create_h1_server_session;
+extern std::function<PoolableSession *()> create_h2_server_session;
 extern std::map<int, std::function<ProxySession *()>> ProtocolSessionCreateMap;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
@@ -216,6 +217,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   }
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_2_0, create_h2_server_session});
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);

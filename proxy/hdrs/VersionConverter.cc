@@ -76,7 +76,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
     field->value_set(header.m_heap, header.m_mime, value, value_len);
   } else {
-    ink_abort("initialize HTTP/2 pseudo-headers");
+    ink_abort("initialize HTTP/2 pseudo-headers, no :method");
     return PARSE_RESULT_ERROR;
   }
 
@@ -91,7 +91,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
       field->value_set(header.m_heap, header.m_mime, URL_SCHEME_HTTPS, URL_LEN_HTTPS);
     }
   } else {
-    ink_abort("initialize HTTP/2 pseudo-headers");
+    ink_abort("initialize HTTP/2 pseudo-headers, no :scheme");
     return PARSE_RESULT_ERROR;
   }
 
@@ -110,8 +110,11 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     } else {
       field->value_set(header.m_heap, header.m_mime, value, value_len);
     }
+    // Remove the host header field, redundant to the authority field
+    // For istio/envoy, having both was causing 404 responses
+    header.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
   } else {
-    ink_abort("initialize HTTP/2 pseudo-headers");
+    ink_abort("initialize HTTP/2 pseudo-headers, no :authority");
     return PARSE_RESULT_ERROR;
   }
 
@@ -119,15 +122,29 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()); field != nullptr) {
     int value_len     = 0;
     const char *value = header.path_get(&value_len);
+    int param_len     = 0;
+    const char *param = header.params_get(&param_len);
+    int query_len     = 0;
+    const char *query = header.query_get(&query_len);
+    int path_len      = value_len + 1;
 
-    ts::LocalBuffer<char> buf(value_len + 1);
+    ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len + param_len);
     char *path = buf.data();
     path[0]    = '/';
     memcpy(path + 1, value, value_len);
-
-    field->value_set(header.m_heap, header.m_mime, path, value_len + 1);
+    if (param_len > 0) {
+      path[path_len] = ';';
+      memcpy(path + path_len + 1, param, param_len);
+      path_len += 1 + param_len;
+    }
+    if (query_len > 0) {
+      path[path_len] = '?';
+      memcpy(path + path_len + 1, query, query_len);
+      path_len += 1 + query_len;
+    }
+    field->value_set(header.m_heap, header.m_mime, path, path_len);
   } else {
-    ink_abort("initialize HTTP/2 pseudo-headers");
+    ink_abort("initialize HTTP/2 pseudo-headers, no :path");
     return PARSE_RESULT_ERROR;
   }
 
@@ -174,10 +191,24 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     int authority_len;
     const char *authority = field->value_get(&authority_len);
-
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, authority_len, true);
 
-    header.field_delete(field);
+    MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+    if (host == nullptr) {
+      // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
+      // Host header field, it SHOULD be the first header in the header section
+      // of a request. We accomplish that by simply renaming the :authority
+      // header as Host.
+      header.field_detach(field);
+      field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST, MIME_LEN_HOST);
+      header.field_attach(field);
+    } else {
+      // There already is a Host header field. Simply set the value of the Host
+      // field to the current value of :authority and delete the :authority
+      // field.
+      host->value_set(header.m_heap, header.m_mime, authority, authority_len);
+      header.field_delete(field);
+    }
   } else {
     return PARSE_RESULT_ERROR;
   }
@@ -234,7 +265,7 @@ VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
 
     field->value_set(header.m_heap, header.m_mime, status_str, STATUS_VALUE_LEN);
   } else {
-    ink_abort("initialize HTTP/2 pseudo-headers");
+    ink_abort("initialize HTTP/2 pseudo-headers, no :status");
     return PARSE_RESULT_ERROR;
   }
 

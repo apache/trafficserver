@@ -359,6 +359,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s       = &vc->write;
   ProxyMutex *mutex = thread->mutex.get();
+  Continuation *c   = vc->write.vio.cont;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
@@ -442,6 +443,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // signal write ready to allow user to fill the buffer
   if (towrite != ntodo && !buf.writer()->high_water()) {
     if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
+      return;
+    } else if (c != s->vio.cont) { /* The write vio was updated in the handler */
+      write_reschedule(nh, vc);
       return;
     }
 

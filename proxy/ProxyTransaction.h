@@ -50,6 +50,11 @@ public:
   virtual void set_default_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_inactivity_timeout();
   virtual void cancel_active_timeout();
+  virtual bool is_read_closed() const;
+  virtual bool expect_send_trailer() const;
+  virtual void set_expect_send_trailer();
+  virtual bool expect_receive_trailer() const;
+  virtual void set_expect_receive_trailer();
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -119,6 +124,7 @@ public:
   const IpAllow::ACL &get_acl() const;
 
   ProxySession *get_proxy_ssn();
+  ProxySession const *get_proxy_ssn() const;
   PoolableSession *get_server_session() const;
   HttpSM *get_sm() const;
 
@@ -199,6 +205,12 @@ ProxyTransaction::has_hooks() const
 
 inline ProxySession *
 ProxyTransaction::get_proxy_ssn()
+{
+  return _proxy_ssn;
+}
+
+inline ProxySession const *
+ProxyTransaction::get_proxy_ssn() const
 {
   return _proxy_ssn;
 }
