@@ -34,9 +34,9 @@
 
 UnixUDPConnection::~UnixUDPConnection()
 {
-  UDPPacketInternal *p = nullptr;
+  UDPPacket *p = nullptr;
 
-  SList(UDPPacketInternal, alink) aq(inQueue.popall());
+  SList(UDPPacket, alink) aq(inQueue.popall());
 
   if (!tobedestroyed) {
     tobedestroyed = 1;
@@ -76,11 +76,11 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     Release();
     return EVENT_CONT;
   } else {
-    UDPPacketInternal *p = nullptr;
-    SList(UDPPacketInternal, alink) aq(inQueue.popall());
+    UDPPacket *p = nullptr;
+    SList(UDPPacket, alink) aq(inQueue.popall());
 
     Debug("udpnet", "UDPConnection::callbackHandler");
-    Queue<UDPPacketInternal> result;
+    Queue<UDPPacket> result;
     while ((p = aq.pop())) {
       result.push(p);
     }
@@ -111,9 +111,8 @@ UDPConnection::bindToThread(Continuation *c, EThread *t)
 }
 
 Action *
-UDPConnection::send(Continuation *c, UDPPacket *xp)
+UDPConnection::send(Continuation *c, UDPPacket *p)
 {
-  UDPPacketInternal *p    = (UDPPacketInternal *)xp;
   UnixUDPConnection *conn = (UnixUDPConnection *)this;
 
   if (shouldDestroy()) {
@@ -127,8 +126,8 @@ UDPConnection::send(Continuation *c, UDPPacket *xp)
   p->setConnection(this);
   conn->continuation = c;
   ink_assert(conn->continuation != nullptr);
-  mutex               = c->mutex;
-  p->reqGenerationNum = conn->sendGenerationNum;
+  mutex                 = c->mutex;
+  p->p.reqGenerationNum = conn->sendGenerationNum;
   get_UDPNetHandler(conn->ethread)->udpOutQueue.send(p);
   return nullptr;
 }

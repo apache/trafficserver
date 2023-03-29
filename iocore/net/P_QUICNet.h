@@ -39,8 +39,8 @@ void initialize_thread_for_quic_net(EThread *thread);
 
 struct QUICPollEvent {
   QUICConnection *con;
-  UDPPacketInternal *packet;
-  void init(QUICConnection *con, UDPPacketInternal *packet);
+  UDPPacket *packet;
+  void init(QUICConnection *con, UDPPacket *packet);
   void free();
 
   SLINK(QUICPollEvent, alink);
@@ -62,7 +62,7 @@ public:
 
 private:
   // Internal Queue to save Long Header Packet
-  Que(UDPPacketInternal, link) _longInQueue;
+  Que(UDPPacket, link) _longInQueue;
 
 private:
 #if TS_HAS_QUICHE
