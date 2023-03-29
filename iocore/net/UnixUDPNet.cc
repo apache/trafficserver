@@ -119,10 +119,10 @@ UDPPacket::getPktLength()
   IOBufferBlock *b;
 
   pkt->p.pktLength = 0;
-  b              = pkt->p.chain.get();
+  b                = pkt->p.chain.get();
   while (b) {
     pkt->p.pktLength += b->read_avail();
-    b              = b->next.get();
+    b                = b->next.get();
   }
   return pkt->p.pktLength;
 }
@@ -1279,7 +1279,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
     struct iovec *iov;
     int iov_len;
 
-    packet                             = p[i];
+    packet                               = p[i];
     packet->p.conn->lastSentPktStartTime = packet->p.delivery_time;
     ink_assert(packet->p.conn->getFd() == fd);
     if (packet->p.segment_size > 0) {
@@ -1320,11 +1320,11 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
           iov              = &iovec[iovec_used++];
           iov_len          = 1;
           iov->iov_base    = packet->p.chain.get()->start() + offset;
-          iov->iov_len =
-            std::min(packet->p.segment_size, static_cast<uint16_t>(packet->p.chain.get()->end() - static_cast<char *>(iov->iov_base)));
-          msg->msg_iov    = iov;
-          msg->msg_iovlen = iov_len;
-          offset          += iov->iov_len;
+          iov->iov_len     = std::min(packet->p.segment_size,
+                                      static_cast<uint16_t>(packet->p.chain.get()->end() - static_cast<char *>(iov->iov_base)));
+          msg->msg_iov     = iov;
+          msg->msg_iovlen  = iov_len;
+          offset           += iov->iov_len;
           vlen++;
         }
         ink_assert(offset == packet->p.chain.get()->size());
