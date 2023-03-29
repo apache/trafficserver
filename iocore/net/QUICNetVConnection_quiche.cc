@@ -334,10 +334,8 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
   quiche_recv_info recv_info = {
     &packet->from.sa,
     static_cast<socklen_t>(packet->from.isIp4() ? sizeof(packet->from.sin) : sizeof(packet->from.sin6)),
-#ifdef HAVE_QUICHE_CONFIG_SET_ACTIVE_CONNECTION_ID_LIMIT
     &packet->to.sa,
     static_cast<socklen_t>(packet->to.isIp4() ? sizeof(packet->to.sin) : sizeof(packet->to.sin6)),
-#endif
   };
 
   ssize_t done = quiche_conn_recv(this->_quiche_con, buf, buf_len, &recv_info);
