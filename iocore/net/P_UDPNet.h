@@ -107,10 +107,10 @@ public:
 
     ink_assert(delivery_time[now_slot]);
 
-    if (e->delivery_time < now)
-      e->delivery_time = now;
+    if (e->p.delivery_time < now)
+      e->p.delivery_time = now;
 
-    ink_hrtime s = e->delivery_time - delivery_time[now_slot];
+    ink_hrtime s = e->p.delivery_time - delivery_time[now_slot];
 
     if (s < 0) {
       before = 1;
@@ -123,16 +123,16 @@ public:
     // from long-term slot whenever you advance.
     if (s >= N_SLOTS - 1) {
       longTermQ.enqueue(e);
-      e->in_heap               = 0;
-      e->in_the_priority_queue = 1;
+      e->p.in_heap               = 0;
+      e->p.in_the_priority_queue = 1;
       return;
     }
     slot = (s + now_slot) % N_SLOTS;
 
     // so that slot+1 is still "in future".
-    ink_assert((before || delivery_time[slot] <= e->delivery_time) && (delivery_time[(slot + 1) % N_SLOTS] >= e->delivery_time));
-    e->in_the_priority_queue = 1;
-    e->in_heap               = slot;
+    ink_assert((before || delivery_time[slot] <= e->p.delivery_time) && (delivery_time[(slot + 1) % N_SLOTS] >= e->p.delivery_time));
+    e->p.in_the_priority_queue = 1;
+    e->p.in_heap               = slot;
     bucket[slot].enqueue(e);
   }
 
@@ -164,7 +164,7 @@ public:
   IsCancelledPacket(UDPPacket *p)
   {
     // discard packets that'll never get sent...
-    return ((p->conn->shouldDestroy()) || (p->conn->GetSendGenerationNumber() != p->reqGenerationNum));
+    return ((p->p.conn->shouldDestroy()) || (p->p.conn->GetSendGenerationNumber() != p->p.reqGenerationNum));
   }
 
   void
@@ -236,9 +236,9 @@ private:
   remove(UDPPacket *e)
   {
     nPackets--;
-    ink_assert(e->in_the_priority_queue);
-    e->in_the_priority_queue = 0;
-    bucket[e->in_heap].remove(e);
+    ink_assert(e->p.in_the_priority_queue);
+    e->p.in_the_priority_queue = 0;
+    bucket[e->p.in_heap].remove(e);
   }
 
 public:
@@ -248,8 +248,8 @@ public:
     (void)t;
     UDPPacket *e = bucket[now_slot].dequeue();
     if (e) {
-      ink_assert(e->in_the_priority_queue);
-      e->in_the_priority_queue = 0;
+      ink_assert(e->p.in_the_priority_queue);
+      e->p.in_the_priority_queue = 0;
     }
     advanceNow(t);
     return e;

@@ -127,7 +127,7 @@ UDPConnection::send(Continuation *c, UDPPacket *p)
   conn->continuation = c;
   ink_assert(conn->continuation != nullptr);
   mutex               = c->mutex;
-  p->reqGenerationNum = conn->sendGenerationNum;
+  p->p.reqGenerationNum = conn->sendGenerationNum;
   get_UDPNetHandler(conn->ethread)->udpOutQueue.send(p);
   return nullptr;
 }
