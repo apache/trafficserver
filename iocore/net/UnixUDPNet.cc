@@ -99,17 +99,15 @@ UDPPacket::~UDPPacket()
 void
 UDPPacket::append_block(IOBufferBlock *block)
 {
-  UDPPacket *p = this;
-
   if (block) {
-    if (p->p.chain) { // append to end
-      IOBufferBlock *last = p->p.chain.get();
+    if (p.chain) { // append to end
+      IOBufferBlock *last = p.chain.get();
       while (last->next) {
         last = last->next.get();
       }
       last->next = block;
     } else {
-      p->p.chain = block;
+      p.chain = block;
     }
   }
 }
@@ -117,16 +115,16 @@ UDPPacket::append_block(IOBufferBlock *block)
 int64_t
 UDPPacket::getPktLength()
 {
-  UDPPacket *p = this;
+  UDPPacket *pkt = this;
   IOBufferBlock *b;
 
-  p->p.pktLength = 0;
-  b              = p->p.chain.get();
+  pkt->p.pktLength = 0;
+  b              = pkt->p.chain.get();
   while (b) {
-    p->p.pktLength += b->read_avail();
+    pkt->p.pktLength += b->read_avail();
     b              = b->next.get();
   }
-  return p->p.pktLength;
+  return pkt->p.pktLength;
 }
 
 void
@@ -1274,7 +1272,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
   int iovec_used = 0;
 
   int vlen = 0;
-  int fd   = p[0]->conn->getFd();
+  int fd   = p[0]->p.conn->getFd();
   for (int i = 0; i < n; ++i) {
     UDPPacket *packet;
     struct msghdr *msg;
@@ -1282,11 +1280,11 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
     int iov_len;
 
     packet                             = p[i];
-    packet->conn->lastSentPktStartTime = packet->delivery_time;
-    ink_assert(packet->conn->getFd() == fd);
-    if (packet->segment_size > 0) {
+    packet->p.conn->lastSentPktStartTime = packet->p.delivery_time;
+    ink_assert(packet->p.conn->getFd() == fd);
+    if (packet->p.segment_size > 0) {
       // Presumes one big super buffer is given
-      ink_assert(packet->chain->next == nullptr);
+      ink_assert(packet->p.chain->next == nullptr);
 #ifdef SOL_UDP
       if (use_udp_gso) {
         msg              = &msgvec[vlen].msg_hdr;
@@ -1308,28 +1306,28 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
         cm->cmsg_level               = SOL_UDP;
         cm->cmsg_type                = UDP_SEGMENT;
         cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
-        *((uint16_t *)CMSG_DATA(cm)) = packet->segment_size;
+        *((uint16_t *)CMSG_DATA(cm)) = packet->p.segment_size;
         vlen++;
       } else {
 #endif
         // UDP_SEGMENT is unavailable
         // Send the given data as multiple messages
         int offset = 0;
-        while (offset < packet->chain.get()->size()) {
+        while (offset < packet->p.chain.get()->size()) {
           msg              = &msgvec[vlen].msg_hdr;
           msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
           msg->msg_namelen = ats_ip_size(packet->to);
           iov              = &iovec[iovec_used++];
           iov_len          = 1;
-          iov->iov_base    = packet->chain.get()->start() + offset;
+          iov->iov_base    = packet->p.chain.get()->start() + offset;
           iov->iov_len =
-            std::min(packet->segment_size, static_cast<uint16_t>(packet->chain.get()->end() - static_cast<char *>(iov->iov_base)));
+            std::min(packet->p.segment_size, static_cast<uint16_t>(packet->p.chain.get()->end() - static_cast<char *>(iov->iov_base)));
           msg->msg_iov    = iov;
           msg->msg_iovlen = iov_len;
           offset          += iov->iov_len;
           vlen++;
         }
-        ink_assert(offset == packet->chain.get()->size());
+        ink_assert(offset == packet->p.chain.get()->size());
 #ifdef SOL_UDP
       } // use_udp_gso
 #endif
@@ -1340,7 +1338,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
       msg->msg_namelen = ats_ip_size(packet->to);
       iov              = &iovec[iovec_used++];
       iov_len          = 0;
-      for (IOBufferBlock *b = packet->chain.get(); b != nullptr; b = b->next.get()) {
+      for (IOBufferBlock *b = packet->p.chain.get(); b != nullptr; b = b->next.get()) {
         iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
         iov[iov_len].iov_len  = b->size();
         iov_len++;
@@ -1382,10 +1380,10 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
       int i    = 0;
       int nmsg = res;
       for (i = 0; i < n && res > 0; ++i) {
-        if (p[i]->segment_size == 0) {
+        if (p[i]->p.segment_size == 0) {
           res -= 1;
         } else {
-          res -= (p[i]->chain.get()->size() / p[i]->segment_size) + ((p[i]->chain.get()->size() % p[i]->segment_size) != 0);
+          res -= (p[i]->p.chain.get()->size() / p[i]->p.segment_size) + ((p[i]->p.chain.get()->size() % p[i]->p.segment_size) != 0);
         }
       }
       Debug("udp-send", "Sent %d messages by processing %d UDPPackets", nmsg, i);
