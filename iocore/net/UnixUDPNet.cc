@@ -1121,8 +1121,8 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
     msg.msg_iovlen = 1;
 #ifdef SOL_UDP
     if (use_udp_gso) {
-      iov[0].iov_base = p->chain.get()->start();
-      iov[0].iov_len  = p->chain.get()->size();
+      iov[0].iov_base = p->p.chain.get()->start();
+      iov[0].iov_len  = p->p.chain.get()->size();
 
       union udp_segment_hdr {
         char buf[CMSG_SPACE(sizeof(uint16_t))];
@@ -1135,12 +1135,12 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
       cm->cmsg_level               = SOL_UDP;
       cm->cmsg_type                = UDP_SEGMENT;
       cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
-      *((uint16_t *)CMSG_DATA(cm)) = p->segment_size;
+      *((uint16_t *)CMSG_DATA(cm)) = p->p.segment_size;
 
       count = 0;
       while (true) {
         // stupid Linux problem: sendmsg can return EAGAIN
-        n = ::sendmsg(p->conn->getFd(), &msg, 0);
+        n = ::sendmsg(p->p.conn->getFd(), &msg, 0);
         if (n >= 0) {
           break;
         }
@@ -1299,8 +1299,8 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
         msg->msg_controllen = sizeof(u->buf);
         iov                 = &iovec[iovec_used++];
         iov_len             = 1;
-        iov->iov_base       = packet->chain.get()->start();
-        iov->iov_len        = packet->chain.get()->size();
+        iov->iov_base       = packet->p.chain.get()->start();
+        iov->iov_len        = packet->p.chain.get()->size();
         msg->msg_iov        = iov;
         msg->msg_iovlen     = iov_len;
 
