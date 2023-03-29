@@ -130,7 +130,8 @@ public:
     slot = (s + now_slot) % N_SLOTS;
 
     // so that slot+1 is still "in future".
-    ink_assert((before || delivery_time[slot] <= e->p.delivery_time) && (delivery_time[(slot + 1) % N_SLOTS] >= e->p.delivery_time));
+    ink_assert((before || delivery_time[slot] <= e->p.delivery_time) &&
+               (delivery_time[(slot + 1) % N_SLOTS] >= e->p.delivery_time));
     e->p.in_the_priority_queue = 1;
     e->p.in_heap               = slot;
     bucket[slot].enqueue(e);

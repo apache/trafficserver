@@ -121,10 +121,10 @@ UDPPacket::getPktLength()
   IOBufferBlock *b;
 
   p->p.pktLength = 0;
-  b            = p->p.chain.get();
+  b              = p->p.chain.get();
   while (b) {
     p->p.pktLength += b->read_avail();
-    b            = b->next.get();
+    b              = b->next.get();
   }
   return p->p.pktLength;
 }
@@ -1168,7 +1168,8 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
       int offset = 0;
       while (offset < p->p.chain.get()->size()) {
         iov[0].iov_base = p->p.chain.get()->start() + offset;
-        iov[0].iov_len = std::min(static_cast<long>(p->p.segment_size), p->p.chain.get()->end() - static_cast<char *>(iov[0].iov_base));
+        iov[0].iov_len =
+          std::min(static_cast<long>(p->p.segment_size), p->p.chain.get()->end() - static_cast<char *>(iov[0].iov_base));
 
         count = 0;
         while (true) {

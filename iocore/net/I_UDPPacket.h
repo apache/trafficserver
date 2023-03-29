@@ -33,8 +33,7 @@
 
 #include "I_UDPConnection.h"
 
-struct UDPPacketInternal
-{
+struct UDPPacketInternal {
   // packet scheduling stuff: keep it a doubly linked list
   uint64_t pktLength    = 0;
   uint16_t segment_size = 0;
@@ -50,7 +49,6 @@ struct UDPPacketInternal
   int in_heap               = 0;
 };
 
-
 /** @name UDPPacket
     UDP packet functions used by UDPConnection
  */
@@ -64,6 +62,7 @@ class UDPPacket
   friend class PacketQueue;
   friend class UDPConnection;
   friend class UnixUDPConnection;
+
 public:
   UDPPacket();
   ~UDPPacket();
