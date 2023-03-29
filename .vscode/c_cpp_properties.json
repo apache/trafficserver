@@ -55,7 +55,8 @@
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "compilerArgs": []
+            "compilerArgs": [],
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         },
         {
             "name": "Linux",
@@ -154,7 +155,8 @@
             "compilerArgs": [],
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "compilerPath": "/usr/bin/clang"
+            "compilerPath": "/usr/bin/clang",
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         }
     ],
     "version": 4
