@@ -26,6 +26,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <swoc/swoc_meta.h>
 #include "json/YAMLCodec.h"
 
 namespace
@@ -265,33 +266,33 @@ inline ts::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const &request) const
 {
   ts::Rv<YAML::Node> ret;
-  std::visit(ts::meta::overloaded{[](std::monostate) -> void { /* no op */ },
-                                  [&request](Notification const &handler) -> void {
-                                    // Notification handler call. Ignore response, there is no completion cv check in here basically
-                                    // because we do  not deal with any response, the callee can just re-schedule the work if
-                                    // needed. We fire and forget.
-                                    handler.cb(request.params);
-                                  },
-                                  [&ret, &request](Method const &handler) -> void {
-                                    // Regular Method Handler call, No cond variable check here, this should have not be created by
-                                    // a plugin.
-                                    ret = handler.cb(request.id, request.params);
-                                  },
-                                  [&ret, &request](PluginMethod const &handler) -> void {
-                                    // We call the method handler, we'll lock and wait till the condition_variable
-                                    // gets set on the other side. The handler may return immediately with no response being set.
-                                    // cond var will give us green to proceed.
-                                    handler.cb(request.id, request.params);
-                                    std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
-                                    g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
-                                    g_rpcHandlerProcessingCompleted = false;
-                                    // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
-                                    // error and non error cases.
-                                    ret = g_rpcHandlerResponseData;
-                                    // clean up the shared data.
-                                    g_rpcHandlerResponseData.clear();
-                                    lock.unlock();
-                                  }},
+  std::visit(swoc::meta::vary{[](std::monostate) -> void { /* no op */ },
+                              [&request](Notification const &handler) -> void {
+                                // Notification handler call. Ignore response, there is no completion cv check in here basically
+                                // because we do  not deal with any response, the callee can just re-schedule the work if
+                                // needed. We fire and forget.
+                                handler.cb(request.params);
+                              },
+                              [&ret, &request](Method const &handler) -> void {
+                                // Regular Method Handler call, No cond variable check here, this should have not be created by
+                                // a plugin.
+                                ret = handler.cb(request.id, request.params);
+                              },
+                              [&ret, &request](PluginMethod const &handler) -> void {
+                                // We call the method handler, we'll lock and wait till the condition_variable
+                                // gets set on the other side. The handler may return immediately with no response being set.
+                                // cond var will give us green to proceed.
+                                handler.cb(request.id, request.params);
+                                std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
+                                g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
+                                g_rpcHandlerProcessingCompleted = false;
+                                // seems to be done, set the response. As the response data is a ts::Rv this will handle both,
+                                // error and non error cases.
+                                ret = g_rpcHandlerResponseData;
+                                // clean up the shared data.
+                                g_rpcHandlerResponseData.clear();
+                                lock.unlock();
+                              }},
              this->_func);
   return ret;
 }
@@ -330,7 +331,7 @@ JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, con
 {
   YAML::Node rpcService;
   std::lock_guard<std::mutex> lock(_mutex);
-  // std::for_each(std::begin(_handlers), std::end(_handlers), [&rpcService](auto const &h) {
+
   for (auto const &[name, handler] : _handlers) {
     YAML::Node method;
     method[RPC_SERVICE_NAME_KEY] = name;

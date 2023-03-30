@@ -30,7 +30,6 @@
 
 #include "tscore/Errata.h"
 #include "tscore/Diags.h"
-#include "tscpp/util/ts_meta.h"
 #include "ts/apidefs.h"
 
 #include "Defs.h"
