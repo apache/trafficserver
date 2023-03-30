@@ -549,7 +549,7 @@ Http2Stream::initiating_close()
   if (!closed) {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     REMEMBER(NO_EVENT, this->reentrancy_count);
-    Http2StreamDebug("initiating_close client_window=%" PRId64 " session_window=%" PRId64, _peer_rwnd,
+    Http2StreamDebug("initiating_close client_window=%zd session_window=%zd", _peer_rwnd,
                      this->get_connection_state().get_peer_rwnd());
 
     if (this->is_state_writeable()) { // Let the other end know we are going away
@@ -731,8 +731,8 @@ Http2Stream::update_write_request(bool call_update)
   IOBufferReader *vio_reader = write_vio.get_reader();
 
   if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0))) {
-    Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%" PRId64
-                     " session_window=%" PRId64,
+    Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%zd"
+                     " session_window=%zd",
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,
                      this->get_connection_state().get_peer_rwnd());
     return;

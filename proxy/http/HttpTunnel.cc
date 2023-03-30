@@ -986,7 +986,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
           p->handler_state = HTTP_SM_POST_SUCCESS;
         }
       }
-      Debug("http_tunnel", "Start write vio %ld bytes", c_write);
+      Debug("http_tunnel", "Start write vio %" PRId64 " bytes", c_write);
       // Start the writes now that we know we will consume all the initial data
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
       ink_assert(c_write > 0);
@@ -1013,7 +1013,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       if (read_start_pos > 0) {
         p->read_vio = ((CacheVC *)p->vc)->do_io_pread(this, producer_n, p->read_buffer, read_start_pos);
       } else {
-        Debug("http_tunnel", "Start read vio %ld bytes", producer_n);
+        Debug("http_tunnel", "Start read vio %" PRId64 " bytes", producer_n);
         p->read_vio = p->vc->do_io_read(this, producer_n, p->read_buffer);
         p->read_vio->reenable();
       }
