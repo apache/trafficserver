@@ -2352,7 +2352,7 @@ HttpSM::add_to_existing_request()
       // bytes are received back
       this->t_state.set_connect_fail(EIO);
       ip_iter->second->connect_sms.insert(this);
-      Debug("http_connect", "Add entry to connection queue. size=%" PRId64, ip_iter->second->connect_sms.size());
+      Debug("http_connect", "Add entry to connection queue. size=%zd", ip_iter->second->connect_sms.size());
       retval = true;
       break;
     }
