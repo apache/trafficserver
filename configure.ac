@@ -1325,6 +1325,12 @@ TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
 AC_CHECK_FUNCS([ \
   BIO_meth_new \
+  BIO_set_data \
+  BIO_get_data \
+  BIO_get_shutdown \
+  BIO_meth_get_ctrl \
+  BIO_meth_get_create \
+  BIO_meth_get_destroy \
   BIO_sock_non_fatal_error \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
@@ -1338,19 +1344,6 @@ AC_CHECK_FUNCS([ \
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
               [AC_DEFINE([ASN1_STRING_get0_data], [ASN1_STRING_data], [Added in OpenSSL 1.1])])
-
-AC_CHECK_FUNC([BIO_set_data], [],
-              [AC_DEFINE([BIO_set_data(a, _ptr)], [((a)->ptr = (_ptr))], [Added in OpenSSL 1.1])])
-AC_CHECK_FUNC([BIO_get_data], [],
-              [AC_DEFINE([BIO_get_data(a)], [((a)->ptr)], [Added in OpenSSL 1.1])])
-AC_CHECK_FUNC([BIO_get_shutdown], [],
-              [AC_DEFINE([BIO_get_shutdown(a)], [((a)->shutdown)], [Added in OpenSSL 1.1])])
-AC_CHECK_FUNC([BIO_meth_get_ctrl], [],
-              [AC_DEFINE([BIO_meth_get_ctrl(biom)], [((biom)->ctrl)], [Added in OpenSSL 1.1])])
-AC_CHECK_FUNC([BIO_meth_get_create], [],
-              [AC_DEFINE([BIO_meth_get_create(biom)], [((biom)->create)], [Added in OpenSSL 1.1])])
-AC_CHECK_FUNC([BIO_meth_get_destroy], [],
-              [AC_DEFINE([BIO_meth_get_destroy(biom)], [((biom)->destroy)], [Added in OpenSSL 1.1])])
 
 AC_CHECK_FUNC([EVP_MD_CTX_new], [],
               [AC_DEFINE([EVP_MD_CTX_new], [EVP_MD_CTX_create], [Renamed in OpenSSL 1.1])])
