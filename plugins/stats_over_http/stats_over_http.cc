@@ -51,6 +51,8 @@
 #include <brotli/encode.h>
 #endif
 
+#include "tscore/ink_hrtime.h"
+
 #define PLUGIN_NAME     "stats_over_http"
 #define FREE_TMOUT      300000
 #define STR_BUFFER_SIZE 1024
@@ -411,12 +413,13 @@ json_out_stats(stats_state *my_state)
 {
   const char *version;
   APPEND("{ \"global\": {\n");
-
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, my_state);
   version = TSTrafficServerVersionGet();
+  APPEND_STAT_JSON_NUMERIC("current_time_epoch_ms", "%" PRIu64, ink_hrtime_to_msec(ink_get_hrtime_internal()));
   APPEND("\"server\": \"");
   APPEND(version);
   APPEND("\"\n");
+
   APPEND("  }\n}\n");
 }
 
@@ -491,6 +494,7 @@ csv_out_stats(stats_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
   const char *version = TSTrafficServerVersionGet();
+  APPEND_STAT_CSV_NUMERIC("current_time_epoch_ms", "%" PRIu64, ink_hrtime_to_msec(ink_get_hrtime_internal()));
   APPEND_STAT_CSV("version", "%s", version);
 }
 
