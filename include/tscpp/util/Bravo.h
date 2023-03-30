@@ -40,6 +40,7 @@
 #include "DenseThreadId.h"
 
 #include "tscore/Diags.h"
+#include "tscore/ink_assert.h"
 
 #include <array>
 #include <atomic>
@@ -252,21 +253,20 @@ public:
   void
   lock_shared(Token &token)
   {
+    ink_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
+
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = DenseThreadId::self();
-      for (size_t i = 0; i < SLOT_SIZE; ++i) {
-        index       = (index + i) % SLOT_SIZE;
-        Slot &slot  = _mutex.readers[index];
-        bool expect = false;
-        if (slot.mu.compare_exchange_strong(expect, true, std::memory_order_relaxed)) {
-          // recheck
-          if (_mutex.read_bias.load(std::memory_order_acquire)) {
-            token = index + 1;
-            return;
-          } else {
-            slot.mu.store(false, std::memory_order_relaxed);
-          }
+      size_t index = DenseThreadId::self() % SLOT_SIZE;
+      Slot &slot   = _mutex.readers[index];
+      bool expect  = false;
+      if (slot.mu.compare_exchange_strong(expect, true, std::memory_order_relaxed)) {
+        // recheck
+        if (_mutex.read_bias.load(std::memory_order_acquire)) {
+          token = index + 1;
+          return;
+        } else {
+          slot.mu.store(false, std::memory_order_relaxed);
         }
       }
     }
@@ -281,21 +281,21 @@ public:
   bool
   try_lock_shared(Token &token)
   {
+    ink_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
+
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = DenseThreadId::self();
-      for (size_t i = 0; i < SLOT_SIZE; ++i) {
-        index       = (index + i) % SLOT_SIZE;
-        Slot &slot  = _mutex.readers[index];
-        bool expect = false;
-        if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_release, std::memory_order_relaxed)) {
-          // recheck
-          if (_mutex.read_bias.load(std::memory_order_acquire)) {
-            token = index + 1;
-            return true;
-          } else {
-            slot.mu.store(false, std::memory_order_relaxed);
-          }
+      size_t index = DenseThreadId::self() % SLOT_SIZE;
+      Slot &slot   = _mutex.readers[index];
+      bool expect  = false;
+
+      if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_release, std::memory_order_relaxed)) {
+        // recheck
+        if (_mutex.read_bias.load(std::memory_order_acquire)) {
+          token = index + 1;
+          return true;
+        } else {
+          slot.mu.store(false, std::memory_order_relaxed);
         }
       }
     }
