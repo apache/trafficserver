@@ -75,8 +75,10 @@ template <class Mutex> class shared_lock
 public:
   using mutex_type = Mutex;
 
-  shared_lock() = default;
+  shared_lock() noexcept = default;
   shared_lock(Mutex &m) : _mutex(&m) { lock(); }
+  shared_lock(Mutex &m, std::try_to_lock_t) : _mutex(&m) { try_lock(); }
+  shared_lock(Mutex &m, std::defer_lock_t) noexcept : _mutex(&m) {}
 
   ~shared_lock()
   {
