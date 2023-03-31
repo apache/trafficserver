@@ -24,7 +24,7 @@
 #include <algorithm>
 
 #include "tscpp/util/IntrusiveDList.h"
-#include "tscpp/util/bwf_base.h"
+#include "swoc/bwf_base.h"
 
 #include "catch.hpp"
 
@@ -124,7 +124,7 @@ auto
 Container::debug(std::string_view fmt, Args &&...args) -> self_type &
 {
   Message *msg = new Message;
-  ts::bwprintv(msg->_text, fmt, std::forward_as_tuple(args...));
+  swoc::bwprint_v(msg->_text, fmt, std::forward_as_tuple(args...));
   msg->_severity = Message::LVL_DEBUG;
   _msgs.append(msg);
   return *this;
@@ -286,7 +286,7 @@ TEST_CASE("IntrusiveDList", "[libtscpputil][IntrusiveDList]")
   PrivateThingList priv_list;
   for (int i = 1; i <= 23; ++i) {
     std::string name;
-    ts::bwprint(name, "Item {}", i);
+    swoc::bwprint(name, "Item {}", i);
     priv_list.append(new PrivateThing(name));
     REQUIRE(priv_list.count() == i);
   }

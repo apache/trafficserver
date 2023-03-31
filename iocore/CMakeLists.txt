@@ -17,7 +17,9 @@
 
 
 add_subdirectory(eventsystem)
+if (TS_USE_LINUX_IO_URING)
 add_subdirectory(io_uring)
+endif (TS_USE_LINUX_IO_URING)
 add_subdirectory(net)
 add_subdirectory(aio)
 add_subdirectory(dns)

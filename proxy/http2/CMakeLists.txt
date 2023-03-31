@@ -27,6 +27,7 @@ add_library(http2 STATIC
         Http2FrequencyCounter.cc
         Http2Stream.cc
         Http2SessionAccept.cc
+        Http2ServerSession.cc
 )
 target_include_directories(http2 PRIVATE
         ${IOCORE_INCLUDE_DIRS}

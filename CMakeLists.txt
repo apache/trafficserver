@@ -104,6 +104,7 @@ check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
 set(CMAKE_REQUIRED_LIBRARIES uring)
 check_symbol_exists(io_uring_queue_init "liburing.h" HAVE_IOURING)
+unset(CMAKE_REQUIRED_LIBRARIES)
 check_symbol_exists(getresuid unistd.h HAVE_GETRESUID)
 check_symbol_exists(getresgid unistd.h HAVE_GETRESGID)
 check_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
@@ -136,6 +137,16 @@ include(CTest)
 
 message("Configuring for ${HOST_OS}")
 
+if(HOST_OS STREQUAL "linux")
+    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    set(CMAKE_HAVE_THREADS_LIBRARY 1)
+    set(CMAKE_USE_WIN32_THREADS_INIT 0)
+    set(CMAKE_USE_PTHREADS_INIT 1)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    link_libraries(dl)
+endif(HOST_OS STREQUAL "linux")
+
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options(-Wno-invalid-offsetof)
 
@@ -147,6 +158,7 @@ include_directories(
 )
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
+    link_libraries(${OPENSSL_CRYPTO_LIBRARY})
 endif(OPENSSL_FOUND)
 
 add_subdirectory(lib)
