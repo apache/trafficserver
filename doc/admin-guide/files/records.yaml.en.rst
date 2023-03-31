@@ -526,6 +526,9 @@ Network
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+   Note that for QUIC this will be ignored and ``proxy.config.quic.no_activity_timeout_in``
+   should be used instead.
+
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
    How frequent (in seconds) to check for inactive connections. If you deal
@@ -4550,6 +4553,11 @@ removed in the future without prior notice.
    The max idle timeout in milliseconds.
    This value will be advertised as ``idle_timeout`` Transport Parameter.
    Transport Parameter.
+
+   .. important::
+
+      QUIC ignores any settings for ``proxy.config.net.default_inactivity_timeout`` and only
+      honors the ``proxy.config.quic.no_activity_timeout_in``.
 
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
    :reloadable:

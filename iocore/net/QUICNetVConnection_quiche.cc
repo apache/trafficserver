@@ -73,6 +73,10 @@ QUICNetVConnection::free()
 void
 QUICNetVConnection::remove_connection_ids()
 {
+  if (this->_ctable) {
+    this->_ctable->erase(this->_quic_connection_id, this);
+    this->_ctable->erase(this->_original_quic_connection_id, this);
+  }
 }
 
 // called by ET_UDP
@@ -281,12 +285,14 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
 
   // Send this netvc to InactivityCop.
+  // Note: even though we will set the timeouts to 0, we need this so we make sure the one gets freed and the IO is properly ended.
   nh->startCop(this);
 
+  // We will take care of this by using `idle_timeout` configured by `proxy.config.quic.no_activity_timeout_in`.
+  this->set_default_inactivity_timeout(0);
+
   if (inactivity_timeout_in) {
-    set_inactivity_timeout(inactivity_timeout_in);
-  } else {
-    set_inactivity_timeout(0);
+    this->set_inactivity_timeout(inactivity_timeout_in);
   }
 
   if (active_timeout_in) {
@@ -589,9 +595,6 @@ QUICNetVConnection::_handle_interval()
   quiche_conn_on_timeout(this->_quiche_con);
 
   if (quiche_conn_is_closed(this->_quiche_con)) {
-    this->_ctable->erase(this->_quic_connection_id, this);
-    this->_ctable->erase(this->_original_quic_connection_id, this);
-
     if (quiche_conn_is_timed_out(this->_quiche_con)) {
       QUICConDebug("QUIC Idle timeout detected");
       this->thread->schedule_imm(this, VC_EVENT_INACTIVITY_TIMEOUT);

@@ -125,15 +125,11 @@ test1 = Test_quic_no_activity_timeout(
     gold_file="gold/quic_no_activity_timeout.gold")
 test1.run(check_for_max_idle_timeout=True)
 
-##
-# The following tests is commented out as if we have a smaller default_inactivity_timeout
-# happening before the configured max_idle_timeout in quiche we will end up crashing.
-# The following should be uncommented once the bug is fixed.
-#
-
-# test2 = Test_quic_no_activity_timeout(
-#     "Test quic ts.quic.no_activity_timeout_in(max_idle_timeout_, default_inactivity_timeout should kick in first.",
-#     replay_keys="delay5s",
-#     no_activity_timeout_in=6800,
-#     extra_recs={'proxy.config.net.default_inactivity_timeout': 1})
-# test2.run()
+# QUIC Ignores the default_inactivity_timeout config, so the ts.quic.no_activity_timeout_in
+# should be honor
+test2 = Test_quic_no_activity_timeout(
+    "Ignoring default_inactivity_timeout and use the ts.quic.no_activity_timeout_in instead",
+    replay_keys="delay5s",
+    no_activity_timeout_in=3000,
+    extra_recs={'proxy.config.net.default_inactivity_timeout': 1})
+test2.run(check_for_max_idle_timeout=True)
