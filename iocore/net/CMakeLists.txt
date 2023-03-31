@@ -52,7 +52,6 @@ add_library(inknet STATIC
         TLSSessionResumptionSupport.cc
         TLSSNISupport.cc
         TLSTunnelSupport.cc
-        TLSCertSwitchSupport.cc
         UDPIOEvent.cc
         UnixConnection.cc
         UnixNet.cc
