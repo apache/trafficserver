@@ -569,12 +569,8 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  SSLMultiCertConfigLoader loader(params);
-  if (!loader.load(lookup)) {
-    retStatus = false;
-  }
-
-  if (!lookup->is_valid) {
+  auto errata = SSLMultiCertConfigLoader(params).load(lookup);
+  if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }
 
@@ -586,10 +582,18 @@ SSLCertificateConfig::reconfigure()
     delete lookup;
   }
 
-  if (retStatus) {
-    Note("%s finished loading", params->configFilePath);
+  if (!errata.empty()) {
+    errata.assign_annotation_glue_text("\n  ");
+    errata.assign_severity_glue_text(" -> \n  ");
+    bwprint(bw_dbg, "\n{}", errata);
   } else {
-    Error("%s failed to load", params->configFilePath);
+    bw_dbg = "";
+  }
+
+  if (retStatus) {
+    Note("%s finished loading%s", params->configFilePath, bw_dbg.c_str());
+  } else {
+    Error("%s failed to load%s", params->configFilePath, bw_dbg.c_str());
   }
 
   return retStatus;

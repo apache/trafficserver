@@ -19,6 +19,9 @@
   limitations under the License.
  */
 
+#include "swoc/Errata.h"
+#include "swoc/bwf_std.h"
+
 #include "P_SSLUtils.h"
 
 #include "tscpp/util/TextView.h"
@@ -1955,7 +1958,7 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
   return true;
 }
 
-bool
+swoc::Errata
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
   const SSLConfigParams *params = this->_params;
@@ -1975,11 +1978,10 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     switch (ec.value()) {
     case ENOENT:
       // missing config file is an acceptable runtime state
-      Warning("Cannot open SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
-      return true;
+      return swoc::Errata(ERRATA_WARN, "Cannot open SSL certificate configuration \"{}\" - {}", params->configFilePath, ec);
     default:
-      Error("Failed to read SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
-      return false;
+      return swoc::Errata(ERRATA_ERROR, "Failed to read SSL certificate configuration from \"{}\" - {}", params->configFilePath,
+                          ec);
     }
   }
 
@@ -1990,6 +1992,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   line = tokLine(content.data(), &tok_state);
+  swoc::Errata errata(ERRATA_NOTE);
   while (line != nullptr) {
     line_num++;
 
@@ -2011,10 +2014,10 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
           // There must be a certificate specified unless the tunnel action is set
           if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
             if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-              return false;
+              errata.note(ERRATA_ERROR, "Failed to load certificate on line {}", line_num);
             }
           } else {
-            Warning("No ssl_cert_name specified and no tunnel action set");
+            errata.note(ERRATA_WARN, "No ssl_cert_name specified and no tunnel action set on line {}", line_num);
           }
         }
       }
@@ -2030,12 +2033,11 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
     sslMultiCertSettings->addr = ats_strdup("*");
     if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-      Error("failed set default context");
-      return false;
+      errata.note(ERRATA_ERROR, "failed set default context");
     }
   }
 
-  return true;
+  return errata;
 }
 
 // Release SSL_CTX and the associated data. This works for both
