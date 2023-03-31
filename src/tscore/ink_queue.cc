@@ -214,7 +214,7 @@ freelist_new(InkFreeList *f)
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       uint32_t i;
       void *newp        = nullptr;
-      size_t alloc_size = f->chunk_size * f->type_size;
+      size_t alloc_size = static_cast<size_t>(f->chunk_size) * f->type_size;
       size_t alignment  = 0;
 
       if (f->use_hugepages) {
