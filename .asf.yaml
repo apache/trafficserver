@@ -48,6 +48,7 @@ github:
           - Rocky
           - Clang-Analyzer
           - Clang-Format
+          - CMake
           - Debian
           - Docs
           - Fedora
