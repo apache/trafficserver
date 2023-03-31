@@ -271,6 +271,8 @@ public:
   bool m_outbound_transparent_p = false;
   // True if transparent pass-through is enabled on this port.
   bool m_transparent_passthrough = false;
+  // True if allow-plain is enabled on this port.
+  bool m_allow_plain = false;
   /// True if MPTCP is enabled on this port.
   bool m_mptcp = false;
   /// Local address for inbound connections (listen address).
@@ -420,6 +422,7 @@ public:
   static const char *const OPT_TRANSPARENT_OUTBOUND;    ///< Outbound transparent.
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
+  static const char *const OPT_ALLOW_PLAIN;             ///< Backup to plain HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
   static const char *const OPT_QUIC;                    ///< QUIC (experimental)
   static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol

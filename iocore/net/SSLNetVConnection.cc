@@ -1360,13 +1360,23 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     err = errno;
     SSLVCDebug(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
-    // start a blind tunnel if tr-pass is set and data does not look like ClientHello
     char *buf = handShakeBuffer ? handShakeBuffer->buf() : nullptr;
-    if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
-      SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
-      this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
-      return EVENT_CONT;
+    if (buf && *buf != SSL_OP_HANDSHAKE) {
+      if (getAllowPlain()) {
+        SSLVCDebug(this, "Try plain");
+        // If this doesn't look like a ClientHello, convert this connection to a UnixNetVC and send the
+        // packet for Http Processing
+        this->_migrateFromSSL();
+        return EVENT_CONT;
+      } else if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
+        // start a blind tunnel if tr-pass is set and data does not look like ClientHello
+        SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
+        this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+        sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+        return EVENT_CONT;
+      } else {
+        SSLVCDebug(this, "Give up");
+      }
     }
   }
 
@@ -2139,6 +2149,76 @@ NetProcessor *
 SSLNetVConnection::_getNetProcessor()
 {
   return &sslNetProcessor;
+}
+
+void
+SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t)
+{
+  Debug("ssl", "allow-plain, handshake buffer ready to read=%" PRId64, this->handShakeHolder->read_avail());
+  // Take ownership of the handShake buffer
+  this->sslHandshakeStatus = SSL_HANDSHAKE_DONE;
+  NetState *s              = &target->read;
+  s->vio.buffer.writer_for(this->handShakeBuffer);
+  s->vio.set_reader(this->handShakeHolder);
+  this->handShakeHolder = nullptr;
+  this->handShakeBuffer = nullptr;
+  s->vio.vc_server      = target;
+  s->vio.cont           = this->read.vio.cont;
+  s->vio.mutex          = this->read.vio.cont->mutex;
+  // Passing along the buffer, don't keep a reading holding early in the buffer
+  this->handShakeReader->dealloc();
+  this->handShakeReader = nullptr;
+
+  // Kick things again, so the data that was copied into the
+  // vio.read buffer gets processed
+  target->readSignalDone(VC_EVENT_READ_COMPLETE, get_NetHandler(t));
+}
+
+/*
+ * Replaces the current SSLNetVConnection with a UnixNetVConnection
+ * Propagates any data in the SSL handShakeBuffer to be processed
+ * by the UnixNetVConnection logic
+ */
+UnixNetVConnection *
+SSLNetVConnection::_migrateFromSSL()
+{
+  EThread *t            = this_ethread();
+  NetHandler *client_nh = get_NetHandler(t);
+  ink_assert(client_nh);
+
+  Connection hold_con;
+  hold_con.move(this->con);
+
+  // We will leave the SSL object with the original SSLNetVC to be
+  // cleaned up.  Only moving the socket and handShakeBuffer
+  // So no need to call _prepareMigration
+
+  // Do_io_close will signal the VC to be freed on the original thread
+  // Since we moved the con context, the fd will not be closed
+  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+  // processed on two threads simultaneously
+  this->ep.stop();
+
+  // Create new VC:
+  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(unix_netProcessor.allocate_vc(t));
+  ink_assert(newvc != nullptr);
+  if (newvc != nullptr && newvc->populate(hold_con, this->read.vio.cont, nullptr) != EVENT_DONE) {
+    newvc->do_io_close();
+    Debug("ssl", "Failed to populate unixvc for allow-plain");
+    newvc = nullptr;
+  }
+  if (newvc != nullptr) {
+    newvc->attributes = HttpProxyPort::TRANSPORT_DEFAULT;
+    newvc->set_is_transparent(this->is_transparent);
+    newvc->set_context(get_context());
+    newvc->options = this->options;
+    Debug("ssl", "Move to unixvc for allow-plain");
+    this->_propagateHandShakeBuffer(newvc, t);
+  }
+
+  // Do not mark this closed until the end so it does not get freed by the other thread too soon
+  this->do_io_close();
+  return newvc;
 }
 
 ssl_curve_id
