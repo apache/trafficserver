@@ -70,7 +70,6 @@ if test "$has_quiche" != "0"; then
   if test "$quiche_have_headers" != "0"; then
     AC_SUBST([QUICHE_LIB], [-lquiche])
     AC_SUBST([QUICHE_CFLAGS], [-I${quiche_include}])
-    AC_CHECK_FUNCS([quiche_config_set_active_connection_id_limit])
   else
     has_quiche=0
     CPPFLAGS=$saved_cppflags
