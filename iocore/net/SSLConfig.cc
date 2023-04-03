@@ -226,7 +226,8 @@ SSLConfigParams::SetServerPolicyProperties(const char *verify_server)
   } else if (strcmp(verify_server, "NONE") == 0) {
     verifyServerProperties = YamlSNIConfig::Property::NONE;
   } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of ALL, SIGNATURE, NAME, or NONE. "
+            "Default is ALL",
             verify_server);
     verifyServerProperties = YamlSNIConfig::Property::NONE;
   }
@@ -242,7 +243,8 @@ SSLConfigParams::SetServerPolicy(const char *verify_server)
   } else if (strcmp(verify_server, "ENFORCED") == 0) {
     verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
   } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED. "
+            "Default is DISABLED",
             verify_server);
     verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
   }
