@@ -4623,9 +4623,9 @@ HttpSM::track_connect_fail() const
   bool retval = false;
   if (t_state.current.server->had_connect_fail()) {
     // What does our policy say?
-    if (t_state.txn_conf->connect_dead_policy == 2) { // Any connection error through TLS handshake
+    if (t_state.txn_conf->connect_down_policy == 2) { // Any connection error through TLS handshake
       retval = true;
-    } else if (t_state.txn_conf->connect_dead_policy == 1) { // Any connection error through TCP
+    } else if (t_state.txn_conf->connect_down_policy == 1) { // Any connection error through TCP
       retval = t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
     }
   }
@@ -5353,7 +5353,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     }
 
     if (HttpTransact::is_server_negative_cached(&t_state) == true &&
-        t_state.txn_conf->connect_attempts_max_retries_dead_server <= 0) {
+        t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
       call_transact_and_set_next_state(HttpTransact::OriginDead);
       return;
     }

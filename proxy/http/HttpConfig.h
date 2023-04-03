@@ -356,7 +356,7 @@ enum {
   http_origin_shutdown_cleanup_entry,
   http_origin_shutdown_tunnel_abort,
 
-  http_dead_server_no_requests,
+  http_down_server_no_requests,
 
   http_origin_reuse,
   http_origin_not_found,
@@ -681,11 +681,11 @@ struct OverridableHttpConfigParams {
   // origin server connect attempts //
   ////////////////////////////////////
   MgmtInt connect_attempts_max_retries             = 0;
-  MgmtInt connect_attempts_max_retries_dead_server = 3;
+  MgmtInt connect_attempts_max_retries_down_server = 3;
   MgmtInt connect_attempts_rr_retries              = 3;
   MgmtInt connect_attempts_timeout                 = 30;
 
-  MgmtInt connect_dead_policy = 2;
+  MgmtInt connect_down_policy = 2;
 
   ////////////////////////////////////
   // parent proxy connect attempts //

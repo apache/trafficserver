@@ -1599,23 +1599,23 @@ Origin Server Connect Attempts
 
    The maximum number of connection retries |TS| can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
-   reached, the origin is marked dead (as controlled by `proxy.config.http.connect.dead.policy`_.  After this, the setting
-   `proxy.config.http.connect_attempts_max_retries_dead_server`_ is used to limit the number of retry attempts to the known dead origin.
+   reached, the origin is marked down (as controlled by `proxy.config.http.connect.down.policy`_.  After this, the setting
+   `proxy.config.http.connect_attempts_max_retries_down_server`_ is used to limit the number of retry attempts to the known down origin.
 
-.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_down_server INT 1
    :reloadable:
    :overridable:
 
-   Maximum number of connection attempts |TS| can make while an origin is marked dead per request.  Typically this value is smaller than
-   `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
+   Maximum number of connection attempts |TS| can make while an origin is marked down per request.  Typically this value is smaller than
+   `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
-.. ts:cv:: CONFIG proxy.config.http.connect.dead.policy INT 2
+.. ts:cv:: CONFIG proxy.config.http.connect.down.policy INT 2
    :overridable:
 
-   Controls what origin server connection failures contribute to marking a server dead. When set to 2, any connection failure during the TCP and TLS
-   handshakes will contribute to marking the server dead. When set to 1, only TCP handshake failures will contribute to marking a server dead.
-   When set to 0, no connection failures will be used towards marking a server dead.
+   Controls what origin server connection failures contribute to marking a server down. When set to 2, any connection failure during the TCP and TLS
+   handshakes will contribute to marking the server down. When set to 1, only TCP handshake failures will contribute to marking a server down.
+   When set to 0, no connection failures will be used towards marking a server down.
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:

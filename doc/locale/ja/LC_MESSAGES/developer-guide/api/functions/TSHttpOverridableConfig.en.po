@@ -271,7 +271,7 @@ msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:114
-msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`"
+msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries_down_server`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:115

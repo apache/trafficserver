@@ -908,7 +908,7 @@ HttpTransact::OriginDead(State *s)
   TxnDebug("http_trans", "origin server is marked down");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
-  HTTP_INCREMENT_DYN_STAT(http_dead_server_no_requests);
+  HTTP_INCREMENT_DYN_STAT(http_down_server_no_requests);
   char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
@@ -3756,7 +3756,7 @@ HttpTransact::handle_response_from_server(State *s)
   case BAD_INCOMING_RESPONSE:
 
     if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
+      max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
     } else {
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;

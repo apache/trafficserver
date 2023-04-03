@@ -181,10 +181,10 @@ ts:
       size: 4096
     chunking_enabled: 1
     connect:
-      dead:
+      down:
         policy: 2
     connect_attempts_max_retries: 3
-    connect_attempts_max_retries_dead_server: 1
+    connect_attempts_max_retries_down_server: 1
     connect_attempts_rr_retries: 3
     connect_attempts_timeout: 30
     connect_ports: '443'

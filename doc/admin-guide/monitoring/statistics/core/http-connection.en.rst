@@ -144,10 +144,10 @@ HTTP Connection
    This metric tracks the number of server connections currently in the server session sharing pools. The server session sharing is
    controlled by settings :ts:cv:`proxy.config.http.server_session_sharing.pool` and :ts:cv:`proxy.config.http.server_session_sharing.match`.
 
-.. ts:stat:: global proxy.process.http.dead_server.no_requests integer
+.. ts:stat:: global proxy.process.http.down_server.no_requests integer
    :type: counter
 
-   Tracks the number of client requests that did not have a request sent to the origin server because the origin server was marked dead.
+   Tracks the number of client requests that did not have a request sent to the origin server because the origin server was marked down.
 
 .. ts:stat:: global proxy.process.http.http_proxy_loop_detected integer
    :type: counter
