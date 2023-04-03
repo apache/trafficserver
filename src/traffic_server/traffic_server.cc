@@ -1748,7 +1748,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Before accessing file system initialize Layout engine
   Layout::create();
   // Let's be clear on what exactly is starting up.
-  printf("Traffic Server " PACKAGE_VERSION BUILD_NUMBER " " __DATE__ " " __TIME__ " " BUILD_MACHINE "\n");
+  printf("Traffic Server " PACKAGE_VERSION "-" BUILD_NUMBER " " __DATE__ " " __TIME__ " " BUILD_MACHINE "\n");
   chdir_root(); // change directory to the install root of traffic server.
 
   std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
