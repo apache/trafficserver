@@ -23,22 +23,35 @@
 #include "tscore/ink_defs.h"
 #include "ts/ts.h"
 
-#include <dirent.h>
-#include <getopt.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <limits.h>
+#include <ts/ts.h>
 #include <string.h>
-#include <sys/types.h>
+#include <inttypes.h>
+#include <getopt.h>
+#include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <zlib.h>
+#include <fstream>
+#include <ts/remap.h>
+#include <dirent.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+#include "ink_autoconf.h"
 
 #ifdef HAVE_SYS_SYSINFO_H
 #include <sys/sysinfo.h>
 #endif
 
 #include <limits.h>
+#include "tscore/ink_hrtime.h"
 
 #define PLUGIN_NAME "system_stats"
 #define DEBUG_TAG   PLUGIN_NAME
@@ -65,6 +78,9 @@
 // Base net stats name, full name needs to populated
 // with NET_STATS.infname.RX/TX.standard_net_stats field
 #define NET_STATS "plugin." PLUGIN_NAME ".net."
+
+// Timestamp Strings
+#define TIMESTAMP "plugin." PLUGIN_NAME ".timestamp_ms"
 
 #define NET_STATS_DIR  "/sys/class/net"
 #define STATISTICS_DIR "statistics"
@@ -145,8 +161,8 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   memset(&sysfs_name[0], 0, sizeof(sysfs_name));
   memset(&data[0], 0, sizeof(data));
 
-  if ((interface == NULL) || (entry == NULL)) {
-    TSError("%s: NULL subdir or entry", DEBUG_TAG);
+  if ((interface == nullptr) || (entry == nullptr)) {
+    TSError("%s: nullptr subdir or entry", DEBUG_TAG);
     return;
   }
 
@@ -158,7 +174,7 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   }
 
   // Determine if this is a toplevel netdev stat, or one from statistics.
-  if (subdir == NULL) {
+  if (subdir == nullptr) {
     snprintf(&sysfs_name[0], sizeof(sysfs_name), "%s/%s/%s", NET_STATS_DIR, interface, entry);
   } else {
     snprintf(&sysfs_name[0], sizeof(sysfs_name), "%s/%s/%s/%s", NET_STATS_DIR, interface, subdir, entry);
@@ -179,15 +195,15 @@ setBondingStat(TSMutex stat_creation_mutex, const char *interface)
 
   memset(&infdir[0], 0, sizeof(infdir));
 
-  if (interface == NULL) {
-    TSError("%s: NULL interface", DEBUG_TAG);
+  if (interface == nullptr) {
+    TSError("%s: nullptr interface", DEBUG_TAG);
     return;
   }
 
   snprintf(&infdir[0], sizeof(infdir), "%s/%s", NET_STATS_DIR, interface);
   DIR *localdir = opendir(infdir);
 
-  while ((dent = readdir(localdir)) != NULL) {
+  while ((dent = readdir(localdir)) != nullptr) {
     if (((strncmp(SLAVE, dent->d_name, strlen(SLAVE)) == 0) || (strncmp(LOWER, dent->d_name, strlen(LOWER)) == 0)) &&
         (dent->d_type == DT_LNK)) {
       // We have a symlink starting with slave or lower, get its speed
@@ -209,16 +225,16 @@ netStatsInfo(TSMutex stat_creation_mutex)
   struct dirent *dent;
   DIR *srcdir = opendir(NET_STATS_DIR);
 
-  if (srcdir == NULL) {
+  if (srcdir == nullptr) {
     return 0;
   }
 
-  while ((dent = readdir(srcdir)) != NULL) {
+  while ((dent = readdir(srcdir)) != nullptr) {
     if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || (dent->d_type != DT_LNK)) {
       continue;
     }
 
-    setNetStat(stat_creation_mutex, dent->d_name, "speed", NULL, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "speed", nullptr, false);
     setNetStat(stat_creation_mutex, dent->d_name, "collisions", STATISTICS_DIR, false);
     setNetStat(stat_creation_mutex, dent->d_name, "multicast", STATISTICS_DIR, false);
     setNetStat(stat_creation_mutex, dent->d_name, "rx_bytes", STATISTICS_DIR, false);
@@ -260,6 +276,7 @@ getStats(TSMutex stat_creation_mutex)
 
   sysinfo(&info);
 
+  statSet(TIMESTAMP, ink_hrtime_to_msec(ink_get_hrtime_internal()), stat_creation_mutex);
   statSet(LOAD_AVG_ONE_MIN, info.loads[0], stat_creation_mutex);
   statSet(LOAD_AVG_FIVE_MIN, info.loads[1], stat_creation_mutex);
   statSet(LOAD_AVG_FIFTEEN_MIN, info.loads[2], stat_creation_mutex);
@@ -310,7 +327,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   stats_cont = TSContCreate(systemStatsContCB, TSMutexCreate());
-  TSContDataSet(stats_cont, NULL);
+  TSContDataSet(stats_cont, nullptr);
 
   // We want our first hit immediate to populate the stats,
   // Subsequent schedules done within the function will be for
