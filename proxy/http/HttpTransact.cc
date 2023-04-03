@@ -1908,7 +1908,7 @@ HttpTransact::OSDNSLookup(State *s)
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
         log_msg = "looking up";
       } else {
-        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_dead");
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
         log_msg = "no valid server";
       }
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);

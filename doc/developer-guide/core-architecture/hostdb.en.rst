@@ -47,13 +47,13 @@ about the protocol to use to the upstream.
 
 The last failure time tracks when the last connection failure to the info occurred and doubles as
 a flag, where a value of ``TS_TIME_ZERO`` indicates a live target and any other value indicates a
-dead info.
+down info.
 
-If an info is marked dead (has a non-zero last failure time) there is a "fail window" during which
+If an info is marked down (has a non-zero last failure time) there is a "fail window" during which
 no connections are permitted. After this time the info is considered to be a "zombie". If all infos
-for a record are dead then a specific error message is generated (body factory tag
-"connect#all_dead"). Otherwise if the selected info is a zombie, a request is permitted but the
-zombie is immediately marked dead again, preventing any additional requests until either the fail
+for a record are down then a specific error message is generated (body factory tag
+"connect#all_down"). Otherwise if the selected info is a zombie, a request is permitted but the
+zombie is immediately marked down again, preventing any additional requests until either the fail
 window has passed or the single connection succeeds. A successful connection clears the last file
 time and the info becomes alive.
 
@@ -135,10 +135,10 @@ Issues
 ======
 
 Currently if an upstream is marked down connections are still permitted, the only change is the
-number of retries. This has caused operational problems where dead systems are flooded with requests
+number of retries. This has caused operational problems where down systems are flooded with requests
 which, despite the timeouts, accumulate in ATS until ATS runs out of memory (there were instances of
 over 800K pending transactions). This also made it hard to bring the upstreams back online. With
-these changes requests to dead upstreams are strongly rate limited and other transactions are
+these changes, requests to upstreams marked down are strongly rate limited and other transactions are
 immediately terminated with a 502 response, protecting both the upstream and ATS.
 
 Future
@@ -176,14 +176,14 @@ This version has several major architectural changes from the previous version.
 *  Single and multiple address results are treated identically - a singleton is simply a multiple
    of size 1. This yields a major simplification of the implementation.
 
-*  Connections are throttled to dead upstreams, allowing only a single connection attempt per fail
+*  Connections are throttled to upstreams marked down, allowing only a single connection attempt per fail
    window timing until a connection succeeds.
 
 *  Timing information is stored in ``std::chrono`` data types instead of proprietary types.
 
 *  State information has been promoted to atomics and updates are immediate rather than scheduled.
    This also means the data in the state machine is a reference to a shared object, not a local copy.
-   The promotion was necessary to coordinate zombie connections to dead upstreams across transactions.
+   The promotion was necessary to coordinate zombie connections to upstreams marked down across transactions.
 
 *  The "resolve key" is now a separate data object from the HTTP request. This is a subtle but
    major change. The effect is requests can be routed to different upstreams without changing

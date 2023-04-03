@@ -115,7 +115,7 @@ ts.Disk.records_config.update({
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.dns.resolv_conf': 'NULL',
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.http.connect.down.policy': 1,  # Don't count TLS failures for dead upstream.
+    'proxy.config.http.connect.down.policy': 1,  # Don't count TLS failures when deciding whehter the server is down.
 })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
