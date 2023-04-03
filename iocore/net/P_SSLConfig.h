@@ -167,6 +167,8 @@ struct SSLConfigParams : public ConfigInfo {
   void cleanup();
   void reset();
   void SSLConfigInit(IpMap *global);
+  void SetServerPolicy(const char *);
+  void SetServerPolicyProperties(const char *);
 
 private:
   // c_str() of string passed to in-progess call to updateCTX().

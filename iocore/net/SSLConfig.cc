@@ -190,6 +190,67 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
   }
 }
 
+int
+UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+{
+  SSLConfigParams *params = SSLConfig::acquire();
+  char *verify_server     = data.rec_string;
+  if (params != nullptr && verify_server != nullptr) {
+    Debug("ssl_load", "New Server Policy %s", verify_server);
+    params->SetServerPolicy(verify_server);
+  } else {
+    Debug("ssl_load", "Failed to load new Server Policy %p %p", verify_server, params);
+  }
+  return 0;
+}
+
+int
+UpdateServerPolicyProperties(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+{
+  SSLConfigParams *params = SSLConfig::acquire();
+  char *verify_server     = data.rec_string;
+  if (params != nullptr && verify_server != nullptr) {
+    params->SetServerPolicyProperties(verify_server);
+  }
+  return 0;
+}
+
+void
+SSLConfigParams::SetServerPolicyProperties(const char *verify_server)
+{
+  if (strcmp(verify_server, "SIGNATURE") == 0) {
+    verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
+  } else if (strcmp(verify_server, "NAME") == 0) {
+    verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
+  } else if (strcmp(verify_server, "ALL") == 0) {
+    verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+  } else if (strcmp(verify_server, "NONE") == 0) {
+    verifyServerProperties = YamlSNIConfig::Property::NONE;
+  } else {
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of ALL, SIGNATURE, NAME, or NONE. "
+            "Default is ALL",
+            verify_server);
+    verifyServerProperties = YamlSNIConfig::Property::NONE;
+  }
+}
+
+void
+SSLConfigParams::SetServerPolicy(const char *verify_server)
+{
+  if (strcmp(verify_server, "DISABLED") == 0) {
+    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+  } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
+    verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
+  } else if (strcmp(verify_server, "ENFORCED") == 0) {
+    verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
+  } else {
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED. "
+            "Default is DISABLED",
+            verify_server);
+    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+  }
+}
+
 void
 SSLConfigParams::initialize()
 {
@@ -380,34 +441,14 @@ SSLConfigParams::initialize()
 
   char *verify_server = nullptr;
   REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
-  if (strcmp(verify_server, "DISABLED") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-  } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-  } else if (strcmp(verify_server, "ENFORCED") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-  } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-            verify_server);
-    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-  }
+  this->SetServerPolicy(verify_server);
   ats_free(verify_server);
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.client.verify.server.policy", UpdateServerPolicy, nullptr);
 
   REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
-  if (strcmp(verify_server, "SIGNATURE") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
-  } else if (strcmp(verify_server, "NAME") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
-  } else if (strcmp(verify_server, "ALL") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
-  } else if (strcmp(verify_server, "NONE") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::NONE;
-  } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
-            verify_server);
-    verifyServerProperties = YamlSNIConfig::Property::NONE;
-  }
+  this->SetServerPolicyProperties(verify_server);
   ats_free(verify_server);
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.client.verify.server.properties", UpdateServerPolicyProperties, nullptr);
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;
