@@ -2008,7 +2008,8 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  line = tokLine(content.data(), &tok_state);
+  bool error_p = false;
+  line         = tokLine(content.data(), &tok_state);
   while (line != nullptr) {
     line_num++;
 
@@ -2031,7 +2032,8 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
           // There must be a certificate specified unless the tunnel action is set
           if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
             if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
-              return false;
+              Error("Failed to add certificate from \"%s\"", line);
+              error_p = true;
             }
           } else {
             Warning("No ssl_cert_name specified and no tunnel action set");
@@ -2055,7 +2057,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     }
   }
 
-  return true;
+  return !error_p;
 }
 
 // Release SSL_CTX and the associated data. This works for both

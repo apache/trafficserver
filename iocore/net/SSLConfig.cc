@@ -562,9 +562,9 @@ SSLCertificateConfig::reconfigure()
     retStatus = false;
   }
 
-  // If there are errors in the certificate configs and we had wanted to exit on error
-  // we won't want to reset the config
-  if (retStatus || !params->configExitOnLoadError) {
+  // If there are errors in the certificate configs force the load anyway if there
+  // is no configuration at all (i.e. this is the initial load).
+  if (retStatus || 0 == configid) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;
