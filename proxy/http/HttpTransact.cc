@@ -5731,6 +5731,11 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->cache_info.action = CACHE_DO_NO_ACTION;
   }
 
+  // This function, HttpTransact::initialize_state_variables_from_request(), may be called multiple times for the same
+  // HTTP request.  But we only want to increment the per-method request count the first time this function is called
+  // for each request.  0 is the value that the State class constructor initializes 'method' to, it means unset, so
+  // method should only be 0 if it's the first call to this function.
+  //
   bool do_increment_stat = (0 == s->method);
 
   s->method = incoming_request->method_get_wksidx();
