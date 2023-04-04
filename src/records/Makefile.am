@@ -56,11 +56,7 @@ librecords_COMMON = \
 	RecordsConfig.cc \
 	RecordsConfigUtils.cc
 
-librecords_p_a_SOURCES = \
-	$(librecords_COMMON) \
-	I_RecProcess.h \
-	P_RecProcess.h \
-	RecProcess.cc
+librecords_p_a_SOURCES = $(librecords_COMMON)
 
 TESTS = $(check_PROGRAMS)
 

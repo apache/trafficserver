@@ -134,27 +134,27 @@ ProxyTransaction::set_outbound_port(in_port_t port)
 IpAddr
 ProxyTransaction::get_outbound_ip4() const
 {
-  return upstream_outbound_options.outbound_ip4;
+  if (upstream_outbound_options.outbound.has_ip4()) {
+    return IpAddr(upstream_outbound_options.outbound.ip4().network_order());
+  }
+  return IpAddr();
 }
 
 IpAddr
 ProxyTransaction::get_outbound_ip6() const
 {
-  return upstream_outbound_options.outbound_ip6;
+  if (upstream_outbound_options.outbound.has_ip6()) {
+    return IpAddr(upstream_outbound_options.outbound.ip6().network_order());
+  }
+  return IpAddr();
 }
 
 void
-ProxyTransaction::set_outbound_ip(const IpAddr &new_addr)
+ProxyTransaction::set_outbound_ip(swoc::IPAddr const &addr)
 {
-  if (new_addr.isIp4()) {
-    upstream_outbound_options.outbound_ip4 = new_addr;
-  } else if (new_addr.isIp6()) {
-    upstream_outbound_options.outbound_ip6 = new_addr;
-  } else {
-    upstream_outbound_options.outbound_ip4.invalidate();
-    upstream_outbound_options.outbound_ip6.invalidate();
-  }
+  upstream_outbound_options.outbound = addr;
 }
+
 bool
 ProxyTransaction::is_outbound_transparent() const
 {
@@ -233,6 +233,34 @@ HTTPVersion
 ProxyTransaction::get_version(HTTPHdr &hdr) const
 {
   return hdr.version_get();
+}
+
+bool
+ProxyTransaction::is_read_closed() const
+{
+  return false;
+}
+
+bool
+ProxyTransaction::expect_send_trailer() const
+{
+  return false;
+}
+
+void
+ProxyTransaction::set_expect_send_trailer()
+{
+}
+
+bool
+ProxyTransaction::expect_receive_trailer() const
+{
+  return false;
+}
+
+void
+ProxyTransaction::set_expect_receive_trailer()
+{
 }
 
 bool

@@ -122,7 +122,7 @@ def validate_schema(data, schema_filename):
     return ""
 
 
-def save_to_file(filename, is_json, typerepr, data):
+def save_to_file(filename, is_json, typerepr, no_backup, data):
 
     def float_representer(dumper, value):
         return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
@@ -137,8 +137,8 @@ def save_to_file(filename, is_json, typerepr, data):
         return dumper.represent_scalar(u'tag:yaml.org,2002:null', str(value), style="'")
 
     # Make sure we do not wipe out an existing file.
-    if os.path.exists(filename):
-        os.popen(f'cp {filename} {filename}.{int(time.time())}')
+    if no_backup == False and os.path.exists(filename):
+        os.system(f'cp {filename} {filename}.{int(time.time())}')
 
     with open(filename, 'w') as f:
         if is_json:
@@ -278,7 +278,7 @@ def handle_file_input(args):
         if err:
             raise Exception("Schema failed.")
 
-    save_to_file(args.output, args.json, args.typerepr, ts)
+    save_to_file(args.output, args.json, args.typerepr, args.no_backup, ts)
 
     f.close()
     return
@@ -298,6 +298,8 @@ if __name__ == '__main__':
         required=False,
         action='store_true')
     parser.add_argument('-e', '--error', help="Show traceback", required=False, action='store_true', default=False)
+    parser.add_argument('-x', '--no-backup', help="If it exists, do not backup the output file.",
+                        required=False, action='store_true', default=False, dest='no_backup')
     kk = parser.add_mutually_exclusive_group(required=False)
     kk.add_argument('-j', '--json', help="Output as json", action='store_true', default=False)
     kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true', default=True)

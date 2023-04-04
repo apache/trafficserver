@@ -27,7 +27,7 @@
 
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #include "QUICStreamManager_quiche.h"
 #else
 #include "QUICStreamManager_native.h"
@@ -43,7 +43,7 @@
 #include "QUICPadder.h"
 #include "QUICHandshakeProtocol.h"
 #include "QUICStreamAdapter.h"
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #include "QUICStream_quiche.h"
 #else
 #include "QUICStream_native.h"
@@ -255,7 +255,7 @@ public:
   MockQUICStreamManager(QUICContext *context) : QUICStreamManagerImpl(context, nullptr) {}
 
   // Override
-#ifndef HAVE_QUICHE_H
+#if TS_HAS_QUICHE == 0
   virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
@@ -664,7 +664,7 @@ public:
   {
     return _config;
   }
-#ifndef HAVE_QUICHE_H
+#if TS_HAS_QUICHE == 0
   virtual QUICRTTProvider *
   rtt_provider() const override
   {

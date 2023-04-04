@@ -91,6 +91,7 @@ Http2CommonSession::common_free(ProxySession *ssn)
           ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
           this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
   }
+
   // Update stats on how we died.  May want to eliminate this.  Was useful for
   // tracking down which cases we were having problems cleaning up.  But for general
   // use probably not worth the effort
@@ -152,7 +153,6 @@ Http2CommonSession::xmit(const Http2TxFrame &frame, bool flush)
 {
   int64_t len                      = frame.write_to(this->write_buffer);
   this->_pending_sending_data_size += len;
-  // Force flush for some cases
   if (!flush) {
     // Flush if we already use half of the buffer to avoid adding a new block to the chain.
     // A frame size can be 16MB at maximum so blocks can be added, but that's fine.
@@ -160,7 +160,6 @@ Http2CommonSession::xmit(const Http2TxFrame &frame, bool flush)
       flush = true;
     }
   }
-
   if (flush) {
     this->flush();
   }
@@ -341,6 +340,8 @@ Http2CommonSession::do_complete_frame_read()
 int
 Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
 {
+  Http2SsnDebug("do_process_frame_read %" PRId64 " bytes ready", this->_read_buffer_reader->read_avail());
+
   if (inside_frame) {
     do_complete_frame_read();
   }
@@ -367,6 +368,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     // Return if there was an error
     if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
+      this->connection_state.restart_receiving(nullptr);
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
@@ -385,6 +387,7 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 
     if (this->_should_do_something_else()) {
       if (this->_reenable_event == nullptr) {
+        this->connection_state.restart_receiving(nullptr);
         vio->disable();
         this->_reenable_event = this->get_mutex()->thread_holding->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1),
                                                                                HTTP2_SESSION_EVENT_REENABLE, vio);
@@ -422,7 +425,12 @@ Http2CommonSession::is_write_high_water() const
 void
 Http2CommonSession::write_reenable()
 {
-  write_vio->reenable();
+  if (write_vio) {
+    // Grab the lock for the write_vio.  Holding the lock is
+    // checked eventually via the reenable logic
+    SCOPED_MUTEX_LOCK(lock, write_vio->mutex, this_ethread());
+    write_vio->reenable();
+  }
 }
 
 void
@@ -437,4 +445,15 @@ Http2CommonSession::add_url_to_pushed_table(const char *url, int url_len)
   if (_h2_pushed_urls->size() < Http2::push_diary_size) {
     _h2_pushed_urls->emplace(url);
   }
+}
+
+void
+Http2CommonSession::add_session()
+{
+}
+
+bool
+Http2CommonSession::is_outbound() const
+{
+  return false;
 }

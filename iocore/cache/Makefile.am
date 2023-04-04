@@ -46,7 +46,6 @@ libinkcache_a_SOURCES = \
 	I_Cache.h \
 	I_CacheDefs.h \
 	I_Store.h \
-	Inline.cc \
 	P_Cache.h \
 	P_CacheArray.h \
 	P_CacheDir.h \
@@ -116,6 +115,7 @@ test_LDADD = \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@BORINGOCSP_LIBS@ \
 	-lm
 
 check_PROGRAMS = \

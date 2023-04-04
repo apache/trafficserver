@@ -64,7 +64,7 @@ sessions:
         - [ X-Response, { value: 'zero-response', as: equal } ]
 
   - client-request:
-      delay: 500ms
+      await: zero-request
 
       headers:
         fields:
@@ -88,9 +88,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, first-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -120,9 +120,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, second-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -152,9 +152,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, third-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 1200 ]
       content:
-        size: 28
+        size: 1200
 
     proxy-response:
       headers:
@@ -190,9 +190,9 @@ sessions:
       headers:
         fields:
         - [ X-Response, fourth-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 120000 ]
       content:
-        size: 28
+        size: 120000
 
     proxy-response:
       headers:
@@ -226,12 +226,77 @@ sessions:
       headers:
         fields:
         - [ X-Response, fifth-response ]
-        - [ Content-Length, 28 ]
+        - [ Content-Length, 10000 ]
       content:
-        size: 28
+        size: 10000
 
     proxy-response:
       headers:
         fields:
         - [ X-Response, {value: 'fifth-response', as: equal } ]
 
+  - client-request:
+      # Populate the cache with a large response.
+
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /sixth-request ]
+        - [ uuid, sixth-request ]
+        - [ X-Request, sixth-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'sixth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, sixth-response ]
+        - [ Cache-Control, max-age=3600 ]
+        - [ Content-Length, 120000 ]
+      content:
+        size: 120000
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'sixth-response', as: equal } ]
+
+
+  # Retrieve an item from the cache. /sixth-request should have been cached in
+  # the previous transaction.
+  - client-request:
+
+      # Give the above transaction enough time to finish.
+      await: sixth-request
+
+      # Add some time to ensure that the sixth-request response is cached.
+      delay: 100ms
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.example.com ]
+        - [ :path, /sixth-request ]
+        - [ uuid, sixth-request-cached ]
+        - [ X-Request, sixth-request-cached ]
+      content:
+        size: 0
+
+    # Configure an error response which we don't expect to receive from the
+    # server because this should be served out of the cache.
+    server-response:
+      status: 500
+      reason: Bad Request
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'sixth-response', as: equal } ]

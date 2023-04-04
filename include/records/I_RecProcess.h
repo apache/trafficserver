@@ -27,22 +27,12 @@
 #include "I_EventSystem.h"
 
 //-------------------------------------------------------------------------
-// Initialization/Starting
-//-------------------------------------------------------------------------
-int RecProcessInit(Diags *diags = nullptr);
-int RecProcessInitMessage();
-int RecProcessStart();
-
-//-------------------------------------------------------------------------
-// Setters for manipulating internal sleep intervals
-//-------------------------------------------------------------------------
-void RecProcess_set_raw_stat_sync_interval_ms(int ms);
-void RecProcess_set_config_update_interval_ms(int ms);
-void RecProcess_set_remote_sync_interval_ms(int ms);
-
-//-------------------------------------------------------------------------
 // RawStat Registration
 //-------------------------------------------------------------------------
+
+using RecRawStatBlockAllocator = RecRawStatBlock *(*)(int num_stats);
+
+void SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator);
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);
 
 int _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,

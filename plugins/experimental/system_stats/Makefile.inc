@@ -17,4 +17,6 @@
 pkglib_LTLIBRARIES += experimental/system_stats/system_stats.la
 
 experimental_system_stats_system_stats_la_SOURCES = \
-experimental/system_stats/system_stats.c
+experimental/system_stats/system_stats.cc
+
+experimental_system_stats_system_stats_la_CXXFLAGS = $(AM_CXXFLAGS)

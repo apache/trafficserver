@@ -104,14 +104,11 @@ libtscore_la_SOURCES = \
 	ink_thread.cc \
 	ink_time.cc \
 	ink_uuid.cc \
-	IpMap.cc \
-	IpMapConf.cc \
 	JeMiAllocator.cc \
 	Layout.cc \
 	llqueue.cc \
 	lockfile.cc \
 	MatcherUtils.cc \
-	MemArena.cc \
 	MMH.cc \
 	ParseRules.cc \
 	Random.cc \
@@ -184,10 +181,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_ink_memory.cc \
 	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
-	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PluginUserArgs.cc \

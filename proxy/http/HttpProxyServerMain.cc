@@ -51,6 +51,7 @@
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 extern std::function<PoolableSession *()> create_h1_server_session;
+extern std::function<PoolableSession *()> create_h2_server_session;
 extern std::map<int, std::function<ProxySession *()>> ProtocolSessionCreateMap;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
@@ -168,10 +169,10 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
-    } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {
-      net.local_ip = HttpConfig::m_master.inbound_ip6;
-    } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
-      net.local_ip = HttpConfig::m_master.inbound_ip4;
+    } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound.has_ip6()) {
+      net.local_ip = HttpConfig::m_master.inbound.ip6().network_order();
+    } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound.has_ip4()) {
+      net.local_ip = HttpConfig::m_master.inbound.ip4().network_order();
     }
   }
   return net;
@@ -191,17 +192,8 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
   accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
 
-  if (port.m_outbound_ip4.isValid()) {
-    accept_opt.outbound_ip4 = port.m_outbound_ip4;
-  } else if (HttpConfig::m_master.outbound_ip4.isValid()) {
-    accept_opt.outbound_ip4 = HttpConfig::m_master.outbound_ip4;
-  }
-
-  if (port.m_outbound_ip6.isValid()) {
-    accept_opt.outbound_ip6 = port.m_outbound_ip6;
-  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
-    accept_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
-  }
+  accept_opt.outbound += HttpConfig::m_master.outbound;
+  accept_opt.outbound += port.m_outbound; // top priority, override master and base options.
 
   // OK the way this works is that the fallback for each port is a protocol
   // probe acceptor. For SSL ports, we can stack a NPN+ALPN acceptor in front
@@ -213,7 +205,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
   HttpSessionAccept *http           = nullptr; // don't allocate this unless it will be used.
   probe->proxyPort                  = &port;
-  probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ipmap;
+  probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
 
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
     http = new HttpSessionAccept(accept_opt);
@@ -225,6 +217,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   }
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_2_0, create_h2_server_session});
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);

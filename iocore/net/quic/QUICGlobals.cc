@@ -53,7 +53,7 @@ QUIC::init()
 int
 QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 {
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 #else
   QUICTLS *qtls            = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
   const char *session_file = qtls->session_file();

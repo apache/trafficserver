@@ -31,6 +31,7 @@ add_custom_target(ParseRules ALL DEPENDS ParseRulesCType ParseRulesCTypeToUpper 
 
 add_library(tscore SHARED
         AcidPtr.cc
+        AcidPtr.cc
         Arena.cc
         ArgParser.cc
         BaseLogFile.cc
@@ -49,14 +50,11 @@ add_library(tscore SHARED
         HashSip.cc
         HostLookup.cc
         InkErrno.cc
-        IpMap.cc
-        IpMapConf.cc
         JeMiAllocator.cc
         Layout.cc
         LogMessage.cc
         MMH.cc
         MatcherUtils.cc
-        MemArena.cc
         ParseRules.cc
         Random.cc
         RbTree.cc
@@ -109,7 +107,7 @@ target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${YAML_INCLUDE_DIRS}
 )
-target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv)
+target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc)
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc
@@ -124,11 +122,9 @@ add_executable(test_tscore
         unit_tests/test_History.cc
         unit_tests/test_IntrusiveHashMap.cc
         unit_tests/test_IntrusivePtr.cc
-        unit_tests/test_IpMap.cc
         unit_tests/test_List.cc
         unit_tests/test_MMH.cc
         unit_tests/test_MT_hashtable.cc
-        unit_tests/test_MemArena.cc
         unit_tests/test_ParseRules.cc
         unit_tests/test_PluginUserArgs.cc
         unit_tests/test_PriorityQueue.cc

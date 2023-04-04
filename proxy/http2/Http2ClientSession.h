@@ -33,8 +33,7 @@
 class Http2ClientSession : public ProxySession, public Http2CommonSession
 {
 public:
-  using super          = ProxySession; ///< Parent type.
-  using SessionHandler = int (Http2ClientSession::*)(int, void *);
+  using super = ProxySession; ///< Parent type.
 
   Http2ClientSession();
 
@@ -62,6 +61,8 @@ public:
   HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
+
+  void set_no_activity_timeout() override;
 
   ProxySession *get_proxy_session() override;
 

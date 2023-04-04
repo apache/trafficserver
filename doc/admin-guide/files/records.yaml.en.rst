@@ -526,6 +526,9 @@ Network
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+   Note that for QUIC this will be ignored and ``proxy.config.quic.no_activity_timeout_in``
+   should be used instead.
+
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
    How frequent (in seconds) to check for inactive connections. If you deal
@@ -4026,10 +4029,14 @@ Client-Related Configuration
 
    Sets the ALPN string that |TS| will send to the origin in the ClientHello of TLS handshakes.
    Configuring this to an empty string (the default configuration) means that the ALPN extension
-   will not be sent as a part of the TLS ClientHello.
+   will not be sent as a part of the TLS ClientHello, resulting in HTTP/1.x being negotiated for all
+   origin-side connections.
 
    Configuring the ALPN string provides a mechanism to control origin-side HTTP protocol
-   negotiation. Configuring this requires an understanding of the ALPN TLS protocol extension. See
+   negotiation. Including ``h2`` in the ALPN list is required for negotiatnge origin-side HTTP/2
+   connections.
+
+   Configuring this requires an understanding of the ALPN TLS protocol extension. See
    `RFC 7301 <https://www.rfc-editor.org/rfc/rfc7301.html>`_ for details about the ALPN protocol.
    See the official `IANA ALPN protocol registration
    <https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>`_
@@ -4044,6 +4051,7 @@ Client-Related Configuration
 
     - ``http/1.0``
     - ``http/1.1``
+    - ``h2``
 
    Here are some example configurations and the consequences of each:
 
@@ -4065,6 +4073,9 @@ Client-Related Configuration
                                     either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
                                     is currently not supported by |TS|.)
    ================================ ======================================================================
+
+   Note that this is an overridable configuration, so the ALPN can be configured on a per-origin
+   basis via the :ref:`admin-plugins-conf-remap` plugin.
 
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
@@ -4186,11 +4197,28 @@ HTTP/2 Configuration
    Reloading this value affects only new HTTP/2 connections, not the
    ones already established.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_concurrent_streams_out INT 100
+   :reloadable:
+
+   The maximum number of concurrent streams per outbound connection.
+
+.. note::
+
+   Reloading this value affects only new HTTP/2 connections, not the
+   ones already established.
+
 .. ts:cv:: CONFIG proxy.config.http2.min_concurrent_streams_in INT 10
    :reloadable:
 
    The minimum number of concurrent streams per inbound connection.
    This is used when :ts:cv:`proxy.config.http2.max_active_streams_in` is set
+   larger than ``0``.
+
+.. ts:cv:: CONFIG proxy.config.http2.min_concurrent_streams_out INT 10
+   :reloadable:
+
+   The minimum number of concurrent streams per outbound connection.
+   This is used when :ts:cv:`proxy.config.http2.max_active_streams_out` is set
    larger than ``0``.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 0
@@ -4202,6 +4230,15 @@ HTTP/2 Configuration
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
    To disable, set to zero (``0``).
 
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_out INT 0
+   :reloadable:
+
+   Limits the maximum number of connection wide active streams.
+   When connection wide active streams are larger than this value,
+   SETTINGS_MAX_CONCURRENT_STREAMS will be reduced to
+   :ts:cv:`proxy.config.http2.min_concurrent_streams_out`.
+   To disable, set to zero (``0``).
+
 .. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
    :units: bytes
@@ -4210,6 +4247,16 @@ HTTP/2 Configuration
    receiver advertises to the peer. See IETF RFC 9113 section 5.2 for details
    concerning HTTP/2 flow control. See
    :ts:cv:`proxy.config.http2.flow_control.policy_in` for how HTTP/2 stream and
+   session windows are maintained over the lifetime of HTTP/2 sessions.
+
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_out INT 65535
+   :reloadable:
+   :units: bytes
+
+   The initial HTTP/2 stream window size for outbound connections that |TS| as a
+   client advertises to the peer. See IETF RFC 9113 section 5.2 for details
+   concerning HTTP/2 flow control. See
+   :ts:cv:`proxy.config.http2.flow_control.policy_out` for how HTTP/2 stream and
    session windows are maintained over the lifetime of HTTP/2 sessions.
 
 .. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_in INT 0
@@ -4240,6 +4287,13 @@ HTTP/2 Configuration
          sessions. That is, stream window sizes dynamically adjust to fill the session window in
          a way that shares the window equally among all concurrent streams.
    ===== ===========================================================================================
+
+.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_out INT 0
+   :reloadable:
+
+   Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
+   stream and session windows for outbound connections. See the corresponding :ts:cv:`proxy.config.http2.flow_control.policy_in`
+   configuration for details concerning how this configuration variable is used.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:
@@ -4300,6 +4354,13 @@ HTTP/2 Configuration
    transaction stalls. Lowering this timeout can ease pressure on the proxy if
    misconfigured or misbehaving clients are opening a large number of
    connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_out INT 120
+   :reloadable:
+   :units: seconds
+
+   Specifies how long |TS| keeps connections to origins open if a
+   transaction stalls.
 
 .. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
    :reloadable:
@@ -4492,6 +4553,11 @@ removed in the future without prior notice.
    The max idle timeout in milliseconds.
    This value will be advertised as ``idle_timeout`` Transport Parameter.
    Transport Parameter.
+
+   .. important::
+
+      QUIC ignores any settings for ``proxy.config.net.default_inactivity_timeout`` and only
+      honors the ``proxy.config.quic.no_activity_timeout_in``.
 
 .. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
    :reloadable:

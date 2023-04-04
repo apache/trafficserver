@@ -24,7 +24,7 @@
 #include <string_view>
 
 #include "jsonrpc/ctrl_yaml_codecs.h"
-#include "tscpp/util/ts_meta.h"
+#include <swoc/swoc_meta.h>
 #include <swoc/bwf_base.h>
 #include <swoc/bwf_ex.h>
 #include <swoc/BufferWriter.h>
@@ -248,7 +248,7 @@ RecordDescribePrinter::write_output(YAML::Node const &result)
     std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Record Type ", rec_labelof(recordInfo.rclass));
     std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Data Type ", recordInfo.dataType);
 
-    std::visit(ts::meta::overloaded{
+    std::visit(swoc::meta::vary{
                  [&](shared::rpc::RecordLookUpResponse::RecordParamInfo::ConfigMeta const &meta) {
                    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Access Control ", rec_accessof(meta.accessType));
                    std::cout << swoc::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(meta.updateType));

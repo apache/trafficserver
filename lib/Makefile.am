@@ -18,10 +18,6 @@
 
 SUBDIRS = . fastlz
 
-if BUILD_PERL_LIB
-SUBDIRS += perl
-endif
-
 # These are broken out because the build and header export are separate actions.
 # Also clang analyzer requires the `all-local` target, which is annoying.
 

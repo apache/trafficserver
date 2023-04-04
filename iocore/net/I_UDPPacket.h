@@ -32,6 +32,23 @@
 #pragma once
 
 #include "I_UDPConnection.h"
+
+struct UDPPacketInternal {
+  // packet scheduling stuff: keep it a doubly linked list
+  uint64_t pktLength    = 0;
+  uint16_t segment_size = 0;
+
+  int reqGenerationNum     = 0;
+  ink_hrtime delivery_time = 0; // when to deliver packet
+
+  Ptr<IOBufferBlock> chain;
+  Continuation *cont  = nullptr; // callback on error
+  UDPConnection *conn = nullptr; // connection where packet should be sent to.
+
+  int in_the_priority_queue = 0;
+  int in_heap               = 0;
+};
+
 /** @name UDPPacket
     UDP packet functions used by UDPConnection
  */
@@ -41,14 +58,21 @@
  */
 class UDPPacket
 {
+  friend class UDPQueue;
+  friend class PacketQueue;
+  friend class UDPConnection;
+  friend class UnixUDPConnection;
+
 public:
-  virtual ~UDPPacket() {}
-  virtual void free(); // fast deallocate
+  UDPPacket();
+  ~UDPPacket();
+  void free(); // fast deallocate
+
   void setContinuation(Continuation *c);
   void setConnection(UDPConnection *c);
   UDPConnection *getConnection();
   IOBufferBlock *getIOBlockChain();
-  int64_t getPktLength() const;
+  int64_t getPktLength();
 
   /**
      Add IOBufferBlock (chain) to end of packet.
@@ -62,7 +86,6 @@ public:
   int from_size;
 
   LINK(UDPPacket, link);
-
   // Factory (static) methods
 
   /**
@@ -87,4 +110,49 @@ public:
      Internal function only
   */
   static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block);
+
+private:
+  SLINK(UDPPacket, alink); // atomic link
+  UDPPacketInternal p;
 };
+
+// Inline definitions
+
+inline void
+UDPPacket::setContinuation(Continuation *c)
+{
+  p.cont = c;
+}
+
+inline void
+UDPPacket::setConnection(UDPConnection *c)
+{
+  /*Code reviewed by Case Larsen.  Previously, we just had
+     ink_assert(!conn).  This prevents tunneling of packets
+     correctly---that is, you get packets from a server on a udp
+     conn. and want to send it to a player on another connection, the
+     assert will prevent that.  The "if" clause enables correct
+     handling of the connection ref. counts in such a scenario. */
+
+  if (p.conn) {
+    if (p.conn == c) {
+      return;
+    }
+    p.conn->Release();
+    p.conn = nullptr;
+  }
+  p.conn = c;
+  p.conn->AddRef();
+}
+
+inline UDPConnection *
+UDPPacket::getConnection()
+{
+  return p.conn;
+}
+
+inline IOBufferBlock *
+UDPPacket::getIOBlockChain()
+{
+  return p.chain.get();
+}

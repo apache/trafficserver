@@ -1,7 +1,0 @@
-Makefile.PL
-README
-examples/forw_proxy_conf.pl
-MANIFEST
-lib/Apache/TS.pm
-lib/Apache/TS/Config/Records.pm
-lib/Apache/TS/Config.pm

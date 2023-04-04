@@ -28,7 +28,7 @@
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 
 void
-QUICPollEvent::init(QUICConnection *con, UDPPacketInternal *packet)
+QUICPollEvent::init(QUICConnection *con, UDPPacket *packet)
 {
   this->con    = con;
   this->packet = packet;
@@ -60,11 +60,11 @@ QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.
 
 QUICPollCont::~QUICPollCont() {}
 
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
 void
 QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p   = e->packet;
+  UDPPacket *p           = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;
@@ -84,7 +84,7 @@ QUICPollCont::_process_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p = e->packet;
+  UDPPacket *p = e->packet;
   // FIXME: VC is nullptr ?
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   uint8_t *buf           = reinterpret_cast<uint8_t *>(p->getIOBlockChain()->buf());
@@ -124,7 +124,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  UDPPacketInternal *p   = e->packet;
+  UDPPacket *p           = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
 
   vc->read.triggered = 1;
@@ -158,7 +158,7 @@ QUICPollCont::pollEvent(int, Event *)
   Queue<QUICPollEvent> result;
   while ((e = aq.pop())) {
     QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(e->con);
-    UDPPacketInternal *p    = e->packet;
+    UDPPacket *p            = e->packet;
     if (qvc != nullptr && qvc->in_closed_queue) {
       p->free();
       e->free();
@@ -168,7 +168,7 @@ QUICPollCont::pollEvent(int, Event *)
   }
 
   while ((e = result.pop())) {
-#if HAVE_QUICHE_H
+#if TS_HAS_QUICHE
     this->_process_packet(e, nh);
 #else
     uint8_t *buf;

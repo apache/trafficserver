@@ -1143,7 +1143,7 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
 void
 HttpConfig::startup()
 {
-  extern void SSLConfigInit(IpMap * map);
+  extern void SSLConfigInit(swoc::IPRangeSet * addrs);
   http_rsb = RecAllocateRawStatBlock(static_cast<int>(http_stat_count));
   register_stat_callbacks();
 
@@ -1159,10 +1159,10 @@ HttpConfig::startup()
     c.proxy_hostname[0] = '\0';
   }
 
-  RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
-  RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
-  RecHttpLoadIpMap("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ipmap);
-  SSLConfigInit(&c.config_proxy_protocol_ipmap);
+  c.inbound  += RecHttpLoadIp("proxy.local.incoming_ip_to_bind");
+  c.outbound += RecHttpLoadIp("proxy.local.outgoing_ip_to_bind");
+  RecHttpLoadIpAddrsFromConfVar("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ip_addrs);
+  SSLConfigInit(&c.config_proxy_protocol_ip_addrs);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
@@ -1450,11 +1450,9 @@ HttpConfig::reconfigure()
 
   params = new HttpConfigParams;
 
-  params->inbound_ip4 = m_master.inbound_ip4;
-  params->inbound_ip6 = m_master.inbound_ip6;
+  params->inbound = m_master.inbound;
 
-  params->outbound_ip4 = m_master.outbound_ip4;
-  params->outbound_ip6 = m_master.outbound_ip6;
+  params->outbound = m_master.outbound;
 
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
@@ -1837,7 +1835,7 @@ HttpConfig::parse_ports_list(char *ports_string)
 //  HttpConfig::parse_redirect_actions()
 //
 ////////////////////////////////////////////////////////////////
-IpMap *
+RedirectEnabled::ActionMap *
 HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &self_action)
 {
   using RedirectEnabled::Action;
@@ -1880,69 +1878,36 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     configMapping[AddressClass::DEFAULT] = Action::RETURN;
   }
 
-  IpMap *ret = new IpMap();
-  IpAddr min, max;
+  auto *ret     = new RedirectEnabled::ActionMap;
   Action action = Action::INVALID;
-
-  // Order Matters. IpAddr::mark uses Painter's Algorithm. Last one wins.
 
   // PRIVATE
   action = configMapping.find(AddressClass::PRIVATE) != configMapping.end() ? configMapping[AddressClass::PRIVATE] :
                                                                               configMapping[AddressClass::DEFAULT];
-  // 10.0.0.0/8
-  min.load("10.0.0.0");
-  max.load("10.255.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // 100.64.0.0/10
-  min.load("100.64.0.0");
-  max.load("100.127.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // 172.16.0.0/12
-  min.load("172.16.0.0");
-  max.load("172.31.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // 192.168.0.0/16
-  min.load("192.168.0.0");
-  max.load("192.168.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // fc00::/7
-  min.load("fc00::");
-  max.load("feff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
+  ret->mark(swoc::IP4Range("10.0.0.0/8"), action);
+  ret->mark(swoc::IP4Range("100.64.0.0/10"), action);
+  ret->mark(swoc::IP4Range("172.16.0.0/12"), action);
+  ret->mark(swoc::IP4Range("192.168.0.0/16"), action);
+  ret->mark(swoc::IP6Range("fc00::/7"), action);
 
   // LOOPBACK
   action = configMapping.find(AddressClass::LOOPBACK) != configMapping.end() ? configMapping[AddressClass::LOOPBACK] :
                                                                                configMapping[AddressClass::DEFAULT];
-  min.load("127.0.0.0");
-  max.load("127.255.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  min.load("::1");
-  max.load("::1");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
+
+  ret->mark(swoc::IP4Range("127.0.0.0/8"), action);
+  ret->mark(swoc::IP6Addr("::1"), action);
 
   // MULTICAST
   action = configMapping.find(AddressClass::MULTICAST) != configMapping.end() ? configMapping[AddressClass::MULTICAST] :
                                                                                 configMapping[AddressClass::DEFAULT];
-  // 224.0.0.0/4
-  min.load("224.0.0.0");
-  max.load("239.255.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // ff00::/8
-  min.load("ff00::");
-  max.load("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
+  ret->mark(swoc::IP4Range("224.0.0.0/4"), action);
+  ret->mark(swoc::IP6Range("ff00::/8"), action);
 
   // LINKLOCAL
   action = configMapping.find(AddressClass::LINKLOCAL) != configMapping.end() ? configMapping[AddressClass::LINKLOCAL] :
                                                                                 configMapping[AddressClass::DEFAULT];
-  // 169.254.0.0/16
-  min.load("169.254.0.0");
-  max.load("169.254.255.255");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
-  // fe80::/10
-  min.load("fe80::");
-  max.load("febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
-  ret->mark(min, max, reinterpret_cast<void *>(action));
+  ret->mark(swoc::IP4Range("169.254.0.0/16"), action);
+  ret->mark(swoc::IP6Range("fe80::/10"), action);
 
   // SELF
   // We must store the self address class separately instead of adding the addresses to our map.
@@ -1951,17 +1916,12 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
                                                                                 configMapping[AddressClass::DEFAULT];
   self_action = action;
 
-  // IpMap::fill only marks things that are not already marked.
-
   // ROUTABLE
   action = configMapping.find(AddressClass::ROUTABLE) != configMapping.end() ? configMapping[AddressClass::ROUTABLE] :
                                                                                configMapping[AddressClass::DEFAULT];
-  min.load("0.0.0.0");
-  max.load("255.255.255.255");
-  ret->fill(min, max, reinterpret_cast<void *>(action));
-  min.load("::");
-  max.load("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
-  ret->fill(min, max, reinterpret_cast<void *>(action));
+  // @c fille doesn't change any existing mapping.
+  ret->fill(swoc::IP4Range("0/0"), action);
+  ret->fill(swoc::IP6Range("::/0"), action);
 
   return ret;
 }

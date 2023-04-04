@@ -46,6 +46,10 @@ Http2ClientSession::destroy()
     in_destroy = true;
     REMEMBER(NO_EVENT, this->recursion)
     Http2SsnDebug("session destroy");
+    if (_vc) {
+      _vc->do_io_close();
+      _vc = nullptr;
+    }
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
@@ -54,14 +58,10 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  if (_vc) {
-    _vc->do_io_close();
-    _vc = nullptr;
-  }
   auto mutex_thread = this->mutex->thread_holding;
   if (Http2CommonSession::common_free(this)) {
     HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, mutex_thread);
-    THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
+    THREAD_FREE(this, http2ClientSessionAllocator, mutex_thread);
   }
 }
 
@@ -98,7 +98,6 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   _vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
-  this->in_destroy     = false;
 
   this->connection_state.mutex = this->mutex;
 
@@ -145,17 +144,20 @@ void
 Http2ClientSession::do_io_close(int alerrno)
 {
   REMEMBER(NO_EVENT, this->recursion)
-  Http2SsnDebug("session closed");
 
-  ink_assert(this->mutex->thread_holding == this_ethread());
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
+  if (!this->connection_state.is_state_closed()) {
+    Http2SsnDebug("session closed");
 
-  this->connection_state.release_stream();
+    ink_assert(this->mutex->thread_holding == this_ethread());
+    send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  this->clear_session_active();
+    this->connection_state.release_stream();
 
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(this, 0, nullptr);
+    this->clear_session_active();
+
+    // Clean up the write VIO in case of inactivity timeout
+    this->do_io_write(this, 0, nullptr);
+  }
 }
 
 int
@@ -163,6 +165,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
   int retval;
+  bool set_closed = false;
 
   recursion++;
 
@@ -196,7 +199,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     Http2SsnDebug("Closing event %d", event);
     this->set_dying_event(event);
     this->do_io_close();
-    retval = 0;
+    retval     = 0;
+    set_closed = true;
     break;
 
   case VC_EVENT_WRITE_READY:
@@ -238,7 +242,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     }
   }
 
-  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
+  if (!set_closed && this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
     send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_SHUTDOWN_INIT, this);
   }
 
@@ -279,15 +283,15 @@ Http2ClientSession::get_transact_count() const
   return connection_state.get_stream_requests();
 }
 
-void
-Http2ClientSession::release(ProxyTransaction *trans)
-{
-}
-
 const char *
 Http2ClientSession::get_protocol_string() const
 {
   return "http/2";
+}
+
+void
+Http2ClientSession::release(ProxyTransaction *trans)
+{
 }
 
 int
@@ -320,6 +324,15 @@ ProxySession *
 Http2ClientSession::get_proxy_session()
 {
   return this;
+}
+
+void
+Http2ClientSession::set_no_activity_timeout()
+{
+  // Only set if not previously set
+  if (this->_vc->get_inactivity_timeout() == 0) {
+    this->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
+  }
 }
 
 HTTPVersion

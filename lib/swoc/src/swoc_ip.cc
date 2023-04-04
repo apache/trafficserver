@@ -66,22 +66,62 @@ IPEndpoint::assign(sockaddr *dst, sockaddr const *src) {
 }
 
 IPEndpoint &
-IPEndpoint::assign(IPAddr const &src, in_port_t port) {
+IPEndpoint::assign(IP4Addr const &addr) {
+  memset(&sa4, 0, sizeof sa4);
+  sa4.sin_family      = AF_INET;
+  sa4.sin_addr.s_addr = addr.network_order();
+  Set_Sockaddr_Len(&sa4);
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IP6Addr const &addr) {
+  memset(&sa6, 0, sizeof sa6);
+  sa6.sin6_family = AF_INET6;
+  addr.network_order(sa6.sin6_addr);
+  Set_Sockaddr_Len(&sa6);
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IPAddr const &src) {
   switch (src.family()) {
   case AF_INET: {
     memset(&sa4, 0, sizeof sa4);
     sa4.sin_family      = AF_INET;
     sa4.sin_addr.s_addr = src.ip4().network_order();
-    sa4.sin_port        = port;
     Set_Sockaddr_Len(&sa4);
   } break;
   case AF_INET6: {
     memset(&sa6, 0, sizeof sa6);
     sa6.sin6_family = AF_INET6;
     sa6.sin6_addr   = src.ip6().network_order();
-    sa6.sin6_port   = port;
     Set_Sockaddr_Len(&sa6);
   } break;
+  }
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IPSrv const &src) {
+  switch (src.family()) {
+  case AF_INET:
+    memset(&sa4, 0, sizeof sa4);
+    sa4.sin_family      = AF_INET;
+    sa4.sin_addr.s_addr = src.ip4().addr().network_order();
+    sa4.sin_port        = src.network_order_port();
+    Set_Sockaddr_Len(&sa4);
+    break;
+  case AF_INET6:
+    memset(&sa6, 0, sizeof sa6);
+    sa6.sin6_family = AF_INET6;
+    sa6.sin6_addr   = src.ip6().addr().network_order();
+    sa6.sin6_port   = src.network_order_port();
+    Set_Sockaddr_Len(&sa6);
+    break;
+  default:
+    memset(&sa, 0, sizeof sa);
+    sa.sa_family = AF_UNSPEC;
   }
   return *this;
 }
@@ -146,24 +186,9 @@ IPEndpoint::tokenize(std::string_view str, std::string_view *addr, std::string_v
 
 bool
 IPEndpoint::parse(std::string_view const &str) {
-  TextView addr_str, port_str, rest;
-  TextView src{TextView{str}.trim_if(&isspace)};
-
-  if (this->tokenize(src, &addr_str, &port_str, &rest)) {
-    if (rest.empty()) {
-      if (IPAddr addr; addr.load(addr_str)) {
-        in_port_t port = 0;
-        if (!port_str.empty()) {
-          uintmax_t n{swoc::svto_radix<10>(port_str)};
-          if (!port_str.empty() || n > std::numeric_limits<in_port_t>::max()) {
-            return false;
-          }
-          port = n;
-        }
-        this->assign(addr, htons(port));
-        return true;
-      }
-    }
+  if (IPSrv srv; srv.load(TextView(str).trim_if(&isspace))) {
+    this->assign(srv);
+    return true;
   }
   return false;
 }
@@ -261,6 +286,7 @@ IP4Addr::load(std::string_view const &text) {
   _addr = INADDR_ANY; // clear to zero.
 
   // empty or trailing dot or empty brackets or unmatched brackets.
+  src.trim_if(&isspace);
   if (src.empty() || src.back() == '.' || ('[' == *src && ((++src).empty() || src.back() != ']'))) {
     return false;
   }
@@ -305,20 +331,21 @@ IP4Addr::operator=(sockaddr_in const *sa) -> self_type & {
 }
 
 sockaddr_in *
-IP4Addr::copy_to(sockaddr_in *sa, in_port_t port) const {
-  sa->sin_addr.s_addr = this->network_order();
-  sa->sin_port        = port;
-  return sa;
+IP4Addr::copy_to(sockaddr_in *sin) const {
+  sin->sin_family = AF_INET;
+  sin->sin_addr.s_addr = this->network_order();
+  Set_Sockaddr_Len(sin);
+  return sin;
 }
 
 // --- IPv6
 
-sockaddr *
-IP6Addr::copy_to(sockaddr *sa, in_port_t port) const {
-  IPEndpoint addr(sa);
-  self_type::reorder(addr.sa6.sin6_addr, _addr._raw);
-  addr.network_order_port() = port;
-  return sa;
+sockaddr_in6 *
+IP6Addr::copy_to(sockaddr_in6 *sin6) const {
+  sin6->sin6_family = AF_INET6;
+  self_type::reorder(sin6->sin6_addr, _addr._raw);
+  Set_Sockaddr_Len(sin6);
+  return sin6;
 }
 
 int
@@ -377,6 +404,7 @@ IP6Addr::load(std::string_view const &str) {
   int empty_idx = -1;
   auto quad     = _addr._quad.data();
 
+  src.trim_if(&isspace);
   if (src && '[' == *src) {
     ++src;
     if (src.empty() || src.back() != ']') {
@@ -472,6 +500,16 @@ IPAddr::IPAddr(IPEndpoint const &addr) {
 IPAddr &
 IPAddr::operator=(IPEndpoint const &addr) {
   return this->assign(&addr.sa);
+}
+
+sockaddr *
+IPAddr::copy_to(sockaddr *sa) {
+  if (this->is_ip4()) {
+    _addr._ip4.copy_to(sa);
+  } else if (this->is_ip6()) {
+    _addr._ip6.copy_to(sa);
+  }
+  return sa;
 }
 
 bool
@@ -1017,11 +1055,9 @@ IP6Range::load(std::string_view text) {
 
 IPRange::IPRange(IPAddr const &min, IPAddr const &max) {
   if (min.is_ip4() && max.is_ip4()) {
-    _range._ip4.assign(min.ip4(), max.ip4());
-    _family = AF_INET;
+    this->assign(min.ip4(), max.ip4());
   } else if (min.is_ip6() && max.is_ip6()) {
-    _range._ip6.assign(min.ip6(), max.ip6());
-    _family = AF_INET6;
+    this->assign(min.ip6(), max.ip6());
   }
 }
 

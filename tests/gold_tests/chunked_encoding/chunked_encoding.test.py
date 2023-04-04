@@ -50,7 +50,7 @@ request_header2 = {
     "body": "knock knock"}
 response_header2 = {"headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
                     "timestamp": "1415926535.898",
-                    "body": ""}
+                    "body": "12345678901234567890"}
 
 request_header3 = {
     "headers": "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",

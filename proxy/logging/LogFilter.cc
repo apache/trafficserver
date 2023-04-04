@@ -29,7 +29,12 @@
 
 #include <memory>
 
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_ex.h"
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_platform.h"
+#include "tscpp/util/ts_errata.h"
 
 #include "LogUtils.h"
 #include "LogFilter.h"
@@ -40,7 +45,6 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
-#include "tscore/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
 const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
@@ -712,10 +716,10 @@ LogFilterInt::display(FILE *fd)
 /*-------------------------------------------------------------------------
   LogFilterIP::LogFilterIP
   -------------------------------------------------------------------------*/
-LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, IpAddr value)
+LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, swoc::IPAddr value)
   : LogFilter(name, field, action, oper)
 {
-  m_map.mark(value, value);
+  m_addrs.mark(value);
   this->init();
 }
 
@@ -724,7 +728,7 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
   : LogFilter(name, field, action, oper)
 {
   for (IpAddr *limit = value + num_values; value != limit; ++value) {
-    m_map.mark(*value, *value);
+    m_addrs.mark(swoc::IPAddr(*value));
   }
   this->init();
 }
@@ -732,50 +736,37 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
 LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, char *values)
   : LogFilter(name, field, action, oper)
 {
-  // parse the comma-separated list of values and construct array
-  //
-  size_t i = 0;
-  SimpleTokenizer tok(values, ',');
-  size_t n = tok.getNumTokensRemaining();
-  char *t; // temp token pointer.
+  swoc::TextView text(swoc::TextView(values).ltrim_if(&isspace));
+  swoc::Errata errata;
+  unsigned n = 0; // # of valid specifications.
 
-  if (n) {
-    while (t = tok.getNext(), t != nullptr) {
-      IpAddr min, max;
-      char *x = strchr(t, '-');
-      if (x) {
-        *x++ = 0;
-      }
-      if (0 == min.load(t)) {
-        if (x) {
-          if (0 != max.load(x)) {
-            Warning("LogFilterIP Configuration: '%s-%s' looks like a range but the second address was ill formed", t, x);
-            continue;
-          }
-        } else {
-          max = min;
-        }
-        m_map.mark(min, max);
-        ++i;
-      } else {
-        Warning("LogFilterIP Configuration:  '%s' is ill formed", t);
-      }
-    }
-    if (i < n) {
-      Warning("There were invalid IP values in the definition of filter %s"
-              " only %zu out of %zu values will be used.",
-              name, i, n);
-    }
-  } else {
+  if (text.empty()) {
     Warning("No values in the definition of filter %s.", name);
+  } else {
+    while (text.ltrim_if(&isspace)) {
+      auto token = text.take_prefix_at(',');
+      if (swoc::IPRange r; r.load(token)) {
+        m_addrs.mark(r);
+        ++n;
+      } else {
+        errata.note(R"("{}")", token);
+      }
+    }
+    if (!errata.is_ok()) {
+      std::string s;
+      errata.assign_annotation_glue_text(", ");
+      swoc::bwprint(s, "LogFilterIP Configuration: {} invalid IP address specifications found and ignored - using {} valid - {}",
+                    errata.length(), n, errata);
+      Warning("%s", s.c_str());
+    }
   }
   this->init();
 }
 
 LogFilterIP::LogFilterIP(const LogFilterIP &rhs) : LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
 {
-  for (auto &spot : rhs.m_map) {
-    m_map.mark(spot.min(), spot.max(), spot.data());
+  for (auto &spot : rhs.m_addrs) {
+    m_addrs.mark(swoc::IPRange(spot.min(), spot.max()));
   }
   this->init();
 }
@@ -784,7 +775,7 @@ void
 LogFilterIP::init()
 {
   m_type       = IP_FILTER;
-  m_num_values = m_map.count();
+  m_num_values = m_addrs.count();
 }
 
 /*-------------------------------------------------------------------------
@@ -795,12 +786,7 @@ LogFilterIP::~LogFilterIP() = default;
 
 /*-------------------------------------------------------------------------
   LogFilterIP::operator==
-
-  This operator is not very intelligent and expects the objects being
-  compared to have the same values specified *in the same order*.
-  Filters with the same values specified in different order are considered
-  to be different.
-
+  Because the libswoc container orders the ranges, input ordering is irrelevant.
   -------------------------------------------------------------------------*/
 
 bool
@@ -808,13 +794,13 @@ LogFilterIP::operator==(LogFilterIP &rhs)
 {
   if (m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
       m_num_values == rhs.m_num_values) {
-    IpMap::iterator left_spot(m_map.begin());
-    IpMap::iterator left_limit(m_map.end());
-    IpMap::iterator right_spot(rhs.m_map.begin());
-    IpMap::iterator right_limit(rhs.m_map.end());
+    auto left_spot(m_addrs.begin());
+    auto left_limit(m_addrs.end());
+    auto right_spot(rhs.m_addrs.begin());
+    auto right_limit(rhs.m_addrs.end());
 
     while (left_spot != left_limit && right_spot != right_limit) {
-      if (!ats_ip_addr_eq(left_spot->min(), right_spot->min()) || !ats_ip_addr_eq(left_spot->max(), right_spot->max())) {
+      if (*left_spot != *right_spot) {
         break;
       }
       ++left_spot;
@@ -846,7 +832,7 @@ LogFilterIP::is_match(LogAccess *lad)
     } else if (field_ip_storage._ip._family == AF_INET6) {
       field_ip = field_ip_storage._ip6._addr;
     }
-    zret = m_map.contains(field_ip);
+    zret = m_addrs.contains(field_ip);
   }
 
   return zret;
@@ -870,42 +856,21 @@ LogFilterIP::wipe_this_entry(LogAccess *)
   -------------------------------------------------------------------------*/
 
 void
-LogFilterIP::displayRange(FILE *fd, IpMap::iterator const &iter)
-{
-  ip_text_buffer ipb;
-
-  fprintf(fd, "%s", ats_ip_ntop(iter->min(), ipb, sizeof(ipb)));
-
-  if (!ats_ip_addr_eq(iter->min(), iter->max())) {
-    fprintf(fd, "-%s", ats_ip_ntop(iter->max(), ipb, sizeof(ipb)));
-  }
-}
-
-void
-LogFilterIP::displayRanges(FILE *fd)
-{
-  IpMap::iterator spot(m_map.begin()), limit(m_map.end());
-  ink_assert(spot != limit);
-
-  this->displayRange(fd, spot);
-  for (++spot; spot != limit; ++spot) {
-    for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ",");
-      this->displayRange(fd, spot);
-    }
-  }
-}
-
-void
 LogFilterIP::display(FILE *fd)
 {
   ink_assert(fd != nullptr);
 
-  if (0 == m_map.count()) {
+  if (0 == m_addrs.count()) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
+    std::string s;
+    bool comma_p = false;
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-    this->displayRanges(fd);
+    for (auto r : m_addrs) {
+      swoc::bwprint(s, "{}{::c}", swoc::bwf::If(comma_p, ","), r);
+      fprintf(fd, "%s", s.c_str());
+      comma_p = true;
+    }
     fprintf(fd, "\n");
   }
 }

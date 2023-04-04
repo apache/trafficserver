@@ -59,7 +59,11 @@ fqdn                      Both      Fully Qualified Domain Name. This item is us
 
 ip_allow                  Inbound   Specify a list of client IP address, subnets, or ranges what are allowed to complete
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
-                                    Here is an example list: 192.168.1.0/24,192.168.10.1-4. This would allow connections
+                                    Here is an example list ::
+
+                                       192.168.1.0/24,192.168.10.1-192.168.10.4
+
+                                    This would allow connections
                                     from clients in the 19.168.1.0 network or in the range from 192.168.10.1 to 192.168.1.4.
 
                                     Alternatively, the path to a file containing
@@ -158,6 +162,24 @@ tunnel_route              Inbound   Destination as an FQDN and port, separated b
 
                                     This will forward all traffic to the specified destination without first terminating
                                     the incoming TLS connection.
+
+                                    The destination port can be designated with the literal string
+                                    ``{inbound_local_port}`` to specify that |TS| should connect to the tunnel route's
+                                    port on the same destination port that the incoming connection had. For
+                                    example, if a client connected to |TS| on port ``4443`` and the associated
+                                    ``tunnel_route`` had ``{inbound_local_port}`` for the port designation, then |TS|
+                                    will connect to the specified host using port ``4443``.
+
+                                    The destination port can also be designated with the literal string
+                                    ``{proxy_protocol_port}``, in which case |TS| will connect to the specified host on
+                                    the port that was specified by the incoming Proxy Protocol payload. See :ref:`Proxy
+                                    Protocol <proxy-protocol>` for more information on Proxy Protocol and how it is
+                                    configured for |TS|.
+
+                                    For each of these tunnel targets, unless the port is explicitly specified in the target
+                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
+                                    specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for
+                                    the tunnel to succeed.
 
 forward_route             Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
@@ -304,6 +326,16 @@ FQDN ``some.foo.com`` will match and the captured string will be replaced in the
 ``some.myfoo``.
 Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``tunnel_route`` will end up being
 ``bar.some.bob.yahoo``.
+
+Establish a blind tunnel to the backend server, connecting to the server's port with the destination port specified
+in the Proxy Protocol from the inbound connection. Remember to add any expected values for ``{proxy_protocol_port}`` to
+the :ts:cv:`proxy.config.http.connect_ports` list.
+
+.. code-block:: yaml
+
+   sni:
+   - fqdn: tunnel-pp.example.com
+     tunnel_route: my.backend.example.com:{proxy_protocol_port}
 
 See Also
 ========

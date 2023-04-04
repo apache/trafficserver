@@ -21,6 +21,8 @@
   limitations under the License.
 */
 
+#include "swoc/swoc_ip.h"
+
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
 #include "tscore/ink_defs.h"
@@ -29,6 +31,8 @@
 #include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
+#include "swoc/BufferWriter.h"
+#include "swoc/bwf_ip.h"
 #include <string_view>
 #include <unordered_set>
 
@@ -103,64 +107,60 @@ mptcp_supported()
   return value != 0;
 }
 
-void
-RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
+ts::IPAddrPair
+RecHttpLoadIp(char const *name)
 {
+  ts::IPAddrPair zret;
   char value[1024];
-  ip4.invalidate();
-  ip6.invalidate();
-  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
+
+  if (REC_ERR_OKAY == RecGetRecordString(name, value, sizeof(value))) {
     Tokenizer tokens(", ");
     int n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
       const char *host = tokens[i];
-      IpEndpoint tmp4, tmp6;
       // For backwards compatibility we need to support the use of host names
       // for the address to bind.
-      if (0 == ats_ip_getbestaddrinfo(host, &tmp4, &tmp6)) {
-        if (ats_is_ip4(&tmp4)) {
-          if (!ip4.isValid()) {
-            ip4 = tmp4;
+      auto addrs = ts::getbestaddrinfo(host);
+      if (addrs.has_value()) {
+        if (addrs.has_ip4()) {
+          if (!zret.has_ip4()) {
+            zret = addrs.ip4();
           } else {
-            Warning("'%s' specifies more than one IPv4 address, ignoring %s.", value_name, host);
+            Warning("'%s' specifies more than one IPv4 address, ignoring %s.", name, host);
           }
         }
-        if (ats_is_ip6(&tmp6)) {
-          if (!ip6.isValid()) {
-            ip6 = tmp6;
+        if (addrs.has_ip6()) {
+          if (!zret.has_ip6()) {
+            zret = addrs.ip6();
           } else {
-            Warning("'%s' specifies more than one IPv6 address, ignoring %s.", value_name, host);
+            Warning("'%s' specifies more than one IPv6 address, ignoring %s.", name, host);
           }
         }
       } else {
-        Warning("'%s' has an value '%s' that is not recognized as an IP address, ignored.", value_name, host);
+        Warning("'%s' has an value '%s' that is not recognized as an IP address, ignored.", name, host);
       }
     }
   }
+  return zret;
 }
 
 void
-RecHttpLoadIpMap(const char *value_name, IpMap &ipmap)
+RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
 {
   char value[1024];
-  IpAddr laddr;
-  IpAddr raddr;
-  void *payload = nullptr;
 
   if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
-    Debug("config", "RecHttpLoadIpMap: parsing the name [%s] and value [%s] to an IpMap", value_name, value);
-    Tokenizer tokens(", ");
-    int n_addrs = tokens.Initialize(value);
-    for (int i = 0; i < n_addrs; ++i) {
-      const char *val = tokens[i];
-
-      Debug("config", "RecHttpLoadIpMap: marking the value [%s] to an IpMap entry", val);
-      if (0 == ats_ip_range_parse(val, laddr, raddr)) {
-        ipmap.fill(laddr, raddr, payload);
+    Debug("config", "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
+    swoc::TextView text(value);
+    while (text) {
+      auto token = text.take_prefix_at(',');
+      if (swoc::IPRange r; r.load(token)) {
+        Debug("config", "RecHttpLoadIpAddrsFromConfVar: marking the value [%.*s]", int(token.size()), token.data());
+        addrs.mark(r);
       }
     }
   }
-  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", ipmap.count());
+  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", addrs.count());
 }
 
 const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
@@ -392,8 +392,8 @@ HttpProxyPort::processOptions(const char *opts)
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
     } else if (nullptr != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
-      if (0 == ip.load(value)) {
-        this->outboundIp(ip.family()) = ip;
+      if (swoc::IPAddr addr; addr.load(value)) {
+        this->m_outbound = addr;
       } else {
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
@@ -557,22 +557,24 @@ HttpProxyPort::print(char *out, size_t n)
     return n;
   }
 
-  if (m_outbound_ip4.isValid()) {
+  if (m_outbound.has_ip4()) {
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip4.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
+                             swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip4()).data());
     need_colon_p = true;
   }
   if (zret >= n) {
     return n;
   }
 
-  if (m_outbound_ip6.isValid()) {
+  if (m_outbound.has_ip6()) {
     if (need_colon_p) {
       out[zret++] = ':';
     }
-    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX, m_outbound_ip6.toString(ipb, sizeof(ipb)));
+    zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
+                             swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip6()).data());
     need_colon_p = true;
   }
   if (zret >= n) {
@@ -885,16 +887,10 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
       Error("Unknown protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()), protocol.data());
       return false;
     }
-    // We currently only support HTTP/1.x protocols toward the origin.
-    if (!HTTP_PROTOCOL_SET.contains(protocol_index)) {
-      Error("Unsupported non-HTTP/1.x protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
-            protocol.data());
-      return false;
-    }
-    // But not HTTP/0.9.
-    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9) {
-      Error("Unsupported \"http/0.9\" protocol name in configured ALPN list: \"%.*s\"", static_cast<int>(protocol.size()),
-            protocol.data());
+    // Make sure the protocol is one of our supported protocols.
+    if (protocol_index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 ||
+        (!HTTP_PROTOCOL_SET.contains(protocol_index) && !HTTP2_PROTOCOL_SET.contains(protocol_index))) {
+      Error("Unsupported protocol name in configured ALPN list: %.*s", static_cast<int>(protocol.size()), protocol.data());
       return false;
     }
 

@@ -29,6 +29,8 @@
 #include <sys/socket.h>
 #include <string_view>
 
+#include "swoc/swoc_ip.h"
+
 #include "tscore/ink_memory.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/BufferWriterForward.h"
@@ -1329,6 +1331,17 @@ struct IpAddr {
 
   ///< Pre-constructed invalid instance.
   static self const INVALID;
+
+  operator swoc::IPAddr()
+  {
+    switch (_family) {
+    case AF_INET:
+      return swoc::IPAddr{ntohl(_addr._ip4)}; // types store in opposite order.
+    case AF_INET6:
+      return swoc::IPAddr{_addr._ip6};
+    }
+    return {};
+  }
 };
 
 inline IpAddr &

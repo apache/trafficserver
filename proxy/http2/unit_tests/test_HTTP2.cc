@@ -90,7 +90,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       CHECK(v == "/index.html");
     }
 
-    // convert to HTTP/1.1
+    // convert back to HTTP/1.1
     HTTPHdr hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
     hdr_2.create(HTTP_TYPE_REQUEST);
@@ -99,7 +99,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[128]  = {0};
+    char buf[1024] = {0};
     int bufindex   = 0;
     int dumpoffset = 0;
 
@@ -109,6 +109,35 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     CHECK_THAT(buf, Catch::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
                                       "Host: trafficserver.apache.org\r\n"
                                       "User-Agent: foobar\r\n"
+                                      "\r\n"));
+
+    // Verify that conversion from HTTP/2 to HTTP/1.1 works correctly when the
+    // HTTP/2 request contains a Host header.
+    HTTPHdr hdr_2_with_host;
+    ts::PostScript hdr_2_with_host_defer([&]() -> void { hdr_2_with_host.destroy(); });
+    hdr_2_with_host.create(HTTP_TYPE_REQUEST);
+    hdr_2_with_host.copy(&hdr_1);
+
+    MIMEField *host = hdr_2_with_host.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
+    hdr_2_with_host.field_attach(host);
+    std::string_view host_value = "bogus.host.com";
+    host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value.data(), host_value.size());
+
+    http2_convert_header_from_2_to_1_1(&hdr_2_with_host);
+
+    // dump
+    memset(buf, 0, sizeof(buf));
+    bufindex   = 0;
+    dumpoffset = 0;
+
+    hdr_2_with_host.print(buf, sizeof(buf), &bufindex, &dumpoffset);
+
+    // check: Note that the Host will now be at the end of the Headers since we
+    // added it above and it will remain there, albeit with the updated value
+    // from the :authority header.
+    CHECK_THAT(buf, Catch::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
+                                      "User-Agent: foobar\r\n"
+                                      "Host: trafficserver.apache.org\r\n"
                                       "\r\n"));
   }
 
@@ -154,7 +183,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     http2_convert_header_from_2_to_1_1(&hdr_2);
 
     // dump
-    char buf[128]  = {0};
+    char buf[1024] = {0};
     int bufindex   = 0;
     int dumpoffset = 0;
 

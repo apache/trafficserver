@@ -34,8 +34,9 @@
 
 #include <openssl/rand.h>
 
+#include "swoc/swoc_ip.h"
+
 #include "tscore/ink_inet.h"
-#include "tscore/IpMap.h"
 
 #include "ConfigProcessor.h"
 
@@ -137,7 +138,7 @@ struct SSLConfigParams : public ConfigInfo {
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
 
-  static IpMap *proxy_protocol_ipmap;
+  static swoc::IPRangeSet *proxy_protocol_ip_addrs;
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
@@ -171,7 +172,9 @@ struct SSLConfigParams : public ConfigInfo {
   void initialize();
   void cleanup();
   void reset();
-  void SSLConfigInit(IpMap *global);
+  void SSLConfigInit(swoc::IPRangeSet *global);
+  void SetServerPolicy(const char *);
+  void SetServerPolicyProperties(const char *);
 
 private:
   // c_str() of string passed to in-progess call to updateCTX().

@@ -200,7 +200,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
                            * we need to connect using socks server even
                            * if this ip is in no_socks list.
                            */
-                          !socks_conf_stuff->ip_map.contains(target))
+                          !socks_conf_stuff->ip_addrs.contains(swoc::IPAddr(target)))
 #endif
   );
   SocksEntry *socksEntry = nullptr;

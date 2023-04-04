@@ -94,7 +94,7 @@ echo "Building nghttp3..."
 if [ ! -d nghttp3 ]; then
   git clone https://github.com/ngtcp2/nghttp3.git
   cd nghttp3
-  git checkout -b v0.8.0 v0.8.0
+  git checkout -b v0.9.0 v0.9.0
   cd ..
 fi
 cd nghttp3
@@ -155,7 +155,7 @@ cd ..
 
 # And finally curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
 cd curl
 autoreconf -i
 ./configure \

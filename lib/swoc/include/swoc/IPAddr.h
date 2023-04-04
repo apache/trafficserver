@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include <cstddef>
+
 #include "swoc/swoc_version.h"
 #include "swoc/swoc_meta.h"
 #include "swoc/MemSpan.h"
@@ -50,7 +52,7 @@ public:
   explicit IP4Addr(sockaddr_in const *s);
 
   /// Construct from text representation.
-  /// If the @a text is invalid the result is an invalid instance.
+  /// If the @a text is invalid the result is @c INADDR_ANY
   IP4Addr(string_view const &text);
 
   /// Self assignment.
@@ -83,8 +85,21 @@ public:
   /// Apply @a mask to address, creating the broadcast address.
   self_type &operator|=(IPMask const &mask);
 
-  /// Write this adddress and @a host_order_port to the sockaddr @a sa.
-  sockaddr_in *copy_to(sockaddr_in *sa, in_port_t port = 0) const;
+  /** Update socket address with this address.
+   *
+   * @param sa Socket address.
+   * @return @sa
+   *
+   * @a sa is assumed to be large enough to hold an IPv4 address.
+   */
+  sockaddr *copy_to(sockaddr *sa) const;
+
+  /** Update socket address with this address.
+   *
+   * @param sin IPv4 socket address.
+   * @return @sin
+   */
+  sockaddr_in *copy_to(sockaddr_in *sin) const;
 
   /// @return The address in network order.
   in_addr_t network_order() const;
@@ -92,11 +107,13 @@ public:
   /// @return The address in host order.
   in_addr_t host_order() const;
 
-  /** Parse @a text as IPv4 address.
-      The address resulting from the parse is copied to this object if the conversion is successful,
-      otherwise this object is invalidated.
-
-      @return @c true on success, @c false otherwise.
+  /** Parse IPv4 address.
+   *
+   * @param text Text to parse.
+   *
+   * @return @c true if @a text is a valid IPv4 address, @c false otherwise.
+   *
+   * Whitespace is trimmed from @text before parsing. If the parse fails @a this is set to @c INADDR_ANY.
   */
   bool load(string_view const &text);
 
@@ -281,14 +298,41 @@ public:
    */
   constexpr uint8_t operator [] (int idx) const;
 
-  /// Write to @c sockaddr using network order and @a host_order_port.
-  sockaddr *copy_to(sockaddr *sa, in_port_t port = 0) const;
+  /** Update socket address with this address.
+   *
+   * @param sin IPv6 socket address.
+   * @return @sin
+   */
+  sockaddr_in6 *copy_to(sockaddr_in6 *sin6) const;
 
-  /// Copy address to @a addr in network order.
-  in6_addr &copy_to(in6_addr &addr) const;
+  /** Update socket address with this address.
+   *
+   * @param sa Socket address.
+   * @return @sin
+   *
+   * @a sa is assumed to be large enough to hold an IPv6 address.
+   */
+  sockaddr *copy_to(sockaddr *sa) const;
+
+  /// Return the address in host order.
+  in6_addr host_order() const;
+
+  /** Copy the address in host order.
+   *
+   * @param dst Destination for host order address.
+   * @return @a dst
+   */
+  in6_addr& host_order(in6_addr & dst) const;
 
   /// Return the address in network order.
   in6_addr network_order() const;
+
+  /** Copy the address in network order.
+   *
+   * @param dst Destination for network order address.
+   * @return @a dst
+   */
+  in6_addr &network_order(in6_addr &dst) const;
 
   /** Parse a string for an IP address.
 
@@ -403,11 +447,13 @@ protected:
   /// These are in sort of host order - @a _store elements are host order, but the
   /// MSW and LSW are swapped (big-endian). This makes various bits of the implementation
   /// easier. Conversion to and from network order is via the @c reorder method.
-  union {
+  union Addr {
     word_store_type _store = {0}; ///< 0 is MSW, 1 is LSW.
     quad_store_type _quad;        ///< By quad.
     raw_type _raw;                ///< By byte.
+    in6_addr _in6;                ///< By networking type (but in host order!)
   } _addr;
+  static_assert(sizeof(in6_addr) == sizeof(raw_type));
 
   static constexpr unsigned LSW = 1; ///< Least significant word index.
   static constexpr unsigned MSW = 0; ///< Most significant word index.
@@ -417,7 +463,7 @@ protected:
   static constexpr std::array<unsigned, N_QUADS> QUAD_IDX = {3, 2, 1, 0, 7, 6, 5, 4};
 
   /// Index of bytes in @a _addr._raw
-  /// This converts MSB (0) to LSB (15) indicies to the bytes in the binary format.
+  /// This converts MSB (0) to LSB (15) indices to the bytes in the binary format.
   static constexpr std::array<unsigned, SIZE> RAW_IDX = { 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8 };
 
   /// Convert between network and host order.
@@ -515,6 +561,13 @@ public:
   self_type &operator&=(IPMask const &mask);
 
   self_type &operator|=(IPMask const &mask);
+
+  /** Copy the address to a socket address.
+   *
+   * @param sa Destination.
+   * @return @a sa
+   */
+  sockaddr * copy_to(sockaddr * sa);
 
   /** Parse a string and load the result in @a this.
    *
@@ -764,6 +817,12 @@ IP4Addr::operator=(in_addr_t ip) -> self_type & {
   return *this;
 }
 
+inline sockaddr *
+IP4Addr::copy_to(sockaddr *sa) const {
+  this->copy_to(reinterpret_cast<sockaddr_in*>(sa));
+  return sa;
+}
+
 /// Equality.
 inline bool
 operator==(IP4Addr const &lhs, IP4Addr const &rhs) {
@@ -909,16 +968,30 @@ inline bool IP6Addr::is_private() const {
   return (_addr._raw[RAW_IDX[0]]& 0xFE) == 0xFC; // fc00::/7
 }
 
+inline in6_addr
+IP6Addr::host_order() const {
+  Addr zret { {_addr._store[LSW], _addr._store[MSW] }};
+  return zret._in6;
+}
+
 inline in6_addr &
-IP6Addr::copy_to(in6_addr &addr) const {
-  self_type::reorder(addr, _addr._raw);
-  return addr;
+IP6Addr::host_order(in6_addr & dst) const {
+  Addr * addr = reinterpret_cast<Addr*>(&dst);
+  addr->_store[0] = _addr._store[LSW];
+  addr->_store[1] = _addr._store[MSW];
+  return dst;
 }
 
 inline in6_addr
 IP6Addr::network_order() const {
   in6_addr zret;
-  return this->copy_to(zret);
+  return this->network_order(zret);
+}
+
+inline in6_addr &
+IP6Addr::network_order(in6_addr & dst) const {
+  self_type::reorder(dst, _addr._raw);
+  return dst;
 }
 
 inline auto
@@ -1002,6 +1075,12 @@ operator<=(IP6Addr const &lhs, IP6Addr const &rhs) {
 inline bool
 operator>=(IP6Addr const &lhs, IP6Addr const &rhs) {
   return rhs <= lhs;
+}
+
+inline sockaddr *
+IP6Addr::copy_to(sockaddr *sa) const {
+  this->copy_to(reinterpret_cast<sockaddr_in6*>(sa));
+  return sa;
 }
 
 inline IP6Addr &

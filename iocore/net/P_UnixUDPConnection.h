@@ -31,7 +31,6 @@
 #pragma once
 
 #include "P_UDPConnection.h"
-#include "P_UDPPacket.h"
 
 class UnixUDPConnection : public UDPConnectionInternal
 {
@@ -45,7 +44,7 @@ public:
   LINK(UnixUDPConnection, callback_link);
 
   // Incoming UDP Packet Queue
-  ASLL(UDPPacketInternal, alink) inQueue;
+  ASLL(UDPPacket, alink) inQueue;
   int onCallbackQueue    = 0;
   Action *callbackAction = nullptr;
   EThread *ethread       = nullptr;

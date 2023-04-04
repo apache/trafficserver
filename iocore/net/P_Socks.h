@@ -22,12 +22,16 @@
  */
 
 #pragma once
+
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+
 #include "P_EventSystem.h"
 #include "I_Socks.h"
+#include "tscpp/util/ts_errata.h"
 
 #ifdef SOCKS_WITH_TS
 #include "ParentSelection.h"
-#include "tscore/IpMap.h"
 #endif
 
 enum {
@@ -43,8 +47,7 @@ struct socks_conf_struct {
   int server_connect_timeout    = 0;
   int socks_timeout             = 100;
   unsigned char default_version = 5;
-  char *user_name_n_passwd      = nullptr;
-  int user_name_n_passwd_len    = 0;
+  std::string user_name_n_passwd;
 
   int per_server_connection_attempts = 1;
   int connection_attempts            = 0;
@@ -55,7 +58,7 @@ struct socks_conf_struct {
   unsigned short http_port = 1080;
 
 #ifdef SOCKS_WITH_TS
-  IpMap ip_map;
+  swoc::IPRangeSet ip_addrs;
 #endif
 
 #ifndef SOCKS_WITH_TS
@@ -75,7 +78,9 @@ extern struct socks_conf_struct *g_socks_conf_stuff;
 
 void start_SocksProxy(int port);
 
-int loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff);
+int loadSocksAuthInfo(swoc::TextView content, socks_conf_struct *socks_stuff);
+
+swoc::Errata loadSocksIPAddrs(swoc::TextView content, socks_conf_struct *socks_stuff);
 
 // umm.. the following typedef should take _its own_ type as one of the args
 // not possible with C

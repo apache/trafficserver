@@ -42,7 +42,6 @@ trafficserver ............. Top src dir
 │   │   └── quic .......... QUIC implementation
 │   └── utils ............. Utilities
 ├── lib ...................
-│   ├── perl .............. Perl libraries for configurations
 │   ├── records ........... Library for config files
 │   └── yamlcpp ........... Library for YAML of C++
 ├── mgmt .................. JSONRPC server/management and tools
@@ -97,7 +96,6 @@ autoconf
 automake
 libtool
 pkgconfig
-perl-ExtUtils-MakeMaker
 gcc/g++ or clang/clang++
 openssl-devel
 pcre-devel
@@ -113,7 +111,6 @@ autoconf
 automake
 libtool
 pkg-config
-libmodule-install-perl
 gcc/g++ or clang/clang++
 zlib1g-dev
 libssl-dev

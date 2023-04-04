@@ -25,8 +25,6 @@ namespace {
 std::vector<Errata::Sink::Handle> Sink_List;
 }
 
-std::string_view Errata::DEFAULT_GLUE{"\n", 1};
-
 string_view
 Errata::Data::localize(string_view src) {
   auto span = _arena.alloc(src.size()).rebind<char>();
@@ -110,10 +108,19 @@ Errata &
 Errata::note(const self_type &that) {
   if (that._data) {
     auto d       = this->data();
-    d->_severity = std::max<Severity>(d->_severity, that._data->_severity);
+    if (that.has_severity()) {
+      this->update(that.severity());
+    }
     for (auto const &annotation : that) {
       d->_notes.append(d->_arena.make<Annotation>(d->localize(annotation._text), annotation._severity, annotation._level + 1));
     }
+  }
+  return *this;
+}
+
+auto Errata::update(Severity severity) -> self_type & {
+  if (! _data || ! _data->_severity.has_value() || _data->_severity.value() < severity) {
+    this->assign(severity);
   }
   return *this;
 }
@@ -135,17 +142,30 @@ bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata::Severity level) {
 
 BufferWriter &
 bwformat(BufferWriter &bw, bwf::Spec const &, Errata const &errata) {
-  bw.print("{}: ", errata.severity());
+  if (errata.has_severity()) {
+    bw.print("{}{}", errata.severity(), errata.severity_glue_text());
+  }
 
   if (errata.code()) {
     bw.print("[{0:s} {0:d}] ", errata.code());
   }
 
+  bool trailing_p = false;
+  auto glue = errata.annotation_glue_text();
+  auto a_s_glue = errata.annotation_severity_glue_text();
+  auto id_txt = errata.indent_text();
   for (auto &note : errata) {
     if (note.text()) {
-      bw.print("{}{}{}\n", swoc::bwf::Pattern{int(note.level()), "  "}, swoc::bwf::If(note.has_severity(), "{}: ", note.severity()),
-               note.text());
+      bw.print("{}{}{}{}"
+               , swoc::bwf::If(trailing_p, "{}", glue)
+               , swoc::bwf::Pattern{int(note.level()), id_txt}
+               , swoc::bwf::If(note.has_severity(), "{}{}", note.severity(), a_s_glue)
+               , note.text());
+      trailing_p = true;
     }
+  }
+  if (trailing_p && errata._data->_glue_final_p) {
+    bw.print("{}", glue);
   }
   return bw;
 }

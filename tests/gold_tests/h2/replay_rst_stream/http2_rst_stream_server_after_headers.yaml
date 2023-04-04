@@ -1,0 +1,48 @@
+meta:
+  version: '1.0'
+sessions:
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: test_sni
+  - name: tcp
+  - name: ip
+    version: 4
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [:method, POST]
+        - [:scheme, https]
+        - [:authority, example.data.com]
+        - [:path, /a/path]
+        - [Content-Type, text/html]
+        - [Content-Length, '11']
+        - [uuid, 1]
+      content:
+        encoding: plain
+        data: client_test
+        size: 11
+
+    proxy-request:
+      content:
+        encoding: plain
+        data: client_test
+        verify: {as: equal}
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [:status, 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '11']
+      - RST_STREAM:
+          error-code: ENHANCE_YOUR_CALM
+      - DATA:
+          content:
+            encoding: plain
+            data: server_test
+            size: 11

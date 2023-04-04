@@ -30,6 +30,18 @@
 
 namespace ts
 {
+IPAddrPair::self_type &
+IPAddrPair::operator+=(const IPAddrPair::self_type &that)
+{
+  if (that.has_ip4()) {
+    _ip4 = that._ip4;
+  }
+  if (that.has_ip6()) {
+    _ip6 = that._ip6;
+  }
+  return *this;
+}
+
 IPAddrPair
 getbestaddrinfo(swoc::TextView name)
 {

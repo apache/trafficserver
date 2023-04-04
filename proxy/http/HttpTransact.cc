@@ -1971,11 +1971,11 @@ HttpTransact::OSDNSLookup(State *s)
       action = s->http_config_param->redirect_actions_self_action;
       TxnDebug("http_trans", "[OSDNSLookup] Self action - %d.", int(action));
     } else {
-      // Make sure the return value from contains is big enough for a void*.
-      intptr_t x{intptr_t(RedirectEnabled::Action::INVALID)};
       ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
-      ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->dns_info.addr, reinterpret_cast<void **>(&x)));
-      action = static_cast<RedirectEnabled::Action>(x);
+      auto &addrs = *(s->http_config_param->redirect_actions_map);
+      auto spot   = addrs.find(swoc::IPAddr(&s->dns_info.addr.sa));
+      ink_release_assert(spot != addrs.end()); // Should always find an entry.
+      action = std::get<1>(*spot);
       TxnDebug("http_trans", "[OSDNSLookup] Mapped action - %d for family %d.", int(action),
                int(s->dns_info.active->data.ip.family()));
     }
@@ -3764,7 +3764,8 @@ HttpTransact::handle_response_from_server(State *s)
 
     TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts.get());
 
-    if (is_request_retryable(s) && s->current.attempts.get() < max_connect_retries) {
+    if (is_request_retryable(s) && s->current.attempts.get() < max_connect_retries &&
+        !HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
       if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
@@ -5042,11 +5043,17 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //
     if (field.m_next_dup) {
       if (dups_seen == false) {
+        const char *name2;
+        int name_len2;
+
         // use a second iterator to delete the
         // remaining response headers in the cached response,
         // so that they will be added in the next iterations.
         for (auto spot2 = spot; spot2 != limit; ++spot2) {
-          cached_header->field_delete(&*spot2, true);
+          MIMEField &field2{*spot2};
+          name2 = field2.name_get(&name_len2);
+
+          cached_header->field_delete(name2, name_len2);
         }
         dups_seen = true;
       }
@@ -5361,6 +5368,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     }
     if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough &&
         (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
+      TxnDebug("http_trans", "Rejected a CONNECT to port %d not in connect_ports", incoming_hdr->url_get()->port_get());
       return BAD_CONNECT_PORT;
     }
 
@@ -6366,8 +6374,15 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   RequestError_t incoming_error;
   URL *url = nullptr;
 
-  // If we are blind tunneling the header is just a synthesized placeholder anyway
+  // If we are blind tunneling the header is just a synthesized placeholder anyway.
+  // But we do have to check that we are not tunneling to a dynamic port that is
+  // not in the connect_ports list.
   if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+    if (s->tunnel_port_is_dynamic &&
+        !is_port_in_range(incoming_request->url_get()->port_get(), s->http_config_param->connect_ports)) {
+      TxnDebug("http_trans", "Rejected a tunnel to port %d not in connect_ports", incoming_request->url_get()->port_get());
+      return false;
+    }
     return true;
   }
 

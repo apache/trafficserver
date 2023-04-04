@@ -77,7 +77,7 @@ extern "C" int plock(int);
 #include "tscore/I_Layout.h"
 #include "I_Machine.h"
 #include "records/I_RecordsConfig.h"
-#include "records/I_RecProcess.h"
+#include "RecProcess.h"
 #include "Transform.h"
 #include "ConfigProcessor.h"
 #include "HttpProxyServerMain.h"
@@ -672,7 +672,6 @@ initialize_process_manager()
   RecProcessInit(diags());
   LibRecordsConfigInit();
 
-  RecProcessInitMessage();
   check_config_directories();
 
   //
@@ -1749,7 +1748,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Before accessing file system initialize Layout engine
   Layout::create();
   // Let's be clear on what exactly is starting up.
-  printf("Traffic Server " PACKAGE_VERSION BUILD_NUMBER " " __DATE__ " " __TIME__ " " BUILD_MACHINE "\n");
+  printf("Traffic Server " PACKAGE_VERSION "-" BUILD_NUMBER " " __DATE__ " " __TIME__ " " BUILD_MACHINE "\n");
   chdir_root(); // change directory to the install root of traffic server.
 
   std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
@@ -1939,16 +1938,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
-  IpEndpoint machine_addr;
+  swoc::IPEndpoint machine_addr;
   ink_zero(machine_addr);
-  if (HttpConfig::m_master.outbound_ip4.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.outbound_ip4);
-  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.outbound_ip6);
-  } else if (HttpConfig::m_master.inbound_ip4.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.inbound_ip4);
-  } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
-    machine_addr.assign(HttpConfig::m_master.inbound_ip6);
+  if (HttpConfig::m_master.outbound.has_ip4()) {
+    machine_addr.assign(HttpConfig::m_master.outbound.ip4());
+  } else if (HttpConfig::m_master.outbound.has_ip6()) {
+    machine_addr.assign(HttpConfig::m_master.outbound.ip6());
+  } else if (HttpConfig::m_master.inbound.has_ip4()) {
+    machine_addr.assign(HttpConfig::m_master.inbound.ip4());
+  } else if (HttpConfig::m_master.inbound.has_ip6()) {
+    machine_addr.assign(HttpConfig::m_master.inbound.ip6());
   }
   char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {

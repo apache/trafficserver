@@ -39,19 +39,20 @@
 #include <map>
 #include <cctype>
 #include <string_view>
-
 #include <chrono>
+
+#include "swoc/swoc_ip.h"
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
-#include "tscore/IpMap.h"
 #include "tscore/Regex.h"
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ConfigProcessor.h"
 #include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
+#include "tscpp/util/ts_ip.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
@@ -467,6 +468,8 @@ enum class Action {
   FOLLOW,
 };
 
+using ActionMap = swoc::IPSpace<Action>;
+
 static std::map<std::string, AddressClass> address_class_map = {
   {"default",   AddressClass::DEFAULT  },
   {"private",   AddressClass::PRIVATE  },
@@ -772,10 +775,11 @@ public:
   };
 
 public:
-  IpAddr inbound_ip4, inbound_ip6;
-  IpAddr outbound_ip4, outbound_ip6;
+  ts::IPAddrPair inbound;
+  // Initialize to any addr (default constructed) because these must always be set.
+  ts::IPAddrPair outbound;
   IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
-  IpMap config_proxy_protocol_ipmap;
+  swoc::IPRangeSet config_proxy_protocol_ip_addrs;
 
   MgmtInt server_max_connections    = 0;
   MgmtInt max_websocket_connections = -1;
@@ -810,7 +814,7 @@ public:
   MgmtInt max_msg_iobuf_index     = BUFFER_SIZE_INDEX_32K;
 
   char *redirect_actions_string                        = nullptr;
-  IpMap *redirect_actions_map                          = nullptr;
+  RedirectEnabled::ActionMap *redirect_actions_map     = nullptr;
   RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
 
   ///////////////////////////////////////////////////////////////////
@@ -895,7 +899,7 @@ public:
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
 
   // parse redirect configuration string
-  static IpMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
+  static RedirectEnabled::ActionMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
 
 public:
   static int m_id;

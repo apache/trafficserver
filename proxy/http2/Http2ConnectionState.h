@@ -53,7 +53,7 @@ class Http2ConnectionSettings
 public:
   Http2ConnectionSettings();
 
-  void settings_from_configs();
+  void settings_from_configs(bool is_outbound);
   unsigned get(Http2SettingsIdentifier id) const;
   unsigned set(Http2SettingsIdentifier id, unsigned value);
 
@@ -122,6 +122,8 @@ public:
 
   // Stream control interfaces
   Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error);
+  Http2Stream *create_initiating_stream(Http2Error &error);
+  void set_stream_id(Http2Stream *stream);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   bool delete_stream(Http2Stream *stream);
@@ -130,15 +132,17 @@ public:
   void restart_receiving(Http2Stream *stream);
 
   /** Update all streams for the peer's newly dictated stream window size. */
-  void update_initial_peer_rwnd_in(Http2WindowSize new_size);
+  void update_initial_peer_rwnd(Http2WindowSize new_size);
 
   /** Update all streams for our newly dictated stream window size. */
-  void update_initial_local_rwnd_in(Http2WindowSize new_size);
+  void update_initial_local_rwnd(Http2WindowSize new_size);
 
   Http2StreamId get_latest_stream_id_in() const;
   Http2StreamId get_latest_stream_id_out() const;
   int get_stream_requests() const;
   void increment_stream_requests();
+  bool is_peer_concurrent_stream_ub() const;
+  bool is_peer_concurrent_stream_lb() const;
 
   // Continuated header decoding
   Http2StreamId get_continued_stream_id() const;
@@ -191,12 +195,15 @@ public:
   void increment_received_priority_frame_count();
   uint32_t get_received_priority_frame_count();
 
-  ssize_t get_peer_rwnd_in() const;
-  Http2ErrorCode increment_peer_rwnd_in(size_t amount);
-  Http2ErrorCode decrement_peer_rwnd_in(size_t amount);
-  ssize_t get_local_rwnd_in() const;
-  Http2ErrorCode increment_local_rwnd_in(size_t amount);
-  Http2ErrorCode decrement_local_rwnd_in(size_t amount);
+  ssize_t get_peer_rwnd() const;
+  Http2ErrorCode increment_peer_rwnd(size_t amount);
+  Http2ErrorCode decrement_peer_rwnd(size_t amount);
+  ssize_t get_local_rwnd() const;
+  Http2ErrorCode increment_local_rwnd(size_t amount);
+  Http2ErrorCode decrement_local_rwnd(size_t amount);
+
+  bool no_streams() const;
+  bool single_stream() const;
 
 private:
   Http2Error rcv_data_frame(const Http2Frame &);
@@ -233,13 +240,22 @@ private:
    */
   void _process_incoming_settings_ack_frame();
 
-  /** Calculate the initial session window size that we communicate to peers.
+  // Getters for stream control configurations that retrieve the inbound or
+  // outbound values per the configured session.
+  uint32_t _get_configured_max_concurrent_streams() const;
+  uint32_t _get_configured_min_concurrent_streams() const;
+  uint32_t _get_configured_max_active_streams() const;
+  uint32_t _get_configured_initial_window_size() const;
+  Http2FlowControlPolicy _get_configured_flow_control_policy() const;
+
+  /** Calculate the initial session window size that we communicate to inbound
+   * peers.
    *
    * @return The initial receive window size.
    */
-  uint32_t _get_configured_receive_session_window_size_in() const;
+  uint32_t _get_configured_receive_session_window_size() const;
 
-  /** Whether our stream window can change over the lifetime of a session.
+  /** Whether the stream window can change over the lifetime of a session.
    *
    * @return @c true if the stream window can change, @c false otherwise.
    */
@@ -271,8 +287,8 @@ private:
 
   // Connection level window size
 
-  /** The client-side session level window that we have to respect when we send
-   * data to the peer.
+  /** The session level window that we have to respect when we send data to the
+   * peer.
    *
    * This is the session window configured by the peer via WINDOW_UPDATE
    * frames. Per specification, this defaults to HTTP2_INITIAL_WINDOW_SIZE (see
@@ -281,17 +297,16 @@ private:
    * specification. When we receive WINDOW_UPDATE frames, we increment this
    * value.
    */
-  ssize_t _peer_rwnd_in = HTTP2_INITIAL_WINDOW_SIZE;
+  ssize_t _peer_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
 
-  /** The session window we maintain with the client-side peer via
-   * WINDOW_UPDATE frames.
+  /** The session window we maintain with the peer via WINDOW_UPDATE frames.
    *
    * We maintain the window we expect the peer to respect by sending
    * WINDOW_UPDATE frames to the peer. As we receive data, we decrement this
    * value, as we send WINDOW_UPDATE frames, we increment it. If it reaches
    * zero, we generate a connection-level error.
    */
-  ssize_t _local_rwnd_in = 0;
+  ssize_t _local_rwnd = 0;
 
   /** Whether the client-side session window is in a shrinking state before we
    * send the first WINDOW_UPDATE frame.
@@ -303,7 +318,7 @@ private:
    * window gets to the desired size, we start maintaining the window via
    * WINDOW_UPDATE frames.
    */
-  bool _local_rwnd_is_shrinking_in = false;
+  bool _local_rwnd_is_shrinking = false;
 
   std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index             = 0;
@@ -359,7 +374,7 @@ private:
 
   /** The queue of SETTINGS frames that we have sent but have not yet been
    * acknowledged by the peer. */
-  std::queue<OutstandingSettingsFrame> _outstanding_settings_frames_in;
+  std::queue<OutstandingSettingsFrame> _outstanding_settings_frames;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS

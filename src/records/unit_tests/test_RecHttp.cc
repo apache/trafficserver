@@ -92,8 +92,8 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
     REQUIRE(ports[0].m_port == 4443);
     REQUIRE(ports[0].m_family == AF_INET6);
     REQUIRE(ports[0].isSSL() == true);
-    REQUIRE(ports[0].m_outbound_ip6.isValid() == true);
-    REQUIRE(ports[0].m_outbound_ip4.isValid() == true);
+    REQUIRE(ports[0].m_outbound.has_ip6() == true);
+    REQUIRE(ports[0].m_outbound.has_ip4() == true);
     REQUIRE(ports[0].m_inbound_ip.isValid() == false);
     REQUIRE(view.find(":ssl") != TextView::npos);
     REQUIRE(view.find(":proto") == TextView::npos); // it's default, should not have this.
@@ -166,22 +166,8 @@ std::vector<ConvertAlpnToWireFormatTestCase> convertAlpnToWireFormatTestCases = 
     false
   },
   {
-    "Single protocol: HTTP/2 (currently unsupported)",
-    "h2",
-    { 0 },
-    0,
-    false
-  },
-  {
     "Single protocol: HTTP/3 (currently unsupported)",
     "h3",
-    { 0 },
-    0,
-    false
-  },
-  {
-    "Both HTTP/1.1 and HTTP/2 (HTTP/2 is currently unsupported)",
-    "h2,http/1.1",
     { 0 },
     0,
     false
@@ -197,7 +183,14 @@ std::vector<ConvertAlpnToWireFormatTestCase> convertAlpnToWireFormatTestCases = 
     true
   },
   {
-    "Multiple protocols: HTTP/1.0, HTTP/1.1",
+    "Single protocol: HTTP/2",
+    "h2",
+    {0x02, 'h', '2'},
+    3,
+    true
+  },
+  {
+    "Multiple protocols: HTTP/1.1, HTTP/1.0",
     "http/1.1,http/1.0",
     {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '0'},
     18,
@@ -208,6 +201,13 @@ std::vector<ConvertAlpnToWireFormatTestCase> convertAlpnToWireFormatTestCases = 
     "http/1.1, http/1.0",
     {0x08, 'h', 't', 't', 'p', '/', '1', '.', '1', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '0'},
     18,
+    true
+  },
+  {
+    "Both HTTP/2 and HTTP/1.1",
+    "h2,http/1.1",
+    {0x02, 'h', '2', 0x08, 'h', 't', 't', 'p', '/', '1', '.', '1'},
+    12,
     true
   },
 };

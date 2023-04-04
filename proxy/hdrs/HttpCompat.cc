@@ -55,7 +55,7 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
   int in_quote;
   const char quot = '\"';
   const char *s, *e, *l, *s_before_skipping_ws;
-  int index, byte_length, hit_sep;
+  int index, byte_length, hit_sep, trim_end_quote;
 
   if ((string == nullptr) || (list == nullptr) || (sep == NUL)) {
     return;
@@ -113,14 +113,16 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
 #define is_unquoted_separator(c) ((c == sep) && !in_quote)
 
     if (*s == quot) {
-      in_quote = 1;
-      e        = s + 1; // start after quote
+      in_quote       = 1;
+      e              = s + 1; // start after quote
+      trim_end_quote = trim_quotes;
       if (trim_quotes) {
         ++s; // trim starting quote
       }
     } else {
-      in_quote = 0;
-      e        = s;
+      in_quote       = 0;
+      trim_end_quote = 0;
+      e              = s;
     }
 
     while ((e <= l) && !is_unquoted_separator(*e)) {
@@ -142,7 +144,7 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
     while ((e > s) && ParseRules::is_ws(*(e - 1))) {
       --e; // eat trailing ws
     }
-    if ((e > s) && (*(e - 1) == quot) && trim_quotes) {
+    if ((e > s) && (*(e - 1) == quot) && trim_end_quote) {
       --e; // eat trailing quote
     }
 

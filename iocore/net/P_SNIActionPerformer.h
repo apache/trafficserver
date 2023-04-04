@@ -30,12 +30,14 @@
  ****************************************************************************/
 #pragma once
 
+#include "swoc/TextView.h"
+#include "swoc/swoc_ip.h"
+
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
-#include "swoc/TextView.h"
 
 #include "tscore/ink_inet.h"
 
@@ -90,12 +92,30 @@ private:
 
 class TunnelDestination : public ActionItem
 {
+  // ID of the configured variable. This will be used to know which function
+  // should be called when processing the tunnel destination.
+  enum OpId : int32_t {
+    DEFAULT = -1,                 // No specific variable set.
+    MATCH_GROUPS,                 // Deal with configured groups.
+    MAP_WITH_RECV_PORT,           // Use port from inbound local
+    MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
+    MAX                           // Always at the end and do not change the value of the above items.
+  };
+  static constexpr std::string_view MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
+  static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
+
 public:
   TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
                     const std::vector<int> &alpn)
     : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
   {
-    need_fix = (destination.find_first_of('$') != std::string::npos);
+    if (destination.find_first_of('$') != std::string::npos) {
+      fnArrIndex = OpId::MATCH_GROUPS;
+    } else if (var_start_pos = destination.find(MAP_WITH_RECV_PORT_STR); var_start_pos != std::string::npos) {
+      fnArrIndex = OpId::MAP_WITH_RECV_PORT;
+    } else if (var_start_pos = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR); var_start_pos != std::string::npos) {
+      fnArrIndex = OpId::MAP_WITH_PROXY_PROTOCOL_PORT;
+    }
   }
   ~TunnelDestination() override {}
 
@@ -106,14 +126,15 @@ public:
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
     const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
-      // If needed, we will try to amend the tunnel destination.
-      if (ctx._fqdn_wildcard_captured_groups && need_fix) {
-        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
-        ssl_netvc->set_tunnel_destination(fixed_dst, type, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
-      } else {
-        ssl_netvc->set_tunnel_destination(destination, type, tunnel_prewarm);
+      if (fnArrIndex == OpId::DEFAULT) {
+        ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
+      } else {
+        // Dispatch to the correct tunnel destination port function.
+        bool port_is_dynamic  = false;
+        const auto &fixed_dst = fix_destination[fnArrIndex](destination, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
+        ssl_netvc->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
+        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       }
 
       if (type == SNIRoutingType::BLIND) {
@@ -130,11 +151,11 @@ public:
   }
 
 private:
-  bool
-  is_number(const std::string &s) const
+  static bool
+  is_number(std::string_view s)
   {
     return !s.empty() &&
-           std::find_if(std::begin(s), std::end(s), [](std::string::value_type c) { return !std::isdigit(c); }) == std::end(s);
+           std::find_if(std::begin(s), std::end(s), [](std::string_view::value_type c) { return !std::isdigit(c); }) == std::end(s);
   }
 
   /**
@@ -142,11 +163,12 @@ private:
    * captured group from the `fqdn`, this function will replace them using proper group string. Matching
    * groups could be at any order.
    */
-  std::string
-  replace_match_groups(const std::string &dst, const ActionItem::Context::CapturedGroupViewVec &groups) const
+  static std::string
+  replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups, bool &port_is_dynamic)
   {
+    port_is_dynamic = false;
     if (dst.empty() || groups.empty()) {
-      return dst;
+      return std::string{dst};
     }
     std::string real_dst;
     std::string::size_type pos{0};
@@ -155,7 +177,11 @@ private:
     // We need to split the tunnel string and place each corresponding match on the
     // configured one, so we need to first, get the match, then get the match number
     // making sure that it does exist in the captured group.
+    bool is_writing_port = false;
     for (auto c = std::begin(dst); c != end; c++, pos++) {
+      if (*c == ':') {
+        is_writing_port = true;
+      }
       if (*c == '$') {
         // find the next '.' so we can get the group number.
         const auto dot            = dst.find('.', pos);
@@ -169,16 +195,19 @@ private:
             to = (port - pos) - 1;
           }
         }
-        const auto &number_str = dst.substr(pos + 1, to);
+        std::string_view number_str{dst.substr(pos + 1, to)};
         if (!is_number(number_str)) {
           // it may be some issue on the configured string, place the char and keep going.
           real_dst += *c;
           continue;
         }
-        const std::size_t group_index = std::stoi(number_str);
+        const std::size_t group_index = swoc::svtoi(number_str);
         if ((group_index - 1) < groups.size()) {
           // place the captured group.
           real_dst += groups[group_index - 1];
+          if (is_writing_port) {
+            port_is_dynamic = true;
+          }
           // if it was the last match, then ...
           if (dot == std::string::npos && to == std::string::npos) {
             // that's it.
@@ -196,10 +225,25 @@ private:
   }
 
   std::string destination;
+
+  /// The start position of a tunnel destination variable, such as '{proxy_protocol_port}'.
+  size_t var_start_pos{0};
   SNIRoutingType type                         = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
-  bool need_fix;
+
+  OpId fnArrIndex{OpId::DEFAULT}; /// On creation, we decide which function needs to be called, set the index and then we
+                                  /// call it with the relevant data
+
+  /// tunnel_route destination callback array.
+  static std::array<std::function<std::string(std::string_view,    // destination view
+                                              size_t,              // The start position for any relevant tunnel_route variable.
+                                              const Context &,     // Context
+                                              SSLNetVConnection *, // Net vc to get the port.
+                                              bool &               // Whether the port is derived from information on the wire.
+                                              )>,
+                    OpId::MAX>
+    fix_destination;
 };
 
 class VerifyClient : public ActionItem
@@ -294,7 +338,7 @@ public:
 
 class SNI_IpAllow : public ActionItem
 {
-  IpMap ip_map;
+  swoc::IPRangeSet ip_addrs;
 
 public:
   SNI_IpAllow(std::string &ip_allow_list, const std::string &servername);

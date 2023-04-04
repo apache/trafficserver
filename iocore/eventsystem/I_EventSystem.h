@@ -44,6 +44,7 @@
 #include "I_VConnection.h"
 #include "records/I_RecProcess.h"
 #include "I_SocketManager.h"
+#include "RecProcess.h"
 
 static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
