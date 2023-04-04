@@ -809,19 +809,9 @@ AS_IF([test -n "$LEX"],
 # Otherwise just use the checked in version.
 AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
 
-# Check for Perl and Doxygen
+# Check for Doxygen
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
-AC_PATH_PROG([PERL], [perl],[not found])
-AS_IF([test "x$PERL" = "xnot found"],
-  BUILD_PERL_LIB=false
-)
 AC_ARG_VAR([DOXYGEN], [full path of Doxygen executable])
-AC_ARG_VAR([PERL], [full path of Perl executable])
-
-# Check if MakeMaker is available
-AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [true]),
-                                            AM_CONDITIONAL([BUILD_PERL_LIB], [false])
-)
 
 # Check for GNU-style -On optimization flags
 AC_MSG_CHECKING([whether to auto-set compiler optimization flags])
@@ -2392,8 +2382,6 @@ AC_CONFIG_FILES([
   iocore/utils/Makefile
   lib/Makefile
   src/tscpp/api/Makefile
-  lib/perl/Makefile
-  lib/perl/lib/Apache/TS.pm
   src/wccp/Makefile
   lib/fastlz/Makefile
   lib/swoc/Makefile
