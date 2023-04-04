@@ -147,7 +147,7 @@ struct HostDBInfo {
    * @param fail_window Failure window.
    * @return Status of the selection.
    *
-   * If a zombie is selected the failure time is updated to make it look down to other threads in a thread safe
+   * If a zombie is selected the failure time is updated to make it appear down to other threads in a thread safe
    * manner. The caller should check @c last_fail_time to see if a zombie was selected.
    */
   bool select(ts_time now, ts_seconds fail_window);
