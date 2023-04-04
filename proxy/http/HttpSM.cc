@@ -5354,7 +5354,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
     if (HttpTransact::is_server_negative_cached(&t_state) == true &&
         t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
-      call_transact_and_set_next_state(HttpTransact::OriginDead);
+      call_transact_and_set_next_state(HttpTransact::OriginDown);
       return;
     }
   }
@@ -5973,7 +5973,7 @@ HttpSM::release_server_session(bool serve_from_cache)
 //
 //   We failed in our attempt post (or put) a document
 //    to the server.  Two cases happen here.  The normal
-//    one is the server died, in which case we ought to
+//    one is the server is down, in which case we ought to
 //    return an error to the client.  The second one is
 //    stupid.  The server returned a response without reading
 //    all the post data.  In order to be as transparent as
@@ -6011,7 +6011,7 @@ HttpSM::handle_post_failure()
 
   tunnel.deallocate_buffers();
   tunnel.reset();
-  // Server died
+  // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
