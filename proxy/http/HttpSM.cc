@@ -773,6 +773,13 @@ HttpSM::state_read_client_request_header(int event, void *data)
       }
     }
 
+    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUSH &&
+        t_state.http_config_param->push_method_enabled == 0) {
+      SMDebug("http", "Rejecting PUSH request because push_method_enabled is 0.");
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return 0;
+    }
+
     if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
         (t_state.hdr_info.client_request.get_content_length() == 0 &&
          t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
