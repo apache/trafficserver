@@ -86,6 +86,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ip-allow',
+    'proxy.config.http.push_method_enabled': 1,
     'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
