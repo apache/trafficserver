@@ -5,7 +5,7 @@ Server: ATS/``
 Cache-Control: no-store
 Content-Type: text/html
 Content-Language: en
-X-Effective-URL: http://none/argh
+X-Effective-URL: "http://none/argh"
 Content-Length: 391
 
 <HTML>
@@ -32,7 +32,7 @@ Age: ``
 Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
-X-Effective-URL: http://127.0.0.1:SERVER_PORT/argh
+X-Effective-URL: "http://127.0.0.1:SERVER_PORT/argh"
 
 0
 
@@ -43,7 +43,7 @@ Age: ``
 Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
-X-Effective-URL: http://127.0.0.1:SERVER_PORT/two/argh
+X-Effective-URL: "http://127.0.0.1:SERVER_PORT/two/argh"
 
 0
 
@@ -54,7 +54,18 @@ Age: ``
 Transfer-Encoding: chunked
 Connection: close
 Server: ATS/``
-X-Effective-URL: http://127.0.0.1:SERVER_PORT/argh
+X-Effective-URL: "http://127.0.0.1:SERVER_PORT/argh"
+
+0
+
+======
+HTTP/1.1 200 OK
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Effective-URL: "http://127.0.0.1:SERVER_PORT/four/argh,urgh"
 
 0
 

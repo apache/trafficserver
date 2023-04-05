@@ -433,7 +433,11 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   if (strval.ptr != nullptr && strval.len > 0) {
     TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Effective-URL", lengthof("X-Effective-URL"));
     if (dst != TS_NULL_MLOC) {
-      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+      char buf[16 * 1024];
+      int len = snprintf(buf, sizeof(buf), "\"%s\"", strval.ptr);
+      if (len == strval.len + 2 && len <= static_cast<int>(sizeof(buf)) - 1) { // Only copy back if len expected and within buffer.
+        TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
+      }
       TSHandleMLocRelease(buffer, hdr, dst);
     }
   }
