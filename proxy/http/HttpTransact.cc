@@ -5109,11 +5109,17 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //
     if (field.m_next_dup) {
       if (dups_seen == false) {
+        const char *name2;
+        int name_len2;
+
         // use a second iterator to delete the
         // remaining response headers in the cached response,
         // so that they will be added in the next iterations.
         for (auto spot2 = spot; spot2 != limit; ++spot2) {
-          cached_header->field_delete(&*spot2, true);
+          MIMEField &field2{*spot2};
+          name2 = field2.name_get(&name_len2);
+
+          cached_header->field_delete(name2, name_len2);
         }
         dups_seen = true;
       }
