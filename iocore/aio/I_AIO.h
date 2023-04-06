@@ -38,20 +38,23 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
 
-#define AIO_MODE_THREAD   0
+#define AIO_MODE_DEFAULT  0
 #define AIO_MODE_NATIVE   1
-#define AIO_MODE_IO_URING 2
 
 #if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE AIO_MODE_NATIVE
-#elif TS_USE_LINUX_IO_URING
-#define AIO_MODE AIO_MODE_IO_URING
 #else
-#define AIO_MODE AIO_MODE_THREAD
+#define AIO_MODE AIO_MODE_DEFAULT
 #endif
 
 #define LIO_READ  0x1
 #define LIO_WRITE 0x2
+
+enum AIOBackend {
+  AIO_BACKEND_AUTO = 0,
+  AIO_BACKEND_THREAD = 1,
+  AIO_BACKEND_IO_URING = 2,
+};
 
 #if AIO_MODE == AIO_MODE_NATIVE
 
@@ -67,24 +70,6 @@ using ink_io_event_t = struct io_event;
 #define aio_offset u.c.offset
 #define aio_buf    u.c.buf
 
-#elif AIO_MODE == AIO_MODE_IO_URING
-#include "I_IO_URING.h"
-
-struct AIOCallback;
-struct ink_aiocb : public IOUringCompletionHandler {
-  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
-  void *aio_buf     = nullptr; /* buffer location */
-  size_t aio_nbytes = 0;       /* length of transfer */
-  off_t aio_offset  = 0;       /* file offset */
-
-  int aio_lio_opcode   = 0; /* listio operation */
-  int aio_state        = 0; /* state flag for List I/O */
-  AIOCallback *this_op = nullptr;
-  AIOCallback *aio_op  = nullptr;
-
-  void handle_complete(io_uring_cqe *) override;
-};
-
 #else
 
 struct ink_aiocb {
@@ -93,14 +78,11 @@ struct ink_aiocb {
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_lio_opcode = 0; /* listio operation */
-  int aio_state      = 0; /* state flag for List I/O */
-  int aio__pad[1];        /* extension padding */
+  int aio_lio_opcode   = 0; /* listio operation */
+  int aio_state        = 0; /* state flag for List I/O */
 };
 
 bool ink_aio_thread_num_set(int thread_num);
-
-#endif
 
 // AIOCallback::thread special values
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
@@ -118,6 +100,7 @@ struct AIOCallback : public Continuation {
   int ok();
   AIOCallback() {}
 };
+#endif
 
 #if AIO_MODE == AIO_MODE_NATIVE
 
@@ -157,16 +140,15 @@ struct DiskHandler : public Continuation {
 private:
   inline static DbgCtl _dbg_ctl_aio{"aio"};
 };
+int ink_aio_readv(AIOCallback *op,
+                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
+int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
 #endif
 
-void ink_aio_init(ts::ModuleVersion version);
-int ink_aio_start();
+void ink_aio_init(ts::ModuleVersion version, AIOBackend backend = AIO_BACKEND_AUTO);
 void ink_aio_set_callback(Continuation *error_callback);
 
 int ink_aio_read(AIOCallback *op,
                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
 int ink_aio_write(AIOCallback *op, int fromAPI = 0);
-int ink_aio_readv(AIOCallback *op,
-                  int fromAPI = 0); // fromAPI is a boolean to indicate if this is from an API call such as upload proxy feature
-int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
 AIOCallback *new_AIOCallback();

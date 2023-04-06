@@ -43,6 +43,9 @@
 #define MAX_DISKS_POSSIBLE 100
 
 // globals
+#if TS_USE_LINUX_IO_URING
+static bool use_io_uring = false;
+#endif
 
 int ts_config_with_inkdiskio = 0;
 /* structure to hold information about each file descriptor */
@@ -50,19 +53,18 @@ AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
 int num_filedes = 1;
 
-#if AIO_MODE == AIO_MODE_THREAD
 // acquire this mutex before inserting a new entry in the aio_reqs array.
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
-#endif
 
 int thread_is_created = 0;
 #endif // AIO_MODE == AIO_MODE_NATIVE
+
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
 // config for io_uring mode
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
 RecInt aio_io_uring_queue_entries = 1024;
 RecInt aio_io_uring_sq_poll_ms    = 0;
 RecInt aio_io_uring_attach_wq     = 0;
@@ -116,7 +118,7 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   case AIO_STAT_KB_WRITE_PER_SEC:
     new_val = aio_bytes_written.load() >> 10;
     break;
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
   case AIO_STAT_IO_URING_SUBMITTED:
     new_val = io_uring_submissions.load();
     break;
@@ -171,7 +173,7 @@ ink_aio_set_callback(Continuation *callback)
 }
 
 void
-ink_aio_init(ts::ModuleVersion v)
+ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
@@ -190,13 +192,13 @@ ink_aio_init(ts::ModuleVersion v)
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.io_uring.completed", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_IO_URING_COMPLETED, aio_stats_cb);
 #endif
-#if AIO_MODE == AIO_MODE_THREAD
+#if AIO_MODE == AIO_MODE_DEFAULT
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 #endif
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
-  Warning("Running with Linux AIO, there are known issues with this feature");
+  Warning("Running with Linux libaio is deprecate, there are known issues with this feature, and it is being replaced with io_uring");
 #endif
 
 #if TS_USE_LINUX_IO_URING
@@ -206,19 +208,51 @@ ink_aio_init(ts::ModuleVersion v)
   REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.aio.io_uring.wq_workers_bounded");
   REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.aio.io_uring.wq_workers_unbounded");
 #endif
-}
 
-int
-ink_aio_start()
-{
-#ifdef AIO_STATS
-  data = new AIOTestData();
-  eventProcessor.schedule_in(data, HRTIME_MSECONDS(100), ET_CALL);
+#if AIO_MODE == AIO_MODE_DEFAULT
+#if TS_USE_LINUX_IO_URING
+  if (backend == AIOBackend::AIO_BACKEND_AUTO) {
+    RecString aio_io_uring_force_aio = nullptr;
+    REC_ReadConfigStringAlloc(aio_io_uring_force_aio, "proxy.config.aio.io_uring.force_aio");
+    if (aio_io_uring_force_aio) {
+      if (strcasecmp(aio_io_uring_force_aio, "auto") == 0) {
+        backend = AIOBackend::AIO_BACKEND_AUTO;
+      } else if (strcasecmp(aio_io_uring_force_aio, "thread") == 0) {
+        // force thread mode
+        backend = AIOBackend::AIO_BACKEND_THREAD;
+      } else if (strcasecmp(aio_io_uring_force_aio, "io_uring") == 0) {
+        // force io_uring mode
+        backend = AIOBackend::AIO_BACKEND_IO_URING;
+      } else {
+        Warning("Invalid value '%s' for proxy.config.aio.io_uring.force_aio.  autodetecting", aio_io_uring_force_aio);
+      }
+
+      ats_free(aio_io_uring_force_aio);
+    }
+  }
+
+  switch (backend) {
+  case AIOBackend::AIO_BACKEND_AUTO:
+    // TODO(cmfarlen): detect if io_uring is available and can support the required features
+  case AIOBackend::AIO_BACKEND_IO_URING:
+    use_io_uring = true;
+    break;
+  case AIOBackend::AIO_BACKEND_THREAD:
+    use_io_uring = false;
+    break;
+  }
+
+  if (use_io_uring) {
+    Warning("Using io_uring for AIO");
+  } else {
+    Warning("Using thread for AIO");
+  }
 #endif
-  return 0;
+#endif
+
 }
 
-#if AIO_MODE == AIO_MODE_THREAD
+#if AIO_MODE == AIO_MODE_DEFAULT
 
 struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
@@ -444,24 +478,6 @@ cache_op(AIOCallbackInternal *op)
   return 1;
 }
 
-int
-ink_aio_read(AIOCallback *op, int fromAPI)
-{
-  op->aiocb.aio_lio_opcode = LIO_READ;
-  aio_queue_req((AIOCallbackInternal *)op, fromAPI);
-
-  return 1;
-}
-
-int
-ink_aio_write(AIOCallback *op, int fromAPI)
-{
-  op->aiocb.aio_lio_opcode = LIO_WRITE;
-  aio_queue_req((AIOCallbackInternal *)op, fromAPI);
-
-  return 1;
-}
-
 bool
 ink_aio_thread_num_set(int thread_num)
 {
@@ -530,14 +546,13 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
   return nullptr;
 }
 
-#elif AIO_MODE == AIO_MODE_IO_URING
-
+#ifdef TS_USE_LINUX_IO_URING
 #include "I_IO_URING.h"
 
 void
-ink_aiocb::handle_complete(io_uring_cqe *cqe)
+AIOCallbackInternal::handle_complete(io_uring_cqe *cqe)
 {
-  AIOCallback *op = this_op;
+  AIOCallbackInternal *op = this_op;
 
   op->aio_result = static_cast<int64_t>(cqe->res);
   op->link.prev  = nullptr;
@@ -553,8 +568,8 @@ ink_aiocb::handle_complete(io_uring_cqe *cqe)
   }
 
   // the last op in the linked ops will have the original op stored in the aiocb
-  if (op->aiocb.aio_op) {
-    op = op->aiocb.aio_op;
+  if (aio_op) {
+    op = op->aio_op;
     if (op->thread == AIO_CALLBACK_THREAD_AIO) {
       SCOPED_MUTEX_LOCK(lock, op->mutex, this_ethread());
       op->handleEvent(EVENT_NONE, nullptr);
@@ -565,50 +580,68 @@ ink_aiocb::handle_complete(io_uring_cqe *cqe)
     }
   }
 }
+#endif
 
 int
-ink_aio_read(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
+ink_aio_read(AIOCallback *op_in, int fromAPI)
 {
-  IOUringContext *ur = IOUringContext::local_context();
-  AIOCallback *op    = op_in;
-  while (op) {
-    op->aiocb.this_op = op;
-    io_uring_sqe *sqe = ur->next_sqe(&op->aiocb);
-    io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-    op->aiocb.aio_lio_opcode = LIO_READ;
-    if (op->then) {
-      sqe->flags |= IOSQE_IO_LINK;
-    } else {
-      op->aiocb.aio_op = op_in;
-    }
+#if TS_USE_LINUX_IO_URING
+  if (use_io_uring) {
+    IOUringContext *ur = IOUringContext::local_context();
+    AIOCallbackInternal *op    = static_cast<AIOCallbackInternal*>(op_in);
+    while (op) {
+      op->this_op = op;
+      io_uring_sqe *sqe = ur->next_sqe(op);
+      io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      op->aiocb.aio_lio_opcode = LIO_READ;
+      if (op->then) {
+        sqe->flags |= IOSQE_IO_LINK;
+      } else {
+        op->aio_op = static_cast<AIOCallbackInternal*>(op_in);
+      }
 
-    op = op->then;
+      op = static_cast<AIOCallbackInternal*>(op->then);
+    }
+    return 1;
   }
+#endif
+  op_in->aiocb.aio_lio_opcode = LIO_READ;
+  aio_queue_req(static_cast<AIOCallbackInternal*>(op_in), fromAPI);
+
   return 1;
 }
 
 int
-ink_aio_write(AIOCallback *op_in, int /* fromAPI ATS_UNUSED */)
+ink_aio_write(AIOCallback *op_in, int fromAPI)
 {
-  IOUringContext *ur = IOUringContext::local_context();
-  AIOCallback *op    = op_in;
-  while (op) {
-    op->aiocb.this_op = op;
-    io_uring_sqe *sqe = ur->next_sqe(&op->aiocb);
-    io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-    op->aiocb.aio_lio_opcode = LIO_WRITE;
-    if (op->then) {
-      sqe->flags |= IOSQE_IO_LINK;
-    } else {
-      op->aiocb.aio_op = op_in;
-    }
+#if TS_USE_LINUX_IO_URING
+  if (use_io_uring) {
+    IOUringContext *ur = IOUringContext::local_context();
+    AIOCallbackInternal *op    = static_cast<AIOCallbackInternal*>(op_in);
+    while (op) {
+      op->this_op = op;
+      io_uring_sqe *sqe = ur->next_sqe(op);
+      io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      op->aiocb.aio_lio_opcode = LIO_WRITE;
+      if (op->then) {
+        sqe->flags |= IOSQE_IO_LINK;
+      } else {
+        op->aio_op = static_cast<AIOCallbackInternal*>(op_in);
+      }
 
-    op = op->then;
+      op = static_cast<AIOCallbackInternal*>(op->then);
+    }
+    return 1;
   }
+#endif
+  op_in->aiocb.aio_lio_opcode = LIO_WRITE;
+  aio_queue_req(static_cast<AIOCallbackInternal*>(op_in), fromAPI);
+
   return 1;
 }
+#endif
 
-#else
+#if AIO_MODE == AIO_MODE_NATIVE
 int
 DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e)
 {

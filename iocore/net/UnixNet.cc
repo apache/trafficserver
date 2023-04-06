@@ -462,7 +462,7 @@ int
 NetHandler::waitForActivity(ink_hrtime timeout)
 {
   EventIO *epd = nullptr;
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
   IOUringContext *ur = IOUringContext::local_context();
   bool servicedh     = false;
 #endif
@@ -472,7 +472,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   process_enabled_list();
 
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
   ur->submit();
 #endif
 
@@ -527,7 +527,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
       net_signal_hook_callback(this->thread);
     } else if (epd->type == EVENTIO_NETACCEPT) {
       this->thread->schedule_imm(epd->data.na);
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
     } else if (epd->type == EVENTIO_IO_URING) {
       servicedh = true;
 #endif
@@ -539,7 +539,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   process_ready_list();
 
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
   if (servicedh) {
     ur->service();
   }
