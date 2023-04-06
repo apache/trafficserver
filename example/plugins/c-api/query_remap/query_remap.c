@@ -41,7 +41,7 @@ typedef struct _query_remap_info {
   int num_hosts;
 } query_remap_info;
 
-int
+TSReturnCode
 TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   /* Called at TS startup. Nothing needed for this plugin */
@@ -49,7 +49,7 @@ TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int 
   return 0;
 }
 
-int
+TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   /* Called for each remap rule using this plugin. The parameters are parsed here */

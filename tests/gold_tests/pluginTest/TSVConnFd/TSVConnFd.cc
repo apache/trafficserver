@@ -20,6 +20,7 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <cstdint>
 #include <cstdlib>
 #include <atomic>
 
