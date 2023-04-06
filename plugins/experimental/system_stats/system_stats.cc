@@ -43,6 +43,7 @@
 #include <dirent.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <chrono>
 
 #include "ink_autoconf.h"
 
@@ -51,7 +52,6 @@
 #endif
 
 #include <limits.h>
-#include "tscore/ink_hrtime.h"
 
 #define PLUGIN_NAME "system_stats"
 #define DEBUG_TAG   PLUGIN_NAME
@@ -276,7 +276,9 @@ getStats(TSMutex stat_creation_mutex)
 
   sysinfo(&info);
 
-  statSet(TIMESTAMP, ink_hrtime_to_msec(ink_get_hrtime_internal()), stat_creation_mutex);
+  statSet(TIMESTAMP,
+          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(),
+          stat_creation_mutex);
   statSet(LOAD_AVG_ONE_MIN, info.loads[0], stat_creation_mutex);
   statSet(LOAD_AVG_FIVE_MIN, info.loads[1], stat_creation_mutex);
   statSet(LOAD_AVG_FIFTEEN_MIN, info.loads[2], stat_creation_mutex);
