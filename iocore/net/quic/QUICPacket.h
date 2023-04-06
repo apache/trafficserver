@@ -206,8 +206,16 @@ public:
   QUICConnectionId source_cid() const;
   virtual QUICVersion version() const;
 
+  // Explicitly tell the compiler that we intentionally want both the
+  // QUICPacketR::type and the following static type. Otherwise it warns
+  // that we might have accidentally not formed our signatures correctly
+  // via a `-Werror=overloaded-virtual` warning.
+  using QUICPacketR::type;
   static bool type(QUICPacketType &type, const uint8_t *packet, size_t packet_len);
   static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
+
+  // Again, address a `-Werror=overloaded-virtual` warning.
+  using QUICPacket::key_phase;
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
   static bool length(size_t &length, uint8_t &length_field_len, size_t &length_field_offset, const uint8_t *packet,
                      size_t packet_len);
