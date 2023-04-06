@@ -80,7 +80,7 @@ auto
 make_buffer_size_parser()
 {
   return [l = swoc::Lexicon<int>{
-            {{0, {"128"}},
+            {swoc::Lexicon<int>::Pair{0, {"128"}},
              {1, {"256"}},
              {2, {"512"}},
              {3, {"1k", "1024"}},
