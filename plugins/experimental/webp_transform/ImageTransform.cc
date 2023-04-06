@@ -30,7 +30,9 @@
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
+#if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
 #include <Magick++.h>
