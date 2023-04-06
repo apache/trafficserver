@@ -144,6 +144,7 @@ public:
   IpEndpoint src_ip;
   IpEndpoint dest_ip;
   uint16_t incoming_port                = 0;
+  int8_t parent_use_cache_url           = 0;
   char *tag                             = nullptr;
   bool internal_txn                     = false;
   URL **cache_info_lookup_url           = nullptr;

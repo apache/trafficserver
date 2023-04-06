@@ -65,36 +65,48 @@ ParentConsistentHash::~ParentConsistentHash()
 uint64_t
 ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
+  URL *ps_url                = nullptr;
   const char *url_string_ref = nullptr;
   int len;
-  URL *url = hrdata->hdr->url_get();
 
-  // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
-  URL *ps_url = nullptr;
   if (hrdata->cache_info_parent_selection_url) {
     ps_url = *(hrdata->cache_info_parent_selection_url);
-    if (ps_url) {
-      url_string_ref = ps_url->string_get_ref(&len);
-      if (url_string_ref && len > 0) {
-        // Print the over-ride URL
-        Debug("parent_select", "Using Over-Ride String='%.*s'.", len, url_string_ref);
-        h->update(url_string_ref, len);
-        h->final();
-        return h->get();
-      }
+  } else if ((hrdata->parent_use_cache_url == 2) && hrdata->cache_info_lookup_url) {
+    ps_url = *(hrdata->cache_info_lookup_url);
+  }
+
+  // This will use the full URL, which is different than the default
+  if (ps_url) {
+    url_string_ref = ps_url->string_get_ref(&len);
+    if (url_string_ref && len > 0) {
+      // Print the over-ride URL
+      Debug("parent_select", "Using Over-Ride String='%.*s'.", len, url_string_ref);
+      h->update(url_string_ref, len);
+      h->final();
+      return h->get();
     }
+  }
+
+  // With parent_use_cache_url == 1, we use the cache key URL, but using only the path / query components
+  if ((hrdata->parent_use_cache_url == 1) && hrdata->cache_info_lookup_url) {
+    ps_url = *(hrdata->cache_info_lookup_url);
+  }
+
+  // Default URL for parent selection
+  if (ps_url == nullptr) {
+    ps_url = hrdata->hdr->url_get();
   }
 
   // Always hash on '/' because paths returned by ATS are always stripped of it
   h->update("/", 1);
 
-  url_string_ref = url->path_get(&len);
+  url_string_ref = ps_url->path_get(&len);
   if (url_string_ref) {
     h->update(url_string_ref, len);
   }
 
   if (!ignore_query) {
-    url_string_ref = url->query_get(&len);
+    url_string_ref = ps_url->query_get(&len);
     if (url_string_ref) {
       h->update("?", 1);
       h->update(url_string_ref, len);

@@ -8839,6 +8839,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->default_inactivity_timeout, conv);
     break;
+  case TS_CONFIG_HTTP_PARENT_PROXY_USE_CACHE_URL:
+    ret = _memberp_to_generic(&overridableHttpConfig->parent_use_cache_url, conv);
+    break;
 
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:

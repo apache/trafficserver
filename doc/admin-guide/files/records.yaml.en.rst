@@ -1401,6 +1401,21 @@ Parent Proxy Configuration
    globally.  This setting should not be used in conjunction with
    ``proxy.config.http.parent_proxy.enable_parent_timeout_markdowns``
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.use_cache_url INT 0
+   :reloadable:
+   :overridable:
+
+   This configuration option is used to determine if, and how, the cache url
+   should be used for parent selection hashing. Possible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Don't use the cache key URL
+   ``1`` Use the URL path (and possibly query paramaters) from the cache key URL
+   ``2`` Use the full URL from the cache key
+   ===== ======================================================================
+
 HTTP Connection Timeouts
 ========================
 

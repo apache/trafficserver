@@ -169,5 +169,6 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
      {TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS, TS_RECORDDATATYPE_INT}                                                                    },
     {"proxy.config.http.parent_proxy.disable_parent_markdowns",        {TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS, TS_RECORDDATATYPE_INT}         },
-    {"proxy.config.net.default_inactivity_timeout",                    {TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}        }
+    {"proxy.config.net.default_inactivity_timeout",                    {TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}        },
+    {"proxy.config.http.parent_proxy.use_cache_url",                   {TS_CONFIG_HTTP_PARENT_PROXY_USE_CACHE_URL, TS_RECORDDATATYPE_INT}       }
 });

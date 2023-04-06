@@ -422,6 +422,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.self_detect", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.parent_proxy.use_cache_url", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.disable_parent_markdowns", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}

@@ -1270,6 +1270,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.enable_parent_timeout_markdowns,
                                 "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns");
   HttpEstablishStaticConfigByte(c.oride.disable_parent_markdowns, "proxy.config.http.parent_proxy.disable_parent_markdowns");
+  HttpEstablishStaticConfigByte(c.oride.parent_use_cache_url, "proxy.config.http.parent_proxy.use_cache_url");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
@@ -1558,6 +1559,7 @@ HttpConfig::reconfigure()
   params->oride.parent_failures_update_hostdb   = m_master.oride.parent_failures_update_hostdb;
   params->oride.enable_parent_timeout_markdowns = m_master.oride.enable_parent_timeout_markdowns;
   params->oride.disable_parent_markdowns        = m_master.oride.disable_parent_markdowns;
+  params->oride.parent_use_cache_url            = m_master.oride.parent_use_cache_url;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;

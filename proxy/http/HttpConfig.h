@@ -695,6 +695,7 @@ struct OverridableHttpConfigParams {
   MgmtInt per_parent_connect_attempts      = 2;
   MgmtByte enable_parent_timeout_markdowns = 0;
   MgmtByte disable_parent_markdowns        = 0;
+  MgmtByte parent_use_cache_url            = 0;
 
   ts_seconds down_server_timeout{300};
 
