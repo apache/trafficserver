@@ -61,6 +61,8 @@ dns.addRecords(records={"one.testmatch": ["127.0.0.1"]})
 dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
 dns.addRecords(records={"backend.incoming.port.com": ["127.0.0.1"]})
 dns.addRecords(records={"backend.proxy.protocol.port.com": ["127.0.0.1"]})
+dns.addRecords(records={"backend.wildcard.with.incoming.port.com": ["127.0.0.1"]})
+dns.addRecords(records={"backend.wildcard.with.proxy.protocol.port.com": ["127.0.0.1"]})
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
@@ -103,6 +105,10 @@ ts.Disk.sni_yaml.AddLines([
     "  tunnel_route: backend.incoming.port.com:{inbound_local_port}",
     "- fqdn: 'proxy.protocol.port.com'",
     "  tunnel_route: backend.proxy.protocol.port.com:{proxy_protocol_port}",
+    "- fqdn: '*.*.incoming.port.com'",
+    "  tunnel_route: backend.$1.$2.incoming.port.com:{inbound_local_port}",
+    "- fqdn: '*.*.proxy.protocol.port.com'",
+    "  tunnel_route: backend.$1.$2.proxy.protocol.port.com:{proxy_protocol_port}",
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
@@ -235,6 +241,39 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"Rejected a tunnel to port {rejected_port} not in connect_ports",
     "Verify the tunnel was rejected")
+
+tr = Test.AddTestRun("test wildcard with inbound_local_port")
+tr.Processes.Default.Command = "curl -vvv --resolve 'wildcard.with.incoming.port.com:{0}:127.0.0.1' -k  https://wildcard.with.incoming.port.com:{0}".format(
+    ts.Variables.ssl_port)
+
+# See the inbound_local_port test above for the explanation of the return code.
+tr.ReturnCode = 35
+tr.StillRunningAfter = ts
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    rf"Destination now is \[backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port}\]",
+    "Verify the tunnel destination is expanded correctly.")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"CONNECT tunnel://backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
+    "Verify a CONNECT request is handled")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Direct self loop detected", "The loop should be detected")
+
+tr = Test.AddTestRun("test wildcard with proxy_protocol_port")
+tr.Setup.Copy('proxy_protocol_client.py')
+tr.Processes.Default.Command = (
+    f'{sys.executable} proxy_protocol_client.py '
+    f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
+    f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
+    f'2 --https'
+)
+tr.ReturnCode = 0
+tr.TimeOut = 5
+tr.StillRunningAfter = ts
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    rf"Destination now is \[backend.wildcard.with.proxy.protocol.port.com:{server_foo.Variables.SSL_Port}\]",
+    "Verify the tunnel destination is expanded correctly.")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    "HTTP/1.1 200 OK",
+    "Verify a successful response is received")
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")
