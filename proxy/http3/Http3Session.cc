@@ -38,9 +38,8 @@ HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
 
 HQSession::~HQSession()
 {
-  for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
-    delete t;
-  }
+  // Transactions should be deleted first before HQSesson gets deleted.
+  ink_assert(this->_transaction_list.head);
 }
 
 void
@@ -55,7 +54,6 @@ void
 HQSession::remove_transaction(HQTransaction *trans)
 {
   this->_transaction_list.remove(trans);
-  delete trans;
 
   return;
 }

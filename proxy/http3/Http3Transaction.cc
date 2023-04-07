@@ -62,9 +62,14 @@ HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &in
   this->_thread = this_ethread();
 
   this->_reader = this->_read_vio_buf.alloc_reader();
+
+  static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 }
 
-HQTransaction::~HQTransaction() {}
+HQTransaction::~HQTransaction()
+{
+  static_cast<HQSession *>(this->_proxy_ssn)->remove_transaction(this);
+}
 
 void
 HQTransaction::set_active_timeout(ink_hrtime timeout_in)
@@ -297,7 +302,6 @@ HQTransaction::_signal_write_event()
 //
 Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
 {
-  static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
   QUICStreamId stream_id = this->_info.adapter.stream().id();
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
@@ -515,8 +519,6 @@ Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) 
 //
 Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
 {
-  static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
-
   SET_HANDLER(&Http09Transaction::state_stream_open);
 }
 
