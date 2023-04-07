@@ -32,10 +32,12 @@
 #include <openssl/ocsp.h>
 #endif
 
+#include "tscore/ink_memory.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "SSLStats.h"
+#include "FetchSM.h"
 
 // Maximum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,
@@ -55,6 +57,142 @@ struct certinfo {
   bool is_prefetched;
   bool is_expire;
   time_t expire_time;
+};
+
+extern ClassAllocator<FetchSM> FetchSMAllocator;
+
+class HTTPRequest : public Continuation
+{
+public:
+  static constexpr int MAX_RESP_LEN = 100 * 1024;
+
+  HTTPRequest()
+  {
+    mutex = new_ProxyMutex();
+    SET_HANDLER(&HTTPRequest::event_handler);
+  }
+
+  ~HTTPRequest()
+  {
+    this->_fsm->ext_destroy();
+    OPENSSL_free(this->_req_body);
+  }
+
+  int
+  event_handler(int event, Event *e)
+  {
+    if (event == TS_EVENT_IMMEDIATE) {
+      this->fetch();
+    } else {
+      auto fsm = reinterpret_cast<FetchSM *>(e);
+      auto ctx = reinterpret_cast<HTTPRequest *>(fsm->ext_get_user_data());
+      if (event == TS_FETCH_EVENT_EXT_BODY_DONE) {
+        ctx->set_done();
+      } else if (event == TS_EVENT_ERROR) {
+        ctx->set_error();
+      }
+    }
+
+    return 0;
+  }
+
+  void
+  set_request_line(bool use_post, const char *uri)
+  {
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family      = AF_INET;
+    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sin.sin_port        = 65535;
+
+    this->_fsm = FetchSMAllocator.alloc();
+    this->_fsm->ext_set_user_data(this);
+    if (use_post) {
+      this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
+    } else {
+      this->_fsm->ext_init(this, "GET", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
+    }
+  }
+
+  int
+  set_body(const char *content_type, const ASN1_ITEM *it, const ASN1_VALUE *req)
+  {
+    this->_req_body = nullptr;
+
+    if (req != nullptr) {
+      // const_cast is needed for OpenSSL 1.1.1
+      this->_req_body_len = ASN1_item_i2d(const_cast<ASN1_VALUE *>(req), &this->_req_body, it);
+      if (this->_req_body_len == -1) {
+        return 0;
+      }
+    }
+    this->add_header("Content-Type", content_type);
+    char req_body_len_str[10];
+    int req_body_len_str_len;
+    req_body_len_str_len = ink_fast_itoa(this->_req_body_len, req_body_len_str, sizeof(req_body_len_str));
+    this->add_header("Content-Length", 14, req_body_len_str, req_body_len_str_len);
+
+    return 1;
+  }
+
+  void
+  add_header(const char *name, int name_len, const char *value, int value_len)
+  {
+    this->_fsm->ext_add_header(name, name_len, value, value_len);
+  }
+
+  void
+  add_header(const char *name, const char *value)
+  {
+    this->add_header(name, strlen(name), value, strlen(value));
+  }
+
+  void
+  fetch()
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    this->_fsm->ext_launch();
+    this->_fsm->ext_write_data(this->_req_body, this->_req_body_len);
+  }
+
+  void
+  set_done()
+  {
+    this->_result = 1;
+  }
+
+  void
+  set_error()
+  {
+    this->_result = -1;
+  }
+
+  bool
+  is_done()
+  {
+    return this->_result != 0;
+  }
+
+  bool
+  is_success()
+  {
+    return this->_result == 1;
+  }
+
+  unsigned char *
+  get_response_body(int *len)
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    char *buf = static_cast<char *>(malloc(MAX_RESP_LEN));
+    *len      = this->_fsm->ext_read_data(buf, MAX_RESP_LEN);
+    return reinterpret_cast<unsigned char *>(buf);
+  }
+
+private:
+  FetchSM *_fsm            = nullptr;
+  unsigned char *_req_body = nullptr;
+  int _req_body_len        = 0;
+  int _result              = 0;
 };
 
 /*
@@ -373,84 +511,73 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
 }
 
 static OCSP_RESPONSE *
-query_responder(BIO *b, const char *host, const char *path, const char *user_agent, OCSP_REQUEST *req, int req_timeout)
+query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int req_timeout)
 {
   ink_hrtime start, end;
   OCSP_RESPONSE *resp = nullptr;
-  OCSP_REQ_CTX *ctx;
-  int rv;
 
   start = Thread::get_hrtime();
   end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
 
-  ctx = OCSP_sendreq_new(b, path, nullptr, -1);
-  OCSP_REQ_CTX_add1_header(ctx, "Host", host);
+  HTTPRequest httpreq;
+  bool use_post = true;
+
+  httpreq.set_request_line(use_post, uri);
+
+  // Host header
+  HdrHeap *heap = new_HdrHeap();
+  heap->init();
+  URL url;
+  url.create(heap);
+  url.parse(uri, strlen(uri));
+  int host_len;
+  const char *host = url.host_get(&host_len);
+  httpreq.add_header("Host", 4, host, host_len);
+
+  // User-Agent header
   if (user_agent != nullptr) {
-    OCSP_REQ_CTX_add1_header(ctx, "User-Agent", user_agent);
+    httpreq.add_header("User-Agent", user_agent);
   }
-  OCSP_REQ_CTX_set1_req(ctx, req);
 
+  // Content-Type, Content-Length, Request Body
+  if (use_post) {
+    httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(OCSP_REQUEST), (const ASN1_VALUE *)req);
+  }
+
+  // Send request
+  eventProcessor.schedule_imm(&httpreq, ET_NET);
+
+  // Wait until the request completes
   do {
-    rv = OCSP_sendreq_nbio(&resp, ctx);
     ink_hrtime_sleep(HRTIME_MSECONDS(1));
-  } while ((rv == -1) && BIO_should_retry(b) && (Thread::get_hrtime() < end));
+  } while (!httpreq.is_done() && (Thread::get_hrtime() < end));
 
-  OCSP_REQ_CTX_free(ctx);
+  if (httpreq.is_success()) {
+    // Parse the response
+    int len;
+    const unsigned char *p = httpreq.get_response_body(&len);
+    resp                   = reinterpret_cast<OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(OCSP_RESPONSE)));
 
-  if (rv == 1) {
-    return resp;
+    if (resp) {
+      return resp;
+    }
   }
 
-  Error("failed to connect to OCSP server; host=%s path=%s", host, path);
-
+  Error("failed to get a response from OCSP server; uri=%s", uri);
   return nullptr;
-}
-
-static OCSP_RESPONSE *
-process_responder(OCSP_REQUEST *req, const char *host, const char *path, const char *port, const char *user_agent, int req_timeout)
-{
-  BIO *cbio           = nullptr;
-  OCSP_RESPONSE *resp = nullptr;
-  cbio                = BIO_new_connect(host);
-  if (!cbio) {
-    goto end;
-  }
-  if (port) {
-    BIO_set_conn_port(cbio, port);
-  }
-
-  BIO_set_nbio(cbio, 1);
-  if (BIO_do_connect(cbio) <= 0 && !BIO_should_retry(cbio)) {
-    Debug("ssl_ocsp", "process_responder: failed to connect to OCSP server; host=%s port=%s path=%s", host, port, path);
-    goto end;
-  }
-  resp = query_responder(cbio, host, path, user_agent, req, req_timeout);
-
-end:
-  if (cbio) {
-    BIO_free_all(cbio);
-  }
-  return resp;
 }
 
 static bool
 stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
 {
-  bool rv           = true;
-  OCSP_REQUEST *req = nullptr;
-  OCSP_CERTID *id   = nullptr;
-  char *host = nullptr, *port = nullptr, *path = nullptr;
-  int ssl_flag        = 0;
+  bool rv             = true;
+  OCSP_REQUEST *req   = nullptr;
+  OCSP_CERTID *id     = nullptr;
   int response_status = 0;
 
   *prsp = nullptr;
 
-  if (!OCSP_parse_url(cinf->uri, &host, &port, &path, &ssl_flag)) {
-    Debug("ssl_ocsp", "stapling_refresh_response: OCSP_parse_url failed; uri=%s", cinf->uri);
-    goto err;
-  }
-
-  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; host=%s port=%s path=%s", host, port, path);
+  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; uri=%s", cinf->uri);
 
   req = OCSP_REQUEST_new();
   if (!req) {
@@ -464,7 +591,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     goto err;
   }
 
-  *prsp = process_responder(req, host, path, port, cinf->user_agent, SSLConfigParams::ssl_ocsp_request_timeout);
+  *prsp = query_responder(cinf->uri, cinf->user_agent, req, SSLConfigParams::ssl_ocsp_request_timeout);
   if (*prsp == nullptr) {
     goto done;
   }
@@ -474,8 +601,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     Debug("ssl_ocsp", "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
-    Error("stapling_refresh_response: responder response error; host=%s port=%s path=%s response_status=%d", host, port, path,
-          response_status);
+    Error("stapling_refresh_response: responder response error; uri=%s response_status=%d", cinf->uri, response_status);
   }
 
   if (!stapling_cache_response(*prsp, cinf)) {
@@ -496,9 +622,6 @@ done:
   if (*prsp) {
     OCSP_RESPONSE_free(*prsp);
   }
-  OPENSSL_free(host);
-  OPENSSL_free(path);
-  OPENSSL_free(port);
   return rv;
 }
 
@@ -611,6 +734,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     ink_mutex_release(&cinf->stapling_mutex);
     SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);
     Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: successfully got certificate status for %s", cinf->certname);
+    Debug("ssl_ocsp", "is_prefetched:%d uri:%s", cinf->is_prefetched, cinf->uri);
     return SSL_TLSEXT_ERR_OK;
   }
 }
