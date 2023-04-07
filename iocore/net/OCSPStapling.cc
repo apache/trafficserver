@@ -525,13 +525,12 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
   httpreq.set_request_line(use_post, uri);
 
   // Host header
-  HdrHeap *heap = new_HdrHeap();
-  heap->init();
-  URL url;
-  url.create(heap);
-  url.parse(uri, strlen(uri));
-  int host_len;
-  const char *host = url.host_get(&host_len);
+  const char *host  = strstr(uri, "://") + 3;
+  const char *slash = strchr(host, '/');
+  if (slash == nullptr) {
+    slash = host + strlen(host);
+  }
+  int host_len = slash - host;
   httpreq.add_header("Host", 4, host, host_len);
 
   // User-Agent header
