@@ -171,7 +171,7 @@ protected:
 
 template <class Data, class MatchResult> class UrlMatcher : protected BaseMatcher<Data>
 {
-  typedef BaseMatcher<Data> super;
+  using super = BaseMatcher<Data>;
 
 public:
   UrlMatcher(const char *name, const char *filename);
@@ -197,7 +197,7 @@ private:
 
 template <class Data, class MatchResult> class RegexMatcher : protected BaseMatcher<Data>
 {
-  typedef BaseMatcher<Data> super;
+  using super = BaseMatcher<Data>;
 
 public:
   RegexMatcher(const char *name, const char *filename);
@@ -222,7 +222,7 @@ protected:
 
 template <class Data, class MatchResult> class HostRegexMatcher : public RegexMatcher<Data, MatchResult>
 {
-  typedef BaseMatcher<Data> super;
+  using super = BaseMatcher<Data>;
 
 public:
   HostRegexMatcher(const char *name, const char *filename);
@@ -237,7 +237,7 @@ public:
 
 template <class Data, class MatchResult> class HostMatcher : protected BaseMatcher<Data>
 {
-  typedef BaseMatcher<Data> super;
+  using super = BaseMatcher<Data>;
 
 public:
   HostMatcher(const char *name, const char *filename);
@@ -268,7 +268,7 @@ private:
 
 template <class Data, class MatchResult> class IpMatcher : protected BaseMatcher<Data>
 {
-  typedef BaseMatcher<Data> super;
+  using super = BaseMatcher<Data>;
 
 public:
   IpMatcher(const char *name, const char *filename);

@@ -41,7 +41,7 @@ public:
   std::string PrintUrlMappingPathIndex() const;
 
 private:
-  typedef Trie<url_mapping> UrlMappingTrie;
+  using UrlMappingTrie = Trie<url_mapping>;
 
   struct UrlMappingTrieKey {
     int scheme_wks_idx;
@@ -58,7 +58,7 @@ private:
     }
   };
 
-  typedef std::map<UrlMappingTrieKey, UrlMappingTrie *> UrlMappingGroup;
+  using UrlMappingGroup = std::map<UrlMappingTrieKey, UrlMappingTrie *>;
   UrlMappingGroup m_tries;
 
   // make copy-constructor and assignment operator private

@@ -59,12 +59,12 @@
 struct HttpTunnelProducer;
 class HttpSM;
 class HttpPagesHandler;
-typedef int (HttpSM::*HttpSMHandler)(int event, void *data);
+using HttpSMHandler = int (HttpSM::*)(int, void *);
 
 struct HttpTunnelConsumer;
 struct HttpTunnelProducer;
-typedef int (HttpSM::*HttpProducerHandler)(int event, HttpTunnelProducer *p);
-typedef int (HttpSM::*HttpConsumerHandler)(int event, HttpTunnelConsumer *c);
+using HttpProducerHandler = int (HttpSM::*)(int, HttpTunnelProducer *);
+using HttpConsumerHandler = int (HttpSM::*)(int, HttpTunnelConsumer *);
 
 enum HttpTunnelType_t { HT_HTTP_SERVER, HT_HTTP_CLIENT, HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM, HT_STATIC, HT_BUFFER_READ };
 

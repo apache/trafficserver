@@ -483,7 +483,7 @@ struct Stripe {
     Bytes _skip;  ///< # of bytes not valid at the start of the first block.
     Bytes _clip;  ///< # of bytes not valid at the end of the last block.
 
-    typedef std::vector<MemSpan<void>> Chain;
+    using Chain = std::vector<MemSpan<void>>;
     Chain _chain; ///< Chain of blocks.
 
     ~Chunk();

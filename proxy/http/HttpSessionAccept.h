@@ -54,7 +54,7 @@ namespace detail
 class HttpSessionAcceptOptions
 {
 private:
-  typedef HttpSessionAcceptOptions self; ///< Self reference type.
+  using self = HttpSessionAcceptOptions; ///< Self reference type.
 public:
   HttpSessionAcceptOptions();
 
@@ -169,12 +169,12 @@ HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const 
 class HttpSessionAccept : public SessionAccept, private detail::HttpSessionAcceptOptions
 {
 private:
-  typedef HttpSessionAccept self; ///< Self reference type.
+  using self = HttpSessionAccept; ///< Self reference type.
 public:
   /** Construction options.
       Provide an easier to remember typedef for clients.
   */
-  typedef detail::HttpSessionAcceptOptions Options;
+  using Options = detail::HttpSessionAcceptOptions;
 
   /** Default constructor.
       @internal We don't use a static default options object because of

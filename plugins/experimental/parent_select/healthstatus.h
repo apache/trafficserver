@@ -29,13 +29,13 @@ struct PLHostRecord;
 
 enum PLNHCmd { PL_NH_MARK_UP, PL_NH_MARK_DOWN };
 
-typedef enum {
+using PLNHParentResultType = enum {
   PL_NH_PARENT_UNDEFINED,
   PL_NH_PARENT_DIRECT,
   PL_NH_PARENT_SPECIFIED,
   PL_NH_PARENT_AGENT,
   PL_NH_PARENT_FAIL,
-} PLNHParentResultType;
+};
 
 struct PLStatusTxn {
   PLNHParentResultType result = PL_NH_PARENT_UNDEFINED;

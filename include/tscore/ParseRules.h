@@ -31,7 +31,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
 
-typedef unsigned int CTypeResult;
+using CTypeResult = unsigned int;
 
 // Set this to 0 to disable SI
 // decimal multipliers

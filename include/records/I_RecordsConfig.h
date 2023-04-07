@@ -46,7 +46,7 @@ struct RecordElement {
   RecAccessT access; // access level of the record
 };
 
-typedef void (*RecordElementCallback)(const RecordElement *, void *);
+using RecordElementCallback = void (*)(const RecordElement *, void *);
 void RecordsConfigIterate(RecordElementCallback, void *);
 
 void LibRecordsConfigInit(); // initializes RecordsConfigIndex

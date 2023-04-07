@@ -31,8 +31,8 @@ namespace ats
 {
 namespace inliner
 {
-  typedef std::pair<std::string, std::string> Pair;
-  typedef std::vector<Pair> AttributeVector;
+  using Pair            = std::pair<std::string, std::string>;
+  using AttributeVector = std::vector<Pair>;
 
   struct Attributes : AttributeVector {
     operator std::string() const;

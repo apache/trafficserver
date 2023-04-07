@@ -78,10 +78,10 @@ struct LruHashHasher {
   }
 };
 
-typedef LruHash LruEntry;
-typedef std::list<LruEntry> LruList;
-typedef std::unordered_map<const LruHash *, LruList::iterator, LruHashHasher, LruHashHasher> LruMap;
-typedef LruMap::iterator LruMapIterator;
+using LruEntry       = LruHash;
+using LruList        = std::list<LruEntry>;
+using LruMap         = std::unordered_map<const LruHash *, LruList::iterator, LruHashHasher, LruHashHasher>;
+using LruMapIterator = LruMap::iterator;
 
 static LruEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 

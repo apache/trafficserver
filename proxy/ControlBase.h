@@ -91,7 +91,7 @@ protected:
   const char *getSchemeModText() const;
 
 private:
-  typedef std::vector<Modifier *> Array;
+  using Array = std::vector<Modifier *>;
   Array _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);

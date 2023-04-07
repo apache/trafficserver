@@ -59,8 +59,8 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define MAX_AIO_EVENTS 1024
 
-typedef struct iocb ink_aiocb;
-typedef struct io_event ink_io_event_t;
+using ink_aiocb      = struct iocb;
+using ink_io_event_t = struct io_event;
 
 // XXX hokey old-school compatibility with ink_aiocb.h ...
 #define aio_nbytes u.c.nbytes

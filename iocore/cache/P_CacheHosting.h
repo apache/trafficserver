@@ -259,7 +259,7 @@ private:
 };
 
 struct CacheHostTableConfig;
-typedef int (CacheHostTableConfig::*CacheHostTabHandler)(int, void *);
+using CacheHostTabHandler = int (CacheHostTableConfig::*)(int, void *);
 struct CacheHostTableConfig : public Continuation {
   CacheHostTableConfig(ReplaceablePtr<CacheHostTable> *appt) : Continuation(nullptr), ppt(appt)
   {

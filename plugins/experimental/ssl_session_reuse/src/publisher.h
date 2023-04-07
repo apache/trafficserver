@@ -45,7 +45,7 @@ struct RedisContextDeleter {
   }
 };
 
-typedef std::unique_ptr<::redisContext, RedisContextDeleter> RedisContextPtr;
+using RedisContextPtr = std::unique_ptr<::redisContext, RedisContextDeleter>;
 
 class RedisPublisher
 {

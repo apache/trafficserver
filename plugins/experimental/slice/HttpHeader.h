@@ -74,7 +74,7 @@ struct HttpHeader {
 
   bool setUrl(TSMBuffer const bufurl, TSMLoc const locurl);
 
-  typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int *);
+  using CharPtrGetFunc = const char *(*)(TSMBuffer, TSMLoc, int *);
 
   // request method TS_HTTP_METHOD_*
   char const *
@@ -163,7 +163,7 @@ struct TxnHdrMgr {
     }
   }
 
-  typedef TSReturnCode (*HeaderGetFunc)(TSHttpTxn, TSMBuffer *, TSMLoc *);
+  using HeaderGetFunc = TSReturnCode (*)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   /** use one of the following:
     TSHttpTxnClientReqGet
     TSHttpTxnClientRespGet
@@ -215,7 +215,7 @@ struct HdrMgr {
     }
   }
 
-  typedef TSParseResult (*HeaderParseFunc)(TSHttpParser, TSMBuffer, TSMLoc, char const **, char const *);
+  using HeaderParseFunc = TSParseResult (*)(TSHttpParser, TSMBuffer, TSMLoc, const char **, const char *);
 
   /** Clear/create the parser before calling this and don't
    use the parser on another header until done with this one.

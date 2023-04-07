@@ -34,7 +34,7 @@ namespace ts
 // This creates the actual error, depending on whether X has a valid
 // nest type Result.
 template <typename X> struct TEST_RESULT {
-  typedef typename X::Result type;
+  using type = typename X::Result;
 };
 
 // Bool checking - a base template then specializations to succeed or
@@ -43,7 +43,7 @@ template <bool VALUE> struct TEST_BOOL {
 };
 // Successful test defines Result.
 template <> struct TEST_BOOL<true> {
-  typedef int Result;
+  using Result = int;
 };
 // Failing test does not define Result.
 template <> struct TEST_BOOL<false> {
@@ -157,7 +157,7 @@ template <typename Elt,  ///< Element type.
           typename Value ///< Member value type.
           >
 struct MethodPredicate {
-  typedef Value (Elt::*MethodPtr)() const;
+  using MethodPtr = Value (Elt::*)() const;
   Value const &m_value; ///< Value to test against.
   MethodPtr m_mptr;     ///< Pointer to method returning value.
   MethodPredicate(MethodPtr mptr, Value const &v) : m_value(v), m_mptr(mptr) {}

@@ -40,7 +40,7 @@
 
 /* Some defines that might be candidates for configurable settings later.
  */
-typedef int8_t TSMgmtByte; // Not for external use
+using TSMgmtByte = int8_t; // Not for external use
 
 /* ****** Cache Structure ********* */
 

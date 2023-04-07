@@ -31,7 +31,7 @@
 #pragma once
 namespace ats_plugin
 {
-typedef enum {
+using FcgiConfigKey = enum {
   fcgiEnabled,
   fcgiHostname,
   fcgiServerIp,
@@ -43,8 +43,8 @@ typedef enum {
   fcgiMaxConnections,
   fcgiMaxRequests,
   fcgiRequestQueueSize
-} FcgiConfigKey;
-typedef enum {
+};
+using FcgiParamKey = enum {
   gatewayInterface,
   serverSoftware,
   queryString,
@@ -62,10 +62,10 @@ typedef enum {
   serverAddr,
   serverPort,
   serverName
-} FcgiParamKey;
+};
 
-typedef std::map<uint32_t, int8_t> UintMap;
-typedef std::map<std::string, std::string> FCGIParams;
+using UintMap    = std::map<uint32_t, int8_t>;
+using FCGIParams = std::map<std::string, std::string>;
 
 class FcgiPluginConfig
 {

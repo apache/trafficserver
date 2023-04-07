@@ -44,8 +44,8 @@ struct ConstBuffer;
     empty @c Buffer use @c Buffer(0).
  */
 struct Buffer {
-  typedef Buffer self; ///< Self reference type.
-  typedef bool (self::*pseudo_bool)() const;
+  using self        = Buffer; ///< Self reference type.
+  using pseudo_bool = bool (self::*)() const;
 
   char *_ptr   = nullptr; ///< Pointer to base of memory chunk.
   size_t _size = 0;       ///< Size of memory chunk.
@@ -124,8 +124,8 @@ struct Buffer {
     A convenience class because we pass this kind of pair frequently.
  */
 struct ConstBuffer {
-  typedef ConstBuffer self; ///< Self reference type.
-  typedef bool (self::*pseudo_bool)() const;
+  using self        = ConstBuffer; ///< Self reference type.
+  using pseudo_bool = bool (self::*)() const;
 
   char const *_ptr = nullptr; ///< Pointer to base of memory chunk.
   size_t _size     = 0;       ///< Size of memory chunk.
@@ -504,5 +504,5 @@ ConstBuffer::clip(char const *p)
 
 } // namespace ts
 
-typedef ts::Buffer TsBuffer;
-typedef ts::ConstBuffer TsConstBuffer;
+using TsBuffer      = ts::Buffer;
+using TsConstBuffer = ts::ConstBuffer;

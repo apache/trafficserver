@@ -105,7 +105,7 @@ private:
   TSCont _contp;
   char _debug_tag[64];
 
-  typedef std::list<FetchedDataProcessor *> CallbackObjectList;
+  using CallbackObjectList = std::list<FetchedDataProcessor *>;
 
   // used to track a request that was made
   struct RequestData {
@@ -122,10 +122,10 @@ private:
     RequestData() {}
   };
 
-  typedef __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher> UrlToContentMap;
+  using UrlToContentMap = __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher>;
   UrlToContentMap _pages;
 
-  typedef std::vector<UrlToContentMap::iterator> IteratorArray;
+  using IteratorArray = std::vector<UrlToContentMap::iterator>;
   IteratorArray _page_entry_lookup; // used to map event ids to requests
 
   int _n_pending_requests;

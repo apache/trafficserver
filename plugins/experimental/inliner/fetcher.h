@@ -92,7 +92,7 @@ struct HttpParser {
 };
 
 template <class T> struct HttpTransaction {
-  typedef HttpTransaction<T> Self;
+  using Self = HttpTransaction<T>;
 
   bool parsingHeaders_;
   bool abort_;
@@ -301,7 +301,7 @@ template <class T>
 bool
 get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
-  typedef HttpTransaction<T> Transaction;
+  using Transaction = HttpTransaction<T>;
   struct sockaddr_in socket;
   socket.sin_family = AF_INET;
   socket.sin_port   = 80;

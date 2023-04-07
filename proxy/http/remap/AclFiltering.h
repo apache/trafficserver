@@ -83,7 +83,7 @@ public:
   bool method_restriction_enabled;
   std::vector<bool> standard_method_lookup;
 
-  typedef std::set<std::string> MethodMap;
+  using MethodMap = std::set<std::string>;
   MethodMap nonstandard_methods;
 
   // src_ip

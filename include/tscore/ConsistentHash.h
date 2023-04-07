@@ -38,7 +38,7 @@ struct ATSConsistentHashNode {
 
 std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing);
 
-typedef std::map<uint64_t, ATSConsistentHashNode *>::iterator ATSConsistentHashIter;
+using ATSConsistentHashIter = std::map<uint64_t, ATSConsistentHashNode *>::iterator;
 
 /*
   TSConsistentHash requires a TSHash64 object

@@ -131,7 +131,7 @@ class Profiler
 {
 public:
   // The storage of profiles
-  typedef std::vector<Profile> ProfileContainer;
+  using ProfileContainer = std::vector<Profile>;
 
   // Empty constructor
   Profiler() : record_enabled_(false) {}

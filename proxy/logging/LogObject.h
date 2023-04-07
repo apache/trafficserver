@@ -334,7 +334,7 @@ public:
   };
 
 private:
-  typedef std::vector<LogObject *> LogObjectList;
+  using LogObjectList = std::vector<LogObject *>;
 
   LogObjectList _objects;    // array of configured objects
   LogObjectList _APIobjects; // array of API objects

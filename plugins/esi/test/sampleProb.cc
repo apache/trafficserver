@@ -73,7 +73,7 @@ public:
   int _windowPassed;
 };
 
-typedef std::map<std::string, class FailureInfo *> FailureData;
+using FailureData = std::map<std::string, class FailureInfo *>;
 
 void
 registerSuccFail(string URL, FailureData &data, bool isSuccess)

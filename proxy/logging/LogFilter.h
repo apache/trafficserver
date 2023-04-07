@@ -152,7 +152,7 @@ private:
 
   // note: OperatorFunction's must return 0 (zero) if condition is satisfied
   // (as strcmp does)
-  typedef int (*OperatorFunction)(const char *, const char *);
+  using OperatorFunction = int (*)(const char *, const char *);
 
   static int
   _isSubstring(const char *s0, const char *s1)

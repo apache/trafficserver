@@ -37,7 +37,7 @@
 
 #include <pthread.h>
 #include <cstdlib>
-typedef pthread_mutex_t ink_mutex;
+using ink_mutex = pthread_mutex_t;
 
 void ink_mutex_init(ink_mutex *m);
 void ink_mutex_destroy(ink_mutex *m);

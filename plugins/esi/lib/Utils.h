@@ -101,8 +101,8 @@ namespace Utils
     parseAttributes(data.data(), data.size(), attr_list, pair_separators);
   }
 
-  typedef std::map<std::string, std::string> KeyValueMap;
-  typedef std::list<std::string> HeaderValueList;
+  using KeyValueMap     = std::map<std::string, std::string>;
+  using HeaderValueList = std::list<std::string>;
 
   // parses given lines (assumes <key><whitespace><value> format) and
   // stores them in supplied map; Lines beginning with '#' are ignored

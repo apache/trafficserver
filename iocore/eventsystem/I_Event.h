@@ -91,7 +91,7 @@
 // define misc events here
 #define ONE_WAY_TUNNEL_EVENT_PEER_CLOSE (SIMPLE_EVENT_EVENTS_START + 1)
 
-typedef int EventType;
+using EventType           = int;
 const int ET_CALL         = 0;
 const int MAX_EVENT_TYPES = 8; // conservative, these are dynamically allocated
 

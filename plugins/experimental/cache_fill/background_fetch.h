@@ -40,8 +40,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-typedef std::unordered_map<std::string, bool> OutstandingRequests;
-const char PLUGIN_NAME[] = "cache_fill";
+using OutstandingRequests = std::unordered_map<std::string, bool>;
+const char PLUGIN_NAME[]  = "cache_fill";
 
 class BgFetchState
 {

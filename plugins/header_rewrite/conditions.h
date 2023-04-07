@@ -90,7 +90,7 @@ protected:
 // Check the HTTP return status
 class ConditionStatus : public Condition
 {
-  typedef Matchers<TSHttpStatus> MatcherType;
+  using MatcherType = Matchers<TSHttpStatus>;
 
 public:
   ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
@@ -110,7 +110,7 @@ protected:
 // Check the HTTP method
 class ConditionMethod : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
@@ -129,7 +129,7 @@ protected:
 // Random 0 to (N-1)
 class ConditionRandom : public Condition
 {
-  typedef Matchers<unsigned int> MatcherType;
+  using MatcherType = Matchers<unsigned int>;
 
 public:
   ConditionRandom() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
@@ -173,7 +173,7 @@ private:
 // cookie(name)
 class ConditionCookie : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
@@ -244,7 +244,7 @@ private:
 // header
 class ConditionHeader : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   explicit ConditionHeader(bool client = false) : _client(client)
@@ -269,7 +269,7 @@ private:
 // url
 class ConditionUrl : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
@@ -295,7 +295,7 @@ private:
 // DBM lookups
 class ConditionDBM : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   ConditionDBM()
@@ -333,7 +333,7 @@ private:
 
 class ConditionInternalTxn : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   void
@@ -347,8 +347,8 @@ protected:
 
 class ConditionIp : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
-  typedef Matchers<const sockaddr *> MatcherTypeIp;
+  using MatcherType   = Matchers<std::string>;
+  using MatcherTypeIp = Matchers<const sockaddr *>;
 
 public:
   explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
@@ -371,7 +371,7 @@ private:
 // Transact Count
 class ConditionTransactCount : public Condition
 {
-  typedef Matchers<int> MatcherType;
+  using MatcherType = Matchers<int>;
 
 public:
   ConditionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount"); }
@@ -390,7 +390,7 @@ protected:
 // now: Keeping track of current time / day / hour etc.
 class ConditionNow : public Condition
 {
-  typedef Matchers<int64_t> MatcherType;
+  using MatcherType = Matchers<int64_t>;
 
 public:
   explicit ConditionNow() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
@@ -529,7 +529,7 @@ private:
 
 class ConditionStringLiteral : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   explicit ConditionStringLiteral(const std::string &v);
@@ -550,7 +550,7 @@ private:
 // Single Session Transaction Count
 class ConditionSessionTransactCount : public Condition
 {
-  typedef Matchers<int> MatcherType;
+  using MatcherType = Matchers<int>;
 
 public:
   ConditionSessionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "ConditionSessionTransactCount()"); }
@@ -569,7 +569,7 @@ protected:
 // Tcp Info
 class ConditionTcpInfo : public Condition
 {
-  typedef Matchers<int> MatcherType;
+  using MatcherType = Matchers<int>;
 
 public:
   ConditionTcpInfo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTcpInfo"); }

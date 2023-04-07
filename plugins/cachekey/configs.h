@@ -41,7 +41,7 @@ enum CacheKeyKeyType {
 const char *getCacheKeyUriTypeName(CacheKeyUriType type);
 const char *getCacheKeyKeyTypeName(CacheKeyKeyType type);
 
-typedef std::set<CacheKeyKeyType> CacheKeyKeyTypeSet;
+using CacheKeyKeyTypeSet = std::set<CacheKeyKeyType>;
 
 /**
  * @brief Plug-in configuration elements (query / headers / cookies).

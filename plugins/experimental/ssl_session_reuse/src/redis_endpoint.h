@@ -28,22 +28,20 @@
 
 #include "globals.h"
 
-typedef struct redis_endpoint {
+using RedisEndpoint = struct redis_endpoint {
   std::string m_hostname;
   int m_port;
 
   redis_endpoint() : m_hostname(cDefaultRedisHost), m_port(cDefaultRedisPort) {}
   redis_endpoint(const std::string &endpoint_spec);
+};
 
-} RedisEndpoint;
-
-typedef struct redis_endpoint_compare {
+using RedisEndpointCompare = struct redis_endpoint_compare {
   bool
   operator()(const RedisEndpoint &lhs, const RedisEndpoint &rhs) const
   {
     return lhs.m_hostname < rhs.m_hostname || (lhs.m_hostname == rhs.m_hostname && lhs.m_port < rhs.m_port);
   }
-
-} RedisEndpointCompare;
+};
 
 void addto_endpoint_vector(std::vector<RedisEndpoint> &endpoints, const std::string &endpoint_str);

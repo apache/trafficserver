@@ -47,11 +47,11 @@
 #define SSL_EVENT_CLIENT 1
 
 // Indicator the context for a NetVConnection
-typedef enum {
+using NetVConnectionContext_t = enum {
   NET_VCONNECTION_UNSET = 0,
   NET_VCONNECTION_IN,  // Client <--> ATS, Client-Side
   NET_VCONNECTION_OUT, // ATS <--> Server, Server-Side
-} NetVConnectionContext_t;
+};
 
 /** Holds client options for NetVConnection.
 
@@ -69,7 +69,7 @@ typedef enum {
     that protocol. If it's not an IP protocol, IPv4 will be used.
 */
 struct NetVCOptions {
-  typedef NetVCOptions self; ///< Self reference type.
+  using self = NetVCOptions; ///< Self reference type.
 
   /// Values for valid IP protocols.
   enum ip_protocol_t {

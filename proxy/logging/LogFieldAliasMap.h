@@ -78,7 +78,7 @@ public:
   // The problem using the correct type is that the init method is
   // vararg. To make that work, we must use the "generic" int.
 
-  typedef int64_t IntType;
+  using IntType = int64_t;
   enum {
     ALL_OK = 0,
     INVALID_INT,

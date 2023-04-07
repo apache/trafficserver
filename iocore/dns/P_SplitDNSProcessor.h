@@ -32,6 +32,7 @@
 
 #include "ConfigProcessor.h"
 
+#include "ControlMatcher.h"
 #include "tscore/HostLookup.h"
 
 /* ---------------------------
@@ -54,7 +55,7 @@ enum DNSResultType {
   DNS_SRVR_FAIL,
 };
 
-typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
+using DNS_table = ControlMatcher<SplitDNSRecord, SplitDNSResult>;
 
 /* --------------------------------------------------------------
    **                struct SplitDNSResult

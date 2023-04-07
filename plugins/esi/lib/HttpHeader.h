@@ -36,5 +36,5 @@ struct HttpHeader {
     : name(n), name_len(n_len), value(v), value_len(v_len){};
 };
 
-typedef std::list<HttpHeader> HttpHeaderList;
+using HttpHeaderList = std::list<HttpHeader>;
 }; // namespace EsiLib

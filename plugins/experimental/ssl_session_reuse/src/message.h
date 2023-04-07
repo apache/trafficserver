@@ -28,7 +28,7 @@
 
 #include "redis_endpoint.h"
 
-typedef struct message {
+using Message = struct message {
   std::string channel;
   std::string data;
   bool cleanup;
@@ -38,4 +38,4 @@ typedef struct message {
   message(const struct message &m) : channel(m.channel), data(m.data), cleanup(m.cleanup), hosts_tried(m.hosts_tried) {}
   message(const std::string &c, const std::string &d, bool quit = false) : channel(c), data(d), cleanup(quit) {}
   virtual ~message() {}
-} Message;
+};

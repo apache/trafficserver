@@ -51,7 +51,7 @@ class HttpSM;
 class Http1ClientSession : public ProxySession
 {
 public:
-  typedef ProxySession super; ///< Parent type.
+  using super = ProxySession; ///< Parent type.
   Http1ClientSession();
   ~Http1ClientSession() = default;
 

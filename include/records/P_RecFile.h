@@ -28,7 +28,7 @@
 //-------------------------------------------------------------------------
 
 #define REC_HANDLE_INVALID -1
-typedef int RecHandle;
+using RecHandle = int;
 
 static constexpr unsigned VERSION_HDR_SIZE = 5;
 //-------------------------------------------------------------------------

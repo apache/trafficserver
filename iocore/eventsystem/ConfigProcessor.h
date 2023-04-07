@@ -31,7 +31,7 @@ class ProxyMutex;
 
 #define MAX_CONFIGS 100
 
-typedef RefCountObj ConfigInfo;
+using ConfigInfo = RefCountObj;
 
 class ConfigProcessor
 {

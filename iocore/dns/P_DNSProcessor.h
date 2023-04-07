@@ -147,7 +147,7 @@ struct DNSEntry : public Continuation {
   }
 };
 
-typedef int (DNSEntry::*DNSEntryHandler)(int, void *);
+using DNSEntryHandler = int (DNSEntry::*)(int, void *);
 
 struct DNSEntry;
 

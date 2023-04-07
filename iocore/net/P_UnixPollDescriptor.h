@@ -42,7 +42,7 @@
 
 #define POLL_DESCRIPTOR_SIZE 32768
 
-typedef struct pollfd Pollfd;
+using Pollfd = struct pollfd;
 
 struct PollDescriptor {
   int result; // result of poll

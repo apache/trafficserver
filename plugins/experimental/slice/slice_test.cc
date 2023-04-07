@@ -166,7 +166,7 @@ testParseRange()
 }
 
 struct Tests {
-  typedef std::string (*TestFunc)();
+  using TestFunc = std::string (*)();
   std::vector<std::pair<TestFunc, char const *>> funcs;
 
   void

@@ -79,11 +79,11 @@ struct LogSlice {
 class LogField
 {
 public:
-  typedef int (LogAccess::*MarshalFunc)(char *buf);
-  typedef int (*UnmarshalFunc)(char **buf, char *dest, int len);
-  typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
-  typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  typedef void (LogAccess::*SetFunc)(char *buf, int len);
+  using MarshalFunc            = int (LogAccess::*)(char *);
+  using UnmarshalFunc          = int (*)(char **, char *, int);
+  using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
+  using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
+  using SetFunc                = void (LogAccess::*)(char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;

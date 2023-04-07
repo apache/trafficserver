@@ -24,7 +24,7 @@
 
 class TSNextHopSelectionStrategy;
 
-typedef std::map<std::string, std::shared_ptr<TSNextHopSelectionStrategy>, std::less<>> strategies_map;
+using strategies_map = std::map<std::string, std::shared_ptr<TSNextHopSelectionStrategy>, std::less<>>;
 
 void clearStrategiesCache(void);
 strategies_map createStrategiesFromFile(const char *file);

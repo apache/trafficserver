@@ -90,7 +90,7 @@ public:
 extern "C" {
 #endif /* __cplusplus */
 
-typedef void *GetPluginDebugObjectFunction(void);
+using GetPluginDebugObjectFunction = void *();
 GetPluginDebugObjectFunction getPluginDebugObjectTest;
 
 #define PluginDebug(category, fmt, ...) \

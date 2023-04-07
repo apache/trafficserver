@@ -60,7 +60,7 @@ namespace cache
   };
 
   template <class T> struct Read {
-    typedef Read<T> Self;
+    using Self = Read<T>;
 
     T t_;
 

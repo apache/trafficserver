@@ -61,7 +61,7 @@ extern EThread *this_event_thread();
 #define CONTINUATION_DONE 0
 #define CONTINUATION_CONT 1
 
-typedef int (Continuation::*ContinuationHandler)(int event, void *data);
+using ContinuationHandler = int (Continuation::*)(int, void *);
 
 // Convert event handler pointer fp to type ContinuationHandler, but with a compiler error if class C is not
 // derived from the class Continuation.

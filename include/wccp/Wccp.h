@@ -97,7 +97,7 @@ struct ServiceConstants {
 class ServiceGroup : public ServiceConstants
 {
 public:
-  typedef ServiceGroup self; ///< Self reference type.
+  using self = ServiceGroup; ///< Self reference type.
 
   /// Type of service.
   enum Type : uint8_t {
@@ -214,8 +214,8 @@ enum SecurityOption {
 class EndPoint
 {
 public:
-  typedef EndPoint self; ///< Self reference type.
-  typedef Impl ImplType; ///< Implementation type.
+  using self     = EndPoint; ///< Self reference type.
+  using ImplType = Impl;     ///< Implementation type.
 
   /** Set the identifying IP address.
       This is also used as the address for the socket.
@@ -283,9 +283,9 @@ protected:
 class Cache : public EndPoint
 {
 public:
-  typedef Cache self;         ///< Self reference type.
-  typedef EndPoint super;     ///< Parent type.
-  typedef CacheImpl ImplType; ///< Implementation type.
+  using self     = Cache;     ///< Self reference type.
+  using super    = EndPoint;  ///< Parent type.
+  using ImplType = CacheImpl; ///< Implementation type.
 
   class Service;
 
@@ -345,7 +345,7 @@ protected:
 class Cache::Service : public ServiceConstants
 {
 public:
-  typedef Service self; ///< Self reference type.
+  using self = Service; ///< Self reference type.
 
   /// Default constructor (invalid reference).
   Service();
@@ -380,9 +380,9 @@ private:
 class Router : public EndPoint
 {
 public:
-  typedef Router self;         ///< Self reference type.
-  typedef EndPoint super;      ///< Parent type.
-  typedef RouterImpl ImplType; ///< Implementation type.
+  using self     = Router;     ///< Self reference type.
+  using super    = EndPoint;   ///< Parent type.
+  using ImplType = RouterImpl; ///< Implementation type.
 
   /// Default constructor
   Router();

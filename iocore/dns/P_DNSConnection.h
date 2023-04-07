@@ -42,7 +42,7 @@ enum class DNS_CONN_MODE { UDP_ONLY, TCP_RETRY, TCP_ONLY };
 struct DNSConnection {
   /// Options for connecting.
   struct Options {
-    typedef Options self; ///< Self reference type.
+    using self = Options; ///< Self reference type.
 
     /// Connection is done non-blocking.
     /// Default: @c true.

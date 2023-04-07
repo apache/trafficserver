@@ -51,13 +51,13 @@ thread_local int ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
 
 // Metadata for active transactions. Stored upon start to persist improper
 // closing behavior.
-typedef struct started_txn {
+using started_txn = struct started_txn {
   uint64_t id;
   TSHttpTxn txnp;
   TSHttpSsn ssnp;                      // enclosing session
   started_txn(uint64_t id) : id(id) {} // used for lookup on id
   started_txn(uint64_t id, TSHttpTxn txnp, TSHttpSsn ssnp) : id(id), txnp(txnp), ssnp(ssnp) {}
-} started_txn;
+};
 
 // Comparator functor for transactions. Compare by ID.
 struct txn_compare {

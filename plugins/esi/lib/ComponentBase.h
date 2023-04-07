@@ -34,8 +34,8 @@ namespace EsiLib
 class ComponentBase
 {
 public:
-  typedef void (*Debug)(const char *, const char *, ...);
-  typedef void (*Error)(const char *, ...);
+  using Debug = void (*)(const char *, const char *, ...);
+  using Error = void (*)(const char *, ...);
 
 protected:
   ComponentBase(const char *debug_tag, Debug debug_func, Error error_func) : _debugLog(debug_func), _errorLog(error_func)

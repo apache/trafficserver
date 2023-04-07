@@ -26,10 +26,10 @@
 #include <cstring>
 #include <cstdio>
 
-typedef struct {
+using ArgIndexes = struct {
   int TXN, SSN, VCONN, GLB;
   TSCont contp;
-} ArgIndexes;
+};
 
 const char *PLUGIN_NAME = "user_args_test";
 ArgIndexes gIX;

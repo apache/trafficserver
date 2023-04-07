@@ -122,8 +122,8 @@ enum FTP_MODE {
   FTP_PASV,
 };
 
-typedef int (*accept_fn_t)(int);
-typedef int (*poll_cb)(int);
+using accept_fn_t = int (*)(int);
+using poll_cb     = int (*)(int);
 
 static int read_request(int sock);
 static int write_request(int sock);
