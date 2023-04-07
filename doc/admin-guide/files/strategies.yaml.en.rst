@@ -182,8 +182,17 @@ Each **strategy** in the list may using the following parameters:
    #. **path**: (**default**) Creates a hash over the path portion of the request URL.
    #. **path+query**: Same as **path** but adds the **query string** in the request URL.
    #. **path+fragment**: Same as **path** but adds the fragment portion of the URL.
-   #. **cache_key**: Uses the hash key from the **cachekey** plugin.  defaults to **path** if the **cachekey** plugin is not configured on the **remap**.
+   #. **cache_key**: Deprecated, use the URL designation instead.
    #. **url**: Creates a hash from the entire request url.
+
+- **hash_url**: The specific URL to use for the **hash_key**. If the specified URL type does
+  not have a value (e.g. not set by an API), we default back to the reqeust URL. Use one of:
+
+   #. **request**: (**default**) Use the client request URL.
+   #. **cache**: Use the cache key URL as set via the APIs :c:func:`TSHttpTxnCacheLookupUrlSet()`
+      or :c:func:`TSCacheUrlSet()`. This would likely be set using a plugin such as **cachekey**.
+   #. **parent**: Use the parent URL as set via the API :c:func:`TSHttpTxnParentSelectionUrlSet`.
+      This again is likely set via an existing plugin such as the **cachekey** plugin.
 
 - **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
@@ -238,7 +247,8 @@ Example:
           - passive
     - strategy: 'strategy-2'
       policy: rr_strict
-      hash_key: cache_key
+      hash_url: cache
+      hash_key: path+query
       go_direct: true
       groups:
         - *g1

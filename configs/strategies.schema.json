@@ -136,6 +136,15 @@
                       "consistent_hash"
                     ]
                 },
+                "hash_url": {
+                  "type": "string",
+                  "description": "when using consistent_hash, this specifies the chosen URL for the hash",
+                  "enum": [
+                    "request",
+                    "cache",
+                    "parent"
+                  ]
+                },
                 "hash_key": {
                   "type": "string",
                   "description": "when using consistent_hash, this specifies the chosen key used for the hash",

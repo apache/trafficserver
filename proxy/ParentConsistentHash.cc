@@ -67,10 +67,9 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
   const char *url_string_ref = nullptr;
   int len;
-  URL *url = hrdata->hdr->url_get();
+  URL *ps_url = nullptr;
 
   // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
-  URL *ps_url = nullptr;
   if (hrdata->cache_info_parent_selection_url) {
     ps_url = *(hrdata->cache_info_parent_selection_url);
     if (ps_url) {
@@ -85,16 +84,18 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
     }
   }
 
+  ps_url = hrdata->hdr->url_get();
+
   // Always hash on '/' because paths returned by ATS are always stripped of it
   h->update("/", 1);
 
-  url_string_ref = url->path_get(&len);
+  url_string_ref = ps_url->path_get(&len);
   if (url_string_ref) {
     h->update(url_string_ref, len);
   }
 
   if (!ignore_query) {
-    url_string_ref = url->query_get(&len);
+    url_string_ref = ps_url->query_get(&len);
     if (url_string_ref) {
       h->update("?", 1);
       h->update(url_string_ref, len);

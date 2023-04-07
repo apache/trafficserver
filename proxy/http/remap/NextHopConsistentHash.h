@@ -34,8 +34,10 @@ enum NHHashKeyType {
   NH_PATH_HASH_KEY, // default, consistent hash uses the request url path
   NH_PATH_QUERY_HASH_KEY,
   NH_PATH_FRAGMENT_HASH_KEY,
-  NH_CACHE_HASH_KEY
+  NH_CACHE_HASH_KEY // ToDo: Deprecated in 10.0.0, remove in 11.0.0
 };
+
+enum NHHashUrlType { NH_HASH_URL_REQUEST = 0, NH_HASH_URL_CACHE, NH_HASH_URL_PARENT };
 
 class NextHopConsistentHash : public NextHopSelectionStrategy
 {
@@ -45,6 +47,7 @@ class NextHopConsistentHash : public NextHopSelectionStrategy
 
 public:
   NHHashKeyType hash_key = NH_PATH_HASH_KEY;
+  NHHashUrlType hash_url = NH_HASH_URL_REQUEST;
 
   NextHopConsistentHash() = delete;
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n);
