@@ -15,5 +15,10 @@
 #  limitations under the License.
 
 noinst_PROGRAMS += gold_tests/tls/ssl-post
+
 gold_tests_tls_ssl_post_SOURCES = gold_tests/tls/ssl-post.c
 gold_tests_tls_ssl_post_LDADD = -lssl -lcrypto
+
+noinst_LTLIBRARIES += gold_tests/tls/test_ts_ssl.la
+
+gold_tests_tls_test_ts_ssl_la_SOURCES = gold_tests/tls/test_ts_ssl.cc
