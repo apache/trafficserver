@@ -47,11 +47,11 @@
 #define PLUGIN_NAME  "maxmind_acl"
 #define CONFIG_TMOUT 60000
 
-using plugin_regex = struct {
+typedef struct {
   std::string _regex_s;
   pcre *_rex;
   pcre_extra *_extra;
-};
+} plugin_regex;
 
 using ipstate = enum { ALLOW_IP, DENY_IP, UNKNOWN_IP };
 

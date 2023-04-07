@@ -576,39 +576,40 @@ public:
     ServerState_t state                          = STATE_UNDEFINED;
     class Attempts
     {
-      return _v;
-    }
+    public:
+      Attempts()                 = default;
+      Attempts(Attempts const &) = delete;
 
-    void
-    maximize(MgmtInt configured_connect_attempts_max_retries)
-    {
-      ink_assert(_v <= configured_connect_attempts_max_retries);
-      if (_v < configured_connect_attempts_max_retries) {
-        ink_assert(0 == _saved_v);
-        _saved_v = _v;
-        _v       = configured_connect_attempts_max_retries;
+      unsigned
+      get() const
+      {
+        return _v;
       }
-    }
 
-    void
-    clear()
-    {
-      _v       = 0;
-      _saved_v = 0;
-    }
+      void
+      maximize(MgmtInt configured_connect_attempts_max_retries)
+      {
+        ink_assert(_v <= configured_connect_attempts_max_retries);
+        if (_v < configured_connect_attempts_max_retries) {
+          ink_assert(0 == _saved_v);
+          _saved_v = _v;
+          _v       = configured_connect_attempts_max_retries;
+        }
+      }
 
-    void
-    increment(MgmtInt configured_connect_attempts_max_retries)
-    {
-      ++_v;
-      ink_assert(_v <= configured_connect_attempts_max_retries);
-    }
+      void
+      clear()
+      {
+        _v       = 0;
+        _saved_v = 0;
+      }
 
-    unsigned
-    saved() const
-    {
-      return _saved_v ? _saved_v : _v;
-    }
+      void
+      increment(MgmtInt configured_connect_attempts_max_retries)
+      {
+        ++_v;
+        ink_assert(_v <= configured_connect_attempts_max_retries);
+      }
 
       unsigned
       saved() const

@@ -47,11 +47,11 @@
 #define SSL_EVENT_CLIENT 1
 
 // Indicator the context for a NetVConnection
-using NetVConnectionContext_t = enum {
+typedef enum {
   NET_VCONNECTION_UNSET = 0,
   NET_VCONNECTION_IN,  // Client <--> ATS, Client-Side
   NET_VCONNECTION_OUT, // ATS <--> Server, Server-Side
-};
+} NetVConnectionContext_t;
 
 /** Holds client options for NetVConnection.
 

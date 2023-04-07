@@ -30,7 +30,7 @@
 #pragma once
 
 /// Server session sharing values - match
-using TSServerSessionSharingMatchType = enum {
+typedef enum {
   TS_SERVER_SESSION_SHARING_MATCH_IP,
   TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY,
   TS_SERVER_SESSION_SHARING_MATCH_HOSTSNISYNC,
@@ -39,20 +39,20 @@ using TSServerSessionSharingMatchType = enum {
   TS_SERVER_SESSION_SHARING_MATCH_NONE,
   TS_SERVER_SESSION_SHARING_MATCH_BOTH,
   TS_SERVER_SESSION_SHARING_MATCH_HOST,
-};
+} TSServerSessionSharingMatchType;
 
-using TSServerSessionSharingMatchMask = enum {
+typedef enum {
   TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE        = 0,
   TS_SERVER_SESSION_SHARING_MATCH_MASK_IP          = 0x1,
   TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY    = 0x2,
   TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC = 0x4,
   TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI         = 0x8,
   TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT        = 0x10
-};
+} TSServerSessionSharingMatchMask;
 
 /// Server session sharing values - pool
-using TSServerSessionSharingPoolType = enum {
+typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
   TS_SERVER_SESSION_SHARING_POOL_HYBRID
-};
+} TSServerSessionSharingPoolType;

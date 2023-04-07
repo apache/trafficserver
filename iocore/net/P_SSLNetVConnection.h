@@ -82,12 +82,12 @@
 
 struct SSLCertLookup;
 
-using SslVConnOp = enum {
+typedef enum {
   SSL_HOOK_OP_DEFAULT,                     ///< Null / initialization value. Do normal processing.
   SSL_HOOK_OP_TUNNEL,                      ///< Switch to blind tunnel
   SSL_HOOK_OP_TERMINATE,                   ///< Termination connection / transaction.
   SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
-};
+} SslVConnOp;
 
 enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
 
@@ -107,7 +107,7 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public TLSCertSwitchSupport,
                           public TLSBasicSupport
 {
-  using super = UnixNetVConnection; ///< Parent type.
+  typedef UnixNetVConnection super; ///< Parent type.
 
 public:
   int sslStartHandShake(int event, int &err) override;
@@ -484,6 +484,6 @@ private:
   ssl_error_t _ssl_accept();
 };
 
-using SSLNetVConnHandler = int (SSLNetVConnection::*)(int, void *);
+typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
