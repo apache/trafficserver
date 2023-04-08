@@ -924,7 +924,25 @@ public:
     /// @return A pointer to the referent.
     value_type const *operator->() const;
 
+    /** The range for the iterator.
+     *
+     * @return Iterator range.
+     *
+     * @note If the iterator is not valid the returned range will be empty.
+     */
     IPRange const& range() const;
+
+    /** The payload for the iterator.
+     *
+     * @return The payload.
+     *
+     * @note This yields undetermined results for invalid iterators. Always check for validity befure
+     * using this method.
+     *
+     * @note It is not possible to retrieve a modifiable payload because that can break the internal
+     * invariant that adjcent ranges always have different payloads.
+     */
+    PAYLOAD const& payload() const;
 
     /// Equality
     bool operator==(self_type const &that) const;
@@ -1211,7 +1229,7 @@ public:
   /// Remove all addresses in the set.
   void clear();
 
-  /// Constant iterator for iteration over ranges.
+  /// Bidirectional constant iterator for iteration over ranges.
   class const_iterator {
     using self_type = const_iterator; ///< Self reference type.
     using super_type = Space::const_iterator;
@@ -1426,6 +1444,10 @@ IPSpace<PAYLOAD>::const_iterator::operator->() const -> value_type const * {
 template <typename PAYLOAD>
 IPRange const &
 IPSpace<PAYLOAD>::const_iterator::range() const { return std::get<0>(_value); }
+
+template <typename PAYLOAD>
+PAYLOAD const &
+IPSpace<PAYLOAD>::const_iterator::payload() const { return std::get<1>(_value); }
 
 /* Bit of subtlety with equality - although it seems that if @a _iter_4 is valid, it doesn't matter
  * where @a _iter6 is (because it is really the iterator location that's being checked), it's

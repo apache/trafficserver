@@ -103,25 +103,41 @@ IPEndpoint::assign(IPAddr const &src) {
 }
 
 IPEndpoint &
-IPEndpoint::assign(IPSrv const &src) {
-  switch (src.family()) {
-  case AF_INET:
-    memset(&sa4, 0, sizeof sa4);
-    sa4.sin_family      = AF_INET;
-    sa4.sin_addr.s_addr = src.ip4().addr().network_order();
-    sa4.sin_port        = src.network_order_port();
-    Set_Sockaddr_Len(&sa4);
-    break;
-  case AF_INET6:
-    memset(&sa6, 0, sizeof sa6);
-    sa6.sin6_family = AF_INET6;
-    sa6.sin6_addr   = src.ip6().addr().network_order();
-    sa6.sin6_port   = src.network_order_port();
-    Set_Sockaddr_Len(&sa6);
-    break;
-  default:
-    memset(&sa, 0, sizeof sa);
-    sa.sa_family = AF_UNSPEC;
+IPEndpoint::assign(IPAddr const& addr, in_port_t port) {
+  if (addr.is_ip4()) {
+    this->assign(IP4Srv(addr.ip4(), port));
+  } else if (addr.is_ip6()) {
+    this->assign(IP6Srv(addr.ip6(), port));
+  }
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IP4Srv const &src) {
+  memset(&sa4, 0, sizeof sa4);
+  sa4.sin_family      = AF_INET;
+  sa4.sin_addr.s_addr = src.addr().network_order();
+  sa4.sin_port        = src.network_order_port();
+  Set_Sockaddr_Len(&sa4);
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IP6Srv const &src) {
+  memset(&sa6, 0, sizeof sa6);
+  sa6.sin6_family = AF_INET6;
+  sa6.sin6_addr   = src.addr().network_order();
+  sa6.sin6_port   = src.network_order_port();
+  Set_Sockaddr_Len(&sa6);
+  return *this;
+}
+
+IPEndpoint &
+IPEndpoint::assign(IPSrv const &srv) {
+  if (srv.is_ip4()) {
+    return this->assign(srv.ip4());
+  } else if (srv.is_ip6()) {
+    return this->assign(srv.ip6());
   }
   return *this;
 }

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
 
 #include "swoc/swoc_version.h"
 
@@ -111,6 +112,37 @@ static constexpr CaseTag<9> CaseArg{};
  * does not compile.
  */
 template <typename T> T TypeFunc();
+
+/** Template parameter eraser.
+ *
+ * @tparam T Parameter to erase (pass explicitly)
+ * @tparam U Parameter for forwarded value (implicit)
+ * @param u Forward value
+ * @return @a u
+ *
+ * This has no effect on @a u but fools the compiler in to thinking @a T has been used.
+ * This avoids metaprogramming issues with unused template parameters.
+ *
+ * Suppose an API has changed a function from "delain" to "Delain". To handle this the metacase support is used, but there is
+ * no apparent template parameter. A fake one can be used and defaulted to @c void. But that creates the unused template
+ * parameter warning. This is fixed by doing something like
+ * @code
+ *   template <typename V = void>
+ *   auto f(UDT x, swoc::meta::CaseTag<0>) -> decltype(delain(eraser<V>(x)))
+ *   { return delain(eraser<V>(x));  }
+ *
+ *   template <typename V = void>
+ *   auto f(UDT x, swoc::meta::CaseTag<1>) -> decltype(Delain(eraser<V>(x)))
+ *   { return Delain(eraser<V>(vc)); }
+ *
+ *   f(x, swoc::meta::CaseArg); // Invoke the correctly named function
+ * @endcode
+ */
+template <typename T, typename U>
+constexpr auto
+eraser(U &&u) -> U {
+  return std::forward<U>(u);
+}
 
 /** Support for variable parameter lambdas.
  *
