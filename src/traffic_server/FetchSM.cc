@@ -70,10 +70,12 @@ FetchSM::httpConnect()
   http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
   if (http_vc == nullptr) {
     Debug(DEBUG_TAG, "Not ready to use");
-    if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
-      return InvokePluginExt(TS_EVENT_ERROR);
+    if (contp) {
+      if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
+        return InvokePluginExt(TS_EVENT_ERROR);
+      }
+      InvokePlugin(callback_events.failure_event_id, nullptr);
     }
-    InvokePlugin(callback_events.failure_event_id, nullptr);
     cleanUp();
     return;
   }
