@@ -1174,11 +1174,10 @@ auto
 FixedBufferWriter::print_v(bwf::Format const &fmt, std::tuple<Args...> const &args) -> self_type & {
   return static_cast<self_type &>(this->super_type::print_v(fmt, args));
 }
-
 /// @endcond
 
 // Special case support for @c Scalar, because @c Scalar is a base utility for some other utilities
-// there can be some unpleasant cirularities if @c Scalar includes BufferWriter formatting. If the
+// there can be some unpleasant circularities if @c Scalar includes BufferWriter formatting. If the
 // support is here then it's fine because anything using BWF for @c Scalar must include this header.
 template <intmax_t N, typename C, typename T> class Scalar;
 namespace detail {

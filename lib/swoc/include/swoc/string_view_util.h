@@ -11,6 +11,7 @@
 #include <memory.h>
 #include <string>
 #include <string_view>
+#include <memory>
 #include <limits>
 
 /** Compare views with ordering, ignoring case.

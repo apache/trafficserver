@@ -136,13 +136,21 @@ union IPEndpoint {
   /// Assign from IP address.
   self_type &assign(IPAddr const &addr);
 
+  [[deprecated("Use IPSrv")]] self_type &assign(IPAddr const& addr, in_port_t port);
+
   /// Assign from IPv4 address.
   self_type &assign(IP4Addr const& addr);
 
   /// Assign from IPv4 address.
   self_type &assign(IP6Addr const& addr);
 
-  /// Assign from IP service (address and port).
+  /// Assign from IPv4 service.
+  self_type &assign(IP4Srv const& srv);
+
+  /// Assign from IPv6 service.
+  self_type &assign(IP6Srv const& srv);
+
+  /// Assign from IP service.
   self_type &assign(IPSrv const& srv);
 
   /// Copy to @a sa.

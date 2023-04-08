@@ -13,6 +13,7 @@
 
 #pragma once
 #include <bitset>
+#include <cstdint>
 #include <iosfwd>
 #include <memory.h>
 #include <string>

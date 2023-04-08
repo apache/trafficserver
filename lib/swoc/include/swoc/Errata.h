@@ -160,7 +160,7 @@ public:
 
 protected:
   using self_type = Errata; ///< Self reference type.
-  /// Storage type for list of messages.
+  /// Storage, for list of messages.
   /// Internally the vector is accessed backwards, in order to make it LIFO.
   using Container = IntrusiveDList<Annotation::Linkage>;
 
@@ -210,13 +210,61 @@ public:
   self_type &operator                         =(self_type &&that); ///< Move assignment.
   ~Errata();                                                       ///< Destructor.
 
-  // Note based constructors.
+  /** Construct with a severity.
+   *
+   * @param severity Severity.
+   *
+   * No annotations are created.
+   */
   explicit Errata(Severity severity);
-  Errata(code_type const &type, Severity severity, std::string_view const &text);
+
+  /** Constructor.
+   *
+   * @param code Error code.
+   * @param severity Severity.
+   * @param text Annotation text.
+   *
+   * Constructs with error @a code and @a severity. An annotation with @a text.
+   */
+  Errata(code_type const &code, Severity severity, std::string_view const &text);
+
+  /** Constructor.
+   *
+   * @param severity Severity.
+   * @param text Annotation text.
+   *
+   * Constructs with @a severity and an annotation with @a text.
+   */
   Errata(Severity severity, std::string_view const &text);
-  Errata(code_type const &type, std::string_view const &text);
+
+  /** Constructor.
+   *
+   * @param code Error code.
+   * @param text
+   *
+   * Construct with error @a code and an annotation with @a text.
+   */
+  Errata(code_type const &code, std::string_view const &text);
+
+  /** Constructor.
+   *
+   * @param text Annotation text.
+   */
   explicit Errata(std::string_view const &text);
-  template <typename... Args> Errata(code_type const &type, Severity severity, std::string_view fmt, Args &&... args);
+
+  /** Constructor.
+   *
+   * @tparam Args Format argument types.
+   * @param code Error code.
+   * @param severity Severity.
+   * @param fmt Annotation format.
+   * @param args Annotation format arguments.
+   *
+   * Cosntructs with error @a code and @a severity and an formatted annotation.
+   */
+  template <typename... Args> Errata(code_type const &code, Severity severity, std::string_view fmt, Args &&... args);
+
+
   template <typename... Args> Errata(code_type const &type, std::string_view fmt, Args &&... args);
   template <typename... Args> Errata(Severity severity, std::string_view fmt, Args &&... args);
   template <typename... Args> explicit Errata(std::string_view fmt, Args &&... args);
@@ -401,12 +449,10 @@ public:
    */
   bool is_ok() const;
 
+  /// @return If there is top level severity.
   bool has_severity() const { return _data && _data->_severity.has_value(); }
 
-  /** Get the maximum severity of the messages in the erratum.
-   *
-   * @return Max severity for all messages.
-   */
+  /// @return Top level severity.
   Severity severity() const;
 
   /** Set the @a severity.
@@ -843,7 +889,7 @@ public:
    *
    * @return @a true if the value is valid / OK, @c false otherwise.
    */
-  inline bool is_ok() const;
+  bool is_ok() const;
 
   /// Clear the errata.
   self_type &clear();
@@ -941,7 +987,7 @@ inline Errata::Errata(const code_type &code, Severity severity) {
   d->_code     = code;
 }
 
-inline Errata::Errata(const code_type &type, Severity severity, const std::string_view &text) : Errata(type, severity) {
+inline Errata::Errata(const code_type &code, Severity severity, const std::string_view &text) : Errata(code, severity) {
   this->note(text);
 }
 
