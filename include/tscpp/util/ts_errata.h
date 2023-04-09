@@ -39,3 +39,6 @@ static constexpr swoc::Errata::Severity ERRATA_EMERGENCY{DL_Emergency};
 static constexpr std::array<swoc::TextView, 9> Severity_Names{
   {"Diag", "Debug", "Status", "Note", "Warn", "Error", "Fatal", "Alert", "Emergency"}
 };
+
+// Temporary string for formatting.
+inline thread_local std::string bw_dbg;

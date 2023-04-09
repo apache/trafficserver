@@ -29,6 +29,8 @@
 #endif
 #include <openssl/ssl.h>
 
+#include "tscpp/util/ts_errata.h"
+
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
 #include "records/I_RecCore.h"
@@ -77,7 +79,7 @@ public:
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
   virtual ~SSLMultiCertConfigLoader(){};
 
-  bool load(SSLCertLookup *lookup);
+  swoc::Errata load(SSLCertLookup *lookup);
 
   virtual SSL_CTX *default_server_ssl_ctx();
 

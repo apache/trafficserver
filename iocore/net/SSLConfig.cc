@@ -610,27 +610,31 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  SSLMultiCertConfigLoader loader(params);
-  if (!loader.load(lookup)) {
+  auto errata = SSLMultiCertConfigLoader(params).load(lookup);
+  if (!lookup->is_valid || (errata.has_severity() && errata.severity() >= ERRATA_ERROR)) {
     retStatus = false;
   }
 
-  if (!lookup->is_valid) {
-    retStatus = false;
-  }
-
-  // If there are errors in the certificate configs and we had wanted to exit on error
-  // we won't want to reset the config
-  if (retStatus) {
+  // If the load succeeded, load it. If there is no current configuration, load even a broken
+  // config so that a bad initial load doesn't completely disable TLS.
+  if (retStatus || configid == 0) {
     configid = configProcessor.set(configid, lookup);
   } else {
     delete lookup;
   }
 
-  if (retStatus) {
-    Note("%s finished loading", params->configFilePath);
+  if (!errata.empty()) {
+    errata.assign_annotation_glue_text("\n  ");
+    errata.assign_severity_glue_text(" -> \n  ");
+    bwprint(bw_dbg, "\n{}", errata);
   } else {
-    Error("%s failed to load", params->configFilePath);
+    bw_dbg = "";
+  }
+
+  if (retStatus) {
+    Note("%s finished loading%s", params->configFilePath, bw_dbg.c_str());
+  } else {
+    Error("%s failed to load%s", params->configFilePath, bw_dbg.c_str());
   }
 
   return retStatus;
