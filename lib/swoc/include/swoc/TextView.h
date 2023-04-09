@@ -19,6 +19,8 @@
 #include <string>
 #include <string_view>
 #include <limits>
+#include <cstdint>
+#include <cinttypes>
 
 #include "swoc/swoc_version.h"
 #include "swoc/string_view_util.h"
