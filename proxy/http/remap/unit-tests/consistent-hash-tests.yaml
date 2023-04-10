@@ -28,6 +28,7 @@
 strategies:
   - strategy: "consistent-hash-1"
     policy: consistent_hash
+    hash_url: request
     hash_key: path
     groups:
       - &g1
@@ -172,6 +173,7 @@ strategies:
   - strategy: "ignore-self-detect-false"
     policy: consistent_hash
     ignore_self_detect: false
+    hash_url: cache
     hash_key: path
     groups:
       - &g1
