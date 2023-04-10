@@ -237,15 +237,15 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
   // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)
   // ToDo: Deprecated in 10.0.x, remove in 11.0.0
   case NH_CACHE_HASH_KEY:
-    url = *(hrdata.cache_info_parent_selection_url);
-    if (url) {
+    if (hrdata.cache_info_parent_selection_url && *(hrdata.cache_info_parent_selection_url)) {
+      url            = *(hrdata.cache_info_parent_selection_url);
       url_string_ref = url->string_get_ref(&len);
       if (url_string_ref && len > 0) {
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] using parent selection over-ride string:'%.*s'.", sm_id, len, url_string_ref);
         h->update(url_string_ref, len);
       }
     } else {
-      url            = hrdata.hdr->url_get();
+      // URL defaults to hrdata.hdr->url_get() above
       url_string_ref = url->path_get(&len);
       h->update("/", 1);
       if (url_string_ref && len > 0) {
