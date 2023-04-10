@@ -241,10 +241,10 @@ private:
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
 
-  // The indexes of the mapping functions that need to be called. On
-  // creation, we decide which functions need to be called, add the
-  // coressponding indexes and then we call those functions with the relevant
-  // data.
+  /** The indexes of the mapping functions that need to be called. On
+  creation, we decide which functions need to be called, add the coressponding
+  indexes and then we call those functions with the relevant data.
+  */
   std::vector<OpId> fnArrIndexes;
 
   /// tunnel_route destination callback array.
