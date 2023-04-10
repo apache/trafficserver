@@ -185,6 +185,13 @@ Each **strategy** in the list may using the following parameters:
    #. **cache_key**: Deprecated, use the URL designation instead.
    #. **url**: Creates a hash from the entire request url.
 
+  To get the same behaviour as the old **cache_key** directive, you would use the following YAML:
+
+  .. code-block:: yaml
+
+     hash_url: parent
+     hash_key: url
+
 - **hash_url**: The specific URL to use for the **hash_key**. If the specified URL type does
   not have a value (e.g. not set by an API), we default back to the reqeust URL. Use one of:
 
