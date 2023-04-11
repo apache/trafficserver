@@ -190,6 +190,6 @@ add_subdirectory(mgmt/utils)
 add_subdirectory(mgmt/config)
 add_subdirectory(mgmt/rpc)
 add_subdirectory(src/traffic_server)
-add_subdirectory(plugins)
-
 add_subdirectory(src/tests)
+add_subdirectory(plugins)
+add_subdirectory(configs)

@@ -18,4 +18,7 @@
 
 file(GLOB CONFIG_FILES *.default)
 
-install(FILES CONFIG_FILES TYPE sysconf)
+foreach(CONFIG_FILE ${CONFIG_FILES})
+  cmake_path(GET CONFIG_FILE STEM LAST_ONLY CONFIG_FILE_NAME)
+  install(FILES ${CONFIG_FILE} DESTINATION etc/trafficserver RENAME ${CONFIG_FILE_NAME})
+endforeach()
