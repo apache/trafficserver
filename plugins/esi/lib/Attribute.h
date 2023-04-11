@@ -36,5 +36,5 @@ struct Attribute {
     : name(n), name_len(n_len), value(v), value_len(v_len){};
 };
 
-typedef std::list<Attribute> AttributeList;
+using AttributeList = std::list<Attribute>;
 }; // namespace EsiLib

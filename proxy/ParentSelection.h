@@ -124,7 +124,7 @@ public:
   char hash_string[MAXDNAME + 1];
 };
 
-typedef ControlMatcher<ParentRecord, ParentResult> P_table;
+using P_table = ControlMatcher<ParentRecord, ParentResult>;
 
 // class ParentRecord : public ControlBase
 //

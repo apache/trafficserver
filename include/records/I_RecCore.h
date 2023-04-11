@@ -40,7 +40,7 @@ int RecSetDiags(Diags *diags);
 //-------------------------------------------------------------------------
 // Config File Parsing
 //-------------------------------------------------------------------------
-typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source);
+using RecConfigEntryCallback = void (*)(RecT, RecDataT, const char *, const char *, RecSourceT);
 
 void RecConfigFileInit();
 int RecConfigFileParse(const char *path, RecConfigEntryCallback handler);
@@ -154,7 +154,7 @@ RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
-typedef void (*RecLookupCallback)(const RecRecord *, void *);
+using RecLookupCallback = void (*)(const RecRecord *, void *);
 
 RecErrT RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
 RecErrT RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);

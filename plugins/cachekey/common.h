@@ -31,11 +31,11 @@
 #include <list>
 #include <vector>
 
-typedef std::string String;
-typedef std::string_view StringView;
-typedef std::set<std::string> StringSet;
-typedef std::list<std::string> StringList;
-typedef std::vector<std::string> StringVector;
+using String       = std::string;
+using StringView   = std::string_view;
+using StringSet    = std::set<std::string>;
+using StringList   = std::list<std::string>;
+using StringVector = std::vector<std::string>;
 
 #ifdef CACHEKEY_UNIT_TEST
 #include <stdio.h>

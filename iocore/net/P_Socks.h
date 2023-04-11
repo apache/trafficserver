@@ -85,7 +85,7 @@ swoc::Errata loadSocksIPAddrs(swoc::TextView content, socks_conf_struct *socks_s
 // umm.. the following typedef should take _its own_ type as one of the args
 // not possible with C
 // Right now just use a generic fn ptr and hide casting in an inline fn.
-typedef int (*SocksAuthHandler)(int event, unsigned char *buf, void (**h_ptr)(void));
+using SocksAuthHandler = int (*)(int, unsigned char *, void (**)());
 
 TS_INLINE int
 invokeSocksAuthHandler(SocksAuthHandler &h, int arg1, unsigned char *arg2)
@@ -99,7 +99,7 @@ int socks5PasswdAuthHandler(int event, unsigned char *p, void (**)(void));
 int socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
 
 class UnixNetVConnection;
-typedef UnixNetVConnection SocksNetVC;
+using SocksNetVC = UnixNetVConnection;
 
 struct SocksEntry : public Continuation {
   MIOBuffer *buf         = nullptr;
@@ -144,7 +144,7 @@ struct SocksEntry : public Continuation {
   }
 };
 
-typedef int (SocksEntry::*SocksEntryHandler)(int, void *);
+using SocksEntryHandler = int (SocksEntry::*)(int, void *);
 
 extern ClassAllocator<SocksEntry> socksAllocator;
 

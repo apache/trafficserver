@@ -45,7 +45,7 @@ private:
   std::string name_;
 
 public:
-  typedef std::string::size_type size_type;
+  using size_type = std::string::size_type;
 
   /**
    * Constructor: build a new HeaderField name with the given string
@@ -244,8 +244,8 @@ private:
   HeaderField(const header_field_iterator &iter) : iter_(iter) {}
 
 public:
-  typedef unsigned int size_type;
-  typedef header_field_value_iterator iterator;
+  using size_type = unsigned int;
+  using iterator  = header_field_value_iterator;
 
   ~HeaderField();
 
@@ -435,8 +435,8 @@ public:
    */
   bool isInitialized() const;
 
-  typedef unsigned int size_type;
-  typedef header_field_iterator iterator;
+  using size_type = unsigned int;
+  using iterator  = header_field_iterator;
 
   /**
    * Check if the headers are empty

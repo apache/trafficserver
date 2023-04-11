@@ -61,7 +61,7 @@ enum transform_state {
 };
 
 #if HAVE_BROTLI_ENCODE_H
-typedef struct {
+using b_stream = struct {
   BrotliEncoderState *br;
   uint8_t *next_in;
   size_t avail_in;
@@ -69,10 +69,10 @@ typedef struct {
   size_t avail_out;
   size_t total_in;
   size_t total_out;
-} b_stream;
+};
 #endif
 
-typedef struct {
+using Data = struct {
   TSHttpTxn txn;
   HostConfiguration *hc;
   TSVIO downstream_vio;
@@ -86,7 +86,7 @@ typedef struct {
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
-} Data;
+};
 
 voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
 void gzip_free(voidpf opaque, voidpf address);

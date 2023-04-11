@@ -110,8 +110,8 @@ namespace io
 
   struct WriteOperation;
 
-  typedef std::shared_ptr<WriteOperation> WriteOperationPointer;
-  typedef std::weak_ptr<WriteOperation> WriteOperationWeakPointer;
+  using WriteOperationPointer     = std::shared_ptr<WriteOperation>;
+  using WriteOperationWeakPointer = std::weak_ptr<WriteOperation>;
 
   struct Lock {
     const TSMutex mutex_ = nullptr;
@@ -174,17 +174,17 @@ namespace io
   };
 
   struct Node;
-  typedef std::shared_ptr<Node> NodePointer;
-  typedef std::list<NodePointer> Nodes;
+  using NodePointer = std::shared_ptr<Node>;
+  using Nodes       = std::list<NodePointer>;
 
   struct IOSink;
-  typedef std::shared_ptr<IOSink> IOSinkPointer;
+  using IOSinkPointer = std::shared_ptr<IOSink>;
 
   struct Sink;
-  typedef std::shared_ptr<Sink> SinkPointer;
+  using SinkPointer = std::shared_ptr<Sink>;
 
   struct Data;
-  typedef std::shared_ptr<Data> DataPointer;
+  using DataPointer = std::shared_ptr<Data>;
 
   struct IOSink : std::enable_shared_from_this<IOSink> {
     WriteOperationWeakPointer operation_;
@@ -225,7 +225,7 @@ namespace io
   };
 
   struct Node {
-    typedef std::pair<size_t, bool> Result;
+    using Result = std::pair<size_t, bool>;
     IOSinkPointer ioSink_;
     virtual ~Node() {}
     virtual Node::Result process(const TSIOBuffer) = 0;

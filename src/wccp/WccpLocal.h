@@ -100,8 +100,8 @@ static int const PARSE_DATA_OVERRUN = 10;
 class MsgBuffer : protected ts::Buffer
 {
 public:
-  typedef MsgBuffer self;   ///< Self reference type.
-  typedef ts::Buffer super; ///< Parent type.
+  using self  = MsgBuffer;  ///< Self reference type.
+  using super = ts::Buffer; ///< Parent type.
 
   MsgBuffer(); ///< Default construct empty buffer.
   /// Construct from ATS buffer.
@@ -177,7 +177,7 @@ enum CompType {
 /// Router Identity.
 /// Data is stored in host order. This structure is not used publicly.
 struct RouterId {
-  typedef RouterId self; ///< Self reference type.
+  using self = RouterId; ///< Self reference type.
 
   RouterId(); ///< Default constructor.
   /// Construct from address and sequence number.
@@ -199,9 +199,9 @@ struct RouterId {
 class RouterIdElt : protected RouterId
 {
 protected:
-  typedef RouterId super; ///< Parent type.
+  using super = RouterId; ///< Parent type.
 public:
-  typedef RouterIdElt self; ///< Self reference type.
+  using self = RouterIdElt; ///< Self reference type.
 
   /// Default constructor, members zero initialized.
   RouterIdElt();
@@ -228,7 +228,7 @@ public:
 class AssignmentKeyElt
 {
 public:
-  typedef AssignmentKeyElt self; ///< Self reference type.
+  using self = AssignmentKeyElt; ///< Self reference type.
 
   AssignmentKeyElt(); ///< Default constructor. No member initialization.
   /// Construct from address and sequence number.
@@ -254,8 +254,8 @@ protected:
 class RouterAssignElt : public RouterIdElt
 {
 public:
-  typedef RouterAssignElt self; ///< Self reference type.
-  typedef RouterIdElt super;    ///< Parent type.
+  using self  = RouterAssignElt; ///< Self reference type.
+  using super = RouterIdElt;     ///< Parent type.
 
   /// Default constructor, members zero initialized.
   RouterAssignElt();
@@ -281,7 +281,7 @@ protected:
 class RouterAssignListElt
 {
 public:
-  typedef RouterAssignListElt self; ///< Self reference type.
+  using self = RouterAssignListElt; ///< Self reference type.
 
   /// Default constructor - @b no initialization.
   RouterAssignListElt();
@@ -329,7 +329,7 @@ protected:
 class CapabilityElt
 {
 public:
-  typedef CapabilityElt self; ///< Self reference type.
+  using self = CapabilityElt; ///< Self reference type.
 
   /// Capability types.
   enum Type : uint16_t {
@@ -366,7 +366,7 @@ protected:
 class MaskElt
 {
 public:
-  typedef MaskElt self; ///< Self reference type.
+  using self = MaskElt; ///< Self reference type.
 
   /// Default constructor - @b no initialization.
   MaskElt();
@@ -408,7 +408,7 @@ protected:
 class ValueElt
 {
 public:
-  typedef ValueElt self; ///< Self reference type.
+  using self = ValueElt; ///< Self reference type.
 
   /// Default constructor - @b no initialization.
   ValueElt();
@@ -448,7 +448,7 @@ protected:
 class MaskValueSetElt
 {
 public:
-  typedef MaskValueSetElt self; ///< Self reference type.
+  using self = MaskValueSetElt; ///< Self reference type.
 
   MaskValueSetElt(); ///< Default constructor.
   /// Construct from address and sequence number.
@@ -514,7 +514,7 @@ protected:
 class HashAssignElt
 {
 public:
-  typedef HashAssignElt self; ///< Self reference type.
+  using self = HashAssignElt; ///< Self reference type.
 
   /// Hash assignment bucket.
   struct Bucket {
@@ -581,12 +581,12 @@ protected:
 class MaskAssignElt
 {
 public:
-  typedef MaskAssignElt self; ///< Self reference type.
+  using self = MaskAssignElt; ///< Self reference type.
 
   /** A minimalist insert iterator.
    */
   struct appender {
-    typedef appender self; ///< Self reference type.
+    using self = appender; ///< Self reference type.
     /// Get pointer to current set.
     MaskValueSetElt *operator->();
     /// Append a new mask/value set.
@@ -656,7 +656,7 @@ class CacheIdElt
   friend class CacheIdBox;
 
 public:
-  typedef CacheIdElt self; ///< Self reference type.
+  using self = CacheIdElt; ///< Self reference type.
 
   /// Hash revision (protocol required).
   static uint16_t const HASH_REVISION = 0;
@@ -712,10 +712,10 @@ class CacheHashIdElt : public CacheIdElt
   friend class CacheIdBox;
 
 public:
-  typedef CacheHashIdElt self; ///< Self reference type.
-  typedef CacheIdElt super;    ///< Parent type.
+  using self  = CacheHashIdElt; ///< Self reference type.
+  using super = CacheIdElt;     ///< Parent type.
   /// Container for hash assignment.
-  typedef uint8_t HashBuckets[N_BUCKETS >> 3];
+  using HashBuckets = uint8_t[N_BUCKETS >> 3];
   /// @name Accessors
   //@{
   bool getBucket(int idx) const; ///< Get bucket state at index @a idx.
@@ -755,8 +755,8 @@ class CacheMaskIdElt : public CacheIdElt
   friend class CacheIdBox;
 
 public:
-  typedef CacheMaskIdElt self; ///< Self reference type.
-  typedef CacheIdElt super;    ///< Parent type.
+  using self  = CacheMaskIdElt; ///< Self reference type.
+  using super = CacheIdElt;     ///< Parent type.
   /// @name Accessors
   //@{
   uint16_t getWeight() const;  ///< Get weight field.
@@ -786,7 +786,7 @@ protected:
 class CacheIdBox
 {
 public:
-  typedef CacheIdBox self; ///< Self reference type.
+  using self = CacheIdBox; ///< Self reference type.
 
   /// Default constructor.
   CacheIdBox() = default;
@@ -871,7 +871,7 @@ protected:
 class ComponentBase
 {
 public:
-  typedef ComponentBase self; ///< Self reference type.
+  using self = ComponentBase; ///< Self reference type.
   /// Default constructor.
   ComponentBase() = default;
   /// Check for not present.
@@ -887,8 +887,8 @@ protected:
 class MsgHeaderComp : public ComponentBase
 {
 public:
-  typedef MsgHeaderComp self;  ///< Self reference type.
-  typedef ComponentBase super; ///< Parent type.
+  using self  = MsgHeaderComp; ///< Self reference type.
+  using super = ComponentBase; ///< Parent type.
 
   /// Sect 5.5:  Message Header
   /// Serialized layout of message header.
@@ -985,16 +985,16 @@ struct CompWithHeader : public ComponentBase {
 class SecurityComp : public CompWithHeader<SecurityComp>
 {
 public:
-  typedef SecurityComp self;          ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = SecurityComp;         ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
   /// Specify the type for this component.
   static CompType const COMP_TYPE = SECURITY_INFO;
 
   /// Import security option type.
-  typedef SecurityOption Option;
+  using Option = SecurityOption;
 
   static size_t const KEY_SIZE = 8;
-  typedef char Key[KEY_SIZE];
+  using Key                    = char[KEY_SIZE];
 
   /// Raw memory layout, no security.
   struct RawNone : public super::raw_t {
@@ -1006,7 +1006,7 @@ public:
     /// Size of MD5 hash (in bytes).
     static size_t const HASH_SIZE = 16;
     /// Storage for MD5 hash.
-    typedef uint8_t HashData[HASH_SIZE];
+    using HashData = uint8_t[HASH_SIZE];
     /// MD5 hash value.
     HashData m_data;
   };
@@ -1063,8 +1063,8 @@ protected:
 class ServiceComp : public CompWithHeader<ServiceComp>
 {
 public:
-  typedef ServiceComp self;           ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = ServiceComp;          ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Specify the type for this component.
   static CompType const COMP_TYPE = SERVICE_INFO;
@@ -1151,8 +1151,8 @@ protected:
 class RouterIdComp : public CompWithHeader<RouterIdComp>
 {
 public:
-  typedef RouterIdComp self;          ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = RouterIdComp;         ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Specify the type for this component.
   static CompType const COMP_TYPE = ROUTER_ID_INFO;
@@ -1237,8 +1237,8 @@ public:
 class CacheIdComp : public CompWithHeader<CacheIdComp>
 {
 public:
-  typedef CacheIdComp self;           ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = CacheIdComp;          ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = CACHE_ID_INFO;
@@ -1292,8 +1292,8 @@ protected:
 class RouterViewComp : public CompWithHeader<RouterViewComp>
 {
 public:
-  typedef RouterViewComp self;        ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = RouterViewComp;       ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = RTR_VIEW_INFO;
@@ -1381,8 +1381,8 @@ protected:
 class CacheViewComp : public CompWithHeader<CacheViewComp>
 {
 public:
-  typedef CacheViewComp self;         ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = CacheViewComp;        ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = CACHE_VIEW_INFO;
@@ -1457,8 +1457,8 @@ protected:
 class AssignInfoComp : public CompWithHeader<AssignInfoComp>
 {
 public:
-  typedef AssignInfoComp self;        ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = AssignInfoComp;       ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = REDIRECT_ASSIGNMENT;
@@ -1469,7 +1469,7 @@ public:
     AssignmentKeyElt m_key;        ///< Assignment key data.
     RouterAssignListElt m_routers; ///< Routers.
   };
-  typedef HashAssignElt::Bucket Bucket; ///< Import type.
+  using Bucket = HashAssignElt::Bucket; ///< Import type.
 
   /// @name Accessors
   //@{
@@ -1543,8 +1543,8 @@ protected:
 class CapComp : public CompWithHeader<CapComp>
 {
 public:
-  typedef CapComp self;               ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = CapComp;              ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = CAPABILITY_INFO;
@@ -1618,8 +1618,8 @@ protected:
 class AltAssignComp : public CompWithHeader<AltAssignComp>
 {
 public:
-  typedef AltAssignComp self;         ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = AltAssignComp;        ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = ALT_ASSIGNMENT;
@@ -1686,8 +1686,8 @@ protected:
 class AltHashAssignComp : public AltAssignComp
 {
 public:
-  typedef AltHashAssignComp self; ///< Self reference type.
-  typedef AltAssignComp super;    ///< Parent type.
+  using self  = AltHashAssignComp; ///< Self reference type.
+  using super = AltAssignComp;     ///< Parent type.
 
   /// @name Accessors
   //@{
@@ -1727,8 +1727,8 @@ protected:
 class AltMaskAssignComp : public AltAssignComp
 {
 public:
-  typedef AltMaskAssignComp self; ///< Self reference type.
-  typedef AltAssignComp super;    ///< Parent type.
+  using self  = AltMaskAssignComp; ///< Self reference type.
+  using super = AltAssignComp;     ///< Parent type.
 
   /// Force virtual destructor.
   virtual ~AltMaskAssignComp() {}
@@ -1750,8 +1750,8 @@ protected:
 class CmdComp : public CompWithHeader<CmdComp>
 {
 public:
-  typedef CmdComp self;               ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = CmdComp;              ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = COMMAND_EXTENSION;
@@ -1799,8 +1799,8 @@ public:
 class AssignMapComp : public CompWithHeader<AssignMapComp>
 {
 public:
-  typedef AssignMapComp self;         ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = AssignMapComp;        ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = ASSIGN_MAP;
@@ -1834,8 +1834,8 @@ public:
 class QueryComp : public CompWithHeader<QueryComp>
 {
 public:
-  typedef QueryComp self;             ///< Self reference type.
-  typedef CompWithHeader<self> super; ///< Parent type.
+  using self  = QueryComp;            ///< Self reference type.
+  using super = CompWithHeader<self>; ///< Parent type.
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = QUERY_INFO;
@@ -1908,11 +1908,11 @@ namespace detail
   class Assignment
   {
   public:
-    typedef Assignment self;      ///< Self reference type.
-    typedef AssignmentKeyElt Key; ///< Import assignment key type.
+    using self = Assignment;       ///< Self reference type.
+    using Key  = AssignmentKeyElt; ///< Import assignment key type.
     /// Import assignment bucket definition.
     /// @internal Just one byte, no serialization issues.
-    typedef AssignInfoComp::Bucket Bucket;
+    using Bucket = AssignInfoComp::Bucket;
 
     /// Default constructor. Initialization to empty state.
     Assignment();
@@ -1975,7 +1975,7 @@ namespace detail
   {
     /// Common service group data.
     struct GroupData {
-      typedef GroupData self; ///< Self reference type.
+      using self = GroupData; ///< Self reference type.
 
       ServiceGroup m_svc;           ///< The service definition.
       uint32_t m_generation    = 0; ///< Generation value (change number).
@@ -2043,7 +2043,7 @@ protected:
 class HereIAmMsg : public BaseMsg
 {
 public:
-  typedef HereIAmMsg self; ///< Self reference type.
+  using self = HereIAmMsg; ///< Self reference type.
 
   /** Fill in the basic message structure.
       This expects @c setBuffer to have already been called
@@ -2076,7 +2076,7 @@ public:
 class ISeeYouMsg : public BaseMsg
 {
 public:
-  typedef ISeeYouMsg self; ///< Self reference type.
+  using self = ISeeYouMsg; ///< Self reference type.
 
   /// Fill out message structure.
   /// Router ID and view data must be filled in separately.
@@ -2109,7 +2109,7 @@ public:
 class RedirectAssignMsg : public BaseMsg
 {
 public:
-  typedef RedirectAssignMsg self; ///< Self reference type.
+  using self = RedirectAssignMsg; ///< Self reference type.
 
   /** Fill in the basic message structure.
       This expects @c setBuffer to have already been called
@@ -2136,7 +2136,7 @@ public:
 class RemovalQueryMsg : public BaseMsg
 {
 public:
-  typedef RemovalQueryMsg self; ///< Self reference type.
+  using self = RemovalQueryMsg; ///< Self reference type.
 
   /** Fill in the basic message structure.
       This expects @c setBuffer to have already been called
@@ -2162,7 +2162,7 @@ public:
 // ------------------------------------------------------
 /// Last packet information.
 struct PacketStamp {
-  typedef PacketStamp self; ///< Self reference type.
+  using self = PacketStamp; ///< Self reference type.
 
   PacketStamp(); ///< Default constructor (zero elements).
   /// Set the @a time and @a generation.
@@ -2191,10 +2191,10 @@ class Impl : public ts::IntrusivePtrCounter
   friend class EndPoint;
 
 public:
-  typedef Impl self; ///< Self reference type.
+  using self = Impl; ///< Self reference type.
 
   /// Import detail struct.
-  typedef detail::endpoint::GroupData GroupData;
+  using GroupData = detail::endpoint::GroupData;
 
   /// Default constructor.
   Impl() = default;
@@ -2342,17 +2342,17 @@ namespace detail
     };
 
     /// Storage type for known caches.
-    typedef std::vector<CacheData> CacheBag;
+    using CacheBag = std::vector<CacheData>;
     /// Storage type for known routers.
-    typedef std::vector<RouterData> RouterBag;
+    using RouterBag = std::vector<RouterData>;
 
     /** Cache's view of a service group.
         This stores the internal accounting information, it is not the
         serialized form.
     */
     struct GroupData : public endpoint::GroupData {
-      typedef GroupData self;            ///< Self reference type.
-      typedef endpoint::GroupData super; ///< Parent type.
+      using self  = GroupData;           ///< Self reference type.
+      using super = endpoint::GroupData; ///< Parent type.
 
       /// Cache identity of this cache.
       CacheIdBox m_id;
@@ -2449,16 +2449,16 @@ namespace detail
 class CacheImpl : public Impl
 {
 public:
-  typedef CacheImpl self; ///< Self reference type.
-  typedef Impl super;     ///< Parent type.
+  using self  = CacheImpl; ///< Self reference type.
+  using super = Impl;      ///< Parent type.
 
   // Import details
-  typedef detail::cache::SeedRouter SeedRouter;
-  typedef detail::cache::CacheData CacheData;
-  typedef detail::cache::RouterData RouterData;
-  typedef detail::cache::GroupData GroupData;
-  typedef detail::cache::CacheBag CacheBag;
-  typedef detail::cache::RouterBag RouterBag;
+  using SeedRouter = detail::cache::SeedRouter;
+  using CacheData  = detail::cache::CacheData;
+  using RouterData = detail::cache::RouterData;
+  using GroupData  = detail::cache::GroupData;
+  using CacheBag   = detail::cache::CacheBag;
+  using RouterBag  = detail::cache::RouterBag;
 
   /** Define a service group.
       If no service is defined for the ID in @a svc, it is created.
@@ -2528,7 +2528,7 @@ protected:
                                 ) override;
 
   /// Map Service Group ID to Service Group Data.
-  typedef std::map<uint8_t, GroupData> GroupMap;
+  using GroupMap = std::map<uint8_t, GroupData>;
   /// Active service groups.
   GroupMap m_groups;
 
@@ -2572,7 +2572,7 @@ namespace detail
 
     /// Router's view of other routers.
     struct RouterData {
-      typedef RouterData self; ///< Self reference type.
+      using self = RouterData; ///< Self reference type.
 
       /// Identifying IP address of router.
       uint32_t m_addr;
@@ -2586,9 +2586,9 @@ namespace detail
     };
 
     /// Storage type for known caches.
-    typedef std::vector<CacheData> CacheBag;
+    using CacheBag = std::vector<CacheData>;
     /// Storage type for known routers.
-    typedef std::vector<RouterData> RouterBag;
+    using RouterBag = std::vector<RouterData>;
 
     /** A router's view of a service group.
 
@@ -2596,8 +2596,8 @@ namespace detail
         serialized form.
     */
     struct GroupData : public detail::endpoint::GroupData {
-      typedef GroupData self;                    ///< Self reference type.
-      typedef detail::endpoint::GroupData super; ///< Parent type.
+      using self  = GroupData;                   ///< Self reference type.
+      using super = detail::endpoint::GroupData; ///< Parent type.
 
       GroupData(); ///< Default constructor.
 
@@ -2621,14 +2621,14 @@ namespace detail
 class RouterImpl : public Impl
 {
 public:
-  typedef RouterImpl self; ///< Self reference type.
-  typedef Impl super;      ///< Parent type.
+  using self  = RouterImpl; ///< Self reference type.
+  using super = Impl;       ///< Parent type.
   // Import details
-  typedef detail::router::CacheData CacheData;
-  typedef detail::router::RouterData RouterData;
-  typedef detail::router::GroupData GroupData;
-  typedef detail::router::CacheBag CacheBag;
-  typedef detail::router::RouterBag RouterBag;
+  using CacheData  = detail::router::CacheData;
+  using RouterData = detail::router::RouterData;
+  using GroupData  = detail::router::GroupData;
+  using CacheBag   = detail::router::CacheBag;
+  using RouterBag  = detail::router::RouterBag;
 
   /// Process HERE_I_AM message.
   ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
@@ -2659,7 +2659,7 @@ protected:
   );
 
   /// Map Service Group ID to Service Group Data.
-  typedef std::map<uint8_t, GroupData> GroupMap;
+  using GroupMap = std::map<uint8_t, GroupData>;
   /// Active service groups.
   GroupMap m_groups;
 };

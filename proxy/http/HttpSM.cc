@@ -99,7 +99,7 @@ static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response   = strlen(str_100_continue_response);
 
-// Handy typedef for short (single line) message generation.
+// Handy alias for short (single line) message generation.
 using lbw = ts::LocalBufferWriter<256>;
 
 namespace

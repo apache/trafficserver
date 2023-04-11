@@ -140,7 +140,7 @@ public:
     LINK(RegexMapping, link);
   };
 
-  typedef Queue<RegexMapping> RegexMappingList;
+  using RegexMappingList = Queue<RegexMapping>;
 
   struct MappingsStore {
     std::unique_ptr<URLTable> hash_lookup;

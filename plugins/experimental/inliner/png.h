@@ -33,8 +33,8 @@ namespace ats
 namespace inliner
 {
   struct PNG {
-    typedef std::vector<char> Content;
-    typedef Content::const_iterator Iterator;
+    using Content  = std::vector<char>;
+    using Iterator = Content::const_iterator;
 
     static const uint32_t HEADER_SIZE = 8;
 

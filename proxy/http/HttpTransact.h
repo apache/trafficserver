@@ -71,7 +71,7 @@
     }                                                           \
   }
 
-typedef time_t ink_time_t;
+using ink_time_t = time_t;
 
 struct HttpConfigParams;
 class HttpSM;
@@ -469,9 +469,9 @@ public:
   };
 
   struct State;
-  typedef void (*TransactFunc_t)(HttpTransact::State *);
+  using TransactFunc_t = void (*)(HttpTransact::State *);
 
-  typedef struct _CacheDirectives {
+  using CacheDirectives = struct _CacheDirectives {
     bool does_client_permit_lookup      = true;
     bool does_client_permit_storing     = true;
     bool does_client_permit_dns_storing = true;
@@ -481,9 +481,9 @@ public:
     bool does_server_permit_storing     = true;
 
     _CacheDirectives() {}
-  } CacheDirectives;
+  };
 
-  typedef struct _CacheLookupInfo {
+  using CacheLookupInfo = struct _CacheLookupInfo {
     HttpTransact::CacheAction_t action           = CACHE_DO_UNDEFINED;
     HttpTransact::CacheAction_t transform_action = CACHE_DO_UNDEFINED;
 
@@ -506,14 +506,14 @@ public:
     URL parent_selection_url_storage;
 
     _CacheLookupInfo() {}
-  } CacheLookupInfo;
+  };
 
-  typedef struct _RedirectInfo {
+  using RedirectInfo = struct _RedirectInfo {
     bool redirect_in_process = false;
     URL original_url;
 
     _RedirectInfo() {}
-  } RedirectInfo;
+  };
 
   struct ConnectionAttributes {
     HTTPVersion http_version;
@@ -568,7 +568,7 @@ public:
     }
   };
 
-  typedef struct _CurrentInfo {
+  using CurrentInfo = struct _CurrentInfo {
     ProxyMode_t mode                             = UNDEFINED_MODE;
     ResolveInfo::UpstreamResolveStyle request_to = ResolveInfo::UNDEFINED_LOOKUP;
     ConnectionAttributes *server                 = nullptr;
@@ -627,13 +627,12 @@ public:
 
     _CurrentInfo()                     = default;
     _CurrentInfo(_CurrentInfo const &) = delete;
-
-  } CurrentInfo;
+  };
 
   // Conversion handling for DNS host resolution type.
   static const MgmtConverter HOST_RES_CONV;
 
-  typedef struct _HeaderInfo {
+  using HeaderInfo = struct _HeaderInfo {
     HTTPHdr client_request;
     HTTPHdr client_response;
     HTTPHdr server_request;
@@ -650,23 +649,23 @@ public:
     bool extension_method           = false;
 
     _HeaderInfo() {}
-  } HeaderInfo;
+  };
 
-  typedef struct _SquidLogInfo {
+  using SquidLogInfo = struct _SquidLogInfo {
     SquidLogCode log_code          = SQUID_LOG_ERR_UNKNOWN;
     SquidSubcode subcode           = SQUID_SUBCODE_EMPTY;
     SquidHierarchyCode hier_code   = SQUID_HIER_EMPTY;
     SquidHitMissCode hit_miss_code = SQUID_MISS_NONE;
 
     _SquidLogInfo() {}
-  } SquidLogInfo;
+  };
 
-  typedef struct _ResponseAction {
+  using ResponseAction = struct _ResponseAction {
     bool handled = false;
     TSResponseAction action;
 
     _ResponseAction() {}
-  } ResponseAction;
+  };
 
   struct State {
     HttpSM *state_machine = nullptr;
@@ -1105,7 +1104,7 @@ public:
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
 };
 
-typedef void (*TransactEntryFunc_t)(HttpTransact::State *s);
+using TransactEntryFunc_t = void (*)(HttpTransact::State *);
 
 /* The spec says about message body the following:
  *

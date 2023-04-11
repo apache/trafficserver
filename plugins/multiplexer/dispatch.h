@@ -66,7 +66,7 @@ struct Statistics {
   int size; // average
 };
 
-typedef std::vector<std::string> Origins;
+using Origins = std::vector<std::string>;
 
 struct Request {
   std::string host;
@@ -79,7 +79,7 @@ struct Request {
   Request &operator=(const Request &);
 };
 
-typedef std::vector<Request> Requests;
+using Requests = std::vector<Request>;
 
 struct Instance {
   Origins origins;

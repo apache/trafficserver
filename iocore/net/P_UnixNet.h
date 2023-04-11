@@ -66,7 +66,7 @@
 #endif
 
 struct PollDescriptor;
-typedef PollDescriptor *EventLoop;
+using EventLoop = PollDescriptor *;
 
 class NetEvent;
 class UnixUDPConnection;
@@ -140,8 +140,8 @@ struct EventIO {
 
 class NetEvent;
 class NetHandler;
-typedef int (NetHandler::*NetContHandler)(int, void *);
-typedef unsigned int uint32;
+using NetContHandler = int (NetHandler::*)(int, void *);
+using uint32         = unsigned int;
 
 extern ink_hrtime last_throttle_warning;
 extern ink_hrtime last_shedding_warning;

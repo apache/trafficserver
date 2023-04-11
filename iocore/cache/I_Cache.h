@@ -55,9 +55,9 @@ class URL;
 class HTTPHdr;
 class HTTPInfo;
 
-typedef HTTPHdr CacheHTTPHdr;
-typedef URL CacheURL;
-typedef HTTPInfo CacheHTTPInfo;
+using CacheHTTPHdr  = HTTPHdr;
+using CacheURL      = URL;
+using CacheHTTPInfo = HTTPInfo;
 
 struct CacheProcessor : public Processor {
   CacheProcessor()
@@ -120,7 +120,7 @@ struct CacheProcessor : public Processor {
   static bool IsCacheReady(CacheFragType type);
 
   /// Type for callback function.
-  typedef void (*CALLBACK_FUNC)();
+  using CALLBACK_FUNC = void (*)();
   /** Lifecycle callback.
 
       The function @a cb is called after cache initialization has

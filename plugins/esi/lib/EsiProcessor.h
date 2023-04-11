@@ -163,7 +163,7 @@ private:
     TryBlock(EsiLib::DocNodeList &att, EsiLib::DocNodeList &exc, EsiLib::DocNodeList::iterator p)
       : attempt_nodes(att), except_nodes(exc), pos(p){};
   };
-  typedef std::list<TryBlock> TryBlockList;
+  using TryBlockList = std::list<TryBlock>;
   TryBlockList _try_blocks;
   int _n_try_blocks_processed;
 
@@ -171,7 +171,7 @@ private:
 
   static const char *INCLUDE_DATA_ID_ATTR;
 
-  typedef std::map<std::string, EsiLib::SpecialIncludeHandler *> IncludeHandlerMap;
+  using IncludeHandlerMap = std::map<std::string, EsiLib::SpecialIncludeHandler *>;
   IncludeHandlerMap _include_handlers;
 
   void

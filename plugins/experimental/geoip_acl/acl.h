@@ -38,9 +38,9 @@
 
 #if HAVE_GEOIP_H
 #include <GeoIP.h>
-typedef GeoIP *GeoDBHandle;
+using GeoDBHandle = GeoIP *;
 #else  /* !HAVE_GEOIP_H */
-typedef void *GeoDBHandle;
+using GeoDBHandle = void *;
 #endif /* HAVE_GEOIP_H */
 
 // See http://www.iso.org/iso/english_country_names_and_code_elements

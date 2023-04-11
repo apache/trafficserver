@@ -232,7 +232,7 @@ private:
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 
-typedef int (UnixNetVConnection::*NetVConnHandler)(int, void *);
+using NetVConnHandler = int (UnixNetVConnection::*)(int, void *);
 
 inline void
 UnixNetVConnection::set_remote_addr()

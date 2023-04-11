@@ -35,7 +35,7 @@
 #define BYTE_2(x) ((x) >> 16 & 0xff)
 #define BYTE_3(x) ((x) >> 24 | 0x80)
 
-typedef unsigned char uchar;
+using uchar = unsigned char;
 
 #define PRINT_OPAQUE_STRUCT(p) print_mem((p), sizeof(*(p)))
 
@@ -47,7 +47,7 @@ namespace ats_plugin
 {
 using namespace atscppapi;
 
-typedef enum {
+using FCGI_State = enum {
   fcgi_state_version = 0,
   fcgi_state_type,
   fcgi_state_request_id_hi,
@@ -60,7 +60,7 @@ typedef enum {
   fcgi_state_content_proc,
   fcgi_state_padding,
   fcgi_state_done
-} FCGI_State;
+};
 
 struct FCGIClientState;
 

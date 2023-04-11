@@ -32,7 +32,7 @@
 
 namespace Gzip
 {
-typedef std::vector<std::string> StringContainer;
+using StringContainer = std::vector<std::string>;
 
 enum CompressionAlgorithm {
   ALGORITHM_DEFAULT = 0,
@@ -155,7 +155,7 @@ private:
                                                        TS_HTTP_STATUS_NOT_MODIFIED};
 };
 
-typedef std::vector<HostConfiguration *> HostContainer;
+using HostContainer = std::vector<HostConfiguration *>;
 
 class Configuration : private atscppapi::noncopyable
 {

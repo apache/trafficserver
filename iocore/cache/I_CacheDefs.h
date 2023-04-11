@@ -122,7 +122,7 @@ enum CacheFragType {
   NUM_CACHE_FRAG_TYPES     = 4
 };
 
-typedef CryptoHash CacheKey;
+using CacheKey = CryptoHash;
 
 struct HttpCacheKey {
   int hostlen;

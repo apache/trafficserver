@@ -675,7 +675,7 @@ struct HostDBProcessor : public Processor {
 
   /// Optional parameters for getby...
   struct Options {
-    typedef Options self;                                  ///< Self reference type.
+    using self                  = Options;                 ///< Self reference type.
     int port                    = 0;                       ///< Target service port (default 0 -> don't care)
     int flags                   = HOSTDB_DO_NOT_FORCE_DNS; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
     int timeout                 = 0;                       ///< Timeout value (default 0 -> default timeout)

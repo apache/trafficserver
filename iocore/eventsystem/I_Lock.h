@@ -123,7 +123,7 @@
 /////////////////////////////////////
 
 class EThread;
-typedef EThread *EThreadPtr;
+using EThreadPtr = EThread *;
 
 #if DEBUG
 extern void lock_waiting(const SourceLocation &, const char *handler);

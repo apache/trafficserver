@@ -33,11 +33,11 @@
 #include "swoc/MemSpan.h"
 #include "tscpp/util/TextView.h"
 
-typedef int64_t MgmtIntCounter;
-typedef int64_t MgmtInt;
-typedef int8_t MgmtByte;
-typedef float MgmtFloat;
-typedef char *MgmtString;
+using MgmtIntCounter = int64_t;
+using MgmtInt        = int64_t;
+using MgmtByte       = int8_t;
+using MgmtFloat      = float;
+using MgmtString     = char *;
 
 /// Management callback signature.
 /// The memory span is the message payload for the callback.

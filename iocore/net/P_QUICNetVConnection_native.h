@@ -395,6 +395,6 @@ private:
   std::shared_ptr<QLog::QLogListener> _qlog;
 };
 
-typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
+using QUICNetVConnHandler = int (QUICNetVConnection::*)(int, void *);
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

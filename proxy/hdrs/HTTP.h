@@ -1284,7 +1284,7 @@ struct HTTPCacheAlt {
   /// @note This is one less than the number of fragments.
   int m_frag_offset_count = 0;
   /// Type of offset for a fragment.
-  typedef uint64_t FragOffset;
+  using FragOffset = uint64_t;
   /// Table of fragment offsets.
   /// @note The offsets are forward looking so that frag[0] is the
   /// first byte past the end of fragment 0 which is also the first
@@ -1309,7 +1309,7 @@ struct HTTPCacheAlt {
 class HTTPInfo
 {
 public:
-  typedef HTTPCacheAlt::FragOffset FragOffset; ///< Import type.
+  using FragOffset = HTTPCacheAlt::FragOffset; ///< Import type.
 
   HTTPCacheAlt *m_alt = nullptr;
 

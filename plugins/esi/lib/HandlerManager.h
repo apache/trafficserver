@@ -48,7 +48,7 @@ public:
   ~HandlerManager() override;
 
 private:
-  typedef std::map<std::string, SpecialIncludeHandlerCreator> FunctionHandleMap;
+  using FunctionHandleMap = std::map<std::string, SpecialIncludeHandlerCreator>;
 
   struct ModuleHandles {
     void *object;
@@ -56,7 +56,7 @@ private:
     ModuleHandles(void *o = nullptr, SpecialIncludeHandlerCreator f = nullptr) : object(o), function(f){};
   };
 
-  typedef std::map<std::string, ModuleHandles> ModuleHandleMap;
+  using ModuleHandleMap = std::map<std::string, ModuleHandles>;
 
   FunctionHandleMap _id_to_function_map;
   ModuleHandleMap _path_to_module_map;

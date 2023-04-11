@@ -32,7 +32,7 @@
 
 #include "tscore/ink_apidefs.h"
 
-typedef int64_t cache_generation_t;
+using cache_generation_t = int64_t;
 
 enum URLType {
   URL_TYPE_NONE,

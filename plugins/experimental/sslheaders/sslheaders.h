@@ -25,8 +25,8 @@
 #include <string>
 
 extern "C" {
-typedef struct x509_st X509;
-typedef struct bio_st BIO;
+using X509 = struct x509_st;
+using BIO  = struct bio_st;
 }
 
 #define PLUGIN_NAME "sslheaders"
@@ -77,7 +77,7 @@ struct SslHdrExpansion {
 };
 
 struct SslHdrInstance {
-  typedef std::vector<SslHdrExpansion> expansion_list;
+  using expansion_list = std::vector<SslHdrExpansion>;
 
   SslHdrInstance();
   ~SslHdrInstance();

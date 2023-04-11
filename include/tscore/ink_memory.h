@@ -290,9 +290,9 @@ template <typename TRAITS ///< Traits object.
 class ats_scoped_resource
 {
 public:
-  typedef TRAITS Traits;                          ///< Make template arg available.
-  typedef typename TRAITS::value_type value_type; ///< Import value type.
-  typedef ats_scoped_resource self;               ///< Self reference type.
+  using Traits     = TRAITS;                      ///< Make template arg available.
+  using value_type = typename TRAITS::value_type; ///< Import value type.
+  using self       = ats_scoped_resource;         ///< Self reference type.
 
 public:
   /// Default constructor - an empty container.
@@ -392,7 +392,7 @@ namespace detail
 /** Traits for @c ats_scoped_resource for file descriptors.
  */
 struct SCOPED_FD_TRAITS {
-  typedef int value_type;
+  using value_type = int;
   static int
   initValue()
   {
@@ -415,8 +415,8 @@ struct SCOPED_FD_TRAITS {
 class ats_scoped_fd : public ats_scoped_resource<detail::SCOPED_FD_TRAITS>
 {
 public:
-  typedef ats_scoped_resource<detail::SCOPED_FD_TRAITS> super_type; ///< Super type.
-  typedef ats_scoped_fd self_type;                                  ///< Self reference type.
+  using super_type = ats_scoped_resource<detail::SCOPED_FD_TRAITS>; ///< Super type.
+  using self_type  = ats_scoped_fd;                                 ///< Self reference type.
 
   /// Default constructor - an empty container.
   ats_scoped_fd() : super_type() {}
@@ -453,7 +453,7 @@ namespace detail
 template <typename T ///< Underlying type (not the pointer type).
           >
 struct SCOPED_MALLOC_TRAITS {
-  typedef T *value_type;
+  using value_type = T *;
   static T *
   initValue()
   {
@@ -475,7 +475,7 @@ struct SCOPED_MALLOC_TRAITS {
 template <typename T ///< Underlying type - not the pointer type.
           >
 struct SCOPED_OBJECT_TRAITS {
-  typedef T *value_type;
+  using value_type = T *;
   static T *
   initValue()
   {
@@ -575,8 +575,8 @@ template <typename T ///< Underlying (not pointer) type.
 class ats_scoped_mem : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T>>
 {
 public:
-  typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T>> super; ///< Super type.
-  typedef ats_scoped_mem self;                                        ///< Self reference.
+  using super = ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T>>; ///< Super type.
+  using self  = ats_scoped_mem;                                       ///< Self reference.
 
   self &
   operator=(T *ptr)

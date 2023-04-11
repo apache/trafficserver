@@ -34,7 +34,7 @@ namespace
     be passed repeated.
 */
 struct TestBox {
-  typedef TestBox self;  ///< Self reference type.
+  using self = TestBox;  ///< Self reference type.
   RegressionTest *_test; ///< The test object.
   int *_status;          ///< Current status pointer.
 

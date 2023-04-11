@@ -50,7 +50,7 @@ public:
     Continuation *endpoint;
     LINK(NextProtocolEndpoint, link);
 
-    typedef DLL<NextProtocolEndpoint> list_type;
+    using list_type = DLL<NextProtocolEndpoint>;
   };
 
   // noncopyable

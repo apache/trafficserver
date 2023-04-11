@@ -47,7 +47,7 @@ struct ByteBlock {
   ByteBlock(const char *d = nullptr, int d_len = 0) : data(d), data_len(d_len){};
 };
 
-typedef std::list<ByteBlock> ByteBlockList;
+using ByteBlockList = std::list<ByteBlock>;
 
 bool gzip(const ByteBlockList &blocks, std::string &cdata);
 
@@ -59,7 +59,7 @@ gzip(const char *data, int data_len, std::string &cdata)
   return gzip(blocks, cdata);
 }
 
-typedef std::list<std::string> BufferList;
+using BufferList = std::list<std::string>;
 
 bool gunzip(const char *data, int data_len, BufferList &buf_list);
 } // namespace EsiLib

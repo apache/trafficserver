@@ -44,7 +44,7 @@ public:
   /** Options for @c accept.
    */
   struct AcceptOptions {
-    typedef AcceptOptions self; ///< Self reference type.
+    using self = AcceptOptions; ///< Self reference type.
 
     /// Port on which to listen.
     /// 0 => don't care, which is useful if the socket is already bound.

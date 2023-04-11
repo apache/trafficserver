@@ -33,10 +33,10 @@
 
 #include <ts/ts.h>
 
-typedef std::string String;
-typedef std::set<std::string> StringSet;
-typedef std::map<std::string, std::string> StringMap;
-typedef std::multimap<std::string, std::string> HeaderMultiMap;
+using String         = std::string;
+using StringSet      = std::set<std::string>;
+using StringMap      = std::map<std::string, std::string>;
+using HeaderMultiMap = std::multimap<std::string, std::string>;
 
 class HeaderIterator;
 

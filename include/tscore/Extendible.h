@@ -98,9 +98,9 @@ public:
 // C API
 
 // context (internally FieldDesc*)
-typedef void const *ExtFieldContext;
-typedef void *DerivedPtr;
-typedef void *FieldPtr;
+using ExtFieldContext = const void *;
+using DerivedPtr      = void *;
+using FieldPtr        = void *;
 
 FieldPtr ExtFieldPtr(DerivedPtr derived, ExtFieldContext field_context, int *size = nullptr);
 

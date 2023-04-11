@@ -274,7 +274,7 @@ struct ts_imp_res_state {
   unsigned _pad;                /*%< make _u 64 bit aligned */
   uint16_t _nstimes[INK_MAXNS]; /*%< ms. */
 };
-typedef ts_imp_res_state *ink_res_state;
+using ink_res_state = ts_imp_res_state *;
 
 int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = nullptr,
                  const char *pSearchList = nullptr, const char *pResolvConf = nullptr);

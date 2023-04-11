@@ -51,7 +51,7 @@ class SSLNextProtocolAccept;
 //   or -1 to stop accepting.
 //
 typedef int(AcceptFunction)(NetAccept *na, void *e, bool blockable);
-typedef AcceptFunction *AcceptFunctionPtr;
+using AcceptFunctionPtr = AcceptFunction *;
 AcceptFunction net_accept;
 
 class UnixNetVConnection;

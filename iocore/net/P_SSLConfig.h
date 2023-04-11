@@ -57,8 +57,8 @@ struct ssl_ticket_key_block;
 // configuration file.
 /////////////////////////////////////////////////////////////
 
-typedef void (*init_ssl_ctx_func)(void *, bool);
-typedef void (*load_ssl_file_func)(const char *);
+using init_ssl_ctx_func  = void (*)(void *, bool);
+using load_ssl_file_func = void (*)(const char *);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
@@ -203,7 +203,7 @@ struct SSLConfig {
   static int get_config_index();
   static int get_loading_config_index();
   static void commit_config_id();
-  typedef ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams> scoped_config;
+  using scoped_config = ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams>;
 
 private:
   static int config_index;
@@ -216,7 +216,7 @@ struct SSLCertificateConfig {
   static SSLCertLookup *acquire();
   static void release(SSLCertLookup *params);
 
-  typedef ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup> scoped_config;
+  using scoped_config = ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup>;
 
 private:
   static int configid;
@@ -252,7 +252,7 @@ struct SSLTicketKeyConfig {
     }
   }
 
-  typedef ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams> scoped_config;
+  using scoped_config = ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams>;
 
 private:
   static int configid;

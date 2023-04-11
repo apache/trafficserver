@@ -62,7 +62,7 @@
 
 struct RegressionTest;
 
-typedef void TestFunction(RegressionTest *t, int type, int *status);
+using TestFunction = void(RegressionTest *, int, int *);
 
 struct RegressionTest {
   const char *name;

@@ -58,19 +58,19 @@ enum RecEntryT {
   RECE_RECORD,
 };
 
-typedef struct RecConfigCbList_t {
+using RecConfigUpdateCbList = struct RecConfigCbList_t {
   RecConfigUpdateCb update_cb;
   void *update_cookie;
   struct RecConfigCbList_t *next;
-} RecConfigUpdateCbList;
+};
 
-typedef struct RecStatUpdateFuncList_t {
+using RecStatUpdateFuncList = struct RecStatUpdateFuncList_t {
   RecRawStatBlock *rsb;
   int id;
   RecStatUpdateFunc update_func;
   void *update_cookie;
   struct RecStatUpdateFuncList_t *next;
-} RecStatUpdateFuncList;
+};
 
 struct RecStatMeta {
   RecRawStat data_raw;
@@ -142,8 +142,8 @@ struct RecMessageItr {
   int next;
 };
 
-typedef RecMessageHdr RecMessage;
+using RecMessage = RecMessageHdr;
 
-typedef void (*RecDumpEntryCb)(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum);
+using RecDumpEntryCb = void (*)(RecT, void *, int, const char *, int, RecData *);
 
-typedef RecErrT (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
+using RecMessageRecvCb = RecErrT (*)(RecMessage *, RecMessageT, void *);

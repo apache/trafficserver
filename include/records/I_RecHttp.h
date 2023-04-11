@@ -243,10 +243,10 @@ extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
  */
 struct HttpProxyPort {
 private:
-  typedef HttpProxyPort self; ///< Self reference type.
+  using self = HttpProxyPort; ///< Self reference type.
 public:
   /// Explicitly supported collection of proxy ports.
-  typedef std::vector<self> Group;
+  using Group = std::vector<self>;
 
   /// Type of transport on the connection.
   enum TransportType {

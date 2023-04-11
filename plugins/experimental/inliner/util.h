@@ -27,5 +27,5 @@
 
 namespace util
 {
-typedef std::vector<char> Buffer;
+using Buffer = std::vector<char>;
 } // namespace util

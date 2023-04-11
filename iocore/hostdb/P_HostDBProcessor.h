@@ -195,7 +195,7 @@ struct SplitDNS;
     This handles both the host name and raw address cases.
 */
 struct HostDBHash {
-  typedef HostDBHash self; ///< Self reference type.
+  using self = HostDBHash; ///< Self reference type.
 
   CryptoHash hash; ///< The hash value.
 

@@ -61,7 +61,7 @@
 #define STAT_PAGE_SUCCESS STAT_PAGES_EVENTS_START + 0
 #define STAT_PAGE_FAILURE STAT_PAGES_EVENTS_START + 1
 
-typedef Action *(*StatPagesFunc)(Continuation *cont, HTTPHdr *header);
+using StatPagesFunc = Action *(*)(Continuation *, HTTPHdr *);
 
 struct StatPageData {
   char *data = nullptr;

@@ -42,7 +42,7 @@
 
 #define ONE_WAY_TUNNEL_CLOSE_ALL nullptr
 
-typedef void (*Transform_fn)(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf);
+using Transform_fn = void (*)(MIOBufferAccessor &, MIOBufferAccessor &);
 
 /**
   A generic state machine that connects two virtual connections. A

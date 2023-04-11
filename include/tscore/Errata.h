@@ -85,13 +85,13 @@ protected:
   /// Implementation class.
   struct Data;
   /// Handle for implementation class instance.
-  typedef IntrusivePtr<Data> ImpPtr;
+  using ImpPtr = IntrusivePtr<Data>;
 
 public:
-  typedef Errata self; /// Self reference type.
+  using self = Errata; /// Self reference type.
 
   /// Message ID.
-  typedef NumericType<unsigned int, struct MsgIdTag> Id;
+  using Id = NumericType<unsigned int, struct MsgIdTag>;
 
   /* Tag / level / code severity.
      This is intended for clients to use to provide additional
@@ -99,18 +99,18 @@ public:
      is a common use.
 
   */
-  typedef NumericType<unsigned int, struct CodeTag> Code;
+  using Code = NumericType<unsigned int, struct CodeTag>;
   struct Message;
 
-  typedef std::deque<Message> Container; ///< Storage type for messages.
+  using Container = std::deque<Message>; ///< Storage type for messages.
   // We iterate backwards to look like a stack.
-  //    typedef Container::reverse_iterator iterator; ///< Message iteration.
+  //    using iterator = Container::reverse_iterator; ///< Message iteration.
   /// Message const iteration.
-  //    typedef Container::const_reverse_iterator const_iterator;
+  //    using const_iterator = Container::const_reverse_iterator;
   /// Reverse message iteration.
-  //    typedef Container::iterator reverse_iterator;
+  //    using reverse_iterator = Container::iterator;
   /// Reverse constant message iteration.
-  //    typedef Container::const_iterator const_reverse_iterator;
+  //    using const_reverse_iterator = Container::const_iterator;
 
   /// Default constructor - empty errata, very fast.
   Errata();
@@ -288,8 +288,8 @@ public:
   class Sink : public IntrusivePtrCounter
   {
   public:
-    typedef Sink self;                 ///< Self reference type.
-    typedef IntrusivePtr<self> Handle; ///< Handle type.
+    using self   = Sink;               ///< Self reference type.
+    using Handle = IntrusivePtr<self>; ///< Handle type.
 
     /// Handle an abandoned errata.
     virtual void operator()(Errata const &) const = 0;
@@ -301,7 +301,7 @@ public:
   static void registerSink(Sink::Handle const &s);
 
   /// Register a function as a sink.
-  typedef void (*SinkHandlerFunction)(Errata const &);
+  using SinkHandlerFunction = void (*)(Errata const &);
 
   // Wrapper class to support registering functions as sinks.
   struct SinkFunctionWrapper : public Sink {
@@ -374,7 +374,7 @@ extern std::ostream &operator<<(std::ostream &os, Errata const &stat);
 
 /// Storage for a single message.
 struct Errata::Message {
-  typedef Message self; ///< Self reference type.
+  using self = Message; ///< Self reference type.
 
   /// Default constructor.
   /// The message has Id = 0, default code,  and empty text.
@@ -447,7 +447,7 @@ struct Errata::Message {
   static Code Default_Code;
 
   /// Type for overriding success message test.
-  typedef bool (*SuccessTest)(Message const &m);
+  using SuccessTest = bool (*)(Message const &m);
 
   /** Success message test.
 
@@ -488,7 +488,7 @@ struct Errata::Message {
     mainly because the client can't see this class so we can't
 */
 struct Errata::Data : public IntrusivePtrCounter {
-  typedef Data self; ///< Self reference type.
+  using self = Data; ///< Self reference type.
 
   //! Default constructor.
   Data();
@@ -517,8 +517,8 @@ struct Errata::Data : public IntrusivePtrCounter {
 class Errata::iterator : public Errata::Container::reverse_iterator
 {
 public:
-  typedef iterator self;                             ///< Self reference type.
-  typedef Errata::Container::reverse_iterator super; ///< Parent type.
+  using self  = iterator;                            ///< Self reference type.
+  using super = Errata::Container::reverse_iterator; ///< Parent type.
   iterator();                                        ///< Default constructor.
   /// Copy constructor.
   iterator(self const &that ///< Source instance.
@@ -540,8 +540,8 @@ public:
 class Errata::const_iterator : public Errata::Container::const_reverse_iterator
 {
 public:
-  typedef const_iterator self;                             ///< Self reference type.
-  typedef Errata::Container::const_reverse_iterator super; ///< Parent type.
+  using self  = const_iterator;                            ///< Self reference type.
+  using super = Errata::Container::const_reverse_iterator; ///< Parent type.
   const_iterator();                                        ///< Default constructor.
   /// Copy constructor.
   const_iterator(self const &that ///< Source instance.
@@ -601,9 +601,9 @@ struct RvBase {
     asynchronously.
  */
 template <typename R> struct Rv : public RvBase {
-  typedef Rv self;      ///< Standard self reference type.
-  typedef RvBase super; ///< Standard super class reference type.
-  typedef R Result;     ///< Type of result value.
+  using self   = Rv;     ///< Standard self reference type.
+  using super  = RvBase; ///< Standard super class reference type.
+  using Result = R;      ///< Type of result value.
 
   Result _result; ///< The actual result of the function.
 

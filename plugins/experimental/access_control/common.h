@@ -34,12 +34,12 @@
 #include <sstream>
 #include <iostream>
 
-typedef std::string String;
-typedef std::string_view StringView;
-typedef std::set<std::string> StringSet;
-typedef std::list<std::string> StringList;
-typedef std::vector<std::string> StringVector;
-typedef std::map<std::string, std::string> StringMap;
+using String       = std::string;
+using StringView   = std::string_view;
+using StringSet    = std::set<std::string>;
+using StringList   = std::list<std::string>;
+using StringVector = std::vector<std::string>;
+using StringMap    = std::map<std::string, std::string>;
 
 #ifdef ACCESS_CONTROL_UNIT_TEST
 #include <stdio.h>

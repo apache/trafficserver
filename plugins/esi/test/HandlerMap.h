@@ -28,6 +28,6 @@
 
 #include "StubIncludeHandler.h"
 
-typedef std::map<std::string, StubIncludeHandler *> HandlerMap;
+using HandlerMap = std::map<std::string, StubIncludeHandler *>;
 
 extern HandlerMap gHandlerMap;

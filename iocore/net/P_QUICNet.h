@@ -33,7 +33,7 @@
 #include "P_QUICNetVConnection.h"
 
 class NetHandler;
-typedef int (NetHandler::*NetContHandler)(int, void *);
+using NetContHandler = int (NetHandler::*)(int, void *);
 
 void initialize_thread_for_quic_net(EThread *thread);
 

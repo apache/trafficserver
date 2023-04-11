@@ -68,7 +68,7 @@ struct CfgString {
   std::string m_text; ///< Text value of the option.
   bool m_found;       ///< String was found.
 };
-typedef std::vector<CfgString> CfgOpts;
+using CfgOpts = std::vector<CfgString>;
 
 #define N_OPTS(x) (sizeof(x) / sizeof(*x))
 

@@ -84,7 +84,7 @@ new_FreeCaller(C *ap, ink_hrtime t)
 }
 
 struct FreerContinuation;
-typedef int (FreerContinuation::*FreerContHandler)(int, void *);
+using FreerContHandler = int (FreerContinuation::*)(int, void *);
 
 struct FreerContinuation : public Continuation {
   void *p;

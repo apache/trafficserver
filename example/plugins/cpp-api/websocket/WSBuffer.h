@@ -34,7 +34,7 @@ enum ws_frametype {
   WS_FRAME_PING         = 0x9,
   WS_FRAME_PONG         = 0xA
 };
-typedef enum ws_frametype WS_FRAMETYPE;
+using WS_FRAMETYPE = enum ws_frametype;
 
 #define WS_RSV1      0x40
 #define WS_RSV2      0x20

@@ -111,7 +111,7 @@ struct CacheVC;
 #define OPEN_DIR_BUCKETS 256
 
 struct EvacuationBlock;
-typedef uint32_t DirInfo;
+using DirInfo = uint32_t;
 
 // Cache Directory
 

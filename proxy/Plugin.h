@@ -26,7 +26,7 @@
 #include <string>
 #include "tscore/List.h"
 
-typedef enum { RELOAD_OFF, RELOAD_ON, RELOAD_COUNT } PluginDynamicReloadMode;
+using PluginDynamicReloadMode = enum { RELOAD_OFF, RELOAD_ON, RELOAD_COUNT };
 
 // read records.yaml to parse plugin related configs
 void parsePluginConfig();

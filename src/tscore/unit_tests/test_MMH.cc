@@ -44,7 +44,7 @@ xxcompar(const void *a, const void *b)
   return 0;
 }
 
-typedef uint32_t i4_t[4];
+using i4_t = uint32_t[4];
 i4_t *xxh;
 double *xf;
 

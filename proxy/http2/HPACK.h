@@ -178,7 +178,7 @@ int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_e
                                   uint32_t maximum_table_size);
 
 // High level interfaces
-typedef HpackIndexingTable HpackHandle;
+using HpackHandle = HpackIndexingTable;
 int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
                                   uint32_t max_header_size, uint32_t maximum_table_size);
 int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,

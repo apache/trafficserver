@@ -300,7 +300,7 @@ typedef struct {
 } mp4_co64_atom;
 
 class Mp4Meta;
-typedef int (Mp4Meta::*Mp4AtomHandler)(int64_t atom_header_size, int64_t atom_data_size);
+using Mp4AtomHandler = int (Mp4Meta::*)(int64_t, int64_t);
 
 typedef struct {
   const char *name;

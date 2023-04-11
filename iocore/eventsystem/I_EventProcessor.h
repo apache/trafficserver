@@ -376,7 +376,7 @@ private:
   /// Used to generate a callback at the start of thread execution.
   class ThreadInit : public Continuation
   {
-    typedef ThreadInit self;
+    using self = ThreadInit;
     EventProcessor *_evp;
 
   public:

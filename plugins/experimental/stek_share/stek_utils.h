@@ -31,12 +31,12 @@
 
 #define SSL_KEY_LEN 16
 
-typedef struct ssl_ticket_key // a STEK
+using ssl_ticket_key_t = struct ssl_ticket_key // a STEK
 {
   unsigned char key_name[SSL_KEY_LEN]; // tickets use this name to identify who encrypted
   unsigned char hmac_secret[SSL_KEY_LEN];
   unsigned char aes_key[SSL_KEY_LEN];
-} ssl_ticket_key_t;
+};
 
 #define SSL_TICKET_KEY_SIZE sizeof(ssl_ticket_key_t)
 

@@ -68,7 +68,7 @@ class AuthHttpAdapter;
 class PreWarmSM;
 
 class HttpSM;
-typedef int (HttpSM::*HttpSMHandler)(int event, void *data);
+using HttpSMHandler = int (HttpSM::*)(int, void *);
 
 enum HttpVC_t {
   HTTP_UNKNOWN = 0,

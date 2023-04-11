@@ -69,7 +69,7 @@ typedef enum {
     that protocol. If it's not an IP protocol, IPv4 will be used.
 */
 struct NetVCOptions {
-  typedef NetVCOptions self; ///< Self reference type.
+  using self = NetVCOptions; ///< Self reference type.
 
   /// Values for valid IP protocols.
   enum ip_protocol_t {

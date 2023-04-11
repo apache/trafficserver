@@ -35,7 +35,7 @@
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 
 struct ShowCont;
-typedef int (ShowCont::*ShowContEventHandler)(int event, Event *data);
+using ShowContEventHandler = int (ShowCont::*)(int, Event *);
 struct ShowCont : public Continuation {
 private:
   char *buf, *start, *ebuf;

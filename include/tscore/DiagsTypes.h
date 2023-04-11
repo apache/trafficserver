@@ -73,7 +73,7 @@ enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCAT
 
 // Cleanup Function Prototype - Called before ink_fatal to
 //   cleanup process state
-typedef void (*DiagsCleanupFunc)();
+using DiagsCleanupFunc = void (*)();
 
 class DiagsConfigState
 {

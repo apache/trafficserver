@@ -53,7 +53,7 @@ typedef struct {
   pcre_extra *_extra;
 } plugin_regex;
 
-typedef enum { ALLOW_IP, DENY_IP, UNKNOWN_IP } ipstate;
+using ipstate = enum { ALLOW_IP, DENY_IP, UNKNOWN_IP };
 
 // Base class for all ACLs
 class Acl

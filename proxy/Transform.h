@@ -29,12 +29,12 @@
 
 #define TRANSFORM_READ_READY (TRANSFORM_EVENTS_START + 0)
 
-typedef struct _RangeRecord {
+using RangeRecord = struct _RangeRecord {
   _RangeRecord() {}
   int64_t _start     = -1;
   int64_t _end       = -1;
   int64_t _done_byte = -1;
-} RangeRecord;
+};
 
 class TransformProcessor
 {

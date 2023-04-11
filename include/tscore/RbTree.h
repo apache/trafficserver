@@ -33,20 +33,20 @@ namespace detail
       duplication.
   */
   struct RBNode {
-    typedef RBNode self; ///< self reference type
+    using self = RBNode; ///< self reference type
 
     /// Node colors
-    typedef enum {
+    using Color = enum {
       RED,
       BLACK,
-    } Color;
+    };
 
     /// Directional constants
-    typedef enum {
+    using Direction = enum {
       NONE,
       LEFT,
       RIGHT,
-    } Direction;
+    };
 
     /// Get a child by direction.
     /// @return The child in the direction @a d if it exists,

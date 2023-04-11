@@ -39,6 +39,5 @@ EsiLib::SpecialIncludeHandler *createSpecialIncludeHandler(EsiLib::Variables &es
 
 namespace EsiLib
 {
-typedef SpecialIncludeHandler *(*SpecialIncludeHandlerCreator)(Variables &esi_vars, Expression &esi_expr, HttpDataFetcher &fetcher,
-                                                               const std::string &id);
+using SpecialIncludeHandlerCreator = SpecialIncludeHandler *(*)(Variables &, Expression &, HttpDataFetcher &, const std::string &);
 };
