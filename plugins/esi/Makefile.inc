@@ -21,10 +21,7 @@ ESI_CPPFLAGS = \
 	-I$(srcdir)/esi/test \
 	$(AM_CPPFLAGS)
 
-# Add -Wno-deprecated because ESI uses ext/hash_map.
-ESI_CXXFLAGS = \
-	$(AM_CXXFLAGS) \
-	-Wno-deprecated
+ESI_CXXFLAGS = $(AM_CXXFLAGS)
 
 noinst_LTLIBRARIES += \
 	esi/libesicore.la \
