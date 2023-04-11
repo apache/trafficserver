@@ -36,6 +36,11 @@ constexpr std::string_view hash_key_path_query    = "path+query";
 constexpr std::string_view hash_key_path_fragment = "path+fragment";
 constexpr std::string_view hash_key_cache         = "cache_key";
 
+// hash_url strings
+constexpr std::string_view hash_url_request = "request";
+constexpr std::string_view hash_url_cache   = "cache";
+constexpr std::string_view hash_url_parent  = "parent";
+
 static bool
 isWrapped(std::vector<bool> &wrap_around, uint32_t groups)
 {
@@ -89,6 +94,26 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
   ATSHash64Sip24 hash;
 
   try {
+    if (n["hash_url"]) {
+      auto hash_url_val = n["hash_url"].Scalar();
+      if (hash_url_val == hash_url_request) {
+        hash_url = NH_HASH_URL_REQUEST;
+      } else if (hash_url_val == hash_url_cache) {
+        hash_url = NH_HASH_URL_CACHE;
+      } else if (hash_url_val == hash_url_parent) {
+        hash_url = NH_HASH_URL_PARENT;
+      } else {
+        hash_url = NH_HASH_URL_REQUEST;
+        NH_Note("Invalid 'hash_url' value, '%s', for the strategy named '%s', using default '%s'.", hash_url_val.c_str(),
+                strategy_name.c_str(), hash_url_request.data());
+      }
+    }
+  } catch (std::exception &ex) {
+    throw std::invalid_argument("Error parsing the strategy named '" + strategy_name + "' due to '" + ex.what() +
+                                "', this strategy will be ignored.");
+  }
+
+  try {
     if (n["hash_key"]) {
       auto hash_key_val = n["hash_key"].Scalar();
       if (hash_key_val == hash_key_url) {
@@ -102,6 +127,7 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
       } else if (hash_key_val == hash_key_path_fragment) {
         hash_key = NH_PATH_FRAGMENT_HASH_KEY;
       } else if (hash_key_val == hash_key_cache) {
+        // ToDo: Deprecated in 10.0.x, remove in 11.0.0
         hash_key = NH_CACHE_HASH_KEY;
       } else {
         hash_key = NH_PATH_HASH_KEY;
@@ -142,10 +168,29 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
 uint64_t
 NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata, ATSHash64 *h)
 {
-  URL *url                   = hrdata.hdr->url_get();
-  URL *ps_url                = nullptr;
+  URL *url                   = nullptr;
   int len                    = 0;
   const char *url_string_ref = nullptr;
+
+  switch (hash_url) {
+  case NH_HASH_URL_REQUEST:
+    break;
+  case NH_HASH_URL_CACHE:
+    if (hrdata.cache_info_lookup_url) {
+      url = *(hrdata.cache_info_lookup_url);
+    }
+    break;
+  case NH_HASH_URL_PARENT:
+    if (hrdata.cache_info_parent_selection_url) {
+      url = *(hrdata.cache_info_parent_selection_url);
+    }
+    break;
+  }
+
+  // Make sure we default to the request URL if nothing else worked
+  if (!url) {
+    url = hrdata.hdr->url_get();
+  }
 
   // calculate a hash using the selected config.
   switch (hash_key) {
@@ -189,16 +234,18 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
       h->update(url_string_ref, len);
     }
     break;
-  // use the cache key created by the cache-key plugin.
+  // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)
+  // ToDo: Deprecated in 10.0.x, remove in 11.0.0
   case NH_CACHE_HASH_KEY:
-    ps_url = *(hrdata.cache_info_parent_selection_url);
-    if (ps_url) {
-      url_string_ref = ps_url->string_get_ref(&len);
+    if (hrdata.cache_info_parent_selection_url && *(hrdata.cache_info_parent_selection_url)) {
+      url            = *(hrdata.cache_info_parent_selection_url);
+      url_string_ref = url->string_get_ref(&len);
       if (url_string_ref && len > 0) {
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] using parent selection over-ride string:'%.*s'.", sm_id, len, url_string_ref);
         h->update(url_string_ref, len);
       }
     } else {
+      // URL defaults to hrdata.hdr->url_get() above
       url_string_ref = url->path_get(&len);
       h->update("/", 1);
       if (url_string_ref && len > 0) {

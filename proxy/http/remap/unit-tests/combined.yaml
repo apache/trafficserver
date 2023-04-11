@@ -157,7 +157,8 @@ strategies:
         - active
   - strategy: "mid-tier-midwest"
     policy: consistent_hash
-    hash_key: cache_key
+    hash_url: parent
+    hash_key: url
     go_direct: true
     parent_is_proxy: false # next hop hosts  are origin servers
     groups:
