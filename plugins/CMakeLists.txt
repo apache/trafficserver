@@ -25,6 +25,10 @@ function(add_atsplugin name)
   install(TARGETS ${name} DESTINATION libexec/trafficserver)
 endfunction()
 
+if(APPLE)
+  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
+endif()
+
 add_subdirectory(authproxy)
 add_subdirectory(background_fetch)
 add_subdirectory(cache_promote)
