@@ -139,6 +139,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME`                  :ts:cv:`proxy.config.http.negative_caching_lifetime`
 :c:enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED`              :ts:cv:`proxy.config.http.negative_revalidating_enabled`
 :c:enumerator:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`             :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
+:c:enumerator:`TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT`              :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent`
 :c:enumerator:`TS_CONFIG_HTTP_NORMALIZE_AE`                               :ts:cv:`proxy.config.http.normalize_ae`
 :c:enumerator:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                     :ts:cv:`proxy.config.http.number_of_redirections`
 :c:enumerator:`TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD`                :ts:cv:`proxy.config.http.parent_proxy.fail_threshold`

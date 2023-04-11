@@ -579,9 +579,9 @@ struct OverridableHttpConfigParams {
   MgmtByte insert_request_via_string  = 1;
   MgmtByte insert_response_via_string = 0;
 
-  //////////////////////
-  //  DOC IN CACHE NO DNS//
-  //////////////////////
+  /////////////////////////
+  // DOC IN CACHE NO DNS //
+  /////////////////////////
   MgmtByte doc_in_cache_skip_dns = 1;
   MgmtByte flow_control_enabled  = 0;
 
@@ -595,6 +595,7 @@ struct OverridableHttpConfigParams {
   //////////////////////////
   MgmtByte srv_enabled                   = 0;
   MgmtByte parent_failures_update_hostdb = 0;
+  MgmtByte no_dns_forward_to_parent      = 0;
 
   MgmtByte cache_open_write_fail_action = 0;
 
@@ -822,10 +823,9 @@ public:
   ///////////////////////////////////////////////////////////////////
   MgmtByte disable_ssl_parenting = 0;
 
-  MgmtByte no_dns_forward_to_parent = 0;
-  MgmtByte no_origin_server_dns     = 0;
-  MgmtByte use_client_target_addr   = 0;
-  MgmtByte use_client_source_port   = 0;
+  MgmtByte no_origin_server_dns   = 0;
+  MgmtByte use_client_target_addr = 0;
+  MgmtByte use_client_source_port = 0;
 
   MgmtByte enable_http_stats = 1; // Can be "slow"
 

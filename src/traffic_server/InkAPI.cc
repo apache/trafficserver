@@ -8805,6 +8805,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret  = &overridableHttpConfig->host_res_data;
     conv = &HttpTransact::HOST_RES_CONV;
     break;
+  case TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT:
+    ret = _memberp_to_generic(&overridableHttpConfig->no_dns_forward_to_parent, conv);
+    break;
   case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX:
     ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_index, conv);
     break;

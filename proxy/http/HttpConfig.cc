@@ -1179,7 +1179,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
 
-  HttpEstablishStaticConfigByte(c.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
+  HttpEstablishStaticConfigByte(c.oride.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
   HttpEstablishStaticConfigByte(c.oride.uncacheable_requests_bypass_parent, "proxy.config.http.uncacheable_requests_bypass_parent");
   HttpEstablishStaticConfigByte(c.oride.doc_in_cache_skip_dns, "proxy.config.http.doc_in_cache_skip_dns");
 
@@ -1456,7 +1456,7 @@ HttpConfig::reconfigure()
 
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
-  params->no_dns_forward_to_parent                 = INT_TO_BOOL(m_master.no_dns_forward_to_parent);
+  params->oride.no_dns_forward_to_parent           = INT_TO_BOOL(m_master.oride.no_dns_forward_to_parent);
   params->oride.uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.oride.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns                     = INT_TO_BOOL(m_master.no_origin_server_dns);
   params->use_client_target_addr                   = m_master.use_client_target_addr;
@@ -1556,6 +1556,7 @@ HttpConfig::reconfigure()
   params->oride.parent_fail_threshold           = m_master.oride.parent_fail_threshold;
   params->oride.per_parent_connect_attempts     = m_master.oride.per_parent_connect_attempts;
   params->oride.parent_failures_update_hostdb   = m_master.oride.parent_failures_update_hostdb;
+  params->oride.no_dns_forward_to_parent        = m_master.oride.no_dns_forward_to_parent;
   params->oride.enable_parent_timeout_markdowns = m_master.oride.enable_parent_timeout_markdowns;
   params->oride.disable_parent_markdowns        = m_master.oride.disable_parent_markdowns;
 

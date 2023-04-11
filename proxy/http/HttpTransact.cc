@@ -585,7 +585,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       TxnDebug("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
-  } else if (s->txn_conf->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
+  } else if (s->txn_conf->uncacheable_requests_bypass_parent && s->txn_conf->no_dns_forward_to_parent == 0 &&
              !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
     // Note that the configuration of the proxy as well as the request
@@ -614,7 +614,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       // We already have a parent that failed, if we are now told
       //  to go the origin server, we can only obey this if we
       //  dns'ed the origin server
-      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
+      if (s->parent_result.result == PARENT_DIRECT && s->txn_conf->no_dns_forward_to_parent != 0) {
         ink_assert(!s->server_info.dst_addr.isValid());
         s->parent_result.result = PARENT_FAIL;
       }
@@ -625,7 +625,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   1) the config permitted us to dns the origin server
       //   2) the config permits us
       //   3) the parent was not set from API
-      if (s->http_config_param->no_dns_forward_to_parent == 0 && bypass_ok(s) && parent_is_proxy(s) &&
+      if (s->txn_conf->no_dns_forward_to_parent == 0 && bypass_ok(s) && parent_is_proxy(s) &&
           !s->parent_params->apiParentExists(&s->request_data)) {
         s->parent_result.result = PARENT_DIRECT;
       }
@@ -658,7 +658,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   case PARENT_DIRECT:
     // if the configuration does not allow the origin to be dns'd
     // we're unable to go direct to the origin.
-    if (s->http_config_param->no_dns_forward_to_parent) {
+    if (s->txn_conf->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = PARENT_FAIL;
       return ResolveInfo::HOST_NONE;
@@ -1600,8 +1600,7 @@ HttpTransact::HandleRequest(State *s)
     TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
   }
 
-  if (s->http_config_param->no_dns_forward_to_parent && s->scheme != URL_WKSIDX_HTTPS &&
-      strcmp(s->server_info.name, "127.0.0.1") != 0) {
+  if (s->txn_conf->no_dns_forward_to_parent && s->scheme != URL_WKSIDX_HTTPS && strcmp(s->server_info.name, "127.0.0.1") != 0) {
     // for HTTPS requests, we must go directly to the
     // origin server. Ignore the no_dns_just_forward_to_parent setting.
     // we need to see if the hostname is an
@@ -1811,7 +1810,7 @@ HttpTransact::PPDNSLookup(State *s)
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
-      } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+      } else if (s->parent_result.result == PARENT_DIRECT && s->txn_conf->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
         CallOSDNSLookup(s);
         return;
@@ -2019,7 +2018,7 @@ HttpTransact::OSDNSLookup(State *s)
     // therefore no more backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
   } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->parent_table->hostMatch &&
-             !s->http_config_param->no_dns_forward_to_parent) {
+             !s->txn_conf->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
     TRANSACT_RETURN(SM_ACTION_DNS_REVERSE_LOOKUP, HttpTransact::StartAccessControl);
@@ -3311,8 +3310,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     }
     if (!s->current.server->dst_addr.isValid()) {
       ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == ResolveInfo::PARENT_PROXY ||
-                         s->http_config_param->no_dns_forward_to_parent != 0);
-      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+                         s->txn_conf->no_dns_forward_to_parent != 0);
+      if (s->parent_result.result == PARENT_DIRECT && s->txn_conf->no_dns_forward_to_parent != 1) {
         return CallOSDNSLookup(s);
       }
       if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
