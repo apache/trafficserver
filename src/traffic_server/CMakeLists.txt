@@ -65,3 +65,5 @@ if (TS_USE_LINUX_IO_URING)
     target_link_libraries(traffic_server inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
 
+install(TARGETS traffic_server)
+

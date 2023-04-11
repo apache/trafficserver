@@ -147,6 +147,12 @@ if(HOST_OS STREQUAL "linux")
     link_libraries(dl)
 endif(HOST_OS STREQUAL "linux")
 
+if (HOST_OS STREQUAL "darwin")
+    set(CMAKE_MACOSX_RPATH 1)
+endif(HOST_OS STREQUAL "darwin")
+
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options(-Wno-invalid-offsetof)
 
@@ -175,6 +181,7 @@ configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
 configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
 add_subdirectory(src/tscpp/util)
+add_subdirectory(src/tscpp/api)
 add_subdirectory(src/tscore)
 add_subdirectory(src/records)
 add_subdirectory(iocore)
@@ -183,4 +190,6 @@ add_subdirectory(mgmt/utils)
 add_subdirectory(mgmt/config)
 add_subdirectory(mgmt/rpc)
 add_subdirectory(src/traffic_server)
+add_subdirectory(plugins)
+
 add_subdirectory(src/tests)

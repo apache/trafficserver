@@ -15,28 +15,24 @@
 #
 #######################
 
-add_library(records_p SHARED
-        P_RecCore.cc
-        RecConfigParse.cc
-        RecCore.cc
-        RecDebug.cc
-        RecFile.cc
-        RecHttp.cc
-        RecMessage.cc
-        RecMutex.cc
-        RecUtils.cc
-        RecYAMLDecoder.cc
-        RecordsConfig.cc
-        RecordsConfigUtils.cc
-        RecRawStats.cc
-        )
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
-target_include_directories(records_p PRIVATE
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/api/include
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/utils
-        )
-target_link_libraries(records_p tscore libswoc)
-install(TARGETS records_p)
+function(add_atsplugin name)
+  add_library(${name} MODULE ${ARGN})
+  set_target_properties(${name} PROPERTIES PREFIX "")
+  set_target_properties(${name} PROPERTIES SUFFIX ".so")
+  set_target_properties(${name} PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+  install(TARGETS ${name} DESTINATION libexec/trafficserver)
+endfunction()
+
+add_subdirectory(authproxy)
+add_subdirectory(background_fetch)
+add_subdirectory(cache_promote)
+add_subdirectory(cache_range_requests)
+add_subdirectory(cachekey)
+add_subdirectory(certifier)
+add_subdirectory(compress)
+add_subdirectory(conf_remap)
+
+add_subdirectory(generator)
+add_subdirectory(xdebug)
