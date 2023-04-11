@@ -24,7 +24,7 @@
 #pragma once
 
 #include <string>
-#include <ext/hash_map>
+#include <unordered_map>
 
 namespace EsiLib
 {
@@ -32,13 +32,13 @@ struct StringHasher {
   inline size_t
   operator()(const std::string &str) const
   {
-    return __gnu_cxx::hash<const char *>()(str.c_str());
+    return std::hash<std::string>()(str);
   };
 };
 
-using StringHash = __gnu_cxx::hash_map<std::string, std::string, StringHasher>;
+using StringHash = std::unordered_map<std::string, std::string, StringHasher>;
 
-template <typename T> class StringKeyHash : public __gnu_cxx::hash_map<std::string, T, StringHasher>
+template <typename T> class StringKeyHash : public std::unordered_map<std::string, T, StringHasher>
 {
 };
 }; // namespace EsiLib

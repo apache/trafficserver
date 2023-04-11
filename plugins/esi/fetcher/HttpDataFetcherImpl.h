@@ -122,7 +122,7 @@ private:
     RequestData() {}
   };
 
-  using UrlToContentMap = __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher>;
+  using UrlToContentMap = std::unordered_map<std::string, RequestData, EsiLib::StringHasher>;
   UrlToContentMap _pages;
 
   using IteratorArray = std::vector<UrlToContentMap::iterator>;
