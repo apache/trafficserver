@@ -32,6 +32,12 @@ namespace ts
 {
 namespace Yaml
 {
+  constexpr std::string_view YAML_FLOAT_TAG_URI{"tag:yaml.org,2002:float"};
+  constexpr std::string_view YAML_INT_TAG_URI{"tag:yaml.org,2002:int"};
+  constexpr std::string_view YAML_STR_TAG_URI{"tag:yaml.org,2002:str"};
+  constexpr std::string_view YAML_BOOL_TAG_URI{"tag:yaml.org,2002:bool"};
+  constexpr std::string_view YAML_NULL_TAG_URI{"tag:yaml.org,2002:null"};
+
   // A class that is a wrapper for a YAML::Node that corresponds to a map in a YAML input file.
   // It's purpose is to make sure all keys in the map are processed.
   //
