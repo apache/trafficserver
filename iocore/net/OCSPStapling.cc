@@ -85,11 +85,11 @@ public:
       this->fetch();
     } else {
       auto fsm = reinterpret_cast<FetchSM *>(e);
-      auto ctx = reinterpret_cast<HTTPRequest *>(fsm->ext_get_user_data());
+      auto req = reinterpret_cast<HTTPRequest *>(fsm->ext_get_user_data());
       if (event == TS_FETCH_EVENT_EXT_BODY_DONE) {
-        ctx->set_done();
+        req->set_done();
       } else if (event == TS_EVENT_ERROR) {
-        ctx->set_error();
+        req->set_error();
       }
     }
 
