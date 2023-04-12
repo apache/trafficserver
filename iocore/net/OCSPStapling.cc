@@ -540,7 +540,10 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
 
   // Content-Type, Content-Length, Request Body
   if (use_post) {
-    httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(OCSP_REQUEST), (const ASN1_VALUE *)req);
+    if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(OCSP_REQUEST), (const ASN1_VALUE *)req) != 1) {
+      Error("failed to make a request for OCSP server; uri=%s", uri);
+      return nullptr;
+    }
   }
 
   // Send request
