@@ -75,49 +75,6 @@ Process Warnings
    disks; Traffic Server is running in proxy-only mode. You must add
    the disks you want to use for the cache to :file:`storage.config`.
 
-Alarm Messages
-==============
-
-``[ConfigManager::ConfigManager] Config file is read-only: <filename>``
-   Go to the Traffic Server ``config`` directory and check the
-   indicated file permissions; change if necessary.
-
-``[ConfigManager::ConfigManager] Unable to read or write config file <filename>``
-   Go to the Traffic Server ``config`` directory and make sure the
-   indicated file exists. Check permissions and modify if necessary.
-
-``[Traffic Manager] Configuration File Update Failed: <error number>``
-   Go to the Traffic Server ``config`` directory and check the
-   indicated file permissions; change if necessary.
-
-``[Traffic Manager] Mgmt <==>Proxy conn. closed``
-   An informational message to inform you that the :program:`traffic_server`
-   process is down.
-
-``Access logging suspended - configured space allocation exhausted.``
-   The space allocated to the event log files is full; you must either
-   increase the space or delete some log files so that access logging
-   to continue. To prevent this error, consider rolling log files more
-   frequently and enabling the autodelete feature.
-
-``Access logging suspended - no more space on the logging partition.``
-   The entire partition containing the event logs is full; you must
-   delete or move some log files to enable access logging to continue.
-   To prevent this error, consider rolling log files more frequently
-   and enabling the autodelete feature.
-
-``Created zero length place holder for config file <filename>``
-   Go to the Traffic Server ``config`` directory and check the
-   indicated file. If it is indeed zero in length, then use a backup
-   copy of the configuration file.
-
-``Traffic Server could not open logfile <filename>``
-   Check permissions for the indicated file and the logging directory.
-
-``Traffic Server failed to parse line <line number> of the logging config file <filename>``
-   Check your custom log configuration file; there could be syntax
-   errors. Refer to :ref:`admin-logging-fields` for correct custom log format fields.
-
 .. _body-factory:
 
 HTML Messages Sent to Clients
