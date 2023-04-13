@@ -84,7 +84,7 @@ ip_addr_to_str(uint32_t addr)
 {
   static char buff[4 * 3 + 3 + 1];
   unsigned char *octet = reinterpret_cast<unsigned char *>(&addr);
-  sprintf(buff, "%d.%d.%d.%d", octet[0], octet[1], octet[2], octet[3]);
+  snprintf(buff, sizeof(buff), "%d.%d.%d.%d", octet[0], octet[1], octet[2], octet[3]);
   return buff;
 }
 

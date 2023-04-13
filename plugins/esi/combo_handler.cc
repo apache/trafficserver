@@ -320,7 +320,7 @@ CacheControlHeader::generate() const
   immutable = (_immutable ? ", " HTTP_IMMUTABLE : "");
   max_age   = (_max_age == numeric_limits<unsigned int>::max() ? 315360000 : _max_age); // default is 10 years
 
-  sprintf(line_buf, "Cache-Control: max-age=%u, %s%s\r\n", max_age, publicity, immutable);
+  snprintf(line_buf, sizeof(line_buf), "Cache-Control: max-age=%u, %s%s\r\n", max_age, publicity, immutable);
   return string(line_buf);
 }
 
