@@ -34,7 +34,7 @@ MAKE="make"
 # These are for Linux like systems, specially the LDFLAGS, also depends on dirs above
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
-LDFLAGS=${LDFLAGS:-"-Wl,-rpath=${OPENSSL_PREFIX}/lib"}
+LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_PREFIX}/lib"}
 
 if [ -e /etc/redhat-release ]; then
     MAKE="gmake"
@@ -60,6 +60,13 @@ elif [ -e /etc/debian_version ]; then
 fi
 
 set -x
+if [ `uname -s` = "Linux" ]
+then
+  num_threads=$(nproc)
+else
+  # MacOS.
+  num_threads=$(sysctl -n hw.logicalcpu)
+fi
 
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
@@ -71,7 +78,7 @@ cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
-sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
+[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
 sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
 sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
 cd ..
@@ -81,7 +88,7 @@ echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
 cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
-${MAKE} -j $(nproc)
+${MAKE} -j ${num_threads}
 sudo ${MAKE} -j install
 
 # The symlink target provides a more convenient path for the user while also
@@ -106,7 +113,7 @@ autoreconf -if
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-lib-only
-${MAKE} -j $(nproc)
+${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
 
@@ -127,7 +134,7 @@ autoreconf -if
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-lib-only
-${MAKE} -j $(nproc)
+${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
 
@@ -141,6 +148,13 @@ if [ ! -d nghttp2 ]; then
 fi
 cd nghttp2
 autoreconf -if
+if [ `uname -s` = "Darwin" ]
+then
+  # --enable-app requires systemd which is not available on Mac.
+  ENABLE_APP=""
+else
+  ENABLE_APP="--enable-app"
+fi
 ./configure \
   --prefix=${BASE} \
   PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
@@ -148,8 +162,8 @@ autoreconf -if
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-http3 \
-  --enable-app
-${MAKE} -j $(nproc)
+  ${ENABLE_APP}
+${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
 
@@ -157,7 +171,9 @@ cd ..
 echo "Building curl ..."
 [ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
 cd curl
-autoreconf -i
+# On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
+# The second runs fine.
+autoreconf -fi || autoreconf -fi
 ./configure \
   --prefix=${BASE} \
   --with-ssl=${OPENSSL_PREFIX} \
@@ -167,5 +183,5 @@ autoreconf -i
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}"
-${MAKE} -j $(nproc)
+${MAKE} -j ${num_threads}
 sudo ${MAKE} install
