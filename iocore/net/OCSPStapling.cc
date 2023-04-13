@@ -44,6 +44,11 @@
 // so 10K should be more than enough.
 #define MAX_STAPLING_DER 10240
 
+extern ClassAllocator<FetchSM> FetchSMAllocator;
+
+namespace
+{
+
 // Cached info stored in SSL_CTX ex_info
 struct certinfo {
   unsigned char idx[20]; // Index in session cache SHA1 hash of certificate
@@ -58,8 +63,6 @@ struct certinfo {
   bool is_expire;
   time_t expire_time;
 };
-
-extern ClassAllocator<FetchSM> FetchSMAllocator;
 
 class HTTPRequest : public Continuation
 {
@@ -194,6 +197,8 @@ private:
   int _req_body_len        = 0;
   int _result              = 0;
 };
+
+} // End of namespace
 
 /*
  * In the case of multiple certificates associated with a SSL_CTX, we must store a map
