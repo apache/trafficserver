@@ -167,7 +167,7 @@ ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
 
-# And finally curl
+# Then curl
 echo "Building curl ..."
 [ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
 cd curl
@@ -185,3 +185,50 @@ autoreconf -fi || autoreconf -fi
   LDFLAGS="${LDFLAGS}"
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+
+# boringssl
+echo "Building boringssl..."
+
+# We need this go version.
+GO_BASE_PATH=/usr/local
+if [ ! -d ${GO_BASE_PATH} ]; then
+  sudo mkdir ${GO_BASE_PATH}
+fi
+
+if [ `uname -m` = "arm64" ]; then
+    ARCH="arm64"
+else
+    ARCH="amd64"
+fi
+
+if [ `uname -s` = "Darwin" ]; then
+    OS="darwin"
+else
+    OS="linux"
+fi
+
+wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
+sudo rm -rf ${GO_BASE_PATH}/go && sudo tar -C ${GO_BASE_PATH} -xf go1.20.1.${OS}-${ARCH}.tar.gz
+rm go1.20.1.${OS}-${ARCH}.tar.gz
+
+GO_BINARY_PATH=${GO_BASE_PATH}/go/bin/go
+if [ ! -d boringssl ]; then
+  git clone https://boringssl.googlesource.com/boringssl
+  cd boringssl
+  git checkout 31bad2514d21f6207f3925ba56754611c462a873
+  cd ..
+fi
+cd boringssl
+if [ ! -d build ]; then
+  mkdir build
+fi
+cd build
+cmake \
+  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=1 ../
+
+${MAKE} -j ${num_threads}
+sudo ${MAKE} install
+cd ..
