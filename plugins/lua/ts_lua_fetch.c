@@ -375,7 +375,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   }
 
   if (body_len > 0 && cl == 0) { // add Content-Length header
-    n = sprintf(buf, "%zu", body_len);
+    n = snprintf(buf, sizeof(buf), "%zu", body_len);
     TSFetchHeaderAdd(fi->fch, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, buf, n);
   }
 

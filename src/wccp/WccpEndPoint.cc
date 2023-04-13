@@ -432,7 +432,7 @@ CacheImpl::GroupData::processUp()
         int pid            = atoi(buffer);
         if (pid > 0) {
           // If the process is still running, it has an entry in the proc file system, (Linux only)
-          sprintf(buffer, "/proc/%d/status", pid);
+          snprintf(buffer, sizeof(buffer), "/proc/%d/status", pid);
           ats_scoped_fd fd2{open(buffer, O_RDONLY)};
           if (fd2 >= 0) {
             zret = true;

@@ -139,8 +139,8 @@ ShowCacheInternal::showVolConnections(int event, Event *e)
     // if vc is closed ignore - Ramki 08/30/2000
     if (vc->closed == 1)
       continue;
-    sprintf(nbytes, "%d", vc->vio.nbytes);
-    sprintf(todo, "%d", vc->vio.ntodo());
+    snprintf(nbytes, sizeof(nbytes), "%d", vc->vio.nbytes);
+    snprintf(todo, sizeof(todo), "%d", vc->vio.ntodo());
 
     if (vc->f.frag_type == CACHE_FRAG_TYPE_HTTP && vc->request.valid()) {
       URL *u = vc->request.url_get(&uu);
