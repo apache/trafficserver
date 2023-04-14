@@ -24,6 +24,8 @@
 #include <cstring>
 #include <zlib.h>
 
+#include "tscore/ink_config.h"
+
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
