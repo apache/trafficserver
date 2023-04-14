@@ -118,10 +118,12 @@ public:
     if (has_recv_port_var && has_pp_port_var) {
       Error("Invalid destination \"%.*s\" in SNI configuration - Only one port variable can be specified.",
             static_cast<int>(destination.size()), destination.data());
-    } else if (has_recv_port_var || has_pp_port_var) {
-      // Specified only one of the port variables.
-      fnArrIndexes.push_back(has_recv_port_var ? OpId::MAP_WITH_RECV_PORT : OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
-      var_start_pos = has_recv_port_var ? recv_port_start_pos : pp_port_start_pos;
+    } else if (has_recv_port_var) {
+      fnArrIndexes.push_back(OpId::MAP_WITH_RECV_PORT);
+      var_start_pos = recv_port_start_pos;
+    } else if (has_pp_port_var) {
+      fnArrIndexes.push_back(OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
+      var_start_pos = pp_port_start_pos;
     }
     // Check for match groups as well.
     if (destination.find_first_of('$') != std::string::npos) {
