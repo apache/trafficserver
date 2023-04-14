@@ -41,7 +41,6 @@
 
 #include "tscore/ink_inet.h"
 
-#include <sys/types.h>
 #include <vector>
 
 class ControlH2 : public ActionItem
