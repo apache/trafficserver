@@ -41,6 +41,7 @@
 
 #include "tscore/ink_inet.h"
 
+#include <sys/types.h>
 #include <vector>
 
 class ControlH2 : public ActionItem
@@ -108,14 +109,20 @@ public:
                     const std::vector<int> &alpn)
     : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
   {
-    // Check for port variable specification. Note that only one of these can be
-    // present in the config. Also note that this is checked before the match
-    // group so that the corresponding function can be applied before the match
-    // group expansion(when the var_start_pos is still accurate).
-    if (var_start_pos = destination.find(MAP_WITH_RECV_PORT_STR); var_start_pos != std::string::npos) {
-      fnArrIndexes.push_back(OpId::MAP_WITH_RECV_PORT);
-    } else if (var_start_pos = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR); var_start_pos != std::string::npos) {
-      fnArrIndexes.push_back(OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
+    // Check for port variable specification. Note that this is checked before
+    // the match group so that the corresponding function can be applied before
+    // the match group expansion(when the var_start_pos is still accurate).
+    auto recv_port_start_pos = destination.find(MAP_WITH_RECV_PORT_STR);
+    auto pp_port_start_pos   = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR);
+    bool has_recv_port_var   = recv_port_start_pos != std::string::npos;
+    bool has_pp_port_var     = pp_port_start_pos != std::string::npos;
+    if (has_recv_port_var && has_pp_port_var) {
+      Error("Invalid destination \"%.*s\" in SNI configuration - Only one port variable can be specified.",
+            static_cast<int>(destination.size()), destination.data());
+    } else if (has_recv_port_var || has_pp_port_var) {
+      // Specified only one of the port variables.
+      fnArrIndexes.push_back(has_recv_port_var ? OpId::MAP_WITH_RECV_PORT : OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
+      var_start_pos = has_recv_port_var ? recv_port_start_pos : pp_port_start_pos;
     }
     // Check for match groups as well.
     if (destination.find_first_of('$') != std::string::npos) {
