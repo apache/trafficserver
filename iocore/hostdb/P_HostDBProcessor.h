@@ -29,13 +29,13 @@
 
 #include <unordered_map>
 
+#include "swoc/swoc_file.h"
 #include <tscpp/util/TsSharedMutex.h>
 
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
 #include "tscore/TsBuffer.h"
-#include "tscore/ts_file.h"
 
 //
 // Data

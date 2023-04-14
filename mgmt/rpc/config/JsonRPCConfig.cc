@@ -19,10 +19,11 @@
 */
 #include <string>
 
+#include "swoc/swoc_file.h"
+
 #include "JsonRPCConfig.h"
 
 #include "tscore/Diags.h"
-#include "tscore/ts_file.h"
 #include "records/I_RecCore.h"
 
 #include "rpc/jsonrpc/JsonRPCManager.h"
@@ -78,7 +79,7 @@ void
 RPCConfig::load_from_file(std::string const &filePath)
 {
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{filePath}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{filePath}, ec)};
 
   if (ec) {
     Warning("Cannot open the config file: %s - %s", filePath.c_str(), strerror(ec.value()));

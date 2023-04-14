@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "swoc/swoc_file.h"
+
 #include <unordered_map>
 #include <dlfcn.h>
 #include <vector>
@@ -37,8 +39,8 @@
 
 #include "ts/apidefs.h"
 #include "ts/remap.h"
-#include "tscore/ts_file.h"
-namespace fs = ts::file;
+
+namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
 #include "I_EventSystem.h"
@@ -71,7 +73,7 @@ public:
   /* Accessors for effective and runtime paths */
   const fs::path &effectivePath() const;
   const fs::path &runtimePath() const;
-  time_t modTime() const;
+  swoc::file::file_time_type modTime() const;
   void *dlOpenHandle() const;
   void *
   dlh() const
@@ -164,9 +166,9 @@ protected:
   void *_dlh = nullptr; /** @brief dlopen handler used internally in this class, used as flag for loaded vs unloaded (nullptr) */
   std::error_code _errorCode; /** @brief used in filesystem calls */
 
-  static constexpr const char *const _tag = "plugin_dso"; /** @brief log tag used by this class */
-  time_t _mtime                           = 0;            /* @brief modification time of the DSO's file, used for checking */
-  bool _preventiveCleaning                = true;
+  static constexpr const char *const _tag = "plugin_dso";       /** @brief log tag used by this class */
+  swoc::file::file_time_type _mtime{fs::file_time_type::min()}; /* @brief modification time of the DSO's file, used for checking */
+  bool _preventiveCleaning = true;
 
   static Ptr<LoadedPlugins>
     _plugins; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */

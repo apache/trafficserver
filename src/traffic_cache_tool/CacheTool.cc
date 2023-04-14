@@ -62,8 +62,8 @@ extern int cache_config_min_average_object_size;
 extern CacheStoreBlocks Vol_hash_alloc_size;
 extern int OPEN_RW_FLAG;
 const Bytes ts::CacheSpan::OFFSET{CacheStoreBlocks{1}};
-ts::file::path SpanFile;
-ts::file::path VolumeFile;
+swoc::file::path SpanFile;
+swoc::file::path VolumeFile;
 ts::ArgParser parser;
 
 Errata err;
@@ -102,7 +102,7 @@ Volume::clear()
 /* --------------------------------------------------------------------------------------- */
 /// Data parsed from the volume config file.
 struct VolumeConfig {
-  Errata load(ts::file::path const &path);
+  Errata load(swoc::file::path const &path);
 
   /// Data direct from the config file.
   struct Data {
@@ -183,10 +183,10 @@ VolumeConfig::convertToAbsolute(const ts::CacheStripeBlocks &n)
 struct Cache {
   ~Cache();
 
-  Errata loadSpan(ts::file::path const &path);
-  Errata loadSpanConfig(ts::file::path const &path);
-  Errata loadSpanDirect(ts::file::path const &path, int vol_idx = -1, const Bytes &size = Bytes(-1));
-  Errata loadURLs(ts::file::path const &path);
+  Errata loadSpan(swoc::file::path const &path);
+  Errata loadSpanConfig(swoc::file::path const &path);
+  Errata loadSpanDirect(swoc::file::path const &path, int vol_idx = -1, const Bytes &size = Bytes(-1));
+  Errata loadURLs(swoc::file::path const &path);
 
   Errata allocStripe(Span *span, int vol_idx, const CacheStripeBlocks &len);
 
@@ -274,10 +274,10 @@ class VolumeAllocator
 public:
   VolumeAllocator();
 
-  Errata load(ts::file::path const &spanFile, ts::file::path const &volumeFile);
+  Errata load(swoc::file::path const &spanFile, swoc::file::path const &volumeFile);
   Errata fillEmptySpans();
   Errata fillAllSpans();
-  Errata allocateSpan(ts::file::path const &spanFile);
+  Errata allocateSpan(swoc::file::path const &spanFile);
   void dumpVolumes();
 
 protected:
@@ -288,7 +288,7 @@ protected:
 VolumeAllocator::VolumeAllocator() = default;
 
 Errata
-VolumeAllocator::load(ts::file::path const &spanFile, ts::file::path const &volumeFile)
+VolumeAllocator::load(swoc::file::path const &spanFile, swoc::file::path const &volumeFile)
 {
   Errata zret;
 
@@ -340,7 +340,7 @@ VolumeAllocator::fillEmptySpans()
 }
 
 Errata
-VolumeAllocator::allocateSpan(ts::file::path const &input_file_path)
+VolumeAllocator::allocateSpan(swoc::file::path const &input_file_path)
 {
   Errata zret;
   for (auto span : _cache._spans) {
@@ -453,17 +453,17 @@ VolumeAllocator::allocateFor(Span &span)
 }
 /* --------------------------------------------------------------------------------------- */
 Errata
-Cache::loadSpan(ts::file::path const &path)
+Cache::loadSpan(swoc::file::path const &path)
 {
   Errata zret;
   std::error_code ec;
-  auto fs = ts::file::status(path, ec);
+  auto fs = swoc::file::status(path, ec);
 
   if (path.empty()) {
     zret = Errata::Message(0, EINVAL, "A span file specified by --spans is required");
-  } else if (!ts::file::is_readable(path)) {
+  } else if (!swoc::file::is_readable(path)) {
     zret = Errata::Message(0, EPERM, '\'', path.string(), "' is not readable.");
-  } else if (ts::file::is_regular_file(fs)) {
+  } else if (swoc::file::is_regular_file(fs)) {
     zret = this->loadSpanConfig(path);
   } else {
     zret = this->loadSpanDirect(path);
@@ -472,7 +472,7 @@ Cache::loadSpan(ts::file::path const &path)
 }
 
 Errata
-Cache::loadSpanDirect(ts::file::path const &path, int vol_idx, const Bytes &size)
+Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, const Bytes &size)
 {
   Errata zret;
   std::unique_ptr<Span> span(new Span(path));
@@ -506,14 +506,14 @@ Cache::loadSpanDirect(ts::file::path const &path, int vol_idx, const Bytes &size
 }
 
 Errata
-Cache::loadSpanConfig(ts::file::path const &path)
+Cache::loadSpanConfig(swoc::file::path const &path)
 {
   static const ts::TextView TAG_ID("id");
   static const ts::TextView TAG_VOL("volume");
 
   Errata zret;
   std::error_code ec;
-  std::string load_content = ts::file::load(path, ec);
+  std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
     ts::TextView content(load_content);
     while (content) {
@@ -541,7 +541,7 @@ Cache::loadSpanConfig(ts::file::path const &path)
             }
           }
         }
-        zret = this->loadSpan(ts::file::path(localpath));
+        zret = this->loadSpan(swoc::file::path(localpath));
       }
     }
   } else {
@@ -551,14 +551,14 @@ Cache::loadSpanConfig(ts::file::path const &path)
 }
 
 Errata
-Cache::loadURLs(ts::file::path const &path)
+Cache::loadURLs(swoc::file::path const &path)
 {
   static const ts::TextView TAG_VOL("url");
   ts::URLparser loadURLparser;
   Errata zret;
 
   std::error_code ec;
-  std::string load_content = ts::file::load(path, ec);
+  std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
     ts::TextView content(load_content);
     while (!content.empty()) {
@@ -697,13 +697,13 @@ Span::load()
 {
   Errata zret;
   std::error_code ec;
-  auto fs = ts::file::status(_path, ec);
+  auto fs = swoc::file::status(_path, ec);
 
-  if (!ts::file::is_readable(_path)) {
+  if (!swoc::file::is_readable(_path)) {
     zret = Errata::Message(0, EPERM, _path.string(), " is not readable.");
-  } else if (ts::file::is_char_device(fs) || ts::file::is_block_device(fs)) {
+  } else if (swoc::file::is_char_device(fs) || swoc::file::is_block_device(fs)) {
     zret = this->loadDevice();
-  } else if (ts::file::is_dir(fs)) {
+  } else if (swoc::file::is_dir(fs)) {
     zret.push(0, 1, "Directory support not yet available");
   } else {
     zret.push(0, EBADF, _path.string(), " is not a valid file type");
@@ -1028,7 +1028,7 @@ Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
 
 /* --------------------------------------------------------------------------------------- */
 Errata
-VolumeConfig::load(ts::file::path const &path)
+VolumeConfig::load(swoc::file::path const &path)
 {
   static const ts::TextView TAG_SIZE("size");
   static const ts::TextView TAG_VOL("volume");
@@ -1038,7 +1038,7 @@ VolumeConfig::load(ts::file::path const &path)
   int ln = 0;
 
   std::error_code ec;
-  std::string load_content = ts::file::load(path, ec);
+  std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
     ts::TextView content(load_content);
     while (content) {
@@ -1171,7 +1171,7 @@ Clear_Spans()
 }
 
 void
-Find_Stripe(ts::file::path const &input_file_path)
+Find_Stripe(swoc::file::path const &input_file_path)
 {
   // scheme=http user=u password=p host=172.28.56.109 path=somepath query=somequery port=1234
   // input file format: scheme://hostname:port/somepath;params?somequery user=USER password=PASS
@@ -1277,7 +1277,7 @@ Check_Freelist(const std::string &devicePath)
 }
 
 void
-Init_disk(ts::file::path const &input_file_path)
+Init_disk(swoc::file::path const &input_file_path)
 {
   Cache cache;
   VolumeAllocator va;
@@ -1292,7 +1292,7 @@ Init_disk(ts::file::path const &input_file_path)
 }
 
 void
-Get_Response(ts::file::path const &input_file_path)
+Get_Response(swoc::file::path const &input_file_path)
 {
   // scheme=http user=u password=p host=172.28.56.109 path=somepath query=somequery port=1234
   // input file format: scheme://hostname:port/somepath;params?somequery user=USER password=PASS
@@ -1327,7 +1327,7 @@ Get_Response(ts::file::path const &input_file_path)
   }
 }
 
-void static scan_span(Span *span, ts::file::path const &regex_path)
+void static scan_span(Span *span, swoc::file::path const &regex_path)
 {
   for (auto strp : span->_stripes) {
     strp->loadMeta();
@@ -1344,7 +1344,7 @@ void static scan_span(Span *span, ts::file::path const &regex_path)
 }
 
 void
-Scan_Cache(ts::file::path const &regex_path)
+Scan_Cache(swoc::file::path const &regex_path)
 {
   Cache cache;
   std::vector<std::thread> threadPool;
@@ -1365,7 +1365,7 @@ Scan_Cache(ts::file::path const &regex_path)
 int
 main(int argc, const char *argv[])
 {
-  ts::file::path input_url_file;
+  swoc::file::path input_url_file;
   std::string inputFile;
 
   parser.add_global_usage(std::string(argv[0]) + " --spans <SPAN> --volume <FILE> <COMMAND> [<SUBCOMMAND> ...]\n");

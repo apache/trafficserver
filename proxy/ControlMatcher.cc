@@ -31,11 +31,11 @@
 #include <sys/types.h>
 
 #include "swoc/bwf_ip.h"
+#include "swoc/swoc_file.h"
 
 #include "tscore/ink_config.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
-#include "tscore/ts_file.h"
 #include "ConfigProcessor.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
@@ -934,7 +934,7 @@ int
 ControlMatcher<Data, MatchResult>::BuildTable()
 {
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{config_file_path}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
   if (ec) {
     switch (ec.value()) {
     case ENOENT:

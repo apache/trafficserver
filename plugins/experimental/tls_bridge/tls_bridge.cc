@@ -13,12 +13,14 @@
   the License.
 */
 
-#include "ts/ts.h"
 #include <atomic>
 #include <vector>
 #include <cinttypes>
+
+#include "swoc/swoc_file.h"
+
+#include "ts/ts.h"
 #include "tscpp/util/TextView.h"
-#include "tscore/ts_file.h"
 #include "regex.h"
 
 using ts::TextView;
@@ -97,7 +99,7 @@ private:
    * @param service The destination service.
    * @param ln Line number, or 0 if from plugin.config.
    */
-  void load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln = 0);
+  void load_pair(std::string_view rxp, std::string_view service, swoc::file::path const &src, int ln = 0);
 };
 
 inline int
@@ -107,7 +109,7 @@ BridgeConfig::count() const
 }
 
 void
-BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln)
+BridgeConfig::load_pair(std::string_view rxp, std::string_view service, swoc::file::path const &src, int ln)
 {
   Regex r;
   // Unfortunately PCRE can only compile null terminated strings...
@@ -127,7 +129,7 @@ BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file
 void
 BridgeConfig::load_config(int argc, const char *argv[])
 {
-  static const ts::file::path plugin_config_fp{"plugin.config"};
+  static const swoc::file::path plugin_config_fp{"plugin.config"};
 
   for (int i = 0; i < argc; i += 2) {
     if (argv[i] == CONFIG_FILE_ARG) {
@@ -135,13 +137,13 @@ BridgeConfig::load_config(int argc, const char *argv[])
         TSError("[%s] Invalid '%.*s' argument - no file name found.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
                 CONFIG_FILE_ARG.data());
       } else {
-        ts::file::path fp(argv[i + 1]);
+        swoc::file::path fp(argv[i + 1]);
         std::error_code ec;
         if (!fp.is_absolute()) {
-          fp = ts::file::path{TS_CONFIG_DIR} / fp; // slap the config dir on it to make it absolute.
+          fp = swoc::file::path{TS_CONFIG_DIR} / fp; // slap the config dir on it to make it absolute.
         }
         // bulk load the file.
-        std::string content{ts::file::load(fp, ec)};
+        std::string content{swoc::file::load(fp, ec)};
         if (ec) {
           TSError("[%s] Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
                   CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());

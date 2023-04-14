@@ -111,7 +111,7 @@ static fs::path pluginBuildDir = fs::current_path() / "unit-tests/.libs";
 void
 clean()
 {
-  fs::remove(sandboxDir, ec);
+  fs::remove_all(sandboxDir, ec);
 }
 
 static int
@@ -514,7 +514,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
         CHECK(abEffectivePath == pluginInst->_plugin.effectivePath());
         CHECK(absRuntimePath == pluginInst->_plugin.runtimePath());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("a valid plugin is found in the first search path")
@@ -528,12 +528,12 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
         CHECK(effectivePath1 == pluginInst->_plugin.effectivePath());
         CHECK(runtimePath1 == pluginInst->_plugin.runtimePath());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("the first search dir is missing the plugin but the second search has it")
     {
-      CHECK(fs::remove(effectivePath1, ec));
+      CHECK(fs::remove_all(effectivePath1, ec) > 0);
       RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("Expect it to successfully load the one found in the second search dir")
@@ -543,7 +543,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
         CHECK(effectivePath2 == pluginInst->_plugin.effectivePath());
         CHECK(runtimePath2 == pluginInst->_plugin.runtimePath());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("the first and second search dir are missing the plugin but the third search has it")
@@ -559,7 +559,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
         CHECK(effectivePath3 == pluginInst->_plugin.effectivePath());
         CHECK(runtimePath3 == pluginInst->_plugin.runtimePath());
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
 
     WHEN("none of the search dirs contains a valid plugin")
@@ -577,7 +577,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
         CHECK_FALSE(fs::exists(runtimePath2));
         CHECK_FALSE(fs::exists(runtimePath3));
       }
-      CHECK(fs::remove(sandboxDir, ec));
+      CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }
   }
 }

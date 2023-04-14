@@ -85,9 +85,8 @@ PluginDso::load(std::string &error)
 
       /* Save the time for later checking if DSO got modified in consecutive DSO reloads */
       std::error_code ec;
-      fs::file_status fs = fs::status(_effectivePath, ec);
-      _mtime             = fs::modification_time(fs);
-      PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), _mtime);
+      _mtime = fs::last_write_time(_effectivePath, ec);
+      PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
 
       /* Now attempt to load the plugin DSO */
 #if defined(darwin)
@@ -212,7 +211,7 @@ PluginDso::runtimePath() const
  * @return modification time.
  */
 
-time_t
+swoc::file::file_time_type
 PluginDso::modTime() const
 {
   return _mtime;
@@ -243,7 +242,7 @@ PluginDso::clean(std::string &error)
     return;
   }
 
-  if (false == remove(_runtimePath, _errorCode)) {
+  if (0 == remove_all(_runtimePath, _errorCode)) {
     error.append("failed to remove runtime copy: ").append(_errorCode.message());
   }
 }
@@ -316,10 +315,11 @@ PluginDso::LoadedPlugins::remove(PluginDso *plugin)
 PluginDso *
 PluginDso::LoadedPlugins::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
 {
-  struct stat sb;
-  time_t mtime = 0;
-  if (0 == stat(path.c_str(), &sb)) {
-    mtime = sb.st_mtime;
+  std::error_code ec;
+  auto fs = fs::status(path, ec);
+  ts_clock::time_point mtime;
+  if (!ec) {
+    mtime = fs::last_write_time(fs);
   }
 
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());

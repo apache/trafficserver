@@ -21,6 +21,8 @@
  *  limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "RemapConfig.h"
 #include "UrlRewrite.h"
 #include "ReverseProxy.h"
@@ -29,9 +31,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 #include "tscore/ink_cap.h"
-#include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
-#include "tscore/ts_file.h"
 #include "tscore/Filenames.h"
 #include "IPAllow.h"
 #include "PluginFactory.h"
@@ -819,7 +819,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error,
+    pi = rewrite->pluginFactory.getRemapPlugin(swoc::file::path(const_cast<const char *>(c)), parc, pargv, error,
                                                isPluginDynamicReloadEnabled());
   } // done elevating access
 
@@ -942,7 +942,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   const char *type_id_str;
 
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{path}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{path}, ec)};
   if (ec.value() == ENOENT) { // a missing file is ok - treat as empty, no rules.
     return true;
   }

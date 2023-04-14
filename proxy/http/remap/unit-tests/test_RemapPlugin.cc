@@ -49,7 +49,7 @@ static fs::path pluginBuildDir = fs::current_path() / "unit-tests/.libs";
 void
 clean()
 {
-  fs::remove(sandboxDir, ec);
+  fs::remove_all(sandboxDir, ec);
 }
 
 /* Mock used only to make unit testing convenient to check if callbacks are really called and check errors */

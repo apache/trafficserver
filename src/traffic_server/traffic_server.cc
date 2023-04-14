@@ -30,6 +30,8 @@
 
  ****************************************************************************/
 
+#include "swoc/swoc_file.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
@@ -40,7 +42,6 @@
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
 #include "tscore/Filenames.h"
-#include "tscore/ts_file.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -1016,7 +1017,7 @@ load_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string 
       error = error_os.str();
       return false;
     }
-    const auto runtime_path = temporary_directory / ts::file::filename(plugin_path);
+    const auto runtime_path = temporary_directory / plugin_path.filename();
     const fs::path unused_config;
     auto plugin_info = std::make_unique<RemapPluginInfo>(unused_config, plugin_path, runtime_path);
     bool loaded      = plugin_info->load(error);

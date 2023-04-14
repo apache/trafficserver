@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include <RolledLogDeleter.h>
+#include "swoc/swoc_file.h"
 
-#include "tscore/ts_file.h"
+#include <RolledLogDeleter.h>
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-namespace fs = ts::file;
+namespace fs = swoc::file;
 
 const fs::path log_dir("/home/y/logs/trafficserver");
 

@@ -23,9 +23,10 @@
 
 #pragma once
 
+#include "swoc/swoc_file.h"
+
 #include "I_HostDBProcessor.h"
 #include "tscpp/util/TextView.h"
-#include "tscore/ts_file.h"
 
 #include <memory>
 #include <unordered_map>
@@ -48,4 +49,4 @@ struct HostFile {
   HostFileReverseMap reverse;
 };
 
-std::shared_ptr<HostFile> ParseHostFile(ts::file::path const &path, ts_seconds interval);
+std::shared_ptr<HostFile> ParseHostFile(swoc::file::path const &path, ts_seconds interval);

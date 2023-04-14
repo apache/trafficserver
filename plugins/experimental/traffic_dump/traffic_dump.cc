@@ -87,7 +87,7 @@ TSPluginInit(int argc, char const *argv[])
   bool dump_body                       = false;
   bool sensitive_fields_were_specified = false;
   traffic_dump::sensitive_fields_t user_specified_fields;
-  ts::file::path log_dir{traffic_dump::SessionData::default_log_directory};
+  swoc::file::path log_dir{traffic_dump::SessionData::default_log_directory};
   int64_t sample_pool_size = traffic_dump::SessionData::default_sample_pool_size;
   int64_t max_disk_usage   = traffic_dump::SessionData::default_max_disk_usage;
   bool enforce_disk_limit  = traffic_dump::SessionData::default_enforce_disk_limit;
@@ -141,7 +141,7 @@ TSPluginInit(int argc, char const *argv[])
       break;
     }
     case 'l': {
-      log_dir = ts::file::path{optarg};
+      log_dir = swoc::file::path{optarg};
       break;
     }
     case 's': {
@@ -169,7 +169,7 @@ TSPluginInit(int argc, char const *argv[])
     }
   }
   if (!log_dir.is_absolute()) {
-    log_dir = ts::file::path(TSInstallDirGet()) / log_dir;
+    log_dir = swoc::file::path(TSInstallDirGet()) / log_dir;
   }
   if (sni_filter.empty()) {
     if (!traffic_dump::SessionData::init(log_dir.view(), enforce_disk_limit, max_disk_usage, sample_pool_size, client_ip_filter)) {

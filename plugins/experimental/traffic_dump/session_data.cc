@@ -156,7 +156,7 @@ std::atomic<int64_t> SessionData::sample_pool_size = default_sample_pool_size;
 std::atomic<int64_t> SessionData::max_disk_usage   = default_max_disk_usage;
 std::atomic<int64_t> SessionData::disk_usage       = 0;
 std::atomic<bool> SessionData::enforce_disk_limit  = default_enforce_disk_limit;
-ts::file::path SessionData::log_directory{default_log_directory};
+swoc::file::path SessionData::log_directory{default_log_directory};
 uint64_t SessionData::session_counter = 0;
 std::string SessionData::sni_filter;
 std::optional<IpAddr> SessionData::client_ip_filter = std::nullopt;
@@ -425,10 +425,10 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
         TSContDataSet(contp, nullptr);
         close(ssnData->log_fd);
         std::error_code ec;
-        ts::file::file_status st = ts::file::status(ssnData->log_name, ec);
+        swoc::file::file_status st = swoc::file::status(ssnData->log_name, ec);
         if (!ec) {
-          disk_usage += ts::file::file_size(st);
-          TSDebug(debug_tag, "Finish a session with log file of %" PRIuMAX " bytes", ts::file::file_size(st));
+          disk_usage += swoc::file::file_size(st);
+          TSDebug(debug_tag, "Finish a session with log file of %" PRIuMAX " bytes", swoc::file::file_size(st));
         }
         delete ssnData;
         return TS_SUCCESS;
@@ -528,12 +528,12 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     // Initialize AIO file
     const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
     if (ssnData->log_fd < 0) {
-      ts::file::path log_p = log_directory / ts::file::path(std::string(client_str, 3));
-      ts::file::path log_f = log_p / ts::file::path(session_hex_name);
+      swoc::file::path log_p = log_directory / swoc::file::path(std::string(client_str, 3));
+      swoc::file::path log_f = log_p / swoc::file::path(session_hex_name);
 
       // Create subdir if not existing
       std::error_code ec;
-      ts::file::status(log_p, ec);
+      swoc::file::status(log_p, ec);
       if (ec && mkdir(log_p.c_str(), 0755) == -1) {
         TSDebug(debug_tag, "global_session_handler(): Failed to create dir %s", log_p.c_str());
         TSError("[%s] Failed to create dir %s", debug_tag, log_p.c_str());

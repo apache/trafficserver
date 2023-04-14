@@ -21,12 +21,13 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "Main.h"
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "tscore/I_Layout.h"
 #include "Show.h"
-#include "tscore/ts_file.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/bwf_std_format.h"
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
@@ -70,7 +71,7 @@ static ts_time hostdb_last_timestamp{TS_TIME_ZERO};
 static ts_time hostdb_hostfile_update_timestamp{TS_TIME_ZERO};
 static char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_max_count                       = DEFAULT_HOST_DB_SIZE;
-static ts::file::path hostdb_hostfile_path;
+static swoc::file::path hostdb_hostfile_path;
 ts_seconds hostdb_sync_frequency{0};
 int hostdb_disable_reverse_lookup = 0;
 int hostdb_max_iobuf_index        = BUFFER_SIZE_INDEX_32K;
@@ -206,7 +207,7 @@ HostDB_Config_Init()
 
 HostDBCache hostDB;
 
-void UpdateHostsFile(ts::file::path const &path, ts_seconds interval);
+void UpdateHostsFile(swoc::file::path const &path, ts_seconds interval);
 
 static inline bool
 is_addr_valid(uint8_t af, ///< Address family (format of data)
@@ -1513,7 +1514,8 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Debug("hostdb", "%s",
-            ts::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path, ts::bwf::FirstOf(path, "")).c_str());
+            ts::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), ts::bwf::FirstOf(path, ""))
+              .c_str());
       // path to hostfile changed
       hostdb_hostfile_update_timestamp = TS_TIME_ZERO; // never updated from this file
       hostdb_hostfile_path             = path;
@@ -1521,17 +1523,17 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     } else if (!hostdb_hostfile_path.empty()) {
       hostdb_last_timestamp = hostdb_current_timestamp;
       std::error_code ec;
-      auto stat{ts::file::status(hostdb_hostfile_path, ec)};
+      auto stat{swoc::file::status(hostdb_hostfile_path, ec)};
       if (!ec) {
-        if (ts_clock::from_time_t(modification_time(stat)) > hostdb_hostfile_update_timestamp) {
+        if (swoc::file::last_write_time(stat) > hostdb_hostfile_update_timestamp) {
           update_p = true; // same file but it's changed.
         }
       } else {
-        Debug("hostdb", "%s", ts::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path, ec).c_str());
+        Debug("hostdb", "%s", ts::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path.view(), ec).c_str());
       }
     }
     if (update_p) {
-      Debug("hostdb", "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path).c_str());
+      Debug("hostdb", "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path.view()).c_str());
       UpdateHostsFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
     }
   }
@@ -1995,7 +1997,7 @@ HostDBFileContinuation::destroy()
 std::atomic<bool> HostDBFileUpdateActive{false};
 
 void
-UpdateHostsFile(ts::file::path const &path, ts_seconds interval)
+UpdateHostsFile(swoc::file::path const &path, ts_seconds interval)
 {
   // Test and set for update in progress.
   bool flag = false;

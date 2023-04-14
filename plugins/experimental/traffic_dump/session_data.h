@@ -30,9 +30,10 @@
 #include <string_view>
 #include <optional>
 
+#include "swoc/swoc_file.h"
+
 #include "ts/ts.h"
 #include "tscore/ink_inet.h"
-#include "tscore/ts_file.h"
 
 namespace traffic_dump
 {
@@ -68,7 +69,7 @@ private:
   /// Whether this session has been closed.
   bool ssn_closed = false;
   /// The filename for this session's dump file.
-  ts::file::path log_name;
+  swoc::file::path log_name;
   /// Whether the first transaction in this session has been written.
   bool has_written_first_transaction = false;
   /// The HTTP version specified in the client protocol stack, or empty string
@@ -102,7 +103,7 @@ private:
   static std::atomic<bool> enforce_disk_limit;
 
   /// The directory into which to put the dump files.
-  static ts::file::path log_directory;
+  static swoc::file::path log_directory;
 
   /// Only sessions with this SNI will be dumped (if set).
   static std::string sni_filter;

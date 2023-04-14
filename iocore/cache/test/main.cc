@@ -23,9 +23,10 @@
 
 #define CATCH_CONFIG_MAIN
 #include "main.h"
-#include "tscore/ts_file.h"
 
 #include <unistd.h>
+
+#include "swoc/swoc_file.h"
 
 #define THREADS        1
 #define DIAGS_LOG_FILE "diags.log"
@@ -41,8 +42,8 @@ temp_prefix()
     tmpdir = "/tmp";
   }
   snprintf(buffer, sizeof(buffer), "%s/cachetest.XXXXXX", tmpdir);
-  auto prefix = ts::file::path(mkdtemp(buffer));
-  bool result = ts::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
+  auto prefix = swoc::file::path(mkdtemp(buffer));
+  bool result = swoc::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
   if (!result) {
     Debug("cache test", "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
   }

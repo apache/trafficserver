@@ -21,13 +21,14 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "P_Cache.h"
 #include "tscore/I_Layout.h"
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Regression.h"
 #include "tscore/Filenames.h"
-#include "tscore/ts_file.h"
 
 extern int gndisks;
 
@@ -393,7 +394,7 @@ int
 CacheHostTable::BuildTable(const char *config_file_path)
 {
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{config_file_path}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{config_file_path}, ec)};
 
   if (ec) {
     switch (ec.value()) {
@@ -593,7 +594,7 @@ ConfigVolumes::read_config_file()
   Note("%s loading ...", ts::filename::VOLUME);
 
   std::error_code ec;
-  std::string content{ts::file::load(ts::file::path{config_path}, ec)};
+  std::string content{swoc::file::load(swoc::file::path{config_path}, ec)};
 
   if (ec) {
     switch (ec.value()) {

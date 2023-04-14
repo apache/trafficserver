@@ -19,8 +19,9 @@
   limitations under the License.
  */
 
+#include "swoc/swoc_file.h"
+
 #include "InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
-#include "tscore/ts_file.h"
 #include "P_SSLConfig.h"
 
 #include <utility>
@@ -64,7 +65,7 @@ SSLSecret::loadFile(const std::string &name)
 {
   Debug("ssl_secret", "SSLSecret::loadFile(%s)", name.c_str());
   std::error_code error;
-  std::string const data = ts::file::load(ts::file::path(name), error);
+  std::string const data = swoc::file::load(swoc::file::path(name), error);
   if (error) {
     Debug("ssl_secret_err", "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
           error.message().c_str());

@@ -24,13 +24,17 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include <string>
+
+#include "swoc/bwf_base.h"
+
 #include "HostFile.h"
 #include "P_HostDBProcessor.h"
 
 const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n"_sv;
 
 void
-spit(const ts::file::path &p, std::string_view data)
+spit(const swoc::file::path &p, std::string_view data)
 {
   std::ofstream f(p.c_str(), std::ios::trunc);
   f.write(data.data(), data.size());
@@ -39,11 +43,11 @@ spit(const ts::file::path &p, std::string_view data)
 
 TEST_CASE("HostFile", "[hostdb]")
 {
-  auto tmp = ts::file::temp_directory_path();
-  ts::LocalBufferWriter<1024> w;
+  auto tmp = swoc::file::temp_directory_path();
+  swoc::LocalBufferWriter<1024> w;
   w.print("{}/localhost.{}", tmp, ::getpid());
 
-  auto hostfilepath = ts::file::path(w.view());
+  auto hostfilepath = swoc::file::path(w.view());
 
   spit(hostfilepath, hosts_data);
 
