@@ -21,18 +21,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 5 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: GET
@@ -76,7 +64,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -88,7 +75,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -104,18 +90,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 6 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: GET
@@ -159,7 +133,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -171,7 +144,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -199,18 +171,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 7 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -255,7 +215,6 @@ sessions:
         server-response:
           version: '2'
           status: 404
-          reason: "Not Found"
           headers:
             encoding: esc_json
             fields:
@@ -267,7 +226,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 404
-          reason: "Not Found"
           headers:
             encoding: esc_json
             fields:
@@ -279,7 +237,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 404
-          reason: "Not Found"
           headers:
             encoding: esc_json
             fields:
@@ -294,18 +251,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 8 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -348,7 +293,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -360,7 +304,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -375,18 +318,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 9 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -429,7 +360,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -441,7 +371,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -453,7 +382,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -468,18 +396,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 10 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -521,7 +437,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -533,7 +448,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -548,18 +462,6 @@ sessions:
       - all: { headers: { fields: [[ uuid, 11 ]]}}
 
         client-request:
-          protocol:
-            - name: http
-              version: '2'
-            - name: tls
-              version: TLSv1.2
-              sni: data.brian.example.com
-              proxy-verify-mode: 1
-              proxy-provided-cert: false
-            - name: tcp
-            - name: ip
-              version: '4'
-
           version: '2'
           scheme: https
           method: POST
@@ -602,7 +504,6 @@ sessions:
         server-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -614,7 +515,6 @@ sessions:
         proxy-response:
           version: '2'
           status: 200
-          reason: OK
           headers:
             encoding: esc_json
             fields:
