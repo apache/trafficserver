@@ -186,7 +186,7 @@ public:
   get_response_body(int *len)
   {
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    char *buf = static_cast<char *>(malloc(MAX_RESP_LEN));
+    char *buf = static_cast<char *>(ats_malloc(MAX_RESP_LEN));
     *len      = this->_fsm->ext_read_data(buf, MAX_RESP_LEN);
     return reinterpret_cast<unsigned char *>(buf);
   }
@@ -562,12 +562,12 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
   if (httpreq.is_success()) {
     // Parse the response
     int len;
-    const unsigned char *res = httpreq.get_response_body(&len);
-    const unsigned char *p   = res;
-    resp                     = reinterpret_cast<OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(OCSP_RESPONSE)));
+    unsigned char *res     = httpreq.get_response_body(&len);
+    const unsigned char *p = res;
+    resp                   = reinterpret_cast<OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(OCSP_RESPONSE)));
 
     if (resp) {
-      free(res);
+      ats_free(res);
       return resp;
     }
 
@@ -577,7 +577,7 @@ query_responder(const char *uri, const char *user_agent, OCSP_REQUEST *req, int 
       Error("failed to parse a response from OCSP server; uri=%s len=%d data=%02x%02x%02x%02x%02x...", uri, len, res[0], res[1],
             res[2], res[3], res[4]);
     }
-    free(res);
+    ats_free(res);
     return nullptr;
   }
 
