@@ -176,6 +176,8 @@ tunnel_route              Inbound   Destination as an FQDN and port, separated b
                                     Protocol <proxy-protocol>` for more information on Proxy Protocol and how it is
                                     configured for |TS|.
 
+                                    Note that only one of the ``{inbound_local_port}`` and ``{proxy_protocol_port}`` literal strings can be specified. The match group number can be used in combination with either one of those.
+
                                     For each of these tunnel targets, unless the port is explicitly specified in the target
                                     (e.g., if the port is derived from the Proxy Protocol header), the port must be
                                     specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for

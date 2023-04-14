@@ -95,7 +95,6 @@ class TunnelDestination : public ActionItem
   // ID of the configured variable. This will be used to know which function
   // should be called when processing the tunnel destination.
   enum OpId : int32_t {
-    DEFAULT = -1,                 // No specific variable set.
     MATCH_GROUPS,                 // Deal with configured groups.
     MAP_WITH_RECV_PORT,           // Use port from inbound local
     MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
@@ -109,12 +108,26 @@ public:
                     const std::vector<int> &alpn)
     : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
   {
+    // Check for port variable specification. Note that this is checked before
+    // the match group so that the corresponding function can be applied before
+    // the match group expansion(when the var_start_pos is still accurate).
+    auto recv_port_start_pos = destination.find(MAP_WITH_RECV_PORT_STR);
+    auto pp_port_start_pos   = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR);
+    bool has_recv_port_var   = recv_port_start_pos != std::string::npos;
+    bool has_pp_port_var     = pp_port_start_pos != std::string::npos;
+    if (has_recv_port_var && has_pp_port_var) {
+      Error("Invalid destination \"%.*s\" in SNI configuration - Only one port variable can be specified.",
+            static_cast<int>(destination.size()), destination.data());
+    } else if (has_recv_port_var) {
+      fnArrIndexes.push_back(OpId::MAP_WITH_RECV_PORT);
+      var_start_pos = recv_port_start_pos;
+    } else if (has_pp_port_var) {
+      fnArrIndexes.push_back(OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
+      var_start_pos = pp_port_start_pos;
+    }
+    // Check for match groups as well.
     if (destination.find_first_of('$') != std::string::npos) {
-      fnArrIndex = OpId::MATCH_GROUPS;
-    } else if (var_start_pos = destination.find(MAP_WITH_RECV_PORT_STR); var_start_pos != std::string::npos) {
-      fnArrIndex = OpId::MAP_WITH_RECV_PORT;
-    } else if (var_start_pos = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR); var_start_pos != std::string::npos) {
-      fnArrIndex = OpId::MAP_WITH_PROXY_PROTOCOL_PORT;
+      fnArrIndexes.push_back(OpId::MATCH_GROUPS);
     }
   }
   ~TunnelDestination() override {}
@@ -126,13 +139,17 @@ public:
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
     const char *servername       = snis->get_sni_server_name();
     if (ssl_netvc) {
-      if (fnArrIndex == OpId::DEFAULT) {
+      if (fnArrIndexes.empty()) {
         ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       } else {
-        // Dispatch to the correct tunnel destination port function.
-        bool port_is_dynamic  = false;
-        const auto &fixed_dst = fix_destination[fnArrIndex](destination, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
+        bool port_is_dynamic = false;
+        auto fixed_dst{destination};
+        // Apply mapping functions to get the final destination.
+        for (auto fnArrIndex : fnArrIndexes) {
+          // Dispatch to the correct tunnel destination port function.
+          fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
+        }
         ssl_netvc->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
         Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       }
@@ -232,8 +249,11 @@ private:
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
 
-  OpId fnArrIndex{OpId::DEFAULT}; /// On creation, we decide which function needs to be called, set the index and then we
-                                  /// call it with the relevant data
+  /** The indexes of the mapping functions that need to be called. On
+  creation, we decide which functions need to be called, add the coressponding
+  indexes and then we call those functions with the relevant data.
+  */
+  std::vector<OpId> fnArrIndexes;
 
   /// tunnel_route destination callback array.
   static std::array<std::function<std::string(std::string_view,    // destination view
