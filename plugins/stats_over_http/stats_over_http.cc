@@ -40,6 +40,8 @@
 #include <arpa/inet.h>
 #include <zlib.h>
 #include <fstream>
+#include <chrono>
+
 #include <ts/remap.h>
 
 #include "swoc/swoc_ip.h"
@@ -50,8 +52,6 @@
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
-
-#include "tscore/ink_hrtime.h"
 
 #define PLUGIN_NAME     "stats_over_http"
 #define FREE_TMOUT      300000
@@ -179,6 +179,15 @@ init_br(stats_state *my_state)
   return BR;
 }
 #endif
+
+namespace
+{
+inline uint64_t
+ms_since_epoch()
+{
+  return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+} // namespace
 
 encoding_format
 init_gzip(stats_state *my_state, int mode)
@@ -415,7 +424,7 @@ json_out_stats(stats_state *my_state)
   APPEND("{ \"global\": {\n");
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, my_state);
   version = TSTrafficServerVersionGet();
-  APPEND_STAT_JSON_NUMERIC("current_time_epoch_ms", "%" PRIu64, ink_hrtime_to_msec(ink_get_hrtime_internal()));
+  APPEND_STAT_JSON_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
   APPEND("\"server\": \"");
   APPEND(version);
   APPEND("\"\n");
@@ -494,7 +503,7 @@ csv_out_stats(stats_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
   const char *version = TSTrafficServerVersionGet();
-  APPEND_STAT_CSV_NUMERIC("current_time_epoch_ms", "%" PRIu64, ink_hrtime_to_msec(ink_get_hrtime_internal()));
+  APPEND_STAT_CSV_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
   APPEND_STAT_CSV("version", "%s", version);
 }
 
