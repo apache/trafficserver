@@ -44,11 +44,11 @@ public:
   static void copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool retain_proxy_auth_hdrs, ink_time_t date = 0);
 
   static void convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request);
-  static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response);
+  static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response, char const *reason_phrase = nullptr);
   static void convert_to_1_0_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_1_request_header(HTTPHdr *outgoing_request);
-  static void convert_to_1_0_response_header(HTTPHdr *outgoing_response);
-  static void convert_to_1_1_response_header(HTTPHdr *outgoing_response);
+  static void convert_to_1_0_response_header(HTTPHdr *outgoing_response, char const *reason_phrase = nullptr);
+  static void convert_to_1_1_response_header(HTTPHdr *outgoing_response, char const *reason_phrase = nullptr);
 
   static ink_time_t calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
                                            ink_time_t base_response_date, ink_time_t now);

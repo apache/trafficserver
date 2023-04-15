@@ -7834,7 +7834,19 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
                              HTTPStatus status_code, const char *reason_phrase)
 {
   if (reason_phrase == nullptr) {
-    reason_phrase = http_hdr_reason_lookup(status_code);
+    if (status_code != HTTP_STATUS_NONE) {
+      reason_phrase = http_hdr_reason_lookup(status_code);
+      Debug("http_transact", "Using reason phrase from status %d: %s", status_code, reason_phrase);
+    } else if (base_response != nullptr && base_response->status_get() != HTTP_STATUS_NONE) {
+      HTTPStatus const base_response_status = base_response->status_get();
+      reason_phrase                         = http_hdr_reason_lookup(base_response_status);
+      Debug("http_transact", "Using reason phrase from base_response status %d: %s", base_response_status, reason_phrase);
+    } else {
+      // We have to set some value for build_base_response which expects a
+      // non-nullptr reason_phrase.
+      reason_phrase = http_hdr_reason_lookup(status_code);
+      Debug("http_transact", "Using HTTP_STATUS_NONE reason phrase %d: %s", status_code, reason_phrase);
+    }
   }
 
   if (base_response == nullptr) {
@@ -7942,7 +7954,15 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     HttpTransactHeaders::insert_via_header_in_response(s, outgoing_response);
   }
 
-  HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
+  // When converting a response, only set a reason phrase if one was not already
+  // set via some explicit call above.
+  char const *reason_phrase_for_convert = nullptr;
+  int outgoing_reason_phrase_len        = 0;
+  char const *outgoing_reason_phrase    = outgoing_response->reason_get(&outgoing_reason_phrase_len);
+  if (outgoing_reason_phrase == nullptr || outgoing_reason_phrase_len == 0) {
+    reason_phrase_for_convert = reason_phrase;
+  }
+  HttpTransactHeaders::convert_response(outgoing_version, outgoing_response, reason_phrase_for_convert);
 
   // process reverse mappings on the location header
   // TS-1364: do this regardless of response code
