@@ -85,6 +85,7 @@ public:
   void send_request(Http2ConnectionState &cstate);
   void initiating_close();
   bool is_outbound_connection() const;
+  bool is_tunneling() const;
   void terminate_if_possible();
   void update_read_request(bool send_update);
   void update_write_request(bool send_update);
@@ -229,6 +230,14 @@ private:
    * session close in which is_outbound is not accessible.
    */
   bool _is_outbound = false;
+
+  /** Whether CONNECT method is used.
+   *
+   * We cannot buffer outgoing data if this stream is used for tunneling (CONNECT method), because we don't know the
+   * protocol used in the tunnel and we cannot expect additional data from (following read event) from the server side
+   * without sending the data ATS currently has.
+   */
+  bool _is_tunneling = false;
 
   /** Whether the stream has been registered with the connection state. */
   bool _registered_stream = true;

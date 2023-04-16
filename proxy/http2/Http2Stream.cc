@@ -276,6 +276,13 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   }
 
+  // Check whether the request uses CONNECT method
+  int method_len;
+  const char *method = _receive_header.method_get(&method_len);
+  if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
+    this->_is_tunneling = true;
+  }
+
   if (this->expect_send_trailer()) {
     // Send read complete to terminate previous data tunnel
     this->read_vio.nbytes = this->read_vio.ndone;
@@ -616,6 +623,12 @@ bool
 Http2Stream::is_outbound_connection() const
 {
   return _is_outbound;
+}
+
+bool
+Http2Stream::is_tunneling() const
+{
+  return _is_tunneling;
 }
 
 /* Replace existing event only if the new event is different than the inprogress event */

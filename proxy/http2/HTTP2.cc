@@ -491,7 +491,14 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   }
 
   MIMEFieldIter iter;
-  unsigned int expected_pseudo_header_count = is_outbound ? 1 : 4;
+  auto method_field       = hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+  bool has_connect_method = false;
+  if (method_field) {
+    int method_len;
+    const char *method_value = method_field->value_get(&method_len);
+    has_connect_method       = method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method_value, HTTP_LEN_CONNECT) == 0;
+  }
+  unsigned int expected_pseudo_header_count = is_outbound ? 1 : has_connect_method ? 2 : 4;
   unsigned int pseudo_header_count          = 0;
 
   if (is_trailing_header) {
@@ -554,7 +561,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
-      if (hdr->fields_count() >= 4) {
+      if (!has_connect_method && hdr->fields_count() >= 4) {
         if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) == nullptr ||
             hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
             hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) == nullptr ||
@@ -563,6 +570,16 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
           // Decoded header field is invalid
           return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
         }
+      } else if (has_connect_method && hdr->fields_count() >= 2) {
+        if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) != nullptr ||
+            hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
+            hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) != nullptr ||
+            hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
+            hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
+          // Decoded header field is invalid
+          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+        }
+
       } else {
         // Pseudo headers is insufficient
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;

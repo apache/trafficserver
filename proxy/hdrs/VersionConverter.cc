@@ -160,30 +160,49 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 int
 VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 {
+  bool is_connect_method = false;
+
   // HTTP Version
   header.version_set(HTTPVersion(1, 1));
 
-  // :scheme
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+  // :method
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int scheme_len;
-    const char *scheme = field->value_get(&scheme_len);
-    const char *scheme_wks;
-
-    int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
-
-    if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
-      // unknown scheme, validate the scheme
-      if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
-        return PARSE_RESULT_ERROR;
-      }
+    int method_len;
+    const char *method = field->value_get(&method_len);
+    if (method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method, HTTP_LEN_CONNECT) == 0) {
+      is_connect_method = true;
     }
 
-    header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme, scheme_wks_idx, scheme_len, true);
-
+    header.method_set(method, method_len);
     header.field_delete(field);
   } else {
     return PARSE_RESULT_ERROR;
+  }
+
+  if (!is_connect_method) {
+    // :scheme
+    if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
+      int scheme_len;
+      const char *scheme = field->value_get(&scheme_len);
+      const char *scheme_wks;
+
+      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
+
+      if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+        // unknown scheme, validate the scheme
+        if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
+          return PARSE_RESULT_ERROR;
+        }
+      }
+
+      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme, scheme_wks_idx, scheme_len, true);
+
+      header.field_delete(field);
+    } else {
+      return PARSE_RESULT_ERROR;
+    }
   }
 
   // :authority
@@ -193,60 +212,52 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     const char *authority = field->value_get(&authority_len);
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, authority_len, true);
 
-    MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-    if (host == nullptr) {
-      // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
-      // Host header field, it SHOULD be the first header in the header section
-      // of a request. We accomplish that by simply renaming the :authority
-      // header as Host.
-      header.field_detach(field);
-      field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST, MIME_LEN_HOST);
-      header.field_attach(field);
-    } else {
-      // There already is a Host header field. Simply set the value of the Host
-      // field to the current value of :authority and delete the :authority
-      // field.
-      host->value_set(header.m_heap, header.m_mime, authority, authority_len);
+    if (!is_connect_method) {
+      MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+      if (host == nullptr) {
+        // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
+        // Host header field, it SHOULD be the first header in the header section
+        // of a request. We accomplish that by simply renaming the :authority
+        // header as Host.
+        header.field_detach(field);
+        field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST, MIME_LEN_HOST);
+        header.field_attach(field);
+      } else {
+        // There already is a Host header field. Simply set the value of the Host
+        // field to the current value of :authority and delete the :authority
+        // field.
+        host->value_set(header.m_heap, header.m_mime, authority, authority_len);
+        header.field_delete(field);
+      }
+    }
+  } else {
+    return PARSE_RESULT_ERROR;
+  }
+
+  if (!is_connect_method) {
+    // :path
+    if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+        field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
+      int path_len;
+      const char *path = field->value_get(&path_len);
+
+      // cut first '/' if there, because `url_print()` add '/' before printing path
+      if (path_len >= 1 && path[0] == '/') {
+        ++path;
+        --path_len;
+      }
+
+      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, path_len, true);
+
       header.field_delete(field);
-    }
-  } else {
-    return PARSE_RESULT_ERROR;
-  }
-
-  // :path
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
-      field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int path_len;
-    const char *path = field->value_get(&path_len);
-
-    // cut first '/' if there, because `url_print()` add '/' before printing path
-    if (path_len >= 1 && path[0] == '/') {
-      ++path;
-      --path_len;
+    } else {
+      return PARSE_RESULT_ERROR;
     }
 
-    header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, path_len, true);
-
-    header.field_delete(field);
-  } else {
-    return PARSE_RESULT_ERROR;
-  }
-
-  // :method
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
-      field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int method_len;
-    const char *method = field->value_get(&method_len);
-
-    header.method_set(method, method_len);
-    header.field_delete(field);
-  } else {
-    return PARSE_RESULT_ERROR;
-  }
-
-  // Combine Cookie header.([RFC 7540] 8.1.2.5.)
-  if (MIMEField *field = header.field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE); field != nullptr) {
-    header.field_combine_dups(field, true, ';');
+    // Combine Cookie header.([RFC 7540] 8.1.2.5.)
+    if (MIMEField *field = header.field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE); field != nullptr) {
+      header.field_combine_dups(field, true, ';');
+    }
   }
 
   return 0;
