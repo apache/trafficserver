@@ -2248,7 +2248,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   while (!TSSystemState::is_event_system_shut_down()) {
 #if TS_USE_LINUX_IO_URING == 1
-    ur->submit_and_wait(1000);
+    ur->submit_and_wait(1 * HRTIME_SECOND);
 #else
     sleep(1);
 #endif

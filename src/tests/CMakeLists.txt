@@ -15,53 +15,15 @@
 #
 #######################
 
-add_executable(traffic_server
-        Crash.cc
-        EventName.cc
-        FetchSM.cc
-        HostStatus.cc
-        InkAPI.cc
-        InkIOCoreAPI.cc
-        SocksProxy.cc
-        traffic_server.cc
-        RpcAdminPubHandlers.cc
-        ${CMAKE_SOURCE_DIR}/src/shared/overridable_txn_vars.cc
-        )
-target_include_directories(traffic_server PRIVATE
+# This is for tests that depend on multiple libraries where dependency order matters.
+
+add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
+target_include_directories(test_AIO PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-)
-target_link_libraries(traffic_server
-        http
-        http_remap
-        http2
-        logging
-        hdrs
-        configmanager
-        diagsconfig
-        utils_p
-        inkutils
-        inkdns
-        inkhostdb
-        inkcache
-        fastlz
-        aio
-        tscore
-        tscpputil
-        proxy
-        inknet
-        records_p
-        inkevent
-        yaml-cpp
-        libswoc
-        jsonrpc_protocol
-        jsonrpc_server
-        rpcpublichandlers
         )
-
+target_link_libraries(test_AIO aio inkevent proxy tscore tscpputil)
 if (TS_USE_LINUX_IO_URING)
-    target_link_libraries(traffic_server inkuring uring)
+    target_link_libraries(test_AIO inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
-
