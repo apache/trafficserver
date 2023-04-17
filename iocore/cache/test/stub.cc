@@ -284,3 +284,40 @@ INKContInternal::free()
 INKVConnInternal::INKVConnInternal() : INKContInternal() {}
 
 INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp) : INKContInternal(funcp, mutexp) {}
+
+#include "../src/traffic_server/FetchSM.h"
+ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+void
+FetchSM::ext_launch()
+{
+}
+void
+FetchSM::ext_destroy()
+{
+}
+ssize_t
+FetchSM::ext_read_data(char *, unsigned long)
+{
+  return 0;
+}
+void
+FetchSM::ext_add_header(char const *, int, char const *, int)
+{
+}
+void
+FetchSM::ext_write_data(void const *, unsigned long)
+{
+}
+void *
+FetchSM::ext_get_user_data()
+{
+  return nullptr;
+}
+void
+FetchSM::ext_set_user_data(void *)
+{
+}
+void
+FetchSM::ext_init(Continuation *, char const *, char const *, char const *, sockaddr const *, int)
+{
+}
