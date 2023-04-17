@@ -26,7 +26,6 @@
 #include "CtrlCommands.h"
 #include "jsonrpc/CtrlRPCRequests.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
-#include "utils/yaml_utils.h"
 #include "swoc/TextView.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"

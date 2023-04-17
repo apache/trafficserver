@@ -26,7 +26,7 @@
 #include "records/RecYAMLDefs.h"
 
 #include "tscore/Diags.h"
-
+#include "tscpp/util/YamlCfg.h"
 #include "records/I_RecordsConfig.h"
 
 #include <string_view>
@@ -41,13 +41,6 @@ namespace
 {
 constexpr std::string_view CONFIG_RECORD_PREFIX{"proxy.config"};
 const inline std::string RECORD_YAML_ROOT_STR{"ts"};
-
-// I will move this to a common place.
-constexpr std::string_view YAML_FLOAT_TAG_URI{"tag:yaml.org,2002:float"};
-constexpr std::string_view YAML_INT_TAG_URI{"tag:yaml.org,2002:int"};
-constexpr std::string_view YAML_STR_TAG_URI{"tag:yaml.org,2002:str"};
-constexpr std::string_view YAML_BOOL_TAG_URI{"tag:yaml.org,2002:bool"};
-constexpr std::string_view YAML_NULL_TAG_URI{"tag:yaml.org,2002:null"};
 
 } // namespace
 
@@ -163,17 +156,17 @@ try_deduce_type(YAML::Node const &node)
 {
   // Using the tag.
   std::string_view tag = node.Tag();
-  if (tag == YAML_FLOAT_TAG_URI) {
+  if (tag == ts::Yaml::YAML_FLOAT_TAG_URI) {
     return {RecDataT::RECD_FLOAT, {}};
-  } else if (tag == YAML_INT_TAG_URI) {
+  } else if (tag == ts::Yaml::YAML_INT_TAG_URI) {
     return {RecDataT::RECD_INT, {}};
-  } else if (tag == YAML_STR_TAG_URI) {
+  } else if (tag == ts::Yaml::YAML_STR_TAG_URI) {
     return {RecDataT::RECD_STRING, {}};
-  } else if (tag == YAML_INT_TAG_URI) {
+  } else if (tag == ts::Yaml::YAML_INT_TAG_URI) {
     return {RecDataT::RECD_INT, {}};
-  } else if (tag == YAML_BOOL_TAG_URI) {
+  } else if (tag == ts::Yaml::YAML_BOOL_TAG_URI) {
     return {RecDataT::RECD_INT, {}};
-  } else if (tag == YAML_NULL_TAG_URI) {
+  } else if (tag == ts::Yaml::YAML_NULL_TAG_URI) {
     return {RecDataT::RECD_NULL, {}};
   }
   std::string text;

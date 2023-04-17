@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "FileConfigCommand.h"
-#include "utils/yaml_utils.h"
+#include "tscpp/util/YamlCfg.h"
 #include "swoc/TextView.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
@@ -97,9 +97,9 @@ std::string
 get_tag(swoc::TextView tag)
 {
   static std::vector<std::pair<std::string_view, std::vector<std::string_view>>> const Str_to_Tag{
-    {yaml_utils::YAML_INT_TAG_URI,   {"int", "i", "I", "INT", "integer"}         },
-    {yaml_utils::YAML_FLOAT_TAG_URI, {"float", "f", "F", "FLOAT"}                },
-    {yaml_utils::YAML_STR_TAG_URI,   {"str", "s", "S", "STR", "string", "STRING"}}
+    {ts::Yaml::YAML_INT_TAG_URI,   {"int", "i", "I", "INT", "integer"}         },
+    {ts::Yaml::YAML_FLOAT_TAG_URI, {"float", "f", "F", "FLOAT"}                },
+    {ts::Yaml::YAML_STR_TAG_URI,   {"str", "s", "S", "STR", "string", "STRING"}}
   };
 
   for (auto const &[yaml_tag, strs] : Str_to_Tag) {
