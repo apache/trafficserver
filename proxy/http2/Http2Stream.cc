@@ -276,11 +276,13 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   }
 
-  // Check whether the request uses CONNECT method
-  int method_len;
-  const char *method = _receive_header.method_get(&method_len);
-  if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
-    this->_is_tunneling = true;
+  if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
+    // Check whether the request uses CONNECT method
+    int method_len;
+    const char *method = _receive_header.method_get(&method_len);
+    if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
+      this->_is_tunneling = true;
+    }
   }
 
   if (this->expect_send_trailer()) {
