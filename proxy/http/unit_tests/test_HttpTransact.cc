@@ -571,3 +571,274 @@ TEST_CASE("HttpTransact", "[http]")
 #include "HttpSessionManager.h"
 HttpSessionManager httpSessionManager;
 StatPagesManager statPagesManager;
+
+// Mock functions to prevent linking issues
+bool
+StatPagesManager::is_stat_page(URL *url)
+{
+  ink_assert(false);
+  return false;
+}
+
+void
+forceLinkRegressionHttpTransact()
+{
+  ink_assert(false);
+};
+
+#include "remap/NextHopSelectionStrategy.h"
+
+bool
+NextHopSelectionStrategy::nextHopExists(TSHttpTxn, void *)
+{
+  ink_assert(false);
+  return true;
+};
+
+void
+NextHopSelectionStrategy::markNextHop(tsapi_httptxn *, char const *, int, NHCmd, void *, long)
+{
+  ink_assert(false);
+};
+
+const char *
+HttpRequestData::get_host()
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+#include "I_Machine.h"
+
+Machine *
+Machine::instance()
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+bool
+Machine::is_self(sockaddr const *)
+{
+  ink_assert(false);
+  return false;
+}
+
+void
+SSLProxySession::init(NetVConnection const &)
+{
+  ink_assert(false);
+};
+
+#include "HttpSM.h"
+
+VConnection *
+HttpSM::do_transform_open()
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+void
+HttpSM::do_range_setup_if_necessary()
+{
+  ink_assert(false);
+};
+
+void
+HttpSM::set_ua_half_close_flag()
+{
+  ink_assert(false);
+};
+
+void
+HttpSM::do_hostdb_update_if_necessary()
+{
+  ink_assert(false);
+};
+
+int
+HttpSM::populate_client_protocol(std::string_view *result, int n) const
+{
+  ink_assert(false);
+  return 0;
+}
+
+void
+HttpSM::milestone_update_api_time()
+{
+  ink_assert(false);
+}
+
+HTTPVersion
+HttpSM::get_server_version(HTTPHdr &hdr) const
+{
+  ink_assert(false);
+  return {};
+}
+
+#include "HttpDebugNames.h"
+
+const char *
+HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+const char *
+HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+const char *
+HttpDebugNames::get_api_hook_name(TSHttpHookID t)
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+#include "HttpTransactCache.h"
+
+bool
+HttpTransactCache::validate_ifrange_header_if_any(HTTPHdr *request, HTTPHdr *response)
+{
+  ink_assert(false);
+  return false;
+}
+
+HTTPStatus
+HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTPHdr *response, ink_time_t response_received_time)
+{
+  ink_assert(false);
+  return HTTP_STATUS_NONE;
+}
+
+bool
+HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *encoding_identifier)
+{
+  ink_assert(false);
+  return false;
+}
+
+const IpAllow::ACL &
+ProxyTransaction::get_acl() const
+{
+  ink_assert(false);
+  return IpAllow::DENY_ALL_ACL;
+}
+
+bool
+ResolveInfo::set_active(HostDBInfo *info)
+{
+  ink_assert(false);
+  return false;
+}
+
+#include "ParentSelection.h"
+
+void
+ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
+{
+  ink_assert(false);
+};
+
+void
+ParentSelectionStrategy::markParentUp(ParentResult *result)
+{
+  ink_assert(false);
+}
+
+void
+ParentConfigParams::findParent(HttpRequestData *, ParentResult *, unsigned int, unsigned int)
+{
+  ink_assert(false);
+}
+
+void
+ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, unsigned int)
+{
+  ink_assert(false);
+}
+bool
+ParentConfigParams::parentExists(HttpRequestData *rdata)
+{
+  ink_assert(false);
+  return false;
+}
+
+bool
+ParentConfigParams::apiParentExists(HttpRequestData *rdata)
+{
+  ink_assert(false);
+  return false;
+}
+
+mapping_type
+request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, UrlRewrite *table)
+{
+  ink_assert(false);
+  return NONE;
+}
+
+void
+RemapPluginInst::osResponse(TSHttpTxn rh, int os_response_type)
+{
+  ink_assert(false);
+}
+
+bool
+ResolveInfo::select_next_rr()
+{
+  ink_assert(false);
+  return false;
+}
+
+bool
+response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
+{
+  ink_assert(false);
+  return false;
+}
+
+HostDBInfo *
+HostDBRecord::find(sockaddr const *addr)
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+void
+getCacheControl(CacheControlResult *result, HttpRequestData *rdata, const OverridableHttpConfigParams *h_txn_conf, char *tag)
+{
+  ink_assert(false);
+}
+
+void
+IpAllow::release()
+{
+  ink_assert(false);
+}
+
+#include "HttpBodyFactory.h"
+
+char *
+HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
+                                        int64_t *resulting_buffer_length, char *content_language_out_buf,
+                                        size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
+                                        int format_size, const char *format)
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+#include "Log.h"
+
+int
+Log::error(char const *, ...)
+{
+  ink_assert(false);
+  return 0;
+}
