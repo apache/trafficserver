@@ -709,11 +709,7 @@ QUICNetVConnection::_isTryingRenegotiation() const
 {
   // Renegotiation is not allowed on QUIC (TLS 1.3) connections.
   // If handshake is completed when this function is called, that should be unallowed attempt of renegotiation.
-  if (this->getSSLHandShakeComplete()) {
-    return true;
-  } else {
-    return false;
-  }
+  return this->getSSLHandShakeComplete();
 }
 
 shared_SSL_CTX
