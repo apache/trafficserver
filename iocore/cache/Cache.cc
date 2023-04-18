@@ -1128,63 +1128,63 @@ CacheProcessor::IsCacheReady(CacheFragType type)
 }
 
 static void
-vol_init_data_internal(Vol *d)
+vol_init_data_internal(Vol *vol)
 {
   // step1: calculate the number of entries.
-  off_t total_entries = (d->len - (d->start - d->skip)) / cache_config_min_average_object_size;
+  off_t total_entries = (vol->len - (vol->start - vol->skip)) / cache_config_min_average_object_size;
   // step2: calculate the number of buckets
   off_t total_buckets = total_entries / DIR_DEPTH;
   // step3: calculate the number of segments, no segment has more than 16384 buckets
-  d->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  vol->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
   // step4: divide total_buckets into segments on average.
-  d->buckets = (total_buckets + d->segments - 1) / d->segments;
+  vol->buckets = (total_buckets + vol->segments - 1) / vol->segments;
   // step5: set the start pointer.
-  d->start = d->skip + 2 * d->dirlen();
+  vol->start = vol->skip + 2 * vol->dirlen();
 }
 
 static void
-vol_init_data(Vol *d)
+vol_init_data(Vol *vol)
 {
   // iteratively calculate start + buckets
-  vol_init_data_internal(d);
-  vol_init_data_internal(d);
-  vol_init_data_internal(d);
+  vol_init_data_internal(vol);
+  vol_init_data_internal(vol);
+  vol_init_data_internal(vol);
 }
 
 void
-vol_init_dir(Vol *d)
+vol_init_dir(Vol *vol)
 {
   int b, s, l;
 
-  for (s = 0; s < d->segments; s++) {
-    d->header->freelist[s] = 0;
-    Dir *seg               = d->dir_segment(s);
+  for (s = 0; s < vol->segments; s++) {
+    vol->header->freelist[s] = 0;
+    Dir *seg                 = vol->dir_segment(s);
     for (l = 1; l < DIR_DEPTH; l++) {
-      for (b = 0; b < d->buckets; b++) {
+      for (b = 0; b < vol->buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
-        dir_free_entry(dir_bucket_row(bucket, l), s, d);
+        dir_free_entry(dir_bucket_row(bucket, l), s, vol);
       }
     }
   }
 }
 
 void
-vol_clear_init(Vol *d)
+vol_clear_init(Vol *vol)
 {
-  size_t dir_len = d->dirlen();
-  memset(d->raw_dir, 0, dir_len);
-  vol_init_dir(d);
-  d->header->magic          = VOL_MAGIC;
-  d->header->version._major = CACHE_DB_MAJOR_VERSION;
-  d->header->version._minor = CACHE_DB_MINOR_VERSION;
-  d->scan_pos = d->header->agg_pos = d->header->write_pos = d->start;
-  d->header->last_write_pos                               = d->header->write_pos;
-  d->header->phase                                        = 0;
-  d->header->cycle                                        = 0;
-  d->header->create_time                                  = time(nullptr);
-  d->header->dirty                                        = 0;
-  d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
-  *d->footer                              = *d->header;
+  size_t dir_len = vol->dirlen();
+  memset(vol->raw_dir, 0, dir_len);
+  vol_init_dir(vol);
+  vol->header->magic          = VOL_MAGIC;
+  vol->header->version._major = CACHE_DB_MAJOR_VERSION;
+  vol->header->version._minor = CACHE_DB_MINOR_VERSION;
+  vol->scan_pos = vol->header->agg_pos = vol->header->write_pos = vol->start;
+  vol->header->last_write_pos                                   = vol->header->write_pos;
+  vol->header->phase                                            = 0;
+  vol->header->cycle                                            = 0;
+  vol->header->create_time                                      = time(nullptr);
+  vol->header->dirty                                            = 0;
+  vol->sector_size = vol->header->sector_size = vol->disk->hw_sector_size;
+  *vol->footer                                = *vol->header;
 }
 
 int

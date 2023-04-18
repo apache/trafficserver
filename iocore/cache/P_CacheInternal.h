@@ -548,7 +548,7 @@ extern CacheSync *cacheDirSync;
 // Function Prototypes
 int cache_write(CacheVC *, CacheHTTPInfoVector *);
 int get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
-CacheVC *new_DocEvacuator(int nbytes, Vol *d);
+CacheVC *new_DocEvacuator(int nbytes, Vol *vol);
 
 // inline Functions
 
@@ -862,36 +862,36 @@ Vol::close_read_lock(CacheVC *cont)
 }
 
 inline int
-dir_delete_lock(CacheKey *key, Vol *d, ProxyMutex *m, Dir *del)
+dir_delete_lock(CacheKey *key, Vol *vol, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, d->mutex, thread);
+  CACHE_TRY_LOCK(lock, vol->mutex, thread);
   if (!lock.is_locked()) {
     return -1;
   }
-  return dir_delete(key, d, del);
+  return dir_delete(key, vol, del);
 }
 
 inline int
-dir_insert_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m)
+dir_insert_lock(CacheKey *key, Vol *vol, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, d->mutex, thread);
+  CACHE_TRY_LOCK(lock, vol->mutex, thread);
   if (!lock.is_locked()) {
     return -1;
   }
-  return dir_insert(key, d, to_part);
+  return dir_insert(key, vol, to_part);
 }
 
 inline int
-dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
+dir_overwrite_lock(CacheKey *key, Vol *vol, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
 {
   EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, d->mutex, thread);
+  CACHE_TRY_LOCK(lock, vol->mutex, thread);
   if (!lock.is_locked()) {
     return -1;
   }
-  return dir_overwrite(key, d, to_part, overwrite, must_overwrite);
+  return dir_overwrite(key, vol, to_part, overwrite, must_overwrite);
 }
 
 void inline rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)

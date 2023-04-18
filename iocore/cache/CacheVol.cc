@@ -100,11 +100,11 @@ Ldone:
  * vol_map - precalculated map
  * offset - offset to start looking at (and data at this location has not been read yet). */
 static off_t
-next_in_map(Vol *d, char *vol_map, off_t offset)
+next_in_map(Vol *vol, char *vol_map, off_t offset)
 {
-  off_t start_offset = d->vol_offset_to_offset(0);
+  off_t start_offset = vol->vol_offset_to_offset(0);
   off_t new_off      = (offset - start_offset);
-  off_t vol_len      = d->vol_relative_length(start_offset);
+  off_t vol_len      = vol->vol_relative_length(start_offset);
 
   while (new_off < vol_len && !vol_map[new_off / SCAN_BUF_SIZE]) {
     new_off += SCAN_BUF_SIZE;
@@ -116,7 +116,7 @@ next_in_map(Vol *d, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Vol *d);
+int dir_bucket_loop_fix(Dir *start_dir, int s, Vol *vol);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
@@ -125,11 +125,11 @@ int dir_bucket_loop_fix(Dir *start_dir, int s, Vol *d);
  *
  * d - Vol to make a map of. */
 static char *
-make_vol_map(Vol *d)
+make_vol_map(Vol *vol)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
-  off_t start_offset = d->vol_offset_to_offset(0);
-  off_t vol_len      = d->vol_relative_length(start_offset);
+  off_t start_offset = vol->vol_offset_to_offset(0);
+  off_t vol_len      = vol->vol_relative_length(start_offset);
   size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
   char *vol_map      = static_cast<char *>(ats_malloc(map_len));
 
@@ -137,16 +137,16 @@ make_vol_map(Vol *d)
 
   // Scan directories.
   // Copied from dir_entries_used() and modified to fill in the map instead.
-  for (int s = 0; s < d->segments; s++) {
-    Dir *seg = d->dir_segment(s);
-    for (int b = 0; b < d->buckets; b++) {
+  for (int s = 0; s < vol->segments; s++) {
+    Dir *seg = vol->dir_segment(s);
+    for (int b = 0; b < vol->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, d)) {
+      if (dir_bucket_loop_fix(e, s, vol)) {
         break;
       }
       while (e) {
-        if (dir_offset(e) && dir_valid(d, e) && dir_agg_valid(d, e) && dir_head(e)) {
-          off_t offset = d->vol_offset(e) - start_offset;
+        if (dir_offset(e) && dir_valid(vol, e) && dir_agg_valid(vol, e) && dir_head(e)) {
+          off_t offset = vol->vol_offset(e) - start_offset;
           if (offset <= vol_len) {
             vol_map[offset / SCAN_BUF_SIZE] = 1;
           }
