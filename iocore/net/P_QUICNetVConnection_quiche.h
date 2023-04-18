@@ -39,6 +39,9 @@
 #include "P_UDPNet.h"
 #include "P_ALPNSupport.h"
 #include "TLSBasicSupport.h"
+#include "TLSSessionResumptionSupport.h"
+#include "TLSSNISupport.h"
+#include "TLSCertSwitchSupport.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
@@ -57,6 +60,9 @@ class QUICNetVConnection : public UnixNetVConnection,
                            public QUICConnection,
                            public RefCountObj,
                            public ALPNSupport,
+                           public TLSSNISupport,
+                           public TLSSessionResumptionSupport,
+                           public TLSCertSwitchSupport,
                            public TLSBasicSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
@@ -66,7 +72,7 @@ public:
   ~QUICNetVConnection();
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-            QUICConnectionId retry_cid, UDPConnection *, quiche_conn *, QUICPacketHandler *, QUICConnectionTable *ctable);
+            QUICConnectionId retry_cid, UDPConnection *, quiche_conn *, QUICPacketHandler *, QUICConnectionTable *ctable, SSL *);
 
   // Event handlers
   int acceptEvent(int event, Event *e);
@@ -88,6 +94,7 @@ public:
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
   int connectUp(EThread *t, int fd) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
+  bool getSSLHandShakeComplete() const override;
 
   // NetEvent
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
@@ -95,6 +102,8 @@ public:
   // NetVConnection
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
+  const char *get_server_name() const override;
+  bool support_sni() const override;
 
   // QUICConnection
   QUICStreamManager *stream_manager() override;
@@ -144,7 +153,19 @@ protected:
   SSL *_get_ssl_object() const override;
   ssl_curve_id _get_tls_curve() const override;
 
+  // TLSSNISupport
+  void _fire_ssl_servername_event() override;
+
+  // TLSSessionResumptionSupport
+  const IpEndpoint &_getLocalEndpoint() override;
+
+  // TLSCertSwitchSupport
+  bool _isTryingRenegotiation() const override;
+  shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
+  shared_SSL_CTX _lookupContextByIP() override;
+
 private:
+  SSL *_ssl;
   QUICConfig::scoped_config _quic_config;
 
   QUICConnectionId _peer_quic_connection_id;      // dst cid in local
@@ -158,6 +179,9 @@ private:
   UDPConnection *_udp_con      = nullptr;
   quiche_conn *_quiche_con     = nullptr;
   QUICConnectionTable *_ctable = nullptr;
+
+  void _bindSSLObject();
+  void _unbindSSLObject();
 
   void _schedule_packet_write_ready(bool delay = false);
   void _unschedule_packet_write_ready();

@@ -23,7 +23,9 @@
 
 #include "P_QUICNetVConnection_quiche.h"
 #include "P_QUICPacketHandler_quiche.h"
+#include "QUICMultiCertConfigLoader.h"
 #include "quic/QUICStream_quiche.h"
+#include "quic/QUICGlobals.h"
 #include <quiche.h>
 
 static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
@@ -46,7 +48,7 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
 void
 QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
                          QUICConnectionId retry_cid, UDPConnection *udp_con, quiche_conn *quiche_con,
-                         QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
+                         QUICPacketHandler *packet_handler, QUICConnectionTable *ctable, SSL *ssl)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_udp_con                     = udp_con;
@@ -61,6 +63,10 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
     this->_ctable->insert(this->_quic_connection_id, this);
     this->_ctable->insert(this->_original_quic_connection_id, this);
   }
+
+  this->_ssl = ssl;
+  SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
+  this->_bindSSLObject();
 }
 
 void
@@ -114,6 +120,7 @@ QUICNetVConnection::free(EThread *t)
   this->_context->trigger(QUICContext::CallbackEvent::CONNECTION_CLOSE);
   ALPNSupport::clear();
   TLSBasicSupport::clear();
+  TLSCertSwitchSupport::_clear();
 
   this->_packet_handler->close_connection(this);
   this->_packet_handler = nullptr;
@@ -489,6 +496,32 @@ QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
   return 0;
 }
 
+bool
+QUICNetVConnection::getSSLHandShakeComplete() const
+{
+  return quiche_conn_is_established(this->_quiche_con);
+}
+
+void
+QUICNetVConnection::_bindSSLObject()
+{
+  TLSBasicSupport::bind(this->_ssl, this);
+  ALPNSupport::bind(this->_ssl, this);
+  TLSSessionResumptionSupport::bind(this->_ssl, this);
+  TLSSNISupport::bind(this->_ssl, this);
+  TLSCertSwitchSupport::bind(this->_ssl, this);
+}
+
+void
+QUICNetVConnection::_unbindSSLObject()
+{
+  TLSBasicSupport::unbind(this->_ssl);
+  ALPNSupport::unbind(this->_ssl);
+  TLSSessionResumptionSupport::unbind(this->_ssl);
+  TLSSNISupport::unbind(this->_ssl);
+  TLSCertSwitchSupport::unbind(this->_ssl);
+}
+
 void
 QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 {
@@ -632,14 +665,79 @@ QUICNetVConnection::protocol_contains(std::string_view tag) const
   return "";
 }
 
+const char *
+QUICNetVConnection::get_server_name() const
+{
+  return get_sni_server_name();
+}
+
+bool
+QUICNetVConnection::support_sni() const
+{
+  return true;
+}
+
 SSL *
 QUICNetVConnection::_get_ssl_object() const
 {
-  return nullptr;
+  return this->_ssl;
 }
 
 ssl_curve_id
 QUICNetVConnection::_get_tls_curve() const
 {
-  return 0;
+  if (getSSLSessionCacheHit()) {
+    return getSSLCurveNID();
+  } else {
+    return SSLGetCurveNID(this->_ssl);
+  }
+}
+
+void
+QUICNetVConnection::_fire_ssl_servername_event()
+{
+}
+
+const IpEndpoint &
+QUICNetVConnection::_getLocalEndpoint()
+{
+  return this->local_addr;
+}
+
+bool
+QUICNetVConnection::_isTryingRenegotiation() const
+{
+  // Renegotiation is not allowed on QUIC (TLS 1.3) connections.
+  // If handshake is completed when this function is called, that should be unallowed attempt of renegotiation.
+  return this->getSSLHandShakeComplete();
+}
+
+shared_SSL_CTX
+QUICNetVConnection::_lookupContextByName(const std::string &servername, SSLCertContextType ctxType)
+{
+  shared_SSL_CTX ctx = nullptr;
+  QUICCertConfig::scoped_config lookup;
+  SSLCertContext *cc = lookup->find(servername, ctxType);
+
+  if (cc && cc->getCtx()) {
+    ctx = cc->getCtx();
+  }
+
+  return ctx;
+}
+
+shared_SSL_CTX
+QUICNetVConnection::_lookupContextByIP()
+{
+  shared_SSL_CTX ctx = nullptr;
+  QUICCertConfig::scoped_config lookup;
+  QUICFiveTuple five_tuple = this->five_tuple();
+  IpEndpoint ip            = five_tuple.destination();
+  SSLCertContext *cc       = lookup->find(ip);
+
+  if (cc && cc->getCtx()) {
+    ctx = cc->getCtx();
+  }
+
+  return ctx;
 }
