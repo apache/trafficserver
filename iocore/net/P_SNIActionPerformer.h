@@ -41,7 +41,10 @@
 
 #include "tscore/ink_inet.h"
 
+#include "swoc/bwf_base.h"
+
 #include <vector>
+#include <optional>
 
 class ControlH2 : public ActionItem
 {
@@ -92,178 +95,57 @@ private:
 
 class TunnelDestination : public ActionItem
 {
-  // ID of the configured variable. This will be used to know which function
-  // should be called when processing the tunnel destination.
-  enum OpId : int32_t {
-    MATCH_GROUPS,                 // Deal with configured groups.
-    MAP_WITH_RECV_PORT,           // Use port from inbound local
-    MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
-    MAX                           // Always at the end and do not change the value of the above items.
+  /// Context used for name binding on tunnel destination.
+  struct BWContext {
+    Context const &_action_ctx; ///< @c ActionItem context.
+    SSLNetVConnection *_vc;     ///< Connection object.
   };
-  static constexpr std::string_view MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
-  static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
+  /// The container for bound names.
+  using bwf_map_type = swoc::bwf::ContextNames<BWContext const>;
+  /// Argument pack for capture groups.
+  class CaptureArgs : public swoc::bwf::ArgPack
+  {
+  public:
+    CaptureArgs(std::optional<ActionItem::Context::CapturedGroupViewVec> const &groups)
+      : _groups(groups.has_value() ? groups.value() : NO_GROUPS)
+    {
+    }
+
+    virtual std::any capture(unsigned idx) const override;
+
+    /// Call out from formatting when a replace group is referenced.
+    virtual swoc::BufferWriter &print(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, unsigned idx) const override;
+
+    /// Number of arguments in the pack.
+    virtual unsigned count() const override;
+
+  private:
+    /// Empty group for when no captures exist.
+    static inline const ActionItem::Context::CapturedGroupViewVec NO_GROUPS;
+    ActionItem::Context::CapturedGroupViewVec const &_groups;
+  };
+
+  static constexpr std::string_view MAP_WITH_RECV_PORT_STR           = "inbound_local_port";
+  static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "proxy_protocol_port";
 
 public:
   TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
-                    const std::vector<int> &alpn)
-    : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
-  {
-    // Check for port variable specification. Note that this is checked before
-    // the match group so that the corresponding function can be applied before
-    // the match group expansion(when the var_start_pos is still accurate).
-    auto recv_port_start_pos = destination.find(MAP_WITH_RECV_PORT_STR);
-    auto pp_port_start_pos   = destination.find(MAP_WITH_PROXY_PROTOCOL_PORT_STR);
-    bool has_recv_port_var   = recv_port_start_pos != std::string::npos;
-    bool has_pp_port_var     = pp_port_start_pos != std::string::npos;
-    if (has_recv_port_var && has_pp_port_var) {
-      Error("Invalid destination \"%.*s\" in SNI configuration - Only one port variable can be specified.",
-            static_cast<int>(destination.size()), destination.data());
-    } else if (has_recv_port_var) {
-      fnArrIndexes.push_back(OpId::MAP_WITH_RECV_PORT);
-      var_start_pos = recv_port_start_pos;
-    } else if (has_pp_port_var) {
-      fnArrIndexes.push_back(OpId::MAP_WITH_PROXY_PROTOCOL_PORT);
-      var_start_pos = pp_port_start_pos;
-    }
-    // Check for match groups as well.
-    if (destination.find_first_of('$') != std::string::npos) {
-      fnArrIndexes.push_back(OpId::MATCH_GROUPS);
-    }
-  }
+                    const std::vector<int> &alpn);
   ~TunnelDestination() override {}
 
-  int
-  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
-  {
-    // Set the netvc option?
-    SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
-    const char *servername       = snis->get_sni_server_name();
-    if (ssl_netvc) {
-      if (fnArrIndexes.empty()) {
-        ssl_netvc->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
-      } else {
-        bool port_is_dynamic = false;
-        auto fixed_dst{destination};
-        // Apply mapping functions to get the final destination.
-        for (auto fnArrIndex : fnArrIndexes) {
-          // Dispatch to the correct tunnel destination port function.
-          fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
-        }
-        ssl_netvc->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
-        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
-      }
+  int SNIAction(TLSSNISupport *snis, const Context &ctx) const override;
 
-      if (type == SNIRoutingType::BLIND) {
-        ssl_netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      }
-
-      // ALPN
-      for (int id : alpn_ids) {
-        ssl_netvc->enableProtocol(id);
-      }
-    }
-
-    return SSL_TLSEXT_ERR_OK;
-  }
+  static void static_initialization();
 
 private:
-  static bool
-  is_number(std::string_view s)
-  {
-    return !s.empty() &&
-           std::find_if(std::begin(s), std::end(s), [](std::string_view::value_type c) { return !std::isdigit(c); }) == std::end(s);
-  }
-
-  /**
-   * `tunnel_route` may contain matching groups ie: `$1` which needs to be replaced by the corresponding
-   * captured group from the `fqdn`, this function will replace them using proper group string. Matching
-   * groups could be at any order.
-   */
-  static std::string
-  replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups, bool &port_is_dynamic)
-  {
-    port_is_dynamic = false;
-    if (dst.empty() || groups.empty()) {
-      return std::string{dst};
-    }
-    std::string real_dst;
-    std::string::size_type pos{0};
-
-    const auto end = std::end(dst);
-    // We need to split the tunnel string and place each corresponding match on the
-    // configured one, so we need to first, get the match, then get the match number
-    // making sure that it does exist in the captured group.
-    bool is_writing_port = false;
-    for (auto c = std::begin(dst); c != end; c++, pos++) {
-      if (*c == ':') {
-        is_writing_port = true;
-      }
-      if (*c == '$') {
-        // find the next '.' so we can get the group number.
-        const auto dot            = dst.find('.', pos);
-        std::string::size_type to = std::string::npos;
-        if (dot != std::string::npos) {
-          to = dot - (pos + 1);
-        } else {
-          // It may not have a dot, which could be because it's the last part. In that case
-          // we should check for the port separator.
-          if (const auto port = dst.find(':', pos); port != std::string::npos) {
-            to = (port - pos) - 1;
-          }
-        }
-        std::string_view number_str{dst.substr(pos + 1, to)};
-        if (!is_number(number_str)) {
-          // it may be some issue on the configured string, place the char and keep going.
-          real_dst += *c;
-          continue;
-        }
-        const std::size_t group_index = swoc::svtoi(number_str);
-        if ((group_index - 1) < groups.size()) {
-          // place the captured group.
-          real_dst += groups[group_index - 1];
-          if (is_writing_port) {
-            port_is_dynamic = true;
-          }
-          // if it was the last match, then ...
-          if (dot == std::string::npos && to == std::string::npos) {
-            // that's it.
-            break;
-          }
-          pos += number_str.size() + 1;
-          std::advance(c, number_str.size() + 1);
-        }
-        // If there is no match for a specific group, then we keep the `$#` as defined in the string.
-      }
-      real_dst += *c;
-    }
-
-    return real_dst;
-  }
-
-  std::string destination;
-
-  /// The start position of a tunnel destination variable, such as '{proxy_protocol_port}'.
-  size_t var_start_pos{0};
+  std::string destination; ///< Persistent storage for format.
   SNIRoutingType type                         = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
 
-  /** The indexes of the mapping functions that need to be called. On
-  creation, we decide which functions need to be called, add the coressponding
-  indexes and then we call those functions with the relevant data.
-  */
-  std::vector<OpId> fnArrIndexes;
+  std::optional<swoc::bwf::Format> _fmt; ///< Format used to render destination.
 
-  /// tunnel_route destination callback array.
-  static std::array<std::function<std::string(std::string_view,    // destination view
-                                              size_t,              // The start position for any relevant tunnel_route variable.
-                                              const Context &,     // Context
-                                              SSLNetVConnection *, // Net vc to get the port.
-                                              bool &               // Whether the port is derived from information on the wire.
-                                              )>,
-                    OpId::MAX>
-    fix_destination;
+  static bwf_map_type bwf_map; ///< Names available in the configuration strings.
 };
 
 class VerifyClient : public ActionItem

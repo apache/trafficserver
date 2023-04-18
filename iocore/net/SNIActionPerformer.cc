@@ -26,6 +26,8 @@
 #include "swoc/bwf_std.h"
 #include "swoc/bwf_ip.h"
 
+using namespace std::literals;
+
 #include "P_SNIActionPerformer.h"
 
 SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &servername)
@@ -92,3 +94,103 @@ SNI_IpAllow::TestClientSNIAction(char const *servrername, IpEndpoint const &ep, 
 {
   return ip_addrs.contains(swoc::IPAddr(ep));
 }
+
+TunnelDestination::bwf_map_type TunnelDestination::bwf_map;
+
+TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
+                                     const std::vector<int> &alpn)
+  : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
+{
+  try {
+    _fmt = swoc::bwf::Format(destination);
+  } catch (std::exception const &e) {
+    Error("Invalid destination \"%.*s\" in SNI configuration - %s", static_cast<int>(dest.size()), dest.data(), e.what());
+  }
+}
+
+int
+TunnelDestination::SNIAction(TLSSNISupport *snis, const ActionItem::Context &ctx) const
+{
+  // Set the netvc option?
+  SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
+  const char *servername       = snis->get_sni_server_name();
+  if (ssl_netvc && _fmt.has_value()) {
+    // Two pass for performance. If the destination fits in the static buffer no allocation is
+    // needed. Otherwise the string is used to allocate a sufficient large buffer.
+
+    // Output generation lambda.
+    auto print = [&](swoc::FixedBufferWriter &&w) -> std::tuple<size_t, std::string_view> {
+      w.print_nfv(bwf_map.bind(BWContext{ctx, ssl_netvc}), (*_fmt).bind(), CaptureArgs{ctx._fqdn_wildcard_captured_groups});
+      return {w.extent(), w.view()};
+    };
+
+    std::string sbuff;    // string buffer if needed.
+    std::string_view dst; // result is put here.
+    char buff[512];       // Fixed buffer, try this first.
+    auto const BSIZE = sizeof(buff);
+
+    // Print on stack buffer.
+    auto &&[extent, view] = print(swoc::FixedBufferWriter{buff, BSIZE});
+    if (extent <= BSIZE) {
+      dst = view;
+    } else { // overflow, resize the string and print there.
+      sbuff.resize(extent);
+      std::tie(extent, dst) = print(swoc::FixedBufferWriter{sbuff.data(), extent});
+    }
+    ssl_netvc->set_tunnel_destination(dst, type, TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
+    Debug("ssl_sni", "Destination now is [%.*s], fqdn [%s]", int(dst.size()), dst.data(), servername);
+
+    if (type == SNIRoutingType::BLIND) {
+      ssl_netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+    }
+
+    // ALPN
+    for (int id : alpn_ids) {
+      ssl_netvc->enableProtocol(id);
+    }
+  }
+
+  return SSL_TLSEXT_ERR_OK;
+}
+
+void
+TunnelDestination::static_initialization()
+{
+  bwf_map.assign(
+    TunnelDestination::MAP_WITH_RECV_PORT_STR,
+    [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec, TunnelDestination::BWContext const &ctx) -> swoc::BufferWriter & {
+      return bwformat(w, spec, ctx._vc->get_local_port());
+    });
+  bwf_map.assign(
+    TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR,
+    [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec, TunnelDestination::BWContext const &ctx) -> swoc::BufferWriter & {
+      return bwformat(w, spec, ctx._vc->get_proxy_protocol_dst_port());
+    });
+}
+
+std::any
+TunnelDestination::CaptureArgs::capture(unsigned int idx) const
+{
+  static const std::string_view EMPTY;
+  auto n = _groups.size();
+  return std::any{static_cast<std::string_view const &>(n ? _groups[idx - 1] : EMPTY)};
+}
+
+swoc::BufferWriter &
+TunnelDestination::CaptureArgs::print(swoc::BufferWriter &w, const swoc::bwf::Spec &spec, unsigned int idx) const
+{
+  return bwformat(w, spec, idx ? _groups[idx - 1] : ""sv);
+}
+
+unsigned
+TunnelDestination::CaptureArgs::count() const
+{
+  auto n = _groups.size();
+  return n ? n + 1 : 0; // Standard 0th group not provided.
+}
+
+// Static initializations/
+[[maybe_unused]] static bool TunnelDestination_INIT = []() -> bool {
+  TunnelDestination::static_initialization();
+  return true;
+}();

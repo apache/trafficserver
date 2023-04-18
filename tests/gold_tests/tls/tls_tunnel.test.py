@@ -96,19 +96,19 @@ ts.Disk.sni_yaml.AddLines([
     "- fqdn: bob.*.com",
     "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
     "- fqdn: '*.match.com'",
-    "  tunnel_route: $1.testmatch:{0}".format(server_foo.Variables.SSL_Port),
+    '''  tunnel_route: "{{1}}.testmatch:{0}"'''.format(server_foo.Variables.SSL_Port),
     "- fqdn: '*.ok.*.com'",
-    "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
+    '''  tunnel_route: "{{2}}.example.{{1}}:{0}"'''.format(server_foo.Variables.SSL_Port),
     "- fqdn: ''",  # No SNI sent
     "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
     "- fqdn: 'incoming.port.com'",
-    "  tunnel_route: backend.incoming.port.com:{inbound_local_port}",
+    '''  tunnel_route: "backend.incoming.port.com:{inbound_local_port}"''',
     "- fqdn: 'proxy.protocol.port.com'",
-    "  tunnel_route: backend.proxy.protocol.port.com:{proxy_protocol_port}",
+    '''  tunnel_route: "backend.proxy.protocol.port.com:{proxy_protocol_port}"''',
     "- fqdn: '*.*.incoming.port.com'",
-    "  tunnel_route: backend.$1.$2.incoming.port.com:{inbound_local_port}",
+    '''  tunnel_route: "backend.{1}.{2}.incoming.port.com:{inbound_local_port}"''',
     "- fqdn: '*.*.proxy.protocol.port.com'",
-    "  tunnel_route: backend.$1.$2.proxy.protocol.port.com:{proxy_protocol_port}",
+    '''  tunnel_route: "backend.{1}.{2}.proxy.protocol.port.com:{proxy_protocol_port}"''',
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
