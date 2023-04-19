@@ -101,6 +101,14 @@ TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingTyp
                                      const std::vector<int> &alpn)
   : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
 {
+  // Get a view of the port text. If there is a substitution there, @a port will end up empty while
+  // rest (stuff after port) will be non-empty. If both are empty there is no port specified at all.
+  std::string_view port_text, rest;
+  swoc::IPEndpoint::tokenize(destination, nullptr, &port_text, &rest);
+  dynamic_port_p = port_text.empty() && !rest.empty();
+
+  Debug("ssl_sni", "port is %s", dynamic_port_p ? "true" : "false");
+
   try {
     _fmt = swoc::bwf::Format(destination);
   } catch (std::exception const &e) {
@@ -137,7 +145,7 @@ TunnelDestination::SNIAction(TLSSNISupport *snis, const ActionItem::Context &ctx
       sbuff.resize(extent);
       std::tie(extent, dst) = print(swoc::FixedBufferWriter{sbuff.data(), extent});
     }
-    ssl_netvc->set_tunnel_destination(dst, type, TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
+    ssl_netvc->set_tunnel_destination(dst, type, dynamic_port_p, tunnel_prewarm);
     Debug("ssl_sni", "Destination now is [%.*s], fqdn [%s]", int(dst.size()), dst.data(), servername);
 
     if (type == SNIRoutingType::BLIND) {

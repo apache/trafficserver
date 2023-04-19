@@ -106,10 +106,7 @@ class TunnelDestination : public ActionItem
   class CaptureArgs : public swoc::bwf::ArgPack
   {
   public:
-    CaptureArgs(std::optional<ActionItem::Context::CapturedGroupViewVec> const &groups)
-      : _groups(groups.has_value() ? groups.value() : NO_GROUPS)
-    {
-    }
+    CaptureArgs(std::optional<ActionItem::Context::CapturedGroupViewVec> const &groups);
 
     virtual std::any capture(unsigned idx) const override;
 
@@ -139,6 +136,7 @@ public:
 
 private:
   std::string destination; ///< Persistent storage for format.
+  bool dynamic_port_p;
   SNIRoutingType type                         = SNIRoutingType::NONE;
   YamlSNIConfig::TunnelPreWarm tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
   const std::vector<int> &alpn_ids;
@@ -147,6 +145,11 @@ private:
 
   static bwf_map_type bwf_map; ///< Names available in the configuration strings.
 };
+
+inline TunnelDestination::CaptureArgs::CaptureArgs(const std::optional<ActionItem::Context::CapturedGroupViewVec> &groups)
+  : _groups(groups.has_value() ? groups.value() : NO_GROUPS)
+{
+}
 
 class VerifyClient : public ActionItem
 {
