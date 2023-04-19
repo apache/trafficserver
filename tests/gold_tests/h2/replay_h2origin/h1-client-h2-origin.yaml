@@ -72,8 +72,9 @@ sessions:
             size: 0
 
         proxy-response:
-          version: '2'
+          version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -142,6 +143,7 @@ sessions:
         proxy-response:
           version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -220,8 +222,9 @@ sessions:
             size: 0
 
         proxy-response:
-          version: '2'
+          version: '1.1'
           status: 404
+          reason: Not Found
           headers:
             encoding: esc_json
             fields:
@@ -286,8 +289,9 @@ sessions:
             size: 32
 
         proxy-response:
-          version: '2'
+          version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -353,8 +357,9 @@ sessions:
             size: 1600
 
         proxy-response:
-          version: '2'
+          version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -422,6 +427,7 @@ sessions:
         proxy-response:
           version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
@@ -489,6 +495,7 @@ sessions:
         proxy-response:
           version: '1.1'
           status: 200
+          reason: OK
           headers:
             encoding: esc_json
             fields:
