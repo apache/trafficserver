@@ -80,6 +80,7 @@ target_include_directories(inknet PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/mgmt/utils
+        ${CMAKE_SOURCE_DIR}/src/traffic_server
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}
         )
