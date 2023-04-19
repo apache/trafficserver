@@ -1118,9 +1118,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (cipher) {
       const char *cipherName = SSL_CIPHER_get_name(cipher);
       // lookup index of stat by name and incr count
-      if (auto it = cipher_map.find(cipherName); it != cipher_map.end()) {
-        SSL_INCREMENT_DYN_STAT((intptr_t)it->second);
+      auto it = cipher_map.find(cipherName);
+      if (it == cipher_map.end()) {
+        it = cipher_map.find(SSL_CIPHER_STAT_OTHER);
+        ink_assert(it != cipher_map.end());
       }
+      SSL_INCREMENT_DYN_STAT((intptr_t)it->second);
     }
   }
 }
