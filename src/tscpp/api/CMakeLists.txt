@@ -15,7 +15,30 @@
 #
 #######################
 
-
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+add_library(tscppapi STATIC
+        AsyncHttpFetch.cc
+        AsyncTimer.cc
+        CaseInsensitiveStringComparator.cc
+        ClientRequest.cc
+        Continuation.cc
+        GlobalPlugin.cc
+        GzipDeflateTransformation.cc
+        GzipInflateTransformation.cc
+        Headers.cc
+        HttpMethod.cc
+        HttpVersion.cc
+        InterceptPlugin.cc
+        Logger.cc
+        Plugin.cc
+        RemapPlugin.cc
+        Request.cc
+        Response.cc
+        Stat.cc
+        Transaction.cc
+        TransactionPlugin.cc
+        TransformationPlugin.cc
+        Url.cc
+        utils.cc
+        utils_internal.cc
+        )
+install(TARGETS tscppapi)

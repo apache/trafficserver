@@ -15,7 +15,10 @@
 #
 #######################
 
-
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+add_atsplugin(cache_promote
+        cache_promote.cc
+        configs.cc
+        policy.cc
+        lru_policy.cc
+        policy_manager.cc
+)

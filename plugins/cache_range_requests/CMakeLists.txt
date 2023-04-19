@@ -15,7 +15,6 @@
 #
 #######################
 
-
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+add_atsplugin(cache_range_requests
+        cache_range_requests.cc
+)

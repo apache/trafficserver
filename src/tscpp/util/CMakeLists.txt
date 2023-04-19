@@ -36,3 +36,4 @@ add_executable(test_tscpputil
         )
 target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc)
 target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+install(TARGETS tscpputil)

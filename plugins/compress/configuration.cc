@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_autoconf.h"
+#include "tscore/ink_config.h"
 #include "configuration.h"
 #include <fstream>
 #include <algorithm>

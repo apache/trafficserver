@@ -39,3 +39,4 @@ target_include_directories(records_p PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/utils
         )
 target_link_libraries(records_p tscore libswoc)
+install(TARGETS records_p)

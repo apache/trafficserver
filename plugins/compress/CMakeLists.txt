@@ -15,7 +15,8 @@
 #
 #######################
 
-
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+add_atsplugin(compress
+        compress.cc
+        configuration.cc
+        misc.cc
+)

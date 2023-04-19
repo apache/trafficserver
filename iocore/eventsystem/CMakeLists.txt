@@ -16,7 +16,7 @@
 #######################
 
 
-add_library(inkevent SHARED
+add_library(inkevent STATIC
         EventSystem.cc
         IOBuffer.cc
         Inline.cc

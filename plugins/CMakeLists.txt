@@ -15,7 +15,28 @@
 #
 #######################
 
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+function(add_atsplugin name)
+  add_library(${name} MODULE ${ARGN})
+  set_target_properties(${name} PROPERTIES PREFIX "")
+  set_target_properties(${name} PROPERTIES SUFFIX ".so")
+  set_target_properties(${name} PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+  install(TARGETS ${name} DESTINATION libexec/trafficserver)
+endfunction()
+
+if(APPLE)
+  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
+endif()
+
+add_subdirectory(authproxy)
+add_subdirectory(background_fetch)
+add_subdirectory(cache_promote)
+add_subdirectory(cache_range_requests)
+add_subdirectory(cachekey)
+add_subdirectory(certifier)
+add_subdirectory(compress)
+add_subdirectory(conf_remap)
+
+add_subdirectory(generator)
+add_subdirectory(xdebug)

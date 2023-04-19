@@ -15,7 +15,9 @@
 #
 #######################
 
-
-add_library(fastlz)
-target_sources(fastlz PRIVATE fastlz.cc fastlz.h)
-install(TARGETS fastlz)
+add_atsplugin(background_fetch
+        background_fetch.cc
+        configs.cc
+        headers.cc
+        rules.cc
+)
