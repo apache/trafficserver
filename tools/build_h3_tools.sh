@@ -43,7 +43,9 @@ if [ -e /etc/redhat-release ]; then
     echo "|                                                                         |"
     echo "|   sudo yum -y install libev-devel jemalloc-devel python2-devel          |"
     echo "|   sudo yum -y install libxml2-devel c-ares-devel libevent-devel         |"
-    echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel            |"
+    echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel cargo      |"
+    echo "|                                                                         |"
+    echo "| Rust may be needed too, see https://rustup.rs for the details           |"
     echo "+-------------------------------------------------------------------------+"
     echo
     echo
@@ -53,7 +55,9 @@ elif [ -e /etc/debian_version ]; then
     echo "|                                                                         |"
     echo "|   sudo apt -y install libev-dev libjemalloc-dev python2-dev libxml2-dev |"
     echo "|   sudo apt -y install libpython2-dev libc-ares-dev libsystemd-dev       |"
-    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev            |"
+    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev cargo      |"
+    echo "|                                                                         |"
+    echo "| Rust may be needed too, see https://rustup.rs for the details           |"
     echo "+-------------------------------------------------------------------------+"
     echo
     echo
