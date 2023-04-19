@@ -14,6 +14,8 @@
 .. include:: ../../common.defs
 .. highlight:: yaml
 
+.. _ip-allow:
+
 ===============
 ip_allow.yaml
 ===============
