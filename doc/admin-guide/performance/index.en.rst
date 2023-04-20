@@ -185,7 +185,7 @@ Thread Scaling
 By default, |TS| creates one thread per CPU core on the host system. This may
 be adjusted with the following settings in :file:`records.yaml`:
 
-* :ts:cv:`proxy.config.exec_thread.autoconfig`
+* :ts:cv:`proxy.config.exec_thread.autoconfig.enabled`
 * :ts:cv:`proxy.config.exec_thread.autoconfig.scale`
 * :ts:cv:`proxy.config.exec_thread.limit`
 
