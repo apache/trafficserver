@@ -649,6 +649,9 @@ TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status,
     return 0;
   single = TS_OCSP_resp_get0(bs, i);
   i      = TS_OCSP_single_get0_status(single, reason, revtime, thisupd, nextupd);
+  if (i < 0) {
+    return 0;
+  }
   if (status != nullptr)
     *status = i;
   return 1;
