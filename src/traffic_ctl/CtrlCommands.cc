@@ -438,6 +438,7 @@ PluginCommand::plugin_msg()
   }
   BasicPluginMessageRequest request{params};
   auto response = invoke_rpc(request);
+  _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
