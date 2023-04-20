@@ -432,8 +432,8 @@ Doc::data()
   return this->hdr() + hlen;
 }
 
-int vol_dir_clear(Vol *d);
-int vol_init(Vol *d, char *s, off_t blocks, off_t skip, bool clear);
+int vol_dir_clear(Vol *vol);
+int vol_init(Vol *vol, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 

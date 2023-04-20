@@ -276,24 +276,24 @@ struct CacheSync : public Continuation {
 
 // Global Functions
 
-void vol_init_dir(Vol *d);
+void vol_init_dir(Vol *vol);
 int dir_probe(const CacheKey *, Vol *, Dir *, Dir **);
-int dir_insert(const CacheKey *key, Vol *d, Dir *to_part);
-int dir_overwrite(const CacheKey *key, Vol *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int dir_delete(const CacheKey *key, Vol *d, Dir *del);
-int dir_lookaside_probe(const CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock);
-int dir_lookaside_insert(EvacuationBlock *b, Vol *d, Dir *to);
-int dir_lookaside_fixup(const CacheKey *key, Vol *d);
-void dir_lookaside_cleanup(Vol *d);
-void dir_lookaside_remove(const CacheKey *key, Vol *d);
-void dir_free_entry(Dir *e, int s, Vol *d);
+int dir_insert(const CacheKey *key, Vol *vol, Dir *to_part);
+int dir_overwrite(const CacheKey *key, Vol *vol, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int dir_delete(const CacheKey *key, Vol *vol, Dir *del);
+int dir_lookaside_probe(const CacheKey *key, Vol *vol, Dir *result, EvacuationBlock **eblock);
+int dir_lookaside_insert(EvacuationBlock *b, Vol *vol, Dir *to);
+int dir_lookaside_fixup(const CacheKey *key, Vol *vol);
+void dir_lookaside_cleanup(Vol *vol);
+void dir_lookaside_remove(const CacheKey *key, Vol *vol);
+void dir_free_entry(Dir *e, int s, Vol *vol);
 void dir_sync_init();
-int check_dir(Vol *d);
-void dir_clean_vol(Vol *d);
-void dir_clear_range(off_t start, off_t end, Vol *d);
-int dir_segment_accounted(int s, Vol *d, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+int check_dir(Vol *vol);
+void dir_clean_vol(Vol *vol);
+void dir_clear_range(off_t start, off_t end, Vol *vol);
+int dir_segment_accounted(int s, Vol *vol, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
                           int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
-uint64_t dir_entries_used(Vol *d);
+uint64_t dir_entries_used(Vol *vol);
 void sync_cache_dir_on_shutdown();
 
 // Global Data
