@@ -480,6 +480,21 @@ mapping rules. (It is activated before any mappings and is never
 deactivated.) The filter `local_only` will only be applied to the
 second mapping.
 
+Implict IPAllow filter
+======================
+
+To allow control of :ref:`IP Allow<ip-allow>` it is treated as an implicitly active and named
+filter. When this filter is active IP Allow checks are done before remap. To prevent this for
+specific remap rules, this filter, named "ip_allow", must be disabled. The common way of doing this
+would be ::
+
+   .deactivatefilter ip_allow
+   map ...
+   map ...
+   .activateefilter ip_allow
+
+Note this entirely disables IP Allow checks for those remap rules.
+
 NextHop Selection Strategies
 ============================
 
