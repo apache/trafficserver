@@ -18,27 +18,32 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "CtrlCommands.h"
+
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
 #include <thread>
+#include <csignal>
+#include <unistd.h>
 
-#include "CtrlCommands.h"
+#include <swoc/TextView.h>
+#include <swoc/BufferWriter.h>
+#include <swoc/bwf_base.h>
+
 #include "jsonrpc/CtrlRPCRequests.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
-#include "swoc/TextView.h"
-#include "swoc/BufferWriter.h"
-#include "swoc/bwf_base.h"
 
 namespace
 {
 /// We use yamlcpp as codec implementation.
 using Codec = yamlcpp_json_emitter;
-} // namespace
+
 const std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat> _Fmt_str_to_enum = {
   {"json", BasePrinter::Options::OutputFormat::JSON},
   {"rpc",  BasePrinter::Options::OutputFormat::RPC }
 };
+} // namespace
 
 BasePrinter::Options::OutputFormat
 parse_format(ts::Arguments *args)
@@ -57,13 +62,13 @@ parse_format(ts::Arguments *args)
   }
   return val;
 }
-
 BasePrinter::Options
 parse_print_opts(ts::Arguments *args)
 {
   return {parse_format(args)};
 }
 
+std::atomic_int CtrlCommand::Signal_Flagged{0};
 //------------------------------------------------------------------------------------------------------------------------------------
 CtrlCommand::CtrlCommand(ts::Arguments *args) : _arguments(args) {}
 
@@ -289,11 +294,12 @@ MetricCommand::metric_monitor()
   //
   // Note: if any of the string->number fails, the exception will be caught by the invoke function from the ArgParser.
   //
-  const int32_t count    = std::stoi(get_parsed_arguments()->get("count").value());
+  const int32_t count = std::stoi(get_parsed_arguments()->get("count").value());
+  int32_t query_count{0};
   const int32_t interval = std::stoi(get_parsed_arguments()->get("interval").value());
-  if (count <= 0 || interval <= 0) {
-    throw std::runtime_error(
-      ts::bwprint(err_text, "monitor: invalid input, count({}), interval({}) should be > than '0'", count, interval));
+  // default count is 0.
+  if (count < 0 || interval <= 0) {
+    throw std::runtime_error(swoc::bwprint(err_text, "monitor: invalid input, count: {}(>=0), interval: {}(>=1)", count, interval));
   }
 
   // keep track of each metric
@@ -305,9 +311,27 @@ MetricCommand::metric_monitor()
   };
 
   // Keep track of the requested metric(s), we support more than one at the same time.
+
+  // To be used to print all the stats. This is a lambda function as this could
+  // be called when SIGINT is invoked, so we dump what we have before exit.
+  auto dump = [&](std::unordered_map<std::string, ctx> const &_summary) {
+    if (_summary.size() == 0) {
+      // nothing to report.
+      return;
+    }
+
+    _printer->write_output(swoc::bwprint(err_text, "--- metric monitor statistics({}) ---", query_count));
+
+    for (auto const &item : _summary) {
+      ctx const &s  = item.second;
+      const int avg = s.sum / query_count;
+      _printer->write_output(swoc::bwprint(err_text, "┌ {}\n└─ min/avg/max = {:.5}/{}/{:.5}", item.first, s.min, avg, s.max));
+    }
+  };
+
   std::unordered_map<std::string, ctx> summary;
 
-  for (int idx = 0;; idx++) {
+  while (!Signal_Flagged.load()) {
     // Request will hold all metrics in a single message.
     shared::rpc::JSONRPCResponse const &resp = record_fetch(arg, shared::rpc::NOT_REGEX, RecordQueryType::METRIC);
 
@@ -323,15 +347,14 @@ MetricCommand::metric_monitor()
     }
 
     for (auto &&rec : response.recordList) { // requested metric(s)
-      auto &s = summary[rec.name];           // We will update it.
-      // Note: To avoid
+      auto &s         = summary[rec.name];   // We will update it.
       const float val = std::stof(rec.currentValue);
 
       s.sum += val;
       s.max = std::max<float>(s.max, val);
       s.min = std::min<float>(s.min, val);
       std::string symbol;
-      if (idx > 0) {
+      if (query_count > 0) {
         if (val > s.last) {
           symbol = "+";
         } else if (val < s.last) {
@@ -339,25 +362,18 @@ MetricCommand::metric_monitor()
         }
       }
       s.last = val;
-      _printer->write_output(ts::bwprint(err_text, "{}: {} {}", rec.name, rec.currentValue, symbol));
+      _printer->write_output(swoc::bwprint(err_text, "{}: {} {}", rec.name, rec.currentValue, symbol));
     }
-    if (idx == count - 1) {
+
+    if ((query_count++ == count - 1) && count > 0 /* could be a forever loop*/) {
       break;
     }
-    std::this_thread::sleep_for(std::chrono::seconds(interval));
-  }
-  if (summary.size() == 0) {
-    // nothing to report.
-    return;
+
+    sleep(interval);
   }
 
-  _printer->write_output("--- metric monitor statistics ---");
-
-  for (auto &&item : summary) {
-    ctx const &s  = item.second;
-    const int avg = s.sum / count;
-    _printer->write_output(ts::bwprint(err_text, "┌ {}\n└─ min/avg/max = {:.5}/{}/{:.5}", item.first, s.min, avg, s.max));
-  }
+  // all done, print summary.
+  dump(summary);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 // TODO, let call the super const

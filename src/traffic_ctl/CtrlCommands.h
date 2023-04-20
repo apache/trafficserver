@@ -72,6 +72,10 @@ public:
   ///        If @c _invoked_func is not properly set, the function will throw @c logic_error
   virtual void execute();
 
+  /// @brief This variable is used to mark if a Signal was flagged by the application. Default value is 0 and the signal number
+  ///        should be set when the signal is handled.
+  static std::atomic_int Signal_Flagged;
+
 protected:
   /// @brief The whole design is that the command will execute the @c _invoked_func once invoked. This function ptr should be
   ///        set by the appropriated derived class base on the passed parameters. The derived class have the option to override

@@ -325,6 +325,9 @@ traffic_ctl metric
    Display the current value of the specified metric(s) using an interval time
    and a count value. Use ``-i`` to set the interval time between requests, and
    ``-c`` to set the number of requests the program will send in total per metric.
+   The program will terminate execution after requesting <count> metrics.
+   If ``count=0`` is passed or ``count`` is not specified then the program should be terminated
+   by SIGINT.
    Note that the metric will display `+` or `-` depending on the value of the last
    metric and the current being shown, if current is greater, then  `+` will be
    added beside the metric value, `-` if the last value is less than current,
@@ -345,7 +348,7 @@ traffic_ctl metric
       proxy.process.eventloop.time.min.10s: 4011194
       proxy.process.eventloop.time.min.10s: 4011194
       proxy.process.eventloop.time.min.10s: 4018669 +
-      --- metric monitor statistics ---
+      --- metric monitor statistics(10) ---
       ┌ proxy.process.eventloop.time.min.10s
       └─ min/avg/max = 4011194/4017498/4025085
 
