@@ -22,10 +22,10 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-    ts = Test.MakeATSProcess("ts", enable_tls=True, enable_quic=True)
-else:
-    ts = Test.MakeATSProcess("ts", enable_tls=True)
+USE_QUIC = True if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3') else False
+
+ts = Test.MakeATSProcess("ts", enable_tls=USE_QUIC, enable_quic=USE_QUIC)
+
 server = Test.MakeOriginServer("server", delay=8)
 
 request_header = {"headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
@@ -36,18 +36,20 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.addSSLfile("../tls/ssl/server.pem")
 ts.addSSLfile("../tls/ssl/server.key")
 
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.url_remap.remap_required': 1,
-    'proxy.config.http.transaction_active_timeout_out': 2,
-})
+ts.Disk.records_config.update(
+    '''
+    url_remap:
+      remap_required: 1
+    http:
+      transaction_active_timeout_out: 2
+    '''
+)
 
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+    f'dest_ip=* ssl_cert_name={ts.Variables.SSLDir}/server.pem ssl_key_name={ts.Variables.SSLDir}/server.key'
 )
 
 tr = Test.AddTestRun("tr")
