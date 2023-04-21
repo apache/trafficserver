@@ -433,7 +433,12 @@ Acl Filters
 
 Acl filters can be created to control access of specific remap lines. The markup
 is very similar to that of :file:`ip_allow.yaml`, with slight changes to
-accommodate remap markup
+accommodate remap markup.
+
+**Note:** As of ATS v10.x, these filters are applied just as :file:`ip_allow.yaml`,
+this means once a filter matches the request, the action for that rule takes effect.
+In previous versions, all filters for a remap rule were evaluated, and the ``deny``
+action took priority.
 
 Examples
 --------
