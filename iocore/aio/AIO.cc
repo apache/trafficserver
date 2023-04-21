@@ -32,7 +32,7 @@
 
 #include "P_AIO.h"
 
-#if AIO_MODE == AIO_MODE_IO_URING
+#if defined(HAVE_EVENTFD) && AIO_MODE == AIO_MODE_IO_URING
 #include <sys/eventfd.h>
 #endif
 
