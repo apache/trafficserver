@@ -517,7 +517,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   ink_aio_init(AIO_MODULE_PUBLIC_VERSION, backend);
   ts::Random::seed(time(nullptr));
 
-
   max_size = seq_read_size;
   if (seq_write_size > max_size) {
     max_size = seq_write_size;

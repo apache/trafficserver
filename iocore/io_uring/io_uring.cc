@@ -43,7 +43,7 @@ IOUringContext::set_config(const IOUringConfig &cfg)
   config = cfg;
 }
 
-static io_uring_probe probe_unsupported = {};
+static io_uring_probe probe_unsupported     = {};
 constexpr int MAX_SUPPORTED_OP_BEFORE_PROBE = 20;
 
 IOUringContext::IOUringContext()

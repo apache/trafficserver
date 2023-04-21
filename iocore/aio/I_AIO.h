@@ -38,8 +38,8 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
 
-#define AIO_MODE_DEFAULT  0
-#define AIO_MODE_NATIVE   1
+#define AIO_MODE_DEFAULT 0
+#define AIO_MODE_NATIVE  1
 
 #if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE AIO_MODE_NATIVE
@@ -51,8 +51,8 @@ static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVer
 #define LIO_WRITE 0x2
 
 enum AIOBackend {
-  AIO_BACKEND_AUTO = 0,
-  AIO_BACKEND_THREAD = 1,
+  AIO_BACKEND_AUTO     = 0,
+  AIO_BACKEND_THREAD   = 1,
   AIO_BACKEND_IO_URING = 2,
 };
 
@@ -78,8 +78,8 @@ struct ink_aiocb {
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_lio_opcode   = 0; /* listio operation */
-  int aio_state        = 0; /* state flag for List I/O */
+  int aio_lio_opcode = 0; /* listio operation */
+  int aio_state      = 0; /* state flag for List I/O */
 };
 
 bool ink_aio_thread_num_set(int thread_num);

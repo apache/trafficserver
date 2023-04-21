@@ -84,9 +84,9 @@ AIOVec::mainEvent(int /* event */, Event *)
 struct AIO_Reqs;
 
 #ifdef TS_USE_LINUX_IO_URING
-  struct AIOCallbackInternal : public AIOCallback, public IOUringCompletionHandler {
+struct AIOCallbackInternal : public AIOCallback, public IOUringCompletionHandler {
 #else
-  struct AIOCallbackInternal : public AIOCallback {
+struct AIOCallbackInternal : public AIOCallback {
 #endif
   AIO_Reqs *aio_req     = nullptr;
   ink_hrtime sleep_time = 0;

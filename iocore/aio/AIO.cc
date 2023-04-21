@@ -198,7 +198,8 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 #endif
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
-  Warning("Running with Linux libaio is deprecate, there are known issues with this feature, and it is being replaced with io_uring");
+  Warning(
+    "Running with Linux libaio is deprecate, there are known issues with this feature, and it is being replaced with io_uring");
 #endif
 
 #if TS_USE_LINUX_IO_URING
@@ -249,7 +250,6 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   }
 #endif
 #endif
-
 }
 
 #if AIO_MODE == AIO_MODE_DEFAULT
@@ -587,26 +587,26 @@ ink_aio_read(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    IOUringContext *ur = IOUringContext::local_context();
-    AIOCallbackInternal *op    = static_cast<AIOCallbackInternal*>(op_in);
+    IOUringContext *ur      = IOUringContext::local_context();
+    AIOCallbackInternal *op = static_cast<AIOCallbackInternal *>(op_in);
     while (op) {
-      op->this_op = op;
+      op->this_op       = op;
       io_uring_sqe *sqe = ur->next_sqe(op);
       io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
       op->aiocb.aio_lio_opcode = LIO_READ;
       if (op->then) {
         sqe->flags |= IOSQE_IO_LINK;
       } else {
-        op->aio_op = static_cast<AIOCallbackInternal*>(op_in);
+        op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
       }
 
-      op = static_cast<AIOCallbackInternal*>(op->then);
+      op = static_cast<AIOCallbackInternal *>(op->then);
     }
     return 1;
   }
 #endif
   op_in->aiocb.aio_lio_opcode = LIO_READ;
-  aio_queue_req(static_cast<AIOCallbackInternal*>(op_in), fromAPI);
+  aio_queue_req(static_cast<AIOCallbackInternal *>(op_in), fromAPI);
 
   return 1;
 }
@@ -616,26 +616,26 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    IOUringContext *ur = IOUringContext::local_context();
-    AIOCallbackInternal *op    = static_cast<AIOCallbackInternal*>(op_in);
+    IOUringContext *ur      = IOUringContext::local_context();
+    AIOCallbackInternal *op = static_cast<AIOCallbackInternal *>(op_in);
     while (op) {
-      op->this_op = op;
+      op->this_op       = op;
       io_uring_sqe *sqe = ur->next_sqe(op);
       io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
       op->aiocb.aio_lio_opcode = LIO_WRITE;
       if (op->then) {
         sqe->flags |= IOSQE_IO_LINK;
       } else {
-        op->aio_op = static_cast<AIOCallbackInternal*>(op_in);
+        op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
       }
 
-      op = static_cast<AIOCallbackInternal*>(op->then);
+      op = static_cast<AIOCallbackInternal *>(op->then);
     }
     return 1;
   }
 #endif
   op_in->aiocb.aio_lio_opcode = LIO_WRITE;
-  aio_queue_req(static_cast<AIOCallbackInternal*>(op_in), fromAPI);
+  aio_queue_req(static_cast<AIOCallbackInternal *>(op_in), fromAPI);
 
   return 1;
 }

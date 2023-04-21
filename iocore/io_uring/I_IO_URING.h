@@ -77,9 +77,9 @@ public:
   static int get_main_queue_fd();
 
 private:
-  io_uring ring = {};
-  io_uring_probe* probe = nullptr;
-  int evfd      = -1;
+  io_uring ring         = {};
+  io_uring_probe *probe = nullptr;
+  int evfd              = -1;
 
   void handle_cqe(io_uring_cqe *);
   static IOUringConfig config;
