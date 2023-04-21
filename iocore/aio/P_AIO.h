@@ -33,7 +33,7 @@
 #include "P_EventSystem.h"
 #include "I_AIO.h"
 
-#ifdef TS_USE_LINUX_IO_URING
+#if TS_USE_LINUX_IO_URING
 #include "I_IO_URING.h"
 #endif
 
@@ -83,7 +83,7 @@ AIOVec::mainEvent(int /* event */, Event *)
 
 struct AIO_Reqs;
 
-#ifdef TS_USE_LINUX_IO_URING
+#if TS_USE_LINUX_IO_URING
 struct AIOCallbackInternal : public AIOCallback, public IOUringCompletionHandler {
 #else
 struct AIOCallbackInternal : public AIOCallback {
@@ -91,7 +91,7 @@ struct AIOCallbackInternal : public AIOCallback {
   AIO_Reqs *aio_req     = nullptr;
   ink_hrtime sleep_time = 0;
   SLINK(AIOCallbackInternal, alink); /* for AIO_Reqs::aio_temp_list */
-#ifdef TS_USE_LINUX_IO_URING
+#if TS_USE_LINUX_IO_URING
   AIOCallbackInternal *this_op = nullptr;
   AIOCallbackInternal *aio_op  = nullptr;
 
@@ -162,7 +162,7 @@ enum aio_stat_enum {
   AIO_STAT_KB_READ_PER_SEC,
   AIO_STAT_WRITE_PER_SEC,
   AIO_STAT_KB_WRITE_PER_SEC,
-#ifdef TS_USE_LINUX_IO_URING
+#if TS_USE_LINUX_IO_URING
   AIO_STAT_IO_URING_SUBMITTED,
   AIO_STAT_IO_URING_COMPLETED,
 #endif

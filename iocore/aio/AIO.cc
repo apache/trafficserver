@@ -546,7 +546,7 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
   return nullptr;
 }
 
-#ifdef TS_USE_LINUX_IO_URING
+#if TS_USE_LINUX_IO_URING
 #include "I_IO_URING.h"
 
 void
