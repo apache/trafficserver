@@ -49,12 +49,16 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     // The buffer we create will be handed over to the eventually created server session
     _netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
     _netvc_reader      = _netvc_read_buffer->alloc_reader();
-    netvc->do_io_write(this, 1, _netvc_reader);
     ink_release_assert(!connect_sms.empty());
-    if (!connect_sms.empty()) {
-      HttpSM *prime_connect_sm = *(connect_sms.begin());
-      netvc->set_inactivity_timeout(prime_connect_sm->get_server_connect_timeout());
+    HttpSM *prime_connect_sm = *(connect_sms.begin());
+
+    int64_t nbytes = 1;
+    if (is_no_plugin_tunnel && prime_connect_sm->t_state.txn_conf->proxy_protocol_out >= 0) {
+      nbytes = do_outbound_proxy_protocol(_netvc_reader->mbuf, vc, ua_txn->get_netvc(),
+                                          prime_connect_sm->t_state.txn_conf->proxy_protocol_out);
     }
+    netvc->do_io_write(this, nbytes, _netvc_reader);
+    netvc->set_inactivity_timeout(prime_connect_sm->get_server_connect_timeout());
     ink_release_assert(_pending_action == nullptr);
     return 0;
   }
