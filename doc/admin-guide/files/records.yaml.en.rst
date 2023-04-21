@@ -357,7 +357,7 @@ System Variables
 Thread Variables
 ----------------
 
-.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig INT 1
+.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.enabled INT 1
 
    When enabled (the default, ``1``), |TS| scales threads according to the
    available CPU cores. See the config option below.
@@ -370,7 +370,7 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.limit INT 2
 
-   The number of threads |TS| will create if `proxy.config.exec_thread.autoconfig`
+   The number of threads |TS| will create if `proxy.config.exec_thread.autoconfig.enabled`
    is set to ``0``, otherwise this option is ignored.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.listen INT 0
@@ -5027,12 +5027,20 @@ Sockets
 
    Make sure accept threads are enabled
 
-   The relevant configurations for this are::
+   The relevant configurations for this are
 
-       CONFIG proxy.config.exec_thread.autoconfig INT 0
-       CONFIG proxy.config.exec_thread.limit INT 2
-       CONFIG proxy.config.accept_threads INT 1
-       CONFIG proxy.config.cache.threads_per_disk INT 8
+   .. code-block:: yaml
+      :linenos:
+
+      ts:
+        exec_thread:
+          autoconfig:
+            enabled: 0
+          limit: 2
+        accept_threads: 1
+        cache:
+          threads_per_disk: 8
+
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
