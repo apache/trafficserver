@@ -70,6 +70,18 @@ class PreWarmSM;
 class HttpSM;
 using HttpSMHandler = int (HttpSM::*)(int, void *);
 
+/** Write Proxy Protocol to the first block of given MIOBuffer.
+ *
+ * @param[in] miob The MIOBuffer to write the Proxy Protocol to.
+ * @param[in] vc_out The outbound (server-side) VC.
+ * @param[in] vc_in The inbound (client-side) VC.
+ * @param[in] conf The configured Proxy Protocol version to write.
+ *
+ * @return The number of bytes written on the socket to write the Proxy
+ * Protocol.
+ */
+int64_t do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnection *vc_in, int conf);
+
 enum HttpVC_t {
   HTTP_UNKNOWN = 0,
   HTTP_UA_VC,
@@ -235,8 +247,6 @@ public:
 
   ProxyTransaction *get_ua_txn();
   ProxyTransaction *get_server_txn();
-  // Write out the proxy_protocol information on a new outbound connection
-  void write_outbound_proxy_protocol();
 
   // Called by transact.  Updates are fire and forget
   //  so there are no callbacks and are safe to do
