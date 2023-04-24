@@ -6,9 +6,8 @@
 ``
 < HTTP/2 200 ``
 ``
-< content-type: application/octet-stream
+< content-length: 0
 < date: ``
-< content-length: ``
 < age: ``
 < via: ``ApacheTrafficServer/``
 < server: ATS/``

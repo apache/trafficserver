@@ -97,8 +97,7 @@ test_run.Processes.Default.Streams.stderr = Testers.GoldFile("gold/httpbin_0_std
 test_run.StillRunningAfter = httpbin
 
 # Test Case 1: Attempt an empty response body.
-# Note: go-httpbin incorrectly returns a body of 1 byte instead of 0 bytes.
-# https://github.com/mccutchen/go-httpbin/issues/112
+# This test case requires go-httpbin@v2.6.0 or later.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bytes/0'.format(ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
