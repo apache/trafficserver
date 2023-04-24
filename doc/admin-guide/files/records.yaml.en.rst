@@ -5230,7 +5230,7 @@ AIO
    can instead be specified.  The value can be one of:
 
    ============ ======================================================================
-   Value Description
+   Value        Description
    ============ ======================================================================
    ``NULL``     Use the default detection logic
    ``auto``     Use the default detection logic
