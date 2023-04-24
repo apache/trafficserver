@@ -47,7 +47,6 @@
 static bool use_io_uring = false;
 #endif
 
-int ts_config_with_inkdiskio = 0;
 /* structure to hold information about each file descriptor */
 AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
@@ -63,14 +62,6 @@ int thread_is_created = 0;
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
-// config for io_uring mode
-#if TS_USE_LINUX_IO_URING
-RecInt aio_io_uring_queue_entries = 1024;
-RecInt aio_io_uring_sq_poll_ms    = 0;
-RecInt aio_io_uring_attach_wq     = 0;
-RecInt aio_io_uring_wq_bounded    = 0;
-RecInt aio_io_uring_wq_unbounded  = 0;
-#endif
 
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
@@ -203,18 +194,35 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 #endif
 
 #if TS_USE_LINUX_IO_URING
+  IOUringConfig cfg;
+
+  RecInt aio_io_uring_queue_entries = cfg.queue_entries;
+  RecInt aio_io_uring_sq_poll_ms    = cfg.sq_poll_ms;
+  RecInt aio_io_uring_attach_wq     = cfg.attach_wq;
+  RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
+  RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
+
   REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.aio.io_uring.entries");
   REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.aio.io_uring.sq_poll_ms");
   REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.aio.io_uring.attach_wq");
   REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.aio.io_uring.wq_workers_bounded");
   REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.aio.io_uring.wq_workers_unbounded");
+
+  cfg.queue_entries = aio_io_uring_queue_entries;
+  cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;
+  cfg.attach_wq     = aio_io_uring_attach_wq;
+  cfg.wq_bounded    = aio_io_uring_wq_bounded;
+  cfg.wq_unbounded  = aio_io_uring_wq_unbounded;
+
+  IOUringContext::set_config(cfg);
 #endif
 
 #if AIO_MODE == AIO_MODE_DEFAULT
 #if TS_USE_LINUX_IO_URING
+  // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
     RecString aio_io_uring_force_aio = nullptr;
-    REC_ReadConfigStringAlloc(aio_io_uring_force_aio, "proxy.config.aio.io_uring.force_aio");
+    REC_ReadConfigStringAlloc(aio_io_uring_force_aio, "proxy.config.aio.force_aio");
     if (aio_io_uring_force_aio) {
       if (strcasecmp(aio_io_uring_force_aio, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;
@@ -225,7 +233,7 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
         // force io_uring mode
         backend = AIOBackend::AIO_BACKEND_IO_URING;
       } else {
-        Warning("Invalid value '%s' for proxy.config.aio.io_uring.force_aio.  autodetecting", aio_io_uring_force_aio);
+        Warning("Invalid value '%s' for proxy.config.aio.force_aio.  autodetecting", aio_io_uring_force_aio);
       }
 
       ats_free(aio_io_uring_force_aio);
@@ -234,7 +242,17 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 
   switch (backend) {
   case AIOBackend::AIO_BACKEND_AUTO:
-    // TODO(cmfarlen): detect if io_uring is available and can support the required features
+  {
+    // detect if io_uring is available and can support the required features
+    auto* ctx = IOUringContext::local_context();
+    if (ctx && ctx->supports_op(IORING_OP_WRITE) && ctx->supports_op(IORING_OP_READ)) {
+      use_io_uring = true;
+    } else {
+      Note("AIO using thread backend as required io_uring ops are not supported");
+      use_io_uring = false;
+    }
+    break;
+  }
   case AIOBackend::AIO_BACKEND_IO_URING:
     use_io_uring = true;
     break;

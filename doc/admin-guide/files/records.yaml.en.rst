@@ -5196,3 +5196,45 @@ Sockets
 
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
+
+IO_URING
+========
+
+.. ts:cv:: CONFIG proxy.config.io_uring.entries INT 32
+
+   Specify the number of entries in each io_uring.  There will be on io_uring instance per thread that uses io_uring
+   for IO.  This parameter is passed to io_uring_queue_init.
+
+.. ts:cv:: CONFIG proxy.config.io_uring.sq_poll_ms INT 0
+
+   If this value is >0 then use submit queue polling mode.  The value will be used to specifiy the sq_thread_idle parameter
+   to io_uring setup. More information about submit queue polling mode can be found here: https://unixism.net/loti/tutorial/sq_poll.html
+
+.. ts:cv:: CONFIG proxy.config.io_uring.attach_wq INT 0
+
+   Set this to 1 if you want io_uring to re-use the same worker queue backend for each thread.
+
+.. ts:cv:: CONFIG proxy.config.io_uring.wq_workers_bounded INT 0
+.. ts:cv:: CONFIG proxy.config.io_uring.wq_workers_unbounded INT 0
+
+   These settings configured the number of threads for the io_uring worker queue backend.  See the manpage for
+   io_uring_register_iowq_max_workers for more information.
+
+AIO
+===
+
+.. ts:cv:: CONFIG proxy.config.aio.force_aio STRING NULL
+
+   (Only if io_uring is enabled in the build)
+   Normally, ATS will detect if io_uring can be used for async disk IO.  Using this config item, the AIO mode
+   can instead be specified.  The value can be one of:
+
+   ============ ======================================================================
+   Value Description
+   ============ ======================================================================
+   ``NULL``     Use the default detection logic
+   ``auto``     Use the default detection logic
+   ``thread``   Use the AIO thread pool for disk IO
+   ``io_uring`` Use io_uring for disk IO
+
+   Note: If you force the backend to use io_uring, you might experience failures with some (older, pre 5.4) kernel versions
