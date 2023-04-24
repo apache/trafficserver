@@ -5236,5 +5236,6 @@ AIO
    ``auto``     Use the default detection logic
    ``thread``   Use the AIO thread pool for disk IO
    ``io_uring`` Use io_uring for disk IO
+   ============ ======================================================================
 
    Note: If you force the backend to use io_uring, you might experience failures with some (older, pre 5.4) kernel versions
