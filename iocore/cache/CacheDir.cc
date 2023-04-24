@@ -54,7 +54,6 @@
 // Globals
 
 ClassAllocator<OpenDirEntry> openDirEntryAllocator("openDirEntry");
-Dir empty_dir;
 
 // OpenDir
 

@@ -111,7 +111,6 @@ struct CacheVC;
 #define OPEN_DIR_BUCKETS 256
 
 struct EvacuationBlock;
-using DirInfo = uint32_t;
 
 // Cache Directory
 
@@ -140,23 +139,6 @@ struct Dir {
 #else
   uint16_t w[5];
   Dir() { dir_clear(this); }
-#endif
-};
-
-// INTERNAL: do not access these members directly, use the
-// accessors below (e.g. dir_offset, dir_set_offset)
-struct FreeDir {
-#if DO_NOT_REMOVE_THIS
-  // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO
-  // USE MACROS TO PREVENT UNALIGNED LOADS
-  unsigned int offset      : 24; // 0: empty
-  unsigned int reserved    : 8;
-  unsigned int prev        : 16; // (2)
-  unsigned int next        : 16; // (3)
-  unsigned int offset_high : 16; // 0: empty
-#else
-  uint16_t w[5];
-  FreeDir() { dir_clear(this); }
 #endif
 };
 
@@ -295,10 +277,6 @@ int dir_segment_accounted(int s, Vol *vol, int offby = 0, int *free = nullptr, i
                           int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Vol *vol);
 void sync_cache_dir_on_shutdown();
-
-// Global Data
-
-extern Dir empty_dir;
 
 // Inline Functions
 
