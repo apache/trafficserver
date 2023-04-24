@@ -567,7 +567,3 @@ TEST_CASE("HttpTransact", "[http]")
     }
   }
 }
-
-#include "HttpSessionManager.h"
-HttpSessionManager httpSessionManager;
-StatPagesManager statPagesManager;
