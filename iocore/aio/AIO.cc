@@ -62,7 +62,6 @@ int thread_is_created = 0;
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
-
 RecRawStatBlock *aio_rsb      = nullptr;
 Continuation *aio_err_callbck = nullptr;
 // AIO Stats
@@ -190,7 +189,7 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
   Warning(
-    "Running with Linux libaio is deprecate, there are known issues with this feature, and it is being replaced with io_uring");
+    "Running with Linux libaio is deprecated. There are known issues with this feature and it is being replaced with io_uring");
 #endif
 
 #if TS_USE_LINUX_IO_URING
@@ -241,10 +240,9 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   }
 
   switch (backend) {
-  case AIOBackend::AIO_BACKEND_AUTO:
-  {
+  case AIOBackend::AIO_BACKEND_AUTO: {
     // detect if io_uring is available and can support the required features
-    auto* ctx = IOUringContext::local_context();
+    auto *ctx = IOUringContext::local_context();
     if (ctx && ctx->supports_op(IORING_OP_WRITE) && ctx->supports_op(IORING_OP_READ)) {
       use_io_uring = true;
     } else {
