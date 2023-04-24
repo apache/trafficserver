@@ -406,13 +406,14 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
   s->acl_filtering_performed = true; // small protection against reverse mapping
 
   if (map->filter) {
-    int method               = s->hdr_info.client_request.method_get_wksidx();
-    int method_wksidx        = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
-    bool client_enabled_flag = true;
+    int method        = s->hdr_info.client_request.method_get_wksidx();
+    int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
     ink_release_assert(ats_is_ip(&s->client_info.src_addr));
 
-    for (acl_filter_rule *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
+    s->client_connection_enabled = true; // Default is that we allow things unless some filter matches
+
+    for (acl_filter_rule *rp = map->filter; rp; rp = rp->next) {
       bool match = true;
 
       if (rp->method_restriction_enabled) {
@@ -474,22 +475,16 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         Debug("url_rewrite", "%s an internal request", match ? "matched" : "didn't match");
       }
 
-      if (match && client_enabled_flag) { // make sure that a previous filter did not DENY
+      if (match) {
+        // We have a match, stop evaluating filters
         Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
-        client_enabled_flag = rp->allow_flag ? true : false;
+        s->client_connection_enabled = rp->allow_flag;
+        break;
       } else {
-        if (!client_enabled_flag) {
-          Debug("url_rewrite", "Previous ACL filter rule denied request, continuing to deny it");
-        } else {
-          Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
-          client_enabled_flag = rp->allow_flag ? false : true;
-        }
+        Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
       }
-
-    } /* end of for(rp = map->filter;rp;rp = rp->next) */
-
-    s->client_connection_enabled = client_enabled_flag;
-  }
+    }
+  } /* end of for(rp = map->filter;rp;rp = rp->next) */
 }
 
 /**
