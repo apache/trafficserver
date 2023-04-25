@@ -46,7 +46,7 @@ read_varint(uint8_t *&pos, size_t len, uint64_t &field, size_t &field_len)
     return false;
   }
 
-  field = QUICIntUtil::read_QUICVariableInt(pos, len);
+  field  = QUICIntUtil::read_QUICVariableInt(pos, len);
   pos   += field_len;
   return true;
 }
@@ -170,10 +170,10 @@ QUICStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet
   this->_reset();
   this->_packet = packet;
 
-  uint8_t *pos            = const_cast<uint8_t *>(buf);
-  this->_has_offset_field = (buf[0] & 0x04) != 0; // "O" of "0b00010OLF"
-  this->_has_length_field = (buf[0] & 0x02) != 0; // "L" of "0b00010OLF"
-  this->_fin              = (buf[0] & 0x01) != 0; // "F" of "0b00010OLF"
+  uint8_t *pos             = const_cast<uint8_t *>(buf);
+  this->_has_offset_field  = (buf[0] & 0x04) != 0; // "O" of "0b00010OLF"
+  this->_has_length_field  = (buf[0] & 0x02) != 0; // "L" of "0b00010OLF"
+  this->_fin               = (buf[0] & 0x01) != 0; // "F" of "0b00010OLF"
   pos                     += 1;
 
   size_t field_len = 0;
@@ -204,7 +204,7 @@ QUICStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);
   pos         += data_len;
-  this->_size = FRAME_SIZE(pos);
+  this->_size  = FRAME_SIZE(pos);
 }
 
 void
@@ -431,7 +431,7 @@ QUICCryptoFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);
   pos         += data_len;
-  this->_size = FRAME_SIZE(pos);
+  this->_size  = FRAME_SIZE(pos);
 }
 
 void
@@ -702,7 +702,7 @@ QUICAckFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::ACK);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::ACK);
   n              += 1;
 
   // Largest Acknowledged (i)
@@ -728,8 +728,8 @@ QUICAckFrame::to_io_buffer_block(size_t limit) const
 int
 QUICAckFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  int len = snprintf(msg, msg_len, "ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64, this->size(),
-                     this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
+  int len  = snprintf(msg, msg_len, "ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64, this->size(),
+                      this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
   msg_len -= len;
 
   if (this->ack_block_section()) {
@@ -1096,7 +1096,7 @@ QUICRstStreamFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::RESET_STREAM);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::RESET_STREAM);
   n              += 1;
 
   // Stream ID (i)
@@ -1185,7 +1185,7 @@ QUICPingFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::PING);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::PING);
   n              += 1;
 
   block->fill(n);
@@ -1352,9 +1352,9 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   }
   this->_reason_phrase = reinterpret_cast<const char *>(pos);
 
-  this->_valid = true;
+  this->_valid  = true;
   pos          += this->_reason_phrase_length;
-  this->_size  = FRAME_SIZE(pos);
+  this->_size   = FRAME_SIZE(pos);
 }
 
 QUICFrameType
@@ -1397,7 +1397,7 @@ QUICConnectionCloseFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(first_block->start());
 
   // Type
-  block_start[0] = this->_type;
+  block_start[0]  = this->_type;
   n              += 1;
 
   // Error Code (i)
@@ -1454,7 +1454,7 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
     int phrase_len = std::min(msg_len - len, static_cast<size_t>(this->reason_phrase_length()));
     memcpy(msg + len, this->reason_phrase(), phrase_len);
     len      += phrase_len;
-    msg[len] = '\0';
+    msg[len]  = '\0';
     ++len;
   }
 
@@ -1558,7 +1558,7 @@ QUICMaxDataFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
   n              += 1;
 
   // Maximum Data (i)
@@ -1663,7 +1663,7 @@ QUICMaxStreamDataFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
   n              += 1;
 
   // Stream ID (i)
@@ -1771,7 +1771,7 @@ QUICMaxStreamsFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::MAX_STREAMS);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::MAX_STREAMS);
   n              += 1;
 
   // Maximum Streams (i)
@@ -1863,7 +1863,7 @@ QUICDataBlockedFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED);
   n              += 1;
 
   // Data Limit (i)
@@ -1961,7 +1961,7 @@ QUICStreamDataBlockedFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::STREAM_DATA_BLOCKED);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::STREAM_DATA_BLOCKED);
   n              += 1;
 
   // Stream ID (i)
@@ -2057,7 +2057,7 @@ QUICStreamIdBlockedFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED);
   n              += 1;
 
   // Stream Limit (i)
@@ -2122,14 +2122,14 @@ QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   if (LEFT_SPACE(pos) < 1) {
     return;
   }
-  size_t cid_len = *pos;
+  size_t cid_len  = *pos;
   pos            += 1;
 
   // Connection ID (8..160)
   if (LEFT_SPACE(pos) < cid_len) {
     return;
   }
-  this->_connection_id = QUICTypeUtil::read_QUICConnectionId(pos, cid_len);
+  this->_connection_id  = QUICTypeUtil::read_QUICConnectionId(pos, cid_len);
   pos                  += cid_len;
 
   // Stateless Reset Token (128)
@@ -2177,7 +2177,7 @@ QUICNewConnectionIdFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   n              += 1;
 
   // Sequence Number (i)
@@ -2189,7 +2189,7 @@ QUICNewConnectionIdFrame::to_io_buffer_block(size_t limit) const
   n += written_len;
 
   // Length (8)
-  *(block_start + n) = this->_connection_id.length();
+  *(block_start + n)  = this->_connection_id.length();
   n                  += 1;
 
   // Connection ID (8..160)
@@ -2323,7 +2323,7 @@ QUICStopSendingFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
   n              += 1;
 
   // Stream ID (i)
@@ -2424,7 +2424,7 @@ QUICPathChallengeFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::PATH_CHALLENGE);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::PATH_CHALLENGE);
   n              += 1;
 
   // Data (64)
@@ -2483,7 +2483,7 @@ QUICPathResponseFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::PATH_RESPONSE);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::PATH_RESPONSE);
   n              += 1;
 
   // Data (64)
@@ -2619,7 +2619,7 @@ QUICNewTokenFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::NEW_TOKEN);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::NEW_TOKEN);
   n              += 1;
 
   // Token Length (i)
@@ -2716,7 +2716,7 @@ QUICRetireConnectionIdFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::RETIRE_CONNECTION_ID);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::RETIRE_CONNECTION_ID);
   n              += 1;
 
   // Sequence Number (i)
@@ -2785,7 +2785,7 @@ QUICHandshakeDoneFrame::to_io_buffer_block(size_t limit) const
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
-  block_start[0] = static_cast<uint8_t>(QUICFrameType::HANDSHAKE_DONE);
+  block_start[0]  = static_cast<uint8_t>(QUICFrameType::HANDSHAKE_DONE);
   n              += 1;
 
   block->fill(n);

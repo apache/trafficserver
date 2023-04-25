@@ -822,7 +822,7 @@ LogFieldList::marshal(LogAccess *lad, char *buf)
   char *ptr;
   int bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
-    ptr   = &buf[bytes];
+    ptr    = &buf[bytes];
     bytes += f->marshal(lad, ptr);
     ink_assert(bytes % INK_MIN_ALIGN == 0);
   }
@@ -835,7 +835,7 @@ LogFieldList::marshal_agg(char *buf)
   char *ptr;
   int bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
-    ptr   = &buf[bytes];
+    ptr    = &buf[bytes];
     bytes += f->marshal_agg(ptr);
   }
   return bytes;

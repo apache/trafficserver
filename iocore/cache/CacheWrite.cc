@@ -226,9 +226,9 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 
   set_agg_write_in_progress();
   POP_HANDLER;
-  agg_len            = vol->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
+  agg_len             = vol->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
   vol->agg_todo_size += agg_len;
-  bool agg_error     = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
+  bool agg_error      = (agg_len > AGG_SIZE || header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
                     (!f.readers && (vol->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
   agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
@@ -240,7 +240,7 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
     CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
     CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
     vol->agg_todo_size -= agg_len;
-    io.aio_result      = AIO_SOFT_FAILURE;
+    io.aio_result       = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
       return EVENT_RETURN;
     }
@@ -263,9 +263,9 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 {
   IOBufferBlock *b = ab;
   while (b && len >= 0) {
-    char *start   = b->_start;
-    char *end     = b->_end;
-    int max_bytes = end - start;
+    char *start    = b->_start;
+    char *end      = b->_end;
+    int max_bytes  = end - start;
     max_bytes     -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
@@ -279,8 +279,8 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
     ::memcpy(p, start + offset, bytes);
     p      += bytes;
     len    -= bytes;
-    b      = b->next.get();
-    offset = 0;
+    b       = b->next.get();
+    offset  = 0;
   }
   return p;
 }
@@ -368,7 +368,7 @@ Vol::aggWriteDone(int event, Event *e)
     return EVENT_CONT;
   }
   if (io.ok()) {
-    header->last_write_pos = header->write_pos;
+    header->last_write_pos  = header->write_pos;
     header->write_pos      += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
     DDebug("cache_agg", "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
@@ -533,7 +533,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           Dir dir_tmp;
           dir_lookaside_probe(&evac->earliest_key, vol, &dir_tmp, &eblock);
           if (eblock) {
-            CacheVC *earliest_evac   = eblock->earliest_evacuator;
+            CacheVC *earliest_evac    = eblock->earliest_evacuator;
             earliest_evac->total_len += doc->data_len();
             if (earliest_evac->total_len == earliest_evac->doc_len) {
               dir_lookaside_fixup(&evac->earliest_key, vol);
@@ -570,8 +570,8 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           ink_assert(dir_compare_tag(&overwrite_dir, &doc->key));
           ink_assert(b->earliest_evacuator == this);
           total_len    += doc->data_len();
-          first_key    = doc->first_key;
-          earliest_dir = dir;
+          first_key     = doc->first_key;
+          earliest_dir  = dir;
           if (dir_probe(&first_key, vol, &dir, &last_collision) > 0) {
             dir_lookaside_insert(b, vol, &earliest_dir);
             // read the vector
@@ -632,7 +632,7 @@ Vol::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 
-  evacuator->agg_len = round_to_approx_size((reinterpret_cast<Doc *>(evacuator->buf->data()))->len);
+  evacuator->agg_len  = round_to_approx_size((reinterpret_cast<Doc *>(evacuator->buf->data()))->len);
   agg_todo_size      += evacuator->agg_len;
   /* insert the evacuator after all the other evacuators */
   CacheVC *cur   = static_cast<CacheVC *>(agg.head);
@@ -1044,7 +1044,7 @@ Lagain:
     ink_assert(writelen == wrotelen);
     agg_todo_size -= writelen;
     agg_buf_pos   += writelen;
-    CacheVC *n    = (CacheVC *)c->link.next;
+    CacheVC *n     = (CacheVC *)c->link.next;
     agg.dequeue();
     if (c->f.sync && c->f.use_first_key) {
       CacheVC *last = sync.tail;
@@ -1452,11 +1452,11 @@ Lagain:
   int64_t towrite     = avail + length;
   if (towrite > ntodo) {
     avail   -= (towrite - ntodo);
-    towrite = ntodo;
+    towrite  = ntodo;
   }
   if (towrite > static_cast<int>(MAX_FRAG_SIZE)) {
     avail   -= (towrite - MAX_FRAG_SIZE);
-    towrite = MAX_FRAG_SIZE;
+    towrite  = MAX_FRAG_SIZE;
   }
   if (!blocks && towrite) {
     blocks = vio.buffer.reader()->block;

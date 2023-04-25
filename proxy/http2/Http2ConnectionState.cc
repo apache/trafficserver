@@ -992,7 +992,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     }
   }
 
-  uint32_t header_blocks_offset = stream->header_blocks_length;
+  uint32_t header_blocks_offset  = stream->header_blocks_length;
   stream->header_blocks_length  += payload_length;
 
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
@@ -2189,7 +2189,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 
   // Send a HEADERS frame
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
-    payload_length = header_blocks_size;
+    payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;
     if (stream->is_outbound_connection()) { // Will be sending a request_header
       int method = send_hdr->method_get_wksidx();
@@ -2213,14 +2213,14 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
         // TODO deal with the chunked encoding case
         Http2StreamDebug(session, stream->get_id(), "request END_STREAM");
         flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream = true;
+        stream->send_end_stream  = true;
       }
     } else {
       if ((send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && send_hdr->get_content_length() == 0) ||
           (!send_hdr->expect_final_response() && stream->is_write_vio_done())) {
         Http2StreamDebug(session, stream->get_id(), "response END_STREAM");
         flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream = true;
+        stream->send_end_stream  = true;
       }
     }
     stream->mark_milestone(Http2StreamMilestone::START_TX_HEADERS_FRAMES);
@@ -2310,7 +2310,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   Http2PushPromise push_promise;
   if (header_blocks_size <=
       BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]) - sizeof(push_promise.promised_streamid)) {
-    payload_length = header_blocks_size;
+    payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS;
   } else {
     payload_length =

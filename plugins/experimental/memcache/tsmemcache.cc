@@ -1131,7 +1131,7 @@ MC::ascii_set(char *s, char *e)
   }
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
-    f.noreply = 1;
+    f.noreply  = 1;
     s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
@@ -1164,7 +1164,7 @@ MC::ascii_delete(char *s, char *e)
   header.nkey = s - key;
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
-    f.noreply = 1;
+    f.noreply  = 1;
     s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
@@ -1198,7 +1198,7 @@ MC::ascii_incr_decr(char *s, char *e)
   GET_NUM(delta);
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
-    f.noreply = 1;
+    f.noreply  = 1;
     s         += 7;
     if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");

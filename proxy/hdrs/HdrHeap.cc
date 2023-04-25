@@ -195,7 +195,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   while (true) {
     if (static_cast<unsigned>(nbytes) <= (h->m_free_size)) {
-      new_space       = h->m_free_start;
+      new_space        = h->m_free_start;
       h->m_free_start += nbytes;
       h->m_free_size  -= nbytes;
 
@@ -564,7 +564,7 @@ HdrHeap::marshal_length()
 
   while (h) {
     len += static_cast<int>(h->m_free_start - h->m_data_start);
-    h   = h->m_next;
+    h    = h->m_next;
   }
 
   // Since when we unmarshal, we won't have a writable string
@@ -592,7 +592,7 @@ compute_checksum(void *buf, int len)
 
   while (len > 4) {
     cksum += *((uint32_t *)buf);
-    buf   = ((char *)buf) + 4;
+    buf    = ((char *)buf) + 4;
     len   -= 4;
   }
 
@@ -657,7 +657,7 @@ HdrHeap::marshal(char *buf, int len)
     if (ptr_heaps >= ptr_xl_size) {
       MarshalXlate *tmp_xl = static_cast<MarshalXlate *>(alloca(sizeof(MarshalXlate) * ptr_xl_size * 2));
       memcpy(tmp_xl, ptr_xlation, sizeof(MarshalXlate) * ptr_xl_size);
-      ptr_xlation = tmp_xl;
+      ptr_xlation  = tmp_xl;
       ptr_xl_size *= 2;
     }
     // Add translation table entry for pointer heaps
@@ -1139,7 +1139,7 @@ HdrHeap::total_used_size() const
 
   while (h) {
     size += (h->m_free_start - h->m_data_start);
-    h    = h->m_next;
+    h     = h->m_next;
   }
 
   return size;
@@ -1170,7 +1170,7 @@ HdrStrHeap::allocate(int nbytes)
   char *new_space;
 
   if (m_free_size >= static_cast<unsigned>(nbytes)) {
-    new_space    = m_free_start;
+    new_space     = m_free_start;
     m_free_start += nbytes;
     m_free_size  -= nbytes;
     return new_space;

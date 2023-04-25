@@ -96,7 +96,7 @@ safe_set_fl(int fd, int arg)
     return flags;
   }
   flags |= arg;
-  flags = safe_fcntl(fd, F_SETFL, flags);
+  flags  = safe_fcntl(fd, F_SETFL, flags);
   return flags;
 }
 
@@ -108,7 +108,7 @@ safe_clr_fl(int fd, int arg)
     return flags;
   }
   flags &= ~arg;
-  flags = safe_fcntl(fd, F_SETFL, flags);
+  flags  = safe_fcntl(fd, F_SETFL, flags);
   return flags;
 }
 

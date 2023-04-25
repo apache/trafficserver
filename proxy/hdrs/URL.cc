@@ -991,8 +991,8 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
   int str_len = static_cast<int>(str_e - str);
   int min_len = (str_len < buf_len ? str_len : buf_len);
 
-  first_pct = ink_memcpy_until_char(buf, const_cast<char *>(str), min_len, '%');
-  copy_len  = static_cast<int>(first_pct - str);
+  first_pct  = ink_memcpy_until_char(buf, const_cast<char *>(str), min_len, '%');
+  copy_len   = static_cast<int>(first_pct - str);
   str       += copy_len;
   buf       += copy_len;
   if (copy_len == min_len) {
@@ -1004,16 +1004,16 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
     case 0:
       if (str[0] == '%') {
         str   += 1;
-        state = 1;
+        state  = 1;
       } else {
-        *buf++ = str[0];
+        *buf++  = str[0];
         str    += 1;
       }
       break;
     case 1:
       if (ParseRules::is_hex(str[0])) {
         str   += 1;
-        state = 2;
+        state  = 2;
       } else {
         *buf++ = str[-1];
         state  = 0;
@@ -1034,9 +1034,9 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
           tmp += str[0] - '0';
         }
 
-        *buf++ = tmp;
+        *buf++  = tmp;
         str    += 1;
-        state  = 0;
+        state   = 0;
       } else {
         *buf++ = str[-2];
         state  = 3;
@@ -1061,16 +1061,16 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
     case 0:
       if (str[0] == '%') {
         str   += 1;
-        state = 1;
+        state  = 1;
       } else {
-        *buf++ = ParseRules::ink_tolower(str[0]);
+        *buf++  = ParseRules::ink_tolower(str[0]);
         str    += 1;
       }
       break;
     case 1:
       if (ParseRules::is_hex(str[0])) {
         str   += 1;
-        state = 2;
+        state  = 2;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-1]);
         state  = 0;
@@ -1091,9 +1091,9 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
           tmp += str[0] - '0';
         }
 
-        *buf++ = tmp;
+        *buf++  = tmp;
         str    += 1;
-        state  = 0;
+        state   = 0;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-2]);
         state  = 3;
@@ -1771,19 +1771,19 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   p = buffer;
   memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
   p    += url->m_len_scheme;
-  *p++ = ':';
-  *p++ = '/';
-  *p++ = '/';
+  *p++  = ':';
+  *p++  = '/';
+  *p++  = '/';
   // no user
   *p++ = ':';
   // no password
   *p++ = '@';
   memcpy_tolower(p, url->m_ptr_host, url->m_len_host);
   p    += url->m_len_host;
-  *p++ = '/';
+  *p++  = '/';
   memcpy(p, url->m_ptr_path, url->m_len_path);
   p    += url->m_len_path;
-  *p++ = ';';
+  *p++  = ';';
   // no params
   *p++ = '?';
   // no query

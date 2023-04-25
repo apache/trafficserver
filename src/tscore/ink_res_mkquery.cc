@@ -235,7 +235,7 @@ decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
   if ((blen = (*cp & 0xff)) == 0) {
     blen = 256;
   }
-  plen = (blen + 3) / 4;
+  plen  = (blen + 3) / 4;
   plen += sizeof("\\[x/]") + (blen > 99 ? 3 : (blen > 9) ? 2 : 1);
   if (dn + plen >= eom) {
     return (-1);

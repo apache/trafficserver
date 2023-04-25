@@ -153,8 +153,8 @@ HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_n
   int offset = sizeof(self_type);
   memcpy(self->apply_offset<void>(offset), query_name);
   offset          += qn_size;
-  self->rr_offset = offset;
-  self->rr_count  = rr_count;
+  self->rr_offset  = offset;
+  self->rr_count   = rr_count;
   // Construct the info instances to a valid state.
   for (auto &info : self->rr_info()) {
     new (&info) std::remove_reference_t<decltype(info)>;

@@ -444,7 +444,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
       p = buf + *bufindex;
       memcpy(p, hdr->u.req.m_ptr_method, hdr->u.req.m_len_method);
       p         += hdr->u.req.m_len_method;
-      *p++      = ' ';
+      *p++       = ' ';
       *bufindex += hdr->u.req.m_len_method + 1;
 
       if (hdr->u.req.m_url_impl) {
@@ -453,8 +453,8 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
           if (hdr->u.req.m_method_wks_idx == HTTP_WKSIDX_CONNECT) {
             *bufindex -= 1; // remove trailing slash for CONNECT request
           }
-          p         = buf + *bufindex;
-          *p++      = ' ';
+          p          = buf + *bufindex;
+          *p++       = ' ';
           *bufindex += 1;
         } else {
           return 0;
@@ -469,9 +469,9 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
       }
 
       if (bufsize - *bufindex >= 2) {
-        p         = buf + *bufindex;
-        *p++      = '\r';
-        *p++      = '\n';
+        p          = buf + *bufindex;
+        *p++       = '\r';
+        *p++       = '\n';
         *bufindex += 2;
       } else {
         TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
@@ -503,7 +503,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
       p = buf + *bufindex;
       http_hdr_version_to_string(hdr->m_version, p);
       p         += 8; // overwrite '\0' with space
-      *p++      = ' ';
+      *p++       = ' ';
       *bufindex += 9;
 
       hdrstat = http_hdr_status_get(hdr);
@@ -517,7 +517,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
         ink_assert(tmplen <= 6);
         p += tmplen;
       }
-      *p++      = ' ';
+      *p++       = ' ';
       *bufindex += tmplen + 1;
 
       if (hdr->u.resp.m_ptr_reason) {
@@ -525,9 +525,9 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
       }
 
       if (bufsize - *bufindex >= 2) {
-        p         = buf + *bufindex;
-        *p++      = '\r';
-        *p++      = '\n';
+        p          = buf + *bufindex;
+        *p++       = '\r';
+        *p++       = '\n';
         *bufindex += 2;
       } else {
         TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
@@ -1540,7 +1540,7 @@ http_parse_version(const char *start, const char *end)
     min = 0;
 
     while ((start != end) && isdigit(*start)) {
-      maj   = (maj * 10) + (*start - '0');
+      maj    = (maj * 10) + (*start - '0');
       start += 1;
     }
 
@@ -1549,7 +1549,7 @@ http_parse_version(const char *start, const char *end)
     }
 
     while ((start != end) && isdigit(*start)) {
-      min   = (min * 10) + (*start - '0');
+      min    = (min * 10) + (*start - '0');
       start += 1;
     }
 
@@ -1619,7 +1619,7 @@ http_parse_qvalue(const char *&buf, int &len)
 
         n = 0.0;
         while (len > 0 && *buf && isdigit(*buf)) {
-          n   = (n * 10) + (*buf++ - '0');
+          n    = (n * 10) + (*buf++ - '0');
           len -= 1;
         }
 
@@ -2133,10 +2133,10 @@ HTTPInfo::marshal(char *buf, int len)
   //   extra bytes now but will save copying any
   //   bytes on the way out of the cache
   memcpy(buf, m_alt, sizeof(HTTPCacheAlt));
-  marshal_alt->m_magic         = CACHE_ALT_MAGIC_MARSHALED;
-  marshal_alt->m_writeable     = 0;
-  marshal_alt->m_unmarshal_len = -1;
-  marshal_alt->m_ext_buffer    = nullptr;
+  marshal_alt->m_magic          = CACHE_ALT_MAGIC_MARSHALED;
+  marshal_alt->m_writeable      = 0;
+  marshal_alt->m_unmarshal_len  = -1;
+  marshal_alt->m_ext_buffer     = nullptr;
   buf                          += HTTP_ALT_MARSHAL_SIZE;
   used                         += HTTP_ALT_MARSHAL_SIZE;
 
@@ -2203,7 +2203,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   len -= HTTP_ALT_MARSHAL_SIZE;
 
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
-    alt->m_frag_offsets = reinterpret_cast<FragOffset *>(buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets));
+    alt->m_frag_offsets  = reinterpret_cast<FragOffset *>(buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets));
     len                 -= sizeof(FragOffset) * alt->m_frag_offset_count;
     ink_assert(len >= 0);
   } else if (alt->m_frag_offset_count > 0) {
@@ -2222,10 +2222,10 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
       return -1;
     }
     len                                    -= tmp;
-    alt->m_request_hdr.m_heap              = heap;
-    alt->m_request_hdr.m_http              = hh;
-    alt->m_request_hdr.m_mime              = hh->m_fields_impl;
-    alt->m_request_hdr.m_url_cached.m_heap = heap;
+    alt->m_request_hdr.m_heap               = heap;
+    alt->m_request_hdr.m_http               = hh;
+    alt->m_request_hdr.m_mime               = hh->m_fields_impl;
+    alt->m_request_hdr.m_url_cached.m_heap  = heap;
   }
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
@@ -2303,10 +2303,10 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
       return -1;
     }
     len                                    -= tmp;
-    alt->m_request_hdr.m_heap              = heap;
-    alt->m_request_hdr.m_http              = hh;
-    alt->m_request_hdr.m_mime              = hh->m_fields_impl;
-    alt->m_request_hdr.m_url_cached.m_heap = heap;
+    alt->m_request_hdr.m_heap               = heap;
+    alt->m_request_hdr.m_http               = hh;
+    alt->m_request_hdr.m_mime               = hh->m_fields_impl;
+    alt->m_request_hdr.m_url_cached.m_heap  = heap;
   }
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);

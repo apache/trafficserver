@@ -388,7 +388,7 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
     }
     if (*src & (1 << shift)) {
       curr_bits |= 1;
-      current   = current->right;
+      current    = current->right;
     } else {
       current = current->left;
     }
@@ -453,18 +453,18 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
     const uint32_t bit_len = huffman_table[src[i]].bit_len;
 
     if (remain_bits > bit_len) {
-      remain_bits = remain_bits - bit_len;
+      remain_bits  = remain_bits - bit_len;
       buf         |= hex << remain_bits;
     } else if (remain_bits == bit_len) {
       buf         |= hex;
-      dst         = huffman_encode_append(dst, buf);
-      remain_bits = 32;
-      buf         = 0;
+      dst          = huffman_encode_append(dst, buf);
+      remain_bits  = 32;
+      buf          = 0;
     } else {
       buf         |= hex >> (bit_len - remain_bits);
-      dst         = huffman_encode_append(dst, buf);
-      remain_bits = (32 - (bit_len - remain_bits));
-      buf         = hex << remain_bits;
+      dst          = huffman_encode_append(dst, buf);
+      remain_bits  = (32 - (bit_len - remain_bits));
+      buf          = hex << remain_bits;
     }
   }
 

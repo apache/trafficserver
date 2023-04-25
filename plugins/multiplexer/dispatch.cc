@@ -185,7 +185,7 @@ public:
     length += l;
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       std::string buffer;
-      const uint64_t length = read(r, buffer, l);
+      const uint64_t length  = read(r, buffer, l);
       response              += buffer;
       TSDebug(PLUGIN_TAG, "Receiving response chunk \"%s\" of %" PRIu64 " bytes", buffer.c_str(), length);
     }

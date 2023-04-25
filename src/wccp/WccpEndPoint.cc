@@ -481,7 +481,7 @@ CacheImpl::GroupData &
 CacheImpl::GroupData::viewChanged(time_t now)
 {
   m_generation      += 1;
-  m_generation_time = now;
+  m_generation_time  = now;
   m_assign_info.setActive(false); // invalidate current assignment.
   m_assignment_pending = m_routers.size() && m_caches.size();
   // Cancel any pending assignment transmissions.
@@ -678,7 +678,7 @@ CacheImpl::housekeeping()
         if (0 <= zret) {
           logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].", group.m_svc.getSvcId(),
                ip_addr_to_str(sspot->m_addr), group.m_generation, now, here_i_am.getCount());
-          sspot->m_xmit  = now;
+          sspot->m_xmit   = now;
           sspot->m_count += 1;
         } else
           logf(LVL_DEBUG, "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].", zret, strerror(errno),

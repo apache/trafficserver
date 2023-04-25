@@ -288,7 +288,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     ink_assert(size_in_blocks > (off_t)p->len);
     /* allocate in 128 megabyte chunks. The Remaining space should
        be thrown away */
-    size_in_blocks = (p->len - (p->len % blocks_per_vol));
+    size_in_blocks  = (p->len - (p->len % blocks_per_vol));
     wasted_space   += p->len % blocks_per_vol;
   }
 
@@ -299,8 +299,8 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   size_t new_size = p->len - size_in_blocks;
   if (new_size >= static_cast<size_t>(blocks_per_vol)) {
     /* create a new volume */
-    DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
-    *dpb              = *p;
+    DiskVolBlock *dpb  = &header->vol_info[header->num_diskvol_blks];
+    *dpb               = *p;
     dpb->len          -= size_in_blocks;
     dpb->offset       += (size_in_blocks * STORE_BLOCK_SIZE);
 
@@ -350,9 +350,9 @@ CacheDisk::delete_volume(int number)
     if (disk_vols[i]->vol_number == number) {
       DiskVolBlockQueue *q;
       for (q = disk_vols[i]->dpb_queue.head; q;) {
-        DiskVolBlock *p = q->b;
-        p->type         = CACHE_NONE_TYPE;
-        p->free         = 1;
+        DiskVolBlock *p  = q->b;
+        p->type          = CACHE_NONE_TYPE;
+        p->free          = 1;
         free_space      += p->len;
         header->num_free++;
         header->num_used--;

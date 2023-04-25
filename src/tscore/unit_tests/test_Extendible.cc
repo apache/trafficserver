@@ -288,7 +288,7 @@ struct testField {
   {
     uint8_t x = 1;
     for (uint8_t &a : arr) {
-      a = x;
+      a  = x;
       x *= 2;
     }
     alive++;

@@ -267,12 +267,12 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint3
       break;
     }
 
-    size_t id_len = QUICVariableInt::size(buf + len);
-    uint16_t id   = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    size_t id_len  = QUICVariableInt::size(buf + len);
+    uint16_t id    = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
     len           += id_len;
 
-    size_t value_len = QUICVariableInt::size(buf + len);
-    uint64_t value   = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    size_t value_len  = QUICVariableInt::size(buf + len);
+    uint64_t value    = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
     len              += value_len;
 
     // Ignore any SETTINGS identifier it does not understand.

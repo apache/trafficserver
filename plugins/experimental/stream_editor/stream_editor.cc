@@ -407,7 +407,7 @@ public:
     }
 
     if (len_spec) {
-      match_len = 0;
+      match_len  = 0;
       len_spec  += 4;
       while (isdigit(*len_spec)) {
         match_len = 10 * match_len + (*len_spec++ - '0');
@@ -479,7 +479,7 @@ public:
     }
 
     to_spec += 3;
-    delim   = *to_spec;
+    delim    = *to_spec;
     if (isalnum(delim)) {
       len = strcspn(to_spec, WHITESPACE);
     } else {
@@ -654,7 +654,7 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   /* data after the last edit */
   if (bytes_read < buflen - keep) {
-    n                   = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, buflen - bytes_read - keep);
+    n                    = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, buflen - bytes_read - keep);
     contdata->bytes_in  += n;
     contdata->bytes_out += n;
     bytes_read          += n;

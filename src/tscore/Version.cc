@@ -51,7 +51,7 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
 
   static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"};
 
-  invalid_datetime = sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
+  invalid_datetime  = sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
   invalid_datetime |= sscanf(build_date, "%3s %d %d", month_name, &day, &year) < 3;
 
   // Jan=1, Feb=2 ... Dec=12, ???=13

@@ -481,11 +481,11 @@ gzip_out_stats(stats_state *my_state)
   TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
 
   my_state->output_bytes    -= toconsume;
-  my_state->zstrm.avail_in  = inputbytes;
-  my_state->zstrm.avail_out = sizeof(outputbuf);
-  my_state->zstrm.next_in   = (Bytef *)inputbuf;
-  my_state->zstrm.next_out  = (Bytef *)outputbuf;
-  int err                   = deflate(&my_state->zstrm, Z_FINISH);
+  my_state->zstrm.avail_in   = inputbytes;
+  my_state->zstrm.avail_out  = sizeof(outputbuf);
+  my_state->zstrm.next_in    = (Bytef *)inputbuf;
+  my_state->zstrm.next_out   = (Bytef *)outputbuf;
+  int err                    = deflate(&my_state->zstrm, Z_FINISH);
   if (err != Z_STREAM_END) {
     TSDebug(PLUGIN_NAME, "deflate error: %d", err);
   }

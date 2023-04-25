@@ -223,21 +223,21 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
 
         offset = 0;
         do {
-          used    = 0;
-          tmp     = offset;
-          done    = cached_request->print(b, sizeof(b) - 1, &used, &tmp);
+          used     = 0;
+          tmp      = offset;
+          done     = cached_request->print(b, sizeof(b) - 1, &used, &tmp);
           offset  += used;
-          b[used] = '\0';
+          b[used]  = '\0';
           fprintf(stderr, "%s", b);
         } while (!done);
 
         offset = 0;
         do {
-          used    = 0;
-          tmp     = offset;
-          done    = cached_response->print(b, sizeof(b) - 1, &used, &tmp);
+          used     = 0;
+          tmp      = offset;
+          done     = cached_response->print(b, sizeof(b) - 1, &used, &tmp);
           offset  += used;
-          b[used] = '\0';
+          b[used]  = '\0';
           fprintf(stderr, "%s", b);
         } while (!done);
       }

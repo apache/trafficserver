@@ -137,7 +137,7 @@ testRefcounting()
   RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(4);
 
   // Create and then immediately delete an item
-  ExampleStruct *to_delete = ExampleStruct::alloc();
+  ExampleStruct *to_delete  = ExampleStruct::alloc();
   ret                      |= to_delete->refcount() != 0;
   cache->put(1, to_delete);
   ret |= to_delete->refcount() != 1;
@@ -146,7 +146,7 @@ testRefcounting()
   ret |= to_delete->idx != -1;
 
   // Set an item in the cache
-  ExampleStruct *tmp = ExampleStruct::alloc();
+  ExampleStruct *tmp  = ExampleStruct::alloc();
   ret                |= tmp->refcount() != 0;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   cache->put(static_cast<uint64_t>(1), tmp);
@@ -155,11 +155,11 @@ testRefcounting()
   tmp->idx = 1;
 
   // Grab a pointer to item 1
-  Ptr<ExampleStruct> ccitem = cache->get(static_cast<uint64_t>(1));
+  Ptr<ExampleStruct> ccitem  = cache->get(static_cast<uint64_t>(1));
   ret                       |= tmp->refcount() != 2;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
 
-  Ptr<ExampleStruct> tmpAfter = cache->get(static_cast<uint64_t>(1));
+  Ptr<ExampleStruct> tmpAfter  = cache->get(static_cast<uint64_t>(1));
   ret                         |= tmp->refcount() != 3;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
 
@@ -186,7 +186,7 @@ testclear()
   RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(4);
 
   // Create and then immediately delete an item
-  ExampleStruct *item = ExampleStruct::alloc();
+  ExampleStruct *item  = ExampleStruct::alloc();
   ret                 |= item->refcount() != 0;
   cache->put(1, item);
   ret |= item->refcount() != 1;

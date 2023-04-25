@@ -162,8 +162,8 @@ StrListOverflow::alloc(int size, StrListOverflow **new_heap_ptr)
     return next->alloc(size, new_heap_ptr);
   }
 
-  char *start = (reinterpret_cast<char *>(this)) + overflow_head_hdr_size;
-  char *rval  = start + heap_used;
+  char *start  = (reinterpret_cast<char *>(this)) + overflow_head_hdr_size;
+  char *rval   = start + heap_used;
   heap_used   += size;
   ink_assert(heap_used <= heap_size);
   return (void *)rval;

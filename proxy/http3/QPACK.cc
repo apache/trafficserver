@@ -327,7 +327,7 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
   prefix->end()[0] = 0x0;
   if (base_index < largest_reference) {
     prefix->end()[0] |= 0x80;
-    delta            = largest_reference - base_index;
+    delta             = largest_reference - base_index;
   } else {
     delta = base_index - largest_reference;
   }
@@ -896,7 +896,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
     return -1;
   }
   pos                        += ret;
-  uint16_t largest_reference = tmp;
+  uint16_t largest_reference  = tmp;
 
   uint64_t delta_base_index;
   uint16_t base_index;
@@ -1353,7 +1353,7 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
       break;
     }
     available += this->_entries[tail].name_len + this->_entries[tail].value_len;
-    tail      = (tail + 1) % this->_max_entries;
+    tail       = (tail + 1) % this->_max_entries;
   }
   if (available < required_len) {
     // We can't insert a new entry because some stream(s) refer an entry that need to be evicted
@@ -1370,9 +1370,9 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
   }
 
   // Insert
-  this->_entries_head                 = (this->_entries_head + 1) % this->_max_entries;
-  this->_entries[this->_entries_head] = {++this->_entries_inserted, this->_storage->write(name, name_len, value, value_len),
-                                         name_len, value_len, 0};
+  this->_entries_head                  = (this->_entries_head + 1) % this->_max_entries;
+  this->_entries[this->_entries_head]  = {++this->_entries_inserted, this->_storage->write(name, name_len, value, value_len),
+                                          name_len, value_len, 0};
   this->_available                    -= required_len;
 
   QPACKDTDebug("Insert Entry: entry=%u, index=%u, size=%u", this->_entries_head, this->_entries_inserted, name_len + value_len);
@@ -1662,14 +1662,14 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  index    = tmp;
+  index     = tmp;
   read_len += ret;
 
   // Value
   if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, 7)) < 0 && tmp > 0xFF) {
     return -1;
   }
-  value_len = tmp;
+  value_len  = tmp;
   read_len  += ret;
 
   reader.consume(read_len);
@@ -1692,14 +1692,14 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
   if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  name_len = tmp;
+  name_len  = tmp;
   read_len += ret;
 
   // Value
   if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, 7)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  value_len = tmp;
+  value_len  = tmp;
   read_len  += ret;
 
   reader.consume(read_len);
@@ -1721,7 +1721,7 @@ QPACK::_read_duplicate(IOBufferReader &reader, uint16_t &index)
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  index    = tmp;
+  index     = tmp;
   read_len += ret;
 
   reader.consume(read_len);
@@ -1743,7 +1743,7 @@ QPACK::_read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_siz
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  max_size = tmp;
+  max_size  = tmp;
   read_len += ret;
 
   reader.consume(read_len);
@@ -1765,7 +1765,7 @@ QPACK::_read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_co
   if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
     return -1;
   }
-  insert_count = tmp;
+  insert_count  = tmp;
   read_len     += ret;
 
   reader.consume(read_len);

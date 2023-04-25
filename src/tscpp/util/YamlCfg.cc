@@ -71,7 +71,7 @@ namespace Yaml
           if (!first) {
             msg += ", ";
           }
-          first = false;
+          first  = false;
           msg   += key;
         }
       }

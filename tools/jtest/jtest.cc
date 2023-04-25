@@ -530,7 +530,7 @@ append_string(char *dest, const char *src, int *offset_ptr, int max_len)
     }
   }
   memcpy(dest + *offset_ptr, src, num);
-  dest[*offset_ptr + num] = '\0';
+  dest[*offset_ptr + num]  = '\0';
   (*offset_ptr)           += num;
 }
 
@@ -676,10 +676,10 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
   char *url_end   = nullptr;
   if (!strncasecmp(url_start, "GET ", sizeof("GET ") - 1)) {
     url_start += sizeof("GET ") - 1;
-    url_end   = (char *)memchr(url_start, ' ', 70);
+    url_end    = (char *)memchr(url_start, ' ', 70);
   } else if (!strncasecmp(url_start, "POST ", sizeof("POST ") - 1)) {
     url_start += sizeof("POST ") - 1;
-    url_end   = (char *)memchr(url_start, ' ', 70);
+    url_end    = (char *)memchr(url_start, ' ', 70);
   } else {
     url_end = (char *)memchr(url_start, 0, 70);
   }
@@ -689,7 +689,7 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
   if (url_end - url_start > 10) {
     if (!strncasecmp(url_start, "http://", sizeof("http://") - 1)) {
       url_start += sizeof("http://") - 1;
-      url_start = (char *)memchr(url_start, '/', 70);
+      url_start  = (char *)memchr(url_start, '/', 70);
     }
   }
   *purl_start = url_start;
@@ -1099,8 +1099,8 @@ parse_header(int sock, int err)
   total_proxy_request_bytes             += err;
   new_tbytes                            += err;
   fd[sock].req_pos                      += err;
-  fd[sock].req_header[fd[sock].req_pos] = 0;
-  char *buffer                          = fd[sock].req_header;
+  fd[sock].req_header[fd[sock].req_pos]  = 0;
+  char *buffer                           = fd[sock].req_header;
   for (i = fd[sock].req_pos - err; i < fd[sock].req_pos; i++) {
     switch (fd[sock].state) {
     case 0:
@@ -1261,7 +1261,7 @@ send_compd_response(int sock)
     new_tbytes        += err;
     fd[sock].req_pos  += err;
     fd[sock].bytes    += err;
-    fd[sock].response = response_buffer + (((fd[sock].length * 2) / 3) % 256);
+    fd[sock].response  = response_buffer + (((fd[sock].length * 2) / 3) % 256);
   }
 
   if (fd[sock].req_pos < ((fd[sock].length * 2) / 3) + (int)sizeof(compd_header)) {
@@ -1426,10 +1426,10 @@ read_ftp_request(int sock)
     }
     new_tbytes                            += err;
     fd[sock].req_pos                      += err;
-    fd[sock].req_header[fd[sock].req_pos] = 0;
-    char *buffer                          = fd[sock].req_header, *n;
-    int res                               = 0;
-    buffer[fd[sock].req_pos]              = 0;
+    fd[sock].req_header[fd[sock].req_pos]  = 0;
+    char *buffer                           = fd[sock].req_header, *n;
+    int res                                = 0;
+    buffer[fd[sock].req_pos]               = 0;
     if (verbose) {
       printf("buffer [%s]\n", buffer);
     }
@@ -2278,7 +2278,7 @@ verify_content(int sock, char *buf, int done)
       // skip past the URL which is embedded in the document
       // to confound the fingerprinting code
       if (l - left < 64) {
-        int skip = 64 - (l - left);
+        int skip  = 64 - (l - left);
         left     -= skip;
         done     -= skip;
         buf      += skip;
@@ -2407,17 +2407,17 @@ read_response(int sock)
     new_tbytes       += err;
     fd[sock].req_pos += err;
     fd[sock].bytes   += err;
-    fd[sock].active  = ink_get_hrtime_internal();
-    int total_read   = fd[sock].req_pos;
-    char *p          = fd[sock].req_header;
-    char *cl         = nullptr;
-    int cli          = 0;
+    fd[sock].active   = ink_get_hrtime_internal();
+    int total_read    = fd[sock].req_pos;
+    char *p           = fd[sock].req_header;
+    char *cl          = nullptr;
+    int cli           = 0;
     while ((p = strchr(p, '\n'))) {
       if (verbose) {
         printf("read header end? [%s]\n", p);
       }
       if (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')) {
-        int off = 1 + (p[1] == '\r' ? 2 : 1);
+        int off  = 1 + (p[1] == '\r' ? 2 : 1);
         p       += off;
         strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
         fd[sock].response_header[p - fd[sock].req_header] = '\0';
@@ -2629,7 +2629,7 @@ Ldone:
     printf("read %d done\n", sock);
   }
   new_ops++;
-  double thislatency = elapsed_from_start(sock);
+  double thislatency  = elapsed_from_start(sock);
   latency            += (int)thislatency;
   lat_ops++;
   if (fd[sock].keepalive > 0) {
@@ -2679,7 +2679,7 @@ write_request(int sock)
     new_tbytes                 += err;
     total_client_request_bytes += err;
     fd[sock].req_pos           += err;
-    fd[sock].active            = ink_get_hrtime_internal();
+    fd[sock].active             = ink_get_hrtime_internal();
 
     if (fd[sock].req_pos >= fd[sock].length) {
       if (verbose) {
@@ -2722,7 +2722,7 @@ write_request(int sock)
     new_tbytes                 += err;
     total_client_request_bytes += err;
     fd[sock].req_pos           += err;
-    fd[sock].active            = ink_get_hrtime_internal();
+    fd[sock].active             = ink_get_hrtime_internal();
 
     if (fd[sock].req_pos >= fd[sock].post_size) {
       if (verbose) {
@@ -2916,13 +2916,13 @@ make_random_url(int sock, double *dr, double *h)
   } else {
     unsigned long long int doc = get_zipf(*dr);
     // Some large randomish number.
-    unsigned long long int doc_len_int = doc * 0x14A4D0FB0E93E3A7LL;
-    unsigned long int x                = doc_len_int;
-    double y                           = (double)x;
+    unsigned long long int doc_len_int  = doc * 0x14A4D0FB0E93E3A7LL;
+    unsigned long int x                 = doc_len_int;
+    double y                            = (double)x;
     y                                  /= 0x100000000LL; // deterministic random number between 0 and 1.0
-    fd[sock].response_length           = gen_bfc_dist(y);
-    *dr                                = doc;
-    range_mode                         = 0;
+    fd[sock].response_length            = gen_bfc_dist(y);
+    *dr                                 = doc;
+    range_mode                          = 0;
   }
 }
 
@@ -3913,10 +3913,10 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   while ((ptr < end - 1) && !fail) {
     if (*(ptr + 0) == '/') {
       if (*(ptr + 1) == '/') {
-        host1       = ptr + 2;
+        host1        = ptr + 2;
         ptr         += 2; /* skip "//" */
-        host_exists = 1;
-        fail        = true;
+        host_exists  = 1;
+        fail         = true;
       } else {
         /* this is the start of a path, not a host */
         host_exists = 0;
@@ -4710,9 +4710,9 @@ ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
           } else {
             /* don't unescapify these, just pass the escape sequence */
             if (dcount + 3 < max_dest_len) {
-              *(dest++) = '%';
-              *(dest++) = hexdigits[dig1];
-              *(dest++) = hexdigits[dig2];
+              *(dest++)  = '%';
+              *(dest++)  = hexdigits[dig1];
+              *(dest++)  = hexdigits[dig2];
               dcount    += 3;
               src       += 2;
             } else {

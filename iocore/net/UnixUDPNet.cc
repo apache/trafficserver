@@ -122,7 +122,7 @@ UDPPacket::getPktLength()
   b                = pkt->p.chain.get();
   while (b) {
     pkt->p.pktLength += b->read_avail();
-    b                = b->next.get();
+    b                 = b->next.get();
   }
   return pkt->p.pktLength;
 }
@@ -300,7 +300,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
       if (saved > buffer_size) {
         b->fill(buffer_size);
         saved -= buffer_size;
-        b     = b->next.get();
+        b      = b->next.get();
       } else {
         b->fill(saved);
         saved      = 0;
@@ -1066,7 +1066,7 @@ sendPackets:
 
     bytesUsed           += pktLen;
     bytesThisPipe       -= pktLen;
-    packets[npackets++] = p;
+    packets[npackets++]  = p;
   next_pkt:
     if (bytesThisPipe < 0 || npackets == N_MAX_PACKETS) {
       break;
@@ -1314,16 +1314,16 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
         // Send the given data as multiple messages
         int offset = 0;
         while (offset < packet->p.chain.get()->size()) {
-          msg              = &msgvec[vlen].msg_hdr;
-          msg->msg_name    = reinterpret_cast<caddr_t>(&packet->to.sa);
-          msg->msg_namelen = ats_ip_size(packet->to);
-          iov              = &iovec[iovec_used++];
-          iov_len          = 1;
-          iov->iov_base    = packet->p.chain.get()->start() + offset;
-          iov->iov_len     = std::min(packet->p.segment_size,
-                                      static_cast<uint16_t>(packet->p.chain.get()->end() - static_cast<char *>(iov->iov_base)));
-          msg->msg_iov     = iov;
-          msg->msg_iovlen  = iov_len;
+          msg               = &msgvec[vlen].msg_hdr;
+          msg->msg_name     = reinterpret_cast<caddr_t>(&packet->to.sa);
+          msg->msg_namelen  = ats_ip_size(packet->to);
+          iov               = &iovec[iovec_used++];
+          iov_len           = 1;
+          iov->iov_base     = packet->p.chain.get()->start() + offset;
+          iov->iov_len      = std::min(packet->p.segment_size,
+                                       static_cast<uint16_t>(packet->p.chain.get()->end() - static_cast<char *>(iov->iov_base)));
+          msg->msg_iov      = iov;
+          msg->msg_iovlen   = iov_len;
           offset           += iov->iov_len;
           vlen++;
         }

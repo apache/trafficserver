@@ -747,7 +747,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 
   if (jump_to_argc != 0) {
     argc  -= jump_to_argc;
-    int i = 0;
+    int i  = 0;
     while (argv[i + jump_to_argc]) {
       new_argv[i] = argv[i + jump_to_argc];
       i++;
@@ -1077,7 +1077,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // URL::create modified map_from so keep a point to
     //   the beginning of the string
     if ((tmp = (map_from_start = map_from)) != nullptr && length > 2 && tmp[length - 1] == '/' && tmp[length - 2] == '/') {
-      new_mapping->unique = true;
+      new_mapping->unique  = true;
       length              -= 2;
     }
 

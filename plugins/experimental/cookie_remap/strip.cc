@@ -73,7 +73,7 @@ write_spaces_if_room(char **p, const char *maxp, int &slen)
   }
 
   *p   += slen;
-  slen = 0;
+  slen  = 0;
 }
 
 // File-scope data

@@ -328,7 +328,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
 static ssl_select_cert_result_t
 ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
-  SSL *s = client_hello->ssl;
+  SSL *s              = client_hello->ssl;
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
 
   if (snis) {
@@ -1391,7 +1391,7 @@ SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
     SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
   }
 
-  int additional_cache_flags = 0;
+  int additional_cache_flags  = 0;
   additional_cache_flags     |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
 
   switch (params->ssl_session_cache) {
@@ -2571,7 +2571,7 @@ SSLSessionDup(SSL_SESSION *sess)
   return SSL_SESSION_dup(sess);
 #else
   SSL_SESSION *duplicated = nullptr;
-  int len = i2d_SSL_SESSION(sess, nullptr);
+  int len                 = i2d_SSL_SESSION(sess, nullptr);
   if (len < 0) {
     return nullptr;
   }

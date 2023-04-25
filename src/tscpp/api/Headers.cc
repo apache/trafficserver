@@ -698,7 +698,7 @@ Headers::wireStr()
 {
   string retval;
   for (auto &&iter : *this) {
-    HeaderField hf = iter;
+    HeaderField hf  = iter;
     retval         += hf.name().str();
     retval         += ": ";
     retval         += hf.values(", ");

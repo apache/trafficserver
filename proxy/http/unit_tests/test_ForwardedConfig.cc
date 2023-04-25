@@ -74,11 +74,11 @@ public:
     for (; *in; ++in) {
       if (islower(*in)) {
         s     += upper ? toupper(*in) : *in;
-        upper = !upper;
+        upper  = !upper;
 
       } else if (isupper(*in)) {
         s     += upper ? *in : tolower(*in);
-        upper = !upper;
+        upper  = !upper;
 
       } else {
         s += *in;

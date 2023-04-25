@@ -648,7 +648,7 @@ read_url_file(char *url_file)
      constructed by the URL host and possibly port (if not port 80) */
 
   char hdr_buf[2048];
-  int hdr_bytes = 0;
+  int hdr_bytes  = 0;
   hdr_bytes     += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
   if (cookie)
     hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Cookie: %s\r\n", cookie);
@@ -673,7 +673,7 @@ read_url_file(char *url_file)
     /* Check for room in urls. */
     if (num_urls >= max_urls) {
       max_urls *= 2;
-      urls     = (url *)realloc_check((void *)urls, max_urls * sizeof(url));
+      urls      = (url *)realloc_check((void *)urls, max_urls * sizeof(url));
     }
 
     /* Add to table. */
@@ -692,7 +692,7 @@ read_url_file(char *url_file)
     }
     for (cp = line + proto_len; *cp != '\0' && *cp != ':' && *cp != '/'; ++cp)
       ;
-    host_len = cp - line;
+    host_len  = cp - line;
     host_len -= proto_len;
     strncpy(hostname, line + proto_len, host_len);
     hostname[host_len]      = '\0';
@@ -733,7 +733,7 @@ read_url_file(char *url_file)
     }
     if (unique_id == 1) {
       req_bytes                       += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "X-ID: ");
-      urls[num_urls].unique_id_offset = req_bytes;
+      urls[num_urls].unique_id_offset  = req_bytes;
       req_bytes                       += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "%09u\r\n", 0);
     }
 
@@ -899,7 +899,7 @@ read_sip_file(char *sip_file)
     /* Check for room in sips. */
     if (num_sips >= max_sips) {
       max_sips *= 2;
-      sips     = (sip *)realloc_check((void *)sips, max_sips * sizeof(sip));
+      sips      = (sip *)realloc_check((void *)sips, max_sips * sizeof(sip));
     }
 
     /* Add to table. */
@@ -2835,8 +2835,8 @@ close_connection(int cnum)
                 connect_usecs = max_connect_usecs;
     */
     total_connect_usecs += connect_usecs;
-    max_connect_usecs   = max(max_connect_usecs, connect_usecs);
-    min_connect_usecs   = min(min_connect_usecs, connect_usecs);
+    max_connect_usecs    = max(max_connect_usecs, connect_usecs);
+    min_connect_usecs    = min(min_connect_usecs, connect_usecs);
     ++connects_completed;
   }
   if (connections[cnum].did_response) {
@@ -2846,8 +2846,8 @@ close_connection(int cnum)
                 response_usecs = max_response_usecs;
     */
     total_response_usecs += response_usecs;
-    max_response_usecs   = max(max_response_usecs, response_usecs);
-    min_response_usecs   = min(min_response_usecs, response_usecs);
+    max_response_usecs    = max(max_response_usecs, response_usecs);
+    min_response_usecs    = min(min_response_usecs, response_usecs);
     ++responses_completed;
   }
   if (connections[cnum].http_status >= 0 && connections[cnum].http_status <= 999) {

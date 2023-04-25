@@ -49,9 +49,9 @@ base64_decode(const char *input)
   output = obuf = (char *)TSmalloc((len * 6) / 8 + 3);
 
   while (len > 0) {
-    *output++ = decode(0) << 2 | decode(1) >> 4;
-    *output++ = decode(1) << 4 | decode(2) >> 2;
-    *output++ = decode(2) << 6 | decode(3);
+    *output++  = decode(0) << 2 | decode(1) >> 4;
+    *output++  = decode(1) << 4 | decode(2) >> 2;
+    *output++  = decode(2) << 6 | decode(3);
     len       -= 4;
     input     += 4;
   }
@@ -138,7 +138,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
-  *password = '\0';
+  *password  = '\0';
   password  += 1;
 
   if (!authorized(user, password)) {

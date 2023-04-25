@@ -721,7 +721,7 @@ public:
               if (ix <= subop->getRegexCcount()) { // Just skip an illegal regex group
                 dest += sendto.substr(ppos, pos - ppos);
                 dest += string_to_match.substr(ovector[ix * 2], ovector[ix * 2 + 1] - ovector[ix * 2]);
-                ppos = pos + 2;
+                ppos  = pos + 2;
               } else {
                 TSDebug(MY_NAME,
                         "bad "
@@ -1055,7 +1055,7 @@ sub_lookup(char const *targ, int targ_len)
     }
     targ     += opt->comp.size();
     targ_len -= opt->comp.size();
-    opt      = reinterpret_cast<CompNext const *>(reinterpret_cast<char const *>(opt->next) + offsetof(decltype(sub), o1));
+    opt       = reinterpret_cast<CompNext const *>(reinterpret_cast<char const *>(opt->next) + offsetof(decltype(sub), o1));
   }
   return count;
 }
@@ -1173,7 +1173,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   std::string client_req_query_params;
   auto query = req_url.query(false);
   if (!query.empty()) {
-    client_req_query_params = "?";
+    client_req_query_params  = "?";
     client_req_query_params += query;
   }
   TSDebug(MY_NAME, "Query Parameters: %s", client_req_query_params.c_str());

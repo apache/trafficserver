@@ -315,10 +315,10 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
       return zret;
     }
     len                                    -= tmp;
-    alt->m_request_hdr.m_heap              = heap;
-    alt->m_request_hdr.m_http              = hh;
-    alt->m_request_hdr.m_mime              = hh->m_fields_impl;
-    alt->m_request_hdr.m_url_cached.m_heap = heap;
+    alt->m_request_hdr.m_heap               = heap;
+    alt->m_request_hdr.m_http               = hh;
+    alt->m_request_hdr.m_mime               = hh->m_fields_impl;
+    alt->m_request_hdr.m_url_cached.m_heap  = heap;
   }
 
   // response hdrs

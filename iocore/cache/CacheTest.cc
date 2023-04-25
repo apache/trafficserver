@@ -217,10 +217,10 @@ Lnext:
 void
 CacheTestSM::fill_buffer()
 {
-  int64_t avail = buffer->write_avail();
-  CacheKey k    = key;
+  int64_t avail  = buffer->write_avail();
+  CacheKey k     = key;
   k.b[1]        += content_salt;
-  int64_t sk    = static_cast<int64_t>(sizeof(key));
+  int64_t sk     = static_cast<int64_t>(sizeof(key));
   while (avail > 0) {
     int64_t l = avail;
     if (l > sk) {
@@ -244,8 +244,8 @@ CacheTestSM::fill_buffer()
 int
 CacheTestSM::check_buffer()
 {
-  int64_t avail = buffer_reader->read_avail();
-  CacheKey k    = key;
+  int64_t avail  = buffer_reader->read_avail();
+  CacheKey k     = key;
   k.b[1]        += content_salt;
   char b[sizeof(key)];
   int64_t sk  = static_cast<int64_t>(sizeof(key));

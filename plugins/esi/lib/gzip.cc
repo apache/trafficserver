@@ -37,7 +37,7 @@ append(string &out, T data)
 {
   for (unsigned int i = 0; i < sizeof(data); ++i) {
     out  += static_cast<char>(data & 0xff);
-    data = data >> 8;
+    data  = data >> 8;
   }
 }
 
@@ -92,14 +92,14 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
   int in_data_size   = 0;
   for (auto block : blocks) {
     if (block.data && (block.data_len > 0)) {
-      zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
-      zstrm.avail_in = block.data_len;
+      zstrm.next_in   = reinterpret_cast<Bytef *>(const_cast<char *>(block.data));
+      zstrm.avail_in  = block.data_len;
       in_data_size   += block.data_len;
-      deflate_result = runDeflateLoop(zstrm, 0, cdata);
+      deflate_result  = runDeflateLoop(zstrm, 0, cdata);
       if (deflate_result != Z_OK) {
         break; // break out of the blocks iteration
       }
-      crc            = crc32(crc, reinterpret_cast<const Bytef *>(block.data), block.data_len);
+      crc             = crc32(crc, reinterpret_cast<const Bytef *>(block.data), block.data_len);
       total_data_len += block.data_len;
     }
   }
@@ -173,7 +173,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
       break;
     }
     unzipped_data_size += curr_buf_size;
-    crc                = crc32(crc, reinterpret_cast<const Bytef *>(raw_buf), curr_buf_size);
+    crc                 = crc32(crc, reinterpret_cast<const Bytef *>(raw_buf), curr_buf_size);
 
     // push empty object onto list and add data to in-list object to
     // avoid data copy for temporary

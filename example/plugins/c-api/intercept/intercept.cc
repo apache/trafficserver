@@ -245,7 +245,7 @@ InterceptTransferData(InterceptIO *from, InterceptIO *to)
     while (ptr && remain) {
       int64_t nbytes;
 
-      nbytes   = TSIOBufferWrite(to->writeio.iobuf, ptr, remain);
+      nbytes    = TSIOBufferWrite(to->writeio.iobuf, ptr, remain);
       remain   -= nbytes;
       ptr      += nbytes;
       consumed += nbytes;

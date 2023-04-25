@@ -93,7 +93,7 @@ iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
       bytes = max_bytes;
     }
 
-    IOBufferBlock *new_buf = src->clone();
+    IOBufferBlock *new_buf  = src->clone();
     new_buf->_start        += offset;
     new_buf->_buf_end = new_buf->_end = new_buf->_start + bytes;
 
@@ -106,8 +106,8 @@ iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
     }
 
     len    -= bytes;
-    src    = src->next.get();
-    offset = 0;
+    src     = src->next.get();
+    offset  = 0;
   }
 
   return start_buf;
@@ -132,16 +132,16 @@ iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t wr
     }
 
     if (len >= max_bytes) {
-      b      = b->next.get();
+      b       = b->next.get();
       len    -= max_bytes;
-      offset = 0;
+      offset  = 0;
     } else {
       offset = offset + len;
       break;
     }
   }
 
-  *poffset = offset;
+  *poffset  = offset;
   *plen    -= write;
   return b;
 }
@@ -431,7 +431,7 @@ IOBufferReader::skip_empty_blocks()
 {
   while (block->next && block->next->read_avail() && start_offset >= block->size()) {
     start_offset -= block->size();
-    block        = block->next;
+    block         = block->next;
   }
 }
 
@@ -521,7 +521,7 @@ IOBufferReader::read_avail()
 
   while (b) {
     t += b->read_avail();
-    b = b->next.get();
+    b  = b->next.get();
   }
 
   t -= start_offset;
@@ -565,9 +565,9 @@ IOBufferReader::consume(int64_t n)
   int64_t s = start_offset;
   while (r <= s && block->next && block->next->read_avail()) {
     s            -= r;
-    start_offset = s;
-    block        = block->next;
-    r            = block->read_avail();
+    start_offset  = s;
+    block         = block->next;
+    r             = block->read_avail();
   }
 }
 
@@ -584,7 +584,7 @@ IOBufferReader::operator[](int64_t i)
       return b->start()[i];
     }
     i -= bytes;
-    b = b->next.get();
+    b  = b->next.get();
   }
 
   ink_release_assert(!"out of range");
@@ -879,7 +879,7 @@ MIOBuffer::current_write_avail()
   IOBufferBlock *b = _writer.get();
   while (b) {
     t += b->write_avail();
-    b = b->next.get();
+    b  = b->next.get();
   }
   return t;
 }

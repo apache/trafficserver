@@ -93,13 +93,13 @@ RecRawStatBlockOpsImpl::raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawS
 
   // get thread local values
   for (EThread *et : eventProcessor.active_ethreads()) {
-    RecRawStat *tlp = thread_stat(et, rsb, id);
+    RecRawStat *tlp  = thread_stat(et, rsb, id);
     total->sum      += tlp->sum;
     total->count    += tlp->count;
   }
 
   for (EThread *et : eventProcessor.active_dthreads()) {
-    RecRawStat *tlp = thread_stat(et, rsb, id);
+    RecRawStat *tlp  = thread_stat(et, rsb, id);
     total->sum      += tlp->sum;
     total->count    += tlp->count;
   }
@@ -124,13 +124,13 @@ RecRawStatBlockOpsImpl::raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
   // sum the thread local values
   for (EThread *et : eventProcessor.active_ethreads()) {
-    RecRawStat *tlp = thread_stat(et, rsb, id);
+    RecRawStat *tlp  = thread_stat(et, rsb, id);
     total.sum       += tlp->sum;
     total.count     += tlp->count;
   }
 
   for (EThread *et : eventProcessor.active_dthreads()) {
-    RecRawStat *tlp = thread_stat(et, rsb, id);
+    RecRawStat *tlp  = thread_stat(et, rsb, id);
     total.sum       += tlp->sum;
     total.count     += tlp->count;
   }

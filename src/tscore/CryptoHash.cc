@@ -82,14 +82,14 @@ ink_code_to_hex_str(char *dest, uint8_t const *hash)
 
   d = dest;
   for (i = 0; i < CRYPTO_HASH_SIZE; i += 4) {
-    *(d + 0) = hex_digits[hash[i + 0] >> 4];
-    *(d + 1) = hex_digits[hash[i + 0] & 15];
-    *(d + 2) = hex_digits[hash[i + 1] >> 4];
-    *(d + 3) = hex_digits[hash[i + 1] & 15];
-    *(d + 4) = hex_digits[hash[i + 2] >> 4];
-    *(d + 5) = hex_digits[hash[i + 2] & 15];
-    *(d + 6) = hex_digits[hash[i + 3] >> 4];
-    *(d + 7) = hex_digits[hash[i + 3] & 15];
+    *(d + 0)  = hex_digits[hash[i + 0] >> 4];
+    *(d + 1)  = hex_digits[hash[i + 0] & 15];
+    *(d + 2)  = hex_digits[hash[i + 1] >> 4];
+    *(d + 3)  = hex_digits[hash[i + 1] & 15];
+    *(d + 4)  = hex_digits[hash[i + 2] >> 4];
+    *(d + 5)  = hex_digits[hash[i + 2] & 15];
+    *(d + 6)  = hex_digits[hash[i + 3] >> 4];
+    *(d + 7)  = hex_digits[hash[i + 3] & 15];
     d        += 8;
   }
   *d = '\0';

@@ -45,8 +45,8 @@ to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len)
   static char hex_digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
   for (size_t i = 0; i < src_len; ++i) {
-    *dst       = hex_digits[src[i] >> 4];
-    *(dst + 1) = hex_digits[src[i] & 0xf];
+    *dst        = hex_digits[src[i] >> 4];
+    *(dst + 1)  = hex_digits[src[i] & 0xf];
     dst        += 2;
   }
   *dst = '\0';
@@ -372,11 +372,11 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   data_len = strlen(reinterpret_cast<char *>(data));
 
   size_t cid_len;
-  *(data + data_len) = original_dcid.length();
+  *(data + data_len)  = original_dcid.length();
   data_len           += 1;
   QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
   data_len           += cid_len;
-  *(data + data_len) = scid.length();
+  *(data + data_len)  = scid.length();
   data_len           += 1;
   QUICTypeUtil::write_QUICConnectionId(scid, data + data_len, &cid_len);
   data_len += cid_len;
@@ -387,11 +387,11 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   ink_assert(this->_token_len == 20);
   this->_token_len += 1;
 
-  *(this->_token + this->_token_len) = original_dcid.length();
+  *(this->_token + this->_token_len)  = original_dcid.length();
   this->_token_len                   += 1;
   QUICTypeUtil::write_QUICConnectionId(original_dcid, this->_token + this->_token_len, &cid_len);
   this->_token_len                   += cid_len;
-  *(this->_token + this->_token_len) = scid.length();
+  *(this->_token + this->_token_len)  = scid.length();
   this->_token_len                   += 1;
   QUICTypeUtil::write_QUICConnectionId(scid, this->_token + this->_token_len, &cid_len);
   this->_token_len += cid_len;
@@ -465,9 +465,9 @@ QUICPreferredAddress::QUICPreferredAddress(const uint8_t *buf, uint16_t len)
   ats_ip6_set(&this->_endpoint_ipv6, addr_ipv6, port_ipv6);
 
   // CID
-  uint16_t cid_len = QUICIntUtil::read_nbytes_as_uint(p, 1);
+  uint16_t cid_len  = QUICIntUtil::read_nbytes_as_uint(p, 1);
   p                += 1;
-  this->_cid       = QUICTypeUtil::read_QUICConnectionId(p, cid_len);
+  this->_cid        = QUICTypeUtil::read_QUICConnectionId(p, cid_len);
   p                += cid_len;
 
   // Token
@@ -551,8 +551,8 @@ QUICPreferredAddress::store(uint8_t *buf, uint16_t &len) const
   }
 
   // CID
-  uint8_t cid_len = this->_cid.length();
-  p[0]            = cid_len;
+  uint8_t cid_len  = this->_cid.length();
+  p[0]             = cid_len;
   p               += 1;
   QUICTypeUtil::write_QUICConnectionId(this->_cid, p, &dummy);
   p += cid_len;

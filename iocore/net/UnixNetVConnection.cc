@@ -242,7 +242,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
           if (a > togo) {
             a = togo;
           }
-          tiovec[niov].iov_len = a;
+          tiovec[niov].iov_len  = a;
           rattempted           += a;
           niov++;
           if (a >= togo) {
@@ -693,16 +693,16 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     SocketManager::shutdown((this)->con.fd, 0);
     read.enabled = 0;
     read.vio.buffer.clear();
-    read.vio.nbytes = 0;
-    read.vio.cont   = nullptr;
+    read.vio.nbytes  = 0;
+    read.vio.cont    = nullptr;
     f.shutdown      |= NetEvent::SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
     SocketManager::shutdown((this)->con.fd, 1);
     write.enabled = 0;
     write.vio.buffer.clear();
-    write.vio.nbytes = 0;
-    write.vio.cont   = nullptr;
+    write.vio.nbytes  = 0;
+    write.vio.cont    = nullptr;
     f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:

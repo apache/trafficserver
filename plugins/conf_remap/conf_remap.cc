@@ -143,7 +143,7 @@ RemapConfigs::parse_file(const char *filename)
     path = filename;
   } else {
     // Relative path. Make it relative to the configuration directory.
-    path = TSConfigDirGet();
+    path  = TSConfigDirGet();
     path += "/";
     path += filename;
   }

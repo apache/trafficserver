@@ -73,6 +73,6 @@ StubIncludeHandler::getFooter(const char *&footer, int &footer_len)
 StubIncludeHandler::~StubIncludeHandler()
 {
   for (std::list<char *>::iterator iter = heap_strings.begin(); iter != heap_strings.end(); ++iter) {
-    delete[] * iter;
+    delete[] *iter;
   }
 }

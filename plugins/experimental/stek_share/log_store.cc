@@ -189,7 +189,7 @@ STEKShareLogStore::pack(uint64_t index, int32_t cnt)
       le = logs_[i];
     }
     assert(le.get());
-    nuraft::ptr<nuraft::buffer> buf = le->serialize();
+    nuraft::ptr<nuraft::buffer> buf  = le->serialize();
     size_total                      += buf->size();
     logs.push_back(buf);
   }

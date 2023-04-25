@@ -97,7 +97,7 @@ hexDecode(const char *in, size_t inLen, char *out, size_t outLen)
   char *dstEnd       = out + outLen;
 
   while (src < (srcEnd - 1) && dst < dstEnd) {
-    *dst++ = hex2uchar(*src) << 4 | hex2uchar(*(src + 1));
+    *dst++  = hex2uchar(*src) << 4 | hex2uchar(*(src + 1));
     src    += 2;
   }
   return dst - out;
@@ -149,8 +149,8 @@ urlDecode(const char *in, size_t inLen, char *out, size_t outLen)
   while (static_cast<size_t>(src - in) < inLen && static_cast<size_t>(dst - out) < outLen) {
     if (*src == '%') {
       if (src[1] && src[2]) {
-        int u  = hex2uchar(*(src + 1)) << 4 | hex2uchar(*(src + 2));
-        *dst++ = static_cast<char>(u);
+        int u   = hex2uchar(*(src + 1)) << 4 | hex2uchar(*(src + 2));
+        *dst++  = static_cast<char>(u);
         src    += 2;
       }
     } else if (*src == '+') {

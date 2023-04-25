@@ -916,7 +916,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor               += read_bytes;
-      header_field_started = true;
+      header_field_started  = true;
       break;
     case HpackField::INDEXED_LITERAL:
     case HpackField::NOINDEX_LITERAL:
@@ -930,7 +930,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
         read_bytes          = -read_bytes;
       }
       cursor               += read_bytes;
-      header_field_started = true;
+      header_field_started  = true;
       break;
     case HpackField::TABLESIZE_UPDATE:
       if (header_field_started) {

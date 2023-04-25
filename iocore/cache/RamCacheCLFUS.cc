@@ -219,7 +219,7 @@ check_accounting(RamCacheCLFUS *c)
   while (y) {
     x++;
     xsize += y->size + ENTRY_OVERHEAD;
-    y     = y->lru_link.next;
+    y      = y->lru_link.next;
   }
   y = c->lru[1].head;
   while (y) {
@@ -293,7 +293,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           IOBufferData *data = new_xmalloc_IOBufferData(b, e->len);
           data->_mem_type    = DEFAULT_ALLOC;
           if (!e->flag_bits.copy) { // don't bother if we have to copy anyway
-            int64_t delta = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
+            int64_t delta  = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
             this->_bytes  += delta;
             CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
             e->size = e->compressed_len;
@@ -525,8 +525,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         bb                      = static_cast<char *>(ats_malloc(l));
         memcpy(bb, b, l);
         ats_free(b);
-        e->compressed_len = l;
-        int64_t delta     = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
+        e->compressed_len  = l;
+        int64_t delta      = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
         this->_bytes      += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = l;
@@ -535,7 +535,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         e->flag_bits.compressed = 0;
         bb                      = static_cast<char *>(ats_malloc(e->len));
         memcpy(bb, e->data->data(), e->len);
-        int64_t delta = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
+        int64_t delta  = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
         this->_bytes  += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = e->len;
@@ -601,7 +601,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       this->_move_compressed(e);
       this->_lru[e->flag_bits.lru].remove(e);
       this->_lru[e->flag_bits.lru].enqueue(e);
-      int64_t delta = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
+      int64_t delta  = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       this->_bytes  += delta;
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
       if (!copy) {
@@ -722,7 +722,7 @@ Linsert:
     e->data            = new_xmalloc_IOBufferData(b, len);
     e->data->_mem_type = DEFAULT_ALLOC;
   }
-  e->flag_bits.copy = copy;
+  e->flag_bits.copy  = copy;
   this->_bytes      += size + ENTRY_OVERHEAD;
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
   e->size = size;

@@ -2137,8 +2137,8 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
   int offset = sizeof(self_type);
   memcpy(self->apply_offset<void>(offset), query_name);
   offset          += qn_size;
-  self->rr_offset = offset;
-  self->rr_count  = rr_count;
+  self->rr_offset  = offset;
+  self->rr_count   = rr_count;
   // Construct the info instances to a valid state.
   for (auto &info : self->rr_info()) {
     new (&info) std::remove_reference_t<decltype(info)>;
@@ -2203,9 +2203,9 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
     }
 
     if (target.data.srv.srv_priority <= p) {
-      p              = target.data.srv.srv_priority;
+      p               = target.data.srv.srv_priority;
       weight         += target.data.srv.srv_weight;
-      live[live_n++] = &target;
+      live[live_n++]  = &target;
     } else {
       break;
     }

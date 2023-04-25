@@ -271,11 +271,11 @@ gen_header(char *status_str, char *mime, int *header_len)
     const char *status_reason;
     int len = sizeof(HEADER_TEMPLATE) + 3 + 1;
 
-    status_reason = TSHttpHdrReasonLookup(status);
+    status_reason  = TSHttpHdrReasonLookup(status);
     len           += strlen(status_reason);
     len           += strlen(mime);
-    buf           = TSmalloc(len);
-    *header_len   = snprintf(buf, len, HEADER_TEMPLATE, status, status_reason, mime);
+    buf            = TSmalloc(len);
+    *header_len    = snprintf(buf, len, HEADER_TEMPLATE, status, status_reason, mime);
   } else {
     *header_len = 0;
   }
@@ -438,7 +438,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     char buf[48];
     int len;
 
-    len                    = snprintf(buf, sizeof(buf), "Content-Length: %d\r\n\r\n", my_state->data->b_len);
+    len                     = snprintf(buf, sizeof(buf), "Content-Length: %d\r\n\r\n", my_state->data->b_len);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
     if (my_state->data->b_len > 0) {
       my_state->output_bytes += add_data_to_resp(my_state->data->body, my_state->data->b_len, my_state);

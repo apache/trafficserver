@@ -1008,7 +1008,7 @@ load_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string 
     return plugin_dso_load(plugin_path.c_str(), handle, initptr, error);
   }
   case plugin_type_t::REMAP: {
-    auto temporary_directory = fs::temp_directory_path();
+    auto temporary_directory  = fs::temp_directory_path();
     temporary_directory      /= fs::path(std::string("verify_plugin_") + std::to_string(getpid()));
     std::error_code ec;
     if (!fs::create_directories(temporary_directory, ec)) {
@@ -1400,30 +1400,30 @@ struct ShowStats : public Continuation {
     int64_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
-    int64_t d_rb = sval - last_rb;
+    int64_t d_rb  = sval - last_rb;
     last_rb      += d_rb;
 
     NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
-    int64_t d_wb = sval - last_wb;
+    int64_t d_wb  = sval - last_wb;
     last_wb      += d_wb;
 
     NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
-    int64_t d_nrb = sval - last_nrb;
+    int64_t d_nrb  = sval - last_nrb;
     last_nrb      += d_nrb;
-    int64_t d_nr  = cval - last_nr;
+    int64_t d_nr   = cval - last_nr;
     last_nr       += d_nr;
 
     NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
-    int64_t d_nwb = sval - last_nwb;
+    int64_t d_nwb  = sval - last_nwb;
     last_nwb      += d_nwb;
-    int64_t d_nw  = cval - last_nw;
+    int64_t d_nw   = cval - last_nw;
     last_nw       += d_nw;
 
     NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
     int64_t d_o = sval;
 
     NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
-    int64_t d_p = cval - last_p;
+    int64_t d_p  = cval - last_p;
     last_p      += d_p;
     printf("%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n", d_rb, d_wb, d_nrb,
            d_nr, d_nwb, d_nw, d_o, d_p);

@@ -643,7 +643,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *pp = NULL;
   if (cp != NULL) {
     cp                        += (strlen(CIP_QSTRING) + 1);
-    struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
+    struct sockaddr const *ip  = TSHttpTxnClientAddrGet(txnp);
     if (ip == NULL) {
       TSError("Can't get client ip address.");
       goto deny;
@@ -710,7 +710,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   cp = strstr(query, ALG_QSTRING "=");
   if (cp != NULL) {
     cp        += strlen(ALG_QSTRING) + 1;
-    algorithm = atoi(cp);
+    algorithm  = atoi(cp);
     // The check for a valid algorithm is later.
     TSDebug(PLUGIN_NAME, "Algorithm: %d", algorithm);
   } else {
@@ -721,7 +721,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   cp = strstr(query, KIN_QSTRING "=");
   if (cp != NULL) {
     cp       += strlen(KIN_QSTRING) + 1;
-    keyindex = atoi(cp);
+    keyindex  = atoi(cp);
     if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
       err_log(url, "Invalid key index");
       goto deny;
@@ -736,7 +736,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   cp                = strstr(query, PAR_QSTRING "=");
   if (cp != NULL) {
     cp    += strlen(PAR_QSTRING) + 1;
-    parts = cp; // NOTE parts is not NULL terminated it is terminated by "&" of next param
+    parts  = cp; // NOTE parts is not NULL terminated it is terminated by "&" of next param
     has_path_params == false ? (cp = strstr(parts, "&")) : (cp = strstr(parts, ";"));
     if (cp) {
       TSDebug(PLUGIN_NAME, "Parts: %.*s", (int)(cp - parts), parts);
@@ -752,7 +752,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   cp                    = strstr(query, SIG_QSTRING "=");
   if (cp != NULL) {
     cp        += strlen(SIG_QSTRING) + 1;
-    signature = cp;
+    signature  = cp;
     if ((algorithm == USIG_HMAC_SHA1 && strlen(signature) < SHA1_SIG_SIZE) ||
         (algorithm == USIG_HMAC_MD5 && strlen(signature) < MD5_SIG_SIZE)) {
       err_log(url, "Signature query string too short (< 20)");
