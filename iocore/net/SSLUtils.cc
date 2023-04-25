@@ -375,13 +375,15 @@ ssl_cert_callback(SSL *ssl, void *arg)
   int retval = 1;
 
   // If we are in tunnel mode, don't select a cert.  Pause!
-  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslnetvc);
-  if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
+  if (sslnetvc) {
+    NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslnetvc);
+    if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
 #ifdef OPENSSL_IS_BORINGSSL
-    return -2; // Retry
+      return -2; // Retry
 #else
-    return -1; // Pause
+      return -1; // Pause
 #endif
+    }
   }
 
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
