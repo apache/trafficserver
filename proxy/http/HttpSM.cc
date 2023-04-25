@@ -4263,7 +4263,12 @@ HttpSM::do_hostdb_lookup()
 
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
 
-  if (t_state.txn_conf->srv_enabled) {
+  // If directed to not look up fqdns then mark as resolved
+  if (t_state.http_config_param->no_dns_forward_to_parent && t_state.parent_result.result == PARENT_UNDEFINED) {
+    t_state.dns_info.lookup_success = true;
+    call_transact_and_set_next_state(nullptr);
+    return;
+  } else if (t_state.txn_conf->srv_enabled) {
     char d[MAXDNAME];
 
     // Look at the next_hop_scheme to determine what scheme to put in the SRV lookup
