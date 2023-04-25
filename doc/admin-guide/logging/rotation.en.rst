@@ -177,7 +177,7 @@ they reach a certain size, adjust the following settings in
 You can fine-tune log file rolling settings for individual log files in the
 ``log.*`` specification in :file:`logging.yaml`. The custom log file uses the
 rolling settings provided in the relevant ``log`` function call, which override
-the default settings you specify in Traffic Manager or :file:`records.yaml`
+the default settings you specify in :file:`records.yaml`
 described above.
 
 .. _admin-logging-retention:

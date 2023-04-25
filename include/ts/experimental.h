@@ -230,7 +230,7 @@ tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sock
 
 /**
    Attempt to attach the contp continuation to sockets that have already been
-   opened by the traffic manager and defined as belonging to plugins (based on
+   opened by the traffic Server and defined as belonging to plugins (based on
    records.yaml configuration). If a connection is successfully accepted,
    the TS_EVENT_NET_ACCEPT is delivered to the continuation. The event
    data will be a valid TSVConn bound to the accepted connection.

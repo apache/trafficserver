@@ -210,13 +210,6 @@ msgstr ""
 "Traffic Server の ``config`` ディレクトリで指示されたファイルが存在すること"
 "を確認してください。パーミッションを確認し、必要であれば変更してください"
 
-#: ../../../admin-guide/monitoring/error-messages.en.rst:100
-msgid "``[Traffic Manager] Configuration File Update Failed: <error number>``"
-msgstr ""
-
-#: ../../../admin-guide/monitoring/error-messages.en.rst:104
-msgid "``[Traffic Manager] Mgmt <==>Proxy conn. closed``"
-msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:103
 msgid ""

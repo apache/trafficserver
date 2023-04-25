@@ -59,19 +59,19 @@ diags.log
 =========
 
 The following methods print to diags.log with expected reactions as a coordinated outcome of
-Traffic Server, Traffic Manager, AuTest, CI, and your log monitoring service/dashboard (e.g. Splunk)
+Traffic Server, AuTest, CI, and your log monitoring service/dashboard (e.g. Splunk)
 
 .. csv-table::
-   :header: "API", "Purpose", "TrafficManager", "AuTest+CI",  "LogMonitor"
-   :widths: 15, 20, 10, 10, 10
+   :header: "API", "Purpose", "AuTest+CI",  "LogMonitor"
+   :widths: 15, 20, 10, 10
 
    ":func:`TSStatus`","basic information"
    ":func:`TSNote`","significant information"
-   ":func:`TSWarning`","concerning information","","","track"
-   ":func:`TSError`","operational failure","","FAIL","review"
-   ":func:`TSFatal`","recoverable crash","restart","FAIL","review"
-   ":func:`TSAlert`","significant crash","restart","FAIL","ALERT"
-   ":func:`TSEmergency`","unrecoverable,misconfigured","EXIT","FAIL","ALERT"
+   ":func:`TSWarning`","concerning information","","track"
+   ":func:`TSError`","operational failure","FAIL","review"
+   ":func:`TSFatal`","recoverable crash","FAIL","review"
+   ":func:`TSAlert`","significant crash","FAIL","ALERT"
+   ":func:`TSEmergency`","unrecoverable,misconfigured","FAIL","ALERT"
 
 .. note::
     :func:`TSFatal`, :func:`TSAlert`, and :func:`TSEmergency` can be called within
