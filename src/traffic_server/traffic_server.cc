@@ -1722,6 +1722,35 @@ bind_outputs(const char *bind_stdout_p, const char *bind_stderr_p)
   }
 }
 
+#if TS_USE_LINUX_IO_URING
+// Load config items for io_uring
+static void
+configure_io_uring()
+{
+  IOUringConfig cfg;
+
+  RecInt aio_io_uring_queue_entries = cfg.queue_entries;
+  RecInt aio_io_uring_sq_poll_ms    = cfg.sq_poll_ms;
+  RecInt aio_io_uring_attach_wq     = cfg.attach_wq;
+  RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
+  RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
+
+  REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.io_uring.entries");
+  REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.io_uring.sq_poll_ms");
+  REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.io_uring.attach_wq");
+  REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.io_uring.wq_workers_bounded");
+  REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.io_uring.wq_workers_unbounded");
+
+  cfg.queue_entries = aio_io_uring_queue_entries;
+  cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;
+  cfg.attach_wq     = aio_io_uring_attach_wq;
+  cfg.wq_bounded    = aio_io_uring_wq_bounded;
+  cfg.wq_unbounded  = aio_io_uring_wq_unbounded;
+
+  IOUringContext::set_config(cfg);
+}
+#endif
+
 //
 // Main
 //
@@ -2006,6 +2035,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
+
+#if TS_USE_LINUX_IO_URING
+  configure_io_uring();
+#endif
 
   ink_event_system_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
   ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));

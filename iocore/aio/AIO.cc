@@ -192,30 +192,6 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
     "Running with Linux libaio is deprecated. There are known issues with this feature and it is being replaced with io_uring");
 #endif
 
-#if TS_USE_LINUX_IO_URING
-  IOUringConfig cfg;
-
-  RecInt aio_io_uring_queue_entries = cfg.queue_entries;
-  RecInt aio_io_uring_sq_poll_ms    = cfg.sq_poll_ms;
-  RecInt aio_io_uring_attach_wq     = cfg.attach_wq;
-  RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
-  RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
-
-  REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.aio.io_uring.entries");
-  REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.aio.io_uring.sq_poll_ms");
-  REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.aio.io_uring.attach_wq");
-  REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.aio.io_uring.wq_workers_bounded");
-  REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.aio.io_uring.wq_workers_unbounded");
-
-  cfg.queue_entries = aio_io_uring_queue_entries;
-  cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;
-  cfg.attach_wq     = aio_io_uring_attach_wq;
-  cfg.wq_bounded    = aio_io_uring_wq_bounded;
-  cfg.wq_unbounded  = aio_io_uring_wq_unbounded;
-
-  IOUringContext::set_config(cfg);
-#endif
-
 #if AIO_MODE == AIO_MODE_DEFAULT
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
