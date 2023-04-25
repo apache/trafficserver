@@ -437,3 +437,4 @@ The MIME header functions are listed below:
 -  :c:func:`TSMimeParserCreate`
 -  :c:func:`TSMimeParserDestroy`
 -  :c:func:`TSMimeHdrPrint`
+-  :c:func:`TSMimeHdrStringToWKS`

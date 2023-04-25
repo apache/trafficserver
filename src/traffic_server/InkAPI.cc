@@ -3773,6 +3773,16 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
   return TS_SUCCESS;
 }
 
+const char *
+TSMimeHdrStringToWKS(const char *str, int length)
+{
+  if (length < 0) {
+    return hdrtoken_string_to_wks(str);
+  } else {
+    return hdrtoken_string_to_wks(str, length);
+  }
+}
+
 /**************/
 /* HttpParser */
 /**************/

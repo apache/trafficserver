@@ -29,6 +29,8 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char * name, int length)
+.. function:: const char *TSMimeHdrStringToWKS(const char *str, int length)
+
 
 Description
 ===========
@@ -42,3 +44,7 @@ comparison is done between the field name and :arg:`name`. If
 :c:func:`TSMimeHdrFieldFind` cannot find the requested field, it
 returns :c:data:`TS_NULL_MLOC`.  Release the returned :c:type:`TSMLoc`
 handle with a call to :c:func:`TSHandleMLocRelease`.
+
+The :arg:`name` argument is best specified using the pre-defined Well-Known strings, such as e.g.
+``TS_MIME_FIELD_CACHE_CONTROL`` and ``TS_MIME_LEN_CACHE_CONTROL``. These WK constants
+can also be looked up using :c:func:`TSMimeHdrStringToWKS`.

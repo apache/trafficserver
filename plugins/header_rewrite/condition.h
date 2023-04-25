@@ -97,7 +97,8 @@ public:
   virtual void
   set_qualifier(const std::string &q)
   {
-    _qualifier = q;
+    _qualifier_wks = TSMimeHdrStringToWKS(q.c_str(), q.length());
+    _qualifier     = q;
   }
 
   // Some getters
@@ -128,8 +129,9 @@ protected:
   virtual bool eval(const Resources &res) = 0;
 
   std::string _qualifier;
-  MatcherOps _cond_op = MATCH_EQUAL;
-  Matcher *_matcher   = nullptr;
+  const char *_qualifier_wks = nullptr;
+  MatcherOps _cond_op        = MATCH_EQUAL;
+  Matcher *_matcher          = nullptr;
 
 private:
   CondModifiers _mods = COND_NONE;
