@@ -36,7 +36,9 @@
 #include "I_EventSystem.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLNetVConnection.h"
+#if TS_USE_QUIC == 1
 #include "P_QUICNetVConnection.h"
+#endif
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
 
@@ -57,6 +59,7 @@ public:
       return SSL_TLSEXT_ERR_OK;
     }
 
+#if TS_USE_QUIC == 1
     // This action is only available for QUIC connections
     auto *quic_vc = dynamic_cast<QUICNetVConnection *>(snis);
     if (quic_vc == nullptr) {
@@ -67,6 +70,7 @@ public:
       const char *servername = quic_vc->get_server_name();
       Debug("ssl_sni", "Rejecting handshake, fqdn [%s]", servername);
     }
+#endif
 
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
