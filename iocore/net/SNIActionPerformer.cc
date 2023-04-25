@@ -28,6 +28,35 @@
 
 #include "P_SNIActionPerformer.h"
 
+#if TS_USE_QUIC == 1
+#include "P_QUICNetVConnection.h"
+#endif
+
+int
+ControlQUIC::SNIAction(TLSSNISupport *snis, const Context &ctx) const
+{
+#if TS_USE_QUIC == 1
+  if (enable_quic) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+  // This action is only available for QUIC connections
+  auto *quic_vc = dynamic_cast<QUICNetVConnection *>(snis);
+  if (quic_vc == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+  if (is_debug_tag_set("ssl_sni")) {
+    const char *servername = quic_vc->get_server_name();
+    Debug("ssl_sni", "Rejecting handshake, fqdn [%s]", servername);
+  }
+
+  return SSL_TLSEXT_ERR_ALERT_FATAL;
+#else
+  return SSL_TLSEXT_ERR_OK;
+#endif
+}
+
 SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &servername)
 {
   swoc::TextView content{ip_allow_list};
