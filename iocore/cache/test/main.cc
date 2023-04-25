@@ -142,7 +142,7 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
     content_type = "application/octet-stream";
   }
 
-  p = buf;
+  p  = buf;
   p += snprintf(p, sizeof(buf) - (p - buf), "HTTP/1.1 200 OK\n");
   p += snprintf(p, sizeof(buf) - (p - buf), "Content-Type: %s\n", content_type);
   p += snprintf(p, sizeof(buf) - (p - buf), "Expires: Fri, 15 Mar 2219 08:55:45 GMT\n");
@@ -178,8 +178,8 @@ generate_key(HTTPInfo &info)
 void
 CacheWriteTest::fill_data()
 {
-  size_t size   = std::min(WRITE_LIMIT, this->_size);
-  auto n        = this->_write_buffer->write(this->_cursor, size);
+  size_t size    = std::min(WRITE_LIMIT, this->_size);
+  auto n         = this->_write_buffer->write(this->_cursor, size);
   this->_size   -= n;
   this->_cursor += n;
 }

@@ -526,7 +526,7 @@ StateAuthProxyReadHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUSED *
     case TS_PARSE_DONE:
       // We consumed the buffer we got minus the remainder.
       consumed += (nbytes - std::distance(ptr, end));
-      complete = true;
+      complete  = true;
       break;
     case TS_PARSE_CONT:
       consumed += (nbytes - std::distance(ptr, end));

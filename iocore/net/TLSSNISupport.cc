@@ -97,7 +97,7 @@ TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
   {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
-    len = *(p++) << 8;
+    len  = *(p++) << 8;
     len += *(p++);
     if (len + 2 == remaining) {
       remaining = len;
@@ -109,7 +109,7 @@ TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
         remaining--;
         /* Now we can finally pull out the byte array with the actual hostname. */
         if (remaining > 2) {
-          len = *(p++) << 8;
+          len  = *(p++) << 8;
           len += *(p++);
           if (len + 2 <= remaining) {
             servername = reinterpret_cast<const char *>(p);

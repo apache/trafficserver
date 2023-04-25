@@ -60,11 +60,11 @@
       offset = 0;                                               \
       if ((H)->valid()) {                                       \
         do {                                                    \
-          used    = 0;                                          \
-          tmp     = offset;                                     \
-          done    = (H)->print(b, 4095, &used, &tmp);           \
+          used     = 0;                                         \
+          tmp      = offset;                                    \
+          done     = (H)->print(b, 4095, &used, &tmp);          \
           offset  += used;                                      \
-          b[used] = '\0';                                       \
+          b[used]  = '\0';                                      \
           fprintf(stderr, "%s", b);                             \
         } while (!done);                                        \
       }                                                         \

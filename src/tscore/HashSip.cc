@@ -22,18 +22,18 @@ using namespace std;
 #define SIPCOMPRESS(x0, x1, x2, x3) \
   x0 += x1;                         \
   x2 += x3;                         \
-  x1 = ROTL64(x1, 13);              \
-  x3 = ROTL64(x3, 16);              \
+  x1  = ROTL64(x1, 13);             \
+  x3  = ROTL64(x3, 16);             \
   x1 ^= x0;                         \
   x3 ^= x2;                         \
-  x0 = ROTL64(x0, 32);              \
+  x0  = ROTL64(x0, 32);             \
   x2 += x1;                         \
   x0 += x3;                         \
-  x1 = ROTL64(x1, 17);              \
-  x3 = ROTL64(x3, 21);              \
+  x1  = ROTL64(x1, 17);             \
+  x3  = ROTL64(x3, 21);             \
   x1 ^= x2;                         \
   x3 ^= x0;                         \
-  x2 = ROTL64(x2, 32);
+  x2  = ROTL64(x2, 32);
 
 ATSHash64Sip24::ATSHash64Sip24()
 {
@@ -59,7 +59,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
   uint8_t block_off = 0;
 
   if (!finalized) {
-    m         = (unsigned char *)data;
+    m          = (unsigned char *)data;
     total_len += len;
 
     if (len + block_buffer_len < SIP_BLOCK_SIZE) {
@@ -70,7 +70,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
         block_off = SIP_BLOCK_SIZE - block_buffer_len;
         memcpy(block_buffer + block_buffer_len, m, block_off);
 
-        mi = U8TO64_LE(block_buffer);
+        mi  = U8TO64_LE(block_buffer);
         v3 ^= mi;
         SIPCOMPRESS(v0, v1, v2, v3);
         SIPCOMPRESS(v0, v1, v2, v3);
@@ -78,7 +78,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
       }
 
       for (i = block_off, blocks = ((len - block_off) & ~(SIP_BLOCK_SIZE - 1)); i < blocks; i += SIP_BLOCK_SIZE) {
-        mi = U8TO64_LE(m + i);
+        mi  = U8TO64_LE(m + i);
         v3 ^= mi;
         SIPCOMPRESS(v0, v1, v2, v3);
         SIPCOMPRESS(v0, v1, v2, v3);

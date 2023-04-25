@@ -1304,8 +1304,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
     while ((field = fieldlist->next(field))) {
       switch (state) {
       case P_STATE_ELAPSED:
-        state     = P_STATE_IP;
-        elapsed   = *((int64_t *)(read_from));
+        state      = P_STATE_IP;
+        elapsed    = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1327,8 +1327,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         break;
 
       case P_STATE_RESULT:
-        state     = P_STATE_CODE;
-        result    = *((int64_t *)(read_from));
+        state      = P_STATE_CODE;
+        result     = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((result < 32) || (result > 255)) {
           flag  = 1;
@@ -1337,8 +1337,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         break;
 
       case P_STATE_CODE:
-        state     = P_STATE_SIZE;
-        http_code = *((int64_t *)(read_from));
+        state      = P_STATE_SIZE;
+        http_code  = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((http_code < 0) || (http_code > 999)) {
           flag  = 1;
@@ -1349,8 +1349,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
       case P_STATE_SIZE:
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
-        state     = P_STATE_METHOD;
-        size      = *((int64_t *)(read_from));
+        state      = P_STATE_METHOD;
+        size       = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1361,19 +1361,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         // Small optimization for common (3-4 char) cases
         switch (*reinterpret_cast<int *>(read_from)) {
         case GET_AS_INT:
-          method    = METHOD_GET;
+          method     = METHOD_GET;
           read_from += LogAccess::round_strlen(3 + 1);
           break;
         case PUT_AS_INT:
-          method    = METHOD_PUT;
+          method     = METHOD_PUT;
           read_from += LogAccess::round_strlen(3 + 1);
           break;
         case HEAD_AS_INT:
-          method    = METHOD_HEAD;
+          method     = METHOD_HEAD;
           read_from += LogAccess::round_strlen(4 + 1);
           break;
         case POST_AS_INT:
-          method    = METHOD_POST;
+          method     = METHOD_POST;
           read_from += LogAccess::round_strlen(4 + 1);
           break;
         default:
@@ -1414,13 +1414,13 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           if (HTTP_AS_INT == *reinterpret_cast<int *>(tok)) {
             tok += 4;
             if (':' == *tok) {
-              scheme  = SCHEME_HTTP;
+              scheme   = SCHEME_HTTP;
               tok     += 3;
-              tok_len = strlen(tok) + 7;
+              tok_len  = strlen(tok) + 7;
             } else if ('s' == *tok) {
-              scheme  = SCHEME_HTTPS;
+              scheme   = SCHEME_HTTPS;
               tok     += 4;
-              tok_len = strlen(tok) + 8;
+              tok_len  = strlen(tok) + 8;
             } else {
               tok_len = strlen(tok) + 4;
             }
@@ -1740,7 +1740,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           }
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
-        flag      = 0; // We exited this state without errors
+        flag       = 0; // We exited this state without errors
         break;
 
       case P_STATE_END:

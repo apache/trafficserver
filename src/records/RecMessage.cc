@@ -84,21 +84,21 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   // find out how much space we need
   msg_ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
   if (record->name) {
-    rec_name_len = strlen(record->name) + 1;
+    rec_name_len  = strlen(record->name) + 1;
     msg_ele_size += rec_name_len;
   }
   if (record->data_type == RECD_STRING) {
     if (record->data.rec_string) {
-      rec_data_str_len = strlen(record->data.rec_string) + 1;
+      rec_data_str_len  = strlen(record->data.rec_string) + 1;
       msg_ele_size     += rec_data_str_len;
     }
     if (record->data_default.rec_string) {
-      rec_data_def_str_len = strlen(record->data_default.rec_string) + 1;
+      rec_data_def_str_len  = strlen(record->data_default.rec_string) + 1;
       msg_ele_size         += rec_data_def_str_len;
     }
   }
   if (REC_TYPE_IS_CONFIG(record->rec_type) && (record->config_meta.check_expr)) {
-    rec_cfg_chk_len = strlen(record->config_meta.check_expr) + 1;
+    rec_cfg_chk_len  = strlen(record->config_meta.check_expr) + 1;
     msg_ele_size    += rec_cfg_chk_len;
   }
   // XXX: this is NOT 8 byte alignment
@@ -125,24 +125,24 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   ele_hdr->o_next = msg->o_write;
   p               = reinterpret_cast<char *>(ele_hdr) + sizeof(RecMessageEleHdr);
   memcpy(p, record, sizeof(RecRecord));
-  r = reinterpret_cast<RecRecord *>(p);
+  r  = reinterpret_cast<RecRecord *>(p);
   p += sizeof(RecRecord);
   if (rec_name_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_name_len);
     memcpy(p, record->name, rec_name_len);
-    r->name = (char *)((uintptr_t)p - (uintptr_t)r);
+    r->name  = (char *)((uintptr_t)p - (uintptr_t)r);
     p       += rec_name_len;
   }
   if (rec_data_str_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_str_len);
     memcpy(p, record->data.rec_string, rec_data_str_len);
-    r->data.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
+    r->data.rec_string  = (char *)((uintptr_t)p - (uintptr_t)r);
     p                  += rec_data_str_len;
   }
   if (rec_data_def_str_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_def_str_len);
     memcpy(p, record->data_default.rec_string, rec_data_def_str_len);
-    r->data_default.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
+    r->data_default.rec_string  = (char *)((uintptr_t)p - (uintptr_t)r);
     p                          += rec_data_def_str_len;
   }
   if (rec_cfg_chk_len != -1) {
@@ -189,9 +189,9 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
+    itr->ele_hdr  = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
     itr->next    += 1;
-    eh           = itr->ele_hdr;
+    eh            = itr->ele_hdr;
   }
 
   ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);

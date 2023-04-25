@@ -445,7 +445,7 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
     t->set_event_type(ev_type);
     t->schedule_spawn(&thread_initializer);
   }
-  tg->_count = n_threads;
+  tg->_count  = n_threads;
   n_ethreads += n_threads;
   schedule_spawn(&thread_started, ev_type);
 

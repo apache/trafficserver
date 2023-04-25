@@ -298,7 +298,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
       this->_receive_buffer.add_block();
       block = this->_receive_buffer.get_current_block();
     }
-    done       = _receive_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
+    done        = _receive_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
     this->_receive_buffer.fill(bufindex);
     if (!done) {

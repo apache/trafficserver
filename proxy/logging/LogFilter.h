@@ -421,12 +421,12 @@ updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos,
   char *temp_text = buf_dest_to_field;
   memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
   temp_text             += (pattern_str - buf_dest);
-  const char *value_str = strchr(pattern_str, '=');
+  const char *value_str  = strchr(pattern_str, '=');
   if (value_str) {
     value_str++;
     memcpy(temp_text, pattern_str, (value_str - pattern_str));
     temp_text                  += (value_str - pattern_str);
-    const char *next_param_str = strchr(value_str, '&');
+    const char *next_param_str  = strchr(value_str, '&');
     if (next_param_str) {
       for (int i = 0; i < (next_param_str - value_str); i++) {
         temp_text[i] = 'X';

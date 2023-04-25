@@ -249,8 +249,8 @@ public:
         if (tail == data) {
           tail = data->prev;
         }
-        data->prev = nullptr;
-        data->next = nullptr;
+        data->prev  = nullptr;
+        data->next  = nullptr;
         size       -= 1;
       }
     }

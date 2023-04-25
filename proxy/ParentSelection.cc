@@ -420,7 +420,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
 
     str   += token;
     str   += ";";
-    token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
+    token  = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
   }
   strncpy(buf, str.c_str(), len);
   ats_free(_val);

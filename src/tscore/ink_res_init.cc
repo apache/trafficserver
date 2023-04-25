@@ -115,7 +115,7 @@ ink_res_nclose(ink_res_state statp)
 {
   if (statp->_vcsock >= 0) {
     (void)close(statp->_vcsock);
-    statp->_vcsock = -1;
+    statp->_vcsock  = -1;
     statp->_flags  &= ~(INK_RES_F_VC | INK_RES_F_CONN);
   }
 }

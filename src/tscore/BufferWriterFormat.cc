@@ -129,11 +129,11 @@ BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
         if (!isxdigit(d0) || !isxdigit(d1)) {
           throw std::invalid_argument("URI encoding with non-hex characters");
         }
-        _fill = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
+        _fill  = isdigit(d0) ? d0 - '0' : tolower(d0) - 'a' + 10;
         _fill += (isdigit(d1) ? d1 - '0' : tolower(d1) - 'a' + 10) << 4;
         sz    += 4;
       } else if (sz.size() > 1 && Align::NONE != (_align = align_of(sz[1]))) {
-        _fill = *sz;
+        _fill  = *sz;
         sz    += 2;
       } else if (Align::NONE != (_align = align_of(*sz))) {
         ++sz;
@@ -286,7 +286,7 @@ namespace bw_fmt
         }
         // Right fill.
         dst  += size;
-        last = dst + delta / 2; // round down
+        last  = dst + delta / 2; // round down
         if (last > limit) {
           last = limit;
         }
@@ -340,7 +340,7 @@ namespace bw_fmt
     char *out = buff + width;
     if (n) {
       while (n) {
-        *--out = digits[n % RADIX];
+        *--out  = digits[n % RADIX];
         n      /= RADIX;
       }
     } else {

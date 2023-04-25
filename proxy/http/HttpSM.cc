@@ -4727,7 +4727,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     return;
   }
 
-  ranges    = new RangeRecord[n_values];
+  ranges     = new RangeRecord[n_values];
   value     += 6; // skip leading 'bytes='
   value_len -= 6;
 
@@ -6531,7 +6531,7 @@ HttpSM::write_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
     int tmp              = dumpoffset;
 
     ink_assert(block->write_avail() > 0);
-    done       = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
+    done        = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
     ink_assert(bufindex > 0);
     b->fill(bufindex);
@@ -6685,7 +6685,7 @@ HttpSM::setup_server_send_request()
   if (t_state.api_server_request_body_set) {
     SMDebug("http", "appending msg of %" PRId64 " bytes to request %s", msg_len, t_state.internal_msg_buffer);
     hdr_length                += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
-    server_request_body_bytes = msg_len;
+    server_request_body_bytes  = msg_len;
   }
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();

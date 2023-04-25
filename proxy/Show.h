@@ -63,10 +63,10 @@ public:
       Debug("cache_inspector", "needed %d bytes, reallocating to %d bytes", (int)needed, (int)bufsz + (int)needed);
 
       bufsz += ROUNDUP(needed, ats_pagesize());
-      start = (char *)ats_realloc(start, bufsz);
-      ebuf  = start + bufsz;
-      buf   = start + used;
-      avail = ebuf - buf;
+      start  = (char *)ats_realloc(start, bufsz);
+      ebuf   = start + bufsz;
+      buf    = start + used;
+      avail  = ebuf - buf;
 
       needed = vsnprintf(buf, avail, s, aap);
       va_end(aap);

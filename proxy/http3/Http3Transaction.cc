@@ -666,7 +666,7 @@ Http09Transaction::_process_read_vio()
         return 0;
       }
       nread                             += len;
-      this->_client_req_header_complete = true;
+      this->_client_req_header_complete  = true;
 
       // Check "CRLF" or "LF"
       int n = 2;

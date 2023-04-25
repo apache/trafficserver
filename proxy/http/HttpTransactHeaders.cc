@@ -134,7 +134,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 
     if (is_supported) {
       ++num_methods_supported;
-      method_output_lengths[i] = hdrtoken_wks_to_length(method_wks);
+      method_output_lengths[i]  = hdrtoken_wks_to_length(method_wks);
       bytes                    += method_output_lengths[i];
       if (num_methods_supported > 1) {
         bytes += 2; // +2 if need leading ", "
@@ -791,9 +791,9 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   *via_string++ = '[';
   memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
   via_string    += TS_UUID_STRING_LEN;
-  *via_string++ = ']';
-  *via_string++ = ' ';
-  *via_string++ = '(';
+  *via_string++  = ']';
+  *via_string++  = ' ';
+  *via_string++  = '(';
 
   memcpy(via_string, s->http_config_param->proxy_request_via_string, s->http_config_param->proxy_request_via_string_len);
   via_string += s->http_config_param->proxy_request_via_string_len;
@@ -877,8 +877,8 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   *via_string++ = ' ';
 
   via_string    += nstrcpy(via_string, s->http_config_param->proxy_hostname);
-  *via_string++ = ' ';
-  *via_string++ = '(';
+  *via_string++  = ' ';
+  *via_string++  = '(';
 
   memcpy(via_string, s->http_config_param->proxy_response_via_string, s->http_config_param->proxy_response_via_string_len);
   via_string += s->http_config_param->proxy_response_via_string_len;

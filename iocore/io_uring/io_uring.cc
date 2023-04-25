@@ -57,7 +57,7 @@ IOUringContext::IOUringContext()
 
   if (config.sq_poll_ms > 0) {
     p.flags          |= IORING_SETUP_SQPOLL;
-    p.sq_thread_idle = config.sq_poll_ms;
+    p.sq_thread_idle  = config.sq_poll_ms;
   }
 
   int ret = io_uring_queue_init_params(config.queue_entries, &ring, &p);

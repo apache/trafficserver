@@ -212,9 +212,9 @@ main(int argc, char *argv[])
     // Here starts the actual simulation, loop through variations
     for (uint32_t size = options.start_size; size <= options.end_size; size += options.incr_size) {
       for (uint32_t buckets = options.start_buckets; buckets <= options.end_buckets; buckets += options.incr_buckets) {
-        for (uint32_t threshold = options.start_threshold; threshold <= options.end_threshold;
+        for (uint32_t threshold  = options.start_threshold; threshold <= options.end_threshold;
              threshold          += options.incr_threshold) {
-          for (uint32_t permablock = options.start_permablock; permablock <= options.end_permablock;
+          for (uint32_t permablock  = options.start_permablock; permablock <= options.end_permablock;
                permablock          += options.incr_permablock) {
             // Setup the buckets and metrics for this loop
             IpReputation::SieveLru ipt(buckets, size);

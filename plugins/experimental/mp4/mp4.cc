@@ -379,7 +379,7 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
       TSIOBufferCopy(mtc->output.buffer, mtc->res_reader, avail, 0);
       TSIOBufferReaderConsume(mtc->res_reader, avail);
       mtc->total += avail;
-      write_down = true;
+      write_down  = true;
     }
 
   } else {
@@ -387,7 +387,7 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
     if (mtc->total < mtc->meta_length) {
       TSIOBufferCopy(mtc->output.buffer, mtc->mm.out_handle.reader, mtc->meta_length, 0);
       mtc->total += mtc->meta_length;
-      write_down = true;
+      write_down  = true;
     }
 
     // ignore useless part
@@ -414,7 +414,7 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
 
         mtc->pos   += avail;
         mtc->total += avail;
-        write_down = true;
+        write_down  = true;
       }
     }
   }

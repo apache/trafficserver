@@ -99,7 +99,7 @@ SieveLru::initialize(uint32_t num_buckets, uint32_t size)
 
   // Create the other buckets, in smaller and smaller sizes (power of 2)
   for (uint32_t i = lastBucket(); i <= entryBucket(); ++i) {
-    _buckets[i] = new SieveBucket(cur_size);
+    _buckets[i]  = new SieveBucket(cur_size);
     cur_size    *= 2;
   }
 
@@ -152,7 +152,7 @@ SieveLru::increment(KeyClass key)
       auto last_lru = _buckets[entryBucket()];
 
       count  >>= 3; // Age the count by a factor of 1/8th
-      bucket = entryBucket();
+      bucket   = entryBucket();
       last_lru->moveTop(lru, map_item);
     } else {
       ++count;

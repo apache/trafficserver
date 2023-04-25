@@ -794,7 +794,7 @@ protected:
   _read(size_t len) override
   {
     this->_sending_data_len  -= len;
-    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    Ptr<IOBufferBlock> block  = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
     block->fill(len);
     return block;

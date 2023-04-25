@@ -471,9 +471,9 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   const char *tempPath = strstr(url, "/");
   char *host_and_port;
   if (tempPath) {
-    host_and_port = ats_strndup(url, strlen(url) - strlen(tempPath));
+    host_and_port  = ats_strndup(url, strlen(url) - strlen(tempPath));
     tempPath      += 1; // advance one position to get rid of leading '/'
-    httpPath      = ats_strdup(tempPath);
+    httpPath       = ats_strdup(tempPath);
   } else {
     host_and_port = ats_strdup(url);
     httpPath      = ats_strdup("");
@@ -482,9 +482,9 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   // the port proceed by a ":", if it exists
   char *colon = strstr(host_and_port, ":");
   if (colon) {
-    httpHost = ats_strndup(host_and_port, strlen(host_and_port) - strlen(colon));
+    httpHost  = ats_strndup(host_and_port, strlen(host_and_port) - strlen(colon));
     colon    += 1; // advance one position to get rid of leading ':'
-    httpPort = ink_atoi(colon);
+    httpPort  = ink_atoi(colon);
     if (httpPort <= 0) {
       httpPort = HTTP_PORT;
     }

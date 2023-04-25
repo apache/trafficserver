@@ -465,7 +465,7 @@ ConstBuffer::splitOn(char const *p)
   if (this->contains(p)) {
     size_t n = p - _ptr;
     zret.set(_ptr, n);
-    _ptr  = p + 1;
+    _ptr   = p + 1;
     _size -= n + 1;
   }
   return zret;

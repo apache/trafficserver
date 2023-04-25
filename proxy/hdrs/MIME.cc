@@ -611,7 +611,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
             Warning("Encountered WKS hash collision on '%.*s'", field->m_len_name, field->m_ptr_name);
           }
 
-          uint64_t mask = mime_field_presence_mask(field->m_wks_idx);
+          uint64_t mask  = mime_field_presence_mask(field->m_wks_idx);
           masksum       |= mask;
 
           int32_t slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
@@ -1927,7 +1927,7 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
   cell = list->head;
   for (i = 0; i < list->count; i++) {
     new_value_len += cell->len;
-    cell          = cell->next;
+    cell           = cell->next;
   }
   if (list->count > 1) {
     new_value_len += (2 * (list->count - 1));
@@ -1946,7 +1946,7 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
     }
     memcpy(dest, cell->str, cell->len);
     dest += cell->len;
-    cell = cell->next;
+    cell  = cell->next;
   }
   ink_assert(dest - new_value == new_value_len);
 
@@ -2098,7 +2098,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 
   // (4) trim quotes if any
   if ((cell->len >= 2) && (cell->str[0] == '\"') && (cell->str[cell->len - 1] == '\"')) {
-    trimmed   = 1;
+    trimmed    = 1;
     cell->str += 1;
     cell->len -= 2;
   } else {
@@ -2785,7 +2785,7 @@ mime_mem_print_(const char *src_d, int src_l, char *buf_start, int buf_length, i
     } else {
       src_l                    -= *buf_chars_to_skip_inout;
       src_d                    += *buf_chars_to_skip_inout;
-      *buf_chars_to_skip_inout = 0;
+      *buf_chars_to_skip_inout  = 0;
     }
   }
 
@@ -2854,8 +2854,8 @@ mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_ind
       memcpy(buf_start, field->m_ptr_name, field->m_len_name);
       buf_start += field->m_len_name;
 
-      buf_start[0] = ':';
-      buf_start[1] = ' ';
+      buf_start[0]  = ':';
+      buf_start[1]  = ' ';
       buf_start    += 2;
 
       memcpy(buf_start, field->m_ptr_value, field->m_len_value);
@@ -2954,9 +2954,9 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
   d = dp = (year * 365) + (year / 4) - (year / 100) + (year / 100 + 3) / 4 - DAYS_OFFSET - 1;
 
   while (dp < mday) {
-    d    = dp;
+    d     = dp;
     year += 1;
-    dp   = (year * 365) + (year / 4) - (year / 100) + (year / 100 + 3) / 4 - DAYS_OFFSET - 1;
+    dp    = (year * 365) + (year / 4) - (year / 100) + (year / 100 + 3) / 4 - DAYS_OFFSET - 1;
   }
 
   /* convert the days */
@@ -2969,7 +2969,7 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
       year -= 1;
     }
 
-    mday = d - days[month] - 1;
+    mday  = d - days[month] - 1;
     year += 1900;
 
     *m_return = month;
@@ -3030,11 +3030,11 @@ mime_format_date(char *buffer, time_t value)
 
   buf = buffer;
 
-  sec   = static_cast<int>(value % 60);
+  sec    = static_cast<int>(value % 60);
   value /= 60;
-  min   = static_cast<int>(value % 60);
+  min    = static_cast<int>(value % 60);
   value /= 60;
-  hour  = static_cast<int>(value % 24);
+  hour   = static_cast<int>(value % 24);
   value /= 24;
 
   /* Jan 1, 1970 was a Thursday */
@@ -3054,27 +3054,27 @@ mime_format_date(char *buffer, time_t value)
   ink_assert((sec >= 0) && (sec <= 99));
 
   /* the day string */
-  const char *three_char_day = daystrs[wday];
-  buf[0]                     = three_char_day[0];
-  buf[1]                     = three_char_day[1];
-  buf[2]                     = three_char_day[2];
+  const char *three_char_day  = daystrs[wday];
+  buf[0]                      = three_char_day[0];
+  buf[1]                      = three_char_day[1];
+  buf[2]                      = three_char_day[2];
   buf                        += 3;
 
-  buf[0] = ',';
-  buf[1] = ' ';
+  buf[0]  = ',';
+  buf[1]  = ' ';
   buf    += 2;
 
   /* the day of month */
-  buf[0] = digitstrs[mday][0];
-  buf[1] = digitstrs[mday][1];
-  buf[2] = ' ';
+  buf[0]  = digitstrs[mday][0];
+  buf[1]  = digitstrs[mday][1];
+  buf[2]  = ' ';
   buf    += 3;
 
   /* the month string */
-  const char *three_char_month = monthstrs[month];
-  buf[0]                       = three_char_month[0];
-  buf[1]                       = three_char_month[1];
-  buf[2]                       = three_char_month[2];
+  const char *three_char_month  = monthstrs[month];
+  buf[0]                        = three_char_month[0];
+  buf[1]                        = three_char_month[1];
+  buf[2]                        = three_char_month[2];
   buf                          += 3;
 
   /* the year */
@@ -3091,40 +3091,40 @@ mime_format_date(char *buffer, time_t value)
     buf[3] = '9';
     buf[4] = (year - 1990) + '0';
   } else {
-    buf[4] = (year % 10) + '0';
+    buf[4]  = (year % 10) + '0';
     year   /= 10;
-    buf[3] = (year % 10) + '0';
+    buf[3]  = (year % 10) + '0';
     year   /= 10;
-    buf[2] = (year % 10) + '0';
+    buf[2]  = (year % 10) + '0';
     year   /= 10;
-    buf[1] = (year % 10) + '0';
+    buf[1]  = (year % 10) + '0';
   }
-  buf[5] = ' ';
+  buf[5]  = ' ';
   buf    += 6;
 
   /* the hour */
-  buf[0] = digitstrs[hour][0];
-  buf[1] = digitstrs[hour][1];
-  buf[2] = ':';
+  buf[0]  = digitstrs[hour][0];
+  buf[1]  = digitstrs[hour][1];
+  buf[2]  = ':';
   buf    += 3;
 
   /* the minute */
-  buf[0] = digitstrs[min][0];
-  buf[1] = digitstrs[min][1];
-  buf[2] = ':';
+  buf[0]  = digitstrs[min][0];
+  buf[1]  = digitstrs[min][1];
+  buf[2]  = ':';
   buf    += 3;
 
   /* the second */
-  buf[0] = digitstrs[sec][0];
-  buf[1] = digitstrs[sec][1];
-  buf[2] = ' ';
+  buf[0]  = digitstrs[sec][0];
+  buf[1]  = digitstrs[sec][1];
+  buf[2]  = ' ';
   buf    += 3;
 
   /* the timezone string */
-  buf[0] = 'G';
-  buf[1] = 'M';
-  buf[2] = 'T';
-  buf[3] = '\0';
+  buf[0]  = 'G';
+  buf[1]  = 'M';
+  buf[2]  = 'T';
+  buf[3]  = '\0';
   buf    += 3;
 
   return buf - buffer; // not counting NUL
@@ -3162,7 +3162,7 @@ mime_parse_int(const char *buf, const char *end)
     }
 
     if ((buf != end) && (*buf == '-')) {
-      negative = true;
+      negative  = true;
       buf      += 1;
     }
     // NOTE: we first compute the value as negative then correct the
@@ -3239,7 +3239,7 @@ mime_parse_int64(const char *buf, const char *end)
     }
 
     if ((buf != end) && (*buf == '-')) {
-      negative = true;
+      negative  = true;
       buf      += 1;
     }
     // NOTE: we first compute the value as negative then correct the
@@ -3647,7 +3647,7 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
     }
 
     if ((buf != end) && (*buf == '-')) {
-      negative = true;
+      negative  = true;
       buf      += 1;
     }
     // NOTE: we first compute the value as negative then correct the
@@ -3867,10 +3867,10 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
       if (!field->has_dups()) {
         s = field->value_get(&len);
         if (ptr_len_casecmp(s, len, "public", 6) == 0) {
-          mask                                  = MIME_COOKED_MASK_CC_PUBLIC;
+          mask                                   = MIME_COOKED_MASK_CC_PUBLIC;
           m_cooked_stuff.m_cache_control.m_mask |= mask;
         } else if (ptr_len_casecmp(s, len, "private,no-cache", 16) == 0) {
-          mask                                  = MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_NO_CACHE;
+          mask                                   = MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_NO_CACHE;
           m_cooked_stuff.m_cache_control.m_mask |= mask;
         }
       }
@@ -3891,8 +3891,8 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             Debug("http", "recompute_cooked_stuff: got field '%s'", token_wks);
 #endif
 
-            HdrTokenHeapPrefix *p                 = hdrtoken_wks_to_prefix(token_wks);
-            mask                                  = p->wks_type_specific.u.cache_control.cc_mask;
+            HdrTokenHeapPrefix *p                  = hdrtoken_wks_to_prefix(token_wks);
+            mask                                   = p->wks_type_specific.u.cache_control.cc_mask;
             m_cooked_stuff.m_cache_control.m_mask |= mask;
 
 #if TRACK_COOKING

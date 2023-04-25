@@ -195,8 +195,8 @@ runroot_handler(const char **argv, bool json)
   if (!arg.empty() && arg != prefix) {
     // 1. pass in path
     prefix            += "=";
-    std::string value = arg.substr(prefix.size(), arg.size() - 1);
-    path              = get_yaml_path(value);
+    std::string value  = arg.substr(prefix.size(), arg.size() - 1);
+    path               = get_yaml_path(value);
     if (!path.empty()) {
       if (!json) {
         ink_notice("using command line path as RUNROOT");

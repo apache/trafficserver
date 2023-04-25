@@ -551,7 +551,7 @@ HttpProxyPort::print(char *out, size_t n)
 
   if (m_inbound_ip.isValid()) {
     zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_INBOUND_IP_PREFIX, m_inbound_ip.toString(ipb, sizeof(ipb)));
-    need_colon_p = true;
+    need_colon_p  = true;
   }
   if (zret >= n) {
     return n;
@@ -563,7 +563,7 @@ HttpProxyPort::print(char *out, size_t n)
     }
     zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
                              swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip4()).data());
-    need_colon_p = true;
+    need_colon_p  = true;
   }
   if (zret >= n) {
     return n;
@@ -575,7 +575,7 @@ HttpProxyPort::print(char *out, size_t n)
     }
     zret         += snprintf(out + zret, n - zret, "%s=[%s]", OPT_OUTBOUND_IP_PREFIX,
                              swoc::FixedBufferWriter(ipb, sizeof(ipb)).print("{}", m_outbound.ip6()).data());
-    need_colon_p = true;
+    need_colon_p  = true;
   }
   if (zret >= n) {
     return n;
@@ -586,7 +586,7 @@ HttpProxyPort::print(char *out, size_t n)
       out[zret++] = ':';
     }
     zret         += snprintf(out + zret, n - zret, "%d", m_port);
-    need_colon_p = true;
+    need_colon_p  = true;
   }
   if (zret >= n) {
     return n;
@@ -694,7 +694,7 @@ HttpProxyPort::print(char *out, size_t n)
       if (sp_set.contains(k)) {
         auto name{globalSessionProtocolNameRegistry.nameFor(k)};
         zret  += snprintf(out + zret, n - zret, "%s%.*s", sep_p ? ";" : "", static_cast<int>(name.size()), name.data());
-        sep_p = true;
+        sep_p  = true;
       }
     }
   }
@@ -894,7 +894,7 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
       return false;
     }
 
-    auto const protocol_wire_format = globalSessionProtocolNameRegistry.convert_openssl_alpn_wire_format(protocol_index);
+    auto const protocol_wire_format  = globalSessionProtocolNameRegistry.convert_openssl_alpn_wire_format(protocol_index);
     computed_alpn_array_len         += protocol_wire_format.size();
     if (computed_alpn_array_len > orig_wire_format_buffer_len) {
       // We have exceeded the size of the output buffer.

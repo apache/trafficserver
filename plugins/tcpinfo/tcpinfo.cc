@@ -302,7 +302,7 @@ parse_hook_list(const char *hook_list)
     for (const struct hookmask *m = hooks; m->name != nullptr; ++m) {
       if (strcmp(m->name, tok) == 0) {
         mask  |= m->mask;
-        match = true;
+        match  = true;
         break;
       }
     }

@@ -125,7 +125,7 @@ struct ShowCache : public ShowCont {
       p = strstr(unescapedQuery, "url=");
       if (p) {
         p += 4; // 4 ==> strlen("url=")
-        t = strchr(p, '&');
+        t  = strchr(p, '&');
         if (!t) {
           t = (char *)unescapedQuery + strlen(unescapedQuery);
         }
@@ -385,11 +385,11 @@ ShowCache::handleCacheEvent(int event, Event *e)
         CHECK_SHOW(show("<tr><td>Request Header</td><td><PRE>"));
         offset = 0;
         do {
-          used    = 0;
-          tmp     = offset;
-          done    = cached_request->print(b, 4095, &used, &tmp);
+          used     = 0;
+          tmp      = offset;
+          done     = cached_request->print(b, 4095, &used, &tmp);
           offset  += used;
-          b[used] = '\0';
+          b[used]  = '\0';
           CHECK_SHOW(show("%s", b));
         } while (!done);
         CHECK_SHOW(show("</PRE></td><tr>\n"));
@@ -398,11 +398,11 @@ ShowCache::handleCacheEvent(int event, Event *e)
         CHECK_SHOW(show("<tr><td>Response Header</td><td><PRE>"));
         offset = 0;
         do {
-          used    = 0;
-          tmp     = offset;
-          done    = cached_response->print(b, 4095, &used, &tmp);
+          used     = 0;
+          tmp      = offset;
+          done     = cached_response->print(b, 4095, &used, &tmp);
           offset  += used;
-          b[used] = '\0';
+          b[used]  = '\0';
           CHECK_SHOW(show("%s", b));
         } while (!done);
         CHECK_SHOW(show("</PRE></td></tr>\n"));

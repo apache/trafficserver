@@ -246,7 +246,7 @@ InterceptPlugin::doRead()
         consume(string(data, num_body_bytes_in_block), InterceptPlugin::REQUEST_BODY);
       }
       consumed += data_len;
-      block    = TSIOBufferBlockNext(block);
+      block     = TSIOBufferBlockNext(block);
     }
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);

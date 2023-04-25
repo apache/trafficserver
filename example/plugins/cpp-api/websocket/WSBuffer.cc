@@ -144,9 +144,9 @@ WSBuffer::read_buffered_message(std::string &message, int &code)
 
   // Copy the message out.
   if (final) {
-    message = msg_buf_;
+    message  = msg_buf_;
     message += ws_buf_.substr(pos, msg_len);
-    code    = frame;
+    code     = frame;
   } else {
     msg_buf_ += ws_buf_.substr(pos, msg_len);
   }
@@ -223,13 +223,13 @@ WSBuffer::get_frame(size_t len, int code)
   int len_len;
   if (len <= 125) {
     frame   += char(len);
-    len_len = 0;
+    len_len  = 0;
   } else if (len <= UINT16_MAX) {
     frame   += char(WS_16BIT_LEN);
-    len_len = 2;
+    len_len  = 2;
   } else {
     frame   += char(WS_64BIT_LEN);
-    len_len = 8;
+    len_len  = 8;
   }
   // Convert length to big-endian bytes.
   while (--len_len >= 0) {
@@ -244,9 +244,9 @@ WSBuffer::get_closing_code(std::string const &message, std::string *desc)
 {
   uint16_t code = 0;
   if (message.size() >= 2) {
-    code = static_cast<unsigned char>(message[0]);
+    code   = static_cast<unsigned char>(message[0]);
     code <<= 8;
-    code += static_cast<unsigned char>(message[1]);
+    code  += static_cast<unsigned char>(message[1]);
     if (desc) {
       *desc = message.substr(2);
     }

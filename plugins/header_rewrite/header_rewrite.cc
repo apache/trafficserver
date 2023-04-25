@@ -139,7 +139,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
   }
 
   if (fname[0] != '/') {
-    filename = TSConfigDirGet();
+    filename  = TSConfigDirGet();
     filename += "/" + fname;
   } else {
     filename = fname;

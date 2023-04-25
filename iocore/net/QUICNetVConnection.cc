@@ -1442,7 +1442,7 @@ QUICNetVConnection::_state_closing_receive_packet()
 
     if (this->_state_closing_recv_packet_window < STATE_CLOSING_MAX_RECV_PKT_WIND &&
         this->_state_closing_recv_packet_count >= this->_state_closing_recv_packet_window) {
-      this->_state_closing_recv_packet_count  = 0;
+      this->_state_closing_recv_packet_count    = 0;
       this->_state_closing_recv_packet_window <<= 1;
 
       this->_schedule_packet_write_ready(true);
@@ -1694,7 +1694,7 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
                        this->_remote_flow_controller->current_limit());
           ink_assert(ret == 0);
         }
-        last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
+        last_block  = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
         len        += size_added;
 
         // FIXME ACK frame should have priority

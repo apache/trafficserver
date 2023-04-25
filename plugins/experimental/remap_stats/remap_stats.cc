@@ -168,7 +168,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
       hostsv = unknown;
     }
 
-    uint64_t in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
+    uint64_t in_bytes  = TSHttpTxnClientReqHdrBytesGet(txn);
     in_bytes          += TSHttpTxnClientReqBodyBytesGet(txn);
 
     ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
@@ -176,7 +176,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     create_stat_name(stat_name, hostsv, "in_bytes");
     stat_add(stat_name.data(), static_cast<TSMgmtInt>(in_bytes), config->persist_type, config->stat_creation_mutex);
 
-    uint64_t out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
+    uint64_t out_bytes  = TSHttpTxnClientRespHdrBytesGet(txn);
     out_bytes          += TSHttpTxnClientRespBodyBytesGet(txn);
 
     create_stat_name(stat_name, hostsv, "out_bytes");

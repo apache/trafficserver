@@ -613,7 +613,7 @@ try_alloc(Store &target, Span *source, unsigned int start_blocks, bool one_only 
         source->offset += a;
       }
       source->blocks -= a;
-      ds             = d;
+      ds              = d;
       blocks         -= a;
       if (one_only) {
         break;
@@ -686,7 +686,7 @@ Store::try_realloc(Store &s, Store &diff)
                 d->blocks    = sd->offset - d->offset;
                 d->link.next = x;
                 // x will be the last vol
-                x->offset = sd->offset + sd->blocks;
+                x->offset  = sd->offset + sd->blocks;
                 x->blocks -= x->offset - d->offset;
                 goto Lfound;
               }

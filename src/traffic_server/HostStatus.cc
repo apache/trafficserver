@@ -215,8 +215,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
     if (reason & Reason::ACTIVE) {
       Debug("host_statuses", "for host %.*s set status: %s, Reason:ACTIVE", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-        host_stat->active_marked_down = time(0);
-        host_stat->active_down_time   = down_time;
+        host_stat->active_marked_down  = time(0);
+        host_stat->active_down_time    = down_time;
         host_stat->reasons            |= Reason::ACTIVE;
       } else {
         host_stat->active_marked_down = 0;
@@ -229,8 +229,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
     if (reason & Reason::LOCAL) {
       Debug("host_statuses", "for host %.*s set status: %s, Reason:LOCAL", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-        host_stat->local_marked_down = time(0);
-        host_stat->local_down_time   = down_time;
+        host_stat->local_marked_down  = time(0);
+        host_stat->local_down_time    = down_time;
         host_stat->reasons           |= Reason::LOCAL;
       } else {
         host_stat->local_marked_down = 0;
@@ -243,8 +243,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
     if (reason & Reason::MANUAL) {
       Debug("host_statuses", "for host %.*s set status: %s, Reason:MANUAL", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-        host_stat->manual_marked_down = time(0);
-        host_stat->manual_down_time   = down_time;
+        host_stat->manual_marked_down  = time(0);
+        host_stat->manual_down_time    = down_time;
         host_stat->reasons            |= Reason::MANUAL;
       } else {
         host_stat->manual_marked_down = 0;
@@ -258,7 +258,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       Debug("host_statuses", "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(),
             HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-        host_stat->self_detect_marked_down = time(0);
+        host_stat->self_detect_marked_down  = time(0);
         host_stat->reasons                 |= Reason::SELF_DETECT;
       } else {
         host_stat->self_detect_marked_down = 0;

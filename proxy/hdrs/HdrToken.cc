@@ -454,9 +454,9 @@ hdrtoken_init()
 
     int heap_size = 0;
     for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
-      hdrtoken_str_lengths[i]   = static_cast<int>(strlen(_hdrtoken_strs[i]));
-      int sstr_len              = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
-      int packed_prefix_str_len = sizeof(HdrTokenHeapPrefix) + sstr_len;
+      hdrtoken_str_lengths[i]    = static_cast<int>(strlen(_hdrtoken_strs[i]));
+      int sstr_len               = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
+      int packed_prefix_str_len  = sizeof(HdrTokenHeapPrefix) + sstr_len;
       heap_size                 += packed_prefix_str_len;
     }
 
@@ -480,9 +480,9 @@ hdrtoken_init()
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 
-      *reinterpret_cast<HdrTokenHeapPrefix *>(heap_ptr) = prefix;                      // set string prefix
+      *reinterpret_cast<HdrTokenHeapPrefix *>(heap_ptr)  = prefix;                     // set string prefix
       heap_ptr                                          += sizeof(HdrTokenHeapPrefix); // advance heap ptr past index
-      hdrtoken_strs[i]                                  = heap_ptr;                    // record string pointer
+      hdrtoken_strs[i]                                   = heap_ptr;                   // record string pointer
       // coverity[secure_coding]
       ink_strlcpy(const_cast<char *>(hdrtoken_strs[i]), _hdrtoken_strs[i],
                   heap_size - sizeof(HdrTokenHeapPrefix)); // copy string into heap

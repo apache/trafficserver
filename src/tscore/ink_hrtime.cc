@@ -73,7 +73,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
     ++num_chars;
   } else {
     do {
-      *working_buf-- = static_cast<char>(val % 10) + '0';
+      *working_buf--  = static_cast<char>(val % 10) + '0';
       val            /= 10;
       ++num_chars;
     } while (val);

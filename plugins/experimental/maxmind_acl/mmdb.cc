@@ -34,7 +34,7 @@ Acl::init(char const *filename)
 
   if (filename[0] != '/') {
     // relative file
-    configloc = TSConfigDirGet();
+    configloc  = TSConfigDirGet();
     configloc += "/";
     configloc.append(filename);
   } else {
@@ -416,7 +416,7 @@ Acl::loadhtml(const YAML::Node &htmlNode)
 
   htmlname = htmlNode.as<std::string>();
   if (htmlname[0] != '/') {
-    htmlloc = TSConfigDirGet();
+    htmlloc  = TSConfigDirGet();
     htmlloc += "/";
     htmlloc.append(htmlname);
   } else {
@@ -449,7 +449,7 @@ Acl::loaddb(const YAML::Node &dbNode)
   }
   dbname = dbNode.as<std::string>();
   if (dbname[0] != '/') {
-    dbloc = TSConfigDirGet();
+    dbloc  = TSConfigDirGet();
     dbloc += "/";
     dbloc.append(dbname);
   } else {

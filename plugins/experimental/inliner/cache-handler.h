@@ -319,7 +319,7 @@ namespace inliner
 
       const std::string::const_iterator b1 = b.begin(), b2 = b.end(), i = std::find(b1, b2, '/');
 
-      std::string request = "GET ";
+      std::string request  = "GET ";
       request             += std::string(i, b2);
       request             += " HTTP/1.1\r\n";
       request             += "Host: ";

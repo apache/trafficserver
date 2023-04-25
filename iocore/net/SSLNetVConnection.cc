@@ -610,9 +610,9 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
           // Copy over all data already read in during the SSL_accept
           // (the client hello message)
-          NetState *s            = &this->read;
-          MIOBufferAccessor &buf = s->vio.buffer;
-          int64_t r              = buf.writer()->write(this->handShakeHolder);
+          NetState *s             = &this->read;
+          MIOBufferAccessor &buf  = s->vio.buffer;
+          int64_t r               = buf.writer()->write(this->handShakeHolder);
           s->vio.nbytes          += r;
           s->vio.ndone           += r;
 
@@ -843,7 +843,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   } while (num_really_written == try_to_write && total_written < towrite);
 
   if (total_written > 0) {
-    sslLastWriteTime  = now;
+    sslLastWriteTime   = now;
     sslTotalBytesSent += total_written;
   }
   redoWriteSize = 0;
@@ -856,7 +856,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     case SSL_ERROR_WANT_READ:
       needs              |= EVENTIO_READ;
-      num_really_written = -EAGAIN;
+      num_really_written  = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -868,7 +868,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
         redoWriteSize = l;
       }
       needs              |= EVENTIO_WRITE;
-      num_really_written = -EAGAIN;
+      num_really_written  = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;
     }
@@ -2153,7 +2153,7 @@ SSLNetVConnection::_ssl_accept()
         had_error_on_reading_early_data = true;
       } else {
         if (SSL_in_early_data(ssl)) {
-          ret = SSL_read(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K));
+          ret                         = SSL_read(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K));
           finished_reading_early_data = !SSL_in_early_data(ssl);
           if (ret < 0) {
             nread = 0;
@@ -2174,8 +2174,8 @@ SSLNetVConnection::_ssl_accept()
             }
           }
         } else {
-          nread = 0;
-          ret = 2; // SSL_READ_EARLY_DATA_FINISH
+          nread                       = 0;
+          ret                         = 2; // SSL_READ_EARLY_DATA_FINISH
           finished_reading_early_data = true;
         }
       }
@@ -2399,12 +2399,12 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
       // If SSL_read_early_data is unavailable, it's probably OpenSSL,
       // and SSL_in_early_data should be available.
       if (SSL_in_early_data(ssl)) {
-        ret = SSL_read(ssl, buf, nbytes);
+        ret                         = SSL_read(ssl, buf, nbytes);
         finished_reading_early_data = !SSL_in_early_data(ssl);
         if (ret < 0) {
           if (!finished_reading_early_data) {
             had_error_on_reading_early_data = true;
-            ssl_error = SSL_get_error(ssl, ret);
+            ssl_error                       = SSL_get_error(ssl, ret);
           }
           read_bytes = 0;
         } else {
@@ -2412,7 +2412,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
         }
       } else {
         finished_reading_early_data = true;
-        read_bytes = 0;
+        read_bytes                  = 0;
       }
 #endif
 

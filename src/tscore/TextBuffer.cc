@@ -107,7 +107,7 @@ TextBuffer::copyFrom(const void *source, unsigned num_bytes)
   spaceLeft -= num_bytes;
 
   nextAdd    += num_bytes;
-  nextAdd[0] = '\0';
+  nextAdd[0]  = '\0';
 
   return num_bytes;
 }
@@ -137,10 +137,10 @@ TextBuffer::enlargeBuffer(unsigned N)
 
     newSpace = static_cast<char *>(ats_realloc(bufferStart, newSize));
     if (newSpace != nullptr) {
-      nextAdd     = newSpace + static_cast<unsigned>(nextAdd - bufferStart);
-      bufferStart = newSpace;
+      nextAdd      = newSpace + static_cast<unsigned>(nextAdd - bufferStart);
+      bufferStart  = newSpace;
       spaceLeft   += addedSize;
-      currentSize = newSize;
+      currentSize  = newSize;
     } else {
       // Out of Memory, Sigh
       return -1;
@@ -179,7 +179,7 @@ TextBuffer::rawReadFromFile(int fd)
     // Error on read
     return readSize;
   } else {
-    nextAdd   = nextAdd + readSize;
+    nextAdd    = nextAdd + readSize;
     spaceLeft -= readSize;
     return readSize;
   }
@@ -223,8 +223,8 @@ TextBuffer::readFromFD(int fd)
     // Error on read
     return readSize;
   } else {
-    nextAdd    = nextAdd + readSize;
-    nextAdd[0] = '\0';
+    nextAdd     = nextAdd + readSize;
+    nextAdd[0]  = '\0';
     spaceLeft  -= readSize + 1;
     return readSize;
   }
@@ -251,7 +251,7 @@ TextBuffer::vformat(const char *fmt, va_list ap)
       // overwrite the previous NUL.
       this->spaceLeft -= num;
       this->nextAdd   += num;
-      done            = true;
+      done             = true;
     } else {
       if (enlargeBuffer(num + 1) == -1) {
         return;

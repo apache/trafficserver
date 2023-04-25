@@ -108,14 +108,14 @@ QUICPacket::store(uint8_t *buf, size_t *len) const
   while (block) {
     memcpy(buf + written, block->start(), block->size());
     written += block->size();
-    block   = block->next;
+    block    = block->next;
   }
 
   block = this->payload_block();
   while (block) {
     memcpy(buf + written, block->start(), block->size());
     written += block->size();
-    block   = block->next;
+    block    = block->next;
   }
 
   *len = written;
@@ -369,7 +369,7 @@ QUICLongHeaderPacket::_write_common_header(uint8_t *buf) const
   size_t n;
   size_t len = 0;
 
-  buf[0] = 0xC0;
+  buf[0]  = 0xC0;
   buf[0] += static_cast<uint8_t>(this->type()) << 4;
   len    += 1;
 
@@ -379,28 +379,28 @@ QUICLongHeaderPacket::_write_common_header(uint8_t *buf) const
   // DICD
   if (this->_dcid != QUICConnectionId::ZERO()) {
     // Len
-    buf[len] = this->_dcid.length();
+    buf[len]  = this->_dcid.length();
     len      += 1;
 
     // ID
     QUICTypeUtil::write_QUICConnectionId(this->_dcid, buf + len, &n);
     len += n;
   } else {
-    buf[len] = 0;
+    buf[len]  = 0;
     len      += 1;
   }
 
   // SCID
   if (this->_scid != QUICConnectionId::ZERO()) {
     // Len
-    buf[len] = this->_scid.length();
+    buf[len]  = this->_scid.length();
     len      += 1;
 
     // ID
     QUICTypeUtil::write_QUICConnectionId(this->_scid, buf + len, &n);
     len += n;
   } else {
-    buf[len] = 0;
+    buf[len]  = 0;
     len      += 1;
   }
 
@@ -665,7 +665,7 @@ QUICShortHeaderPacket::attach_payload(Ptr<IOBufferBlock> payload, bool unprotect
   Ptr<IOBufferBlock> tmp = payload;
   while (tmp) {
     this->_payload_length += tmp->size();
-    tmp                   = tmp->next;
+    tmp                    = tmp->next;
   }
   if (unprotected) {
     this->_payload_length += aead_tag_len;
@@ -812,7 +812,7 @@ QUICStatelessResetPacket::header_block() const
   for (int i = 0; i < MIN_UNPREDICTABLE_FIELD_LEN; ++i) {
     buf[i] = static_cast<uint8_t>(rnd() & 0xFF);
   }
-  buf[0]      = (buf[0] | 0x40) & 0x7f;
+  buf[0]       = (buf[0] | 0x40) & 0x7f;
   written_len += MIN_UNPREDICTABLE_FIELD_LEN;
 
   block->fill(written_len);
@@ -1019,10 +1019,10 @@ QUICVersionNegotiationPacketR::QUICVersionNegotiationPacketR(UDPConnection *udp_
   QUICInvariants::dcil(dcil, raw_buf, len);
   QUICInvariants::scil(scil, raw_buf, len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_dcid   = {raw_buf + offset, dcil};
+  size_t offset  = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_dcid    = {raw_buf + offset, dcil};
   offset        += dcil + 1;
-  this->_scid   = {raw_buf + offset, scil};
+  this->_scid    = {raw_buf + offset, scil};
   offset        += scil;
 
   this->_versions  = raw_buf + offset;
@@ -1175,7 +1175,7 @@ QUICInitialPacket::attach_payload(Ptr<IOBufferBlock> payload, bool unprotected)
   Ptr<IOBufferBlock> tmp = payload;
   while (tmp) {
     this->_payload_length += tmp->size();
-    tmp                   = tmp->next;
+    tmp                    = tmp->next;
   }
   if (unprotected) {
     this->_payload_length += aead_tag_len;
@@ -1211,19 +1211,19 @@ QUICInitialPacketR::QUICInitialPacketR(UDPConnection *udp_con, IpEndpoint from, 
   QUICInvariants::dcil(dcil, raw_buf, len);
   QUICInvariants::scil(scil, raw_buf, len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_dcid   = {raw_buf + offset, dcil};
+  size_t offset  = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_dcid    = {raw_buf + offset, dcil};
   offset        += dcil + 1;
-  this->_scid   = {raw_buf + offset, scil};
+  this->_scid    = {raw_buf + offset, scil};
   offset        += scil;
 
   // Token Length Field
-  uint64_t token_len = QUICIntUtil::read_QUICVariableInt(raw_buf + offset, len - offset);
+  uint64_t token_len  = QUICIntUtil::read_QUICVariableInt(raw_buf + offset, len - offset);
   offset             += QUICVariableInt::size(raw_buf + offset);
 
   // Token Field
   if (token_len) {
-    this->_token = new QUICAddressValidationToken(raw_buf + offset, token_len);
+    this->_token  = new QUICAddressValidationToken(raw_buf + offset, token_len);
     offset       += token_len;
   } else {
     this->_token = new QUICAddressValidationToken(nullptr, 0);
@@ -1401,7 +1401,7 @@ QUICZeroRttPacket::attach_payload(Ptr<IOBufferBlock> payload, bool unprotected)
   Ptr<IOBufferBlock> tmp = payload;
   while (tmp) {
     this->_payload_length += tmp->size();
-    tmp                   = tmp->next;
+    tmp                    = tmp->next;
   }
   if (unprotected) {
     this->_payload_length += aead_tag_len;
@@ -1437,10 +1437,10 @@ QUICZeroRttPacketR::QUICZeroRttPacketR(UDPConnection *udp_con, IpEndpoint from, 
   QUICInvariants::dcil(dcil, raw_buf, len);
   QUICInvariants::scil(scil, raw_buf, len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_dcid   = {raw_buf + offset, dcil};
+  size_t offset  = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_dcid    = {raw_buf + offset, dcil};
   offset        += dcil + 1;
-  this->_scid   = {raw_buf + offset, scil};
+  this->_scid    = {raw_buf + offset, scil};
   offset        += scil;
 
   // Length Field
@@ -1581,7 +1581,7 @@ QUICHandshakePacket::attach_payload(Ptr<IOBufferBlock> payload, bool unprotected
   Ptr<IOBufferBlock> tmp = payload;
   while (tmp) {
     this->_payload_length += tmp->size();
-    tmp                   = tmp->next;
+    tmp                    = tmp->next;
   }
   if (unprotected) {
     this->_payload_length += aead_tag_len;
@@ -1617,10 +1617,10 @@ QUICHandshakePacketR::QUICHandshakePacketR(UDPConnection *udp_con, IpEndpoint fr
   QUICInvariants::dcil(dcil, raw_buf, len);
   QUICInvariants::scil(scil, raw_buf, len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_dcid   = {raw_buf + offset, dcil};
+  size_t offset  = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_dcid    = {raw_buf + offset, dcil};
   offset        += dcil + 1;
-  this->_scid   = {raw_buf + offset, scil};
+  this->_scid    = {raw_buf + offset, scil};
   offset        += scil;
 
   // Length Field
@@ -1786,14 +1786,14 @@ QUICRetryPacketR::QUICRetryPacketR(UDPConnection *udp_con, IpEndpoint from, IpEn
   QUICInvariants::dcil(dcil, raw_buf, len);
   QUICInvariants::scil(scil, raw_buf, len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_dcid   = {raw_buf + offset, dcil};
+  size_t offset  = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_dcid    = {raw_buf + offset, dcil};
   offset        += dcil + 1;
-  this->_scid   = {raw_buf + offset, scil};
+  this->_scid    = {raw_buf + offset, scil};
   offset        += scil;
 
   // Retry Token field
-  this->_token = new QUICRetryToken(raw_buf + offset, len - offset - QUICRetryIntegrityTag::LEN);
+  this->_token  = new QUICRetryToken(raw_buf + offset, len - offset - QUICRetryIntegrityTag::LEN);
   offset       += this->_token->length();
 
   // Retry Integrity Tag

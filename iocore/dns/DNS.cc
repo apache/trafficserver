@@ -1136,7 +1136,7 @@ DNSHandler::get_query_id()
       }
     }
     i  <<= 6;
-    q2 &= 0x3F;
+    q2  &= 0x3F;
     while (query_id_in_use(i + q2)) {
       ++q2;
       q2 &= 0x3F;
@@ -1661,7 +1661,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       } else {
         n = rname_len + 1;
       }
-      buf->ent.h_name = reinterpret_cast<char *>(bp);
+      buf->ent.h_name  = reinterpret_cast<char *>(bp);
       bp              += n;
       buflen          -= n;
     }
@@ -1700,7 +1700,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     unsigned char *here = reinterpret_cast<unsigned char *>(buf->buf) + HFIXEDSZ;
     if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
-        int strlen = dn_skipname(here, eom);
+        int strlen  = dn_skipname(here, eom);
         here       += strlen + QFIXEDSZ;
       }
     }
@@ -1738,11 +1738,11 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           break;
         }
         cp     += n;
-        *ap++  = bp;
-        n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+        *ap++   = bp;
+        n       = strlen(reinterpret_cast<char *>(bp)) + 1;
         bp     += n;
         buflen -= n;
-        n      = strlen(reinterpret_cast<char *>(tbuf)) + 1;
+        n       = strlen(reinterpret_cast<char *>(tbuf)) + 1;
         if (n > buflen) {
           ++error;
           break;
@@ -1779,13 +1779,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         if (!answer) {
           buf->ent.h_name = reinterpret_cast<char *>(bp);
           Debug("dns", "received PTR name = %s", bp);
-          n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+          n       = strlen(reinterpret_cast<char *>(bp)) + 1;
           bp     += n;
           buflen -= n;
         } else if (ap < &buf->host_aliases[DNS_MAX_ALIASES - 1]) {
           *ap++ = bp;
           Debug("dns", "received PTR alias = %s", bp);
-          n      = strlen(reinterpret_cast<char *>(bp)) + 1;
+          n       = strlen(reinterpret_cast<char *>(bp)) + 1;
           bp     += n;
           buflen -= n;
         }
@@ -1793,13 +1793,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         if (buf->srv_hosts.hosts.size() >= hostdb_round_robin_max_count) {
           break;
         }
-        cp                           = here; /* hack */
-        int strlen                   = dn_skipname(cp, eom);
+        cp                            = here; /* hack */
+        int strlen                    = dn_skipname(cp, eom);
         cp                           += strlen;
-        const unsigned char *srv_off = cp;
+        const unsigned char *srv_off  = cp;
         cp                           += SRV_FIXEDSZ;
         cp                           += dn_skipname(cp, eom);
-        here                         = cp; /* hack */
+        here                          = cp; /* hack */
 
         SRV srv;
 
@@ -1842,7 +1842,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         }
         // attempt to use the original buffer (if it is word aligned)
         if (!(((uintptr_t)cp) % sizeof(unsigned int))) {
-          *hap++ = cp;
+          *hap++  = cp;
           cp     += n;
         } else {
           ip_text_buffer ip_string;

@@ -351,8 +351,8 @@ MetricCommand::metric_monitor()
       const float val = std::stof(rec.currentValue);
 
       s.sum += val;
-      s.max = std::max<float>(s.max, val);
-      s.min = std::min<float>(s.min, val);
+      s.max  = std::max<float>(s.max, val);
+      s.min  = std::min<float>(s.min, val);
       std::string symbol;
       if (query_count > 0) {
         if (val > s.last) {

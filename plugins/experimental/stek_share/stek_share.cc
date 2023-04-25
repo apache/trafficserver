@@ -297,16 +297,16 @@ load_config_from_file()
       return -1;
     }
 
-    std::string cluster_list_str = "";
+    std::string cluster_list_str  = "";
     cluster_list_str             += "\nSTEK Share Cluster Server List:";
     for (auto it = server_list.begin(); it != server_list.end(); ++it) {
       YAML::Node server_info = it->as<YAML::Node>();
       if (server_info["server_id"] && server_info["address"] && server_info["port"]) {
-        int server_id                      = server_info["server_id"].as<int>();
-        std::string address                = server_info["address"].as<std::string>();
-        int port                           = server_info["port"].as<int>();
-        std::string endpoint               = address + ":" + std::to_string(port);
-        new_config->server_list[server_id] = endpoint;
+        int server_id                       = server_info["server_id"].as<int>();
+        std::string address                 = server_info["address"].as<std::string>();
+        int port                            = server_info["port"].as<int>();
+        std::string endpoint                = address + ":" + std::to_string(port);
+        new_config->server_list[server_id]  = endpoint;
         cluster_list_str                   += "\n  " + std::to_string(server_id) + ", " + endpoint;
       } else {
         TSDebug(PLUGIN_NAME, "Wrong server list format.");
@@ -404,8 +404,8 @@ print_status()
   // For debugging
   std::shared_lock smgr_lock(stek_share_server.smgr_mutex);
   std::shared_lock raft_lock(stek_share_server.raft_mutex);
-  nuraft::ptr<nuraft::log_store> ls = stek_share_server.smgr_instance->load_log_store();
-  std::string status_str            = "";
+  nuraft::ptr<nuraft::log_store> ls  = stek_share_server.smgr_instance->load_log_store();
+  std::string status_str             = "";
   status_str                        += "\n  Server ID: " + std::to_string(config->server_id);
   status_str                        += "\n  Leader ID: " + std::to_string(stek_share_server.raft_instance->get_leader());
   status_str += "\n  Raft log range: " + std::to_string(ls->start_index()) + " - " + std::to_string((ls->next_slot() - 1));

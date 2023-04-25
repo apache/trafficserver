@@ -481,7 +481,7 @@ void
 BaseMetaInfo::_read_from_file()
 {
   _flags |= DATA_FROM_METAFILE; // mark attempt
-  int fd = elevating_open(_filename, O_RDONLY);
+  int fd  = elevating_open(_filename, O_RDONLY);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for reading: %s\n", _filename, strerror(errno));
   } else {
@@ -495,13 +495,13 @@ BaseMetaInfo::_read_from_file()
         if (strcmp(t, "creation_time") == 0) {
           t = tok.getNext();
           if (t) {
-            _creation_time = static_cast<time_t>(ink_atoi64(t));
+            _creation_time  = static_cast<time_t>(ink_atoi64(t));
             _flags         |= VALID_CREATION_TIME;
           }
         } else if (strcmp(t, "object_signature") == 0) {
           t = tok.getNext();
           if (t) {
-            _log_object_signature = ink_atoi64(t);
+            _log_object_signature  = ink_atoi64(t);
             _flags                |= VALID_SIGNATURE;
             log_log_trace("BaseMetaInfo::_read_from_file\n"
                           "\tfilename = %s\n"

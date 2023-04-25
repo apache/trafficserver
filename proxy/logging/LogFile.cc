@@ -540,7 +540,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
       memcpy(&fmt_buf[fmt_buf_bytes], fmt_line, fmt_line_bytes);
       fmt_buf_bytes += fmt_line_bytes;
       ink_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
-      fmt_buf[fmt_buf_bytes] = '\n'; // keep entries separate
+      fmt_buf[fmt_buf_bytes]  = '\n'; // keep entries separate
       fmt_buf_bytes          += 1;
     }
   }
@@ -611,7 +611,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
       if (bytes > 0) {
         fmt_buf_bytes               += bytes;
-        ascii_buffer[fmt_buf_bytes] = '\n';
+        ascii_buffer[fmt_buf_bytes]  = '\n';
         ++fmt_buf_bytes;
         ++fmt_entry_count;
       } else {

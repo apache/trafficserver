@@ -495,7 +495,7 @@ public:
   parseResponse(const string &response)
   {
     // move past global
-    size_t pos = response.find(constant::global);
+    size_t pos  = response.find(constant::global);
     pos        += sizeof(constant::global) - 1;
 
     // find parts of the line

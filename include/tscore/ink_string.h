@@ -140,8 +140,8 @@ ptr_len_str(const char *p1, int l1, const char *str)
         }
       } else if (str_index > 0) {
         l1        += (p1 - match_start);
-        p1        = match_start;
-        str_index = 0;
+        p1         = match_start;
+        str_index  = 0;
       }
 
       p1++;
@@ -309,36 +309,36 @@ ink_small_itoa(int val, char *buf, int buf_len)
     buf[0] = '0' + val;
     return 1;
   } else if (val < 100) { // 10 - 99
-    buf[1] = '0' + (val % 10);
+    buf[1]  = '0' + (val % 10);
     val    /= 10;
-    buf[0] = '0' + (val % 10);
+    buf[0]  = '0' + (val % 10);
     return 2;
   } else if (val < 1000) { // 100 - 999
-    buf[2] = '0' + (val % 10);
+    buf[2]  = '0' + (val % 10);
     val    /= 10;
-    buf[1] = '0' + (val % 10);
+    buf[1]  = '0' + (val % 10);
     val    /= 10;
-    buf[0] = '0' + (val % 10);
+    buf[0]  = '0' + (val % 10);
     return 3;
   } else if (val < 10000) { // 1000 - 9999
-    buf[3] = '0' + (val % 10);
+    buf[3]  = '0' + (val % 10);
     val    /= 10;
-    buf[2] = '0' + (val % 10);
+    buf[2]  = '0' + (val % 10);
     val    /= 10;
-    buf[1] = '0' + (val % 10);
+    buf[1]  = '0' + (val % 10);
     val    /= 10;
-    buf[0] = '0' + (val % 10);
+    buf[0]  = '0' + (val % 10);
     return 4;
   } else { // 10000 - 99999
-    buf[4] = '0' + (val % 10);
+    buf[4]  = '0' + (val % 10);
     val    /= 10;
-    buf[3] = '0' + (val % 10);
+    buf[3]  = '0' + (val % 10);
     val    /= 10;
-    buf[2] = '0' + (val % 10);
+    buf[2]  = '0' + (val % 10);
     val    /= 10;
-    buf[1] = '0' + (val % 10);
+    buf[1]  = '0' + (val % 10);
     val    /= 10;
-    buf[0] = '0' + (val % 10);
+    buf[0]  = '0' + (val % 10);
     return 5;
   }
 }

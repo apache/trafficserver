@@ -123,7 +123,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
     while (block != nullptr && size_ == 0) {
       const char *p = TSIOBufferBlockReadStart(block, r, &size);
       assert(p != nullptr);
-      const int i = parseSize(p, size);
+      const int i  = parseSize(p, size);
       size        -= i;
       TSIOBufferReaderConsume(r, i);
       if (state_ == State::kEnd) {
@@ -145,8 +145,8 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
     if (p != nullptr) {
       if (size >= size_) {
         length += size_;
-        size_  = 0;
-        state_ = State::kSizeR;
+        size_   = 0;
+        state_  = State::kSizeR;
         break;
       } else {
         length += size;

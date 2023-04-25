@@ -126,7 +126,7 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
   if (value < (static_cast<uint64_t>(1 << n) - 1)) {
     *(p++) = value;
   } else {
-    *(p++) = (1 << n) - 1;
+    *(p++)  = (1 << n) - 1;
     value  -= (1 << n) - 1;
     while (value >= 128) {
       if (p >= buf_end) {
