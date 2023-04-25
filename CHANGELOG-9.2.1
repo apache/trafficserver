@@ -28,7 +28,6 @@ Changes with Apache Traffic Server 9.2.1
   #9480 - Slight performance improvements before calling APIHooks::clear
   #9491 - Adds a new percentage option, cleans up pressure calculations
   #9494 - Properly support multiple instantiation in plugins.config
-  #9500 - HttpSM: fix no_dns_forward_to_parent for cache stale
   #9508 - 9.2.x: http2_flow_control.test.py: Correctly enable debug logs
   #9525 - Fix compile warning on BoringSSL build
   #9534 - (backport) Fixes silent header duplication and early loop termination that occurs upon successful revalidation when duplicate headers are present
@@ -37,3 +36,5 @@ Changes with Apache Traffic Server 9.2.1
   #9554 - Make magick plugin buildable with BoringSSL
   #9579 - Enable loading invalid SSL configuration on first load.
   #9626 - Doc: document IP allow filter for remap.
+  #9639 - HttpSM: fix no_dns_forward_to_parent for cache stale (92x)
+  #9640 - 9.2.x: Fix clang 16 92x warnings
