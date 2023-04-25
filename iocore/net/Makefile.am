@@ -121,6 +121,11 @@ test_libinknet_LDADD = \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
+if ENABLE_QUIC
+test_libinknet_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 libinknet_a_SOURCES = \
 	ALPNSupport.cc \
 	BIO_fastopen.cc \
