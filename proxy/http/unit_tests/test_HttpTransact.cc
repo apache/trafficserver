@@ -534,3 +534,16 @@ TEST_CASE("HttpTransact", "[http]")
     }
   }
 }
+
+// There is an apparent bug in the linker on Debian, when a library refers to a symbol defined in a library later in
+// the link order.  (This function is never called.)
+//
+void
+dummy_call_CacheProcessor_remove()
+{
+  // The compilers on some OSes emit a warning about using a null 'this' pointer, so an arbitrary address is used here for
+  // 'this'.
+  //
+  static_cast<void>(reinterpret_cast<CacheProcessor *>(0xDEADDEAD)
+                      ->remove(static_cast<Continuation *>(nullptr), static_cast<const HttpCacheKey *>(nullptr)));
+}
