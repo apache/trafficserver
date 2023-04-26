@@ -38,6 +38,20 @@ plugin allows the following:
    blocks that can be spread across multiple storage
    devices and within cache groups.
 
+How It Works
+============
+
+The `slice` plugin takes GET requests and breaks them into
+successive aligned range requested blocks.  It issues these
+range requests back into the ATS instance and relies on the
+`cache_range_requests` plugin to interact with the caching layer.
+
+This design was chosen because the `cache_range_requests`
+plugin was already proven to work well with the ATS caching layer.
+The `slice` plugin has the already difficult task of managing
+multiple block requests and all of the associated flow control
+between the cache_range_requests plugin and the downstream clients.
+
 Configuration
 =============
 
