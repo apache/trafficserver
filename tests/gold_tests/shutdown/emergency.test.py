@@ -40,12 +40,23 @@ ts.Disk.records_config.update({
 # Load plugin
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'emergency_shutdown.so'), ts)
 
-# www.example.com Host
 tr = Test.AddTestRun()
+
+# We have to wait upon TS to emit the expected log message, but it cannot be
+# the ts Ready criteria because autest might detect the process going away
+# before it detects the log message. So we add a separate process that waits
+# upon the log message.
+watcher = Test.Processes.Process("watcher")
+watcher.Command = "sleep 1"
+watcher.Ready = When.FileContains(ts.Disk.diags_log.Name, "testing emergency shutdown")
+watcher.StartBefore(ts)
+
 tr.Processes.Default.Command = 'printf "Emergency Shutdown Test"'
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts)
+tr.Processes.Default.StartBefore(watcher)
+
+tr.Timeout = 5
 ts.ReturnCode = 33
-ts.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
+ts.Ready = 0
 ts.Disk.traffic_out.Content = Testers.ExcludesExpression('failed to shutdown', 'should NOT contain "failed to shutdown"')
 ts.Disk.diags_log.Content = Testers.IncludesExpression('testing emergency shutdown', 'should contain "testing emergency shutdown"')
