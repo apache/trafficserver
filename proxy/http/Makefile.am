@@ -128,40 +128,37 @@ test_HttpTransact_CPPFLAGS = \
 	-I$(abs_top_srcdir)/tests/include
 
 if OS_LINUX
-test_HttpTransact_LDFLAGS = $(AM_LDFLAGS)\
-	-Wl,--unresolved-symbols=ignore-all
+test_HttpTransact_LDFLAGS = $(AM_LDFLAGS)
 else
 test_HttpTransact_LDFLAGS = $(AM_LDFLAGS)\
 	-Wl,-undefined -Wl,suppress -Wl,-flat_namespace -Wl,-dead_strip
 endif
 
 test_HttpTransact_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/http/libhttp.a \
+	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
+	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/lib/records/librecords_p.a \
-	$(top_builddir)/lib/records/RecRawStats.o \
 	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/proxy/libproxy.a \
-	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
+	$(top_builddir)/iocore/dns/libinkdns.a \
 	$(top_builddir)/iocore/cache/libinkcache.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
-	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
-	$(top_builddir)/proxy/http/libhttp.a \
-	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
-	$(top_builddir)/iocore/hostdb/HostDB.o \
-	$(top_builddir)/proxy/ProxySession.o \
-	$(top_builddir)/proxy/http/HttpConfig.o \
-	$(top_builddir)/proxy/http/HttpTransact.o \
-	$(top_builddir)/proxy/http/HttpTransactHeaders.o \
-	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	@HWLOC_LIBS@ \
+	@LIBPCRE@ \
+	@LIBRESOLV@ \
 	@LIBZ@ \
 	@LIBLZMA@ \
 	@OPENSSL_LIBS@ \
-	@BORINGOCSP_LIBS@
+	-lm
 
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
