@@ -121,3 +121,5 @@ extern std::unordered_map<std::string, intptr_t> cipher_map;
 
 // Initialize SSL statistics.
 void SSLInitializeStatistics();
+
+const std::string SSL_CIPHER_STAT_OTHER = "OTHER";

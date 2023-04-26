@@ -67,6 +67,27 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
+static void
+add_cipher_stat(const char *cipherName, const std::string &statName, int index)
+{
+  // If room in allocated space ...
+  if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
+    // Too many ciphers, increase ssl_cipher_stats_end.
+    SSLError("too many ciphers to register metric '%s', increase SSL_Stats::ssl_cipher_stats_end", statName.c_str());
+    return;
+  }
+
+  // If not already registered ...
+  if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
+    cipher_map.emplace(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
+    // Register as non-persistent since the order/index is dependent upon configuration.
+    RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)ssl_cipher_stats_start + index,
+                       RecRawStatSyncSum);
+    SSL_CLEAR_DYN_STAT((int)ssl_cipher_stats_start + index);
+    Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
+  }
+}
+
 void
 SSLInitializeStatistics()
 {
@@ -238,28 +259,16 @@ SSLInitializeStatistics()
   ciphers = SSL_get_ciphers(ssl);
 
   // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
-  for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
+  int index;
+  for (index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
     SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
     std::string statName   = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
-
-    // If room in allocated space ...
-    if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
-      // Too many ciphers, increase ssl_cipher_stats_end.
-      SSLError("too many ciphers to register metric '%s', increase SSL_Stats::ssl_cipher_stats_end", statName.c_str());
-      continue;
-    }
-
-    // If not already registered ...
-    if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
-      cipher_map.emplace(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
-      // Register as non-persistent since the order/index is dependent upon configuration.
-      RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                         (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);
-      SSL_CLEAR_DYN_STAT((int)ssl_cipher_stats_start + index);
-      Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
-    }
+    add_cipher_stat(cipherName, statName, index);
   }
+
+  // Add "OTHER" for ciphers not on the map
+  add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER, index);
 
   SSL_free(ssl);
   SSLReleaseContext(ctx);
