@@ -193,3 +193,40 @@ add_subdirectory(src/traffic_server)
 add_subdirectory(src/tests)
 add_subdirectory(plugins)
 add_subdirectory(configs)
+
+add_custom_target(clang-format-install
+        COMMAND ${CMAKE_SOURCE_DIR}/tools/clang-format.sh --install
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        BYPRODUCTS ${CMAKE_SOURCE_DIR}/.git/fmt/.clang-format-installed
+        COMMENT "Installing clang-format"
+        VERBATIM
+        )
+
+function(add_clang_format_target target)
+    add_custom_target(clang-format-${target}
+            ${CMAKE_SOURCE_DIR}/tools/clang-format.sh ${CMAKE_SOURCE_DIR}/${target}
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMENT "Checking clang-format for ${target}"
+            VERBATIM
+            )
+    add_dependencies(clang-format-${target} clang-format-install)
+    list(APPEND CLANG_FORMAT_TARGETS clang-format-${target})
+    set(CLANG_FORMAT_TARGETS ${CLANG_FORMAT_TARGETS} PARENT_SCOPE)
+endfunction(add_clang_format_target)
+
+add_clang_format_target(src)
+add_clang_format_target(example)
+add_clang_format_target(iocore)
+add_clang_format_target(include)
+add_clang_format_target(mgmt)
+add_clang_format_target(plugins)
+add_clang_format_target(proxy)
+add_clang_format_target(tools)
+add_clang_format_target(tests)
+
+add_custom_target(clang-format
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "formatting all files"
+        DEPENDS ${CLANG_FORMAT_TARGETS}
+        VERBATIM
+        )
