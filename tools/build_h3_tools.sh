@@ -72,13 +72,59 @@ else
   num_threads=$(sysctl -n hw.logicalcpu)
 fi
 
+# boringssl
+echo "Building boringssl..."
+
+# We need this go version.
+if [ ! -d ${BASE}/go ]; then
+  sudo mkdir ${BASE}/go
+fi
+
+if [ `uname -m` = "arm64" ]; then
+    ARCH="arm64"
+else
+    ARCH="amd64"
+fi
+
+if [ `uname -s` = "Darwin" ]; then
+    OS="darwin"
+else
+    OS="linux"
+fi
+
+wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
+sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.20.1.${OS}-${ARCH}.tar.gz
+rm go1.20.1.${OS}-${ARCH}.tar.gz
+
+GO_BINARY_PATH=${BASE}/go/bin/go
+if [ ! -d boringssl ]; then
+  git clone https://boringssl.googlesource.com/boringssl
+  cd boringssl
+  git checkout 31bad2514d21f6207f3925ba56754611c462a873
+  cd ..
+fi
+cd boringssl
+if [ ! -d build ]; then
+  mkdir build
+fi
+cd build
+cmake \
+  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=1 ../
+
+${MAKE} -j ${num_threads}
+sudo ${MAKE} install
+cd ..
+
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
 echo "Building quiche"
-QUICHE_BASE=${BASE:-"/opt/quiche"}
+if [ -z ${BASE+x} ]; then QUICHE_BASE="/opt/quiche"; else QUICHE_BASE=${BASE}/quiche; fi
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
-cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
+QUICHE_BSSL_PATH=${BASE}/boringssl QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
@@ -187,52 +233,6 @@ autoreconf -fi || autoreconf -fi
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}"
-${MAKE} -j ${num_threads}
-sudo ${MAKE} install
-
-# boringssl
-echo "Building boringssl..."
-
-# We need this go version.
-GO_BASE_PATH=/usr/local
-if [ ! -d ${GO_BASE_PATH} ]; then
-  sudo mkdir ${GO_BASE_PATH}
-fi
-
-if [ `uname -m` = "arm64" ]; then
-    ARCH="arm64"
-else
-    ARCH="amd64"
-fi
-
-if [ `uname -s` = "Darwin" ]; then
-    OS="darwin"
-else
-    OS="linux"
-fi
-
-wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${GO_BASE_PATH}/go && sudo tar -C ${GO_BASE_PATH} -xf go1.20.1.${OS}-${ARCH}.tar.gz
-rm go1.20.1.${OS}-${ARCH}.tar.gz
-
-GO_BINARY_PATH=${GO_BASE_PATH}/go/bin/go
-if [ ! -d boringssl ]; then
-  git clone https://boringssl.googlesource.com/boringssl
-  cd boringssl
-  git checkout 31bad2514d21f6207f3925ba56754611c462a873
-  cd ..
-fi
-cd boringssl
-if [ ! -d build ]; then
-  mkdir build
-fi
-cd build
-cmake \
-  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
-  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DBUILD_SHARED_LIBS=1 ../
-
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
