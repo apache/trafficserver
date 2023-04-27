@@ -22,7 +22,7 @@
 set -e
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1q+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1t+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -43,7 +43,9 @@ if [ -e /etc/redhat-release ]; then
     echo "|                                                                         |"
     echo "|   sudo yum -y install libev-devel jemalloc-devel python2-devel          |"
     echo "|   sudo yum -y install libxml2-devel c-ares-devel libevent-devel         |"
-    echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel            |"
+    echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel cargo      |"
+    echo "|                                                                         |"
+    echo "| Rust may be needed too, see https://rustup.rs for the details           |"
     echo "+-------------------------------------------------------------------------+"
     echo
     echo
@@ -53,7 +55,9 @@ elif [ -e /etc/debian_version ]; then
     echo "|                                                                         |"
     echo "|   sudo apt -y install libev-dev libjemalloc-dev python2-dev libxml2-dev |"
     echo "|   sudo apt -y install libpython2-dev libc-ares-dev libsystemd-dev       |"
-    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev            |"
+    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev cargo      |"
+    echo "|                                                                         |"
+    echo "| Rust may be needed too, see https://rustup.rs for the details           |"
     echo "+-------------------------------------------------------------------------+"
     echo
     echo
@@ -68,13 +72,57 @@ else
   num_threads=$(sysctl -n hw.logicalcpu)
 fi
 
+# boringssl
+echo "Building boringssl..."
+
+# We need this go version.
+sudo mkdir -p ${BASE}/go
+
+if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then
+    ARCH="arm64"
+else
+    ARCH="amd64"
+fi
+
+if [ `uname -s` = "Darwin" ]; then
+    OS="darwin"
+else
+    OS="linux"
+fi
+
+wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
+sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.20.1.${OS}-${ARCH}.tar.gz
+rm go1.20.1.${OS}-${ARCH}.tar.gz
+
+GO_BINARY_PATH=${BASE}/go/bin/go
+if [ ! -d boringssl ]; then
+  git clone https://boringssl.googlesource.com/boringssl
+  cd boringssl
+  git checkout 31bad2514d21f6207f3925ba56754611c462a873
+  cd ..
+fi
+cd boringssl
+if [ ! -d build ]; then
+  mkdir -p build
+fi
+cd build
+cmake \
+  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
+  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=1 ../
+
+${MAKE} -j ${num_threads}
+sudo ${MAKE} install
+cd ..
+
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
 echo "Building quiche"
-QUICHE_BASE=${BASE:-"/opt/quiche"}
+QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
-cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
+QUICHE_BSSL_PATH=${BASE}/boringssl QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
@@ -167,7 +215,7 @@ ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
 cd ..
 
-# And finally curl
+# Then curl
 echo "Building curl ..."
 [ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
 cd curl
@@ -185,3 +233,4 @@ autoreconf -fi || autoreconf -fi
   LDFLAGS="${LDFLAGS}"
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
+cd ..
