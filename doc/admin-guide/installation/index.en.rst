@@ -170,6 +170,11 @@ working copy::
 
     ./configure --prefix=/opt/ats --with-pcre=/opt/csw/include:/opt/csw/lib/amd64
 
+   If you build |TS| with LLVM toolchain installed in optional path, you need to specify
+   all of them explicitly in some cases. - e.g. ThinLTO by ``--enable-lto``::
+
+    ./configure --prefix=/opt/ats --enable-lto CC=/opt/bin/clang CXX=/opt/bin/clang++ LD=/opt/bin/ld.lld AR=/opt/bin/llvm-ar NM=/opt/bin/llvm-nm RANLIB=/opt/bin/llvm-ranlib
+
 #. Once the source tree has been configured, you may proceed on to building with
    the generated Makefiles. The ``make check`` command may be used to perform
    sanity checks on the resulting build, prior to installation, and it is
