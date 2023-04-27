@@ -77,10 +77,10 @@ echo "Building boringssl..."
 
 # We need this go version.
 if [ ! -d ${BASE}/go ]; then
-  sudo mkdir ${BASE}/go
+  sudo mkdir -p ${BASE}/go
 fi
 
-if [ `uname -m` = "arm64" ]; then
+if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then
     ARCH="arm64"
 else
     ARCH="amd64"
@@ -105,7 +105,7 @@ if [ ! -d boringssl ]; then
 fi
 cd boringssl
 if [ ! -d build ]; then
-  mkdir build
+  mkdir -p build
 fi
 cd build
 cmake \
@@ -121,7 +121,7 @@ cd ..
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
 echo "Building quiche"
-if [ -z ${BASE+x} ]; then QUICHE_BASE="/opt/quiche"; else QUICHE_BASE=${BASE}/quiche; fi
+QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
 QUICHE_BSSL_PATH=${BASE}/boringssl QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
