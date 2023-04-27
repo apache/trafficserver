@@ -22,7 +22,7 @@
 set -e
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1q+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1t+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -76,9 +76,7 @@ fi
 echo "Building boringssl..."
 
 # We need this go version.
-if [ ! -d ${BASE}/go ]; then
-  sudo mkdir -p ${BASE}/go
-fi
+sudo mkdir -p ${BASE}/go
 
 if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then
     ARCH="arm64"
