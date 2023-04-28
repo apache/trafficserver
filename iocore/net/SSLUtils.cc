@@ -413,7 +413,7 @@ ssl_cert_callback(SSL *ssl, void *arg)
       retval = -1; // Pause
     }
   } else {
-    if (tcss->selectCertificate(ssl, ctxType) == 1) {
+    if (tcss && tcss->selectCertificate(ssl, ctxType) == 1) {
       retval = 1;
     } else {
       retval = 0;
