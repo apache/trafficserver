@@ -32,6 +32,8 @@
 #include "QUICMultiCertConfigLoader.h"
 #include <quiche.h>
 
+#include "swoc/BufferWriter.h"
+
 static constexpr char debug_tag[]   = "quic_sec";
 static constexpr char v_debug_tag[] = "v_quic_sec";
 
@@ -285,14 +287,15 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6), &this->_quiche_config, ssl, true);
 
     if (params->get_qlog_file_base_name() != nullptr) {
-      char qlog_filepath[PATH_MAX];
+      swoc::LocalBufferWriter<PATH_MAX> w;
       const uint8_t *quic_trace_id;
-      size_t quic_trace_id_len = 0;
+      size_t quic_trace_id_len{0};
       quiche_conn_trace_id(quiche_con, &quic_trace_id, &quic_trace_id_len);
-      snprintf(qlog_filepath, PATH_MAX, "%s-%.*s.sqlog", Layout::get()->relative(params->get_qlog_file_base_name()).c_str(),
-               static_cast<int>(quic_trace_id_len), quic_trace_id);
-      if (auto success = quiche_conn_set_qlog_path(quiche_con, qlog_filepath, "Apache Traffic Server", "qlog"); !success) {
-        QUICDebug("quiche_conn_set_qlog_path failed to use %s", qlog_filepath);
+
+      w.print("{}-{}.sqlog\0", Layout::get()->relative(params->get_qlog_file_base_name()),
+              std::string_view{reinterpret_cast<const char *>(quic_trace_id), quic_trace_id_len});
+      if (auto success = quiche_conn_set_qlog_path(quiche_con, w.data(), "Apache Traffic Server", "qlog"); !success) {
+        QUICDebug("quiche_conn_set_qlog_path failed to use %s", w.data());
       }
     }
 
