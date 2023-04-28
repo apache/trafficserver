@@ -21,6 +21,7 @@ from enum import Enum
 Test.Summary = 'Exercise Background Fill'
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
+    Condition.HasProxyVerifierVersion('2.8.0')
 )
 Test.ContinueOnFail = True
 
@@ -130,10 +131,29 @@ curl --http2 -vsk https://127.0.0.1:{self.ts.Variables.ssl_port}/drip?duration=4
         tr.Processes.Default.Streams.stderr = "gold/background_fill_2_stderr.gold"
         self.__checkProcessAfter(tr)
 
+    def __testCase3(self):
+        """
+        HTTP/2 over TLS using ProxyVerifier
+        """
+        tr = Test.AddTestRun()
+        self.__checkProcessBefore(tr)
+        tr.AddVerifierClientProcess(
+            "pv_client",
+            "replay/bg_fill.yaml",
+            http_ports=[
+                self.ts.Variables.port],
+            https_ports=[
+                self.ts.Variables.ssl_port],
+            other_args='--thread-limit 1')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/background_fill_3_stdout.gold"
+        self.__checkProcessAfter(tr)
+
     def run(self):
         self.__testCase0()
         self.__testCase1()
         self.__testCase2()
+        self.__testCase3()
 
 
 BackgroundFillTest().run()
