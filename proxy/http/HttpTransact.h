@@ -620,7 +620,7 @@ public:
     private:
       unsigned _v{0}, _saved_v{0};
     };
-    Attempts attempts;
+    Attempts retry_attempts;
     unsigned simple_retry_attempts             = 0;
     unsigned unavailable_server_retry_attempts = 0;
     ParentRetry_t retry_type                   = PARENT_RETRY_NONE;
