@@ -355,6 +355,7 @@ public:
   fetch()
   {
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    this->_result = 0;
     this->_fsm->ext_launch();
     this->_fsm->ext_write_data(this->_req_body, this->_req_body_len);
   }
@@ -362,24 +363,35 @@ public:
   void
   set_done()
   {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     this->_result = 1;
   }
 
   void
   set_error()
   {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     this->_result = -1;
+  }
+
+  bool
+  is_initiated()
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    return this->_result != INT_MAX;
   }
 
   bool
   is_done()
   {
-    return this->_result != 0;
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    return this->_result != 0 && this->_result != INT_MAX;
   }
 
   bool
   is_success()
   {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     return this->_result == 1;
   }
 
@@ -396,7 +408,7 @@ private:
   FetchSM *_fsm            = nullptr;
   unsigned char *_req_body = nullptr;
   int _req_body_len        = 0;
-  int _result              = 0;
+  int _result              = INT_MAX;
 };
 
 TS_OCSP_CERTID *
@@ -1016,12 +1028,20 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
   }
 
   // Send request
-  eventProcessor.schedule_imm(&httpreq, ET_NET);
+  Event *e = eventProcessor.schedule_imm(&httpreq, ET_NET);
 
   // Wait until the request completes
   do {
     ink_hrtime_sleep(HRTIME_MSECONDS(1));
   } while (!httpreq.is_done() && (Thread::get_hrtime() < end));
+
+  if (!httpreq.is_done()) {
+    Error("OCSP request was timed out; uri=%s", uri);
+    if (!httpreq.is_initiated()) {
+      Debug("ssl_ocsp", "Request is not initiated yet. Cancelling the event.");
+      e->cancel(&httpreq);
+    }
+  }
 
   if (httpreq.is_success()) {
     // Parse the response
@@ -1075,7 +1095,7 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 
   *prsp = query_responder(cinf->uri, cinf->user_agent, req, SSLConfigParams::ssl_ocsp_request_timeout);
   if (*prsp == nullptr) {
-    goto done;
+    goto err;
   }
 
   response_status = ASN1_ENUMERATED_get((*prsp)->responseStatus);

@@ -46,6 +46,9 @@ FetchSM::cleanUp()
     chunked_handler.clear();
   }
 
+  if (http_vc) {
+    http_vc->do_io_close();
+  }
   free_MIOBuffer(req_buffer);
   free_MIOBuffer(resp_buffer);
   mutex.clear();
@@ -53,9 +56,6 @@ FetchSM::cleanUp()
   client_response_hdr.destroy();
   ats_free(client_response);
   cont_mutex.clear();
-  if (http_vc) {
-    http_vc->do_io_close();
-  }
   FetchSMAllocator.free(this);
 }
 
