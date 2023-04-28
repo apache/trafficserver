@@ -273,27 +273,6 @@ AC_DEFUN([TS_CHECK_CRYPTO_TLS13], [
 ])
 
 dnl
-dnl Since OpenSSL 1.1.0
-dnl
-AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
-  _ocsp_saved_LIBS=$LIBS
-
-  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ocsp.h, [ocsp_have_headers=1], [enable_tls_ocsp=no])
-
-  if test "$ocsp_have_headers" == "1"; then
-    AC_CHECK_FUNCS(OCSP_response_status, [enable_tls_ocsp=yes], [enable_tls_ocsp=no])
-
-    LIBS=$_ocsp_saved_LIBS
-  fi
-
-  AC_MSG_CHECKING(whether OCSP is supported)
-  AC_MSG_RESULT([$enable_tls_ocsp])
-  TS_ARG_ENABLE_VAR([use], [tls-ocsp])
-  AC_SUBST(use_tls_ocsp)
-])
-
-dnl
 dnl Since OpenSSL 1.1.1
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO_KEYLOGGING], [

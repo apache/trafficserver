@@ -940,9 +940,7 @@ SSLInitializeLibrary()
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
-#if TS_USE_TLS_OCSP
   ssl_stapling_ex_init();
-#endif /* TS_USE_TLS_OCSP */
 
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.
@@ -2364,18 +2362,12 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
                                      const std::vector<std::string> &key_list, CertLoadData const &data,
                                      const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
-#if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl_load", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
   } else {
     Debug("ssl_load", "SSL OCSP Stapling is disabled");
   }
-#else
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
-  }
-#endif /* TS_USE_TLS_OCSP */
 
   ink_assert(!cert_names_list.empty());
 
@@ -2456,7 +2448,6 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
         }
       }
     }
-#if TS_USE_TLS_OCSP
     if (SSLConfigParams::ssl_ocsp_enabled) {
       if (sslMultCertSettings->ocsp_response) {
         const char *ocsp_response_name = data.ocsp_list[i].c_str();
@@ -2470,7 +2461,6 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
         }
       }
     }
-#endif /* TS_USE_TLS_OCSP */
     X509_free(cert);
   }
   return true;

@@ -1499,9 +1499,6 @@ AM_CONDITIONAL([BUILD_SWOC], [test "$has_libswoc" = "no"])
 TS_CHECK_SWOC_HEADERS_EXPORT
 AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test x"$enable_swoc_headers" = x"yes"])
 
-# Check for optional boringocsp library
-TS_CHECK_BORINGOCSP
-
 # Check for optional hiredis library
 TS_CHECK_HIREDIS
 AM_CONDITIONAL([BUILD_SSL_SESSION_REUSE_PLUGIN], [test ! -z "${LIB_HIREDIS}" -a "x${has_hiredis}" = "x1" ])

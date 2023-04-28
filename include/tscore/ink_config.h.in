@@ -82,15 +82,12 @@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
 #define TS_USE_LINUX_IO_URING @use_linux_io_uring@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@
-#define TS_USE_TLS_OCSP @use_tls_ocsp@
 #define TS_HAS_TLS_EARLY_DATA @has_tls_early_data@
 #define TS_HAS_TLS_SESSION_TICKET @has_tls_session_ticket@
 #define TS_HAS_VERIFY_CERT_STORE @has_verify_cert_store@
 
 #define TS_USE_HRW_GEOIP @use_hrw_geoip@
 #define TS_USE_HRW_MAXMINDDB @use_hrw_maxminddb@
-
-#define TS_HAS_BORINGOCSP @has_boringocsp@
 
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
 
