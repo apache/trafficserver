@@ -33,6 +33,9 @@
 #include "SSLStats.h"
 #include "FetchSM.h"
 
+// Macros for ASN1 and the code in TS_OCSP_* functions were borrowed from OpenSSL 3.1.0 (a92271e03a8d0dee507b6f1e7f49512568b2c7ad),
+// and were modified to make them compilable with BoringSSL and C++ compiler.
+
 // Maximum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,
 // so 10K should be more than enough.
