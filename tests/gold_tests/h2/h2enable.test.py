@@ -71,7 +71,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should negotiate HTTP2")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("[Uu]sing HTTP/?2", "Curl should negotiate HTTP2")
 tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Do negotiate h2")
@@ -82,7 +82,7 @@ tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ContainsExpression("Using HTTP2", "Curl should not negotiate HTTP2")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression("[Uu]sing HTTP/?2", "Curl should not negotiate HTTP2")
 tr2.TimeOut = 5
 
 tr2 = Test.AddTestRun("Do negotiate h2")
@@ -93,5 +93,5 @@ tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ContainsExpression("Using HTTP2", "Curl should not negotiate HTTP2")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression("[Uu]sing HTTP/?2", "Curl should not negotiate HTTP2")
 tr2.TimeOut = 5

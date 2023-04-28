@@ -9,7 +9,7 @@
 < HTTP/1.1 200 OK
 ``
 <``
-* Proxy replied 200 to CONNECT request
+`` CONNECT ``
 ``
 > GET /get HTTP/1.1
 > Host: foo.com
