@@ -28,14 +28,14 @@
 // NOTE: The secret_map_mutex should not be held by the caller of this
 // function. The implementation of this function may call a plugin's
 // TS_EVENT_SSL_SECRET handler which in turn may grab a lock for
-// secret_map_mutex via a TSSslSecretSet call. These events will result in a
-// deadlock.
+// secret_map_mutex via a TSSslSecretSet (proposed in a future release) call.
+// These events will result in a deadlock.
 void
 SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {
   // Call the load secret hooks
   //
-  class APIHook *curHook = lifecycle_hooks->get(TS_LIFECYCLE_SSL_SECRET_HOOK);
+  class APIHook *curHook = lifecycle_hooks->get(/* TS_LIFECYCLE_SSL_SECRET_HOOK */ TS_LIFECYCLE_LAST_HOOK /* dummy value */);
   TSSecretID secret_name;
   secret_name.cert_name     = name1.data();
   secret_name.cert_name_len = name1.size();

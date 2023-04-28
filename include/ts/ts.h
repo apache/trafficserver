@@ -1302,15 +1302,6 @@ tsapi TSSslContext TSSslClientContextFindByName(const char *ca_paths, const char
 tsapi TSReturnCode TSSslClientCertUpdate(const char *cert_path, const char *key_path);
 tsapi TSReturnCode TSSslServerCertUpdate(const char *cert_path, const char *key_path);
 
-/* Update the transient secret table for SSL_CTX loading */
-tsapi TSReturnCode TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_length);
-
-/* Returns secret with given name (not null terminted).  If there is no secret with the given name, return value will
-** be null and secret_data_lenght will be zero.  Calling code must free data buffer by calling TSfree(). */
-tsapi char *TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data_length);
-
-tsapi TSReturnCode TSSslSecretUpdate(const char *secret_name, int secret_name_length);
-
 /* Create a new SSL context based on the settings in records.config */
 tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
