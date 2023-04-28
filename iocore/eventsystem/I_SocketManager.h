@@ -43,7 +43,7 @@
 #endif
 
 #ifndef MSG_FASTOPEN
-#if defined(linux)
+#if defined(__linux__)
 #define MSG_FASTOPEN 0x20000000
 #else
 #define MSG_FASTOPEN 0

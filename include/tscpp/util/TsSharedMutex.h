@@ -168,7 +168,7 @@ private:
     }
   }
 
-#if defined(linux)
+#if defined(__linux__)
   // Use the initializer that prevents writer starvation.
   //
   pthread_rwlock_t _lock = PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP;

@@ -51,11 +51,11 @@
 #include <list>
 #include <string>
 
-#if !defined(linux)
+#if !defined(__linux__)
 #include <sys/lock.h>
 #endif
 
-#if defined(linux)
+#if defined(__linux__)
 extern "C" int plock(int);
 #else
 #include <sys/filio.h>

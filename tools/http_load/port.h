@@ -36,7 +36,7 @@
 #elif defined(__NetBSD__)
 #define OS_NetBSD
 #define ARCH "NetBSD"
-#elif defined(linux)
+#elif defined(__linux__)
 #define OS_Linux
 #define ARCH "Linux"
 #else

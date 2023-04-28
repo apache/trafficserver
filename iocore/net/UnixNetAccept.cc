@@ -475,7 +475,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       Debug("iocore_net", "received : %s", strerror(errno));
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
-#if defined(linux)
+#if defined(__linux__)
           || res == -EPIPE
 #endif
       ) {

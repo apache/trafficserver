@@ -40,7 +40,7 @@ void ink_rwlock_destroy(ink_rwlock *rw);
 // Instead of calling ink_rwlock_init(), an ink_rwlock instance can be initialized with one of thsee values.
 //
 ink_rwlock const INK_RWLOCK_INIT = PTHREAD_RWLOCK_INITIALIZER;
-#if defined(linux)
+#if defined(__linux__)
 ink_rwlock const INK_RWLOCK_INIT_NO_WRITER_STARVATION = PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP;
 #else
 // Testing indicates that for MacOS/Darwin and FreeBSD, pthread rwlocks always prevent writer starvation.
