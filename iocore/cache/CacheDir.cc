@@ -51,6 +51,27 @@
     CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
   } while (0);
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_dir_sync{"dir_sync"};
+DbgCtl dbg_ctl_cache_check_dir{"cache_check_dir"};
+DbgCtl dbg_ctl_dir_clean{"dir_clean"};
+
+#ifdef DEBUG
+
+DbgCtl dbg_ctl_cache_stats{"cache_stats"};
+DbgCtl dbg_ctl_dir_probe_hit{"dir_probe_hit"};
+DbgCtl dbg_ctl_dir_probe_tag{"dir_probe_tag"};
+DbgCtl dbg_ctl_dir_probe_miss{"dir_probe_miss"};
+DbgCtl dbg_ctl_dir_insert{"dir_insert"};
+DbgCtl dbg_ctl_dir_overwrite{"dir_overwrite"};
+DbgCtl dbg_ctl_dir_lookaside{"dir_lookaside"};
+
+#endif
+
+} // end anonymous namespace
+
 // Globals
 
 ClassAllocator<OpenDirEntry> openDirEntryAllocator("openDirEntry");
@@ -279,7 +300,7 @@ int
 check_dir(Vol *vol)
 {
   int i, s;
-  Debug("cache_check_dir", "inside check dir");
+  Dbg(dbg_ctl_cache_check_dir, "inside check dir");
   for (s = 0; s < vol->segments; s++) {
     Dir *seg = vol->dir_segment(s);
     for (i = 0; i < vol->buckets; i++) {
@@ -361,9 +382,9 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
     }
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
-      if (is_debug_tag_set("dir_clean")) {
-        Debug("dir_clean", "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
-              dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
+      if (is_dbg_ctl_enabled(dbg_ctl_dir_clean)) {
+        Dbg(dbg_ctl_dir_clean, "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
+            dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
         CACHE_DEC_DIR_USED(vol->mutex);
@@ -562,14 +583,14 @@ Lagain:
             // for the same document and so the collision stat
             // may not accurately reflect the number of documents
             // having the same first_key
-            DDebug("cache_stats", "Incrementing dir collisions");
+            DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
             CACHE_INC_DIR_COLLISIONS(vol->mutex);
           }
           goto Lcont;
         }
         if (dir_valid(vol, e)) {
-          DDebug("dir_probe_hit", "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1), vol->fd, b,
-                 dir_offset(e));
+          DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1), vol->fd,
+               b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < vol->len);
@@ -580,7 +601,7 @@ Lagain:
           continue;
         }
       } else {
-        DDebug("dir_probe_tag", "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
+        DDbg(dbg_ctl_dir_probe_tag, "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
       }
     Lcont:
       p = e;
@@ -588,12 +609,12 @@ Lagain:
     } while (e);
   }
   if (collision) { // last collision no longer in the list, retry
-    DDebug("cache_stats", "Incrementing dir collisions");
+    DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
     CACHE_INC_DIR_COLLISIONS(vol->mutex);
     collision = nullptr;
     goto Lagain;
   }
-  DDebug("dir_probe_miss", "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), vol->fd, b, seg);
+  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), vol->fd, b, seg);
   CHECK_DIR(d);
   return 0;
 }
@@ -656,8 +677,8 @@ Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
   ink_assert(vol->vol_offset(e) < (vol->skip + vol->len));
-  DDebug("dir_insert", "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), vol->fd, bi, e,
-         key->slice32(1), dir_tag(e), dir_offset(e));
+  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), vol->fd,
+       bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   vol->header->dirty = 1;
   CACHE_INC_DIR_USED(vol->mutex);
@@ -742,8 +763,8 @@ Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
   ink_assert(vol->vol_offset(e) < vol->skip + vol->len);
-  DDebug("dir_overwrite", "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), vol->fd,
-         bi, e, t, dir_tag(e), dir_offset(e));
+  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
+       vol->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   vol->header->dirty = 1;
   return res;
@@ -798,7 +819,7 @@ dir_lookaside_probe(const CacheKey *key, Vol *vol, Dir *result, EvacuationBlock 
     if (b->evac_frags.key == *key) {
       if (dir_valid(vol, &b->new_dir)) {
         *result = b->new_dir;
-        DDebug("dir_lookaside", "probe %X success", key->slice32(0));
+        DDbg(dbg_ctl_dir_lookaside, "probe %X success", key->slice32(0));
         if (eblock) {
           *eblock = b;
         }
@@ -807,7 +828,7 @@ dir_lookaside_probe(const CacheKey *key, Vol *vol, Dir *result, EvacuationBlock 
     }
     b = b->link.next;
   }
-  DDebug("dir_lookaside", "probe %X failed", key->slice32(0));
+  DDbg(dbg_ctl_dir_lookaside, "probe %X failed", key->slice32(0));
   return 0;
 }
 
@@ -815,8 +836,8 @@ int
 dir_lookaside_insert(EvacuationBlock *eblock, Vol *vol, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
-  DDebug("dir_lookaside", "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
-         (int)dir_phase(to));
+  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
+       (int)dir_phase(to));
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int i                      = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b         = new_EvacuationBlock(vol->mutex->thread_holding);
@@ -839,8 +860,8 @@ dir_lookaside_fixup(const CacheKey *key, Vol *vol)
   while (b) {
     if (b->evac_frags.key == *key) {
       int res = dir_overwrite(key, vol, &b->new_dir, &b->dir, false);
-      DDebug("dir_lookaside", "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
-             dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
+      DDbg(dbg_ctl_dir_lookaside, "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
+           dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
       vol->ram_cache->fixup(key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
       vol->lookaside[i].remove(b);
@@ -849,7 +870,7 @@ dir_lookaside_fixup(const CacheKey *key, Vol *vol)
     }
     b = b->link.next;
   }
-  DDebug("dir_lookaside", "fixup %X %X failed", key->slice32(0), key->slice32(1));
+  DDbg(dbg_ctl_dir_lookaside, "fixup %X %X failed", key->slice32(0), key->slice32(1));
   return 0;
 }
 
@@ -862,8 +883,8 @@ dir_lookaside_cleanup(Vol *vol)
     while (b) {
       if (!dir_valid(vol, &b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
-        DDebug("dir_lookaside", "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
-               b->evac_frags.earliest_key.slice32(1));
+        DDbg(dbg_ctl_dir_lookaside, "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
+             b->evac_frags.earliest_key.slice32(1));
         i.remove(b);
         free_CacheVC(b->earliest_evacuator);
         free_EvacuationBlock(b, vol->mutex->thread_holding);
@@ -884,15 +905,15 @@ dir_lookaside_remove(const CacheKey *key, Vol *vol)
   EvacuationBlock *b = vol->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      DDebug("dir_lookaside", "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1), dir_offset(&b->new_dir),
-             dir_phase(&b->new_dir));
+      DDbg(dbg_ctl_dir_lookaside, "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1),
+           dir_offset(&b->new_dir), dir_phase(&b->new_dir));
       vol->lookaside[i].remove(b);
       free_EvacuationBlock(b, vol->mutex->thread_holding);
       return;
     }
     b = b->link.next;
   }
-  DDebug("dir_lookaside", "remove %X %X failed", key->slice32(0), key->slice32(1));
+  DDbg(dbg_ctl_dir_lookaside, "remove %X %X failed", key->slice32(0), key->slice32(1));
   return;
 }
 
@@ -955,7 +976,7 @@ dir_entries_used(Vol *vol)
 void
 sync_cache_dir_on_shutdown()
 {
-  Debug("cache_dir_sync", "sync started");
+  Dbg(dbg_ctl_cache_dir_sync, "sync started");
   char *buf     = nullptr;
   size_t buflen = 0;
   bool buf_huge = false;
@@ -969,13 +990,13 @@ sync_cache_dir_on_shutdown()
     Vol *vol = gvol[i];
 
     if (DISK_BAD(vol->disk)) {
-      Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", vol->hash_text.get());
+      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", vol->hash_text.get());
       continue;
     }
     size_t dirlen = vol->dirlen();
     ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
     if (!vol->header->dirty && !vol->dir_sync_in_progress) {
-      Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", vol->hash_text.get());
+      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", vol->hash_text.get());
       continue;
     }
     // recompute hit_evacuate_window
@@ -985,7 +1006,7 @@ sync_cache_dir_on_shutdown()
     // dont worry about the cachevc s in the agg queue
     // directories have not been inserted for these writes
     if (vol->agg_buf_pos) {
-      Debug("cache_dir_sync", "Dir %s: flushing agg buffer first", vol->hash_text.get());
+      Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", vol->hash_text.get());
 
       // set write limit
       vol->header->agg_pos = vol->header->write_pos + vol->agg_buf_pos;
@@ -1025,7 +1046,7 @@ sync_cache_dir_on_shutdown()
     if (!vol->dir_sync_in_progress) {
       vol->header->sync_serial++;
     } else {
-      Debug("cache_dir_sync", "Periodic dir sync in progress -- overwriting");
+      Dbg(dbg_ctl_cache_dir_sync, "Periodic dir sync in progress -- overwriting");
     }
     vol->footer->sync_serial = vol->header->sync_serial;
 
@@ -1035,9 +1056,9 @@ sync_cache_dir_on_shutdown()
     off_t start = vol->skip + (B ? dirlen : 0);
     B           = pwrite(vol->fd, buf, dirlen, start);
     ink_assert(B == dirlen);
-    Debug("cache_dir_sync", "done syncing dir for vol %s", vol->hash_text.get());
+    Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", vol->hash_text.get());
   }
-  Debug("cache_dir_sync", "sync done");
+  Dbg(dbg_ctl_cache_dir_sync, "sync done");
   if (buf) {
     if (buf_huge) {
       ats_free_hugepage(buf, buflen);
@@ -1069,7 +1090,7 @@ Lrestart:
       buf      = nullptr;
       buf_huge = false;
     }
-    Debug("cache_dir_sync", "sync done");
+    Dbg(dbg_ctl_cache_dir_sync, "sync done");
     if (event == EVENT_INTERVAL) {
       trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
     } else {
@@ -1114,25 +1135,25 @@ Lrestart:
     size_t dirlen = vol->dirlen();
     if (!writepos) {
       // start
-      Debug("cache_dir_sync", "sync started");
+      Dbg(dbg_ctl_cache_dir_sync, "sync started");
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
          The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
        */
       if (!vol->header->dirty) {
-        Debug("cache_dir_sync", "Dir %s not dirty", vol->hash_text.get());
+        Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", vol->hash_text.get());
         goto Ldone;
       }
       if (vol->is_io_in_progress() || vol->agg_buf_pos) {
-        Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", vol->hash_text.get());
+        Dbg(dbg_ctl_cache_dir_sync, "Dir %s: waiting for agg buffer", vol->hash_text.get());
         vol->dir_sync_waiting = true;
         if (!vol->is_io_in_progress()) {
           vol->aggWrite(EVENT_IMMEDIATE, nullptr);
         }
         return EVENT_CONT;
       }
-      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
+      Dbg(dbg_ctl_cache_dir_sync, "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
       vol->header->dirty = 0;
       if (buflen < dirlen) {
         if (buf) {

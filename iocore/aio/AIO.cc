@@ -639,7 +639,7 @@ Lagain:
     if (errno == EINTR)
       goto Lagain;
     if (errno == EFAULT || errno == ENOSYS)
-      Debug("aio", "io_getevents failed: %s (%d)", strerror(-ret), -ret);
+      Dbg(_dbg_ctl_aio, "io_getevents failed: %s (%d)", strerror(-ret), -ret);
   }
 
   ink_aiocb *cbs[MAX_AIO_EVENTS];
@@ -658,7 +658,7 @@ Lagain:
 
     if (ret != num) {
       if (ret < 0) {
-        Debug("aio", "io_submit failed: %s (%d)", strerror(-ret), -ret);
+        Dbg(_dbg_ctl_aio, "io_submit failed: %s (%d)", strerror(-ret), -ret);
       } else {
         Fatal("could not submit IOs, io_submit(%p, %d, %p) returned %d", ctx, num, cbs, ret);
       }

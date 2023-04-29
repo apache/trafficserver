@@ -27,6 +27,26 @@
 #define UINT_WRAP_GTE(_x, _y) (((_x) - (_y)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_LT(_x, _y)  (((_x) - (_y)) >= INT_MAX) // exploit overflow
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_evac{"cache_evac"};
+DbgCtl dbg_ctl_cache_update{"cache_update"};
+DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
+DbgCtl dbg_ctl_cache_update_alt{"cache_update_alt"};
+
+#ifdef DEBUG
+
+DbgCtl dbg_ctl_cache_agg{"cache_agg"};
+DbgCtl dbg_ctl_cache_stats{"cache_stats"};
+DbgCtl dbg_ctl_cache_write{"cache_write"};
+DbgCtl dbg_ctl_cache_insert{"cache_insert"};
+DbgCtl dbg_ctl_agg_read{"agg_read"};
+
+#endif
+
+} // end anonymous namespace
+
 // Given a key, finds the index of the alternate which matches
 // used to get the alternate which is actually present in the document
 int
@@ -40,7 +60,6 @@ get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key)
   for (int i = 0; i < alt_count; i++) {
     obj = cache_vector->get(i);
     if (obj->compare_object_key(&key)) {
-      // Debug("cache_key", "Resident alternate key  %X", key.slice32(0));
       return i;
     }
   }
@@ -71,8 +90,8 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (f.update) {
       // all Update cases. Need to get the alternate index.
       alternate_index = get_alternate_index(write_vector, update_key);
-      Debug("cache_update", "updating alternate index %d frags %d", alternate_index,
-            alternate_index >= 0 ? write_vector->get(alternate_index)->get_frag_offset_count() : -1);
+      Dbg(dbg_ctl_cache_update, "updating alternate index %d frags %d", alternate_index,
+          alternate_index >= 0 ? write_vector->get(alternate_index)->get_frag_offset_count() : -1);
       // if its an alternate delete
       if (!vec) {
         ink_assert(!total_len);
@@ -167,8 +186,8 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         od->move_resident_alt  = false;
         f.rewrite_resident_alt = 1;
         write_len              = doc->data_len();
-        Debug("cache_update_alt", "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.slice32(0),
-              first_key.slice32(0));
+        Dbg(dbg_ctl_cache_update_alt, "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.slice32(0),
+            first_key.slice32(0));
       }
     }
     header_len      = write_vector->marshal_length();
@@ -290,8 +309,8 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
-    DDebug("cache_evac", "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
-           (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    DDbg(dbg_ctl_cache_evac, "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
+         (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     return nullptr;
   }
 
@@ -306,7 +325,7 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
   if (!b) {
     b      = new_EvacuationBlock(mutex->thread_holding);
     b->dir = *evac_dir;
-    DDebug("cache_evac", "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    DDbg(dbg_ctl_cache_evac, "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     evacuate[bucket].push(b);
   }
   b->f.pinned        = pinned;
@@ -327,7 +346,7 @@ Vol::scan_for_pinned_documents()
     int pe                = this->offset_to_vol_offset(header->write_pos + 2 * EVACUATION_SIZE + (len / PIN_SCAN_EVERY));
     int vol_end_offset    = this->offset_to_vol_offset(len + skip);
     int before_end_of_vol = pe < vol_end_offset;
-    DDebug("cache_evac", "scan %d %d", ps, pe);
+    DDbg(dbg_ctl_cache_evac, "scan %d %d", ps, pe);
     for (int i = 0; i < this->direntries(); i++) {
       // is it a valid pinned object?
       if (!dir_is_empty(&dir[i]) && dir_pinned(&dir[i]) && dir_head(&dir[i])) {
@@ -343,8 +362,6 @@ Vol::scan_for_pinned_documents()
           }
         }
         force_evacuate_head(&dir[i], 1);
-        //      DDebug("cache_evac", "scan pinned at offset %d %d %d %d %d %d",
-        //            (int)dir_offset(&b->dir), ps, o , pe, i, (int)b->f.done);
       }
     }
   }
@@ -371,8 +388,8 @@ Vol::aggWriteDone(int event, Event *e)
     header->last_write_pos  = header->write_pos;
     header->write_pos      += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
-    DDebug("cache_agg", "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
-           header->last_write_pos);
+    DDbg(dbg_ctl_cache_agg, "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
+         header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
       periodic_scan();
@@ -382,11 +399,10 @@ Vol::aggWriteDone(int event, Event *e)
   } else {
     // delete all the directory entries that we inserted
     // for fragments is this aggregation buffer
-    Debug("cache_disk_error", "Write error on disk %s\n \
-              write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-          hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
-          (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
-          (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
+    Dbg(dbg_ctl_cache_disk_error, "Write error on disk %s\n \
+            write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
+        hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+        (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
     for (int done = 0; done < agg_buf_pos;) {
@@ -465,8 +481,8 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     }
     alternate_tmp = vector.get(alternate_index);
     doc_len       = alternate_tmp->object_size_get();
-    Debug("cache_evac", "evacuateReadHead http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0), first_key.slice32(0),
-          doc_len);
+    Dbg(dbg_ctl_cache_evac, "evacuateReadHead http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
+        first_key.slice32(0), doc_len);
   } else {
     // non-http document
     CacheKey next_key;
@@ -475,8 +491,8 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       goto Ldone;
     }
     doc_len = doc->total_len;
-    DDebug("cache_evac", "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
-           first_key.slice32(0), doc_len);
+    DDbg(dbg_ctl_cache_evac, "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
+         first_key.slice32(0), doc_len);
   }
   if (doc_len == total_len) {
     // the whole document has been evacuated. Insert the directory
@@ -503,8 +519,8 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
   Doc *doc = reinterpret_cast<Doc *>(buf->data());
-  DDebug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0), (int)dir_offset(&overwrite_dir),
-         (int)dir_phase(&overwrite_dir), (int)dir_offset(&dir), (int)dir_phase(&dir));
+  DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0), (int)dir_offset(&overwrite_dir),
+       (int)dir_phase(&overwrite_dir), (int)dir_offset(&dir), (int)dir_phase(&dir));
   int i = dir_evac_bucket(&overwrite_dir);
   // nasty beeping race condition, need to have the EvacuationBlock here
   EvacuationBlock *b = vol->evac_bucket_valid(i) ? vol->evacuate[i].head : nullptr;
@@ -528,7 +544,8 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           break;
         }
         if (evac->earliest_key.fold()) {
-          DDebug("cache_evac", "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0), evac->earliest_key.slice32(0));
+          DDbg(dbg_ctl_cache_evac, "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0),
+               evac->earliest_key.slice32(0));
           EvacuationBlock *eblock = nullptr;
           Dir dir_tmp;
           dir_lookaside_probe(&evac->earliest_key, vol, &dir_tmp, &eblock);
@@ -549,16 +566,16 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // Cache::open_write). Once we know its the vector, we can
       // safely overwrite the first_key in the directory.
       if (dir_head(&overwrite_dir) && b->f.evacuate_head) {
-        DDebug("cache_evac", "evacuateDocDone evacuate_head %X %X hlen %d offset %d", (int)key.slice32(0), (int)doc->key.slice32(0),
-               doc->hlen, (int)dir_offset(&overwrite_dir));
+        DDbg(dbg_ctl_cache_evac, "evacuateDocDone evacuate_head %X %X hlen %d offset %d", (int)key.slice32(0),
+             (int)doc->key.slice32(0), doc->hlen, (int)dir_offset(&overwrite_dir));
 
         if (dir_compare_tag(&overwrite_dir, &doc->first_key)) {
           OpenDirEntry *cod;
-          DDebug("cache_evac", "evacuating vector: %X %d", (int)doc->first_key.slice32(0), (int)dir_offset(&overwrite_dir));
+          DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %d", (int)doc->first_key.slice32(0), (int)dir_offset(&overwrite_dir));
           if ((cod = vol->open_read(&doc->first_key))) {
             // writer  exists
-            DDebug("cache_evac", "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
-                   (int)dir_offset(&cod->first_dir), (int)dir_offset(&dir));
+            DDbg(dbg_ctl_cache_evac, "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
+                 (int)dir_offset(&cod->first_dir), (int)dir_offset(&dir));
             cod->first_dir = dir;
           }
           if (dir_overwrite(&doc->first_key, vol, &dir, &overwrite_dir)) {
@@ -566,7 +583,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             vol->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
           }
         } else {
-          DDebug("cache_evac", "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&overwrite_dir));
+          DDbg(dbg_ctl_cache_evac, "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&overwrite_dir));
           ink_assert(dir_compare_tag(&overwrite_dir, &doc->key));
           ink_assert(b->earliest_evacuator == this);
           total_len    += doc->data_len();
@@ -621,8 +638,8 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
     if (force) {
       b->readers = 0;
     }
-    DDebug("cache_evac", "next fragment %X Earliest: %X offset %d phase %d force %d", (int)key->slice32(0),
-           (int)earliest_key->slice32(0), (int)dir_offset(&dir), (int)dir_phase(&dir), force);
+    DDbg(dbg_ctl_cache_evac, "next fragment %X Earliest: %X offset %d phase %d force %d", (int)key->slice32(0),
+         (int)earliest_key->slice32(0), (int)dir_offset(&dir), (int)dir_phase(&dir), force);
   }
   return i;
 }
@@ -660,13 +677,13 @@ Vol::evacuateDocReadDone(int event, Event *e)
   EvacuationBlock *b = nullptr;
   auto bucket        = dir_evac_bucket(&doc_evacuator->overwrite_dir);
   if (doc->magic != DOC_MAGIC) {
-    Debug("cache_evac", "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
-          (int)dir_offset(&doc_evacuator->overwrite_dir));
+    Dbg(dbg_ctl_cache_evac, "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
+        (int)dir_offset(&doc_evacuator->overwrite_dir));
     ink_assert(doc->magic == DOC_MAGIC);
     goto Ldone;
   }
-  DDebug("cache_evac", "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
-         (int)dir_offset(&doc_evacuator->overwrite_dir));
+  DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
+       (int)dir_offset(&doc_evacuator->overwrite_dir));
 
   if (evac_bucket_valid(bucket)) {
     b = evacuate[bucket].head;
@@ -691,8 +708,8 @@ Vol::evacuateDocReadDone(int event, Event *e)
     if (dir_compare_tag(&b->dir, &doc->first_key)) {
       doc_evacuator->key = doc->first_key;
       b->evac_frags.key  = doc->first_key;
-      DDebug("cache_evac", "evacuating vector %X offset %d", (int)doc->first_key.slice32(0),
-             (int)dir_offset(&doc_evacuator->overwrite_dir));
+      DDbg(dbg_ctl_cache_evac, "evacuating vector %X offset %d", (int)doc->first_key.slice32(0),
+           (int)dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 57;
     } else {
       // if its an earliest fragment (alternate) evacuation, things get
@@ -704,8 +721,8 @@ Vol::evacuateDocReadDone(int event, Event *e)
       b->evac_frags.key           = doc->key;
       b->evac_frags.earliest_key  = doc->key;
       b->earliest_evacuator       = doc_evacuator;
-      DDebug("cache_evac", "evacuating earliest %X %X evac: %p offset: %d", (int)b->evac_frags.key.slice32(0),
-             (int)doc->key.slice32(0), doc_evacuator, (int)dir_offset(&doc_evacuator->overwrite_dir));
+      DDbg(dbg_ctl_cache_evac, "evacuating earliest %X %X evac: %p offset: %d", (int)b->evac_frags.key.slice32(0),
+           (int)doc->key.slice32(0), doc_evacuator, (int)dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 67;
     }
   } else {
@@ -720,7 +737,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
     }
     doc_evacuator->key          = ek->key;
     doc_evacuator->earliest_key = ek->earliest_key;
-    DDebug("cache_evac", "evacuateDocReadDone key: %X earliest: %X", (int)ek->key.slice32(0), (int)ek->earliest_key.slice32(0));
+    DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone key: %X earliest: %X", (int)ek->key.slice32(0), (int)ek->earliest_key.slice32(0));
     b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
@@ -774,7 +791,7 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
       io.aiocb.aio_buf = doc_evacuator->buf->data();
       io.action        = this;
       io.thread        = AIO_CALLBACK_THREAD_ANY;
-      DDebug("cache_evac", "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
+      DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
       SET_HANDLER(&Vol::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
@@ -943,7 +960,7 @@ Vol::evacuate_cleanup_blocks(int i)
     if (b->f.done && ((header->phase != dir_phase(&b->dir) && header->write_pos > this->vol_offset(&b->dir)) ||
                       (header->phase == dir_phase(&b->dir) && header->write_pos <= this->vol_offset(&b->dir)))) {
       EvacuationBlock *x = b;
-      DDebug("cache_evac", "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
+      DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
       b = b->link.next;
       evacuate[i].remove(x);
       free_EvacuationBlock(x, mutex->thread_holding);
@@ -1039,7 +1056,8 @@ Lagain:
     if (agg_buf_pos + writelen > AGG_SIZE || header->write_pos + agg_buf_pos + writelen > (skip + len)) {
       break;
     }
-    DDebug("agg_read", "copying: %d, %" PRIu64 ", key: %d", agg_buf_pos, header->write_pos + agg_buf_pos, c->first_key.slice32(0));
+    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", agg_buf_pos, header->write_pos + agg_buf_pos,
+         c->first_key.slice32(0));
     int wrotelen = agg_copy(agg_buffer + agg_buf_pos, c);
     ink_assert(writelen == wrotelen);
     agg_todo_size -= writelen;
@@ -1158,18 +1176,18 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
       dir_delete(&earliest_key, vol, &earliest_dir);
     }
   }
-  if (is_debug_tag_set("cache_update")) {
+  if (is_dbg_ctl_enabled(dbg_ctl_cache_update)) {
     if (f.update && closed > 0) {
       if (!total_len && !f.allow_empty_doc && alternate_index != CACHE_ALT_REMOVED) {
-        Debug("cache_update", "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
-              update_key.b[1]);
+        Dbg(dbg_ctl_cache_update, "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
+            update_key.b[1]);
 
       } else if ((total_len || f.allow_empty_doc) && alternate_index != CACHE_ALT_REMOVED) {
-        Debug("cache_update", "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
-              DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
+        Dbg(dbg_ctl_cache_update, "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
+            DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
       } else if (!total_len && alternate_index == CACHE_ALT_REMOVED) {
-        Debug("cache_update", "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
-              update_key.b[1]);
+        Dbg(dbg_ctl_cache_update, "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
+            update_key.b[1]);
       }
     }
   }
@@ -1179,7 +1197,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   // updates we dont decrement the variable corresponding the old
   // size of the document
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
-    DDebug("cache_stats", "Fragment = %d", fragment);
+    DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
     switch (fragment) {
     case 0:
       CACHE_INCREMENT_DYN_STAT(cache_single_fragment_document_count_stat);
@@ -1402,7 +1420,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
     ++fragment;
     write_pos += write_len;
     dir_insert(&key, vol, &dir);
-    DDebug("cache_insert", "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
+    DDbg(dbg_ctl_cache_insert, "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
     blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
   }
@@ -1579,8 +1597,8 @@ CacheVC::openWriteStartDone(int event, Event *e)
          to nullptr.
        */
       if (!dir_valid(vol, &dir)) {
-        DDebug("cache_write", "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
-               (int64_t)vol->offset_to_vol_offset(vol->header->write_pos), dir_offset(&dir));
+        DDbg(dbg_ctl_cache_write, "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
+             (int64_t)vol->offset_to_vol_offset(vol->header->write_pos), dir_offset(&dir));
         last_collision = nullptr;
         goto Lcollision;
       }
@@ -1812,7 +1830,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
      */
     c->f.update  = 1;
     c->base_stat = cache_update_active_stat;
-    DDebug("cache_update", "Update called");
+    DDbg(dbg_ctl_cache_update, "Update called");
     info->object_key_get(&c->update_key);
     ink_assert(!(c->update_key == zero_key));
     c->update_len = info->object_size_get();

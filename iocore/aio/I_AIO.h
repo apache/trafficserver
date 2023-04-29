@@ -150,9 +150,12 @@ struct DiskHandler : public Continuation {
     memset(&ctx, 0, sizeof(ctx));
     int ret = io_setup(MAX_AIO_EVENTS, &ctx);
     if (ret < 0) {
-      Debug("aio", "io_setup error: %s (%d)", strerror(-ret), -ret);
+      Dbg(_dbg_ctl_aio, "io_setup error: %s (%d)", strerror(-ret), -ret);
     }
   }
+
+private:
+  inline static DbgCtl _dbg_ctl_aio{"aio"};
 };
 #endif
 
