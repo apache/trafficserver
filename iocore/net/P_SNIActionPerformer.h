@@ -332,6 +332,8 @@ class TLSValidProtocols : public ActionItem
 {
   bool unset = true;
   unsigned long protocol_mask;
+  int min_ver = -1;
+  int max_ver = -1;
 
 public:
 #ifdef SSL_OP_NO_TLSv1_3
@@ -341,15 +343,25 @@ public:
 #endif
   TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
+  TLSValidProtocols(int min_ver, int max_ver) : unset(false), protocol_mask(0), min_ver(min_ver), max_ver(max_ver) {}
 
   int
   SNIAction(TLSSNISupport *snis, const Context & /* ctx */) const override
   {
-    if (!unset) {
-      auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
+    if (this->min_ver >= 0 || this->max_ver >= 0) {
       const char *servername = snis->get_sni_server_name();
-      Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
-      ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
+      Debug("ssl_sni", "TLSValidProtocol min=%d, max=%d, fqdn [%s]", this->min_ver, this->max_ver, servername);
+      auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+      ssl_vc->set_valid_tls_version_min(this->min_ver);
+      ssl_vc->set_valid_tls_version_max(this->max_ver);
+    } else {
+      if (!unset) {
+        auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
+        const char *servername = snis->get_sni_server_name();
+        Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
+        ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
+        Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and ivalid_tls_version_max_in instead.");
+      }
     }
 
     return SSL_TLSEXT_ERR_OK;

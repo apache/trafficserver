@@ -2456,3 +2456,36 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
 
   return ssl_error;
 }
+
+void
+SSLNetVConnection::set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+{
+  SSL_set_options(this->ssl, proto_mask);
+  SSL_clear_options(this->ssl, max_mask & ~proto_mask);
+}
+
+void
+SSLNetVConnection::set_valid_tls_version_min(int min)
+{
+  // Ignore available versions set by SSL_(CTX_)set_options if a ragne is specified
+  SSL_clear_options(this->ssl, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+
+  int ver = 0;
+  if (min >= 0) {
+    ver = TLS1_VERSION + min;
+  }
+  SSL_set_min_proto_version(this->ssl, ver);
+}
+
+void
+SSLNetVConnection::set_valid_tls_version_max(int max)
+{
+  // Ignore available versions set by SSL_(CTX_)set_options if a ragne is specified
+  SSL_clear_options(this->ssl, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+
+  int ver = 0;
+  if (max >= 0) {
+    ver = TLS1_VERSION + max;
+  }
+  SSL_set_max_proto_version(this->ssl, ver);
+}

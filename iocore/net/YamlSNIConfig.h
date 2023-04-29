@@ -53,6 +53,8 @@ TSDECL(client_key);
 TSDECL(client_sni_policy);
 TSDECL(ip_allow);
 TSDECL(valid_tls_versions_in);
+TSDECL(valid_tls_version_min_in);
+TSDECL(valid_tls_version_max_in);
 TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
 TSDECL(host_sni_policy);
@@ -83,6 +85,8 @@ struct YamlSNIConfig {
     std::string ip_allow;
     bool protocol_unset = true;
     unsigned long protocol_mask;
+    int valid_tls_version_min_in = -1;
+    int valid_tls_version_max_in = -1;
     std::vector<int> tunnel_alpn{};
     std::optional<int> http2_buffer_water_mark;
 

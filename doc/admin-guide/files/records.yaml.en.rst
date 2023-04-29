@@ -3583,11 +3583,45 @@ SSL Termination
 
    This configuration works with OpenSSL v1.0.2 and above.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.version.min INT -1
+
+   Specifies the minimum TLS version that will be offered to clients during the TLS negotiation.
+
+   ======== ===================================================================
+   Value    Version
+   ======== ===================================================================
+   ``0``    TLS 1.0
+   ``1``    TLS 1.1
+   ``2``    TLS 1.2
+   ``3``    TLS 1.3
+   ======== ===================================================================
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.version.max INT -1
+
+   Specifies the maximum TLS version that will be offered to clients during the TLS negotiation.
+
+   ======== ===================================================================
+   Value    Version
+   ======== ===================================================================
+   ``0``    TLS 1.0
+   ``1``    TLS 1.1
+   ``2``    TLS 1.2
+   ``3``    TLS 1.3
+   ======== ===================================================================
+
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1.0. If not specified, disabled by default.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, disabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
@@ -3599,10 +3633,18 @@ SSL Termination
 
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.3.  If not specified, enabled by default.  [Requires OpenSSL v1.1.1 and higher]
 
@@ -4008,19 +4050,61 @@ Client-Related Configuration
          warning and return an immediate HTTP 400 response.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.version.min INT -1
+
+   Specifies the minimum TLS version that will be offered to servers during the TLS negotiation.
+
+   ======== ===================================================================
+   Value    Version
+   ======== ===================================================================
+   ``0``    TLS 1.0
+   ``1``    TLS 1.1
+   ``2``    TLS 1.2
+   ``3``    TLS 1.3
+   ======== ===================================================================
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.version.max INT -1
+
+   Specifies the maximum TLS version that will be offered to servers during the TLS negotiation.
+
+   ======== ===================================================================
+   Value    Version
+   ======== ===================================================================
+   ``0``    TLS 1.0
+   ``1``    TLS 1.1
+   ``2``    TLS 1.2
+   ``3``    TLS 1.3
+   ======== ===================================================================
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
+   :deprecated:
+
+   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 

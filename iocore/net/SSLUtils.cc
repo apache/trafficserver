@@ -1270,8 +1270,23 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     Debug("ssl_load", "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(),
           cert_names_list[0].c_str());
 
-    // disable selected protocols
     SSL_CTX_set_options(ctx, _params->ssl_ctx_options);
+
+    if (_params->server_tls_ver_min >= 0 || _params->server_tls_ver_max >= 0) {
+      int ver = 0;
+      if (_params->server_tls_ver_min >= 0) {
+        ver = TLS1_VERSION + _params->server_tls_ver_min;
+      }
+      // Setting 0 enables version down to the lowest version supported by the SSL library
+      SSL_CTX_set_min_proto_version(ctx, ver);
+
+      ver = 0;
+      if (_params->server_tls_ver_max >= 0) {
+        ver = TLS1_VERSION + _params->server_tls_ver_max;
+      }
+      // Setting 0 enables version up to the highest version supported by the SSL library
+      SSL_CTX_set_max_proto_version(ctx, ver);
+    }
 
     if (!this->_setup_session_cache(ctx)) {
       goto fail;

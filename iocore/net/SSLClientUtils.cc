@@ -204,6 +204,22 @@ SSLInitClientContext(const SSLConfigParams *params)
     }
   }
 
+  if (params->client_tls_ver_min >= 0 || params->client_tls_ver_max >= 0) {
+    int ver = 0;
+    if (params->client_tls_ver_min >= 0) {
+      ver = TLS1_VERSION + params->client_tls_ver_min;
+    }
+    // Setting 0 enables version down to the lowest version supported by the SSL library
+    SSL_CTX_set_min_proto_version(client_ctx, ver);
+
+    ver = 0;
+    if (params->client_tls_ver_max >= 0) {
+      ver = TLS1_VERSION + params->client_tls_ver_max;
+    }
+    // Setting 0 enables version up to the highest version supported by the SSL library
+    SSL_CTX_set_max_proto_version(client_ctx, ver);
+  }
+
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (params->client_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(client_ctx, params->client_tls13_cipher_suites)) {
