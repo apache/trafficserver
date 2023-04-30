@@ -28,6 +28,13 @@
 
 #include "main.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_rww_test{"cache_rww_test"};
+
+} // end anonymous namespace
+
 class CacheRWWTest;
 
 class CacheRWWTest : public CacheTestHandler
@@ -144,7 +151,7 @@ CacheRWWTest::process_read_event(int event, CacheTestBase *base)
     base->do_io_read();
     break;
   case VC_EVENT_READ_READY:
-    Debug("cache_rww_test", "cache read reenable");
+    Dbg(dbg_ctl_cache_rww_test, "cache read reenable");
     this->_read_event    = nullptr;
     this->_is_read_start = true;
     break;
@@ -211,7 +218,7 @@ public:
       break;
     case VC_EVENT_WRITE_READY:
       if (this->_size != SMALL_FILE && !this->_wt->vc->fragment) {
-        Debug("cache_rww_test", "cache write reenable");
+        Dbg(dbg_ctl_cache_rww_test, "cache write reenable");
         base->reenable();
         return;
       }
@@ -297,22 +304,6 @@ class CacheRWWEOSTest : public CacheRWWTest
 {
 public:
   CacheRWWEOSTest(size_t size, const char *url = DEFAULT_URL) : CacheRWWTest(size, url) {}
-  /*
-   * test this code in openReadMain
-   * if (writer_done()) {
-      last_collision = nullptr;
-      while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
-        // write complete. this could be reached the size we set in do_io_write or someone call do_io_close with -1 (-1 means write
-   success) flag if (dir_offset(&dir) == dir_offset(&earliest_dir)) { DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d",
-   this, first_key.slice32(1), (int)vio.ndone); doc_len = vio.ndone; goto Leos;
-        }
-      }
-      // writer abort. server crash. someone call do_io_close() with error flag
-      DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
-      goto Lerror;
-    }
-   *
-   */
 
   void
   process_write_event(int event, CacheTestBase *base) override
@@ -323,7 +314,7 @@ public:
       break;
     case VC_EVENT_WRITE_READY:
       if (this->_size != SMALL_FILE && !this->_wt->vc->fragment) {
-        Debug("cache_rww_test", "cache write reenable");
+        Dbg(dbg_ctl_cache_rww_test, "cache write reenable");
         base->reenable();
         return;
       }

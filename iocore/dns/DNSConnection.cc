@@ -43,6 +43,13 @@
 
 DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 
+namespace
+{
+
+DbgCtl dbg_ctl_dns{"dns"};
+
+} // end anonymous namespace
+
 //
 // Functions
 //
@@ -143,7 +150,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       uint32_t p                      = generator.random();
       p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
-      Debug("dns", "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
+      Dbg(dbg_ctl_dns, "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
       if (SocketManager::ink_bind(fd, &bind_addr.sa, bind_size, Proto) < 0) {
         continue;
       }

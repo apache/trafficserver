@@ -64,7 +64,15 @@ enum SplitDNSCB_t {
   SDNS_ENABLE_CB,
 };
 
-static const char *SDNSResultStr[] = {"DNSServer_Undefined", "DNSServer_Specified", "DNSServer_Failed"};
+namespace
+{
+
+DbgCtl dbg_ctl_splitdns{"splitdns"};
+DbgCtl dbg_ctl_splitdns_config{"splitdns_config"};
+
+const char *SDNSResultStr[] = {"DNSServer_Undefined", "DNSServer_Specified", "DNSServer_Failed"};
+
+} // end anonymous namespace
 
 int SplitDNSConfig::m_id               = 0;
 int SplitDNSConfig::gsplit_dns_enabled = 0;
@@ -152,7 +160,7 @@ SplitDNSConfig::reconfigure()
 
   m_id = configProcessor.set(m_id, params);
 
-  if (is_debug_tag_set("splitdns_config")) {
+  if (is_dbg_ctl_enabled(dbg_ctl_splitdns_config)) {
     SplitDNSConfig::print();
   }
 
@@ -167,8 +175,8 @@ SplitDNSConfig::print()
 {
   SplitDNS *params = SplitDNSConfig::acquire();
 
-  Debug("splitdns_config", "DNS Server Selection Config");
-  Debug("splitdns_config", "\tEnabled=%d", params->m_SplitDNSlEnable);
+  Dbg(dbg_ctl_splitdns_config, "DNS Server Selection Config");
+  Dbg(dbg_ctl_splitdns_config, "\tEnabled=%d", params->m_SplitDNSlEnable);
 
   params->m_DNSSrvrTable->Print();
   SplitDNSConfig::release(params);
@@ -180,7 +188,7 @@ SplitDNSConfig::print()
 void *
 SplitDNS::getDNSRecord(ts::TextView hostname)
 {
-  Debug("splitdns", "Called SplitDNS::getDNSRecord(%.*s)", int(hostname.size()), hostname.data());
+  Dbg(dbg_ctl_splitdns, "Called SplitDNS::getDNSRecord(%.*s)", int(hostname.size()), hostname.data());
 
   DNSRequestData *pRD = DNSReqAllocator.alloc();
   pRD->m_pHost        = hostname;
@@ -194,7 +202,7 @@ SplitDNS::getDNSRecord(ts::TextView hostname)
     return &(res.m_rec->m_servers);
   }
 
-  Debug("splitdns", "Fail to match a valid splitdns rule, fallback to default dns resolver");
+  Dbg(dbg_ctl_splitdns, "Fail to match a valid splitdns rule, fallback to default dns resolver");
   return nullptr;
 }
 
@@ -266,15 +274,15 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
     result->r = DNS_SRVR_SPECIFIED;
   }
 
-  if (is_debug_tag_set("splitdns_config")) {
+  if (is_dbg_ctl_enabled(dbg_ctl_splitdns_config)) {
     const char *host = rdata->get_host();
 
     switch (result->r) {
     case DNS_SRVR_FAIL:
-      Debug("splitdns_config", "Result for %s was %s", host, SDNSResultStr[result->r]);
+      Dbg(dbg_ctl_splitdns_config, "Result for %s was %s", host, SDNSResultStr[result->r]);
       break;
     case DNS_SRVR_SPECIFIED:
-      Debug("splitdns_config", "Result for %s was dns servers", host);
+      Dbg(dbg_ctl_splitdns_config, "Result for %s was dns servers", host);
       result->m_rec->Print();
       break;
     default:
@@ -518,7 +526,7 @@ SplitDNSRecord::UpdateMatch(SplitDNSResult *result, RequestData * /* rdata ATS_U
     result->m_rec         = this;
     result->m_line_number = this->line_num;
 
-    Debug("splitdns_config", "Matched with %p dns node from line %d", this, this->line_num);
+    Dbg(dbg_ctl_splitdns_config, "Matched with %p dns node from line %d", this, this->line_num);
   }
 }
 
@@ -530,7 +538,7 @@ SplitDNSRecord::Print() const
 {
   for (int i = 0; i < m_dnsSrvr_cnt; i++) {
     char ab[INET6_ADDRPORTSTRLEN];
-    Debug("splitdns_config", " %s", ats_ip_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
+    Dbg(dbg_ctl_splitdns_config, " %s", ats_ip_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
   }
 }
 

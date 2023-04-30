@@ -75,7 +75,8 @@ public:
   int
   start_event(int event, void *e)
   {
-    Debug("cache_test", "cache init successfully");
+    static DbgCtl dbg_ctl{"cache_test"};
+    Dbg(dbg_ctl, "cache init successfully");
     this->cache_init_success_callback(event, e);
     return 0;
   }

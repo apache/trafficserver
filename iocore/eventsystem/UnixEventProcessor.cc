@@ -33,6 +33,14 @@
 #include "tscore/ink_hw.h"
 #include "tscore/hugepages.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_iocore_thread{"iocore_thread"};
+DbgCtl dbg_ctl_iocore_thread_start{"iocore_thread_start"};
+
+} // end anonymous namespace
+
 /// Global singleton.
 class EventProcessor eventProcessor;
 
@@ -202,8 +210,8 @@ ThreadAffinityInitializer::do_alloc_stack(size_t stacksize)
   setup_stack_guard(stack_and_guard, stackguard_pages);
 
   void *stack_begin = static_cast<char *>(stack_and_guard) + stackguard_pages * pagesize;
-  Debug("iocore_thread", "Allocated %zu bytes (%zu bytes in guard pages) for stack {%p-%p guard, %p-%p stack}", size,
-        stackguard_pages * pagesize, stack_and_guard, stack_begin, stack_begin, static_cast<char *>(stack_begin) + stacksize);
+  Dbg(dbg_ctl_iocore_thread, "Allocated %zu bytes (%zu bytes in guard pages) for stack {%p-%p guard, %p-%p stack}", size,
+      stackguard_pages * pagesize, stack_and_guard, stack_begin, stack_begin, static_cast<char *>(stack_begin) + stacksize);
 
   return stack_begin;
 }
@@ -247,7 +255,7 @@ ThreadAffinityInitializer::init()
   }
 
   obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
-  Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
+  Dbg(dbg_ctl_iocore_thread, "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 }
 
 int
@@ -262,9 +270,9 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
     int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
     char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
-    Debug("iocore_thread", "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
+    Dbg(dbg_ctl_iocore_thread, "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
 #else
-    Debug("iocore_thread", "EThread: %d %s: %d", _name, obj->logical_index);
+    Dbg(dbg_ctl_iocore_thread, "EThread: %d %s: %d", _name, obj->logical_index);
 #endif // HWLOC_API_VERSION
     hwloc_set_thread_cpubind(ink_get_topology(), t->tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
   } else {
@@ -435,7 +443,7 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
     stacksize = INK_ALIGN(stacksize, ats_pagesize());
   }
 
-  Debug("iocore_thread", "Thread stack size set to %zu", stacksize);
+  Dbg(dbg_ctl_iocore_thread, "Thread stack size set to %zu", stacksize);
 
   for (i = 0; i < n_threads; ++i) {
     EThread *t                   = new EThread(REGULAR, n_ethreads + i);
@@ -453,13 +461,13 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
   // the group. Some thread set up depends on knowing the total number of threads but that can't be
   // safely updated until all the EThread instances are created and stored in the table.
   for (i = 0; i < n_threads; ++i) {
-    Debug("iocore_thread_start", "Created %s thread #%d", tg->_name.c_str(), i + 1);
+    Dbg(dbg_ctl_iocore_thread_start, "Created %s thread #%d", tg->_name.c_str(), i + 1);
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.c_str(), i);
     void *stack = Thread_Affinity_Initializer.alloc_stack(tg->_thread[i], stacksize);
     tg->_thread[i]->start(thr_name, stack, stacksize);
   }
 
-  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", tg->_name.c_str(), ev_type, n_threads);
+  Dbg(dbg_ctl_iocore_thread, "Created thread group '%s' id %d with %d threads", tg->_name.c_str(), ev_type, n_threads);
 
   return ev_type; // useless but not sure what would be better.
 }
@@ -539,7 +547,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 
   this->spawn_event_threads(ET_CALL, n_event_threads, stacksize);
 
-  Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
+  Dbg(dbg_ctl_iocore_thread, "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
   return 0;
 }
 
