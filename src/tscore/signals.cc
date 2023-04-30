@@ -33,45 +33,6 @@
 #include "tscore/ink_thread.h"
 #include "tscore/Diags.h"
 
-bool
-signal_check_handler(int signal, signal_handler_t handler)
-{
-  struct sigaction oact;
-  void *sigact;
-
-  ink_release_assert(sigaction(signal, nullptr, &oact) == 0);
-  if (handler == reinterpret_cast<signal_handler_t>(SIG_DFL) || handler == reinterpret_cast<signal_handler_t>(SIG_IGN)) {
-    sigact = reinterpret_cast<void *>(oact.sa_handler);
-  } else {
-    sigact = reinterpret_cast<void *>(oact.sa_sigaction);
-  }
-
-  if (sigact != reinterpret_cast<void *>(handler)) {
-    Warning("handler for signal %d was %p, not %p as expected", signal, sigact, handler);
-    return false;
-  }
-
-  return true;
-}
-
-//
-// This is used during debugging to insure that the signals
-// don't change from under us, as they did on the DEC alpha
-// with a specific version of pthreads.
-//
-
-void
-check_signals(signal_handler_t handler)
-{
-  signal_check_handler(SIGPIPE, reinterpret_cast<signal_handler_t>(SIG_IGN));
-  signal_check_handler(SIGQUIT, handler);
-  signal_check_handler(SIGHUP, handler);
-  signal_check_handler(SIGTERM, handler);
-  signal_check_handler(SIGINT, handler);
-  signal_check_handler(SIGUSR1, handler);
-  signal_check_handler(SIGUSR2, handler);
-}
-
 static void
 set_signal(int signo, signal_handler_t handler)
 {
@@ -96,27 +57,6 @@ signal_reset_default(int signo)
   sigemptyset(&(act.sa_mask));
 
   ink_release_assert(sigaction(signo, &act, nullptr) == 0);
-}
-
-//
-// This thread checks the signals every 2 seconds to make
-// certain the DEC pthreads SIGPIPE bug isn't back..
-//
-static void *
-check_signal_thread(void *ptr)
-{
-  signal_handler_t handler = reinterpret_cast<signal_handler_t>(ptr);
-  for (;;) {
-    check_signals(handler);
-    sleep(2);
-  }
-  return nullptr;
-}
-
-void
-signal_start_check_thread(signal_handler_t handler)
-{
-  ink_thread_create(nullptr, check_signal_thread, reinterpret_cast<void *>(handler), 0, 0, nullptr);
 }
 
 bool
