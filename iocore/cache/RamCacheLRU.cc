@@ -60,7 +60,12 @@ struct RamCacheLRU : public RamCache {
 
 #ifdef DEBUG
 
-static DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+namespace
+{
+
+DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+
+} // end anonymous namespace
 
 #endif
 
