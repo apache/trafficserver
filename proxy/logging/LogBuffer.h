@@ -37,7 +37,7 @@ class LogBufferIterator;
 #define LOG_SEGMENT_COOKIE  0xaceface
 #define LOG_SEGMENT_VERSION 2
 
-#if defined(linux)
+#if defined(__linux__)
 #define LB_DEFAULT_ALIGN 512
 #else
 #define LB_DEFAULT_ALIGN 8

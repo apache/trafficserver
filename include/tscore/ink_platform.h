@@ -146,7 +146,7 @@ struct ifafilt;
 #include <sys/sockio.h>
 #endif
 
-#if defined(linux)
+#if defined(__linux__)
 typedef unsigned int in_addr_t;
 #endif
 
@@ -192,7 +192,7 @@ typedef unsigned int in_addr_t;
 
 // This is a little bit of a hack for now, until MPTCP has landed upstream in Linux land.
 #ifndef MPTCP_ENABLED
-#if defined(linux)
+#if defined(__linux__)
 #define MPTCP_ENABLED 42
 #else
 #define MPTCP_ENABLED 0

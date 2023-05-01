@@ -108,7 +108,7 @@ LogFormat::id_from_name(const char *name)
   if (name) {
     CryptoHash hash;
     CryptoContext().hash_immediate(hash, name, static_cast<int>(strlen(name)));
-#if defined(linux)
+#if defined(__linux__)
     /* Mask most significant bit so that return value of this function
      * is not sign extended to be a negative number.
      * This problem is only known to occur on Linux which

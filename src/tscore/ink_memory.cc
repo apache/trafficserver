@@ -37,7 +37,7 @@
 #endif
 
 #include <cassert>
-#if defined(linux)
+#if defined(__linux__)
 // XXX: Shouldn't that be part of CPPFLAGS?
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
@@ -154,7 +154,7 @@ ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
   if ((a + l) > end) {
     l = end - a; // strict limit
   }
-#if defined(linux)
+#if defined(__linux__)
 /* Fix INKqa06500
    Under Linux, msync(..., MS_SYNC) calls are painfully slow, even on
    non-dirty buffers. This is true as of kernel 2.2.12. We sacrifice

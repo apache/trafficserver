@@ -486,7 +486,7 @@ Span::init(const char *path, int64_t size)
   case S_IFBLK:
   case S_IFCHR:
 
-#if defined(linux)
+#if defined(__linux__)
     if (major(sbuf.st_rdev) == RAW_MAJOR && minor(sbuf.st_rdev) == 0) {
       Warning("cache %s '%s' is the raw device control interface", span_file_typename(sbuf.st_mode), path);
       serr = SPAN_ERROR_UNSUPPORTED_DEVTYPE;

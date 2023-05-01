@@ -418,7 +418,7 @@ ink_file_is_mmappable(mode_t st_mode)
     return true;
   }
 
-#if defined(linux)
+#if defined(__linux__)
   // Disks cannot be mmapped.
   if (S_ISBLK(st_mode)) {
     return false;
@@ -458,7 +458,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
   errno = ENOTSUP;
 #endif
 
-#elif defined(linux)
+#elif defined(__linux__)
   ioctl_arg_t arg;
 
   // The following set of ioctls work for both block and character devices. You can use the
