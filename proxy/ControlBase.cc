@@ -28,6 +28,8 @@
  *
  *
  ****************************************************************************/
+#include "swoc/MemSpan.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_time.h"
@@ -39,8 +41,6 @@
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
-
-#include "tscore/TsBuffer.h"
 
 #include <vector>
 
@@ -396,7 +396,7 @@ SchemeMod::make(char *value, const char **error)
 // This is a base class for all of the mods that have a
 // text string.
 struct TextMod : public ControlBase::Modifier {
-  ts::Buffer text;
+  swoc::MemSpan<char> text;
 
   TextMod();
   ~TextMod() override;
@@ -424,11 +424,11 @@ void
 TextMod::set(const char *value)
 {
   free(this->text.data());
-  this->text.set(ats_strdup(value), strlen(value));
+  this->text.assign(ats_strdup(value), strlen(value));
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  std::vector<ts::Buffer> text_vec;
+  std::vector<swoc::MemSpan<char>> text_vec;
   MultiTextMod();
   ~MultiTextMod() override;
 
@@ -459,8 +459,8 @@ MultiTextMod::set(char *value)
   Tokenizer rangeTok(",");
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
   for (int i = 0; i < num_tok; i++) {
-    ts::Buffer text;
-    text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
+    swoc::MemSpan<char> text;
+    text.assign(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
     this->text_vec.push_back(text);
   }
 }
