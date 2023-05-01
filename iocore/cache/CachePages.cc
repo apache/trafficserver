@@ -26,6 +26,12 @@
 #include "Show.h"
 #include "I_Tasks.h"
 #include "CacheControl.h"
+namespace
+{
+
+DbgCtl dbg_ctl_cache_inspector{"cache_inspector"};
+
+} // end anonymous namespace
 
 struct ShowCache : public ShowCont {
   enum scan_type {
@@ -92,8 +98,8 @@ struct ShowCache : public ShowCont {
 
       query_len = unescapifyStr(query);
 
-      Debug("cache_inspector", "query params: '%s' len %d [unescaped]", unescapedQuery, query_len);
-      Debug("cache_inspector", "query params: '%s' len %d [escaped]", query, query_len);
+      Dbg(dbg_ctl_cache_inspector, "query params: '%s' len %d [unescaped]", unescapedQuery, query_len);
+      Dbg(dbg_ctl_cache_inspector, "query params: '%s' len %d [escaped]", query, query_len);
 
       // remove 'C-m' s
       unsigned l, m;
@@ -140,15 +146,15 @@ struct ShowCache : public ShowCont {
         }
       }
 
-      Debug("cache_inspector", "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
+      Dbg(dbg_ctl_cache_inspector, "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
 
       for (unsigned i = 0; i < nstrings; i++) {
         if (show_cache_urlstrs[i][0] == '\0') {
           continue;
         }
-        Debug("cache_inspector", "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
+        Dbg(dbg_ctl_cache_inspector, "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
         unescapifyStr(show_cache_urlstrs[i]);
-        Debug("cache_inspector", "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
+        Dbg(dbg_ctl_cache_inspector, "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
       }
     }
 
@@ -617,7 +623,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
       int erroffset;
       pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, nullptr);
 
-      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
+      Dbg(dbg_ctl_cache_inspector, "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
 
       if (preq) {
         int r = pcre_exec(preq, nullptr, xx, ib, 0, 0, nullptr, 0);
@@ -662,7 +668,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
         }
       } else {
         // TODO: Regex didn't compile, show errors ?
-        Debug("cache_inspector", "regex '%s' didn't compile", show_cache_urlstrs[s]);
+        Dbg(dbg_ctl_cache_inspector, "regex '%s' didn't compile", show_cache_urlstrs[s]);
       }
     }
     return res;
@@ -677,7 +683,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
       }
     }
     CHECK_SHOW(show("<H3>Done</H3>\n"));
-    Debug("cache_inspector", "scan done");
+    Dbg(dbg_ctl_cache_inspector, "scan done");
     complete(event, e);
     return EVENT_DONE;
   case CACHE_EVENT_SCAN_FAILED:

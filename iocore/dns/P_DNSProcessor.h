@@ -198,7 +198,7 @@ struct DNSHandler : public Continuation {
   sent_one()
   {
     ++failover_number[name_server];
-    Debug("dns", "sent_one: failover_number for resolver %d is %d", name_server, failover_number[name_server]);
+    Dbg(_dbg_ctl_dns, "sent_one: failover_number for resolver %d is %d", name_server, failover_number[name_server]);
     if (failover_number[name_server] >= dns_failover_number && !crossed_failover_number[name_server])
       crossed_failover_number[name_server] = Thread::get_hrtime();
   }
@@ -206,10 +206,10 @@ struct DNSHandler : public Continuation {
   bool
   failover_now(int i)
   {
-    if (is_debug_tag_set("dns")) {
-      Debug("dns", "failover_now: Considering immediate failover, target time is %" PRId64 "",
-            (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
-      Debug("dns", "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
+    if (is_dbg_ctl_enabled(_dbg_ctl_dns)) {
+      DbgPrint(_dbg_ctl_dns, "failover_now: Considering immediate failover, target time is %" PRId64 "",
+               (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
+      DbgPrint(_dbg_ctl_dns, "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
     }
     return ns_down[i] || (crossed_failover_number[i] &&
                           ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
@@ -268,6 +268,9 @@ private:
   /** The event used for the periodic retry of connectivity to any down name
    * servers. */
   PendingAction _dns_retry_event;
+
+private:
+  inline static DbgCtl _dbg_ctl_dns{"dns"}, _dbg_ctl_net_epoll{"net_epoll"};
 };
 
 /* --------------------------------------------------------------
@@ -313,5 +316,5 @@ DNSHandler::DNSHandler()
   }
   memset(&qid_in_flight, 0, sizeof(qid_in_flight));
   SET_HANDLER(&DNSHandler::startEvent);
-  Debug("net_epoll", "inline DNSHandler::DNSHandler()");
+  Dbg(_dbg_ctl_net_epoll, "inline DNSHandler::DNSHandler()");
 }

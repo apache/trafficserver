@@ -31,6 +31,13 @@
 #define THREADS        1
 #define DIAGS_LOG_FILE "diags.log"
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_test{"cache test"};
+
+} // end anonymous namespace
+
 // Create a new temp directory and return it
 std::string
 temp_prefix()
@@ -45,7 +52,7 @@ temp_prefix()
   auto prefix = swoc::file::path(mkdtemp(buffer));
   bool result = swoc::file::create_directories(prefix / "var" / "trafficserver", err, 0755);
   if (!result) {
-    Debug("cache test", "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
+    Dbg(dbg_ctl_cache_test, "Failed to create directories for test: %s(%s)", prefix.c_str(), err.message().c_str());
   }
   ink_assert(result);
 
@@ -222,7 +229,7 @@ CacheWriteTest::do_io_write(size_t size)
 int
 CacheWriteTest::start_test(int event, void *e)
 {
-  Debug("cache test", "start write test");
+  Dbg(dbg_ctl_cache_test, "start write test");
 
   HttpCacheKey key;
   key = generate_key(this->info);
@@ -289,7 +296,7 @@ CacheReadTest::do_io_read(size_t size)
 int
 CacheReadTest::start_test(int event, void *e)
 {
-  Debug("cache test", "start read test");
+  Dbg(dbg_ctl_cache_test, "start read test");
   HttpCacheKey key;
   key = generate_key(this->info);
 

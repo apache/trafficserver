@@ -40,6 +40,13 @@
 const char Store::VOLUME_KEY[]           = "volume";
 const char Store::HASH_BASE_STRING_KEY[] = "id";
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_init{"cache_init"};
+
+} // end anonymous namespace
+
 static span_error_t
 make_span_error(int error)
 {
@@ -311,7 +318,7 @@ Store::read_config()
   ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
   Note("%s loading ...", ts::filename::STORAGE);
-  Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
+  Dbg(dbg_ctl_cache_init, "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
     Error("%s failed to load", ts::filename::STORAGE);
@@ -340,7 +347,7 @@ Store::read_config()
     }
 
     // parse
-    Debug("cache_init", "Store::read_config: \"%s\"", path);
+    Dbg(dbg_ctl_cache_init, "Store::read_config: \"%s\"", path);
     ++n_disks_in_config;
 
     int64_t size   = -1;
@@ -378,10 +385,10 @@ Store::read_config()
     std::string pp = Layout::get()->relative(path);
 
     ns = new Span;
-    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(), size,
-          volume_num, seed ? " id=" : "", seed ? seed : "");
+    Dbg(dbg_ctl_cache_init, "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(),
+        size, volume_num, seed ? " id=" : "", seed ? seed : "");
     if ((err = ns->init(pp.c_str(), size))) {
-      Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp.c_str(), err);
+      Dbg(dbg_ctl_cache_init, "Store::read_config - could not initialize storage \"%s\" [%s]", pp.c_str(), err);
       delete ns;
       continue;
     }
@@ -569,9 +576,10 @@ Span::init(const char *path, int64_t size)
   this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? static_cast<mode_t>(S_IFREG) : sbuf.st_mode));
   this->pathname = ats_strdup(path);
 
-  Debug("cache_init", "initialized span '%s'", this->pathname.get());
-  Debug("cache_init", "hw_sector_size=%d, size=%" PRId64 ", blocks=%" PRId64 ", disk_id=%" PRId64 "/%" PRId64 ", file_pathname=%d",
-        this->hw_sector_size, this->size(), this->blocks, this->disk_id[0], this->disk_id[1], this->file_pathname);
+  Dbg(dbg_ctl_cache_init, "initialized span '%s'", this->pathname.get());
+  Dbg(dbg_ctl_cache_init,
+      "hw_sector_size=%d, size=%" PRId64 ", blocks=%" PRId64 ", disk_id=%" PRId64 "/%" PRId64 ", file_pathname=%d",
+      this->hw_sector_size, this->size(), this->blocks, this->disk_id[0], this->disk_id[1], this->file_pathname);
 
   return nullptr;
 

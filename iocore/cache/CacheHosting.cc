@@ -32,6 +32,14 @@
 
 extern int gndisks;
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
+DbgCtl dbg_ctl_matcher{"matcher"};
+
+} // end anonymous namespace
+
 /*************************************************************
  *   Begin class HostMatcher
  *************************************************************/
@@ -169,7 +177,7 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
     memset(static_cast<void *>(cur_d), 0, sizeof(CacheHostRecord));
     return;
   }
-  Debug("cache_hosting", "hostname: %s, host record: %p", match_data, cur_d);
+  Dbg(dbg_ctl_cache_hosting, "hostname: %s, host record: %p", match_data, cur_d);
   // Fill in the matching info
   host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
 
@@ -384,7 +392,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
   ink_assert(second_pass == numEntries);
 
-  if (is_debug_tag_set("matcher")) {
+  if (is_dbg_ctl_enabled(dbg_ctl_matcher)) {
     Print();
   }
   return numEntries;
@@ -426,7 +434,7 @@ CacheHostRecord::Init(CacheType typ)
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %" PRId64, this, cachep->vol_number, (int64_t)cachep->size);
+      Dbg(dbg_ctl_cache_hosting, "Host Record: %p, Volume: %d, size: %" PRId64, this, cachep->vol_number, (int64_t)cachep->size);
       cp[num_cachevols] = cachep;
       num_cachevols++;
       num_vols += cachep->num_vols;
@@ -517,8 +525,8 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             if (cachep->vol_number == volume_number) {
               is_vol_present = 1;
               if (cachep->scheme == type) {
-                Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %ld", this, volume_number,
-                      (long)(cachep->size * STORE_BLOCK_SIZE));
+                Dbg(dbg_ctl_cache_hosting, "Host Record: %p, Volume: %d, size: %ld", this, volume_number,
+                    (long)(cachep->size * STORE_BLOCK_SIZE));
                 cp[num_cachevols] = cachep;
                 num_cachevols++;
                 num_vols += cachep->num_vols;
@@ -780,8 +788,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
-            in_percent, ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
+          in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);
@@ -1045,14 +1053,14 @@ execute_and_verify(RegressionTest *t)
 
   for (int i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
-    if (is_debug_tag_set("cache_hosting")) {
-      Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
+    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
+      Dbg(dbg_ctl_cache_hosting, "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
       for (int j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        Dbg(dbg_ctl_cache_hosting, "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (int j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
-        Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
-              d->header->vol_info[j].len, d->header->vol_info[j].free);
+        Dbg(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
+            d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }
   }
