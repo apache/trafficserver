@@ -2092,7 +2092,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
                    _peer_rwnd, stream->get_peer_rwnd(), payload_length, flags);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
-  this->session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
+  this->session->xmit(data, stream->is_tunneling() || flags & HTTP2_FLAGS_DATA_END_STREAM);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(session, stream->get_id(), "END_STREAM");
