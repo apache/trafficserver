@@ -1431,33 +1431,20 @@ APIHook const *
 HttpHookState::getNext()
 {
   APIHook const *zret = nullptr;
-  do {
-    APIHook const *hg   = _global.candidate();
-    APIHook const *hssn = _ssn.candidate();
-    APIHook const *htxn = _txn.candidate();
-    zret                = nullptr;
 
-    Debug("plugin", "computing next callback for hook %d", _id);
+#ifdef DEBUG
+  Debug("plugin", "computing next callback for hook %d", _id);
+#endif
 
-    if (hg) {
-      zret = hg;
-      ++_global;
-    } else if (hssn) {
-      zret = hssn;
-      ++_ssn;
-    } else if (htxn) {
-      zret = htxn;
-      ++_txn;
-    }
-  } while (zret != nullptr && !this->is_enabled());
+  if (zret = _global.candidate(); zret) {
+    ++_global;
+  } else if (zret = _ssn.candidate(); zret) {
+    ++_ssn;
+  } else if (zret = _txn.candidate(); zret) {
+    ++_txn;
+  }
 
   return zret;
-}
-
-bool
-HttpHookState::is_enabled()
-{
-  return true;
 }
 
 void

@@ -361,9 +361,6 @@ public:
   /// Get the hook ID
   TSHttpHookID id() const;
 
-  /// Temporary function to return true. Later will be used to decide if a plugin is enabled for the hooks
-  bool is_enabled();
-
 protected:
   /// Track the state of one scope of hooks.
   struct Scope {
