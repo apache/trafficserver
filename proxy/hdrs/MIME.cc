@@ -24,7 +24,6 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
-#include "tscore/TsBuffer.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
