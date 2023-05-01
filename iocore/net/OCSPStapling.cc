@@ -937,7 +937,7 @@ stapling_get_cert_info(SSL_CTX *ctx)
 static int
 stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 {
-  int status, reason;
+  int status            = TS_OCSP_CERTSTATUS_UNKNOWN, reason;
   TS_OCSP_BASICRESP *bs = nullptr;
   ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
   int response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
