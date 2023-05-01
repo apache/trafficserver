@@ -49,9 +49,9 @@ struct EvacuationBlock;
 #endif
 
 #ifdef DEBUG
-#define DDebug(tag, fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
+#define DDbg(dbg_ctl, fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #else
-#define DDebug(tag, fmt, ...)
+#define DDbg(dbg_ctl, fmt, ...)
 #endif
 
 #define AIO_SOFT_FAILURE -100000
@@ -563,7 +563,8 @@ new_CacheVC(Continuation *cont)
   c->start_time       = Thread::get_hrtime();
   c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
-  Debug("cache_new", "new %p", c);
+  static DbgCtl dbg_ctl{"cache_new"};
+  Dbg(dbg_ctl, "new %p", c);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!c->stat_link.next);
   ink_assert(!c->stat_link.prev);
@@ -575,7 +576,8 @@ new_CacheVC(Continuation *cont)
 inline int
 free_CacheVC(CacheVC *cont)
 {
-  Debug("cache_free", "free %p", cont);
+  static DbgCtl dbg_ctl{"cache_free"};
+  Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex = cont->mutex.get();
   Vol *vol          = cont->vol;
   if (vol) {

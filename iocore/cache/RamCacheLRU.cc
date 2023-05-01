@@ -58,6 +58,17 @@ struct RamCacheLRU : public RamCache {
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 };
 
+#ifdef DEBUG
+
+namespace
+{
+
+DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+
+} // end anonymous namespace
+
+#endif
+
 int64_t
 RamCacheLRU::size() const
 {
@@ -81,7 +92,7 @@ void
 RamCacheLRU::resize_hashtable()
 {
   int anbuckets = bucket_sizes[ibuckets];
-  DDebug("ram_cache", "resize hashtable %d", anbuckets);
+  DDbg(dbg_ctl_ram_cache, "resize hashtable %d", anbuckets);
   int64_t s                                      = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
   DList(RamCacheLRUEntry, hash_link) *new_bucket = static_cast<DList(RamCacheLRUEntry, hash_link) *>(ats_malloc(s));
   memset(static_cast<void *>(new_bucket), 0, s);
@@ -109,7 +120,7 @@ RamCacheLRU::init(int64_t abytes, Vol *avol)
 {
   vol       = avol;
   max_bytes = abytes;
-  DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
+  DDbg(dbg_ctl_ram_cache, "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!max_bytes) {
     return;
   }
@@ -129,13 +140,13 @@ RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
       lru.remove(e);
       lru.enqueue(e);
       (*ret_data) = e->data;
-      DDebug("ram_cache", "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
+      DDbg(dbg_ctl_ram_cache, "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
       return 1;
     }
     e = e->hash_link.next;
   }
-  DDebug("ram_cache", "get %X %" PRIu64 " MISS", key->slice32(3), auxkey);
+  DDbg(dbg_ctl_ram_cache, "get %X %" PRIu64 " MISS", key->slice32(3), auxkey);
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 }
@@ -149,7 +160,7 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(ENTRY_OVERHEAD + e->data->block_size()));
-  DDebug("ram_cache", "put %X %" PRIu64 " FREED", e->key.slice32(3), e->auxkey);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " FREED", e->key.slice32(3), e->auxkey);
   e->data = nullptr;
   THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
   objects--;
@@ -169,7 +180,7 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64
     uint16_t kk = seen[i];
     seen[i]     = k;
     if ((kk != k)) {
-      DDebug("ram_cache", "put %X %" PRIu64 " len %d UNSEEN", key->slice32(3), auxkey, len);
+      DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " len %d UNSEEN", key->slice32(3), auxkey, len);
       return 0;
     }
   }
@@ -204,7 +215,7 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64
       break;
     }
   }
-  DDebug("ram_cache", "put %X %" PRIu64 " INSERTED", key->slice32(3), auxkey);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " INSERTED", key->slice32(3), auxkey);
   if (objects > nbuckets) {
     ++ibuckets;
     resize_hashtable();

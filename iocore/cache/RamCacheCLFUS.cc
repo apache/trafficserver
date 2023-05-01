@@ -48,6 +48,18 @@
 #define AVERAGE_VALUE_OVER 100
 #define REQUEUE_LIMIT      100
 
+#ifdef DEBUG
+
+namespace
+{
+
+DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+DbgCtl dbg_ctl_ram_cache_compare{"ram_cache_compare"};
+
+} // end anonymous namespace
+
+#endif
+
 struct RamCacheCLFUSEntry {
   CryptoHash key;
   uint64_t auxkey;
@@ -171,7 +183,7 @@ void
 RamCacheCLFUS::_resize_hashtable()
 {
   int anbuckets = bucket_sizes[this->_ibuckets];
-  DDebug("ram_cache", "resize hashtable %d", anbuckets);
+  DDbg(dbg_ctl_ram_cache, "resize hashtable %d", anbuckets);
   int64_t s                                        = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
   DList(RamCacheCLFUSEntry, hash_link) *new_bucket = static_cast<DList(RamCacheCLFUSEntry, hash_link) *>(ats_malloc(s));
   memset(static_cast<void *>(new_bucket), 0, s);
@@ -200,7 +212,7 @@ RamCacheCLFUS::init(int64_t abytes, Vol *avol)
   ink_assert(avol != nullptr);
   vol              = avol;
   this->_max_bytes = abytes;
-  DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
+  DDbg(dbg_ctl_ram_cache, "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!this->_max_bytes) {
     return;
   }
@@ -311,25 +323,25 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           (*ret_data) = data;
         }
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
-        DDebug("ram_cache", "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
+        DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
         return ram_hit_state;
       } else {
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
-        DDebug("ram_cache", "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
+        DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
         return 0;
       }
     }
     assert(e != e->hash_link.next);
     e = e->hash_link.next;
   }
-  DDebug("ram_cache", "get %X %" PRId64 " MISS", key->slice32(3), auxkey);
+  DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " MISS", key->slice32(3), auxkey);
 Lerror:
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 Lfailed:
   ats_free(b);
   this->_destroy(e);
-  DDebug("ram_cache", "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
+  DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
   goto Lerror;
 }
 
@@ -359,7 +371,7 @@ Lfree:
   this->_history--;
   uint32_t b = e->key.slice32(3) % this->_nbuckets;
   this->_bucket[b].remove(e);
-  DDebug("ram_cache", "put %X %" PRId64 " size %d FREED", e->key.slice32(3), e->auxkey, e->size);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d FREED", e->key.slice32(3), e->auxkey, e->size);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
 }
 
@@ -367,7 +379,7 @@ void
 RamCacheCLFUS::_victimize(RamCacheCLFUSEntry *e)
 {
   this->_objects--;
-  DDebug("ram_cache", "put %X %" PRId64 " size %d VICTIMIZED", e->key.slice32(3), e->auxkey, e->size);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d VICTIMIZED", e->key.slice32(3), e->auxkey, e->size);
   e->data          = nullptr;
   e->flag_bits.lru = 1;
   this->_lru[1].enqueue(e);
@@ -403,7 +415,7 @@ RamCacheCLFUS::_destroy(RamCacheCLFUSEntry *e)
   }
   uint32_t b = e->key.slice32(3) % this->_nbuckets;
   this->_bucket[b].remove(e);
-  DDebug("ram_cache", "put %X %" PRId64 " DESTROYED", e->key.slice32(3), e->auxkey);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " DESTROYED", e->key.slice32(3), e->auxkey);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
   return ret;
 }
@@ -550,8 +562,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     ats_free(b);
     e->flag_bits.incompressible = 1;
   Lcontinue:;
-    DDebug("ram_cache", "compress %X %" PRId64 " %d %d %d %d %d", e->key.slice32(3), e->auxkey, e->flag_bits.incompressible,
-           e->flag_bits.compressed, e->len, e->compressed_len, this->_ncompressed);
+    DDbg(dbg_ctl_ram_cache, "compress %X %" PRId64 " %d %d %d %d %d", e->key.slice32(3), e->auxkey, e->flag_bits.incompressible,
+         e->flag_bits.compressed, e->len, e->compressed_len, this->_ncompressed);
     if (!e->lru_link.next) {
       break;
     }
@@ -617,7 +629,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       check_accounting(this);
       e->flag_bits.copy       = copy;
       e->flag_bits.compressed = 0;
-      DDebug("ram_cache", "put %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
+      DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
       return 1;
     } else {
       this->_lru[1].remove(e);
@@ -641,7 +653,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     uint16_t kk    = this->_seen[s];
     this->_seen[s] = k;
     if (this->_history >= this->_objects && kk != k) {
-      DDebug("ram_cache", "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
+      DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
       return 0;
     }
   }
@@ -655,7 +667,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
         this->_lru[1].enqueue(e);
       }
       this->_requeue_victims(victims);
-      DDebug("ram_cache", "put %X %" PRId64 " NO VICTIM", key->slice32(3), auxkey);
+      DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " NO VICTIM", key->slice32(3), auxkey);
       return 0;
     }
     this->_average_value = (CACHE_VALUE(victim) + (this->_average_value * (AVERAGE_VALUE_OVER - 1))) / AVERAGE_VALUE_OVER;
@@ -676,11 +688,11 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     if (!e) {
       goto Lhistory;
     } else { // e from history
-      DDebug("ram_cache_compare", "put %f %f", victim_value, CACHE_VALUE(e));
+      DDbg(dbg_ctl_ram_cache_compare, "put %f %f", victim_value, CACHE_VALUE(e));
       if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > CACHE_VALUE(e)) {
         this->_requeue_victims(victims);
         this->_lru[1].enqueue(e);
-        DDebug("ram_cache", "put %X %" PRId64 " size %d INC %" PRId64 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
+        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d INC %" PRId64 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
         return 0;
       }
     }
@@ -730,7 +742,7 @@ Linsert:
   this->_lru[0].enqueue(e);
   e->len = len;
   check_accounting(this);
-  DDebug("ram_cache", "put %X %" PRId64 " size %d INSERTED", key->slice32(3), auxkey, e->size);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d INSERTED", key->slice32(3), auxkey, e->size);
   return 1;
 Lhistory:
   this->_requeue_victims(victims);
@@ -745,7 +757,7 @@ Lhistory:
   e->flag_bits.lru = 1;
   this->_lru[1].enqueue(e);
   this->_history++;
-  DDebug("ram_cache", "put %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
+  DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
   return 0;
 }
 

@@ -112,6 +112,26 @@ ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
 CacheKey zero_key;
 
+namespace
+{
+
+DbgCtl dbg_ctl_cache_init{"cache_init"};
+DbgCtl dbg_ctl_cache_remove{"cache_remove"};
+DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
+DbgCtl dbg_ctl_cache_bc{"cache_bc"};
+DbgCtl dbg_ctl_cache_read{"cache_read"};
+DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
+DbgCtl dbg_ctl_ram_cache{"ram_cache"};
+
+#ifdef DEBUG
+
+DbgCtl dbg_ctl_cache_close{"cache_close"};
+DbgCtl dbg_ctl_cache_reenable{"cache_reenable"};
+
+#endif
+
+} // end anonymous namespace
+
 struct VolInitInfo {
   off_t recover_pos;
   AIOCallbackInternal vol_aio[4];
@@ -357,7 +377,7 @@ CacheVC::do_io_close(int alerrno)
   ink_assert(mutex->thread_holding == this_ethread());
   int previous_closed = closed;
   closed              = (alerrno == -1) ? 1 : -1; // Stupid default arguments
-  DDebug("cache_close", "do_io_close %p %d %d", this, alerrno, closed);
+  DDbg(dbg_ctl_cache_close, "do_io_close %p %d %d", this, alerrno, closed);
   if (!previous_closed && !recursive) {
     die();
   }
@@ -366,7 +386,7 @@ CacheVC::do_io_close(int alerrno)
 void
 CacheVC::reenable(VIO *avio)
 {
-  DDebug("cache_reenable", "reenable %p", this);
+  DDbg(dbg_ctl_cache_reenable, "reenable %p", this);
   (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
@@ -386,7 +406,7 @@ CacheVC::reenable(VIO *avio)
 void
 CacheVC::reenable_re(VIO *avio)
 {
-  DDebug("cache_reenable", "reenable_re %p", this);
+  DDbg(dbg_ctl_cache_reenable, "reenable_re %p", this);
   (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
@@ -744,7 +764,7 @@ CacheProcessor::start_internal(int flags)
     gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
 #endif
 
-    Debug("cache_hosting", "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
+    Dbg(dbg_ctl_cache_hosting, "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
   }
 
   return 0;
@@ -828,16 +848,16 @@ CacheProcessor::diskInitialized()
   gnvol = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
-    if (is_debug_tag_set("cache_hosting")) {
+    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
       int j;
-      Debug("cache_hosting", "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
-            d->free_space);
+      DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
+               d->free_space);
       for (j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        DbgPrint(dbg_ctl_cache_hosting, "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
-        Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
-              d->header->vol_info[j].len, d->header->vol_info[j].free);
+        DbgPrint(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
+                 d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }
     if (!check) {
@@ -883,10 +903,10 @@ CacheProcessor::cacheInitialized()
 
   if (theCache) {
     total_size += theCache->cache_size;
-    Debug("cache_init", "CacheProcessor::cacheInitialized - theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
-          total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
+    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
+        total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
     if (theCache->ready == CACHE_INIT_FAILED) {
-      Debug("cache_init", "CacheProcessor::cacheInitialized - failed to initialize the cache for http: cache disabled");
+      Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - failed to initialize the cache for http: cache disabled");
       Warning("failed to initialize the cache for http: cache disabled\n");
     } else {
       caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
@@ -912,8 +932,8 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
-          gnvol.load());
+    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
+        gnvol.load());
 
     int64_t ram_cache_bytes = 0;
 
@@ -932,21 +952,21 @@ CacheProcessor::cacheInitialized()
       }
       // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
-        Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
+        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
 
           if (gvol[i]->cache_vol->ramcache_enabled) {
             gvol[i]->ram_cache->init(vol->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
             ram_cache_bytes += gvol[i]->dirlen();
-            Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", ram_cache_bytes,
-                  ram_cache_bytes / (1024 * 1024));
+            Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
+                ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
             CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)gvol[i]->dirlen());
           }
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
-          Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
-                total_cache_bytes, total_cache_bytes / (1024 * 1024));
+          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
+              total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
 
@@ -963,20 +983,21 @@ CacheProcessor::cacheInitialized()
         // we got configured memory size
         // TODO, should we check the available system memories, or you will
         //   OOM or swapout, that is not a good situation for the server
-        Debug("cache_init", "CacheProcessor::cacheInitialized - %" PRId64 " != AUTO_SIZE_RAM_CACHE", cache_config_ram_cache_size);
+        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - %" PRId64 " != AUTO_SIZE_RAM_CACHE",
+            cache_config_ram_cache_size);
         int64_t http_ram_cache_size =
           (theCache) ?
             static_cast<int64_t>((static_cast<double>(theCache->cache_size) / total_size) * cache_config_ram_cache_size) :
             0;
-        Debug("cache_init", "CacheProcessor::cacheInitialized - http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
-              http_ram_cache_size, http_ram_cache_size / (1024 * 1024));
+        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
+            http_ram_cache_size, http_ram_cache_size / (1024 * 1024));
         int64_t stream_ram_cache_size = cache_config_ram_cache_size - http_ram_cache_size;
-        Debug("cache_init", "CacheProcessor::cacheInitialized - stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
-              stream_ram_cache_size, stream_ram_cache_size / (1024 * 1024));
+        Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb",
+            stream_ram_cache_size, stream_ram_cache_size / (1024 * 1024));
 
         // Dump some ram_cache size information in debug mode.
-        Debug("ram_cache", "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
-              cache_config_ram_cache_cutoff);
+        Dbg(dbg_ctl_ram_cache, "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
+            cache_config_ram_cache_cutoff);
 
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
@@ -984,21 +1005,21 @@ CacheProcessor::cacheInitialized()
           if (gvol[i]->cache == theCache && gvol[i]->cache_vol->ramcache_enabled) {
             ink_assert(gvol[i]->cache != nullptr);
             factor = static_cast<double>(static_cast<int64_t>(gvol[i]->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
-            Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
+            Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - factor = %f", factor);
             gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), vol);
             ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
             CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)(http_ram_cache_size * factor));
           } else if (gvol[i]->cache_vol->ramcache_enabled) {
             ink_release_assert(!"Unexpected non-HTTP cache volume");
           }
-          Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
-                ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
+          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
+              ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           vol_total_cache_bytes  = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes     += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
           CACHE_VOL_SUM_DYN_STAT(cache_stripes_stat, 1); // Count the cache stripes
-          Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
-                total_cache_bytes, total_cache_bytes / (1024 * 1024));
+          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
+              total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
           vol_total_direntries  = gvol[i]->buckets * gvol[i]->segments * DIR_DEPTH;
           total_direntries     += vol_total_direntries;
@@ -1096,7 +1117,7 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 Action *
 CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
-  Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
+  Dbg(dbg_ctl_cache_remove, "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
   return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
 }
 
@@ -1250,8 +1271,8 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
   memset(static_cast<void *>(evacuate), 0, evac_len);
 
-  Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
-        (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
+  Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
+      (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
 
   raw_dir = nullptr;
   if (ats_hugepage_enabled()) {
@@ -1276,7 +1297,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // try A
   off_t as = skip;
 
-  Debug("cache_init", "reading directory '%s'", hash_text.get());
+  Dbg(dbg_ctl_cache_init, "reading directory '%s'", hash_text.get());
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -1594,7 +1615,7 @@ Ldone : {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
     SET_HANDLER(&Vol::handle_recover_write_dir);
-    if (is_debug_tag_set("cache_init")) {
+    if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
       Note("recovery wrapped around. nothing to clear\n");
     }
     return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
@@ -1602,7 +1623,8 @@ Ldone : {
 
   recover_pos += EVACUATION_SIZE; // safely cover the max write size
   if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
-    Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
+    Dbg(dbg_ctl_cache_init, "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos,
+        recover_wrapped);
     Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
     goto Lclear;
   }
@@ -1714,7 +1736,7 @@ Vol::handle_header_read(int event, void *data)
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Vol::handle_dir_read);
-      if (is_debug_tag_set("cache_init")) {
+      if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
         Note("using directory A for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip;
@@ -1723,7 +1745,7 @@ Vol::handle_header_read(int event, void *data)
     // try B
     else if (hf[2]->sync_serial == hf[3]->sync_serial) {
       SET_HANDLER(&Vol::handle_dir_read);
-      if (is_debug_tag_set("cache_init")) {
+      if (is_dbg_ctl_enabled(dbg_ctl_cache_init)) {
         Note("using directory B for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip + this->dirlen();
@@ -1874,7 +1896,7 @@ build_vol_hash_table(CacheHostRecord *cp)
     gotvol[rtable[i].idx]++;
   }
   for (int i = 0; i < num_vols; i++) {
-    Debug("cache_init", "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
+    Dbg(dbg_ctl_cache_init, "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
   }
   // install new table
   if (nullptr != (old_table = ink_atomic_swap(&(cp->vol_hash_table), ttable))) {
@@ -2059,7 +2081,8 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   total_good_nvol       = 0;
 
   REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
-  Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %d", (int)cache_config_min_average_object_size);
+  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d",
+      (int)cache_config_min_average_object_size);
 
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
@@ -2167,10 +2190,10 @@ CacheVC::handleReadDone(int event, Event *e)
     }
     if ((!dir_valid(vol, &dir)) || (!io.ok())) {
       if (!io.ok()) {
-        Debug("cache_disk_error", "Read error on disk %s\n \
+        Dbg(dbg_ctl_cache_disk_error, "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-              vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
-              (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+            vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+            (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
@@ -2182,8 +2205,8 @@ CacheVC::handleReadDone(int event, Event *e)
     if (ts::VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
       // future version, count as corrupted
       doc->magic = DOC_CORRUPT;
-      Debug("cache_bc", "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major, doc->v_minor,
-            vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+      Dbg(dbg_ctl_cache_bc, "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major,
+          doc->v_minor, vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
       goto Ldone;
     }
 
@@ -2199,10 +2222,11 @@ CacheVC::handleReadDone(int event, Event *e)
     }
 #endif
 
-    if (is_debug_tag_set("cache_read")) {
+    if (is_dbg_ctl_enabled(dbg_ctl_cache_read)) {
       char xt[CRYPTO_HEX_SIZE];
-      Debug("cache_read", "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64 " prefix=%d",
-            doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len());
+      Dbg(dbg_ctl_cache_read,
+          "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64 " prefix=%d",
+          doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len());
     }
 
     // put into ram cache?
@@ -2630,7 +2654,7 @@ fillExclusiveDisks(CacheVol *cp)
   int diskCount     = 0;
   int volume_number = cp->vol_number;
 
-  Debug("cache_init", "volume %d", volume_number);
+  Dbg(dbg_ctl_cache_init, "volume %d", volume_number);
   for (int i = 0; i < gndisks; i++) {
     if (gdisks[i]->forced_volume_num != volume_number) {
       continue;
@@ -2671,7 +2695,7 @@ fillExclusiveDisks(CacheVol *cp)
         cp->size  += dpb->len;
         cp->num_vols++;
       } else {
-        Debug("cache_init", "create_volume failed");
+        Dbg(dbg_ctl_cache_init, "create_volume failed");
         break;
       }
     } while ((size_diff > 0));
@@ -2712,7 +2736,7 @@ cplist_reconfigure()
         int vols            = (free_space / MAX_VOL_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
-          Debug("cache_hosting", "blocks = %" PRId64, (int64_t)b);
+          Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
           DiskVolBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
@@ -2793,8 +2817,8 @@ cplist_reconfigure()
                 (int64_t)config_vol->size, 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Debug("cache_hosting", "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
-            config_vol->ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
+          config_vol->ramcache_enabled);
     }
     cplist_update();
 
@@ -2933,7 +2957,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
   cp->vol_number = volume_number;
   cp->scheme     = scheme;
   if (fillExclusiveDisks(cp)) {
-    Debug("cache_init", "volume successfully filled from forced disks: volume_number=%d", volume_number);
+    Dbg(dbg_ctl_cache_init, "volume successfully filled from forced disks: volume_number=%d", volume_number);
     return 0;
   }
 
@@ -3019,20 +3043,20 @@ Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
     if (res.record) {
       unsigned short *host_hash_table = res.record->vol_hash_table;
       if (host_hash_table) {
-        if (is_debug_tag_set("cache_hosting")) {
+        if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
           char format_str[50];
           snprintf(format_str, sizeof(format_str), "Volume: %%xd for host: %%.%ds", host_len);
-          Debug("cache_hosting", format_str, res.record, hostname);
+          Dbg(dbg_ctl_cache_hosting, format_str, res.record, hostname);
         }
         return res.record->vols[host_hash_table[h]];
       }
     }
   }
   if (hash_table) {
-    if (is_debug_tag_set("cache_hosting")) {
+    if (is_dbg_ctl_enabled(dbg_ctl_cache_hosting)) {
       char format_str[50];
       snprintf(format_str, sizeof(format_str), "Generic volume: %%xd for host: %%.%ds", host_len);
-      Debug("cache_hosting", format_str, host_rec, hostname);
+      Dbg(dbg_ctl_cache_hosting, format_str, host_rec, hostname);
     }
     return host_rec->vols[hash_table[h]];
   } else {
@@ -3134,8 +3158,8 @@ ink_cache_init(ts::ModuleVersion v)
   cache_rsb = RecAllocateRawStatBlock(static_cast<int>(cache_stat_count));
 
   REC_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
-  Debug("cache_init", "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
-        cache_config_ram_cache_size / (1024 * 1024));
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
+      cache_config_ram_cache_size / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
@@ -3143,42 +3167,42 @@ ink_cache_init(ts::ModuleVersion v)
   REC_ReadConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
 
   REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
-  Debug("cache_init", "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
   REC_EstablishStaticConfigInt32(cache_config_log_alternate_eviction, "proxy.config.cache.log.alternate.eviction");
-  Debug("cache_init", "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
 
   REC_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
-  Debug("cache_init", "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
-        cache_config_ram_cache_cutoff / (1024 * 1024));
+  Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
+      cache_config_ram_cache_cutoff / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
-  Debug("cache_init", "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
 
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
-  Debug("cache_init", "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
 
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
-  Debug("cache_init", "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
 
   REC_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
-  Debug("cache_init", "proxy.config.cache.max_doc_size = %d = %dMb", cache_config_max_doc_size,
-        cache_config_max_doc_size / (1024 * 1024));
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_doc_size = %d = %dMb", cache_config_max_doc_size,
+      cache_config_max_doc_size / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
-  Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
   REC_EstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
-  Debug("cache_init", "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
 
   REC_EstablishStaticConfigInt32(cache_read_while_writer_retry_delay, "proxy.config.cache.read_while_writer_retry.delay");
-  Debug("cache_init", "proxy.config.cache.read_while_writer_retry.delay = %dms", cache_read_while_writer_retry_delay);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer_retry.delay = %dms", cache_read_while_writer_retry_delay);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
-  Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
-  Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
 
@@ -3191,21 +3215,21 @@ ink_cache_init(ts::ModuleVersion v)
   }
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
-  Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
 
   REC_EstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
-  Debug("cache_init", "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
 
   REC_EstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
-  Debug("cache_init", "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
 
   REC_EstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
-  Debug("cache_init", "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
 
   REC_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
   cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
   REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
-  Debug("cache_init", "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
   register_cache_stats(cache_rsb, "proxy.process.cache");
 
