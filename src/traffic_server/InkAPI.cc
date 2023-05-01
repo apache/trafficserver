@@ -1468,11 +1468,11 @@ HttpHookState::getNext()
 #endif
 
   if (zret = _global.candidate(); zret) {
-      ++_global;
+    ++_global;
   } else if (zret = _ssn.candidate(); zret) {
-      ++_ssn;
+    ++_ssn;
   } else if (zret = _txn.candidate(); zret) {
-      ++_txn;
+    ++_txn;
   }
 
   return zret;
