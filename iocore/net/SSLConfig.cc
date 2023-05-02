@@ -287,7 +287,7 @@ SSLConfigParams::initialize()
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1;
     } else {
-      // This is disabled by default. It it's used if it's enabled.
+      // This is disabled by default. It's used if it's enabled.
       Warning("proxy.config.ssl.client.TLSv1 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -296,7 +296,7 @@ SSLConfigParams::initialize()
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_1;
     } else {
-      // This is disabled by default. It it's used if it's enabled.
+      // This is disabled by default. It's used if it's enabled.
       Warning("proxy.config.ssl.client.TLSv1_1 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -304,7 +304,7 @@ SSLConfigParams::initialize()
     REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_2");
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
-      // This is enabled by default. It it's used if it's disabled.
+      // This is enabled by default. It's used if it's disabled.
       Warning("proxy.config.ssl.client.TLSv1_2 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -313,7 +313,7 @@ SSLConfigParams::initialize()
     REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3.enabled");
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
-      // This is enabled by default. It it's used if it's disabled.
+      // This is enabled by default. It's used if it's disabled.
       Warning("proxy.config.ssl.client.TLSv1_3.enabled is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -327,7 +327,7 @@ SSLConfigParams::initialize()
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1;
     } else {
-      // This is disabled by default. It it's used if it's enabled.
+      // This is disabled by default. It's used if it's enabled.
       Warning("proxy.config.ssl.client.TLSv1 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -336,7 +336,7 @@ SSLConfigParams::initialize()
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
     } else {
-      // This is disabled by default. It it's used if it's enabled.
+      // This is disabled by default. It's used if it's enabled.
       Warning("proxy.config.ssl.client.TLSv1_1 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -344,7 +344,7 @@ SSLConfigParams::initialize()
     REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_2");
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
-      // This is enabled by default. It it's used if it's disabled.
+      // This is enabled by default. It's used if it's disabled.
       Warning("proxy.config.ssl.client.TLSv1_2 is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }
@@ -353,7 +353,7 @@ SSLConfigParams::initialize()
     REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3.enabled");
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
-      // This is enabled by default. It it's used if it's disabled.
+      // This is enabled by default. It's used if it's disabled.
       Warning("proxy.config.ssl.client.TLSv1_3.enabled is deprecated. Use proxy.config.ssl.client.version.min and "
               "proxy.config.ssl.client.version.max instead.");
     }

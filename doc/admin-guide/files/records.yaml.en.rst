@@ -3612,7 +3612,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
    :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1.0. If not specified, disabled by default.
@@ -3620,7 +3620,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
    :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, disabled by default.  [Requires OpenSSL v1.0.1 and higher]
@@ -3635,7 +3635,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
    :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
@@ -3643,7 +3643,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
    :ts:cv:`proxy.config.ssl.server.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLS v1.3.  If not specified, enabled by default.  [Requires OpenSSL v1.1.1 and higher]
@@ -4079,7 +4079,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
    :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
@@ -4087,7 +4087,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
    :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
@@ -4095,7 +4095,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
    :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
@@ -4103,7 +4103,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
    :deprecated:
 
-   This setting is depreated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
+   This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
    :ts:cv:`proxy.config.ssl.client.version.min`, and will be ignored if those new settings are used.
 
    Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
