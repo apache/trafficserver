@@ -417,7 +417,7 @@ TextMod::~TextMod()
 void
 TextMod::print(FILE *f) const
 {
-  fprintf(f, "%s=%*s  ", this->name(), static_cast<int>(text.size()), text.data());
+  fprintf(f, "%s=%.*s  ", this->name(), static_cast<int>(text.size()), text.data());
 }
 
 void
@@ -449,7 +449,7 @@ void
 MultiTextMod::print(FILE *f) const
 {
   for (auto text_iter : this->text_vec) {
-    fprintf(f, "%s=%*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
+    fprintf(f, "%s=%.*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
   }
 }
 
@@ -576,7 +576,7 @@ SuffixMod::check(HttpRequestData *req) const
   const char *path = req->hdr->url_get()->path_get(&path_len);
 
   if (1 == static_cast<int>(this->text_vec.size()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
-      0 == strcmp(this->text_vec[0].data(), "*")) {
+      this->text_vec[0][0] == '*') {
     return true;
   }
 
