@@ -957,8 +957,10 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
   if (!TS_OCSP_resp_find_status(bs, cinf->cid, &status, &reason, &rev, &thisupd, &nextupd)) {
     // If ID not present just pass it back to client
     Error("stapling_check_response: certificate ID not present in response for %s", cinf->certname);
-  } else {
-    TS_OCSP_check_validity(thisupd, nextupd, 300, -1);
+  }
+  if (!TS_OCSP_check_validity(thisupd, nextupd, 300, -1)) {
+    // The check is just for logging and pass the response back to client anyway
+    Error("stapling_check_response: status in response for %s is not valid already/yet", cinf->certname);
   }
 
   switch (status) {
