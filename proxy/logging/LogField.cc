@@ -169,7 +169,7 @@ struct cmp_str {
   bool
   operator()(swoc::TextView const &a, swoc::TextView const &b) const
   {
-    return a.size() == b.size() && 0 == strncasecmp(a.data(), b.data(), a.size());
+    return strcasecmp(a, b) < 0;
   }
 };
 } // namespace
