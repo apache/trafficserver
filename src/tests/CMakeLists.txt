@@ -20,7 +20,7 @@
 include_directories(
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
+        ${PROJECT_SOURCE_DIR}/mgmt
         ${CATCH_INCLUDE_DIR}
 )
 
@@ -31,39 +31,39 @@ endif (TS_USE_LINUX_IO_URING)
 
 macro(add_cache_test name)
     add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/main.cc
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc
+            ${PROJECT_SOURCE_DIR}/iocore/cache/test/main.cc
+            ${PROJECT_SOURCE_DIR}/iocore/cache/test/stub.cc
+            ${PROJECT_SOURCE_DIR}/iocore/cache/test/CacheTestHandler.cc
             ${ARGN})
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
 macro(add_stubbed_test name)
     add_executable(${name}
-            ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
+            ${PROJECT_SOURCE_DIR}/iocore/cache/test/stub.cc
             ${ARGN})
     add_test(NAME test_stubbed_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
-add_cache_test(Cache ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Cache.cc)
-add_cache_test(RWW ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_RWW.cc)
-add_cache_test(Alternate_L_to_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S.cc)
-add_cache_test(Alternate_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L.cc)
-add_cache_test(Alternate_L_to_S_remove_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S_remove_L.cc)
-add_cache_test(Alternate_L_to_S_remove_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S_remove_S.cc)
-add_cache_test(Alternate_S_to_L_remove_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L_remove_L.cc)
-add_cache_test(Alternate_S_to_L_remove_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L_remove_S.cc)
-add_cache_test(Update_L_to_S ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_L_to_S.cc)
-add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S_to_L.cc)
-add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
+add_cache_test(Cache ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Cache.cc)
+add_cache_test(RWW ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_RWW.cc)
+add_cache_test(Alternate_L_to_S ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S.cc)
+add_cache_test(Alternate_S_to_L ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L.cc)
+add_cache_test(Alternate_L_to_S_remove_L ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S_remove_L.cc)
+add_cache_test(Alternate_L_to_S_remove_S ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_L_to_S_remove_S.cc)
+add_cache_test(Alternate_S_to_L_remove_L ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L_remove_L.cc)
+add_cache_test(Alternate_S_to_L_remove_S ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Alternate_S_to_L_remove_S.cc)
+add_cache_test(Update_L_to_S ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Update_L_to_S.cc)
+add_cache_test(Update_S_to_L ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Update_S_to_L.cc)
+add_cache_test(Update_Header ${PROJECT_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
 
-add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
+add_executable(test_AIO ${PROJECT_SOURCE_DIR}/iocore/aio/test_AIO.cc)
 add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO>)
 
-add_executable(test_net ${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
+add_executable(test_net ${PROJECT_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
 add_test(NAME test_net COMMAND $<TARGET_FILE:test_net>)
 
-add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
-add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
-add_stubbed_test(MIOBufferWriter ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_MIOBufferWriter.cc)
-add_stubbed_test(ProxyAllocator ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/benchmark_ProxyAllocator.cc)
+add_stubbed_test(EventSystem ${PROJECT_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
+add_stubbed_test(IOBuffer ${PROJECT_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
+add_stubbed_test(MIOBufferWriter ${PROJECT_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_MIOBufferWriter.cc)
+add_stubbed_test(ProxyAllocator ${PROJECT_SOURCE_DIR}/iocore/eventsystem/unit_tests/benchmark_ProxyAllocator.cc)
