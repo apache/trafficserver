@@ -1291,30 +1291,6 @@ AM_CONDITIONAL([HAS_HKDF], [test "x$enable_hkdf" = "xyes"])
 # Check for TLS 1.3 support
 TS_CHECK_CRYPTO_TLS13
 
-# Check for QUIC support
-enable_quic=no
-AC_MSG_CHECKING([whether APIs for QUIC are available])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
-                                   [[
-                                     SSL_QUIC_METHOD var;
-                                   ]])
-                  ],
-                  [
-                    AC_MSG_RESULT([yes])
-                    enable_quic=yes
-                    _quic_saved_LIBS=$LIBS
-                    TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-                    AC_CHECK_FUNCS(SSL_set_quic_early_data_enabled)
-                    LIBS=$_quic_saved_LIBS
-                  ],
-                  [
-                    AC_MSG_RESULT([no])
-                  ])
-
-AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
-TS_ARG_ENABLE_VAR([use], [quic])
-AC_SUBST(use_quic)
-
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
 
@@ -1451,19 +1427,19 @@ TS_CHECK_BROTLI
 TS_CHECK_LUAJIT
 
 # Check for optional quiche library
+enable_quic=no
 TS_CHECK_QUICHE
 if test "${has_quiche}" = "1"; then
 if test "$openssl_is_boringssl" = "1" ; then
 enable_quic=yes
-## Doing these again for Quiche
-AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
-TS_ARG_ENABLE_VAR([use], [quic])
-AC_SUBST(use_quic)
-AC_SUBST(has_quiche)
 else
   AC_MSG_ERROR([Use of BoringSSL is required if Quiche is used.])
 fi
 fi
+TS_ARG_ENABLE_VAR([use], [quic])
+AC_SUBST(use_quic)
+AC_SUBST(has_quiche)
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 
 # Check for optional WAVM library
 TS_CHECK_WAVM

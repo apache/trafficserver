@@ -214,7 +214,6 @@ libinknet_a_SOURCES = \
 	SNIActionPerformer.cc
 
 if ENABLE_QUIC
-if USE_QUICHE
 libinknet_a_SOURCES += \
   P_QUICClosedConCollector.h \
   P_QUICPacketHandler.h \
@@ -228,22 +227,6 @@ libinknet_a_SOURCES += \
   QUICNetVConnection_quiche.cc \
   QUICNextProtocolAccept_quiche.cc \
   QUICPacketHandler_quiche.cc
-else
-libinknet_a_SOURCES += \
-  P_QUICClosedConCollector.h \
-  P_QUICPacketHandler.h \
-  P_QUICNet.h \
-  P_QUICNetProcessor.h \
-  P_QUICNetVConnection.h \
-  P_QUICNextProtocolAccept.h \
-  QUICClosedConCollector.cc \
-  QUICPacketHandler.cc \
-  QUICMultiCertConfigLoader.cc \
-  QUICNet.cc \
-  QUICNetProcessor.cc \
-  QUICNetVConnection.cc \
-  QUICNextProtocolAccept.cc
-endif
 endif
 
 if BUILD_TESTS
