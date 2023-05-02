@@ -231,3 +231,14 @@ add_custom_target(clang-format
         DEPENDS ${CLANG_FORMAT_TARGETS}
         VERBATIM
         )
+
+add_custom_target(autopep8 ${CMAKE_SOURCE_DIR}/tools/autopep8.sh ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "formatting python files"
+        VERBATIM
+        )
+
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
+    message("Installing github hook")
+    configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
+endif()
