@@ -28,6 +28,8 @@
  *
  *
  ****************************************************************************/
+#include "swoc/MemSpan.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_time.h"
@@ -39,8 +41,6 @@
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
-
-#include "tscore/TsBuffer.h"
 
 #include <vector>
 
@@ -396,7 +396,7 @@ SchemeMod::make(char *value, const char **error)
 // This is a base class for all of the mods that have a
 // text string.
 struct TextMod : public ControlBase::Modifier {
-  ts::Buffer text;
+  swoc::MemSpan<char> text;
 
   TextMod();
   ~TextMod() override;
@@ -417,18 +417,18 @@ TextMod::~TextMod()
 void
 TextMod::print(FILE *f) const
 {
-  fprintf(f, "%s=%*s  ", this->name(), static_cast<int>(text.size()), text.data());
+  fprintf(f, "%s=%.*s  ", this->name(), static_cast<int>(text.size()), text.data());
 }
 
 void
 TextMod::set(const char *value)
 {
   free(this->text.data());
-  this->text.set(ats_strdup(value), strlen(value));
+  this->text.assign(ats_strdup(value), strlen(value));
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  std::vector<ts::Buffer> text_vec;
+  std::vector<swoc::MemSpan<char>> text_vec;
   MultiTextMod();
   ~MultiTextMod() override;
 
@@ -449,7 +449,7 @@ void
 MultiTextMod::print(FILE *f) const
 {
   for (auto text_iter : this->text_vec) {
-    fprintf(f, "%s=%*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
+    fprintf(f, "%s=%.*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
   }
 }
 
@@ -459,8 +459,8 @@ MultiTextMod::set(char *value)
   Tokenizer rangeTok(",");
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
   for (int i = 0; i < num_tok; i++) {
-    ts::Buffer text;
-    text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
+    swoc::MemSpan<char> text;
+    text.assign(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
     this->text_vec.push_back(text);
   }
 }
@@ -576,7 +576,7 @@ SuffixMod::check(HttpRequestData *req) const
   const char *path = req->hdr->url_get()->path_get(&path_len);
 
   if (1 == static_cast<int>(this->text_vec.size()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
-      0 == strcmp(this->text_vec[0].data(), "*")) {
+      this->text_vec[0][0] == '*') {
     return true;
   }
 
