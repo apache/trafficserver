@@ -143,4 +143,6 @@ add_executable(test_tscore
 target_link_libraries(test_tscore PRIVATE tscore inkevent records_p libswoc)
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/iocore/eventsystem ${CATCH_INCLUDE_DIR})
 
+add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
+
 install(TARGETS tscore)
