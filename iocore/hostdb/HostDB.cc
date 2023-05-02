@@ -80,6 +80,9 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 namespace
 {
+DbgCtl dbg_ctl_hostdb{"hostdb"};
+DbgCtl dbg_ctl_dns_srv{"dns_srv"};
+
 unsigned int
 HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, IpAddr const &rhs)
 {
@@ -458,7 +461,7 @@ HostDBCache::start(int flags)
       Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
     }
 
-    Debug("hostdb", "Storage path is %s", storage_path);
+    Dbg(dbg_ctl_hostdb, "Storage path is %s", storage_path);
 
     if (access(storage_path, W_OK | R_OK) == -1) {
       Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
@@ -469,8 +472,8 @@ HostDBCache::start(int flags)
     char full_path[2 * PATH_NAME_MAX];
     ink_filepath_make(full_path, 2 * PATH_NAME_MAX, storage_path, hostdb_filename);
 
-    Debug("hostdb", "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions, hostdb_max_size,
-          hostdb_max_count);
+    Dbg(dbg_ctl_hostdb, "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions,
+        hostdb_max_size, hostdb_max_count);
     int load_ret = LoadRefCountCacheFromPath<HostDBRecord>(*this->refcountcache, full_path, HostDBRecord::unmarshall);
     if (load_ret != 0) {
       Warning("Error loading cache from %s: %d", full_path, load_ret);
@@ -582,7 +585,7 @@ reply_to_cont(Continuation *cont, HostDBRecord *r, bool is_srv = false)
       hostDB.refcountcache->erase(r->key);
       return false;
     }
-    Debug("hostdb", "hostname = %s", r->name());
+    Dbg(dbg_ctl_hostdb, "hostname = %s", r->name());
   }
 
   cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
@@ -666,16 +669,16 @@ probe(HostDBHash const &hash, bool ignore_timeout)
       (record->is_ip_timeout() && record->serve_stale_but_revalidate())) {
     HOSTDB_INCREMENT_DYN_STAT_THREAD(hostdb_total_serve_stale_stat, this_ethread());
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
-      Debug("hostdb", "%s",
-            ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
-                        record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
-              .c_str());
+      Dbg(dbg_ctl_hostdb, "%s",
+          ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
+                      record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
+            .c_str());
       return record;
     }
-    Debug("hostdb", "%s",
-          ts::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
-                      record->ip_timeout_interval)
-            .c_str());
+    Dbg(dbg_ctl_hostdb, "%s",
+        ts::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
+                    record->ip_timeout_interval)
+          .c_str());
     HostDBContinuation *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
     copt.host_res_style = record->af_family == AF_INET6 ? HOST_RES_IPV6_ONLY : HOST_RES_IPV4_ONLY;
@@ -743,12 +746,12 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
         if (!loop) {
           // No retry -> final result. Return it.
           if (hash.db_mark == HOSTDB_MARK_SRV) {
-            Debug("hostdb", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
-            Debug("dns_srv", "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
+            Dbg(dbg_ctl_hostdb, "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
+            Dbg(dbg_ctl_dns_srv, "immediate SRV answer for %.*s from hostdb", int(hash.host_name.size()), hash.host_name.data());
           } else if (hash.host_name) {
-            Debug("hostdb", "immediate answer for %.*s", int(hash.host_name.size()), hash.host_name.data());
+            Dbg(dbg_ctl_hostdb, "immediate answer for %.*s", int(hash.host_name.size()), hash.host_name.data());
           } else {
-            Debug("hostdb", "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
+            Dbg(dbg_ctl_hostdb, "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
           }
           HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
           if (cb_process_result) {
@@ -763,16 +766,16 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
     }
   }
   if (hash.db_mark == HOSTDB_MARK_SRV) {
-    Debug("hostdb", "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, int(hash.host_name.size()),
-          hash.host_name.data(), opt.timeout);
-    Debug("dns_srv", "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, int(hash.host_name.size()),
-          hash.host_name.data(), opt.timeout);
+    Dbg(dbg_ctl_hostdb, "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, int(hash.host_name.size()),
+        hash.host_name.data(), opt.timeout);
+    Dbg(dbg_ctl_dns_srv, "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, int(hash.host_name.size()),
+        hash.host_name.data(), opt.timeout);
   } else if (hash.host_name) {
-    Debug("hostdb", "delaying (force=%d) answer for %.*s [timeout %d]", force_dns, int(hash.host_name.size()),
-          hash.host_name.data(), opt.timeout);
+    Dbg(dbg_ctl_hostdb, "delaying (force=%d) answer for %.*s [timeout %d]", force_dns, int(hash.host_name.size()),
+        hash.host_name.data(), opt.timeout);
   } else {
-    Debug("hostdb", "delaying (force=%d) answer for %s [timeout %d]", force_dns,
-          hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>", opt.timeout);
+    Dbg(dbg_ctl_hostdb, "delaying (force=%d) answer for %s [timeout %d]", force_dns,
+        hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>", opt.timeout);
   }
 
 Lretry:
@@ -923,12 +926,12 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
   ink_assert(record);
   if (query_name.empty()) {
     if (is_byname()) {
-      Debug("hostdb", "lookup_done() failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      Dbg(dbg_ctl_hostdb, "lookup_done() failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
     } else if (is_srv()) {
-      Debug("dns_srv", "SRV failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
+      Dbg(dbg_ctl_dns_srv, "SRV failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
     } else {
       ip_text_buffer b;
-      Debug("hostdb", "failed for %s", hash.ip.toString(b, sizeof b));
+      Dbg(dbg_ctl_hostdb, "failed for %s", hash.ip.toString(b, sizeof b));
     }
     record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = ts_seconds(std::clamp(hostdb_ip_fail_timeout_interval, 1u, HOST_DB_MAX_TTL));
@@ -968,13 +971,13 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     record->ip_timeout_interval = std::clamp(answer_ttl, ts_seconds(1), ts_seconds(HOST_DB_MAX_TTL));
 
     if (is_byname()) {
-      Debug_bw("hostdb", "done {} TTL {}", hash.host_name, answer_ttl);
+      Dbg_bw(dbg_ctl_hostdb, "done {} TTL {}", hash.host_name, answer_ttl);
     } else if (is_srv()) {
       ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count);
 
       record->record_type = HostDBType::SRV;
     } else {
-      Debug_bw("hostdb", "done {} TTL {}", hash.host_name, answer_ttl);
+      Dbg_bw(dbg_ctl_hostdb, "done {} TTL {}", hash.host_name, answer_ttl);
       record->record_type = HostDBType::HOST;
     }
   }
@@ -1064,7 +1067,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (e && e->isNameError() && old_r) {
       hostDB.refcountcache->erase(old_r->key);
       old_r = nullptr;
-      Debug("hostdb", "Removing the old record when the DNS lookup failed with NXDOMAIN");
+      Dbg(dbg_ctl_hostdb, "Removing the old record when the DNS lookup failed with NXDOMAIN");
     }
 
     int valid_records  = 0;
@@ -1155,7 +1158,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             }
           }
           // Archetypical example - "%zd" doesn't work on FreeBSD, "%ld" doesn't work on Ubuntu, "%lld" doesn't work on Fedora.
-          Debug_bw("dns_srv", "inserted SRV RR record [{}] into HostDB with TTL: {} seconds", t->host, ttl);
+          Dbg_bw(dbg_ctl_dns_srv, "inserted SRV RR record [{}] into HostDB with TTL: {} seconds", t->host, ttl);
         }
       } else { // Otherwise this is a regular dns response
         unsigned idx = 0;
@@ -1237,13 +1240,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 int
 HostDBContinuation::iterateEvent(int event, Event *e)
 {
-  Debug("hostdb", "iterateEvent event=%d eventp=%p", event, e);
+  Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p", event, e);
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
   MUTEX_TRY_LOCK(lock, action.mutex, t);
   if (!lock.is_locked()) {
-    Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting action mutex", event, e);
+    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: reschedule due to not getting action mutex", event, e);
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
@@ -1271,12 +1274,12 @@ HostDBContinuation::iterateEvent(int event, Event *e)
 
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
-    Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
-          hostDB.refcountcache->partition_count());
+    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
+        hostDB.refcountcache->partition_count());
     mutex->thread_holding->schedule_in(this, HOST_DB_ITERATE_PERIOD);
     return EVENT_CONT;
   } else {
-    Debug("hostdb", "iterateEvent event=%d eventp=%p: completed FINAL iteration %ld", event, e, current_iterate_pos);
+    Dbg(dbg_ctl_hostdb, "iterateEvent event=%d eventp=%p: completed FINAL iteration %ld", event, e, current_iterate_pos);
     // if there are no more buckets, then we're done.
     action.continuation->handleEvent(EVENT_DONE, nullptr);
     hostdb_cont_free(this);
@@ -1360,13 +1363,13 @@ HostDBContinuation::set_check_pending_dns()
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
     HOSTDB_INCREMENT_DYN_STAT(hostdb_insert_duplicate_to_pending_dns_stat);
-    Debug("hostdb", "Skip the insertion of the same continuation to pending dns");
+    Dbg(dbg_ctl_hostdb, "Skip the insertion of the same continuation to pending dns");
     return false;
   }
   HostDBContinuation *c = q.head;
   for (; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash.hash == c->hash.hash) {
-      Debug("hostdb", "enqueuing additional request");
+      Dbg(dbg_ctl_hostdb, "enqueuing additional request");
       q.enqueue(this);
       return false;
     }
@@ -1389,7 +1392,7 @@ HostDBContinuation::remove_and_trigger_pending_dns()
     while (c) {
       HostDBContinuation *n = static_cast<HostDBContinuation *>(c->link.next);
       if (hash.hash == c->hash.hash) {
-        Debug("hostdb", "dequeuing additional request");
+        Dbg(dbg_ctl_hostdb, "dequeuing additional request");
         q.remove(c);
         qq.enqueue(c);
       }
@@ -1420,7 +1423,7 @@ HostDBContinuation::do_dns()
 {
   ink_assert(!action.cancelled);
   if (is_byname()) {
-    Debug("hostdb", "DNS %.*s", int(hash.host_name.size()), hash.host_name.data());
+    Dbg(dbg_ctl_hostdb, "DNS %.*s", int(hash.host_name.size()), hash.host_name.data());
     IpAddr tip;
     if (0 == tip.load(hash.host_name)) {
       // Need to consider if this is necessary - could the record in ResolveInfo be left null and
@@ -1468,11 +1471,11 @@ HostDBContinuation::do_dns()
       }
       pending_action = dnsProcessor.gethostbyname(this, hash.host_name, opt);
     } else if (is_srv()) {
-      Debug("dns_srv", "SRV lookup of %.*s", int(hash.host_name.size()), hash.host_name.data());
+      Dbg(dbg_ctl_dns_srv, "SRV lookup of %.*s", int(hash.host_name.size()), hash.host_name.data());
       pending_action = dnsProcessor.getSRVbyname(this, hash.host_name, opt);
     } else {
       ip_text_buffer ipb;
-      Debug("hostdb", "DNS IP %s", hash.ip.toString(ipb, sizeof ipb));
+      Dbg(dbg_ctl_hostdb, "DNS IP %s", hash.ip.toString(ipb, sizeof ipb));
       pending_action = dnsProcessor.gethostbyaddr(this, &hash.ip, opt);
     }
   } else {
@@ -1513,9 +1516,9 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     updateHostFileConfig();
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
-      Debug("hostdb", "%s",
-            ts::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), ts::bwf::FirstOf(path, ""))
-              .c_str());
+      Dbg(dbg_ctl_hostdb, "%s",
+          ts::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), ts::bwf::FirstOf(path, ""))
+            .c_str());
       // path to hostfile changed
       hostdb_hostfile_update_timestamp = TS_TIME_ZERO; // never updated from this file
       hostdb_hostfile_path             = path;
@@ -1529,11 +1532,12 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
           update_p = true; // same file but it's changed.
         }
       } else {
-        Debug("hostdb", "%s", ts::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path.view(), ec).c_str());
+        Dbg(dbg_ctl_hostdb, "%s",
+            ts::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path.view(), ec).c_str());
       }
     }
     if (update_p) {
-      Debug("hostdb", "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path.view()).c_str());
+      Dbg(dbg_ctl_hostdb, "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path.view()).c_str());
       UpdateHostsFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
     }
   }
@@ -1556,18 +1560,18 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
   if (HostDBProcessor::hostdb_strict_round_robin) {
     // Always select the next viable target - select failure means no valid targets at all.
     best_alive = best_any = this->select_next_rr(now, fail_window);
-    Debug("hostdb", "Using strict round robin - index %d", this->index_of(best_alive));
+    Dbg(dbg_ctl_hostdb, "Using strict round robin - index %d", this->index_of(best_alive));
   } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
     auto ctime = rr_ctime.load(); // cache for atomic update.
     auto ntime = ctime + ts_seconds(HostDBProcessor::hostdb_timed_round_robin);
     // Check and update RR if it's time - this always yields a valid target if there is one.
     if (now > ntime && rr_ctime.compare_exchange_strong(ctime, ntime)) {
       best_alive = best_any = this->select_next_rr(now, fail_window);
-      Debug("hostdb", "Round robin timed interval expired - index %d", this->index_of(best_alive));
+      Dbg(dbg_ctl_hostdb, "Round robin timed interval expired - index %d", this->index_of(best_alive));
     } else { // pick the current index, which may be dead.
       best_any = &info[this->rr_idx()];
     }
-    Debug("hostdb", "Using timed round robin - index %d", this->index_of(best_any));
+    Dbg(dbg_ctl_hostdb, "Using timed round robin - index %d", this->index_of(best_any));
   } else {
     // Walk the entries and find the best (largest) hash.
     unsigned int best_hash = 0; // any hash is better than this.
@@ -1578,7 +1582,7 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
         best_hash = h;
       }
     }
-    Debug("hostdb", "Using client affinity - index %d", this->index_of(best_any));
+    Dbg(dbg_ctl_hostdb, "Using client affinity - index %d", this->index_of(best_any));
   }
 
   // If there is a base choice, search for valid target starting there.
@@ -1854,7 +1858,7 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
     if (query && query_len && strstr(query, "json")) {
       s->output_json = true;
     }
-    Debug("hostdb", "dumping all hostdb records");
+    Dbg(dbg_ctl_hostdb, "dumping all hostdb records");
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showAll);
   }
   this_ethread()->schedule_imm(s);
@@ -2002,7 +2006,7 @@ UpdateHostsFile(swoc::file::path const &path, ts_seconds interval)
   // Test and set for update in progress.
   bool flag = false;
   if (!HostDBFileUpdateActive.compare_exchange_strong(flag, true)) {
-    Debug("hostdb", "Skipped load of host file because update already in progress");
+    Dbg(dbg_ctl_hostdb, "Skipped load of host file because update already in progress");
     return;
   }
 
@@ -2111,7 +2115,7 @@ void
 HostDBRecord::free()
 {
   if (_iobuffer_index >= 0) {
-    Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + _iobuffer_index)), this);
+    Dbg(dbg_ctl_hostdb, "freeing %d bytes at [%p]", (1 << (7 + _iobuffer_index)), this);
     ioBufAllocator[_iobuffer_index].free_void(static_cast<void *>(this));
   }
 }
@@ -2130,8 +2134,8 @@ HostDBRecord::alloc(TextView query_name, unsigned int rr_count, size_t srv_name_
   self->_iobuffer_index = iobuffer_index;
   self->_record_size    = r_size;
 
-  Debug("hostdb", "allocating %ld bytes for %.*s with %d RR records at [%p]", r_size.value(), int(query_name.size()),
-        query_name.data(), rr_count, self);
+  Dbg(dbg_ctl_hostdb, "allocating %ld bytes for %.*s with %d RR records at [%p]", r_size.value(), int(query_name.size()),
+      query_name.data(), rr_count, self);
 
   // where in our block of memory we are
   int offset = sizeof(self_type);
@@ -2175,8 +2179,8 @@ HostDBRecord::serve_stale_but_revalidate() const
   // hostdb_serve_stale_but_revalidate == number of seconds
   // ip_age() is the number of seconds between now() and when the entry was inserted
   if ((ip_timeout_interval + ts_seconds(hostdb_serve_stale_but_revalidate)) > ip_age()) {
-    Debug_bw("hostdb", "serving stale entry for {}, TTL: {}, serve_stale_for: {}, age: {} as requested by config", name(),
-             ip_timeout_interval, hostdb_serve_stale_but_revalidate, ip_age());
+    Dbg_bw(dbg_ctl_hostdb, "serving stale entry for {}, TTL: {}, serve_stale_for: {}, age: {} as requested by config", name(),
+           ip_timeout_interval, hostdb_serve_stale_but_revalidate, ip_age());
     return true;
   }
 
@@ -2272,7 +2276,7 @@ ResolveInfo::resolve_immediate()
     // nothing - already resolved.
   } else if (IpAddr tmp; TS_SUCCESS == tmp.load(lookup_name)) {
     ts::bwprint(ts::bw_dbg, "[resolve_immediate] success - FQDN '{}' is a valid IP address.", lookup_name);
-    Debug("hostdb", "%s", ts::bw_dbg.c_str());
+    Dbg(dbg_ctl_hostdb, "%s", ts::bw_dbg.c_str());
     addr.assign(tmp);
     resolved_p = true;
   }

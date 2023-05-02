@@ -29,6 +29,13 @@
 
 ConfigProcessor configProcessor;
 
+namespace
+{
+
+DbgCtl dbg_ctl_config{"config"};
+
+}
+
 class ConfigInfoReleaser : public Continuation
 {
 public:
@@ -81,8 +88,8 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   idx      = id - 1;
   old_info = infos[idx].exchange(info);
 
-  Debug("config", "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
-        (old_info) ? old_info->refcount() : 0);
+  Dbg(dbg_ctl_config, "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
+      (old_info) ? old_info->refcount() : 0);
 
   if (old_info) {
     // The ConfigInfoReleaser now takes our refcount, but
@@ -132,7 +139,7 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 
   if (info && info->refcount_dec() == 0) {
     // When we release, we should already have replaced this object in the index.
-    Debug("config", "Release config %d 0x%" PRId64, id, (int64_t)info);
+    Dbg(dbg_ctl_config, "Release config %d 0x%" PRId64, id, (int64_t)info);
     ink_release_assert(info != this->infos[idx]);
     delete info;
   }

@@ -36,6 +36,9 @@ struct RecRawStatBlockOpsImpl : RecRawStatBlockOps {
   int raw_stat_clear_sum(RecRawStatBlock *rsb, int id) override;
   int raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total) override;
   int raw_stat_sync_to_global(RecRawStatBlock *rsb, int id) override;
+
+private:
+  inline static DbgCtl _dbg_ctl{"stats"};
 };
 
 RecRawStatBlock *
@@ -166,7 +169,7 @@ RecRawStatBlockOpsImpl::raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 int
 RecRawStatBlockOpsImpl::raw_stat_clear(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear(): rsb pointer:%p id:%d", rsb, id);
+  Dbg(_dbg_ctl, "raw_stat_clear(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
@@ -199,7 +202,7 @@ RecRawStatBlockOpsImpl::raw_stat_clear(RecRawStatBlock *rsb, int id)
 int
 RecRawStatBlockOpsImpl::raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear_sum(): rsb pointer:%p id:%d", rsb, id);
+  Dbg(_dbg_ctl, "raw_stat_clear_sum(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
@@ -229,7 +232,7 @@ RecRawStatBlockOpsImpl::raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 int
 RecRawStatBlockOpsImpl::raw_stat_clear_count(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear_count(): rsb pointer:%p id:%d", rsb, id);
+  Dbg(_dbg_ctl, "raw_stat_clear_count(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
