@@ -3641,12 +3641,12 @@ HttpTransact::handle_response_from_parent(State *s)
       return;
     }
 
-    if (s->current.retry_attempts.get() < s->txn_conf->parent_connect_attempts) {
+    if (s->current.retry_attempts.get() < (s->txn_conf->parent_connect_attempts - 1)) {
       HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_stat);
-      s->current.retry_attempts.increment(s->configured_connect_attempts_max_retries());
+      s->current.retry_attempts.increment();
 
       // Are we done with this particular parent?
-      if ((s->current.retry_attempts.get() - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
+      if (s->current.retry_attempts.get() % s->txn_conf->per_parent_connect_attempts != 0) {
         // No we are not done with this parent so retry
         HTTP_INCREMENT_DYN_STAT(http_total_parent_switches_stat);
         s->next_action = how_to_open_connection(s);
@@ -3864,7 +3864,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // disable keep-alive for request and retry //
   //////////////////////////////////////////////
   s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-  s->current.retry_attempts.increment(s->configured_connect_attempts_max_retries());
+  s->current.retry_attempts.increment();
 
   TxnDebug("http_trans", "retry attempts now: %d, max: %d", s->current.retry_attempts.get(), max_retries);
 
