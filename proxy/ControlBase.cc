@@ -428,9 +428,10 @@ TextMod::set(const char *value)
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  std::vector<swoc::MemSpan<char>> text_vec;
+  std::string _s; ///< Storage for all strings.
+  std::vector<swoc::TextView> text_vec;
   MultiTextMod();
-  ~MultiTextMod() override;
+  ~MultiTextMod() override = default;
 
   // Copy the value to the MultiTextMod buffer.
   void set(char *value);
@@ -440,10 +441,6 @@ struct MultiTextMod : public ControlBase::Modifier {
 };
 
 MultiTextMod::MultiTextMod() = default;
-MultiTextMod::~MultiTextMod()
-{
-  text_vec.clear();
-}
 
 void
 MultiTextMod::print(FILE *f) const
@@ -456,12 +453,11 @@ MultiTextMod::print(FILE *f) const
 void
 MultiTextMod::set(char *value)
 {
-  Tokenizer rangeTok(",");
-  int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
-  for (int i = 0; i < num_tok; i++) {
-    swoc::MemSpan<char> text;
-    text.assign(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
-    this->text_vec.push_back(text);
+  _s.assign(value); // local copy.
+  swoc::TextView src(_s);
+  while (src.ltrim(',')) { // don't allow empty tokens.
+    auto token = src.take_prefix_at(',');
+    this->text_vec.push_back(token);
   }
 }
 
@@ -575,8 +571,7 @@ SuffixMod::check(HttpRequestData *req) const
   int path_len;
   const char *path = req->hdr->url_get()->path_get(&path_len);
 
-  if (1 == static_cast<int>(this->text_vec.size()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
-      this->text_vec[0][0] == '*') {
+  if (1 == this->text_vec.size() && 1 == this->text_vec[0].size() && this->text_vec[0][0] == '*') {
     return true;
   }
 
