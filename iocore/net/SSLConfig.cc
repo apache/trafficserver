@@ -63,6 +63,7 @@ int SSLConfigParams::ssl_misc_max_iobuffer_size_index       = 8;
 bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
 bool SSLConfigParams::ssl_ocsp_enabled                      = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
+bool SSLConfigParams::ssl_ocsp_request_mode                 = false;
 int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
 int SSLConfigParams::ssl_ocsp_update_period                 = 60;
 char *SSLConfigParams::ssl_ocsp_user_agent                  = nullptr;
@@ -469,6 +470,7 @@ SSLConfigParams::initialize()
   // SSL OCSP Stapling configurations
   REC_ReadConfigInt32(ssl_ocsp_enabled, "proxy.config.ssl.ocsp.enabled");
   REC_EstablishStaticConfigInt32(ssl_ocsp_cache_timeout, "proxy.config.ssl.ocsp.cache_timeout");
+  REC_ReadConfigInt32(ssl_ocsp_request_mode, "proxy.config.ssl.ocsp.request_mode");
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
   REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
