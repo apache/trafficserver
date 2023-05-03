@@ -65,6 +65,7 @@ libtscore_la_SOURCES = \
 	CryptoHash.cc \
 	DbgCtl.cc \
 	Diags.cc \
+	Encoding.cc \
 	Errata.cc \
 	EventNotify.cc \
 	Extendible.cc \
@@ -193,7 +194,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_Version.cc \
 	unit_tests/test_Errata.cc \
 	unit_tests/test_MMH.cc \
-	unit_tests/test_Random.cc
+	unit_tests/test_Random.cc \
+	unit_tests/test_Encoding.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \

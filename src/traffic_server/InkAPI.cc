@@ -29,6 +29,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
+#include "tscore/Encoding.h"
 #include "tscore/PluginUserArgs.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
@@ -2594,7 +2595,7 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
   // However, if there is no destination argument, none is allocated.  I don't understand the full possibility of calling cases.
   // It seems like we might want to review how this is being called and perhaps create a number of smaller accessor methods that
   // can be set up correctly.
-  if (nullptr == LogUtils::pure_escapify_url(nullptr, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
+  if (nullptr == Encoding::pure_escapify_url(nullptr, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
     if (length) {
       *length = 0;
     }
