@@ -35,7 +35,6 @@
 #include "I_HostDBProcessor.h"
 #include "P_RefCountCache.h"
 #include "tscore/PendingAction.h"
-#include "tscore/TsBuffer.h"
 
 //
 // Data
