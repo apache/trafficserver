@@ -52,6 +52,10 @@ buffers. The URL functions can create, copy, retrieve or delete entire URLs,
 and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
+Note that :func:`TSUrlHostGet` can only be called after TS_HTTP_POST_REMAP_HOOK. 
+If you want to get the host in the TS_HTTP_READ_REQUEST_HDR_HOOK phase, you can call 
+:func:`TSHttpHdrHostGet` instead.
+
 :func:`TSUrlSchemeGet`, :func:`TSUrlRawSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
 :func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
 and :func:`TSUrlHttpFragmentGet` each retrieve an internal pointer to the
@@ -71,6 +75,8 @@ scheme.
 :func:`TSUrlRawPortGet` also retrieves the port number portion of the URL located at
 :arg:`offset` within the marshal buffer :arg:`bufp`. If there is no explicit
 port number in the URL, zero is returned.
+
+
 
 Return Values
 =============
