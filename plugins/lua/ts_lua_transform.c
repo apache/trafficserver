@@ -58,11 +58,10 @@ ts_lua_client_entry(TSCont contp, TSEvent ev, void *edata)
 static int
 ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TSEvent event, int n)
 {
-  TSVConn output_conn;
   TSVIO input_vio;
   TSIOBufferReader input_reader;
   TSIOBufferBlock blk;
-  int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes, l;
+  int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes;
   const char *start;
   const char *res;
   size_t res_len;
