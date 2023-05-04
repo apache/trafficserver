@@ -203,12 +203,12 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
       return 0;
 
     case 0: // coroutine success
-      ret     = 0;
+      ret = 0;
       break;
 
     default: // coroutine failed
       TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
-      ret     = 1;
+      ret = 1;
       break;
     }
 
