@@ -63,7 +63,7 @@ if test "$has_quiche" != "0"; then
     TS_ADDTO_RPATH(${quiche_ldflags})
   fi
 
-  AC_CHECK_LIB([quiche], quiche_connect, [quiche_have_libs=1])
+  AC_CHECK_LIB([quiche], quiche_connect, [quiche_have_libs=1], [], [$OPENSSL_LIBS])
   if test "$quiche_have_libs" != "0"; then
     AC_CHECK_HEADERS(quiche.h, [quiche_have_headers=1])
   fi
@@ -80,7 +80,7 @@ fi
 ],
 [
 AC_CHECK_HEADER([quiche.h], [], [has_quiche=0])
-AC_CHECK_LIB([quiche], quiche_connect, [:], [has_quiche=0])
+AC_CHECK_LIB([quiche], quiche_connect, [:], [has_quiche=0], [$OPENSSL_LIBS])
 ])
 
 AM_CONDITIONAL([USE_QUICHE], [test $has_quiche -eq 1])
