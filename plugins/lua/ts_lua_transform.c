@@ -63,9 +63,7 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
   TSIOBufferBlock blk;
   int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes;
   const char *start;
-  const char *res;
-  size_t res_len;
-  int ret, eos, write_down, rc, top, empty_input;
+  int ret, eos, rc, top, empty_input;
   ts_lua_coroutine *crt;
   ts_lua_cont_info *ci;
 
@@ -139,7 +137,6 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
     TSVIONDoneSet(input_vio, upstream_done + input_avail);
   }
 
-  write_down = 0;
   if (empty_input == 0) {
     towrite = TSIOBufferReaderAvail(transform_ctx->reserved.reader);
   } else {
@@ -207,15 +204,11 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
 
     case 0: // coroutine success
       ret     = 0;
-      res     = NULL;
-      res_len = 0;
       break;
 
     default: // coroutine failed
       TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
       ret     = 1;
-      res     = NULL;
-      res_len = 0;
       break;
     }
 
