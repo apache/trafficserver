@@ -52,9 +52,9 @@ buffers. The URL functions can create, copy, retrieve or delete entire URLs,
 and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
-Note that :func:`TSUrlHostGet` can only be called after TS_HTTP_POST_REMAP_HOOK. 
-If you want to get the host in the TS_HTTP_READ_REQUEST_HDR_HOOK phase, you can call 
-:func:`TSHttpHdrHostGet` instead.
+    TSMBufferCreate(...)
+    TSUrlParse(...)
+    TSUrlHostGet(...)
 
 :func:`TSUrlSchemeGet`, :func:`TSUrlRawSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
 :func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
