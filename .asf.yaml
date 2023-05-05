@@ -35,6 +35,7 @@ github:
     - mtorluemke
     - c-taylor
     - etapia
+    - lzx404243
   protected_branches:
     master:
       required_status_checks:
