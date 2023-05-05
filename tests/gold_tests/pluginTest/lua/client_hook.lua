@@ -14,22 +14,11 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-
-function request_client(data, eos)
-  ts.debug('request_client')
-  ts.ctx['reqbody'] = ts.ctx['reqbody'] .. data
-  ts.debug("req transform got " .. string.len(data) .. "bytes, eos=" .. eos)
-  if (eos == 1) then
-    ts.debug('End of Stream and the reqbody is ... ')
-    ts.debug(ts.ctx['reqbody'])
-  end
+function response_client(data, eos)
+    ts.debug(data)
 end
 
-function do_global_read_request()
-  ts.debug('do_global_read_request')
-  if (ts.client_request.get_method() == 'POST') then
-    ts.debug('post')
-    ts.ctx['reqbody'] = ''
-    ts.hook(TS_LUA_REQUEST_CLIENT, request_client)
-  end
+function do_remap()
+    ts.hook(TS_LUA_RESPONSE_CLIENT, response_client)
+    return 0
 end
