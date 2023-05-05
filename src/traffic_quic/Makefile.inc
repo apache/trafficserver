@@ -62,9 +62,5 @@ traffic_quic_traffic_quic_LDADD = \
 	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@OPENSSL_LIBS@ \
+	@QUICHE_LIB@ \
 	@LIBPCRE@
-
-if USE_QUICHE
-traffic_quic_traffic_quic_LDADD += \
-  $(QUICHE_LIB)
-endif

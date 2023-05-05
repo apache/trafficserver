@@ -112,11 +112,8 @@ if ENABLE_QUIC
 traffic_server_traffic_server_LDADD += \
   $(top_builddir)/proxy/http3/libhttp3.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
-if USE_QUICHE
-traffic_server_traffic_server_LDADD += \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(QUICHE_LIB)
-endif
 endif
 
 if ENABLE_IO_URING

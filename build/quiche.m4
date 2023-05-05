@@ -82,6 +82,4 @@ fi
 AC_CHECK_HEADER([quiche.h], [], [has_quiche=0])
 AC_CHECK_LIB([quiche], quiche_connect, [:], [has_quiche=0])
 ])
-
-AM_CONDITIONAL([USE_QUICHE], [test $has_quiche -eq 1])
 ])
