@@ -19,16 +19,13 @@
 import os
 
 Test.Summary = 'Test PROXY Protocol'
-Test.SkipUnless(
-    Condition.HasCurlOption("--haproxy-protocol")
-)
 Test.ContinueOnFail = True
 
 
 class ProxyProtocolInTest:
     """Test that ATS can receive Proxy Protocol."""
 
-    replay_file = "replay/proxy_protocol.replay.yaml"
+    replay_file = "replay/proxy_protocol_in.replay.yaml"
 
     def __init__(self):
         self.setupOriginServer()
@@ -75,11 +72,8 @@ logging:
       format: access
 '''.split("\n"))
 
-    def runTrafficInPV(self):
-        """
-        Incoming PROXY Protocol v1 on TCP port
-        """
-        tr = Test.AddTestRun("Verify correct handling PROXY protcol")
+    def runTraffic(self):
+        tr = Test.AddTestRun("Verify correct handling of incoming PROXY header.")
         tr.AddVerifierClientProcess(
             "pp-in-client",
             self.replay_file,
@@ -107,7 +101,7 @@ logging:
         tr.Processes.Default.ReturnCode = 0
 
     def run(self):
-        self.runTrafficInPV()
+        self.runTraffic()
         self.checkAccessLog()
 
 
@@ -137,7 +131,7 @@ class ProxyProtocolOutTest:
         """Configure the origin server.
         """
         self._server = Test.MakeVerifierServerProcess(
-            f"proxy-verifier-server-{ProxyProtocolOutTest._server_counter}",
+            f"pp-out-server-{ProxyProtocolOutTest._server_counter}",
             self._pp_out_replay_file)
         ProxyProtocolOutTest._server_counter += 1
 
@@ -192,7 +186,7 @@ class ProxyProtocolOutTest:
 
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             "HTTP/1.1 200 OK",
-            "Verify that curl got a 200 response")
+            "Verify the client got a 200 response.")
 
         if self._pp_version in (1, 2):
             expected_pp = (
@@ -211,6 +205,11 @@ class ProxyProtocolOutTest:
             self._server.Streams.All += Testers.ContainsExpression(
                 'No valid PROXY header found',
                 'There should be no Proxy Protocol string.')
+
+        if self._is_tunnel:
+            self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+                'CONNECT tunnel://backend.pp.origin.com',
+                'Verify ATS establishes a blind tunnel to the server.')
 
     def run(self) -> None:
         """Run the test."""
@@ -237,8 +236,6 @@ class ProxyProtocolOutTest:
         tr.Processes.Default.StartBefore(self._ts)
         tr.StillRunningAfter = self._server
 
-        # todo: investigate why the following line cause the test to fail
-        #tr.StillRunningAfter = self._ts
         self.setLogExpectations(tr)
 
 
