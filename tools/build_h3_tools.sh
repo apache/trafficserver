@@ -38,6 +38,7 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_PREFIX}/lib"}
 
 if [ -e /etc/redhat-release ]; then
     MAKE="gmake"
+    TMP_QUICHE_BSSL_PATH="${BASE}/boringssl/lib64"
     echo "+-------------------------------------------------------------------------+"
     echo "| You probably need to run this, or something like this, for your system: |"
     echo "|                                                                         |"
@@ -50,6 +51,7 @@ if [ -e /etc/redhat-release ]; then
     echo
     echo
 elif [ -e /etc/debian_version ]; then
+    TMP_QUICHE_BSSL_PATH="${BASE}/boringssl/lib"
     echo "+-------------------------------------------------------------------------+"
     echo "| You probably need to run this, or something like this, for your system: |"
     echo "|                                                                         |"
@@ -61,6 +63,10 @@ elif [ -e /etc/debian_version ]; then
     echo "+-------------------------------------------------------------------------+"
     echo
     echo
+fi
+
+if [ -z ${QUICHE_BSSL_PATH+x} ]; then
+   QUICHE_BSSL_PATH=${TMP_QUICHE_BSSL_PATH:-"${BASE}/boringssl/lib"}
 fi
 
 set -x
@@ -122,7 +128,7 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
-QUICHE_BSSL_PATH=${BASE}/boringssl QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
+QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
 sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
 sudo mkdir -p ${QUICHE_BASE}/include
 sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
