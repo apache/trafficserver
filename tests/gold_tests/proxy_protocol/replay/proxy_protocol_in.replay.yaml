@@ -106,7 +106,7 @@ sessions:
           url: /get
           headers:
             fields:
-              - [uuid, 1]
+              - [uuid, 3]
 
         proxy-request:
           headers:
@@ -140,7 +140,7 @@ sessions:
           url: /get
           headers:
             fields:
-              - [uuid, 2]
+              - [uuid, 4]
 
         proxy-request:
           headers:
@@ -176,7 +176,7 @@ sessions:
           url: /get
           headers:
             fields:
-              - [uuid, 3]
+              - [uuid, 5]
               - [Host, 127.0.0.1:80]
 
         proxy-request:
@@ -214,7 +214,7 @@ sessions:
           url: /get
           headers:
             fields:
-              - [uuid, 4]
+              - [uuid, 6]
 
         proxy-request:
           headers:
@@ -248,7 +248,7 @@ sessions:
           url: /get
           headers:
             fields:
-              - [uuid, 5]
+              - [uuid, 7]
 
         proxy-request:
           headers:
