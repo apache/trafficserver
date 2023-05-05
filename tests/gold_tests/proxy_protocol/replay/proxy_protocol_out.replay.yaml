@@ -14,15 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# todo: update comment
-# This replay file executes proxy protocol out traffic. It's a single https
-# transaction
-#
+# This replay file executes a single https transaction. ATS has PROXY protocol
+# out configured and is expected to send out a PROXY header to the origin
+# server.
 meta:
   version: "1.0"
 
 sessions:
-  # Test 1: basic https transaction with pp out configured
+  # Basic https transaction
   - protocol:
       - name: http
         version: 1
@@ -33,8 +32,6 @@ sessions:
 
     transactions:
       - client-request:
-          delay: 1s
-
           method: GET
           version: "1.1"
           url: /get/request
