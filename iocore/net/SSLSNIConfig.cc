@@ -50,6 +50,9 @@
 
 static constexpr int OVECSIZE{30};
 
+static DbgCtl dbg_ctl_ssl{"ssl"};
+static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
+
 ////
 // NamedElement
 //
@@ -80,7 +83,7 @@ NamedElement::set_glob_name(std::string name)
   while ((pos = name.find('*', pos)) != std::string::npos) {
     name.replace(pos, 1, "(.{0,})");
   }
-  Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
+  Dbg(dbg_ctl_ssl_sni, "Regexed fqdn=%s", name.c_str());
   set_regex_name(name);
 }
 
@@ -118,7 +121,7 @@ SNIConfigParams::load_sni_config()
     auto &ai = sni_action_list.emplace_back();
     ai.set_glob_name(item.fqdn);
     ai.inbound_port_ranges = item.inbound_port_ranges;
-    Debug("ssl", "name: %s", item.fqdn.data());
+    Dbg(dbg_ctl_ssl, "name: %s", item.fqdn.data());
 
     item.populate_sni_actions(ai.actions);
     if (!set_next_hop_properties(item)) {
@@ -268,7 +271,7 @@ SNIConfig::startup()
 int
 SNIConfig::reconfigure()
 {
-  Debug("ssl", "Reload SNI file");
+  Dbg(dbg_ctl_ssl, "Reload SNI file");
   SNIConfigParams *params = new SNIConfigParams;
 
   bool retStatus = params->initialize();

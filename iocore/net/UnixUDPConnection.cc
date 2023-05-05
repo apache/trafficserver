@@ -32,6 +32,13 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_udpnet{"udpnet"};
+
+} // end anonymous namespace
+
 UnixUDPConnection::~UnixUDPConnection()
 {
   UDPPacket *p = nullptr;
@@ -49,7 +56,7 @@ UnixUDPConnection::~UnixUDPConnection()
     callbackAction->cancel();
     callbackAction = nullptr;
   }
-  Debug("udpnet", "Destroying udp port = %d", getPortNum());
+  Dbg(dbg_ctl_udpnet, "Destroying udp port = %d", getPortNum());
   if (fd != NO_FD) {
     SocketManager::close(fd);
   }
@@ -79,7 +86,7 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     UDPPacket *p = nullptr;
     SList(UDPPacket, alink) aq(inQueue.popall());
 
-    Debug("udpnet", "UDPConnection::callbackHandler");
+    Dbg(dbg_ctl_udpnet, "UDPConnection::callbackHandler");
     Queue<UDPPacket> result;
     while ((p = aq.pop())) {
       result.push(p);

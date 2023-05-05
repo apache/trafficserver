@@ -231,9 +231,12 @@ public:
       }
     }
 
-    if (s != now_slot)
-      Debug("v_udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms", s - now_slot,
-            ink_hrtime_to_msec(t - delivery_time[now_slot]));
+    if (s != now_slot) {
+      static DbgCtl dbg_ctl{"v_udpnet-service"};
+      Dbg(dbg_ctl, "Advancing by (%d slots): behind by %" PRId64 " ms", s - now_slot,
+          ink_hrtime_to_msec(t - delivery_time[now_slot]));
+    }
+
     now_slot = s;
   }
 

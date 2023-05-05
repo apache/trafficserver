@@ -232,7 +232,8 @@ read_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
+    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
+        ne);
   }
   ne->read.enabled = 0;
   nh->read_ready_list.remove(ne);
@@ -255,7 +256,8 @@ write_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
+    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
+        ne);
   }
   ne->write.enabled = 0;
   nh->write_ready_list.remove(ne);

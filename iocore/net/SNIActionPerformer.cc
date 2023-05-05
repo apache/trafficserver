@@ -46,9 +46,9 @@ ControlQUIC::SNIAction(TLSSNISupport *snis, const Context &ctx) const
     return SSL_TLSEXT_ERR_OK;
   }
 
-  if (is_debug_tag_set("ssl_sni")) {
+  if (dbg_ctl_ssl_sni.on()) {
     const char *servername = quic_vc->get_server_name();
-    Debug("ssl_sni", "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
+    Dbg(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
   }
 
   return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -84,11 +84,11 @@ SNI_IpAllow::load(swoc::TextView content, swoc::TextView server_name)
   while (!content.ltrim(delim).empty()) {
     swoc::TextView token{content.take_prefix_at(delim)};
     if (swoc::IPRange r; r.load(token)) {
-      Debug("ssl_sni", "%.*s is not a valid format", static_cast<int>(token.size()), token.data());
+      Dbg(dbg_ctl_ssl_sni, "%.*s is not a valid format", static_cast<int>(token.size()), token.data());
       break;
     } else {
-      Debug("ssl_sni", "%.*s added to the ip_allow token %.*s", static_cast<int>(token.size()), token.data(),
-            int(server_name.size()), server_name.data());
+      Dbg(dbg_ctl_ssl_sni, "%.*s added to the ip_allow token %.*s", static_cast<int>(token.size()), token.data(),
+          int(server_name.size()), server_name.data());
       ip_addrs.fill(r);
     }
   }
@@ -111,7 +111,7 @@ SNI_IpAllow::SNIAction(TLSSNISupport *snis, ActionItem::Context const &ctx) cons
   } else {
     swoc::LocalBufferWriter<256> w;
     w.print("{} is not allowed - denying connection\0", ip);
-    Debug("ssl_sni", "%s", w.data());
+    Dbg(dbg_ctl_ssl_sni, "%s", w.data());
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
 }

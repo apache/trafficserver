@@ -30,6 +30,14 @@ using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
 int NetAccept::accept_till_done = 1;
 
+namespace
+{
+
+DbgCtl dbg_ctl_iocore_net{"iocore_net"};
+DbgCtl dbg_ctl_iocore_net_accept_start{"iocore_net_accept_start"};
+
+} // end anonymous namespace
+
 static void
 safe_delay(int msec)
 {
@@ -163,7 +171,8 @@ NetAccept::init_accept_loop()
     NetAccept *a = (i < n - 1) ? clone() : this;
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
-    Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", i + 1, ats_ip_port_host_order(&server.accept_addr));
+    Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
+        ats_ip_port_host_order(&server.accept_addr));
   }
 }
 
@@ -439,7 +448,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         NET_SUM_DYN_STAT(net_connections_throttled_in_stat, 1);
         continue;
       }
-      Debug("iocore_net", "accepted a new socket: %d", fd);
+      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", fd);
       NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
       if (opt.send_bufsize > 0) {
         if (unlikely(SocketManager::set_sndbuf_size(fd, opt.send_bufsize))) {
@@ -468,7 +477,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     // check return value from accept()
     if (res < 0) {
-      Debug("iocore_net", "received : %s", strerror(errno));
+      Dbg(dbg_ctl_iocore_net, "received : %s", strerror(errno));
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
 #if defined(__linux__)

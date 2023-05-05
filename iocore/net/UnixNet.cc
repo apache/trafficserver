@@ -41,6 +41,15 @@ NetHandler::Config NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
 const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affects_per_thread_value{0x3};
 
+namespace
+{
+
+DbgCtl dbg_ctl_inactivity_cop{"inactivity_cop"};
+DbgCtl dbg_ctl_inactivity_cop_check{"inactivity_cop_check"};
+DbgCtl dbg_ctl_inactivity_cop_verbose{"inactivity_cop_verbose"};
+
+} // end anonymous namespace
+
 NetHandler *
 get_NetHandler(EThread *t)
 {
@@ -74,7 +83,7 @@ public:
     ink_hrtime now = ink_get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
 
-    Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
+    Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
     // The rest NetEvents in cop_list which are not triggered between InactivityCop runs.
     // Use pop() to catch any closes caused by callbacks.
     while (NetEvent *ne = nh.cop_list.pop()) {
@@ -93,8 +102,9 @@ public:
       if (ne->default_inactivity_timeout_in == -1) {
         // If no context-specific default inactivity timeout has been set by an
         // override plugin, then use the global default.
-        Debug("inactivity_cop", "vc: %p setting the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64,
-              ne, nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
+        Dbg(dbg_ctl_inactivity_cop,
+            "vc: %p setting the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64, ne,
+            nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
         ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
       }
 
@@ -102,8 +112,8 @@ public:
       // The event `EVENT_INACTIVITY_TIMEOUT` only be triggered if a read
       // or write I/O operation was set by `do_io_read()` or `do_io_write()`.
       if (ne->next_inactivity_timeout_at == 0 && ne->default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) {
-        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
-              nh.config.default_inactivity_timeout);
+        Dbg(dbg_ctl_inactivity_cop, "vc: %p inactivity timeout not set, setting a default of %d", ne,
+            nh.config.default_inactivity_timeout);
         ne->use_default_inactivity_timeout = true;
         ne->next_inactivity_timeout_at     = ink_get_hrtime() + ne->default_inactivity_timeout_in;
         ne->inactivity_timeout_in          = 0;
@@ -113,7 +123,7 @@ public:
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
         if (ne->is_default_inactivity_timeout()) {
           // track the connections that timed out due to default inactivity
-          Debug("inactivity_cop", "vc: %p timed out due to default inactivity timeout", ne);
+          Dbg(dbg_ctl_inactivity_cop, "vc: %p timed out due to default inactivity timeout", ne);
           NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
         }
         if (nh.keep_alive_queue.in(ne)) {
@@ -122,12 +132,12 @@ public:
           NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
           NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
         }
-        Debug("inactivity_cop_verbose", "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
-              ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
+        Dbg(dbg_ctl_inactivity_cop_verbose, "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
+            ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
         ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, e);
       } else if (ne->next_activity_timeout_at && ne->next_activity_timeout_at < now) {
-        Debug("inactivity_cop_verbose", "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
-              ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
+        Dbg(dbg_ctl_inactivity_cop_verbose, "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
+            ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
         ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }

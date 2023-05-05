@@ -29,6 +29,13 @@
 
 int TLSSNISupport::_ex_data_index = -1;
 
+namespace
+{
+
+DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
+
+} // end anonymous namespace
+
 void
 TLSSNISupport::initialize()
 {
@@ -61,14 +68,14 @@ TLSSNISupport::perform_sni_action()
 {
   const char *servername = this->get_sni_server_name();
   if (!servername) {
-    Debug("ssl_sni", "No servername provided");
+    Dbg(dbg_ctl_ssl_sni, "No servername provided");
     return SSL_TLSEXT_ERR_OK;
   }
 
   SNIConfig::scoped_config params;
   auto const port{this->_get_local_port()};
   if (auto const &actions = params->get({servername, std::strlen(servername)}, port); !actions.first) {
-    Debug("ssl_sni", "%s:%i not available in the map", servername, port);
+    Dbg(dbg_ctl_ssl_sni, "%s:%i not available in the map", servername, port);
   } else {
     for (auto &&item : *actions.first) {
       auto ret = item->SNIAction(this, actions.second);

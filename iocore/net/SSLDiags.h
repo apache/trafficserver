@@ -40,10 +40,10 @@ void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc,
 const char *SSLErrorName(int ssl_error);
 
 // Log a SSL network buffer.  TAG must be a C-string literal debug tag.
-#define SSLDebugBufferPrint(TAG, BUFFER, BUFFER_LEN, MESSAGE) \
-  do {                                                        \
-    if (is_debug_tag_set(TAG))                                \
-      SSLDebugBufferPrint_(BUFFER, BUFFER_LEN, MESSAGE);      \
+#define SSLDebugBufferPrint(DBG_CTL, BUFFER, BUFFER_LEN, MESSAGE) \
+  do {                                                            \
+    if ((DBG_CTL).on())                                           \
+      SSLDebugBufferPrint_(BUFFER, BUFFER_LEN, MESSAGE);          \
   } while (0)
 
 void SSLDebugBufferPrint_(const char *buffer, unsigned buflen, const char *message);
