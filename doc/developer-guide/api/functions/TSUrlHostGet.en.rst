@@ -76,8 +76,6 @@ scheme.
 :arg:`offset` within the marshal buffer :arg:`bufp`. If there is no explicit
 port number in the URL, zero is returned.
 
-
-
 Return Values
 =============
 
