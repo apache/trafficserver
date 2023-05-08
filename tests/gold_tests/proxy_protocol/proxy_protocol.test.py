@@ -29,13 +29,9 @@ class ProxyProtocolInTest:
 
     def __init__(self):
         self.setupOriginServer()
-        self.setupPVOriginServer()
         self.setupTS()
 
     def setupOriginServer(self):
-        self.httpbin = Test.MakeHttpBinServer("httpbin")
-
-    def setupPVOriginServer(self):
         self.server = Test.MakeVerifierServerProcess(
             "pp-in-server",
             self.replay_file)
@@ -47,9 +43,7 @@ class ProxyProtocolInTest:
         self.ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
         self.ts.Disk.remap_config.AddLine(
-            f"map /get http://127.0.0.1:{self.server.Variables.http_port}/")
-        self.ts.Disk.remap_config.AddLine(
-            f"map / http://127.0.0.1:{self.httpbin.Variables.Port}/")
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
         self.ts.Disk.records_config.update({
             "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
