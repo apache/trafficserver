@@ -83,6 +83,7 @@ struct ink_aiocb {
 };
 
 bool ink_aio_thread_num_set(int thread_num);
+#endif
 
 // AIOCallback::thread special values
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
@@ -100,7 +101,6 @@ struct AIOCallback : public Continuation {
   int ok();
   AIOCallback() {}
 };
-#endif
 
 #if AIO_MODE == AIO_MODE_NATIVE
 
