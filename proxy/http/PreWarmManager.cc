@@ -993,7 +993,7 @@ PreWarmManager::reconfigure_prewarming_on_threads()
     if (ethread->prewarm_queue == nullptr) {
       ethread->prewarm_queue = new PreWarmQueue();
     }
-    ethread->schedule_imm_local(ethread->prewarm_queue);
+    ethread->schedule_imm(ethread->prewarm_queue);
   }
 }
 
