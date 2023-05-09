@@ -5223,7 +5223,7 @@ IO_URING
 AIO
 ===
 
-.. ts:cv:: CONFIG proxy.config.aio.force_aio STRING NULL
+.. ts:cv:: CONFIG proxy.config.aio.mode STRING auto
 
    (Only if io_uring is enabled in the build)
    Normally, ATS will detect if io_uring can be used for async disk IO.  Using this config item, the AIO mode
@@ -5232,7 +5232,6 @@ AIO
    ============ ======================================================================
    Value        Description
    ============ ======================================================================
-   ``NULL``     Use the default detection logic
    ``auto``     Use the default detection logic
    ``thread``   Use the AIO thread pool for disk IO
    ``io_uring`` Use io_uring for disk IO

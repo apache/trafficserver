@@ -196,22 +196,22 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
-    RecString aio_io_uring_force_aio = nullptr;
-    REC_ReadConfigStringAlloc(aio_io_uring_force_aio, "proxy.config.aio.force_aio");
-    if (aio_io_uring_force_aio) {
-      if (strcasecmp(aio_io_uring_force_aio, "auto") == 0) {
+    RecString aio_mode = nullptr;
+    REC_ReadConfigStringAlloc(aio_mode, "proxy.config.aio.mode");
+    if (aio_mode) {
+      if (strcasecmp(aio_mode, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;
-      } else if (strcasecmp(aio_io_uring_force_aio, "thread") == 0) {
+      } else if (strcasecmp(aio_mode, "thread") == 0) {
         // force thread mode
         backend = AIOBackend::AIO_BACKEND_THREAD;
-      } else if (strcasecmp(aio_io_uring_force_aio, "io_uring") == 0) {
+      } else if (strcasecmp(aio_mode, "io_uring") == 0) {
         // force io_uring mode
         backend = AIOBackend::AIO_BACKEND_IO_URING;
       } else {
-        Warning("Invalid value '%s' for proxy.config.aio.force_aio.  autodetecting", aio_io_uring_force_aio);
+        Warning("Invalid value '%s' for proxy.config.aio.mode.  autodetecting", aio_mode);
       }
 
-      ats_free(aio_io_uring_force_aio);
+      ats_free(aio_mode);
     }
   }
 
@@ -236,9 +236,9 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   }
 
   if (use_io_uring) {
-    Warning("Using io_uring for AIO");
+    Note("Using io_uring for AIO");
   } else {
-    Warning("Using thread for AIO");
+    Note("Using thread for AIO");
   }
 #endif
 #endif
