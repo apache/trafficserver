@@ -71,6 +71,10 @@ class quiche_qlog_Test:
         self._ts.addDefaultSSLFiles()
         self._ts.Disk.records_config.update(
             '''
+        diags:
+          debug:
+            enabled: 1
+            tags: vv_quic|v_quic
         quic:
           no_activity_timeout_in: 3000
         ''')
@@ -104,12 +108,22 @@ class quiche_qlog_Test:
         quiche_qlog_Test.client_counter += 1
         tr.Processes.Default.ReturnCode = 0
 
-        # Check for the qlog file. If requested then the file should be present.
-        # If not, then we expect the `ls` to return an error.
+        # If requested we will copy the file to a known name as the runtime name is not know
+        # by the test. So we will rename them all and grab the first one for validation.
         test_run = Test.AddTestRun(f"{self._name} : check qlog files")
-        qlog_file = f'{os.path.join(self._ts.Variables.LOGDIR, "test_qlog")}-*.sqlog'
-        test_run.Processes.Default.Command = f"sleep 5; ls -la {qlog_file}"
-        test_run.Processes.Default.ReturnCode = 0 if self._generate_qlog else 2
+        qlog_base_name = "test_qlog"
+        rename_script = os.path.join(Test.TestDirectory, 'rename_qlog.sh')
+        test_run.Processes.Default.Command = f'sleep 5; bash {rename_script} {self._ts.Variables.LOGDIR} {qlog_base_name}'
+        test_run.Processes.Default.ReturnCode = 0 if self._generate_qlog else 2  # exit 2 is what we want if no qlog was generated.
+
+        # Basic valdation
+        if self._generate_qlog:
+            tr = Test.AddTestRun("Check qlog content")
+            file = os.path.join(self._ts.Variables.LOGDIR, "1.sqlog")
+            f = tr.Disk.File(file)
+            tr.Processes.Default.Command = "echo 0"
+            tr.Processes.Default.ReturnCode = 0
+            f.Content = Testers.IncludesExpression('"title":"Apache Traffic Server"', 'Should include this basic text')
 
 
 quiche_qlog_Test("Generate qlog test").with_qlogs().test()
