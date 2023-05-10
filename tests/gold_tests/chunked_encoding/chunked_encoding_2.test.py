@@ -21,7 +21,7 @@ Test.Summary = 'Test ATS configured to not respond with chunked content.'
 
 
 class ChunkedEncoding:
-    chunkedReplayFile = "replays/chunked.replay.yaml"
+    chunkedReplayFile = "replays/chunked_2.replay.yaml"
 
     def __init__(self):
         self.setupOriginServer()
