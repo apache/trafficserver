@@ -46,6 +46,9 @@ FetchSM::cleanUp()
     chunked_handler.clear();
   }
 
+  if (http_vc) {
+    http_vc->do_io_close();
+  }
   free_MIOBuffer(req_buffer);
   free_MIOBuffer(resp_buffer);
   mutex.clear();
@@ -53,9 +56,6 @@ FetchSM::cleanUp()
   client_response_hdr.destroy();
   ats_free(client_response);
   cont_mutex.clear();
-  if (http_vc) {
-    http_vc->do_io_close();
-  }
   FetchSMAllocator.free(this);
 }
 
@@ -107,14 +107,13 @@ int
 FetchSM::InvokePlugin(int event, void *data)
 {
   EThread *mythread = this_ethread();
-
-  MUTEX_TAKE_LOCK(contp->mutex, mythread);
-
-  int ret = contp->handleEvent(event, data);
-
-  MUTEX_UNTAKE_LOCK(contp->mutex, mythread);
-
-  return ret;
+  SCOPED_MUTEX_LOCK(lock, mutex, mythread);
+  if (contp) {
+    SCOPED_MUTEX_LOCK(lock2, contp->mutex, mythread);
+    return contp->handleEvent(event, data);
+  } else {
+    return TS_ERROR;
+  }
 }
 
 bool
@@ -734,18 +733,12 @@ FetchSM::ext_read_data(char *buf, size_t len)
 void
 FetchSM::ext_destroy()
 {
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+
   contp = nullptr;
 
   if (recursion) {
     return;
-  }
-
-  if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
-    MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-    if (!lock.is_locked()) {
-      eventProcessor.schedule_in(this, FETCH_LOCK_RETRY_TIME);
-      return;
-    }
   }
 
   cleanUp();
