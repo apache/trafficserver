@@ -205,8 +205,8 @@ public:
   int marshal_server_resp_time_ms(char *);            // INT
   int marshal_server_resp_time_s(char *);             // INT
   int marshal_server_transact_count(char *);          // INT
-  int marshal_parent_simple_retry_count(char *);      // INT
-  int marshal_parent_unavailable_retry_count(char *); // INT
+  int marshal_server_simple_retry_count(char *);      // INT
+  int marshal_server_unavailable_retry_count(char *); // INT
   int marshal_server_connect_attempts(char *);        // INT
   int marshal_server_resp_all_header_fields(char *);  // STR
 

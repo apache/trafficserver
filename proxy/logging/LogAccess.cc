@@ -2630,7 +2630,7 @@ LogAccess::marshal_server_transact_count(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_parent_simple_retry_count(char *buf)
+LogAccess::marshal_server_simple_retry_count(char *buf)
 {
   if (buf) {
     const int64_t attempts = m_http_sm->t_state.current.simple_retry_attempts;
@@ -2643,7 +2643,7 @@ LogAccess::marshal_parent_simple_retry_count(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_parent_unavailable_retry_count(char *buf)
+LogAccess::marshal_server_unavailable_retry_count(char *buf)
 {
   if (buf) {
     const int64_t attempts = m_http_sm->t_state.current.unavailable_server_retry_attempts;
