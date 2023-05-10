@@ -1,0 +1,105 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+- transactions:
+  # Test 1
+  # Normal chunked response from the origin and proxy
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /valid
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Connection, keep-alive ]
+        - [ Transfer-Encoding, chunked ]
+      content:
+        size: 10
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Transfer-Encoding, { value: chunked, as: equal } ]
+      content:
+        size: 10
+
+    # Test 2
+    # If Transfer-Encoding is invalid ATS will respond with a 502
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /invalid_server_response/invalid_transfer-encoding
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Transfer-Encoding, invalid ]
+        - [ Connection, keep-alive ]
+      content:
+        size: 1024
+
+    proxy-response:
+      status: 502
+      headers:
+        fields:
+        - [ Connection, { value: keep-alive, as: equal } ]
+
+  # Test 3
+  # If there is no Transfer-Encoding: chunked or Content-Length header
+  # ATS will read the bytes and chunk the response to the client
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing/transfer-encoding_or_content-length
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ Connection, close ]
+      content:
+        transfer: plain
+        size: 10
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Transfer-Encoding, { value: chunked, as: equal } ]
+        - [ Connection, { value: keep-alive, as: equal } ]
+      content:
+        size: 10
