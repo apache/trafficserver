@@ -974,6 +974,7 @@ public:
   static void StartAccessControl(State *s);
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
+  static void BadResponse(State *s);
   static void Forbidden(State *s);
   static void SelfLoop(State *s);
   static void TooEarly(State *s);

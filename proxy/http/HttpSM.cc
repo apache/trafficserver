@@ -2134,7 +2134,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
       t_state.http_return_code = HTTP_STATUS_BAD_GATEWAY;
-      call_transact_and_set_next_state(HttpTransact::BadRequest);
+      call_transact_and_set_next_state(HttpTransact::BadResponse);
       break;
     }
 

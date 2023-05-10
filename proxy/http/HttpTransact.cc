@@ -858,6 +858,15 @@ HttpTransact::BadRequest(State *s)
 }
 
 void
+HttpTransact::BadResponse(State *s)
+{
+  TxnDebug("http_trans", "invalid response from origin");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Invalid Response From Origin", "response#bad_response");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::PostActiveTimeoutResponse(State *s)
 {
   TxnDebug("http_trans", "post active timeout");
