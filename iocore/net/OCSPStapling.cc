@@ -288,12 +288,10 @@ public:
     if (event == TS_EVENT_IMMEDIATE) {
       this->fetch();
     } else {
-      auto fsm = reinterpret_cast<FetchSM *>(e);
-      auto req = reinterpret_cast<HTTPRequest *>(fsm->ext_get_user_data());
       if (event == TS_FETCH_EVENT_EXT_BODY_DONE) {
-        req->set_done();
+        this->set_done();
       } else if (event == TS_EVENT_ERROR) {
-        req->set_error();
+        this->set_error();
       }
     }
 
@@ -310,7 +308,6 @@ public:
     sin.sin_port        = 65535;
 
     this->_fsm = FetchSMAllocator.alloc();
-    this->_fsm->ext_set_user_data(this);
     if (use_post) {
       this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
     } else {
@@ -351,29 +348,6 @@ public:
     this->add_header(name, strlen(name), value, strlen(value));
   }
 
-  void
-  fetch()
-  {
-    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    this->_result = 0;
-    this->_fsm->ext_launch();
-    this->_fsm->ext_write_data(this->_req_body, this->_req_body_len);
-  }
-
-  void
-  set_done()
-  {
-    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    this->_result = 1;
-  }
-
-  void
-  set_error()
-  {
-    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    this->_result = -1;
-  }
-
   bool
   is_initiated()
   {
@@ -409,6 +383,29 @@ private:
   unsigned char *_req_body = nullptr;
   int _req_body_len        = 0;
   int _result              = INT_MAX;
+
+  void
+  fetch()
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    this->_result = 0;
+    this->_fsm->ext_launch();
+    this->_fsm->ext_write_data(this->_req_body, this->_req_body_len);
+  }
+
+  void
+  set_done()
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    this->_result = 1;
+  }
+
+  void
+  set_error()
+  {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    this->_result = -1;
+  }
 };
 
 TS_OCSP_CERTID *
