@@ -1085,6 +1085,14 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.session_ticket.number", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL},
 
+  {RECT_CONFIG, "proxy.config.ssl.client.version.min", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_INT, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.client.version.max", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_INT, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.server.version.min", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_INT, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.server.version.max", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_INT, "^-?[0-9]+$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.ssl.TLSv1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.TLSv1_1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}

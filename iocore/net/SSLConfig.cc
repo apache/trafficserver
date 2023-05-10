@@ -280,47 +280,85 @@ SSLConfigParams::initialize()
 
   int option = 0;
 
-  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1");
-  if (!option) {
-    ssl_ctx_options |= SSL_OP_NO_TLSv1;
-  }
+  REC_ReadConfigInteger(client_tls_ver_min, "proxy.config.ssl.client.version.min");
+  REC_ReadConfigInteger(client_tls_ver_max, "proxy.config.ssl.client.version.max");
+  if (client_tls_ver_min < 0 || client_tls_ver_max < 0) {
+    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1");
+    if (!option) {
+      ssl_client_ctx_options |= SSL_OP_NO_TLSv1;
+    } else {
+      // This is disabled by default. It's used if it's enabled.
+      Warning("proxy.config.ssl.client.TLSv1 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
 
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1");
-  if (!option) {
-    ssl_client_ctx_options |= SSL_OP_NO_TLSv1;
-  }
+    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_1");
+    if (!option) {
+      ssl_client_ctx_options |= SSL_OP_NO_TLSv1_1;
+    } else {
+      // This is disabled by default. It's used if it's enabled.
+      Warning("proxy.config.ssl.client.TLSv1_1 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
 
-  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_1");
-  if (!option) {
-    ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
-  }
-
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_1");
-  if (!option) {
-    ssl_client_ctx_options |= SSL_OP_NO_TLSv1_1;
-  }
-
-  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_2");
-  if (!option) {
-    ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
-  }
-
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_2");
-  if (!option) {
-    ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
-  }
+    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_2");
+    if (!option) {
+      ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
+      // This is enabled by default. It's used if it's disabled.
+      Warning("proxy.config.ssl.client.TLSv1_2 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
 
 #ifdef SSL_OP_NO_TLSv1_3
-  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3.enabled");
-  if (!option) {
-    ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
+    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3.enabled");
+    if (!option) {
+      ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
+      // This is enabled by default. It's used if it's disabled.
+      Warning("proxy.config.ssl.client.TLSv1_3.enabled is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
+#endif
   }
 
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3.enabled");
-  if (!option) {
-    ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
-  }
+  REC_ReadConfigInteger(server_tls_ver_min, "proxy.config.ssl.server.version.min");
+  REC_ReadConfigInteger(server_tls_ver_max, "proxy.config.ssl.server.version.max");
+  if (server_tls_ver_min < 0 || server_tls_ver_max < 0) {
+    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1");
+    if (!option) {
+      ssl_ctx_options |= SSL_OP_NO_TLSv1;
+    } else {
+      // This is disabled by default. It's used if it's enabled.
+      Warning("proxy.config.ssl.client.TLSv1 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
+
+    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_1");
+    if (!option) {
+      ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
+    } else {
+      // This is disabled by default. It's used if it's enabled.
+      Warning("proxy.config.ssl.client.TLSv1_1 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
+
+    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_2");
+    if (!option) {
+      ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
+      // This is enabled by default. It's used if it's disabled.
+      Warning("proxy.config.ssl.client.TLSv1_2 is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
+
+#ifdef SSL_OP_NO_TLSv1_3
+    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3.enabled");
+    if (!option) {
+      ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
+      // This is enabled by default. It's used if it's disabled.
+      Warning("proxy.config.ssl.client.TLSv1_3.enabled is deprecated. Use proxy.config.ssl.client.version.min and "
+              "proxy.config.ssl.client.version.max instead.");
+    }
 #endif
+  }
 
   // Read in the protocol string for ALPN to origin
   char *clientALPNProtocols = nullptr;

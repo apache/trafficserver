@@ -126,8 +126,12 @@ SNIConfigParams::load_sni_config()
     if (item.host_sni_policy != 255) {
       ai->actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
     }
-    if (!item.protocol_unset) {
-      ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
+    if (item.valid_tls_version_min_in >= 0 || item.valid_tls_version_max_in >= 0) {
+      ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.valid_tls_version_min_in, item.valid_tls_version_max_in));
+    } else {
+      if (!item.protocol_unset) {
+        ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
+      }
     }
     if (item.tunnel_destination.length() > 0) {
       ai->actions.push_back(

@@ -389,12 +389,9 @@ public:
     return _ca_cert_dir.get();
   }
 
-  void
-  set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
-  {
-    SSL_set_options(this->ssl, proto_mask);
-    SSL_clear_options(this->ssl, max_mask & ~proto_mask);
-  }
+  void set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask);
+  void set_valid_tls_version_min(int min);
+  void set_valid_tls_version_max(int max);
 
 protected:
   SSL *

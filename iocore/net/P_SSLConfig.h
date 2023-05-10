@@ -111,6 +111,10 @@ struct SSLConfigParams : public ConfigInfo {
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
+  int server_tls_ver_min;
+  int server_tls_ver_max;
+  int client_tls_ver_min;
+  int client_tls_ver_max;
 
   char *keylog_file;
 

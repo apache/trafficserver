@@ -122,7 +122,25 @@ host_sni_policy           Inbound   One of the values :code:`DISABLED`, :code:`P
                                     which a malicious user may alter to some other server value whose policies are more
                                     lenient than the host he is trying to access.
 
-valid_tls_versions_in     Inbound   This specifies the list of TLS protocols that will be offered to user agents during
+valid_tls_version_min_in  Inbound   This specifies the minimum TLS version that will be offered to user agents during
+                                    the TLS negotiation.  This replaces the global settings in
+                                    :ts:cv:`proxy.config.ssl.server.version.min`,
+                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
+                                    :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                                    values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3. This key is only valid for OpenSSL
+                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
+                                    the SSL object.  It is a syntax error for |TS| built against earlier versions.
+
+valid_tls_version_max_in  Inbound   This specifies the minimum TLS version that will be offered to user agents during
+                                    the TLS negotiation.  This replaces the global settings in
+                                    :ts:cv:`proxy.config.ssl.server.version.max`,
+                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
+                                    :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                                    values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3. This key is only valid for OpenSSL
+                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
+                                    the SSL object.  It is a syntax error for |TS| built against earlier versions.
+
+valid_tls_versions_in     Inbound   Deprecated. This specifies the list of TLS protocols that will be offered to user agents during
                                     the TLS negotiation.  This replaces the global settings in
                                     :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
                                     :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
