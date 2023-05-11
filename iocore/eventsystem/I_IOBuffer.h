@@ -1411,7 +1411,7 @@ IOBufferChain::operator=(self_type const &that)
 inline IOBufferChain &
 IOBufferChain::operator+=(self_type const &that)
 {
-  if (nullptr == _head)
+  if (_head == nullptr)
     *this = that;
   else {
     _tail->next  = that._head;
