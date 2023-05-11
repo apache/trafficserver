@@ -347,7 +347,7 @@ bwformat(BufferWriter &w, Spec const &spec, IPRange const &range) {
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IP4Net const &net) {
-  bwformat(w, spec, net.lower_bound());
+  bwformat(w, spec, net.min());
   w.write('/');
   bwformat(w, Spec{}, net.mask().width());
   return w;
@@ -355,7 +355,7 @@ bwformat(BufferWriter &w, Spec const &spec, IP4Net const &net) {
 
 BufferWriter &
 bwformat(BufferWriter &w, Spec const &spec, IP6Net const &net) {
-  bwformat(w, spec, net.lower_bound());
+  bwformat(w, spec, net.min());
   w.write('/');
   bwformat(w, Spec{}, net.mask().width());
   return w;

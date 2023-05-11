@@ -437,6 +437,9 @@ protected:
   /// Number of bits per word.
   static constexpr size_t WORD_WIDTH = std::numeric_limits<uint8_t>::digits * WORD_SIZE;
 
+  /// Mask the size of a word.
+  static constexpr word_type WORD_MASK = ~word_type(0);
+
   /// Number of words used for basic address storage.
   static constexpr size_t N_STORE = SIZE / WORD_SIZE;
 
@@ -1085,22 +1088,27 @@ IP6Addr::copy_to(sockaddr *sa) const {
 
 inline IP6Addr &
 IP6Addr::operator&=(IPMask const &mask) {
-  if (mask._cidr < WORD_WIDTH) {
-    _addr._store[MSW] &= (~word_type{0} << (WORD_WIDTH - mask._cidr));
+  if (0 == mask._cidr) {
+    _addr._store[LSW] = _addr._store[MSW] = 0;
+  } else if (mask._cidr < WORD_WIDTH) {
+    _addr._store[MSW] &= (WORD_MASK << (WORD_WIDTH - mask._cidr));
     _addr._store[LSW] = 0;
   } else if (mask._cidr < WIDTH) {
-    _addr._store[LSW] &= (~word_type{0} << (2 * WORD_WIDTH - mask._cidr));
+    _addr._store[LSW] &= (WORD_MASK << (2 * WORD_WIDTH - mask._cidr));
   }
   return *this;
 }
 
 inline IP6Addr &
 IP6Addr::operator|=(IPMask const &mask) {
-  if (mask._cidr < WORD_WIDTH) {
-    _addr._store[MSW] |= (~word_type{0} >> mask._cidr);
-    _addr._store[LSW] = ~word_type{0};
+  if (0 == mask._cidr) { // do nothing in this case.
+  } else if (0 < mask._cidr && mask._cidr < WORD_WIDTH) {
+      _addr._store[MSW] |= (WORD_MASK >> mask._cidr);
+      _addr._store[LSW] = WORD_MASK;
   } else if (mask._cidr < WIDTH) {
-    _addr._store[LSW] |= (~word_type{0} >> (mask._cidr - WORD_WIDTH));
+    _addr._store[LSW] |= (WORD_MASK >> (mask._cidr - WORD_WIDTH));
+  } else {
+    _addr._store[LSW] = _addr._store[MSW] = WORD_MASK;
   }
   return *this;
 }
@@ -1138,7 +1146,9 @@ inline IP4Addr
 IPMask::as_ip4() const {
   static constexpr auto MASK = ~in_addr_t{0};
   in_addr_t addr             = MASK;
-  if (_cidr < IP4Addr::WIDTH) {
+  if (0 == _cidr) {
+    addr = in_addr_t(0);
+  } else if (_cidr < IP4Addr::WIDTH) {
     addr <<= IP4Addr::WIDTH - _cidr;
   }
   return IP4Addr{addr};

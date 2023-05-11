@@ -566,11 +566,17 @@ public:
   /// @return @c true if the network is valid, @c false if not.
   bool is_valid() const;
 
-  /// @return THh smallest address in the network.
-  IP4Addr lower_bound() const;
+  /// @return Network address - smallest address in the network.
+  IP4Addr min() const;
 
   /// @return The largest address in the network.
-  IP4Addr upper_bound() const;
+  IP4Addr max() const;
+
+  /// @return Network address.
+  [[deprecated]] IP4Addr lower_bound() const;
+
+  /// @return The largest address in the network.
+  [[deprecated]] IP4Addr upper_bound() const;
 
   /// @return The mask for the network.
   IPMask const &mask() const;
@@ -628,11 +634,17 @@ public:
   /// @return @c true if the network is valid, @c false if not.
   bool is_valid() const;
 
+  /// @return Network address - smallest address in the network.
+  IP6Addr min() const;
+
+  /// @return Largest address in the network.
+  IP6Addr max() const;
+
   /// @return THh smallest address in the network.
-  IP6Addr lower_bound() const;
+  [[deprecated]] IP6Addr lower_bound() const;
 
   /// @return The largest address in the network.
-  IP6Addr upper_bound() const;
+  [[deprecated]] IP6Addr upper_bound() const;
 
   /// @return The mask for the network.
   IPMask const &mask() const;
@@ -698,11 +710,17 @@ public:
   /// @return @c true if the network is valid, @c false if not.
   bool is_valid() const;
 
+  /// @return Network address - smallest address in the network.
+  IPAddr min() const;
+
+  /// @return Largest address in the network.
+  IPAddr max() const;
+
   /// @return THh smallest address in the network.
-  IPAddr lower_bound() const;
+  [[deprecated]] IPAddr lower_bound() const;
 
   /// @return The largest address in the network.
-  IPAddr upper_bound() const;
+  [[deprecated]] IPAddr upper_bound() const;
 
   IPMask::raw_type width() const;
 
@@ -1589,18 +1607,28 @@ IP4Net::is_valid() const {
 }
 
 inline IP4Addr
-IP4Net::lower_bound() const {
+IP4Net::min() const {
   return _addr;
 }
 
 inline IP4Addr
-IP4Net::upper_bound() const {
+IP4Net::max() const {
   return _addr | _mask;
+}
+
+inline IP4Addr
+IP4Net::lower_bound() const {
+  return this->min();
+}
+
+inline IP4Addr
+IP4Net::upper_bound() const {
+  return this->max();
 }
 
 inline IP4Range
 IP4Net::as_range() const {
-  return {this->lower_bound(), this->upper_bound()};
+  return {this->min(), this->max()};
 }
 
 inline bool
@@ -1633,18 +1661,21 @@ IP6Net::is_valid() const {
 }
 
 inline IP6Addr
-IP6Net::lower_bound() const {
+IP6Net::min() const {
   return _addr;
 }
 
 inline IP6Addr
-IP6Net::upper_bound() const {
+IP6Net::max() const {
   return _addr | _mask;
 }
 
+inline IP6Addr IP6Net::lower_bound() const { return this->min(); }
+inline IP6Addr IP6Net::upper_bound() const { return this->max(); }
+
 inline IP6Range
 IP6Net::as_range() const {
-  return {this->lower_bound(), this->upper_bound()};
+  return {this->min(), this->max()};
 }
 
 inline bool
@@ -1676,14 +1707,17 @@ IPNet::is_valid() const {
 }
 
 inline IPAddr
-IPNet::lower_bound() const {
+IPNet::min() const {
   return _addr;
 }
 
 inline IPAddr
-IPNet::upper_bound() const {
+IPNet::max() const {
   return _addr | _mask;
 }
+
+inline IPAddr IPNet::lower_bound() const { return this->min(); }
+inline IPAddr IPNet::upper_bound() const { return this->max(); }
 
 inline IPMask::raw_type
 IPNet::width() const {
@@ -1697,7 +1731,7 @@ IPNet::mask() const {
 
 inline IPRange
 IPNet::as_range() const {
-  return {this->lower_bound(), this->upper_bound()};
+  return {this->min(), this->max()};
 }
 
 inline IPNet::self_type &
@@ -2222,7 +2256,7 @@ template <size_t IDX>
 typename std::tuple_element<IDX, IP4Net>::type
 get(swoc::IP4Net const &net) {
   if constexpr (IDX == 0) {
-    return net.lower_bound();
+    return net.min();
   } else if constexpr (IDX == 1) {
     return net.mask();
   }
@@ -2232,7 +2266,7 @@ template <size_t IDX>
 typename std::tuple_element<IDX, IP6Net>::type
 get(swoc::IP6Net const &net) {
   if constexpr (IDX == 0) {
-    return net.lower_bound();
+    return net.min();
   } else if constexpr (IDX == 1) {
     return net.mask();
   }
@@ -2242,7 +2276,7 @@ template <size_t IDX>
 typename std::tuple_element<IDX, IPNet>::type
 get(swoc::IPNet const &net) {
   if constexpr (IDX == 0) {
-    return net.lower_bound();
+    return net.min();
   } else if constexpr (IDX == 1) {
     return net.mask();
   }

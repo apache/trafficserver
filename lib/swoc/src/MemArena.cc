@@ -5,10 +5,12 @@
     MemArena memory allocator. Chunks of memory are allocated, frozen into generations and thawed
     away when unused.
  */
-#include <algorithm>
 #include "swoc/MemArena.h"
+#include <algorithm>
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
+
+void (*MemArena::destroyer)(MemArena*) = std::destroy_at<MemArena>;
 
 inline bool
 MemArena::Block::satisfies(size_t n, size_t align) const {
@@ -173,9 +175,10 @@ MemArena::require(size_t n, size_t align) {
 
 void
 MemArena::destroy_active() {
+  auto sb = _static_block; // C++20 nonsense - capture of @a this is incompatible with C++17.
   _active
     .apply([=](Block *b) {
-      if (b != _static_block)
+      if (b != sb)
         delete b;
     })
     .clear();
@@ -183,9 +186,10 @@ MemArena::destroy_active() {
 
 void
 MemArena::destroy_frozen() {
+  auto sb = _static_block; // C++20 nonsense - capture of @a this is incompatible with C++17.
   _frozen
     .apply([=](Block *b) {
-      if (b != _static_block)
+      if (b != sb)
         delete b;
     })
     .clear();

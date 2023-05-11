@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include "swoc/MemSpan.h"
+#include "swoc/Scalar.h"
+#include "swoc/IntrusiveDList.h"
+
 #include <mutex>
 #include <memory>
 #include <utility>
@@ -14,10 +18,6 @@
 #if __has_include(<memory_resource>)
 #include <memory_resource>
 #endif
-
-#include "swoc/MemSpan.h"
-#include "swoc/Scalar.h"
-#include "swoc/IntrusiveDList.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A memory arena.
@@ -38,9 +38,9 @@ class MemArena
 public:
   static constexpr size_t DEFAULT_ALIGNMENT{1}; ///< Default memory alignment.
 
-  /// Functor for destructing a self contained arena.
-  /// @see MemArena::unique_ptr
-  static inline auto destroyer = std::destroy_at<MemArena>;
+  /// Convenient alias for use with @c unique_ptr.
+  /// @internal Can't be @c inline because the instantiation requires a complete type.
+  static void (*destroyer)(self_type *);
 
   /// Correct type for a unique pointer to an instance.
   /// Initialization is

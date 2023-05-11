@@ -33,10 +33,24 @@ namespace detail {
  */
 template <typename... Args>
 std::string
-what(std::string_view const &fmt, Args &&... args) {
+what(std::string_view const &fmt, Args &&...args) {
   std::string zret;
   return swoc::bwprint_v(zret, fmt, std::forward_as_tuple(args...));
 }
+
+// Exported because inner classes in template classes cannot be used in partial specialization
+// which is required for tuple support. This should be remove next time there is a API changing
+// release because tuple access is being deprecated.
+template < typename E > struct lexicon_pair_type {
+  E _value;
+  TextView _name;
+
+  /// Constructor.
+  /// @internal Required to make the @c Lexicon constructors work as intended by forbidding
+  /// construction of this type with only a value.
+  lexicon_pair_type(E value, TextView name) : _value(value), _name(name) {}
+};
+
 } // namespace detail
 
 /// Policy template use to specify the hash function for the integral type of @c Lexicon.
@@ -79,8 +93,9 @@ protected:
 public:
   /// An association of an enumeration value and a name.
   /// @ note Used for initializer lists that have just a primary value.
-  using Pair = std::tuple<E, std::string_view>;
+  using Pair = detail::lexicon_pair_type<E>;
 
+  // Deprecated - use the member names now.
   /// Index in @c Pair for the enumeration value.
   static constexpr auto VALUE_IDX = 0;
   /// Index in @c Pair for name.
@@ -95,7 +110,7 @@ public:
    * without a destructor being called. Unfortunately this can't be done any better without
    * imposing memory management costs on normal use.
    */
-  using UnknownValueHandler = std::function<std::string_view(E)>;
+  using UnknownValueHandler = std::function<TextView(E)>;
 
   /** A function to be called if a name is not found, to provide a default value.
    * @param name The name
@@ -103,22 +118,26 @@ public:
    *
    * The @a name is provided and a value in the enumeration type is expected.
    */
-  using UnknownNameHandler = std::function<E(std::string_view)>;
+  using UnknownNameHandler = std::function<E(TextView)>;
 
   /** A default handler.
    *
    * This handles providing a default value or name for a missing name or value.
    */
-  using DefaultHandler = std::variant<std::monostate, E, std::string_view, UnknownNameHandler, UnknownValueHandler>;
+  using Default = std::variant<std::monostate, E, TextView, UnknownNameHandler, UnknownValueHandler>;
 
   /// Element of an initializer list that contains secondary names.
+  /// @note This is used only in the constructor and contains transient data.
   struct Definition {
-    const E &value;                                       ///< Value for definition.
-    const std::initializer_list<std::string_view> &names; ///< Primary then secondary names.
+    const E &value;                               ///< Value for definition.
+    std::initializer_list<TextView> const &names; ///< Primary then secondary names.
   };
 
   /// Construct empty instance.
   Lexicon();
+
+  using with       = std::initializer_list<Pair> const &;
+  using with_multi = std::initializer_list<Definition> const &;
 
   /** Construct with names, possible secondary values, and optional default handlers.
    *
@@ -135,8 +154,7 @@ public:
    *
    * @see set_default.
    */
-  explicit Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1 = DefaultHandler{},
-                   DefaultHandler handler_2 = DefaultHandler{});
+  explicit Lexicon(with_multi items, Default handler_1 = Default{}, Default handler_2 = Default{});
 
   /** Construct with names / value pairs, and optional default handlers.
    *
@@ -151,8 +169,7 @@ public:
    *
    * @see set_default.
    */
-  explicit Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1 = DefaultHandler{},
-                   DefaultHandler handler_2 = DefaultHandler{});
+  explicit Lexicon(with items, Default handler_1 = Default{}, Default handler_2 = Default{});
 
   /** Construct with only default values / handlers.
    *
@@ -164,7 +181,7 @@ public:
    *
    * @see set_default.
    */
-  explicit Lexicon(DefaultHandler handler_1, DefaultHandler handler_2 = DefaultHandler{});
+  explicit Lexicon(Default handler_1, Default handler_2 = Default{});
 
   Lexicon(self_type &&that) = default;
 
@@ -173,24 +190,24 @@ public:
    * @param value Value to look up.
    * @return The name for @a value.
    */
-  std::string_view operator[](E const& value) const;
+  TextView operator[](E const &value) const;
 
   /** Get the value for a @a name.
    *
    * @param name Name to look up.
    * @return The value for the @a name.
    */
-  E operator[](std::string_view const &name) const;
+  E operator[](TextView const &name) const;
 
   /// Define the @a names for a @a value.
   /// The first name is the primary name. All @a names must be convertible to @c std::string_view.
   /// <tt>lexicon.define(Value, primary, [secondary, ... ]);</tt>
-  template <typename... Args> self_type &define(E value, Args &&... names);
+  template <typename... Args> self_type &define(E value, Args &&...names);
 
   // These are really for consistency with constructors, they're not expected to be commonly used.
   /// Define a value and names.
   /// <tt>lexicon.define(Value, { primary, [secondary, ...] });</tt>
-  self_type &define(E value, const std::initializer_list<std::string_view> &names);
+  self_type &define(E value, const std::initializer_list<TextView> &names);
 
   /** Define a name, value pair.
    *
@@ -230,7 +247,7 @@ public:
    * - A @c DefaultValueHandler. This is a functor that takes a name as a @c string_view and returns
    *   an enumeration value as the value for any name that is not found.
    */
-  self_type &set_default(DefaultHandler const &handler);
+  self_type &set_default(Default const &handler);
 
   /// Get the number of values with definitions.
   size_t count() const;
@@ -239,11 +256,12 @@ protected:
   /// Common features of container iterators.
   class base_iterator {
     using self_type = base_iterator;
+
   public:
-    using value_type        = const Pair; ///< Iteration value.
-    using pointer           = value_type *; ///< Pointer to iteration value.
-    using reference         = value_type &; ///< Reference to iteration value.
-    using difference_type   = ptrdiff_t; ///< Type of difference between iterators.
+    using value_type        = const Pair;                      ///< Iteration value.
+    using pointer           = value_type *;                    ///< Pointer to iteration value.
+    using reference         = value_type &;                    ///< Reference to iteration value.
+    using difference_type   = ptrdiff_t;                       ///< Type of difference between iterators.
     using iterator_category = std::bidirectional_iterator_tag; ///< Concepts for iterator.
     /// Default constructor (invalid iterator)
     base_iterator() = default;
@@ -257,24 +275,23 @@ protected:
     bool operator!=(self_type const &that) const;
 
   protected:
-    base_iterator(Item const * item) : _item(item) {}
+    explicit base_iterator(Item const *item) : _item(item) {}
 
-    const Item *_item{nullptr};                      ///< Current location in the container.
+    const Item *_item{nullptr}; ///< Current location in the container.
   };
 
 public:
-
   /** Iterator over pairs of values and primary name pairs.
    *  The value type is a @c Pair with the value and name.
    */
   class value_iterator : public base_iterator {
     using super_type = base_iterator;
-    using self_type = value_iterator;
+    using self_type  = value_iterator;
 
   public:
-    using value_type        = typename super_type::value_type;
-    using pointer           = typename super_type::pointer;
-    using reference         = typename super_type::reference;
+    using value_type = typename super_type::value_type;
+    using pointer    = typename super_type::pointer;
+    using reference  = typename super_type::reference;
 
     /// Default constructor.
     value_iterator() = default;
@@ -301,15 +318,16 @@ public:
     self_type operator--(int);
 
   protected:
-    value_iterator(const Item *item) : super_type(item) {}; ///< Internal constructor.
+    value_iterator(const Item *item) : super_type(item){}; ///< Internal constructor.
 
     friend Lexicon;
   };
 
   class name_iterator : public base_iterator {
   private:
-    using self_type = name_iterator;
+    using self_type  = name_iterator;
     using super_type = base_iterator;
+
   public:
     /// Default constructor.
     name_iterator() = default;
@@ -336,7 +354,7 @@ public:
     self_type operator--(int);
 
   protected:
-    name_iterator(const Item *item) : super_type(item) {}; ///< Internal constructor.
+    name_iterator(const Item *item) : super_type(item){}; ///< Internal constructor.
 
     friend Lexicon;
   };
@@ -354,17 +372,29 @@ public:
   const_iterator end() const;
 
   /// Iteration over names - every value/name pair.
-  name_iterator begin_names() const { return { _by_name.begin() }; }
+  name_iterator
+  begin_names() const {
+    return {_by_name.begin()};
+  }
   /// Iteration over names - every value/name pair.
-  name_iterator end_names() const { return { _by_name.end() }; }
+  name_iterator
+  end_names() const {
+    return {_by_name.end()};
+  }
 
   /// @cond INTERNAL
   // Helper struct to return to enable container iteration for names.
   struct ByNameHelper {
-    self_type const & _lexicon;
-    ByNameHelper(self_type const & self) : _lexicon(self) {}
-    name_iterator begin() const { return _lexicon.begin_names(); }
-    name_iterator end() const { return _lexicon.end_names(); }
+    self_type const &_lexicon;
+    ByNameHelper(self_type const &self) : _lexicon(self) {}
+    name_iterator
+    begin() const {
+      return _lexicon.begin_names();
+    }
+    name_iterator
+    end() const {
+      return _lexicon.end_names();
+    }
   };
   /// @endcond
 
@@ -379,7 +409,10 @@ public:
    * @endcode
    * @return Temporary.
    */
-  ByNameHelper by_names() const { return { *this }; }
+  ByNameHelper
+  by_names() const {
+    return {*this};
+  }
 
 protected:
   /// Handle providing a default name.
@@ -399,7 +432,7 @@ protected:
 
     /// Visitor - literal string.
     std::string_view
-    operator()(std::string_view const &name) const {
+    operator()(TextView const &name) const {
       return name;
     }
 
@@ -442,7 +475,7 @@ protected:
      * @param name The name.
      *
      */
-    Item(E value, std::string_view name);
+    Item(E value, TextView name);
 
     Pair _payload; ///< Enumeration and name.
 
@@ -474,7 +507,7 @@ protected:
   };
 
   /// Copy @a name in to local storage.
-  std::string_view localize(std::string_view const &name);
+  TextView localize(TextView const &name);
 
   /// Storage for names.
   MemArena _arena{1024};
@@ -492,7 +525,7 @@ protected:
 // ----
 // Item
 
-template <typename E> Lexicon<E>::Item::Item(E value, std::string_view name) : _payload(value, name) {}
+template <typename E> Lexicon<E>::Item::Item(E value, TextView name) : _payload{value, name} {}
 
 /// @cond INTERNAL_DETAIL
 template <typename E>
@@ -522,13 +555,13 @@ Lexicon<E>::Item::ValueLinkage::prev_ptr(Item *item) -> Item *& {
 template <typename E>
 std::string_view
 Lexicon<E>::Item::NameLinkage::key_of(Item *item) {
-  return std::get<NAME_IDX>(item->_payload);
+  return item->_payload._name;
 }
 
 template <typename E>
 E
 Lexicon<E>::Item::ValueLinkage::key_of(Item *item) {
-  return std::get<VALUE_IDX>(item->_payload);
+  return item->_payload._value;
 }
 
 template <typename E>
@@ -561,8 +594,7 @@ Lexicon<E>::Item::ValueLinkage::equal(E lhs, E rhs) {
 
 template <typename E> Lexicon<E>::Lexicon() {}
 
-template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
+template <typename E> Lexicon<E>::Lexicon(with_multi items, Default handler_1, Default handler_2) {
   for (auto const &item : items) {
     this->define(item.value, item.names);
   }
@@ -572,8 +604,7 @@ Lexicon<E>::Lexicon(const std::initializer_list<Definition> &items, DefaultHandl
   }
 }
 
-template <typename E>
-Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler handler_1, DefaultHandler handler_2) {
+template <typename E> Lexicon<E>::Lexicon(with items, Default handler_1, Default handler_2) {
   for (auto const &item : items) {
     this->define(item);
   }
@@ -583,49 +614,49 @@ Lexicon<E>::Lexicon(const std::initializer_list<Pair> &items, DefaultHandler han
   }
 }
 
-template <typename E> Lexicon<E>::Lexicon(DefaultHandler handler_1, DefaultHandler handler_2) {
+template <typename E> Lexicon<E>::Lexicon(Default handler_1, Default handler_2) {
   for (auto &&h : {handler_1, handler_2}) {
     this->set_default(h);
   }
 }
 
 template <typename E>
-std::string_view
-Lexicon<E>::localize(std::string_view const &name) {
+TextView
+Lexicon<E>::localize(TextView const &name) {
   auto span = _arena.alloc_span<char>(name.size());
   memcpy(span, name);
-  return { span.data(), span.size() };
+  return {span.data(), span.size()};
 }
 
 template <typename E>
-std::string_view
-Lexicon<E>::operator[](E const& value) const {
-  if ( auto spot = _by_value.find(value) ; spot != _by_value.end()) {
-    return std::get<NAME_IDX>(spot->_payload);
+TextView
+Lexicon<E>::operator[](E const &value) const {
+  if (auto spot = _by_value.find(value); spot != _by_value.end()) {
+    return spot->_payload._name;
   }
   return std::visit(NameDefaultVisitor{value}, _name_default);
 }
 
 template <typename E>
 E
-Lexicon<E>::operator[](std::string_view const &name) const {
-  if ( auto spot = _by_name.find(name) ; spot != _by_name.end()) {
-    return std::get<VALUE_IDX>(spot->_payload);
+Lexicon<E>::operator[](TextView const &name) const {
+  if (auto spot = _by_name.find(name); spot != _by_name.end()) {
+    return spot->_payload._value;
   }
   return std::visit(ValueDefaultVisitor{name}, _value_default);
 }
 
 template <typename E>
 auto
-Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names) -> self_type & {
+Lexicon<E>::define(E value, const std::initializer_list<TextView> &names) -> self_type & {
   if (names.size() < 1) {
     throw std::invalid_argument("A defined value must have at least a primary name");
   }
-  for (auto const& name : names) {
+  for (auto const &name : names) {
     if (_by_name.find(name) != _by_name.end()) {
       throw std::invalid_argument(detail::what("Duplicate name '{}' in Lexicon", name));
     }
-    auto i = new Item(value, this->localize(name));
+    auto i = _arena.make<Item>(value, this->localize(name));
     _by_name.insert(i);
     // Only put primary names in the value table.
     if (_by_value.find(value) == _by_value.end()) {
@@ -638,7 +669,7 @@ Lexicon<E>::define(E value, const std::initializer_list<std::string_view> &names
 template <typename E>
 template <typename... Args>
 auto
-Lexicon<E>::define(E value, Args &&... names) -> self_type & {
+Lexicon<E>::define(E value, Args &&...names) -> self_type & {
   static_assert(sizeof...(Args) > 0, "A defined value must have at least a primary name");
   return this->define(value, {std::forward<Args>(names)...});
 }
@@ -646,7 +677,7 @@ Lexicon<E>::define(E value, Args &&... names) -> self_type & {
 template <typename E>
 auto
 Lexicon<E>::define(const Pair &pair) -> self_type & {
-  return this->define(std::get<VALUE_IDX>(pair), {std::get<NAME_IDX>(pair)});
+  return this->define(pair._value, pair._name);
 }
 
 template <typename E>
@@ -657,7 +688,7 @@ Lexicon<E>::define(const Definition &init) -> self_type & {
 
 template <typename E>
 auto
-Lexicon<E>::set_default(DefaultHandler const &handler) -> self_type & {
+Lexicon<E>::set_default(Default const &handler) -> self_type & {
   switch (handler.index()) {
   case 0:
     break;
@@ -813,4 +844,33 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, Lexicon<E> const &lex) {
   return w;
 }
 
-}} // namespace swoc::SWOC_VERSION_NS
+}} // namespace swoc
+
+namespace std {
+
+template <size_t IDX, typename E> class tuple_element<IDX, swoc::detail::lexicon_pair_type<E>> {
+  static_assert("swoc::Lexicon::Pair tuple index out of range");
+};
+
+template <typename E> class tuple_element<0, swoc::detail::lexicon_pair_type<E>> {
+public:
+  using type = E;
+};
+
+template <typename E> class tuple_element<1, swoc::detail::lexicon_pair_type<E>> {
+public:
+  using type = swoc::TextView;
+};
+
+template <size_t IDX, typename E>
+auto
+get(swoc::detail::lexicon_pair_type<E> const &p) -> typename std::tuple_element<IDX, swoc::detail::lexicon_pair_type<E>>::type {
+  if constexpr (IDX == 0) {
+    return p._value;
+  } else if constexpr (IDX == 1) {
+    return p._name;
+  }
+}
+
+} // namespace std
+
