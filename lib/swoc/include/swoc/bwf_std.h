@@ -14,23 +14,39 @@
 #include "swoc/swoc_version.h"
 #include "swoc/bwf_base.h"
 
-namespace std {
+namespace swoc { inline namespace SWOC_VERSION_NS {
+
 /// Format atomics by stripping the atomic and formatting the underlying type.
 template <typename T>
-swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, atomic<T> const &v) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::atomic<T> const &v) {
   return ::swoc::bwformat(w, spec, v.load());
 }
 
-swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::error_code const &ec);
 
 template <size_t N>
-swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const & /* spec */, bitset<N> const &bits) {
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const & /* spec */, std::bitset<N> const &bits) {
   for (unsigned idx = 0; idx < N; ++idx) {
     w.write(bits[idx] ? '1' : '0');
   }
   return w;
 }
 
-} // end namespace std
+template <typename Rep, typename Period>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::duration<Rep, Period> const &d)
+{
+  return bwformat(w, spec, d.count());
+}
+
+template <typename Clock, typename Duration>
+BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::time_point<Clock, Duration> const &t)
+{
+  return bwformat(w, spec, t.time_since_epoch());
+}
+
+
+}} // end namespace swoc

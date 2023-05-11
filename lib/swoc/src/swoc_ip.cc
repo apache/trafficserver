@@ -715,7 +715,9 @@ IPMask::mask_for(IP6Addr const &addr) {
 IP6Addr
 IPMask::as_ip6() const {
   static constexpr auto MASK = ~IP6Addr::word_type{0};
-  if (_cidr <= IP6Addr::WORD_WIDTH) {
+  if (_cidr == 0) {
+    return { 0, 0 };
+  } else if (_cidr <= IP6Addr::WORD_WIDTH) {
     return {MASK << (IP6Addr::WORD_WIDTH - _cidr), 0};
   } else if (_cidr < 2 * IP6Addr::WORD_WIDTH) {
     return {MASK, MASK << (2 * IP6Addr::WORD_WIDTH - _cidr)};

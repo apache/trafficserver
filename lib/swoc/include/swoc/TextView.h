@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <limits>
+#include <type_traits>
 
 #include "swoc/swoc_version.h"
 #include "swoc/string_view_util.h"
@@ -78,8 +79,23 @@ public:
    * @param last End of half open range.
    *
    * The character at @a first will be in the view, but the character at @a last will not.
+   *
+   * @note @c explicit to avoid interpreting a string initializer list as a view.
+   *
+   * @internal For the love of Turing, WHY DID YOU DO THIS?
+   *
+   * Well, estemed reader, because the C++ standard doesn't have a better way to support overloads
+   * that handle character pointers and literal strings differently. If the parameters were simply
+   * <tt>(char const *, char const *)</tt> then a cosntruct like <tt>{ "really", "broken" }</tt> can
+   * be interpreted as a @c TextView because the elements implicitly convert to <tt>char const
+   * *</tt>. This makes no sense and creates some @b very annoying ambiguities for lists of strings
+   * if there are exactly two in the list. See @c Lexicon for an example.
+   *
+   * The template itself does the check to make sure it's a character @b pointer and not an array. Arrays
+   * are handled by a different constructor so this only disables constructing from two char arrays
+   * which IMHO makes no sense and should be forbidden.
    */
-  constexpr TextView(char const *first, char const *last) noexcept;
+  template < typename T > explicit TextView(T first, std::enable_if_t<!std::is_array_v<T> && std::is_pointer_v<T> && std::is_convertible_v<T, char const *>, T> last) noexcept : super_type(first, last - first) {}
 
   /** Construct from any character container following STL standards.
    *
@@ -847,14 +863,25 @@ public:
     }
   };
 
-  /** Get a pointer to past the last byte.
+  /** A pointer to the first byte.
    *
-   * @return The first byte past the end of the view.
+   * @return Address of the first byte of the view.
+   *
+   * @internal This fixes an error in @c std::string_view where this method is declared to return
+   * a template parameter instead of the correct @c value_type. The effect is @c string_view::data
+   * is not considered by the compiler to return <tt>char const *</tt> which makes meta-programming
+   * painful.
+   */
+  constexpr value_type const *data() const noexcept;
+
+  /** A pointer to past the last byte.
+   *
+   * @return Address of the first byte past the end of the view.
    *
    * This is effectively @c std::string_view::end() except it explicit returns a pointer and not
    * (potentially) an iterator class, to match up with @c data().
    */
-  constexpr char const *data_end() const noexcept;
+  constexpr value_type const *data_end() const noexcept;
 
   /// Specialized stream operator implementation.
   /// @note Use the standard stream operator unless there is a specific need for this, which is unlikely.
@@ -974,7 +1001,6 @@ double svtod(swoc::TextView text, swoc::TextView *parsed = nullptr);
 // Doxygen doesn't match these up well due to various type and template issues.
 inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
   : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
-inline constexpr TextView::TextView(char const *first, char const *last) noexcept : super_type(first, last - first) {}
 inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
 inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
@@ -1471,8 +1497,13 @@ TextView::trim_if(F const &pred) {
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-constexpr inline char const *
-TextView::data_end() const noexcept {
+constexpr inline auto
+TextView::data() const noexcept -> value_type const* {
+  return super_type::data();
+}
+
+constexpr inline auto
+TextView::data_end() const noexcept -> value_type const* {
   return this->data() + this->size();
 }
 

@@ -18,17 +18,9 @@
 #include "swoc/swoc_version.h"
 #include "swoc/TextView.h"
 #include "swoc/MemSpan.h"
+#include "swoc/bwf_fwd.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
-namespace bwf {
-struct Spec;
-
-class Format;
-
-class NameBinding;
-
-class ArgPack;
-} // namespace bwf
 
 /** Wrapper for operations on a buffer.
  *

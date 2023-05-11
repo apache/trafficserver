@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include "swoc/swoc_version.h"
+#include "swoc/Scalar.h"
+
 #include <cstring>
 #include <memory>
 #include <type_traits>
@@ -20,9 +23,6 @@
 #include <array>
 #include <vector>
 #include <string_view>
-
-#include "swoc/swoc_version.h"
-#include "swoc/Scalar.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 /** A span of contiguous piece of memory.
