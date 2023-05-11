@@ -46,13 +46,19 @@
 class ControlQUIC : public ActionItem
 {
 public:
+#if TS_USE_QUIC == 1
   ControlQUIC(bool turn_on) : enable_quic(turn_on) {}
+#else
+  ControlQUIC(bool turn_on);
+#endif
   ~ControlQUIC() override {}
 
   int SNIAction(TLSSNISupport *snis, const Context &ctx) const override;
 
 private:
+#if TS_USE_QUIC == 1
   bool enable_quic = false;
+#endif
 };
 
 class ControlH2 : public ActionItem
