@@ -242,9 +242,9 @@ class ProxyProtocolOutTest:
 ProxyProtocolInTest().run()
 
 # non-tunnling HTTP to origin
-ProxyProtocolOutTest(pp_version=-1, is_tunnel=False).run()
-ProxyProtocolOutTest(pp_version=1, is_tunnel=False).run()
-ProxyProtocolOutTest(pp_version=2, is_tunnel=False).run()
+ProxyProtocolOutTest(pp_version=-1, is_tunnel=False, is_tls_to_origin=False).run()
+ProxyProtocolOutTest(pp_version=1, is_tunnel=False, is_tls_to_origin=False).run()
+ProxyProtocolOutTest(pp_version=2, is_tunnel=False, is_tls_to_origin=False).run()
 # non-tunnling HTTPS to origin
 ProxyProtocolOutTest(pp_version=-1, is_tunnel=False, is_tls_to_origin=True).run()
 ProxyProtocolOutTest(pp_version=1, is_tunnel=False, is_tls_to_origin=True).run()
