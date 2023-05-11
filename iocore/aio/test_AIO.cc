@@ -72,12 +72,13 @@ int delete_disks     = 0;
 int max_size         = 0;
 int use_lseek        = 0;
 int num_processors   = 0;
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
 int io_uring_queue_entries = 32;
 int io_uring_sq_poll_ms    = 0;
 int io_uring_attach_wq     = 0;
 int io_uring_wq_bounded    = 0;
 int io_uring_wq_unbounded  = 0;
+int io_uring_force_thread  = 0;
 #endif
 
 int chains                    = 1;
@@ -218,7 +219,7 @@ dump_summary()
   printf("%0.2f total mbytes/sec\n", sr + sw + rr);
   printf("----------------------------------------------------------\n");
 
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
   printf("-----------------\n");
   printf("IO_URING results\n");
   printf("-----------------\n");
@@ -392,12 +393,13 @@ read_config(const char *config_filename)
     PARAM(threads_per_disk)
     PARAM(delete_disks)
     PARAM(num_processors)
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
     PARAM(io_uring_queue_entries)
     PARAM(io_uring_sq_poll_ms)
     PARAM(io_uring_attach_wq)
     PARAM(io_uring_wq_bounded)
     PARAM(io_uring_wq_unbounded)
+    PARAM(io_uring_force_thread)
 #endif
     else if (strcmp(field_name, "disk_path") == 0)
     {
@@ -429,7 +431,7 @@ read_config(const char *config_filename)
   return (1);
 }
 
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
 
 class IOUringLoopTailHandler : public EThread::LoopTailHandler
 {
@@ -468,7 +470,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   }
   printf("Using %d processor threads\n", num_processors);
 
-#if AIO_MODE == AIO_MODE_IO_URING
+  AIOBackend backend = AIOBackend::AIO_BACKEND_AUTO;
+
+#if TS_USE_LINUX_IO_URING
   {
     IOUringConfig cfg;
 
@@ -479,6 +483,10 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     cfg.wq_unbounded  = io_uring_wq_unbounded;
 
     IOUringContext::set_config(cfg);
+
+    if (io_uring_force_thread) {
+      backend = AIOBackend::AIO_BACKEND_THREAD;
+    }
   };
 #endif
 
@@ -497,14 +505,16 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     et->schedule_imm(et->diskHandler);
   }
 #endif
-#if AIO_MODE == AIO_MODE_IO_URING
-  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
-    et->set_tail_handler(&uring_handler);
+#if TS_USE_LINUX_IO_URING
+  if (!io_uring_force_thread) {
+    for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
+      et->set_tail_handler(&uring_handler);
+    }
   }
 #endif
 
   RecProcessStart();
-  ink_aio_init(AIO_MODULE_PUBLIC_VERSION);
+  ink_aio_init(AIO_MODULE_PUBLIC_VERSION, backend);
   ts::Random::seed(time(nullptr));
 
   max_size = seq_read_size;
@@ -539,7 +549,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   }
 
   while (!TSSystemState::is_event_system_shut_down()) {
-#if AIO_MODE == AIO_MODE_IO_URING
+#if TS_USE_LINUX_IO_URING
     IOUringContext::local_context()->submit_and_wait(1 * HRTIME_SECOND);
 #else
     sleep(1);
