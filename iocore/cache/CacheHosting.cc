@@ -230,7 +230,7 @@ CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* 
                                 RecData /* data ATS_UNUSED */, void *cookie)
 {
   ReplaceablePtr<CacheHostTable> *ppt = static_cast<ReplaceablePtr<CacheHostTable> *>(cookie);
-  eventProcessor.schedule_imm(new CacheHostTableConfig(ppt));
+  eventProcessor.schedule_imm(new CacheHostTableConfig(ppt), ET_TASK);
   return 0;
 }
 
