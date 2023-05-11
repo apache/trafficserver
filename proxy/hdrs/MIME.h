@@ -275,8 +275,8 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
     self_type &operator++();
     self_type operator++(int);
 
-    bool operator==(self_type const &that);
-    bool operator!=(self_type const &that);
+    bool operator==(self_type const &that) const;
+    bool operator!=(self_type const &that) const;
 
   protected:
     MIMEFieldBlockImpl *_block = nullptr; ///< Current block.
@@ -384,13 +384,13 @@ MIMEHdrImpl::iterator::operator->() -> pointer
 }
 
 inline bool
-MIMEHdrImpl::iterator::operator==(const self_type &that)
+MIMEHdrImpl::iterator::operator==(const self_type &that) const
 {
   return _block == that._block && _slot == that._slot;
 }
 
 inline bool
-MIMEHdrImpl::iterator::operator!=(const self_type &that)
+MIMEHdrImpl::iterator::operator!=(const self_type &that) const
 {
   return _block != that._block || _slot != that._slot;
 }

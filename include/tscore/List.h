@@ -337,10 +337,10 @@ template <class C, class L = typename C::Link_link> struct DLL {
     self_type operator++(int);
 
     /// Equality.
-    bool operator==(self_type const &that);
+    bool operator==(self_type const &that) const;
 
     /// Inequality.
-    bool operator!=(self_type const &that);
+    bool operator!=(self_type const &that) const;
 
   protected:
     const_iterator(C *spot) : _spot(spot) {}
@@ -515,14 +515,14 @@ DLL<C, L>::const_iterator::operator++(int) -> self_type
 
 template <class C, class L>
 bool
-DLL<C, L>::const_iterator::operator==(DLL::const_iterator::self_type const &that)
+DLL<C, L>::const_iterator::operator==(DLL::const_iterator::self_type const &that) const
 {
   return _spot == that._spot;
 }
 
 template <class C, class L>
 bool
-DLL<C, L>::const_iterator::operator!=(DLL::const_iterator::self_type const &that)
+DLL<C, L>::const_iterator::operator!=(DLL::const_iterator::self_type const &that) const
 {
   return _spot != that._spot;
 }

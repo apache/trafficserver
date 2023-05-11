@@ -120,7 +120,7 @@ public:
   }
 
   bool
-  operator==(const Ptr<T> &p)
+  operator==(const Ptr<T> &p) const
   {
     return (m_ptr == p.m_ptr);
   }

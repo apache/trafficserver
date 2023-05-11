@@ -62,12 +62,12 @@ public:
     return tmp;
   }
   bool
-  operator!=(const HeaderIterator &it)
+  operator!=(const HeaderIterator &it) const
   {
     return _bufp != it._bufp || _hdrs != it._hdrs || _field != it._field;
   }
   bool
-  operator==(const HeaderIterator &it)
+  operator==(const HeaderIterator &it) const
   {
     return _bufp == it._bufp && _hdrs == it._hdrs && _field == it._field;
   }
