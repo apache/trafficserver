@@ -220,7 +220,7 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   case AIOBackend::AIO_BACKEND_AUTO: {
     // detect if io_uring is available and can support the required features
     auto *ctx = IOUringContext::local_context();
-    if (ctx && ctx->supports_op(IORING_OP_WRITE) && ctx->supports_op(IORING_OP_READ)) {
+    if (ctx && ctx->valid()) {
       use_io_uring = true;
     } else {
       Note("AIO using thread backend as required io_uring ops are not supported");
@@ -585,7 +585,13 @@ ink_aio_read(AIOCallback *op_in, int fromAPI)
     while (op) {
       op->this_op       = op;
       io_uring_sqe *sqe = ur->next_sqe(op);
-      io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      if (ur->supports_op(IORING_OP_READ)) {
+        io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      } else {
+        op->iovec.iov_len  = op->aiocb.aio_nbytes;
+        op->iovec.iov_base = op->aiocb.aio_buf;
+        io_uring_prep_readv(sqe, op->aiocb.aio_fildes, &op->iovec, 1, op->aiocb.aio_offset);
+      }
       op->aiocb.aio_lio_opcode = LIO_READ;
       if (op->then) {
         sqe->flags |= IOSQE_IO_LINK;
@@ -614,7 +620,13 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
     while (op) {
       op->this_op       = op;
       io_uring_sqe *sqe = ur->next_sqe(op);
-      io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      if (ur->supports_op(IORING_OP_WRITE)) {
+        io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+      } else {
+        op->iovec.iov_len  = op->aiocb.aio_nbytes;
+        op->iovec.iov_base = op->aiocb.aio_buf;
+        io_uring_prep_writev(sqe, op->aiocb.aio_fildes, &op->iovec, 1, op->aiocb.aio_offset);
+      }
       op->aiocb.aio_lio_opcode = LIO_WRITE;
       if (op->then) {
         sqe->flags |= IOSQE_IO_LINK;
