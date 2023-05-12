@@ -6551,7 +6551,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
 
 #define PRINT_DIFF(_x)                                                                                                 \
   {                                                                                                                    \
-    if (_x - ORIG_##_x != 0) {                                                                                         \
+    if (static_cast<int>(_x) - static_cast<int>(ORIG_##_x) != 0) {                                                     \
       test_passed = false;                                                                                             \
       SDK_RPRINT(test, "##_x", "TestCase1", TC_FAIL, "%s:Original Value = %d; New Value = %d \n", #_x, _x, ORIG_##_x); \
     }                                                                                                                  \
