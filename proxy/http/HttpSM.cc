@@ -1554,7 +1554,7 @@ plugins required to work with sni_routing.
         api_timer = Thread::get_hrtime();
       }
 
-      hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+      hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + static_cast<int>(cur_hook_id), this);
       if (api_timer > 0) { // true if the hook did not call TxnReenable()
         this->milestone_update_api_time();
         api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
