@@ -38,7 +38,7 @@ sessions:
         - [ Connection, keep-alive ]
         - [ Transfer-Encoding, chunked ]
       content:
-        size: 10
+        size: 32
 
     proxy-response:
       status: 200
@@ -46,7 +46,7 @@ sessions:
         fields:
         - [ Transfer-Encoding, { value: chunked, as: equal } ]
       content:
-        size: 10
+        size: 32
 
     # Test 2
     # If Transfer-Encoding is invalid ATS will respond with a 502
@@ -93,7 +93,7 @@ sessions:
         - [ Connection, close ]
       content:
         transfer: plain
-        size: 10
+        size: 32
 
     proxy-response:
       status: 200
@@ -102,4 +102,4 @@ sessions:
         - [ Transfer-Encoding, { value: chunked, as: equal } ]
         - [ Connection, { value: keep-alive, as: equal } ]
       content:
-        size: 10
+        size: 32

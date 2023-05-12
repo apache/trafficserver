@@ -32,23 +32,15 @@ class ChunkedEncoding:
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
-        self.ts.addDefaultSSLFiles()
         self.ts.Disk.records_config.update({
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
-            "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
 
             # Respond with chunked encoding.
             "proxy.config.http.chunking_enabled": 1,
         })
-        self.ts.Disk.ssl_multicert_config.AddLine(
-            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-        )
         self.ts.Disk.remap_config.AddLines([
-            f"map /for/http http://127.0.0.1:{self.server.Variables.http_port}/",
-            f"map /for/tls https://127.0.0.1:{self.server.Variables.https_port}/",
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
 
     def runChunkedTraffic(self):
@@ -58,7 +50,7 @@ class ChunkedEncoding:
             self.chunkedReplayFile,
             http_ports=[self.ts.Variables.port],
             https_ports=[self.ts.Variables.ssl_port])
-        tr.Processes.Default.Streams.stdout += "gold/verifier_client_chunked.gold"
+        tr.Processes.Default.Streams.stdout += "gold/verifier_client_chunked_2.gold"
 
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
