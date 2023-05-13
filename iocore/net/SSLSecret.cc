@@ -26,6 +26,14 @@
 
 #include <utility>
 
+namespace
+{
+
+DbgCtl dbg_ctl_ssl_secret{"ssl_secret"};
+DbgCtl dbg_ctl_ssl_secret_err{"ssl_secret_err"};
+
+} // end anonymous namespace
+
 // NOTE: The secret_map_mutex should not be held by the caller of this
 // function. The implementation of this function may call a plugin's
 // TS_EVENT_SSL_SECRET handler which in turn may grab a lock for
@@ -63,17 +71,17 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
 std::string
 SSLSecret::loadFile(const std::string &name)
 {
-  Debug("ssl_secret", "SSLSecret::loadFile(%s)", name.c_str());
+  Dbg(dbg_ctl_ssl_secret, "SSLSecret::loadFile(%s)", name.c_str());
   std::error_code error;
   std::string const data = swoc::file::load(swoc::file::path(name), error);
   if (error) {
-    Debug("ssl_secret_err", "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
-          error.message().c_str());
+    Dbg(dbg_ctl_ssl_secret_err, "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
+        error.message().c_str());
     // Loading file failed
-    Debug("ssl_secret", "Loading file: %s failed ", name.c_str());
+    Dbg(dbg_ctl_ssl_secret, "Loading file: %s failed ", name.c_str());
     return std::string{};
   }
-  Debug("ssl_secret", "Secret data: %.50s", data.c_str());
+  Dbg(dbg_ctl_ssl_secret, "Secret data: %.50s", data.c_str());
   if (SSLConfigParams::load_ssl_file_cb) {
     SSLConfigParams::load_ssl_file_cb(name.c_str());
   }
@@ -86,7 +94,7 @@ SSLSecret::setSecret(const std::string &name, std::string_view data)
   std::scoped_lock lock(secret_map_mutex);
   secret_map[name] = std::string{data};
   // The full secret data can be sensitive. Print only the first 50 bytes.
-  Debug("ssl_secret", "Set secret for %s to %.*s", name.c_str(), int(data.size() > 50 ? 50 : data.size()), data.data());
+  Dbg(dbg_ctl_ssl_secret, "Set secret for %s to %.*s", name.c_str(), int(data.size() > 50 ? 50 : data.size()), data.data());
 }
 
 std::string
@@ -95,22 +103,22 @@ SSLSecret::getSecret(const std::string &name) const
   std::scoped_lock lock(secret_map_mutex);
   auto iter = secret_map.find(name);
   if (secret_map.end() == iter) {
-    Debug("ssl_secret", "Get secret for %s: not found", name.c_str());
+    Dbg(dbg_ctl_ssl_secret, "Get secret for %s: not found", name.c_str());
     return std::string{};
   }
   if (iter->second.empty()) {
-    Debug("ssl_secret", "Get secret for %s: empty", name.c_str());
+    Dbg(dbg_ctl_ssl_secret, "Get secret for %s: empty", name.c_str());
     return std::string{};
   }
   // The full secret data can be sensitive. Print only the first 50 bytes.
-  Debug("ssl_secret", "Get secret for %s: %.50s", name.c_str(), iter->second.c_str());
+  Dbg(dbg_ctl_ssl_secret, "Get secret for %s: %.50s", name.c_str(), iter->second.c_str());
   return iter->second;
 }
 
 void
 SSLSecret::getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {
-  Debug("ssl_secret", "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
+  Dbg(dbg_ctl_ssl_secret, "lookup up secrets for %s and %s", name1.c_str(), name2.c_str());
   {
     std::scoped_lock lock(secret_map_mutex);
     std::string *const data1ptr = &(secret_map[name1]);

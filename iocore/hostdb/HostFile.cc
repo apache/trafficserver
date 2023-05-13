@@ -86,7 +86,8 @@ ParseHostFile(swoc::file::path const &path, ts_seconds interval)
 {
   std::shared_ptr<HostFile> hf;
 
-  Debug_bw("hostdb", R"(Loading host file "{}")", path.view());
+  static DbgCtl dbg_ctl{"hostdb"};
+  Dbg_bw(dbg_ctl, R"(Loading host file "{}")", path.view());
 
   if (!path.empty()) {
     std::error_code ec;

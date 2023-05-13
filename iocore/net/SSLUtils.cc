@@ -105,6 +105,11 @@ static int ssl_vc_index = -1;
 static ink_mutex *mutex_buf      = nullptr;
 static bool open_ssl_initialized = false;
 
+static DbgCtl dbg_ctl_ssl_load{"ssl_load"};
+static DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
+static DbgCtl dbg_ctl_ssl_error{"ssl.error"};
+static DbgCtl dbg_ctl_ssl_verify{"ssl_verify"};
+
 /* Using pthread thread ID and mutex functions directly, instead of
  * ATS this_ethread / ProxyMutex, so that other linked libraries
  * may use pthreads and openssl without confusing us here. (TS-2271).
@@ -123,7 +128,8 @@ SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 static void
 SSL_locking_callback(int mode, int type, const char *file, int line)
 {
-  Debug("v_ssl_lock", "file: %s line: %d type: %d", file, line, type);
+  DbgCtl dbg_ctl{"v_ssl_lock"};
+  Dbg(dbg_ctl, "file: %s line: %d type: %d", file, line, type);
   ink_assert(type < CRYPTO_num_locks());
 
 #ifdef OPENSSL_FIPS
@@ -138,7 +144,7 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
   } else if (mode & CRYPTO_UNLOCK) {
     ink_mutex_release(&mutex_buf[type]);
   } else {
-    Debug("ssl_load", "invalid SSL locking mode 0x%x", mode);
+    Dbg(dbg_ctl_ssl_load, "invalid SSL locking mode 0x%x", mode);
     ink_assert(0);
   }
 }
@@ -210,7 +216,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   SSLSessionID sid(id, len);
 
   if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl.session_cache.insert");
+    static DbgCtl dbg_ctl("ssl_session_cache.insert");
     if (dbg_ctl.ptr()->on) {
       char printable_buf[(len * 2) + 1];
 
@@ -253,7 +259,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   }
 
   if (diags()->on()) {
-    static DbgCtl dbg_ctl("ssl.session_cache.remove");
+    static DbgCtl dbg_ctl("ssl_session_cache.remove");
     if (dbg_ctl.ptr()->on) {
       char printable_buf[(len * 2) + 1];
       sid.toString(printable_buf, sizeof(printable_buf));
@@ -268,12 +274,12 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
-  Debug("ssl_verify", "Callback: verify client cert");
+  Dbg(dbg_ctl_ssl_verify, "Callback: verify client cert");
   auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl_verify", "ssl_verify_client_callback call back on stale netvc");
+    Dbg(dbg_ctl_ssl_verify, "ssl_verify_client_callback call back on stale netvc");
     return false;
   }
 
@@ -305,14 +311,14 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
     // 2) Call back on stale netvc
-    Debug("ssl.error", "ssl_client_hello_callback was called unexpectedly");
+    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
     return SSL_CLIENT_HELLO_ERROR;
   }
 
   SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
   if (netvc) {
     if (netvc->ssl != s) {
-      Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+      Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
       return SSL_CLIENT_HELLO_ERROR;
     }
 
@@ -341,14 +347,14 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
     // 2) Call back on stale netvc
-    Debug("ssl.error", "ssl_client_hello_callback was called unexpectedly");
+    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
     return ssl_select_cert_error;
   }
 
   SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
   if (netvc) {
     if (netvc->ssl != s) {
-      Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+      Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
       return ssl_select_cert_error;
     }
 
@@ -461,7 +467,7 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
     // 2) Call back on stale netvc
-    Debug("ssl.error", "ssl_servername_callback was called unexpectedly");
+    Dbg(dbg_ctl_ssl_error, "ssl_servername_callback was called unexpectedly");
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
 
@@ -557,7 +563,8 @@ SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
 #ifdef SSL_OP_ENABLE_KTLS
   if (SSLConfigParams::ssl_ktls_enabled) {
     if (SSL_CTX_set_options(ctx, SSL_OP_ENABLE_KTLS)) {
-      Debug("ssl.ktls", "KTLS is enabled");
+      static DbgCtl dbg_ctl{"ssl.ktls"};
+      Dbg(dbg_ctl, "KTLS is enabled");
     } else {
       return false;
     }
@@ -756,7 +763,7 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
   *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
-  Debug("ssl_load", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
@@ -790,7 +797,7 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
   *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
-  Debug("ssl_load", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
@@ -922,7 +929,7 @@ SSLInitializeLibrary()
     // After POST we don't have to lock for FIPS
     int mode = FIPS_mode();
     FIPS_mode_set(mode);
-    Debug("ssl_load", "FIPS_mode: %d", mode);
+    Dbg(dbg_ctl_ssl_load, "FIPS_mode: %d", mode);
 #endif
 
     mutex_buf = static_cast<ink_mutex *>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex)));
@@ -973,7 +980,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
     if (pkey) {
       if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-        Debug("ssl_load", "failed to load server private key from engine");
+        Dbg(dbg_ctl_ssl_load, "failed to load server private key from engine");
         EVP_PKEY_free(pkey);
         return false;
       }
@@ -986,18 +993,18 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
     pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if (nullptr == pkey) {
-      Debug("ssl_load", "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
-            secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+      Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
+          secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       return false;
     }
     if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      Debug("ssl_load", "failed to attach server private key loaded from %s",
-            (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+      Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
+          (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       EVP_PKEY_free(pkey);
       return false;
     }
     if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-      Debug("ssl_load", "server private key does not match the certificate public key");
+      Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
       return false;
     }
   }
@@ -1051,7 +1058,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
     return -5;
   }
 
-  Debug("ssl_load", "server certificate %s passed accessibility and date checks", certname);
+  Dbg(dbg_ctl_ssl_load, "server certificate %s passed accessibility and date checks", certname);
   return 0; // all good
 
 } /* CheckServerCertNow() */
@@ -1072,12 +1079,12 @@ asn1_strdup(ASN1_STRING *s)
 static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
-  Debug("ssl_load", "ssl_callback_info ssl: %p, where: %d, ret: %d, State: %s", ssl, where, ret, SSL_state_string_long(ssl));
+  Dbg(dbg_ctl_ssl_load, "ssl_callback_info ssl: %p, where: %d, ret: %d, State: %s", ssl, where, ret, SSL_state_string_long(ssl));
 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "ssl_callback_info call back on stale netvc");
+    Dbg(dbg_ctl_ssl_error, "ssl_callback_info call back on stale netvc");
     return;
   }
 
@@ -1104,12 +1111,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 #ifdef TLS1_3_VERSION
       // TLSv1.3 has no renegotiation.
       if (SSL_version(ssl) >= TLS1_3_VERSION) {
-        Debug("ssl_load", "TLSv1.3 has no renegotiation.");
+        Dbg(dbg_ctl_ssl_load, "TLSv1.3 has no renegotiation.");
         return;
       }
 #endif
       netvc->setSSLClientRenegotiationAbort(true);
-      Debug("ssl_load", "ssl_callback_info trying to renegotiate from the client");
+      Dbg(dbg_ctl_ssl_load, "ssl_callback_info trying to renegotiate from the client");
     }
   }
   if (where & SSL_CB_HANDSHAKE_DONE) {
@@ -1192,7 +1199,7 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
     ink_release_assert(!"Invalid client verify level");
   }
 
-  Debug("ssl_load", "setting cert level to %d", server_verify_client);
+  Dbg(dbg_ctl_ssl_load, "setting cert level to %d", server_verify_client);
   SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
@@ -1267,8 +1274,8 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
 
     ctx_type = (!generate_default_ctx && i < data.cert_type_list.size()) ? data.cert_type_list[i] : SSLCertContextType::GENERIC;
 
-    Debug("ssl_load", "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(),
-          cert_names_list[0].c_str());
+    Dbg(dbg_ctl_ssl_load, "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(),
+        cert_names_list[0].c_str());
 
     SSL_CTX_set_options(ctx, _params->ssl_ctx_options);
 
@@ -1293,7 +1300,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
-    Debug("ssl_load", "enabling SSL_MODE_RELEASE_BUFFERS");
+    Dbg(dbg_ctl_ssl_load, "enabling SSL_MODE_RELEASE_BUFFERS");
     SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
 
@@ -1399,11 +1406,11 @@ SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
 {
   const SSLConfigParams *params = this->_params;
 
-  Debug("ssl.session_cache",
-        "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
-        "skip_on_contention=%d, timeout=%d, auto_clear=%d",
-        ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
-        params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
+  Dbg(dbg_ctl_ssl_session_cache,
+      "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
+      "skip_on_contention=%d, timeout=%d, auto_clear=%d",
+      ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
+      params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
 
   if (params->ssl_session_cache_timeout) {
     SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
@@ -1414,18 +1421,18 @@ SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
 
   switch (params->ssl_session_cache) {
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
-    Debug("ssl.session_cache", "disabling SSL session cache");
+    Dbg(dbg_ctl_ssl_session_cache, "disabling SSL session cache");
 
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
     break;
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
-    Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
+    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with OpenSSL implementation");
 
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | additional_cache_flags);
     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
     break;
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
-    Debug("ssl.session_cache", "enabling SSL session cache with ATS implementation");
+    Dbg(dbg_ctl_ssl_session_cache, "enabling SSL session cache with ATS implementation");
     /* Add all the OpenSSL callbacks */
     SSL_CTX_sess_set_new_cb(ctx, ssl_new_cached_session);
     SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
@@ -1506,13 +1513,13 @@ SSLMultiCertConfigLoader::_setup_session_ticket(SSL_CTX *ctx, const SSLMultiCert
   // Session tickets are enabled by default. Disable if explicitly requested.
   if (sslMultCertSettings->session_ticket_enabled == 0) {
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
-    Debug("ssl_load", "ssl session ticket is disabled");
+    Dbg(dbg_ctl_ssl_load, "ssl session ticket is disabled");
   }
 #endif
 #if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
   if (!(this->_params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
     SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
-    Debug("ssl_load", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
+    Dbg(dbg_ctl_ssl_load, "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
   }
 #endif
   return true;
@@ -1698,7 +1705,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams &s
     if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
-      Debug(this->_debug_tag(), "Marking certificate as NOT VALID: %s", current_cert_name);
+      Dbg(this->_dbg_ctl(), "Marking certificate as NOT VALID: %s", current_cert_name);
       good_certs = false;
     }
     i++;
@@ -1862,7 +1869,7 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings->addr) {
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
-      Debug("ssl_load", "Addr is '*'; setting %p to default", ctx.get());
+      Dbg(dbg_ctl_ssl_load, "Addr is '*'; setting %p to default", ctx.get());
       if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
         inserted            = true;
         lookup->ssl_default = ctx;
@@ -1917,7 +1924,7 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
     if (label == nullptr) {
       continue;
     }
-    Debug("ssl_load", "Extracting certificate label: %s, value: %s", label, value);
+    Dbg(dbg_ctl_ssl_load, "Extracting certificate label: %s, value: %s", label, value);
 
     if (strcasecmp(label, SSL_IP_TAG) == 0) {
       sslMultCertSettings->addr = ats_strdup(value);
@@ -2024,7 +2031,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
       const char *errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Debug("ssl_load", "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
+      Dbg(dbg_ctl_ssl_load, "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
       if (errPtr != nullptr) {
         Warning("%s: discarding %s entry at line %d: %s", __func__, params->configFilePath, line_num, errPtr);
       } else {
@@ -2299,11 +2306,11 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
         ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
         subj_name          = asn1_strdup(cn);
 
-        Debug("ssl_load", "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
+        Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());
       }
       if (name_set.empty()) {
-        Debug("ssl_load", "no subj name in certificate %s", data.cert_names_list[i].c_str());
+        Dbg(dbg_ctl_ssl_load, "no subj name in certificate %s", data.cert_names_list[i].c_str());
       }
     }
 
@@ -2317,7 +2324,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
         name = sk_GENERAL_NAME_value(names, i);
         if (name->type == GEN_DNS) {
           ats_scoped_str dns(asn1_strdup(name->d.dNSName));
-          Debug("ssl_load", "inserting dns '%s' in certificate", dns.get());
+          Dbg(dbg_ctl_ssl_load, "inserting dns '%s' in certificate", dns.get());
           name_set.insert(dns.get());
         }
       }
@@ -2378,10 +2385,10 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
                                      const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl_load", "SSL OCSP Stapling is enabled");
+    Dbg(dbg_ctl_ssl_load, "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
   } else {
-    Debug("ssl_load", "SSL OCSP Stapling is disabled");
+    Dbg(dbg_ctl_ssl_load, "SSL OCSP Stapling is disabled");
   }
 
   ink_assert(!cert_names_list.empty());
@@ -2410,7 +2417,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       return false;
     }
 
-    Debug("ssl_load", "for ctx=%p, using certificate %s", ctx, cert_names_list[i].c_str());
+    Dbg(dbg_ctl_ssl_load, "for ctx=%p, using certificate %s", ctx, cert_names_list[i].c_str());
     if (!SSL_CTX_use_certificate(ctx, cert)) {
       SSLError("Failed to assign cert from %s to SSL_CTX", cert_names_list[i].c_str());
       X509_free(cert);
@@ -2419,7 +2426,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
 
     // Load up any additional chain certificates
     if (!SSL_CTX_add_extra_chain_cert_bio(ctx, bio.get())) {
-      Debug("ssl_load", "couldn't add chain to %p", ctx);
+      Dbg(dbg_ctl_ssl_load, "couldn't add chain to %p", ctx);
       SSLError("failed to load intermediate certificate chain from %s", cert_names_list[i].c_str());
       return false;
     }
@@ -2506,7 +2513,7 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
   }
 
   if (nullptr != setting_cert) {
-    Debug("ssl_load", "Using '%s' in hash for session id context", sslMultCertSettings->cert.get());
+    Dbg(dbg_ctl_ssl_load, "Using '%s' in hash for session id context", sslMultCertSettings->cert.get());
     if (EVP_DigestUpdate(digest, sslMultCertSettings->cert, strlen(setting_cert)) == 0) {
       SSLError("EVP_DigestUpdate failed using '%s' in hash for session id context", sslMultCertSettings->cert.get());
       goto fail;
@@ -2551,6 +2558,13 @@ const char *
 SSLMultiCertConfigLoader::_debug_tag() const
 {
   return "ssl";
+}
+
+const DbgCtl &
+SSLMultiCertConfigLoader::_dbg_ctl() const
+{
+  static DbgCtl dc{_debug_tag()};
+  return dc;
 }
 
 /**

@@ -148,9 +148,15 @@ struct RefCountCacheLinkage {
   }
 };
 
+class RefCountCacheBase
+{
+protected:
+  inline static DbgCtl dbg_ctl{"refcountcache"};
+};
+
 // The RefCountCachePartition is simply a map of key -> Ptr<YourClass>
 // We partition the cache to reduce lock contention
-template <class C> class RefCountCachePartition
+template <class C> class RefCountCachePartition : private RefCountCacheBase
 {
 public:
   using hash_type = IntrusiveHashMap<RefCountCacheLinkage>;
@@ -219,7 +225,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
 
   // if we are full, and can't make space-- then don't store the item
   if (this->is_full() && !this->make_space_for(size)) {
-    Debug("refcountcache", "partition %d is full-- not storing item key=%" PRIu64, this->part_num, key);
+    Dbg(dbg_ctl, "partition %d is full-- not storing item key=%" PRIu64, this->part_num, key);
     this->metric_inc(refcountcache_total_failed_inserts_stat, 1);
     return;
   }
@@ -230,7 +236,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
 
   // add expiry_entry to expiry queue, if the expire time is positive (otherwise it means don't expire)
   if (expire_time >= 0) {
-    Debug("refcountcache", "partition %d adding entry with expire_time=%d\n", this->part_num, expire_time);
+    Dbg(dbg_ctl, "partition %d adding entry with expire_time=%d\n", this->part_num, expire_time);
     PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = expiryQueueEntry.alloc();
     new ((void *)expiry_entry) PriorityQueueEntry<RefCountCacheHashEntry *>(val);
     expiry_queue.push(expiry_entry);
@@ -272,7 +278,7 @@ RefCountCachePartition<C>::dealloc_entry(hash_type::iterator ptr)
 
   // remove from expiry queue
   if (ptr->expiry_entry != nullptr) {
-    Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d", this->part_num, ptr->expiry_entry->index);
+    Dbg(dbg_ctl, "partition %d deleting item from expiry_queue idx=%d", this->part_num, ptr->expiry_entry->index);
 
     this->expiry_queue.erase(ptr->expiry_entry);
     expiryQueueEntry.free(ptr->expiry_entry);
@@ -303,8 +309,8 @@ template <class C>
 bool
 RefCountCachePartition<C>::is_full() const
 {
-  Debug("refcountcache", "partition %d is full? items %d/%d size %" PRIu64 "/%" PRIu64 "\n\n", this->part_num, this->items,
-        this->max_items, this->size, this->max_size);
+  Dbg(dbg_ctl, "partition %d is full? items %d/%d size %" PRIu64 "/%" PRIu64 "\n\n", this->part_num, this->items, this->max_items,
+      this->size, this->max_size);
   return (this->max_items > 0 && this->items >= this->max_items) || (this->max_size > 0 && this->size >= this->max_size);
 }
 

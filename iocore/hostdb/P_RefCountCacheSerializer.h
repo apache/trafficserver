@@ -38,7 +38,7 @@
 //
 // This way we only have to hold the lock on the partition for the
 // time it takes to get Ptr<>s to all items in the partition
-template <class C> class RefCountCacheSerializer : public Continuation
+template <class C> class RefCountCacheSerializer : public Continuation, private RefCountCacheBase
 {
 public:
   size_t partition;        // Current partition
@@ -96,7 +96,7 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, RefCoun
 {
   this->tmp_filename = this->filename + ".syncing"; // TODO tmp file extension configurable?
 
-  Debug("refcountcache", "started serializer %p", this);
+  Dbg(dbg_ctl, "started serializer %p", this);
   SET_HANDLER(&RefCountCacheSerializer::initialize_storage);
   eventProcessor.schedule_imm(this, ET_TASK);
 }
@@ -114,7 +114,7 @@ template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
   }
   this->partition_items.clear();
 
-  Debug("refcountcache", "finished serializer %p", this);
+  Dbg(dbg_ctl, "finished serializer %p", this);
 
   // Note that we have to do the unlink before we send the completion event, otherwise
   // we could unlink the sync file out from under another serializer.
@@ -133,12 +133,12 @@ RefCountCacheSerializer<C>::copy_partition(int /* event */, Event *e)
       Warning("Unable to finalize sync of cache to disk %s: %s", this->filename.c_str(), strerror(-error));
     }
 
-    Debug("refcountcache", "RefCountCacheSync done");
+    Dbg(dbg_ctl, "RefCountCacheSync done");
     delete this;
     return EVENT_DONE;
   }
 
-  Debug("refcountcache", "sync partition=%ld/%ld", partition, cache->partition_count());
+  Dbg(dbg_ctl, "sync partition=%ld/%ld", partition, cache->partition_count());
   // copy the partition into our buffer, then we'll let `pauseEvent` write it out
   this->partition_items.reserve(cache->get_partition(partition).count());
   cache->get_partition(partition).copy(this->partition_items);
