@@ -47,4 +47,5 @@ handle with a call to :c:func:`TSHandleMLocRelease`.
 
 The :arg:`name` argument is best specified using the pre-defined Well-Known strings, such as e.g.
 ``TS_MIME_FIELD_CACHE_CONTROL`` and ``TS_MIME_LEN_CACHE_CONTROL``. These WK constants
-can also be looked up using :c:func:`TSMimeHdrStringToWKS`.
+can also be looked up using :c:func:`TSMimeHdrStringToWKS`. If a header does
+not have a WKS, this function will return a :code:`nullptr`.
