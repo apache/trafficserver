@@ -160,7 +160,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
     if (interval_start == 0) {
       start = m_start_time;
     } else {
-      start = (m_start_time < interval_start) ? m_start_time : interval_start;
+      start = (m_start_time > 0 && m_start_time < interval_start) ? m_start_time : interval_start;
     }
   }
   log_log_trace("in BaseLogFile::roll(..), start = %ld, m_start_time = %ld, interval_start = %ld\n", start, m_start_time,
