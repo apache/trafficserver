@@ -216,7 +216,7 @@ char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned norm
 void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
-void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, cache_generation_t generation = -1);
+void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1);
 void url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash);
 
 constexpr bool USE_STRICT_URI_PARSING = true;
@@ -277,7 +277,7 @@ public:
   char *string_get(Arena *arena, int *length = nullptr) const;
   char *string_get_ref(int *length = nullptr, unsigned normalization_flags = URLNormalize::NONE) const;
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
-  void hash_get(CryptoHash *hash, cache_generation_t generation = -1) const;
+  void hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
   void host_hash_get(CryptoHash *hash) const;
 
   const char *scheme_get(int *length);
@@ -492,10 +492,10 @@ URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length) const
   -------------------------------------------------------------------------*/
 
 inline void
-URL::hash_get(CryptoHash *hash, cache_generation_t generation) const
+URL::hash_get(CryptoHash *hash, bool ignore_query, cache_generation_t generation) const
 {
   ink_assert(valid());
-  url_CryptoHash_get(m_url_impl, hash, generation);
+  url_CryptoHash_get(m_url_impl, hash, ignore_query, generation);
 }
 
 /*-------------------------------------------------------------------------

@@ -1312,6 +1312,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
+
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
   HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
@@ -1338,6 +1339,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
   HttpEstablishStaticConfigByte(c.oride.cache_urls_that_look_dynamic, "proxy.config.http.cache.cache_urls_that_look_dynamic");
+  HttpEstablishStaticConfigByte(c.oride.cache_ignore_query, "proxy.config.http.cache.ignore_query");
   HttpEstablishStaticConfigByte(c.cache_post_method, "proxy.config.http.cache.post_method");
 
   HttpEstablishStaticConfigByte(c.oride.ignore_accept_mismatch, "proxy.config.http.cache.ignore_accept_mismatch");
@@ -1630,6 +1632,7 @@ HttpConfig::reconfigure()
   params->oride.cache_responses_to_cookies     = m_master.oride.cache_responses_to_cookies;
   params->oride.cache_ignore_auth              = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
   params->oride.cache_urls_that_look_dynamic   = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
+  params->oride.cache_ignore_query             = INT_TO_BOOL(m_master.oride.cache_ignore_query);
   params->cache_post_method                    = INT_TO_BOOL(m_master.cache_post_method);
 
   params->oride.ignore_accept_mismatch          = m_master.oride.ignore_accept_mismatch;
