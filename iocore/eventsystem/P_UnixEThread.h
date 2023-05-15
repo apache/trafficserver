@@ -204,6 +204,10 @@ EThread::schedule_local(Event *e)
   // The continuation that gets scheduled later is not always the
   // client VC, it can be HttpCacheSM etc. so save the flags
   e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
+
+  // If you need to schedule an event from a different thread, use Ethread::schedule_imm/at/in/every functions
+  ink_release_assert(this == this_ethread());
+
   EventQueueExternal.enqueue_local(e);
   return e;
 }
