@@ -97,9 +97,8 @@ SNI_IpAllow::TestClientSNIAction(char const *servrername, IpEndpoint const &ep, 
 
 TunnelDestination::bwf_map_type TunnelDestination::bwf_map;
 
-TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
-                                     const std::vector<int> &alpn)
-  : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
+TunnelDestination::TunnelDestination(YamlSNIConfig::Item const &item, int cg_count)
+  : destination(item.tunnel_destination), type(item.tunnel_type), tunnel_prewarm(item.tunnel_prewarm), alpn_ids(item.tunnel_alpn)
 {
   // Get a view of the port text. If there is a substitution there, @a port will end up empty while
   // rest (stuff after port) will be non-empty. If both are empty there is no port specified at all.
@@ -107,12 +106,30 @@ TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingTyp
   swoc::IPEndpoint::tokenize(destination, nullptr, &port_text, &rest);
   dynamic_port_p = port_text.empty() && !rest.empty();
 
-  Debug("ssl_sni", "port is %s", dynamic_port_p ? "true" : "false");
+  Debug("ssl_sni", "port is %s", dynamic_port_p ? "dynamic" : "static");
 
+  _fmt.reset();
   try {
-    _fmt = swoc::bwf::Format(destination);
+    bool valid_p = true;
+    auto fmt     = swoc::bwf::Format(destination);
+    // Validate the format doesn't exceed the context.
+    for (auto const &item : fmt) {
+      if ((item._type != swoc::bwf::Spec::LITERAL_TYPE && !bwf_map.contains(item._name))) {
+        valid_p = false;
+        Error("Invalid substitution \"%.*s\" in SNI configuration", static_cast<int>(item._name.size()), item._name.data());
+        break;
+      } else if (item._idx >= cg_count) {
+        valid_p = false;
+        Error("Invalid capture group %d in SNI configuration", item._idx);
+        break;
+      }
+    }
+    if (valid_p) {
+      _fmt.emplace(std::move(fmt));
+    }
   } catch (std::exception const &e) {
-    Error("Invalid destination \"%.*s\" in SNI configuration - %s", static_cast<int>(dest.size()), dest.data(), e.what());
+    Error("Invalid destination \"%.*s\" in SNI configuration - %s", static_cast<int>(destination.size()), destination.data(),
+          e.what());
   }
 }
 

@@ -134,8 +134,11 @@ SNIConfigParams::load_sni_config()
       }
     }
     if (item.tunnel_destination.length() > 0) {
-      ai->actions.push_back(
-        std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type, item.tunnel_prewarm, item.tunnel_alpn));
+      int cg_count = -1;
+      if (ai->match) {
+        pcre_fullinfo(ai->match.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &cg_count);
+      }
+      ai->actions.push_back(std::make_unique<TunnelDestination>(item, cg_count));
     }
     if (!item.client_sni_policy.empty()) {
       ai->actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));

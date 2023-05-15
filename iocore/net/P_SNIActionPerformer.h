@@ -126,8 +126,9 @@ class TunnelDestination : public ActionItem
   static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "proxy_protocol_port";
 
 public:
-  TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
-                    const std::vector<int> &alpn);
+  //  TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
+  //                    const std::vector<int> &alpn);
+  TunnelDestination(YamlSNIConfig::Item const &item, int cg_count);
   ~TunnelDestination() override {}
 
   int SNIAction(TLSSNISupport *snis, const Context &ctx) const override;

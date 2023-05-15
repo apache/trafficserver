@@ -134,6 +134,9 @@ protected:
 struct Format {
   using self_type = Format; ///< Self reference type.
 
+  /// Empty format.
+  Format() = default;
+
   /// Construct from a format string @a fmt.
   Format(TextView fmt);
 
@@ -196,11 +199,16 @@ struct Format {
   /// @return @c true if all specifiers are literal.
   bool is_literal() const;
 
-protected:
-  /// Default constructor for use by subclasses with alternate formatting.
-  Format() = default;
+  using Container = std::vector<Spec>;
+  Container _items; ///< Items from format string.
 
-  std::vector<Spec> _items; ///< Items from format string.
+  using iterator = Container::iterator;
+  using const_iterator = Container::const_iterator;
+
+  iterator begin() { return _items.begin(); }
+  iterator end() { return _items.end(); }
+  const_iterator begin() const { return _items.begin(); }
+  const_iterator end() const { return _items.end(); }
 };
 
 // Name binding - support for having format specifier names.
@@ -271,11 +279,14 @@ public:
  * suitable for the subclass generators.
  */
 template <typename F> class NameMap {
-private:
-  using self_type = NameMap; ///< self reference type.
 public:
   /// Signature for generators.
   using Generator = std::function<F>;
+protected:
+  using Map = std::unordered_map<std::string_view, Generator>;
+private:
+  using self_type = NameMap; ///< self reference type.
+public:
 
   /// Construct an empty container.
   NameMap();
@@ -290,12 +301,15 @@ public:
    */
   self_type &assign(std::string_view const &name, Generator const &generator);
 
+  bool contains(std::string_view name) {
+      return _map.end() != _map.find(name);
+  }
+
 protected:
   /// Copy @a name in to local storage and return a view of it.
   std::string_view localize(std::string_view const &name);
 
   /// Name to name generator.
-  using Map = std::unordered_map<std::string_view, Generator>;
   Map _map;              ///< Defined generators.
   MemArena _arena{1024}; ///< Local name storage.
 };
