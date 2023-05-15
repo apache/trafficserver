@@ -108,9 +108,7 @@ if [ ! -d boringssl ]; then
   cd ..
 fi
 cd boringssl
-if [ ! -d build ]; then
-  mkdir -p build
-fi
+mkdir -p build
 cd build
 cmake \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
