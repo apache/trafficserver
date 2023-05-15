@@ -43,15 +43,15 @@ int
 main()
 {
   Utils::HeaderValueList allowlistCookies;
-  Variables esi_vars("vars", &Debug, &Error, allowlistCookies);
-  HandlerManager handler_mgr("handler_mgr", &Debug, &Error);
+  Variables esi_vars("vars", &Error, allowlistCookies);
+  HandlerManager handler_mgr("handler_mgr", &Error);
 
-  Utils::init(&Debug, &Error);
+  Utils::init(&Error);
 
   {
     cout << endl << "===================== Test 1) call sequence" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("");
     const char *output_data;
     int output_data_len = 0;
@@ -102,7 +102,7 @@ main()
   {
     cout << endl << "===================== Test 2) Negative test: invalid ESI tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo<esi:blah/>bar");
 
     const char *output_data;
@@ -116,7 +116,7 @@ main()
   {
     cout << endl << "===================== Test 3) comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo<esi:comment text=\"bleh\"/>bar");
 
     const char *output_data;
@@ -132,7 +132,7 @@ main()
   {
     cout << endl << "===================== Test 4) comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:comment text=\"bleh\"/>bar");
 
     const char *output_data;
@@ -148,7 +148,7 @@ main()
   {
     cout << endl << "===================== Test 5) comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo<esi:comment text=\"bleh\"/>");
 
     const char *output_data;
@@ -164,7 +164,7 @@ main()
   {
     cout << endl << "===================== Test 6) multi-line comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo\n<esi:comment text=\"\nbleh\"/>\nbar");
 
     const char *output_data;
@@ -180,7 +180,7 @@ main()
   {
     cout << endl << "===================== Test 7) multi-line remove tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar");
 
     const char *output_data;
@@ -196,7 +196,7 @@ main()
   {
     cout << endl << "===================== Test 8) remove and comment tags" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar"
                       "foo2\n<esi:comment text=\"bleh\"/>\nbar2");
 
@@ -213,7 +213,7 @@ main()
   {
     cout << endl << "===================== Test 9) multiple remove and comment tags" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo1<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar1\n"
                       "foo1<esi:comment text=\"bleh\"/>bar1\n"
                       "foo2<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar2\n"
@@ -233,7 +233,7 @@ main()
   {
     cout << endl << "===================== Test 10) include tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
@@ -249,7 +249,7 @@ main()
   {
     cout << endl << "===================== Test 11) include tag with no URL" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include src=/> bar");
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == false);
   }
@@ -257,7 +257,7 @@ main()
   {
     cout << endl << "===================== Test 12) include tag with no src" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include /> bar");
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == false);
   }
@@ -265,7 +265,7 @@ main()
   {
     cout << endl << "===================== Test 13) multiple include tags" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo1 <esi:include src=url1/> bar1\n"
                       "foo2 <esi:include src=url2/> bar2\n"
                       "<esi:include src=\"blah bleh\"/>");
@@ -287,7 +287,7 @@ main()
   {
     cout << endl << "===================== Test 14) remove, comment and include tags" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo1 <esi:include src=url1/> bar1\n"
                       "foo2 <esi:include src=url2/> bar2\n"
                       "<esi:include src=\"blah bleh\"/>"
@@ -311,7 +311,7 @@ main()
   {
     cout << endl << "===================== Test 15) multiple addParseData calls" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     char line1[] = "foo1 <esi:include src=url1/> bar1\n";
     char line2[] = "foo2 <esi:include src=url2/> bar2\n";
     char line3[] = "<esi:include src=\"blah bleh\"/>";
@@ -341,7 +341,7 @@ main()
   {
     cout << endl << "===================== Test 16) one-shot parse" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo1 <esi:include src=url1/> bar1\n"
                       "foo2 <esi:include src=url2/> bar2\n"
                       "<esi:include src=\"blah bleh\"/>"
@@ -364,7 +364,7 @@ main()
   {
     cout << endl << "===================== Test 17) final chunk call" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     char line1[] = "foo1 <esi:include src=url1/> bar1\n";
     char line2[] = "foo2 <esi:include src=url2/> bar2\n";
     char line3[] = "<esi:include src=\"blah bleh\"/>";
@@ -393,7 +393,7 @@ main()
   {
     cout << endl << "===================== Test 18) no length arg" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
@@ -409,7 +409,7 @@ main()
   {
     cout << endl << "===================== Test 19) std::string arg" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
 
     const char *output_data;
@@ -425,7 +425,7 @@ main()
   {
     cout << endl << "===================== Test 20) one-shot parse, std::string arg" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo1 <esi:include src=url1/> bar1\n"
                       "foo2 <esi:include src=url2/> bar2\n"
                       "<esi:include src=\"blah bleh\"/>"
@@ -448,7 +448,7 @@ main()
   {
     cout << endl << "===================== Test 21) invalidly expanding url" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:include src=$(HTTP_HOST) /> bar");
 
     const char *output_data;
@@ -463,7 +463,7 @@ main()
   {
     cout << endl << "===================== Test 22) vars node with simple expression" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:vars>HTTP_HOST</esi:vars> bar");
 
     const char *output_data;
@@ -479,7 +479,7 @@ main()
   {
     cout << endl << "===================== Test 23) vars node expression with valid variable" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:vars>$(HTTP_HOST)</esi:vars> bar");
 
     const char *output_data;
@@ -495,7 +495,7 @@ main()
   {
     cout << endl << "===================== Test 24) vars node with invalid expression" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:vars>$(HTTP_HOST</esi:vars> bar");
 
     const char *output_data;
@@ -511,7 +511,7 @@ main()
   {
     cout << endl << "===================== Test 25) choose-when" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:choose>"
                       "<esi:when test=foo>"
                       "<esi:include src=foo />"
@@ -535,7 +535,7 @@ main()
   {
     cout << endl << "===================== Test 26) choose-when" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:choose>"
                       "<esi:otherwise>"
                       "<esi:include src=otherwise />"
@@ -553,7 +553,7 @@ main()
   {
     cout << endl << "===================== Test 27) try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -574,7 +574,7 @@ main()
   {
     cout << endl << "===================== Test 28) try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -597,7 +597,7 @@ main()
   {
     cout << endl << "===================== Test 29) try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -621,7 +621,7 @@ main()
   {
     cout << endl << "===================== Test 30) try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -644,7 +644,7 @@ main()
   {
     cout << endl << "===================== Test 31) try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:include src=pre />"
                       "foo"
                       "<esi:try>"
@@ -672,7 +672,7 @@ main()
   {
     cout << endl << "===================== Test 32) html comment node" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:include src=helloworld />"
                       "foo"
                       "<!--esi <esi:vars>blah</esi:vars>-->"
@@ -689,7 +689,7 @@ main()
   {
     cout << endl << "===================== Test 33) invalid html comment node" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:include src=helloworld />"
                       "foo"
                       "<!--esi <esi:vars>blah</esi:var>-->"
@@ -701,7 +701,7 @@ main()
   {
     cout << endl << "===================== Test 34) choose-when" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:choose>\n\t"
                       "<esi:when test=foo>"
                       "\t<esi:include src=foo />"
@@ -725,7 +725,7 @@ main()
   {
     cout << endl << "===================== Test 35) special-include 1" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:special-include handler=stub/>");
     gHandlerMap.clear();
     assert(esi_proc.addParseData(input_data) == true);
@@ -746,7 +746,7 @@ main()
   {
     cout << endl << "===================== Test 36) special-include 2" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:special-include handler=stub/> <esi:special-include handler=stub/> bar");
     gHandlerMap.clear();
     assert(esi_proc.addParseData(input_data) == true);
@@ -767,7 +767,7 @@ main()
   {
     cout << endl << "===================== Test 37) special-include 3" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("foo <esi:special-include handler=ads/> <esi:special-include handler=udb/> bar");
     gHandlerMap.clear();
     assert(esi_proc.addParseData(input_data) == true);
@@ -792,7 +792,7 @@ main()
   {
     cout << endl << "===================== Test 38) special-include negative" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:special-include handler=stub/>");
     gHandlerMap.clear();
     StubIncludeHandler::includeResult = false;
@@ -805,7 +805,7 @@ main()
   {
     cout << endl << "===================== Test 39) try block with special include" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:special-include handler=stub />"
@@ -826,7 +826,7 @@ main()
   {
     cout << endl << "===================== Test 40) try block with special include" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:special-include handler=stub />"
@@ -849,7 +849,7 @@ main()
   {
     cout << endl << "===================== Test 41) try block with special include" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:special-include handler=stub />"
@@ -873,7 +873,7 @@ main()
   {
     cout << endl << "===================== Test 42) special include try block" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:special-include handler=stub />"
@@ -902,7 +902,7 @@ main()
   {
     cout << endl << "===================== Test 43) comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:comment text=\"bleh\"/>");
 
     const char *output_data;
@@ -917,7 +917,7 @@ main()
   {
     cout << endl << "===================== Test 44) using packed node list" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiParser parser("parser", &Debug, &Error);
+    EsiParser parser("parser", &Error);
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"
@@ -931,7 +931,7 @@ main()
 
     string packedNodeList = node_list.pack();
 
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
 
     assert(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_SUCCESS);
     const char *output_data;
@@ -967,10 +967,10 @@ main()
   {
     cout << endl << "===================== Test 45) using packed node list" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:comment text=\"bleh\"/>");
 
-    EsiParser parser("parser", &Debug, &Error);
+    EsiParser parser("parser", &Error);
     DocNodeList node_list;
     string input_data2("<esi:try>"
                        "<esi:attempt>"
@@ -998,7 +998,7 @@ main()
   {
     cout << endl << "===================== Test 46) special include with footer" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:special-include handler=stub />"
@@ -1028,7 +1028,7 @@ main()
   {
     cout << endl << "===================== Test 47) using packed node list" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiParser parser("parser", &Debug, &Error);
+    EsiParser parser("parser", &Error);
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"
@@ -1042,7 +1042,7 @@ main()
 
     string packedNodeList = node_list.pack();
 
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
 
     assert(esi_proc.usePackedNodeList(nullptr, packedNodeList.size()) == EsiProcessor::UNPACK_FAILURE);
   }
@@ -1050,7 +1050,7 @@ main()
   {
     cout << endl << "===================== Test 48) using packed node list" << endl;
     TestHttpDataFetcher data_fetcher;
-    EsiParser parser("parser", &Debug, &Error);
+    EsiParser parser("parser", &Error);
     DocNodeList node_list;
     string input_data("<esi:try>"
                       "<esi:attempt>"
@@ -1064,7 +1064,7 @@ main()
 
     string packedNodeList = node_list.pack();
 
-    EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
+    EsiProcessor esi_proc("processor", "parser", "expression", &Error, data_fetcher, esi_vars, handler_mgr);
 
     assert(esi_proc.usePackedNodeList(packedNodeList.data(), 0) == EsiProcessor::UNPACK_FAILURE);
   }

@@ -33,10 +33,12 @@
 #include "ts/ts.h"
 #include "ts/experimental.h"
 #include "tscore/ink_defs.h"
+#include "tscpp/api/Cleanup.h"
 
 #define PLUGIN_NAME "cache_scan"
 
-static const TSDbgCtl *const dbg_ctl = TSDbgCtlCreate(PLUGIN_NAME);
+static atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+static const TSDbgCtl *const dbg_ctl{dbg_ctl_guard.get()};
 
 static TSCont global_contp;
 

@@ -20,12 +20,15 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include <tscpp/api/Cleanup.h>
 
 #include "policy_manager.h"
 #include "configs.h"
 
 const char *PLUGIN_NAME = "cache_promote";
 int TXN_ARG_IDX;
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
 
 // This has to be a global here. I tried doing a classic singleton (with a getInstance()) in the PolicyManager,
 // but then reloading the DSO does not work. What happens is that the old singleton is still there, even though
@@ -58,9 +61,9 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
         case TS_CACHE_LOOKUP_MISS:
         case TS_CACHE_LOOKUP_SKIPPED:
           if (config->getPolicy()->doSample() && config->getPolicy()->doPromote(txnp)) {
-            TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
+            TSDbg(dbg_ctl, "cache-status is %d, and leaving cache on (promoted)", obj_status);
           } else {
-            TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
+            TSDbg(dbg_ctl, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
             if (config->getPolicy()->countBytes()) {
               // Need to schedule this continuation for read-response-header-hook as well.
               TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
@@ -73,7 +76,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
           break;
         default:
           // Do nothing, just let it handle the lookup.
-          TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
+          TSDbg(dbg_ctl, "cache-status is %d (hit), nothing to do", obj_status);
 
           if (config->getPolicy()->_stats_enabled) {
             TSStatIntIncrement(config->getPolicy()->_cache_hits_id, 1);
@@ -85,7 +88,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
         TSStatIntIncrement(config->getPolicy()->_total_requests_id, 1);
       }
     } else {
-      TSDebug(PLUGIN_NAME, "request is an internal (plugin) request, implicitly promoted");
+      TSDbg(dbg_ctl, "request is an internal (plugin) request, implicitly promoted");
     }
     break;
 
@@ -100,7 +103,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 
   // Should not happen
   default:
-    TSDebug(PLUGIN_NAME, "unhandled event %d", static_cast<int>(event));
+    TSDbg(dbg_ctl, "unhandled event %d", static_cast<int>(event));
     break;
   }
 
@@ -132,14 +135,14 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized, TXN_IDX = %d", TXN_ARG_IDX);
+  TSDbg(dbg_ctl, "remap plugin is successfully initialized, TXN_IDX = %d", TXN_ARG_IDX);
   return TS_SUCCESS; /* success */
 }
 
 void
 TSRemapDone()
 {
-  TSDebug(PLUGIN_NAME, "called TSRemapDone()");
+  TSDbg(dbg_ctl, "called TSRemapDone()");
   gManager.clear();
 }
 
@@ -180,11 +183,11 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* ATS_UNUSED rri */)
 {
   if (nullptr == ih) {
-    TSDebug(PLUGIN_NAME, "no promotion rules configured, this is probably a plugin bug");
+    TSDbg(dbg_ctl, "no promotion rules configured, this is probably a plugin bug");
   } else {
     TSCont contp = static_cast<TSCont>(ih);
 
-    TSDebug(PLUGIN_NAME, "scheduling a TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK hook");
+    TSDbg(dbg_ctl, "scheduling a TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK hook");
     TSHttpTxnHookAdd(rh, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
   }
 

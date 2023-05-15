@@ -45,17 +45,27 @@ using StringVector = std::vector<std::string>;
 #define CacheKeyError(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 void PrintToStdErr(const char *fmt, ...);
 
-#else /* CACHEKEY_UNIT_TEST */
+#else /* not defined CACHEKEY_UNIT_TEST */
 #include "ts/ts.h"
+#include <tscpp/api/Cleanup.h>
 
-#define CacheKeyDebug(fmt, ...)                                                           \
-  do {                                                                                    \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+class CacheKeyDbg
+{
+private:
+  inline static atscppapi::TSDbgCtlUniqPtr guard{TSDbgCtlCreate(PLUGIN_NAME)};
+
+public:
+  inline static TSDbgCtl const *const ctl{guard.get()};
+};
+
+#define CacheKeyDebug(fmt, ...)                                                              \
+  do {                                                                                       \
+    TSDbg(CacheKeyDbg::ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 
-#define CacheKeyError(fmt, ...)                                                           \
-  do {                                                                                    \
-    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                                     \
-    TSDebug(PLUGIN_NAME, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+#define CacheKeyError(fmt, ...)                                                              \
+  do {                                                                                       \
+    TSError("(%s) " fmt, PLUGIN_NAME, ##__VA_ARGS__);                                        \
+    TSDbg(CacheKeyDbg::ctl, "%s:%d:%s() " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
   } while (0)
 #endif /* CACHEKEY_UNIT_TEST */

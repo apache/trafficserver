@@ -38,6 +38,7 @@
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
 #include "tscpp/util/TextView.h"
+#include <tscpp/api/Cleanup.h>
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"
@@ -47,6 +48,14 @@ using namespace std;
 using namespace EsiLib;
 
 #define DEBUG_TAG "combo_handler"
+
+namespace
+{
+
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(DEBUG_TAG)};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+
+} // end anonymous namespace
 
 // Because STL vs. C library leads to ugly casting, fix it once.
 inline int
@@ -70,15 +79,15 @@ static vector<string> HEADER_ALLOWLIST;
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
 static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 
-#define LOG_ERROR(fmt, args...)                                                               \
-  do {                                                                                        \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);            \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define LOG_ERROR(fmt, args...)                                                           \
+  do {                                                                                    \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);        \
+    TSDbg(dbg_ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define LOG_DEBUG(fmt, args...)                                                               \
-  do {                                                                                        \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define LOG_DEBUG(fmt, args...)                                                           \
+  do {                                                                                    \
+    TSDbg(dbg_ctl, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
 using StringList = list<string>;
@@ -372,7 +381,7 @@ TSPluginInit(int argc, const char *argv[])
           TSError("[%s] %s must be a positive number", DEBUG_TAG, longopts[longindex].name);
         } else {
           MaxFileCount = n;
-          TSDebug(DEBUG_TAG, "Max files set to %u", MaxFileCount);
+          TSDbg(dbg_ctl, "Max files set to %u", MaxFileCount);
         }
         break;
       }
@@ -445,7 +454,7 @@ TSPluginInit(int argc, const char *argv[])
     LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
-  Utils::init(&TSDebug, &TSError);
+  Utils::init(&TSError);
   LOG_DEBUG("Plugin started");
 }
 
@@ -1243,7 +1252,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
-  TSDebug(DEBUG_TAG, "%s plugin's remap part is initialized", DEBUG_TAG);
+  TSDbg(dbg_ctl, "%s plugin's remap part is initialized", DEBUG_TAG);
 
   return TS_SUCCESS;
 }
@@ -1253,7 +1262,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   *ih = nullptr;
 
-  TSDebug(DEBUG_TAG, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
+  TSDbg(dbg_ctl, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
   return TS_SUCCESS;
 }
 

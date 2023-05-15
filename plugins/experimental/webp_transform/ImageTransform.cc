@@ -27,6 +27,7 @@
 #include "tscpp/api/TransformationPlugin.h"
 #include "tscpp/api/Logger.h"
 #include "tscpp/api/Stat.h"
+#include <tscpp/api/Cleanup.h>
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
@@ -49,7 +50,8 @@ namespace
 {
 GlobalPlugin *plugin;
 
-auto webp_dbg_ctl = TSDbgCtlCreate(TAG);
+atscppapi::TSDbgCtlUniqPtr webp_dbg_ctl_guard{TSDbgCtlCreate(TAG)};
+auto webp_dbg_ctl{webp_dbg_ctl_guard.get()};
 
 enum class ImageEncoding { webp, jpeg, png, unknown };
 

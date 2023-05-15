@@ -51,7 +51,7 @@ checkAttributes(const char *check_id, const AttributeList &attr_list, const char
 int
 main()
 {
-  Utils::init(&Debug, &Error);
+  Utils::init(&Error);
 
   AttributeList attr_list;
 

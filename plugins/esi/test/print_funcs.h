@@ -23,6 +23,10 @@
 
 #pragma once
 
-void Debug(const char *tag, const char *fmt, ...);
+#include <string>
 
 void Error(const char *fmt, ...);
+
+// When set to non-null pointer, TSDbg() output will be appended to the specified string.
+//
+void set_TSDbgBuffer(std::string *);

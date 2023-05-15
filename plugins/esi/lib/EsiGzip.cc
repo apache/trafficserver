@@ -29,8 +29,8 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0), _crc(0)
+EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Error error_func)
+  : ComponentBase(debug_tag, error_func), _downstream_length(0), _total_data_length(0), _crc(0)
 {
   // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
   // coverity[uninit_member]

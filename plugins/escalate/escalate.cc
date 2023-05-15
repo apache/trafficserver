@@ -23,6 +23,7 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/experimental.h>
+#include <tscpp/api/Cleanup.h>
 #include <cstdlib>
 #include <cstdio>
 #include <getopt.h>
@@ -31,8 +32,17 @@
 #include <iterator>
 #include <map>
 
+namespace
+{
+
 // Constants and some declarations
 const char PLUGIN_NAME[] = "escalate";
+
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+
+} // end anonymous namespace
+
 static int EscalateResponse(TSCont, TSEvent, void *);
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +83,7 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
   // Update the request URL with the new Host to try.
   TSUrlHostSet(mbuf, url, host, host_len);
   url_str = TSUrlStringGet(mbuf, url, &url_len);
-  TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
+  TSDbg(dbg_ctl, "Setting new URL to %.*s", url_len, url_str);
 
   return url_str;
 }
@@ -104,7 +114,7 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
   if (0 != tries) { // ToDo: Future support for more than one retry-URL
     goto no_action;
   }
-  TSDebug(PLUGIN_NAME, "This is try %d, proceeding", tries);
+  TSDbg(dbg_ctl, "This is try %d, proceeding", tries);
 
   // Next, the response status ...
   status = TSHttpHdrStatusGet(mbuf, hdrp);
@@ -116,11 +126,11 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
     goto no_action;
   }
 
-  TSDebug(PLUGIN_NAME, "Found an entry for HTTP status %u", static_cast<unsigned>(status));
+  TSDbg(dbg_ctl, "Found an entry for HTTP status %u", static_cast<unsigned>(status));
   if (EscalationState::RETRY_URL == entry->second.type) {
     url_str = TSstrdup(entry->second.target.c_str());
     url_len = entry->second.target.size();
-    TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
+    TSDbg(dbg_ctl, "Setting new URL to %.*s", url_len, url_str);
   } else if (EscalationState::RETRY_HOST == entry->second.type) {
     if (es->use_pristine) {
       if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txn, &mbuf, &url)) {
@@ -185,10 +195,10 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
       info.target = sep;
       if (std::string::npos != info.target.find('/')) {
         info.type = EscalationState::RETRY_URL;
-        TSDebug(PLUGIN_NAME, "Creating Redirect rule with URL = %s", sep);
+        TSDbg(dbg_ctl, "Creating Redirect rule with URL = %s", sep);
       } else {
         info.type = EscalationState::RETRY_HOST;
-        TSDebug(PLUGIN_NAME, "Creating Redirect rule with Host = %s", sep);
+        TSDbg(dbg_ctl, "Creating Redirect rule with Host = %s", sep);
       }
 
       for (token = strtok_r(argv[i], ",", &save); token; token = strtok_r(nullptr, ",", &save)) {
@@ -199,7 +209,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
           goto fail;
         }
 
-        TSDebug(PLUGIN_NAME, "      added status = %d to rule", status);
+        TSDbg(dbg_ctl, "      added status = %d to rule", status);
         es->status_map[status] = info;
       }
     }

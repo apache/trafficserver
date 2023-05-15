@@ -151,11 +151,11 @@ checkNodeList2(const DocNodeList &node_list)
 int
 main()
 {
-  Utils::init(&Debug, &Error);
+  Utils::init(&Error);
 
   {
     cout << endl << "==================== Test 1" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:include src=blah /> bar";
 
     DocNodeList node_list;
@@ -186,7 +186,7 @@ main()
 
   {
     cout << endl << "==================== Test 2" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:when test=c1>"
                       "<esi:try>"

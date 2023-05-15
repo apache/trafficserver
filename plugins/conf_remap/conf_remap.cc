@@ -19,6 +19,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
+#include <tscpp/api/Cleanup.h>
 
 #include <cstdio>
 #include <cstring>
@@ -27,6 +28,9 @@
 #include <string>
 
 static const char PLUGIN_NAME[] = "conf_remap";
+
+static atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+static TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
 
 // This makes the plugin depend on the version of traffic server installed, but that's
 // OK, since this plugin is distributed only with the "core" (it's a core piece).
@@ -153,7 +157,7 @@ RemapConfigs::parse_file(const char *filename)
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "loading configuration file %s", path.c_str());
+  TSDbg(dbg_ctl, "loading configuration file %s", path.c_str());
 
   while (nullptr != TSfgets(file, buf, sizeof(buf))) {
     char *ln, *tok;
@@ -269,7 +273,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+  TSDbg(dbg_ctl, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */
 }
 
@@ -332,15 +336,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
       switch (conf->_items[ix]._type) {
       case TS_RECORDDATATYPE_INT:
         TSHttpTxnConfigIntSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
-        TSDebug(PLUGIN_NAME, "Setting config id %d to %" PRId64 "", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
+        TSDbg(dbg_ctl, "Setting config id %d to %" PRId64 "", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
         break;
       case TS_RECORDDATATYPE_STRING:
         TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string, conf->_items[ix]._data_len);
-        TSDebug(PLUGIN_NAME, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
+        TSDbg(dbg_ctl, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
         break;
       case TS_RECORDDATATYPE_FLOAT:
         TSHttpTxnConfigFloatSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
-        TSDebug(PLUGIN_NAME, "Setting config id %d to %f", conf->_items[ix]._name, conf->_items[ix]._data.rec_float);
+        TSDbg(dbg_ctl, "Setting config id %d to %f", conf->_items[ix]._name, conf->_items[ix]._data.rec_float);
         break;
       default:
         break; // Error ?

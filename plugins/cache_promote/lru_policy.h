@@ -43,19 +43,19 @@ class LRUHash
   friend struct LRUHashHasher;
 
 public:
-  LRUHash() { TSDebug(PLUGIN_NAME, "LRUHash() CTOR"); }
-  ~LRUHash() { TSDebug(PLUGIN_NAME, "~LRUHash() DTOR"); }
+  LRUHash() { TSDbg(dbg_ctl, "LRUHash() CTOR"); }
+  ~LRUHash() { TSDbg(dbg_ctl, "~LRUHash() DTOR"); }
 
   LRUHash(const LRUHash &h)
   {
-    TSDebug(PLUGIN_NAME, "Copy CTOR an LRUHash object");
+    TSDbg(dbg_ctl, "Copy CTOR an LRUHash object");
     memcpy(_hash, h._hash, sizeof(_hash));
   }
 
   LRUHash &
   operator=(const LRUHash &h)
   {
-    TSDebug(PLUGIN_NAME, "copying an LRUHash object");
+    TSDbg(dbg_ctl, "copying an LRUHash object");
     if (this != &h) {
       memcpy(_hash, h._hash, sizeof(_hash));
     }

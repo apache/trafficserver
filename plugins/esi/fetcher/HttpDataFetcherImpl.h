@@ -103,7 +103,7 @@ public:
 
 private:
   TSCont _contp;
-  char _debug_tag[64];
+  TSDbgCtl const *_dbg_ctl;
 
   using CallbackObjectList = std::list<FetchedDataProcessor *>;
 

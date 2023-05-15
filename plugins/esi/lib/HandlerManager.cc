@@ -61,7 +61,7 @@ HandlerManager::loadObjects(const Utils::KeyValueMap &handlers)
         } else {
           _id_to_function_map.insert(FunctionHandleMap::value_type(id, func_handle));
           _path_to_module_map.insert(ModuleHandleMap::value_type(path, ModuleHandles(obj_handle, func_handle)));
-          _debugLog(_debug_tag, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
+          TSDbg(_dbg_ctl, "[%s] Loaded handler module [%s]", __FUNCTION__, path.c_str());
         }
       }
     }

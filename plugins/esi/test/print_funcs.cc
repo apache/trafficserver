@@ -23,19 +23,49 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <string>
+#include <ts/ts.h>
 
 #include "print_funcs.h"
 
+char ts_new_debug_on_flag_{1};
+
 static const int LINE_SIZE = 1024 * 1024;
 
+static std::string *buffer_TSDbg{nullptr};
+
 void
-Debug(const char *tag, const char *fmt, ...)
+set_TSDbgBuffer(std::string *buf)
+{
+  buffer_TSDbg = buf;
+}
+
+TSDbgCtl const *
+TSDbgCtlCreate(char const *tag)
+{
+  static TSDbgCtl dummy;
+  dummy.on  = 1;
+  dummy.tag = tag;
+  return &dummy;
+}
+
+tsapi void
+TSDbgCtlDestroy(TSDbgCtl const *)
+{
+}
+
+void
+_TSDbg(const char *tag, const char *fmt, ...)
 {
   char buf[LINE_SIZE];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buf, LINE_SIZE, fmt, ap);
-  printf("Debug (%s): %s\n", tag, buf);
+  if (buffer_TSDbg) {
+    *buffer_TSDbg = *buffer_TSDbg + "Debug (" + std::string{tag} + "): " + std::string{buf} + '\n';
+  } else {
+    printf("Debug (%s): %s\n", tag, buf);
+  }
   va_end(ap);
 }
 

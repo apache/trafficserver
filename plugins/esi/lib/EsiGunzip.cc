@@ -29,8 +29,8 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
+EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Error error_func)
+  : ComponentBase(debug_tag, error_func), _downstream_length(0), _total_data_length(0)
 {
   _init    = false;
   _success = true;

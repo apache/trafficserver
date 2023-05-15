@@ -35,6 +35,7 @@
 #include "ts/ts.h"
 #include "ts/experimental.h"
 #include "ts/remap.h"
+#include "tscpp/api/Cleanup.h"
 
 #include "lib/Utils.h"
 #include "lib/gzip.h"
@@ -87,6 +88,9 @@ static const char *DATA_TYPE_NAMES_[] = {"RAW_ESI", "GZIPPED_ESI", "PACKED_ESI"}
 static const char *HEADER_MASK_PREFIX    = "Mask-";
 static const int HEADER_MASK_PREFIX_SIZE = 5;
 
+static atscppapi::TSDbgCtlUniqPtr pi_dbg_ctl_guard{TSDbgCtlCreate(DEBUG_TAG)};
+static const TSDbgCtl *const pi_dbg_ctl = pi_dbg_ctl_guard.get();
+
 struct ContData {
   enum STATE {
     READING_ESI_DOC,
@@ -112,7 +116,7 @@ struct ContData {
   DataType input_type;
   string packed_node_list;
   string gzipped_data;
-  char debug_tag[32];
+  TSDbgCtl const *dbg_ctl = nullptr;
   bool gzip_output;
   bool initialized;
   bool xform_closed;
@@ -149,7 +153,6 @@ struct ContData {
       os_response_cacheable(true)
   {
     client_addr = TSHttpTxnClientAddrGet(txnp);
-    *debug_tag  = '\0';
   }
 
   void fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc);
@@ -181,13 +184,22 @@ public:
   }
 };
 
-static const char *
-createDebugTag(const char *prefix, TSCont contp, string &dest)
+template <std::size_t Size> struct CharArr {
+  char data[Size];
+  std::size_t
+  size() const
+  {
+    return Size;
+  }
+  operator char *() { return data; }
+};
+
+static CharArr<1024>
+makeDebugTag(const char *prefix, TSCont contp)
 {
-  char buf[1024];
-  snprintf(buf, 1024, "%s_%p", prefix, contp);
-  dest.assign(buf);
-  return dest.c_str();
+  CharArr<1024> ca;
+  snprintf(ca.data, ca.size(), "%s_%p", prefix, contp);
+  return ca;
 }
 
 static bool checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value = nullptr,
@@ -202,9 +214,9 @@ ContData::checkXformStatus()
     int retval = TSVConnClosedGet(contp);
     if ((retval == TS_ERROR) || retval) {
       if (retval == TS_ERROR) {
-        TSDebug(debug_tag, "[%s] Error while getting close status of transformation at state %d", __FUNCTION__, curr_state);
+        TSDbg(dbg_ctl, "[%s] Error while getting close status of transformation at state %d", __FUNCTION__, curr_state);
       } else {
-        TSDebug(debug_tag, "[%s] Vconn closed", __FUNCTION__);
+        TSDbg(dbg_ctl, "[%s] Vconn closed", __FUNCTION__);
       }
       xform_closed = true;
     }
@@ -219,9 +231,7 @@ ContData::init()
     return false;
   }
 
-  string tmp_tag;
-  createDebugTag(DEBUG_TAG, contp, tmp_tag);
-  memcpy(debug_tag, tmp_tag.c_str(), tmp_tag.length() + 1);
+  dbg_ctl = TSDbgCtlCreate(makeDebugTag(DEBUG_TAG, contp));
 
   checkXformStatus();
 
@@ -249,26 +259,24 @@ ContData::init()
     // we don't know how much data we are going to write, so INT_MAX
     output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
 
-    string fetcher_tag, vars_tag, expr_tag, proc_tag, gzip_tag, gunzip_tag;
     if (!data_fetcher) {
-      data_fetcher = new HttpDataFetcherImpl(contp, client_addr, createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
+      data_fetcher = new HttpDataFetcherImpl(contp, client_addr, makeDebugTag(FETCHER_DEBUG_TAG, contp));
     }
     if (!esi_vars) {
-      esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gAllowlistCookies);
+      esi_vars = new Variables(makeDebugTag(VARS_DEBUG_TAG, contp), &TSError, gAllowlistCookies);
     }
 
-    esi_proc = new EsiProcessor(
-      createDebugTag(PROCESSOR_DEBUG_TAG, contp, proc_tag), createDebugTag(PARSER_DEBUG_TAG, contp, fetcher_tag),
-      createDebugTag(EXPR_DEBUG_TAG, contp, expr_tag), &TSDebug, &TSError, *data_fetcher, *esi_vars, *gHandlerManager);
+    esi_proc = new EsiProcessor(makeDebugTag(PROCESSOR_DEBUG_TAG, contp), makeDebugTag(PARSER_DEBUG_TAG, contp),
+                                makeDebugTag(EXPR_DEBUG_TAG, contp), &TSError, *data_fetcher, *esi_vars, *gHandlerManager);
 
-    esi_gzip   = new EsiGzip(createDebugTag(GZIP_DEBUG_TAG, contp, gzip_tag), &TSDebug, &TSError);
-    esi_gunzip = new EsiGunzip(createDebugTag(GUNZIP_DEBUG_TAG, contp, gunzip_tag), &TSDebug, &TSError);
+    esi_gzip   = new EsiGzip(makeDebugTag(GZIP_DEBUG_TAG, contp), &TSError);
+    esi_gunzip = new EsiGunzip(makeDebugTag(GUNZIP_DEBUG_TAG, contp), &TSError);
 
-    TSDebug(debug_tag, "[%s] Set input data type to [%s]", __FUNCTION__, DATA_TYPE_NAMES_[input_type]);
+    TSDbg(dbg_ctl, "[%s] Set input data type to [%s]", __FUNCTION__, DATA_TYPE_NAMES_[input_type]);
 
     retval = true;
   } else {
-    TSDebug(debug_tag, "[%s] Transformation closed during initialization; Returning false", __FUNCTION__);
+    TSDbg(dbg_ctl, "[%s] Transformation closed during initialization; Returning false", __FUNCTION__);
   }
 
 lReturn:
@@ -288,11 +296,11 @@ ContData::getClientState()
 
   if (!esi_vars) {
     string vars_tag;
-    esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gAllowlistCookies);
+    esi_vars = new Variables(makeDebugTag(VARS_DEBUG_TAG, contp), &TSError, gAllowlistCookies);
   }
   if (!data_fetcher) {
     string fetcher_tag;
-    data_fetcher = new HttpDataFetcherImpl(contp, client_addr, createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
+    data_fetcher = new HttpDataFetcherImpl(contp, client_addr, makeDebugTag(FETCHER_DEBUG_TAG, contp));
   }
   if (req_bufp && req_hdr_loc) {
     TSMBuffer bufp;
@@ -307,7 +315,7 @@ ContData::getClientState()
       }
       int length;
       request_url = TSUrlStringGet(bufp, url_loc, &length);
-      TSDebug(DEBUG_TAG, "[%s] Got request URL [%s]", __FUNCTION__, request_url ? request_url : "(null)");
+      TSDbg(pi_dbg_ctl, "[%s] Got request URL [%s]", __FUNCTION__, request_url ? request_url : "(null)");
       int query_len;
       const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
       if (query) {
@@ -367,10 +375,10 @@ ContData::getClientState()
 
   if (gzip_output) {
     if (option_info->disable_gzip_output) {
-      TSDebug(DEBUG_TAG, "[%s] disable gzip output", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] disable gzip output", __FUNCTION__);
       gzip_output = false;
     } else {
-      TSDebug(DEBUG_TAG, "[%s] Client accepts gzip encoding; will compress output", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] Client accepts gzip encoding; will compress output", __FUNCTION__);
     }
   }
 
@@ -388,17 +396,17 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc)
   for (int i = 0; i < n_mime_headers; ++i) {
     field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
     if (!field_loc) {
-      TSDebug(DEBUG_TAG, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
+      TSDbg(pi_dbg_ctl, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
       continue;
     }
     name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
     if (name) {
       if (Utils::areEqual(name, name_len, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING)) {
-        TSDebug(DEBUG_TAG, "[%s] Not retaining transfer encoding header", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Not retaining transfer encoding header", __FUNCTION__);
       } else if (Utils::areEqual(name, name_len, MIME_FIELD_XESI, MIME_FIELD_XESI_LEN)) {
-        TSDebug(DEBUG_TAG, "[%s] Not retaining 'X-Esi' header", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Not retaining 'X-Esi' header", __FUNCTION__);
       } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
-        TSDebug(DEBUG_TAG, "[%s] Not retaining 'Content-length' header", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Not retaining 'Content-length' header", __FUNCTION__);
       } else {
         header.assign(name, name_len);
         header.append(": ");
@@ -406,14 +414,14 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc)
         for (int j = 0; j < n_field_values; ++j) {
           value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
           if (nullptr == value || !value_len) {
-            TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
+            TSDbg(pi_dbg_ctl, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
           } else {
             if (Utils::areEqual(name, name_len, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY) &&
                 Utils::areEqual(value, value_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING)) {
-              TSDebug(DEBUG_TAG, "[%s] Not retaining 'vary: accept-encoding' header", __FUNCTION__);
+              TSDbg(pi_dbg_ctl, "[%s] Not retaining 'vary: accept-encoding' header", __FUNCTION__);
             } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING) &&
                        Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
-              TSDebug(DEBUG_TAG, "[%s] Not retaining 'content-encoding: gzip' header", __FUNCTION__);
+              TSDbg(pi_dbg_ctl, "[%s] Not retaining 'content-encoding: gzip' header", __FUNCTION__);
             } else {
               if (header[header.size() - 2] != ':') {
                 header.append(", ");
@@ -421,8 +429,8 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc)
               header.append(value, value_len);
               checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
               if (!os_response_cacheable) {
-                TSDebug(DEBUG_TAG, "[%s] Header [%.*s] with value [%.*s] is a no-cache header", __FUNCTION__, name_len, name,
-                        value_len, value);
+                TSDbg(pi_dbg_ctl, "[%s] Header [%.*s] with value [%.*s] is a no-cache header", __FUNCTION__, name_len, name,
+                      value_len, value);
                 break;
               }
             }
@@ -480,7 +488,7 @@ ContData::getServerState()
 
 ContData::~ContData()
 {
-  TSDebug(debug_tag, "[%s] Destroying continuation data", __FUNCTION__);
+  TSDbg(dbg_ctl, "[%s] Destroying continuation data", __FUNCTION__);
   if (output_reader) {
     TSIOBufferReaderFree(output_reader);
   }
@@ -504,6 +512,9 @@ ContData::~ContData()
   }
   if (esi_gunzip) {
     delete esi_gunzip;
+  }
+  if (dbg_ctl) {
+    TSDbgCtlDestroy(dbg_ctl);
   }
 }
 
@@ -580,7 +591,7 @@ cacheNodeList(ContData *cont_data)
 {
   bool client_abort;
   if (TSHttpTxnAborted(cont_data->txnp, &client_abort) == TS_SUCCESS) {
-    TSDebug(cont_data->debug_tag, "[%s] Not caching node list as txn has been aborted", __FUNCTION__);
+    TSDbg(cont_data->dbg_ctl, "[%s] Not caching node list as txn has been aborted", __FUNCTION__);
     return;
   }
   string post_request("");
@@ -594,7 +605,7 @@ cacheNodeList(ContData *cont_data)
        ++list_iter) {
     post_request.append(ECHO_HEADER_PREFIX);
 
-    // TSDebug(cont_data->debug_tag, "[%s] header == %s", __FUNCTION__, list_iter->c_str());
+    // TSDbg(cont_data->dbg_ctl, "[%s] header == %s", __FUNCTION__, list_iter->c_str());
     if (((int)list_iter->length() > HEADER_MASK_PREFIX_SIZE) &&
         (strncmp(list_iter->c_str(), HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0)) {
       post_request.append(list_iter->c_str() + HEADER_MASK_PREFIX_SIZE, list_iter->length() - HEADER_MASK_PREFIX_SIZE);
@@ -616,7 +627,7 @@ cacheNodeList(ContData *cont_data)
   post_request.append(body);
 
   // TSError("[%s] DO caching node list size=%d", __FUNCTION__, (int)body.size());
-  // TSDebug(cont_data->debug_tag, "[%s] caching node list size=%d", __FUNCTION__, (int)body.size());
+  // TSDbg(cont_data->dbg_ctl, "[%s] caching node list size=%d", __FUNCTION__, (int)body.size());
 
   TSFetchEvent event_ids = {0, 0, 0};
   TSFetchUrl(post_request.data(), post_request.size(), cont_data->client_addr, cont_data->contp, NO_CALLBACK, event_ids);
@@ -637,19 +648,19 @@ transformData(TSCont contp)
   if (!TSVIOBufferGet(cont_data->input_vio)) {
     input_vio_buf_null = true;
     if (cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
-      TSDebug(cont_data->debug_tag, "[%s] input_vio NULL, marking transformation to be terminated", __FUNCTION__);
+      TSDbg(cont_data->dbg_ctl, "[%s] input_vio NULL, marking transformation to be terminated", __FUNCTION__);
       return 1;
     } else if (cont_data->curr_state == ContData::READING_ESI_DOC) {
-      TSDebug(cont_data->debug_tag, "[%s] input_vio NULL while in read state. Assuming end of input", __FUNCTION__);
+      TSDbg(cont_data->dbg_ctl, "[%s] input_vio NULL while in read state. Assuming end of input", __FUNCTION__);
       process_input_complete = true;
     } else {
       if (!cont_data->data_fetcher->isFetchComplete()) {
-        TSDebug(cont_data->debug_tag, "[%s] input_vio NULL, but data needs to be fetched. Returning control", __FUNCTION__);
+        TSDbg(cont_data->dbg_ctl, "[%s] input_vio NULL, but data needs to be fetched. Returning control", __FUNCTION__);
         if (!cont_data->option_info->first_byte_flush) {
           return 1;
         }
       } else {
-        TSDebug(cont_data->debug_tag, "[%s] input_vio NULL, but processing needs to (and can) be completed", __FUNCTION__);
+        TSDbg(cont_data->dbg_ctl, "[%s] input_vio NULL, but processing needs to (and can) be completed", __FUNCTION__);
       }
     }
   }
@@ -657,7 +668,7 @@ transformData(TSCont contp)
   if (!process_input_complete && (cont_data->curr_state == ContData::READING_ESI_DOC)) {
     // Determine how much data we have left to read.
     toread = TSVIONTodoGet(cont_data->input_vio);
-    TSDebug(cont_data->debug_tag, "[%s] upstream VC has %" PRId64 " bytes available to read", __FUNCTION__, toread);
+    TSDbg(cont_data->dbg_ctl, "[%s] upstream VC has %" PRId64 " bytes available to read", __FUNCTION__, toread);
 
     if (toread > 0) {
       avail = TSIOBufferReaderAvail(cont_data->input_reader);
@@ -683,14 +694,14 @@ transformData(TSCont contp)
           } else {
             cont_data->packed_node_list.append(data, data_len);
           }
-          TSDebug(cont_data->debug_tag, "[%s] Added chunk of %" PRId64 " bytes starting with [%.10s] to parse list", __FUNCTION__,
-                  data_len, (data_len ? data : "(null)"));
+          TSDbg(cont_data->dbg_ctl, "[%s] Added chunk of %" PRId64 " bytes starting with [%.10s] to parse list", __FUNCTION__,
+                data_len, (data_len ? data : "(null)"));
           consumed += data_len;
 
           block = TSIOBufferBlockNext(block);
         }
       }
-      TSDebug(cont_data->debug_tag, "[%s] Consumed %" PRId64 " bytes from upstream VC", __FUNCTION__, consumed);
+      TSDbg(cont_data->dbg_ctl, "[%s] Consumed %" PRId64 " bytes from upstream VC", __FUNCTION__, consumed);
 
       TSIOBufferReaderConsume(cont_data->input_reader, consumed);
 
@@ -709,10 +720,10 @@ transformData(TSCont contp)
     }
   }
   if (process_input_complete) {
-    TSDebug(cont_data->debug_tag, "[%s] Completed reading input", __FUNCTION__);
+    TSDbg(cont_data->dbg_ctl, "[%s] Completed reading input", __FUNCTION__);
     if (cont_data->input_type == DATA_TYPE_PACKED_ESI) {
-      TSDebug(DEBUG_TAG, "[%s] Going to use packed node list of size %d", __FUNCTION__,
-              static_cast<int>(cont_data->packed_node_list.size()));
+      TSDbg(pi_dbg_ctl, "[%s] Going to use packed node list of size %d", __FUNCTION__,
+            static_cast<int>(cont_data->packed_node_list.size()));
       if (cont_data->esi_proc->usePackedNodeList(cont_data->packed_node_list) == EsiProcessor::UNPACK_FAILURE) {
         removeCacheKey(cont_data->txnp);
 
@@ -744,22 +755,22 @@ transformData(TSCont contp)
   if ((cont_data->curr_state == ContData::FETCHING_DATA) &&
       (!cont_data->option_info->first_byte_flush)) { // retest as state may have changed in previous block
     if (cont_data->data_fetcher->isFetchComplete()) {
-      TSDebug(cont_data->debug_tag, "[%s] data ready; going to process doc", __FUNCTION__);
+      TSDbg(cont_data->dbg_ctl, "[%s] data ready; going to process doc", __FUNCTION__);
       const char *out_data;
       int out_data_len;
       EsiProcessor::ReturnCode retval = cont_data->esi_proc->process(out_data, out_data_len);
-      TSDebug(cont_data->debug_tag, "[%s] data length: %d, retval: %d", __FUNCTION__, out_data_len, retval);
+      TSDbg(cont_data->dbg_ctl, "[%s] data length: %d, retval: %d", __FUNCTION__, out_data_len, retval);
       if (retval == EsiProcessor::NEED_MORE_DATA) {
-        TSDebug(cont_data->debug_tag,
-                "[%s] ESI processor needs more data; "
-                "will wait for all data to be fetched",
-                __FUNCTION__);
+        TSDbg(cont_data->dbg_ctl,
+              "[%s] ESI processor needs more data; "
+              "will wait for all data to be fetched",
+              __FUNCTION__);
         return 1;
       }
       cont_data->curr_state = ContData::PROCESSING_COMPLETE;
       if (retval == EsiProcessor::SUCCESS) {
-        TSDebug(cont_data->debug_tag, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__,
-                out_data_len, (out_data_len ? out_data : "(null)"));
+        TSDbg(cont_data->dbg_ctl, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__, out_data_len,
+              (out_data_len ? out_data : "(null)"));
       } else {
         TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
         out_data     = "";
@@ -775,8 +786,8 @@ transformData(TSCont contp)
             out_data_len = 0;
             out_data     = "";
           } else {
-            TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes via gzip", __FUNCTION__, out_data_len,
-                    static_cast<int>(cdata.size()));
+            TSDbg(cont_data->dbg_ctl, "[%s] Compressed document from size %d to %d bytes via gzip", __FUNCTION__, out_data_len,
+                  static_cast<int>(cdata.size()));
             out_data_len = cdata.size();
             out_data     = cdata.data();
           }
@@ -804,26 +815,26 @@ transformData(TSCont contp)
         TSVIOReenable(output_vio);
       }
     } else {
-      TSDebug(cont_data->debug_tag, "[%s] Data not available yet; cannot process document", __FUNCTION__);
+      TSDbg(cont_data->dbg_ctl, "[%s] Data not available yet; cannot process document", __FUNCTION__);
     }
   }
 
   if (((cont_data->curr_state == ContData::FETCHING_DATA) || (cont_data->curr_state == ContData::READING_ESI_DOC)) &&
       (cont_data->option_info->first_byte_flush)) { // retest as state may have changed in previous block
-    TSDebug(cont_data->debug_tag, "[%s] trying to process doc", __FUNCTION__);
+    TSDbg(cont_data->dbg_ctl, "[%s] trying to process doc", __FUNCTION__);
     string out_data;
     string cdata;
     int overall_len;
     EsiProcessor::ReturnCode retval = cont_data->esi_proc->flush(out_data, overall_len);
 
     if ((cont_data->curr_state == ContData::FETCHING_DATA) && cont_data->data_fetcher->isFetchComplete()) {
-      TSDebug(cont_data->debug_tag, "[%s] data ready; last process() will have finished the entire processing", __FUNCTION__);
+      TSDbg(cont_data->dbg_ctl, "[%s] data ready; last process() will have finished the entire processing", __FUNCTION__);
       cont_data->curr_state = ContData::PROCESSING_COMPLETE;
     }
 
     if (retval == EsiProcessor::SUCCESS) {
-      TSDebug(cont_data->debug_tag, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__,
-              static_cast<int>(out_data.size()), (out_data.size() ? out_data.data() : "(null)"));
+      TSDbg(cont_data->dbg_ctl, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__,
+            static_cast<int>(out_data.size()), (out_data.size() ? out_data.data() : "(null)"));
     } else {
       TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
       out_data.assign("");
@@ -840,8 +851,8 @@ transformData(TSCont contp)
         if (!cont_data->esi_gzip->stream_encode(out_data, cdata)) {
           TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
         } else {
-          TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes via EsiGzip", __FUNCTION__,
-                  static_cast<int>(out_data.size()), static_cast<int>(cdata.size()));
+          TSDbg(cont_data->dbg_ctl, "[%s] Compressed document from size %d to %d bytes via EsiGzip", __FUNCTION__,
+                static_cast<int>(out_data.size()), static_cast<int>(cdata.size()));
         }
         if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), cdata.data(), cdata.size()) == TS_ERROR) {
           TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
@@ -872,11 +883,11 @@ transformData(TSCont contp)
               TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
               return 0;
             }
-            TSDebug(cont_data->debug_tag, "[%s] ESI processed overall/gzip: %d", __FUNCTION__, downstream_length);
+            TSDbg(cont_data->dbg_ctl, "[%s] ESI processed overall/gzip: %d", __FUNCTION__, downstream_length);
             TSVIONBytesSet(cont_data->output_vio, downstream_length);
           }
         } else {
-          TSDebug(cont_data->debug_tag, "[%s] ESI processed overall: %d", __FUNCTION__, overall_len);
+          TSDbg(cont_data->dbg_ctl, "[%s] ESI processed overall: %d", __FUNCTION__, overall_len);
           TSVIONBytesSet(cont_data->output_vio, overall_len);
         }
       }
@@ -898,46 +909,46 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
 
   // we need these later, but declaring now avoid compiler warning w.r.t. goto
   bool process_event = true;
-  const char *cont_debug_tag;
   bool shutdown, is_fetch_event;
+  TSDbgCtl const *cont_dbg_ctl;
 
   if (!cont_data->initialized) {
     if (!cont_data->init()) {
       TSError("[esi][%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
       goto lShutdown;
     }
-    TSDebug(cont_data->debug_tag, "[%s] initialized continuation data", __FUNCTION__);
+    TSDbg(cont_data->dbg_ctl, "[%s] initialized continuation data", __FUNCTION__);
   }
 
-  cont_debug_tag = cont_data->debug_tag; // just a handy reference
+  cont_dbg_ctl = cont_data->dbg_ctl; // just a handy reference
 
   cont_data->checkXformStatus();
 
   is_fetch_event = cont_data->data_fetcher->isFetchEvent(event);
 
   if (cont_data->xform_closed) {
-    TSDebug(cont_debug_tag, "[%s] Transformation closed, post-processing", __FUNCTION__);
+    TSDbg(cont_dbg_ctl, "[%s] Transformation closed, post-processing", __FUNCTION__);
     if (cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
-      TSDebug(cont_debug_tag, "[%s] Processing is complete, not processing current event %d", __FUNCTION__, event);
+      TSDbg(cont_dbg_ctl, "[%s] Processing is complete, not processing current event %d", __FUNCTION__, event);
       process_event = false;
     } else if (cont_data->curr_state == ContData::READING_ESI_DOC) {
-      TSDebug(cont_debug_tag, "[%s] Parsing is incomplete, will force end of input", __FUNCTION__);
+      TSDbg(cont_dbg_ctl, "[%s] Parsing is incomplete, will force end of input", __FUNCTION__);
       cont_data->curr_state = ContData::FETCHING_DATA;
     }
     if (cont_data->curr_state == ContData::FETCHING_DATA) { // retest as it may be modified in prev. if block
       if (cont_data->data_fetcher->isFetchComplete()) {
-        TSDebug(cont_debug_tag, "[%s] Requested data has been fetched; will skip event and marking processing as complete ",
-                __FUNCTION__);
+        TSDbg(cont_dbg_ctl, "[%s] Requested data has been fetched; will skip event and marking processing as complete ",
+              __FUNCTION__);
         cont_data->curr_state = ContData::PROCESSING_COMPLETE;
         process_event         = false;
       } else {
         if (is_fetch_event) {
-          TSDebug(cont_debug_tag, "[%s] Going to process received data", __FUNCTION__);
+          TSDbg(cont_dbg_ctl, "[%s] Going to process received data", __FUNCTION__);
         } else {
           // transformation is over, but data hasn't been fetched;
           // let's wait for data to be fetched - we will be called
           // by Fetch API and go through this loop again
-          TSDebug(cont_debug_tag, "[%s] Ignoring event %d; Will wait for pending data", __FUNCTION__, event);
+          TSDbg(cont_dbg_ctl, "[%s] Ignoring event %d; Will wait for pending data", __FUNCTION__, event);
           process_event = false;
         }
       }
@@ -960,31 +971,31 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       break;
 
     case TS_EVENT_VCONN_WRITE_READY:
-      TSDebug(cont_debug_tag, "[%s] WRITE_READY", __FUNCTION__);
+      TSDbg(cont_dbg_ctl, "[%s] WRITE_READY", __FUNCTION__);
       if (!cont_data->option_info->first_byte_flush) {
         TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       }
       break;
 
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(cont_debug_tag, "[%s] shutting down transformation", __FUNCTION__);
+      TSDbg(cont_dbg_ctl, "[%s] shutting down transformation", __FUNCTION__);
       TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
 
     case TS_EVENT_IMMEDIATE:
-      TSDebug(cont_debug_tag, "[%s] handling TS_EVENT_IMMEDIATE", __FUNCTION__);
+      TSDbg(cont_dbg_ctl, "[%s] handling TS_EVENT_IMMEDIATE", __FUNCTION__);
       transformData(contp);
       break;
 
     default:
       if (is_fetch_event) {
-        TSDebug(cont_debug_tag, "[%s] Handling fetch event %d", __FUNCTION__, event);
+        TSDbg(cont_dbg_ctl, "[%s] Handling fetch event %d", __FUNCTION__, event);
         if (cont_data->data_fetcher->handleFetchEvent(event, edata)) {
           if ((cont_data->curr_state == ContData::FETCHING_DATA) || (cont_data->curr_state == ContData::READING_ESI_DOC)) {
             // there's a small chance that fetcher is ready even before
             // parsing is complete; hence we need to check the state too
             if (cont_data->option_info->first_byte_flush || cont_data->data_fetcher->isFetchComplete()) {
-              TSDebug(cont_debug_tag, "[%s] fetcher is ready with data, going into process stage", __FUNCTION__);
+              TSDbg(cont_dbg_ctl, "[%s] fetcher is ready with data, going into process stage", __FUNCTION__);
               transformData(contp);
             }
           }
@@ -998,8 +1009,8 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
     }
   }
 
-  TSDebug(cont_data->debug_tag, "[%s] transformHandler, event: %d, curr_state: %d", __FUNCTION__, static_cast<int>(event),
-          static_cast<int>(cont_data->curr_state));
+  TSDbg(cont_data->dbg_ctl, "[%s] transformHandler, event: %d, curr_state: %d", __FUNCTION__, static_cast<int>(event),
+        static_cast<int>(cont_data->curr_state));
 
   shutdown = (cont_data->xform_closed && (cont_data->curr_state == ContData::PROCESSING_COMPLETE));
   if (shutdown) {
@@ -1007,7 +1018,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       // we need to return control to the fetch API to give up it's
       // lock on our continuation which will fail if we destroy
       // ourselves right now
-      TSDebug(cont_debug_tag, "[%s] Deferring shutdown as data event was just processed", __FUNCTION__);
+      TSDbg(cont_dbg_ctl, "[%s] Deferring shutdown as data event was just processed", __FUNCTION__);
       TSContScheduleOnPool(contp, 10, TS_THREAD_POOL_TASK);
     } else {
       goto lShutdown;
@@ -1017,7 +1028,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
   return 1;
 
 lShutdown:
-  TSDebug(cont_data->debug_tag, "[%s] transformation closed; cleaning up data", __FUNCTION__);
+  TSDbg(cont_data->dbg_ctl, "[%s] transformation closed; cleaning up data", __FUNCTION__);
   delete cont_data;
   TSContDestroy(contp);
   return 1;
@@ -1075,7 +1086,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
     for (int i = 0; i < n_mime_headers; ++i) {
       field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
       if (!field_loc) {
-        TSDebug(DEBUG_TAG, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
+        TSDbg(pi_dbg_ctl, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
         continue;
       }
       name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
@@ -1097,14 +1108,14 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
         } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
           if (mod_data->head_only) {
             destroy_header = true;
-            TSDebug(DEBUG_TAG, "[%s] remove Content-Length", __FUNCTION__);
+            TSDbg(pi_dbg_ctl, "[%s] remove Content-Length", __FUNCTION__);
           }
         } else {
           int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
           for (int j = 0; j < n_field_values; ++j) {
             value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
             if (nullptr == value || !value_len) {
-              TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
+              TSDbg(pi_dbg_ctl, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
             } else {
               if (!mod_data->option_info->packed_node_support || mod_data->cache_txn) {
                 bool response_cacheable, is_cache_header;
@@ -1117,7 +1128,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
           }   // end for
         }
         if (destroy_header) {
-          TSDebug(DEBUG_TAG, "[%s] Removing header with name [%.*s]", __FUNCTION__, name_len, name);
+          TSDbg(pi_dbg_ctl, "[%s] Removing header with name [%.*s]", __FUNCTION__, name_len, name);
           TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
           --n_mime_headers;
           --i;
@@ -1144,7 +1155,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
     }
 
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    TSDebug(DEBUG_TAG, "[%s] Inspected client-bound headers", __FUNCTION__);
+    TSDbg(pi_dbg_ctl, "[%s] Inspected client-bound headers", __FUNCTION__);
     retval = 1;
   } else {
     TSError("[esi][%s] Error while getting response from txn", __FUNCTION__);
@@ -1181,7 +1192,7 @@ checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
           retval = true;
         }
       } else {
-        TSDebug(DEBUG_TAG, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__, i, name_len, name);
+        TSDbg(pi_dbg_ctl, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__, i, name_len, name);
       }
       if (retval) {
         break;
@@ -1213,7 +1224,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
   for (int i = 0; i < n_mime_headers; ++i) {
     field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
     if (!field_loc) {
-      TSDebug(DEBUG_TAG, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
+      TSDbg(pi_dbg_ctl, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
       continue;
     }
     name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
@@ -1223,15 +1234,15 @@ maskOsCacheHeaders(TSHttpTxn txnp)
       for (int j = 0; j < n_field_values; ++j) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
         if (nullptr == value || !value_len) {
-          TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
+          TSDbg(pi_dbg_ctl, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
         } else {
           bool is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
           if (!os_response_cacheable) {
             break;
           }
           if (is_cache_header) {
-            TSDebug(DEBUG_TAG, "[%s] Masking OS cache header [%.*s] with value [%.*s]. ", __FUNCTION__, name_len, name, value_len,
-                    value);
+            TSDbg(pi_dbg_ctl, "[%s] Masking OS cache header [%.*s] with value [%.*s]. ", __FUNCTION__, name_len, name, value_len,
+                  value);
             mask_header = true;
           }
         } // end if got value string
@@ -1281,7 +1292,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
     *head_only = true;
   } else if (!(((method_len >= TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0)) ||
                ((method_len >= TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)))) {
-    TSDebug(DEBUG_TAG, "[%s] method %.*s will be ignored", __FUNCTION__, method_len, method);
+    TSDbg(pi_dbg_ctl, "[%s] method %.*s will be ignored", __FUNCTION__, method_len, method);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return false;
   }
@@ -1311,10 +1322,10 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
     *intercept_header = checkHeaderValue(bufp, hdr_loc, SERVER_INTERCEPT_HEADER, SERVER_INTERCEPT_HEADER_LEN);
     if (*intercept_header) {
       if (is_cache_txn) {
-        TSDebug(DEBUG_TAG, "[%s] Packed ESI document found in cache; will process", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Packed ESI document found in cache; will process", __FUNCTION__);
         retval = true;
       } else {
-        TSDebug(DEBUG_TAG, "[%s] Found Intercept header in server response; document not processable", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Found Intercept header in server response; document not processable", __FUNCTION__);
       }
       break; // found internal header; no other detection required
     }
@@ -1326,11 +1337,11 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
                            true)) &&
         (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, "application/json", 16, true)) &&
         (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, "multipart/mixed", 15, true))) {
-      TSDebug(DEBUG_TAG, "[%s] Not text content", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] Not text content", __FUNCTION__);
       break;
     }
     if (!checkHeaderValue(bufp, hdr_loc, MIME_FIELD_XESI, MIME_FIELD_XESI_LEN)) {
-      TSDebug(DEBUG_TAG, "[%s] ESI header [%s] not found", __FUNCTION__, MIME_FIELD_XESI);
+      TSDbg(pi_dbg_ctl, "[%s] ESI header [%s] not found", __FUNCTION__, MIME_FIELD_XESI);
       break;
     }
 
@@ -1350,10 +1361,10 @@ isCacheObjTransformable(TSHttpTxn txnp, bool *intercept_header, bool *head_only)
     return false;
   }
   if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
-    TSDebug(DEBUG_TAG, "[%s] doc found in cache, will add transformation", __FUNCTION__);
+    TSDbg(pi_dbg_ctl, "[%s] doc found in cache, will add transformation", __FUNCTION__);
     return isTxnTransformable(txnp, true, intercept_header, head_only);
   }
-  TSDebug(DEBUG_TAG, "[%s] cache object's status is %d; not transformable", __FUNCTION__, obj_status);
+  TSDbg(pi_dbg_ctl, "[%s] cache object's status is %d; not transformable", __FUNCTION__, obj_status);
   return false;
 }
 
@@ -1361,7 +1372,7 @@ static bool
 isInterceptRequest(TSHttpTxn txnp)
 {
   if (!TSHttpTxnIsInternal(txnp)) {
-    TSDebug(DEBUG_TAG, "[%s] Skipping external request", __FUNCTION__);
+    TSDbg(pi_dbg_ctl, "[%s] Skipping external request", __FUNCTION__);
     return false;
   }
 
@@ -1380,9 +1391,9 @@ isInterceptRequest(TSHttpTxn txnp)
     TSError("[esi][%s] Could not obtain method!", __FUNCTION__);
   } else {
     if ((method_len != TS_HTTP_LEN_POST) || (strncasecmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST))) {
-      TSDebug(DEBUG_TAG, "[%s] Method [%.*s] invalid, [%s] expected", __FUNCTION__, method_len, method, TS_HTTP_METHOD_POST);
+      TSDbg(pi_dbg_ctl, "[%s] Method [%.*s] invalid, [%s] expected", __FUNCTION__, method_len, method, TS_HTTP_METHOD_POST);
     } else {
-      TSDebug(DEBUG_TAG, "[%s] Valid server intercept method found", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] Valid server intercept method found", __FUNCTION__);
       valid_request = true;
     }
   }
@@ -1482,7 +1493,7 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
     TSHttpTxnUntransformedRespCache(txnp, 1);
   }
 
-  TSDebug(DEBUG_TAG, "[%s] Added transformation (0x%p)", __FUNCTION__, contp);
+  TSDbg(pi_dbg_ctl, "[%s] Added transformation (0x%p)", __FUNCTION__, contp);
   return true;
 
 lFail:
@@ -1506,15 +1517,15 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(DEBUG_TAG, "[%s] handling read request header event", __FUNCTION__);
+    TSDbg(pi_dbg_ctl, "[%s] handling read request header event", __FUNCTION__);
     if (intercept_req) {
       if (!setupServerIntercept(txnp)) {
         TSError("[esi][%s] Could not setup server intercept", __FUNCTION__);
       } else {
-        TSDebug(DEBUG_TAG, "[%s] Setup server intercept", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Setup server intercept", __FUNCTION__);
       }
     } else {
-      TSDebug(DEBUG_TAG, "[%s] Not setting up intercept", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] Not setting up intercept", __FUNCTION__);
     }
     break;
 
@@ -1523,7 +1534,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
     if (!intercept_req) {
       if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
         bool mask_cache_headers = false;
-        TSDebug(DEBUG_TAG, "[%s] handling read response header event", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] handling read response header event", __FUNCTION__);
         if (isTxnTransformable(txnp, false, &intercept_header, &head_only)) {
           addTransform(txnp, true, intercept_header, head_only, pOptionInfo);
           Stats::increment(Stats::N_OS_DOCS);
@@ -1536,7 +1547,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
           maskOsCacheHeaders(txnp);
         }
       } else {
-        TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] handling cache lookup complete event", __FUNCTION__);
         if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // we make the assumption above that a transformable cache
           // object would already have a transformation. We should revisit
@@ -1549,7 +1560,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
     break;
 
   default:
-    TSDebug(DEBUG_TAG, "[%s] Don't know how to handle event type %d", __FUNCTION__, event);
+    TSDbg(pi_dbg_ctl, "[%s] Don't know how to handle event type %d", __FUNCTION__, event);
     break;
   }
 
@@ -1569,7 +1580,7 @@ loadHandlerConf(const char *file_name, Utils::KeyValueMap &handler_conf)
     }
     TSfclose(conf_file);
     Utils::parseKeyValueConfig(conf_lines, handler_conf, gAllowlistCookies);
-    TSDebug(DEBUG_TAG, "[%s] Loaded handler conf file [%s]", __FUNCTION__, file_name);
+    TSDbg(pi_dbg_ctl, "[%s] Loaded handler conf file [%s]", __FUNCTION__, file_name);
   } else {
     TSError("[esi][%s] Failed to open handler config file [%s]", __FUNCTION__, file_name);
   }
@@ -1582,12 +1593,12 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
 
   if (statSystem == nullptr) {
     statSystem = new TSStatSystem();
-    Utils::init(&TSDebug, &TSError);
+    Utils::init(&TSError);
     Stats::init(statSystem);
   }
 
   if (gHandlerManager == nullptr) {
-    gHandlerManager = new HandlerManager(HANDLER_MGR_DEBUG_TAG, &TSDebug, &TSError);
+    gHandlerManager = new HandlerManager(HANDLER_MGR_DEBUG_TAG, &TSError);
   }
 
   memset(pOptionInfo, 0, sizeof(struct OptionInfo));
@@ -1630,12 +1641,12 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     }
   }
 
-  TSDebug(DEBUG_TAG,
-          "[%s] Plugin started, "
-          "packed-node-support: %d, private-response: %d, "
-          "disable-gzip-output: %d, first-byte-flush: %d ",
-          __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-          pOptionInfo->first_byte_flush);
+  TSDbg(pi_dbg_ctl,
+        "[%s] Plugin started, "
+        "packed-node-support: %d, private-response: %d, "
+        "disable-gzip-output: %d, first-byte-flush: %d ",
+        __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
+        pOptionInfo->first_byte_flush);
 
   return 0;
 }
@@ -1694,7 +1705,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(DEBUG_TAG, "esi remap plugin is successfully initialized");
+  TSDbg(pi_dbg_ctl, "esi remap plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -1761,10 +1772,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED 
       if (!setupServerIntercept(txnp)) {
         TSError("[esi][%s] Could not setup server intercept", __FUNCTION__);
       } else {
-        TSDebug(DEBUG_TAG, "[%s] Setup server intercept", __FUNCTION__);
+        TSDbg(pi_dbg_ctl, "[%s] Setup server intercept", __FUNCTION__);
       }
     } else {
-      TSDebug(DEBUG_TAG, "[%s] Not setting up intercept", __FUNCTION__);
+      TSDbg(pi_dbg_ctl, "[%s] Not setting up intercept", __FUNCTION__);
     }
   }
 

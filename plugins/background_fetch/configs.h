@@ -28,10 +28,20 @@
 #include <atomic>
 #include <string>
 
+#include <tscpp/api/Cleanup.h>
+
 #include "rules.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
+
+namespace
+{
+
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+
+} // end anonymous namespace
 
 ///////////////////////////////////////////////////////////////////////////
 // This holds one complete background fetch rule

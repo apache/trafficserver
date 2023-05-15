@@ -25,8 +25,8 @@
 class PolicyManager
 {
 public:
-  PolicyManager() { TSDebug(PLUGIN_NAME, "PolicyManager() CTOR"); }
-  virtual ~PolicyManager() { TSDebug(PLUGIN_NAME, "~PolicyManger() DTOR"); }
+  PolicyManager() { TSDbg(dbg_ctl, "PolicyManager() CTOR"); }
+  virtual ~PolicyManager() { TSDbg(dbg_ctl, "~PolicyManger() DTOR"); }
 
   // This is sort of a no-op right now, but it should be called regardless.
   void

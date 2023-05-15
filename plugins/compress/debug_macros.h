@@ -24,33 +24,43 @@
 #pragma once
 
 #include <ts/ts.h>
+#include <tscpp/api/Cleanup.h>
 
 #define TAG "compress"
 
-#define debug(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSDebug(TAG, "DEBUG: [%s:%d] [%s] " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+class CompressDbg
+{
+private:
+  inline static atscppapi::TSDbgCtlUniqPtr guard{TSDbgCtlCreate(TAG)};
+
+public:
+  inline static TSDbgCtl const *const ctl{guard.get()};
+};
+
+#define debug(fmt, args...)                                                                        \
+  do {                                                                                             \
+    TSDbg(CompressDbg::ctl, "DEBUG: [%s:%d] [%s] " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define info(fmt, args...)              \
-  do {                                  \
-    TSDebug(TAG, "INFO: " fmt, ##args); \
+#define info(fmt, args...)                         \
+  do {                                             \
+    TSDbg(CompressDbg::ctl, "INFO: " fmt, ##args); \
   } while (0)
 
-#define warning(fmt, args...)              \
-  do {                                     \
-    TSDebug(TAG, "WARNING: " fmt, ##args); \
+#define warning(fmt, args...)                         \
+  do {                                                \
+    TSDbg(CompressDbg::ctl, "WARNING: " fmt, ##args); \
   } while (0)
 
-#define error(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);      \
-    TSDebug(TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+#define error(fmt, args...)                                                                        \
+  do {                                                                                             \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);                 \
+    TSDbg(CompressDbg::ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define fatal(fmt, args...)                                                             \
-  do {                                                                                  \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);      \
-    TSDebug(TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
-    exit(-1);                                                                           \
+#define fatal(fmt, args...)                                                                        \
+  do {                                                                                             \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);                 \
+    TSDbg(CompressDbg::ctl, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
+    exit(-1);                                                                                      \
   } while (0)

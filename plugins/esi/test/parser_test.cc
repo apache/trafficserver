@@ -49,11 +49,11 @@ check_node_attr(const Attribute &attr, const char *name, const char *value)
 int
 main()
 {
-  Utils::init(&Debug, &Error);
+  Utils::init(&Error);
 
   {
     cout << endl << "==================== Test 1: No src attr test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include />";
 
     DocNodeList node_list;
@@ -64,7 +64,7 @@ main()
 
   {
     cout << endl << "==================== Test 2: Empty src test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=/>";
 
     DocNodeList node_list;
@@ -75,7 +75,7 @@ main()
 
   {
     cout << endl << "==================== Test 3: Valid src test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=abc />";
 
     DocNodeList node_list;
@@ -92,7 +92,7 @@ main()
 
   {
     cout << endl << "==================== Test 4: Invalid Quoted URL test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=\"abc def />";
 
     DocNodeList node_list;
@@ -103,7 +103,7 @@ main()
 
   {
     cout << endl << "==================== Test 5: Invalid Quoted URL test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=abcdef\" />";
 
     DocNodeList node_list;
@@ -114,7 +114,7 @@ main()
 
   {
     cout << endl << "==================== Test 6: Invalid Quoted URL test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = R"(<esi:include src=abc""de"f />)";
 
     DocNodeList node_list;
@@ -125,7 +125,7 @@ main()
 
   {
     cout << endl << "==================== Test 7: Quoted URL test " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=\"abc def\" />";
 
     DocNodeList node_list;
@@ -142,7 +142,7 @@ main()
 
   {
     cout << endl << "==================== Test 8: Invalid tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "bleh <esi:blah /> flah";
 
     DocNodeList node_list;
@@ -153,7 +153,7 @@ main()
 
   {
     cout << endl << "==================== Test 9: Invalid Comment tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:comment></esi:comment>";
 
     DocNodeList node_list;
@@ -164,7 +164,7 @@ main()
 
   {
     cout << endl << "==================== Test 10: Valid Comment tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:comment text=\"blah\"/>";
 
     DocNodeList node_list;
@@ -176,7 +176,7 @@ main()
 
   {
     cout << endl << "==================== Test 11: Invalid remove tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:remove />";
 
     DocNodeList node_list;
@@ -187,7 +187,7 @@ main()
 
   {
     cout << endl << "==================== Test 12: Valid remove tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:remove> </esi:remove>";
 
     DocNodeList node_list;
@@ -198,7 +198,7 @@ main()
 
   {
     cout << endl << "==================== Test 13: Interleaving raw text " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:remove> </esi:remove> bar";
 
     DocNodeList node_list;
@@ -222,7 +222,7 @@ main()
 
   {
     cout << endl << "==================== Test 14: Interleaving different nodes" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:remove> </esi:remove> bar <esi:include src=blah /><esi:vars>bleh</esi:vars>";
 
     DocNodeList node_list;
@@ -254,14 +254,14 @@ main()
 
   {
     cout << endl << "==================== Test 15: empty parse" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     assert(parser.completeParse(node_list) == true);
   }
 
   {
     cout << endl << "==================== Test 16: clear() test" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     string input_data = "foo <esi:remove> </esi:remove> bar <esi:include src=blah />";
 
@@ -312,7 +312,7 @@ main()
 
   {
     cout << endl << "==================== Test 17: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <esi:include src=url1/> bar1\n";
     char line2[] = "foo2 <esi:include src=url2/> bar2\n";
@@ -335,7 +335,7 @@ main()
 
   {
     cout << endl << "==================== Test 18: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <esi:include";
     char line2[] = "src=url2/>";
@@ -352,7 +352,7 @@ main()
 
   {
     cout << endl << "==================== Test 19: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <esi:include ";
     char line2[] = "src=url2/>";
@@ -369,7 +369,7 @@ main()
 
   {
     cout << endl << "==================== Test 20: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <e";
     char line2[] = "si:include src=url2/>";
@@ -386,7 +386,7 @@ main()
 
   {
     cout << endl << "==================== Test 21: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <e";
     char line2[] = "xsi:include src=url2/>";
@@ -403,7 +403,7 @@ main()
 
   {
     cout << endl << "==================== Test 22: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <e";
     char line2[] = "si:include src=ur";
@@ -434,7 +434,7 @@ main()
 
   {
     cout << endl << "==================== Test 23: multi-chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <e";
     char line2[] = "si:include src=ur";
@@ -481,7 +481,7 @@ main()
 
   {
     cout << endl << "==================== Test 24: one-shot parse" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:include src=blah /> bar";
 
     DocNodeList node_list;
@@ -505,7 +505,7 @@ main()
 
   {
     cout << endl << "==================== Test 25: final chunk" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     char line1[] = "foo1 <e";
     char line2[] = "si:include src=ur";
@@ -550,7 +550,7 @@ main()
 
   {
     cout << endl << "==================== Test 26: partial trailing tag" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:include src=blah /> <esi";
 
     DocNodeList node_list;
@@ -573,7 +573,7 @@ main()
 
   {
     cout << endl << "==================== Test 27: partial trailing tag" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:include src=blah /> <esi:remov";
 
     DocNodeList node_list;
@@ -601,7 +601,7 @@ main()
 
   {
     cout << endl << "==================== Test 28: empty vars tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:vars></esi:vars>";
 
     DocNodeList node_list;
@@ -615,7 +615,7 @@ main()
 
   {
     cout << endl << "==================== Test 29: non-empty vars tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:vars>$(HTTP_COOKIE)</esi:vars>";
 
     DocNodeList node_list;
@@ -630,7 +630,7 @@ main()
 
   {
     cout << endl << "==================== Test 30: choose tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:choose>"
                         "<esi:when test=blah><esi:include src=url /></esi:when>"
                         "</esi:choose>";
@@ -660,7 +660,7 @@ main()
 
   {
     cout << endl << "==================== Test 31: when tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:when test=blah><esi:include src=url /></esi:when>";
 
     DocNodeList node_list;
@@ -677,7 +677,7 @@ main()
 
   {
     cout << endl << "==================== Test 32: otherwise tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:otherwise><esi:include src=url /></esi:otherwise>";
 
     DocNodeList node_list;
@@ -693,7 +693,7 @@ main()
 
   {
     cout << endl << "==================== Test 33: try tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:try>"
                         "<esi:attempt><esi:include src=url1 /></esi:attempt>"
                         "<esi:except><esi:include src=url2 /></esi:except>"
@@ -736,7 +736,7 @@ main()
 
   {
     cout << endl << "==================== Test 34: attempt/except tags " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:attempt><esi:include src=url1 /></esi:attempt>"
                         "<esi:except><esi:include src=url2 /></esi:except>";
 
@@ -770,7 +770,7 @@ main()
 
   {
     cout << endl << "==================== Test 35: internal data pointer " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=abc />";
 
     DocNodeList node_list;
@@ -791,7 +791,7 @@ main()
 
   {
     cout << endl << "==================== Test 36: external data pointer " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:include src=abc />";
 
     DocNodeList orig_node_list;
@@ -845,7 +845,7 @@ main()
 
   {
     cout << endl << "==================== Test 37: html comment tag " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "foo <esi:comment text=\"blah\"/><!--esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->"
                         "<esi:include src=url /> bar";
 
@@ -881,7 +881,7 @@ main()
 
   {
     cout << endl << "==================== Test 38: html comment tag - partial chunks " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     const char *lines[] = {"foo ",
                            "<es",
                            "i:comment text=\"blah\"/><esi:include src=url1/>",
@@ -987,7 +987,7 @@ main()
 
   {
     cout << endl << "==================== Test 39: opening tag corner cases" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     DocNodeList node_list;
     DocNodeList::iterator list_iter;
 
@@ -1032,7 +1032,7 @@ main()
 
   {
     cout << endl << "==================== Test 40: No handler attr " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:special-include />";
 
     DocNodeList node_list;
@@ -1043,7 +1043,7 @@ main()
 
   {
     cout << endl << "==================== Test 41: Empty handle " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:special-include handler=/>";
 
     DocNodeList node_list;
@@ -1054,7 +1054,7 @@ main()
 
   {
     cout << endl << "==================== Test 42: Valid special include " << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data = "<esi:special-include handler=ads pos=SKY />";
 
     DocNodeList node_list;
@@ -1071,7 +1071,7 @@ main()
 
   {
     cout << endl << "===================== Test 43) choose-when" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data1("<esi:choose>"
                        "<esi:when test=cond1>"
                        "<esi:include src=foo />"
@@ -1121,7 +1121,7 @@ main()
 
   {
     cout << endl << "===================== Test 44) invalid choose; non when/otherwise node" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:comment text=\"blah\" />"
                       "<esi:when test=foo>"
@@ -1142,7 +1142,7 @@ main()
 
   {
     cout << endl << "===================== Test 45) invalid choose; multiple otherwise" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:when test=foo>"
                       "<esi:include src=foo />"
@@ -1166,7 +1166,7 @@ main()
 
   {
     cout << endl << "===================== Test 46) choose-when" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:otherwise>"
                       "<esi:include src=otherwise />"
@@ -1190,7 +1190,7 @@ main()
 
   {
     cout << endl << "===================== Test 47) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -1204,7 +1204,7 @@ main()
 
   {
     cout << endl << "===================== Test 48) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "<esi:except>"
                       "<esi:include src=except />"
@@ -1218,7 +1218,7 @@ main()
 
   {
     cout << endl << "===================== Test 49) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -1236,7 +1236,7 @@ main()
 
   {
     cout << endl << "===================== Test 50) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -1256,7 +1256,7 @@ main()
 
   {
     cout << endl << "===================== Test 51) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "<esi:attempt>"
                       "<esi:include src=attempt />"
@@ -1276,7 +1276,7 @@ main()
 
   {
     cout << endl << "===================== Test 52) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:include src=pre />"
                       "foo"
                       "<esi:try>"
@@ -1298,7 +1298,7 @@ main()
 
   {
     cout << endl << "===================== Test 53) try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data1("<esi:include src=pre />"
                        "foo"
                        "<esi:try>\n\t  "
@@ -1381,7 +1381,7 @@ main()
 
   {
     cout << endl << "===================== Test 54) invalid choose-when" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:when test=foo>"
                       "<esi:include src=foo />"
@@ -1401,7 +1401,7 @@ main()
 
   {
     cout << endl << "===================== Test 55) invalid choose; multiple otherwise" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>\n"
                       "\t<esi:when test=foo>"
                       "<esi:include src=foo />"
@@ -1424,7 +1424,7 @@ main()
 
   {
     cout << endl << "===================== Test 56) invalid try block" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:try>"
                       "</esi:try>");
     DocNodeList node_list;
@@ -1435,7 +1435,7 @@ main()
 
   {
     cout << endl << "===================== Test 57) choose/try combo" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:when test=c1>"
                       "<esi:try>"
@@ -1543,7 +1543,7 @@ main()
 
   {
     cout << endl << "===================== Test 58) '>' and '>=' operators" << endl;
-    EsiParser parser("parser_test", &Debug, &Error);
+    EsiParser parser("parser_test", &Error);
     string input_data("<esi:choose>"
                       "<esi:when test=\"a>b\">foo</esi:when>"
                       "<esi:when test=\"c >= d\">bar</esi:when>"

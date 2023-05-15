@@ -21,11 +21,25 @@
 #include <string>
 #include <string_view>
 #include <ts/ts.h>
+#include <tscpp/api/Cleanup.h>
 #include <netinet/in.h>
 #include <memory>
 
-#define AuthLogDebug(fmt, ...) TSDebug("authproxy", "%s: " fmt, __func__, ##__VA_ARGS__)
+#ifndef CATCH_CONFIG_MAIN
+
+class AuthLogDbg
+{
+private:
+  inline static atscppapi::TSDbgCtlUniqPtr guard{TSDbgCtlCreate("authproxy")};
+
+public:
+  inline static TSDbgCtl const *const ctl{guard.get()};
+};
+
+#define AuthLogDebug(fmt, ...) TSDbg(AuthLogDbg::ctl, "%s: " fmt, __func__, ##__VA_ARGS__)
 #define AuthLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
+
+#endif // not defined CATCH_CONFIG_MAIN
 
 template <typename T>
 T *

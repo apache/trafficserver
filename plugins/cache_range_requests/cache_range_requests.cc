@@ -28,6 +28,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include "tscpp/api/Cleanup.h"
 
 #include <cinttypes>
 #include <cstdio>
@@ -37,11 +38,14 @@
 #include <string_view>
 
 #define PLUGIN_NAME         "cache_range_requests"
-#define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define DEBUG_LOG(fmt, ...) TSDbg(dbg_ctl, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
 namespace
 {
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PLUGIN_NAME)};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+
 using parent_select_mode_t = enum parent_select_mode {
   PS_DEFAULT,      // Default ATS parent selection mode
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
@@ -569,7 +573,7 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
                 static_cast<intmax_t>(txn_state->ims_time));
       if (ch_time < txn_state->ims_time) {
         TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
-        if (TSIsDebugTagSet(PLUGIN_NAME)) {
+        if (TSIsDbgCtlSet(dbg_ctl)) {
           int url_len         = 0;
           char *const req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
           if (nullptr != req_url) {

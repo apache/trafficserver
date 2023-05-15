@@ -39,7 +39,7 @@ using namespace EsiLib;
 int
 main()
 {
-  Utils::init(&Debug, &Error);
+  Utils::init(&Error);
 
   {
     cout << endl << "===================== Test 1" << endl;

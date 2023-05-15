@@ -46,8 +46,8 @@ public:
   };
 
   EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
-               EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func, HttpDataFetcher &fetcher,
-               EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr);
+               EsiLib::ComponentBase::Error error_func, HttpDataFetcher &fetcher, EsiLib::Variables &variables,
+               const EsiLib::HandlerManager &handler_mgr);
 
   /** Initializes the processor with the context of the request to be processed */
   bool start();

@@ -23,21 +23,27 @@
 
 #include "Utils.h"
 
+#include <tscpp/api/Cleanup.h>
+
 #include <sstream>
 
 using namespace EsiLib;
 
-ComponentBase::Debug Utils::DEBUG_LOG(nullptr);
 ComponentBase::Error Utils::ERROR_LOG(nullptr);
 
-#define DEBUG_TAG "EsiUtils"
+namespace
+{
+
+atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate("EsiUtils")};
+TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
+
+} // end anonymous namespace
 
 using std::string;
 
 void
-Utils::init(ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+Utils::init(ComponentBase::Error error_func)
 {
-  DEBUG_LOG = debug_func;
   ERROR_LOG = error_func;
 }
 
@@ -131,7 +137,7 @@ Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, H
       }
       if (key.size() && value.size()) {
         kvMap.insert(KeyValueMap::value_type(key, value));
-        DEBUG_LOG(DEBUG_TAG, "[%s] Read value [%s] for key [%s]", __FUNCTION__, value.c_str(), key.c_str());
+        TSDbg(dbg_ctl, "[%s] Read value [%s] for key [%s]", __FUNCTION__, value.c_str(), key.c_str());
       }
     }
     key.clear();
@@ -177,8 +183,8 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
             attr.value_len -= 2;
           }
           if (attr.name_len && attr.value_len) {
-            DEBUG_LOG(DEBUG_TAG, "[%s] Added attribute with name [%.*s] and value [%.*s]", __FUNCTION__, attr.name_len, attr.name,
-                      attr.value_len, attr.value);
+            TSDbg(dbg_ctl, "[%s] Added attribute with name [%.*s] and value [%.*s]", __FUNCTION__, attr.name_len, attr.name,
+                  attr.value_len, attr.value);
             attr_list.push_back(attr);
           } // else ignore empty name/value
         }   // else ignore attribute with no value
