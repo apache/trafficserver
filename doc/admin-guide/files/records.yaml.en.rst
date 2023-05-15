@@ -825,8 +825,8 @@ mptcp
 
    The range of origin server ports that can be used for tunneling via ``CONNECT``.
 
-   |TS| allows tunnels only to the specified ports. Supports both wildcards
-   (``*``) and ranges (e.g. ``0-1023``).
+   |TS| allows tunnels only to the specified ports. Values are space separated. Wildcards
+   (``*``), ranges (``0-1023``), and mixes of each (e.g. ``80 443 666-999``) are supported.
 
 .. note::
 
