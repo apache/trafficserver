@@ -570,6 +570,7 @@ Http09Transaction::state_stream_open(int event, void *edata)
     if (this->_read_event == edata) {
       this->_read_event = nullptr;
     }
+    [[fallthrough]];
   case VC_EVENT_READ_COMPLETE: {
     int64_t len = this->_process_read_vio();
     // if no progress, don't need to signal
@@ -584,6 +585,7 @@ Http09Transaction::state_stream_open(int event, void *edata)
     if (this->_write_event == edata) {
       this->_write_event = nullptr;
     }
+    [[fallthrough]];
   case VC_EVENT_WRITE_COMPLETE: {
     int64_t len = this->_process_write_vio();
     if (len > 0) {
