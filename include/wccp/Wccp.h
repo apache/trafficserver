@@ -23,19 +23,19 @@
 #pragma once
 
 #include <memory.h>
+#include <string_view>
 
 #include "tscore/TsBuffer.h"
 #include "tscore/Errata.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
+
 // Nasty, defining this with no prefix. The value is still available
 // in TS_VERSION_STRING.
 #undef VERSION
 
 // INADDR_ANY
 #include <netinet/in.h>
-
-#include <string_view>
 
 /// WCCP Support.
 namespace wccp
@@ -61,9 +61,9 @@ namespace detail
 
 /// Basic time unit for WCCP in seconds
 /// @note Sec 4.14: HERE_I_AM_T.
-static time_t const TIME_UNIT   = 10;
-static time_t const ASSIGN_WAIT = (3 * TIME_UNIT) / 2;
-static time_t const RAPID_TIME  = TIME_UNIT / 10;
+static time_t constexpr TIME_UNIT   = 10;
+static time_t constexpr ASSIGN_WAIT = (3 * TIME_UNIT) / 2;
+static time_t constexpr RAPID_TIME  = TIME_UNIT / 10;
 
 /// Service group related constants.
 /// @internal In a struct so enum values can be imported to more than
@@ -97,7 +97,7 @@ struct ServiceConstants {
 class ServiceGroup : public ServiceConstants
 {
 public:
-  using self = ServiceGroup; ///< Self reference type.
+  using self_type = ServiceGroup; ///< Self reference type.
 
   /// Type of service.
   enum Type : uint8_t {
@@ -153,9 +153,9 @@ public:
   /// Default constructor - no member initialization.
   ServiceGroup();
   /// Test for equivalent.
-  bool operator==(self const &that) const;
+  bool operator==(self_type const &that) const;
   /// Test for not equivalent.
-  bool operator!=(self const &that) const;
+  bool operator!=(self_type const &that) const;
 
   /// @name Accessors
   //@{
@@ -165,35 +165,35 @@ public:
                                              component header and service id are set to zero as required
                                              by the protocol.
                                          */
-  self &setSvcType(ServiceGroup::Type svc);
+  self_type &setSvcType(ServiceGroup::Type svc);
 
-  uint8_t getSvcId() const;   ///< Get service ID field.
-  self &setSvcId(uint8_t id); ///< Set service ID field to @a id.
+  uint8_t getSvcId() const;        ///< Get service ID field.
+  self_type &setSvcId(uint8_t id); ///< Set service ID field to @a id.
 
-  uint8_t getPriority() const;    ///< Get priority field.
-  self &setPriority(uint8_t pri); ///< Set priority field to @a p.
+  uint8_t getPriority() const;         ///< Get priority field.
+  self_type &setPriority(uint8_t pri); ///< Set priority field to @a p.
 
-  uint8_t getProtocol() const;  ///< Get protocol field.
-  self &setProtocol(uint8_t p); ///< Set protocol field to @a p.
+  uint8_t getProtocol() const;       ///< Get protocol field.
+  self_type &setProtocol(uint8_t p); ///< Set protocol field to @a p.
 
-  uint32_t getFlags() const;  ///< Get flags field.
-  self &setFlags(uint32_t f); ///< Set the flags in field to @a f.
+  uint32_t getFlags() const;       ///< Get flags field.
+  self_type &setFlags(uint32_t f); ///< Set the flags in field to @a f.
   /// Set the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self &enableFlags(uint32_t f);
+  self_type &enableFlags(uint32_t f);
   /// Clear the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self &disableFlags(uint32_t f);
+  self_type &disableFlags(uint32_t f);
 
   /// Get a port value.
   uint16_t getPort(int idx ///< Index of target port.
   ) const;
   /// Set a port value.
-  self &setPort(int idx,      ///< Index of port.
-                uint16_t port ///< Value for port.
+  self_type &setPort(int idx,      ///< Index of port.
+                     uint16_t port ///< Value for port.
   );
   /// Zero (clear) all ports.
-  self &clearPorts();
+  self_type &clearPorts();
   //@}
 
 protected:
@@ -214,13 +214,13 @@ enum SecurityOption {
 class EndPoint
 {
 public:
-  using self     = EndPoint; ///< Self reference type.
-  using ImplType = Impl;     ///< Implementation type.
+  using self_type = EndPoint; ///< Self reference type.
+  using ImplType  = Impl;     ///< Implementation type.
 
   /** Set the identifying IP address.
       This is also used as the address for the socket.
   */
-  self &setAddr(uint32_t addr ///< IP address.
+  self_type &setAddr(uint32_t addr ///< IP address.
   );
 
   /** Check if this endpoint is ready to use.
@@ -263,7 +263,7 @@ protected:
   /// Default constructor.
   EndPoint();
   /// Copy constructor.
-  EndPoint(self const &that);
+  EndPoint(self_type const &that);
   /// Force virtual destructor
   virtual ~EndPoint();
 
@@ -283,9 +283,9 @@ protected:
 class Cache : public EndPoint
 {
 public:
-  using self     = Cache;     ///< Self reference type.
-  using super    = EndPoint;  ///< Parent type.
-  using ImplType = CacheImpl; ///< Implementation type.
+  using self_type  = Cache;     ///< Self reference type.
+  using super_type = EndPoint;  ///< Parent type.
+  using ImplType   = CacheImpl; ///< Implementation type.
 
   class Service;
 
@@ -320,8 +320,8 @@ public:
       Seed routers are removed when a reply is received from that router.
 
   */
-  self &addSeedRouter(uint8_t id,   ///< Service group ID.
-                      uint32_t addr ///< IP address of router.
+  self_type &addSeedRouter(uint8_t id,   ///< Service group ID.
+                           uint32_t addr ///< IP address of router.
   );
 
   /// Number of seconds until next housekeeping activity is due.
@@ -335,7 +335,7 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType const *impl() const;
   /// Create a new implementation instance.
-  super::ImplType *make() override;
+  super_type::ImplType *make() override;
 };
 
 /** Hold a reference to a service group in this end point.
@@ -345,29 +345,29 @@ protected:
 class Cache::Service : public ServiceConstants
 {
 public:
-  using self = Service; ///< Self reference type.
+  using self_type = Service; ///< Self reference type.
 
   /// Default constructor (invalid reference).
   Service();
 
   /// Add an address for a seed router.
-  self &addSeedRouter(uint32_t addr ///< Router IP address.
+  self_type &addSeedRouter(uint32_t addr ///< Router IP address.
   );
   /// Set the security key.
-  self &setKey(char const *key /// Shared key.
+  self_type &setKey(char const *key /// Shared key.
   );
   /// Set the service local security option.
-  self &setSecurity(SecurityOption opt ///< Security style to use.
+  self_type &setSecurity(SecurityOption opt ///< Security style to use.
   );
   /// Set intercepted packet forwarding style.
-  self &setForwarding(PacketStyle style ///< Type of forwarding supported.
+  self_type &setForwarding(PacketStyle style ///< Type of forwarding supported.
   );
   /// Enable or disable packet return by layer 2 rewrite.
-  self &setReturn(PacketStyle style ///< Type of return supported.
+  self_type &setReturn(PacketStyle style ///< Type of return supported.
   );
 
   /// Set cache assignment style.
-  self &setCacheAssignment(CacheAssignmentStyle style ///< Style to use.
+  self_type &setCacheAssignment(CacheAssignmentStyle style ///< Style to use.
   );
 
 private:
@@ -380,9 +380,9 @@ private:
 class Router : public EndPoint
 {
 public:
-  using self     = Router;     ///< Self reference type.
-  using super    = EndPoint;   ///< Parent type.
-  using ImplType = RouterImpl; ///< Implementation type.
+  using self_type  = Router;     ///< Self reference type.
+  using super_type = EndPoint;   ///< Parent type.
+  using ImplType   = RouterImpl; ///< Implementation type.
 
   /// Default constructor
   Router();
@@ -398,12 +398,12 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType *impl();
   /// Create a new implementation instance.
-  super::ImplType *make() override;
+  super_type::ImplType *make() override;
 };
 
 // ------------------------------------------------------
 inline bool
-ServiceGroup::operator!=(self const &that) const
+ServiceGroup::operator!=(self_type const &that) const
 {
   return !(*this == that);
 }
