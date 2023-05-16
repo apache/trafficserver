@@ -120,7 +120,7 @@ HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   if (buf) {
     this->_process_read_vio();
-    this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
+    this->_read_event = this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
   }
 
   return &this->_read_vio;
@@ -145,7 +145,7 @@ HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
   if (c != nullptr && nbytes > 0) {
     // TODO Return nullptr if the stream is not on writable state
     this->_process_write_vio();
-    this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
+    this->_write_event = this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
   }
 
   return &this->_write_vio;
@@ -173,8 +173,6 @@ HQTransaction::do_io_close(int lerrno)
   this->_write_vio.nbytes = 0;
   this->_write_vio.op     = VIO::NONE;
   this->_write_vio.cont   = nullptr;
-
-  this->_proxy_ssn->do_io_close(lerrno);
 }
 
 void
@@ -208,6 +206,7 @@ HQTransaction::transaction_done()
 {
   // TODO: start closing transaction
   super::transaction_done();
+  delete this;
   return;
 }
 
@@ -327,10 +326,19 @@ Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::I
 
 Http3Transaction::~Http3Transaction()
 {
+  Http3TransDebug("Delete transaction");
+
+  // This should have already been called but call it here just incase.
+  do_io_close();
+
   delete this->_header_framer;
+  this->_header_framer = nullptr;
   delete this->_data_framer;
+  this->_data_framer = nullptr;
   delete this->_header_handler;
+  this->_header_handler = nullptr;
   delete this->_data_handler;
+  this->_data_handler = nullptr;
 }
 
 int
@@ -355,6 +363,9 @@ Http3Transaction::state_stream_open(int event, void *edata)
   switch (event) {
   case VC_EVENT_READ_READY:
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    if (this->_read_event == edata) {
+      this->_read_event = nullptr;
+    }
     // if no progress, don't need to signal
     if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
@@ -375,6 +386,9 @@ Http3Transaction::state_stream_open(int event, void *edata)
     this->_info.read_vio->reenable();
     break;
   case VC_EVENT_WRITE_READY:
+    if (this->_write_event == edata) {
+      this->_write_event = nullptr;
+    }
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     // if no progress, don't need to signal
     if (this->_process_write_vio() > 0) {
@@ -410,11 +424,17 @@ Http3Transaction::state_stream_closed(int event, void *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    if (this->_read_event == data) {
+      this->_read_event = nullptr;
+    }
   case VC_EVENT_READ_COMPLETE: {
     // ignore
     break;
   }
   case VC_EVENT_WRITE_READY:
+    if (this->_write_event == data) {
+      this->_write_event = nullptr;
+    }
   case VC_EVENT_WRITE_COMPLETE: {
     // ignore
     break;
@@ -547,6 +567,9 @@ Http09Transaction::state_stream_open(int event, void *edata)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    if (this->_read_event == edata) {
+      this->_read_event = nullptr;
+    }
   case VC_EVENT_READ_COMPLETE: {
     int64_t len = this->_process_read_vio();
     // if no progress, don't need to signal
@@ -558,6 +581,9 @@ Http09Transaction::state_stream_open(int event, void *edata)
     break;
   }
   case VC_EVENT_WRITE_READY:
+    if (this->_write_event == edata) {
+      this->_write_event = nullptr;
+    }
   case VC_EVENT_WRITE_COMPLETE: {
     int64_t len = this->_process_write_vio();
     if (len > 0) {
@@ -595,11 +621,17 @@ Http09Transaction::state_stream_closed(int event, void *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
+    if (this->_read_event == data) {
+      this->_read_event = nullptr;
+    }
   case VC_EVENT_READ_COMPLETE: {
     // ignore
     break;
   }
   case VC_EVENT_WRITE_READY:
+    if (this->_write_event == data) {
+      this->_write_event = nullptr;
+    }
   case VC_EVENT_WRITE_COMPLETE: {
     // ignore
     break;

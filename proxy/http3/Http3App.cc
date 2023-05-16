@@ -353,7 +353,6 @@ Http3App::_handle_bidi_stream_on_write_complete(int event, VIO *vio)
   // FIXME There may be data to read
   this->_qc->stream_manager()->delete_stream(stream_id);
   this->_streams.erase(stream_id);
-  delete txn;
 }
 
 //
