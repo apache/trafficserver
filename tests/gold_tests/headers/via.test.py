@@ -31,7 +31,12 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
+    ts = Test.MakeATSProcess("ts", enable_tls=True, enable_quic=True)
+else:
+    ts = Test.MakeATSProcess("ts", enable_tls=True)
+
+
 server = Test.MakeOriginServer("server", options={'--load': os.path.join(Test.TestDirectory, 'via-observer.py')})
 
 testName = "VIA"
@@ -64,7 +69,10 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 # Set up to check the output after the tests have run.
 via_log_id = Test.Disk.File("via.log")
-via_log_id.Content = "via.gold"
+if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
+    via_log_id.Content = "via_h3.gold"
+else:
+    via_log_id.Content = "via.gold"
 
 # Basic HTTP 1.1
 tr = Test.AddTestRun()
@@ -91,12 +99,21 @@ tr.StillRunningAfter = ts
 
 # HTTP 2
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --verbose --ipv4 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+tr.Processes.Default.Command = 'curl --verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+
+# HTTP 3
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    tr = Test.AddTestRun()
+    tr.Processes.Default.Command = 'curl --verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+        ts.Variables.ssl_port)
+    tr.Processes.Default.ReturnCode = 0
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts
 
 # TLS
 tr = Test.AddTestRun()
