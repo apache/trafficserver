@@ -188,6 +188,11 @@ private:
   void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
+  void _schedule_quiche_timeout();
+  void _unschedule_quiche_timeout();
+  void _close_quiche_timeout(Event *data);
+  Event *_quiche_timeout = nullptr;
+
   void _handle_read_ready();
   void _handle_write_ready();
   void _handle_interval();

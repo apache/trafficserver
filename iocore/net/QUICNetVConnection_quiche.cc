@@ -110,6 +110,10 @@ QUICNetVConnection::free(EThread *t)
   this->_udp_con = nullptr;
 
   quiche_conn_free(this->_quiche_con);
+  this->_quiche_con = nullptr;
+
+  this->_unschedule_quiche_timeout();
+  this->_unschedule_packet_write_ready();
 
   delete this->_application_map;
   this->_application_map = nullptr;
@@ -150,6 +154,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_schedule_packet_write_ready(true);
     break;
   case EVENT_INTERVAL:
+    this->_close_quiche_timeout(data);
     this->_handle_interval();
     break;
   case VC_EVENT_EOS:
@@ -181,6 +186,7 @@ QUICNetVConnection::state_established(int event, Event *data)
     this->_schedule_packet_write_ready(true);
     break;
   case EVENT_INTERVAL:
+    this->_close_quiche_timeout(data);
     this->_handle_interval();
     break;
   case VC_EVENT_EOS:
@@ -309,7 +315,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
 
-  this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
+  this->_schedule_quiche_timeout();
 
   return EVENT_DONE;
 }
@@ -551,6 +557,30 @@ QUICNetVConnection::_close_packet_write_ready(Event *data)
 }
 
 void
+QUICNetVConnection::_schedule_quiche_timeout()
+{
+  if (!this->_quiche_timeout) {
+    this->_quiche_timeout = this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_quiche_timeout()
+{
+  if (this->_quiche_timeout) {
+    this->_quiche_timeout->cancel();
+    this->_quiche_timeout = nullptr;
+  }
+}
+
+void
+QUICNetVConnection::_close_quiche_timeout(Event *data)
+{
+  ink_assert(this->_quiche_timeout == data);
+  this->_quiche_timeout = nullptr;
+}
+
+void
 QUICNetVConnection::_handle_read_ready()
 {
   quiche_stream_iter *readable = quiche_conn_readable(this->_quiche_con);
@@ -649,7 +679,7 @@ QUICNetVConnection::_handle_interval()
 
   } else {
     // Just schedule timeout event again if the connection is still open
-    this->thread->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(this->_quiche_con)));
+    this->_schedule_quiche_timeout();
   }
 }
 
