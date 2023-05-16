@@ -29,6 +29,8 @@
  ***************************************************************************/
 #include "tscore/ink_platform.h"
 #include "swoc/swoc_meta.h"
+#include "swoc/TextView.h"
+#include "swoc/string_view_util.h"
 
 #include "MIME.h"
 #include "LogUtils.h"
@@ -165,14 +167,14 @@ namespace
 {
 struct cmp_str {
   bool
-  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  operator()(swoc::TextView const &a, swoc::TextView const &b) const
   {
-    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+    return strcasecmp(a, b) < 0;
   }
 };
 } // namespace
 
-using milestone_map = std::map<ts::ConstBuffer, TSMilestonesType, cmp_str>;
+using milestone_map = std::map<swoc::TextView, TSMilestonesType, cmp_str>;
 static milestone_map m_milestone_map;
 
 struct milestone {
@@ -213,7 +215,7 @@ LogField::init_milestone_container()
   if (m_milestone_map.empty()) {
     for (unsigned i = 0; i < countof(milestones); ++i) {
       m_milestone_map.insert(
-        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
+        std::make_pair(swoc::TextView(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
     }
   }
 }
@@ -283,7 +285,7 @@ LogField::milestone_from_m_name()
   milestone_map::iterator it;
   TSMilestonesType result = TS_MILESTONE_LAST_ENTRY;
 
-  it = m_milestone_map.find(ts::ConstBuffer(m_name, strlen(m_name)));
+  it = m_milestone_map.find(m_name);
   if (it != m_milestone_map.end()) {
     result = it->second;
   }
@@ -295,9 +297,9 @@ int
 LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 {
   milestone_map::iterator it;
-  ts::ConstBuffer ms1_name, ms2_name(m_name, strlen(m_name));
+  swoc::TextView ms1_name, ms2_name(m_name);
 
-  ms1_name = ms2_name.splitOn('-');
+  ms1_name = ms2_name.take_prefix_at('-');
 
   it = m_milestone_map.find(ms1_name);
   if (it != m_milestone_map.end()) {
