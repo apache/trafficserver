@@ -228,10 +228,10 @@ Impl::handleMessage()
 
   // Check to see if there is a valid header.
   MsgHeaderComp header;
-  MsgBuffer msg_buffer(buffer, n);
+  MsgBuffer msg_buffer(buffer_type(buffer, n));
   if (PARSE_SUCCESS == header.parse(msg_buffer)) {
     message_type_t msg_type = header.getType();
-    ts::Buffer chunk(buffer, n);
+    buffer_type chunk(buffer, n);
 
     switch (msg_type) {
     case HERE_I_AM:
@@ -257,22 +257,22 @@ Impl::handleMessage()
 }
 
 ts::Errata
-Impl::handleHereIAm(IpHeader const &, ts::Buffer const &)
+Impl::handleHereIAm(IpHeader const &, buffer_type const &)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
 }
 ts::Errata
-Impl::handleISeeYou(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleISeeYou(IpHeader const &, buffer_type const & /* data ATS_UNUSED */)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
 }
 ts::Errata
-Impl::handleRedirectAssign(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleRedirectAssign(IpHeader const &, buffer_type const & /* data ATS_UNUSED */)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
 }
 ts::Errata
-Impl::handleRemovalQuery(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleRemovalQuery(IpHeader const &, buffer_type const & /* data ATS_UNUSED */)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
@@ -604,7 +604,7 @@ CacheImpl::housekeeping()
   static size_t const BUFFER_SIZE = 4096;
   MsgBuffer msg_buffer;
   char msg_data[BUFFER_SIZE];
-  msg_buffer.set(msg_data, BUFFER_SIZE);
+  msg_buffer.assign({msg_data, BUFFER_SIZE});
 
   // Set up everything except the IP address.
   memset(&dst_addr, 0, sizeof(dst_addr));
@@ -690,7 +690,7 @@ CacheImpl::housekeeping()
 }
 
 ts::Errata
-CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer const &chunk)
+CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, buffer_type const &chunk)
 {
   ts::Errata zret;
   ISeeYouMsg msg;
@@ -849,7 +849,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
 }
 
 ts::Errata
-CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer const &chunk)
+CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, buffer_type const &chunk)
 {
   ts::Errata zret;
   RemovalQueryMsg msg;
@@ -937,7 +937,7 @@ RouterImpl::GroupData::resizeRouterSources()
 }
 
 ts::Errata
-RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
+RouterImpl::handleHereIAm(IpHeader const &ip_hdr, buffer_type const &chunk)
 {
   ts::Errata zret;
   HereIAmMsg msg;
@@ -1058,7 +1058,7 @@ RouterImpl::xmitISeeYou()
   memset(&dst_addr, 0, sizeof(dst_addr));
   dst_addr.sin_family = AF_INET;
   dst_addr.sin_port   = htons(DEFAULT_PORT);
-  buffer.set(data, BUFFER_SIZE);
+  buffer.assign({data, BUFFER_SIZE});
 
   // Send out messages for each service group.
   for (GroupMap::iterator svc_spot = m_groups.begin(), svc_limit = m_groups.end(); svc_spot != svc_limit; ++svc_spot) {

@@ -25,17 +25,17 @@
 #include <memory.h>
 #include <string_view>
 
-#include "tscore/TsBuffer.h"
-#include "tscore/Errata.h"
+// INADDR_ANY
+#include <netinet/in.h>
+
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
+#include "tscore/IntrusivePtr.h"
+#include "tscore/Errata.h"
 
 // Nasty, defining this with no prefix. The value is still available
 // in TS_VERSION_STRING.
 #undef VERSION
-
-// INADDR_ANY
-#include <netinet/in.h>
 
 /// WCCP Support.
 namespace wccp
