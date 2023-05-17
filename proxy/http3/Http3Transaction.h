@@ -96,7 +96,7 @@ public:
   using super = HQTransaction;
 
   Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
-  ~Http3Transaction();
+  virtual ~Http3Transaction();
 
   int state_stream_open(int event, void *data) override;
   int state_stream_closed(int event, void *data) override;
