@@ -32,11 +32,12 @@
 
 #include "P_AIO.h"
 
-#if defined(HAVE_EVENTFD) && AIO_MODE == AIO_MODE_IO_URING
+#if AIO_MODE == AIO_MODE_NATIVE
+
+#ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
 #endif
 
-#if AIO_MODE == AIO_MODE_NATIVE
 #define AIO_PERIOD -HRTIME_MSECONDS(10)
 #else
 
