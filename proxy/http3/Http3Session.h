@@ -77,6 +77,9 @@ public:
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
 
+  // Implement ProxySession interface
+  const char *get_protocol_string() const override;
+
   QPACK *local_qpack();
   QPACK *remote_qpack();
 
