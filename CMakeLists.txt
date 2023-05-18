@@ -99,6 +99,9 @@ find_package(PCRE)
 include(FindOpenSSL)
 find_package(OpenSSL)
 
+# Find ccache
+include(find_ccache)
+
 # Check for IO faculties
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
