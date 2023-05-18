@@ -173,42 +173,7 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
       SSL_set_bio(ssl, rbio, wbio);
 
 #if TS_HAS_TLS_EARLY_DATA
-      // Must disable OpenSSL's internal anti-replay if external cache is used with
-      // 0-rtt, otherwise session reuse will be broken. The freshness check described
-      // in https://tools.ietf.org/html/rfc8446#section-8.3 is still performed. But we
-      // still need to implement something to try to prevent replay atacks.
-      //
-      // We are now also disabling this when using OpenSSL's internal cache, since we
-      // are calling "ssl_accept" non-blocking, it seems to be confusing the anti-replay
-      // mechanism and causing session resumption to fail.
-      SSLConfig::scoped_config params;
-      if (SSL_version(ssl) >= TLS1_3_VERSION && params->server_max_early_data > 0) {
-#ifdef HAVE_SSL_SET_MAX_EARLY_DATA
-        bool ret1 = false;
-        bool ret2 = false;
-        if ((ret1 = SSL_set_max_early_data(ssl, params->server_max_early_data)) == 1) {
-          Debug("ssl_early_data", "SSL_set_max_early_data: success");
-        } else {
-          Debug("ssl_early_data", "SSL_set_max_early_data: failed");
-        }
-
-        if ((ret2 = SSL_set_recv_max_early_data(ssl, params->server_recv_max_early_data)) == 1) {
-          Debug("ssl_early_data", "SSL_set_recv_max_early_data: success");
-        } else {
-          Debug("ssl_early_data", "SSL_set_recv_max_early_data: failed");
-        }
-
-        if (ret1 && ret2) {
-          Debug("ssl_early_data", "Must disable anti-replay if 0-rtt is enabled.");
-          SSL_set_options(ssl, SSL_OP_NO_ANTI_REPLAY);
-        }
-#else
-        // If SSL_set_max_early_data is unavailable, it's probably BoringSSL,
-        // and SSL_set_early_data_enabled should be available.
-        SSL_set_early_data_enabled(ssl, 1);
-        Warning("max_early_data is not used due to library limitations");
-#endif
-      }
+      update_early_data_config(SSLConfigParams::server_max_early_data, SSLConfigParams::server_recv_max_early_data);
 #endif
     }
     this->_bindSSLObject();
@@ -2125,7 +2090,7 @@ SSLNetVConnection::_ssl_accept()
   int ssl_error = SSL_ERROR_NONE;
 
 #if TS_HAS_TLS_EARLY_DATA
-  if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
+  if (!this->_early_data_finish) {
 #if HAVE_SSL_READ_EARLY_DATA
     size_t nread = 0;
 #else
@@ -2375,7 +2340,10 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
       return SSL_ERROR_NONE;
     }
 
-    if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
+    bool early_data_enabled = this->hints_from_sni.server_max_early_data.has_value() ?
+                                this->hints_from_sni.server_max_early_data.value() > 0 :
+                                SSLConfigParams::server_max_early_data > 0;
+    if (early_data_enabled && !this->_early_data_finish) {
       bool had_error_on_reading_early_data = false;
       bool finished_reading_early_data     = false;
       Debug("ssl_early_data", "More early data to read.");
@@ -2435,7 +2403,6 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %" PRId64, nread);
         }
       }
-
       return ssl_error;
     }
   }
@@ -2488,4 +2455,46 @@ SSLNetVConnection::set_valid_tls_version_max(int max)
     ver = TLS1_VERSION + max;
   }
   SSL_set_max_proto_version(this->ssl, ver);
+}
+
+void
+SSLNetVConnection::update_early_data_config(uint32_t max_early_data, uint32_t recv_max_early_data)
+{
+#if TS_HAS_TLS_EARLY_DATA
+  // Must disable OpenSSL's internal anti-replay if external cache is used with
+  // 0-rtt, otherwise session reuse will be broken. The freshness check described
+  // in https://tools.ietf.org/html/rfc8446#section-8.3 is still performed. But we
+  // still need to implement something to try to prevent replay atacks.
+  //
+  // We are now also disabling this when using OpenSSL's internal cache, since we
+  // are calling "ssl_accept" non-blocking, it seems to be confusing the anti-replay
+  // mechanism and causing session resumption to fail.
+  if (SSL_version(ssl) >= TLS1_3_VERSION) {
+#ifdef HAVE_SSL_SET_MAX_EARLY_DATA
+    bool ret1 = false;
+    bool ret2 = false;
+    if ((ret1 = SSL_set_max_early_data(ssl, max_early_data)) == 1) {
+      Debug("ssl_early_data", "SSL_set_max_early_data %u: success", max_early_data);
+    } else {
+      Debug("ssl_early_data", "SSL_set_max_early_data %u: failed", max_early_data);
+    }
+
+    if ((ret2 = SSL_set_recv_max_early_data(ssl, recv_max_early_data)) == 1) {
+      Debug("ssl_early_data", "SSL_set_recv_max_early_data %u: success", recv_max_early_data);
+    } else {
+      Debug("ssl_early_data", "SSL_set_recv_max_early_data %u: failed", recv_max_early_data);
+    }
+
+    if (ret1 && ret2) {
+      Debug("ssl_early_data", "Must disable anti-replay if 0-rtt is enabled.");
+      SSL_set_options(ssl, SSL_OP_NO_ANTI_REPLAY);
+    }
+#else
+    // If SSL_set_max_early_data is unavailable, it's probably BoringSSL,
+    // and SSL_set_early_data_enabled should be available.
+    SSL_set_early_data_enabled(ssl, max_early_data > 0 ? 1 : 0);
+    Warning("max_early_data is not used due to library limitations");
+#endif
+  }
+#endif
 }

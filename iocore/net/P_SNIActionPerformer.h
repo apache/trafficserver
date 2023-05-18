@@ -411,3 +411,29 @@ public:
 private:
   std::string_view policy{};
 };
+
+class ServerMaxEarlyData : public ActionItem
+{
+public:
+  ServerMaxEarlyData(uint32_t value) : server_max_early_data(value) {}
+  ~ServerMaxEarlyData() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+#if TS_HAS_TLS_EARLY_DATA
+    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+    if (ssl_vc) {
+      ssl_vc->hints_from_sni.server_max_early_data = server_max_early_data;
+      const uint32_t EARLY_DATA_DEFAULT_SIZE       = 16384;
+      const uint32_t server_recv_max_early_data =
+        server_max_early_data > 0 ? std::max(server_max_early_data, EARLY_DATA_DEFAULT_SIZE) : 0;
+      ssl_vc->update_early_data_config(server_max_early_data, server_recv_max_early_data);
+    }
+#endif
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  uint32_t server_max_early_data = 0;
+};

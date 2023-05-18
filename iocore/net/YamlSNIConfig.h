@@ -58,6 +58,7 @@ TSDECL(valid_tls_version_max_in);
 TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
 TSDECL(host_sni_policy);
+TSDECL(server_max_early_data);
 #undef TSDECL
 
 struct YamlSNIConfig {
@@ -89,6 +90,7 @@ struct YamlSNIConfig {
     int valid_tls_version_max_in = -1;
     std::vector<int> tunnel_alpn{};
     std::optional<int> http2_buffer_water_mark;
+    uint32_t server_max_early_data = 0;
 
     bool tunnel_prewarm_srv                  = false;
     uint32_t tunnel_prewarm_min              = 0;
