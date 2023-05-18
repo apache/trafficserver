@@ -47,6 +47,7 @@ github:
           - AuTest 2of4
           - AuTest 3of4
           - Rocky
+          - CentOS
           - Clang-Analyzer
           - Clang-Format
           - CMake
