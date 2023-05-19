@@ -303,7 +303,7 @@ Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::I
 {
   QUICStreamId stream_id = this->_info.adapter.stream().id();
 
-  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
+  this->_header_framer = new Http3HeaderFramer(this, session->local_qpack(), stream_id);
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
   this->_frame_collector.add_generator(this->_header_framer);
   this->_frame_collector.add_generator(this->_data_framer);
@@ -315,7 +315,7 @@ Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::I
   } else {
     http_type = HTTP_TYPE_REQUEST;
   }
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id);
+  this->_header_handler = new Http3HeaderVIOAdaptor(http_type, session->remote_qpack(), stream_id);
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
 
   this->_frame_dispatcher.add_handler(this->_header_handler);
@@ -339,6 +339,24 @@ Http3Transaction::~Http3Transaction()
   this->_header_handler = nullptr;
   delete this->_data_handler;
   this->_data_handler = nullptr;
+}
+
+bool
+Http3Transaction::supports_direct_header_passing() const
+{
+  return true;
+}
+
+bool
+Http3Transaction::is_parsed_receive_header_ready() const
+{
+  return this->_header_handler->is_complete();
+}
+
+const HTTPHdr *
+Http3Transaction::parsed_receive_header() const
+{
+  return this->_header_handler->get_header();
 }
 
 int
@@ -527,11 +545,10 @@ Http3Transaction::_process_write_vio()
   return nwritten;
 }
 
-// TODO:  Just a place holder for now
 bool
 Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
 {
-  return false;
+  return this->_data_handler->has_data();
 }
 
 //

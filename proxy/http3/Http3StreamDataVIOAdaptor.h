@@ -38,6 +38,7 @@ public:
 
   // Http3StreamDataVIOAdaptor
   void finalize();
+  bool has_data() const;
 
 private:
   VIO *_sink_vio             = nullptr;

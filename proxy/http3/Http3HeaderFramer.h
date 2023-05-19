@@ -32,12 +32,11 @@
 #include "Http3Frame.h"
 
 class Http3Transaction;
-class VIO;
 
 class Http3HeaderFramer : public Http3FrameGenerator
 {
 public:
-  Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
+  Http3HeaderFramer(Http3Transaction *transaction, QPACK *qpack, uint64_t stream_id);
   ~Http3HeaderFramer();
 
   // Http3FrameGenerator
@@ -46,7 +45,6 @@ public:
 
 private:
   Http3Transaction *_transaction       = nullptr;
-  VIO *_source_vio                     = nullptr;
   QPACK *_qpack                        = nullptr;
   MIOBuffer *_header_block             = nullptr;
   IOBufferReader *_header_block_reader = nullptr;

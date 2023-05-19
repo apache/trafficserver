@@ -23,15 +23,14 @@
 
 #include "Http3HeaderFramer.h"
 
-#include "I_VIO.h"
-
 #include "HTTP.h"
+#include "HttpSM.h"
 
 #include "Http3Frame.h"
 #include "Http3Transaction.h"
 
-Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id)
-  : _transaction(transaction), _source_vio(source), _qpack(qpack), _stream_id(stream_id)
+Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, QPACK *qpack, uint64_t stream_id)
+  : _transaction(transaction), _qpack(qpack), _stream_id(stream_id)
 {
   http_parser_init(&this->_http_parser);
 }
@@ -47,8 +46,14 @@ Http3HeaderFramer::~Http3HeaderFramer()
 Http3FrameUPtr
 Http3HeaderFramer::generate_frame()
 {
-  if (!this->_source_vio->get_reader()) {
-    return Http3FrameFactory::create_null_frame();
+  if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
+    if (!this->_transaction->get_sm()->get_server_request_header()) {
+      return Http3FrameFactory::create_null_frame();
+    }
+  } else {
+    if (!this->_transaction->get_sm()->get_client_response_header()) {
+      return Http3FrameFactory::create_null_frame();
+    }
   }
 
   ink_assert(!this->_transaction->is_response_header_sent());
@@ -83,33 +88,29 @@ Http3HeaderFramer::is_done() const
 void
 Http3HeaderFramer::_generate_header_block()
 {
-  // Prase response header and generate header block
-  int bytes_used           = 0;
-  ParseResult parse_result = PARSE_RESULT_ERROR;
+  const HTTPHdr *base;
 
   if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
     this->_header.create(HTTP_TYPE_REQUEST, HTTP_3_0);
-    parse_result = this->_header.parse_req(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
+    base = this->_transaction->get_sm()->get_server_request_header();
   } else {
     this->_header.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
-    parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
+    base = this->_transaction->get_sm()->get_client_response_header();
   }
-  this->_source_vio->ndone += bytes_used;
 
-  switch (parse_result) {
-  case PARSE_RESULT_DONE: {
+  if (base != nullptr) {
+    // Can't use _hedaer.copy(h) because pseudo headers must be at the beginning
+    this->_header.status_set(base->status_get());
+    for (auto &&ite = base->begin(); ite != base->end(); ite++) {
+      std::string_view name  = ite->name_get();
+      std::string_view value = ite->value_get();
+      auto *f                = this->_header.field_create(name.data(), name.length());
+      f->value_set(this->_header.m_heap, this->_header.m_mime, value.data(), value.length());
+      this->_header.field_attach(f);
+    }
     this->_hvc.convert(this->_header, 1, 3);
-
     this->_header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     this->_header_block_reader = this->_header_block->alloc_reader();
-
     this->_qpack->encode(this->_stream_id, this->_header, this->_header_block, this->_header_block_len);
-    break;
-  }
-  case PARSE_RESULT_CONT:
-    break;
-  default:
-    Debug("http3_trans", "Ignore invalid headers");
-    break;
   }
 }

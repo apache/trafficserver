@@ -23,11 +23,10 @@
 
 #include "Http3HeaderVIOAdaptor.h"
 
-#include "I_VIO.h"
 #include "HTTP.h"
 
-Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)
-  : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id)
+Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(HTTPType http_type, QPACK *qpack, uint64_t stream_id)
+  : _qpack(qpack), _stream_id(stream_id)
 {
   SET_HANDLER(&Http3HeaderVIOAdaptor::event_handler);
 
@@ -73,6 +72,12 @@ Http3HeaderVIOAdaptor::is_complete()
   return this->_is_complete;
 }
 
+const HTTPHdr *
+Http3HeaderVIOAdaptor::get_header()
+{
+  return &this->_header;
+}
+
 int
 Http3HeaderVIOAdaptor::event_handler(int event, Event *data)
 {
@@ -100,41 +105,6 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
     Debug("http3", "PARSE_RESULT_ERROR");
     return -1;
   }
-
-  // FIXME: response header might be delayed from first response body because of callback from QPACK
-  // Workaround fix for mixed response header and body
-  if (http_hdr_type_get(this->_header.m_http) == HTTP_TYPE_RESPONSE) {
-    return 0;
-  }
-
-  SCOPED_MUTEX_LOCK(lock, this->_sink_vio->mutex, this_ethread());
-  MIOBuffer *writer = this->_sink_vio->get_writer();
-
-  // TODO: Http2Stream::send_request has same logic. It originally comes from HttpSM::write_header_into_buffer.
-  // a). Make HttpSM::write_header_into_buffer static
-  //   or
-  // b). Add interface to HTTPHdr to dump data
-  //   or
-  // c). Add interface to HttpSM to handle HTTPHdr directly
-  int bufindex;
-  int dumpoffset = 0;
-  int done, tmp;
-  IOBufferBlock *block;
-  do {
-    bufindex = 0;
-    tmp      = dumpoffset;
-    block    = writer->get_current_block();
-    if (!block) {
-      writer->add_block();
-      block = writer->get_current_block();
-    }
-    done        = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
-    dumpoffset += bufindex;
-    writer->fill(bufindex);
-    if (!done) {
-      writer->add_block();
-    }
-  } while (!done);
 
   this->_is_complete = true;
   return 1;

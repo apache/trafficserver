@@ -46,7 +46,7 @@ public:
   HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~HQTransaction();
 
-  // Implement ProxyClienTransaction interface
+  // Implement ProxyTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
   void cancel_inactivity_timeout() override;
@@ -98,6 +98,12 @@ public:
   Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~Http3Transaction();
 
+  // ProxyTransaction
+  virtual bool supports_direct_header_passing() const override;
+  virtual bool is_parsed_receive_header_ready() const override;
+  virtual const HTTPHdr *parsed_receive_header() const override;
+
+  // HQTransaction
   int state_stream_open(int event, void *data) override;
   int state_stream_closed(int event, void *data) override;
 

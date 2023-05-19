@@ -30,7 +30,7 @@
 class Http3HeaderVIOAdaptor : public Continuation, public Http3FrameHandler
 {
 public:
-  Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id);
+  Http3HeaderVIOAdaptor(HTTPType http_type, QPACK *qpack, uint64_t stream_id);
   ~Http3HeaderVIOAdaptor();
 
   // Http3FrameHandler
@@ -38,10 +38,10 @@ public:
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
 
   bool is_complete();
+  const HTTPHdr *get_header();
   int event_handler(int event, Event *data);
 
 private:
-  VIO *_sink_vio      = nullptr;
   QPACK *_qpack       = nullptr;
   uint64_t _stream_id = 0;
   bool _is_complete   = false;

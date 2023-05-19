@@ -52,3 +52,9 @@ Http3StreamDataVIOAdaptor::finalize()
 {
   this->_sink_vio->nbytes = this->_total_data_length;
 }
+
+bool
+Http3StreamDataVIOAdaptor::has_data() const
+{
+  return this->_total_data_length > 0;
+}
