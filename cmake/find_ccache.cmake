@@ -15,9 +15,10 @@
 #
 #######################
 
-option(AUTO_CCACHE "Use ccache to speed up rebuilds" ON)
+option(ENABLE_CCACHE "Use ccache to speed up rebuilds" ON)
 find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM AND ${AUTO_CCACHE})
+if(CCACHE_PROGRAM AND ${ENABLE_CCACHE})
   message(STATUS "Using ${CCACHE_PROGRAM} as compiler launcher")
   set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+  set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
