@@ -636,9 +636,11 @@ private:
   SNIRoutingType _tunnel_type                 = SNIRoutingType::NONE;
   PreWarmSM *_prewarm_sm                      = nullptr;
   PostDataBuffers _postbuf;
-  NetVConnection *_netvc        = nullptr;
-  IOBufferReader *_netvc_reader = nullptr;
-  MIOBuffer *_netvc_read_buffer = nullptr;
+  NetVConnection *_netvc                = nullptr;
+  IOBufferReader *_netvc_reader         = nullptr;
+  MIOBuffer *_netvc_read_buffer         = nullptr;
+  bool _client_response_header_is_ready = false;
+  bool _server_request_header_is_ready  = false;
 
   void kill_this();
   void update_stats();
@@ -655,6 +657,9 @@ public:
   int client_transaction_id() const;
   int client_transaction_priority_weight() const;
   int client_transaction_priority_dependence() const;
+
+  const HTTPHdr *get_client_response_header() const;
+  const HTTPHdr *get_server_request_header() const;
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -743,7 +748,10 @@ HttpSM::get_cache_sm()
 inline int
 HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 {
-  if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
+  if (ua_txn->supports_direct_header_passing()) {
+    this->_client_response_header_is_ready = true;
+    return 0;
+  } else if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
     return 0;
   } else {
     return write_header_into_buffer(h, b);

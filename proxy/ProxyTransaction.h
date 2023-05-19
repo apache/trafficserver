@@ -56,6 +56,10 @@ public:
   virtual bool expect_receive_trailer() const;
   virtual void set_expect_receive_trailer();
 
+  virtual bool supports_direct_header_passing() const;
+  virtual bool is_parsed_receive_header_ready() const;
+  virtual const HTTPHdr *parsed_receive_header() const;
+
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
@@ -289,6 +293,24 @@ ProxyTransaction::cancel_active_timeout()
   if (_proxy_ssn) {
     _proxy_ssn->cancel_active_timeout();
   }
+}
+
+inline bool
+ProxyTransaction::supports_direct_header_passing() const
+{
+  return false;
+}
+
+inline bool
+ProxyTransaction::is_parsed_receive_header_ready() const
+{
+  return false;
+}
+
+inline const HTTPHdr *
+ProxyTransaction::parsed_receive_header() const
+{
+  return nullptr;
 }
 
 // See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.

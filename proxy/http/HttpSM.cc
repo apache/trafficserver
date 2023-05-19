@@ -728,11 +728,22 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  ParseResult state = t_state.hdr_info.client_request.parse_req(
-    &http_parser, ua_txn->get_remote_reader(), &bytes_used, ua_entry->eos, t_state.http_config_param->strict_uri_parsing,
-    t_state.http_config_param->http_request_line_max_size, t_state.http_config_param->http_hdr_field_max_size);
+  ParseResult state;
+  if (ua_txn->supports_direct_header_passing()) {
+    if (ua_txn->is_parsed_receive_header_ready()) {
+      t_state.hdr_info.client_request.copy(ua_txn->parsed_receive_header());
+      client_request_hdr_bytes = t_state.hdr_info.client_request.length_get();
+      state                    = PARSE_RESULT_DONE;
+    } else {
+      state = PARSE_RESULT_CONT;
+    }
+  } else {
+    state = t_state.hdr_info.client_request.parse_req(
+      &http_parser, ua_txn->get_remote_reader(), &bytes_used, ua_entry->eos, t_state.http_config_param->strict_uri_parsing,
+      t_state.http_config_param->http_request_line_max_size, t_state.http_config_param->http_hdr_field_max_size);
 
-  client_request_hdr_bytes += bytes_used;
+    client_request_hdr_bytes += bytes_used;
+  }
 
   // Check to see if we are over the hdr size limit
   if (client_request_hdr_bytes > t_state.txn_conf->request_hdr_max_size) {
@@ -6679,8 +6690,13 @@ HttpSM::setup_server_send_request()
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
-  IOBufferReader *buf_start = server_entry->write_buffer->alloc_reader();
-  server_request_hdr_bytes = hdr_length = write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
+  if (server_txn->supports_direct_header_passing()) {
+    this->_server_request_header_is_ready = true;
+    server_request_hdr_bytes              = t_state.hdr_info.server_request.length_get();
+    hdr_length                            = 0;
+  } else {
+    server_request_hdr_bytes = hdr_length = write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
+  }
 
   // the plugin decided to append a message to the request
   if (t_state.api_server_request_body_set) {
@@ -6690,6 +6706,7 @@ HttpSM::setup_server_send_request()
   }
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
+  IOBufferReader *buf_start                   = server_entry->write_buffer->alloc_reader();
   server_entry->write_vio                     = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 
   // Make sure the VC is using correct timeouts.  We may be reusing a previously used server session
@@ -8821,5 +8838,25 @@ HttpSM::milestone_update_api_time()
       milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
     }
     this_ethread()->metrics.record_api_time(delta);
+  }
+}
+
+const HTTPHdr *
+HttpSM::get_client_response_header() const
+{
+  if (this->_client_response_header_is_ready) {
+    return &t_state.hdr_info.client_response;
+  } else {
+    return nullptr;
+  }
+}
+
+const HTTPHdr *
+HttpSM::get_server_request_header() const
+{
+  if (this->_server_request_header_is_ready) {
+    return &t_state.hdr_info.server_request;
+  } else {
+    return nullptr;
   }
 }
