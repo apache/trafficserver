@@ -885,10 +885,10 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ttms", field);
 
-  field = new LogField("transfer_time_ms_hex", "ttmh", LogField::sINT, &LogAccess::marshal_transfer_time_ms,
+  field = new LogField("transfer_time_ms_hex", "ttmsh", LogField::sINT, &LogAccess::marshal_transfer_time_ms,
                        &LogAccess::unmarshal_int_to_str_hex);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("ttmh", field);
+  field_symbol_hash.emplace("ttmsh", field);
 
   field = new LogField("transfer_time_ms_fractional", "ttmsf", LogField::sINT, &LogAccess::marshal_transfer_time_ms,
                        &LogAccess::unmarshal_ttmsf);
