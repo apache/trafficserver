@@ -65,19 +65,30 @@ public:
   virtual void reenable(VIO *) override;
 
   // HQTransaction
-  virtual int state_stream_open(int, void *)             = 0;
-  virtual int state_stream_closed(int event, void *data) = 0;
+  virtual int state_stream_open(int event, Event *data)   = 0;
+  virtual int state_stream_closed(int event, Event *data) = 0;
   NetVConnectionContext_t direction() const;
 
 protected:
   virtual int64_t _process_read_vio()  = 0;
   virtual int64_t _process_write_vio() = 0;
-  Event *_send_tracked_event(Event *, int, VIO *);
+  void _schedule_read_ready_event();
+  void _unschedule_read_ready_event();
+  void _close_read_ready_event(Event *e);
+  void _schedule_read_complete_event();
+  void _unschedule_read_complete_event();
+  void _close_read_complete_event(Event *e);
+  void _schedule_write_ready_event();
+  void _unschedule_write_ready_event();
+  void _close_write_ready_event(Event *e);
+  void _schedule_write_complete_event();
+  void _unschedule_write_complete_event();
+  void _close_write_complete_event(Event *e);
   void _signal_read_event();
   void _signal_write_event();
+  void _delete_if_possible();
 
-  EThread *_thread           = nullptr;
-  Event *_cross_thread_event = nullptr;
+  EThread *_thread = nullptr;
 
   MIOBuffer _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   QUICStreamVCAdapter::IOInfo &_info;
@@ -86,8 +97,12 @@ protected:
 
   VIO _read_vio;
   VIO _write_vio;
-  Event *_read_event  = nullptr;
-  Event *_write_event = nullptr;
+  Event *_read_ready_event     = nullptr;
+  Event *_read_complete_event  = nullptr;
+  Event *_write_ready_event    = nullptr;
+  Event *_write_complete_event = nullptr;
+
+  bool _transaction_done = false;
 };
 
 class Http3Transaction : public HQTransaction
@@ -98,8 +113,8 @@ public:
   Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~Http3Transaction();
 
-  int state_stream_open(int event, void *data) override;
-  int state_stream_closed(int event, void *data) override;
+  int state_stream_open(int event, Event *data) override;
+  int state_stream_closed(int event, Event *data) override;
 
   void do_io_close(int lerrno = -1) override;
 
@@ -133,8 +148,8 @@ public:
   Http09Transaction(Http09Session *session, QUICStreamVCAdapter::IOInfo &info);
   ~Http09Transaction();
 
-  int state_stream_open(int event, void *data) override;
-  int state_stream_closed(int event, void *data) override;
+  int state_stream_open(int event, Event *data) override;
+  int state_stream_closed(int event, Event *data) override;
 
   void do_io_close(int lerrno = -1) override;
 
