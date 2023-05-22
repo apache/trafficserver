@@ -61,7 +61,7 @@ HQSession::remove_transaction(HQTransaction *trans)
 const char *
 HQSession::get_protocol_string() const
 {
-  return this->_protocol_string;
+  return "";
 }
 
 int
@@ -199,6 +199,12 @@ void
 Http3Session::decrement_current_active_connections_stat()
 {
   // TODO Implement stats
+}
+
+const char *
+Http3Session::get_protocol_string() const
+{
+  return "http/3";
 }
 
 QPACK *
