@@ -116,20 +116,17 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
   return stat_id;
 }
 
-static int
-getFile(const char *filename, char *buffer, int bufferSize)
+static ssize_t
+getFile(const char *filename, char *buffer, size_t bufferSize)
 {
-  TSFile f = 0;
-  size_t s = 0;
-
-  f = TSfopen(filename, "r");
+  TSFile f = TSfopen(filename, "r");
   if (!f) {
     buffer[0] = 0;
     // Return -1 to indicate read err
     return -1;
   }
 
-  s = TSfread(f, buffer, bufferSize);
+  ssize_t s = TSfread(f, buffer, bufferSize - 1);
   if (s > 0) {
     buffer[s] = 0;
   } else {
