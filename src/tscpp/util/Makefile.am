@@ -36,7 +36,9 @@ test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include @SWOC_INCLUDES@
 
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscpputil_LDADD = libtscpputil.la @SWOC_LIBS@
+test_tscpputil_LDADD = \
+	libtscpputil.la \
+	@SWOC_LIBS@
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_LocalBuffer.cc \
