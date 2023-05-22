@@ -6054,8 +6054,8 @@ HttpSM::handle_http_server_open()
 
     int method = t_state.hdr_info.server_request.method_get_wksidx();
     if (method != HTTP_WKSIDX_TRACE &&
-        server_txn->has_request_body(t_state.hdr_info.response_content_length,
-                                     t_state.server_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
+        server_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                     t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
         do_post_transform_open()) {
       do_setup_post_tunnel(HTTP_TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
     } else {

@@ -113,7 +113,7 @@ class MultiplexerTestBase:
             "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
 
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'multiplexer',
+            'proxy.config.diags.debug.tags': 'http|multiplexer',
         })
         self.ts.Disk.ssl_multicert_config.AddLine(
             'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
@@ -172,6 +172,12 @@ class MultiplexerTest(MultiplexerTestBase):
         self.server_https.Streams.All += Testers.ContainsExpression(
             'uuid: POST',
             "Verify the HTTPS server received the POST request.")
+        self.server_http.Streams.All += Testers.ContainsExpression(
+            'x-response: second',
+            "Verify the HTTP server sent the POST response.")
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'x-response: second',
+            "Verify the HTTPS server sent the POST response.")
 
         # Same with PUT
         self.server_http.Streams.All += Testers.ContainsExpression(
