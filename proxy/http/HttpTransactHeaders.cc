@@ -707,8 +707,11 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
       if (ProtocolStackDetail::Standard == pSDetail) {
         *hdr++        = '/';
         bool http_2_p = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_2_0) != proto_end;
+        bool http_3_p = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_3) != proto_end;
         if (http_2_p) {
           *hdr++ = '2';
+        } else if (http_3_p) {
+          *hdr++ = '3';
         } else if (http_1_0_p) {
           memcpy(hdr, "1.0", 3);
           hdr += 3;

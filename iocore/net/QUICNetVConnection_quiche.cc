@@ -656,13 +656,32 @@ QUICNetVConnection::_handle_interval()
 int
 QUICNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
-  return 0;
+  int retval = 0;
+  if (n > retval) {
+    results[retval++] = IP_PROTO_TAG_QUIC;
+    if (n > retval) {
+      results[retval++] = IP_PROTO_TAG_TLS_1_3;
+      if (n > retval) {
+        retval += super::populate_protocol(results + retval, n - retval);
+      }
+    }
+  }
+  return retval;
 }
 
 const char *
-QUICNetVConnection::protocol_contains(std::string_view tag) const
+QUICNetVConnection::protocol_contains(std::string_view prefix) const
 {
-  return "";
+  const char *retval = nullptr;
+  if (prefix.size() <= IP_PROTO_TAG_QUIC.size() && strncmp(IP_PROTO_TAG_QUIC.data(), prefix.data(), prefix.size()) == 0) {
+    retval = IP_PROTO_TAG_QUIC.data();
+  } else if (prefix.size() <= IP_PROTO_TAG_TLS_1_3.size() &&
+             strncmp(IP_PROTO_TAG_TLS_1_3.data(), prefix.data(), prefix.size()) == 0) {
+    retval = IP_PROTO_TAG_TLS_1_3.data();
+  } else {
+    retval = super::protocol_contains(prefix);
+  }
+  return retval;
 }
 
 const char *
