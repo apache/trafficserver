@@ -1,5 +1,5 @@
 '''
-Test ATS configured to not respond with chunked content.
+Test origin server chunked encoding responses and how ATS handles them
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@ Test ATS configured to not respond with chunked content.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Test.Summary = 'Test ATS configured to not respond with chunked content.'
+Test.Summary = 'Test origin server chunked encoding responses and how ATS handles them'
 
 
 class ChunkedEncoding:

@@ -70,6 +70,7 @@ sessions:
 
     proxy-response:
       status: 502
+      reason: Invalid Response From Origin
       headers:
         fields:
         - [ Connection, { value: keep-alive, as: equal } ]
