@@ -108,11 +108,12 @@ class ProxyProtocolOutTest:
     _ts_counter = 0
     _pp_out_replay_file = "replay/proxy_protocol_out.replay.yaml"
 
-    def __init__(self, pp_version: int, is_tunnel: bool) -> None:
+    def __init__(self, pp_version: int, is_tunnel: bool, is_tls_to_origin: bool = False) -> None:
         """Initialize a ProxyProtocolOutTest.
 
         :param pp_version: The Proxy Protocol version to use (1 or 2).
         :param is_tunnel: Whether ATS should tunnel to the origin.
+        :param is_tls: Whether ATS should connect to the origin via TLS.
         """
 
         if pp_version not in (-1, 1, 2):
@@ -120,6 +121,7 @@ class ProxyProtocolOutTest:
                 f'Invalid Proxy Protocol version (not 1 or 2): {pp_version}')
         self._pp_version = pp_version
         self._is_tunnel = is_tunnel
+        self._is_tls_to_origin = is_tls_to_origin
 
     def setupOriginServer(self) -> None:
         """Configure the origin server.
@@ -150,9 +152,11 @@ class ProxyProtocolOutTest:
         self._ts.Disk.ssl_multicert_config.AddLine(
             "dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key"
         )
-
+        scheme = 'https' if self._is_tls_to_origin else 'http'
+        server_port = self._server.Variables.https_port if self._is_tls_to_origin else self._server.Variables.http_port
         self._ts.Disk.remap_config.AddLine(
-            f"map / http://backend.pp.origin.com:{self._server.Variables.http_port}/")
+            f"map / {scheme}://backend.pp.origin.com:{server_port}/"
+        )
 
         self._ts.Disk.records_config.update({
             "proxy.config.ssl.server.cert.path": f"{self._ts.Variables.SSLDir}",
@@ -212,6 +216,8 @@ class ProxyProtocolOutTest:
             description += "with blind tunneling"
         else:
             description += "without blind tunneling"
+            if self._is_tls_to_origin:
+                description += " on TLS connection to origin"
         tr = Test.AddTestRun(description)
 
         self.setupDNS(tr)
@@ -235,8 +241,14 @@ class ProxyProtocolOutTest:
 
 ProxyProtocolInTest().run()
 
-ProxyProtocolOutTest(pp_version=-1, is_tunnel=False).run()
-ProxyProtocolOutTest(pp_version=1, is_tunnel=False).run()
-ProxyProtocolOutTest(pp_version=2, is_tunnel=False).run()
+# non-tunnling HTTP to origin
+ProxyProtocolOutTest(pp_version=-1, is_tunnel=False, is_tls_to_origin=False).run()
+ProxyProtocolOutTest(pp_version=1, is_tunnel=False, is_tls_to_origin=False).run()
+ProxyProtocolOutTest(pp_version=2, is_tunnel=False, is_tls_to_origin=False).run()
+# non-tunnling HTTPS to origin
+ProxyProtocolOutTest(pp_version=-1, is_tunnel=False, is_tls_to_origin=True).run()
+ProxyProtocolOutTest(pp_version=1, is_tunnel=False, is_tls_to_origin=True).run()
+ProxyProtocolOutTest(pp_version=2, is_tunnel=False, is_tls_to_origin=True).run()
+# tunneling
 ProxyProtocolOutTest(pp_version=1, is_tunnel=True).run()
 ProxyProtocolOutTest(pp_version=2, is_tunnel=True).run()

@@ -52,6 +52,9 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     ink_release_assert(!connect_sms.empty());
     HttpSM *prime_connect_sm = *(connect_sms.begin());
 
+    // Perform a zero-byte read to ensure this function can be called back for
+    // VC_EVENT_READ_COMPLETE after the handshake is complete.
+    netvc->do_io_read(this, 0, _netvc_reader->mbuf);
     int64_t nbytes = 1;
     if (is_no_plugin_tunnel && prime_connect_sm->t_state.txn_conf->proxy_protocol_out >= 0) {
       nbytes = do_outbound_proxy_protocol(_netvc_reader->mbuf, vc, ua_txn->get_netvc(),
