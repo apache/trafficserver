@@ -908,7 +908,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       if (doc->magic == DOC_CORRUPT) {
         Warning("Earliest: Doc checksum does not match for %s", key.toHexStr(tmpstring));
       } else {
-        Warning("Earliest : Doc magic does not match for %s", key.toHexStr(tmpstring));
+        Warning("Earliest: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
       dir_delete(&key, vol, &dir);
@@ -1111,7 +1111,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       if (doc->magic == DOC_CORRUPT) {
         Warning("Head: Doc checksum does not match for %s", key.toHexStr(tmpstring));
       } else {
-        Warning("Head : Doc magic does not match for %s", key.toHexStr(tmpstring));
+        Warning("Head: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
       dir_delete(&key, vol, &dir);
