@@ -30,6 +30,8 @@
  ****************************************************************************/
 #pragma once
 
+#include <string>
+#include <unordered_map>
 #include <vector>
 #include <string_view>
 #include <strings.h>
@@ -74,6 +76,8 @@ struct NamedElement {
   std::vector<ts::port_range_t> inbound_port_ranges;
 
   std::unique_ptr<pcre, PcreFreer> match;
+
+  uint32_t rank = 0; ///< order of the config. smaller is higher.
 };
 
 struct ActionElement : public NamedElement {
@@ -83,9 +87,6 @@ struct ActionElement : public NamedElement {
 struct NextHopItem : public NamedElement {
   NextHopProperty prop;
 };
-
-using SNIList             = std::vector<ActionElement>;
-using NextHopPropertyList = std::vector<NextHopItem>;
 
 class SNIConfigParams : public ConfigInfo
 {
@@ -102,8 +103,9 @@ public:
   bool load_sni_config();
   std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, uint16_t dest_incoming_port) const;
 
-  SNIList sni_action_list;
-  NextHopPropertyList next_hop_list;
+  std::unordered_multimap<std::string, ActionElement> sni_action_map; ///< for exact fqdn matching
+  std::vector<ActionElement> sni_action_list;                         ///< for regex fqdn matching
+  std::vector<NextHopItem> next_hop_list;
   YamlSNIConfig yaml_sni;
 
 private:

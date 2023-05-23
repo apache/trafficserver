@@ -46,6 +46,11 @@ public:
     Layout::create();
     BaseLogFile *base_log_file = new BaseLogFile("stderr");
     DiagsPtr::set(new Diags(testRunInfo.name, "" /* tags */, "" /* actions */, base_log_file));
+
+    diags()->activate_taglist("sni", DiagsTagType_Debug);
+    diags()->config.enabled(DiagsTagType_Debug, 0); // set 1 if you want to see debug log
+    diags()->show_location = SHOW_LOCATION_DEBUG;
+
     RecProcessInit();
     LibRecordsConfigInit();
 
