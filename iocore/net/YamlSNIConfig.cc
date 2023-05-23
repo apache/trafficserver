@@ -158,6 +158,9 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (http2_buffer_water_mark.has_value()) {
     actions.push_back(std::make_unique<HTTP2BufferWaterMark>(http2_buffer_water_mark.value()));
   }
+  if (http2_initial_window_size_in.has_value()) {
+    actions.push_back(std::make_unique<HTTP2InitialWindowSizeIn>(http2_initial_window_size_in.value()));
+  }
 
   actions.push_back(std::make_unique<ServerMaxEarlyData>(server_max_early_data));
   actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
@@ -200,6 +203,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_sni_policy,
                                                TS_http2,
                                                TS_http2_buffer_water_mark,
+                                               TS_http2_initial_window_size_in,
                                                TS_quic,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
@@ -253,6 +257,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_http2_buffer_water_mark]) {
       item.http2_buffer_water_mark = node[TS_http2_buffer_water_mark].as<int>();
+    }
+    if (node[TS_http2_initial_window_size_in]) {
+      item.http2_initial_window_size_in = node[TS_http2_initial_window_size_in].as<int>();
     }
     if (node[TS_quic]) {
       item.offer_quic = node[TS_quic].as<bool>();
