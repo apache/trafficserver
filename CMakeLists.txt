@@ -1,11 +1,3 @@
-#### EDITOR SUPPORT ####
-## This file exists ONLY to support code editors (e.g. Visual Code, CLion).
-##
-## !!!-> IT WILL NOT BUILD TRAFFIC SERVER <-!!!
-##
-## This file can be tweaked to keep editors happy. In general all projects should be defined here so
-## there is only one instance of this file, not one per directory. This has been done only to the
-## extent that someone using such an editor needed it, so much work is left to be done.
 #######################
 #
 #  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
