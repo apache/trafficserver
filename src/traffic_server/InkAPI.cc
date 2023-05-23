@@ -10319,25 +10319,29 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 TSReturnCode
 TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
 {
-  swoc::Errata ret = ParseRecordsFromYAML(
-    *reinterpret_cast<YAML::Node *>(node),
-    [handler, data](const CfgNode &field, swoc::Errata &) -> void {
-      // Errors from the handler should be reported and handled by the handler.
-      // RecYAMLConfigFileParse will report any YAML parsing error.
-      TSYAMLRecCfgFieldData cfg;
-      auto const &field_str = field.node.as<std::string>();
-      cfg.field_name        = field_str.c_str();
-      cfg.record_name       = field.get_record_name().data();
-      cfg.value_node        = reinterpret_cast<TSYaml>(const_cast<YAML::Node *>(&field.value_node));
-      handler(&cfg, data);
-    },
-    true /* lock */);
-
+  swoc::Errata err;
+  try {
+    err = ParseRecordsFromYAML(
+      *reinterpret_cast<YAML::Node *>(node),
+      [handler, data](const CfgNode &field, swoc::Errata &) -> void {
+        // Errors from the handler should be reported and handled by the handler.
+        // RecYAMLConfigFileParse will report any YAML parsing error.
+        TSYAMLRecCfgFieldData cfg;
+        auto const &field_str = field.node.as<std::string>();
+        cfg.field_name        = field_str.c_str();
+        cfg.record_name       = field.get_record_name().data();
+        cfg.value_node        = reinterpret_cast<TSYaml>(const_cast<YAML::Node *>(&field.value_node));
+        handler(&cfg, data);
+      },
+      true /* lock */);
+  } catch (std::exception const &ex) {
+    err.note(ERRATA_ERROR, "RecYAMLConfigParse error cought: {}", ex.what());
+  }
   // Drop API logs in case of an error.
-  if (!ret.empty()) {
-    std::string text;
-    Debug("plugin", "%s", swoc::bwprint(text, "{}", ret).c_str());
+  if (!err.empty()) {
+    std::string buf;
+    Debug("plugin", "%s", swoc::bwprint(buf, "{}", err).c_str());
   }
 
-  return ret.empty() ? TS_SUCCESS : TS_ERROR;
+  return err.empty() ? TS_SUCCESS : TS_ERROR;
 }

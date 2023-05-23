@@ -53,6 +53,8 @@ Description
    This contains information about the parsed record field. This will be passed back to the `TSYAMLRecNodeHandler`
    when you call `TSRecYAMLConfigParse`. This class holds the record name as well as the YAML node in case the caller
    wants to use this information to manipulate the record.
+   The record name set is just a reflection of what was build from the YAML document parsing. This API will not perform any
+   check against the internal ATS records. The record validation should be done by the caller, for instance, by calling `TSHttpTxnConfigFind`.
 
 .. var:: const char* field_name
 
@@ -61,6 +63,7 @@ Description
 .. var:: const char* record_name
 
     A null-terminated string with the record name which was built when parsing the YAML file. Example: `proxy.config.diags.debug.enabled`.
+    Use this to validate or do any check base on a record name.
 
 .. var:: TSYaml value_node
 
