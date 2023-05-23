@@ -144,6 +144,7 @@ UDPPacket::free()
 UDPNetProcessorInternal udpNetInternal;
 UDPNetProcessor &udpNet = udpNetInternal;
 
+int g_udp_pollTimeout;
 int32_t g_udp_periodicCleanupSlots;
 int32_t g_udp_periodicFreeCancelledPkts;
 int32_t g_udp_numSendRetries;
@@ -172,9 +173,10 @@ initialize_thread_for_udp_net(EThread *thread)
 
   PollCont *upc       = get_UDPPollCont(thread);
   PollDescriptor *upd = upc->pollDescriptor;
-  // due to ET_UDP is really simple, it should sleep for a long time
-  // TODO: fixed size
-  upc->poll_timeout = 100;
+
+  REC_ReadConfigInteger(g_udp_pollTimeout, "proxy.config.udp.poll_timeout");
+  upc->poll_timeout = g_udp_pollTimeout;
+
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
   REC_ReadConfigInt32(g_udp_periodicFreeCancelledPkts, "proxy.config.udp.free_cancelled_pkts_sec");

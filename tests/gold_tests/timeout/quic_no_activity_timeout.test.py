@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from typing import Optional
+
 Test.Summary = 'Basic checks on QUIC max_idle_timeout set by ts.quic.no_activity_timeout_in'
 
 
@@ -30,8 +32,11 @@ class Test_quic_no_activity_timeout:
     client_counter: int = 0
     ts_counter: int = 0
     server_counter: int = 0
+    udp_poll_timeout: Optional[int] = None
+    expected_poll_timeout: int = 100
 
-    def __init__(self, name: str, no_activity_timeout_in=1000, gold_file="", replay_keys="", extra_recs=None):
+    def __init__(self, name: str, no_activity_timeout_in=1000, gold_file="", replay_keys="", extra_recs=None,
+                 udp_poll_timeout: Optional[int] = None):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -39,12 +44,17 @@ class Test_quic_no_activity_timeout:
         :param gold_file: Gold file to be checked.
         :param replay_keys: Keys to be used by pv
         :param extra_recs: Any additional records to be set, either a yaml string or a dict.
+        :param udp_poll_timeout: Configuration value for proxy.config.udp.poll_timeout
         """
         self.name = name
         self.no_activity_timeout_in = no_activity_timeout_in
         self.gold_file = gold_file
         self.replay_keys = replay_keys
         self.extra_recs = extra_recs
+        self.udp_poll_timeout = udp_poll_timeout
+        self.expected_udp_poll_timeout = 100
+        if udp_poll_timeout is not None:
+            self.expected_udp_poll_timeout = udp_poll_timeout
 
     def _configure_server(self, tr: 'TestRun'):
         """Configure the server.
@@ -70,10 +80,15 @@ class Test_quic_no_activity_timeout:
         self._ts.addSSLfile("ssl/private-key.key")
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop',
+            'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop|v_iocore_net_poll',
             'proxy.config.quic.no_activity_timeout_in': self.no_activity_timeout_in,
             'proxy.config.quic.qlog.file_base': f'log/qlog_{Test_quic_no_activity_timeout.server_counter}',
         })
+
+        if self.udp_poll_timeout is not None:
+            self._ts.Disk.records_config.update({
+                'proxy.config.udp.poll_timeout': self.udp_poll_timeout
+            })
 
         if self.extra_recs:
             self._ts.Disk.records_config.update(self.extra_recs)
@@ -106,6 +121,9 @@ class Test_quic_no_activity_timeout:
         else:
             tr.Processes.Default.ReturnCode = 0
 
+        self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
+            f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout.")
+
         if self.gold_file:
             tr.Processes.Default.Streams.all = self.gold_file
 
@@ -122,7 +140,8 @@ test1 = Test_quic_no_activity_timeout(
     "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout) with a 5s delay",
     no_activity_timeout_in=3000,  # 3s `max_idle_timeout`
     replay_keys="delay5s",
-    gold_file="gold/quic_no_activity_timeout.gold")
+    gold_file="gold/quic_no_activity_timeout.gold",
+    udp_poll_timeout=10)
 test1.run(check_for_max_idle_timeout=True)
 
 # QUIC Ignores the default_inactivity_timeout config, so the ts.quic.no_activity_timeout_in
