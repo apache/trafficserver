@@ -15,6 +15,19 @@
 #
 #######################
 
+add_subdirectory(quic)
+
+if(TS_HAS_QUICHE)
+        set(QUIC_SOURCES
+                QUICClosedConCollector.cc
+                QUICMultiCertConfigLoader.cc
+                QUICNet.cc
+                QUICNetProcessor_quiche.cc
+                QUICNetVConnection_quiche.cc
+                QUICNextProtocolAccept_quiche.cc
+                QUICPacketHandler_quiche.cc
+        )
+endif()
 
 add_library(inknet STATIC
         ALPNSupport.cc
@@ -63,7 +76,9 @@ add_library(inknet STATIC
         UnixUDPNet.cc
         SSLDynlock.cc
         SNIActionPerformer.cc
-        )
+        ${QUIC_SOURCES}
+)
+
 target_link_libraries(inknet inkevent records_p)
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 target_include_directories(inknet PRIVATE
@@ -84,7 +99,8 @@ target_include_directories(inknet PRIVATE
         ${CMAKE_SOURCE_DIR}/src/traffic_server
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}
-        )
+        ${QUIC_INCLUDE_DIRS}
+)
 
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)

@@ -15,6 +15,7 @@
 #
 #######################
 
+
 add_executable(traffic_server
         Crash.cc
         EventName.cc
@@ -32,6 +33,7 @@ target_include_directories(traffic_server PRIVATE
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/mgmt/utils
+        ${QUIC_INCLUDE_DIRS}
 )
 target_link_libraries(traffic_server
         http
@@ -59,7 +61,8 @@ target_link_libraries(traffic_server
         jsonrpc_protocol
         jsonrpc_server
         rpcpublichandlers
-        )
+        ${QUIC_LIBRARIES}
+)
 
 if (TS_USE_LINUX_IO_URING)
     target_link_libraries(traffic_server inkuring uring)
@@ -67,5 +70,9 @@ endif (TS_USE_LINUX_IO_URING)
 if (TS_USE_LINUX_NATIVE_AIO)
     target_link_libraries(traffic_server aio)
 endif (TS_USE_LINUX_NATIVE_AIO)
+
+if (TS_HAS_QUICHE)
+    set_target_properties(traffic_server PROPERTIES LINK_FLAGS "-Wl,-rpath,${QUICHE_LIBRARY_DIR}")
+endif (TS_HAS_QUICHE)
 
 install(TARGETS traffic_server)

@@ -46,5 +46,6 @@ target_include_directories(http PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/mgmt/utils
         ${YAMLCPP_INCLUDE_DIR}
+        ${QUIC_INCLUDE_DIRS}
 )
 add_subdirectory(remap)
