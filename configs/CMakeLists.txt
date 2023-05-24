@@ -16,9 +16,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-file(GLOB CONFIG_FILES *.default)
+file(GLOB CONFIG_FILES *.default ${CMAKE_BINARY_DIR}/configs/*.default)
 
 foreach(CONFIG_FILE ${CONFIG_FILES})
   cmake_path(GET CONFIG_FILE STEM LAST_ONLY CONFIG_FILE_NAME)
   install(FILES ${CONFIG_FILE} DESTINATION etc/trafficserver RENAME ${CONFIG_FILE_NAME})
+endforeach()
+
+
+file(GLOB BODY_FACTORY_FILES body_factory/default/*)
+list(FILTER BODY_FACTORY_FILES EXCLUDE REGEX Makefile.*)
+
+foreach(BODY_FACTORY_FILE ${BODY_FACTORY_FILES})
+  install(FILES ${BODY_FACTORY_FILE} DESTINATION etc/trafficserver/body_factory/default)
 endforeach()
