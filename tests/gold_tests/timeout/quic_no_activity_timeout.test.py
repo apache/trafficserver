@@ -101,7 +101,7 @@ class Test_quic_no_activity_timeout:
 
         if check_for_max_idle_timeout:
             tr.Processes.Default.ReturnCode = 1  # timeout
-            self._ts.Disk.traffic_out.All = Testers.IncludesExpression(
+            self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
                 "QUIC Idle timeout detected", "We should detect the timeout.")
         else:
             tr.Processes.Default.ReturnCode = 0
