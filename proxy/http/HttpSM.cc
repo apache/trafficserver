@@ -4530,7 +4530,7 @@ HttpSM::do_hostdb_lookup()
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
 
   // If directed to not look up fqdns then mark as resolved
-  if (t_state.http_config_param->no_dns_forward_to_parent && t_state.parent_result.result == PARENT_UNDEFINED) {
+  if (t_state.txn_conf->no_dns_forward_to_parent && t_state.parent_result.result == PARENT_UNDEFINED) {
     t_state.dns_info.resolved_p = true;
     call_transact_and_set_next_state(nullptr);
     return;
@@ -7923,7 +7923,7 @@ HttpSM::set_next_state()
 
       call_transact_and_set_next_state(nullptr);
       break;
-    } else if (t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent &&
+    } else if (t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER && t_state.txn_conf->no_dns_forward_to_parent &&
                t_state.parent_result.result != PARENT_UNDEFINED) {
       t_state.dns_info.resolved_p = true; // seems dangerous - where's the IP address?
       call_transact_and_set_next_state(nullptr);

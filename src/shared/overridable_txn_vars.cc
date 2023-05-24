@@ -152,6 +152,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}                                                           },
     {"proxy.config.http.parent_proxy.per_parent_connect_attempts",
      {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}                                                                        },
+    {"proxy.config.http.no_dns_just_forward_to_parent",                {TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT, TS_RECORDDATATYPE_INT}    },
     {"proxy.config.ssl.client.verify.server.policy",                   {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY, TS_RECORDDATATYPE_STRING}    },
     {"proxy.config.ssl.client.verify.server.properties",               {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES, TS_RECORDDATATYPE_STRING}},
     {"proxy.config.ssl.client.sni_policy",                             {TS_CONFIG_SSL_CLIENT_SNI_POLICY, TS_RECORDDATATYPE_STRING}              },
@@ -168,6 +169,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE, TS_RECORDDATATYPE_INT}                                                                  },
     {"proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
      {TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS, TS_RECORDDATATYPE_INT}                                                                    },
+    {"proxy.config.http.parent_proxy.disable_parent_markdowns",        {TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.parent_proxy.disable_parent_markdowns",        {TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.net.default_inactivity_timeout",                    {TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}        }
 });

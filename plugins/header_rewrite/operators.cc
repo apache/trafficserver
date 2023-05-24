@@ -51,16 +51,22 @@ OperatorSetConfig::exec(const Resources &res) const
     case TS_RECORDDATATYPE_INT:
       if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.txnp, _key, _value.get_int_value())) {
         TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
+      } else {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%d", _config.c_str(), _value.get_int_value());
       }
       break;
     case TS_RECORDDATATYPE_FLOAT:
       if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.txnp, _key, _value.get_float_value())) {
         TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
+      } else {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%f", _config.c_str(), _value.get_float_value());
       }
       break;
     case TS_RECORDDATATYPE_STRING:
       if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.txnp, _key, _value.get_value().c_str(), _value.size())) {
         TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
+      } else {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invocation failed on %s=%s", _config.c_str(), _value.get_value().c_str());
       }
       break;
     default:

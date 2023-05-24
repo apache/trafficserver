@@ -1355,6 +1355,7 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.config.http.no_dns_just_forward_to_parent INT 0
    :reloadable:
+   :overridable:
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
