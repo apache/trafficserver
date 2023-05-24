@@ -66,6 +66,15 @@ The following incompatible changes to the configurations have been made in this 
 
 The records.yaml entry proxy.config.http.down_server.abort_threshold has been removed.
 
+The records.yaml entry proxy.config.http.connect_attempts_max_retries_dead_server has been renamed to proxy.config.http.connect_attempts_max_retries_down_server.
+
+The records.yaml entry proxy.config.http.connect.dead.policy has been renamed to proxy.config.http.connect.down.policy.
 
 Plugins
 -------
+
+Statistics changes
+---------------------
+The following changes to the statistics have been made in this version of ATS.
+
+The HTTP connection core statistics entry proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
