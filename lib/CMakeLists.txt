@@ -27,4 +27,4 @@ add_subdirectory(fastlz)
 add_subdirectory(swoc)
 set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
 
-install(TARGETS libswoc yaml-cpp)
+install(TARGETS libswoc yaml-cpp fastlz)

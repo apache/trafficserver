@@ -189,6 +189,9 @@ include(subproject_version)
 
 subproject_version(YAML_CPP YAMLCPP_LIB_VERSION)
 
+set(rel_cachedir var/trafficserver)
+configure_file(configs/storage.config.default.in configs/storage.config.default)
+configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
 configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
@@ -254,3 +257,7 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message("Installing github hook")
     configure_file(${CMAKE_SOURCE_DIR}/tools/git/pre-commit ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit COPYONLY)
 endif()
+
+# Create an empty directories for ATS runtime
+install(DIRECTORY DESTINATION var/log/trafficserver)
+install(DIRECTORY DESTINATION var/trafficserver)
