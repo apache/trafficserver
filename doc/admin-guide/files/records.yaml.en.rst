@@ -4838,6 +4838,14 @@ removed in the future without prior notice.
 UDP Configuration
 =====================
 
+.. ts:cv:: CONFIG proxy.config.udp.poll_timeout INT 100
+   :units: milliseconds
+
+   This is the timeout for listening UDP connections to ``epoll_wait()`` on
+   Linux platforms, and to ``kevent()`` on BSD type OSs. The default value is
+   100. See :ts:cv:`proxy.config.net.poll_timeout` for general information on
+   poll_timeout.
+
 .. ts:cv:: CONFIG proxy.config.udp.threads INT 0
 
    Specifies the number of UDP threads to run. By default 0 threads are dedicated to UDP,
