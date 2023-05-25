@@ -28,24 +28,17 @@ class TestPollTimeout:
 
     ts_counter: int = 0
 
-    def __init__(self, name: str, udp_poll_timeout_in: Optional[int] = None, gold_file="",
-                 replay_keys="", extra_recs=None):
+    def __init__(self, name: str, udp_poll_timeout_in: Optional[int] = None) -> None:
         """Initialize the test.
 
         :param name: The name of the test.
         :param udp_poll_timeout_in: Configuration value for proxy.config.udp.poll_timeout
-        :param gold_file: Gold file to be checked.
-        :param replay_keys: Keys to be used by pv
-        :param extra_recs: Any additional records to be set, either a yaml string or a dict.
         """
         self.name = name
         self.udp_poll_timeout_in = udp_poll_timeout_in
         self.expected_udp_poll_timeout = 100
         if udp_poll_timeout_in is not None:
             self.expected_udp_poll_timeout = udp_poll_timeout_in
-        self.gold_file = gold_file
-        self.replay_keys = replay_keys
-        self.extra_recs = extra_recs
 
     def _configure_traffic_server(self, tr: 'TestRun'):
         """Configure Traffic Server.
@@ -66,9 +59,6 @@ class TestPollTimeout:
                 'proxy.config.udp.poll_timeout': self.udp_poll_timeout_in
             })
 
-        if self.extra_recs:
-           sself._ts.Disk.records_config.update(self.extra_recs)
-
     def run(self):
         """Run the test."""
         tr = Test.AddTestRun(self.name)
@@ -79,9 +69,6 @@ class TestPollTimeout:
 
         self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
             f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout.")
-
-        if self.gold_file:
-            tr.Processes.Default.Streams.all = self.gold_file
 
 # Tests start.
 
