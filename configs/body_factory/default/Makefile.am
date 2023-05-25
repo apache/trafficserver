@@ -28,7 +28,7 @@ dist_bodyfactory_DATA = \
 	connect\#dns_failed \
 	connect\#failed_connect \
 	connect\#hangup \
-	connect\#all_dead \
+	connect\#all_down \
 	default \
 	interception\#no_host \
 	README \

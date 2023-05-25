@@ -139,7 +139,7 @@ struct HostDBInfo {
   bool is_alive();
 
   /// Target has failed and is still in the blocked time window.
-  bool is_dead(ts_time now, ts_seconds fail_window);
+  bool is_down(ts_time now, ts_seconds fail_window);
 
   /** Select this target.
    *
@@ -147,7 +147,7 @@ struct HostDBInfo {
    * @param fail_window Failure window.
    * @return Status of the selection.
    *
-   * If a zombie is selected the failure time is updated to make it look dead to other threads in a thread safe
+   * If a zombie is selected the failure time is updated to make it appear down to other threads in a thread safe
    * manner. The caller should check @c last_fail_time to see if a zombie was selected.
    */
   bool select(ts_time now, ts_seconds fail_window);
@@ -234,7 +234,7 @@ HostDBInfo::is_alive()
 }
 
 inline bool
-HostDBInfo::is_dead(ts_time now, ts_seconds fail_window)
+HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
 {
   auto last_fail = this->last_fail_time();
   return (last_fail != TS_TIME_ZERO) && (last_fail + fail_window < now);
@@ -360,10 +360,10 @@ public:
    * attempt to connect to the selected target if possible.
    *
    * @param now Current time to use for aliveness calculations.
-   * @param fail_window Blackout time for dead servers.
+   * @param fail_window Blackout time for down servers.
    * @return Status of the updated target.
    *
-   * If the return value is @c HostDBInfo::Status::DEAD this means all targets are dead and there is
+   * If the return value is @c HostDBInfo::Status::DOWN this means all targets are down and there is
    * no valid upstream.
    *
    * @note Concurrency - this is not done under lock and depends on the caller for correct use.
@@ -404,7 +404,7 @@ public:
   /** Select an upstream target.
    *
    * @param now Current time.
-   * @param fail_window Dead server blackout time.
+   * @param fail_window Down server blackout time.
    * @param hash_addr Inbound remote IP address.
    * @return A selected target, or @c nullptr if there are no valid targets.
    *
@@ -632,13 +632,13 @@ struct ResolveInfo {
    */
   bool resolve_immediate();
 
-  /** Mark the active target as dead.
+  /** Mark the active target as down.
    *
    * @param now Time of failure.
-   * @return @c true if the server was marked as dead, @c false if not.
+   * @return @c true if the server was marked as down, @c false if not.
    *
    */
-  bool mark_active_server_dead(ts_time now);
+  bool mark_active_server_down(ts_time now);
 
   /** Mark the active target as alive.
    *
@@ -844,7 +844,7 @@ ResolveInfo::mark_active_server_alive()
 }
 
 inline bool
-ResolveInfo::mark_active_server_dead(ts_time now)
+ResolveInfo::mark_active_server_down(ts_time now)
 {
   return active != nullptr && active->mark_down(now);
 }

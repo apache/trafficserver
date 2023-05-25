@@ -1550,7 +1550,7 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
 {
   ink_assert(0 < rr_count && rr_count <= hostdb_round_robin_max_count);
 
-  // @a best_any is set to a base candidate, which may be dead.
+  // @a best_any is set to a base candidate, which may be down.
   HostDBInfo *best_any = nullptr;
   // @a best_alive is set when a valid target has been selected and should be used.
   HostDBInfo *best_alive = nullptr;
@@ -1567,8 +1567,8 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
     // Check and update RR if it's time - this always yields a valid target if there is one.
     if (now > ntime && rr_ctime.compare_exchange_strong(ctime, ntime)) {
       best_alive = best_any = this->select_next_rr(now, fail_window);
-      Dbg(dbg_ctl_hostdb, "Round robin timed interval expired - index %d", this->index_of(best_alive));
-    } else { // pick the current index, which may be dead.
+      Debug("hostdb", "Round robin timed interval expired - index %d", this->index_of(best_alive));
+    } else { // pick the current index, which may be down.
       best_any = &info[this->rr_idx()];
     }
     Dbg(dbg_ctl_hostdb, "Using timed round robin - index %d", this->index_of(best_any));
@@ -2201,8 +2201,8 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
   // Array of live targets, sized by @a live_n
   HostDBInfo *live[rr.count()];
   for (auto &target : rr) {
-    // skip dead upstreams.
-    if (rr[i].is_dead(now, fail_window)) {
+    // skip down targets.
+    if (rr[i].is_down(now, fail_window)) {
       continue;
     }
 

@@ -903,17 +903,17 @@ HttpTransact::TooEarly(State *s)
 }
 
 void
-HttpTransact::OriginDead(State *s)
+HttpTransact::OriginDown(State *s)
 {
   TxnDebug("http_trans", "origin server is marked down");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
-  HTTP_INCREMENT_DYN_STAT(http_dead_server_no_requests);
+  HTTP_INCREMENT_DYN_STAT(http_down_server_no_requests);
   char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
   std::string_view host_name{host_name_ptr, size_t(host_len)};
-  ts::bwprint(error_bw_buffer, "CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
+  ts::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
               host_name, ts::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
   s->arena.str_free(url_str);
@@ -1803,7 +1803,7 @@ HttpTransact::PPDNSLookup(State *s)
         return;
       }
       ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
-      handle_parent_died(s);
+      handle_parent_down(s);
       return;
     }
 
@@ -1817,7 +1817,7 @@ HttpTransact::PPDNSLookup(State *s)
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
-        handle_parent_died(s);
+        handle_parent_down(s);
       }
       return;
     }
@@ -1908,7 +1908,7 @@ HttpTransact::OSDNSLookup(State *s)
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
         log_msg = "looking up";
       } else {
-        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_dead");
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
         log_msg = "no valid server";
       }
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
@@ -2193,7 +2193,7 @@ HttpTransact::LookupSkipOpenServer(State *s)
   if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
   } else if (s->parent_result.result == PARENT_FAIL) {
-    handle_parent_died(s);
+    handle_parent_down(s);
     return;
   }
 
@@ -2863,7 +2863,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
         TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
       } else {
-        handle_parent_died(s);
+        handle_parent_down(s);
         return;
       }
     }
@@ -2893,7 +2893,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
           } else if (s->current.request_to == ResolveInfo::ORIGIN_SERVER) {
             return CallOSDNSLookup(s);
           } else {
-            handle_parent_died(s);
+            handle_parent_down(s);
             return;
           }
         }
@@ -3305,7 +3305,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     // a parent lookup could come back as PARENT_FAIL if in parent.config go_direct == false and
     // there are no available parents (all down).
     if (s->parent_result.result == PARENT_FAIL) {
-      handle_parent_died(s);
+      handle_parent_down(s);
       return;
     }
     if (!s->current.server->dst_addr.isValid()) {
@@ -3317,7 +3317,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookupAPICall);
       } else {
-        handle_parent_died(s);
+        handle_parent_down(s);
         return;
       }
     }
@@ -3367,7 +3367,7 @@ HttpTransact::OriginServerRawOpen(State *s)
     /* fall through */
   case OUTBOUND_CONGESTION:
     /* fall through */
-    handle_server_died(s);
+    handle_server_down(s);
 
     ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
     s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
@@ -3636,7 +3636,7 @@ HttpTransact::handle_response_from_parent(State *s)
         markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
-      handle_parent_died(s);
+      handle_parent_down(s);
       return;
     }
 
@@ -3756,7 +3756,7 @@ HttpTransact::handle_response_from_server(State *s)
   case BAD_INCOMING_RESPONSE:
 
     if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
+      max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
     } else {
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
@@ -3941,10 +3941,10 @@ HttpTransact::handle_server_connection_not_open(State *s)
   } else {
     switch (s->current.request_to) {
     case ResolveInfo::PARENT_PROXY:
-      handle_parent_died(s);
+      handle_parent_down(s);
       break;
     case ResolveInfo::ORIGIN_SERVER:
-      handle_server_died(s);
+      handle_server_down(s);
       break;
     default:
       ink_assert(!("s->current.request_to is not P.P. or O.S. - hmmm."));
@@ -6494,7 +6494,7 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 // and the first set of bytes is relatively small. This distinction is more apparent in the
 // case where the origin connection is a KA session. In this case, the session may not have
 // been used for a long time. In that case, we'll immediately queue up session to send to the
-// origin, without any idea of the state of the connection. If the origin is dead (or the connection
+// origin, without any idea of the state of the connection. If the origin is down (or the connection
 // is broken for some other reason) we'll immediately get a RST back. In that case-- since no
 // bytes where ACKd by the remote end, we can retry/redispatch the request.
 //
@@ -7525,7 +7525,7 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
 }
 
 void
-HttpTransact::handle_parent_died(State *s)
+HttpTransact::handle_parent_down(State *s)
 {
   ink_assert(s->parent_result.result == PARENT_FAIL);
 
@@ -7546,7 +7546,7 @@ HttpTransact::handle_parent_died(State *s)
 }
 
 void
-HttpTransact::handle_server_died(State *s)
+HttpTransact::handle_server_down(State *s)
 {
   const char *reason    = nullptr;
   const char *body_type = "UNKNOWN";
@@ -7557,7 +7557,7 @@ HttpTransact::handle_server_died(State *s)
   ////////////////////////////////////////////////////////
 
   switch (s->current.state) {
-  case CONNECTION_ALIVE: /* died while alive for unknown reason */
+  case CONNECTION_ALIVE: /* down while alive for unknown reason */
     ink_release_assert(s->hdr_info.response_error != NO_RESPONSE_HEADER_ERROR);
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Unknown Error";
@@ -7609,7 +7609,7 @@ HttpTransact::handle_server_died(State *s)
   case STATE_UNDEFINED:
   case TRANSACTION_COMPLETE:
   default: /* unknown death */
-    ink_release_assert(!"[handle_server_died] Unreasonable state - not dead, shouldn't be here");
+    ink_release_assert(!"[handle_server_down] Unreasonable state - not down, shouldn't be here");
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = nullptr;
     body_type = "response#bad_response";

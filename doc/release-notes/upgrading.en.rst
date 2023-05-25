@@ -66,6 +66,22 @@ The following incompatible changes to the configurations have been made in this 
 
 The records.yaml entry proxy.config.http.down_server.abort_threshold has been removed.
 
+The records.yaml entry proxy.config.http.connect_attempts_max_retries_dead_server has been renamed to proxy.config.http.connect_attempts_max_retries_down_server.
+
+The records.yaml entry proxy.config.http.connect.dead.policy has been renamed to proxy.config.http.connect.down.policy.
 
 Plugins
 -------
+
+Lua Plugin
+~~~~~~~~~~
+The following Http config constants have been renamed:
+
+TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER has been renamed to TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER.
+
+TS_LUA_CONFIG_HTTP_CONNECT_DEAD_POLICY has been renamed to TS_LUA_CONFIG_HTTP_CONNECT_DOWN_POLICY.
+
+Metrics
+------------------
+
+The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
