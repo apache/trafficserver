@@ -495,7 +495,11 @@ Http2Stream::do_io_close(int /* flags */)
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("do_io_close");
 
-    if (this->is_state_writeable()) { // Let the other end know we are going away
+    // Let the other end know we are going away.
+    // We only need to do this for the client side since we only need to pass through RST_STREAM
+    // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
+    // the background fill can function as intended.
+    if (!this->is_outbound_connection() && this->is_state_writeable()) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 
@@ -561,7 +565,7 @@ Http2Stream::initiating_close()
     Http2StreamDebug("initiating_close client_window=%zd session_window=%zd", _peer_rwnd,
                      this->get_connection_state().get_peer_rwnd());
 
-    if (this->is_state_writeable()) { // Let the other end know we are going away
+    if (!this->is_outbound_connection() && this->is_state_writeable()) { // Let the other end know we are going away
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 

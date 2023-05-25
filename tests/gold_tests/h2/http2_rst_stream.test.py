@@ -24,7 +24,7 @@ Abort HTTP/2 connection using RST_STREAM frame.
 
 Test.SkipUnless(
     Condition.HasOpenSSLVersion('1.1.1'),
-    Condition.HasProxyVerifierVersion('2.5.2')
+    Condition.HasProxyVerifierVersion('2.8.0')
 )
 
 #
@@ -63,7 +63,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Detect client abort flag.')
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Sent RST_STREAM frame for key 1 on stream 1',
+    'Submitted RST_STREAM frame for key 1 on stream 1.',
     'Send RST_STREAM frame.')
 
 server.Streams.All += Testers.ExcludesExpression(
@@ -122,7 +122,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Detect client abort flag.')
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Sent RST_STREAM frame for key 1 on stream 1',
+    'Submitted RST_STREAM frame for key 1 on stream 1',
     'Send RST_STREAM frame.')
 
 server.Streams.All += Testers.ExcludesExpression(
@@ -177,8 +177,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client2", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'HTTP/2 stream is closed with id: 1',
-    'Client is not affected.')
+    'Received RST_STREAM frame with stream id 1, error code 0',
+    'Client received RST_STREAM frame.')
 
 server.Streams.All += "gold/server_after_headers.gold"
 
