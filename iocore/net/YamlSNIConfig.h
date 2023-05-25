@@ -22,7 +22,9 @@
 #pragma once
 
 #include <vector>
+#include <utility>
 #include <string>
+#include <set>
 #include <optional>
 #include <memory>
 
@@ -72,6 +74,7 @@ struct YamlSNIConfig {
 
   struct Item {
     std::string fqdn;
+    std::vector<std::pair<long, long>> port_ranges;
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;

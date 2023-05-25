@@ -1,0 +1,5 @@
+sni:
+- fqdn: allports.com
+- fqdn: someport.com:1-433
+- fqdn: someport.com:8080-65535
+- fqdn: oneport.com:433-433

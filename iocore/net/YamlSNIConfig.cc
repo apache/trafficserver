@@ -21,12 +21,19 @@
 
 #include "YamlSNIConfig.h"
 
+#include <utility>
 #include <unordered_map>
 #include <set>
 #include <string_view>
+#include <string>
+#include <exception>
+#include <algorithm>
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
+
+#include "swoc/TextView.h"
+#include "swoc/bwf_base.h"
 
 #include "P_SNIActionPerformer.h"
 
@@ -58,6 +65,7 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
     }
   }
 }
+
 } // namespace
 
 ts::Errata
@@ -175,7 +183,28 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_fqdn]) {
-      item.fqdn = node[TS_fqdn].as<std::string>();
+      swoc::TextView fqdn{node[TS_fqdn].Scalar()};
+      auto port_view{fqdn.take_suffix_at(':')};
+      if (port_view && fqdn) {
+        auto min{port_view.split_prefix_at('-')};
+        if (!min) {
+          min = port_view;
+        }
+        const auto &max{port_view};
+
+        swoc::TextView parsed_min;
+        long min_port{swoc::svtoi(min, &parsed_min)};
+        swoc::TextView parsed_max;
+        long max_port{swoc::svtoi(max, &parsed_max)};
+        if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > 65535 || max_port < min_port) {
+          std::string out;
+          swoc::bwprint(out, "bad port range: {}-{}", min, max);
+          throw YAML::ParserException(node[TS_fqdn].Mark(), out);
+        }
+
+        item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
+      }
+      item.fqdn = fqdn;
     } else {
       return false; // servername must be present
     }

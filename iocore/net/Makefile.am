@@ -97,7 +97,8 @@ test_UDPNet_SOURCES = \
 
 test_libinknet_SOURCES = \
 	libinknet_stub.cc \
-	unit_tests/test_ProxyProtocol.cc
+	unit_tests/test_ProxyProtocol.cc \
+	unit_tests/test_YamlSNIConfig.cc
 
 test_libinknet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -108,6 +109,7 @@ test_libinknet_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-DLIBINKNET_UNIT_TEST_DIR="$(abs_top_srcdir)/iocore/net/unit_tests" \
 	@OPENSSL_INCLUDES@
 
 test_libinknet_LDFLAGS = \
