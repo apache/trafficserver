@@ -64,7 +64,7 @@ class TestPollTimeout:
         tr = Test.AddTestRun(self.name)
         self._configure_traffic_server(tr)
 
-        tr.Processes.Default.Command = "sleep 1"
+        tr.Processes.Default.Command = "echo 'testing ts.proxy.config.udp.poll_timeout'"
         tr.Processes.Default.StartBefore(self._ts)
 
         self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
@@ -74,10 +74,10 @@ class TestPollTimeout:
 
 
 test0 = TestPollTimeout(
-    "Test ts.config.udp.poll_timeout with default value.")
+    "Test ts.proxy.config.udp.poll_timeout with default value.")
 test0.run()
 
 test1 = TestPollTimeout(
-    "Test ts.config.udp.poll_timeout with value of 10.",
+    "Test ts.proxy.config.udp.poll_timeout with value of 10.",
     udp_poll_timeout_in=10)
 test1.run()
