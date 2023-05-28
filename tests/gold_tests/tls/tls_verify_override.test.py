@@ -73,7 +73,7 @@ ts.Disk.remap_config.AddLine(
     'map http://bar.com/overridesignature https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
         server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overridenone https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NONE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED"'.format(
+    'map http://bar.com/overridenone https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NONE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
         server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
     'map http://bar.com/overrideenforced https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
@@ -252,7 +252,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not conn
 
 # checks on random.com should fail with message only
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self signed certificate server=random.com\(127.0.0.1\) depth=0",
+    r"WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self.signed certificate server=random.com\(127.0.0.1\) depth=0",
     "Warning for self signed certificate")
 # permissive failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
