@@ -276,16 +276,23 @@ dnl
 dnl Since OpenSSL 1.1.0
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
+  enable_tls_ocsp=yes
   _ocsp_saved_LIBS=$LIBS
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ocsp.h, [ocsp_have_headers=1], [enable_tls_ocsp=no])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#include <openssl/ocsp.h>
+    ]],
+    [[
+OCSP_sendreq_new(NULL, NULL, NULL, 0);
+OCSP_REQ_CTX_add1_header(NULL, NULL, NULL);
+OCSP_REQ_CTX_set1_req(NULL, NULL);
+    ]])
+  ], [], [enable_tls_ocsp=no])
 
-  if test "$ocsp_have_headers" == "1"; then
-    AC_CHECK_FUNCS(OCSP_sendreq_new OCSP_REQ_CTX_add1_header OCSP_REQ_CTX_set1_req, [enable_tls_ocsp=yes], [enable_tls_ocsp=no])
-
-    LIBS=$_ocsp_saved_LIBS
-  fi
+  LIBS=$_ocsp_saved_LIBS
 
   AC_MSG_CHECKING(whether OCSP is supported)
   AC_MSG_RESULT([$enable_tls_ocsp])
