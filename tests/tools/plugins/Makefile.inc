@@ -58,9 +58,6 @@ tools_plugins_ssl_client_verify_test_la_SOURCES = tools/plugins/ssl_client_verif
 noinst_LTLIBRARIES += tools/plugins/ssl_hook_test.la
 tools_plugins_ssl_hook_test_la_SOURCES = tools/plugins/ssl_hook_test.cc
 
-noinst_LTLIBRARIES += tools/plugins/ssl_secret_load_test.la
-tools_plugins_ssl_secret_load_test_la_SOURCES = tools/plugins/ssl_secret_load_test.cc
-
 noinst_LTLIBRARIES += tools/plugins/ssl_verify_test.la
 tools_plugins_ssl_verify_test_la_SOURCES = tools/plugins/ssl_verify_test.cc
 

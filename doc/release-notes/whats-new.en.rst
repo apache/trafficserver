@@ -547,9 +547,6 @@ make the older ``stats_over_http`` obsolete.
 Plugin APIs
 -----------
 
-A new hook for loading certificates was added, :cpp:enumerator:`TS_LIFECYCLE_SSL_SECRET_HOOK`. When using
-this hook, the plugin recieved a structure with a type :c:type:`TSSecretID`.
-
 The transction control APIs where refactored and promoted to that ``ts.h`` public APIs. This adds
 :c:func:`TSHttpTxnCntlGet` and :c:func:`TSHttpTxnCntlSet`, and the c:enum::`TSHttpCntlType` enum.
 

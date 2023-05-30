@@ -40,8 +40,8 @@ specified by :arg:`id`. Lifecycle hooks are based on the Traffic Server
 process, not on any specific transaction or session. These will typically be
 called only once during the execution of the Traffic Server process and
 therefore should be added in :func:`TSPluginInit` (which could itself be
-considered a lifecycle hook). Unlike other hooks, lifecycle hooks may not have a
-well defined ordering and use of them should not assume that one of the hooks
+considered a lifecycle hook). Unlike other hooks, lifecycle hooks may not have
+a well defined ordering and use of them should not assume that one of the hooks
 is always called before another unless specifically mentioned.
 
 Types
@@ -105,14 +105,6 @@ Types
 
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``NULL``
       data.
-
-   .. cpp:enumerator:: TS_LIFECYCLE_SSL_SECRET_HOOK
-
-      Called before the data for the certificate or key is loaded.  The data argument to the callback is a pointer to a :type:`TSSecretID` which
-      contains a pointer to the name of the certificate or key and the relevant version if applicable.
-
-      This hook gives the plugin a chance to load the certificate or key from an alternative source and set via the :c:func:`TSSslSecretSet` API.
-      If there is no plugin override, the certificate or key will be loaded from disk and the secret name will be interpreted as a file path.
 
    .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
 
