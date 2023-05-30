@@ -69,7 +69,7 @@ HQSession::populate_protocol(std::string_view *result, int size) const
 {
   int retval = 0;
   if (size > retval) {
-    result[retval++] = this->get_protocol_string();
+    result[retval++] = static_cast<QUICNetVConnection *>(this->_vc)->negotiated_application_name();
     if (size > retval) {
       retval += super::populate_protocol(result + retval, size - retval);
     }
