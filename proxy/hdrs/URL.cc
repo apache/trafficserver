@@ -1756,7 +1756,7 @@ memcpy_tolower(char *d, const char *s, int n)
   }
 }
 
-#define BUFSIZE 512
+#define BUFSIZE 4096
 
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
