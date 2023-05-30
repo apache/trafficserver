@@ -18,6 +18,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# shellcheck disable=SC1091
+#
+set -o pipefail
+set -o errexit
+
 GIT_TOP="$(git rev-parse --show-toplevel)"
 source "$GIT_TOP/tools/clang-format.sh"
 
@@ -44,19 +49,19 @@ if [ ! -x "$FORMAT" ]; then
 fi
 
 source "$GIT_TOP/tools/autopep8.sh"
-if [ ! -d ${AUTOPEP8_VENV} ]; then
+if [ ! -d "${AUTOPEP8_VENV}" ]; then
     echo "Run \"make autopep8\""
     exit 1
 fi
-source ${AUTOPEP8_VENV}/bin/activate
+source "${AUTOPEP8_VENV}/bin/activate"
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
 autopep8_patch_file=$(mktemp -t autopep8.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $autopep8_patch_file" 0 1 2 3 5 15
+trap 'rm -f $clang_patch_file $autopep8_patch_file' 0 1 2 3 15
 
 # Loop over all files that are changed, and produce a diff file
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(?:yamlcpp|swoc)" | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(?:yamlcpp|swoc)" | while read -r file; do
     case "$file" in
     *.cc | *.c | *.h | *.h.in)
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
@@ -66,7 +71,7 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(?:y
     *.py | *.cli.ext | *.test.ext)
         autopep8 \
             --ignore-local-config \
-            --exclude ${GIT_TOP}/lib/yamlcpp \
+            --exclude "${GIT_TOP}/lib/yamlcpp" \
             --max-line-length 132 \
             --aggressive \
             --aggressive \

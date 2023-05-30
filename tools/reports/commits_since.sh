@@ -32,7 +32,7 @@ PRETTY=${3:-format:%an}
 CMD="git rev-list --no-merges --pretty=${PRETTY}"
 
 if [ "$DATE" = "" ]; then
-    $CMD ${COMMIT}
+    $CMD "${COMMIT}"
 else
-    $CMD --after="${DATE}" ${COMMIT}
+    $CMD --after="${DATE}" "${COMMIT}"
 fi

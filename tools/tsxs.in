@@ -17,10 +17,6 @@
 #   limitations under the License.
 
 host="@HOST_GUESS@"
-prefix="@prefix@"
-exec_prefix="@exec_prefix@"
-libdir="@libdir@"
-localstatedir="@localstatedir@"
 
 INSTALLDIR=$(eval echo "@libexecdir@")
 INCLUDEDIR=$(eval echo "@includedir@")
@@ -40,12 +36,12 @@ fi
 
 debug() {
     if [ -n "$DEBUGECHO" ]; then
-        echo $*
+        echo "$@"
     fi
 }
 
 bail() {
-    echo tsxs: $*
+    echo tsxs: "$@"
     exit 1
 }
 
@@ -78,11 +74,11 @@ query() {
     case $1 in
     CC) echo @CC@ ;;
     CXX) echo @CXX@ ;;
-    CFLAGS) echo $CFLAGS ;;
-    CXXFLAGS) echo $CXXFLAGS ;;
-    CPPFLAGS) echo $CPPFLAGS ;;
-    LIBS) echo $LIBS ;;
-    LDFLAGS) echo $LDFLAGS ;;
+    CFLAGS) echo "$CFLAGS" ;;
+    CXXFLAGS) echo "$CXXFLAGS" ;;
+    CPPFLAGS) echo "$CPPFLAGS" ;;
+    LIBS) echo "$LIBS" ;;
+    LDFLAGS) echo "$LDFLAGS" ;;
     PREFIX) echo @prefix@ ;;
     SYSCONFDIR) echo @sysconfdir@ ;;
     INCLUDEDIR) echo @includedir@ ;;
@@ -97,7 +93,7 @@ query() {
 
 compile() {
     SRC=$1
-    extension=$(echo $SRC | sed -e 's/^.*\.//g')
+    extension=${SRC##*.}
     case $extension in
     c)
         MY_CFLAGS="$CPPFLAGS $CFLAGS"
@@ -117,10 +113,11 @@ compile() {
         ;;
     esac
 
-    obj=$(echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;')
+    obj=${SRC/%$extension/lo} # Replace trailing extension with "lo".
     echo "  compiling $SRC -> $obj"
     debug "$MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
-    $MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj ||
+    # shellcheck disable=SC2086
+    $MY_CC $MY_CFLAGS $PICFLAGS -c "$SRC" -o "$obj" ||
         bail "compilation failed: $MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
     OBJS="$OBJS $obj"
     BUILD=1
@@ -129,35 +126,24 @@ compile() {
 case $host in
 *-*-darwin*)
     LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@"
-    CPPFLAGS="$CPPFLAGS"
     PICFLAGS="-fPIC"
     MODULELD="$CC -bundle -flat_namespace -undefined suppress"
-    MODULELDXX="$CXX -bundle -flat_namespace -undefined suppress"
-    MODULEEXT=bundle
     RLDFLAG="-Wl,-rpath,"
     ;;
 *-*-linux*)
     LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@ -Wl,-E"
-    CPPFLAGS="$CPPFLAGS"
     PICFLAGS="-fpic"
     MODULELD="$CC -shared"
-    MODULELDXX="$CXX -shared"
-    MODULEEXT=so
     RLDFLAG="-Wl,--rpath="
-    WHOLE_ARCHIVE="-Wl,--whole-archive"
-    NOWHOLE_ARCHIVE="-Wl,--no-whole-archive"
     ;;
 *-*-freebsd*)
     PICFLAGS="-fpic"
     MODULELD="$CC -shared"
-    MODULELDXX="$CXX -shared"
-    MODULEEXT=so
     RLDFLAG="-Wl,--rpath="
     ;;
 *)
     PICFLAGS="-fpic"
     MODULELD="$CC -shared"
-    MODULEEXT=so
     RLDFLAG="-Wl,--rpath="
     ;;
 esac
@@ -201,18 +187,22 @@ while getopts "hivl:L:I:c:C:o:q:" OPTION; do
     C)
         files[${#files[@]}]="$OPTARG"
         ;;
+    *)
+        bail "invalid option: $OPTION"
+        ;;
     esac
 done
 shift $((OPTIND - 1))
 
 for file in "${files[@]}" "$@"; do
-    compile $file
+    compile "$file"
 done
 
-if [ "$BUILD" = "1" -a -n "$OBJ" ]; then
+if [ "$BUILD" = "1" ] && [ -n "$OBJ" ]; then
     echo "  linking -> $OBJ"
     debug "$LD $LDFLAGS -o $OBJ $OBJS $LIBS"
-    $LD $LDFLAGS -o $OBJ $OBJS $LIBS ||
+    # shellcheck disable=SC2086
+    $LD $LDFLAGS -o "$OBJ" $OBJS $LIBS ||
         bail "link failed: $LD $LDFLAGS -o $OBJ $OBJS $LIBS"
 fi
 
@@ -220,8 +210,8 @@ if [ -n "$OBJ" ]; then
     if [ -r "$OBJ" ]; then
         if [ "$INSTALL" = "1" ]; then
             echo "  installing $OBJ -> $INSTALLDIR/$OBJ"
-            cp $OBJ ${DESTDIR}${INSTALLDIR}/${OBJ}
-            chmod 0755 ${DESTDIR}${INSTALLDIR}/${OBJ}
+            cp "$OBJ" "${DESTDIR}${INSTALLDIR}/${OBJ}"
+            chmod 0755 "${DESTDIR}${INSTALLDIR}/${OBJ}"
         fi
     else
         echo "No $OBJ"

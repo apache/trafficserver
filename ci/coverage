@@ -16,13 +16,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set -o errexit
+set -o pipefail
+
 LCOV=${LCOV:-lcov}
 GENHTML=${GENHTML:-genhtml}
 
 TMPDIR=${TMPDIR:-/tmp}
 BUILDID="org.apache.trafficserver.$$"
 
-SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
+SRCROOT=${SRCROOT:-$(cd "$(dirname "$0")/.." && pwd)} # where the source lives
 OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
 DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
 
@@ -30,22 +33,26 @@ DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
 # only a small amount of memory.
 NPROCS=${NPROCS:-2}
 
-mkdir -p $SRCROOT
-mkdir -p $OBJROOT
-mkdir -p $DSTROOT
+mkdir -p "$SRCROOT"
+mkdir -p "$OBJROOT"
+mkdir -p "$DSTROOT"
 
 autogen() {
   (
     cd "$SRCROOT"
-    [ configure -nt configure.ac -a Makefile.in -nt Makefile.am ] || autoreconf -fi
+    if [ configure -nt configure.ac ] && [ Makefile.in -nt Makefile.am ] ; then
+        :
+    else
+        autoreconf -fi
+    fi
   )
 }
 
 configure() {
   (
-    cd $OBJROOT
-    $SRCROOT/configure \
-      --prefix=$DSTROOT \
+    cd "$OBJROOT"
+    "$SRCROOT/configure" \
+      --prefix="$DSTROOT" \
       --enable-debug \
       --enable-coverage \
       --enable-werror \
@@ -59,13 +66,13 @@ configure() {
 }
 
 build() {
-  ( cd $OBJROOT && $MAKE -j $NPROCS )
-  ( cd $OBJROOT && $MAKE install )
+  ( cd "$OBJROOT" && $MAKE -j "$NPROCS" )
+  ( cd "$OBJROOT" && $MAKE install )
 }
 
 regress() {
-  ( cd $OBJROOT && $MAKE check ) && \
-  $DSTROOT/bin/traffic_server -k -K -R 1
+  ( cd "$OBJROOT" && $MAKE check ) && \
+  "$DSTROOT/bin/traffic_server" -k -K -R 1
 }
 
 CC=${CC:-gcc}
@@ -84,11 +91,11 @@ autogen || exit 1
 configure "$@" || exit 1
 build || exit 1
 
-$LCOV --quiet --capture --initial --directory $OBJROOT --output-file initial.info
+$LCOV --quiet --capture --initial --directory "$OBJROOT" --output-file initial.info
 
 regress
 
-$LCOV --quiet --capture --directory $OBJROOT --output-file tests.info
+$LCOV --quiet --capture --directory "$OBJROOT" --output-file tests.info
 
 # The --add-tracefile option refuses to create an output file with
 # --output-file (contrary to documentation). Capture the combined

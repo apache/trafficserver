@@ -18,6 +18,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# shellcheck disable=SC1091
+
+set -o errexit
+set -o pipefail
+
 # Update the PKGVERSION with the new desired autopep8 tag when a new autopep8
 # version is desired.
 # See:
@@ -40,12 +45,11 @@ function main() {
     pip install -q virtualenv
   fi
 
-  AUTOPEP8_VENV=${AUTOPEP8_VENV:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
-  if [ ! -e ${AUTOPEP8_VENV} ]
-  then
-    virtualenv ${AUTOPEP8_VENV}
+  AUTOPEP8_VENV=${AUTOPEP8_VENV:-$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)/.git/fmt/autopep8_${AUTOPEP8_VERSION}_venv}
+  if [ ! -d "${AUTOPEP8_VENV}" ] ; then
+    virtualenv "${AUTOPEP8_VENV}"
   fi
-  source ${AUTOPEP8_VENV}/bin/activate
+  source "${AUTOPEP8_VENV}/bin/activate"
 
   pip install -q "pycodestyle==${PYCODESTYLE_TAG}"
   pip install -q "autopep8==${AUTOPEP8_VERSION}"
@@ -58,31 +62,32 @@ function main() {
       exit 1
   fi
 
-  DIR=${@:-.}
+  DIR="${*:-.}" # XXX this collects all arg, but actually only 1 directory arg is allowed.
 
   # Only run autopep8 on tracked files. This saves time and possibly avoids
   # formatting files the user doesn't want formatted.
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
-  files=${tmp_dir}/git_files.txt
-  files_filtered=${tmp_dir}/git_files_filtered.txt
-  git ls-tree -r HEAD --name-only ${DIR} | grep -vE "lib/yamlcpp" > ${files}
+  files="${tmp_dir}/git_files.txt"
+  files_filtered="${tmp_dir}/git_files_filtered.txt"
+  git ls-tree -r HEAD --name-only "${DIR}" | grep -vE "lib/yamlcpp" > "${files}"
   # Add to the above any newly added staged files.
-  git diff --cached --name-only --diff-filter=A >> ${files}
+  git diff --cached --name-only --diff-filter=A >> "${files}"
   # Keep this list of Python extensions the same with the list of
   # extensions searched for in the tools/git/pre-commit hook.
-  grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
+  grep -E '\.py$|\.cli.ext$|\.test.ext$' "${files}" > "${files_filtered}"
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
-  sed -i'.bak' 's:^:\./:' ${files_filtered}
-  rm -f ${files_filtered}.bak
+  sed -i'.bak' 's:^:\./:' "${files_filtered}"
+  rm -f "${files_filtered}.bak"
 
   # Efficiently retrieving modification timestamps in a platform
   # independent way is challenging. We use find's -newer argument, which
   # seems to be broadly supported. The following file is created and has a
   # timestamp just before running clang-format. Any file with a timestamp
   # after this we assume was modified by clang-format.
-  start_time_file=${tmp_dir}/format_start.$$
-  touch ${start_time_file}
+  start_time_file="${tmp_dir}/format_start.$$"
+  touch "${start_time_file}"
+  # shellcheck disable=SC2046
   autopep8 \
       --ignore-local-config \
       -i \
@@ -91,12 +96,13 @@ function main() {
       --max-line-length 132 \
       --aggressive \
       --aggressive \
-      $(cat ${files_filtered})
-  find $(cat ${files_filtered}) -newer ${start_time_file}
+      $(cat "${files_filtered}")
+  # shellcheck disable=SC2046
+  find $(cat "${files_filtered}") -newer "${start_time_file}"
 
   # The above will not catch the Python files in the metalink tests because
   # they do not have extensions.
-  metalink_dir=${DIR}/plugins/experimental/metalink/test
+  metalink_dir="${DIR}/plugins/experimental/metalink/test"
   autopep8 \
       --ignore-local-config \
       -i \
@@ -106,9 +112,9 @@ function main() {
       --aggressive \
       --aggressive \
       --recursive \
-      ${metalink_dir}
-  find ${metalink_dir} -newer ${start_time_file}
-  rm -rf ${tmp_dir}
+      "${metalink_dir}"
+  find "${metalink_dir}" -newer "${start_time_file}"
+  rm -rf "${tmp_dir}"
   deactivate
 }
 

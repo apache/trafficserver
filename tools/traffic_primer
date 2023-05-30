@@ -20,6 +20,7 @@
 # and body) to a set of hosts. The host:port defaults to localhost:80 for fetching
 # the URL, but can be overridden with -h/-p.
 
+# shellcheck disable=SC3037
 
 # Default values for command line options
 HOST="localhost"
@@ -37,7 +38,6 @@ usage() {
     exit 2
 }
 
-
 #
 # push(url, host ...)
 #   fetch the URL storing header + body in a tmp file, and then replay it to the hosts
@@ -47,53 +47,51 @@ push() {
 
     echo "---> ${u}"
     # First make sure the "source" proxy is alive
-    nc -z $HOST $PORT > /dev/null
-    if [ $? -gt 0 ]; then
+    if ! nc -z "$HOST" "$PORT" > /dev/null ; then
         echo "  Error: source ${HOST}:${PORT} is down"
         return
     fi
 
     f=$(mktemp /tmp/pusher-XXXXXX)
-    trap "rm -f ${f} ${f}.hdrs ${f}.body; exit 0" 0 1 2 3 15 # Just in case we left it around
+    # shellcheck disable=SC2064
+    trap "rm -f \"${f}\" \"${f}.hdrs\" \"${f}.body\" ; exit 0" 0 1 2 3 15 # Just in case we left it around
 
     # Fetch the "source" object first
     # [ $FORCE -gt 0 ] && curl -x ${HOST}:${PORT} -s -o /dev/null -X PURGE $u
     echo -en "\tFetching source body ..."
-    curl -x ${HOST}:${PORT} -s -D ${f}.hdrs -o ${f}.body $u
-    s_md5=$(cat ${f}.body | md5sum)
+    curl -x "${HOST}:${PORT}" -s -D "${f}.hdrs" -o "${f}.body" "$u"
+    s_md5=$(md5sum < "${f}.body")
     echo "done"
     echo -e "\tSource MD5=${s_md5}"
 
-    cat ${f}.hdrs ${f}.body > ${f}
+    cat "${f}.hdrs" "${f}.body" > "${f}"
 
-    for h in $*; do
+    for h in "$@" ; do
         # Make sure the destination host:port is up
-        nc -z $h $PORT > /dev/null
-        if [ $? -gt 0 ]; then
+        if ! nc -z "$h" "$PORT" > /dev/null ; then
             echo -e "\tError: ${h}:${PORT} is down"
         else
             echo -en "\tProcessing ${h}:${PORT}..."
             # PURGE the object first if we -f (force) it
             if [ $FORCE -gt 0 ]; then
                 echo -n " purged..."
-                curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+                curl -x "${h}:${PORT}" -s -o /dev/null -X PURGE "$u"
             fi
 
             # If it's not in cache now, PUSH it
-            curl -f -I -x ${h}:${PORT} -s -o /dev/null -H "Cache-Control: only-if-cached" $u
-            if [ $? -gt 0 ]; then
+            if ! curl -f -I -x "${h}:${PORT}" -s -o /dev/null -H "Cache-Control: only-if-cached" "$u" ; then
                 echo -n " pushing..."
-                curl -x ${h}:${PORT} -s -o /dev/null -X PUSH --data-binary @${f} $u
+                curl -x "${h}:${PORT}" -s -o /dev/null -X PUSH --data-binary "@${f}" "$u"
             fi
             echo " done."
 
             # Now, verify the content MD5 if enabled
             if [ $MD5 -gt 0 ]; then
-                n_md5=$(curl -x ${h}:${PORT} -s $u | md5sum)
+                n_md5=$(curl -x "${h}:${PORT}" -s "$u" | md5sum)
                 if [ "$n_md5" != "$s_md5" ]; then
                     # This is bad, MD5's don't match, error and PURGE it
                     echo -en "\t\t Error! MD5 incorrect! Purging the object."
-                    curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+                    curl -x "${h}:${PORT}" -s -o /dev/null -X PURGE "$u"
                 else
                     echo -e "\t\tMD5 checksum is good."
                 fi
@@ -101,16 +99,17 @@ push() {
         fi
     done
 
-    rm -f ${f} ${f}.hdrs ${f}.body
+    rm -f "${f}" "${f}.hdrs" "${f}.body"
 }
 
-
 # Parse command line arguments
-PARGS=$(getopt u:U:h:p:dfc $@)
+PARGS=$(getopt u:U:h:p:dfc "$@")
+# shellcheck disable=SC2181
 [ $? != 0 ] && usage
 
 url=""
 urlfile=""
+# shellcheck disable=SC2086
 set -- $PARGS
 while true; do
     case "$1" in
@@ -118,6 +117,7 @@ while true; do
             MD5=1
             shift ;;
         -d)
+            # shellcheck disable=SC2034
             DEBUG=1
             shift ;;
         -f) FORCE=1
@@ -139,7 +139,6 @@ while true; do
             break ;;
         *)
             usage
-            break
             ;;
     esac
 done
@@ -148,12 +147,12 @@ done
 # Now process the URL or URL file list
 #
 if [ "" != "$urlfile" ]; then
-    while read line; do
-        push $line $@
+    while read -r line; do
+        push "$line" "$@"
         echo
-    done < $urlfile
-elif ["" != "$url" ]; then
-    push $url $@
+    done < "$urlfile"
+elif [ "" != "$url" ]; then
+    push "$url" "$@"
 else
     usage
 fi

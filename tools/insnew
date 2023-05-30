@@ -17,6 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -o errexit
+set -o pipefail
+
 # For each filespec FS given (one per line) on stdin, rename FS (if it exists) to FS.old, then rename FS.new to
 # FS.
 
@@ -25,7 +28,7 @@ if [[ "$*" = "--help" ]] ; then
     exit 0
 fi
 
-while read F
+while read -r F
 do
 python3 - "$F" << THE_END
 

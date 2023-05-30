@@ -18,14 +18,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e # exit on error
+set -o errexit
+set -o pipefail
 
-
-for pr in $@; do
+for pr in "$@" ; do
     if [[ "$pr" =~ ^[0-9]+$ ]]; then
 	URI="https://patch-diff.githubusercontent.com/raw/apache/trafficserver/pull/${pr}.diff"
 	echo "Applying changes from $URI ..."
-	curl -s $URI | patch -p1
+	curl --fail --location -s "$URI" | patch -p1
     else
 	echo "$PR is not a valid pull request, skipping"
     fi

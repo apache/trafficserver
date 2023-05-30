@@ -19,7 +19,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
+set -o errexit
+set -o pipefail
 
 # Update this as the draft we support updates.
 OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1t+quic"}
@@ -70,7 +71,7 @@ if [ -z ${QUICHE_BSSL_PATH+x} ]; then
 fi
 
 set -x
-if [ `uname -s` = "Linux" ]
+if [ "$(uname -s)" = "Linux" ]
 then
   num_threads=$(nproc)
 else
@@ -82,23 +83,23 @@ fi
 echo "Building boringssl..."
 
 # We need this go version.
-sudo mkdir -p ${BASE}/go
+sudo mkdir -p "${BASE}/go"
 
-if [ `uname -m` = "arm64" -o `uname -m` = "aarch64" ]; then
+if [ "$(uname -m)" = "arm64" ] || [ "$(uname -m)" = "aarch64" ]; then
     ARCH="arm64"
 else
     ARCH="amd64"
 fi
 
-if [ `uname -s` = "Darwin" ]; then
+if [ "$(uname -s)" = "Darwin" ]; then
     OS="darwin"
 else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.20.1.${OS}-${ARCH}.tar.gz
-rm go1.20.1.${OS}-${ARCH}.tar.gz
+wget "https://go.dev/dl/go1.20.1.${OS}-${ARCH}.tar.gz"
+sudo rm -rf "${BASE}/go" && sudo tar -C "${BASE}" -xf "go1.20.1.${OS}-${ARCH}.tar.gz"
+rm "go1.20.1.${OS}-${ARCH}.tar.gz"
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
@@ -111,12 +112,12 @@ cd boringssl
 mkdir -p build
 cd build
 cmake \
-  -DGO_EXECUTABLE=${GO_BINARY_PATH} \
-  -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
+  -DGO_EXECUTABLE="${GO_BINARY_PATH}" \
+  -DCMAKE_INSTALL_PREFIX="${BASE}/boringssl" \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=1 ../
 
-${MAKE} -j ${num_threads}
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} install
 cd ..
 
@@ -127,25 +128,25 @@ QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone --recursive https://github.com/cloudflare/quiche.git
 cd quiche
 QUICHE_BSSL_PATH=${QUICHE_BSSL_PATH} QUICHE_BSSL_LINK_KIND=dylib cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog
-sudo mkdir -p ${QUICHE_BASE}/lib/pkgconfig
-sudo mkdir -p ${QUICHE_BASE}/include
-sudo cp target/release/libquiche.a ${QUICHE_BASE}/lib/
-[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so ${QUICHE_BASE}/lib/
-sudo cp quiche/include/quiche.h ${QUICHE_BASE}/include/
-sudo cp target/release/quiche.pc ${QUICHE_BASE}/lib/pkgconfig
+sudo mkdir -p "${QUICHE_BASE}/lib/pkgconfig"
+sudo mkdir -p "${QUICHE_BASE}/include"
+sudo cp target/release/libquiche.a "${QUICHE_BASE}/lib/"
+[ -f target/release/libquiche.so ] && sudo cp target/release/libquiche.so "${QUICHE_BASE}/lib/"
+sudo cp quiche/include/quiche.h "${QUICHE_BASE}/include/"
+sudo cp target/release/quiche.pc "${QUICHE_BASE}/lib/pkgconfig"
 cd ..
 
 # OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
 echo "Building OpenSSL with QUIC support"
-[ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/quictls/openssl.git openssl-quic
+[ ! -d openssl-quic ] && git clone -b "${OPENSSL_BRANCH}" --depth 1 https://github.com/quictls/openssl.git openssl-quic
 cd openssl-quic
-./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
-${MAKE} -j ${num_threads}
+./config enable-tls1_3 --prefix="${OPENSSL_PREFIX}"
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} -j install
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
-sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
+sudo ln -sf "${OPENSSL_PREFIX}" "${OPENSSL_BASE}"
 cd ..
 
 # Then nghttp3
@@ -159,13 +160,13 @@ fi
 cd nghttp3
 autoreconf -if
 ./configure \
-  --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  --prefix="${BASE}" \
+  PKG_CONFIG_PATH="${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig" \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-lib-only
-${MAKE} -j ${num_threads}
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} install
 cd ..
 
@@ -180,13 +181,13 @@ fi
 cd ngtcp2
 autoreconf -if
 ./configure \
-  --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  --prefix="${BASE}" \
+  PKG_CONFIG_PATH="${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig" \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-lib-only
-${MAKE} -j ${num_threads}
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} install
 cd ..
 
@@ -200,7 +201,7 @@ if [ ! -d nghttp2 ]; then
 fi
 cd nghttp2
 autoreconf -if
-if [ `uname -s` = "Darwin" ]
+if [ "$(uname -s)" = "Darwin" ]
 then
   # --enable-app requires systemd which is not available on Mac.
   ENABLE_APP=""
@@ -208,14 +209,14 @@ else
   ENABLE_APP="--enable-app"
 fi
 ./configure \
-  --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  --prefix="${BASE}" \
+  PKG_CONFIG_PATH="${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig" \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
   --enable-http3 \
   ${ENABLE_APP}
-${MAKE} -j ${num_threads}
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} install
 cd ..
 
@@ -227,14 +228,14 @@ cd curl
 # The second runs fine.
 autoreconf -fi || autoreconf -fi
 ./configure \
-  --prefix=${BASE} \
-  --with-ssl=${OPENSSL_PREFIX} \
-  --with-nghttp2=${BASE} \
-  --with-nghttp3=${BASE} \
-  --with-ngtcp2=${BASE} \
+  --prefix="${BASE}" \
+  --with-ssl="${OPENSSL_PREFIX}" \
+  --with-nghttp2="${BASE}" \
+  --with-nghttp3="${BASE}" \
+  --with-ngtcp2="${BASE}" \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}"
-${MAKE} -j ${num_threads}
+${MAKE} -j "${num_threads}"
 sudo ${MAKE} install
 cd ..

@@ -16,19 +16,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e # exit on error
+set -o errexit
+set -o pipefail
 
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/via.XXXXXX")
-if [ ! -z "$srcdir"]; then
-    srcdir=$(cd $srcdir && pwd)
+if [ -n "$srcdir" ] ; then
+    srcdir=$(cd "$srcdir" && pwd)
 else
     srcdir=$(pwd)
 fi
 
 # test command line option
 echo "Testing the command line option:"
-for f in $srcdir/tests/*; do
+for f in "$srcdir"/tests/*; do
     name=$(basename "$f")
     echo "testing $name"
     ./traffic_via.pl -s "$name" > "$tmpfile" 2>&1 || true
@@ -37,11 +38,11 @@ done
 
 # test stdin
 echo -e "\nTesting stdin:"
-for f in $srcdir/tests/\[*; do
+for f in "$srcdir"/tests/\[*; do
     name=$(basename "$f")
     echo "testing $name"
     echo "$name" | ./traffic_via.pl > "$tmpfile" 2>&1 || true
     diff -u "$tmpfile" "$srcdir/tests/$name"
 done
 
-rm -f $tmpfile
+rm -f "$tmpfile"
