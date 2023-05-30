@@ -1,4 +1,5 @@
 Changes with Apache Traffic Server 9.2.1
+  #9184 - TSan: Make Thread::cur_time thread local
   #9238 - Add slice config to strip Range header for HEAD requests
   #9286 - Skip dns_host_down autest from 9.2.x branch
   #9300 - Fixed issue with SDK_API_HttpParentProxySet_Fail regression test
@@ -40,6 +41,7 @@ Changes with Apache Traffic Server 9.2.1
   #9640 - 9.2.x: Fix clang 16 92x warnings
   #9641 - 9.2.x Stabilize 92x emergency and fatal autests
   #9646 - (Backport)Fix debian symbol not found for test_HttpTransact
+  #9647 - 9.2.x: Fix an error on SSL config reload (plus some cleanup). (#9334)
   #9653 - 9.2.x: Autest updates for recent versions of curl
   #9660 - Try to do less work in hot function HttpHookState::getNext
   #9671 - Stabilize autest tls_hooks17
