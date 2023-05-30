@@ -19,6 +19,8 @@ Verify HTTP body buffering.
 
 import os
 
+Test.SkipUnless(Condition.PluginExists('request_buffer.so'))
+
 
 def int_to_hex_string(int_value):
     '''
