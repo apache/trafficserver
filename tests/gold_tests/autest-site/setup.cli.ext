@@ -146,6 +146,7 @@ Variables.AtsExampleDir = os.path.join(AutestSitePath, '..', '..', '..', 'exampl
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '..', '..', 'tools')
 Variables.VerifierBinPath = ENV['VERIFIER_BIN']
 Variables.BuildRoot = ENV['BUILD_ROOT']
+Variables.RepoDir = repo_root
 Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
 Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
 
