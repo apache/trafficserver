@@ -26,7 +26,7 @@ file_suffix = 1
 # case 1 TLS with no data
 tr = Test.AddTestRun("Test records to yaml convert script - full file")
 
-tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
 tr.Setup.Copy('legacy_config/full_records.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f full_records.config --output generated{file_suffix}.yaml --yaml --mute'
 f = tr.Disk.File(f"generated{file_suffix}.yaml")
@@ -35,7 +35,7 @@ f.Content = "gold/full_records.yaml"
 file_suffix = file_suffix + 1
 
 tr = Test.AddTestRun("Test records to yaml convert script -only renamed records.")
-tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
 tr.Setup.Copy('legacy_config/old_records.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f old_records.config --output generated{file_suffix}.yaml --yaml'
 tr.Processes.Default.Stream = 'gold/renamed_records.out'
@@ -44,7 +44,7 @@ f.Content = "gold/renamed_records.yaml"
 
 
 tr = Test.AddTestRun("Test errors when trying to override values ")
-tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
 tr.Setup.Copy('legacy_config/override_value.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_value.config --output generated{file_suffix}.yaml --yaml -m'
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
@@ -52,7 +52,7 @@ tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "Error should be present")
 
 tr = Test.AddTestRun("Test errors when trying to override maps")
-tr.Setup.Copy(os.path.join(Test.Variables.BuildRoot, "tools/records/convert2yaml.py"))
+tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
 tr.Setup.Copy('legacy_config/override_map.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_map.config --output generated{file_suffix}.yaml --yaml -m'
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
