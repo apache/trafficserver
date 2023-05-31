@@ -186,6 +186,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       swoc::TextView fqdn{node[TS_fqdn].Scalar()};
       auto port_view{fqdn.take_suffix_at(':')};
       if (port_view && fqdn) {
+        item.fqdn = fqdn;
         auto min{port_view.split_prefix_at('-')};
         if (!min) {
           min = port_view;
@@ -203,8 +204,9 @@ template <> struct convert<YamlSNIConfig::Item> {
         }
 
         item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
+      } else {
+        item.fqdn = port_view;
       }
-      item.fqdn = fqdn;
     } else {
       return false; // servername must be present
     }

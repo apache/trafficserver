@@ -88,6 +88,12 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     const auto &item{conf.items[1]};
     CHECK(item.fqdn == "someport.com");
   }
+
+  SECTION("If no port was specified, it should not interfere with the fqdn.")
+  {
+    const auto &item{conf.items[0]};
+    CHECK(item.fqdn == "allports.com");
+  }
 }
 
 TEST_CASE("YamlConfig handles bad ports appropriately.")
