@@ -1394,16 +1394,15 @@ HostDBContinuation::remove_and_trigger_pending_dns()
       if (hash.hash == c->hash.hash) {
         Dbg(dbg_ctl_hostdb, "dequeuing additional request");
         q.remove(c);
-        qq.enqueue(c);
+        if (!c->action.cancelled) {
+          qq.enqueue(c);
+        }
       }
       c = n;
     }
   }
   EThread *thread = this_ethread();
   while ((c = qq.dequeue())) {
-    if (c->action.cancelled) {
-      continue;
-    }
     // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
     EThread *affinity_thread = c->getThreadAffinity();
     SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
