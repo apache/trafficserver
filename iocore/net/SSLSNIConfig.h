@@ -30,6 +30,8 @@
  ****************************************************************************/
 #pragma once
 
+#include "swoc/DiscreteRange.h"
+
 #include <vector>
 #include <string_view>
 #include <strings.h>
@@ -60,11 +62,17 @@ struct PcreFreer {
 struct NamedElement {
   NamedElement() {}
 
+  NamedElement(const NamedElement &other)            = delete;
+  NamedElement &operator=(const NamedElement &other) = delete;
   NamedElement(NamedElement &&other);
   NamedElement &operator=(NamedElement &&other);
+  ~NamedElement() = default;
 
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
+
+  using port_range_t = swoc::DiscreteRange<long>;
+  port_range_t ports{1, 65535};
 
   std::unique_ptr<pcre, PcreFreer> match;
 };
@@ -84,8 +92,11 @@ struct SNIConfigParams : public ConfigInfo {
   SNIConfigParams() = default;
   ~SNIConfigParams() override;
 
+  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, long conn_port) const;
+
   const NextHopProperty *get_property_config(const std::string &servername) const;
   int initialize();
+  int initialize(const std::string &sni_filename);
   /** Walk sni.yaml config and populate sni_action_list
       @return 0 for success, 1 is failure
    */

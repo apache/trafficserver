@@ -97,7 +97,9 @@ test_UDPNet_SOURCES = \
 
 test_libinknet_SOURCES = \
 	libinknet_stub.cc \
+	unit_tests/unit_test_main.cc \
 	unit_tests/test_ProxyProtocol.cc \
+	unit_tests/test_SSLSNIConfig.cc \
 	unit_tests/test_YamlSNIConfig.cc
 
 test_libinknet_CPPFLAGS = \

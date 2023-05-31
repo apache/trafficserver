@@ -60,6 +60,7 @@ NamedElement::operator=(NamedElement &&other)
 {
   if (this != &other) {
     match = std::move(other.match);
+    ports = std::move(other.ports);
   }
   return *this;
 }
@@ -111,45 +112,51 @@ int
 SNIConfigParams::load_sni_config()
 {
   for (auto &item : yaml_sni.items) {
-    auto ai = sni_action_list.emplace(sni_action_list.end());
-    ai->set_glob_name(item.fqdn);
+    auto &ai = sni_action_list.emplace_back();
+    ai.set_glob_name(item.fqdn);
+    if (!item.port_ranges.empty()) {
+      const auto [min, max]{item.port_ranges[0]};
+      ai.ports = {min, max};
+    } else {
+      ai.ports = {1, 65535};
+    }
     Debug("ssl", "name: %s", item.fqdn.data());
 
     // set SNI based actions to be called in the ssl_servername_only callback
     if (item.offer_h2.has_value()) {
-      ai->actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
+      ai.actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
     }
     if (item.offer_quic.has_value()) {
       ai->actions.push_back(std::make_unique<ControlQUIC>(item.offer_quic.value()));
     }
     if (item.verify_client_level != 255) {
-      ai->actions.push_back(
+      ai.actions.push_back(
         std::make_unique<VerifyClient>(item.verify_client_level, item.verify_client_ca_file, item.verify_client_ca_dir));
     }
     if (item.host_sni_policy != 255) {
-      ai->actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
+      ai.actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
     }
     if (item.valid_tls_version_min_in >= 0 || item.valid_tls_version_max_in >= 0) {
-      ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.valid_tls_version_min_in, item.valid_tls_version_max_in));
+      ai.actions.push_back(std::make_unique<TLSValidProtocols>(item.valid_tls_version_min_in, item.valid_tls_version_max_in));
     } else {
       if (!item.protocol_unset) {
-        ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
+        ai.actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
       }
     }
     if (item.tunnel_destination.length() > 0) {
-      ai->actions.push_back(
+      ai.actions.push_back(
         std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type, item.tunnel_prewarm, item.tunnel_alpn));
     }
     if (!item.client_sni_policy.empty()) {
-      ai->actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));
+      ai.actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));
     }
     if (item.http2_buffer_water_mark.has_value()) {
-      ai->actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
+      ai.actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
     }
 
-    ai->actions.push_back(std::make_unique<ServerMaxEarlyData>(item.server_max_early_data));
+    ai.actions.push_back(std::make_unique<ServerMaxEarlyData>(item.server_max_early_data));
 
-    ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
+    ai.actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
     // set the next hop properties
     auto nps = next_hop_list.emplace(next_hop_list.end());
@@ -175,6 +182,49 @@ SNIConfigParams::load_sni_config()
   } // end for
 
   return 0;
+}
+
+std::pair<const ActionVector *, ActionItem::Context>
+SNIConfigParams::get(std::string_view servername, long conn_port) const
+{
+  int ovector[OVECSIZE];
+
+  for (const auto &retval : sni_action_list) {
+    int length = servername.length();
+    if (retval.match == nullptr && length == 0) {
+      return {&retval.actions, {}};
+    } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
+               offset >= 0) {
+      if (!retval.ports.contains(conn_port)) {
+        continue;
+      }
+      if (offset == 1) {
+        // first pair identify the portion of the subject string matched by the entire pattern
+        if (ovector[0] == 0 && ovector[1] == length) {
+          // full match
+          return {&retval.actions, {}};
+        } else {
+          continue;
+        }
+      }
+      // If contains groups
+      if (offset == 0) {
+        // reset to max if too many.
+        offset = OVECSIZE / 3;
+      }
+
+      ActionItem::Context::CapturedGroupViewVec groups;
+      groups.reserve(offset);
+      for (int strnum = 1; strnum < offset; strnum++) {
+        const std::size_t start  = ovector[2 * strnum];
+        const std::size_t length = ovector[2 * strnum + 1] - start;
+
+        groups.emplace_back(servername.data() + start, length);
+      }
+      return {&retval.actions, {std::move(groups)}};
+    }
+  }
+  return {nullptr, {}};
 }
 
 std::pair<const ActionVector *, ActionItem::Context>
@@ -221,7 +271,12 @@ int
 SNIConfigParams::initialize()
 {
   std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
+  return initialize(sni_filename);
+}
 
+int
+SNIConfigParams::initialize(const std::string &sni_filename)
+{
   Note("%s loading ...", sni_filename.c_str());
 
   struct stat sbuf;
