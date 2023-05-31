@@ -324,7 +324,7 @@ HQTransaction::_schedule_write_complete_event()
 void
 HQTransaction::_unschedule_write_complete_event()
 {
-  if (this->_read_complete_event) {
+  if (this->_write_complete_event) {
     this->_write_complete_event->cancel();
     this->_write_complete_event = nullptr;
   }
