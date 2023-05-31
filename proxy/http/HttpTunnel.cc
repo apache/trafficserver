@@ -993,7 +993,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       if (c->write_vio == nullptr) {
         consumer_handler(VC_EVENT_ERROR, c);
       } else if (c->write_vio->ntodo() == 0 && c->alive) {
-        consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
+        //  consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
     }
   }

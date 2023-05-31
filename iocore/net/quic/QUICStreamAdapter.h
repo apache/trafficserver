@@ -28,8 +28,14 @@
 class QUICStreamAdapter
 {
 public:
-  QUICStreamAdapter(QUICStream &stream) : _stream(stream) {}
+  QUICStreamAdapter(QUICStream &stream) : _stream(stream), _sid(stream.id()) {}
   virtual ~QUICStreamAdapter() = default;
+
+  QUICStreamId
+  stream_id()
+  {
+    return _sid;
+  }
 
   QUICStream &
   stream()
@@ -62,4 +68,5 @@ public:
 protected:
   virtual Ptr<IOBufferBlock> _read(size_t len) = 0;
   QUICStream &_stream;
+  QUICStreamId _sid;
 };

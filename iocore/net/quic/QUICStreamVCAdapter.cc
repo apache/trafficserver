@@ -84,19 +84,7 @@ QUICStreamVCAdapter::_read(size_t len)
 bool
 QUICStreamVCAdapter::is_eos()
 {
-  if (this->_write_vio.op == VIO::WRITE) {
-    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-
-    if (this->_write_vio.nbytes == INT64_MAX) {
-      return false;
-    }
-    if (this->_write_vio.ntodo() != 0) {
-      return false;
-    }
-    return true;
-  } else {
-    return false;
-  }
+  return this->handler == &QUICStreamVCAdapter::state_stream_closed;
 }
 
 uint64_t
@@ -175,17 +163,13 @@ void
 QUICStreamVCAdapter::notify_eos()
 {
   if (this->_read_vio.op == VIO::READ) {
+    SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
     if (this->_read_vio.cont == nullptr) {
       return;
     }
-    int event = VC_EVENT_EOS;
 
-    MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-    if (lock.is_locked()) {
-      this->_read_vio.cont->handleEvent(event, &this->_read_vio);
-    } else {
-      this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-    }
+    this_ethread()->schedule_imm(this->_read_vio.cont, VC_EVENT_EOS, &this->_read_vio);
   }
 }
 

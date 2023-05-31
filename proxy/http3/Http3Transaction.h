@@ -86,6 +86,7 @@ protected:
   void _close_write_complete_event(Event *e);
   void _signal_read_event();
   void _signal_write_event();
+  void _signal_eos_event();
   void _delete_if_possible();
 
   EThread *_thread = nullptr;

@@ -32,9 +32,6 @@ Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, s
   nwritten = 0;
 
   for (auto g : this->_generators) {
-    if (g->is_done()) {
-      continue;
-    }
     size_t len           = 0;
     Http3FrameUPtr frame = g->generate_frame();
     if (frame) {

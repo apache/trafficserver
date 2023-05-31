@@ -47,18 +47,20 @@ Http3HeaderFramer::~Http3HeaderFramer()
 Http3FrameUPtr
 Http3HeaderFramer::generate_frame()
 {
+  // Debug("http3_trans", "In generate_frame");
   if (!this->_source_vio->get_reader()) {
     return Http3FrameFactory::create_null_frame();
   }
 
-  ink_assert(!this->_transaction->is_response_header_sent());
-
   if (!this->_header_block) {
+    Debug("http3_trans", "Generating header block");
     // this->_header_block will be filled if it is ready
     this->_generate_header_block();
+    this->_wrote_100_continue = false;
   }
 
-  if (this->_header_block) {
+  if (this->_header_block && !this->is_done()) {
+    Debug("http3_trans", "Generating headers frame");
     uint64_t len = std::min(this->_header_block_len - this->_header_block_wrote, UINT64_C(64 * 1024));
 
     Http3FrameUPtr frame = Http3FrameFactory::create_headers_frame(this->_header_block_reader, len);
@@ -66,7 +68,18 @@ Http3HeaderFramer::generate_frame()
     this->_header_block_wrote += len;
 
     if (this->_header_block_len == this->_header_block_wrote) {
-      this->_sent_all_data = true;
+      if (this->_header.expect_final_response()) {
+        this->_header.destroy();
+        free_MIOBuffer(this->_header_block);
+        this->_header_block       = nullptr;
+        this->_header_block_len   = 0;
+        this->_header_block_wrote = 0;
+        http_parser_clear(&this->_http_parser);
+        http_parser_init(&this->_http_parser);
+        this->_wrote_100_continue = true;
+      } else {
+        this->_sent_all_data = true;
+      }
     }
     return frame;
   } else {
@@ -77,7 +90,13 @@ Http3HeaderFramer::generate_frame()
 bool
 Http3HeaderFramer::is_done() const
 {
-  return this->_sent_all_data;
+  return this->_sent_all_data || this->_wrote_100_continue;
+}
+
+bool
+Http3HeaderFramer::wrote_100_continue() const
+{
+  return this->_wrote_100_continue;
 }
 
 void
@@ -94,7 +113,13 @@ Http3HeaderFramer::_generate_header_block()
     this->_header.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
     parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   }
+
+  if (bytes_used <= 0) {
+    return;
+  }
+
   this->_source_vio->ndone += bytes_used;
+  this->_sent_all_data      = false;
 
   switch (parse_result) {
   case PARSE_RESULT_DONE: {

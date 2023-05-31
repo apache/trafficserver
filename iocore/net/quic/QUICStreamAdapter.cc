@@ -27,6 +27,5 @@ Ptr<IOBufferBlock>
 QUICStreamAdapter::read(size_t len)
 {
   auto ret = this->_read(len);
-  this->_stream.on_read();
   return ret;
 }

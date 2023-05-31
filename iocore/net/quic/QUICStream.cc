@@ -55,6 +55,12 @@ QUICStream::is_bidirectional() const
   return ((this->_id & 0x03) < 0x02);
 }
 
+bool
+QUICStream::is_closable() const
+{
+  return this->_is_finished_reading_from_net && this->_is_finished_writing_to_net;
+}
+
 void
 QUICStream::set_io_adapter(QUICStreamAdapter *adapter)
 {

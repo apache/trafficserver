@@ -28,6 +28,11 @@ QUICStreamImpl::QUICStreamImpl() {}
 
 QUICStreamImpl::QUICStreamImpl(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : QUICStream(cinfo, sid) {}
 
+QUICStreamImpl::~QUICStreamImpl()
+{
+  this->_adapter->notify_eos();
+}
+
 QUICOffset
 QUICStreamImpl::final_offset() const
 {
@@ -45,16 +50,6 @@ QUICStreamImpl::reset(QUICStreamErrorUPtr error)
 }
 
 void
-QUICStreamImpl::on_read()
-{
-}
-
-void
-QUICStreamImpl::on_eos()
-{
-}
-
-void
 QUICStreamImpl::receive_data(quiche_conn *quiche_con)
 {
   uint8_t buf[4096];
@@ -64,6 +59,10 @@ QUICStreamImpl::receive_data(quiche_conn *quiche_con)
   while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin)) > 0) {
     this->_adapter->write(this->_received_bytes, buf, read_len, fin);
     this->_received_bytes += read_len;
+  }
+
+  if (quiche_conn_stream_finished(quiche_con, this->_id)) {
+    this->_is_finished_reading_from_net = true;
   }
 
   this->_adapter->encourge_read();
@@ -80,7 +79,7 @@ QUICStreamImpl::send_data(quiche_conn *quiche_con)
     return;
   }
   Ptr<IOBufferBlock> block = this->_adapter->read(len);
-  if (this->_adapter->total_len() == this->_sent_bytes + block->size()) {
+  if (this->_adapter->is_eos()) {
     fin = true;
   }
   if (block->size() > 0 || fin) {
@@ -89,6 +88,7 @@ QUICStreamImpl::send_data(quiche_conn *quiche_con)
     if (written_len >= 0) {
       this->_sent_bytes += written_len;
     }
+    this->_is_finished_writing_to_net = fin;
   }
   this->_adapter->encourge_write();
 }

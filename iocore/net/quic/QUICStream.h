@@ -55,17 +55,12 @@ public:
   const QUICConnectionInfoProvider *connection_info();
   QUICStreamDirection direction() const;
   bool is_bidirectional() const;
+  bool is_closable() const;
 
   virtual QUICOffset final_offset() const = 0;
 
   virtual void stop_sending(QUICStreamErrorUPtr error) = 0;
   virtual void reset(QUICStreamErrorUPtr error)        = 0;
-
-  /*
-   * QUICApplication need to call one of these functions when it process VC_EVENT_*
-   */
-  virtual void on_read() = 0;
-  virtual void on_eos()  = 0;
 
   /**
    * Set an adapter to read/write data from/to this stream
@@ -80,6 +75,8 @@ protected:
   QUICConnectionInfoProvider *_connection_info = nullptr;
   QUICStreamId _id                             = 0;
   QUICStreamAdapter *_adapter                  = nullptr;
+  bool _is_finished_reading_from_net           = false;
+  bool _is_finished_writing_to_net             = false;
 };
 
 class QUICStreamStateListener

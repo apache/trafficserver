@@ -208,7 +208,7 @@ HQTransaction::transaction_done()
 int
 HQTransaction::get_transaction_id() const
 {
-  return this->_info.adapter.stream().id();
+  return this->_info.adapter.stream_id();
 }
 
 void
@@ -391,12 +391,30 @@ HQTransaction::_delete_if_possible()
   }
 }
 
+void
+HQTransaction::_signal_eos_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  int event = VC_EVENT_EOS;
+
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+  if (lock.is_locked()) {
+    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+
+  Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+}
+
 //
 // Http3Transaction
 //
 Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
 {
-  QUICStreamId stream_id = this->_info.adapter.stream().id();
+  QUICStreamId stream_id = this->_info.adapter.stream_id();
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
@@ -486,6 +504,9 @@ Http3Transaction::state_stream_open(int event, Event *edata)
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_signal_eos_event();
+    break;
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
@@ -543,7 +564,7 @@ Http3Transaction::do_io_close(int lerrno)
 bool
 Http3Transaction::is_response_header_sent() const
 {
-  return this->_header_framer->is_done();
+  return !static_cast<Http3HeaderFramer *>(this->_header_framer)->wrote_100_continue() && this->_header_framer->is_done();
 }
 
 bool
@@ -585,8 +606,9 @@ Http3Transaction::_process_write_vio()
 
   size_t nwritten = 0;
   bool all_done   = false;
-  auto error      = this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(),
+  auto error      = this->_frame_collector.on_write_ready(this->_info.adapter.stream_id(), *this->_info.write_vio->get_writer(),
                                                           nwritten, all_done);
+
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
     Http3TransDebug("Error occured while processing write vio: %hu, %s", error->get_code(), error->msg);
     return 0;

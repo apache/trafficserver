@@ -604,6 +604,9 @@ QUICNetVConnection::_handle_read_ready()
       stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
     }
     stream->receive_data(this->_quiche_con);
+    if (stream->is_closable()) {
+      this->_stream_manager->delete_stream(s);
+    }
   }
   quiche_stream_iter_free(readable);
 }
@@ -621,6 +624,9 @@ QUICNetVConnection::_handle_write_ready()
         stream = static_cast<QUICStreamImpl *>(this->_stream_manager->find_stream(s));
       }
       stream->send_data(this->_quiche_con);
+      if (stream->is_closable()) {
+        this->_stream_manager->delete_stream(s);
+      }
     }
     quiche_stream_iter_free(writable);
   }

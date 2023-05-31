@@ -31,6 +31,8 @@ class QUICStreamImpl : public QUICStream
 public:
   QUICStreamImpl();
   QUICStreamImpl(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
+  virtual ~QUICStreamImpl();
+
   void receive_data(quiche_conn *quiche_con);
   void send_data(quiche_conn *quiche_con);
 
@@ -39,9 +41,6 @@ public:
 
   virtual void stop_sending(QUICStreamErrorUPtr error) override;
   virtual void reset(QUICStreamErrorUPtr error) override;
-
-  virtual void on_read() override;
-  virtual void on_eos() override;
 
   LINK(QUICStreamImpl, link);
 

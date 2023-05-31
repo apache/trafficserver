@@ -39,9 +39,13 @@ server = Test.MakeVerifierServerProcess("server", replay_file)
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
+if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
+    ts = Test.MakeATSProcess("ts", enable_tls=True, enable_quic=True, enable_cache=False)
+    ts2 = Test.MakeATSProcess("ts2", enable_tls=True, enable_quic=True, enable_cache=False)
+else:
+    ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
+    ts2 = Test.MakeATSProcess("ts2", enable_tls=True, enable_cache=False)
 
-ts2 = Test.MakeATSProcess("ts2", enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
@@ -79,6 +83,9 @@ big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
 big_post_body_file.write(big_post_body)
 big_post_body_file.close()
 
+#
+# HTTP/1.1
+#
 test_run = Test.AddTestRun("http1.1 POST small body with Expect header")
 test_run.Processes.Default.StartBefore(server)
 test_run.Processes.Default.StartBefore(ts)
@@ -121,6 +128,9 @@ test_run.StillRunningAfter = server
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
+#
+# HTTP/2
+#
 test_run = Test.AddTestRun("http2 POST small body with Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "uuid: post" -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts.Variables.ssl_port)
@@ -161,7 +171,61 @@ test_run.StillRunningAfter = server
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
 
+#
+# HTTP/3
+#
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST small body with Expect header")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
+        ts.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST large body with Expect header")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: 100-continue" -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
+        ts.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST small body w/o Expect header")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: " -d "small body" -k https://127.0.0.1:{0}/post'.format(
+        ts.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST large body w/o Expect header")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: " -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
+        ts.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts
+    test_run.Processes.Default.ReturnCode = 0
+
+
+#
 # Do them all again against the TS that will return 100-continue immediately
+#
+
+#
+# HTTP/1.1
+#
 test_run = Test.AddTestRun("http1.1 POST small body with Expect header, immediate")
 test_run.Processes.Default.StartBefore(Test.Processes.ts2)
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http1.1 -H "uuid: post" -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
@@ -203,6 +267,9 @@ test_run.StillRunningAfter = server
 test_run.StillRunningAfter = ts2
 test_run.Processes.Default.ReturnCode = 0
 
+#
+# HTTP/2
+#
 test_run = Test.AddTestRun("http2 POST small body with Expect header, immediate")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "uuid: post" -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts2.Variables.ssl_port)
@@ -242,3 +309,50 @@ test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/2 100
 test_run.StillRunningAfter = server
 test_run.StillRunningAfter = ts2
 test_run.Processes.Default.ReturnCode = 0
+
+#
+# HTTP/3
+#
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST small body with Expect header, immediate")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
+        ts2.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts2
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST large body with Expect header, immediate")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: 100-continue" -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
+        ts2.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts2
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST small body w/o Expect header, immediate")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: " -d "small body" -k https://127.0.0.1:{0}/post'.format(
+        ts2.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts2
+    test_run.Processes.Default.ReturnCode = 0
+
+if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    test_run = Test.AddTestRun("http3 POST large body w/o Expect header, immediate")
+    test_run.Processes.Default.Command = 'curl -v -o /dev/null --http3 -H "uuid: post" -H "Expect: " -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
+        ts2.Variables.ssl_port)
+    test_run.Processes.Default.Streams.All = "gold/post-h3.gold"
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
+    test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/3 100", "Has Expect header")
+    test_run.StillRunningAfter = server
+    test_run.StillRunningAfter = ts2
+    test_run.Processes.Default.ReturnCode = 0
