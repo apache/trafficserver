@@ -215,11 +215,11 @@ struct ParentResult {
   bool
   is_some() const
   {
-    if (rec == nullptr) {
+    if (nullptr == rec && nullptr == hostname) {
       // If we don't have a result, we either haven't done a parent
       // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
       // anything (PARENT_DIRECT).
-      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT);
+      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT || result == PARENT_FAIL);
       return false;
     }
 
