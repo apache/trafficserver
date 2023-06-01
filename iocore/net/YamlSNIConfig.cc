@@ -26,7 +26,9 @@
 #include <set>
 #include <string_view>
 #include <string>
+#include <limits>
 #include <exception>
+#include <cstdint>
 #include <algorithm>
 
 #include <yaml-cpp/yaml.h>
@@ -197,7 +199,8 @@ template <> struct convert<YamlSNIConfig::Item> {
         long min_port{swoc::svtoi(min, &parsed_min)};
         swoc::TextView parsed_max;
         long max_port{swoc::svtoi(max, &parsed_max)};
-        if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > 65535 || max_port < min_port) {
+        if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<uint16_t>::max() ||
+            max_port < min_port) {
           std::string out;
           swoc::bwprint(out, "bad port range: {}-{}", min, max);
           throw YAML::ParserException(node[TS_fqdn].Mark(), out);
@@ -205,6 +208,7 @@ template <> struct convert<YamlSNIConfig::Item> {
 
         item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
       } else {
+        // no port found; port_view contains entire fqdn and fqdn was emptied
         item.fqdn = port_view;
       }
     } else {

@@ -35,6 +35,7 @@
 #include <vector>
 #include <string_view>
 #include <strings.h>
+#include <limits>
 #include <memory>
 
 #include "ConfigProcessor.h"
@@ -62,8 +63,8 @@ struct PcreFreer {
 struct NamedElement {
   NamedElement() {}
 
-  NamedElement(const NamedElement &other)            = delete;
-  NamedElement &operator=(const NamedElement &other) = delete;
+  NamedElement(NamedElement const &other)            = delete;
+  NamedElement &operator=(NamedElement const &other) = delete;
   NamedElement(NamedElement &&other);
   NamedElement &operator=(NamedElement &&other);
   ~NamedElement() = default;
@@ -71,8 +72,9 @@ struct NamedElement {
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
 
-  using port_range_t = swoc::DiscreteRange<long>;
-  port_range_t ports{1, 65535};
+  inline static constexpr uint16_t MAX_PORT_VALUE{std::numeric_limits<uint16_t>::max()};
+  using port_range_t = swoc::DiscreteRange<uint16_t>;
+  port_range_t ports{1, MAX_PORT_VALUE};
 
   std::unique_ptr<pcre, PcreFreer> match;
 };
@@ -99,7 +101,7 @@ struct SNIConfigParams : public ConfigInfo {
       @return 0 for success, 1 is failure
    */
   int load_sni_config();
-  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, long conn_port) const;
+  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, uint16_t dest_incoming_port) const;
 
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;
@@ -119,7 +121,8 @@ public:
   static SNIConfigParams *acquire();
   static void release(SNIConfigParams *params);
 
-  static bool test_client_action(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
+  static bool test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep,
+                                 int &enforcement_policy);
 
 private:
   static int _configid;

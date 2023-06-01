@@ -1,6 +1,6 @@
 /** @file
 
-  Catch based unit tests for YamlSNIConfig
+  Catch based unit tests for SSLSNIConfig
 
   @section license License
 
@@ -68,19 +68,26 @@ TEST_CASE("Test SSLSNIConfig")
   {
     auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 1)};
     REQUIRE(actions.first);
-    REQUIRE(actions.first->size() == 1);
+    REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for someport.com:433")
   {
     auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 433)};
     REQUIRE(actions.first);
-    REQUIRE(actions.first->size() == 1);
+    REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for someport:8080")
   {
     auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 8080)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 1);
+  }
+
+  SECTION("The config matches an SNI for someport:65535")
+  {
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 65535)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 1);
   }

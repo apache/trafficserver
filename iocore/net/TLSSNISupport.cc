@@ -67,12 +67,12 @@ TLSSNISupport::perform_sni_action()
   }
 
   SNIConfig::scoped_config params;
+  // should always work in this context of SSL action callbacks
   SSLNetVConnection *ssl_vc{dynamic_cast<SSLNetVConnection *>(this)};
   ink_assert(ssl_vc != nullptr);
   auto const port{ssl_vc->get_local_port()};
-  Debug("ssl_sni", "local port %d", port);
   if (auto const &actions = params->get({servername, std::strlen(servername)}, port); !actions.first) {
-    Debug("ssl_sni", "%s not available in the map", servername);
+    Debug("ssl_sni", "%s:%i not available in the map", servername, port);
   } else {
     for (auto &&item : *actions.first) {
       auto ret = item->SNIAction(this, actions.second);

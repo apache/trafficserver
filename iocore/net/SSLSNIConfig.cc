@@ -41,6 +41,7 @@
 
 #include "tscpp/util/TextView.h"
 
+#include <cstdint>
 #include <sstream>
 #include <utility>
 #include <pcre.h>
@@ -116,9 +117,7 @@ SNIConfigParams::load_sni_config()
     ai.set_glob_name(item.fqdn);
     if (!item.port_ranges.empty()) {
       auto const [min, max]{item.port_ranges[0]};
-      ai.ports = {min, max};
-    } else {
-      ai.ports = {1, 65535};
+      ai.ports = {static_cast<uint16_t>(min), static_cast<uint16_t>(max)};
     }
     Debug("ssl", "name: %s", item.fqdn.data());
 
@@ -185,7 +184,7 @@ SNIConfigParams::load_sni_config()
 }
 
 std::pair<const ActionVector *, ActionItem::Context>
-SNIConfigParams::get(std::string_view servername, long conn_port) const
+SNIConfigParams::get(std::string_view servername, uint16_t dest_incoming_port) const
 {
   int ovector[OVECSIZE];
 
@@ -195,7 +194,7 @@ SNIConfigParams::get(std::string_view servername, long conn_port) const
       return {&retval.actions, {}};
     } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
                offset >= 0) {
-      if (!retval.ports.contains(conn_port)) {
+      if (!retval.ports.contains(dest_incoming_port)) {
         continue;
       }
       if (offset == 1) {
@@ -235,7 +234,7 @@ SNIConfigParams::initialize()
 }
 
 int
-SNIConfigParams::initialize(const std::string &sni_filename)
+SNIConfigParams::initialize(std::string const &sni_filename)
 {
   Note("%s loading ...", sni_filename.c_str());
 
@@ -324,12 +323,12 @@ SNIConfig::release(SNIConfigParams *params)
 // setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
 // contains a host_sni_policy entry
 bool
-SNIConfig::test_client_action(const char *servername, const IpEndpoint &ep, int &host_sni_policy)
+SNIConfig::test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep, int &host_sni_policy)
 {
   bool retval = false;
   SNIConfig::scoped_config params;
 
-  auto const &actions = params->get(servername, 8080);
+  auto const &actions = params->get(servername, dest_incoming_port);
   if (actions.first) {
     for (auto &&item : *actions.first) {
       retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);

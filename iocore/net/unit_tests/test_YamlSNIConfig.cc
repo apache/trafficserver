@@ -110,6 +110,6 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
   errorstream << zret;
 
   std::string expected;
-  swoc::bwprint(expected, "1 [1]: yaml-cpp: error at line 2, column 9: bad port range: {}\n", port_str);
+  swoc::bwprint(expected, "1 [1]: yaml-cpp: error at line 18, column 9: bad port range: {}\n", port_str);
   CHECK(errorstream.str() == expected);
 }

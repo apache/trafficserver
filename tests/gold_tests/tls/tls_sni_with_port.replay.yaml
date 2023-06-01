@@ -30,7 +30,7 @@ sessions:
   - client-request:
       method: "GET"
       version: "1.1"
-      url: example.com
+      url: a/path/conn_refused
       headers:
         fields:
         - [ Host, yay.example.com ]
@@ -51,7 +51,7 @@ sessions:
   - client-request:
       method: "GET"
       version: "1.1"
-      url: example.com
+      url: /a/path/conn_accepted
       headers:
         fields:
         - [ Host, yay.example.com ]

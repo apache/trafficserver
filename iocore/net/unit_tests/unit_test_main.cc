@@ -1,6 +1,6 @@
 /** @file
 
-  Catch based unit tests for YamlSNIConfig
+  Catch based unit tests for libinknet
 
   @section license License
 
