@@ -1394,7 +1394,9 @@ HostDBContinuation::remove_and_trigger_pending_dns()
       if (hash.hash == c->hash.hash) {
         Dbg(dbg_ctl_hostdb, "dequeuing additional request");
         q.remove(c);
-        qq.enqueue(c);
+        if (!c->action.cancelled) {
+          qq.enqueue(c);
+        }
       }
       c = n;
     }
