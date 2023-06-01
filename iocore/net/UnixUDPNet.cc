@@ -134,9 +134,40 @@ UDPPacket::free()
   if (p.conn)
     p.conn->Release();
   p.conn = nullptr;
+
+  if (this->_payload) {
+    _payload.release();
+  }
   udpPacketAllocator.free(this);
 }
 
+uint8_t *
+UDPPacket::get_entire_chain_buffer(size_t *buf_len)
+{
+  if (this->_payload == nullptr) {
+    IOBufferBlock *block = this->getIOBlockChain();
+
+    // No need to allocate, we will use the first slice. With the current slice size
+    // 2048 more likely we will using this block most of the time.
+    if (block && block->next.get() == nullptr) {
+      *buf_len = this->getPktLength();
+      return reinterpret_cast<uint8_t *>(block->buf());
+    }
+
+    // Store it. Should we try to avoid allocating here?
+    this->_payload = ats_unique_malloc(this->getPktLength());
+    uint64_t len{0};
+    while (block) {
+      memcpy(this->_payload.get() + len, block->start(), block->read_avail());
+      len   += block->read_avail();
+      block  = block->next.get();
+    }
+    ink_assert(len == static_cast<size_t>(this->getPktLength()));
+  }
+
+  *buf_len = this->getPktLength();
+  return this->_payload.get();
+}
 //
 // Global Data
 //
