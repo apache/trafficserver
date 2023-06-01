@@ -44,13 +44,14 @@ class TestSNIWithPort:
         tr = Test.AddTestRun(self.name)
         server_one = TestSNIWithPort.configure_server(tr, "yay.com")
         server_two = TestSNIWithPort.configure_server(tr, "oof.com")
-        self._configure_traffic_server(tr, server_one, server_two)
+        server_three = TestSNIWithPort.configure_server(tr, "wow.com")
+        self._configure_traffic_server(tr, server_one, server_two, server_three)
 
         tr.Processes.Default.StartBefore(server_one)
         tr.Processes.Default.StartBefore(server_two)
         tr.Processes.Default.StartBefore(self._ts)
 
-        return tr, self._ts, server_one, server_two, self._port_one, self._port_two, self._unspecified_port
+        return tr, self._ts, server_one, server_two, server_three, self._port_one, self._port_two, self._unspecified_port
 
     @classmethod
     def runner(cls, name: str, autorun: bool = True) -> Optional[Callable]:
@@ -86,7 +87,7 @@ class TestSNIWithPort:
 
         return server
 
-    def _configure_traffic_server(self, tr: "TestRun", server_one: "Process", server_two: "Process"):
+    def _configure_traffic_server(self, tr: "TestRun", server_one: "Process", server_two: "Process", server_three: "Process"):
         """Configure Traffic Server.
 
         :param tr: The TestRun object to associate the ts process with.
@@ -94,10 +95,7 @@ class TestSNIWithPort:
         ts = tr.MakeATSProcess(f"ts-{TestSNIWithPort.ts_counter}", select_ports=False, enable_tls=True)
         TestSNIWithPort.ts_counter += 1
 
-        ts.addSSLfile("ssl/server.pem")
-        ts.addSSLfile("ssl/server.key")
-        ts.addSSLfile("ssl/signed-foo.pem")
-        ts.addSSLfile("ssl/signed-foo.key")
+        ts.addDefaultSSLFiles()
         self._port_one = get_port(ts, "PortOne")
         self._port_two = get_port(ts, "PortTwo")
         self._unspecified_port = get_port(ts, "UnspecifiedPort")
@@ -109,6 +107,8 @@ class TestSNIWithPort:
             'proxy.config.diags.debug.tags': 'dns|http|ssl|sni',
         })
 
+        ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server_three.Variables.http_port}")
+
         ts.Disk.sni_yaml.AddLines([
             "sni:",
             f"- fqdn: yay.example.com:{self._port_one}-{self._port_one}",
@@ -118,7 +118,7 @@ class TestSNIWithPort:
         ])
 
         ts.Disk.ssl_multicert_config.AddLine(
-            f"dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key"
+            f"dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key"
         )
 
         self._ts = ts
@@ -132,6 +132,7 @@ def test0(
         ts: "Process",
         server_one: "Process",
         server_two: "Process",
+        server_three: "Process",
         port_one: int,
         port_two: int,
         unspecified_port: int):
@@ -139,12 +140,21 @@ def test0(
         f"client0",
         TestSNIWithPort.replay_filepath,
         https_ports=[unspecified_port],
-        keys="conn_refused"
+        keys="conn_remapped"
     )
 
     tr.Processes.Default.ReturnCode = 0
     ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-        "not available in the map", "The SNI should not be found in the map."
+        "not available in the map", "the request should not match an SNI"
+    )
+    server_one.Streams.All.Content += Testers.ExcludesExpression(
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server one"
+    )
+    server_two.Streams.All.Content += Testers.ExcludesExpression(
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server two"
+    )
+    server_three.Streams.All.Content += Testers.IncludesExpression(
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "request was remaped to server three"
     )
 
 
@@ -154,6 +164,7 @@ def test1(
         ts: "Process",
         server_one: "Process",
         server_two: "Process",
+        server_three: "Process",
         port_one: int,
         port_two: int,
         unspecified_port: int):
@@ -179,6 +190,7 @@ def test2(
         ts: "Process",
         server_one: "Process",
         server_two: "Process",
+        server_three: "Process",
         port_one: int,
         port_two: int,
         unspecified_port: int):
@@ -191,8 +203,8 @@ def test2(
 
     tr.Processes.Default.ReturnCode = 0
     server_two.Streams.All.Content += Testers.IncludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server one"
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server two"
     )
     server_one.Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server two"
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server one"
     )

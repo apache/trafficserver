@@ -30,13 +30,13 @@ sessions:
   - client-request:
       method: "GET"
       version: "1.1"
-      url: a/path/conn_refused
+      url: /a/path/conn_remapped
       headers:
         fields:
         - [ Host, yay.example.com ]
         - [ Connection, keep-alive ]
         - [ Content-Length, 16 ]
-        - [ uuid, "conn_refused" ]
+        - [ uuid, "conn_remapped" ]
 
     server-response:
       status: 200
@@ -46,7 +46,7 @@ sessions:
         - [ Content-Length, 32 ]
 
     proxy-response:
-      status: 400
+      status: 200
   
   - client-request:
       method: "GET"

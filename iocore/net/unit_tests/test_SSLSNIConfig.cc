@@ -57,6 +57,13 @@ TEST_CASE("Test SSLSNIConfig")
     CHECK(!actions.first);
   }
 
+  SECTION("The config does match an SNI for oneport.com:433")
+  {
+    auto const &actions{params.get({"oneport.com", std::strlen("oneport.com")}, 433)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 1);
+  }
+
   SECTION("The config matches an SNI for allports.com")
   {
     auto const &actions{params.get({"allports.com", std::strlen("allports.com")}, 1)};
@@ -70,6 +77,7 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
+
 
   SECTION("The config matches an SNI for someport.com:433")
   {
