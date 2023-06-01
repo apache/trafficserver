@@ -27,7 +27,7 @@ Description
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
 connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
-file consists of a set of configuration items, each identified by an SNI value (``fqdn``).
+file consists of a set of configuration items, each identified by an SNI value and optionally a port range (``fqdn``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
 the defaults. This is done during the inbound connection processing; some outbound properties
@@ -55,7 +55,22 @@ for a more detailed description of HTTP/2 connection coalescing. A similar thing
 ========================= ========= ========================================================================================
 Key                       Direction Meaning
 ========================= ========= ========================================================================================
-fqdn                      Both      Fully Qualified Domain Name. This item is used if the SNI value matches this.
+fqdn[:min[-max]]          Both      Fully Qualified Domain Name. This is the key for the items in this configuration file.
+                                    The incoming destination port will also be matched against the port range if present.
+                                    The max end of the range defaults to min if it is not specified.
+                                    For example:
+
+                                       ``example.com``
+
+                                    would match all requests with an SNI for example.com
+
+                                       ``example.com:443``
+
+                                    would only match requests with an SNI for example.com on port 443, and
+
+                                       ``example.com:443-446``
+
+                                    would match requests with an SNI for example.com on ports 443 to 446, inclusive.
 
 ip_allow                  Inbound   Specify a list of client IP address, subnets, or ranges what are allowed to complete
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
