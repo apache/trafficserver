@@ -135,7 +135,7 @@ for i in range(num_peer):
         #"        - passive",
     ])
 
-    suffix = f" @plugin=parent_select.so @pparam={ts.Variables.CONFIGDIR}/strategies.yaml @pparam=the-strategy @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
+    suffix = " @plugin=parent_select.so @pparam=strategies.yaml @pparam=the-strategy @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
     ts.Disk.remap_config.AddLines([
         "map http://dummy.com http://not_used" + suffix,
         "map http://not_used http://also_not_used" + suffix,
