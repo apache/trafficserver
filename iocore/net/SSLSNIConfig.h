@@ -92,8 +92,6 @@ struct SNIConfigParams : public ConfigInfo {
   SNIConfigParams() = default;
   ~SNIConfigParams() override;
 
-  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, long conn_port) const;
-
   const NextHopProperty *get_property_config(const std::string &servername) const;
   int initialize();
   int initialize(const std::string &sni_filename);
@@ -101,7 +99,7 @@ struct SNIConfigParams : public ConfigInfo {
       @return 0 for success, 1 is failure
    */
   int load_sni_config();
-  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername) const;
+  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, long conn_port) const;
 
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;

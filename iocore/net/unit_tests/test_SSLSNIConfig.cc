@@ -41,46 +41,46 @@ TEST_CASE("Test SSLSNIConfig")
 
   SECTION("The config does not match any SNIs for someport.com:577")
   {
-    const auto &actions{params.get({"someport.com", std::strlen("someport.com")}, 577)};
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 577)};
     CHECK(!actions.first);
   }
 
   SECTION("The config does not match any SNIs for someport.com:808")
   {
-    const auto &actions{params.get({"someport.com", std::strlen("someport.com")}, 808)};
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 808)};
     CHECK(!actions.first);
   }
 
   SECTION("The config does not match any SNIs for oneport.com:1")
   {
-    const auto &actions{params.get({"oneport.com", std::strlen("oneport.com")}, 1)};
+    auto const &actions{params.get({"oneport.com", std::strlen("oneport.com")}, 1)};
     CHECK(!actions.first);
   }
 
   SECTION("The config matches an SNI for allports.com")
   {
-    const auto &actions{params.get({"allports.com", std::strlen("allports.com")}, 1)};
+    auto const &actions{params.get({"allports.com", std::strlen("allports.com")}, 1)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 1);
   }
 
   SECTION("The config matches an SNI for someport.com:1")
   {
-    const auto &actions{params.get({"someport.com", std::strlen("someport.com")}, 1)};
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 1)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 1);
   }
 
   SECTION("The config matches an SNI for someport.com:433")
   {
-    const auto &actions{params.get({"someport.com", std::strlen("someport.com")}, 433)};
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 433)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 1);
   }
 
   SECTION("The config matches an SNI for someport:8080")
   {
-    const auto &actions{params.get({"someport.com", std::strlen("someport.com")}, 8080)};
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 8080)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 1);
   }

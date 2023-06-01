@@ -115,7 +115,7 @@ SNIConfigParams::load_sni_config()
     auto &ai = sni_action_list.emplace_back();
     ai.set_glob_name(item.fqdn);
     if (!item.port_ranges.empty()) {
-      const auto [min, max]{item.port_ranges[0]};
+      auto const [min, max]{item.port_ranges[0]};
       ai.ports = {min, max};
     } else {
       ai.ports = {1, 65535};
@@ -189,7 +189,7 @@ SNIConfigParams::get(std::string_view servername, long conn_port) const
 {
   int ovector[OVECSIZE];
 
-  for (const auto &retval : sni_action_list) {
+  for (auto const &retval : sni_action_list) {
     int length = servername.length();
     if (retval.match == nullptr && length == 0) {
       return {&retval.actions, {}};
@@ -198,46 +198,6 @@ SNIConfigParams::get(std::string_view servername, long conn_port) const
       if (!retval.ports.contains(conn_port)) {
         continue;
       }
-      if (offset == 1) {
-        // first pair identify the portion of the subject string matched by the entire pattern
-        if (ovector[0] == 0 && ovector[1] == length) {
-          // full match
-          return {&retval.actions, {}};
-        } else {
-          continue;
-        }
-      }
-      // If contains groups
-      if (offset == 0) {
-        // reset to max if too many.
-        offset = OVECSIZE / 3;
-      }
-
-      ActionItem::Context::CapturedGroupViewVec groups;
-      groups.reserve(offset);
-      for (int strnum = 1; strnum < offset; strnum++) {
-        const std::size_t start  = ovector[2 * strnum];
-        const std::size_t length = ovector[2 * strnum + 1] - start;
-
-        groups.emplace_back(servername.data() + start, length);
-      }
-      return {&retval.actions, {std::move(groups)}};
-    }
-  }
-  return {nullptr, {}};
-}
-
-std::pair<const ActionVector *, ActionItem::Context>
-SNIConfigParams::get(std::string_view servername) const
-{
-  int ovector[OVECSIZE];
-
-  for (const auto &retval : sni_action_list) {
-    int length = servername.length();
-    if (retval.match == nullptr && length == 0) {
-      return {&retval.actions, {}};
-    } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
-               offset >= 0) {
       if (offset == 1) {
         // first pair identify the portion of the subject string matched by the entire pattern
         if (ovector[0] == 0 && ovector[1] == length) {
@@ -369,7 +329,7 @@ SNIConfig::test_client_action(const char *servername, const IpEndpoint &ep, int 
   bool retval = false;
   SNIConfig::scoped_config params;
 
-  const auto &actions = params->get(servername);
+  auto const &actions = params->get(servername, 8080);
   if (actions.first) {
     for (auto &&item : *actions.first) {
       retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);

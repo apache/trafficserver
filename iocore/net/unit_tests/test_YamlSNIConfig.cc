@@ -51,7 +51,7 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
 
   SECTION("If no ports were specified, ports should be empty.")
   {
-    const auto &item{conf.items[0]};
+    auto const &item{conf.items[0]};
     CHECK(item.port_ranges.size() == 0);
   }
 
@@ -59,25 +59,25 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
   {
     SECTION("Ports 1-433.")
     {
-      const auto &item{conf.items[1]};
+      auto const item{conf.items[1]};
       REQUIRE(item.port_ranges.size() == 1);
-      const auto [min, max]{item.port_ranges[0]};
+      auto const [min, max]{item.port_ranges[0]};
       CHECK(min == 1);
       CHECK(max == 433);
     }
     SECTION("Ports 8080-65535.")
     {
-      const auto &item{conf.items[2]};
+      auto const &item{conf.items[2]};
       REQUIRE(item.port_ranges.size() == 1);
-      const auto [min, max]{item.port_ranges[0]};
+      auto const [min, max]{item.port_ranges[0]};
       CHECK(min == 8080);
       CHECK(max == 65535);
     }
     SECTION("Ports 433-433.")
     {
-      const auto &item{conf.items[3]};
+      auto const &item{conf.items[3]};
       REQUIRE(item.port_ranges.size() == 1);
-      const auto [min, max]{item.port_ranges[0]};
+      auto const [min, max]{item.port_ranges[0]};
       CHECK(min == 433);
       CHECK(max == 433);
     }
@@ -85,13 +85,13 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
 
   SECTION("If a port was specified, it should not interfere with the fqdn.")
   {
-    const auto &item{conf.items[1]};
+    auto const &item{conf.items[1]};
     CHECK(item.fqdn == "someport.com");
   }
 
   SECTION("If no port was specified, it should not interfere with the fqdn.")
   {
-    const auto &item{conf.items[0]};
+    auto const &item{conf.items[0]};
     CHECK(item.fqdn == "allports.com");
   }
 }

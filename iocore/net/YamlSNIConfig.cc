@@ -191,7 +191,7 @@ template <> struct convert<YamlSNIConfig::Item> {
         if (!min) {
           min = port_view;
         }
-        const auto &max{port_view};
+        auto const &max{port_view};
 
         swoc::TextView parsed_min;
         long min_port{swoc::svtoi(min, &parsed_min)};

@@ -22,8 +22,15 @@
  */
 #include "TLSSNISupport.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_inet.h"
 #include "tscore/Diags.h"
 #include "SSLSNIConfig.h"
+
+#include "I_EventSystem.h"
+#include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
+#include "SNIActionPerformer.h"
+#include "SSLTypes.h"
 
 int TLSSNISupport::_ex_data_index = -1;
 
@@ -64,7 +71,11 @@ TLSSNISupport::perform_sni_action()
   }
 
   SNIConfig::scoped_config params;
-  if (const auto &actions = params->get({servername, std::strlen(servername)}); !actions.first) {
+  SSLNetVConnection *ssl_vc{dynamic_cast<SSLNetVConnection *>(this)};
+  ink_assert(ssl_vc != nullptr);
+  auto const port{ssl_vc->get_local_port()};
+  Debug("ssl_sni", "local port %d", port);
+  if (auto const &actions = params->get({servername, std::strlen(servername)}, port); !actions.first) {
     Debug("ssl_sni", "%s not available in the map", servername);
   } else {
     for (auto &&item : *actions.first) {
