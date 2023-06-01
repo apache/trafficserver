@@ -22,12 +22,13 @@
   limitations under the License.
  */
 
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
-#include <fstream>
-#include <cstdlib>
-#include <cstring>
 #include <string>
 
 #include "ts/ts.h"
@@ -271,31 +272,37 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
     return TS_ERROR;
   }
 
-  const char *remap_from       = argv[0];
-  const char *remap_to         = argv[1];
-  const char *config_file_path = argv[2];
-  const char *strategy_name    = argv[3];
+  const char *remap_from                 = argv[0];
+  const char *remap_to                   = argv[1];
+  std::filesystem::path config_file_path = argv[2];
+  const char *strategy_name              = argv[3];
 
-  TSDebug(PLUGIN_NAME, "%s %s Loading parent selection strategy file %s for strategy %s", remap_from, remap_to, config_file_path,
+  if (config_file_path.is_relative()) {
+    config_file_path = std::filesystem::path(TSConfigDirGet()) / config_file_path;
+  }
+
+  const char *const pathstr = config_file_path.c_str();
+
+  TSDebug(PLUGIN_NAME, "%s %s Loading parent selection strategy file %s for strategy %s", remap_from, remap_to, pathstr,
           strategy_name);
-  auto file_strategies = createStrategiesFromFile(config_file_path);
+  auto file_strategies = createStrategiesFromFile(pathstr);
   if (file_strategies.size() == 0) {
-    TSError("[%s] %s %s Failed to parse configuration file %s", PLUGIN_NAME, remap_from, remap_to, config_file_path);
+    TSError("[%s] %s %s Failed to parse configuration file %s", PLUGIN_NAME, remap_from, remap_to, pathstr);
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "'%s' '%s' successfully created strategies in file %s num %d", remap_from, remap_to, config_file_path,
+  TSDebug(PLUGIN_NAME, "'%s' '%s' successfully created strategies in file %s num %d", remap_from, remap_to, pathstr,
           int(file_strategies.size()));
 
   auto new_strategy = file_strategies.find(strategy_name);
   if (new_strategy == file_strategies.end()) {
     TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy '%s' not found in file '%s'", remap_from, remap_to, strategy_name,
-            config_file_path);
+            pathstr);
     return TS_ERROR;
   }
 
   TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance successfully loaded strategy '%s' from '%s'.", remap_from, remap_to,
-          strategy_name, config_file_path);
+          strategy_name, pathstr);
 
   // created a raw pointer _to_ a shared_ptr, because ih needs a raw pointer.
   // The raw pointer in ih will be deleted in TSRemapDeleteInstance,
@@ -307,7 +314,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   TSMgmtString result;
   const char *var_name = "proxy.config.url_remap.filename";
   TSMgmtStringGet(var_name, &result);
-  TSMgmtConfigFileAdd(result, config_file_path);
+  TSMgmtConfigFileAdd(result, pathstr);
 
   return TS_SUCCESS;
 }
