@@ -47,7 +47,7 @@ sessions:
 
     proxy-response:
       status: 200
-  
+
   - client-request:
       method: "GET"
       version: "1.1"
