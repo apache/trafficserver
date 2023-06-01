@@ -20,17 +20,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "P_SSLNextProtocolAccept.h"
+#include "P_SSLNetVConnection.h"
+#include "SSLSNIConfig.h"
 #include "TLSSNISupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_inet.h"
 #include "tscore/Diags.h"
-#include "SSLSNIConfig.h"
-
-#include "I_EventSystem.h"
-#include "P_SSLNextProtocolAccept.h"
-#include "P_SSLNetVConnection.h"
-#include "SNIActionPerformer.h"
-#include "SSLTypes.h"
 
 int TLSSNISupport::_ex_data_index = -1;
 
