@@ -73,7 +73,7 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
       CHECK(min == 8080);
       CHECK(max == 65535);
     }
-    SECTION("Ports 433-433.")
+    SECTION("Port 433.")
     {
       auto const &item{conf.items[3]};
       REQUIRE(item.port_ranges.size() == 1);

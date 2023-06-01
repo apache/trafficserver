@@ -113,7 +113,7 @@ class TestSNIWithPort:
             "sni:",
             f"- fqdn: yay.example.com:{self._port_one}-{self._port_one}",
             f"  tunnel_route: localhost:{server_one.Variables.https_port}",
-            f"- fqdn: yay.example.com:{self._port_two}-{self._port_two}",
+            f"- fqdn: yay.example.com:{self._port_two}",
             f"  tunnel_route: localhost:{server_two.Variables.https_port}"
         ])
 

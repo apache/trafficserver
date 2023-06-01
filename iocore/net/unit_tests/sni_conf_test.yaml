@@ -19,4 +19,4 @@ sni:
 - fqdn: someport.com:1-433
   http2: true
 - fqdn: someport.com:8080-65535
-- fqdn: oneport.com:433-433
+- fqdn: oneport.com:433
