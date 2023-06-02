@@ -125,6 +125,40 @@ YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
   }
 }
 
+void
+YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
+{
+  if (offer_h2.has_value()) {
+    actions.push_back(std::make_unique<ControlH2>(offer_h2.value()));
+  }
+  if (item.offer_quic.has_value()) {
+    actions.push_back(std::make_unique<ControlQUIC>(offer_quic.value()));
+  }
+  if (verify_client_level != 255) {
+    actions.push_back(std::make_unique<VerifyClient>(verify_client_level, verify_client_ca_file, verify_client_ca_dir));
+  }
+  if (host_sni_policy != 255) {
+    actions.push_back(std::make_unique<HostSniPolicy>(host_sni_policy));
+  }
+  if (valid_tls_version_min_in >= 0 || valid_tls_version_max_in >= 0) {
+    actions.push_back(std::make_unique<TLSValidProtocols>(valid_tls_version_min_in, valid_tls_version_max_in));
+  } else if (!protocol_unset) {
+    actions.push_back(std::make_unique<TLSValidProtocols>(protocol_mask));
+  }
+  if (tunnel_destination.length() > 0) {
+    actions.push_back(std::make_unique<TunnelDestination>(tunnel_destination, tunnel_type, tunnel_prewarm, tunnel_alpn));
+  }
+  if (!client_sni_policy.empty()) {
+    actions.push_back(std::make_unique<OutboundSNIPolicy>(client_sni_policy));
+  }
+  if (http2_buffer_water_mark.has_value()) {
+    actions.push_back(std::make_unique<HTTP2BufferWaterMark>(http2_buffer_water_mark.value()));
+  }
+
+  actions.push_back(std::make_unique<ServerMaxEarlyData>(server_max_early_data));
+  actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
+}
+
 VerifyClient::~VerifyClient() {}
 
 TsEnumDescriptor LEVEL_DESCRIPTOR = {

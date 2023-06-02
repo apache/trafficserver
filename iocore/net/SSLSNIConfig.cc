@@ -121,41 +121,7 @@ SNIConfigParams::load_sni_config()
     }
     Debug("ssl", "name: %s", item.fqdn.data());
 
-    // set SNI based actions to be called in the ssl_servername_only callback
-    if (item.offer_h2.has_value()) {
-      ai.actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
-    }
-    if (item.offer_quic.has_value()) {
-      ai->actions.push_back(std::make_unique<ControlQUIC>(item.offer_quic.value()));
-    }
-    if (item.verify_client_level != 255) {
-      ai.actions.push_back(
-        std::make_unique<VerifyClient>(item.verify_client_level, item.verify_client_ca_file, item.verify_client_ca_dir));
-    }
-    if (item.host_sni_policy != 255) {
-      ai.actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
-    }
-    if (item.valid_tls_version_min_in >= 0 || item.valid_tls_version_max_in >= 0) {
-      ai.actions.push_back(std::make_unique<TLSValidProtocols>(item.valid_tls_version_min_in, item.valid_tls_version_max_in));
-    } else {
-      if (!item.protocol_unset) {
-        ai.actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
-      }
-    }
-    if (item.tunnel_destination.length() > 0) {
-      ai.actions.push_back(
-        std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type, item.tunnel_prewarm, item.tunnel_alpn));
-    }
-    if (!item.client_sni_policy.empty()) {
-      ai.actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));
-    }
-    if (item.http2_buffer_water_mark.has_value()) {
-      ai.actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
-    }
-
-    ai.actions.push_back(std::make_unique<ServerMaxEarlyData>(item.server_max_early_data));
-
-    ai.actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
+    item.populate_sni_actions(ai.actions);
 
     // set the next hop properties
     auto nps = next_hop_list.emplace(next_hop_list.end());

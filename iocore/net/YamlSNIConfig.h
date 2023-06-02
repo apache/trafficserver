@@ -29,6 +29,7 @@
 #include <memory>
 #include <cstdint>
 
+#include "SNIActionPerformer.h"
 #include "SSLTypes.h"
 
 #include "tscore/Errata.h"
@@ -106,7 +107,10 @@ struct YamlSNIConfig {
     uint32_t tunnel_prewarm_inactive_timeout = 0;
     TunnelPreWarm tunnel_prewarm             = TunnelPreWarm::UNSET;
 
+    using action_vector_t = std::vector<std::unique_ptr<ActionItem>>;
+
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
+    void populate_sni_actions(action_vector_t &actions);
   };
 
   ts::Errata loader(const std::string &cfgFilename);
