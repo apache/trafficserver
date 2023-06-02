@@ -144,6 +144,8 @@ SNIConfigParams::load_sni_config()
       ai->actions.push_back(std::make_unique<HTTP2BufferWaterMark>(item.http2_buffer_water_mark.value()));
     }
 
+    ai->actions.push_back(std::make_unique<ServerMaxEarlyData>(item.server_max_early_data));
+
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
     // set the next hop properties

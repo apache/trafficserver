@@ -157,7 +157,8 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_valid_tls_version_min_in,
                                                TS_valid_tls_version_max_in,
 #endif
-                                               TS_host_sni_policy};
+                                               TS_host_sni_policy,
+                                               TS_server_max_early_data};
 
 namespace YAML
 {
@@ -357,6 +358,13 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_valid_tls_version_max_in]) {
       item.valid_tls_version_max_in = TLS_PROTOCOLS_DESCRIPTOR.get(node[TS_valid_tls_version_max_in].as<std::string>());
     }
+
+    if (node[TS_server_max_early_data]) {
+      item.server_max_early_data = node[TS_server_max_early_data].as<uint32_t>();
+    } else {
+      item.server_max_early_data = SSLConfigParams::server_max_early_data;
+    }
+
     return true;
   }
 };

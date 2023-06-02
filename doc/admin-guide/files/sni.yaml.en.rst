@@ -218,6 +218,11 @@ tunnel_alpn               Inbound   List of ALPN Protocol Ids for Partial Blind 
 
                                     ATS negotiates application protocol with the client on behalf of the origin server.
                                     This only works with ``partial_blind_route``.
+
+server_max_early_data     Inbound   Specifies the maximum amount of early data in bytes that is permitted to be sent on a single connection.
+
+                                    If not specified, the value of :ts:cv:`proxy.config.ssl.server.max_early_data` is used.
+
 ========================= ========= ========================================================================================
 
 Pre-warming TLS Tunnel

@@ -141,6 +141,7 @@ public:
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
   void do_io_close(int lerrno = -1) override;
+  void update_early_data_config(uint32_t max_early_data, uint32_t recv_max_early_data);
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //
