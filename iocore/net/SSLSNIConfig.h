@@ -90,7 +90,9 @@ struct NextHopItem : public NamedElement {
 using SNIList             = std::vector<ActionElement>;
 using NextHopPropertyList = std::vector<NextHopItem>;
 
-struct SNIConfigParams : public ConfigInfo {
+class SNIConfigParams : public ConfigInfo
+{
+public:
   SNIConfigParams() = default;
   ~SNIConfigParams() override;
 
@@ -106,6 +108,10 @@ struct SNIConfigParams : public ConfigInfo {
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;
   YamlSNIConfig yaml_sni;
+
+private:
+  int set_next_hop_properties(YamlSNIConfig::Item const &item);
+  int load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps);
 };
 
 class SNIConfig

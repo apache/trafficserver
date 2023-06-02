@@ -122,29 +122,45 @@ SNIConfigParams::load_sni_config()
     Debug("ssl", "name: %s", item.fqdn.data());
 
     item.populate_sni_actions(ai.actions);
+    if (set_next_hop_properties(item) == 1) {
+      return 1;
+    }
+  }
 
-    // set the next hop properties
-    auto nps = next_hop_list.emplace(next_hop_list.end());
+  return 0;
+}
 
+int
+SNIConfigParams::set_next_hop_properties(YamlSNIConfig::Item const &item)
+{
+  auto &nps = next_hop_list.emplace_back();
+  if (load_certs_if_client_cert_specified(item, nps) == 1) {
+    return 1;
+  };
+
+  nps.set_glob_name(item.fqdn);
+  nps.prop.verify_server_policy     = item.verify_server_policy;
+  nps.prop.verify_server_properties = item.verify_server_properties;
+
+  return 0;
+}
+
+int
+SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps)
+{
+  if (!item.client_cert.empty()) {
     SSLConfig::scoped_config params;
-    // Load if we have at least specified the client certificate
-    if (!item.client_cert.empty()) {
-      nps->prop.client_cert_file = Layout::get()->relative_to(params->clientCertPathOnly, item.client_cert.data());
-      if (!item.client_key.empty()) {
-        nps->prop.client_key_file = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
-      }
-
-      auto ctx = params->getCTX(nps->prop.client_cert_file, nps->prop.client_key_file, params->clientCACertFilename,
-                                params->clientCACertPath);
-      if (ctx.get() == nullptr) {
-        return 1;
-      }
+    nps.prop.client_cert_file = Layout::get()->relative_to(params->clientCertPathOnly, item.client_cert.data());
+    if (!item.client_key.empty()) {
+      nps.prop.client_key_file = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
     }
 
-    nps->set_glob_name(item.fqdn);
-    nps->prop.verify_server_policy     = item.verify_server_policy;
-    nps->prop.verify_server_properties = item.verify_server_properties;
-  } // end for
+    auto ctx =
+      params->getCTX(nps.prop.client_cert_file, nps.prop.client_key_file, params->clientCACertFilename, params->clientCACertPath);
+    if (ctx.get() == nullptr) {
+      return 1;
+    }
+  }
 
   return 0;
 }
