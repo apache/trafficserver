@@ -36,6 +36,7 @@ github:
     - c-taylor
     - etapia
     - lzx404243
+    - JosiahWI
   protected_branches:
     master:
       required_status_checks:
