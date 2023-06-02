@@ -15,25 +15,14 @@
 #
 #######################
 
+if (USE_SSL)
+  find_path(SSL_INCLUDE_DIR NAMES openssl/ssl.h PATHS ${USE_SSL}/include NO_DEFAULT_PATH)
+  find_path(SSL_LIBRARY_DIR NAMES libssl.so libcrypto.so PATHS ${USE_SSL}/lib ${USE_SSL}/lib64 NO_DEFAULT_PATH)
 
-add_library(inkevent STATIC
-        EventSystem.cc
-        IOBuffer.cc
-        Inline.cc
-        Lock.cc
-        MIOBufferWriter.cc
-        PQ-List.cc
-        Processor.cc
-        ProtectedQueue.cc
-        ProxyAllocator.cc
-        SocketManager.cc
-        Tasks.cc
-        Thread.cc
-        UnixEThread.cc
-        UnixEvent.cc
-        UnixEventProcessor.cc
-        ConfigProcessor.cc
-        RecRawStatsImpl.cc
-        RecProcess.cc)
-target_include_directories(inkevent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(inkevent ${PCRE_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc tscore records_p)
+  if (SSL_INCLUDE_DIR AND SSL_LIBRARY_DIR)
+    set(SSL_FOUND TRUE)
+    find_library(SSL_CRYPTO_LIBRARY NAMES crypto PATHS ${SSL_LIBRARY_DIR} NO_DEFAULT_PATH)
+    find_library(SSL_SSL_LIBRARY NAMES ssl PATHS ${SSL_LIBRARY_DIR} NO_DEFAULT_PATH)
+    set(SSL_LIBRARIES ${SSL_CRYPTO_LIBRARY} ${SSL_SSL_LIBRARY})
+  endif()
+endif(USE_SSL)
