@@ -1003,7 +1003,7 @@ struct Cache {
                      const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
                      int host_len = 0);
   static void generate_key(CryptoHash *hash, CacheURL *url);
-  static void generate_key(HttpCacheKey *hash, CacheURL *url, cache_generation_t generation = -1);
+  static void generate_key(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
 
   void vol_initialized(bool result);
 
@@ -1024,10 +1024,10 @@ Cache::generate_key(CryptoHash *hash, CacheURL *url)
 }
 
 inline void
-Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generation)
+Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
 {
   key->hostname = url->host_get(&key->hostlen);
-  url->hash_get(&key->hash, generation);
+  url->hash_get(&key->hash, ignore_query, generation);
 }
 
 inline unsigned int

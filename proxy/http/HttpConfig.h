@@ -566,6 +566,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_responses_to_cookies     = 1;
   MgmtByte cache_ignore_auth              = 0;
   MgmtByte cache_urls_that_look_dynamic   = 1;
+  MgmtByte cache_ignore_query             = 0;
   MgmtByte cache_required_headers         = 2;
   MgmtByte cache_range_lookup             = 1;
   MgmtByte cache_range_write              = 0;
@@ -619,18 +620,18 @@ struct OverridableHttpConfigParams {
   /////////////////////////////////////////////////
   MgmtByte response_suppression_mode = 0; // proxy.config.body_factory.response_suppression_mode
 
+  //////////////////
+  // Redirection  //
+  //////////////////
+  MgmtByte redirect_use_orig_cache_key = 0;
+  MgmtInt number_of_redirections       = 0;
+
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
   char *ssl_client_verify_server_policy     = nullptr;
   char *ssl_client_verify_server_properties = nullptr;
   char *ssl_client_sni_policy               = nullptr;
-
-  //////////////////
-  // Redirection  //
-  //////////////////
-  MgmtByte redirect_use_orig_cache_key = 0;
-  MgmtInt number_of_redirections       = 0;
 
   MgmtInt proxy_response_hsts_max_age = -1;
 

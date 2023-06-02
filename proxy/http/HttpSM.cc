@@ -5047,7 +5047,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDebug("http_seq", "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
   pending_action = cache_sm.open_read(
     &key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
@@ -5072,7 +5072,8 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
   SMDebug("http_seq", "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                      t_state.txn_conf->cache_generation_number);
   pending_action = cacheProcessor.remove(cont, &key);
 
   return;
@@ -5150,7 +5151,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDebug("http_cache_write", "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
   pending_action =
     c_sm->open_write(&key, s_url, &t_state.hdr_info.client_request, object_read_info,

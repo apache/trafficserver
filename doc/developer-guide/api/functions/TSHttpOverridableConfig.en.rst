@@ -84,6 +84,7 @@ TSOverridableConfigKey Value                                              Config
 :c:enumerator:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`        :ts:cv:`proxy.config.http.background_fill_completed_threshold`
 :c:enumerator:`TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES`           :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 :c:enumerator:`TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC`         :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
+:c:enumerator:`TS_CONFIG_HTTP_CACHE_IGNORE_QUERY`                         :ts:cv:`proxy.config.http.cache.ignore_query`
 :c:enumerator:`TS_CONFIG_HTTP_CACHE_GENERATION`                           :ts:cv:`proxy.config.http.cache.generation`
 :c:enumerator:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME`              :ts:cv:`proxy.config.http.cache.guaranteed_max_lifetime`
 :c:enumerator:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME`              :ts:cv:`proxy.config.http.cache.guaranteed_min_lifetime`

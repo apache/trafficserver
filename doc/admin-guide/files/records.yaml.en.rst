@@ -2134,6 +2134,14 @@ Cache Control
    used to purge the entire cache, or just a specific :file:`remap.config`
    rule.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_query INT 0
+   :reloadable:
+   :overridable:
+
+   If this value is set to ``1``, then the query string is ignored when
+   calculating the cach key for the request. This can be noticeably faster
+   than using e.g. the ``cachekey`` plugin to just remove the query parameters.
+
 .. ts:cv:: CONFIG proxy.config.http.doc_in_cache_skip_dns INT 1
    :reloadable:
    :overridable:
