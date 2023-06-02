@@ -190,10 +190,8 @@ QUICPacketHandlerIn::_get_continuation()
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  // Assumption: udp_packet has only one IOBufferBlock
-  IOBufferBlock *block = udp_packet->getIOBlockChain();
-  const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
-  uint64_t buf_len     = block->size();
+  uint64_t buf_len{0};
+  uint8_t *buf = udp_packet->get_entire_chain_buffer(&buf_len);
 
   constexpr int MAX_TOKEN_LEN             = 1200;
   constexpr int DEFAULT_MAX_DATAGRAM_SIZE = 1350;

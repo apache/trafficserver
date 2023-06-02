@@ -345,10 +345,8 @@ QUICNetVConnection::reset_quic_connection()
 void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
-  IOBufferBlock *block = packet->getIOBlockChain();
-  uint8_t *buf         = reinterpret_cast<uint8_t *>(block->buf());
-  uint64_t buf_len     = block->size();
-
+  size_t buf_len{0};
+  uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
   net_activity(this, this_ethread());
   quiche_recv_info recv_info = {
     &packet->from.sa,
