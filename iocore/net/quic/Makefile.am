@@ -54,6 +54,20 @@ libquic_a_SOURCES = \
 # Check Programs
 #
 
+check_PROGRAMS := test_MTHashTable
+
+test_MTHashTable_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+
+test_MTHashTable_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ @OPENSSL_LIBS@
+
+test_MTHashTable_SOURCES = test_MTHashTable.cc
+
 TESTS = $(check_PROGRAMS)
 
 #
