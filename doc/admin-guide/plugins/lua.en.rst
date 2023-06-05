@@ -647,6 +647,8 @@ Hook point constants
     TS_LUA_HOOK_SEND_RESPONSE_HDR
     TS_LUA_REQUEST_TRANSFORM
     TS_LUA_RESPONSE_TRANSFORM
+    TS_LUA_REQUEST_CLIENT
+    TS_LUA_RESPONSE_CLIENT
 
 These constants are usually used in ts.hook method call.
 
@@ -693,6 +695,12 @@ Additional Information:
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_RESPONSE      | TS_LUA_RESPONSE_TRANSFORM |     YES              |    YES             |    YES               |
 | _TRANSFORM_HOOK       |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_REQUEST       | TS_LUA_REQUEST_CLIENT     |     YES              |    NO              |    YES               |
+| _CLIENT_HOOK          |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_RESPONSE      | TS_LUA_RESPONSE_CLIENT    |     YES              |    YES             |    YES               |
+| _CLIENT_HOOK          |                           |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_TXN           | TS_LUA_HOOK_TXN_CLOSE     |     YES              |    YES             |    YES               |
 | _CLOSE_HOOK           |                           |                      |                    |                      |

@@ -20,4 +20,5 @@
 
 #include "ts_lua_common.h"
 
+int ts_lua_client_entry(TSCont contp, TSEvent event, void *edata);
 int ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata);
