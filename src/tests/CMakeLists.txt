@@ -24,7 +24,40 @@ include_directories(
         ${CATCH_INCLUDE_DIR}
 )
 
-link_libraries(aio inkevent proxy tscore tscpputil hdrs inkcache inknet inkdns inkhostdb inkutils http http_remap logging fastlz)
+link_libraries(
+        http
+        http_remap
+        http2
+        logging
+        hdrs
+        configmanager
+        diagsconfig
+        utils_p
+        inkutils
+        inkdns
+        inkhostdb
+        proxy
+        http
+        inkutils
+        inkdns
+        inkhostdb
+        proxy
+        http
+        hdrs
+        http_remap
+        logging
+        inkcache
+        fastlz
+        aio
+        tscore
+        tscpputil
+        proxy
+        inknet
+        records_p
+        inkevent
+        yaml-cpp
+        libswoc
+)
 if (TS_USE_LINUX_IO_URING)
     link_libraries(inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
