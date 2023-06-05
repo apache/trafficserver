@@ -123,7 +123,6 @@ add_executable(test_tscore
         unit_tests/test_IntrusivePtr.cc
         unit_tests/test_List.cc
         unit_tests/test_MMH.cc
-        unit_tests/test_MT_hashtable.cc
         unit_tests/test_ParseRules.cc
         unit_tests/test_PluginUserArgs.cc
         unit_tests/test_PriorityQueue.cc
@@ -140,7 +139,7 @@ add_executable(test_tscore
         unit_tests/test_scoped_resource.cc
         unit_tests/unit_test_main.cc
 )
-target_link_libraries(test_tscore PRIVATE tscore inkevent records_p libswoc)
-target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/iocore/eventsystem ${CATCH_INCLUDE_DIR})
+target_link_libraries(test_tscore PRIVATE tscore libswoc)
+target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
 install(TARGETS tscore)

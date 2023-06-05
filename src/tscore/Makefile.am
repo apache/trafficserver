@@ -34,8 +34,7 @@ TESTS = $(check_PROGRAMS)
 lib_LTLIBRARIES = libtscore.la
 
 AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-        @SWOC_INCLUDES@ \
+	@SWOC_INCLUDES@ \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
@@ -164,7 +163,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @SWOC_LIBS@ @OPENSSL_LIBS@
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -183,7 +182,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PluginUserArgs.cc \
 	unit_tests/test_PriorityQueue.cc \
