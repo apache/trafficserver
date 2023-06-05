@@ -14,8 +14,6 @@ The current layout is:
 
 ## Scripts
 
-To help with easy running of the tests, there is autest.sh and bootstrap.py.
-
 ### autest.sh
 This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a pipenv. If the pipenv is not setup, the script will prompt user the missing components. That will set up the Autest on most systems in a Python virtual environment. The wrapper adds some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
 
@@ -39,6 +37,44 @@ To run autest manually, the recommended way is to follow these steps:
 2. **pipenv shell**: enter a shell in the virtual environment(type "exit" to leave the shell).
 3. **cd gold_tests**: enter the directory containing the test files.
 4. **autest --ats-bin user_ats_bin**: run autest where user_ats_bin is the bin directory in the user's ats directory.
+
+# Running tests
+
+First, you need a TrafficServer installation. You can't run autest with
+a build that has not been installed. Bear in mind that you don't need
+to install to a system-wide location, a personal directory will work
+too. For example:
+
+    $ ./configure --prefix=$HOME/test/trafficserver
+
+Next, you can run all the tests by executing the`autest.sh` command from
+the `./tests` directory. Note that `--ats-bin` is a required argument and
+is the path to `bin` directory of your TrafficServer installation prefix:
+
+    $ ./autest.sh --ats-bin=$PREFIX/bin
+    Python 3.6 or newer detected!
+    python3-dev/devel detected!
+    pipenv detected!
+    Using the pre-existing virtual environment.
+    Environment config finished. Running AuTest...
+    Running Test CppDelayTransformation: Skipped
+    Warning: Skipping test CppDelayTransformation because:
+     /opt/ats/libexec/trafficserver/DelayTransformationPlugin.so not found.
+    Running Test TSVConnFd:F Failed
+    Running Test accept_timeout: Skipped
+    Warning: Skipping test accept_timeout because:
+     Need telnet to shutdown when server shuts down tcp
+    Running Test accept_webp:... Passed
+    Running Test active_timeout:...
+    ...
+
+Finally, to run a single test, you can use the `--filter` flag to name
+which test to run. The tests are in files whose names are the test name
+, and are suffixed with `.test.py`. Thus, the `something_descriptive`
+test will be specified in a file named `something_descriptive.test.py`.
+The corresponding `autest.sh` command is:
+
+    $ ./autest.sh --ats-bin=$PREFIX/bin --filter=something_descriptive
 
 # Advanced setup
 
