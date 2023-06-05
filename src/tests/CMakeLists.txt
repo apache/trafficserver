@@ -71,6 +71,13 @@ macro(add_cache_test name)
     add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
 endmacro()
 
+macro(add_net_test name)
+    add_executable(${name}
+            ${CMAKE_SOURCE_DIR}/iocore/net/libinknet_stub.cc
+            ${ARGN})
+    add_test(NAME test_cache_${name} COMMAND $<TARGET_FILE:${name}>)
+endmacro()
+
 macro(add_stubbed_test name)
     add_executable(${name}
             ${CMAKE_SOURCE_DIR}/iocore/cache/test/stub.cc
@@ -93,8 +100,7 @@ add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
 add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO>)
 
-add_executable(test_net ${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
-add_test(NAME test_net COMMAND $<TARGET_FILE:test_net>)
+add_net_test(test_net ${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)
