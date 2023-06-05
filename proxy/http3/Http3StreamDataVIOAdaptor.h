@@ -31,6 +31,7 @@ class Http3StreamDataVIOAdaptor : public Http3FrameHandler
 {
 public:
   Http3StreamDataVIOAdaptor(VIO *sink);
+  virtual ~Http3StreamDataVIOAdaptor();
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
@@ -38,8 +39,10 @@ public:
 
   // Http3StreamDataVIOAdaptor
   void finalize();
+  bool has_data();
 
 private:
   VIO *_sink_vio             = nullptr;
   int64_t _total_data_length = 0;
+  MIOBuffer *_buffer;
 };
