@@ -15,4 +15,5 @@
 #  limitations under the License.
 
 sni:
-- fqdn: notaport.com:yowzers-1
+- fqdn: notaport.com
+  inbound_port_range: yowzers-1

@@ -15,4 +15,5 @@
 #  limitations under the License.
 
 sni:
-- fqdn: badport.com:1-yowzers2
+- fqdn: badport.com
+  inbound_port_range: 1-yowzers2

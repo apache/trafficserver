@@ -175,6 +175,7 @@ TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {
 };
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
+                                               TS_inbound_port_range,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
@@ -219,34 +220,31 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_fqdn]) {
-      swoc::TextView fqdn{node[TS_fqdn].Scalar()};
-      auto port_view{fqdn.take_suffix_at(':')};
-      if (port_view && fqdn) {
-        item.fqdn = fqdn;
-        auto min{port_view.split_prefix_at('-')};
-        if (!min) {
-          min = port_view;
-        }
-        auto const &max{port_view};
-
-        swoc::TextView parsed_min;
-        long min_port{swoc::svtoi(min, &parsed_min)};
-        swoc::TextView parsed_max;
-        long max_port{swoc::svtoi(max, &parsed_max)};
-        if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<uint16_t>::max() ||
-            max_port < min_port) {
-          std::string out;
-          swoc::bwprint(out, "bad port range: {}-{}", min, max);
-          throw YAML::ParserException(node[TS_fqdn].Mark(), out);
-        }
-
-        item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
-      } else {
-        // no port found; port_view contains entire fqdn and fqdn was emptied
-        item.fqdn = port_view;
-      }
+      item.fqdn = node[TS_fqdn].as<std::string>();
     } else {
       return false; // servername must be present
+    }
+
+    if (node[TS_inbound_port_range]) {
+      swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
+      auto min{port_view.split_prefix_at('-')};
+      if (!min) {
+        min = port_view;
+      }
+      auto const &max{port_view};
+
+      swoc::TextView parsed_min;
+      long min_port{swoc::svtoi(min, &parsed_min)};
+      swoc::TextView parsed_max;
+      long max_port{swoc::svtoi(max, &parsed_max)};
+      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<uint16_t>::max() ||
+          max_port < min_port) {
+        std::string out;
+        swoc::bwprint(out, "bad port range: {}-{}", min, max);
+        throw YAML::ParserException(node[TS_fqdn].Mark(), out);
+      }
+
+      item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();

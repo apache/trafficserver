@@ -15,4 +15,5 @@
 #  limitations under the License.
 
 sni:
-- fqdn: badport.com:8080-433
+- fqdn: badport.com
+  inbound_port_range: 8080-433

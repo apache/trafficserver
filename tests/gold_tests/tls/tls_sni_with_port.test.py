@@ -111,9 +111,11 @@ class TestSNIWithPort:
 
         ts.Disk.sni_yaml.AddLines([
             "sni:",
-            f"- fqdn: yay.example.com:{self._port_one}-{self._port_one}",
+            "- fqdn: yay.example.com",
+            f"  inbound_port_range: {self._port_one}-{self._port_one}",
             f"  tunnel_route: localhost:{server_one.Variables.https_port}",
-            f"- fqdn: yay.example.com:{self._port_two}",
+            "- fqdn: yay.example.com",
+            f"  inbound_port_range: {self._port_two}",
             f"  tunnel_route: localhost:{server_two.Variables.https_port}"
         ])
 
@@ -144,6 +146,9 @@ def test0(
     )
 
     tr.Processes.Default.ReturnCode = 0
+    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+        "unsupported key 'inbound_port_range'", "we should not warn about the key"
+    )
     ts.Disk.traffic_out.Content += Testers.IncludesExpression(
         "not available in the map", "the request should not match an SNI"
     )

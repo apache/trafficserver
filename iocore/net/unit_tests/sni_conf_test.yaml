@@ -16,7 +16,10 @@
 
 sni:
 - fqdn: allports.com
-- fqdn: someport.com:1-433
+- fqdn: someport.com
+  inbound_port_range: 1-433
   http2: true
-- fqdn: someport.com:8080-65535
-- fqdn: oneport.com:433
+- fqdn: someport.com
+  inbound_port_range: 8080-65535
+- fqdn: oneport.com
+  inbound_port_range: 433

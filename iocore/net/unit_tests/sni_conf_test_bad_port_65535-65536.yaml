@@ -15,4 +15,5 @@
 #  limitations under the License.
 
 sni:
-- fqdn: badport.com:65535-65536
+- fqdn: badport.com
+  inbound_port_range: 65535-65536
