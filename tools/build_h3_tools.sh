@@ -21,6 +21,12 @@
 
 set -e
 
+WORKDIR="$(mktemp -d)"
+readonly WORKDIR
+
+cd "${WORKDIR}"
+echo "Building H3 dependencies in ${WORKDIR} ..."
+
 # Update this as the draft we support updates.
 OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1t+quic"}
 
