@@ -70,20 +70,20 @@ deny, one explicit and the other implicit. The ``src_ip`` rules are checked when
 to |TS|. The ``dst_ip`` rules are checked when |TS| connects to another host.
 
 By default the :file:`ip_allow.config` file contains the following lines, which allows all methods
-to connections from localhost and denies the ``PUSH``, ``PURGE`` and ``DELETE`` methods to all other
-IP addresses (note this allows all other methods to all IP addresses)::
+to connections from localhost and denies the ``PUSH``, ``PURGE``, ``DELETE`` and ``TRACE`` methods
+to all other IP addresses (note this allows all other methods to all IP addresses)::
 
     src_ip=127.0.0.1                                  action=ip_allow method=ALL
     src_ip=::1                                        action=ip_allow method=ALL
-    src_ip=0.0.0.0-255.255.255.255                    action=ip_deny  method=PUSH|PURGE|DELETE
-    src_ip=::-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff action=ip_deny  method=PUSH|PURGE|DELETE
+    src_ip=0.0.0.0-255.255.255.255                    action=ip_deny  method=PUSH|PURGE|DELETE|TRACE
+    src_ip=::-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff action=ip_deny  method=PUSH|PURGE|DELETE|TRACE
 
 This could also be specified as::
 
     src_ip=127.0.0.1   action=ip_allow method=ALL
     src_ip=::1         action=ip_allow method=ALL
-    src_ip=0/0         action=ip_deny  method=PUSH|PURGE|DELETE
-    src_ip=::/0        action=ip_deny  method=PUSH|PURGE|DELETE
+    src_ip=0/0         action=ip_deny  method=PUSH|PURGE|DELETE|TRACE
+    src_ip=::/0        action=ip_deny  method=PUSH|PURGE|DELETE|TRACE
 
 Examples
 ========
