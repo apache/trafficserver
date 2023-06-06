@@ -98,7 +98,7 @@ add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S
 #add_cache_test(Update_Header ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_Header.cc)
 
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
-add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO>)
+add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO> WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/iocore/aio)
 
 add_net_test(test_net ${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
 
