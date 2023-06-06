@@ -252,8 +252,10 @@ HQTransaction::_unschedule_read_ready_event()
 void
 HQTransaction::_close_read_ready_event(Event *e)
 {
-  ink_assert(this->_read_ready_event == e);
-  this->_read_ready_event = nullptr;
+  if (e) {
+    ink_assert(this->_read_ready_event == e);
+    this->_read_ready_event = nullptr;
+  }
 }
 
 void
@@ -279,8 +281,10 @@ HQTransaction::_unschedule_read_complete_event()
 void
 HQTransaction::_close_read_complete_event(Event *e)
 {
-  ink_assert(this->_read_complete_event == e);
-  this->_read_complete_event = nullptr;
+  if (e) {
+    ink_assert(this->_read_complete_event == e);
+    this->_read_complete_event = nullptr;
+  }
 }
 
 void
@@ -306,8 +310,10 @@ HQTransaction::_unschedule_write_ready_event()
 void
 HQTransaction::_close_write_ready_event(Event *e)
 {
-  ink_assert(this->_write_ready_event == e);
-  this->_write_ready_event = nullptr;
+  if (e) {
+    ink_assert(this->_write_ready_event == e);
+    this->_write_ready_event = nullptr;
+  }
 }
 
 void
@@ -333,8 +339,10 @@ HQTransaction::_unschedule_write_complete_event()
 void
 HQTransaction::_close_write_complete_event(Event *e)
 {
-  ink_assert(this->_write_complete_event == e);
-  this->_write_complete_event = nullptr;
+  if (e) {
+    ink_assert(this->_write_complete_event == e);
+    this->_write_complete_event = nullptr;
+  }
 }
 
 /**
