@@ -4119,6 +4119,11 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
   STATE_ENTER(&HttpSM::tunnel_handler_ssl_producer, event);
 
   switch (event) {
+  case VC_EVENT_READ_COMPLETE:
+    // This event is triggered during an HTTP/2 CONNECT request when a DATA
+    // frame with the END_STREAM flag set is received, indicating the end of the
+    // stream.
+    [[fallthrough]];
   case VC_EVENT_EOS:
     // The write side of this connection is still alive
     //  so half-close the read
@@ -4150,7 +4155,11 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
       }
     }
     break;
-  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_READ_READY:
+    // This event is triggered when receiving DATA frames without the END_STREAM
+    // flag set in a HTTP/2 CONNECT request. Breaking as there are more DATA
+    // frames to come.
+    break;
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   // We should never get these event since we don't know
   //  how long the stream is
