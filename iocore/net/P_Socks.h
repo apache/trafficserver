@@ -30,9 +30,7 @@
 #include "I_Socks.h"
 #include "tscpp/util/ts_errata.h"
 
-#ifdef SOCKS_WITH_TS
 #include "ParentSelection.h"
-#endif
 
 enum {
   // types of events for Socks auth handlers
@@ -57,21 +55,9 @@ struct socks_conf_struct {
   int accept_port          = 0;
   unsigned short http_port = 1080;
 
-#ifdef SOCKS_WITH_TS
   swoc::IPRangeSet ip_addrs;
-#endif
 
-#ifndef SOCKS_WITH_TS
-  IpEndpoint server_addr;
-#endif
-
-  socks_conf_struct()
-
-  {
-#if !defined(SOCKS_WITH_TS)
-    memset(&server_addr, 0, sizeof(server_addr));
-#endif
-  }
+  socks_conf_struct() {}
 };
 
 extern struct socks_conf_struct *g_socks_conf_stuff;
@@ -124,12 +110,10 @@ struct SocksEntry : public Continuation {
   SocksAuthHandler auth_handler = nullptr;
   unsigned char socks_cmd       = NORMAL_SOCKS;
 
-#ifdef SOCKS_WITH_TS
   // socks server selection:
   ParentConfigParams *server_params = nullptr;
   HttpRequestData req_data; // We dont use any http specific fields.
   ParentResult server_result;
-#endif
 
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
