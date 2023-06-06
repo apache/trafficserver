@@ -903,6 +903,13 @@ HttpSM::state_read_client_request_header(int event, void *data)
       }
     }
 
+    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUSH &&
+        t_state.http_config_param->push_method_enabled == 0) {
+      SMDebug("http", "Rejecting PUSH request because push_method_enabled is 0.");
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return 0;
+    }
+
     // Call to ensure the content-length and transfer_encoding elements in client_request are filled in
     HttpTransact::set_client_request_state(&t_state, &t_state.hdr_info.client_request);
 
