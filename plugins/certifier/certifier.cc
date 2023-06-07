@@ -102,9 +102,7 @@ private:
     SslData *next = nullptr;
 
     SslData() = default;
-    ~SslData()
-    { /* TSDebug(PLUGIN_NAME, "Deleting ssl data for [%s]", commonName.c_str()); */
-    }
+    ~SslData() { TSDebug(PLUGIN_NAME, "Deleting ssl data for [%s]", commonName.c_str()); }
   };
 
   using scoped_SslData = std::unique_ptr<SslLRUList::SslData>;
@@ -554,6 +552,15 @@ cert_retriever(TSCont contp, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 
+static int
+shutdown_handler(TSCont contp, TSEvent event, void *edata)
+{
+  if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    ssl_list.reset();
+  }
+  return 0;
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -561,6 +568,7 @@ TSPluginInit(int argc, const char *argv[])
   // Initialization data and callback
   TSPluginRegistrationInfo info;
   TSCont cb_shadow   = nullptr;
+  TSCont cb_shutdown = nullptr;
   info.plugin_name   = "certifier";
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
@@ -618,6 +626,8 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Unable to initialize plugin (disabled). Failed to register plugin.", PLUGIN_NAME);
   } else if ((cb_shadow = TSContCreate(cert_retriever, nullptr)) == nullptr) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to create shadow cert cb.", PLUGIN_NAME);
+  } else if ((cb_shutdown = TSContCreate(shutdown_handler, nullptr)) == nullptr) {
+    TSError("[%s] Unable to initialize plugin (disabled). Failed to create shutdown cb.", PLUGIN_NAME);
   } else {
     if ((sign_enabled = cert && key && serial)) {
       // Dynamic cert generation enabled. Initialize CA key, cert and serial
@@ -666,6 +676,7 @@ TSPluginInit(int argc, const char *argv[])
 
     /// Add global hooks
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_shadow);
+    TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, cb_shutdown);
   }
 
   return;
