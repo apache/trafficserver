@@ -311,6 +311,11 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   str = api.getPath(&length);
   String path("/");
   path.append(str, length);
+  str = api.getParams(&length);
+  if (length > 0) {
+    path.append(";", 1);
+    path.append(str, length);
+  }
   String canonicalUri = canonicalEncode(path, /* isObjectName */ true);
   sha256Update(&canonicalRequestSha256Ctx, canonicalUri);
   sha256Update(&canonicalRequestSha256Ctx, "\n");
