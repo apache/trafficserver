@@ -102,7 +102,9 @@ private:
     SslData *next = nullptr;
 
     SslData() = default;
-    ~SslData() { TSDebug(PLUGIN_NAME, "Deleting ssl data for [%s]", commonName.c_str()); }
+    ~SslData()
+    { /* TSDebug(PLUGIN_NAME, "Deleting ssl data for [%s]", commonName.c_str()); */
+    }
   };
 
   using scoped_SslData = std::unique_ptr<SslLRUList::SslData>;
