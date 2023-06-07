@@ -73,7 +73,6 @@ SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support
 
   ats_ip_copy(&target_addr, vc->get_remote_addr());
 
-#ifdef SOCKS_WITH_TS
   req_data.hdr          = nullptr;
   req_data.hostname_str = nullptr;
   req_data.api_info     = nullptr;
@@ -86,7 +85,6 @@ SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support
   ats_ip_copy(&req_data.src_ip, &target_addr);
 
   server_params = SocksServerConfig::acquire();
-#endif
 
   nattempts = 0;
   findServer();
@@ -102,7 +100,6 @@ SocksEntry::findServer()
   unsigned int fail_threshold = server_params->policy.FailThreshold;
   unsigned int retry_time     = server_params->policy.ParentRetryTime;
 
-#ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
     ink_assert(server_result.result == PARENT_UNDEFINED);
     server_params->findParent(&req_data, &server_result, fail_threshold, retry_time);
@@ -140,12 +137,6 @@ SocksEntry::findServer()
   case PARENT_FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
   }
-#else
-  if (nattempts > netProcessor.socks_conf_stuff->connection_attempts)
-    memset(&server_addr, 0, sizeof(server_addr));
-  else
-    ats_ip_copy(&server_addr, &g_socks_conf_stuff->server_addr);
-#endif // SOCKS_WITH_TS
 
   char buff[INET6_ADDRSTRLEN];
   Dbg(dbg_ctl_SocksParent, "findServer result: %s:%d", ats_ip_ntop(&server_addr.sa, buff, sizeof(buff)),
@@ -164,11 +155,9 @@ SocksEntry::free()
     timeout->cancel(this);
   }
 
-#ifdef SOCKS_WITH_TS
   if (!lerrno && netVConnection && server_result.retry) {
     server_params->markParentUp(&server_result);
   }
-#endif
 
   if ((action_.cancelled || lerrno) && netVConnection) {
     netVConnection->do_io_close();
@@ -189,9 +178,7 @@ SocksEntry::free()
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
     }
   }
-#ifdef SOCKS_WITH_TS
   SocksServerConfig::release(server_params);
-#endif
 
   free_MIOBuffer(buf);
   action_ = nullptr;
@@ -469,9 +456,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 {
   int socks_config_fd = -1;
   ats_scoped_str config_pathname;
-#ifdef SOCKS_WITH_TS
   swoc::Errata errata;
-#endif
   std::error_code ec;
   std::string config_text;
 
@@ -506,9 +491,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
       "accept_port = %d http_port = %d",
       socks_conf_stuff->accept_enabled, socks_conf_stuff->accept_port, socks_conf_stuff->http_port);
 
-#ifdef SOCKS_WITH_TS
   SocksServerConfig::startup();
-#endif
 
   config_pathname = RecConfigReadConfigPath("proxy.config.socks.socks_config_file");
   Dbg(dbg_ctl_Socks, "Socks Config File: %s", (const char *)config_pathname);
@@ -525,7 +508,6 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     goto error;
   }
 
-#ifdef SOCKS_WITH_TS
   errata = loadSocksIPAddrs(config_text, socks_conf_stuff);
 
   if (!errata.is_ok()) {
@@ -533,7 +515,6 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     Error("%s", config_text.c_str());
     goto error;
   }
-#endif
 
   if (loadSocksAuthInfo(config_text, socks_conf_stuff) != 0) {
     Error("SOCKS Config: Error while reading Socks auth info");

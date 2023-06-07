@@ -193,16 +193,15 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   }
 
   vc->set_context(NET_VCONNECTION_OUT);
-  bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
-#ifdef SOCKS_WITH_TS
-                      && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
-                          /* This implies we are tunnelling.
-                           * we need to connect using socks server even
-                           * if this ip is in no_socks list.
-                           */
-                          !socks_conf_stuff->ip_addrs.contains(swoc::IPAddr(target)))
-#endif
-  );
+
+  const bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS &&
+                            (opt->socks_version != SOCKS_DEFAULT_VERSION ||
+                             /* This implies we are tunnelling.
+                              * we need to connect using socks server even
+                              * if this ip is in no_socks list.
+                              */
+                             !socks_conf_stuff->ip_addrs.contains(swoc::IPAddr(target))));
+
   SocksEntry *socksEntry = nullptr;
 
   vc->id          = net_next_connection_number();
