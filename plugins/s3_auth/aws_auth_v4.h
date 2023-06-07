@@ -47,6 +47,7 @@ public:
   virtual const char *getMethod(int *length) = 0;
   virtual const char *getHost(int *length)   = 0;
   virtual const char *getPath(int *length)   = 0;
+  virtual const char *getParams(int *length) = 0;
   virtual const char *getQuery(int *length)  = 0;
   virtual HeaderIterator headerBegin()       = 0;
   virtual HeaderIterator headerEnd()         = 0;
