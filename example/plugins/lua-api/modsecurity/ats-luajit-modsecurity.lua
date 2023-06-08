@@ -40,6 +40,9 @@ function __init__(argtb)
   local result = msc.msc_rules_add_file(msc_config.rules, msc_config.rulesfile, error)
   if(result < 0) then
     ts.error("Problems loading the rules: ".. ffi.string(error[0]))
+    local ptr = ffi.cast("void *", error[0])
+    C.free(ptr)
+    
     msc.msc_rules_cleanup(msc_config.rules)
     msc_config.rules = nil
     return -1
@@ -56,6 +59,8 @@ function __reload__()
   local result = msc.msc_rules_add_file(newrules, msc_config.rulesfile, error)
   if(result < 0) then
     ts.error("Problems loading the rules during reload: ".. ffi.string(error[0]))
+    local ptr = ffi.cast("void *", error[0])
+    C.free(ptr)
 
     msc.msc_rules_cleanup(newrules)
     newrules = nil
