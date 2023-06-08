@@ -56,7 +56,30 @@ struct PollDescriptor {
   int kqueue_fd;
 #endif
 
-  PollDescriptor() { init(); }
+  PollDescriptor()
+  {
+    result = 0;
+#if TS_USE_EPOLL
+    nfds     = 0;
+    epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
+    memset(ePoll_Triggered_Events, 0, sizeof(ePoll_Triggered_Events));
+    memset(pfd, 0, sizeof(pfd));
+#endif
+#if TS_USE_KQUEUE
+    kqueue_fd = kqueue();
+    memset(kq_Triggered_Events, 0, sizeof(kq_Triggered_Events));
+#endif
+  }
+
+  virtual ~PollDescriptor()
+  {
+#if TS_USE_EPOLL
+    close(epoll_fd);
+#endif
+#if TS_USE_KQUEUE
+    close(kqueue_fd);
+#endif
+  }
 #if TS_USE_EPOLL
 #define get_ev_port(a)      ((a)->epoll_fd)
 #define get_ev_events(a, x) ((a)->ePoll_Triggered_Events[(x)].events)
@@ -101,23 +124,6 @@ struct PollDescriptor {
     return &pfd[nfds++];
 #else
     return nullptr;
-#endif
-  }
-
-private:
-  void
-  init()
-  {
-    result = 0;
-#if TS_USE_EPOLL
-    nfds     = 0;
-    epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
-    memset(ePoll_Triggered_Events, 0, sizeof(ePoll_Triggered_Events));
-    memset(pfd, 0, sizeof(pfd));
-#endif
-#if TS_USE_KQUEUE
-    kqueue_fd = kqueue();
-    memset(kq_Triggered_Events, 0, sizeof(kq_Triggered_Events));
 #endif
   }
 };

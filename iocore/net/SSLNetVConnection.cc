@@ -1280,8 +1280,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
           // Have to have the read NetState enabled because we are using it for the signal vc
           read.enabled       = true;
           PollDescriptor *pd = get_PollDescriptor(this_ethread());
-          this->async_ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), EVENTIO_READ);
-          this->async_ep.type = EVENTIO_READWRITE_VC;
+          this->async_ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), get_NetHandler(this->thread), EVENTIO_READ);
         }
       }
     }

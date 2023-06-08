@@ -34,8 +34,15 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
+#include "AsyncSignalEventIO.h"
+#include "I_AIO.h"
+#if TS_USE_LINUX_IO_URING
+#include "I_IO_URING.h"
+#endif
 #include "P_Net.h"
 #include "P_UDPNet.h"
+#include "P_UnixNet.h"
+#include "tscore/ink_sock.h"
 
 #include "netinet/udp.h"
 #ifndef UDP_SEGMENT
@@ -223,14 +230,19 @@ initialize_thread_for_udp_net(EThread *thread)
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
   thread->set_tail_handler(nh);
-  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
-  new (thread->ep) EventIO();
-  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
-  thread->ep->start(upd, thread->evfd, nullptr, EVENTIO_READ);
+#if TS_USE_LINUX_IO_URING
+  auto ep = new IOUringEventIO();
+  ep->start(upd, IOUringContext::local_context());
 #else
-  thread->ep->start(upd, thread->evpipe[0], nullptr, EVENTIO_READ);
+  auto ep = new AsyncSignalEventIO();
+  ep->start(upd, thread->evfd, EVENTIO_READ);
 #endif
+#else
+  auto ep = new AsyncSignalEventIO();
+  ep->start(upd, thread->evpipe[0], EVENTIO_READ);
+#endif
+  thread->ep = ep;
 }
 
 EventType
@@ -982,7 +994,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   pc = get_UDPPollCont(n->ethread);
   pd = pc->pollDescriptor;
 
-  n->ep.start(pd, n, EVENTIO_READ);
+  n->ep.start(pd, n, get_UDPNetHandler(cont->getThreadAffinity()), EVENTIO_READ);
 
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
@@ -1440,18 +1452,6 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
 
 #undef LINK
 
-static void
-net_signal_hook_callback(EThread *thread)
-{
-#if HAVE_EVENTFD
-  uint64_t counter;
-  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
-#else
-  char dummy[1024];
-  ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
-#endif
-}
-
 UDPNetHandler::UDPNetHandler(bool enable_gso) : udpOutQueue(enable_gso)
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
@@ -1512,34 +1512,9 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
   int i        = 0;
   EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    epd = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
-    if (epd->type == EVENTIO_UDP_CONNECTION) {
-      // TODO: handle EVENTIO_ERROR
-      if (get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) {
-        uc = epd->data.uc;
-        ink_assert(uc && uc->mutex && uc->continuation);
-        ink_assert(uc->refcount >= 1);
-        open_list.in_or_enqueue(uc); // due to the above race
-        if (uc->shouldDestroy()) {
-          open_list.remove(uc);
-          uc->Release();
-        } else {
-          udpNetInternal.udp_read_from_net(this, uc);
-        }
-      } else {
-        Debug("iocore_udp_main", "Unhandled epoll event: 0x%04x", get_ev_events(pc->pollDescriptor, i));
-      }
-    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
-      // TODO: handle DNS conn if there is ET_UDP
-      if (epd->data.dnscon != nullptr) {
-        epd->data.dnscon->trigger();
-#if defined(USE_EDGE_TRIGGER)
-        epd->refresh(EVENTIO_READ);
-#endif
-      }
-    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      net_signal_hook_callback(this->thread);
-    }
+    epd       = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
+    int flags = get_ev_events(pc->pollDescriptor, i);
+    epd->process_event(flags);
   } // end for
 
   // remove dead UDP connections

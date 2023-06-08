@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "I_EventSystem.h"
+#include "DNSEventIO.h"
 #include "I_DNSProcessor.h"
 
 //
@@ -78,7 +78,7 @@ struct DNSConnection {
   int num = 0;
   Options opt;
   LINK(DNSConnection, link);
-  EventIO eio;
+  DNSEventIO eio{*this};
   InkRand generator;
   DNSHandler *handler = nullptr;
 

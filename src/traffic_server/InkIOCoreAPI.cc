@@ -34,6 +34,7 @@
 #include "I_Net.h"
 #include "I_Cache.h"
 #include "I_HostDB.h"
+#include "P_UnixUDPConnection.h"
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK

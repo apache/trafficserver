@@ -33,6 +33,7 @@ noinst_LIBRARIES = libinkdns.a
 libinkdns_a_SOURCES = \
 	DNS.cc \
 	DNSConnection.cc \
+	DNSEventIO.cc \
 	I_DNS.h \
 	I_DNSProcessor.h \
 	I_SplitDNS.h \

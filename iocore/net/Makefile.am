@@ -122,12 +122,18 @@ test_libinknet_LDADD = \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
 libinknet_a_SOURCES = \
+  AcceptOptions.cc \
+  AcceptOptions.h \
 	ALPNSupport.cc \
+	AsyncSignalEventIO.cc \
+	AsyncSignalEventIO.h \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	BoringSSLUtils.cc \
 	BoringSSLUtils.h \
 	Connection.cc \
+	EventIO.h \
+	EventIO.cc \
 	I_Net.h \
 	I_NetProcessor.h \
 	I_NetVConnection.h \
@@ -140,6 +146,12 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \
 	Net.cc \
+	NetAcceptEventIO.h \
+	NetAcceptEventIO.cc \
+	NetHandler.h \
+	NetHandler.cc \
+	NetVCOptions.h \
+	NetVCOptions.cc \
 	NetVConnection.cc \
 	P_ALPNSupport.h \
 	P_SNIActionPerformer.h \
@@ -172,8 +184,12 @@ libinknet_a_SOURCES = \
 	P_UnixNetVConnection.h \
 	P_UnixPollDescriptor.h \
 	P_UnixUDPConnection.h \
+	PollCont.h \
+	PollCont.cc \
 	ProxyProtocol.h \
 	ProxyProtocol.cc \
+	ReadWriteEventIO.h \
+	ReadWriteEventIO.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
 	SSLClientCoordinator.cc \
@@ -201,6 +217,8 @@ libinknet_a_SOURCES = \
 	TLSSNISupport.cc \
 	TLSTunnelSupport.cc \
 	TLSCertSwitchSupport.cc \
+	UDPEventIO.h \
+	UDPEventIO.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \

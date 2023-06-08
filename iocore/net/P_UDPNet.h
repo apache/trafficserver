@@ -32,6 +32,7 @@
 
 #include "tscore/ink_platform.h"
 #include "I_UDPNet.h"
+#include "PollCont.h"
 
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
@@ -335,7 +336,6 @@ public:
   UDPNetHandler(bool enable_gso);
 };
 
-struct PollCont;
 static inline PollCont *
 get_UDPPollCont(EThread *t)
 {
