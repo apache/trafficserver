@@ -33,9 +33,19 @@
 #include <algorithm>
 
 #include "swoc/bwf_base.h"
+#include <netinet/in.h>
 #include "catch.hpp"
 
 #include "YamlSNIConfig.h"
+
+static void
+check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_port_t max_expected)
+{
+  REQUIRE(item.port_ranges.size() == 1);
+  auto const [min, max]{item.port_ranges[0]};
+  CHECK(min == min_expected);
+  CHECK(max == max_expected);
+}
 
 TEST_CASE("YamlSNIConfig sets port ranges appropriately")
 {
@@ -59,27 +69,15 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
   {
     SECTION("Ports 1-433.")
     {
-      auto const item{conf.items[1]};
-      REQUIRE(item.port_ranges.size() == 1);
-      auto const [min, max]{item.port_ranges[0]};
-      CHECK(min == 1);
-      CHECK(max == 433);
+      check_port_range(conf.items[1], 1, 433);
     }
     SECTION("Ports 8080-65535.")
     {
-      auto const &item{conf.items[2]};
-      REQUIRE(item.port_ranges.size() == 1);
-      auto const [min, max]{item.port_ranges[0]};
-      CHECK(min == 8080);
-      CHECK(max == 65535);
+      check_port_range(conf.items[2], 8080, 65535);
     }
     SECTION("Port 433.")
     {
-      auto const &item{conf.items[3]};
-      REQUIRE(item.port_ranges.size() == 1);
-      auto const [min, max]{item.port_ranges[0]};
-      CHECK(min == 433);
-      CHECK(max == 433);
+      check_port_range(conf.items[3], 433, 433);
     }
   }
 
