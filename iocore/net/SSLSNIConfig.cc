@@ -109,7 +109,7 @@ SNIConfigParams::get_property_config(const std::string &servername) const
   return nps;
 }
 
-int
+bool
 SNIConfigParams::load_sni_config()
 {
   for (auto &item : yaml_sni.items) {
@@ -122,30 +122,30 @@ SNIConfigParams::load_sni_config()
     Debug("ssl", "name: %s", item.fqdn.data());
 
     item.populate_sni_actions(ai.actions);
-    if (set_next_hop_properties(item) == 1) {
-      return 1;
+    if (!set_next_hop_properties(item)) {
+      return false;
     }
   }
 
-  return 0;
+  return true;
 }
 
-int
+bool
 SNIConfigParams::set_next_hop_properties(YamlSNIConfig::Item const &item)
 {
   auto &nps = next_hop_list.emplace_back();
-  if (load_certs_if_client_cert_specified(item, nps) == 1) {
-    return 1;
+  if (!load_certs_if_client_cert_specified(item, nps)) {
+    return false;
   };
 
   nps.set_glob_name(item.fqdn);
   nps.prop.verify_server_policy     = item.verify_server_policy;
   nps.prop.verify_server_properties = item.verify_server_properties;
 
-  return 0;
+  return true;
 }
 
-int
+bool
 SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps)
 {
   if (!item.client_cert.empty()) {
@@ -158,11 +158,11 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
     auto ctx =
       params->getCTX(nps.prop.client_cert_file, nps.prop.client_key_file, params->clientCACertFilename, params->clientCACertPath);
     if (ctx.get() == nullptr) {
-      return 1;
+      return false;
     }
   }
 
-  return 0;
+  return true;
 }
 
 std::pair<const ActionVector *, ActionItem::Context>
@@ -208,14 +208,14 @@ SNIConfigParams::get(std::string_view servername, uint16_t dest_incoming_port) c
   return {nullptr, {}};
 }
 
-int
+bool
 SNIConfigParams::initialize()
 {
   std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
   return initialize(sni_filename);
 }
 
-int
+bool
 SNIConfigParams::initialize(std::string const &sni_filename)
 {
   Note("%s loading ...", sni_filename.c_str());
@@ -225,7 +225,7 @@ SNIConfigParams::initialize(std::string const &sni_filename)
     Note("%s failed to load", sni_filename.c_str());
     Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename.c_str());
 
-    return 0;
+    return true;
   }
 
   YamlSNIConfig yaml_sni_tmp;
@@ -238,7 +238,7 @@ SNIConfigParams::initialize(std::string const &sni_filename)
     } else {
       Error("%s failed to load: %s", sni_filename.c_str(), errMsg.str().c_str());
     }
-    return 1;
+    return false;
   }
   yaml_sni = std::move(yaml_sni_tmp);
 
@@ -270,8 +270,8 @@ SNIConfig::reconfigure()
   Debug("ssl", "Reload SNI file");
   SNIConfigParams *params = new SNIConfigParams;
 
-  int retStatus = params->initialize();
-  if (!retStatus) {
+  bool retStatus = params->initialize();
+  if (retStatus) {
     _configid = configProcessor.set(_configid, params);
     prewarmManager.reconfigure();
   } else {
@@ -279,13 +279,13 @@ SNIConfig::reconfigure()
   }
 
   std::string sni_filename = RecConfigReadConfigPath("proxy.config.ssl.servername.filename");
-  if (!retStatus || TSSystemState::is_initializing()) {
+  if (retStatus || TSSystemState::is_initializing()) {
     Note("%s finished loading", sni_filename.c_str());
   } else {
     Error("%s failed to load", sni_filename.c_str());
   }
 
-  return !retStatus;
+  return retStatus ? 1 : 0;
 }
 
 SNIConfigParams *

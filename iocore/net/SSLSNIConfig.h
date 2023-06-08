@@ -97,12 +97,12 @@ public:
   ~SNIConfigParams() override;
 
   const NextHopProperty *get_property_config(const std::string &servername) const;
-  int initialize();
-  int initialize(const std::string &sni_filename);
+  bool initialize();
+  bool initialize(const std::string &sni_filename);
   /** Walk sni.yaml config and populate sni_action_list
       @return 0 for success, 1 is failure
    */
-  int load_sni_config();
+  bool load_sni_config();
   std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, uint16_t dest_incoming_port) const;
 
   SNIList sni_action_list;
@@ -110,8 +110,8 @@ public:
   YamlSNIConfig yaml_sni;
 
 private:
-  int set_next_hop_properties(YamlSNIConfig::Item const &item);
-  int load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps);
+  bool set_next_hop_properties(YamlSNIConfig::Item const &item);
+  bool load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps);
 };
 
 class SNIConfig
