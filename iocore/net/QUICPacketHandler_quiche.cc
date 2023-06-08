@@ -190,7 +190,7 @@ QUICPacketHandlerIn::_get_continuation()
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  uint64_t buf_len{0};
+  size_t buf_len{0};
   uint8_t *buf = udp_packet->get_entire_chain_buffer(&buf_len);
 
   constexpr int MAX_TOKEN_LEN             = 1200;
