@@ -252,8 +252,8 @@ prune_config(invalidate_t **i)
     ilast = NULL;
     while (iptr) {
       if (difftime(iptr->expiry, now) < 0) {
-        TSDebug(PLUGIN_NAME, "Removing %s expiry: %d type: %s now: %d", iptr->regex_text, (int)iptr->expiry,
-                strForResult(iptr->new_result), (int)now);
+        TSDebug(PLUGIN_NAME, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, iptr->expiry,
+                strForResult(iptr->new_result), now);
         if (ilast) {
           ilast->next = iptr->next;
           free_invalidate_t(iptr);
@@ -289,6 +289,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
     return true;
   }
 
+  /* coverity[fs_check_call] */
   if (stat(pstate->state_path, &s) < 0) {
     TSDebug(PLUGIN_NAME, "Could not stat state %s", pstate->state_path);
     return false;
@@ -385,12 +386,14 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
   } else {
     path = pstate->config_path;
   }
+  /* coverity[fs_check_call] */
   if (stat(path, &s) < 0) {
     TSDebug(PLUGIN_NAME, "Could not stat %s", path);
     return false;
   }
   if (pstate->last_load < s.st_mtime) {
     now = time(NULL);
+    /* coverity[toctou] */
     if (!(fs = fopen(path, "r"))) {
       TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
       return false;
@@ -435,7 +438,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
-            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry,
+            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %jd %jd %s", i->regex_text, i->epoch, i->expiry,
                     strForResult(i->new_result));
           } else {
             iptr = *ilist;
@@ -462,7 +465,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
             if (i) {
               iptr->next = i;
-              TSDebug(PLUGIN_NAME, "Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry, strForResult(i->new_result));
+              TSDebug(PLUGIN_NAME, "Loaded %s %jd %jd %s", i->regex_text, i->epoch, i->expiry, strForResult(i->new_result));
             }
           }
         }
@@ -475,7 +478,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     pstate->last_load = s.st_mtime;
     return true;
   } else {
-    TSDebug(PLUGIN_NAME, "File mod time is not newer: %d >= %d", (int)pstate->last_load, (int)s.st_mtime);
+    TSDebug(PLUGIN_NAME, "File mod time is not newer: %jd >= %jd", pstate->last_load, s.st_mtime);
   }
   return false;
 }
@@ -502,13 +505,13 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
     iptr = i;
     while (iptr) {
       char const *const typestr = strForResult(iptr->new_result);
-      TSDebug(PLUGIN_NAME, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
+      TSDebug(PLUGIN_NAME, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, iptr->epoch, iptr->expiry, typestr);
       if (pstate->log) {
-        TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch,
-                             (int)iptr->expiry, typestr);
+        TSTextLogObjectWrite(pstate->log, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, iptr->epoch, iptr->expiry,
+                             typestr);
       }
       if (state_file) {
-        fprintf(state_file, "%s %d %d %s\n", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
+        fprintf(state_file, "%s %jd %jd %s\n", iptr->regex_text, iptr->epoch, iptr->expiry, typestr);
       }
       iptr = iptr->next;
     }
