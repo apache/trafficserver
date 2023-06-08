@@ -115,10 +115,7 @@ SNIConfigParams::load_sni_config()
   for (auto &item : yaml_sni.items) {
     auto &ai = sni_action_list.emplace_back();
     ai.set_glob_name(item.fqdn);
-    if (!item.port_ranges.empty()) {
-      auto const [min, max]{item.port_ranges[0]};
-      ai.ports = {static_cast<uint16_t>(min), static_cast<uint16_t>(max)};
-    }
+    ai.ports = item.port_range;
     Debug("ssl", "name: %s", item.fqdn.data());
 
     item.populate_sni_actions(ai.actions);

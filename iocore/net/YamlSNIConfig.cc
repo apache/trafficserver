@@ -243,7 +243,7 @@ template <> struct convert<YamlSNIConfig::Item> {
         throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
       }
 
-      item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
+      item.port_range = YamlSNIConfig::Item::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();

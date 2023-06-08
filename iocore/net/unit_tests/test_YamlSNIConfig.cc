@@ -41,10 +41,8 @@
 static void
 check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_port_t max_expected)
 {
-  REQUIRE(item.port_ranges.size() == 1);
-  auto const [min, max]{item.port_ranges[0]};
-  CHECK(min == min_expected);
-  CHECK(max == max_expected);
+  CHECK(item.port_range.min() == min_expected);
+  CHECK(item.port_range.max() == max_expected);
 }
 
 TEST_CASE("YamlSNIConfig sets port ranges appropriately")
@@ -59,13 +57,12 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
   REQUIRE(zret.isOK());
   REQUIRE(conf.items.size() == 4);
 
-  SECTION("If no ports were specified, ports should be empty.")
+  SECTION("If no ports were specified, port range should contain all ports.")
   {
-    auto const &item{conf.items[0]};
-    CHECK(item.port_ranges.size() == 0);
+    check_port_range(conf.items[0], 1, 65535);
   }
 
-  SECTION("If one port range was specified, ports should contain that port range.")
+  SECTION("If one port range was specified, port range should match.")
   {
     SECTION("Ports 1-433.")
     {
@@ -81,13 +78,13 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     }
   }
 
-  SECTION("If a port was specified, it should not interfere with the fqdn.")
+  SECTION("If a port range was specified, it should not interfere with the fqdn.")
   {
     auto const &item{conf.items[1]};
     CHECK(item.fqdn == "someport.com");
   }
 
-  SECTION("If no port was specified, it should not interfere with the fqdn.")
+  SECTION("If no port range was specified, it should not interfere with the fqdn.")
   {
     auto const &item{conf.items[0]};
     CHECK(item.fqdn == "allports.com");

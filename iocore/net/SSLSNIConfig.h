@@ -38,6 +38,8 @@
 #include <limits>
 #include <memory>
 
+#include <netinet/in.h>
+
 #include "ConfigProcessor.h"
 #include "SNIActionPerformer.h"
 #include "YamlSNIConfig.h"
@@ -72,8 +74,8 @@ struct NamedElement {
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
 
-  inline static constexpr uint16_t MAX_PORT_VALUE{std::numeric_limits<uint16_t>::max()};
-  using port_range_t = swoc::DiscreteRange<uint16_t>;
+  inline static constexpr in_port_t MAX_PORT_VALUE{std::numeric_limits<in_port_t>::max()};
+  using port_range_t = swoc::DiscreteRange<in_port_t>;
   port_range_t ports{1, MAX_PORT_VALUE};
 
   std::unique_ptr<pcre, PcreFreer> match;
