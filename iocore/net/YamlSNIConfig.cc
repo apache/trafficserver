@@ -39,6 +39,7 @@
 
 #include "P_SNIActionPerformer.h"
 
+#include "tscore/BufferWriterForward.h"
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/Errata.h"
@@ -239,9 +240,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       long max_port{swoc::svtoi(max, &parsed_max)};
       if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<uint16_t>::max() ||
           max_port < min_port) {
-        std::string out;
-        swoc::bwprint(out, "bad port range: {}-{}", min, max);
-        throw YAML::ParserException(node[TS_fqdn].Mark(), out);
+        throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
       }
 
       item.port_ranges.emplace_back(std::make_pair(min_port, max_port));
