@@ -843,8 +843,7 @@ TSRemapDeleteInstance(void *ih)
     if (ink_ctime_r(&tim, now)) {
       now[strlen(now) - 1] = '\0';
     } else {
-      memcpy(now, "unknown time", 12);
-      *(now + 12) = '\0';
+      strncpy(now, "unknown time", sizeof(now));
     }
 
     fprintf(stderr, "[%s]: Profiling information for regex_remap file `%s':\n", now, (ri->filename).c_str());
