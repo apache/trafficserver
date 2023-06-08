@@ -19,7 +19,6 @@
 #pragma once
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 
 #include <cstring>
 #include <string_view>

@@ -34,7 +34,6 @@
 #include <getopt.h>
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
 #include "tscpp/util/TextView.h"

@@ -806,6 +806,11 @@ tsapi void TSMimeParserClear(TSMimeParser parser);
 tsapi void TSMimeParserDestroy(TSMimeParser parser);
 
 /**
+  Parse a MIME header date string. Candidate for deprecation in v10.0.0
+ */
+tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
+
+/**
     Creates a new MIME header within bufp. Release with a call to
     TSHandleMLocRelease().
 
@@ -1240,6 +1245,10 @@ tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 tsapi TSReturnCode TSMgmtSourceGet(const char *var_name, TSMgmtSource *source);
 tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 tsapi TSReturnCode TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result);
+
+/* --------------------------------------------------------------------------
+   TSHRTime, this is a candidate for deprecation in v10.0.0 */
+tsapi TSHRTime TShrtime(void);
 
 /* --------------------------------------------------------------------------
    Continuations */
@@ -2828,6 +2837,30 @@ tsapi TSReturnCode TSRPCHandlerDone(TSYaml resp);
  * @return TS_SUCCESS if no issues. TS_ERROR otherwise.
  */
 tsapi TSReturnCode TSRPCHandlerError(int code, const char *descr, size_t descr_len);
+
+/** Do another cache lookup with a different cache key.
+ *
+ * @param txnp Transaction.
+ * @param url URL to use for cache key.
+ * @param length Length of the string in @a url
+ *
+ * @return @c TS_SUCCESS on success, @c TS_ERROR if the @a txnp is invalid or the @a url is
+ * not a valid URL.
+ *
+ * If @a length is negative, @c strlen will be used to determine the length of @a url.
+ *
+ * @a url must be syntactically a URL, but otherwise it is just a string and does not need to
+ * be retrievable.
+ *
+ * This can only be called in a @c TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK callback. To set the cache
+ * key for the first lookup, use @c TSCacheUrlSet.
+ *
+ * @see TSCacheUrlSet
+ */
+tsapi TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length);
+
+/* IP addr parsing. This is a candidate for deprecation in v10.0.0, in favor of libswoc */
+tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
 #ifdef __cplusplus
 }

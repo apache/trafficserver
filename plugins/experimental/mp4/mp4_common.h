@@ -25,7 +25,6 @@
 #include <cinttypes>
 
 #include <ts/ts.h>
-#include <ts/experimental.h>
 #include <ts/remap.h>
 #include "mp4_meta.h"
 

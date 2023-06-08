@@ -33,7 +33,6 @@
 #include <getopt.h>
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "ts/remap.h"
 
 #include "lib/Utils.h"
