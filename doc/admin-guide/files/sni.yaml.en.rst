@@ -45,7 +45,7 @@ the user needs to enter the fqdn in the configuration with a ``*.`` followed by 
 For some settings, there is no guarantee that they will be applied to a connection under certain conditions.
 An established TLS connection may be reused for another server name if it’s used for HTTP/2. This also means that settings
 for server name A may affects requests for server name B as well. See https://daniel.haxx.se/blog/2016/08/18/http2-connection-coalescing/
-for a more detailed description of HTTP/2 connection coalescing. Similar thing can happen on a QUIC connection for HTTP/3 as welll.
+for a more detailed description of HTTP/2 connection coalescing. Similar thing can happen on a QUIC connection for HTTP/3 as well.
 
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
