@@ -1061,6 +1061,7 @@ tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSM
 tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
 
 tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
+tsapi const char *TSMimeHdrStringToWKS(const char *str, int length);
 
 /* --------------------------------------------------------------------------
    HTTP headers */
