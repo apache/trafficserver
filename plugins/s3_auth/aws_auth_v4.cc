@@ -740,7 +740,7 @@ AwsAuthV4::getAuthorizationHeader()
   std::cout << "<StringToSign>" << stringToSign << "</StringToSign>" << std::endl;
 #endif
 
-  char signature[EVP_MAX_MD_SIZE];
+  char signature[EVP_MAX_MD_SIZE] = "";
   size_t signatureLen =
     getSignature(_awsSecretAccessKey, _awsSecretAccessKeyLen, awsRegion.c_str(), awsRegion.length(), _awsService, _awsServiceLen,
                  _dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);
