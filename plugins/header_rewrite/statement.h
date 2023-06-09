@@ -41,7 +41,13 @@ enum UrlQualifiers {
   URL_QUAL_QUERY,
   URL_QUAL_MATRIX,
   URL_QUAL_SCHEME,
-  URL_QUAL_URL
+  URL_QUAL_URL,
+};
+
+enum NextHopQualifiers {
+  NEXT_HOP_NONE,
+  NEXT_HOP_HOST,
+  NEXT_HOP_PORT,
 };
 
 // NOW data
@@ -53,7 +59,7 @@ enum NowQualifiers {
   NOW_QUAL_HOUR,
   NOW_QUAL_MINUTE,
   NOW_QUAL_WEEKDAY,
-  NOW_QUAL_YEARDAY
+  NOW_QUAL_YEARDAY,
 };
 
 // GEO data
@@ -146,6 +152,7 @@ protected:
   virtual void initialize_hooks();
 
   UrlQualifiers parse_url_qualifier(const std::string &q) const;
+  NextHopQualifiers parse_next_hop_qualifier(const std::string &q) const;
 
   void
   require_resources(const ResourceIDs ids)
