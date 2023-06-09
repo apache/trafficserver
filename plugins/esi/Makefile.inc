@@ -16,6 +16,7 @@
 
 ESI_CPPFLAGS = \
 	-I$(srcdir)/esi \
+	-I$(srcdir)/esi/common \
 	-I$(srcdir)/esi/lib \
 	-I$(srcdir)/esi/fetcher \
 	-I$(srcdir)/esi/test \
@@ -40,10 +41,10 @@ check_PROGRAMS += \
 	esi/gzip_test
 
 esi_libesicore_la_SOURCES = \
-	esi/lib/Attribute.h \
-	esi/lib/ComponentBase.h \
-	esi/lib/DocNode.cc \
-	esi/lib/DocNode.h \
+	esi/common/Attribute.h \
+	esi/common/ComponentBase.h \
+	esi/common/DocNode.cc \
+	esi/common/DocNode.h \
 	esi/lib/EsiGunzip.cc \
 	esi/lib/EsiGunzip.h \
 	esi/lib/EsiGzip.cc \
@@ -55,18 +56,18 @@ esi_libesicore_la_SOURCES = \
 	esi/lib/Expression.cc \
 	esi/lib/Expression.h \
 	esi/lib/HandlerManager.h \
-	esi/lib/HttpHeader.h \
+	esi/common/HttpHeader.h \
 	esi/lib/IncludeHandlerFactory.h \
 	esi/lib/SpecialIncludeHandler.h \
 	esi/lib/Stats.cc \
 	esi/lib/Stats.h \
-	esi/lib/StringHash.h \
-	esi/lib/Utils.cc \
-	esi/lib/Utils.h \
+	esi/common/StringHash.h \
+	esi/common/Utils.cc \
+	esi/common/Utils.h \
 	esi/lib/Variables.cc \
 	esi/lib/Variables.h \
-	esi/lib/gzip.cc \
-	esi/lib/gzip.h
+	esi/common/gzip.cc \
+	esi/common/gzip.h
 
 esi_libesicore_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_libesicore_la_CXXFLAGS = $(ESI_CXXFLAGS)

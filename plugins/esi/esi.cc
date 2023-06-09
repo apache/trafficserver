@@ -36,8 +36,8 @@
 #include "ts/experimental.h"
 #include "ts/remap.h"
 
-#include "lib/Utils.h"
-#include "lib/gzip.h"
+#include "Utils.h"
+#include "gzip.h"
 #include "EsiGzip.h"
 #include "EsiGunzip.h"
 #include "EsiProcessor.h"
