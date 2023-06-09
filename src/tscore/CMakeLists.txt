@@ -106,7 +106,17 @@ target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${YAML_INCLUDE_DIRS}
 )
-target_link_libraries(tscore ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc)
+target_link_libraries(tscore
+    PUBLIC
+        $<$<BOOL:TS_USE_HWLOC>:hwloc::hwloc>
+        libswoc
+        ${OPENSSL_LIBRARIES}
+        ${PCRE_LIBRARIES}
+        resolv
+        tscpputil
+    PRIVATE
+        yaml-cpp::yaml-cpp
+)
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc
@@ -139,7 +149,12 @@ add_executable(test_tscore
         unit_tests/test_scoped_resource.cc
         unit_tests/unit_test_main.cc
 )
-target_link_libraries(test_tscore PRIVATE tscore libswoc)
+target_link_libraries(test_tscore
+    PRIVATE
+        $<$<BOOL:TS_USE_HWLOC>:hwloc::hwloc>
+        libswoc
+        tscore
+)
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
 add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
