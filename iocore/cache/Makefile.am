@@ -82,7 +82,7 @@ test_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@

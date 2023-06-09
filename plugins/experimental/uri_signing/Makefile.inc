@@ -32,7 +32,7 @@ check_PROGRAMS += experimental/uri_signing/test_uri_signing
 
 experimental_uri_signing_test_uri_signing_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -I$(abs_top_srcdir)/tests/include \
+  -I$(abs_top_srcdir)/lib/catch2 \
   -DURI_SIGNING_UNIT_TEST \
   -DSRCDIR=\"$(srcdir)\"
 

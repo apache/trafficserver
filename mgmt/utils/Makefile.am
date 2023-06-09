@@ -51,7 +51,7 @@ libutils_lm_la_SOURCES = \
 libutils_p_la_SOURCES = \
 	$(libutils_COMMON)
 
-test_mgmt_utils_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
+test_mgmt_utils_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2
 
 test_mgmt_utils_LDFLAGS = \
 	@AM_LDFLAGS@ \

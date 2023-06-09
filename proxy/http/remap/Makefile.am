@@ -85,7 +85,7 @@ check_PROGRAMS =  test_NextHopStrategyFactory test_NextHopRoundRobin test_NextHo
 if EXPENSIVE_TESTS
 check_PROGRAMS += test_PluginFactory test_PluginDso test_RemapPluginInfo
 
-test_PluginDso_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
+test_PluginDso_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DPLUGIN_DSO_TESTS
 test_PluginDso_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_PluginDso_DEPENDENCIES = unit-tests/plugin_v1.la
 test_PluginDso_LDADD = $(COMMON_PLUGINDSO_LDADDS)
@@ -95,7 +95,7 @@ test_PluginDso_SOURCES = \
 	unit-tests/plugin_testing_common.cc \
 	PluginDso.cc
 
-test_PluginFactory_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
+test_PluginFactory_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DPLUGIN_DSO_TESTS
 test_PluginFactory_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_PluginFactory_DEPENDENCIES = \
 	unit-tests/plugin_v1.la \
@@ -110,7 +110,7 @@ test_PluginFactory_SOURCES = \
 	PluginDso.cc \
 	RemapPluginInfo.cc
 
-test_RemapPluginInfo_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
+test_RemapPluginInfo_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DPLUGIN_DSO_TESTS
 test_RemapPluginInfo_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_RemapPluginInfo_DEPENDENCIES = \
 	unit-tests/plugin_missing_init.la \
@@ -132,7 +132,7 @@ test_NextHopStrategyFactory_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
 	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
@@ -163,7 +163,7 @@ test_NextHopRoundRobin_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
 	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 
@@ -194,7 +194,7 @@ test_NextHopConsistentHash_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
 	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 

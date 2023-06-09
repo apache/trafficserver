@@ -97,7 +97,7 @@ test_libinknet_SOURCES = \
 test_libinknet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \

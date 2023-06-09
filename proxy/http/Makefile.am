@@ -93,7 +93,7 @@ check_PROGRAMS = test_proxy_http test_PreWarm test_HttpTransact
 TESTS = $(check_PROGRAMS)
 
 test_proxy_http_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_proxy_http_SOURCES = \
 	unit_tests/unit_test_main.cc \
@@ -116,7 +116,7 @@ test_proxy_http_LDADD = \
 
 test_PreWarm_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_PreWarm_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la
@@ -126,7 +126,7 @@ test_PreWarm_SOURCES = \
 
 test_HttpTransact_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 if OS_LINUX
 test_HttpTransact_LDFLAGS = $(AM_LDFLAGS)

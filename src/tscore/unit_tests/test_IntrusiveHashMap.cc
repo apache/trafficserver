@@ -28,7 +28,7 @@
 #include <random>
 #include <tscore/IntrusiveHashMap.h>
 #include <tscore/BufferWriter.h>
-#include "../../../tests/include/catch.hpp"
+#include "catch.hpp"
 
 // -------------
 // --- TESTS ---

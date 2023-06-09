@@ -58,7 +58,7 @@ check_PROGRAMS := test_MTHashTable
 
 test_MTHashTable_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_MTHashTable_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \

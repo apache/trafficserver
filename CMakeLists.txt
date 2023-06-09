@@ -135,7 +135,7 @@ check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTR
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 
 # Catch2 for tests
-set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/tests/include)
+set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
 
 include(CTest)
 

@@ -86,7 +86,7 @@ test_RefCountCache_LDADD = $(test_LD_ADD)
 
 test_HostFile_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	-I$(abs_top_srcdir)/proxy/http/remap
 
 test_HostFile_LDADD = $(test_LD_ADD) @SWOC_LIBS@

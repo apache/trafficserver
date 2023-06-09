@@ -30,7 +30,7 @@ AM_CPPFLAGS += @YAMLCPP_INCLUDES@
 check_PROGRAMS +=  \
 	experimental/cookie_remap/test_cookiejar
 
-experimental_cookie_remap_test_cookiejar_CPPFLAGS = $(AM_CPPFLAGS) -Iexperimental/cookie_remap -I$(abs_top_srcdir)/tests/include
+experimental_cookie_remap_test_cookiejar_CPPFLAGS = $(AM_CPPFLAGS) -Iexperimental/cookie_remap -I$(abs_top_srcdir)/lib/catch2
 experimental_cookie_remap_test_cookiejar_SOURCES = \
 	experimental/cookie_remap/test_cookiejar.cc \
 	experimental/cookie_remap/strip.cc \
