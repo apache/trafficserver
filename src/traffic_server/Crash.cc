@@ -21,18 +21,20 @@
   limitations under the License.
  */
 
-#include "Main.h"
+#include "Crash.h"
+#include "swoc/swoc_file.h"
+#include "records/I_RecCore.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
-#include "I_Net.h"
 #include "tscore/signals.h"
-#include "tscore/ink_cap.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
 // include it if we are planning to use it.
 #if defined(__linux__)
 #include <ucontext.h>
 #endif
+
+static constexpr int NO_FD = swoc::file::NO_FD;
 
 extern AppVersionInfo appVersionInfo;
 

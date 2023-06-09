@@ -65,9 +65,6 @@ std::mutex etUdpMutex;
 std::condition_variable etUdpCheck;
 bool et_udp_threads_ready = false;
 
-extern int num_of_net_threads;
-extern int num_accept_threads;
-
 /// Global BufferWriter format name functions.
 namespace
 {
