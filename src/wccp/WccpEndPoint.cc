@@ -307,13 +307,13 @@ CacheImpl::GroupData::removeSeedRouter(uint32_t addr)
 CacheImpl::GroupData &
 CacheImpl::GroupData::setKey(const char *key)
 {
-  return static_cast<self &>(this->super::setKey(key));
+  return static_cast<self_type &>(this->super_type::setKey(key));
 }
 
 CacheImpl::GroupData &
 CacheImpl::GroupData::setSecurity(SecurityOption style)
 {
-  return static_cast<self &>(this->super::setSecurity(style));
+  return static_cast<self_type &>(this->super_type::setSecurity(style));
 }
 
 CacheImpl::CacheBag::iterator
@@ -523,7 +523,7 @@ CacheImpl::isConfigured() const
 int
 CacheImpl::open(uint32_t addr)
 {
-  int zret = this->super::open(addr);
+  int zret = this->super_type::open(addr);
   // If the socket was successfully opened, go through the
   // services and update the local service descriptor.
   if (0 <= zret) {
@@ -1103,7 +1103,7 @@ EndPoint::EndPoint() {}
 
 EndPoint::~EndPoint() {}
 
-EndPoint::EndPoint(self const &that) : m_ptr(that.m_ptr) {}
+EndPoint::EndPoint(self_type const &that) : m_ptr(that.m_ptr) {}
 
 inline EndPoint::ImplType *
 EndPoint::instance()
@@ -1172,7 +1172,7 @@ Cache::make()
 inline Cache::ImplType *
 Cache::instance()
 {
-  return static_cast<ImplType *>(this->super::instance());
+  return static_cast<ImplType *>(this->super_type::instance());
 }
 
 inline Cache::ImplType *
@@ -1226,7 +1226,7 @@ Router::make()
 inline Router::ImplType *
 Router::instance()
 {
-  return static_cast<ImplType *>(this->super::instance());
+  return static_cast<ImplType *>(this->super_type::instance());
 }
 
 inline Router::ImplType *
