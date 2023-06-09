@@ -22,8 +22,8 @@
  */
 
 #include "HttpDataFetcherImpl.h"
-#include "lib/Utils.h"
-#include "lib/gzip.h"
+#include "Utils.h"
+#include "gzip.h"
 
 #include <arpa/inet.h>
 #include <cstdlib>

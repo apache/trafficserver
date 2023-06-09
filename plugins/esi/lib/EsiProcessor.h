@@ -25,9 +25,9 @@
 
 #include <string>
 #include <map>
-#include "lib/ComponentBase.h"
-#include "lib/StringHash.h"
-#include "lib/DocNode.h"
+#include "ComponentBase.h"
+#include "StringHash.h"
+#include "DocNode.h"
 #include "EsiParser.h"
 #include "HttpDataFetcher.h"
 #include "Variables.h"

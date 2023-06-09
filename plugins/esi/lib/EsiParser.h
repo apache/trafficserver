@@ -25,8 +25,8 @@
 
 #include <string>
 
-#include "lib/ComponentBase.h"
-#include "lib/DocNode.h"
+#include "ComponentBase.h"
+#include "DocNode.h"
 
 class EsiParser : private EsiLib::ComponentBase
 {
