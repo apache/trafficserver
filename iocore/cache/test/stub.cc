@@ -190,9 +190,6 @@ HostStatus::HostStatus() {}
 
 HostStatus::~HostStatus() {}
 
-int auto_clear_hostdb_flag = 0;
-bool ts_is_draining        = false;
-
 void
 INKVConnInternal::do_io_close(int error)
 {

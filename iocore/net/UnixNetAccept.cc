@@ -27,7 +27,8 @@
 #include "P_Net.h"
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
-int accept_till_done   = 1;
+
+int NetAccept::accept_till_done = 1;
 
 // we need to protect naVec since it might be accessed
 // in different threads at the same time
@@ -48,7 +49,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   Event *e               = static_cast<Event *>(ep);
   int res                = 0;
   int count              = 0;
-  int loop               = accept_till_done;
+  const int loop         = NetAccept::accept_till_done;
   UnixNetVConnection *vc = nullptr;
   Connection con;
 
@@ -285,7 +286,7 @@ int
 NetAccept::do_blocking_accept(EThread *t)
 {
   int res                = 0;
-  int loop               = accept_till_done;
+  const int loop         = NetAccept::accept_till_done;
   UnixNetVConnection *vc = nullptr;
   Connection con;
   con.sock_type = SOCK_STREAM;
@@ -428,7 +429,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   con.sock_type = SOCK_STREAM;
 
   UnixNetVConnection *vc = nullptr;
-  int loop               = accept_till_done;
+  const int loop         = NetAccept::accept_till_done;
 
   do {
     socklen_t sz = sizeof(con.addr);
