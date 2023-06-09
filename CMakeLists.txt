@@ -88,6 +88,10 @@ CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
 
 # Find libraries
+find_package(jemalloc)
+if(jemalloc_FOUND)
+    set(TS_HAS_JEMALLOC TRUE)
+endif()
 find_package(hwloc)
 if(hwloc_FOUND)
     set(TS_USE_HWLOC TRUE)

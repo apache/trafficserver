@@ -108,6 +108,7 @@ target_include_directories(tscore PRIVATE
 )
 target_link_libraries(tscore
     PUBLIC
+        $<$<BOOL:TS_HAS_JEMALLOC>:jemalloc::jemalloc>
         $<$<BOOL:TS_USE_HWLOC>:hwloc::hwloc>
         libswoc
         ${OPENSSL_LIBRARIES}
