@@ -207,7 +207,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   int rc = quiche_header_info(buf, buf_len, QUICConnectionId::SCID_LEN, &version, &type, scid, &scid_len, dcid, &dcid_len, token,
                               &token_len);
   if (rc < 0) {
-    QUICDebug("Ignore packet - failed to parse header");
+    QUICDebug("Ignore packet - failed to parse header: '%d'", rc);
     udp_packet->free();
     return;
   }

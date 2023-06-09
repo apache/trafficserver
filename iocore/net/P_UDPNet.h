@@ -309,6 +309,11 @@ void initialize_thread_for_udp_net(EThread *thread);
 class UDPNetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
+  struct Cfg {
+    // Segmentation offload.
+    bool enable_gso{true};
+    bool enable_gro{true};
+  };
   // engine for outgoing packets
   UDPQueue udpOutQueue;
 
@@ -332,7 +337,13 @@ public:
   int waitForActivity(ink_hrtime timeout) override;
   void signalActivity() override;
 
-  UDPNetHandler(bool enable_gso);
+  UDPNetHandler(Cfg &&cfg);
+
+  // GRO
+  bool is_gro_enabled() const;
+
+private:
+  Cfg _cfg; // Note: may not be the best place to put this, but for now is ok.
 };
 
 struct PollCont;
