@@ -7625,20 +7625,6 @@ TSStatFindName(const char *name, int *idp)
   return TS_SUCCESS;
 }
 
-/**************************    Stats API    ****************************/
-// THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
-// #define ink_sanity_check_stat_structure(_x) TS_SUCCESS
-
-inline TSReturnCode
-ink_sanity_check_stat_structure(void *obj)
-{
-  if (obj == nullptr) {
-    return TS_ERROR;
-  }
-
-  return TS_SUCCESS;
-}
-
 /**************************   Tracing API   ****************************/
 // returns 1 or 0 to indicate whether TS is being run with a debug tag.
 int
@@ -7922,14 +7908,6 @@ TSMatcherLineValue(TSMatcherLine ml, int element)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   return (((matcher_line *)ml)->line)[1][element];
-}
-
-/* Configuration Setting */
-TSReturnCode
-TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
-{
-  Warning("This API is no longer supported.");
-  return TS_SUCCESS;
 }
 
 extern void load_config_file_callback(const char *parent, const char *remap_file);
