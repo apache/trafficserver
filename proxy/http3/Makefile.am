@@ -66,7 +66,7 @@ TESTS = $(check_PROGRAMS)
 test_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/tests/include
+  -I$(abs_top_srcdir)/lib/catch2
 
 test_LDADD = \
   $(top_builddir)/iocore/net/quic/libquic.a \

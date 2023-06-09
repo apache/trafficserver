@@ -92,7 +92,7 @@ test_CPP_FLAGS = \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	@OPENSSL_INCLUDES@ @SWOC_INCLUDES@
 
 test_LD_ADD = \

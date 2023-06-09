@@ -47,7 +47,7 @@ experimental_sslheaders_test_sslheaders_SOURCES = \
 experimental_sslheaders_test_sslheaders_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@ \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	-I$(abs_top_srcdir)/include
 experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \

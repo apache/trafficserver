@@ -22,7 +22,6 @@
  */
 
 #include "catch.hpp"
-#include "../../../tests/include/catch.hpp"
 #include <chrono>
 #include <iostream>
 #include <netinet/in.h>

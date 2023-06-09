@@ -155,12 +155,12 @@ test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.l
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
 
-test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
+test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2
 test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @OPENSSL_LIBS@
@@ -200,11 +200,11 @@ test_tscore_SOURCES += \
 	unit_tests/test_HKDF.cc
 endif
 
-freelist_benchmark_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/tests/include
+freelist_benchmark_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
 freelist_benchmark_LDADD = libtscore.la @HWLOC_LIBS@
 freelist_benchmark_SOURCES = unit_tests/freelist_benchmark.cc
 
-benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/tests/include
+benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
 benchmark_shared_mutex_LDADD = libtscore.la
 benchmark_shared_mutex_SOURCES = unit_tests/benchmark_shared_mutex.cc
 

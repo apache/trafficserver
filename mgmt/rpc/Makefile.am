@@ -53,7 +53,7 @@ libjsonrpc_protocol_la_SOURCES = \
 
 test_jsonrpc_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	@YAMLCPP_INCLUDES@
 
 test_jsonrpc_LDFLAGS = \
@@ -92,7 +92,7 @@ libjsonrpc_server_la_SOURCES = \
 
 test_jsonrpcserver_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	-I$(abs_top_srcdir)/tests \
 	@YAMLCPP_INCLUDES@
 
