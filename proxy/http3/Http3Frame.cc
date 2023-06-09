@@ -262,7 +262,7 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint3
 
   while (len < buf_len) {
     if (nsettings >= max_settings) {
-      this->_error_code   = Http3ErrorCode::EXCESSIVE_LOAD;
+      this->_error_code   = Http3ErrorCode::H3_EXCESSIVE_LOAD;
       this->_error_reason = reinterpret_cast<const char *>("too many settings");
       break;
     }
