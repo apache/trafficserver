@@ -39,11 +39,15 @@
 #include "P_UDPNet.h"
 
 #include "tscore/ink_sock.h"
-
-#include "netinet/udp.h"
+#include <math.h>
+#include <netinet/udp.h>
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.
 #define UDP_SEGMENT 103
+#endif
+
+#ifndef UDP_GRO
+#define UDP_GRO 104
 #endif
 
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
@@ -73,7 +77,7 @@ UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBuffe
 }
 
 UDPPacket *
-UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block)
+UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> block)
 {
   UDPPacket *p = udpPacketAllocator.alloc();
 
@@ -150,8 +154,6 @@ UDPPacket::get_entire_chain_buffer(size_t *buf_len)
   if (this->_payload == nullptr) {
     IOBufferBlock *block = this->getIOBlockChain();
 
-    // No need to allocate, we will use the first slice. With the current slice size
-    // 2048 more likely we will using this block most of the time.
     if (block && block->next.get() == nullptr) {
       *buf_len = this->getPktLength();
       return reinterpret_cast<uint8_t *>(block->buf());
@@ -183,6 +185,12 @@ int32_t g_udp_periodicCleanupSlots;
 int32_t g_udp_periodicFreeCancelledPkts;
 int32_t g_udp_numSendRetries;
 
+namespace
+{
+// We'd need to set some flags in case some of the config is enabled. So we have
+// this object as global.
+UDPNetHandler::Cfg G_udp_config;
+} // namespace
 //
 // Public functions
 // See header for documentation
@@ -193,12 +201,23 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
-  int enable_gso;
+  int enable_gso, enable_gro;
   REC_ReadConfigInteger(enable_gso, "proxy.config.udp.enable_gso");
+  REC_ReadConfigInteger(enable_gro, "proxy.config.udp.enable_gro");
 
   UDPNetHandler *nh = get_UDPNetHandler(thread);
 
-  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler(enable_gso);
+  UDPNetHandler::Cfg cfg{static_cast<bool>(enable_gso), static_cast<bool>(enable_gro)};
+
+  G_udp_config = cfg; // keep a global copy.
+  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler(std::move(cfg));
+
+#ifndef SOL_UDP
+  if (G_udp_config.enable_gro) {
+    Warning("Attempted to use UDP GRO per configuration, but it is unavailable");
+  }
+#endif
+
   new (reinterpret_cast<ink_dummy_for_new *>(get_UDPPollCont(thread))) PollCont(thread->mutex);
   // The UDPNetHandler cannot be accessed across EThreads.
   // Because the UDPNetHandler should be called back immediately after UDPPollCont.
@@ -259,6 +278,42 @@ UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
   return 0;
 }
 
+namespace
+{
+bool
+get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_in6 *toaddr)
+{
+#ifdef IP_PKTINFO
+  if (IP_PKTINFO == cmsg->cmsg_type) {
+    if (cmsg->cmsg_level == IPPROTO_IP) {
+      struct in_pktinfo *pktinfo                               = reinterpret_cast<struct in_pktinfo *>(CMSG_DATA(cmsg));
+      reinterpret_cast<sockaddr_in *>(toaddr)->sin_addr.s_addr = pktinfo->ipi_addr.s_addr;
+    }
+    return true;
+  }
+#endif
+#ifdef IP_RECVDSTADDR
+  if (IP_RECVDSTADDR == cmsg->cmsg_type) {
+    if (cmsg->cmsg_level == IPPROTO_IP) {
+      struct in_addr *addr                                     = reinterpret_cast<struct in_addr *>(CMSG_DATA(cmsg));
+      reinterpret_cast<sockaddr_in *>(toaddr)->sin_addr.s_addr = addr->s_addr;
+    }
+    return true;
+  }
+#endif
+#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
+  if (IPV6_PKTINFO == cmsg->cmsg_type) { // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
+    if (cmsg->cmsg_level == IPPROTO_IPV6) {
+      struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
+      memcpy(toaddr->sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
+    }
+    return true;
+  }
+#endif
+  return false;
+}
+} // namespace
+
 void
 UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
@@ -269,7 +324,9 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   int64_t r;
   int iters         = 0;
   unsigned max_niov = 32;
-
+#ifdef SOL_UDP
+  int64_t gso_size{0};
+#endif
   struct msghdr msg;
   Ptr<IOBufferBlock> chain, next_chain;
   struct iovec tiovec[max_niov];
@@ -308,14 +365,32 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     // build struct msghdr
     sockaddr_in6 fromaddr;
     sockaddr_in6 toaddr;
-    int toaddr_len = sizeof(toaddr);
-    char *cbuf[1024];
-    msg.msg_name       = &fromaddr;
-    msg.msg_namelen    = sizeof(fromaddr);
-    msg.msg_iov        = tiovec;
-    msg.msg_iovlen     = niov;
-    msg.msg_control    = cbuf;
-    msg.msg_controllen = sizeof(cbuf);
+    int toaddr_len  = sizeof(toaddr);
+    msg.msg_name    = &fromaddr;
+    msg.msg_namelen = sizeof(fromaddr);
+    msg.msg_iov     = tiovec;
+    msg.msg_iovlen  = niov;
+
+    static const size_t cmsg_size
+    {
+      CMSG_SPACE(sizeof(int))
+#ifdef IP_PKTINFO
+      +CMSG_SPACE(sizeof(struct in_pktinfo))
+#endif
+#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
+        + CMSG_SPACE(sizeof(struct in6_pktinfo))
+#endif
+#ifdef IP_RECVDSTADDR
+        + CMSG_SPACE(sizeof(struct in_addr))
+#endif
+#ifdef UDP_GRO
+        + CMSG_SPACE(sizeof(uint16_t))
+#endif
+    };
+
+    char control[cmsg_size] = {0};
+    msg.msg_control         = control;
+    msg.msg_controllen      = cmsg_size;
 
     // receive data by recvmsg
     r = SocketManager::recvmsg(uc->getFd(), &msg, 0);
@@ -329,61 +404,55 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
       Debug("udp-read", "The UDP packet is truncated");
     }
 
-    // fill the IOBufferBlock chain
-    int64_t saved = r;
-    b             = chain.get();
-    while (b && saved > 0) {
-      if (saved > buffer_size) {
-        b->fill(buffer_size);
-        saved -= buffer_size;
-        b      = b->next.get();
-      } else {
-        b->fill(saved);
-        saved      = 0;
-        next_chain = b->next.get();
-        b->next    = nullptr;
-      }
-    }
-
     safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr), &toaddr_len);
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-      switch (cmsg->cmsg_type) {
-#ifdef IP_PKTINFO
-      case IP_PKTINFO:
-        if (cmsg->cmsg_level == IPPROTO_IP) {
-          struct in_pktinfo *pktinfo                                = reinterpret_cast<struct in_pktinfo *>(CMSG_DATA(cmsg));
-          reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = pktinfo->ipi_addr.s_addr;
-        }
+      if (get_ip_address_from_cmsg(cmsg, &toaddr)) {
         break;
-#endif
-#ifdef IP_RECVDSTADDR
-      case IP_RECVDSTADDR:
-        if (cmsg->cmsg_level == IPPROTO_IP) {
-          struct in_addr *addr                                      = reinterpret_cast<struct in_addr *>(CMSG_DATA(cmsg));
-          reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = addr->s_addr;
-        }
-        break;
-#endif
-#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
-      case IPV6_PKTINFO: // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
-        if (cmsg->cmsg_level == IPPROTO_IPV6) {
-          struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
-          memcpy(toaddr.sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
-        }
-        break;
-#endif
       }
+#ifdef SOL_UDP
+      if (UDP_GRO == cmsg->cmsg_type) {
+        if (nh->is_gro_enabled()) {
+          gso_size = *reinterpret_cast<uint16_t *>(CMSG_DATA(cmsg));
+        }
+        break;
+      }
+#endif
     }
 
-    // create packet
-    UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
-    p->setConnection(uc);
-    // queue onto the UDPConnection
-    uc->inQueue.push(p);
+    int const parts = gso_size ? static_cast<int>(ceil(static_cast<double>(r) / static_cast<double>(gso_size))) : 1;
+    Debug("udp-read", "Received %ld bytes. gso_size %ld. Ready to process the payload in %d parts(%s)", r, gso_size, parts,
+          (parts > 1 ? "GRO" : "No GRO"));
+    int64_t total_remaining = r;
 
-    // reload the unused block
-    chain      = next_chain;
-    next_chain = nullptr;
+    for (auto f = 0; f < parts; f++) {
+      b                     = chain.get();
+      int64_t this_packet_r = gso_size ? std::min(gso_size, total_remaining) : total_remaining;
+      while (b && this_packet_r > 0) {
+        if (this_packet_r > buffer_size) {
+          b->fill(buffer_size);
+          total_remaining -= this_packet_r;
+          this_packet_r   -= buffer_size;
+          b                = b->next.get();
+        } else {
+          b->fill(this_packet_r);
+          total_remaining -= this_packet_r;
+          this_packet_r    = 0;
+          next_chain       = b->next.get();
+          b->next          = nullptr;
+        }
+      }
+      Debug("udp-read", "Creating packet");
+      // create packet
+      UDPPacket *p = UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
+      p->setConnection(uc);
+      // queue onto the UDPConnection
+      uc->inQueue.push(p);
+
+      // reload the unused block
+      chain      = next_chain;
+      next_chain = nullptr;
+    }
+
     iters++;
   } while (r > 0);
   if (iters >= 1) {
@@ -884,7 +953,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   bool need_bind     = true;
 
   if (fd == -1) {
-    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
       goto Lerror;
     }
     fd = res;
@@ -929,6 +998,17 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
   }
 
+#ifdef SOL_UDP
+  if (G_udp_config.enable_gro) {
+    int gro = 1;
+    if (safe_setsockopt(fd, IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == 0) {
+      Debug("udpnet", "setsockopt UDP_GRO ok");
+    } else {
+      Debug("udpnet", "setsockopt UDP_GRO. errno=%d", errno);
+    }
+  }
+#endif
+
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
     if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
@@ -957,6 +1037,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     goto Lerror;
   }
 
+  // check this for GRO
   if (recv_bufsize) {
     if (unlikely(SocketManager::set_rcvbuf_size(fd, recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
@@ -1449,11 +1530,20 @@ net_signal_hook_callback(EThread *thread)
 #endif
 }
 
-UDPNetHandler::UDPNetHandler(bool enable_gso) : udpOutQueue(enable_gso)
+UDPNetHandler::UDPNetHandler(Cfg &&cfg) : udpOutQueue(cfg.enable_gso), _cfg{std::move(cfg)}
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER(&UDPNetHandler::startNetEvent);
+}
+
+bool
+UDPNetHandler::is_gro_enabled() const
+{
+#ifndef SOL_UDP
+  return false;
+#endif
+  return this->_cfg.enable_gro;
 }
 
 int
