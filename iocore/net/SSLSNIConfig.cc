@@ -41,7 +41,8 @@
 
 #include "tscpp/util/TextView.h"
 
-#include <cstdint>
+#include <netinet/in.h>
+
 #include <sstream>
 #include <utility>
 #include <pcre.h>
@@ -163,7 +164,7 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
 }
 
 std::pair<const ActionVector *, ActionItem::Context>
-SNIConfigParams::get(std::string_view servername, uint16_t dest_incoming_port) const
+SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) const
 {
   int ovector[OVECSIZE];
 
@@ -302,7 +303,7 @@ SNIConfig::release(SNIConfigParams *params)
 // setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
 // contains a host_sni_policy entry
 bool
-SNIConfig::test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep, int &host_sni_policy)
+SNIConfig::test_client_action(const char *servername, in_port_t dest_incoming_port, const IpEndpoint &ep, int &host_sni_policy)
 {
   bool retval = false;
   SNIConfig::scoped_config params;
