@@ -21,57 +21,55 @@
   limitations under the License.
  */
 
-#include <iostream>
-#include <cassert>
 #include <string>
 #include <cstring>
+
+#define CATCH_CONFIG_MAIN
+#include <catch.hpp>
 
 #include "print_funcs.h"
 #include "Utils.h"
 #include "gzip.h"
 
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::string;
 using namespace EsiLib;
 
-int
-main()
+TEST_CASE("test esi plugin - gzip")
 {
   Utils::init(&Debug, &Error);
 
+  SECTION("===================== Test 1")
   {
-    cout << endl << "===================== Test 1" << endl;
     const char expected_cdata[] = "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03\xf3\x48\xcd\xc9\xc9\x57\x08\xcf\x2f\xca\x49\x51\x04\x00"
                                   "\xa3\x1c\x29\x1c\x0c\x00\x00\x00";
     const char expected_data[]  = "Hello World!";
 
     string cdata;
     // check output of gzip
-    assert(gzip(expected_data, 12, cdata));
+    REQUIRE(gzip(expected_data, 12, cdata));
 
     // check the size of compressed data
-    assert(cdata.size() == 32);
+    REQUIRE(cdata.size() == 32);
 
     // check the content of compressed data
-    assert(strncmp(expected_cdata, cdata.c_str(), cdata.size()) == 0);
+    REQUIRE(strncmp(expected_cdata, cdata.c_str(), cdata.size()) == 0);
 
     BufferList buf_list;
     string data;
     // check output of gunzip
-    assert(gunzip(expected_cdata, 32, buf_list));
+    REQUIRE(gunzip(expected_cdata, 32, buf_list));
     data = (buf_list.begin())->data();
+    data = buf_list.front();
 
     // check the size of uncompressed data
-    assert(data.size() == 12);
+    REQUIRE(data.size() == 12);
 
     // check the content of uncompressed data
-    assert(strncmp(expected_data, data.c_str(), data.size()) == 0);
+    CHECK(strncmp(expected_data, data.c_str(), data.size()) == 0);
   }
 
+  SECTION("===================== Test 2")
   {
-    cout << endl << "===================== Test 2" << endl;
     // OS_TYPE (byte[9]) is 0
     const char expected_cdata[] = "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x00\xf3\x48\xcd\xc9\xc9\x57\x08\xcf\x2f\xca\x49\x51\x04\x00"
                                   "\xa3\x1c\x29\x1c\x0c\x00\x00\x00";
@@ -80,37 +78,32 @@ main()
     BufferList buf_list;
     string data;
     // check output of gunzip
-    assert(gunzip(expected_cdata, 32, buf_list));
+    REQUIRE(gunzip(expected_cdata, 32, buf_list));
     data = (buf_list.begin())->data();
 
     // check the size of uncompressed data
-    assert(data.size() == 12);
+    REQUIRE(data.size() == 12);
 
     // check the content of uncompressed data
-    assert(strncmp(expected_data, data.c_str(), data.size()) == 0);
+    CHECK(strncmp(expected_data, data.c_str(), data.size()) == 0);
   }
 
+  SECTION("invalid compressed data - too short")
   {
-    cout << endl << "===================== Test 3" << endl;
-    // invalid compressed data - too short
     const char expected_cdata[] = "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xa3\x1c\x29\x1c\x0c\x00\x00\x00";
 
     BufferList buf_list;
     // check output of gunzip
-    assert(gunzip(expected_cdata, 17, buf_list) == false);
+    CHECK(gunzip(expected_cdata, 17, buf_list) == false);
   }
 
+  SECTION("invalid magic byte")
   {
-    cout << endl << "===================== Test 4" << endl;
-    // invalid magic byte
     const char expected_cdata[] = "\x1f\x8c\x08\x00\x00\x00\x00\x00\x00\x00\xf3\x48\xcd\xc9\xc9\x57\x08\xcf\x2f\xca\x49\x51\x04\x00"
                                   "\xa3\x1c\x29\x1c\x0c\x00\x00\x00";
 
     BufferList buf_list;
     // check output of gunzip
-    assert(gunzip(expected_cdata, 32, buf_list) == false);
+    CHECK(gunzip(expected_cdata, 32, buf_list) == false);
   }
-
-  cout << endl << "All tests passed!" << endl;
-  return 0;
 }
