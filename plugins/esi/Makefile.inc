@@ -131,7 +131,8 @@ esi_vars_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_vars_test_LDADD = esi/libtest.la -lz
 esi_vars_test_SOURCES = esi/test/vars_test.cc
 
-esi_gzip_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_gzip_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_gzip_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_gzip_test_LDADD = esi/libtest.la -lz
 esi_gzip_test_SOURCES = esi/test/gzip_test.cc

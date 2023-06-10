@@ -37,6 +37,7 @@ add_subdirectory(cachekey)
 add_subdirectory(certifier)
 add_subdirectory(compress)
 add_subdirectory(conf_remap)
+add_subdirectory(esi)
 
 add_subdirectory(generator)
 add_subdirectory(xdebug)
