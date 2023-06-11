@@ -60,8 +60,6 @@ struct socks_conf_struct {
   socks_conf_struct() {}
 };
 
-extern struct socks_conf_struct *g_socks_conf_stuff;
-
 void start_SocksProxy(int port);
 
 int loadSocksAuthInfo(swoc::TextView content, socks_conf_struct *socks_stuff);
