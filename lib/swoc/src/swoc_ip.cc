@@ -676,11 +676,11 @@ auto
 IPMask::mask_for_quad(IP6Addr::quad_type q) -> raw_type {
   raw_type cidr = IP6Addr::QUAD_WIDTH;
   if (q != 0) {
-    auto mask = IP6Addr::QUAD_MASK;
+    IP6Addr::quad_type mask = IP6Addr::QUAD_MASK;
     do {
       mask <<= 1;
       --cidr;
-    } while ((q | ~mask) == q);
+    } while ((q & mask) == q);
     ++cidr; // loop goes exactly 1 too far.
   }
   return cidr;
@@ -842,17 +842,19 @@ auto IPSrv::assign(const sockaddr *sa) -> self_type & {
 
 bool
 IP4Net::load(TextView text) {
-  auto idx = text.find('/');
-  if (idx != text.npos) {
-    if (idx + 1 < text.size()) { // must have something past the separator or it's bogus.
-      IP4Addr addr;
-      if (addr.load(text.substr(0, idx))) { // load the address
-        IPMask mask;
-        text.remove_prefix(idx + 1); // drop address and separator.
-        if (mask.load(text)) {
-          this->assign(addr, mask);
-          return true;
+  if (auto mask_text = text.split_suffix_at('/') ; !mask_text.empty() ) {
+    IPMask mask;
+    bool mask_p = mask.load(mask_text);
+    if (IP4Addr addr; addr.load(text)) {
+      if (!mask_p) {
+        if (IP4Addr m ; m.load(mask_text)) {
+          mask   = IPMask::mask_for(m);
+          mask_p = (m == mask.as_ip4()); // must be an actual mask like address.
         }
+      }
+      if (mask_p) {
+        this->assign(addr, mask);
+        return true;
       }
     }
   }
@@ -863,17 +865,19 @@ IP4Net::load(TextView text) {
 
 bool
 IP6Net::load(TextView text) {
-  auto idx = text.find('/');
-  if (idx != text.npos) {
-    if (idx + 1 < text.size()) { // must have something past the separator or it's bogus.
-      IP6Addr addr;
-      if (addr.load(text.substr(0, idx))) { // load the address
-        IPMask mask;
-        text.remove_prefix(idx + 1); // drop address and separator.
-        if (mask.load(text)) {
-          this->assign(addr, mask);
-          return true;
+  if (auto mask_text = text.split_suffix_at('/') ; !mask_text.empty() ) {
+    IPMask mask;
+    bool mask_p = mask.load(mask_text);
+    if (IP6Addr addr; addr.load(text)) {
+      if (!mask_p) {
+        if (IP6Addr m ; m.load(mask_text)) {
+          mask   = IPMask::mask_for(m);
+          mask_p = (m == mask.as_ip6()); // must be an actual mask like address.
         }
+      }
+      if (mask_p) {
+        this->assign(addr, mask);
+        return true;
       }
     }
   }
@@ -886,11 +890,27 @@ bool
 IPNet::load(TextView text) {
   if ( auto mask_text = text.split_suffix_at('/') ; !mask_text.empty() ) {
     IPMask mask;
-    if (mask.load(mask_text)) {
-      if (IP6Addr a6; a6.load(text)) { // load the address
+    bool mask_p = mask.load(mask_text);
+
+    if (IP6Addr a6 ; a6.load(text)) { // load the address
+      if (!mask_p) {
+        if (IP6Addr m ; m.load(mask_text)) {
+          mask   = IPMask::mask_for(m);
+          mask_p = (m == mask.as_ip6()); // must be an actual mask like address.
+        }
+      }
+      if (mask_p) {
         this->assign(a6, mask);
         return true;
-      } else if (IP4Addr a4; a4.load(text)) {
+      }
+    } else if (IP4Addr a4 ; a4.load(text)) {
+      if (!mask_p) {
+        if (IP4Addr m ; m.load(mask_text)) {
+          mask   = IPMask::mask_for(m);
+          mask_p = (m == mask.as_ip4()); // must be an actual mask like address.
+        }
+      }
+      if (mask_p) {
         this->assign(a4, mask);
         return true;
       }
@@ -1210,6 +1230,32 @@ IP6Range::NetSource::search_narrower() {
   while (!this->is_valid(_mask)) {
     _mask >>= 1;
   }
+}
+
+bool
+IPRangeView::operator==(IPRange const &r) const {
+  if (_family == r.family()) {
+    if (AF_INET == _family) {
+      return *_raw._4 == r.ip4();
+    } else if (AF_INET6 == _family) {
+      return *_raw._6 == r.ip6();
+    }
+    return true;
+  }
+  return false;
+}
+
+bool
+IPRangeView::operator==(IPRangeView::self_type const &that) const {
+  if (_family == that._family) { // different families are not equal
+    if (AF_INET == _family) {
+      return (_raw._4 == that._raw._4) || (*_raw._4 == *that._raw._4);
+    } else if (AF_INET6 == _family) {
+      return (_raw._6 == that._raw._6) || (*_raw._6 == *that._raw._6);
+    }
+    return true;
+  }
+  return false;
 }
 
 }} // namespace swoc::SWOC_VERSION_NS
