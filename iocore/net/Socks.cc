@@ -41,8 +41,6 @@
 
 using namespace swoc::literals;
 
-socks_conf_struct *g_socks_conf_stuff = nullptr;
-
 ClassAllocator<SocksEntry> socksAllocator("socksAllocator");
 
 namespace
