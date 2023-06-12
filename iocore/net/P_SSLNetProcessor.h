@@ -55,21 +55,17 @@ struct SSLNetProcessor : public UnixNetProcessor {
 public:
   int start(int, size_t stacksize) override;
 
-  void cleanup();
-
   SSLNetProcessor();
   ~SSLNetProcessor() override;
 
-  //
-  // Private
-  //
-
-  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
   NetVConnection *allocate_vc(EThread *t) override;
 
   // noncopyable
   SSLNetProcessor(const SSLNetProcessor &)            = delete;
   SSLNetProcessor &operator=(const SSLNetProcessor &) = delete;
+
+protected:
+  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
 };
 
 extern SSLNetProcessor ssl_NetProcessor;

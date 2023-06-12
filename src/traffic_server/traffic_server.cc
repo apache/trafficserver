@@ -2048,8 +2048,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     ts::ModuleVersion(HOSTDB_MODULE_INTERNAL_VERSION._major, HOSTDB_MODULE_INTERNAL_VERSION._minor, ts::ModuleVersion::PRIVATE));
   ink_split_dns_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
 
-  naVecMutex = new_ProxyMutex();
-
   // Do the inits for NetProcessors that use ET_NET threads. MUST be before starting those threads.
   netProcessor.init();
   prep_HttpProxyServer();
