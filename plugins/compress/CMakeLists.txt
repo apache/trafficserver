@@ -20,3 +20,6 @@ add_atsplugin(compress
         configuration.cc
         misc.cc
 )
+if(HAVE_BROTLI_ENCODE_H)
+    target_link_libraries(compress PRIVATE brotli::brotlienc)
+endif()

@@ -104,6 +104,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #define TS_MAX_HOST_NAME_LEN @TS_MAX_HOST_NAME_LEN@
 
 /* Feature Flags */
+#cmakedefine01 HAVE_BROTLI_ENCODE_H
 #cmakedefine01 TS_HAS_JEMALLOC
 #cmakedefine01 TS_HAS_TCMALLOC
 #cmakedefine01 TS_USE_EPOLL
