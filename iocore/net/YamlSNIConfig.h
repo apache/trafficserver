@@ -27,14 +27,12 @@
 #include <set>
 #include <optional>
 #include <memory>
-#include <limits>
 #include <cstdint>
-
-#include "swoc/DiscreteRange.h"
-#include <netinet/in.h>
 
 #include "SNIActionPerformer.h"
 #include "SSLTypes.h"
+
+#include "tscpp/util/ts_ip.h"
 
 #include "tscore/Errata.h"
 
@@ -82,9 +80,7 @@ struct YamlSNIConfig {
   struct Item {
     std::string fqdn;
 
-    inline static constexpr in_port_t MAX_PORT_VALUE{std::numeric_limits<in_port_t>::max()};
-    using port_range_t = swoc::DiscreteRange<in_port_t>;
-    port_range_t port_range{1, MAX_PORT_VALUE};
+    ts::port_range_t port_range{1, ts::MAX_PORT_VALUE};
 
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!

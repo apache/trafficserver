@@ -33,11 +33,14 @@
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
+#include <netinet/in.h>
 
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 
 #include "P_SNIActionPerformer.h"
+
+#include "tscpp/util/ts_ip.h"
 
 #include "tscore/BufferWriterForward.h"
 #include "tscore/Diags.h"
@@ -238,12 +241,12 @@ template <> struct convert<YamlSNIConfig::Item> {
       long min_port{swoc::svtoi(min, &parsed_min)};
       swoc::TextView parsed_max;
       long max_port{swoc::svtoi(max, &parsed_max)};
-      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<uint16_t>::max() ||
+      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
           max_port < min_port) {
         throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
       }
 
-      item.port_range = YamlSNIConfig::Item::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+      item.port_range = ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();

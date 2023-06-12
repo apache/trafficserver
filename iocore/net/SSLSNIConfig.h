@@ -30,15 +30,12 @@
  ****************************************************************************/
 #pragma once
 
-#include "swoc/DiscreteRange.h"
-
 #include <vector>
 #include <string_view>
 #include <strings.h>
-#include <limits>
 #include <memory>
 
-#include <netinet/in.h>
+#include "tscpp/util/ts_ip.h"
 
 #include "ConfigProcessor.h"
 #include "SNIActionPerformer.h"
@@ -74,9 +71,7 @@ struct NamedElement {
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
 
-  inline static constexpr in_port_t MAX_PORT_VALUE{std::numeric_limits<in_port_t>::max()};
-  using port_range_t = swoc::DiscreteRange<in_port_t>;
-  port_range_t ports{1, MAX_PORT_VALUE};
+  ts::port_range_t ports{1, ts::MAX_PORT_VALUE};
 
   std::unique_ptr<pcre, PcreFreer> match;
 };
