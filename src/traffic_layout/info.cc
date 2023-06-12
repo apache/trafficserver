@@ -35,9 +35,7 @@
 #include <hwloc.h>
 #endif
 
-#if HAVE_ZLIB_H
 #include <zlib.h>
-#endif
 
 #if HAVE_LZMA_H
 #include <lzma.h>
@@ -79,11 +77,6 @@ produce_features(bool json)
   print_feature("BUILD_PERSON", BUILD_PERSON, json);
   print_feature("BUILD_GROUP", BUILD_GROUP, json);
   print_feature("BUILD_NUMBER", BUILD_NUMBER, json);
-#if HAVE_ZLIB_H
-  print_feature("TS_HAS_LIBZ", 1, json);
-#else
-  print_feature("TS_HAS_LIBZ", 0, json);
-#endif
 #if HAVE_LZMA_H
   print_feature("TS_HAS_LZMA", 1, json);
 #else
@@ -187,6 +180,7 @@ produce_versions(bool json)
     printf("{\n");
   }
 
+  print_var("libz", LBW().print("{}", ZLIB_VERSION).view(), json);
   print_var("openssl", LBW().print("{:#x}", OPENSSL_VERSION_NUMBER).view(), json);
   print_var("openssl_str", LBW().print(OPENSSL_VERSION_TEXT).view(), json);
   print_var("pcre", LBW().print("{}.{}", PCRE_MAJOR, PCRE_MINOR).view(), json);
@@ -196,11 +190,6 @@ produce_versions(bool json)
   print_var("hwloc.run", LBW().print("{:#x}", hwloc_get_api_version()).view(), json);
 #else
   print_var("hwloc", undef, json);
-#endif
-#if HAVE_ZLIB_H
-  print_var("libz", LBW().print("{}", ZLIB_VERSION).view(), json);
-#else
-  print_var("libz", undef, json);
 #endif
 #if HAVE_LZMA_H
   print_var("lzma", LBW().print("{}", LZMA_VERSION_STRING).view(), json);
