@@ -4230,28 +4230,6 @@ ts.http.server_packet_mark_set
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-ts.http.client_packet_tos_set
------------------------------
-**syntax:** *ts.http.client_packet_tos_set(NUMBER)*
-
-**context:** do_remap/do_os_response or do_global_* or later.
-
-**description:** This function can be used to set packet tos for client connection.
-
-
-:ref:`TOP <admin-plugins-ts-lua>`
-
-ts.http.server_packet_tos_set
------------------------------
-**syntax:** *ts.http.server_packet_tos_set(NUMBER)*
-
-**context:** do_remap/do_os_response or do_global_* or later.
-
-**description:** This function can be used to set packet tos for server connection.
-
-
-:ref:`TOP <admin-plugins-ts-lua>`
-
 ts.http.client_packet_dscp_set
 ------------------------------
 **syntax:** *ts.http.client_packet_dscp_set(NUMBER)*
