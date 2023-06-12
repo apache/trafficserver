@@ -42,7 +42,7 @@ function __init__(argtb)
     ts.error("Problems loading the rules: ".. ffi.string(error[0]))
     local ptr = ffi.cast("void *", error[0])
     C.free(ptr)
-    
+
     msc.msc_rules_cleanup(msc_config.rules)
     msc_config.rules = nil
     return -1
