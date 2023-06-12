@@ -19,6 +19,7 @@
 #pragma once
 
 #include "Data.h"
+#include "Config.h"
 
 /** Functions to deal with the connection to the client.
  * Body content transfers are handled by the client.
