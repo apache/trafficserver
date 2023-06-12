@@ -116,9 +116,6 @@ target_link_libraries(tscore
     PRIVATE
         yaml-cpp::yaml-cpp
 )
-if(TS_HAS_JEMALLOC)
-    target_link_libraries(tscore PUBLIC jemalloc::jemalloc)
-endif()
 if(TS_USE_HWLOC)
     target_link_libraries(tscore PUBLIC hwloc::hwloc)
 endif()
