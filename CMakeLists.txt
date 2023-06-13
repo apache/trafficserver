@@ -154,12 +154,14 @@ if (HOST_OS STREQUAL "darwin")
     set(CMAKE_MACOSX_RPATH 1)
 endif(HOST_OS STREQUAL "darwin")
 
+# Set the rpath for installed binaries
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options(-Wno-invalid-offsetof)
 
-# common includes for everyone
+# Common includes for everyone
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
@@ -170,8 +172,6 @@ if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
     link_libraries(${OPENSSL_CRYPTO_LIBRARY})
 endif(OPENSSL_FOUND)
-
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_subdirectory(lib)
 include_directories(
@@ -256,6 +256,7 @@ endif()
 install(DIRECTORY DESTINATION var/log/trafficserver)
 install(DIRECTORY DESTINATION var/trafficserver)
 
+# Display build summary
 include(CMakePrintHelpers)
 message("Build Summary:")
 cmake_print_variables(CMAKE_SYSTEM_NAME)
