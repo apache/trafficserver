@@ -42,14 +42,6 @@ Synopsis
 
    .. c:enumerator:: TS_RECORDTYPE_NODE
 
-   .. c:enumerator:: TS_RECORDTYPE_CLUSTER
-
-      Deprecated - shared among a cluster.
-
-   .. c:enumerator:: TS_RECORDTYPE_LOCAL
-
-      Deprecated - not shared among a cluster.
-
    .. c:enumerator:: TS_RECORDTYPE_PLUGIN
 
       Created by a plugin.

@@ -1520,33 +1520,6 @@ tsapi TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
 */
 tsapi TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
 
-/** Change packet TOS for the client side connection
- *
-    @note The change takes effect immediately
-
-    @note TOS is deprecated and replaced by DSCP, this is still used to
-    set DSCP however the first 2 bits of this value will be ignored as
-    they now belong to the ECN field.
-
-    @return TS_SUCCESS if the client connection was modified
-*/
-tsapi TSReturnCode TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos);
-
-/** Change packet TOS for the server side connection
- *
-
-    @note The change takes effect immediately, if no OS connection has been
-    made, then this sets the mark that will be used IF an OS connection
-    is established
-
-    @note TOS is deprecated and replaced by DSCP, this is still used to
-    set DSCP however the first 2 bits of this value will be ignored as
-    they now belong to the ECN field.
-
-    @return TS_SUCCESS if the (future?) server connection was modified
-*/
-tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
-
 /** Change packet DSCP for the client side connection
  *
     @note The change takes effect immediately

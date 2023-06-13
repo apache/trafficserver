@@ -5982,46 +5982,6 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 }
 
 TSReturnCode
-TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_txn) {
-    return TS_ERROR;
-  }
-
-  NetVConnection *vc = sm->ua_txn->get_netvc();
-  if (nullptr == vc) {
-    return TS_ERROR;
-  }
-
-  vc->options.packet_tos = (uint32_t)tos;
-  vc->apply_options();
-  return TS_SUCCESS;
-}
-
-TSReturnCode
-TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *)txnp;
-
-  // change the tos on an active server session
-  ProxyTransaction *ssn = sm->get_server_txn();
-  if (nullptr != ssn) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      vc->options.packet_tos = (uint32_t)tos;
-      vc->apply_options();
-    }
-  }
-
-  // update the transactions mark config for future connections
-  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, tos);
-  return TS_SUCCESS;
-}
-
-TSReturnCode
 TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -7625,20 +7585,6 @@ TSStatFindName(const char *name, int *idp)
   return TS_SUCCESS;
 }
 
-/**************************    Stats API    ****************************/
-// THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
-// #define ink_sanity_check_stat_structure(_x) TS_SUCCESS
-
-inline TSReturnCode
-ink_sanity_check_stat_structure(void *obj)
-{
-  if (obj == nullptr) {
-    return TS_ERROR;
-  }
-
-  return TS_SUCCESS;
-}
-
 /**************************   Tracing API   ****************************/
 // returns 1 or 0 to indicate whether TS is being run with a debug tag.
 int
@@ -7922,14 +7868,6 @@ TSMatcherLineValue(TSMatcherLine ml, int element)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   return (((matcher_line *)ml)->line)[1][element];
-}
-
-/* Configuration Setting */
-TSReturnCode
-TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
-{
-  Warning("This API is no longer supported.");
-  return TS_SUCCESS;
 }
 
 extern void load_config_file_callback(const char *parent, const char *remap_file);

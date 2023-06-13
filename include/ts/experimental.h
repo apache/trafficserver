@@ -324,12 +324,6 @@ tsapi char *TSMatcherLineName(TSMatcherLine ml, int element);
  ****************************************************************************/
 tsapi char *TSMatcherLineValue(TSMatcherLine ml, int element);
 
-/****************************************************************************
- *  Set a records.yaml integer variable
- ****************************************************************************/
-// DEPRECATED
-tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
-
 tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* ----------------------------------------------------------------------
  * Interfaces used by Wireless group
