@@ -31,6 +31,7 @@ add_library(inkcache STATIC
     RamCacheLRU.cc
     Store.cc
 )
+target_link_libraries(inkcache PRIVATE ZLIB::ZLIB)
 target_include_directories(inkcache PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring

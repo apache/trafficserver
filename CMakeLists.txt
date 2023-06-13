@@ -99,6 +99,7 @@ endif()
 find_package(PCRE)
 include(FindOpenSSL)
 find_package(OpenSSL)
+find_package(ZLIB REQUIRED)
 
 # Find ccache
 include(find_ccache)

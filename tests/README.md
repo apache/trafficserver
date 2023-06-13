@@ -293,7 +293,6 @@ ts.Disk.remap_config.AddLine(
  * feature - The feature to test for
 
  This function tests for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
- * TS_HAS_LIBZ
  * TS_HAS_LZMA
  * TS_HAS_PIPE_BUFFER_SIZE_CONFIG
  * TS_HAS_JEMALLOC
