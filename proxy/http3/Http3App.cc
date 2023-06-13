@@ -388,11 +388,11 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
     Debug("http3", "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
   }
 
-  if (settings_frame->contains(Http3SettingsId::MAX_HEADER_LIST_SIZE)) {
-    uint64_t max_header_list_size = settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE);
-    this->_session->remote_qpack()->update_max_header_list_size(max_header_list_size);
+  if (settings_frame->contains(Http3SettingsId::MAX_FIELD_SECTION_SIZE)) {
+    uint64_t max_field_section_size = settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE);
+    this->_session->remote_qpack()->update_max_field_section_size(max_field_section_size);
 
-    Debug("http3", "SETTINGS_MAX_HEADER_LIST_SIZE: %" PRId64, max_header_list_size);
+    Debug("http3", "SETTINGS_MAX_FIELD_SECTION_SIZE: %" PRId64, max_field_section_size);
   }
 
   if (settings_frame->contains(Http3SettingsId::QPACK_BLOCKED_STREAMS)) {
@@ -433,8 +433,8 @@ Http3SettingsFramer::generate_frame()
     frame->set(Http3SettingsId::HEADER_TABLE_SIZE, params->header_table_size());
   }
 
-  if (params->max_header_list_size() != HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE) {
-    frame->set(Http3SettingsId::MAX_HEADER_LIST_SIZE, params->max_header_list_size());
+  if (params->max_field_section_size() != HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE) {
+    frame->set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, params->max_field_section_size());
   }
 
   if (params->qpack_blocked_streams() != HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS) {

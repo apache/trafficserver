@@ -133,10 +133,10 @@ const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {
   {"x-frame-options",                  "sameorigin"                                           }
 };
 
-QPACK::QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_table_size, uint16_t max_blocking_streams)
+QPACK::QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_table_size, uint16_t max_blocking_streams)
   : QUICApplication(qc),
     _dynamic_table(max_table_size),
-    _max_header_list_size(max_header_list_size),
+    _max_field_section_size(max_field_section_size),
     _max_table_size(max_table_size),
     _max_blocking_streams(max_blocking_streams)
 {
@@ -296,9 +296,9 @@ QPACK::set_decoder_stream(QUICStreamId id)
 }
 
 void
-QPACK::update_max_header_list_size(uint32_t max_header_list_size)
+QPACK::update_max_field_section_size(uint32_t max_field_section_size)
 {
-  this->_max_header_list_size = max_header_list_size;
+  this->_max_field_section_size = max_field_section_size;
 }
 
 void
@@ -937,7 +937,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
     }
 
     decoded_header_list_size += header_len;
-    if (decoded_header_list_size > this->_max_header_list_size) {
+    if (decoded_header_list_size > this->_max_field_section_size) {
       ret = -2;
       break;
     }

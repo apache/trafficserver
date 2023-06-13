@@ -79,8 +79,8 @@ Http3DebugNames::settings_id(uint16_t id)
   switch (id) {
   case static_cast<uint16_t>(Http3SettingsId::HEADER_TABLE_SIZE):
     return "HEADER_TABLE_SIZE";
-  case static_cast<uint16_t>(Http3SettingsId::MAX_HEADER_LIST_SIZE):
-    return "MAX_HEADER_LIST_SIZE";
+  case static_cast<uint16_t>(Http3SettingsId::MAX_FIELD_SECTION_SIZE):
+    return "MAX_FIELD_SECTION_SIZE";
   case static_cast<uint16_t>(Http3SettingsId::QPACK_BLOCKED_STREAMS):
     return "QPACK_BLOCKED_STREAMS";
   case static_cast<uint16_t>(Http3SettingsId::NUM_PLACEHOLDERS):
