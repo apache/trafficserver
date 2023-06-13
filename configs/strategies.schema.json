@@ -169,6 +169,10 @@
                     "type": "boolean",
                     "description": "cache or do not cache proxy peer responses when using a peering ring mode and consistent hashing"
                 },
+		"use_pristine": {
+		    "type": "boolean",
+                    "description": "use the pristine (pre-remap) url when going to a peer cache in a peering ring"
+                },
                 "groups": {
                     "type": "array",
                     "description": "the groups of hosts assigned to the strategy",

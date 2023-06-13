@@ -191,6 +191,7 @@ struct ParentResult {
   int port;
   bool retry;
   bool chash_init[MAX_GROUP_RINGS] = {false};
+  bool use_pristine                = false;
   TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
   bool do_not_cache_response       = false;
 
