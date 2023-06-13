@@ -35,6 +35,8 @@ add_library(proxy STATIC
         StatPages.cc
         Transform.cc
 )
+add_library(ts::proxy ALIAS proxy)
+
 if(BUILD_REGRESSION_TESTING)
     target_sources(proxy PRIVATE RegressionSM.cc)
 endif()
@@ -50,7 +52,7 @@ set(PROXY_INCLUDE_DIRS
 )
 set(PROXY_INCLUDE_DIRS ${PROXY_INCLUDE_DIRS} PARENT_SCOPE)
 
-target_include_directories(proxy PRIVATE
+target_include_directories(proxy PUBLIC
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
@@ -63,3 +65,7 @@ add_subdirectory(shared)
 add_subdirectory(http)
 add_subdirectory(http2)
 add_subdirectory(logging)
+
+if(TS_USE_QUIC)
+    add_subdirectory(http3)
+endif()

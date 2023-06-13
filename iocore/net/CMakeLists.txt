@@ -64,12 +64,37 @@ add_library(inknet STATIC
         SSLDynlock.cc
         SNIActionPerformer.cc
         )
+add_library(ts::inknet ALIAS inknet)
+
+if(TS_USE_QUIC)
+    add_subdirectory(quic)
+
+    target_sources(inknet
+        PRIVATE
+            QUICClosedConCollector.cc
+            QUICMultiCertConfigLoader.cc
+            QUICNet.cc
+            QUICNetProcessor_quiche.cc
+            QUICNetVConnection_quiche.cc
+            QUICNextProtocolAccept_quiche.cc
+            QUICPacketHandler_quiche.cc
+    )
+
+    target_link_libraries(inknet
+        PUBLIC
+            quiche::quiche
+            ts::quic
+    )
+endif()
+
+
 if(BUILD_REGRESSION_TESTING)
     target_sources(inknet PRIVATE NetVCTest.cc)
 endif()
+
 target_link_libraries(inknet PUBLIC inkevent records_p)
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
-target_include_directories(inknet PRIVATE
+target_include_directories(inknet PUBLIC
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/io_uring

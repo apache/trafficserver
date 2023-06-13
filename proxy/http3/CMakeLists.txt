@@ -15,21 +15,39 @@
 #
 #######################
 
+add_library(http3 STATIC
+    Http09App.cc
+    Http3.cc
+    Http3Config.cc
+    Http3App.cc
+    Http3Types.cc
+    Http3SessionAccept.cc
+    Http3Session.cc
+    Http3Transaction.cc
+    Http3DebugNames.cc
+    Http3Frame.cc
+    Http3FrameCollector.cc
+    Http3FrameDispatcher.cc
+    Http3HeaderFramer.cc
+    Http3DataFramer.cc
+    Http3HeaderVIOAdaptor.cc
+    Http3StreamDataVIOAdaptor.cc
+    QPACK.cc
+)
+add_library(ts::http3 ALIAS http3)
 
-add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
-add_library(ts::inkutils ALIAS inkutils)
+target_include_directories(http3 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-
-target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        )
+target_link_libraries(http3
+    PUBLIC
+        ts::hdrs
+        ts::http
+        ts::inknet
+        ts::inkutils
+        ts::inkevent
+        ts::proxy
+        ts::quic
+        ts::records_p
+        ts::tscpputil
+        ts::tscore
+)

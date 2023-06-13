@@ -101,6 +101,8 @@ add_library(tscore SHARED
         runroot.cc
         signals.cc
 )
+add_library(ts::tscore ALIAS tscore)
+
 add_dependencies(tscore ParseRules tscpputil)
 target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}

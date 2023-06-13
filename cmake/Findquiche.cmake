@@ -15,21 +15,35 @@
 #
 #######################
 
+# Findquiche.cmake
+#
+# This will define the following variables
+#
+#     quiche_FOUND
+#     quiche_LIBRARY
+#     quiche_INCLUDE_DIRS
+#
+# and the following imported targets
+#
+#     quiche::quiche
+#
 
-add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
-add_library(ts::inkutils ALIAS inkutils)
+find_library(quiche_LIBRARY NAMES quiche)
+find_path(quiche_INCLUDE_DIR NAMES quiche.h PATH_SUFFIXES)
 
+mark_as_advanced(quiche_FOUND quiche_LIBRARY quiche_INCLUDE_DIR)
 
-target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(quiche
+    REQUIRED_VARS quiche_LIBRARY quiche_INCLUDE_DIR
+)
+
+if(quiche_FOUND)
+    set(quiche_INCLUDE_DIRS "${quiche_INCLUDE_DIR}")
+endif()
+
+if(quiche_FOUND AND NOT TARGET quiche::quiche)
+    add_library(quiche::quiche INTERFACE IMPORTED)
+    target_include_directories(quiche::quiche INTERFACE ${quiche_INCLUDE_DIRS})
+    target_link_libraries(quiche::quiche INTERFACE "${quiche_LIBRARY}")
+endif()

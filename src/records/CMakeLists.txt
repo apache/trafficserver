@@ -30,13 +30,26 @@ add_library(records_p SHARED
         RecordsConfigUtils.cc
         RecRawStats.cc
         )
+add_library(ts::records_p ALIAS records_p)
 
-target_include_directories(records_p PRIVATE
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/api/include
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/utils
-        )
-target_link_libraries(records_p tscore libswoc yaml-cpp::yaml-cpp)
+target_include_directories(records_p
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_SOURCE_DIR}/mgmt"
+        "${CMAKE_SOURCE_DIR}/mgmt/api/include"
+        "${CMAKE_SOURCE_DIR}/mgmt/utils"
+        "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
+        "${CMAKE_SOURCE_DIR}/iocore/utils"
+)
+
+target_link_libraries(records_p
+    PUBLIC
+        libswoc
+        #ts::inkevent cyclic dependency; I_RecProcess.h and P_RecProcess.h
+        ts::tscore
+        ts::tscpputil
+        yaml-cpp::yaml-cpp
+)
+
 install(TARGETS records_p)

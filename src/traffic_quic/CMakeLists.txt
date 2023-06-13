@@ -15,21 +15,15 @@
 #
 #######################
 
+add_executable(traffic_quic traffic_quic.cc quic_client.cc)
 
-add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
-add_library(ts::inkutils ALIAS inkutils)
-
-
-target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        )
+target_link_libraries(traffic_quic
+    PRIVATE
+        ts::hdrs
+        ts::http3
+        ts::inkevent
+        ts::inknet
+        ts::quic
+        ts::records_p
+        ts::tscore
+)

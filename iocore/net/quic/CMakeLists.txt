@@ -15,21 +15,31 @@
 #
 #######################
 
+add_library(quic STATIC
+    QUICApplication.cc
+    QUICApplicationMap.cc
+    QUICConfig.cc
+    QUICContext.cc
+    QUICConnectionTable.cc
+    QUICGlobals.cc
+    QUICTypes.cc
+    QUICIntUtil.cc
+    QUICStream.cc
+    QUICStream_quiche.cc
+    QUICStreamManager.cc
+    QUICStreamManager_quiche.cc
+    QUICStreamAdapter.cc
+    QUICStreamVCAdapter.cc
+)
+add_library(ts::quic ALIAS quic)
 
-add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
-add_library(ts::inkutils ALIAS inkutils)
+target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-
-target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        )
+target_link_libraries(quic
+    PUBLIC
+        inkevent
+        inknet
+        ${OPENSSL_LIBRARY}
+        quiche::quiche
+        ts::tscore
+)

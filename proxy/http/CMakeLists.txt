@@ -40,6 +40,8 @@ add_library(http STATIC
         PreWarmConfig.cc
         PreWarmManager.cc
 )
+add_library(ts::http ALIAS http)
+
 if(BUILD_REGRESSION_TESTING)
     target_sources(http PRIVATE RegressionHttpTransact.cc)
 endif()
@@ -51,4 +53,9 @@ target_include_directories(http PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt/utils
         ${YAMLCPP_INCLUDE_DIR}
 )
+
+if(TS_USE_QUIC)
+    target_link_libraries(http PRIVATE ts::http3)
+endif()
+
 add_subdirectory(remap)

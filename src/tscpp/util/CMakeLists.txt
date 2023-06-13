@@ -22,7 +22,14 @@ add_library(tscpputil SHARED
         TextView.cc
         YamlCfg.cc
         ts_unit_parser.cc)
-target_link_libraries(tscpputil PRIVATE yaml-cpp libswoc)
+add_library(ts::tscpputil ALIAS tscpputil)
+
+target_link_libraries(tscpputil
+    PUBLIC
+        libswoc
+        # ts::tscore cyclic dependency
+        yaml-cpp::yaml-cpp
+)
 
 add_executable(test_tscpputil
         unit_tests/test_IntrusiveDList.cc

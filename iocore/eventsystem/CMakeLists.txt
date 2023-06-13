@@ -35,5 +35,23 @@ add_library(inkevent STATIC
         ConfigProcessor.cc
         RecRawStatsImpl.cc
         RecProcess.cc)
-target_include_directories(inkevent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(inkevent ${PCRE_LIBRARIES} ${OPENSSL_LIBRARIES} yaml-cpp::yaml-cpp tscpputil resolv libswoc tscore records_p)
+add_library(ts::inkevent ALIAS inkevent)
+
+target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_link_libraries(inkevent
+    PUBLIC
+        ts::records_p
+        ts::tscore
+    PRIVATE
+        libswoc
+        ${OPENSSL_LIBRARIES} # transitive
+        ${PCRE_LIBRARIES} # transitive
+        resolv # transitive
+        tscpputil # transitive
+        yaml-cpp::yaml-cpp # transitive
+)
+
+if(TS_USE_HWLOC)
+        target_link_libraries(inkevent PRIVATE hwloc::hwloc)
+endif()
