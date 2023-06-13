@@ -28,8 +28,7 @@
 #
 
 # libtcmalloc.so symlink not created on OpenSUSE Leap 15.4
-find_library(TCMalloc_LIBRARY NAMES libtcmalloc libtcmalloc.so.4 PATHS)
-message(STATUS ${TCMalloc_LIBRARY})
+find_library(TCMalloc_LIBRARY NAMES libtcmalloc libtcmalloc.so.4)
 
 mark_as_advanced(TCMalloc_FOUND TCMalloc_LIBRARY)
 

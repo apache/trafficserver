@@ -20,7 +20,6 @@
 # This will define the following variables
 #
 #     TSMallocReplacement_FOUND
-#     TSMallocReplacement_LIBRARY
 #     TS_HAS_MALLOC_REPLACEMENT
 #     TS_HAS_JEMALLOC
 #     TS_HAS_TCMALLOC
@@ -42,12 +41,6 @@ endif()
 
 if(TS_HAS_JEMALLOC AND TS_HAS_TCMALLOC)
     message(FATAL_ERROR "Cannot build with both jemalloc and TCMalloc.")
-endif()
-
-if(TS_HAS_JEMALLOC)
-    set(TSMallocReplacement_LIBRARY "${jemalloc_LIBRARY}")
-elseif(TS_HAS_TCMALLOC)
-    set(TSMallocReplacement_LIBRARY "${TCMalloc_LIBRARY}")
 endif()
 
 mark_as_advanced(TSMallocReplacement_FOUND TS_HAS_MALLOC_REPLACEMENT)
