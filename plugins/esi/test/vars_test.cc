@@ -22,19 +22,17 @@
  */
 
 #include <cstdio>
-#include <iostream>
-#include <cassert>
 #include <string>
 #include <cstdarg>
+
+#define CATCH_CONFIG_MAIN
+#include <catch.hpp>
 
 #include "print_funcs.h"
 #include "Variables.h"
 #include "Expression.h"
 #include "Utils.h"
 
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::string;
 using namespace EsiLib;
 
@@ -66,14 +64,13 @@ fakeDebug(const char *tag, const char *fmt, ...)
   gFakeDebugLog.append(buf);
 }
 
-int
-main()
+TEST_CASE("esi vars test")
 {
   Utils::init(&Debug, &Error);
+  Utils::HeaderValueList allowlistCookies;
 
+  SECTION("Test 1")
   {
-    cout << endl << "===================== Test 1" << endl;
-    Utils::HeaderValueList allowlistCookies;
     allowlistCookies.push_back("c1");
     allowlistCookies.push_back("c2");
     allowlistCookies.push_back("c3");
@@ -99,243 +96,241 @@ main()
     esi_vars.populate(headers);
     esi_vars.populate("a=b&c=d&e=f");
 
-    assert(esi_vars.getValue("HTTP_COOKIE{c1}") == "v1");
-    assert(esi_vars.getValue("HTTP_COOKIE{c2}") == "v2");
-    assert(esi_vars.getValue("HTTP_COOKIE{c3}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c4}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c5}") == "v5");
-    assert(esi_vars.getValue("HTTP_COOKIE{c2}") != "v1");
-    assert(esi_vars.getValue("HTTP_COOKIE{C1}") != "v1");
-    assert(esi_vars.getValue("HTTP_USER_AGENT").size() == 0);
-    assert(esi_vars.getValue("BLAH").size() == 0);
-    assert(esi_vars.getValue("HTTP_HOST") == "example.com");
-    assert(esi_vars.getValue("HTTP_host") == "example.com");
-    assert(esi_vars.getValue("HTTP_REFERER") == "google.com");
-    assert(esi_vars.getValue("HTTP_BLAH").size() == 0);
-    assert(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{en-gb}") == "true");
-    assert(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{en-us}") == "true");
-    assert(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{es-us}") == "");
-    assert(esi_vars.getValue("QUERY_STRING") == "a=b&c=d&e=f");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "b");
-    assert(esi_vars.getValue("QUERY_STRING{e}") == "f");
-    assert(esi_vars.getValue("QUERY_STRING{z}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1") == "");
-    assert(esi_vars.getValue("HTTP_COOKIEc1") == "");
-    assert(esi_vars.getValue("HTTP_COOKIEc1}") == "");
-    assert(esi_vars.getValue("{c1}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1{c2}}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1{c2}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1c}2}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1c2}") == "");
-    assert(esi_vars.getValue("{c1c2}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1}c") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1}") == "v1");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c2}") == "v2");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c3}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c4}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c5}") == "v5");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c2}") != "v1");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{C1}") != "v1");
+    REQUIRE(esi_vars.getValue("HTTP_USER_AGENT").size() == 0);
+    REQUIRE(esi_vars.getValue("BLAH").size() == 0);
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "example.com");
+    REQUIRE(esi_vars.getValue("HTTP_host") == "example.com");
+    REQUIRE(esi_vars.getValue("HTTP_REFERER") == "google.com");
+    REQUIRE(esi_vars.getValue("HTTP_BLAH").size() == 0);
+    REQUIRE(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{en-gb}") == "true");
+    REQUIRE(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{en-us}") == "true");
+    REQUIRE(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{es-us}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "a=b&c=d&e=f");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "b");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{e}") == "f");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{z}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIEc1") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIEc1}") == "");
+    REQUIRE(esi_vars.getValue("{c1}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1{c2}}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1{c2}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1c}2}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1c2}") == "");
+    REQUIRE(esi_vars.getValue("{c1c2}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1}c") == "");
     esi_vars.populate(HttpHeader("hosT", -1, "localhost", -1));
-    assert(esi_vars.getValue("HTTP_HOST") == "localhost");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "localhost");
 
     esi_vars.populate(HttpHeader("User-agent", -1,
                                  "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
                                  "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)",
                                  -1));
 
-    assert(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{ka-in}") == "true");
+    REQUIRE(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{ka-in}") == "true");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING") == "");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "");
-    assert(esi_vars.getValue("HTTP_COOKIE{c1}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1}") == "");
     esi_vars.populate(headers);
     esi_vars.populate("a=b&c=d&e=f");
 
     Expression esi_expr("vars_test", &Debug, &Error, esi_vars);
-    assert(esi_expr.expand(nullptr) == "");
-    assert(esi_expr.expand("") == "");
-    assert(esi_expr.expand("blah") == "blah");
-    assert(esi_expr.expand("blah$(HTTP_HOST") == "");
-    assert(esi_expr.expand("blah$A(HTTP_HOST)") == "blah$A(HTTP_HOST)");
-    assert(esi_expr.expand("blah$()") == "blah");
-    assert(esi_expr.expand("blah-$(HTTP_HOST)") == "blah-example.com");
-    assert(esi_expr.expand("blah-$(HTTP_REFERER)") == "blah-google.com");
-    assert(esi_expr.expand("blah-$(HTTP_COOKIE{c1})") == "blah-v1");
-    assert(esi_expr.expand("blah-$(HTTP_COOKIE{c1a})") == "blah-");
-    assert(esi_expr.expand("blah-$(HTTP_COOKIE{c1}$(HTTP_HOST))") == "");
-    assert(esi_expr.expand("blah-$(HTTP_COOKIE{c1})-$(HTTP_HOST)") == "blah-v1-example.com");
-    assert(esi_expr.expand("$()") == "");
-    assert(esi_expr.expand("$(HTTP_COOKIE{c1})$(HTTP_COOKIE{c2})$(HTTP_HOST)") == "v1v2example.com");
+    REQUIRE(esi_expr.expand(nullptr) == "");
+    REQUIRE(esi_expr.expand("") == "");
+    REQUIRE(esi_expr.expand("blah") == "blah");
+    REQUIRE(esi_expr.expand("blah$(HTTP_HOST") == "");
+    REQUIRE(esi_expr.expand("blah$A(HTTP_HOST)") == "blah$A(HTTP_HOST)");
+    REQUIRE(esi_expr.expand("blah$()") == "blah");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_HOST)") == "blah-example.com");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_REFERER)") == "blah-google.com");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_COOKIE{c1})") == "blah-v1");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_COOKIE{c1a})") == "blah-");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_COOKIE{c1}$(HTTP_HOST))") == "");
+    REQUIRE(esi_expr.expand("blah-$(HTTP_COOKIE{c1})-$(HTTP_HOST)") == "blah-v1-example.com");
+    REQUIRE(esi_expr.expand("$()") == "");
+    REQUIRE(esi_expr.expand("$(HTTP_COOKIE{c1})$(HTTP_COOKIE{c2})$(HTTP_HOST)") == "v1v2example.com");
 
     // quotes
-    assert(esi_expr.expand("'blah") == "");  // unterminated quote
-    assert(esi_expr.expand("\"blah") == ""); // unterminated quote
-    assert(esi_expr.expand("'blah'") == "blah");
-    assert(esi_expr.expand("\"blah\"") == "blah");
-    assert(esi_expr.expand("'$(HTTP_COOKIE{c1})'") == "v1");
-    assert(esi_expr.expand("\"$(HTTP_HOST)\"") == "example.com");
+    REQUIRE(esi_expr.expand("'blah") == "");  // unterminated quote
+    REQUIRE(esi_expr.expand("\"blah") == ""); // unterminated quote
+    REQUIRE(esi_expr.expand("'blah'") == "blah");
+    REQUIRE(esi_expr.expand("\"blah\"") == "blah");
+    REQUIRE(esi_expr.expand("'$(HTTP_COOKIE{c1})'") == "v1");
+    REQUIRE(esi_expr.expand("\"$(HTTP_HOST)\"") == "example.com");
 
     // leading/trailing whitespace
-    assert(esi_expr.expand("   blah  ") == "blah");
-    assert(esi_expr.expand("   $(HTTP_REFERER) $(HTTP_HOST)  ") == "google.com example.com");
-    assert(esi_expr.expand(" ' foo ' ") == " foo ");
-    assert(esi_expr.expand(" ' foo '") == " foo ");
-    assert(esi_expr.expand("bar ") == "bar");
+    REQUIRE(esi_expr.expand("   blah  ") == "blah");
+    REQUIRE(esi_expr.expand("   $(HTTP_REFERER) $(HTTP_HOST)  ") == "google.com example.com");
+    REQUIRE(esi_expr.expand(" ' foo ' ") == " foo ");
+    REQUIRE(esi_expr.expand(" ' foo '") == " foo ");
+    REQUIRE(esi_expr.expand("bar ") == "bar");
 
     // evaluate tests
-    assert(esi_expr.evaluate("foo") == true);
-    assert(esi_expr.evaluate("") == false);
-    assert(esi_expr.evaluate("$(HTTP_HOST)") == true);
-    assert(esi_expr.evaluate("$(HTTP_XHOST)") == false);
-    assert(esi_expr.evaluate("foo == foo") == true);
-    assert(esi_expr.evaluate("'foo' == \"foo\"") == true);
-    assert(esi_expr.evaluate("foo == foo1") == false);
-    assert(esi_expr.evaluate("'foo' == \"foo1\"") == false);
-    assert(esi_expr.evaluate("$(HTTP_REFERER) == google.com") == true);
-    assert(esi_expr.evaluate("$(HTTP_HOST)=='example.com'") == true);
-    assert(esi_expr.evaluate("$(HTTP_REFERER) != google.com") == false);
-    assert(esi_expr.evaluate("$(HTTP_HOST)!='example.com'") == false);
-    assert(esi_expr.evaluate("$(HTTP_HOST) == 'facebook.com'") == false);
-    assert(esi_expr.evaluate("!") == true);
-    assert(esi_expr.evaluate("!abc") == false);
-    assert(esi_expr.evaluate("!$(FOO_BAR)") == true);
-    assert(esi_expr.evaluate("!$(HTTP_HOST)") == false);
-    assert(esi_expr.evaluate("abc!abc") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) == 'v1'") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1b}) == 'v1'") == false);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) <= 'v2'") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) < 'v2'") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) >= 'v0'") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) > 'v2'") == false);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) & 'v2'") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{foo}) & $(HTTP_COOKIE{bar})") == false);
-    assert(esi_expr.evaluate("'' | $(HTTP_COOKIE{c1})") == true);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{foo}) | $(HTTP_COOKIE{bar})") == false);
+    REQUIRE(esi_expr.evaluate("foo") == true);
+    REQUIRE(esi_expr.evaluate("") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_HOST)") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_XHOST)") == false);
+    REQUIRE(esi_expr.evaluate("foo == foo") == true);
+    REQUIRE(esi_expr.evaluate("'foo' == \"foo\"") == true);
+    REQUIRE(esi_expr.evaluate("foo == foo1") == false);
+    REQUIRE(esi_expr.evaluate("'foo' == \"foo1\"") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_REFERER) == google.com") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_HOST)=='example.com'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_REFERER) != google.com") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_HOST)!='example.com'") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_HOST) == 'facebook.com'") == false);
+    REQUIRE(esi_expr.evaluate("!") == true);
+    REQUIRE(esi_expr.evaluate("!abc") == false);
+    REQUIRE(esi_expr.evaluate("!$(FOO_BAR)") == true);
+    REQUIRE(esi_expr.evaluate("!$(HTTP_HOST)") == false);
+    REQUIRE(esi_expr.evaluate("abc!abc") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) == 'v1'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1b}) == 'v1'") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) <= 'v2'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) < 'v2'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) >= 'v0'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) > 'v2'") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) & 'v2'") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{foo}) & $(HTTP_COOKIE{bar})") == false);
+    REQUIRE(esi_expr.evaluate("'' | $(HTTP_COOKIE{c1})") == true);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{foo}) | $(HTTP_COOKIE{bar})") == false);
 
     // default value tests
-    assert(esi_expr.expand("foo|bar") == "foo|bar");
-    assert(esi_expr.expand("$(HTTP_HOST|") == "");
-    assert(esi_expr.expand("$(HTTP_HOST|foo") == "");
-    assert(esi_expr.expand("$(HTTP_HOST|foo)") == "example.com");
-    assert(esi_expr.expand("$(HTTP_XHOST|foo)") == "foo");
-    assert(esi_expr.expand("$(|foo)") == "foo");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk})") == "");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes')") == "yes");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes with space')") == "yes with space");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-gb}|'yes')") == "true");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-gb}|'yes)") == "");
-    assert(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes)") == "");
+    REQUIRE(esi_expr.expand("foo|bar") == "foo|bar");
+    REQUIRE(esi_expr.expand("$(HTTP_HOST|") == "");
+    REQUIRE(esi_expr.expand("$(HTTP_HOST|foo") == "");
+    REQUIRE(esi_expr.expand("$(HTTP_HOST|foo)") == "example.com");
+    REQUIRE(esi_expr.expand("$(HTTP_XHOST|foo)") == "foo");
+    REQUIRE(esi_expr.expand("$(|foo)") == "foo");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk})") == "");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes')") == "yes");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes with space')") == "yes with space");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-gb}|'yes')") == "true");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-gb}|'yes)") == "");
+    REQUIRE(esi_expr.expand("$(HTTP_ACCEPT_LANGUAGE{en-uk}|'yes)") == "");
 
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{non-existent}) < 7") == false);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) > $(HTTP_COOKIE{non-existent})") == false);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{non-existent}) <= 7") == false);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) >= $(HTTP_COOKIE{non-existent})") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{non-existent}) < 7") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) > $(HTTP_COOKIE{non-existent})") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{non-existent}) <= 7") == false);
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) >= $(HTTP_COOKIE{non-existent})") == false);
 
     // query string tests
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("a");
-    assert(esi_vars.getValue("QUERY_STRING") == "a");
-    assert(esi_vars.getValue("QUERY_STRING{a}").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "a");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}").size() == 0);
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("");
-    assert(esi_vars.getValue("QUERY_STRING") == "");
-    assert(esi_vars.getValue("QUERY_STRING{a}").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}").size() == 0);
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("a=b");
-    assert(esi_vars.getValue("QUERY_STRING") == "a=b");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "b");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "a=b");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "b");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("a=b&");
-    assert(esi_vars.getValue("QUERY_STRING") == "a=b&");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "b");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "a=b&");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "b");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("&a=b&");
-    assert(esi_vars.getValue("QUERY_STRING") == "&a=b&");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "b");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "&a=b&");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "b");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("name1=value1&name2=value2&name3=val%32ue");
-    assert(esi_vars.getValue("QUERY_STRING") == "name1=value1&name2=value2&name3=val%32ue");
-    assert(esi_vars.getValue("QUERY_STRING{name1}") == "value1");
-    assert(esi_vars.getValue("QUERY_STRING{name2}") == "value2");
-    assert(esi_vars.getValue("QUERY_STRING{name3}") == "val%32ue");
-    assert(esi_vars.getValue("QUERY_STRING{name4}") == "");
-    assert(esi_vars.getValue("QUERY_STRING{}") == "");
-    assert(esi_vars.getValue("QUERY_STRING{foo}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "name1=value1&name2=value2&name3=val%32ue");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{name1}") == "value1");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{name2}") == "value2");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{name3}") == "val%32ue");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{name4}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{foo}") == "");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("=");
-    assert(esi_vars.getValue("QUERY_STRING") == "=");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "=");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("a=&");
-    assert(esi_vars.getValue("QUERY_STRING") == "a=&");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "a=&");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("=b&");
-    assert(esi_vars.getValue("QUERY_STRING") == "=b&");
-    assert(esi_vars.getValue("QUERY_STRING{a}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "=b&");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{a}") == "");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("foo=bar&blah=&");
-    assert(esi_vars.getValue("QUERY_STRING") == "foo=bar&blah=&");
-    assert(esi_vars.getValue("QUERY_STRING{foo}") == "bar");
-    assert(esi_vars.getValue("QUERY_STRING{blah}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "foo=bar&blah=&");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{foo}") == "bar");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{blah}") == "");
 
     esi_vars.clear();
-    assert(esi_vars.getValue("QUERY_STRING").size() == 0);
+    REQUIRE(esi_vars.getValue("QUERY_STRING").size() == 0);
     esi_vars.populate("=blah&foo=bar");
-    assert(esi_vars.getValue("QUERY_STRING") == "=blah&foo=bar");
-    assert(esi_vars.getValue("QUERY_STRING{foo}") == "bar");
-    assert(esi_vars.getValue("QUERY_STRING{blah}") == "");
+    REQUIRE(esi_vars.getValue("QUERY_STRING") == "=blah&foo=bar");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{foo}") == "bar");
+    REQUIRE(esi_vars.getValue("QUERY_STRING{blah}") == "");
   }
 
+  SECTION("Test 2")
   {
-    cout << endl << "===================== Test 2" << endl;
     gFakeDebugLog.assign("");
-    Utils::HeaderValueList allowlistCookies;
     Variables esi_vars("vars_test", &fakeDebug, &Error, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
     const char *PARSING_DEBUG_MESSAGE = "Parsing headers";
-    assert(gFakeDebugLog.find(PARSING_DEBUG_MESSAGE) >= gFakeDebugLog.size()); // shouldn't have parsed yet
+    REQUIRE(gFakeDebugLog.find(PARSING_DEBUG_MESSAGE) >= gFakeDebugLog.size()); // shouldn't have parsed yet
 
-    assert(esi_vars.getValue("HTTP_HOST") == "example.com");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "example.com");
     size_t str_pos = gFakeDebugLog.find(PARSING_DEBUG_MESSAGE);
-    assert(str_pos < gFakeDebugLog.size()); // should've parsed now
+    REQUIRE(str_pos < gFakeDebugLog.size()); // should've parsed now
 
-    assert(esi_vars.getValue("HTTP_REFERER") == "google.com");
-    assert(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) == str_pos); // shouldn't have parsed again
+    REQUIRE(esi_vars.getValue("HTTP_REFERER") == "google.com");
+    REQUIRE(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) == str_pos); // shouldn't have parsed again
 
     esi_vars.populate(HttpHeader("Host", -1, "localhost", -1));
-    assert(esi_vars.getValue("HTTP_HOST") == "localhost");
-    assert(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) == str_pos); // should not have parsed all headers
-    assert(esi_vars.getValue("HTTP_HOST") == "localhost");         // only this one
-    assert(esi_vars.getValue("HTTP_REFERER") == "google.com");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "localhost");
+    REQUIRE(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) == str_pos); // should not have parsed all headers
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "localhost");         // only this one
+    REQUIRE(esi_vars.getValue("HTTP_REFERER") == "google.com");
 
     esi_vars.clear();
     esi_vars.populate(HttpHeader("Host", -1, "home", -1));
-    assert(esi_vars.getValue("HTTP_HOST") == "home");
-    assert(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) != str_pos); // should have parsed again
-    assert(esi_vars.getValue("HTTP_REFERER") == "");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "home");
+    REQUIRE(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) != str_pos); // should have parsed again
+    REQUIRE(esi_vars.getValue("HTTP_REFERER") == "");
   }
 
+  SECTION("Test 3")
   {
-    cout << endl << "===================== Test 3" << endl;
-    Utils::HeaderValueList allowlistCookies;
     allowlistCookies.push_back("age");
     allowlistCookies.push_back("grade");
     allowlistCookies.push_back("avg");
@@ -353,35 +348,34 @@ main()
     esi_vars.populate(HttpHeader("Cookie", -1, "t3=-0; t4=0; t5=6", -1));
 
     Expression esi_expr("vars_test", &Debug, &Error, esi_vars);
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) >= -9"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 9"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) < 22"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) <= 22.1"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 100a")); // non-numerical
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{t1})"));         // non-numerical
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{grade})"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{grade}) == -5"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{grade}) != -5.1"));
-    assert(esi_expr.evaluate("!$(HTTP_COOKIE{t2})"));
-    assert(esi_expr.evaluate("!$(HTTP_COOKIE{t3})"));
-    assert(esi_expr.evaluate("!$(HTTP_COOKIE{t4})"));
-    assert(esi_expr.evaluate("+4.3 == $(HTTP_COOKIE{avg})"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{grade}) < -0x2"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{t2}) | 1"));
-    assert(!esi_expr.evaluate("$(HTTP_COOKIE{t3}) & 1"));
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{t5}) == 6"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) >= -9"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 9"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) < 22"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) <= 22.1"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 100a")); // non-numerical
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{t1})"));         // non-numerical
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{grade})"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{grade}) == -5"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{grade}) != -5.1"));
+    REQUIRE(esi_expr.evaluate("!$(HTTP_COOKIE{t2})"));
+    REQUIRE(esi_expr.evaluate("!$(HTTP_COOKIE{t3})"));
+    REQUIRE(esi_expr.evaluate("!$(HTTP_COOKIE{t4})"));
+    REQUIRE(esi_expr.evaluate("+4.3 == $(HTTP_COOKIE{avg})"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{grade}) < -0x2"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{t2}) | 1"));
+    REQUIRE(!esi_expr.evaluate("$(HTTP_COOKIE{t3}) & 1"));
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{t5}) == 6"));
 
     string strange_cookie("c1=123");
     strange_cookie[4] = '\0';
     esi_vars.populate(HttpHeader("Cookie", -1, strange_cookie.data(), strange_cookie.size()));
-    assert(esi_vars.getValue("HTTP_COOKIE{c1}").size() == 3);
-    assert(esi_vars.getValue("HTTP_COOKIE{c1}")[1] == '\0');
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{c1}) != 1"));
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1}").size() == 3);
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c1}")[1] == '\0');
+    REQUIRE(esi_expr.evaluate("$(HTTP_COOKIE{c1}) != 1"));
   }
 
+  SECTION("Test 4")
   {
-    cout << endl << "===================== Test 4" << endl;
-    Utils::HeaderValueList allowlistCookies;
     allowlistCookies.push_back("FPS");
     allowlistCookies.push_back("mb");
     allowlistCookies.push_back("Y");
@@ -396,59 +390,57 @@ main()
                       "6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ"); // TODO - might need to
     esi_vars.populate(HttpHeader("Cookie", -1, cookie_str.data(), cookie_str.size()));
 
-    assert(esi_vars.getValue("HTTP_COOKIE{FPS}") == "dl");
-    assert(esi_vars.getValue("HTTP_COOKIE{mb}") ==
-           "d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1");
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;n}") == "fmaptagvuff50");
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;l}") == "fc0d94i7/o");
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "us");
-    assert(esi_vars.getValue("HTTP_COOKIE{C}") == "mg=1");
-    assert(esi_vars.getValue("HTTP_COOKIE{non-existent}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{FPS}") == "dl");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{mb}") ==
+            "d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;n}") == "fmaptagvuff50");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;l}") == "fc0d94i7/o");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "us");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{C}") == "mg=1");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{non-existent}") == "");
 
-    assert(esi_vars.getValue("HTTP_COOKIE{Y}") == "v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y}") == "v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us");
 
     esi_vars.populate(HttpHeader("Host", -1, "www.example.com", -1));
-    assert(esi_vars.getValue("HTTP_COOKIE{F}") ==
-           "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
-           "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
-    assert(esi_vars.getValue("HTTP_HOST") == "www.example.com");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{F}") ==
+            "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
+            "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "www.example.com");
 
     esi_vars.populate(HttpHeader("Cookie", -1, "a=b; c=d", -1));
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "us");
-    assert(esi_vars.getValue("HTTP_COOKIE{F}") ==
-           "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
-           "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
-    assert(esi_vars.getValue("HTTP_COOKIE{a}") == "b");
-    assert(esi_vars.getValue("HTTP_COOKIE{c}") == "d");
-    assert(esi_vars.getValue("HTTP_HOST") == "www.example.com");
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;blah}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "us");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{F}") ==
+            "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
+            "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{a}") == "b");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{c}") == "d");
+    REQUIRE(esi_vars.getValue("HTTP_HOST") == "www.example.com");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;blah}") == "");
 
     esi_vars.clear();
     esi_vars.populate(HttpHeader("Cookie", -1, "Y=junk", -1));
-    assert(esi_vars.getValue("HTTP_COOKIE{Y}") == "junk");
-    assert(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y}") == "junk");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "");
   }
 
+  SECTION("Test 5")
   {
-    cout << endl << "===================== Test 5" << endl;
-    Utils::HeaderValueList allowlistCookies;
     Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
     esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
     esi_vars.populate(HttpHeader("cookie", -1, "x=y", -1));
 
-    assert(esi_vars.getValue("HTTP_HEADER{hdr1}") == "hval1");
-    assert(esi_vars.getValue("HTTP_HEADER{hdr2}") == "");
-    assert(esi_vars.getValue("HTTP_HEADER{Hdr2}") == "hval2");
-    assert(esi_vars.getValue("HTTP_HEADER{non-existent}") == "");
-    assert(esi_vars.getValue("HTTP_HEADER{@Intenal-hdr1}") == "internal-hval1");
-    assert(esi_vars.getValue("HTTP_HEADER{cookie}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{hdr1}") == "hval1");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{hdr2}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{Hdr2}") == "hval2");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{non-existent}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{@Intenal-hdr1}") == "internal-hval1");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{cookie}") == "");
   }
 
+  SECTION("Test 6")
   {
-    cout << endl << "===================== Test 6" << endl;
-    Utils::HeaderValueList allowlistCookies;
     allowlistCookies.push_back("*");
     Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
 
@@ -456,16 +448,13 @@ main()
     esi_vars.populate(HttpHeader("Cookie", -1, "age=21; grade=-5; avg=4.3; t1=\" \"; t2=0.0", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "t3=-0; t4=0; t5=6", -1));
 
-    assert(esi_vars.getValue("HTTP_COOKIE{age}") == "21");
-    assert(esi_vars.getValue("HTTP_COOKIE{grade}") == "-5");
-    assert(esi_vars.getValue("HTTP_COOKIE{avg}") == "4.3");
-    assert(esi_vars.getValue("HTTP_COOKIE{t1}") == " ");
-    assert(esi_vars.getValue("HTTP_COOKIE{t2}") == "0.0");
-    assert(esi_vars.getValue("HTTP_COOKIE{t3}") == "-0");
-    assert(esi_vars.getValue("HTTP_COOKIE{t4}") == "0");
-    assert(esi_vars.getValue("HTTP_COOKIE{t5}") == "6");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{age}") == "21");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{grade}") == "-5");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{avg}") == "4.3");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{t1}") == " ");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{t2}") == "0.0");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{t3}") == "-0");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{t4}") == "0");
+    REQUIRE(esi_vars.getValue("HTTP_COOKIE{t5}") == "6");
   }
-
-  cout << endl << "All tests passed!" << endl;
-  return 0;
 }
