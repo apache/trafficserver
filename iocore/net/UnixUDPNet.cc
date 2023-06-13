@@ -34,6 +34,7 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
+#include "P_DNSConnection.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
 

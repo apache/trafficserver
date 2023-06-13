@@ -49,29 +49,6 @@ net_next_connection_number()
 
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
-NetProcessor::AcceptOptions &
-NetProcessor::AcceptOptions::reset()
-{
-  local_port = 0;
-  local_ip.invalidate();
-  accept_threads        = -1;
-  ip_family             = AF_INET;
-  etype                 = ET_NET;
-  localhost_only        = false;
-  frequent_accept       = true;
-  recv_bufsize          = 0;
-  send_bufsize          = 0;
-  sockopt_flags         = 0;
-  packet_mark           = 0;
-  packet_tos            = 0;
-  packet_notsent_lowat  = 0;
-  tfo_queue_length      = 0;
-  f_inbound_transparent = false;
-  f_mptcp               = false;
-  f_proxy_protocol      = false;
-  return *this;
-}
-
 Action *
 UnixNetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
 {

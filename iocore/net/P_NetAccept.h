@@ -38,11 +38,14 @@
  ****************************************************************************/
 #pragma once
 
+#include "EventIO.h"
+#include "I_NetProcessor.h"
 #include <vector>
 #include "tscore/ink_platform.h"
 #include "P_Connection.h"
 
 struct NetAccept;
+struct HttpProxyPort;
 class Event;
 class SSLNextProtocolAccept;
 //
@@ -50,7 +53,7 @@ class SSLNextProtocolAccept;
 //   Accepts as many connections as possible, returning the number accepted
 //   or -1 to stop accepting.
 //
-typedef int(AcceptFunction)(NetAccept *na, void *e, bool blockable);
+using AcceptFunction    = int(NetAccept *, void *, bool);
 using AcceptFunctionPtr = AcceptFunction *;
 AcceptFunction net_accept;
 
@@ -91,7 +94,7 @@ struct NetAccept : public Continuation {
   EventIO ep;
 
   HttpProxyPort *proxyPort = nullptr;
-  NetProcessor::AcceptOptions opt;
+  AcceptOptions opt;
 
   virtual NetProcessor *getNetProcessor() const;
 

@@ -32,6 +32,7 @@
 
 #include "I_EventSystem.h"
 #include "I_DNSProcessor.h"
+#include "EventIO.h"
 
 //
 // Connection

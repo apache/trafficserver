@@ -58,15 +58,12 @@
 
 #pragma once
 
-#if !defined(_I_EventSystem_h) && !defined(_P_EventSystem_h)
-#error "include I_EventSystem.h or P_EventSystem.h"
-#endif
-
 #include <functional>
 
+#include "I_ProxyAllocator.h"
+#include "tscore/Ptr.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_thread.h"
-#include "I_ProxyAllocator.h"
 
 class ProxyMutex;
 

@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "I_DNSProcessor.h"
 #include "HttpDebugNames.h"
 #include "P_EventSystem.h"
 #include "StatPages.h"

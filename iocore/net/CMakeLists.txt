@@ -17,14 +17,19 @@
 
 
 add_library(inknet STATIC
+        AcceptOptions.cc
         ALPNSupport.cc
         BIO_fastopen.cc
         BoringSSLUtils.cc
         Connection.cc
+        EventIO.cc
         Inline.cc
         YamlSNIConfig.cc
         Net.cc
+        NetHandler.cc
+        NetVCOptions.cc
         NetVConnection.cc
+        PollCont.cc
         ProxyProtocol.cc
         Socks.cc
         SSLCertLookup.cc
