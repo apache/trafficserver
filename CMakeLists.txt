@@ -118,8 +118,6 @@ check_symbol_exists(getresgid unistd.h HAVE_GETRESGID)
 check_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
 check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 
-check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
-
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)
 if (HAVE_IOURING AND USE_IOURING)
     message(Using io_uring)
@@ -143,6 +141,7 @@ check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
+check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
 
 # Catch2 for tests
 set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
@@ -165,17 +164,20 @@ if (HOST_OS STREQUAL "darwin")
     set(CMAKE_MACOSX_RPATH 1)
 endif(HOST_OS STREQUAL "darwin")
 
+# Set the rpath for installed binaries
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
 add_compile_options(-Wno-invalid-offsetof)
 
-# common includes for everyone
+# Common includes for everyone
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
         ${PCRE_INCLUDE_DIRS}
 )
+
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
     link_libraries(${OPENSSL_CRYPTO_LIBRARY})
@@ -266,3 +268,22 @@ endif()
 # Create an empty directories for ATS runtime
 install(DIRECTORY DESTINATION var/log/trafficserver)
 install(DIRECTORY DESTINATION var/trafficserver)
+
+# Display build summary
+include(CMakePrintHelpers)
+message("Build Summary:")
+cmake_print_variables(CMAKE_SYSTEM_NAME)
+cmake_print_variables(CMAKE_SYSTEM_VERSION)
+cmake_print_variables(CMAKE_SYSTEM_PROCESSOR)
+cmake_print_variables(CMAKE_GENERATOR)
+cmake_print_variables(CMAKE_BUILD_TYPE)
+cmake_print_variables(CMAKE_INSTALL_PREFIX)
+cmake_print_variables(CMAKE_CXX_COMPILER)
+cmake_print_variables(CMAKE_C_COMPILER)
+cmake_print_variables(CMAKE_CXX_FLAGS)
+cmake_print_variables(CMAKE_C_FLAGS)
+cmake_print_variables(BUILD_PERSON)
+cmake_print_variables(BUILD_GROUP)
+cmake_print_variables(BUILD_MACHINE)
+cmake_print_variables(DEFAULT_STACK_SIZE)
+cmake_print_variables(CMAKE_INSTALL_RPATH)
