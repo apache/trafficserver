@@ -108,8 +108,6 @@ target_include_directories(tscore PRIVATE
 )
 target_link_libraries(tscore
     PUBLIC
-        $<$<BOOL:TS_HAS_JEMALLOC>:jemalloc::jemalloc>
-        $<$<BOOL:TS_USE_HWLOC>:hwloc::hwloc>
         libswoc
         ${OPENSSL_LIBRARIES}
         ${PCRE_LIBRARIES}
@@ -118,6 +116,12 @@ target_link_libraries(tscore
     PRIVATE
         yaml-cpp::yaml-cpp
 )
+if(TS_HAS_JEMALLOC)
+    target_link_libraries(tscore PUBLIC jemalloc::jemalloc)
+endif()
+if(TS_USE_HWLOC)
+    target_link_libraries(tscore PUBLIC hwloc::hwloc)
+endif()
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc
@@ -152,10 +156,12 @@ add_executable(test_tscore
 )
 target_link_libraries(test_tscore
     PRIVATE
-        $<$<BOOL:TS_USE_HWLOC>:hwloc::hwloc>
         libswoc
         tscore
 )
+if(TS_USE_HWLOC)
+    target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
+endif()
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
 add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
