@@ -88,9 +88,9 @@ CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
 
 # Find libraries
-find_package(jemalloc)
-if(jemalloc_FOUND)
-    set(TS_HAS_JEMALLOC TRUE)
+find_package(TSMallocReplacement QUIET MODULE)
+if(TSMallocReplacement_FOUND)
+    link_libraries(ts::TSMallocReplacement)
 endif()
 find_package(hwloc)
 if(hwloc_FOUND)
