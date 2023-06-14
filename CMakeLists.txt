@@ -37,10 +37,10 @@ execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING
 execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Options
-option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
+option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
@@ -92,6 +92,11 @@ CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
 
 # Find libraries
+find_package(Backtrace)
+if(Backtrace_FOUND)
+    set(TS_HAS_BACKTRACE TRUE)
+endif()
+
 find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
