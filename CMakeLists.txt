@@ -111,7 +111,7 @@ find_package(OpenSSL)
 
 if(ENABLE_PROFILER)
     find_package(profiler REQUIRED)
-    set(TS_HAS_PROFILER TRUE)
+    set(TS_HAS_PROFILER ${profiler_FOUND})
 endif()
 
 find_package(TSMallocReplacement QUIET MODULE)
