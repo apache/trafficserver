@@ -32,15 +32,22 @@
 find_package(jemalloc QUIET)
 set(TS_HAS_JEMALLOC ${jemalloc_FOUND})
 
+find_package(mimalloc QUIET)
+set(TS_HAS_MIMALLOC ${mimalloc_FOUND})
+
 find_package(TCMalloc QUIET)
 set(TS_HAS_TCMALLOC ${TCMalloc_FOUND})
 
-if(TS_HAS_JEMALLOC OR TS_HAS_TCMALLOC)
+if(TS_HAS_JEMALLOC OR TS_HAS_MIMALLOC OR TS_HAS_TCMALLOC)
     set(TS_HAS_MALLOC_REPLACEMENT TRUE)
 endif()
 
-if(TS_HAS_JEMALLOC AND TS_HAS_TCMALLOC)
+if(TS_HAS_JEMALLOC AND TS_HAS_MIMALLOC)
+    message(FATAL_ERROR "Cannot build with both jemalloc and mimalloc.")
+elseif(TS_HAS_JEMALLOC AND TS_HAS_TCMALLOC)
     message(FATAL_ERROR "Cannot build with both jemalloc and TCMalloc.")
+elseif(TS_HAS_MIMALLOC AND TS_HAS_TCMALLOC)
+    message(FATAL_ERROR "Cannot build with both mimalloc and TCMalloc.")
 endif()
 
 mark_as_advanced(TSMallocReplacement_FOUND TS_HAS_MALLOC_REPLACEMENT)
@@ -57,6 +64,12 @@ if(TSMallocReplacement_FOUND AND NOT TARGET ts::TSMallocReplacement)
             INTERFACE
                 jemalloc::jemalloc
         )
+    elseif(TS_HAS_MIMALLOC)
+        add_library(mimalloc::mimalloc ALIAS mimalloc)
+        target_link_libraries(ts::TSMallocReplacement
+            INTERFACE
+                mimalloc::mimalloc
+    )
     elseif(TS_HAS_TCMALLOC)
         target_link_libraries(ts::TSMallocReplacement
             INTERFACE
