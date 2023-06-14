@@ -38,6 +38,9 @@ execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAI
 
 # Options
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
+option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
+option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
+option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")

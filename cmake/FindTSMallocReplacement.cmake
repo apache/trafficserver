@@ -22,6 +22,7 @@
 #     TSMallocReplacement_FOUND
 #     TS_HAS_MALLOC_REPLACEMENT
 #     TS_HAS_JEMALLOC
+#     TS_HAS_MIMALLOC
 #     TS_HAS_TCMALLOC
 #
 # and the following imported targets
@@ -29,28 +30,40 @@
 #     ts::TSMallocReplacement
 #
 
-find_package(jemalloc QUIET)
+if(ENABLE_JEMALLOC AND ENABLE_MIMALLOC)
+    message(FATAL_ERROR "Cannot build with both jemalloc and mimalloc.")
+elseif(ENABLE_JEMALLOC AND ENABLE_TCMALLOC)
+    message(FATAL_ERROR "Cannot build with both jemalloc and TCMalloc.")
+elseif(ENABLE_MIMALLOC AND ENABLE_TCMALLOC)
+    message(FATAL_ERROR "Cannot build with both mimalloc and TCMalloc.")
+endif()
+
+if(ENABLE_JEMALLOC)
+    find_package(jemalloc REQUIRED)
+endif()
 set(TS_HAS_JEMALLOC ${jemalloc_FOUND})
 
-find_package(mimalloc QUIET)
+if(ENABLE_MIMALLOC)
+    find_package(mimalloc REQUIRED)
+endif()
 set(TS_HAS_MIMALLOC ${mimalloc_FOUND})
 
-find_package(TCMalloc QUIET)
+if(ENABLE_TCMALLOC)
+    find_package(TCMalloc REQUIRED)
+endif()
 set(TS_HAS_TCMALLOC ${TCMalloc_FOUND})
 
 if(TS_HAS_JEMALLOC OR TS_HAS_MIMALLOC OR TS_HAS_TCMALLOC)
     set(TS_HAS_MALLOC_REPLACEMENT TRUE)
 endif()
 
-if(TS_HAS_JEMALLOC AND TS_HAS_MIMALLOC)
-    message(FATAL_ERROR "Cannot build with both jemalloc and mimalloc.")
-elseif(TS_HAS_JEMALLOC AND TS_HAS_TCMALLOC)
-    message(FATAL_ERROR "Cannot build with both jemalloc and TCMalloc.")
-elseif(TS_HAS_MIMALLOC AND TS_HAS_TCMALLOC)
-    message(FATAL_ERROR "Cannot build with both mimalloc and TCMalloc.")
-endif()
-
-mark_as_advanced(TSMallocReplacement_FOUND TS_HAS_MALLOC_REPLACEMENT)
+mark_as_advanced(
+    TSMallocReplacement_FOUND
+    TS_HAS_MALLOC_REPLACEMENT
+    TS_HAS_JEMALLOC
+    TS_HAS_MIMALLOC
+    TS_HAS_TCMALLOC
+)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(TSMallocReplacement
