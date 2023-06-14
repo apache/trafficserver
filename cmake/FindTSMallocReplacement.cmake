@@ -60,7 +60,7 @@ if(TSMallocReplacement_FOUND AND NOT TARGET ts::TSMallocReplacement)
     elseif(TS_HAS_TCMALLOC)
         target_link_libraries(ts::TSMallocReplacement
             INTERFACE
-                TCMalloc::TCMalloc
+                gperftools::TCMalloc
         )
     endif()
 endif()

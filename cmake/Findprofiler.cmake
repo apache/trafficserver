@@ -15,27 +15,35 @@
 #
 #######################
 
-# FindTCMalloc.cmake
+# Findprofiler.cmake
 #
 # This will define the following variables
 #
-#     TCMalloc_FOUND
-#     TCMalloc_LIBRARY
+#     profiler_FOUND
+#     profiler_LIBRARY
+#     profiler_INCLUDE_DIRS
 #
 # and the following imported targets
 #
-#     TCMalloc::TCMalloc
+#     profiler::profiler
 #
 
-# libtcmalloc.so symlink not created on OpenSUSE Leap 15.4
-find_library(TCMalloc_LIBRARY NAMES libtcmalloc libtcmalloc.so.4)
+find_library(profiler_LIBRARY NAMES profiler)
+find_path(profiler_INCLUDE_DIR NAMES profiler.h PATH_SUFFIXES gperftools)
 
-mark_as_advanced(TCMalloc_FOUND TCMalloc_LIBRARY)
+mark_as_advanced(profiler_FOUND profiler_LIBRARY profiler_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(TCMalloc REQUIRED_VARS TCMalloc_LIBRARY)
+find_package_handle_standard_args(profiler
+    REQUIRED_VARS profiler_LIBRARY profiler_INCLUDE_DIR
+)
 
-if(TCMalloc_FOUND AND NOT TARGET TCMalloc::TCMalloc)
-    add_library(gperftools::TCMalloc INTERFACE IMPORTED)
-    target_link_libraries(gperftools::TCMalloc INTERFACE "${TCMalloc_LIBRARY}")
+if(profiler_FOUND)
+    set(profiler_INCLUDE_DIRS ${profiler_INCLUDE_DIR})
+endif()
+
+if(profiler_FOUND AND NOT TARGET profiler::profiler)
+    add_library(gperftools::profiler INTERFACE IMPORTED)
+    target_include_directories(gperftools::profiler INTERFACE "${profiler_INCLUDE_DIRS}")
+    target_link_libraries(gperftools::profiler INTERFACE "${profiler_LIBRARY}")
 endif()

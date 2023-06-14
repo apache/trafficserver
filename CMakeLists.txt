@@ -88,25 +88,36 @@ CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
 
 # Find libraries
-find_package(TSMallocReplacement QUIET MODULE)
-if(TSMallocReplacement_FOUND)
-    link_libraries(ts::TSMallocReplacement)
-endif()
 find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
 endif()
+
 find_package(hwloc)
 if(hwloc_FOUND)
     set(TS_USE_HWLOC TRUE)
 endif()
+
 find_package(LibLZMA)
 if(LibLZMA_FOUND)
         set(HAVE_LZMA_H TRUE)
 endif()
+
 find_package(PCRE)
+
 include(FindOpenSSL)
 find_package(OpenSSL)
+
+find_package(profiler)
+if(profiler_FOUND)
+    set(TS_HAS_PROFILER TRUE)
+endif()
+
+find_package(TSMallocReplacement QUIET MODULE)
+if(TSMallocReplacement_FOUND)
+    link_libraries(ts::TSMallocReplacement)
+endif()
+
 find_package(ZLIB REQUIRED)
 
 # Find ccache
