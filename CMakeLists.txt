@@ -37,6 +37,7 @@ execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING
 execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Options
+option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
@@ -91,25 +92,36 @@ CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
 
 # Find libraries
-find_package(TSMallocReplacement QUIET MODULE)
-if(TSMallocReplacement_FOUND)
-    link_libraries(ts::TSMallocReplacement)
-endif()
 find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
 endif()
+
 find_package(hwloc)
 if(hwloc_FOUND)
     set(TS_USE_HWLOC TRUE)
 endif()
+
 find_package(LibLZMA)
 if(LibLZMA_FOUND)
         set(HAVE_LZMA_H TRUE)
 endif()
+
 find_package(PCRE)
+
 include(FindOpenSSL)
 find_package(OpenSSL)
+
+if(ENABLE_PROFILER)
+    find_package(profiler REQUIRED)
+    set(TS_HAS_PROFILER ${profiler_FOUND})
+endif()
+
+find_package(TSMallocReplacement QUIET MODULE)
+if(TSMallocReplacement_FOUND)
+    link_libraries(ts::TSMallocReplacement)
+endif()
+
 find_package(ZLIB REQUIRED)
 
 # Find ccache
