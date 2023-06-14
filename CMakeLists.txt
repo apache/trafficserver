@@ -37,6 +37,7 @@ execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING
 execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Options
+option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
@@ -108,8 +109,8 @@ find_package(PCRE)
 include(FindOpenSSL)
 find_package(OpenSSL)
 
-find_package(profiler)
-if(profiler_FOUND)
+if(ENABLE_PROFILER)
+    find_package(profiler REQUIRED)
     set(TS_HAS_PROFILER TRUE)
 endif()
 
