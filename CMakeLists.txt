@@ -105,6 +105,7 @@ find_package(ZLIB REQUIRED)
 include(find_ccache)
 
 # Check for IO faculties
+check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UNSPECIFIED)
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
 set(CMAKE_REQUIRED_LIBRARIES uring)
