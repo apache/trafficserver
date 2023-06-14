@@ -136,7 +136,7 @@ UDPPacket::free()
   p.conn = nullptr;
 
   if (this->_payload) {
-    _payload.release();
+    _payload.reset();
   }
   udpPacketAllocator.free(this);
 }
