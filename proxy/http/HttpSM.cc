@@ -5261,29 +5261,29 @@ HttpSM::get_outbound_sni() const
 bool
 HttpSM::apply_ip_allow_filter()
 {
+  bool result{true};
   // Method allowed on dest IP address check
   IpAllow::ACL acl = IpAllow::match(server_ip(), IpAllow::DST_ADDR);
 
   if (ip_allow_is_request_forbidden(acl)) {
     ip_allow_deny_request(acl);
-    return false;
-  }
-
-  if (HttpTransact::is_server_negative_cached(&t_state) == true &&
-      t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
+    result = false;
+  } else if (HttpTransact::is_server_negative_cached(&t_state) == true &&
+             t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
     call_transact_and_set_next_state(HttpTransact::OriginDown);
-    return false;
+    result = false;
   }
 
-  return true;
+  return result;
 }
 
 bool
 HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
 {
+  bool result{false};
   if (acl.isValid()) {
     if (acl.isDenyAll()) {
-      return true;
+      result = true;
     } else if (!acl.isAllowAll()) {
       if (method() != -1) {
         return !acl.isMethodAllowed(method());
@@ -5295,7 +5295,7 @@ HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
     }
   }
 
-  return false;
+  return result;
 }
 
 void
@@ -5303,7 +5303,7 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
 {
   if (is_debug_tag_set("ip_allow")) {
     ip_text_buffer ipb;
-    const char *method_str;
+    const char *method_str{};
     int method_str_len{};
     if (method() != -1) {
       method_str     = hdrtoken_index_to_wks(method());
@@ -5311,10 +5311,12 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
     } else {
       method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
     }
-    Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip(), ipb, sizeof(ipb)), acl.source_line());
-    SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
-            ats_ip_ntop(server_ip(), ipb, sizeof(ipb)));
+
+    const char *ntop_formatted = ats_ip_ntop(server_ip(), ipb, sizeof(ipb));
+    Warning("server '%s' prohibited by ip-allow policy at line %d", ntop_formatted, acl.source_line());
+    SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str, ntop_formatted);
   }
+
   t_state.current.retry_attempts.maximize(
     t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
   call_transact_and_set_next_state(HttpTransact::Forbidden);
