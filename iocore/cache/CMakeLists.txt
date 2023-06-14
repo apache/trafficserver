@@ -32,6 +32,9 @@ add_library(inkcache STATIC
     Store.cc
 )
 target_link_libraries(inkcache PRIVATE ZLIB::ZLIB)
+if(HAVE_LZMA_H)
+    target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
+endif()
 target_include_directories(inkcache PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
