@@ -437,6 +437,9 @@ private:
   void do_hostdb_reverse_lookup();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false, bool only_direct = false);
+  bool apply_ip_allow_filter();
+  bool ip_allow_is_request_forbidden(const IpAllow::ACL &acl);
+  void ip_allow_deny_request(const IpAllow::ACL &acl);
   void send_origin_throttled_response();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
   void do_cache_prepare_write();
@@ -518,6 +521,18 @@ private:
 
   /// Update the milestones to track time spent in the plugin API.
   void milestone_update_api_time();
+
+  sockaddr *
+  server_ip() const
+  {
+    return &t_state.current.server->dst_addr.sa;
+  };
+
+  int
+  method() const
+  {
+    return t_state.hdr_info.server_request.method_get_wksidx();
+  };
 
 public:
   // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213

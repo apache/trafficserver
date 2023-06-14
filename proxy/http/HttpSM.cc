@@ -5258,6 +5258,68 @@ HttpSM::get_outbound_sni() const
   return zret;
 }
 
+bool
+HttpSM::apply_ip_allow_filter()
+{
+  // Method allowed on dest IP address check
+  IpAllow::ACL acl = IpAllow::match(server_ip(), IpAllow::DST_ADDR);
+
+  if (ip_allow_is_request_forbidden(acl)) {
+    ip_allow_deny_request(acl);
+    return false;
+  }
+
+  if (HttpTransact::is_server_negative_cached(&t_state) == true &&
+      t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
+    call_transact_and_set_next_state(HttpTransact::OriginDown);
+    return false;
+  }
+
+  return true;
+}
+
+bool
+HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
+{
+  if (acl.isValid()) {
+    if (acl.isDenyAll()) {
+      return true;
+    } else if (!acl.isAllowAll()) {
+      if (method() != -1) {
+        return !acl.isMethodAllowed(method());
+      } else {
+        int method_str_len{};
+        auto method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
+        return !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
+      }
+    }
+  }
+
+  return false;
+}
+
+void
+HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
+{
+  if (is_debug_tag_set("ip_allow")) {
+    ip_text_buffer ipb;
+    const char *method_str;
+    int method_str_len{};
+    if (method() != -1) {
+      method_str     = hdrtoken_index_to_wks(method());
+      method_str_len = strlen(method_str);
+    } else {
+      method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
+    }
+    Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip(), ipb, sizeof(ipb)), acl.source_line());
+    SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+            ats_ip_ntop(server_ip(), ipb, sizeof(ipb)));
+  }
+  t_state.current.retry_attempts.maximize(
+    t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
+  call_transact_and_set_next_state(HttpTransact::Forbidden);
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -5319,50 +5381,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // Check for remap rule. If so, only apply ip_allow filter if it is activated (ip_allow_check_enabled_p set).
   // Otherwise, if no remap rule is defined, apply the ip_allow filter.
   if (!t_state.url_remap_success || t_state.url_map.getMapping()->ip_allow_check_enabled_p) {
-    // Method allowed on dest IP address check
-    sockaddr *server_ip    = &t_state.current.server->dst_addr.sa;
-    IpAllow::ACL acl       = IpAllow::match(server_ip, IpAllow::DST_ADDR);
-    bool deny_request      = false; // default is fail open.
-    int method             = t_state.hdr_info.server_request.method_get_wksidx();
-    int method_str_len     = 0;
-    const char *method_str = nullptr;
-
-    if (acl.isValid()) {
-      if (acl.isDenyAll()) {
-        deny_request = true;
-      } else if (!acl.isAllowAll()) {
-        if (method != -1) {
-          deny_request = !acl.isMethodAllowed(method);
-        } else {
-          method_str   = t_state.hdr_info.server_request.method_get(&method_str_len);
-          deny_request = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
-        }
-      }
-    }
-
-    if (deny_request) {
-      if (is_debug_tag_set("ip_allow")) {
-        ip_text_buffer ipb;
-        if (method != -1) {
-          method_str     = hdrtoken_index_to_wks(method);
-          method_str_len = strlen(method_str);
-        } else if (!method_str) {
-          method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
-        }
-        Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip, ipb, sizeof(ipb)),
-                acl.source_line());
-        SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
-                ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
-      }
-      t_state.current.retry_attempts.maximize(
-        t_state.configured_connect_attempts_max_retries()); // prevent any more retries with this IP
-      call_transact_and_set_next_state(HttpTransact::Forbidden);
-      return;
-    }
-
-    if (HttpTransact::is_server_negative_cached(&t_state) == true &&
-        t_state.txn_conf->connect_attempts_max_retries_down_server <= 0) {
-      call_transact_and_set_next_state(HttpTransact::OriginDown);
+    if (!apply_ip_allow_filter()) {
       return;
     }
   }
