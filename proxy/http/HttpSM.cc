@@ -5286,11 +5286,11 @@ HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
       result = true;
     } else if (!acl.isAllowAll()) {
       if (method() != -1) {
-        return !acl.isMethodAllowed(method());
+        result = !acl.isMethodAllowed(method());
       } else {
         int method_str_len{};
         auto method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
-        return !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
+        result          = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
       }
     }
   }
