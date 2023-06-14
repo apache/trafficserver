@@ -71,8 +71,4 @@ if (TS_USE_LINUX_NATIVE_AIO)
     target_link_libraries(traffic_server aio)
 endif (TS_USE_LINUX_NATIVE_AIO)
 
-if (TS_HAS_QUICHE)
-    set_target_properties(traffic_server PROPERTIES LINK_FLAGS "-Wl,-rpath,${QUICHE_LIBRARY_DIR}")
-endif (TS_HAS_QUICHE)
-
 install(TARGETS traffic_server)
