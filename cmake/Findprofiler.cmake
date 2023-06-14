@@ -15,35 +15,35 @@
 #
 #######################
 
-# Findmimalloc.cmake
+# Findprofiler.cmake
 #
 # This will define the following variables
 #
-#     mimalloc_FOUND
-#     mimalloc_LIBRARY
-#     mimalloc_INCLUDE_DIRS
+#     profiler_FOUND
+#     profiler_LIBRARY
+#     profiler_INCLUDE_DIRS
 #
 # and the following imported targets
 #
-#     mimalloc::mimalloc
+#     profiler::profiler
 #
 
-find_library(mimalloc_LIBRARY NAMES mimalloc)
-find_path(mimalloc_INCLUDE_DIR NAMES mimalloc.h PATH_SUFFIXES mimalloc)
+find_library(profiler_LIBRARY NAMES profiler)
+find_path(profiler_INCLUDE_DIR NAMES profiler.h)
 
-mark_as_advanced(mimalloc_FOUND mimalloc_LIBRARY mimalloc_INCLUDE_DIR)
+mark_as_advanced(profiler_FOUND profiler_LIBRARY profiler_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(mimalloc
-    REQUIRED_VARS mimalloc_LIBRARY mimalloc_INCLUDE_DIR
+find_package_handle_standard_args(profiler
+    REQUIRED_VARS profiler_LIBRARY profiler_INCLUDE_DIR
 )
 
-if(mimalloc_FOUND)
-    set(mimalloc_INCLUDE_DIRS "${mimalloc_INCLUDE_DIR}")
+if(profiler_FOUND)
+    set(profiler_INCLUDE_DIRS "${profiler_INCLUDE_DIR}")
 endif()
 
-if(mimalloc_FOUND AND NOT TARGET mimalloc::mimalloc)
-    add_library(mimalloc::mimalloc INTERFACE IMPORTED)
-    target_include_directories(mimalloc::mimalloc INTERFACE ${mimalloc_INCLUDE_DIRS})
-    target_link_libraries(mimalloc::mimalloc INTERFACE "${mimalloc_LIBRARY}")
+if(profiler_FOUND AND NOT TARGET profiler::profiler)
+    add_library(profiler::profiler INTERFACE IMPORTED)
+    target_include_directories(profiler::profiler INTERFACE ${profiler_INCLUDE_DIRS})
+    target_link_libraries(profiler::profiler INTERFACE "${profiler_LIBRARY}")
 endif()

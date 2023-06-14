@@ -65,6 +65,7 @@ if(TSMallocReplacement_FOUND AND NOT TARGET ts::TSMallocReplacement)
                 jemalloc::jemalloc
         )
     elseif(TS_HAS_MIMALLOC)
+        add_library(mimalloc::mimalloc ALIAS mimalloc)
         target_link_libraries(ts::TSMallocReplacement
             INTERFACE
                 mimalloc::mimalloc
