@@ -37,7 +37,6 @@
 #include "P_Cache.h"
 #include "P_Net.h"
 #include "PreWarmConfig.h"
-#include "PreWarmManager.h"
 #include "StatPages.h"
 #include "Log.h"
 #include "LogAccess.h"
@@ -5185,6 +5184,54 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
   call_transact_and_set_next_state(HttpTransact::Forbidden);
 }
 
+bool
+HttpSM::grab_pre_warmed_net_v_connection_if_possible(const TLSTunnelSupport &tts, int pid)
+{
+  bool result{false};
+
+  if (is_prewarm_enabled_or_sni_overridden(tts)) {
+    EThread *ethread = this_ethread();
+    _prewarm_sm      = ethread->prewarm_queue->dequeue(tts.create_dst(pid));
+
+    if (_prewarm_sm != nullptr) {
+      open_prewarmed_connection();
+      result = true;
+    } else {
+      SMDebug("http_ss", "no pre-warmed tunnel");
+    }
+  }
+
+  return result;
+}
+
+bool
+HttpSM::is_prewarm_enabled_or_sni_overridden(const TLSTunnelSupport &tts) const
+{
+  PreWarmConfig::scoped_config prewarm_conf;
+  bool result = prewarm_conf->enabled;
+
+  if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = tts.get_tunnel_prewarm_configuration();
+      sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
+    result = static_cast<bool>(sni_use_prewarm);
+  }
+
+  return result;
+}
+
+void
+HttpSM::open_prewarmed_connection()
+{
+  NetVConnection *netvc = _prewarm_sm->move_netvc();
+  ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+
+  SMDebug("http_ss", "using pre-warmed tunnel netvc=%p", netvc);
+
+  t_state.current.retry_attempts.clear();
+
+  ink_release_assert(default_handler == HttpSM::default_handler);
+  handleEvent(NET_EVENT_OPEN, netvc);
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -5466,40 +5513,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
         }
       }
 
-      //
-      // Grab pre-warmed NetVConnection if possible
-      //
-      PreWarmConfig::scoped_config prewarm_conf;
-      bool use_prewarm = prewarm_conf->enabled;
-
-      // override "proxy.config.tunnel.prewarm" by "tunnel_prewarm" in sni.yaml
-      if (YamlSNIConfig::TunnelPreWarm sni_use_prewarm = tts->get_tunnel_prewarm_configuration();
-          sni_use_prewarm != YamlSNIConfig::TunnelPreWarm::UNSET) {
-        use_prewarm = static_cast<bool>(sni_use_prewarm);
-      }
-
-      if (use_prewarm) {
-        // TODO: avoid copy of string -> make map key std::variant
-        PreWarm::SPtrConstDst dst =
-          std::make_shared<const PreWarm::Dst>(tts->get_tunnel_host(), tts->get_tunnel_port(),
-                                               tls_upstream ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
-
-        EThread *ethread = this_ethread();
-        _prewarm_sm      = ethread->prewarm_queue->dequeue(dst);
-
-        if (_prewarm_sm != nullptr) {
-          NetVConnection *netvc = _prewarm_sm->move_netvc();
-          ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
-
-          SMDebug("http_ss", "using pre-warmed tunnel netvc=%p", netvc);
-
-          t_state.current.retry_attempts.clear();
-
-          ink_release_assert(default_handler == HttpSM::default_handler);
-          handleEvent(NET_EVENT_OPEN, netvc);
-          return;
-        }
-        SMDebug("http_ss", "no pre-warmed tunnel");
+      if (grab_pre_warmed_net_v_connection_if_possible(*tts, pid)) {
+        return;
       }
     }
     opt.local_port = _ua.get_txn()->get_outbound_port();
