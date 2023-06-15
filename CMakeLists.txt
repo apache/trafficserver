@@ -39,6 +39,10 @@ execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAI
 # Options
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
+option(ENABLE_POSIX_CAP
+    "Use POSIX capabilities, turn OFF to use id switching. (default ON)"
+    ON
+)
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_POSIX_CAP
@@ -153,6 +157,7 @@ endif()
 find_package(ZLIB REQUIRED)
 
 include(Check128BitCas)
+include(CheckSOMark)
 
 # Find ccache
 include(find_ccache)

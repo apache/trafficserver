@@ -109,16 +109,18 @@
 const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #define TS_MAX_HOST_NAME_LEN @TS_MAX_HOST_NAME_LEN@
 
-/* Feature Flags */
 #cmakedefine01 TS_HAS_128BIT_CAS
 #cmakedefine01 TS_HAS_BACKTRACE
 #cmakedefine01 TS_HAS_IN6_IS_ADDR_UNSPECIFIED
 #cmakedefine01 TS_HAS_JEMALLOC
 #cmakedefine01 TS_HAS_TCMALLOC
 #cmakedefine01 TS_HAS_PROFILER
+#cmakedefine01 TS_HAS_SO_MARK
 #cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_EPOLL
 #cmakedefine01 TS_USE_FAST_SDK
+#cmakedefine01 TS_USE_DIAGS
+#cmakedefine01 TS_USE_EPOLL
 #cmakedefine01 TS_USE_GET_DH_2048_256
 #cmakedefine01 TS_USE_HWLOC
 #cmakedefine01 TS_USE_KQUEUE
