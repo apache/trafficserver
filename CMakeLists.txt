@@ -38,6 +38,10 @@ execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAI
 
 # Options
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
+option(ENABLE_POSIX_CAP
+    "Use POSIX capabilities, turn OFF to use id switching. (default ON)"
+    ON
+)
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
@@ -101,6 +105,21 @@ find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
 endif()
+
+if(ENABLE_POSIX_CAP)
+    find_package(cap REQUIRED)
+    set(TS_USE_POSIX_CAP ${cap_FOUND})
+    find_path(PRCTL_HEADER NAMES sys/prctl.h)
+    # just making sure
+    if(NOT PRCTL_HEADER)
+        message(FATAL_ERROR "Have cap but sys/prctl.h not found.")
+    endif()
+    set(HAVE_SYS_PRCTL_H TRUE)
+    unset(PRCTL_HEADER)
+else()
+    find_package(cap QUIET)
+endif()
+set(HAVE_SYS_CAPABILITY_H ${cap_FOUND})
 
 find_package(hwloc)
 if(hwloc_FOUND)
