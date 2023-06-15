@@ -114,11 +114,6 @@ test_proxy_http_LDADD = \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@
 
-if ENABLE_QUIC
-test_proxy_http_LDADD += \
-	$(top_builddir)/iocore/net/quic/libquic.a
-endif
-
 test_PreWarm_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
@@ -159,6 +154,11 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	-lz -llzma -lcrypto -lresolv -lssl \
 	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@
+
+if ENABLE_QUIC
+test_HttpTransact_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
 
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
