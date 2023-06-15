@@ -38,18 +38,21 @@ execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAI
 
 # Options
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
+option(ENABlE_FAST_SDK "Use fast SDK APIs (default OFF)")
+option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
+option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_POSIX_CAP
     "Use POSIX capabilities, turn OFF to use id switching. (default ON)"
     ON
 )
-option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
-option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(TS_USE_HWLOC "Use hwloc (default OFF)")
+
+set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
 
 set(TS_VERSION_MAJOR 10)
 set(TS_VERSION_MINOR 0)
@@ -58,6 +61,7 @@ set(TS_LIBTOOL_MAJOR ${TS_VERSION_MAJOR}${TS_VERSION_MINOR})
 set(TS_LIBTOOL_VERSION ${TS_LIBTOOL_MAJOR}:${TS_VERSION_MICRO}:${TS_VERSION_MINOR})
 set(TS_VERSION_STRING TS_VERSION_S)
 set(TS_VERSION_NUMBER TS_VERSION_N)
+
 
 # Check include files
 include(CheckIncludeFile)
