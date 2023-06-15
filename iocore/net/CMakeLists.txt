@@ -64,7 +64,7 @@ add_library(inknet STATIC
         SSLDynlock.cc
         SNIActionPerformer.cc
         )
-target_link_libraries(inknet inkevent records_p)
+target_link_libraries(inknet PUBLIC inkevent records_p)
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 target_include_directories(inknet PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
@@ -85,6 +85,9 @@ target_include_directories(inknet PRIVATE
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}
         )
+if(TS_USE_POSIX_CAP)
+    target_link_libraries(inknet PUBLIC cap::cap)
+endif()
 
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)

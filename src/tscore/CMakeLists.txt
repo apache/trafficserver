@@ -122,6 +122,9 @@ endif()
 if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
     target_compile_options(tscore PUBLIC "-mcx16")
 endif()
+if(TS_USE_POSIX_CAP)
+    target_link_libraries(tscore PUBLIC cap::cap)
+endif()
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc
