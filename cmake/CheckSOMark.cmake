@@ -17,7 +17,7 @@
 
 # CheckSoMark.cmake
 #
-# This will define the following variales
+# This will define the following variables
 #
 #     TS_HAS_SO_MARK
 #
