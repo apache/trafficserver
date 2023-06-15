@@ -48,7 +48,7 @@ ControlQUIC::SNIAction(TLSSNISupport *snis, const Context &ctx) const
 
   if (is_debug_tag_set("ssl_sni")) {
     const char *servername = quic_vc->get_server_name();
-    Debug("ssl_sni", "Rejecting handshake, fqdn [%s]", servername);
+    Debug("ssl_sni", "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
   }
 
   return SSL_TLSEXT_ERR_ALERT_FATAL;
