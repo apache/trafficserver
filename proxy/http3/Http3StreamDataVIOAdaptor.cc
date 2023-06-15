@@ -38,7 +38,8 @@ Http3StreamDataVIOAdaptor::interests()
 }
 
 Http3ErrorUPtr
-Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */,
+                                        Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::DATA);
   const Http3DataFrame *dframe = dynamic_cast<const Http3DataFrame *>(frame.get());

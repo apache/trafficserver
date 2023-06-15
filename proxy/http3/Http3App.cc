@@ -37,6 +37,7 @@
 #include "Http3DebugNames.h"
 #include "Http3Session.h"
 #include "Http3Transaction.h"
+#include "Http3ProtocolEnforcer.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
@@ -50,6 +51,9 @@ Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, co
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
+
+  this->_protocol_enforcer = new Http3ProtocolEnforcer();
+  this->_control_stream_dispatcher.add_handler(this->_protocol_enforcer);
 
   this->_settings_handler = new Http3SettingsHandler(this->_ssn);
   this->_control_stream_dispatcher.add_handler(this->_settings_handler);
@@ -212,7 +216,7 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   case Http3StreamType::CONTROL:
   case Http3StreamType::PUSH: {
     uint64_t nread = 0;
-    this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), *vio->get_reader(), nread);
+    this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
     // TODO: when PUSH comes from client, send stream error with HTTP_WRONG_STREAM_DIRECTION
     break;
   }
@@ -365,7 +369,7 @@ Http3SettingsHandler::interests()
 }
 
 Http3ErrorUPtr
-Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::SETTINGS);
 

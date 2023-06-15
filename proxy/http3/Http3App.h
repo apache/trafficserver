@@ -77,6 +77,7 @@ private:
 
   void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
 
+  Http3FrameHandler *_protocol_enforcer = nullptr;
   Http3FrameHandler *_settings_handler  = nullptr;
   Http3FrameGenerator *_settings_framer = nullptr;
 
@@ -96,7 +97,8 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
+  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
+                              Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
 private:
   // TODO: clarify Http3Session I/F for Http3SettingsHandler and Http3App
