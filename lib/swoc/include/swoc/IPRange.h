@@ -611,6 +611,13 @@ public:
   /// @return @c true if this is an IPv6 range.
   bool is_ip6() const;
 
+  /** Check if @a this range is the IP address @a family.
+   *
+   * @param family IP address family.
+   * @return @c true if this is @a family, @c false if not.
+   */
+  bool is(sa_family_t family) const;
+
   /// @return Reference to the viewed IPv4 range.
   IP4Range const& ip4() const;
 
@@ -1869,6 +1876,8 @@ IPRangeView::empty() const {
 inline bool IPRangeView::is_ip4() const { return AF_INET == _family; }
 
 inline bool IPRangeView::is_ip6() const { return AF_INET6 == _family; }
+
+inline bool IPRangeView::is(sa_family_t f) const { return f == _family; }
 
 inline IP4Range const & IPRangeView::ip4() const { return *_raw._4; }
 

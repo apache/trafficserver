@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(Lib-SWOC CXX)
-set(LIBSWOC_VERSION "1.5.0")
+set(LIBSWOC_VERSION "1.5.1")
 set(CMAKE_CXX_STANDARD 17)
 cmake_policy(SET CMP0087 NEW)
 # override "lib64" to be "lib" unless the user explicitly sets it.
