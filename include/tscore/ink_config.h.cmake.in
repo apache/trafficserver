@@ -79,6 +79,8 @@
 #cmakedefine HAVE_BIO_METH_GET_CREATE 1
 #cmakedefine HAVE_BIO_METH_GET_DESTROY 1
 
+#define SIZEOF_VOIDP @CMAKE_SIZEOF_VOID_P@
+
 /* TODO(cmcfarlen): make this configurable */
 #define TS_PKGSYSUSER "@pkgsysuser@"
 #define TS_PKGSYSGROUP "@pkgsysgroup@"
