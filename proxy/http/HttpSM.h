@@ -523,13 +523,13 @@ private:
   void milestone_update_api_time();
 
   sockaddr *
-  server_ip() const
+  get_server_ip() const
   {
     return &t_state.current.server->dst_addr.sa;
   };
 
   int
-  method() const
+  get_request_method() const
   {
     return t_state.hdr_info.server_request.method_get_wksidx();
   };
