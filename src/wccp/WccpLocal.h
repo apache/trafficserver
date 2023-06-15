@@ -22,15 +22,17 @@
 
 #pragma once
 
-#include "wccp/Wccp.h"
-#include "WccpUtil.h"
-#include "ts/apidefs.h"
-#include "tscore/Errata.h"
 // Needed for template use of byte ordering functions.
 #include <netinet/in.h>
 #include <memory.h>
 #include <map>
 #include <string_view>
+
+#include "swoc/MemSpan.h"
+
+#include "wccp/Wccp.h"
+#include "WccpUtil.h"
+#include "ts/apidefs.h"
 
 namespace YAML
 {
@@ -39,6 +41,9 @@ class Node;
 
 namespace wccp
 {
+
+using buffer_type = swoc::MemSpan<char>;
+
 // Forward declares
 namespace detail
 {
@@ -97,24 +102,16 @@ static int const PARSE_DATA_OVERRUN = 10;
     Takes the basic ATS buffer and adds a count field to track
     the amount of buffer in use.
 */
-class MsgBuffer : protected ts::Buffer
+class MsgBuffer
 {
 public:
-  using self_type  = MsgBuffer;  ///< Self reference type.
-  using super_type = ts::Buffer; ///< Parent type.
+  using self_type = MsgBuffer; ///< Self reference type.
 
   MsgBuffer(); ///< Default construct empty buffer.
-  /// Construct from ATS buffer.
-  MsgBuffer(super_type const &that ///< Instance to copy.
-  );
-  /// Construct from pointer and size.
-  MsgBuffer(void *ptr, ///< Pointer to buffer.
-            size_t n   ///< Size of buffer.
-  );
+  /// Construct from span.
+  MsgBuffer(buffer_type const &span);
   /// Assign a buffer.
-  MsgBuffer &set(void *ptr, ///< Pointer to buffer.
-                 size_t n   ///< Size of buffer.
-  );
+  MsgBuffer &assign(buffer_type const &span);
 
   /// Get the buffer size.
   size_t getSize() const;
@@ -137,7 +134,8 @@ public:
   /// Reset and zero the buffer.
   self_type &zero();
 
-  size_t _count; ///< Number of bytes in use.
+  buffer_type _base;   ///< Original pointer.
+  buffer_type _active; ///< Unprocessed data, always a suffix of @a _base.
 };
 
 /// Sect 4.4: Cache assignment method.
@@ -2063,8 +2061,7 @@ public:
   void fill_caps(detail::cache::RouterData const &router ///< Target router.
   );
   /// Parse message data, presumed to be of this type.
-  int parse(ts::Buffer const &buffer ///< Raw message data.
-  );
+  int parse(swoc::MemSpan<char> const &buffer);
 
   CacheIdComp m_cache_id;     ///< Web cache identity info.
   CacheViewComp m_cache_view; ///< Web cache view.
@@ -2090,7 +2087,7 @@ public:
   );
 
   /// Parse message data, presumed to be of this type.
-  int parse(ts::Buffer const &buffer ///< Raw message data.
+  int parse(buffer_type const &buffer ///< Raw message data.
   );
 
   RouterIdComp m_router_id;     ///< Router ID.
@@ -2123,7 +2120,7 @@ public:
   );
 
   /// Parse message data, presumed to be of this type.
-  int parse(ts::Buffer const &buffer ///< Raw message data.
+  int parse(buffer_type const &buffer ///< Raw message data.
   );
 
   // Only one of these should be present in an instance.
@@ -2153,7 +2150,7 @@ public:
   );
 
   /// Parse message data, presumed to be of this type.
-  int parse(ts::Buffer const &buffer ///< Raw message data.
+  int parse(buffer_type const &buffer ///< Raw message data.
   );
 
   QueryComp m_query; ///< Router Removal Query component.
@@ -2235,19 +2232,19 @@ public:
   */
   /// Process HERE_I_AM message.
   virtual ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
-                                   ts::Buffer const &data  ///< Buffer with message data.
+                                   buffer_type const &data ///< Buffer with message data.
   );
   /// Process I_SEE_YOU message.
   virtual ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
-                                   ts::Buffer const &data  ///< Buffer with message data.
+                                   buffer_type const &data ///< Buffer with message data.
   );
   /// Process REDIRECT_ASSIGN message.
   virtual ts::Errata handleRedirectAssign(IpHeader const &header, ///< IP packet data.
-                                          ts::Buffer const &data  ///< Buffer with message data.
+                                          buffer_type const &data ///< Buffer with message data.
   );
   /// Process REMOVAL_QUERY message.
   virtual ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
-                                        ts::Buffer const &data  ///< Buffer with message data.
+                                        buffer_type const &data ///< Buffer with message data.
   );
 
 protected:
@@ -2520,11 +2517,11 @@ protected:
   );
   /// Process HERE_I_AM message.
   ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
-                           ts::Buffer const &data  ///< Buffer with message data.
+                           buffer_type const &data ///< Buffer with message data.
                            ) override;
   /// Process REMOVAL_QUERY message.
   ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
-                                ts::Buffer const &data  ///< Message data.
+                                buffer_type const &data ///< Message data.
                                 ) override;
 
   /// Map Service Group ID to Service Group Data.
@@ -2632,7 +2629,7 @@ public:
 
   /// Process HERE_I_AM message.
   ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
-                           ts::Buffer const &data  ///< Buffer with message data.
+                           buffer_type const &data ///< Buffer with message data.
                            ) override;
   /// Perform all scheduled housekeeping functions.
   int housekeeping() override;
@@ -3208,68 +3205,65 @@ detail::Assignment::getMask() const
   return *m_mask_assign;
 }
 
-inline MsgBuffer::MsgBuffer() : super_type(), _count(0) {}
-inline MsgBuffer::MsgBuffer(super_type const &that) : super_type(that), _count(0) {}
-inline MsgBuffer::MsgBuffer(void *p, size_t n) : super_type(static_cast<char *>(p), n), _count(0) {}
+inline MsgBuffer::MsgBuffer() {}
+inline MsgBuffer::MsgBuffer(buffer_type const &span) : _base(span), _active(span) {}
 
 inline size_t
 MsgBuffer::getSize() const
 {
-  return _size;
+  return _base.size();
 }
 inline size_t
 MsgBuffer::getCount() const
 {
-  return _count;
+  return _active.size();
 }
 inline char *
 MsgBuffer::getBase()
 {
-  return _ptr;
+  return _base.data();
 }
 inline const char *
 MsgBuffer::getBase() const
 {
-  return _ptr;
+  return _base.data();
 }
 inline char *
 MsgBuffer::getTail()
 {
-  return _ptr + _count;
+  return _active.data();
 }
 inline size_t
 MsgBuffer::getSpace() const
 {
-  return _size - _count;
+  return _active.size();
 }
 inline MsgBuffer &
 MsgBuffer::reset()
 {
-  _count = 0;
+  _active = _base;
   return *this;
 }
 
 inline MsgBuffer &
-MsgBuffer::set(void *ptr, size_t n)
+MsgBuffer::assign(buffer_type const &span)
 {
-  _ptr   = static_cast<char *>(ptr);
-  _size  = n;
-  _count = 0;
+  _base = _active = span;
   return *this;
 }
 
 inline MsgBuffer &
 MsgBuffer::use(size_t n)
 {
-  _count += std::min(n, this->getSpace());
+  _active.remove_prefix(n);
   return *this;
 }
 
 inline MsgBuffer &
 MsgBuffer::zero()
 {
-  memset(_ptr, 0, _size);
-  _count = 0;
+  memset(_base, 0);
+  _active = _base;
   return *this;
 }
 
@@ -3619,7 +3613,7 @@ inline detail::cache::SeedRouter::SeedRouter() {}
 
 inline detail::cache::SeedRouter::SeedRouter(uint32_t addr) : m_addr(addr), m_count(0), m_xmit(0) {}
 
-inline BaseMsg::BaseMsg() : m_buffer(0, 0) {}
+inline BaseMsg::BaseMsg() {}
 inline MsgBuffer const &
 BaseMsg::buffer() const
 {

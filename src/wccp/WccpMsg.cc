@@ -1587,7 +1587,7 @@ detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
 
   if (m_buffer.getSize() < size) {
     ats_free(m_buffer.getBase());
-    m_buffer.set(ats_malloc(size), size);
+    m_buffer.assign(swoc::MemSpan<void>(ats_malloc(size), size).rebind<char>());
   }
   m_buffer.reset();
 
@@ -1690,7 +1690,7 @@ HereIAmMsg::fill_caps(detail::cache::RouterData const &router)
 }
 
 int
-HereIAmMsg::parse(ts::Buffer const &buffer)
+HereIAmMsg::parse(swoc::MemSpan<char> const &buffer)
 {
   int zret;
   this->setBuffer(buffer);
@@ -1760,7 +1760,7 @@ ISeeYouMsg::fill(detail::router::GroupData const &group, SecurityOption sec_opt,
 }
 
 int
-ISeeYouMsg::parse(ts::Buffer const &buffer)
+ISeeYouMsg::parse(buffer_type const &buffer)
 {
   int zret;
   this->setBuffer(buffer);
@@ -1814,7 +1814,7 @@ ISeeYouMsg::parse(ts::Buffer const &buffer)
 }
 // ------------------------------------------------------
 int
-RemovalQueryMsg::parse(ts::Buffer const &buffer)
+RemovalQueryMsg::parse(buffer_type const &buffer)
 {
   int zret;
   this->setBuffer(buffer);
