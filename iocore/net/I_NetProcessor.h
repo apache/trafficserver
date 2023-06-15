@@ -134,7 +134,7 @@ public:
     @return Action, that can be cancelled to cancel the accept. The
       port becomes free immediately.
    */
-  virtual Action *accept(Continuation *cont, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
+  virtual Action *accept(Continuation *cont, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS) = 0;
 
   /**
     Accepts incoming connections on port. Accept connections on port.
@@ -160,8 +160,9 @@ public:
       port becomes free immediately.
 
   */
-  virtual Action *main_accept(Continuation *cont, SOCKET listen_socket_in, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
-  virtual void stop_accept();
+  virtual Action *main_accept(Continuation *cont, SOCKET listen_socket_in, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS) = 0;
+
+  virtual void stop_accept() = 0;
 
   /**
     Open a NetVConnection for connection oriented I/O. Connects
@@ -181,8 +182,7 @@ public:
     @param options @see NetVCOptions.
 
   */
-
-  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr);
+  virtual Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr) = 0;
 
   /**
     Initializes the net processor. This must be called before the event threads are started.
@@ -225,15 +225,6 @@ public:
   // noncopyable
   NetProcessor(const NetProcessor &)            = delete;
   NetProcessor &operator=(const NetProcessor &) = delete;
-
-private:
-  /** @note Not implemented. */
-  virtual int
-  stop()
-  {
-    ink_release_assert(!"NetProcessor::stop not implemented");
-    return 1;
-  }
 };
 
 /**

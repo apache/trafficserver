@@ -109,7 +109,7 @@ QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
     QUICConfig::scoped_config params;
     this->_ctable = new QUICConnectionTable(params->connection_table_size());
   }
-  return (NetAccept *)new QUICPacketHandlerIn(opt, *this->_ctable, *this->_quiche_config);
+  return new QUICPacketHandlerIn(opt, *this->_ctable, *this->_quiche_config);
 }
 
 NetVConnection *

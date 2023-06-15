@@ -184,7 +184,7 @@ QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 Continuation *
 QUICPacketHandlerIn::_get_continuation()
 {
-  return static_cast<NetAccept *>(this);
+  return this;
 }
 
 void

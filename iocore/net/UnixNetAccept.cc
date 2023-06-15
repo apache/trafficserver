@@ -30,10 +30,6 @@ using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
 int NetAccept::accept_till_done = 1;
 
-// we need to protect naVec since it might be accessed
-// in different threads at the same time
-Ptr<ProxyMutex> naVecMutex;
-std::vector<NetAccept *> naVec;
 static void
 safe_delay(int msec)
 {

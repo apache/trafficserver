@@ -35,34 +35,28 @@ class UnixNetVConnection;
 //
 //////////////////////////////////////////////////////////////////
 struct UnixNetProcessor : public NetProcessor {
-public:
-  virtual Action *accept_internal(Continuation *cont, int fd, AcceptOptions const &opt);
+private:
+  Action *accept_internal(Continuation *cont, int fd, AcceptOptions const &opt);
 
-  Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = nullptr);
-  Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = nullptr);
-
+protected:
   virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
+
+public:
+  Action *accept(Continuation *cont, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS) override;
+  Action *main_accept(Continuation *cont, SOCKET listen_socket_in, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS) override;
+
+  void stop_accept() override;
+
+  Action *connect_re(Continuation *cont, sockaddr const *target, NetVCOptions *options = nullptr) override;
   NetVConnection *allocate_vc(EThread *t) override;
 
   void init() override;
   void init_socks() override;
 
-  Event *accept_thread_event;
-
   // offsets for per thread data structures
   off_t netHandler_offset;
   off_t pollCont_offset;
-
-  // we probably won't need these members
-  int n_netthreads;
-  EThread **netthreads;
 };
-
-TS_INLINE Action *
-NetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts)
-{
-  return static_cast<UnixNetProcessor *>(this)->connect_re_internal(cont, addr, opts);
-}
 
 extern UnixNetProcessor unix_netProcessor;
 
