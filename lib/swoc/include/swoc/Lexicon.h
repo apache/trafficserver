@@ -39,7 +39,7 @@ what(std::string_view const &fmt, Args &&...args) {
 }
 
 // Exported because inner classes in template classes cannot be used in partial specialization
-// which is required for tuple support. This should be remove next time there is a API changing
+// which is required for tuple support. This should be removed next time there is a API changing
 // release because tuple access is being deprecated.
 template < typename E > struct lexicon_pair_type {
   E _value;

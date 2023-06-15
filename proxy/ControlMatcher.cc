@@ -651,7 +651,7 @@ template <class Data, class MatchResult>
 void
 IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, MatchResult *result) const
 {
-  if (auto &&[range, data]{*ip_addrs.find(swoc::IPAddr(addr))}; !range.empty()) {
+  if (auto [range, data]{*ip_addrs.find(swoc::IPAddr(addr))}; !range.empty()) {
     ink_assert(data != nullptr);
     data->UpdateMatch(result, rdata);
   }
