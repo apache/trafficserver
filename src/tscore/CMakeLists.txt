@@ -119,6 +119,9 @@ target_link_libraries(tscore
 if(TS_USE_HWLOC)
     target_link_libraries(tscore PUBLIC hwloc::hwloc)
 endif()
+if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
+    target_compile_options(tscore PUBLIC "-mcx16")
+endif()
 
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc

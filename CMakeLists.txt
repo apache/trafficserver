@@ -129,6 +129,8 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
+include(Check128BitCas)
+
 # Find ccache
 include(find_ccache)
 
