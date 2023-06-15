@@ -157,6 +157,8 @@ include(Check128BitCas)
 # Find ccache
 include(find_ccache)
 
+include(CheckSoPeercred)
+
 # Check for IO faculties
 check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UNSPECIFIED)
 check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
