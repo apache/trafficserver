@@ -20,6 +20,6 @@ add_library(wccp SHARED
 	WccpConfig.cc  WccpEndPoint.cc  WccpMsg.cc  WccpStatic.cc
 )
 
-target_link_libraries(wccp PRIVATE libswoc)
+target_link_libraries(wccp PRIVATE libswoc tscore yaml-cpp::yaml-cpp)
 
 install(TARGETS wccp)
