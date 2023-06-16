@@ -44,12 +44,7 @@ ink_rwlock const INK_RWLOCK_INIT = PTHREAD_RWLOCK_INITIALIZER;
 ink_rwlock const INK_RWLOCK_INIT_NO_WRITER_STARVATION = PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP;
 #else
 // Testing indicates that for MacOS/Darwin and FreeBSD, pthread rwlocks always prevent writer starvation.
-//
 ink_rwlock const INK_RWLOCK_INIT_NO_WRITER_STARVATION = INK_RWLOCK_INIT;
-
-#if !(defined(darwin) || defined(freebsd))
-#warning "Use of ink_rwlock may result in writer starvation"
-#endif
 #endif
 
 inline void
@@ -57,7 +52,7 @@ ink_rwlock_rdlock(ink_rwlock *rw)
 {
   int error = pthread_rwlock_rdlock(rw);
   if (unlikely(error != 0)) {
-    ink_abort("pthread_rwlock_rdlock(%p) failed: %s (%d)", rw, strerror(error), error);
+    ink_abort("pthread_rwlock_rdlock(%p) failed: %s (%d)", static_cast<void *>(rw), strerror(error), error);
   }
 }
 
@@ -69,7 +64,7 @@ ink_rwlock_tryrdlock(ink_rwlock *rw)
     return false;
   }
   if (unlikely(error != 0)) {
-    ink_abort("pthread_rwlock_tryrdlock(%p) failed: %s (%d)", rw, strerror(error), error);
+    ink_abort("pthread_rwlock_tryrdlock(%p) failed: %s (%d)", static_cast<void *>(rw), strerror(error), error);
   }
   return true;
 }
@@ -79,7 +74,7 @@ ink_rwlock_wrlock(ink_rwlock *rw)
 {
   int error = pthread_rwlock_wrlock(rw);
   if (unlikely(error != 0)) {
-    ink_abort("pthread_rwlock_wrlock(%p) failed: %s (%d)", rw, strerror(error), error);
+    ink_abort("pthread_rwlock_wrlock(%p) failed: %s (%d)", static_cast<void *>(rw), strerror(error), error);
   }
 }
 
@@ -91,7 +86,7 @@ ink_rwlock_trywrlock(ink_rwlock *rw)
     return false;
   }
   if (unlikely(error != 0)) {
-    ink_abort("pthread_rwlock_trywrlock(%p) failed: %s (%d)", rw, strerror(error), error);
+    ink_abort("pthread_rwlock_trywrlock(%p) failed: %s (%d)", static_cast<void *>(rw), strerror(error), error);
   }
   return true;
 }
@@ -101,6 +96,6 @@ ink_rwlock_unlock(ink_rwlock *rw)
 {
   int error = pthread_rwlock_unlock(rw);
   if (unlikely(error != 0)) {
-    ink_abort("pthread_rwlock_unlock(%p) failed: %s (%d)", rw, strerror(error), error);
+    ink_abort("pthread_rwlock_unlock(%p) failed: %s (%d)", static_cast<void *>(rw), strerror(error), error);
   }
 }
