@@ -108,7 +108,7 @@ raw_stat_get_tlp(RecRawStatBlock *rsb, int id, EThread *ethread)
   if (ethread == nullptr) {
     ethread = this_ethread();
   }
-  return (((RecRawStat *)((char *)(ethread) + rsb->ethr_stat_offset)) + id);
+  return ((reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(ethread) + rsb->ethr_stat_offset)) + id);
 }
 
 inline int
