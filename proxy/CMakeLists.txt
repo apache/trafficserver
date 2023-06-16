@@ -35,7 +35,9 @@ add_library(proxy STATIC
         StatPages.cc
         Transform.cc
 )
-
+if(BUILD_REGRESSION_TESTING)
+    target_sources(proxy PRIVATE RegressionSM.cc)
+endif()
 set(PROXY_INCLUDE_DIRS
         ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/http

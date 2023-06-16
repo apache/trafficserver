@@ -37,6 +37,7 @@ execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING
 execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Options
+option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
@@ -208,6 +209,7 @@ check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_
 set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
 
 include(CTest)
+set(TS_HAS_TESTS ${BUILD_REGRESSION_TESTING})
 
 message("Configuring for ${HOST_OS}")
 

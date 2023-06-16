@@ -64,6 +64,9 @@ add_library(inknet STATIC
         SSLDynlock.cc
         SNIActionPerformer.cc
         )
+if(BUILD_REGRESSION_TESTING)
+    target_sources(inknet PRIVATE NetVCTest.cc)
+endif()
 target_link_libraries(inknet PUBLIC inkevent records_p)
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 target_include_directories(inknet PRIVATE
