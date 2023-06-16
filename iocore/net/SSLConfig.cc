@@ -852,7 +852,8 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
           SSLError("failed to attach client chain certificate from %s", client_cert.c_str());
           goto fail;
         }
-        X509_free(cert);
+        // Do not free cert becasue SSL_CTX_add_extra_chain_cert takes ownership of cert if it succeeds, unlike
+        // SSL_CTX_use_certificate.
         cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       }
 
