@@ -978,8 +978,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     ts::LocalBufferWriter<1024> hdr;
 
     IpEndpoint src_addr = s->client_info.src_addr;
-    if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_netvc()) {
-      const ProxyProtocol &pp = s->state_machine->ua_txn->get_netvc()->get_proxy_protocol_info();
+    if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->get_netvc()) {
+      const ProxyProtocol &pp = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
 
       if (pp.version != ProxyProtocolVersion::UNDEFINED) {
         src_addr = pp.src_addr;

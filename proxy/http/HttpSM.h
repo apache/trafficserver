@@ -38,6 +38,7 @@
 #include "I_EventSystem.h"
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"
+#include "HttpUserAgent.h"
 #include "UrlRewrite.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
@@ -82,16 +83,6 @@ using HttpSMHandler = int (HttpSM::*)(int, void *);
  */
 int64_t do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnection *vc_in, int conf);
 
-enum HttpVC_t {
-  HTTP_UNKNOWN = 0,
-  HTTP_UA_VC,
-  HTTP_SERVER_VC,
-  HTTP_TRANSFORM_VC,
-  HTTP_CACHE_READ_VC,
-  HTTP_CACHE_WRITE_VC,
-  HTTP_RAW_SERVER_VC
-};
-
 enum BackgroundFill_t {
   BACKGROUND_FILL_NONE = 0,
   BACKGROUND_FILL_STARTED,
@@ -100,20 +91,6 @@ enum BackgroundFill_t {
 };
 
 extern ink_mutex debug_sm_list_mutex;
-
-struct HttpVCTableEntry {
-  VConnection *vc;
-  MIOBuffer *read_buffer;
-  MIOBuffer *write_buffer;
-  VIO *read_vio;
-  VIO *write_vio;
-  HttpSMHandler vc_read_handler;
-  HttpSMHandler vc_write_handler;
-  HttpVC_t vc_type;
-  HttpSM *sm;
-  bool eos;
-  bool in_tunnel;
-};
 
 struct HttpVCTable {
   static const int vc_table_max_entries = 4;
@@ -347,7 +324,6 @@ public:
   UrlRewrite *m_remap = nullptr;
 
   History<HISTORY_DEFAULT_SIZE> history;
-  ProxyTransaction *ua_txn = nullptr;
 
   // _postbuf api
   int64_t postbuf_reader_avail();
@@ -569,9 +545,7 @@ private:
 
   HttpVCTable vc_table;
 
-  IOBufferReader *ua_raw_buffer_reader = nullptr;
-
-  HttpVCTableEntry *ua_entry     = nullptr;
+  HttpUserAgent _ua{};
   HttpVCTableEntry *server_entry = nullptr;
   ProxyTransaction *server_txn   = nullptr;
 
@@ -682,7 +656,7 @@ HttpTransact::State::state_machine_id() const
 inline ProxyTransaction *
 HttpSM::get_ua_txn()
 {
-  return ua_txn;
+  return _ua.get_txn();
 }
 
 inline ProxyTransaction *
@@ -772,7 +746,8 @@ HttpSM::txn_hook_get(TSHttpHookID id)
 inline bool
 HttpSM::is_transparent_passthrough_allowed()
 {
-  return (t_state.client_info.is_transparent && ua_txn->is_transparent_passthrough_allowed() && ua_txn->is_first_transaction());
+  return (t_state.client_info.is_transparent && _ua.get_txn()->is_transparent_passthrough_allowed() &&
+          _ua.get_txn()->is_first_transaction());
 }
 
 inline int64_t

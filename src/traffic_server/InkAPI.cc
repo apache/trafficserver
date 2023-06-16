@@ -5079,7 +5079,7 @@ TSHttpTxnSsnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_proxy_ssn() : nullptr);
+  return reinterpret_cast<TSHttpSsn>(sm->get_ua_txn() ? (TSHttpSsn)sm->get_ua_txn()->get_proxy_ssn() : nullptr);
 }
 
 // TODO: Is this still necessary ??
@@ -5887,8 +5887,8 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
 
-  sm->ua_txn->upstream_outbound_options.outbound_port = ats_ip_port_host_order(addr);
-  sm->ua_txn->set_outbound_ip(swoc::IPAddr(addr));
+  sm->get_ua_txn()->upstream_outbound_options.outbound_port = ats_ip_port_host_order(addr);
+  sm->get_ua_txn()->set_outbound_ip(swoc::IPAddr(addr));
   return TS_SUCCESS;
 }
 
@@ -5948,11 +5948,11 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
   }
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (nullptr == sm || nullptr == sm->ua_txn) {
+  if (nullptr == sm || nullptr == sm->get_ua_txn()) {
     return TS_ERROR;
   }
 
-  sm->ua_txn->set_outbound_transparent(flag);
+  sm->get_ua_txn()->set_outbound_transparent(flag);
   return TS_SUCCESS;
 }
 
@@ -5961,11 +5961,11 @@ TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_txn) {
+  if (nullptr == sm->get_ua_txn()) {
     return TS_ERROR;
   }
 
-  NetVConnection *vc = sm->ua_txn->get_netvc();
+  NetVConnection *vc = sm->get_ua_txn()->get_netvc();
   if (nullptr == vc) {
     return TS_ERROR;
   }
@@ -6001,11 +6001,11 @@ TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_txn) {
+  if (nullptr == sm->get_ua_txn()) {
     return TS_ERROR;
   }
 
-  NetVConnection *vc = sm->ua_txn->get_netvc();
+  NetVConnection *vc = sm->get_ua_txn()->get_netvc();
   if (nullptr == vc) {
     return TS_ERROR;
   }
@@ -8173,7 +8173,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   }
 
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->get_ua_txn());
   if (stream == nullptr) {
     url_obj.destroy();
     return TS_ERROR;
@@ -8209,7 +8209,7 @@ TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
   sdk_assert(stream_id != nullptr);
 
   auto *sm     = reinterpret_cast<HttpSM *>(txnp);
-  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->get_ua_txn());
   if (stream == nullptr) {
     return TS_ERROR;
   }
@@ -8226,7 +8226,7 @@ TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
   sdk_assert(priority != nullptr);
 
   auto *sm     = reinterpret_cast<HttpSM *>(txnp);
-  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->get_ua_txn());
   if (stream == nullptr) {
     return TS_ERROR;
   }
@@ -9122,7 +9122,7 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   HttpSM *sm = (HttpSM *)txnp;
   if (should_close) {
     sm->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
-    if (sm->ua_txn) {
+    if (sm->get_ua_txn()) {
       sm->set_ua_half_close_flag();
     }
   }

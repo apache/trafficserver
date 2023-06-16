@@ -1034,8 +1034,8 @@ HttpTransact::EndRemapRequest(State *s)
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   TxnDebug("http_trans", "EndRemapRequest host is %.*s", host_len, host);
-  if (s->state_machine->ua_txn) {
-    s->state_machine->ua_txn->set_default_inactivity_timeout(HRTIME_SECONDS(s->txn_conf->default_inactivity_timeout));
+  if (s->state_machine->get_ua_txn()) {
+    s->state_machine->get_ua_txn()->set_default_inactivity_timeout(HRTIME_SECONDS(s->txn_conf->default_inactivity_timeout));
   }
 
   // Setting enable_redirection according to HttpConfig (master or overridable). We
@@ -1164,13 +1164,14 @@ HttpTransact::EndRemapRequest(State *s)
       s->req_flavor = REQ_FLAVOR_REVPROXY;
     }
   }
-  s->reverse_proxy              = true;
-  s->server_info.is_transparent = s->state_machine->ua_txn ? s->state_machine->ua_txn->is_outbound_transparent() : false;
+  s->reverse_proxy = true;
+  s->server_info.is_transparent =
+    s->state_machine->get_ua_txn() ? s->state_machine->get_ua_txn()->is_outbound_transparent() : false;
 
 done:
   // We now set the active-timeout again, since it might have been changed as part of the remap rules.
-  if (s->state_machine->ua_txn) {
-    s->state_machine->ua_txn->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
+  if (s->state_machine->get_ua_txn()) {
+    s->state_machine->get_ua_txn()->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
   }
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -1552,8 +1553,8 @@ HttpTransact::HandleRequest(State *s)
       }
     }
     if (s->txn_conf->request_buffer_enabled &&
-        s->state_machine->ua_txn->has_request_body(s->hdr_info.request_content_length,
-                                                   s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+        s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
+                                                         s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
       TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, nullptr);
     }
   }
@@ -1886,7 +1887,7 @@ HttpTransact::OSDNSLookup(State *s)
       /* Transparent case: We tried to connect to client target address, failed and tried to use a different addr
        * but that failed to resolve therefore keep on with the CTA.
        */
-      s->dns_info.addr.assign(s->state_machine->ua_txn->get_netvc()->get_local_addr()); // fetch CTA
+      s->dns_info.addr.assign(s->state_machine->get_ua_txn()->get_netvc()->get_local_addr()); // fetch CTA
       s->dns_info.resolved_p    = true;
       s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_CLIENT;
       TxnDebug("http_seq", "DNS lookup unsuccessful, using client target address");
@@ -5388,9 +5389,9 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
         s->client_info.transfer_encoding != CHUNKED_ENCODING) {
-      // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
+      // In normal operation there will always be a get_ua_txn() at this point, but in one of the -R1  regression tests a request is
       // createdindependent of a transaction and this method is called, so we must null check
-      if (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported()) {
+      if (!s->state_machine->get_ua_txn() || s->state_machine->get_ua_txn()->is_chunked_encoding_supported()) {
         // See if we need to insert a chunked header
         if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
           if (s->txn_conf->post_check_content_length_enabled) {
@@ -5685,8 +5686,8 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   NetVConnection *vc = nullptr;
-  if (s->state_machine->ua_txn) {
-    vc = s->state_machine->ua_txn->get_netvc();
+  if (s->state_machine->get_ua_txn()) {
+    vc = s->state_machine->get_ua_txn()->get_netvc();
   }
 
   if (vc) {
@@ -5822,7 +5823,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
 
   if (s->current.server->keep_alive == HTTP_KEEPALIVE) {
     TxnDebug("http_hdrs", "Server is keep-alive.");
-  } else if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent() &&
+  } else if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
     /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
        re-open it because the 4-tuple may still be in the processing of shutting down. So if the server isn't
@@ -6551,8 +6552,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     return;
   }
 
-  if (s->state_machine->ua_txn) {
-    auto &acl              = s->state_machine->ua_txn->get_acl();
+  if (s->state_machine->get_ua_txn()) {
+    auto &acl              = s->state_machine->get_ua_txn()->get_acl();
     bool deny_request      = !acl.isValid();
     int method_str_len     = 0;
     const char *method_str = nullptr;
@@ -6959,9 +6960,9 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
     // check that the client protocol is HTTP/1.1 and the conf allows chunking or
     // the client protocol doesn't support chunked transfer coding (i.e. HTTP/1.0, HTTP/2, and HTTP/3)
-    if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_chunked_encoding_supported() &&
+    if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_chunked_encoding_supported() &&
         s->client_info.http_version == HTTP_1_1 && s->txn_conf->chunking_enabled == 1 &&
-        s->state_machine->ua_txn->is_chunked_encoding_supported() &&
+        s->state_machine->get_ua_txn()->is_chunked_encoding_supported() &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
         // we do not need chunked encoding for internal error messages
@@ -6997,8 +6998,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
-    } else if (s->hdr_info.trust_response_cl == false && s->state_machine->ua_txn &&
-               s->state_machine->ua_txn->is_chunked_encoding_supported() &&
+    } else if (s->hdr_info.trust_response_cl == false && s->state_machine->get_ua_txn() &&
+               s->state_machine->get_ua_txn()->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
       ka_action = KA_CLOSE;
@@ -7024,8 +7025,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
       if (s->client_info.proxy_connect_hdr) {
         heads->value_set(c_hdr_field_str, c_hdr_field_len, "close", 5);
-      } else if (s->state_machine->ua_txn != nullptr) {
-        s->state_machine->ua_txn->set_close_connection(*heads);
+      } else if (s->state_machine->get_ua_txn() != nullptr) {
+        s->state_machine->get_ua_txn()->set_close_connection(*heads);
       }
       s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     }
@@ -7986,7 +7987,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_proxy_ssn()->is_draining()) {
+  if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->get_proxy_ssn()->is_draining()) {
     HttpTransactHeaders::add_connection_close(outgoing_response);
   }
 
@@ -8057,7 +8058,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
   // If transparent and the forward server connection looks unhappy don't
   // keep alive the ua connection.
-  if ((s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent()) &&
+  if ((s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent()) &&
       (status_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || status_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
        status_code == HTTP_STATUS_BAD_GATEWAY || status_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
