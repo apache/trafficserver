@@ -85,7 +85,7 @@ public:
 
 protected:
   std::string _header;
-  const char *_header_wks;
+  const char *_header_wks = nullptr;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
