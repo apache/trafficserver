@@ -151,12 +151,6 @@ if(TSMallocReplacement_FOUND)
     link_libraries(ts::TSMallocReplacement)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_UNWIND)
-    find_package(unwind REQUIRED)
-    link_libraries(unwind::unwind)
-    set(TS_USE_REMOTE_UNWINDING TRUE)
-endif()
-
 find_package(ZLIB REQUIRED)
 
 include(Check128BitCas)
@@ -218,6 +212,12 @@ include(CTest)
 message("Configuring for ${HOST_OS}")
 
 if(HOST_OS STREQUAL "linux")
+    if(ENABLE_UNWIND)
+        find_package(unwind REQUIRED)
+        link_libraries(unwind::unwind)
+        set(TS_USE_REMOTE_UNWINDING TRUE)
+    endif()
+
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     set(CMAKE_HAVE_THREADS_LIBRARY 1)
