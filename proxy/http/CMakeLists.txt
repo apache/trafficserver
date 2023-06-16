@@ -40,6 +40,10 @@ add_library(http STATIC
         PreWarmConfig.cc
         PreWarmManager.cc
 )
+if(BUILD_REGRESSION_TESTING)
+    target_sources(http PRIVATE RegressionHttpTransact.cc)
+endif()
+
 target_include_directories(http PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}

@@ -31,6 +31,9 @@ add_library(inkcache STATIC
     RamCacheLRU.cc
     Store.cc
 )
+if(BUILD_REGRESSION_TESTING)
+    target_sources(inkcache PRIVATE CacheTest.cc)
+endif()
 target_link_libraries(inkcache PRIVATE ZLIB::ZLIB)
 if(HAVE_LZMA_H)
     target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
