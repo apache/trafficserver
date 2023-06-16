@@ -38,5 +38,5 @@ target_include_directories(records_p PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/utils
         )
-target_link_libraries(records_p tscore libswoc)
+target_link_libraries(records_p tscore libswoc yaml-cpp::yaml-cpp)
 install(TARGETS records_p)
