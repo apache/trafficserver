@@ -160,6 +160,7 @@ include(find_ccache)
 # Check for IO faculties
 check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UNSPECIFIED)
 check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
+check_symbol_exists(SO_PEERCRED "sys/socket.h" TS_HAS_SO_PEERCRED)
 check_symbol_exists(TLS1_3_VERSION "${OPENSSL_INCLUDE_DIR}/openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(OPENSSL_NO_TLS1_3 "${OPENSSL_INCLUDE_DIR}/ssl.h" TS_NO_USE_TLS13)
 if(TS_NO_USE_TLS13)
