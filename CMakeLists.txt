@@ -159,12 +159,12 @@ include(find_ccache)
 
 # Check for IO faculties
 check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UNSPECIFIED)
+check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
 check_symbol_exists(TLS1_3_VERSION "${OPENSSL_INCLUDE_DIR}/openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(OPENSSL_NO_TLS1_3 "${OPENSSL_INCLUDE_DIR}/ssl.h" TS_NO_USE_TLS13)
 if(TS_NO_USE_TLS13)
     set(TS_USE_TLS13 FALSE CACHE)
 endif()
-
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
 check_symbol_exists(kqueue "sys/event.h" TS_USE_KQUEUE)
 set(CMAKE_REQUIRED_LIBRARIES uring)

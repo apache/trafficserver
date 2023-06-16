@@ -116,6 +116,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_HAS_JEMALLOC
 #cmakedefine01 TS_HAS_TCMALLOC
 #cmakedefine01 TS_HAS_PROFILER
+#cmakedefine01 TS_HAS_SO_MARK
 #cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_EPOLL
 #cmakedefine01 TS_USE_FAST_SDK
