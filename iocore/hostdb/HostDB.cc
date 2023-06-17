@@ -1274,7 +1274,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
     ts::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
     std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
-    IntrusiveHashMap<RefCountCacheLinkage> &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
+    auto &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
     for (const auto &it : partMap) {
       auto *r = static_cast<HostDBRecord *>(it.item.get());
       if (r && !r->is_failed()) {
