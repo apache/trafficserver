@@ -34,7 +34,7 @@
 
 #include "I_EventSystem.h"
 #include "PoolableSession.h"
-#include "tscore/IntrusiveHashMap.h"
+#include "swoc/IntrusiveHashMap.h"
 
 class ProxyTransaction;
 class HttpSM;
@@ -76,8 +76,8 @@ public:
   }
 
 private:
-  using IPTable   = IntrusiveHashMap<PoolableSession::IPLinkage>;
-  using FQDNTable = IntrusiveHashMap<PoolableSession::FQDNLinkage>;
+  using IPTable   = swoc::IntrusiveHashMap<PoolableSession::IPLinkage>;
+  using FQDNTable = swoc::IntrusiveHashMap<PoolableSession::FQDNLinkage>;
 
 public:
   /** Check if a session matches address and host name.
