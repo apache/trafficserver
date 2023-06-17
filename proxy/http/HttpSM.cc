@@ -5263,7 +5263,7 @@ HttpSM::apply_ip_allow_filter()
 {
   bool result{true};
   // Method allowed on dest IP address check
-  IpAllow::ACL acl = IpAllow::match(get_server_ip(), IpAllow::DST_ADDR);
+  IpAllow::ACL acl = IpAllow::match(this->get_server_remote_addr(), IpAllow::DST_ADDR);
 
   if (ip_allow_is_request_forbidden(acl)) {
     ip_allow_deny_request(acl);
@@ -5285,8 +5285,8 @@ HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
     if (acl.isDenyAll()) {
       result = true;
     } else if (!acl.isAllowAll()) {
-      if (get_request_method() != -1) {
-        result = !acl.isMethodAllowed(get_request_method());
+      if (this->get_request_method_wksidx() != -1) {
+        result = !acl.isMethodAllowed(this->get_request_method_wksidx());
       } else {
         int method_str_len{};
         auto method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
@@ -5305,14 +5305,14 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
     ip_text_buffer ipb;
     const char *method_str{};
     int method_str_len{};
-    if (get_request_method() != -1) {
-      method_str     = hdrtoken_index_to_wks(get_request_method());
+    if (this->get_request_method_wksidx() != -1) {
+      method_str     = hdrtoken_index_to_wks(this->get_request_method_wksidx());
       method_str_len = strlen(method_str);
     } else {
       method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
     }
 
-    const char *ntop_formatted = ats_ip_ntop(get_server_ip(), ipb, sizeof(ipb));
+    const char *ntop_formatted = ats_ip_ntop(this->get_server_remote_addr(), ipb, sizeof(ipb));
     Warning("server '%s' prohibited by ip-allow policy at line %d", ntop_formatted, acl.source_line());
     SMDebug("ip_allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str, ntop_formatted);
   }

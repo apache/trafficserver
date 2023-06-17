@@ -522,17 +522,8 @@ private:
   /// Update the milestones to track time spent in the plugin API.
   void milestone_update_api_time();
 
-  sockaddr *
-  get_server_ip() const
-  {
-    return &t_state.current.server->dst_addr.sa;
-  };
-
-  int
-  get_request_method() const
-  {
-    return t_state.hdr_info.server_request.method_get_wksidx();
-  };
+  sockaddr *get_server_remote_addr() const;
+  int get_request_method_wksidx() const;
 
 public:
   // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
@@ -850,3 +841,15 @@ HttpSM::get_postbuf_clone_reader()
 {
   return this->_postbuf.get_post_data_buffer_clone_reader();
 }
+
+inline sockaddr *
+HttpSM::get_server_remote_addr() const
+{
+  return &t_state.current.server->dst_addr.sa;
+};
+
+inline int
+HttpSM::get_request_method_wksidx() const
+{
+  return t_state.hdr_info.server_request.method_get_wksidx();
+};
