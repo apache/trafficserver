@@ -113,6 +113,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_HAS_128BIT_CAS
 #cmakedefine01 TS_HAS_BACKTRACE
 #cmakedefine01 TS_HAS_IN6_IS_ADDR_UNSPECIFIED
+#cmakedefine01 TS_HAS_IP_TOS
 #cmakedefine01 TS_HAS_JEMALLOC
 #cmakedefine01 TS_HAS_TCMALLOC
 #cmakedefine01 TS_HAS_TESTS
