@@ -38,7 +38,7 @@ tr = Test.AddTestRun("Test records to yaml convert script -only renamed records.
 tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
 tr.Setup.Copy('legacy_config/old_records.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f old_records.config --output generated{file_suffix}.yaml --yaml'
-tr.Processes.Default.Stream = 'gold/renamed_records.out'
+tr.Processes.Default.Stream = 'gold/renamed_records.gold'
 f = tr.Disk.File(f"generated{file_suffix}.yaml")
 f.Content = "gold/renamed_records.yaml"
 
