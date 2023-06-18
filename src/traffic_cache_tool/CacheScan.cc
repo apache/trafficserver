@@ -86,7 +86,7 @@ CacheScan::unmarshal(HTTPHdrImpl *obj, intptr_t offset)
   } else if (obj->m_polarity == HTTP_TYPE_RESPONSE) {
     HDR_UNMARSHAL_STR(obj->u.resp.m_ptr_reason, offset);
   } else {
-    zret.push(0, 0, "Unknown Polarity of HTTPHdrImpl* obj");
+    zret.note("Unknown Polarity of HTTPHdrImpl* obj");
     return zret;
   }
 
@@ -131,7 +131,7 @@ CacheScan::unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset)
 
     // check if out of bounds
     if (!mf_mem.contains(reinterpret_cast<char *>(field))) {
-      zret.push(0, 0, "Out of bounds memory in the deserialized MIMEFieldBlockImpl");
+      zret.note("Out of bounds memory in the deserialized MIMEFieldBlockImpl");
       return zret;
     }
     if (field && field->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE) {
@@ -279,7 +279,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
     // stuff that didn't fit in the integral slots.
     int extra = sizeof(uint64_t) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
     if (extra >= len || extra < 0) {
-      zret.push(0, 0, "Invalid Fragment Count ", extra);
+      zret.note("Invalid Fragment Count {}", extra);
       return zret;
     }
     char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
@@ -311,7 +311,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
     tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
-      zret.push(0, 0, "HTTPInfo::request unmarshal failed");
+      zret.note("HTTPInfo::request unmarshal failed");
       return zret;
     }
     len                                    -= tmp;
@@ -327,7 +327,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
     tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
-      zret.push(0, 0, "HTTPInfo::response unmarshal failed");
+      zret.note("HTTPInfo::response unmarshal failed");
       return zret;
     }
     len -= tmp;
@@ -372,7 +372,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
 
     if (a->m_magic == CACHE_ALT_MAGIC_MARSHALED) {
       zret = this->unmarshal(const_cast<char *>(buf), length, block_ref);
-      if (zret.size()) {
+      if (zret.length()) {
         std::cerr << zret << std::endl;
         return zret;
       } else if (!a->m_request_hdr.m_http) {
