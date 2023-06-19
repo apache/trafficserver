@@ -1,6 +1,8 @@
-HTTP/2 200
-date: {}
-server: ATS/{}
+Response received:
+  :status: 200
+  server: ``
+  date: ``
+  age: ``
 ``
 microserverapachetrafficserver
 ``
