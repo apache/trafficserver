@@ -15,31 +15,10 @@
 #
 #######################
 
-set(CMAKE_SHARED_LIBRARY_PREFIX "")
+# GCC warns that -Wno-invalid-offset, set in top-level CMakeListsitxt,
+# is invalid for C language
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
 
-function(add_atsplugin name)
-  add_library(${name} MODULE ${ARGN})
-  set_target_properties(${name} PROPERTIES PREFIX "")
-  set_target_properties(${name} PROPERTIES SUFFIX ".so")
-  set_target_properties(${name} PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
-  install(TARGETS ${name} DESTINATION libexec/trafficserver)
-endfunction()
+add_atsplugin(healthchecks healthchecks.c)
 
-if(APPLE)
-  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
-endif()
-
-add_subdirectory(authproxy)
-add_subdirectory(background_fetch)
-add_subdirectory(cache_promote)
-add_subdirectory(cache_range_requests)
-add_subdirectory(cachekey)
-add_subdirectory(certifier)
-add_subdirectory(compress)
-add_subdirectory(conf_remap)
-add_subdirectory(esi)
-
-add_subdirectory(generator)
-
-add_subdirectory(healthchecks)
-add_subdirectory(xdebug)
+target_compile_options(healthchecks PRIVATE -Wall -Wextra)
