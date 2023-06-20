@@ -112,14 +112,16 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBCAP@ \
+	@YAMLCPP_LIBS@
 
 test_PreWarm_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_PreWarm_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
 	unit_tests/test_PreWarm.cc
@@ -153,7 +155,7 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	-lz -llzma -lcrypto -lresolv -lssl \
-	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@
+	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
 
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
