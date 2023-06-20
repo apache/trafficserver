@@ -23,37 +23,10 @@
 
 #pragma once
 
+#include "HttpVCTable.h"
+
 #include "I_IOBuffer.h"
-#include "I_VConnection.h"
-#include "I_VIO.h"
 #include "ProxyTransaction.h"
-
-class HttpSM;
-using HttpSMHandler = int (HttpSM::*)(int, void *);
-
-enum HttpVC_t {
-  HTTP_UNKNOWN = 0,
-  HTTP_UA_VC,
-  HTTP_SERVER_VC,
-  HTTP_TRANSFORM_VC,
-  HTTP_CACHE_READ_VC,
-  HTTP_CACHE_WRITE_VC,
-  HTTP_RAW_SERVER_VC
-};
-
-struct HttpVCTableEntry {
-  VConnection *vc;
-  MIOBuffer *read_buffer;
-  MIOBuffer *write_buffer;
-  VIO *read_vio;
-  VIO *write_vio;
-  HttpSMHandler vc_read_handler;
-  HttpSMHandler vc_write_handler;
-  HttpVC_t vc_type;
-  HttpSM *sm;
-  bool eos;
-  bool in_tunnel;
-};
 
 class HttpUserAgent
 {

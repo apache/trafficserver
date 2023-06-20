@@ -39,6 +39,7 @@
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"
 #include "HttpUserAgent.h"
+#include "HttpVCTable.h"
 #include "UrlRewrite.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
@@ -91,34 +92,6 @@ enum BackgroundFill_t {
 };
 
 extern ink_mutex debug_sm_list_mutex;
-
-struct HttpVCTable {
-  static const int vc_table_max_entries = 4;
-  explicit HttpVCTable(HttpSM *);
-
-  HttpVCTableEntry *new_entry();
-  HttpVCTableEntry *find_entry(VConnection *);
-  HttpVCTableEntry *find_entry(VIO *);
-  void remove_entry(HttpVCTableEntry *);
-  void cleanup_entry(HttpVCTableEntry *);
-  void cleanup_all();
-  bool is_table_clear() const;
-
-private:
-  HttpVCTableEntry vc_table[vc_table_max_entries];
-  HttpSM *sm = nullptr;
-};
-
-inline bool
-HttpVCTable::is_table_clear() const
-{
-  for (const auto &i : vc_table) {
-    if (i.vc != nullptr) {
-      return false;
-    }
-  }
-  return true;
-}
 
 struct HttpTransformInfo {
   HttpVCTableEntry *entry = nullptr;

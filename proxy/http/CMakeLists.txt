@@ -35,6 +35,7 @@ add_library(http STATIC
         HttpTransactCache.cc
         HttpTransactHeaders.cc
         HttpTunnel.cc
+        HttpVCTable.cc
         ConnectingEntry.cc
         ForwardedConfig.cc
         PreWarmConfig.cc

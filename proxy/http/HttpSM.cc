@@ -33,6 +33,7 @@
 #include "Http2ServerSession.h"
 #include "HttpDebugNames.h"
 #include "HttpSessionManager.h"
+#include "HttpVCTable.h"
 #include "P_Cache.h"
 #include "P_Net.h"
 #include "PreWarmConfig.h"
@@ -145,111 +146,6 @@ do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnecti
 }
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
-
-HttpVCTable::HttpVCTable(HttpSM *mysm)
-{
-  memset(&vc_table, 0, sizeof(vc_table));
-  sm = mysm;
-}
-
-HttpVCTableEntry *
-HttpVCTable::new_entry()
-{
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc == nullptr) {
-      vc_table[i].sm = sm;
-      return vc_table + i;
-    }
-  }
-
-  ink_release_assert(0);
-  return nullptr;
-}
-
-HttpVCTableEntry *
-HttpVCTable::find_entry(VConnection *vc)
-{
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc == vc) {
-      return vc_table + i;
-    }
-  }
-
-  return nullptr;
-}
-
-HttpVCTableEntry *
-HttpVCTable::find_entry(VIO *vio)
-{
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].read_vio == vio || vc_table[i].write_vio == vio) {
-      ink_assert(vc_table[i].vc != nullptr);
-      return vc_table + i;
-    }
-  }
-
-  return nullptr;
-}
-
-// bool HttpVCTable::remove_entry(HttpVCEntry* e)
-//
-//    Deallocates all buffers from the associated
-//      entry and re-initializes it's other fields
-//      for reuse
-//
-void
-HttpVCTable::remove_entry(HttpVCTableEntry *e)
-{
-  e->vc  = nullptr;
-  e->eos = false;
-  if (e->read_buffer) {
-    free_MIOBuffer(e->read_buffer);
-    e->read_buffer = nullptr;
-  }
-  if (e->write_buffer) {
-    free_MIOBuffer(e->write_buffer);
-    e->write_buffer = nullptr;
-  }
-  // Cannot reach in to checkout the netvc
-  // for remaining I/O operations because the netvc
-  // may have been deleted at this point and the pointer
-  // could be stale.
-  e->read_vio         = nullptr;
-  e->write_vio        = nullptr;
-  e->vc_read_handler  = nullptr;
-  e->vc_write_handler = nullptr;
-  e->vc_type          = HTTP_UNKNOWN;
-  e->in_tunnel        = false;
-}
-
-// bool HttpVCTable::cleanup_entry(HttpVCEntry* e)
-//
-//    Closes the associate vc for the entry,
-//     and the call remove_entry
-//
-void
-HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
-{
-  ink_assert(e->vc);
-  if (e->in_tunnel == false) {
-    if (e->vc_type == HTTP_SERVER_VC) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_cleanup_entry);
-    }
-    e->vc->do_io_close();
-    e->vc = nullptr;
-  }
-  remove_entry(e);
-}
-
-void
-HttpVCTable::cleanup_all()
-{
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc != nullptr) {
-      cleanup_entry(vc_table + i);
-    }
-  }
-}
 
 void
 initialize_thread_for_connecting_pools(EThread *thread)
