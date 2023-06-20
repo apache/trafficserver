@@ -5305,12 +5305,7 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
     ip_text_buffer ipb;
     const char *method_str{};
     int method_str_len{};
-    if (this->get_request_method_wksidx() != -1) {
-      method_str     = hdrtoken_index_to_wks(this->get_request_method_wksidx());
-      method_str_len = strlen(method_str);
-    } else {
-      method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
-    }
+    method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
 
     const char *ntop_formatted = ats_ip_ntop(this->get_server_remote_addr(), ipb, sizeof(ipb));
     Warning("server '%s' prohibited by ip-allow policy at line %d", ntop_formatted, acl.source_line());
