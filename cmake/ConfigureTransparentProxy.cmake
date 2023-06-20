@@ -67,7 +67,9 @@ else()
     if(ENABLE_TPROXY STREQUAL "AUTO")
         set(TS_USE_TPROXY FALSE)
     else()
-        message(FATAL_ERROR "ENABLE_TPROXY on but sockopt value not found")
+        message(FATAL_ERROR
+            "ENABLE_TPROXY on but IP_TRANSPARENT symbol not found"
+        )
     endif()
 endif()
 
