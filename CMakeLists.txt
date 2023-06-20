@@ -48,6 +48,17 @@ option(ENABLE_POSIX_CAP
 )
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
+set(ENABLE_TPROXY
+    "AUTO"
+    CACHE
+    STRING
+    "Use TPROXY to enable connection transparency. (default AUTO)
+        'AUTO' for local system default,
+        'NO', to disable,
+        'FORCE' to use built in default,
+        'X' where X is a number to use as the IP_TRANSPARENT sockopt,
+        anything else to enable."
+)
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
@@ -66,7 +77,6 @@ set(TS_VERSION_STRING TS_VERSION_S)
 set(TS_VERSION_NUMBER TS_VERSION_N)
 
 set(TS_HAS_WCCP ${ENABLE_WCCP})
-
 
 # Check include files
 include(CheckIncludeFile)
@@ -166,6 +176,7 @@ endif()
 find_package(ZLIB REQUIRED)
 
 include(Check128BitCas)
+include(ConfigureTransparentProxy)
 
 # Find ccache
 include(find_ccache)

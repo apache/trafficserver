@@ -107,6 +107,7 @@
 
 /* Build definitions */
 const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
+#define TS_IP_TRANSPARENT @TS_IP_TRANSPARENT@
 #define TS_MAX_HOST_NAME_LEN @TS_MAX_HOST_NAME_LEN@
 
 /* Feature Flags */
@@ -132,6 +133,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_REMOTE_UNWINDING
 #cmakedefine01 TS_USE_SET_RBIO
 #cmakedefine01 TS_USE_TLS13
+#cmakedefine01 TS_USE_TPROXY
 
 #define TS_BUILD_CANONICAL_HOST "@CMAKE_HOST@"
 
