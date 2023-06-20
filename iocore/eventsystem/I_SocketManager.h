@@ -82,6 +82,9 @@ int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 int send(int fd, void *buf, int len, int flags);
 int sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen);
 int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
+#ifdef HAVE_RECVMMSG
+int recvmmsg(int fd, struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout, void *pOLP = nullptr);
+#endif
 int64_t lseek(int fd, off_t offset, int whence);
 int fsync(int fildes);
 int poll(struct pollfd *fds, unsigned long nfds, int timeout);

@@ -36,6 +36,7 @@
 
 #include "P_Net.h"
 #include "P_UDPNet.h"
+#include "tscore/ink_inet.h"
 
 #include <math.h>
 #include <netinet/udp.h>
@@ -52,6 +53,11 @@ using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 ClassAllocator<UDPPacket> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
+
+namespace
+{
+const uint32_t MAX_RECEIVE_MSG_PER_CALL{16}; //< VLEN parameter for the recvmmsg call.
+};                                           // namespace
 
 UDPPacket *
 UDPPacket::new_UDPPacket()
@@ -310,10 +316,40 @@ get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_in6 *toaddr)
 #endif
   return false;
 }
+
+unsigned int
+build_iovec_block_chain(unsigned max_niov, int64_t size_index, Ptr<IOBufferBlock> &chain, struct iovec *out_tiovec)
+{
+  unsigned int niov;
+  IOBufferBlock *b, *last;
+
+  // build struct iov
+  // reuse the block in chain if available
+  b    = chain.get();
+  last = nullptr;
+  for (niov = 0; niov < max_niov; niov++) {
+    if (b == nullptr) {
+      b = new_IOBufferBlock();
+      b->alloc(size_index);
+      if (last == nullptr) {
+        chain = b;
+      } else {
+        last->next = b;
+      }
+    }
+
+    out_tiovec[niov].iov_base = b->buf();
+    out_tiovec[niov].iov_len  = b->block_size();
+
+    last = b;
+    b    = b->next.get();
+  }
+  return niov;
+}
 } // namespace
 
 void
-UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc)
+UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
   UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
 
@@ -335,30 +371,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
   do {
     // create IOBufferBlock chain to receive data
-    unsigned int niov;
-    IOBufferBlock *b, *last;
-
-    // build struct iov
-    // reuse the block in chain if available
-    b    = chain.get();
-    last = nullptr;
-    for (niov = 0; niov < max_niov; niov++) {
-      if (b == nullptr) {
-        b = new_IOBufferBlock();
-        b->alloc(size_index);
-        if (last == nullptr) {
-          chain = b;
-        } else {
-          last->next = b;
-        }
-      }
-
-      tiovec[niov].iov_base = b->buf();
-      tiovec[niov].iov_len  = b->block_size();
-
-      last = b;
-      b    = b->next.get();
-    }
+    unsigned int niov = build_iovec_block_chain(max_niov, size_index, chain, tiovec);
 
     // build struct msghdr
     sockaddr_in6 fromaddr;
@@ -417,26 +430,25 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 #endif
     }
 
+    // If we got the gso size, then we need to find out in how many parts this was spliced.
     int const parts = gso_size ? static_cast<int>(ceil(static_cast<double>(r) / static_cast<double>(gso_size))) : 1;
     Debug("udp-read", "Received %ld bytes. gso_size %ld. Ready to process the payload in %d parts(%s)", r, gso_size, parts,
           (parts > 1 ? "GRO" : "No GRO"));
-    int64_t total_remaining = r;
 
-    for (auto f = 0; f < parts; f++) {
-      b                     = chain.get();
-      int64_t this_packet_r = gso_size ? std::min(gso_size, total_remaining) : total_remaining;
-      while (b && this_packet_r > 0) {
+    IOBufferBlock *block;
+    for (auto part = 0; part < parts; part++) {
+      block                 = chain.get();
+      int64_t this_packet_r = gso_size ? std::min(gso_size, r) : r;
+      while (block && this_packet_r > 0) {
         if (this_packet_r > buffer_size) {
-          b->fill(buffer_size);
-          total_remaining -= this_packet_r;
-          this_packet_r   -= buffer_size;
-          b                = b->next.get();
+          block->fill(buffer_size);
+          this_packet_r -= buffer_size;
+          block          = block->next.get();
         } else {
-          b->fill(this_packet_r);
-          total_remaining -= this_packet_r;
-          this_packet_r    = 0;
-          next_chain       = b->next.get();
-          b->next          = nullptr;
+          block->fill(this_packet_r);
+          this_packet_r = 0;
+          next_chain    = block->next.get();
+          block->next   = nullptr;
         }
       }
       Debug("udp-read", "Creating packet");
@@ -464,6 +476,171 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     nh->udp_callbacks.enqueue(uc);
     uc->onCallbackQueue = 1;
   }
+}
+
+#ifdef HAVE_RECVMMSG
+void
+UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc)
+{
+  UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
+
+  std::array<Ptr<IOBufferBlock>, MAX_RECEIVE_MSG_PER_CALL> buffer_chain;
+  unsigned max_niov = 32;
+#ifdef SOL_UDP
+  int64_t gso_size{0};
+#endif
+
+  struct mmsghdr mmsg[MAX_RECEIVE_MSG_PER_CALL];
+  struct iovec tiovec[MAX_RECEIVE_MSG_PER_CALL][max_niov];
+
+  // Addresses
+  sockaddr_in6 fromaddr[MAX_RECEIVE_MSG_PER_CALL];
+  sockaddr_in6 toaddr[MAX_RECEIVE_MSG_PER_CALL];
+  int toaddr_len = sizeof(toaddr);
+
+  size_t total_bytes_read{0};
+
+  static const size_t cmsg_size
+  {
+    CMSG_SPACE(sizeof(int))
+#ifdef IP_PKTINFO
+    +CMSG_SPACE(sizeof(struct in_pktinfo))
+#endif
+#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
+      + CMSG_SPACE(sizeof(struct in6_pktinfo))
+#endif
+#ifdef IP_RECVDSTADDR
+      + CMSG_SPACE(sizeof(struct in_addr))
+#endif
+#ifdef UDP_GRO
+      + CMSG_SPACE(sizeof(uint16_t))
+#endif
+  };
+
+  // Ancillary data.
+  char control[MAX_RECEIVE_MSG_PER_CALL][cmsg_size];
+
+  int64_t size_index  = BUFFER_SIZE_INDEX_2K;
+  int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
+  // The max length of receive buffer is 32 * buffer_size (2048) = 65536 bytes.
+  // Because the 'UDP Length' is type of uint16_t defined in RFC 768.
+  // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
+
+  for (uint32_t msg_num = 0; msg_num < MAX_RECEIVE_MSG_PER_CALL; msg_num++) {
+    // build each block chain.
+    unsigned int niov = build_iovec_block_chain(max_niov, size_index, buffer_chain[msg_num], tiovec[msg_num]);
+
+    mmsg[msg_num].msg_hdr.msg_iov     = tiovec[msg_num];
+    mmsg[msg_num].msg_hdr.msg_iovlen  = niov;
+    mmsg[msg_num].msg_hdr.msg_name    = &fromaddr[msg_num];
+    mmsg[msg_num].msg_hdr.msg_namelen = sizeof(fromaddr[msg_num]);
+    memset(control[msg_num], 0, cmsg_size);
+    mmsg[msg_num].msg_hdr.msg_control    = control[msg_num];
+    mmsg[msg_num].msg_hdr.msg_controllen = cmsg_size;
+  }
+
+  const int return_val = SocketManager::recvmmsg(uc->getFd(), mmsg, MAX_RECEIVE_MSG_PER_CALL, MSG_WAITFORONE, nullptr);
+
+  if (return_val <= 0) {
+    Debug("udp-read", "Done. recvmmsg() ret is %d, errno %s", return_val, strerror(errno));
+    return;
+  }
+  Debug("udp-read", "recvmmsg() read %d packets", return_val);
+
+  Ptr<IOBufferBlock> chain, next_chain;
+  for (auto packet_num = 0; packet_num < return_val; packet_num++) {
+    gso_size = 0;
+
+    Debug("udp-read", "Processing message %d from a total of %d", packet_num, return_val);
+    struct msghdr &mhdr = mmsg[packet_num].msg_hdr;
+
+    if (mhdr.msg_flags & MSG_TRUNC) {
+      Debug("udp-read", "The UDP packet is truncated");
+      break;
+    }
+
+    if (mhdr.msg_namelen <= 0) {
+      Debug("udp-read", "Unable to get remote address from recvmmsg() for fd: %d", uc->getFd());
+      return;
+    }
+
+    safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]), &toaddr_len);
+    if (mhdr.msg_controllen > 0) {
+      for (auto cmsg = CMSG_FIRSTHDR(&mhdr); cmsg != nullptr; cmsg = CMSG_NXTHDR(&mhdr, cmsg)) {
+        if (get_ip_address_from_cmsg(cmsg, &toaddr[packet_num])) {
+          break;
+        }
+#ifdef SOL_UDP
+        if (UDP_GRO == cmsg->cmsg_type) {
+          if (nh->is_gro_enabled()) {
+            gso_size = *reinterpret_cast<uint16_t *>(CMSG_DATA(cmsg));
+          }
+          break;
+        }
+#endif
+      }
+    }
+
+    const int64_t received  = mmsg[packet_num].msg_len;
+    total_bytes_read       += received;
+
+    // If we got the gso size, then we need to find out in how many parts this was spliced.
+    int const parts = gso_size ? static_cast<int>(ceil(static_cast<double>(received) / static_cast<double>(gso_size))) : 1;
+
+    Debug("udp-read", "Received %ld bytes. gso_size %ld. Ready to process the payload in %d parts(%s)", received, gso_size, parts,
+          (parts > 1 ? "GRO" : "No GRO"));
+
+    auto chain = buffer_chain[packet_num];
+    IOBufferBlock *block;
+    for (auto part = 0; part < parts; part++) {
+      block                 = chain.get();
+      int64_t this_packet_r = gso_size ? std::min(gso_size, received) : received;
+      while (block && this_packet_r > 0) {
+        if (this_packet_r > buffer_size) {
+          block->fill(buffer_size);
+          this_packet_r -= buffer_size;
+          block          = block->next.get();
+        } else {
+          block->fill(this_packet_r);
+          this_packet_r = 0;
+          next_chain    = block->next.get();
+          block->next   = nullptr;
+        }
+      }
+
+      // create packet
+      UDPPacket *p =
+        UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr[packet_num]), ats_ip_sa_cast(&toaddr[packet_num]), chain);
+      p->setConnection(uc);
+      // queue onto the UDPConnection
+      uc->inQueue.push(p);
+
+      // reload the unused block
+      chain      = next_chain;
+      next_chain = nullptr;
+    }
+  }
+  Debug("udp-read", "Total bytes read %ld from %d packets.", total_bytes_read, return_val);
+
+  // if not already on to-be-called-back queue, then add it.
+  if (!uc->onCallbackQueue) {
+    ink_assert(uc->callback_link.next == nullptr);
+    ink_assert(uc->callback_link.prev == nullptr);
+    uc->AddRef();
+    nh->udp_callbacks.enqueue(uc);
+    uc->onCallbackQueue = 1;
+  }
+}
+#endif
+
+void
+UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc)
+{
+#if HAVE_RECVMMSG
+  read_multiple_messages_from_net(nh, xuc);
+#else
+  read_single_message_from_net(nh, xuc);
+#endif
 }
 
 int
@@ -953,7 +1130,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   bool need_bind     = true;
 
   if (fd == -1) {
-    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
       goto Lerror;
     }
     fd = res;

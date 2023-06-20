@@ -53,6 +53,10 @@ public:
 
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
+
+private:
+  void read_single_message_from_net(UDPNetHandler *nh, UDPConnection *uc);
+  void read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc);
 };
 
 extern UDPNetProcessorInternal udpNetInternal;
