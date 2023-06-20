@@ -51,6 +51,18 @@ option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
+set(TS_MAX_EVENT_THREADS
+    4096
+    CACHE
+    STRING
+    "Max number of event threads (default 4096)"
+)
+set(TS_MAX_THREADS_PER_TYPE
+    3072
+    CACHE
+    STRING
+    "Max number of threads per event type (default 3072)"
+)
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(TS_USE_HWLOC "Use hwloc (default OFF)")
