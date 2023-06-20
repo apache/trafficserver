@@ -62,6 +62,18 @@ set(ENABLE_TPROXY
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
+set(MAX_EVENT_THREADS
+    4096
+    CACHE
+    STRING
+    "Max number of event threads (default 4096)"
+)
+set(MAX_THREADS_PER_TYPE
+    3072
+    CACHE
+    STRING
+    "Max number of threads per event type (default 3072)"
+)
 set(TS_USE_SET_RBIO 1 CACHE STRING "Use openssl set_rbio (default 1)")
 set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(TS_USE_HWLOC "Use hwloc (default OFF)")
@@ -77,6 +89,8 @@ set(TS_VERSION_STRING TS_VERSION_S)
 set(TS_VERSION_NUMBER TS_VERSION_N)
 
 set(TS_HAS_WCCP ${ENABLE_WCCP})
+set(TS_MAX_NUMBER_EVENT_THREADS ${MAX_EVENT_THREADS})
+set(TS_MAX_THREADS_IN_EACH_THREAD_TYPE ${MAX_THREADS_PER_TYPE})
 
 # Check include files
 include(CheckIncludeFile)
