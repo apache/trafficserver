@@ -92,7 +92,7 @@ struct AIOCallbackInternal : public AIOCallback {
   ink_hrtime sleep_time = 0;
   SLINK(AIOCallbackInternal, alink); /* for AIO_Reqs::aio_temp_list */
 #if TS_USE_LINUX_IO_URING
-  iovec iovec                  = {}; // this is to support older kernels that only support readv/writev
+  iovec iov                    = {}; // this is to support older kernels that only support readv/writev
   AIOCallbackInternal *this_op = nullptr;
   AIOCallbackInternal *aio_op  = nullptr;
 

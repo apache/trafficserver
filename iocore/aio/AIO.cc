@@ -561,9 +561,9 @@ prep_read(io_uring_sqe *sqe, AIOCallbackInternal *op)
 void
 prep_readv(io_uring_sqe *sqe, AIOCallbackInternal *op)
 {
-  op->iovec.iov_len  = op->aiocb.aio_nbytes;
-  op->iovec.iov_base = op->aiocb.aio_buf;
-  io_uring_prep_readv(sqe, op->aiocb.aio_fildes, &op->iovec, 1, op->aiocb.aio_offset);
+  op->iov.iov_len  = op->aiocb.aio_nbytes;
+  op->iov.iov_base = op->aiocb.aio_buf;
+  io_uring_prep_readv(sqe, op->aiocb.aio_fildes, &op->iov, 1, op->aiocb.aio_offset);
 }
 
 void
@@ -575,9 +575,9 @@ prep_write(io_uring_sqe *sqe, AIOCallbackInternal *op)
 void
 prep_writev(io_uring_sqe *sqe, AIOCallbackInternal *op)
 {
-  op->iovec.iov_len  = op->aiocb.aio_nbytes;
-  op->iovec.iov_base = op->aiocb.aio_buf;
-  io_uring_prep_writev(sqe, op->aiocb.aio_fildes, &op->iovec, 1, op->aiocb.aio_offset);
+  op->iov.iov_len  = op->aiocb.aio_nbytes;
+  op->iov.iov_base = op->aiocb.aio_buf;
+  io_uring_prep_writev(sqe, op->aiocb.aio_fildes, &op->iov, 1, op->aiocb.aio_offset);
 }
 
 using prep_op = void (*)(io_uring_sqe *, AIOCallbackInternal *);
