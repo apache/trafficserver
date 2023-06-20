@@ -349,7 +349,6 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   size_t buf_len{0};
   uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
-
   net_activity(this, this_ethread());
   quiche_recv_info recv_info = {
     &packet->from.sa,
