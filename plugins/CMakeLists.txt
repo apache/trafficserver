@@ -39,5 +39,7 @@ add_subdirectory(compress)
 add_subdirectory(conf_remap)
 add_subdirectory(esi)
 
+add_subdirectory(header_rewrite)
+
 add_subdirectory(generator)
 add_subdirectory(xdebug)
