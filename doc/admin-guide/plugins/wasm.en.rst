@@ -102,9 +102,8 @@ The plugin can also take more than one yaml file as arguments and can thus load 
 TODO
 ====
 
-* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime.
+* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime later.
 * Need to support functionality for retrieving and setting request/response body
-* Need to support functionality for making async request call
 * Need to support L4 lifecycle handler functions
 
 Limitations

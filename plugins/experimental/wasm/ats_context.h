@@ -42,9 +42,14 @@
 
 namespace ats_wasm
 {
+const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
+const int LOCAL_PORT                = 8080;
+const int FETCH_EVENT_ID_BASE       = 10000;
+
 using proxy_wasm::ContextBase;
 using proxy_wasm::PluginBase;
 using proxy_wasm::WasmResult;
+using proxy_wasm::WasmStreamType;
 using proxy_wasm::BufferInterface;
 using proxy_wasm::BufferBase;
 using proxy_wasm::WasmHeaderMapType;
@@ -174,6 +179,27 @@ public:
 
   BufferInterface *getBuffer(WasmBufferType type) override;
 
+  WasmResult httpCall(std::string_view target, const Pairs & request_headers ,
+                      std::string_view request_body, const Pairs & request_trailers,
+                      int timeout_millisconds, uint32_t * token_ptr) override;
+
+  // Call result functions
+  void setHttpCallResult(TSMBuffer buf, TSMLoc loc, const void *body, size_t size, TSEvent result) {
+    cr_hdr_buf_   = buf;
+    cr_hdr_loc_   = loc;
+    cr_body_      = body;
+    cr_body_size_ = size; 
+    cr_result_    = result;
+  }
+
+  void resetHttpCallResult() {
+    cr_hdr_buf_   = nullptr;
+    cr_hdr_loc_   = nullptr;
+    cr_body_      = nullptr;
+    cr_body_size_ = 0;
+    cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);  
+  }
+
   // Metrics
   WasmResult defineMetric(uint32_t metric_type, std::string_view name, uint32_t *metric_id_ptr) override;
   WasmResult incrementMetric(uint32_t metric_id, int64_t offset) override;
@@ -186,8 +212,15 @@ public:
   WasmResult setProperty(std::string_view key, std::string_view serialized_value) override;
 
   // send a premade response
+  WasmResult continueStream(WasmStreamType stream_type) override;
+  WasmResult closeStream(WasmStreamType stream_type) override;
   WasmResult sendLocalResponse(uint32_t response_code, std::string_view body_text, Pairs additional_headers,
                                GrpcStatusCode /* grpc_status */, std::string_view details) override;
+
+  // check stream
+  bool isTxnReenable() { return reenable_txn_; }
+  void resetTxnReenable() { reenable_txn_ = false; }
+  bool isLocalReply() { return local_reply_; }
 
   WasmResult getSharedData(std::string_view key, std::pair<std::string, uint32_t /* cas */> *data) override;
 
@@ -209,11 +242,29 @@ private:
   TSHttpTxn txnp_{nullptr};
   TSCont scheduler_cont_{nullptr};
 
+  // continue/close stream?
+  bool reenable_txn_ = false;
+
+  // local reply
   Pairs local_reply_headers_{};
   std::string local_reply_details_ = "";
   bool local_reply_                = false;
 
+  //buffer for result (don't set to null as default)
   BufferBase buffer_;
+
+  // Call result
+  TSEvent cr_result_    = (TSEvent) (FETCH_EVENT_ID_BASE + 1);
+  const void *cr_body_  = nullptr;
+  size_t cr_body_size_  = 0;
+  TSMBuffer cr_hdr_buf_ = nullptr;
+  TSMLoc cr_hdr_loc_    = nullptr;
 };
+
+//local struct representing info for async transaction
+struct AsyncInfo {
+   uint32_t token;
+     Context *root_context;
+     };
 
 } // namespace ats_wasm

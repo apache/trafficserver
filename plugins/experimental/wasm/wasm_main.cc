@@ -127,6 +127,9 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
   int result     = -1;
   auto *context  = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
   auto *old_wasm = static_cast<ats_wasm::Wasm *>(context->wasm());
+
+  context->resetTxnReenable();
+
   TSMutexLock(old_wasm->mutex());
   std::shared_ptr<ats_wasm::Wasm> temp = nullptr;
   auto *txnp                           = static_cast<TSHttpTxn>(data);
@@ -243,15 +246,25 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
 
   TSMutexUnlock(old_wasm->mutex());
 
-  if (result == 0) {
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } else if (result < 0) {
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+  // check if we have reenable transaction already or not
+  if ((context == nullptr) || (!context->isTxnReenable())) {
+    TSDebug(WASM_DEBUG_TAG, "[%s] no context or not yet reenabled transaction", __FUNCTION__);
+
+    if (result == 0) {
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    } else if (result < 0) {
+      TSDebug(WASM_DEBUG_TAG, "[%s] abnormal event, continue with error", __FUNCTION__);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+    } else {
+      if (context->isLocalReply()) {
+        TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, continue with error due to local reply", __FUNCTION__);
+        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      } else {
+        TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, no continue, context id: %d", __FUNCTION__, context->id());
+      }
+    }
   } else {
-    // TODO: wait for async operation
-    // Temporarily resume with error
-    TSDebug(WASM_DEBUG_TAG, "[%s] result > 0, continue with error for now", __FUNCTION__);
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+    TSDebug(WASM_DEBUG_TAG, "[%s] transaction already reenabled", __FUNCTION__);
   }
   return 0;
 }
