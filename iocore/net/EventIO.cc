@@ -23,50 +23,6 @@
 
 #include "EventIO.h"
 #include "tscore/ink_assert.h"
-#include "P_Net.h"
-#include "P_UnixNetProcessor.h"
-#include "P_UnixNetVConnection.h"
-#include "P_NetAccept.h"
-#include "P_DNSConnection.h"
-#include "P_UnixUDPConnection.h"
-#include "P_UnixPollDescriptor.h"
-
-int
-EventIO::start(EventLoop l, DNSConnection *vc, int events)
-{
-  type        = EVENTIO_DNS_CONNECTION;
-  data.dnscon = vc;
-  return start_common(l, vc->fd, events);
-}
-int
-EventIO::start(EventLoop l, NetAccept *vc, int events)
-{
-  type    = EVENTIO_NETACCEPT;
-  data.na = vc;
-  return start_common(l, vc->server.fd, events);
-}
-int
-EventIO::start(EventLoop l, NetEvent *ne, int events)
-{
-  type    = EVENTIO_READWRITE_VC;
-  data.ne = ne;
-  return start_common(l, ne->get_fd(), events);
-}
-
-int
-EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
-{
-  type    = EVENTIO_UDP_CONNECTION;
-  data.uc = vc;
-  return start_common(l, vc->fd, events);
-}
-
-int
-EventIO::start(EventLoop l, int afd, NetEvent *ne, int e)
-{
-  data.ne = ne;
-  return start_common(l, afd, e);
-}
 
 int
 EventIO::start_common(EventLoop l, int afd, int e)
@@ -210,19 +166,5 @@ EventIO::close()
   }
 
   stop();
-  switch (type) {
-  default:
-    ink_assert(!"case");
-  // fallthrough
-  case EVENTIO_DNS_CONNECTION:
-    return data.dnscon->close();
-    break;
-  case EVENTIO_NETACCEPT:
-    return data.na->server.close();
-    break;
-  case EVENTIO_READWRITE_VC:
-    return data.ne->close();
-    break;
-  }
-  return -1;
+  return 0;
 }

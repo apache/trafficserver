@@ -38,8 +38,8 @@
  ****************************************************************************/
 #pragma once
 
-#include "EventIO.h"
 #include "I_NetProcessor.h"
+#include "NetAcceptEventIO.h"
 #include <vector>
 #include "tscore/ink_platform.h"
 #include "P_Connection.h"
@@ -91,7 +91,7 @@ struct NetAccept : public Continuation {
   int id                      = -1;
   Ptr<NetAcceptAction> action_;
   SSLNextProtocolAccept *snpa = nullptr;
-  EventIO ep;
+  NetAcceptEventIO ep;
 
   HttpProxyPort *proxyPort = nullptr;
   AcceptOptions opt;

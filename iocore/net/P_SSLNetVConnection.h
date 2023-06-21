@@ -463,7 +463,7 @@ private:
   std::unique_ptr<char[]> _ca_cert_file;
   std::unique_ptr<char[]> _ca_cert_dir;
 
-  EventIO async_ep{};
+  ReadWriteEventIO async_ep{};
 
   // early data related stuff
 #if TS_HAS_TLS_EARLY_DATA

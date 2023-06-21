@@ -27,7 +27,6 @@
 #include "I_IO_URING.h"
 #endif
 
-#include "P_DNSConnection.h"
 #include "P_Net.h"
 #include "P_UnixNet.h"
 #include "P_UnixNetProcessor.h"
@@ -50,9 +49,10 @@ NetHandler::startIO(NetEvent *ne)
   int res = 0;
 
   PollDescriptor *pd = get_PollDescriptor(this->thread);
-  if (ne->ep.start(pd, ne, EVENTIO_READ | EVENTIO_WRITE) < 0) {
+  if (ne->ep.start(pd, ne, get_NetHandler(this->thread), EVENTIO_READ | EVENTIO_WRITE) < 0) {
     res = errno;
-    // EEXIST should be ok, though it should have been cleared before we got back here
+    // EEXIST should be ok, though it should have been cleared before we got
+    // back here
     if (errno != EEXIST) {
       Debug("iocore_net", "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
       return -res;
@@ -306,25 +306,12 @@ NetHandler::mainNetEvent(int event, Event *e)
   }
 }
 
-static void
-net_signal_hook_callback(EThread *thread)
-{
-#if HAVE_EVENTFD
-  uint64_t counter;
-  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
-#else
-  char dummy[1024];
-  ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
-#endif
-}
-
 int
 NetHandler::waitForActivity(ink_hrtime timeout)
 {
   EventIO *epd = nullptr;
 #if TS_USE_LINUX_IO_URING
   IOUringContext *ur = IOUringContext::local_context();
-  bool servicedh     = false;
 #endif
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
@@ -342,67 +329,18 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   // Get & Process polling result
   PollDescriptor *pd = get_PollDescriptor(this->thread);
-  NetEvent *ne       = nullptr;
   for (int x = 0; x < pd->result; x++) {
-    epd = static_cast<EventIO *> get_ev_data(pd, x);
-    if (epd->type == EVENTIO_READWRITE_VC) {
-      ne = epd->data.ne;
-      // Remove triggered NetEvent from cop_list because it won't be timeout before next InactivityCop runs.
-      if (cop_list.in(ne)) {
-        cop_list.remove(ne);
-      }
-      int flags = get_ev_events(pd, x);
-      if (flags & (EVENTIO_ERROR)) {
-        ne->set_error_from_socket();
-      }
-      if (flags & (EVENTIO_READ)) {
-        ne->read.triggered = 1;
-        if (!read_ready_list.in(ne)) {
-          read_ready_list.enqueue(ne);
-        }
-      }
-      if (flags & (EVENTIO_WRITE)) {
-        ne->write.triggered = 1;
-        if (!write_ready_list.in(ne)) {
-          write_ready_list.enqueue(ne);
-        }
-      } else if (!(flags & (EVENTIO_READ))) {
-        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
-        // In practice we sometimes see EPOLLERR and EPOLLHUP through there
-        // Anything else would be surprising
-        ink_assert((flags & ~(EVENTIO_ERROR)) == 0);
-        ne->write.triggered = 1;
-        if (!write_ready_list.in(ne)) {
-          write_ready_list.enqueue(ne);
-        }
-      }
-    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
-      if (epd->data.dnscon != nullptr) {
-        epd->data.dnscon->trigger(); // Make sure the DNSHandler for this con knows we triggered
-#if defined(USE_EDGE_TRIGGER)
-        epd->refresh(EVENTIO_READ);
-#endif
-      }
-    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      net_signal_hook_callback(this->thread);
-    } else if (epd->type == EVENTIO_NETACCEPT) {
-      this->thread->schedule_imm(epd->data.na);
-#if TS_USE_LINUX_IO_URING
-    } else if (epd->type == EVENTIO_IO_URING) {
-      servicedh = true;
-#endif
-    }
+    epd       = static_cast<EventIO *> get_ev_data(pd, x);
+    int flags = get_ev_events(pd, x);
+    epd->process_event(flags);
     ev_next_event(pd, x);
   }
 
   pd->result = 0;
 
   process_ready_list();
-
 #if TS_USE_LINUX_IO_URING
-  if (servicedh) {
-    ur->service();
-  }
+  ur->service();
 #endif
 
   return EVENT_CONT;

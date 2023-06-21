@@ -19,6 +19,7 @@
 add_library(inknet STATIC
         AcceptOptions.cc
         ALPNSupport.cc
+        AsyncSignalEventIO.cc
         BIO_fastopen.cc
         BoringSSLUtils.cc
         Connection.cc
@@ -28,9 +29,11 @@ add_library(inknet STATIC
         Net.cc
         NetHandler.cc
         NetVCOptions.cc
+        NetAcceptEventIO.cc
         NetVConnection.cc
         PollCont.cc
         ProxyProtocol.cc
+        ReadWriteEventIO.cc
         Socks.cc
         SSLCertLookup.cc
         SSLClientCoordinator.cc
@@ -57,6 +60,7 @@ add_library(inknet STATIC
         TLSSessionResumptionSupport.cc
         TLSSNISupport.cc
         TLSTunnelSupport.cc
+        UDPEventIO.cc
         UDPIOEvent.cc
         UnixConnection.cc
         UnixNet.cc

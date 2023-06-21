@@ -30,6 +30,13 @@
 #include "PollCont.h"
 #include "EventIO.h"
 #include "NetHandler.h"
+#include "tscore/ink_platform.h"
+
+#if TS_USE_LINUX_IO_URING
+#include "IOUringEventIO.h"
+#endif
+
+#include "P_DNSConnection.h"
 #include "P_Net.h"
 #include "P_NetAccept.h"
 #include "P_UnixNetProcessor.h"

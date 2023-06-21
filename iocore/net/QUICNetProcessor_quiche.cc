@@ -170,7 +170,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   PollDescriptor *pd = pc->pollDescriptor;
 
   errno   = 0;
-  int res = con->ep.start(pd, con, EVENTIO_READ);
+  int res = con->ep.start(pd, con, get_UDPNetHandler(cont->getThreadAffinity()), EVENTIO_READ);
   if (res < 0) {
     Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
   }

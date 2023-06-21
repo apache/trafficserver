@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "AsyncSignalEventIO.h"
 #include "P_Net.h"
 #include "P_UnixNet.h"
 #include "tscore/ink_hrtime.h"
@@ -44,13 +45,13 @@ const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affect
 NetHandler *
 get_NetHandler(EThread *t)
 {
-  return (NetHandler *)ETHREAD_GET_PTR(t, unix_netProcessor.netHandler_offset);
+  return static_cast<NetHandler *>(ETHREAD_GET_PTR(t, unix_netProcessor.netHandler_offset));
 }
 
 PollCont *
 get_PollCont(EThread *t)
 {
-  return (PollCont *)ETHREAD_GET_PTR(t, unix_netProcessor.pollCont_offset);
+  return static_cast<PollCont *>(ETHREAD_GET_PTR(t, unix_netProcessor.pollCont_offset));
 }
 
 PollDescriptor *
@@ -174,17 +175,18 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
-  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
-  new (thread->ep) EventIO();
-  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
-#if HAVE_EVENTFD
-  thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
-#else
-  thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
-#endif
 
+#if HAVE_EVENTFD
 #if TS_USE_LINUX_IO_URING
-  nh->uring_evio.type = EVENTIO_IO_URING;
-  nh->uring_evio.start(pd, IOUringContext::local_context()->register_eventfd(), nullptr, EVENTIO_READ);
+  auto ep = new IOUringEventIO();
+  ep->start(pd, IOUringContext::local_context());
+#else
+  auto ep = new AsyncSignalEventIO();
+  ep->start(pd, thread->evfd, EVENTIO_READ);
 #endif
+#else
+  auto ep = new AsyncSignalEventIO();
+  ep->start(pd, thread->evpipe[0], EVENTIO_READ);
+#endif
+  thread->ep = ep;
 }
