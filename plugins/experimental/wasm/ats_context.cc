@@ -45,7 +45,7 @@ async_handler(TSCont cont, TSEvent event, void *edata)
   Wasm *wasm            = root_context->wasm();
 
   // variables to be used in handler
-  TSEvent result    = (TSEvent) (FETCH_EVENT_ID_BASE + 1);
+  TSEvent result    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
   const void *body  = nullptr;
   size_t body_size  = 0;
   TSMBuffer hdr_buf = nullptr;
@@ -68,7 +68,8 @@ async_handler(TSCont cont, TSEvent event, void *edata)
         header_size         = TSMimeHdrFieldsCount(hdr_buf, hdr_loc);
         body                = data_start; // data_start will now be pointing to body
         body_size           = data_end - data_start;
-        TSDebug(WASM_DEBUG_TAG, "[%s] Fetch result had a status code of %d with a body length of %ld", __FUNCTION__, status, body_size);
+        TSDebug(WASM_DEBUG_TAG, "[%s] Fetch result had a status code of %d with a body length of %ld", __FUNCTION__, status,
+                body_size);
       } else {
         TSError("[wasm][%s] Unable to parse call response", __FUNCTION__);
         event = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
@@ -523,9 +524,8 @@ Context::getBuffer(WasmBufferType type)
 }
 
 WasmResult
-Context::httpCall(std::string_view target, const Pairs & request_headers ,
-                  std::string_view request_body, const Pairs & request_trailers,
-                  int timeout_millisconds, uint32_t * token_ptr)
+Context::httpCall(std::string_view target, const Pairs & request_headers, std::string_view request_body,
+                  const Pairs & request_trailers, int timeout_millisconds, uint32_t * token_ptr)
 {
   Wasm *wasm            = this->wasm();
   Context *root_context = this->root_context();
@@ -553,7 +553,7 @@ Context::httpCall(std::string_view target, const Pairs & request_headers ,
   }
 
   /* request */
-  request = method+" https://"+authority+path+ " HTTP/1.1\r\n";
+  request = method + " https://" + authority + path + " HTTP/1.1\r\n";
   for (const auto &p : request_headers) {
     std::string key(p.first);
     std::string value(p.second);
@@ -563,15 +563,15 @@ Context::httpCall(std::string_view target, const Pairs & request_headers ,
   request += request_body;
 
   TSFetchEvent event_ids;
-  event_ids.success_event_id  = FETCH_EVENT_ID_BASE;
-  event_ids.failure_event_id  = FETCH_EVENT_ID_BASE + 1;
-  event_ids.timeout_event_id  = FETCH_EVENT_ID_BASE + 2;
+  event_ids.success_event_id = FETCH_EVENT_ID_BASE;
+  event_ids.failure_event_id = FETCH_EVENT_ID_BASE + 1;
+  event_ids.timeout_event_id = FETCH_EVENT_ID_BASE + 2;
 
-  contp = TSContCreate(async_handler, TSMutexCreate());
-  AsyncInfo *ai = new AsyncInfo();
-  ai->token = wasm->nextHttpCallId();
+  contp            = TSContCreate(async_handler, TSMutexCreate());
+  AsyncInfo *ai    = new AsyncInfo();
+  ai->token        = wasm->nextHttpCallId();
   ai->root_context = root_context;
-  *token_ptr = ai->token; // to be returned to the caller
+  *token_ptr       = ai->token; // to be returned to the caller
   TSContDataSet(contp, ai);
 
   // API call for async fetch
@@ -1712,7 +1712,7 @@ Context::getHeaderMap(WasmHeaderMapType type)
     if (cr_hdr_buf_ == nullptr || cr_hdr_loc_ == nullptr) {
       return {};
     }
-    map.bufp = cr_hdr_buf_;
+    map.bufp    = cr_hdr_buf_;
     map.hdr_loc = cr_hdr_loc_;
     return map;
   case WasmHeaderMapType::HttpCallResponseTrailers:

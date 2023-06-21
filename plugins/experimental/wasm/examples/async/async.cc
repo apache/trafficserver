@@ -37,7 +37,8 @@ public:
 static RegisterContextFactory register_ExampleContext(CONTEXT_FACTORY(ExampleContext), ROOT_FACTORY(ExampleRootContext),
                                                       "myproject");
 
-bool ExampleRootContext::onStart(size_t)
+bool
+ExampleRootContext::onStart(size_t)
 {
   logInfo(std::string("onStart"));
   return true;
@@ -51,15 +52,15 @@ ExampleContext::onRequestHeaders(uint32_t headers, bool end_of_stream)
   logInfo(std::string("UA ") + std::string(ua->view()));
 
   auto context_id = id();
-  auto callback = [context_id](uint32_t, size_t body_size, uint32_t) {
+  auto callback   = [context_id](uint32_t, size_t body_size, uint32_t) {
     logInfo("async call done");
     if (body_size == 0) {
       logInfo("async_call failed");
       return;
     }
     auto response_headers = getHeaderMapPairs(WasmHeaderMapType::HttpCallResponseHeaders);
-    auto body = getBufferBytes(WasmBufferType::HttpCallResponseBody, 0, body_size);
-    for (auto& p : response_headers->pairs()) {
+    auto body             = getBufferBytes(WasmBufferType::HttpCallResponseBody, 0, body_size);
+    for (auto &p : response_headers->pairs()) {
       logInfo(std::string(p.first) + std::string(" -> ") + std::string(p.second));
     }
     logInfo(std::string(body->view()));
@@ -70,8 +71,13 @@ ExampleContext::onRequestHeaders(uint32_t headers, bool end_of_stream)
   };
   std::string test = std::string(ua->view());
   if (test == "test") {
-    root()->httpCall("cluster", {{":method", "GET"}, {":path", "/.well-known/security.txt"}, {":authority", "www.google.com"}},
-                       "", {}, 10000, callback);
+    root()->httpCall("cluster",
+                     {
+                       {":method",    "GET"                      },
+                       {":path",      "/.well-known/security.txt"},
+                       {":authority", "www.google.com"           }
+    },
+                     "", {}, 10000, callback);
     return FilterHeadersStatus::StopIteration;
   }
 

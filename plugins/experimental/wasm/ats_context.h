@@ -179,12 +179,13 @@ public:
 
   BufferInterface *getBuffer(WasmBufferType type) override;
 
-  WasmResult httpCall(std::string_view target, const Pairs & request_headers ,
-                      std::string_view request_body, const Pairs & request_trailers,
-                      int timeout_millisconds, uint32_t * token_ptr) override;
+  WasmResult httpCall(std::string_view target, const Pairs & request_headers, std::string_view request_body,
+                      const Pairs & request_trailers, int timeout_millisconds, uint32_t * token_ptr) override;
 
   // Call result functions
-  void setHttpCallResult(TSMBuffer buf, TSMLoc loc, const void *body, size_t size, TSEvent result) {
+  void
+  setHttpCallResult(TSMBuffer buf, TSMLoc loc, const void *body, size_t size, TSEvent result)
+  {
     cr_hdr_buf_   = buf;
     cr_hdr_loc_   = loc;
     cr_body_      = body;
@@ -192,7 +193,9 @@ public:
     cr_result_    = result;
   }
 
-  void resetHttpCallResult() {
+  void
+  resetHttpCallResult()
+  {
     cr_hdr_buf_   = nullptr;
     cr_hdr_loc_   = nullptr;
     cr_body_      = nullptr;
@@ -218,9 +221,21 @@ public:
                                GrpcStatusCode /* grpc_status */, std::string_view details) override;
 
   // check stream
-  bool isTxnReenable() { return reenable_txn_; }
-  void resetTxnReenable() { reenable_txn_ = false; }
-  bool isLocalReply() { return local_reply_; }
+  bool
+  isTxnReenable()
+  {
+    return reenable_txn_;
+  }
+  void
+  resetTxnReenable()
+  {
+    reenable_txn_ = false;
+  }
+  bool
+  isLocalReply()
+  {
+    return local_reply_;
+  }
 
   WasmResult getSharedData(std::string_view key, std::pair<std::string, uint32_t /* cas */> *data) override;
 
@@ -250,21 +265,21 @@ private:
   std::string local_reply_details_ = "";
   bool local_reply_                = false;
 
-  //buffer for result (don't set to null as default)
+  // buffer for result (don't set to null as default)
   BufferBase buffer_;
 
   // Call result
-  TSEvent cr_result_    = (TSEvent) (FETCH_EVENT_ID_BASE + 1);
+  TSEvent cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
   const void *cr_body_  = nullptr;
   size_t cr_body_size_  = 0;
   TSMBuffer cr_hdr_buf_ = nullptr;
   TSMLoc cr_hdr_loc_    = nullptr;
 };
 
-//local struct representing info for async transaction
+// local struct representing info for async transaction
 struct AsyncInfo {
-   uint32_t token;
-     Context *root_context;
-     };
+  uint32_t token;
+  Context *root_context;
+};
 
 } // namespace ats_wasm
