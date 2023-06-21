@@ -1473,7 +1473,7 @@ TS_CHECK_LIBSWOC
 AM_CONDITIONAL([BUILD_SWOC], [test "$has_libswoc" = "no"])
 
 TS_CHECK_SWOC_HEADERS_EXPORT
-AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test x"$enable_swoc_headers" = x"yes"])
+AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test ! x"$enable_swoc_headers" = x"no"])
 
 # Check for optional hiredis library
 TS_CHECK_HIREDIS
