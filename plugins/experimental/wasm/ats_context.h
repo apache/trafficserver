@@ -179,8 +179,8 @@ public:
 
   BufferInterface *getBuffer(WasmBufferType type) override;
 
-  WasmResult httpCall(std::string_view target, const Pairs & request_headers, std::string_view request_body,
-                      const Pairs & request_trailers, int timeout_millisconds, uint32_t * token_ptr) override;
+  WasmResult httpCall(std::string_view target, const Pairs &request_headers, std::string_view request_body,
+                      const Pairs &request_trailers, int timeout_millisconds, uint32_t *token_ptr) override;
 
   // Call result functions
   void
