@@ -24,9 +24,33 @@
 #pragma once
 
 #include "HttpVCTable.h"
+#include "Milestones.h"
 
 #include "I_IOBuffer.h"
+#include "P_ALPNSupport.h"
 #include "ProxyTransaction.h"
+#include "records/I_RecHttp.h"
+#include "TLSBasicSupport.h"
+#include "TLSSessionResumptionSupport.h"
+
+struct ClientTransactionInfo {
+  int id{-1};
+  int priority_weight{-1};
+  int priority_dependence{-1};
+};
+
+struct ClientConnectionInfo {
+  bool tcp_reused{false};
+  bool ssl_reused{false};
+  bool connection_is_ssl{false};
+
+  char const *protocol{"-"};
+  char const *sec_protocol{"-"};
+  char const *cipher_suite{"-"};
+  char const *curve{"-"};
+
+  int alpn_id{SessionProtocolNameRegistry::INVALID};
+};
 
 class HttpUserAgent
 {
@@ -38,12 +62,43 @@ public:
   void set_raw_buffer_reader(IOBufferReader *raw_buffer_reader);
 
   ProxyTransaction *get_txn() const;
-  void set_txn(ProxyTransaction *txn);
+  void set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
+
+  int get_client_connection_id() const;
+
+  int get_client_transaction_id() const;
+
+  int get_client_transaction_priority_weight() const;
+
+  int get_client_transaction_priority_dependence() const;
+
+  bool get_client_tcp_reused() const;
+
+  bool get_client_ssl_reused() const;
+
+  bool get_client_connection_is_ssl() const;
+
+  char const *get_client_protocol() const;
+
+  char const *get_client_sec_protocol() const;
+
+  char const *get_client_cipher_suite() const;
+
+  char const *get_client_curve() const;
+
+  int get_client_alpn_id() const;
 
 private:
   HttpVCTableEntry *m_entry{nullptr};
   IOBufferReader *m_raw_buffer_reader{nullptr};
   ProxyTransaction *m_txn{nullptr};
+
+  ClientConnectionInfo m_conn_info{};
+
+  int m_client_connection_id{-1};
+  ClientTransactionInfo m_txn_info{};
+
+  void save_transaction_info();
 };
 
 inline HttpVCTableEntry *
@@ -77,7 +132,129 @@ HttpUserAgent::get_txn() const
 }
 
 inline void
-HttpUserAgent::set_txn(ProxyTransaction *txn)
+HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
 {
   m_txn = txn;
+
+  // It seems to be possible that the m_txn pointer will go stale before log
+  // entries for this HTTP transaction are generated. Therefore, collect
+  // information that may be needed for logging.
+  this->save_transaction_info();
+  if (auto p{txn->get_proxy_ssn()}; p) {
+    m_client_connection_id = p->connection_id();
+  }
+
+  m_conn_info.tcp_reused = txn->is_first_transaction();
+
+  auto netvc{txn->get_netvc()};
+
+  if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
+    m_conn_info.connection_is_ssl = true;
+    if (auto sec_protocol{tbs->get_tls_protocol_name()}; sec_protocol) {
+      m_conn_info.sec_protocol = sec_protocol;
+    }
+    if (auto cipher{tbs->get_tls_cipher_suite()}; cipher) {
+      m_conn_info.cipher_suite = cipher;
+    }
+    if (auto curve{tbs->get_tls_curve()}; curve) {
+      m_conn_info.curve = curve;
+    }
+
+    if (!m_conn_info.tcp_reused) {
+      // Copy along the TLS handshake timings
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+    }
+  }
+
+  if (auto as = netvc->get_service(<ALPNSupport>()) {
+    m_conn_info.alpn_id = as->get_negotiated_protocol_id();
+  }
+
+  if (auto tsrs = netvc->get_service<TLSSessionResumptionSupport>()) {
+    m_conn_info.ssl_reused = tsrs->getSSLSessionCacheHit();
+  }
+
+  if (auto protocol_str{txn->get_protocol_string()}; protocol_str) {
+    m_conn_info.protocol = protocol_str;
+  }
+}
+
+inline int
+HttpUserAgent::get_client_connection_id() const
+{
+  return m_client_connection_id;
+}
+
+inline int
+HttpUserAgent::get_client_transaction_id() const
+{
+  return m_txn_info.id;
+}
+
+inline int
+HttpUserAgent::get_client_transaction_priority_weight() const
+{
+  return m_txn_info.priority_weight;
+}
+
+inline int
+HttpUserAgent::get_client_transaction_priority_dependence() const
+{
+  return m_txn_info.priority_dependence;
+}
+
+inline bool
+HttpUserAgent::get_client_tcp_reused() const
+{
+  return m_conn_info.tcp_reused;
+}
+
+inline bool
+HttpUserAgent::get_client_ssl_reused() const
+{
+  return m_conn_info.ssl_reused;
+}
+
+inline bool
+HttpUserAgent::get_client_connection_is_ssl() const
+{
+  return m_conn_info.connection_is_ssl;
+}
+
+inline char const *
+HttpUserAgent::get_client_protocol() const
+{
+  return m_conn_info.protocol;
+}
+
+inline char const *
+HttpUserAgent::get_client_sec_protocol() const
+{
+  return m_conn_info.sec_protocol;
+}
+
+inline char const *
+HttpUserAgent::get_client_cipher_suite() const
+{
+  return m_conn_info.cipher_suite;
+}
+
+inline char const *
+HttpUserAgent::get_client_curve() const
+{
+  return m_conn_info.curve;
+}
+
+inline int
+HttpUserAgent::get_client_alpn_id() const
+{
+  return m_conn_info.alpn_id;
+}
+
+inline void
+HttpUserAgent::save_transaction_info()
+{
+  m_txn_info = {m_txn->get_transaction_id(), m_txn->get_transaction_priority_weight(),
+                m_txn->get_transaction_priority_dependence()};
 }

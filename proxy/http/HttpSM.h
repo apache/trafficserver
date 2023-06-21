@@ -195,6 +195,14 @@ public:
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
+  bool get_client_tcp_reused() const;
+  bool get_client_ssl_reused() const;
+  bool get_client_connection_is_ssl() const;
+  char const *get_client_protocol() const;
+  char const *get_client_sec_protocol() const;
+  char const *get_client_cipher_suite() const;
+  char const *get_client_curve() const;
+  int get_client_alpn_id() const;
   ProxyTransaction *get_ua_txn();
   ProxyTransaction *get_server_txn();
 
@@ -484,9 +492,6 @@ public:
   int64_t client_response_body_bytes  = 0;
   int64_t cache_response_body_bytes   = 0;
   int64_t pushed_response_body_bytes  = 0;
-  bool client_tcp_reused              = false;
-  bool client_ssl_reused              = false;
-  bool client_connection_is_ssl       = false;
   bool is_internal                    = false;
   bool server_ssl_reused              = false;
   bool server_connection_is_ssl       = false;
@@ -497,13 +502,8 @@ public:
   //  do_api_callout_internal()
   bool hooks_set = false;
   std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
-  const char *client_protocol     = "-";
-  const char *server_protocol     = "-";
-  const char *client_sec_protocol = "-";
-  const char *client_cipher_suite = "-";
-  const char *client_curve        = "-";
-  int client_alpn_id              = SessionProtocolNameRegistry::INVALID;
-  int server_transact_count       = 0;
+  const char *server_protocol = "-";
+  int server_transact_count   = 0;
 
   TransactionMilestones milestones;
   ink_hrtime api_timer = 0;
@@ -576,12 +576,8 @@ private:
    */
   bool has_active_response_plugin_agents = false;
 
-  int _client_connection_id                   = -1;
-  int _client_transaction_id                  = -1;
-  int _client_transaction_priority_weight     = -1;
-  int _client_transaction_priority_dependence = -1;
-  SNIRoutingType _tunnel_type                 = SNIRoutingType::NONE;
-  PreWarmSM *_prewarm_sm                      = nullptr;
+  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
+  PreWarmSM *_prewarm_sm      = nullptr;
   PostDataBuffers _postbuf;
   NetVConnection *_netvc        = nullptr;
   IOBufferReader *_netvc_reader = nullptr;
@@ -626,6 +622,54 @@ HttpTransact::State::state_machine_id() const
   return state_machine->sm_id;
 }
 
+inline bool
+HttpSM::get_client_tcp_reused() const
+{
+  return _ua.get_client_tcp_reused();
+}
+
+inline bool
+HttpSM::get_client_ssl_reused() const
+{
+  return _ua.get_client_ssl_reused();
+}
+
+inline bool
+HttpSM::get_client_connection_is_ssl() const
+{
+  return _ua.get_client_connection_is_ssl();
+}
+
+inline char const *
+HttpSM::get_client_protocol() const
+{
+  return _ua.get_client_protocol();
+}
+
+inline char const *
+HttpSM::get_client_sec_protocol() const
+{
+  return _ua.get_client_sec_protocol();
+}
+
+inline char const *
+HttpSM::get_client_cipher_suite() const
+{
+  return _ua.get_client_cipher_suite();
+}
+
+inline char const *
+HttpSM::get_client_curve() const
+{
+  return _ua.get_client_curve();
+}
+
+inline int
+HttpSM::get_client_alpn_id() const
+{
+  return _ua.get_client_alpn_id();
+}
+
 inline ProxyTransaction *
 HttpSM::get_ua_txn()
 {
@@ -659,25 +703,25 @@ HttpSM::is_dying() const
 inline int
 HttpSM::client_connection_id() const
 {
-  return _client_connection_id;
+  return _ua.get_client_connection_id();
 }
 
 inline int
 HttpSM::client_transaction_id() const
 {
-  return _client_transaction_id;
+  return _ua.get_client_transaction_id();
 }
 
 inline int
 HttpSM::client_transaction_priority_weight() const
 {
-  return _client_transaction_priority_weight;
+  return _ua.get_client_transaction_priority_weight();
 }
 
 inline int
 HttpSM::client_transaction_priority_dependence() const
 {
-  return _client_transaction_priority_dependence;
+  return _ua.get_client_transaction_priority_dependence();
 }
 
 // Function to get the cache_sm object - YTS Team, yamsat

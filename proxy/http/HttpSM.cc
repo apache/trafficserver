@@ -395,55 +395,13 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   if (!netvc) {
     return;
   }
-  _ua.set_txn(client_vc);
-
-  // It seems to be possible that the _ua.get_txn() pointer will go stale before log entries for this HTTP transaction are
-  // generated.  Therefore, collect information that may be needed for logging from the _ua.get_txn() object at this point.
-  //
-  _client_transaction_id                  = _ua.get_txn()->get_transaction_id();
-  _client_transaction_priority_weight     = _ua.get_txn()->get_transaction_priority_weight();
-  _client_transaction_priority_dependence = _ua.get_txn()->get_transaction_priority_dependence();
-  {
-    auto p = _ua.get_txn()->get_proxy_ssn();
-
-    if (p) {
-      _client_connection_id = p->connection_id();
-    }
-  }
+  _ua.set_txn(client_vc, milestones);
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
   // and netvc == _ua.get_txn()->get_netvc().
 
-  is_internal       = netvc->get_is_internal_request();
-  mptcp_state       = netvc->get_mptcp_state();
-  client_tcp_reused = !(_ua.get_txn()->is_first_transaction());
-
-  if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
-    client_connection_is_ssl = true;
-    const char *protocol     = tbs->get_tls_protocol_name();
-    client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = tbs->get_tls_cipher_suite();
-    client_cipher_suite      = cipher ? cipher : "-";
-    const char *curve        = tbs->get_tls_curve();
-    client_curve             = curve ? curve : "-";
-
-    if (!client_tcp_reused) {
-      // Copy along the TLS handshake timings
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
-    }
-  }
-
-  if (auto as = netvc->get_service<ALPNSupport>()) {
-    client_alpn_id = as->get_negotiated_protocol_id();
-  }
-
-  if (auto tsrs = netvc->get_service<TLSSessionResumptionSupport>()) {
-    client_ssl_reused = tsrs->getSSLSessionCacheHit();
-  }
-
-  const char *protocol_str = client_vc->get_protocol_string();
-  client_protocol          = protocol_str ? protocol_str : "-";
+  is_internal = netvc->get_is_internal_request();
+  mptcp_state = netvc->get_mptcp_state();
 
   ink_release_assert(_ua.get_txn()->get_half_close_flag() == false);
   mutex = client_vc->mutex;
@@ -743,10 +701,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     if (!is_internal && t_state.http_config_param->scheme_proto_mismatch_policy != 0) {
       auto scheme = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
-      if ((client_connection_is_ssl && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
-          (!client_connection_is_ssl && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
+      if ((this->get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
+          (!this->get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
         Warning("scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
-                client_connection_is_ssl ? "tls" : "plaintext");
+                this->get_client_connection_is_ssl() ? "tls" : "plaintext");
         if (t_state.http_config_param->scheme_proto_mismatch_policy == 2) {
           t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
           call_transact_and_set_next_state(HttpTransact::BadRequest);
