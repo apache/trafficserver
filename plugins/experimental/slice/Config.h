@@ -45,9 +45,9 @@ struct Config {
   int m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
   int m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
-  RefType m_reftype{First};       // reference slice is relative to request
-  bool m_head_req{false};         // HEAD request
-  bool m_head_strip_range{false}; // strip range header for head requests
+  RefType m_reftype{First};           // reference slice is relative to request
+  const char *m_method_type{nullptr}; // type of header request
+  bool m_head_strip_range{false};     // strip range header for head requests
 
   std::string m_skip_header;
   std::string m_crr_ims_header;
@@ -69,6 +69,13 @@ struct Config {
   hasRegex() const
   {
     return None != m_regex_type;
+  }
+
+  // Check if response only expects header
+  bool
+  onlyHeader() const
+  {
+    return (m_method_type == TS_HTTP_METHOD_HEAD || m_method_type == TS_HTTP_METHOD_PURGE);
   }
 
   // If no null reg, true, otherwise check against regex

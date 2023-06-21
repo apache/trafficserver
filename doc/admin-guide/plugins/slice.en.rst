@@ -278,6 +278,21 @@ is faster since it does not visit any slices outside those needed to
 fulfill a request.  However this may still cause problems if the
 requested range was calculated from a newer version of the asset.
 
+Purge Requests
+--------------
+
+The slice plugin supports PURGE requests, discarding the requested object from cache.
+If a range is given in the client request, only the slice blocks from the
+requested range will be purged (if in cache). If not, all of the blocks will be discarded
+from the cache.
+
+If a block receives a 404, indicating the requested block to be purged is not in the cache,
+slice will not continue to purge the following blocks.
+
+The functionality works with `--ref-relative` both enabled and disabled. If `--ref-relative` is
+disabled (using slice 0 as the reference block), requesting to PURGE a block that does not have
+slice 0 in its range will still PURGE the slice 0 block, as the reference block is always processed.
+
 Important Notes
 ===============
 

@@ -41,7 +41,7 @@ read_request(TSHttpTxn txnp, Config *const config)
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
   HttpHeader const header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
-  if (TS_HTTP_METHOD_GET == header.method() || TS_HTTP_METHOD_HEAD == header.method()) {
+  if (TS_HTTP_METHOD_GET == header.method() || TS_HTTP_METHOD_HEAD == header.method() || TS_HTTP_METHOD_PURGE == header.method()) {
     if (!header.hasKey(config->m_skip_header.data(), config->m_skip_header.size())) {
       // check if any previous plugin has monkeyed with the transaction status
       TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
@@ -50,8 +50,8 @@ read_request(TSHttpTxn txnp, Config *const config)
         return false;
       }
 
-      // set HEAD config to only expect header response
-      config->m_head_req = (TS_HTTP_METHOD_HEAD == header.method());
+      // set header method config to only expect header response
+      config->m_method_type = header.method();
 
       if (config->hasRegex()) {
         int urllen         = 0;
