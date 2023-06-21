@@ -6807,7 +6807,9 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         change_response_header_because_of_range_request(s, header);
         s->hdr_info.trust_response_cl = true;
       } else {
-        header->set_content_length(cl);
+        if (header->status_get() != HTTP_STATUS_NO_CONTENT) {
+          header->set_content_length(cl);
+        }
         s->hdr_info.trust_response_cl = true;
       }
     } else {
