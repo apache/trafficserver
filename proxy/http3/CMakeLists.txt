@@ -31,6 +31,7 @@ add_library(http3 STATIC
     Http3HeaderFramer.cc
     Http3DataFramer.cc
     Http3HeaderVIOAdaptor.cc
+    Http3ProtocolEnforcer.cc
     Http3StreamDataVIOAdaptor.cc
     QPACK.cc
 )
