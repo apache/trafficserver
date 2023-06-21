@@ -65,6 +65,8 @@ protected:
 
   std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 
+  QUICStreamId _control_stream_id = 0;
+
 private:
   void _handle_uni_stream_on_read_ready(int event, VIO *vio);
   void _handle_uni_stream_on_write_ready(int event, VIO *vio);
