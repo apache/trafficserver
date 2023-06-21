@@ -176,10 +176,6 @@ private:
   // Testing indicates that for MacOS/Darwin and FreeBSD, pthread rwlocks always prevent writer starvation.
   //
   pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
-
-#if !(defined(darwin) || defined(freebsd))
-#warning "Use of ts::shared_mutex may result in writer starvation"
-#endif
 #endif
 
   static void
