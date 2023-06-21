@@ -59,6 +59,7 @@ set(ENABLE_TPROXY
         'X' where X is a number to use as the IP_TRANSPARENT sockopt,
         anything else to enable."
 )
+option(ENABLE_QUICHE   "Use quiche (default OFF)")
 option(ENABLE_UNWIND   "Use libunwind if found on system (default ON)" ON)
 option(ENABLE_WCCP     "Use WCCP v2 (default OFF)")
 set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
@@ -185,6 +186,19 @@ if(ENABLE_UNWIND)
             link_libraries(unwind::unwind)
     endif()
     set(TS_USE_REMOTE_UNWINDING ${unwind_FOUND})
+endif()
+
+if(ENABLE_QUICHE)
+    find_package(quiche REQUIRED)
+
+    set(TS_HAS_QUICHE ${quiche_FOUND})
+    set(TS_USE_QUIC ${TS_HAS_QUICHE})
+
+    include(CheckOpenSSLIsBoringSSL)
+    check_openssl_is_boringssl(TS_HAVE_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
+    if(NOT TS_HAVE_BORINGSSL)
+        message(FATAL_ERROR "Use of BoringSSL is required if quiche is used.")
+    endif()
 endif()
 
 find_package(ZLIB REQUIRED)

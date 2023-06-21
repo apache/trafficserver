@@ -119,10 +119,11 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_HAS_IP_TOS
 #cmakedefine01 TS_HAS_JEMALLOC
 #cmakedefine01 TS_HAS_TCMALLOC
-#cmakedefine01 TS_HAS_TESTS
 #cmakedefine01 TS_HAS_PROFILER
+#cmakedefine01 TS_HAS_QUICHE
 #cmakedefine01 TS_HAS_SO_MARK
 #cmakedefine01 TS_HAS_SO_PEERCRED
+#cmakedefine01 TS_HAS_TESTS
 #cmakedefine01 TS_HAS_WCCP
 #cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_EPOLL
@@ -133,6 +134,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_USE_LINUX_IO_URING
 #cmakedefine01 TS_USE_LINUX_NATIVE_AIO
 #cmakedefine01 TS_USE_POSIX_CAP
+#cmakedefine01 TS_USE_QUIC
 #cmakedefine01 TS_USE_REMOTE_UNWINDING
 #cmakedefine01 TS_USE_SET_RBIO
 #cmakedefine01 TS_USE_TLS13

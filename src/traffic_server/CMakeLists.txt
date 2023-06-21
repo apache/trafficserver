@@ -62,6 +62,14 @@ target_link_libraries(traffic_server
         rpcpublichandlers
 )
 
+if(TS_USE_QUIC)
+    target_link_libraries(traffic_server
+        PRIVATE
+            ts::http3
+            ts::quic
+    )
+endif()
+
 if(TS_HAS_PROFILER)
     target_link_libraries(traffic_server PRIVATE gperftools::profiler)
 endif()

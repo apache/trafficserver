@@ -15,21 +15,21 @@
 #
 #######################
 
+function(CHECK_OPENSSL_IS_BORINGSSL OUT_VAR OPENSSL_INCLUDE_DIR)
+    set(CHECK_PROGRAM
+        "
+        #include <openssl/base.h>
 
-add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
-add_library(ts::inkutils ALIAS inkutils)
+        #ifndef OPENSSL_IS_BORINGSSL
+        #error check failed
+        #endif
 
-
-target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
-        ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
-        ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
-        ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
-        )
+        int main() {
+            return 0;
+        }
+        "
+    )
+    set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
+    include(CheckCXXSourceCompiles)
+    check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
+endfunction()
