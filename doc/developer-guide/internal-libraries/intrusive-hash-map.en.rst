@@ -33,17 +33,15 @@ In order to optimize lookup, the container can increase the number of buckets us
 be to be automatic or only done explicitly.
 
 Usage
-*****
+=====
 
 To use an :class:`IntrusiveHashMap` the element must provide support for the container. This is done
 through an associated descriptor class which provides the operations needed to manipulate the elements
 in the container.
 
-Examples
-========
 
 Details
-*******
+=======
 
 .. class:: template < typename H > IntrusiveHashMap
 
@@ -161,7 +159,7 @@ Details
       modify them. In such cases this method provides a safe way to invoke such mechanisms.
 
 Design Notes
-************
+============
 
 This is a refresh of an previously existing class, :code:`TSHahTable`. The switch to C++ 11 and then
 C++ 17 made it possible to do much better in terms of the internal implementation and API. The
@@ -176,7 +174,7 @@ class can be removed. Elements with equal keys can be handled in the same way as
 containers, via iterator ranges, instead of a custom pseudo-iterator class.
 
 Notes on :func:`IntrusiveHashMap::apply`
-========================================
+----------------------------------------
 
 This was added after some experience with use of the container. Initially it was added to make
 cleaning up the container easier. Without it, cleanup looks like ::
