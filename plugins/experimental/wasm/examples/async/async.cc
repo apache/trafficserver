@@ -73,7 +73,7 @@ ExampleContext::onRequestHeaders(uint32_t headers, bool end_of_stream)
     root()->httpCall("cluster", {{":method", "GET"}, {":path", "/.well-known/security.txt"}, {":authority", "www.google.com"}},
                        "", {}, 10000, callback);
     return FilterHeadersStatus::StopIteration;
-  } 
+  }
 
   return FilterHeadersStatus::Continue;
 }
