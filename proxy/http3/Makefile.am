@@ -52,6 +52,7 @@ libhttp3_a_SOURCES = \
   Http3DataFramer.cc \
   Http3HeaderVIOAdaptor.cc \
   Http3StreamDataVIOAdaptor.cc \
+  Http3ProtocolEnforcer.cc \
   QPACK.cc
 
 #
@@ -86,6 +87,10 @@ test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
   ./test/test_Http3Frame.cc \
+  ./test/test_Http3FrameDispatcher.cc \
+  ./Http3ProtocolEnforcer.cc \
+  ./Http3FrameDispatcher.cc \
+  ./Http3DebugNames.cc \
   ./Http3Config.cc \
   ./Http3Frame.cc
 

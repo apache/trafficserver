@@ -41,11 +41,12 @@ Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
 }
 
 Http3ErrorUPtr
-Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, IOBufferReader &reader, uint64_t &nread)
+Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stream_type, IOBufferReader &reader, uint64_t &nread)
 {
   std::shared_ptr<const Http3Frame> frame(nullptr);
   Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
   nread                = 0;
+  uint32_t frame_count = 0;
 
   while (true) {
     // Read a length of Type field and hopefully a length of Length field too
@@ -95,6 +96,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, IOBufferReader &read
       if (frame == nullptr) {
         break;
       }
+      ++frame_count;
 
       // Consume buffer if frame is created
       nread += frame_len;
@@ -105,7 +107,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, IOBufferReader &read
       Debug("http3", "[RX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(type), frame_len);
       std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
       for (auto h : handlers) {
-        error = h->handle_frame(frame);
+        error = h->handle_frame(frame, frame_count - 1, stream_type);
         if (error->cls != Http3ErrorClass::NONE) {
           return error;
         }

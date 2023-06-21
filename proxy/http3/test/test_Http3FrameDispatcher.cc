@@ -24,27 +24,123 @@
 #include "catch.hpp"
 
 #include "Http3FrameDispatcher.h"
+#include "Http3ProtocolEnforcer.h"
 #include "Mock.h"
 
 TEST_CASE("Http3FrameHandler dispatch", "[http3]")
 {
   uint8_t input[] = {// 1st frame (HEADERS)
-                     0x02, 0x01, 0x00, 0x01, 0x23,
+                     0x01, 0x04, 0x11, 0x22, 0x33, 0x44,
                      // 2nd frame (DATA)
-                     0x04, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44,
+                     0x00, 0x04, 0xaa, 0xbb, 0xcc, 0xdd,
                      // 3rd frame (incomplete)
                      0xff};
 
   Http3FrameDispatcher http3FrameDispatcher;
   Http3MockFrameHandler handler;
   http3FrameDispatcher.add_handler(&handler);
-  uint16_t nread = 0;
+
+  MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+  IOBufferReader *reader = buf->alloc_reader();
+  uint64_t nread         = 0;
+  Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+  buf->write(input, sizeof(input));
 
   // Initial state
   CHECK(handler.total_frame_received == 0);
   CHECK(nread == 0);
 
-  http3FrameDispatcher.on_read_ready(input, sizeof(input), nread);
+  error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
+  CHECK(error->app_error_code == Http3ErrorCode::H3_NO_ERROR);
   CHECK(handler.total_frame_received == 1);
   CHECK(nread == 12);
+}
+
+TEST_CASE("dispatch SETTINGS frame", "[http3]")
+{
+  SECTION("Only one SETTINGS frame is allowed per the control stream")
+  {
+    uint8_t input[] = {
+      0x04,       // Type
+      0x08,       // Length
+      0x06,       // Identifier
+      0x44, 0x00, // Value
+      0x09,       // Identifier
+      0x0f,       // Value
+      0x4a, 0x0a, // Identifier
+      0x00,       // Value
+      0x04,       // Type
+      0x08,       // Length
+      0x06,       // Identifier
+      0x44, 0x00, // Value
+      0x09,       // Identifier
+      0x0f,       // Value
+      0x4a, 0x0a, // Identifier
+      0x00,       // Value
+    };
+
+    Http3FrameDispatcher http3FrameDispatcher;
+    Http3ProtocolEnforcer enforcer;
+    Http3MockFrameHandler handler;
+
+    http3FrameDispatcher.add_handler(&enforcer);
+    http3FrameDispatcher.add_handler(&handler);
+
+    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    IOBufferReader *reader = buf->alloc_reader();
+    uint64_t nread         = 0;
+    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+    buf->write(input, sizeof(input));
+
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
+
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(handler.total_frame_received == 1);
+    CHECK(nread == sizeof(input));
+  }
+
+  SECTION("first frame of the control stream must be SETTINGS frame")
+  {
+    uint8_t input[] = {
+      0x0d,       // Type
+      0x01,       // Length
+      0x01,       // Push ID
+      0x04,       // Type
+      0x08,       // Length
+      0x06,       // Identifier
+      0x44, 0x00, // Value
+      0x09,       // Identifier
+      0x0f,       // Value
+      0x4a, 0x0a, // Identifier
+      0x00,       // Value
+    };
+
+    Http3FrameDispatcher http3FrameDispatcher;
+    Http3ProtocolEnforcer enforcer;
+    Http3MockFrameHandler handler;
+
+    http3FrameDispatcher.add_handler(&enforcer);
+    http3FrameDispatcher.add_handler(&handler);
+
+    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    IOBufferReader *reader = buf->alloc_reader();
+    uint64_t nread         = 0;
+    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+    buf->write(input, sizeof(input));
+
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
+
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+    CHECK(error->app_error_code == Http3ErrorCode::H3_MISSING_SETTINGS);
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 3);
+  }
 }

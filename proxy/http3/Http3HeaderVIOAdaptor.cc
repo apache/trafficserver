@@ -46,7 +46,7 @@ Http3HeaderVIOAdaptor::interests()
 }
 
 Http3ErrorUPtr
-Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::HEADERS);
   const Http3HeadersFrame *hframe = dynamic_cast<const Http3HeadersFrame *>(frame.get());

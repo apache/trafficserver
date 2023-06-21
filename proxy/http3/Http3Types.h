@@ -108,7 +108,7 @@ public:
   const char *msg = nullptr;
 
 protected:
-  Http3Error(){};
+  Http3Error() : app_error_code(Http3ErrorCode::H3_NO_ERROR){};
   Http3Error(const Http3ErrorCode error_code, const char *error_msg = nullptr)
     : cls(Http3ErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
 };
