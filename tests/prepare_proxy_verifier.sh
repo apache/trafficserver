@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 # vim: sw=4:ts=4:softtabstop=4:ai:et
 
 #  Licensed to the Apache Software Foundation (ASF) under one

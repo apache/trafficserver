@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -26,18 +26,9 @@ _END_
 
 if [ $? = 1 ]; then
     echo "Python 3.6 or newer is not installed/enabled."
-    return
+    exit 1
 else
     echo "Python 3.6 or newer detected!"
-fi
-
-# check for python development header -- for autest
-python3-config &> /dev/null
-if [ $? = 1 ]; then
-    echo "python3-dev/devel detected!"
-else
-    echo "python3-dev/devel is not installed. "
-    return
 fi
 
 # check for pipenv
@@ -53,4 +44,5 @@ if [ $? -eq 0 ]; then
     fi
 else
     echo "pipenv is not installed/enabled. "
+    exit 1
 fi
