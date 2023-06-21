@@ -4877,6 +4877,11 @@ UDP Configuration
    and disables it automatically if it causes send errors.
 
 
+.. ts:cv:: CONFIG proxy.config.udp.enable_gro INT 1
+
+   Enables (``1``) or disables (``0``) UDP GRO. When enabled, |TS| will try to use it
+   when reading the UDP socket.
+
 Plug-in Configuration
 =====================
 
