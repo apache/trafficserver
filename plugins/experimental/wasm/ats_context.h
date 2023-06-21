@@ -188,7 +188,7 @@ public:
     cr_hdr_buf_   = buf;
     cr_hdr_loc_   = loc;
     cr_body_      = body;
-    cr_body_size_ = size; 
+    cr_body_size_ = size;
     cr_result_    = result;
   }
 
@@ -197,7 +197,7 @@ public:
     cr_hdr_loc_   = nullptr;
     cr_body_      = nullptr;
     cr_body_size_ = 0;
-    cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);  
+    cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
   }
 
   // Metrics

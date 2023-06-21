@@ -560,7 +560,7 @@ Context::httpCall(std::string_view target, const Pairs & request_headers ,
     request += key + ": " + value + "\r\n";
   }
   request += "\r\n";
-  request += request_body; 
+  request += request_body;
 
   TSFetchEvent event_ids;
   event_ids.success_event_id  = FETCH_EVENT_ID_BASE;
@@ -1434,7 +1434,7 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
 
 WasmResult
 Context::continueStream(WasmStreamType /* stream_type */)
-{ 
+{
   if (reenable_txn_) {
     TSError("[wasm][%s] transaction already reenabled", __FUNCTION__);
     return WasmResult::Ok;
@@ -1450,7 +1450,7 @@ Context::continueStream(WasmStreamType /* stream_type */)
     return WasmResult::Ok;
   }
 }
-  
+
 WasmResult
 Context::closeStream(WasmStreamType /* stream_type */)
 {
@@ -1716,7 +1716,7 @@ Context::getHeaderMap(WasmHeaderMapType type)
     map.hdr_loc = cr_hdr_loc_;
     return map;
   case WasmHeaderMapType::HttpCallResponseTrailers:
-    return {};  
+    return {};
   default:
   case WasmHeaderMapType::GrpcReceiveTrailingMetadata:
   case WasmHeaderMapType::GrpcReceiveInitialMetadata:
