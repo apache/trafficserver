@@ -35,11 +35,11 @@ add_library(ts::records_p ALIAS records_p)
 target_include_directories(records_p
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
+        "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/mgmt"
         "${CMAKE_SOURCE_DIR}/mgmt/api/include"
         "${CMAKE_SOURCE_DIR}/mgmt/utils"
-        "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 
