@@ -264,14 +264,14 @@ Ptr<T>::operator=(const Ptr<T> &src)
 
 template <typename T>
 inline bool
-operator==(std::nullptr_t, Ptr<T> const &rhs)
+operator==(nullptr_t, Ptr<T> const &rhs)
 {
   return rhs.get() == nullptr;
 }
 
 template <typename T>
 inline bool
-operator!=(std::nullptr_t, Ptr<T> const &rhs)
+operator!=(nullptr_t, Ptr<T> const &rhs)
 {
   return rhs.get() != nullptr;
 }
