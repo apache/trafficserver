@@ -152,12 +152,18 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
     m_conn_info.connection_is_ssl = true;
     if (auto sec_protocol{tbs->get_tls_protocol_name()}; sec_protocol) {
       m_conn_info.sec_protocol = sec_protocol;
+    } else {
+      m_conn_info.sec_protocol = "-";
     }
     if (auto cipher{tbs->get_tls_cipher_suite()}; cipher) {
       m_conn_info.cipher_suite = cipher;
+    } else {
+      m_conn_info.cipher_suite = "-";
     }
     if (auto curve{tbs->get_tls_curve()}; curve) {
       m_conn_info.curve = curve;
+    } else {
+      m_conn_info.curve = "-";
     }
 
     if (!m_conn_info.tcp_reused) {
@@ -177,6 +183,8 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
 
   if (auto protocol_str{txn->get_protocol_string()}; protocol_str) {
     m_conn_info.protocol = protocol_str;
+  } else {
+    m_conn_info.protocol = "-";
   }
 }
 
