@@ -46,3 +46,5 @@ endif()
 if(HAVE_BROTLI_ENCODE_H)
     target_link_libraries(traffic_layout PRIVATE brotli::brotlienc)
 endif()
+
+install(TARGETS traffic_layout)
