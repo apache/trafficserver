@@ -1159,8 +1159,8 @@ HttpConfig::startup()
     c.proxy_hostname[0] = '\0';
   }
 
-  c.inbound  += RecHttpLoadIp("proxy.local.incoming_ip_to_bind");
-  c.outbound += RecHttpLoadIp("proxy.local.outgoing_ip_to_bind");
+  c.inbound  += RecHttpLoadIp("proxy.config.incoming_ip_to_bind");
+  c.outbound += RecHttpLoadIp("proxy.config.outgoing_ip_to_bind");
   RecHttpLoadIpAddrsFromConfVar("proxy.config.http.proxy_protocol_allowlist", c.config_proxy_protocol_ip_addrs);
   SSLConfigInit(&c.config_proxy_protocol_ip_addrs);
 
@@ -1176,7 +1176,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
 
-  HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
+  HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.config.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
 
   HttpEstablishStaticConfigByte(c.oride.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");

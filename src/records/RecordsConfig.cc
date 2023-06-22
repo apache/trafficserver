@@ -1290,7 +1290,7 @@ static const RecordElement RecordsConfig[] =
   //#  SSL requests from this proxy to a parent from
   //#  self-looping.
   //#
-  {RECT_LOCAL, "proxy.local.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_LOCAL, "proxy.config.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   {RECT_CONFIG, "proxy.config.http.forward_connect_method", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -1493,9 +1493,9 @@ static const RecordElement RecordsConfig[] =
   ,
 
   //# Add LOCAL Records Here
-  {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_LOCAL, "proxy.config.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_LOCAL, "proxy.local.outgoing_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_LOCAL, "proxy.config.outgoing_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //# Librecords based stats system (new as of v2.1.3)
