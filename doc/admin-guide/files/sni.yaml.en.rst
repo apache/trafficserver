@@ -45,7 +45,7 @@ the user needs to enter the fqdn in the configuration with a ``*.`` followed by 
 For some settings, there is no guarantee that they will be applied to a connection under certain conditions.
 An established TLS connection may be reused for another server name if it’s used for HTTP/2. This also means that settings
 for server name A may affects requests for server name B as well. See https://daniel.haxx.se/blog/2016/08/18/http2-connection-coalescing/
-for a more detailed description of HTTP/2 connection coalescing.
+for a more detailed description of HTTP/2 connection coalescing. A similar thing can happen on a QUIC connection for HTTP/3 as well.
 
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
@@ -173,6 +173,11 @@ http2                     Inbound   Indicates whether the H2 protocol should be 
 http2_buffer_water_mark   Inbound   Specifies the high water mark for all HTTP/2 frames on an outoging connection.
                                     By default this is :ts:cv:`proxy.config.http2.default_buffer_water_mark`.
                                     NOTE: Connection coalescing may prevent this taking effect.
+
+quic                      Inbound   Indicates whether QUIC connections should be accepted. The valid values are :code:`on` or
+                                    :code:`off`. Note that this is a more specific setting to configure QUIC availability per server
+                                    name. More broadly, you will also need to configure :ts:cv:`proxy.config.http.server_ports` to
+                                    open ports for QUIC.
 
 tunnel_route              Inbound   Destination as an FQDN and port, separated by a colon ``:``.
                                     Match group number can be specified by ``$N`` where N should refer to a specified group

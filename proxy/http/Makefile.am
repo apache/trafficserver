@@ -157,6 +157,11 @@ test_HttpTransact_LDADD  =  \
 	-lz -llzma -lcrypto -lresolv -lssl \
 	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
 
+if ENABLE_QUIC
+test_HttpTransact_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
 	unit_tests/main.cc \

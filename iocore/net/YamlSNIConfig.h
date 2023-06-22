@@ -57,6 +57,7 @@ TSDECL(valid_tls_version_min_in);
 TSDECL(valid_tls_version_max_in);
 TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
+TSDECL(quic);
 TSDECL(host_sni_policy);
 TSDECL(server_max_early_data);
 #undef TSDECL
@@ -71,7 +72,8 @@ struct YamlSNIConfig {
 
   struct Item {
     std::string fqdn;
-    std::optional<bool> offer_h2; // Has no value by default, so do not initialize!
+    std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
+    std::optional<bool> offer_quic; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
     std::string verify_client_ca_file;
     std::string verify_client_ca_dir;

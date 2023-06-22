@@ -117,6 +117,11 @@ test_LDADD = \
 	@YAMLCPP_LIBS@ \
 	-lm
 
+if ENABLE_QUIC
+test_LDADD += \
+  $(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 check_PROGRAMS = \
   test_Cache \
   test_RWW \

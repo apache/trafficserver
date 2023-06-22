@@ -86,6 +86,11 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
+if ENABLE_QUIC
+test_UDPNet_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 test_UDPNet_SOURCES = \
 	libinknet_stub.cc \
 	test_I_UDPNet.cc
@@ -120,6 +125,11 @@ test_libinknet_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
+
+if ENABLE_QUIC
+test_libinknet_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
 
 libinknet_a_SOURCES = \
 	ALPNSupport.cc \
