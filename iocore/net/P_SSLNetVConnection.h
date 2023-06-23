@@ -98,10 +98,9 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection,
+class SSLNetVConnection : public UnixNetVConnectionWithSNI,
                           public ALPNSupport,
                           public TLSSessionResumptionSupport,
-                          public TLSSNISupport,
                           public TLSEarlyDataSupport,
                           public TLSTunnelSupport,
                           public TLSCertSwitchSupport,

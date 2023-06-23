@@ -336,3 +336,7 @@ UnixNetVConnection::get_action() const
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void net_activity(UnixNetVConnection *vc, EThread *thread);
+
+class UnixNetVConnectionWithSNI : public UnixNetVConnection, public TLSSNISupport
+{
+};

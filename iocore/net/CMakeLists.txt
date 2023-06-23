@@ -117,6 +117,10 @@ if(TS_USE_POSIX_CAP)
     target_link_libraries(inknet PUBLIC cap::cap)
 endif()
 
+if(BUILD_TESTING)
+    add_subdirectory(unit_tests)
+endif()
+
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)
 # target_link_libraries(test_net records_p inknet inkevent tscore yaml-cpp libswoc)
