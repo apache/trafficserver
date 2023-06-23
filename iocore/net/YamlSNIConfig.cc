@@ -135,7 +135,7 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (offer_h2.has_value()) {
     actions.push_back(std::make_unique<ControlH2>(offer_h2.value()));
   }
-  if (item.offer_quic.has_value()) {
+  if (offer_quic.has_value()) {
     actions.push_back(std::make_unique<ControlQUIC>(offer_quic.value()));
   }
   if (verify_client_level != 255) {
