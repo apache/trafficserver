@@ -6571,7 +6571,7 @@ const char *
 TSVConnSslCipherGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = static_cast<TLSBasicSupport *>(vc->get_service(NetVConnection::Service::TLS_Basic));
+  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
 
   return tlsbs ? tlsbs->get_tls_cipher_suite() : nullptr;
 }
@@ -6580,7 +6580,7 @@ const char *
 TSVConnSslProtocolGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = static_cast<TLSBasicSupport *>(vc->get_service(NetVConnection::Service::TLS_Basic));
+  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
 
   return tlsbs ? tlsbs->get_tls_protocol_name() : nullptr;
 }
@@ -6589,7 +6589,7 @@ const char *
 TSVConnSslCurveGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = static_cast<TLSBasicSupport *>(vc->get_service(NetVConnection::Service::TLS_Basic));
+  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
 
   return tlsbs ? tlsbs->get_tls_curve() : nullptr;
 }
@@ -9674,7 +9674,7 @@ TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = static_cast<ALPNSupport *>(net_vc->get_service(NetVConnection::Service::TLS_ALPN));
+  auto alpn_vc        = NetConnectionService<ALPNSupport>(net_vc);
   if (alpn_vc) {
     alpn_vc->enableProtocol(protocol_idx);
     retval = TS_SUCCESS;
@@ -9688,7 +9688,7 @@ TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = static_cast<ALPNSupport *>(net_vc->get_service(NetVConnection::Service::TLS_ALPN));
+  auto alpn_vc        = NetConnectionService<ALPNSupport>(net_vc);
   if (alpn_vc) {
     alpn_vc->disableProtocol(protocol_idx);
     retval = TS_SUCCESS;

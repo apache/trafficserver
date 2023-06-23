@@ -570,3 +570,5 @@ NetVConnection::_set_service(enum NetVConnection::Service service, void *instanc
 {
   this->_services[static_cast<unsigned int>(service)] = instance;
 }
+
+template <typename T> T *NetConnectionService(const NetVConnection *);

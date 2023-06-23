@@ -23,12 +23,20 @@
  */
 
 #include "TLSTunnelSupport.h"
+#include "I_NetVConnection.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
 
 #include "swoc/IPEndpoint.h"
 
 int TLSTunnelSupport::_ex_data_index = -1;
+
+template <>
+TLSTunnelSupport *
+NetConnectionService(const NetVConnection *vc)
+{
+  return static_cast<TLSTunnelSupport *>(vc->get_service(NetVConnection::Service::TLS_Tunnel));
+}
 
 void
 TLSTunnelSupport::initialize()

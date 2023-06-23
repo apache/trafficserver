@@ -29,7 +29,7 @@
 void
 SSLProxySession::init(NetVConnection const &new_vc)
 {
-  if (new_vc.get_service(NetVConnection::Service::TLS_SNI) != nullptr) {
+  if (NetConnectionService<TLSSNISupport>(&new_vc) != nullptr) {
     if (char const *name = new_vc.get_server_name()) {
       _client_sni_server_name.assign(name);
     }

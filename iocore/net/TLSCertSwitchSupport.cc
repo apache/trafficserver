@@ -20,9 +20,17 @@
  */
 
 #include "TLSCertSwitchSupport.h"
+#include "I_NetVConnection.h"
 #include "P_SSLCertLookup.h"
 
 int TLSCertSwitchSupport::_ex_data_index = -1;
+
+template <>
+TLSCertSwitchSupport *
+NetConnectionService(const NetVConnection *vc)
+{
+  return static_cast<TLSCertSwitchSupport *>(vc->get_service(NetVConnection::Service::TLS_CertSwitch));
+}
 
 void
 TLSCertSwitchSupport::initialize()

@@ -287,7 +287,7 @@ ProxySession::get_local_addr()
 void
 ProxySession::_handle_if_ssl(NetVConnection *new_vc)
 {
-  auto tbs = static_cast<TLSBasicSupport *>(new_vc->get_service(NetVConnection::Service::TLS_Basic));
+  auto tbs = NetConnectionService<TLSBasicSupport>(new_vc);
   if (tbs) {
     _ssl = std::make_unique<SSLProxySession>();
     _ssl.get()->init(*new_vc);

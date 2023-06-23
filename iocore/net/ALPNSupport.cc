@@ -22,10 +22,18 @@
  */
 
 #include "P_ALPNSupport.h"
+#include "I_NetVConnection.h"
 #include "P_SSLNextProtocolSet.h"
 #include "records/I_RecHttp.h"
 
 int ALPNSupport::_ex_data_index = -1;
+
+template <>
+ALPNSupport *
+NetConnectionService(const NetVConnection *vc)
+{
+  return static_cast<ALPNSupport *>(vc->get_service(NetVConnection::Service::TLS_ALPN));
+}
 
 void
 ALPNSupport::initialize()
