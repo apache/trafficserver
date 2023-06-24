@@ -124,7 +124,7 @@ cmake \
 
 ${MAKE} -j ${num_threads}
 sudo ${MAKE} install
-cd ..
+cd ../..
 
 # Build quiche
 # Steps borrowed from: https://github.com/apache/trafficserver-ci/blob/main/docker/rockylinux8/Dockerfile
