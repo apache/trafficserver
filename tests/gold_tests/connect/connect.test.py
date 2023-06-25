@@ -165,3 +165,67 @@ class ConnectViaPVTest:
 
 
 ConnectViaPVTest().run()
+
+
+class ConnectViaPVTest2:
+    # This test executes a HTTP/2 CONNECT request with Proxy Verifier.
+    connectReplayFile = "replays/connect_h2.replay.yaml"
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess(
+            "connect-verifier-server2",
+            self.connectReplayFile)
+        # Verify server output
+        self.server.Streams.stdout += Testers.ExcludesExpression(
+            "test: connect-request",
+            "Verify the CONNECT request doesn't reach the server.")
+        self.server.Streams.stdout += Testers.ContainsExpression(
+            "GET /get HTTP/1.1\nuuid: 1\ntest: real-request", reflags=re.MULTILINE,
+            description="Verify the server gets the second(tunneled) request.")
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("connect-ts2", enable_tls=True)
+
+        self.ts.Disk.records_config.update({
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http|hpack',
+            'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
+            'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
+            'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl",
+            'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
+        })
+
+        self.ts.addDefaultSSLFiles()
+        self.ts.Disk.ssl_multicert_config.AddLine(
+            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+        )
+
+        self.ts.Disk.remap_config.AddLines([
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        ])
+        # Verify ts logs
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1", reflags=re.MULTILINE,
+            description="Verify that ATS recognizes the CONNECT request.")
+
+    def runTraffic(self):
+        tr = Test.AddTestRun("Verify correct handling of CONNECT request on HTTP/2")
+        tr.AddVerifierClientProcess(
+            "connect-client2",
+            self.connectReplayFile,
+            https_ports=[self.ts.Variables.ssl_port],
+            other_args='--thread-limit 1')
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def run(self):
+        self.runTraffic()
+
+
+ConnectViaPVTest2().run()
