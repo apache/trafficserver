@@ -31,6 +31,15 @@ else
     echo "Python 3.6 or newer detected!"
 fi
 
+# Check for python development header which is needed for the autest pip package.
+python3-config &> /dev/null
+if [ $? = 1 ]; then
+    echo "python3-dev/devel detected!"
+else
+    echo "python3-dev/devel is not installed. "
+    exit 1
+fi
+
 # check for pipenv
 pipenv --version &> /dev/null
 if [ $? -eq 0 ]; then
