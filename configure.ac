@@ -1879,8 +1879,7 @@ AM_CONDITIONAL([HAS_WASM], [test "x${has_wasm}" = "x1" ])
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
 #
-# Check for tcmalloc, jemalloc and mimalloc
-TS_CHECK_TCMALLOC
+# Check for jemalloc and mimalloc
 TS_CHECK_JEMALLOC
 TS_CHECK_MIMALLOC
 
