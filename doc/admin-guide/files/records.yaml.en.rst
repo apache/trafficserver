@@ -535,7 +535,7 @@ Network
    with a lot of concurrent connections, increasing this setting can reduce
    pressure on the system.
 
-.. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
+.. ts:cv:: CONFIG proxy.config.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server
    ports. The value is a space separated list of IP addresses, one per
@@ -555,18 +555,24 @@ Network
 .. topic:: Example
 
    Set the global default for IPv4 to ``192.168.101.18`` and leave the global
-   default for IPv6 as any address::
+   default for IPv6 as any address
 
-      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18
+   .. code-block:: yaml
+
+      ts:
+        incoming_ip_to_bind: 192.168.101.18
 
 .. topic:: Example
 
    Set the global default for IPv4 to ``191.68.101.18`` and the global default
-   for IPv6 to ``fc07:192:168:101::17``::
+   for IPv6 to ``fc07:192:168:101::17``
 
-      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 [fc07:192:168:101::17]
+   .. code-block:: yaml
 
-.. ts:cv:: LOCAL proxy.local.outgoing_ip_to_bind STRING 0.0.0.0 [::]
+      ts:
+        incoming_ip_to_bind: "192.168.101.18 [fc07:192:168:101::17]"
+
+.. ts:cv:: CONFIG proxy.config.outgoing_ip_to_bind STRING 0.0.0.0 [::]
 
    This controls the global default for the local IP address for outbound
    connections to origin servers. The value is a list of space separated IP
@@ -583,15 +589,21 @@ Network
 
 .. topic:: Example
 
-   Set the default local outbound IP address for IPv4 connections to ``192.168.101.18``.::
+   Set the default local outbound IP address for IPv4 connections to ``192.168.101.18``.
 
-      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.18
+   .. code-block:: yaml
+
+      ts:
+        outgoing_ip_to_bind: 192.168.101.18
 
 .. topic:: Example
 
-   Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.::
+   Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.
 
-      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 [fc07:192:168:101::17]
+   .. code-block:: yaml
+
+      ts:
+        outgoing_ip_to_bind: "192.168.101.17 [fc07:192:168:101::17]"
 
 .. ts:cv:: CONFIG proxy.config.net.event_period INT 10
 
@@ -749,12 +761,12 @@ tr-full
    Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
 
 tr-in
-   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind` for this port.
+   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.config.incoming_ip_to_bind` for this port.
 
    Not compatible with: ``ip-in``, ``blind``
 
 tr-out
-   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind` for this port.
+   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.config.outgoing_ip_to_bind` for this port.
 
    Not compatible with: ``ip-out``, ``ip-resolve``
 
@@ -762,12 +774,12 @@ tr-pass
    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables :ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as there is no other place to obtain the origin server address.
 
 ip-in
-   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this option is omitted :ts:cv:`proxy.local.incoming_ip_to_bind` is used.
+   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this option is omitted :ts:cv:`proxy.config.incoming_ip_to_bind` is used.
 
    Not compatible with: ``tr-in``.
 
 ip-out
-   Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted :ts:cv:`proxy.local.outgoing_ip_to_bind` is used.
+   Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted :ts:cv:`proxy.config.outgoing_ip_to_bind` is used.
 
    This option can used multiple times, once for each IP address family. The address used is selected by the IP address family of the origin server address.
 
@@ -799,7 +811,7 @@ mptcp
 
 .. topic:: Example
 
-   Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from :ts:cv:`proxy.local.incoming_ip_to_bind`.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
+   Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from :ts:cv:`proxy.config.incoming_ip_to_bind`.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
 
       8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
 
@@ -843,7 +855,7 @@ mptcp
    CONNECT method to the next hop, and establishes the tunnel after
    receiving a positive response. This behavior is useful in a proxy
    hierarchy, and is equivalent to setting
-   :ts:cv:`proxy.local.http.parent_proxy.disable_connect_tunneling` to
+   :ts:cv:`proxy.config.http.parent_proxy.disable_connect_tunneling` to
    `0` when parent proxying is enabled.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
@@ -1359,7 +1371,7 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
-.. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.disable_connect_tunneling INT 0
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 2
 
