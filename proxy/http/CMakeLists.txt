@@ -46,7 +46,10 @@ if(BUILD_REGRESSION_TESTING)
     target_sources(http PRIVATE RegressionHttpTransact.cc)
 endif()
 
-target_include_directories(http PRIVATE
+target_include_directories(http
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+    PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
@@ -56,6 +59,10 @@ target_include_directories(http PRIVATE
 
 if(TS_USE_QUIC)
     target_link_libraries(http PRIVATE ts::http3)
+endif()
+
+if(BUILD_TESTING)
+  add_subdirectory(unit_tests)
 endif()
 
 add_subdirectory(remap)
