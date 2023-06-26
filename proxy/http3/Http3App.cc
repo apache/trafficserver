@@ -192,6 +192,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 void
 Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
 {
+  Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
   Http3StreamType type;
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
   auto it                      = this->_remote_uni_stream_map.find(adapter->stream().id());
@@ -213,10 +214,22 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   }
 
   switch (type) {
-  case Http3StreamType::CONTROL:
-  case Http3StreamType::PUSH: {
+  case Http3StreamType::CONTROL: {
+    if (this->_control_stream_id == 0) {
+      this->_control_stream_id = adapter->stream().id();
+    } else if (this->_control_stream_id != adapter->stream().id()) {
+      error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR,
+                                                     "Only one control stream per peer is permitted");
+      Debug("http3", "Only one control stream per peer is permitted");
+      break;
+    }
     uint64_t nread = 0;
     this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
+    break;
+  }
+  case Http3StreamType::PUSH: {
+    error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
+    Debug("http3", "Only servers can push");
     // TODO: when PUSH comes from client, send stream error with HTTP_WRONG_STREAM_DIRECTION
     break;
   }

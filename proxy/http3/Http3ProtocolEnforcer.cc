@@ -22,6 +22,7 @@
  */
 
 #include "Http3ProtocolEnforcer.h"
+#include "Http3DebugNames.h"
 
 std::vector<Http3FrameType>
 Http3ProtocolEnforcer::interests()
@@ -45,6 +46,10 @@ Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, int
     } else if (frame_seq != 0 && f_type == Http3FrameType::SETTINGS) {
       error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_FRAME_UNEXPECTED,
                                                      "only one SETTINGS frame is allowed per the control stream");
+    } else if (f_type == Http3FrameType::DATA || f_type == Http3FrameType::HEADERS) {
+      std::string error_msg = Http3DebugNames::frame_type(f_type);
+      error_msg.append(" frame is not allowed on control stream");
+      error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_FRAME_UNEXPECTED, error_msg.c_str());
     }
   }
   return error;
