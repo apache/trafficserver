@@ -42,4 +42,6 @@ add_subdirectory(esi)
 add_subdirectory(header_rewrite)
 
 add_subdirectory(generator)
+
+add_subdirectory(healthchecks)
 add_subdirectory(xdebug)
