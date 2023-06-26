@@ -237,7 +237,6 @@ Condition Testing
         - TS_HAS_LZMA
         - TS_HAS_PIPE_BUFFER_SIZE_CONFIG
         - TS_HAS_JEMALLOC
-        - TS_HAS_TCMALLOC
         - TS_HAS_MIMALLOC
         - TS_HAS_IN6_IS_ADDR_UNSPECIFIED
         - TS_HAS_BACKTRACE
