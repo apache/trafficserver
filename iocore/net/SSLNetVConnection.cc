@@ -42,6 +42,8 @@
 #include "SSLStats.h"
 #include "P_ALPNSupport.h"
 
+#include <netinet/in.h>
+
 #include <string>
 #include <cstring>
 
@@ -1964,6 +1966,12 @@ void
 SSLNetVConnection::_fire_ssl_servername_event()
 {
   this->callHooks(TS_EVENT_SSL_SERVERNAME);
+}
+
+in_port_t
+SSLNetVConnection::_get_local_port()
+{
+  return this->get_local_port();
 }
 
 bool
