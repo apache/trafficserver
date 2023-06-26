@@ -44,5 +44,8 @@ add_subdirectory(header_rewrite)
 
 add_subdirectory(generator)
 
+if(HOST_OS STREQUAL "linux")
 add_subdirectory(healthchecks)
+endif()
+
 add_subdirectory(xdebug)
