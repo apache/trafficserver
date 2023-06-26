@@ -56,10 +56,11 @@ class QUICPacketHandler;
 class QUICResetTokenTable;
 class QUICConnectionTable;
 
-class QUICNetVConnection : public UnixNetVConnectionWithSNI,
+class QUICNetVConnection : public UnixNetVConnection,
                            public QUICConnection,
                            public RefCountObj,
                            public ALPNSupport,
+                           public TLSSNISupport,
                            public TLSSessionResumptionSupport,
                            public TLSCertSwitchSupport,
                            public TLSBasicSupport
