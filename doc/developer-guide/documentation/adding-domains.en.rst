@@ -209,7 +209,7 @@ Our variables domain might have the following ``run`` method:
         title['first'] = False
         title['objtype'] = node['objtype']
         self.add_name(title)
-        title.set_class('ts-variable-title')
+        title['classes'] = 'ts-variable-title'
 
         title += sphinx.addnodes.desc_name(var_name, var_name)
         node.append(title)
