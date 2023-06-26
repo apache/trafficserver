@@ -1,12 +1,11 @@
-Content length = 191414
-
-Body length = 191414
-
+``
+  content-length: 191414
+``
+Response fully received: 191414 bytes
 Content success
-
-Content length = 191414
-
-Body length = 191414
-
+``
+  content-length: 191414
+``
+Response fully received: 191414 bytes
 Content success
-
+``
