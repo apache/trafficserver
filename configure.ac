@@ -37,9 +37,9 @@ m4_define([TS_VERSION_N],[10000000])
 
 AC_INIT([Apache Traffic Server],[TS_VERSION_S()],[dev@trafficserver.apache.org],[trafficserver],[https://trafficserver.apache.org])
 AC_PREREQ([2.69])
-AC_CONFIG_AUX_DIR([build/_aux])
+AC_CONFIG_AUX_DIR([m4/_aux])
 AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])
-AC_CONFIG_MACRO_DIR([build])
+AC_CONFIG_MACRO_DIR([m4])
 
 # NOTE: we turn off portability warnings because the clang-tidy targets use
 # GNU make extensions to filter the sources list.

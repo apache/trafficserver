@@ -217,7 +217,7 @@ test_Update_header_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_Update_header.cc
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/m4/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/m4/tidy.mk
 
 # Note that hdrs is targeted from ../Makefile.am
 noinst_LIBRARIES = \

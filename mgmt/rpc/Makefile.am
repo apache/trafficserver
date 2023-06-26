@@ -175,7 +175,7 @@ $(shared_overridable_txn_vars_SOURCES):
 $(shared_rpc_ipc_client_SOURCES):
 	echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/m4/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
