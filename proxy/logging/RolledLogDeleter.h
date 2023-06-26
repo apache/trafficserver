@@ -31,7 +31,7 @@
 #include <time.h>
 #include <vector>
 
-#include "tscore/IntrusiveHashMap.h"
+#include "swoc/IntrusiveHashMap.h"
 
 /*-------------------------------------------------------------------------
   LogDeleteCandidate, LogDeletingInfo&Descriptor
@@ -216,7 +216,7 @@ private:
   std::deque<std::unique_ptr<LogDeletingInfo>> deletingInfoList;
 
   /** The set of candidates for deletion keyed by log_type. */
-  IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
+  swoc::IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
 
   /** The number of tracked candidates. */
   size_t num_candidates = 0;
