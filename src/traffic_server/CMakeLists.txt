@@ -81,4 +81,6 @@ if (TS_USE_LINUX_NATIVE_AIO)
     target_link_libraries(traffic_server aio)
 endif (TS_USE_LINUX_NATIVE_AIO)
 
+set_target_properties(traffic_server PROPERTIES ENABLE_EXPORTS ON)
+
 install(TARGETS traffic_server)

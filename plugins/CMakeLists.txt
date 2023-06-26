@@ -19,6 +19,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 function(add_atsplugin name)
   add_library(${name} MODULE ${ARGN})
+  target_link_libraries(${name} PRIVATE traffic_server)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
   set_target_properties(${name} PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
