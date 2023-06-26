@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A bash script to repeatedly run a command until its standard output matches a gold file.
+#
+# usage:
+#  stdout_wait [ MAX-WAIT [ POST-WAIT ] ] COMMAND GOLD-FILE-SPEC
+#
+# (COMMAND may contain white space.)
+#
+# MAX-WAIT is the maximum number of seconds to wait for the condition.  If it is omitted, it defaults to 60.
+#
+# POST-WAIT is the number of seconds to wait after the condition is true.  If it is omitted, it defaults to 0.
+#
+# The script exits with status 0 when the command's standard output matches the gold file.  It exits with status 1 if the
+# output never matche the gold file, and the maximum wait has expired.
+
+WAIT=60
+POST_WAIT=0
+
+USAGE="usage: stdout_wait [ MAX-WAIT [ POST-WAIT ] ] COMMAND GOLD-FILE-SPEC"
+
+if [[ "$1" = "" ]] ; then
+    echo $USAGE >&2
+    exit 1
+fi
+
+X=$( echo "$1" | sed 's/x/yy/g' | sed 's/[^0-9]/x/g' )
+if [[ "$X" = "$1" ]] ; then
+    WAIT=$1
+    shift
+    if [[ "$1" = "" ]] ; then
+        echo $USAGE >&2
+        exit 1
+    fi
+    X=$( echo "$1" | sed 's/x/yy/g' | sed 's/[^0-9]/x/g' )
+    if [[ "$X" = "$1" ]] ; then
+        POST_WAIT=$1
+        shift
+    fi
+fi
+
+if [[ "$1" = "" ]] ; then
+    echo $USAGE >&2
+    exit 1
+fi
+
+if [[ ! -f "$2" ]] ; then
+    echo $USAGE >&2
+    exit 1
+fi
+
+while (( WAIT > 0 ))
+do
+    if $1 | diff - $2 >| /dev/null 2> /dev/null
+    then
+        if (( POST_WAIT > 0 ))
+        then
+            sleep $POST_WAIT
+        fi
+        exit 0
+    fi
+    sleep 1
+    let WAIT=WAIT-1
+done
+$1 | diff - $2
+exit 1
