@@ -47,7 +47,6 @@ option(ENABLE_POSIX_CAP
     ON
 )
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
-option(ENABLE_TCMALLOC "Use TCMalloc (default OFF)")
 set(ENABLE_TPROXY
     "AUTO"
     CACHE
