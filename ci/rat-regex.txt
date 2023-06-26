@@ -1,6 +1,6 @@
 ^BUILDS$
 ^autom4te\.cache$
-^build$
+^m4$
 ^build-aux$
 ^body_factory$
 ^config\.log$
