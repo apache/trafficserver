@@ -67,6 +67,32 @@ test_done()
 
 const char *GLOBAL_DATA = static_cast<char *>(ats_malloc(10 * 1024 * 1024 + 3)); // 10M
 
+#if TS_USE_LINUX_IO_URING
+
+class IOUringLoopTailHandler : public EThread::LoopTailHandler
+{
+public:
+  int
+  waitForActivity(ink_hrtime timeout) override
+  {
+    IOUringContext::local_context()->submit_and_wait(timeout);
+
+    return 0;
+  }
+  /** Unblock.
+
+  This is required to unblock (wake up) the block created by calling @a cb.
+      */
+  void
+  signalActivity() override
+  {
+  }
+
+  ~IOUringLoopTailHandler() override {}
+} uring_handler;
+
+#endif
+
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
@@ -95,6 +121,10 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     EThread *thread = new EThread();
     thread->set_specific();
     init_buffer_allocators(0);
+
+#if TS_USE_LINUX_IO_URING
+    thread->set_tail_handler(&uring_handler);
+#endif
 
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/iocore/cache/test";
     Layout::get()->sysconfdir = src_dir;
