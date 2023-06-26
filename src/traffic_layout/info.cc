@@ -93,7 +93,6 @@ produce_features(bool json)
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 0, json);
 #endif /* F_GETPIPE_SZ */
   print_feature("TS_HAS_JEMALLOC", TS_HAS_JEMALLOC, json);
-  print_feature("TS_HAS_TCMALLOC", TS_HAS_TCMALLOC, json);
   print_feature("TS_HAS_IN6_IS_ADDR_UNSPECIFIED", TS_HAS_IN6_IS_ADDR_UNSPECIFIED, json);
   print_feature("TS_HAS_BACKTRACE", TS_HAS_BACKTRACE, json);
   print_feature("TS_HAS_PROFILER", TS_HAS_PROFILER, json);
