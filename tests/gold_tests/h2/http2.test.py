@@ -135,8 +135,6 @@ ts.Disk.records_config.update({
 })
 
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
-ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
-ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 
 # ----
@@ -145,7 +143,7 @@ ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 
 # Test Case 1:  basic H2 interaction
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'{sys.executable} h2client.py -p {ts.Variables.ssl_port}'
+tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} / --verify_default_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -154,14 +152,14 @@ tr.StillRunningAfter = server
 
 # Test Case 2: Make sure all the big file gets back.  Regression test for issue 1646
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'{sys.executable} h2bigclient.py -p {ts.Variables.ssl_port}'
+tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /bigfile --repeat 2 --verify_default_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
 tr.StillRunningAfter = server
 
 # Test Case 3: Chunked content
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'{sys.executable} h2chunked.py -p {ts.Variables.ssl_port}  -u /test2'
+tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /test2 --print_body'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
 tr.StillRunningAfter = server
@@ -179,7 +177,7 @@ tr.StillRunningAfter = server
 
 # Test Case 5: h2_active_timeout
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py -p {ts.Variables.ssl_port} -d 4'
+tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py {ts.Variables.ssl_port} / 4'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
