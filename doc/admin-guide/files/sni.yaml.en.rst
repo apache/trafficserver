@@ -27,7 +27,7 @@ Description
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
 connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
-file consists of a set of configuration items, each identified by an SNI value (``fqdn``).
+file consists of a set of configuration items, each identified by an SNI value and optionally a port range (``fqdn``, ``inbound_port_range``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
 the defaults. This is done during the inbound connection processing; some outbound properties
@@ -52,11 +52,34 @@ for a more detailed description of HTTP/2 connection coalescing. A similar thing
 .. _override-host-sni-policy:
 .. _override-h2-properties:
 
+The following fields make up the key for each item in the configuration file.
+
 ========================= ========= ========================================================================================
 Key                       Direction Meaning
 ========================= ========= ========================================================================================
-fqdn                      Both      Fully Qualified Domain Name. This item is used if the SNI value matches this.
+fqdn                      Both      Fully Qualified Domain Name.
 
+inbound_port_range        Inbound   The port range for the inbound connection in the form ``port`` or
+                                    ``min-max``.
+
+                                    For example:
+
+                                       ``443``
+
+                                    would match all requests with an SNI for example.com on port 443, and
+
+                                       ``443-446``
+
+                                    would match requests with an SNI for example.com on ports 443 to 446, inclusive.
+                                    By default this is all ports.
+
+========================= ========= ========================================================================================
+
+The following fields are the directives that determine the behavior of connections matching the key.
+
+========================= ========= ========================================================================================
+Key                       Direction Meaning
+========================= ========= ========================================================================================
 ip_allow                  Inbound   Specify a list of client IP address, subnets, or ranges what are allowed to complete
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
                                     Here is an example list ::

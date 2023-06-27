@@ -22,16 +22,23 @@
 #pragma once
 
 #include <vector>
+#include <utility>
 #include <string>
+#include <set>
 #include <optional>
 #include <memory>
+#include <cstdint>
 
+#include "SNIActionPerformer.h"
 #include "SSLTypes.h"
+
+#include "tscpp/util/ts_ip.h"
 
 #include "tscore/Errata.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
+TSDECL(inbound_port_range);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
@@ -72,6 +79,9 @@ struct YamlSNIConfig {
 
   struct Item {
     std::string fqdn;
+
+    ts::port_range_t port_range{1, ts::MAX_PORT_VALUE};
+
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
@@ -102,7 +112,10 @@ struct YamlSNIConfig {
     uint32_t tunnel_prewarm_inactive_timeout = 0;
     TunnelPreWarm tunnel_prewarm             = TunnelPreWarm::UNSET;
 
+    using action_vector_t = std::vector<std::unique_ptr<ActionItem>>;
+
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
+    void populate_sni_actions(action_vector_t &actions);
   };
 
   ts::Errata loader(const std::string &cfgFilename);

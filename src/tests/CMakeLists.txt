@@ -100,7 +100,22 @@ add_cache_test(Update_S_to_L ${CMAKE_SOURCE_DIR}/iocore/cache/test/test_Update_S
 add_executable(test_AIO ${CMAKE_SOURCE_DIR}/iocore/aio/test_AIO.cc)
 add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO> WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/iocore/aio)
 
-add_net_test(test_net ${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc)
+add_net_test(test_net
+    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_ProxyProtocol.cc"
+    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_SSLSNIConfig.cc"
+    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/test_YamlSNIConfig.cc"
+    "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests/unit_test_main.cc"
+)
+set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/iocore/net/unit_tests")
+target_compile_definitions(test_net
+    PRIVATE
+      LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR}
+)
+target_link_libraries(test_net
+    PRIVATE
+        hdrs
+        proxy
+)
 
 add_stubbed_test(EventSystem ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_EventSystem.cc)
 add_stubbed_test(IOBuffer ${CMAKE_SOURCE_DIR}/iocore/eventsystem/unit_tests/test_IOBuffer.cc)

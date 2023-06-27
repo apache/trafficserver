@@ -26,6 +26,8 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "quic/QUICStream_quiche.h"
 #include "quic/QUICGlobals.h"
+
+#include <netinet/in.h>
 #include <quiche.h>
 
 static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
@@ -743,6 +745,12 @@ QUICNetVConnection::_get_tls_curve() const
 void
 QUICNetVConnection::_fire_ssl_servername_event()
 {
+}
+
+in_port_t
+QUICNetVConnection::_get_local_port()
+{
+  return this->get_local_port();
 }
 
 const IpEndpoint &

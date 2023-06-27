@@ -23,11 +23,14 @@
  */
 #pragma once
 
-#include <optional>
+#include "tscore/ink_config.h"
+
+#include <netinet/in.h>
+#include <openssl/ssl.h>
+
 #include <string_view>
 #include <memory>
-#include <openssl/ssl.h>
-#include "tscore/ink_config.h"
+#include <optional>
 
 class TLSSNISupport
 {
@@ -59,6 +62,8 @@ public:
 
 protected:
   virtual void _fire_ssl_servername_event() = 0;
+
+  virtual in_port_t _get_local_port() = 0;
 
   void _clear();
 
