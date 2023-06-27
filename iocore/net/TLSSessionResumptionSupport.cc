@@ -51,9 +51,9 @@ int TLSSessionResumptionSupport::_ex_data_index = -1;
 
 template <>
 TLSSessionResumptionSupport *
-NetConnectionService(const NetVConnection *vc)
+NetVConnection::get_service() const
 {
-  return static_cast<TLSSessionResumptionSupport *>(vc->get_service(NetVConnection::Service::TLS_SessionResumption));
+  return static_cast<TLSSessionResumptionSupport *>(this->_get_service(NetVConnection::Service::TLS_SessionResumption));
 }
 
 static bool

@@ -65,17 +65,6 @@ typedef enum {
 class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
-  enum class Service : uint8_t {
-    TLS_ALPN,
-    TLS_Basic,
-    TLS_CertSwitch,
-    TLS_EarlyData,
-    TLS_SNI,
-    TLS_SessionResumption,
-    TLS_Tunnel,
-    N_SERVICES,
-  };
-
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
@@ -518,9 +507,20 @@ public:
   bool has_proxy_protocol(IOBufferReader *);
   bool has_proxy_protocol(char *, int64_t *);
 
-  void *get_service(enum Service mixin_index) const;
+  template <typename S> S *get_service() const;
 
 protected:
+  enum class Service : uint8_t {
+    TLS_ALPN,
+    TLS_Basic,
+    TLS_CertSwitch,
+    TLS_EarlyData,
+    TLS_SNI,
+    TLS_SessionResumption,
+    TLS_Tunnel,
+    N_SERVICES,
+  };
+
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
   ProxyProtocol pp_info;
@@ -544,6 +544,9 @@ protected:
   void *_services[static_cast<unsigned int>(Service::N_SERVICES)] = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   };
+
+private:
+  void *_get_service(enum Service mixin_index) const;
 };
 
 inline NetVConnection::NetVConnection() : VConnection(nullptr)
@@ -560,7 +563,7 @@ NetVConnection::trapWriteBufferEmpty(int event)
 }
 
 inline void *
-NetVConnection::get_service(enum NetVConnection::Service service) const
+NetVConnection::_get_service(enum NetVConnection::Service service) const
 {
   return _services[static_cast<unsigned int>(service)];
 }
@@ -570,5 +573,3 @@ NetVConnection::_set_service(enum NetVConnection::Service service, void *instanc
 {
   this->_services[static_cast<unsigned int>(service)] = instance;
 }
-
-template <typename T> T *NetConnectionService(const NetVConnection *);

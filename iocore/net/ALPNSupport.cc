@@ -30,9 +30,9 @@ int ALPNSupport::_ex_data_index = -1;
 
 template <>
 ALPNSupport *
-NetConnectionService(const NetVConnection *vc)
+NetVConnection::get_service() const
 {
-  return static_cast<ALPNSupport *>(vc->get_service(NetVConnection::Service::TLS_ALPN));
+  return static_cast<ALPNSupport *>(this->_get_service(NetVConnection::Service::TLS_ALPN));
 }
 
 void

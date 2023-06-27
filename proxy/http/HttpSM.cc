@@ -522,7 +522,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   mptcp_state       = netvc->get_mptcp_state();
   client_tcp_reused = !(ua_txn->is_first_transaction());
 
-  if (auto tbs = NetConnectionService<TLSBasicSupport>(netvc)) {
+  if (auto tbs = netvc->get_service<TLSBasicSupport>()) {
     client_connection_is_ssl = true;
     const char *protocol     = tbs->get_tls_protocol_name();
     client_sec_protocol      = protocol ? protocol : "-";
@@ -538,11 +538,11 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
     }
   }
 
-  if (auto as = NetConnectionService<ALPNSupport>(netvc)) {
+  if (auto as = netvc->get_service<ALPNSupport>()) {
     client_alpn_id = as->get_negotiated_protocol_id();
   }
 
-  if (auto tsrs = NetConnectionService<TLSSessionResumptionSupport>(netvc)) {
+  if (auto tsrs = netvc->get_service<TLSSessionResumptionSupport>()) {
     client_ssl_reused = tsrs->getSSLSessionCacheHit();
   }
 
@@ -585,7 +585,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
-  auto *tts = NetConnectionService<TLSTunnelSupport>(netvc);
+  auto *tts = netvc->get_service<TLSTunnelSupport>();
   if (is_transparent_passthrough_allowed() || (tts && tts->is_decryption_needed())) {
     ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
   }
@@ -649,7 +649,7 @@ HttpSM::setup_blind_tunnel_port()
   }
 
   TLSTunnelSupport *tts = nullptr;
-  if (!ua_txn->is_outbound_transparent() && (tts = NetConnectionService<TLSTunnelSupport>(netvc))) {
+  if (!ua_txn->is_outbound_transparent() && (tts = netvc->get_service<TLSTunnelSupport>())) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       if (tts->has_tunnel_destination()) {
         auto tunnel_host = tts->get_tunnel_host();
@@ -1513,7 +1513,7 @@ plugins required to work with sni_routing.
       t_state.hdr_info.client_request.url_set(&u);
 
       NetVConnection *netvc = ua_txn->get_netvc();
-      auto *tts             = NetConnectionService<TLSTunnelSupport>(netvc);
+      auto *tts             = netvc->get_service<TLSTunnelSupport>();
 
       if (tts && tts->has_tunnel_destination()) {
         auto tunnel_host = tts->get_tunnel_host();
@@ -1678,7 +1678,7 @@ HttpSM::handle_api_return()
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START: {
     NetVConnection *netvc = ua_txn->get_netvc();
-    auto *tts             = NetConnectionService<TLSTunnelSupport>(netvc);
+    auto *tts             = netvc->get_service<TLSTunnelSupport>();
     bool forward_dest     = tts != nullptr && tts->is_decryption_needed();
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
@@ -1822,7 +1822,7 @@ HttpSM::create_server_session(NetVConnection *netvc, MIOBuffer *netvc_read_buffe
 {
   // Figure out what protocol was negotiated
   int proto_index  = SessionProtocolNameRegistry::INVALID;
-  auto const *alpn = NetConnectionService<ALPNSupport>(netvc);
+  auto const *alpn = netvc->get_service<ALPNSupport>();
   if (alpn) {
     proto_index = alpn->get_negotiated_protocol_id();
   }
@@ -5576,7 +5576,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   int scheme_to_use = t_state.scheme; // get initial scheme
   bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
   if (ua_txn) {
-    auto *tts = NetConnectionService<TLSTunnelSupport>(ua_txn->get_netvc());
+    auto *tts = ua_txn->get_netvc()->get_service<TLSTunnelSupport>();
     if (tts && raw) {
       tls_upstream = tts->is_upstream_tls();
       _tunnel_type = tts->get_tunnel_type();
@@ -5584,7 +5584,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
       int pid = SessionProtocolNameRegistry::INVALID;
       if (tts->get_tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
-        auto *alpns = NetConnectionService<ALPNSupport>(ua_txn->get_netvc());
+        auto *alpns = ua_txn->get_netvc()->get_service<ALPNSupport>();
         ink_assert(alpns);
         pid = alpns->get_negotiated_protocol_id();
         if (pid != SessionProtocolNameRegistry::INVALID) {
@@ -6605,12 +6605,12 @@ HttpSM::attach_server_session()
   UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
 
   // set flag for server session is SSL
-  TLSBasicSupport *tbs = NetConnectionService<TLSBasicSupport>(server_vc);
+  TLSBasicSupport *tbs = server_vc->get_service<TLSBasicSupport>();
   if (tbs) {
     server_connection_is_ssl = true;
   }
 
-  if (auto tsrs = NetConnectionService<TLSSessionResumptionSupport>(server_vc)) {
+  if (auto tsrs = server_vc->get_service<TLSSessionResumptionSupport>()) {
     server_ssl_reused = tsrs->getSSLOriginSessionCacheHit();
   }
 

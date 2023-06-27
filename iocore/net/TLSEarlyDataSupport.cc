@@ -31,9 +31,9 @@ int TLSEarlyDataSupport::_ex_data_index = -1;
 
 template <>
 TLSEarlyDataSupport *
-NetConnectionService(const NetVConnection *vc)
+NetVConnection::get_service() const
 {
-  return static_cast<TLSEarlyDataSupport *>(vc->get_service(NetVConnection::Service::TLS_EarlyData));
+  return static_cast<TLSEarlyDataSupport *>(this->_get_service(NetVConnection::Service::TLS_EarlyData));
 }
 
 void

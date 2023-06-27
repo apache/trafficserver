@@ -6571,7 +6571,7 @@ const char *
 TSVConnSslCipherGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
+  TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
 
   return tlsbs ? tlsbs->get_tls_cipher_suite() : nullptr;
 }
@@ -6580,7 +6580,7 @@ const char *
 TSVConnSslProtocolGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
+  TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
 
   return tlsbs ? tlsbs->get_tls_protocol_name() : nullptr;
 }
@@ -6589,7 +6589,7 @@ const char *
 TSVConnSslCurveGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  TLSBasicSupport *tlsbs = NetConnectionService<TLSBasicSupport>(vc);
+  TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
 
   return tlsbs ? tlsbs->get_tls_curve() : nullptr;
 }
@@ -9674,7 +9674,7 @@ TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = NetConnectionService<ALPNSupport>(net_vc);
+  auto alpn_vc        = net_vc->get_service<ALPNSupport>();
   if (alpn_vc) {
     alpn_vc->enableProtocol(protocol_idx);
     retval = TS_SUCCESS;
@@ -9688,7 +9688,7 @@ TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = NetConnectionService<ALPNSupport>(net_vc);
+  auto alpn_vc        = net_vc->get_service<ALPNSupport>();
   if (alpn_vc) {
     alpn_vc->disableProtocol(protocol_idx);
     retval = TS_SUCCESS;

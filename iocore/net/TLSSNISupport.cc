@@ -32,9 +32,9 @@ int TLSSNISupport::_ex_data_index = -1;
 
 template <>
 TLSSNISupport *
-NetConnectionService(const NetVConnection *vc)
+NetVConnection::get_service() const
 {
-  return static_cast<TLSSNISupport *>(vc->get_service(NetVConnection::Service::TLS_SNI));
+  return static_cast<TLSSNISupport *>(this->_get_service(NetVConnection::Service::TLS_SNI));
 }
 
 void
