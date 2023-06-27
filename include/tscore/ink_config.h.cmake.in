@@ -65,6 +65,7 @@
 #cmakedefine HAVE_ARPA_NAMESER_H 1
 #cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
 #cmakedefine HAVE_SIGINFO_H 1
+#cmakedefine HAVE_ENDIAN_H 1
 
 #cmakedefine01 HAVE_GETRESUID
 #cmakedefine01 HAVE_GETRESGID
