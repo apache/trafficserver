@@ -5745,6 +5745,40 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->hdr_info.extension_method = true;
   }
 
+  // This function, HttpTransact::initialize_state_variables_from_request(), may be called multiple times for the same
+  // HTTP request.  But we only want to increment the per-method request metric the first time this function is called
+  // for each request.
+
+  if (!s->method_metric_incremented) {
+    if (s->method == HTTP_WKSIDX_GET) {
+      HTTP_INCREMENT_DYN_STAT(http_get_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_HEAD) {
+      HTTP_INCREMENT_DYN_STAT(http_head_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_POST) {
+      HTTP_INCREMENT_DYN_STAT(http_post_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_PUT) {
+      HTTP_INCREMENT_DYN_STAT(http_put_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_CONNECT) {
+      HTTP_INCREMENT_DYN_STAT(http_connect_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_DELETE) {
+      HTTP_INCREMENT_DYN_STAT(http_delete_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_PURGE) {
+      HTTP_INCREMENT_DYN_STAT(http_purge_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_TRACE) {
+      HTTP_INCREMENT_DYN_STAT(http_trace_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_PUSH) {
+      HTTP_INCREMENT_DYN_STAT(http_push_requests_stat);
+    } else if (s->method == HTTP_WKSIDX_OPTIONS) {
+      HTTP_INCREMENT_DYN_STAT(http_options_requests_stat);
+    } else {
+      HTTP_INCREMENT_DYN_STAT(http_extension_method_requests_stat);
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
+      s->squid_codes.log_code      = SQUID_LOG_TCP_MISS;
+      s->hdr_info.extension_method = true;
+    }
+    s->method_metric_incremented = true;
+  }
+
   // if transfer encoding is chunked content length is undefined
   if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
     s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;

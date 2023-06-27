@@ -161,7 +161,7 @@ class ConnectViaPVTest:
         tr.StillRunningAfter = self.ts
 
     def __testMetrics(self):
-        tr = Test.AddTestRun("Reload config")
+        tr = Test.AddTestRun("Test metrics")
         tr.Processes.Default.Command = (
             f"{Test.Variables.AtsTestToolsDir}/stdout_wait" +
             " 'traffic_ctl metric get" +

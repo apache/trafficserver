@@ -753,10 +753,11 @@ public:
     int64_t internal_msg_buffer_size                = 0;       // out
     int64_t internal_msg_buffer_fast_allocator_size = -1;
 
-    int scheme          = -1;     // out
-    int next_hop_scheme = scheme; // out
-    int orig_scheme     = scheme; // pre-mapped scheme
-    int method          = 0;
+    int scheme                     = -1;     // out
+    int next_hop_scheme            = scheme; // out
+    int orig_scheme                = scheme; // pre-mapped scheme
+    int method                     = 0;
+    bool method_metric_incremented = false;
 
     /// The errno associated with a failed connect attempt.
     ///
