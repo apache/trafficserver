@@ -1511,9 +1511,9 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
 }
 
 void
-UnixNetVConnection::make_tunnel_endpoint()
+UnixNetVConnection::mark_as_tunnel_endpoint()
 {
-  Debug("iocore_net", "Entering UnixNetVConnection::make_tunnel_endpoint()");
+  Debug("iocore_net", "Entering UnixNetVConnection::mark_as_tunnel_endpoint()");
 
   ink_assert(!_is_tunnel_endpoint);
 

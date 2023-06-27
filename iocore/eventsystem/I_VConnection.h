@@ -363,7 +363,7 @@ public:
   // This function should be called when the VConnection is a tunnel endpoint.  By default, a VConnection does not care if it
   // is a tunnel endpoint.
   virtual void
-  make_tunnel_endpoint()
+  mark_as_tunnel_endpoint()
   {
   }
 

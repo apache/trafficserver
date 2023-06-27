@@ -136,7 +136,7 @@ public:
 
   bool support_sni() const;
 
-  void make_tunnel_endpoint() override;
+  void mark_as_tunnel_endpoint() override;
 
   /// Variables
   //

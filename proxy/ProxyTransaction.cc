@@ -278,9 +278,9 @@ ProxyTransaction::set_close_connection(HTTPHdr &hdr) const
 }
 
 void
-ProxyTransaction::make_tunnel_endpoint()
+ProxyTransaction::mark_as_tunnel_endpoint()
 {
   auto nvc = get_netvc();
   ink_assert(nvc != nullptr);
-  nvc->make_tunnel_endpoint();
+  nvc->mark_as_tunnel_endpoint();
 }

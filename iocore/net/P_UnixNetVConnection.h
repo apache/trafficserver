@@ -228,7 +228,7 @@ public:
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
   // set_context() should be called before calling this member function.
-  void make_tunnel_endpoint() override;
+  void mark_as_tunnel_endpoint() override;
 
   bool
   is_tunnel_endpoint() const

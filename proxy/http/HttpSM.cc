@@ -7305,8 +7305,8 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
                                "http server - tunnel");
   }
 
-  _ua.get_entry()->vc->make_tunnel_endpoint();
-  server_entry->vc->make_tunnel_endpoint();
+  _ua.get_entry()->vc->make_as_tunnel_endpoint();
+  server_entry->vc->make_as_tunnel_endpoint();
 
   // Make the tunnel aware that the entries are bi-directional
   tunnel.chain(c_os, p_os);
