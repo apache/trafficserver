@@ -575,8 +575,6 @@ ts:
       skip_cache_on_bucket_contention: 0
       timeout: 0
       value: 2
-  stat_api:
-    max_stats_allowed: 256
   stop:
     shutdown_timeout: 0
   system:

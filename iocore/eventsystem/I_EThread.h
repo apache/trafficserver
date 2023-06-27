@@ -32,8 +32,7 @@
 #include "I_ProtectedQueue.h"
 #include "tscpp/util/Histogram.h"
 
-// TODO: This would be much nicer to have "run-time" configurable (or something),
-// perhaps based on proxy.config.stat_api.max_stats_allowed or other configs. XXX
+// TODO: This would be much nicer to have "run-time" configurable (or something)
 #define PER_THREAD_DATA (1024 * 1024)
 
 // This is not used by the cache anymore, it uses proxy.config.cache.mutex_retry_delay

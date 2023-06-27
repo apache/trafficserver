@@ -2083,8 +2083,7 @@ tsapi struct sockaddr const *TSNetVConnLocalAddrGet(TSVConn vc);
 
 /* --------------------------------------------------------------------------
    Stats and configs based on librecords raw stats (this is preferred API until we
-   rewrite stats). This system has a limitation of up to 1,500 stats max, controlled
-   via proxy.config.stat_api.max_stats_allowed (default is 512).
+   rewrite stats).
 
    This is available as of Apache TS v2.2.*/
 typedef enum {
