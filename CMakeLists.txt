@@ -127,6 +127,7 @@ CHECK_INCLUDE_FILE(arpa/inet.h HAVE_ARPA_INET_H)
 CHECK_INCLUDE_FILE(arpa/nameser.h HAVE_ARPA_NAMESER_H)
 CHECK_INCLUDE_FILE(arpa/nameser_compat.h HAVE_ARPA_NAMESER_COMPAT_H)
 CHECK_INCLUDE_FILE(siginfo.h HAVE_SIGINFO_H)
+CHECK_INCLUDE_FILE(endian.h HAVE_ENDIAN_H)
 
 # Find libraries
 find_package(Backtrace)
