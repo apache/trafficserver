@@ -41,6 +41,7 @@ add_library(tscore SHARED
         CryptoHash.cc
         DbgCtl.cc
         Diags.cc
+        Encoding.cc
         Errata.cc
         EventNotify.cc
         Extendible.cc
