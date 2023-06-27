@@ -22,7 +22,6 @@
  */
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <ts/experimental.h>
 #include <cstdlib>
 #include <cstdio>
 #include <getopt.h>
