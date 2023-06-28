@@ -1498,10 +1498,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_LOCAL, "proxy.config.outgoing_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
-  //# Librecords based stats system (new as of v2.1.3)
-  {RECT_CONFIG, "proxy.config.stat_api.max_stats_allowed", RECD_INT, "256", RECU_RESTART_TS, RR_NULL, RECC_INT, "[256-1000]", RECA_NULL}
-  ,
-
   //############
   //#
   //# Per-thread freelist / allocator controls
