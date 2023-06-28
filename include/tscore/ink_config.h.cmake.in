@@ -73,6 +73,7 @@
 #cmakedefine01 HAVE_EVENTFD
 
 #cmakedefine01 HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
+#cmakedefine01 TS_HAS_TLS_KEYLOGGING
 
 #cmakedefine HAVE_BIO_METH_NEW 1
 #cmakedefine HAVE_BIO_SET_DATA 1

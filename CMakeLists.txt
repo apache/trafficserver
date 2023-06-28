@@ -245,7 +245,10 @@ endif(HAVE_LIBAIO AND USE_LIBAIO)
 
 # Check ssl functionality
 list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
+list(APPEND CMAKE_REQUIRED_LIBRARIES
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
+)
 check_symbol_exists(BIO_meth_new "openssl/bio.h" HAVE_BIO_METH_NEW)
 check_symbol_exists(BIO_set_data "openssl/bio.h" HAVE_BIO_SET_DATA)
 check_symbol_exists(BIO_get_data "openssl/bio.h" HAVE_BIO_GET_DATA)
@@ -254,6 +257,7 @@ check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
+check_symbol_exists(SSL_CTX_set_keylog_callback openssl/ssl.h TS_HAS_TLS_KEYLOGGING)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
 
 # Catch2 for tests
