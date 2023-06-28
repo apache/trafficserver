@@ -15,7 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/m4/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 lib_LTLIBRARIES = libtscppapi.la
 

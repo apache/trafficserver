@@ -16,8 +16,8 @@
 
 # Add new plugins in alphabetic order, but keep experimental always at the bottom.
 
-include $(top_srcdir)/m4/plugins.mk
-include $(top_srcdir)/m4/tidy.mk
+include $(top_srcdir)/mk/plugins.mk
+include $(top_srcdir)/mk/tidy.mk
 
 check_PROGRAMS =
 noinst_LTLIBRARIES =

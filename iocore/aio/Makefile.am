@@ -61,7 +61,7 @@ test_AIO_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
 
-include $(top_srcdir)/m4/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
