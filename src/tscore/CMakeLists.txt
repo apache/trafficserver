@@ -41,6 +41,7 @@ add_library(tscore SHARED
         CryptoHash.cc
         DbgCtl.cc
         Diags.cc
+        Encoding.cc
         Errata.cc
         EventNotify.cc
         Extendible.cc
@@ -143,6 +144,7 @@ add_executable(test_tscore
         unit_tests/test_CryptoHash.cc
         unit_tests/test_Errata.cc
         unit_tests/test_Extendible.cc
+        unit_tests/test_Encoding.cc
         unit_tests/test_HKDF.cc
         unit_tests/test_Histogram.cc
         unit_tests/test_History.cc
