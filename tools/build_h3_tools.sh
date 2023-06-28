@@ -79,6 +79,9 @@ set -x
 if [ `uname -s` = "Linux" ]
 then
   num_threads=$(nproc)
+elif [ `uname -s` = "FreeBSD" ]
+then
+  num_threads=$(sysctl -n hw.ncpu)
 else
   # MacOS.
   num_threads=$(sysctl -n hw.logicalcpu)
@@ -98,6 +101,8 @@ fi
 
 if [ `uname -s` = "Darwin" ]; then
     OS="darwin"
+elif [ `uname -s` = "FreeBSD" ]; then
+    OS="freebsd"
 else
     OS="linux"
 fi
@@ -147,7 +152,7 @@ echo "Building OpenSSL with QUIC support"
 cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j ${num_threads}
-sudo ${MAKE} -j install
+sudo ${MAKE} install
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
@@ -206,13 +211,15 @@ if [ ! -d nghttp2 ]; then
 fi
 cd nghttp2
 autoreconf -if
-if [ `uname -s` = "Darwin" ]
+if [ `uname -s` = "Darwin" ] || [ `uname -s` = "FreeBSD" ]
 then
-  # --enable-app requires systemd which is not available on Mac.
+  # --enable-app requires systemd which is not available on Mac/FreeBSD.
   ENABLE_APP=""
 else
   ENABLE_APP="--enable-app"
 fi
+
+# Note for FreeBSD: This will not build h2load. h2load can be run on a remote machine.
 ./configure \
   --prefix=${BASE} \
   PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
