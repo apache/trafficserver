@@ -169,6 +169,11 @@ find_package(PCRE)
 include(FindOpenSSL)
 find_package(OpenSSL)
 
+if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
+    set(OPENSSL_IS_OPENSSL3 ON)
+    add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
+endif()
+
 if(ENABLE_PROFILER)
     find_package(profiler REQUIRED)
     set(TS_HAS_PROFILER ${profiler_FOUND})
