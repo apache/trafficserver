@@ -44,7 +44,6 @@ add_library(tscore SHARED
         Errata.cc
         EventNotify.cc
         Extendible.cc
-        HKDF_openssl.cc
         Hash.cc
         HashFNV.cc
         HashSip.cc
@@ -102,6 +101,14 @@ add_library(tscore SHARED
         signals.cc
 )
 add_library(ts::tscore ALIAS tscore)
+
+if(OPENSSL_IS_BORINGSSL)
+    target_sources(tscore PRIVATE HKDF_boringssl.cc)
+elseif(OPENSSL_IS_OPENSSL3)
+    target_sources(tscore PRIVATE HKDF_openssl3.cc)
+else()
+    target_sources(tscore PRIVATE HKDF_openssl.cc)
+endif()
 
 add_dependencies(tscore ParseRules tscpputil)
 target_include_directories(tscore PRIVATE
