@@ -102,7 +102,9 @@ add_library(tscore SHARED
 )
 add_library(ts::tscore ALIAS tscore)
 
-if(OPENSSL_IS_OPENSSL3)
+if(OPENSSL_IS_BORINGSSL)
+    target_sources(tscore PUBLIC HKDF_boringssl.cc)
+elseif(OPENSSL_IS_OPENSSL3)
     target_sources(tscore PUBLIC HKDF_openssl3.cc)
 else()
     target_sources(tscore PUBLIC HKDF_openssl.cc)
