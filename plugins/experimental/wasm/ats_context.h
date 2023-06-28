@@ -227,6 +227,11 @@ public:
     return reenable_txn_;
   }
   void
+  setTxnReenable()
+  {
+    reenable_txn_ = true;
+  }
+  void
   resetTxnReenable()
   {
     reenable_txn_ = false;

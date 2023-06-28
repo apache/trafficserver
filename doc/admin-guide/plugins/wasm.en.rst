@@ -113,6 +113,6 @@ The plugin will not support the following functionality as specified in Proxy-Wa
 
 * Getting and setting trailer request and response header
 * Getting and setting HTTP/2 frame meta data
-* Support asynchronous request call in the start handler function of the transaction lifecycle
+* Support asynchronous request call in the start handler function of the plugin lifecycle
 * Support on Grpc lifecycle handler functions
 

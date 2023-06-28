@@ -147,6 +147,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
       TSError("[wasm][%s] cannot retrieve client request", __FUNCTION__);
       TSMutexUnlock(old_wasm->mutex());
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+      context->setTxnReenable();
       return 0;
     }
     count = TSMimeHdrFieldsCount(buf, hdr_loc);
@@ -169,6 +170,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
       TSError("[wasm][%s] cannot retrieve server response", __FUNCTION__);
       TSMutexUnlock(old_wasm->mutex());
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+      context->setTxnReenable();
       return 0;
     }
     count = TSMimeHdrFieldsCount(buf, hdr_loc);
@@ -252,13 +254,22 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
 
     if (result == 0) {
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+      if (context != nullptr) {
+        context->setTxnReenable();
+      }
     } else if (result < 0) {
       TSDebug(WASM_DEBUG_TAG, "[%s] abnormal event, continue with error", __FUNCTION__);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      if (context != nullptr) {
+        context->setTxnReenable();
+      }
     } else {
       if (context->isLocalReply()) {
         TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, continue with error due to local reply", __FUNCTION__);
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+        if (context != nullptr) {
+          context->setTxnReenable();
+        }
       } else {
         TSDebug(WASM_DEBUG_TAG, "[%s] abnormal return, no continue, context id: %d", __FUNCTION__, context->id());
       }
