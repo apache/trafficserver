@@ -48,10 +48,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#if HAVE_LINUX_HDREG_H
-#include <linux/hdreg.h> /* for struct hd_geometry */
-#endif
-
 #if __has_include(<sys/mount.h>)
 #include <sys/mount.h> /* for BLKGETSIZE */
 #endif
