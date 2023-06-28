@@ -43,9 +43,9 @@ add_subdirectory(esi)
 
 add_subdirectory(generator)
 add_subdirectory(header_rewrite)
+add_subdirectory(multiplexer)
 add_subdirectory(xdebug)
 
 if(HOST_OS STREQUAL "linux")
     add_subdirectory(healthchecks)
 endif()
-
