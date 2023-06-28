@@ -19,6 +19,8 @@
 # is invalid for C language
 set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
 
-add_atsplugin(healthchecks healthchecks.c)
+add_atsplugin(libloader libloader.c)
 
-target_compile_options(healthchecks PRIVATE -Wall -Wextra)
+target_include_directories(libloader PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")
+
+target_compile_options(libloader PRIVATE -Wall -Wextra)

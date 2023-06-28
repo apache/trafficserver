@@ -43,6 +43,7 @@ add_subdirectory(esi)
 
 add_subdirectory(generator)
 add_subdirectory(header_rewrite)
+add_subdirectory(libloader)
 add_subdirectory(multiplexer)
 add_subdirectory(xdebug)
 
