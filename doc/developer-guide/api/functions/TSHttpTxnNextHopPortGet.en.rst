@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: const char *TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
+.. function:: int TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
 
 Description
 ===========
