@@ -38,14 +38,14 @@ add_subdirectory(cachekey)
 add_subdirectory(certifier)
 add_subdirectory(compress)
 add_subdirectory(conf_remap)
+add_subdirectory(escalate)
 add_subdirectory(esi)
 
-add_subdirectory(header_rewrite)
-
 add_subdirectory(generator)
+add_subdirectory(header_rewrite)
+add_subdirectory(xdebug)
 
 if(HOST_OS STREQUAL "linux")
-add_subdirectory(healthchecks)
+    add_subdirectory(healthchecks)
 endif()
 
-add_subdirectory(xdebug)
