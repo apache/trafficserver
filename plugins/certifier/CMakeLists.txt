@@ -15,5 +15,4 @@
 #
 #######################
 
-add_definitions(-DOPENSSL_API_COMPAT=10002)
 add_atsplugin(certifier certifier.cc)

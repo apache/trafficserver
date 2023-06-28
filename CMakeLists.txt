@@ -166,13 +166,12 @@ endif()
 
 find_package(PCRE)
 
-include(FindOpenSSL)
 include(CheckOpenSSLIsBoringSSL)
 find_package(OpenSSL)
 check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
 
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
-    set(OPENSSL_IS_OPENSSL3 ON)
+    set(OPENSSL_IS_OPENSSL3 TRUE)
     add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
 endif()
 
@@ -410,3 +409,4 @@ cmake_print_variables(BUILD_GROUP)
 cmake_print_variables(BUILD_MACHINE)
 cmake_print_variables(DEFAULT_STACK_SIZE)
 cmake_print_variables(CMAKE_INSTALL_RPATH)
+cmake_print_variables(OPENSSL_VERSION)
