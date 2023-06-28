@@ -45,6 +45,7 @@ trafficserver ............. Top src dir
 │   ├── records ........... Library for config files
 │   └── yamlcpp ........... Library for YAML of C++
 ├── m4 .................... Custom macros for configure.ac
+├── mk .................... Includes for Makefiles
 ├── mgmt .................. JSONRPC server/management and tools
 ├── plugins ............... Stable core plugins
 │   └── experimental ...... Experimental core plugins
