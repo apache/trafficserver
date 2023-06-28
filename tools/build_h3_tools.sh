@@ -28,7 +28,7 @@ cd "${WORKDIR}"
 echo "Building H3 dependencies in ${WORKDIR} ..."
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1t+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1u+quic"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
@@ -152,7 +152,7 @@ echo "Building OpenSSL with QUIC support"
 cd openssl-quic
 ./config enable-tls1_3 --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j ${num_threads}
-sudo ${MAKE} install
+sudo ${MAKE} install_sw
 
 # The symlink target provides a more convenient path for the user while also
 # providing, in the symlink source, the precise branch of the OpenSSL build.
@@ -162,9 +162,8 @@ cd ..
 # Then nghttp3
 echo "Building nghttp3..."
 if [ ! -d nghttp3 ]; then
-  git clone https://github.com/ngtcp2/nghttp3.git
+  git clone --depth 1 -b v0.12.0 https://github.com/ngtcp2/nghttp3.git
   cd nghttp3
-  git checkout -b v0.9.0 v0.9.0
   cd ..
 fi
 cd nghttp3
@@ -183,9 +182,8 @@ cd ..
 # Now ngtcp2
 echo "Building ngtcp2..."
 if [ ! -d ngtcp2 ]; then
-  git clone https://github.com/ngtcp2/ngtcp2.git
+  git clone --depth 1 -b v0.16.0 https://github.com/ngtcp2/ngtcp2.git
   cd ngtcp2
-  git checkout -b v0.13.1 v0.13.1
   cd ..
 fi
 cd ngtcp2
@@ -206,7 +204,9 @@ echo "Building nghttp2 ..."
 if [ ! -d nghttp2 ]; then
   git clone https://github.com/tatsuhiro-t/nghttp2.git
   cd nghttp2
-  git checkout -b v1.52.0 v1.52.0
+  # The following has a fix for builds on systems, like Mac, which do not have
+  # libev. There isn't currently a release with this fix yet.
+  git checkout 2c955ab76b42dfce58e812da6bbe8a526a125fea
   cd ..
 fi
 cd nghttp2
@@ -234,8 +234,11 @@ cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone --branch curl-7_88_1 https://github.com/curl/curl.git
+[ ! -d curl ] && git clone https://github.com/curl/curl.git
 cd curl
+# There isn't currently a released curl yet which has the updates for the above
+# ngtcp2 and nghttp3 library versions.
+git checkout 891e25edb8527bb8de79cdca6d943216c230e905
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.
 autoreconf -fi || autoreconf -fi
