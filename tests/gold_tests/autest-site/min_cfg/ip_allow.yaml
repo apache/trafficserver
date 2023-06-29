@@ -13,7 +13,7 @@
 #  or implied. See the License for the specific language governing permissions and limitations under
 #  the License.
 
-# Allow anything on localhost, limit destructive methods elsewhere.
+# Allow anything on localhost, limit destructive and debug methods elsewhere.
 ip_allow:
   - apply: in
     ip_addrs: 127.0.0.1
@@ -34,6 +34,7 @@ ip_allow:
       - PURGE
       - PUSH
       - DELETE
+      - TRACE
   - apply: in
     ip_addrs: ::/0
     action: deny
@@ -41,3 +42,4 @@ ip_allow:
       - PURGE
       - PUSH
       - DELETE
+      - TRACE

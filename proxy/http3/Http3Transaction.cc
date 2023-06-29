@@ -68,6 +68,11 @@ HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &in
 
 HQTransaction::~HQTransaction()
 {
+  this->_unschedule_read_ready_event();
+  this->_unschedule_read_complete_event();
+  this->_unschedule_write_ready_event();
+  this->_unschedule_write_complete_event();
+
   static_cast<HQSession *>(this->_proxy_ssn)->remove_transaction(this);
 }
 
@@ -120,7 +125,7 @@ HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   if (buf) {
     this->_process_read_vio();
-    this->_read_event = this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
+    this->_schedule_read_ready_event();
   }
 
   return &this->_read_vio;
@@ -145,7 +150,7 @@ HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
   if (c != nullptr && nbytes > 0) {
     // TODO Return nullptr if the stream is not on writable state
     this->_process_write_vio();
-    this->_write_event = this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
+    this->_schedule_write_ready_event();
   }
 
   return &this->_write_vio;
@@ -154,16 +159,6 @@ HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
 void
 HQTransaction::do_io_close(int lerrno)
 {
-  if (this->_read_event) {
-    this->_read_event->cancel();
-    this->_read_event = nullptr;
-  }
-
-  if (this->_write_event) {
-    this->_write_event->cancel();
-    this->_write_event = nullptr;
-  }
-
   this->_read_vio.buffer.clear();
   this->_read_vio.nbytes = 0;
   this->_read_vio.op     = VIO::NONE;
@@ -206,7 +201,7 @@ HQTransaction::transaction_done()
 {
   // TODO: start closing transaction
   super::transaction_done();
-  delete this;
+  this->_transaction_done = true;
   return;
 }
 
@@ -234,24 +229,120 @@ HQTransaction::direction() const
   return this->_proxy_ssn->get_netvc()->get_context();
 }
 
-/**
- * @brief Replace existing event only if the new event is different than the inprogress event
- */
-Event *
-HQTransaction::_send_tracked_event(Event *event, int send_event, VIO *vio)
+void
+HQTransaction::_schedule_read_ready_event()
 {
-  if (event != nullptr) {
-    if (event->callback_event != send_event) {
-      event->cancel();
-      event = nullptr;
-    }
+  if (this->_read_ready_event) {
+    // The event is already scheduled. No need to schedule the same event.
+    return;
   }
 
-  if (event == nullptr) {
-    event = this_ethread()->schedule_imm(this, send_event, vio);
+  this->_read_ready_event = this->_thread->schedule_imm(this, VC_EVENT_READ_READY, &this->_read_vio);
+}
+
+void
+HQTransaction::_unschedule_read_ready_event()
+{
+  if (this->_read_ready_event) {
+    this->_read_ready_event->cancel();
+    this->_read_ready_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_close_read_ready_event(Event *e)
+{
+  if (e) {
+    ink_assert(this->_read_ready_event == e);
+    this->_read_ready_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_schedule_read_complete_event()
+{
+  if (this->_read_complete_event) {
+    // The event is already scheduled. No need to schedule the same event.
+    return;
   }
 
-  return event;
+  this->_read_complete_event = this->_thread->schedule_imm(this, VC_EVENT_READ_COMPLETE, &this->_read_vio);
+}
+
+void
+HQTransaction::_unschedule_read_complete_event()
+{
+  if (this->_read_complete_event) {
+    this->_read_complete_event->cancel();
+    this->_read_complete_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_close_read_complete_event(Event *e)
+{
+  if (e) {
+    ink_assert(this->_read_complete_event == e);
+    this->_read_complete_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_schedule_write_ready_event()
+{
+  if (this->_write_ready_event) {
+    // The event is already scheduled. No need to schedule the same event.
+    return;
+  }
+
+  this->_write_ready_event = this->_thread->schedule_imm(this, VC_EVENT_WRITE_READY, &this->_write_vio);
+}
+
+void
+HQTransaction::_unschedule_write_ready_event()
+{
+  if (this->_write_ready_event) {
+    this->_write_ready_event->cancel();
+    this->_write_ready_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_close_write_ready_event(Event *e)
+{
+  if (e) {
+    ink_assert(this->_write_ready_event == e);
+    this->_write_ready_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_schedule_write_complete_event()
+{
+  if (this->_write_complete_event) {
+    // The event is already scheduled. No need to schedule the same event.
+    return;
+  }
+
+  this->_write_complete_event = this->_thread->schedule_imm(this, VC_EVENT_WRITE_COMPLETE, &this->_write_vio);
+}
+
+void
+HQTransaction::_unschedule_write_complete_event()
+{
+  if (this->_write_complete_event) {
+    this->_write_complete_event->cancel();
+    this->_write_complete_event = nullptr;
+  }
+}
+
+void
+HQTransaction::_close_write_complete_event(Event *e)
+{
+  if (e) {
+    ink_assert(this->_write_complete_event == e);
+    this->_write_complete_event = nullptr;
+  }
 }
 
 /**
@@ -265,12 +356,8 @@ HQTransaction::_signal_read_event()
   }
   int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
 
-  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-  if (lock.is_locked()) {
-    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-  }
+  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+  this->_read_vio.cont->handleEvent(event, &this->_read_vio);
 
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 }
@@ -286,14 +373,22 @@ HQTransaction::_signal_write_event()
   }
   int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
 
-  MUTEX_TRY_LOCK(lock, this->_write_vio.mutex, this_ethread());
-  if (lock.is_locked()) {
-    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
-  }
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+  this->_write_vio.cont->handleEvent(event, &this->_write_vio);
 
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+}
+
+/**
+ * Deletes this transaction itself.
+ * This must be called only at the end of event handlers to avoid touching itself after deletion.
+ */
+void
+HQTransaction::_delete_if_possible()
+{
+  if (this->_transaction_done) {
+    delete this;
+  }
 }
 
 //
@@ -342,30 +437,16 @@ Http3Transaction::~Http3Transaction()
 }
 
 int
-Http3Transaction::state_stream_open(int event, void *edata)
+Http3Transaction::state_stream_open(int event, Event *edata)
 {
   // TODO: should check recursive call?
-  if (this->_thread != this_ethread()) {
-    // Send on to the owning thread
-    if (this->_cross_thread_event == nullptr) {
-      this->_cross_thread_event = this->_thread->schedule_imm(this, event, edata);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-
-  Event *e = static_cast<Event *>(edata);
-  if (e == this->_cross_thread_event) {
-    this->_cross_thread_event = nullptr;
-  }
 
   switch (event) {
   case VC_EVENT_READ_READY:
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    if (this->_read_event == edata) {
-      this->_read_event = nullptr;
-    }
+    this->_close_read_ready_event(edata);
     // if no progress, don't need to signal
     if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
@@ -374,10 +455,11 @@ Http3Transaction::state_stream_open(int event, void *edata)
     break;
   case VC_EVENT_READ_COMPLETE:
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_close_read_complete_event(edata);
     this->_process_read_vio();
     if (!this->_header_handler->is_complete()) {
       // Delay processing READ_COMPLETE
-      this_ethread()->schedule_imm(this, VC_EVENT_READ_COMPLETE);
+      this->_schedule_read_complete_event();
       break;
     }
     this->_data_handler->finalize();
@@ -386,9 +468,7 @@ Http3Transaction::state_stream_open(int event, void *edata)
     this->_info.read_vio->reenable();
     break;
   case VC_EVENT_WRITE_READY:
-    if (this->_write_event == edata) {
-      this->_write_event = nullptr;
-    }
+    this->_close_write_ready_event(edata);
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     // if no progress, don't need to signal
     if (this->_process_write_vio() > 0) {
@@ -397,6 +477,7 @@ Http3Transaction::state_stream_open(int event, void *edata)
     this->_info.write_vio->reenable();
     break;
   case VC_EVENT_WRITE_COMPLETE:
+    this->_close_write_complete_event(edata);
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_process_write_vio();
     // always signal regardless of progress
@@ -414,31 +495,28 @@ Http3Transaction::state_stream_open(int event, void *edata)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_delete_if_possible();
   return EVENT_DONE;
 }
 
 int
-Http3Transaction::state_stream_closed(int event, void *data)
+Http3Transaction::state_stream_closed(int event, Event *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
-    if (this->_read_event == data) {
-      this->_read_event = nullptr;
-    }
-  case VC_EVENT_READ_COMPLETE: {
-    // ignore
+    this->_close_read_ready_event(data);
     break;
-  }
+  case VC_EVENT_READ_COMPLETE:
+    this->_close_read_complete_event(data);
+    break;
   case VC_EVENT_WRITE_READY:
-    if (this->_write_event == data) {
-      this->_write_event = nullptr;
-    }
-  case VC_EVENT_WRITE_COMPLETE: {
-    // ignore
+    this->_close_write_ready_event(data);
     break;
-  }
+  case VC_EVENT_WRITE_COMPLETE:
+    this->_close_write_complete_event(data);
+    break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -451,6 +529,7 @@ Http3Transaction::state_stream_closed(int event, void *data)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_delete_if_possible();
   return EVENT_DONE;
 }
 
@@ -480,19 +559,12 @@ Http3Transaction::_process_read_vio()
     return 0;
   }
 
-  if (this->_thread != this_ethread()) {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    if (this->_cross_thread_event == nullptr) {
-      // Send to the right thread
-      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_READ_READY, nullptr);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_info.read_vio->mutex, this_ethread());
 
   uint64_t nread = 0;
-  this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), *this->_info.read_vio->get_reader(), nread);
+  this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
+                                        *this->_info.read_vio->get_reader(), nread);
   this->_info.read_vio->ndone += nread;
   return nread;
 }
@@ -504,15 +576,7 @@ Http3Transaction::_process_write_vio()
     return 0;
   }
 
-  if (this->_thread != this_ethread()) {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    if (this->_cross_thread_event == nullptr) {
-      // Send to the right thread
-      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_WRITE_READY, nullptr);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_info.write_vio->mutex, this_ethread());
 
   size_t nwritten = 0;
@@ -527,11 +591,33 @@ Http3Transaction::_process_write_vio()
   return nwritten;
 }
 
-// TODO:  Just a place holder for now
 bool
 Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
 {
-  return false;
+  // Has body if Content-Length != 0
+  if (content_length != 0) {
+    return true;
+  }
+
+  // Has body if there is DATA frame received (In case Content-Length is omitted)
+  if (this->_data_handler->has_data()) {
+    return true;
+  }
+
+  // No body if stream is already closed and DATA frame is not received yet
+  // TODO stream state
+  // if () {
+  //   return false;
+  // }
+
+  // No body if trailing header is received and DATA frame is not received yet
+  // TODO trailing header
+  // if () {
+  //   return false;
+  // }
+
+  // If the stream is open and trailer header hasn't been received, there may be DATA.
+  return true;
 }
 
 //
@@ -545,56 +631,45 @@ Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamVCAdapter
 Http09Transaction::~Http09Transaction() {}
 
 int
-Http09Transaction::state_stream_open(int event, void *edata)
+Http09Transaction::state_stream_open(int event, Event *edata)
 {
   // TODO: should check recursive call?
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 
-  if (this->_thread != this_ethread()) {
-    // Send on to the owning thread
-    if (this->_cross_thread_event == nullptr) {
-      this->_cross_thread_event = this->_thread->schedule_imm(this, event, edata);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-
-  Event *e = static_cast<Event *>(edata);
-  if (e == this->_cross_thread_event) {
-    this->_cross_thread_event = nullptr;
-  }
 
   switch (event) {
   case VC_EVENT_READ_READY:
-    if (this->_read_event == edata) {
-      this->_read_event = nullptr;
-    }
-    [[fallthrough]];
-  case VC_EVENT_READ_COMPLETE: {
-    int64_t len = this->_process_read_vio();
+    this->_close_read_ready_event(edata);
     // if no progress, don't need to signal
-    if (len > 0) {
+    if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
     }
     this->_info.read_vio->reenable();
-
     break;
-  }
-  case VC_EVENT_WRITE_READY:
-    if (this->_write_event == edata) {
-      this->_write_event = nullptr;
+  case VC_EVENT_READ_COMPLETE:
+    this->_close_read_complete_event(edata);
+    // if no progress, don't need to signal
+    if (this->_process_read_vio() > 0) {
+      this->_signal_read_event();
     }
-    [[fallthrough]];
-  case VC_EVENT_WRITE_COMPLETE: {
-    int64_t len = this->_process_write_vio();
-    if (len > 0) {
+    this->_info.read_vio->reenable();
+    break;
+  case VC_EVENT_WRITE_READY:
+    this->_close_write_ready_event(edata);
+    if (this->_process_write_vio() > 0) {
       this->_signal_write_event();
     }
     this->_info.write_vio->reenable();
-
     break;
-  }
+  case VC_EVENT_WRITE_COMPLETE:
+    this->_close_write_complete_event(edata);
+    if (this->_process_write_vio() > 0) {
+      this->_signal_write_event();
+    }
+    this->_info.write_vio->reenable();
+    break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -606,6 +681,7 @@ Http09Transaction::state_stream_open(int event, void *edata)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_delete_if_possible();
   return EVENT_DONE;
 }
 
@@ -617,27 +693,23 @@ Http09Transaction::do_io_close(int lerrno)
 }
 
 int
-Http09Transaction::state_stream_closed(int event, void *data)
+Http09Transaction::state_stream_closed(int event, Event *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
-    if (this->_read_event == data) {
-      this->_read_event = nullptr;
-    }
-  case VC_EVENT_READ_COMPLETE: {
-    // ignore
+    this->_close_read_ready_event(data);
     break;
-  }
+  case VC_EVENT_READ_COMPLETE:
+    this->_close_read_complete_event(data);
+    break;
   case VC_EVENT_WRITE_READY:
-    if (this->_write_event == data) {
-      this->_write_event = nullptr;
-    }
-  case VC_EVENT_WRITE_COMPLETE: {
-    // ignore
+    this->_close_write_ready_event(data);
     break;
-  }
+  case VC_EVENT_WRITE_COMPLETE:
+    this->_close_write_complete_event(data);
+    break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -649,6 +721,7 @@ Http09Transaction::state_stream_closed(int event, void *data)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_delete_if_possible();
   return EVENT_DONE;
 }
 
@@ -660,15 +733,7 @@ Http09Transaction::_process_read_vio()
     return 0;
   }
 
-  if (this->_thread != this_ethread()) {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    if (this->_cross_thread_event == nullptr) {
-      // Send to the right thread
-      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_READ_READY, nullptr);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
   IOBufferReader *reader = this->_info.read_vio->get_reader();
 
@@ -748,15 +813,7 @@ Http09Transaction::_process_write_vio()
     return 0;
   }
 
-  if (this->_thread != this_ethread()) {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    if (this->_cross_thread_event == nullptr) {
-      // Send to the right thread
-      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_WRITE_READY, nullptr);
-    }
-    return 0;
-  }
-
+  ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
   IOBufferReader *reader = this->_write_vio.get_reader();

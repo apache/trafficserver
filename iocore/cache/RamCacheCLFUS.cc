@@ -27,9 +27,7 @@
 #include "P_Cache.h"
 #include "I_Tasks.h"
 #include "fastlz/fastlz.h"
-#ifdef HAVE_ZLIB_H
 #include <zlib.h>
-#endif
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
 #endif
@@ -157,9 +155,7 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   case CACHE_COMPRESSION_FASTLZ:
     break;
   case CACHE_COMPRESSION_LIBZ:
-#ifndef HAVE_ZLIB_H
     Warning("libz not available for RAM cache compression");
-#endif
     break;
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
@@ -278,7 +274,6 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
             break;
           }
-#ifdef HAVE_ZLIB_H
           case CACHE_COMPRESSION_LIBZ: {
             uLongf l = e->len;
             if (Z_OK !=
@@ -288,7 +283,6 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
             break;
           }
-#endif
 #ifdef HAVE_LZMA_H
           case CACHE_COMPRESSION_LIBLZMA: {
             size_t l = static_cast<size_t>(e->len), ipos = 0, opos = 0;
@@ -454,11 +448,9 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       case CACHE_COMPRESSION_FASTLZ:
         l = static_cast<uint32_t>(static_cast<double>(e->len) * 1.05 + 66);
         break;
-#ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ:
         l = static_cast<uint32_t>(compressBound(e->len));
         break;
-#endif
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA:
         l = e->len;
@@ -483,7 +475,6 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           failed = true;
         }
         break;
-#ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ: {
         uLongf ll = l;
         if ((Z_OK != compress(reinterpret_cast<Bytef *>(b), &ll, reinterpret_cast<Bytef *>(edata->data()), elen))) {
@@ -492,7 +483,6 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         l = static_cast<int>(ll);
         break;
       }
-#endif
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA: {
         size_t pos = 0, ll = l;

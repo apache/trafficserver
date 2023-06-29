@@ -20,12 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <cstdint>
-#include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
-#include "tscore/MT_hashtable.h"
-#include "I_Lock.h"
+
+#define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+
+#include "P_EventSystem.h"
+#include "MTHashTable.h"
 
 // -------------
 // --- TESTS ---

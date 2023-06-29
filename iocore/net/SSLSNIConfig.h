@@ -35,6 +35,8 @@
 #include <strings.h>
 #include <memory>
 
+#include "tscpp/util/ts_ip.h"
+
 #include "ConfigProcessor.h"
 #include "SNIActionPerformer.h"
 #include "YamlSNIConfig.h"
@@ -60,11 +62,16 @@ struct PcreFreer {
 struct NamedElement {
   NamedElement() {}
 
+  NamedElement(NamedElement const &other)            = delete;
+  NamedElement &operator=(NamedElement const &other) = delete;
   NamedElement(NamedElement &&other);
   NamedElement &operator=(NamedElement &&other);
+  ~NamedElement() = default;
 
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
+
+  ts::port_range_t ports{1, ts::MAX_PORT_VALUE};
 
   std::unique_ptr<pcre, PcreFreer> match;
 };
@@ -80,21 +87,28 @@ struct NextHopItem : public NamedElement {
 using SNIList             = std::vector<ActionElement>;
 using NextHopPropertyList = std::vector<NextHopItem>;
 
-struct SNIConfigParams : public ConfigInfo {
+class SNIConfigParams : public ConfigInfo
+{
+public:
   SNIConfigParams() = default;
   ~SNIConfigParams() override;
 
   const NextHopProperty *get_property_config(const std::string &servername) const;
-  int initialize();
+  bool initialize();
+  bool initialize(const std::string &sni_filename);
   /** Walk sni.yaml config and populate sni_action_list
       @return 0 for success, 1 is failure
    */
-  int load_sni_config();
-  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername) const;
+  bool load_sni_config();
+  std::pair<const ActionVector *, ActionItem::Context> get(std::string_view servername, uint16_t dest_incoming_port) const;
 
   SNIList sni_action_list;
   NextHopPropertyList next_hop_list;
   YamlSNIConfig yaml_sni;
+
+private:
+  bool set_next_hop_properties(YamlSNIConfig::Item const &item);
+  bool load_certs_if_client_cert_specified(YamlSNIConfig::Item const &item, NextHopItem &nps);
 };
 
 class SNIConfig
@@ -110,7 +124,8 @@ public:
   static SNIConfigParams *acquire();
   static void release(SNIConfigParams *params);
 
-  static bool test_client_action(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
+  static bool test_client_action(const char *servername, uint16_t dest_incoming_port, const IpEndpoint &ep,
+                                 int &enforcement_policy);
 
 private:
   static int _configid;

@@ -22,16 +22,23 @@
 #pragma once
 
 #include <vector>
+#include <utility>
 #include <string>
+#include <set>
 #include <optional>
 #include <memory>
+#include <cstdint>
 
+#include "SNIActionPerformer.h"
 #include "SSLTypes.h"
+
+#include "tscpp/util/ts_ip.h"
 
 #include "tscore/Errata.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
+TSDECL(inbound_port_range);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
@@ -57,7 +64,9 @@ TSDECL(valid_tls_version_min_in);
 TSDECL(valid_tls_version_max_in);
 TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
+TSDECL(quic);
 TSDECL(host_sni_policy);
+TSDECL(server_max_early_data);
 #undef TSDECL
 
 struct YamlSNIConfig {
@@ -70,7 +79,11 @@ struct YamlSNIConfig {
 
   struct Item {
     std::string fqdn;
-    std::optional<bool> offer_h2; // Has no value by default, so do not initialize!
+
+    ts::port_range_t port_range{1, ts::MAX_PORT_VALUE};
+
+    std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
+    std::optional<bool> offer_quic; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
     std::string verify_client_ca_file;
     std::string verify_client_ca_dir;
@@ -89,6 +102,7 @@ struct YamlSNIConfig {
     int valid_tls_version_max_in = -1;
     std::vector<int> tunnel_alpn{};
     std::optional<int> http2_buffer_water_mark;
+    uint32_t server_max_early_data = 0;
 
     bool tunnel_prewarm_srv                  = false;
     uint32_t tunnel_prewarm_min              = 0;
@@ -98,7 +112,10 @@ struct YamlSNIConfig {
     uint32_t tunnel_prewarm_inactive_timeout = 0;
     TunnelPreWarm tunnel_prewarm             = TunnelPreWarm::UNSET;
 
+    using action_vector_t = std::vector<std::unique_ptr<ActionItem>>;
+
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
+    void populate_sni_actions(action_vector_t &actions);
   };
 
   ts::Errata loader(const std::string &cfgFilename);

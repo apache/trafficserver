@@ -234,11 +234,9 @@ Condition Testing
     - ``Condition.HasATSFeature(feature)``
         This function tests TrafficServer for possible features it has been compiled with. Current features you can test for are:
 
-        - TS_HAS_LIBZ
         - TS_HAS_LZMA
         - TS_HAS_PIPE_BUFFER_SIZE_CONFIG
         - TS_HAS_JEMALLOC
-        - TS_HAS_TCMALLOC
         - TS_HAS_MIMALLOC
         - TS_HAS_IN6_IS_ADDR_UNSPECIFIED
         - TS_HAS_BACKTRACE

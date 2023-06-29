@@ -768,38 +768,38 @@ IP4Addr::family() const {
   return AF_value;
 }
 
-inline IP4Addr &
-IP4Addr::operator<<=(unsigned n) {
+inline auto
+IP4Addr::operator<<=(unsigned n) -> self_type & {
   _addr <<= n;
   return *this;
 }
 
-inline IP4Addr &
-IP4Addr::operator>>=(unsigned n) {
+inline auto
+IP4Addr::operator>>=(unsigned n) -> self_type & {
   _addr >>= n;
   return *this;
 }
 
-inline IP4Addr &
-IP4Addr::operator&=(self_type const &that) {
+inline auto
+IP4Addr::operator&=(self_type const &that) -> self_type & {
   _addr &= that._addr;
   return *this;
 }
 
-inline IP4Addr &
-IP4Addr::operator|=(self_type const &that) {
+inline auto
+IP4Addr::operator|=(self_type const &that) -> self_type & {
   _addr |= that._addr;
   return *this;
 }
 
-inline IP4Addr &
-IP4Addr::operator++() {
+inline auto
+IP4Addr::operator++() -> self_type & {
   ++_addr;
   return *this;
 }
 
-inline IP4Addr &
-IP4Addr::operator--() {
+inline auto
+IP4Addr::operator--() -> self_type & {
   --_addr;
   return *this;
 }
@@ -1019,16 +1019,16 @@ IP6Addr::operator=(sockaddr_in6 const *addr) -> self_type & {
   return *this;
 }
 
-inline IP6Addr &
-IP6Addr::operator++() {
+inline auto
+IP6Addr::operator++() -> self_type & {
   if (++(_addr._store[LSW]) == 0) {
     ++(_addr._store[MSW]);
   }
   return *this;
 }
 
-inline IP6Addr &
-IP6Addr::operator--() {
+inline auto
+IP6Addr::operator--() -> self_type & {
   if (--(_addr._store[LSW]) == ~static_cast<uint64_t>(0)) {
     --(_addr._store[MSW]);
   }
@@ -1086,29 +1086,34 @@ IP6Addr::copy_to(sockaddr *sa) const {
   return sa;
 }
 
-inline IP6Addr &
-IP6Addr::operator&=(IPMask const &mask) {
-  if (0 == mask._cidr) {
-    _addr._store[LSW] = _addr._store[MSW] = 0;
-  } else if (mask._cidr < WORD_WIDTH) {
-    _addr._store[MSW] &= (WORD_MASK << (WORD_WIDTH - mask._cidr));
+inline auto
+IP6Addr::operator&=(IPMask const &mask) -> self_type & {
+  if (mask._cidr <= WORD_WIDTH) {
     _addr._store[LSW] = 0;
+    if (0 == mask._cidr) {
+      _addr._store[MSW] = 0;
+    } else if (mask._cidr < WORD_WIDTH) {
+      _addr._store[MSW] &= (WORD_MASK << (WORD_WIDTH - mask._cidr));
+    }
   } else if (mask._cidr < WIDTH) {
     _addr._store[LSW] &= (WORD_MASK << (2 * WORD_WIDTH - mask._cidr));
   }
   return *this;
 }
 
-inline IP6Addr &
-IP6Addr::operator|=(IPMask const &mask) {
-  if (0 == mask._cidr) { // do nothing in this case.
-  } else if (0 < mask._cidr && mask._cidr < WORD_WIDTH) {
-      _addr._store[MSW] |= (WORD_MASK >> mask._cidr);
-      _addr._store[LSW] = WORD_MASK;
-  } else if (mask._cidr < WIDTH) {
-    _addr._store[LSW] |= (WORD_MASK >> (mask._cidr - WORD_WIDTH));
+inline auto
+IP6Addr::operator|=(IPMask const &mask) -> self_type & {
+  if (mask._cidr > WORD_WIDTH) {
+    if (mask._cidr < WIDTH) {
+      _addr._store[LSW] |= (WORD_MASK >> (mask._cidr - WORD_WIDTH));
+    }
   } else {
-    _addr._store[LSW] = _addr._store[MSW] = WORD_MASK;
+    _addr._store[LSW] = WORD_MASK;
+    if (0 == mask._cidr) {
+      _addr._store[MSW] = WORD_MASK;
+    } else if (mask._cidr < WORD_WIDTH) {
+      _addr._store[MSW] |= (WORD_MASK >> mask._cidr);
+    }
   }
   return *this;
 }

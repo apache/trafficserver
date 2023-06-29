@@ -30,5 +30,15 @@ include_directories(
 
 add_executable(test_iouring
         unit_tests/test_diskIO.cc)
-target_link_libraries(test_iouring PRIVATE tscore inkuring tscpputil libswoc uring)
+target_link_libraries(test_iouring
+    PRIVATE
+        inkuring
+        libswoc
+        ts::tscore
+        tscpputil
+        uring
+)
+
 target_include_directories(test_iouring PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+
+add_test(NAME test_iouring COMMAND $<TARGET_FILE:test_iouring>)

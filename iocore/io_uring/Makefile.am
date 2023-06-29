@@ -39,7 +39,7 @@ test_LD_FLAGS = \
 test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_LD_ADD = \
 	$(top_builddir)/src/tscore/libtscore.la \

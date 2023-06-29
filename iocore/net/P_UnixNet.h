@@ -151,7 +151,6 @@ extern bool net_memory_throttle;
 extern int fds_throttle;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
-extern int http_accept_port_number;
 
 //
 // Configuration Parameter had to move here to share

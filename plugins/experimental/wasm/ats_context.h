@@ -36,7 +36,6 @@
 #include "include/proxy-wasm/context.h"
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 
 #define WASM_DEBUG_TAG "wasm"
 

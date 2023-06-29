@@ -23,7 +23,6 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <ts/experimental.h>
 
 #include <cerrno>
 #include <cinttypes>

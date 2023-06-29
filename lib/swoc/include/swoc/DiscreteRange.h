@@ -127,7 +127,7 @@ enum class DiscreteRangeEdgeRelation : uint8_t {
    - have value semantics
    - have minimum and maximum values either
      - members @c MIN and @c MAX that define static instances
-     - support @c std::numeric_limits<T>
+     - @c std::numeric_limits<T> support.
 
    The interval is always an inclusive (closed) contiguous interval,
    defined by the minimum and maximum values contained in the interval.
@@ -147,7 +147,7 @@ public:
   using EdgeRelation = DiscreteRangeEdgeRelation; ///< Import type for convenience.
 
   /** Default constructor.
-      An invalid (empty) range is constructed.
+   * An invalid (empty) range is constructed.
    */
   constexpr DiscreteRange() : _min(detail::maximum<T>()), _max(detail::minimum<T>()) {}
 
@@ -174,109 +174,139 @@ public:
    */
   bool empty() const;
 
+  /** Update the range.
+   *
+   * @param min New minimum value.
+   * @param max New maximum value.
+   * @return @a this.
+   */
   self_type &assign(metric_type const &min, metric_type const &max);
 
-  /// Set the interval to be a singleton.
-  self_type &assign(metric_type const &singleton);
+  /** Update the range.
+   *
+   * @param value The new minimum and maximum value.
+   * @return @a this.
+   *
+   * The range will contain the single value @a value.
+   */
+  self_type &assign(metric_type const &value);
 
+  /** Update the minimum value.
+   *
+   * @param min The new minimum value.
+   * @return @a this.
+   *
+   * @note No checks are done - this can result in an empty range.
+   */
   self_type &assign_min(metric_type const &min);
 
+  /** Update the maximum value.
+   *
+   * @param max The new maximum value.
+   * @return @a this.
+   *
+   * @note No checks are done - this can result in an empty range.
+   */
   self_type &assign_max(metric_type const &max);
 
   /** Decrement the maximum value.
    *
    * @return @a this.
+   *
+   * @note No checks are done, the caller must ensure it is valid to decremented the current maximum.
    */
-  self_type &
-  clip_max() {
-    --_max;
-    return *this;
-  }
+  self_type & clip_max();
 
-  /** Get the minimum value in the interval.
-      @note The return value is unspecified if the interval is empty.
+  /** Minimum value.
+   * @return the minimum value in the range.
+   * @note The return value is unspecified if the interval is empty.
    */
   metric_type const &min() const;
 
-  /** Get the maximum value in the interval.
-      @note The return value is unspecified if the interval is empty.
+  /** Maximum value.
+   * @return The maximum value in the range.
+   * @note The return value is unspecified if the interval is empty.
    */
   metric_type const &max() const;
 
-  /// Test for equality.
-  bool
-  operator==(self_type const &that) const {
-    return _min == that._min && _max == that._max;
-  }
+  /// Equality.
+  bool operator==(self_type const &that) const;
 
-  /// Test for inequality.
-  bool
-  operator!=(self_type const &that) const {
-    return _min != that._min | _max != that._max;
-  }
+  /// Inequality.
+  bool operator!=(self_type const &that) const;
 
   /** Check if a value is in @a this range.
    *
-   * @param m Metric value to check.
-   * @return @c true if @a m is in the range, @c false if not.
+   * @param value Metric value to check.
+   * @return @c true if @a value is in the range, @c false if not.
    */
-  bool
-  contains(metric_type const &m) const {
-    return _min <= m && m <= _max;
-  }
+  bool contains(metric_type const &value) const;
 
-  /** Logical intersection test for two intervals.
-      @return @c true if there is at least one common value in the
-      two intervals, @c false otherwise.
-  */
+  /** Logical intersection.
+   * @return @c true if there is at least one common value in the two intervals, @c false otherwise.
+   */
   bool has_intersection_with(self_type const &that) const;
 
   /** Compute the intersection of two intervals
-      @return The interval consisting of values that are contained by
-      both intervals. This may be the empty interval if the intervals
-      are disjoint.
-      @internal Co-variant
+   *
+   * @return The interval consisting of values that are contained by both intervals. The return range
+   * is empty if the intervals are disjoint.
+   *
+   * @internal Co-variant
    */
   self_type intersection(self_type const &that) const;
 
   /** Test for adjacency.
-      @return @c true if the intervals are adjacent.
-      @note Only disjoint intervals can be adjacent.
+   * @return @c true if the intervals are adjacent.
+   * @note Only disjoint intervals can be adjacent.
    */
   bool is_adjacent_to(self_type const &that) const;
 
-  /** Test for @a this being adjacent on the left of @a that.
+  /** Lower adjacency.
    *
    * @param that Range to check for adjacency.
-   * @return @c true if @a this ends exactly the value before @a that begins.
+   * @return @c true if @a this and @ta that are adjacent and @a this is less than @a that.
    */
   bool is_left_adjacent_to(self_type const &that) const;
 
-  //! Test if the union of two intervals is also an interval.
+  /** Valid union.
+   *
+   * @param that Range to compare.
+   *
+   * @return @a true if the hull of @a this and @a that contains only elements that are also in
+   * @a this or @a that.
+   */
   bool has_union(self_type const &that) const;
 
-  /** Test if an interval is a superset of or equal to another.
-      @return @c true if every value in @c that is also in @c this.
+  /** Superset test.
+   *
+   * @return @c true if every value in @c that is also in @c this.
    */
   bool is_superset_of(self_type const &that) const;
 
-  /** Test if an interval is a subset or equal to another.
-      @return @c true if every value in @c this is also in @c that.
+  /** Subset test.
+   *
+   *  @return @c true if every value in @c this is also in @c that.
    */
   bool is_subset_of(self_type const &that) const;
 
-  /** Test if an interval is a strict superset of another.
-      @return @c true if @c this is strictly a superset of @a rhs.
+  /** Strict superset test.
+   *
+   * @return @c true if @a this contains every value in @a this and @a this has at least one value not
+   * in @a that.
    */
   bool is_strict_superset_of(self_type const &that) const;
 
-  /** Test if an interval is a strict subset of another.
-      @return @c true if @c this is strictly a subset of @a that.
+  /** Strict subset test.
+   *
+   * @return @c true if @a that contains every value in @a this and @a that has at least one value not
+   * in @a this.
    */
   bool is_strict_subset_of(self_type const &that) const;
 
-  /** Determine the relationship between @c this and @a that interval.
-      @return The relationship type.
+  /** Generic relationship.
+   *
+   * @return The relationship between @a this and @a that.
    */
   Relation relationship(self_type const &that) const;
 
@@ -292,18 +322,11 @@ public:
    * - OVLP: @a that left edge is inside @a this.
    * - NONE: @a that left edge is left of @a this.
    */
-  EdgeRelation
-  left_edge_relationship(self_type const &that) const {
-    if (_max < that._max) {
-      return ++metric_type(_max) < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
-    }
-    return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
-  }
+  EdgeRelation left_edge_relationship(self_type const &that) const;
 
-  /** Compute the convex hull of this interval and another one.
-      @return The smallest interval that is a superset of @c this
-      and @a that interval.
-      @internal Co-variant
+  /** Convex hull.
+   * @return The smallest interval that is a superset of @c this and @a that.
+   * @internal Co-variant
    */
   self_type hull(self_type const &that) const;
 
@@ -313,36 +336,32 @@ public:
   /** Test for empty, operator form.
       @return @c true if the interval is empty, @c false otherwise.
    */
-  bool
-  operator!() const {
-    return _min > _max;
-  }
+  bool operator!() const;
 
   /** Test for non-empty.
    *
    * @return @c true if there values in the range, @c false if no values in the range.
    */
-  explicit operator bool() const { return _min <= _max; }
+  explicit operator bool() const;
 
-  /// @return @c true if the range is maximal, @c false otherwise.
+  /** Maximality.
+    * @return @c true if this range contains every value.
+   */
   bool is_maximal() const;
 
   /** Clip interval.
-      Remove all element in @c this interval not in @a that interval.
+   *  Remove all element in @c this interval not in @a that interval.
    */
   self_type &operator&=(self_type const &that);
 
   /** Convex hull.
-      Extend interval to cover all elements in @c this and @a that.
+    * Minimally extend @a this to cover all elements in @c this and @a that.
+    * @return @a this.
    */
   self_type &operator|=(self_type const &that);
 
-  self_type &
-  clear() {
-    _min = detail::maximum<T>();
-    _max = detail::minimum<T>();
-    return *this;
-  }
+  /// Make the range empty.
+  self_type & clear();
 
   /** Functor for lexicographic ordering.
       If, for some reason, an interval needs to be put in a container
@@ -370,6 +389,47 @@ public:
 
 template <typename T>
 bool
+DiscreteRange<T>::operator==(DiscreteRange::self_type const &that) const {
+  return _min == that._min && _max == that._max;
+}
+
+template <typename T>
+bool
+DiscreteRange<T>::operator!=(DiscreteRange::self_type const &that) const {
+  return _min != that._min | _max != that._max;
+}
+
+template <typename T>
+auto
+DiscreteRange<T>::clip_max() -> self_type & {
+  --_max;
+  return *this;
+}
+
+template <typename T>
+bool
+DiscreteRange<T>::operator!() const {
+  return _min > _max;
+}
+
+template <typename T> DiscreteRange<T>::operator bool() const { return _min <= _max; }
+
+template <typename T>
+bool
+DiscreteRange<T>::contains(metric_type const &value) const {
+  return _min <= value && value <= _max;
+}
+
+template <typename T>
+auto
+DiscreteRange<T>::clear() -> self_type & {
+  _min = detail::maximum<T>();
+  _max = detail::minimum<T>();
+  return *this;
+}
+
+template <typename T>
+bool
 DiscreteRange<T>::lexicographic_order::operator()(DiscreteRange::self_type const &lhs, DiscreteRange::self_type const &rhs) const {
   return lhs._min == rhs._min ? lhs._max < rhs._max : lhs._min < rhs._min;
 }
@@ -390,8 +450,17 @@ DiscreteRange<T>::hull(DiscreteRange::self_type const &that) const {
 }
 
 template <typename T>
-typename DiscreteRange<T>::Relation
-DiscreteRange<T>::relationship(self_type const &that) const {
+auto
+DiscreteRange<T>::left_edge_relationship(self_type const &that) const -> EdgeRelation {
+  if (_max < that._max) {
+    return ++metric_type(_max) < that._max ? EdgeRelation::GAP : EdgeRelation::ADJ;
+  }
+  return _min >= that._min ? EdgeRelation::NONE : EdgeRelation::OVLP;
+}
+
+template <typename T>
+auto
+DiscreteRange<T>::relationship(self_type const &that) const -> Relation{
   Relation retval = Relation::NONE;
   if (this->has_intersection(that)) {
     if (*this == that)
@@ -534,7 +603,8 @@ DiscreteRange<T>::is_left_adjacent_to(DiscreteRange::self_type const &that) cons
    * T has a modulus and not depend on ++t > t always being true. However, we know that if t1 >
    * t0 then ++t0 > t0.
    */
-  return _max < that._min && ++metric_type(_max) == that._min;
+  metric_type max(_max); // some built in integer types don't support increment on rvalues.
+  return _max < that._min && ++max == that._min;
 }
 
 template <typename T>
@@ -543,10 +613,6 @@ DiscreteRange<T>::intersection(DiscreteRange::self_type const &that) const {
   return {std::max(_min, that._min), std::min(_max, that._max)};
 }
 
-/** Equality.
-    Two intervals are equal if their min and max values are equal.
-    @relates DiscreteRange
- */
 template <typename T>
 bool
 operator==(DiscreteRange<T> const &lhs, DiscreteRange<T> const &rhs) {

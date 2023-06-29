@@ -29,8 +29,8 @@
 #include <netinet/in.h>
 
 #include "ts/ts.h"
-#include "lib/StringHash.h"
-#include "lib/HttpHeader.h"
+#include "StringHash.h"
+#include "HttpHeader.h"
 #include "HttpDataFetcher.h"
 
 class HttpDataFetcherImpl : public HttpDataFetcher

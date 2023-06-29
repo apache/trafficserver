@@ -52,11 +52,6 @@ struct OCSPContinuation : public Continuation {
   OCSPContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&OCSPContinuation::mainEvent); }
 };
 
-void
-SSLNetProcessor::cleanup()
-{
-}
-
 int
 SSLNetProcessor::start(int, size_t stacksize)
 {
@@ -92,7 +87,7 @@ SSLNetProcessor::start(int, size_t stacksize)
 NetAccept *
 SSLNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new SSLNetAccept(opt);
+  return new SSLNetAccept(opt);
 }
 
 NetVConnection *
@@ -113,7 +108,4 @@ SSLNetProcessor::allocate_vc(EThread *t)
 
 SSLNetProcessor::SSLNetProcessor() {}
 
-SSLNetProcessor::~SSLNetProcessor()
-{
-  cleanup();
-}
+SSLNetProcessor::~SSLNetProcessor() {}

@@ -82,7 +82,7 @@ QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
     this->_ctable = new QUICConnectionTable(params->connection_table_size());
     this->_rtable = new QUICResetTokenTable();
   }
-  return (NetAccept *)new QUICPacketHandlerIn(opt, *this->_ctable, *this->_rtable);
+  return new QUICPacketHandlerIn(opt, *this->_ctable, *this->_rtable);
 }
 
 NetVConnection *

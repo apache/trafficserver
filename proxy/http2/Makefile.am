@@ -90,7 +90,7 @@ test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\
 endif
 
 test_libhttp2_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_libhttp2_SOURCES = \
 	unit_tests/test_HTTP2.cc \
@@ -104,7 +104,7 @@ test_Http2DependencyTree_LDADD = \
 	@SWOC_LIBS@
 
 test_Http2DependencyTree_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_Http2DependencyTree_SOURCES = \
 	unit_tests/test_Http2DependencyTree.cc \
@@ -117,7 +117,7 @@ test_Http2FrequencyCounter_LDADD = \
 	@SWOC_LIBS@
 
 test_Http2FrequencyCounter_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_Http2FrequencyCounter_SOURCES = \
 	unit_tests/test_Http2FrequencyCounter.cc \

@@ -37,6 +37,7 @@
 #include "Http3DebugNames.h"
 #include "Http3Session.h"
 #include "Http3Transaction.h"
+#include "Http3ProtocolEnforcer.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
@@ -50,6 +51,9 @@ Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, co
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
+
+  this->_protocol_enforcer = new Http3ProtocolEnforcer();
+  this->_control_stream_dispatcher.add_handler(this->_protocol_enforcer);
 
   this->_settings_handler = new Http3SettingsHandler(this->_ssn);
   this->_control_stream_dispatcher.add_handler(this->_settings_handler);
@@ -188,6 +192,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 void
 Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
 {
+  Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
   Http3StreamType type;
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
   auto it                      = this->_remote_uni_stream_map.find(adapter->stream().id());
@@ -209,10 +214,22 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   }
 
   switch (type) {
-  case Http3StreamType::CONTROL:
-  case Http3StreamType::PUSH: {
+  case Http3StreamType::CONTROL: {
+    if (this->_control_stream_id == 0) {
+      this->_control_stream_id = adapter->stream().id();
+    } else if (this->_control_stream_id != adapter->stream().id()) {
+      error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR,
+                                                     "Only one control stream per peer is permitted");
+      Debug("http3", "Only one control stream per peer is permitted");
+      break;
+    }
     uint64_t nread = 0;
-    this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), *vio->get_reader(), nread);
+    this->_control_stream_dispatcher.on_read_ready(adapter->stream().id(), type, *vio->get_reader(), nread);
+    break;
+  }
+  case Http3StreamType::PUSH: {
+    error = std::make_unique<Http3ConnectionError>(Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Only servers can push");
+    Debug("http3", "Only servers can push");
     // TODO: when PUSH comes from client, send stream error with HTTP_WRONG_STREAM_DIRECTION
     break;
   }
@@ -365,7 +382,7 @@ Http3SettingsHandler::interests()
 }
 
 Http3ErrorUPtr
-Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::SETTINGS);
 
@@ -388,11 +405,11 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
     Debug("http3", "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
   }
 
-  if (settings_frame->contains(Http3SettingsId::MAX_HEADER_LIST_SIZE)) {
-    uint64_t max_header_list_size = settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE);
-    this->_session->remote_qpack()->update_max_header_list_size(max_header_list_size);
+  if (settings_frame->contains(Http3SettingsId::MAX_FIELD_SECTION_SIZE)) {
+    uint64_t max_field_section_size = settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE);
+    this->_session->remote_qpack()->update_max_field_section_size(max_field_section_size);
 
-    Debug("http3", "SETTINGS_MAX_HEADER_LIST_SIZE: %" PRId64, max_header_list_size);
+    Debug("http3", "SETTINGS_MAX_FIELD_SECTION_SIZE: %" PRId64, max_field_section_size);
   }
 
   if (settings_frame->contains(Http3SettingsId::QPACK_BLOCKED_STREAMS)) {
@@ -433,8 +450,8 @@ Http3SettingsFramer::generate_frame()
     frame->set(Http3SettingsId::HEADER_TABLE_SIZE, params->header_table_size());
   }
 
-  if (params->max_header_list_size() != HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE) {
-    frame->set(Http3SettingsId::MAX_HEADER_LIST_SIZE, params->max_header_list_size());
+  if (params->max_field_section_size() != HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE) {
+    frame->set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, params->max_field_section_size());
   }
 
   if (params->qpack_blocked_streams() != HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS) {

@@ -123,7 +123,7 @@ public:
     machine.
 
   */
-  int cancelled = false;
+  bool cancelled = false;
 
   /**
     Cancels the asynchronous operation represented by this action.
@@ -141,14 +141,8 @@ public:
   cancel(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
-#ifdef DEBUG
     ink_assert(!cancelled);
     cancelled = true;
-#else
-    if (!cancelled) {
-      cancelled = true;
-    }
-#endif
   }
 
   /**
@@ -166,14 +160,8 @@ public:
   cancel_action(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
-#ifdef DEBUG
     ink_assert(!cancelled);
     cancelled = true;
-#else
-    if (!cancelled) {
-      cancelled = true;
-    }
-#endif
   }
 
   Continuation *

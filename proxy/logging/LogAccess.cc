@@ -29,6 +29,7 @@
 #include "I_Machine.h"
 #include "LogFormat.h"
 #include "LogBuffer.h"
+#include "tscore/Encoding.h"
 
 extern AppVersionInfo appVersionInfo;
 
@@ -75,7 +76,7 @@ LogAccess::init()
     m_client_req_url_str[m_client_req_url_len] = '\0';
 
     m_client_req_url_canon_str =
-      LogUtils::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len, &m_client_req_url_canon_len);
+      Encoding::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len, &m_client_req_url_canon_len);
     m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
   }
 
@@ -1578,7 +1579,7 @@ LogAccess::validate_unmapped_url()
 
       if (unmapped_url && unmapped_url[0] != 0) {
         m_client_req_unmapped_url_canon_str =
-          LogUtils::escapify_url(&m_arena, unmapped_url, unmapped_url_len, &m_client_req_unmapped_url_canon_len);
+          Encoding::escapify_url(&m_arena, unmapped_url, unmapped_url_len, &m_client_req_unmapped_url_canon_len);
       }
     }
   }
@@ -1639,7 +1640,7 @@ LogAccess::validate_lookup_url()
       char *lookup_url = m_http_sm->t_state.cache_info.lookup_url_storage.string_get_ref(&lookup_url_len);
 
       if (lookup_url && lookup_url[0] != 0) {
-        m_cache_lookup_url_canon_str = LogUtils::escapify_url(&m_arena, lookup_url, lookup_url_len, &m_cache_lookup_url_canon_len);
+        m_cache_lookup_url_canon_str = Encoding::escapify_url(&m_arena, lookup_url, lookup_url_len, &m_cache_lookup_url_canon_len);
       }
     }
   }
@@ -2630,6 +2631,32 @@ LogAccess::marshal_server_transact_count(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_server_simple_retry_count(char *buf)
+{
+  if (buf) {
+    const int64_t attempts = m_http_sm->t_state.current.simple_retry_attempts;
+    marshal_int(buf, attempts);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_unavailable_retry_count(char *buf)
+{
+  if (buf) {
+    const int64_t attempts = m_http_sm->t_state.current.unavailable_server_retry_attempts;
+    marshal_int(buf, attempts);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_server_connect_attempts(char *buf)
 {
   if (buf) {
@@ -3108,7 +3135,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
       int running_len = 0;
       while (fld) {
         str     = const_cast<char *>(fld->value_get(&actual_len));
-        new_str = LogUtils::escapify_url(&m_arena, str, actual_len, &new_len);
+        new_str = Encoding::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);
           buf += new_len;

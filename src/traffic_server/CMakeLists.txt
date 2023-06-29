@@ -34,6 +34,7 @@ target_include_directories(traffic_server PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt/utils
 )
 target_link_libraries(traffic_server
+    PRIVATE
         http
         http_remap
         http2
@@ -59,13 +60,27 @@ target_link_libraries(traffic_server
         jsonrpc_protocol
         jsonrpc_server
         rpcpublichandlers
-        )
+)
+
+if(TS_USE_QUIC)
+    target_link_libraries(traffic_server
+        PRIVATE
+            ts::http3
+            ts::quic
+    )
+endif()
+
+if(TS_HAS_PROFILER)
+    target_link_libraries(traffic_server PRIVATE gperftools::profiler)
+endif()
 
 if (TS_USE_LINUX_IO_URING)
-    target_link_libraries(traffic_server inkuring uring)
+    target_link_libraries(traffic_server PRIVATE inkuring uring)
 endif (TS_USE_LINUX_IO_URING)
 if (TS_USE_LINUX_NATIVE_AIO)
-    target_link_libraries(traffic_server aio)
+    target_link_libraries(traffic_server PRIVATE aio)
 endif (TS_USE_LINUX_NATIVE_AIO)
+
+set_target_properties(traffic_server PROPERTIES ENABLE_EXPORTS ON)
 
 install(TARGETS traffic_server)

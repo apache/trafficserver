@@ -34,8 +34,7 @@ TESTS = $(check_PROGRAMS)
 lib_LTLIBRARIES = libtscore.la
 
 AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-        @SWOC_INCLUDES@ \
+	@SWOC_INCLUDES@ \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
@@ -66,6 +65,7 @@ libtscore_la_SOURCES = \
 	CryptoHash.cc \
 	DbgCtl.cc \
 	Diags.cc \
+	Encoding.cc \
 	Errata.cc \
 	EventNotify.cc \
 	Extendible.cc \
@@ -156,15 +156,15 @@ test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.l
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ -lstdc++
 
-test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
+test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2
 test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@
 test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @SWOC_LIBS@ @OPENSSL_LIBS@
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -183,7 +183,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PluginUserArgs.cc \
 	unit_tests/test_PriorityQueue.cc \
@@ -195,18 +194,19 @@ test_tscore_SOURCES = \
 	unit_tests/test_Version.cc \
 	unit_tests/test_Errata.cc \
 	unit_tests/test_MMH.cc \
-	unit_tests/test_Random.cc
+	unit_tests/test_Random.cc \
+	unit_tests/test_Encoding.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \
 	unit_tests/test_HKDF.cc
 endif
 
-freelist_benchmark_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/tests/include
+freelist_benchmark_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
 freelist_benchmark_LDADD = libtscore.la @HWLOC_LIBS@
 freelist_benchmark_SOURCES = unit_tests/freelist_benchmark.cc
 
-benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/tests/include
+benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
 benchmark_shared_mutex_LDADD = libtscore.la
 benchmark_shared_mutex_SOURCES = unit_tests/benchmark_shared_mutex.cc
 

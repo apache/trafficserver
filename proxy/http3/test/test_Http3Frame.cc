@@ -151,7 +151,7 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
     std::shared_ptr<const Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<const Http3SettingsFrame>(frame);
     CHECK(settings_frame);
     CHECK(settings_frame->is_valid());
-    CHECK(settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE) == 0x0400);
+    CHECK(settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE) == 0x0400);
     CHECK(settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS) == 0x0f);
   }
 }
@@ -172,7 +172,7 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
     };
 
     Http3SettingsFrame settings_frame;
-    settings_frame.set(Http3SettingsId::MAX_HEADER_LIST_SIZE, 0x0400);
+    settings_frame.set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, 0x0400);
     settings_frame.set(Http3SettingsId::NUM_PLACEHOLDERS, 0x0f);
 
     uint8_t buf[32] = {0};
@@ -198,7 +198,7 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
     };
 
     Http3SettingsFrame settings_frame;
-    settings_frame.set(Http3SettingsId::MAX_HEADER_LIST_SIZE, 0x0400);
+    settings_frame.set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, 0x0400);
 
     uint8_t buf[32] = {0};
     size_t len;

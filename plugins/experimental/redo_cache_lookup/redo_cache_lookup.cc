@@ -29,7 +29,6 @@
 #include <getopt.h>
 
 #include <ts/ts.h>
-#include <ts/experimental.h>
 #include "tscpp/api/GlobalPlugin.h"
 #include "tscpp/api/utils.h"
 

@@ -73,6 +73,7 @@ public:
   UDPConnection *getConnection();
   IOBufferBlock *getIOBlockChain();
   int64_t getPktLength();
+  uint8_t *get_entire_chain_buffer(size_t *buf_len);
 
   /**
      Add IOBufferBlock (chain) to end of packet.
@@ -114,6 +115,7 @@ public:
 private:
   SLINK(UDPPacket, alink); // atomic link
   UDPPacketInternal p;
+  ats_unique_buf _payload{nullptr};
 };
 
 // Inline definitions

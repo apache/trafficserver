@@ -75,7 +75,7 @@ TESTS = $(check_PROGRAMS)
 test_LogUtils_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DTEST_LOG_UTILS \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_LogUtils_SOURCES = \
 	LogUtils.cc \
@@ -90,7 +90,7 @@ test_LogUtils_LDADD = \
 test_RolledLogDeleter_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DTEST_LOG_UTILS \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_RolledLogDeleter_SOURCES = \
 	RolledLogDeleter.cc \

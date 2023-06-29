@@ -57,17 +57,18 @@ public:
   virtual ~QUICNetProcessor();
 
   void init() override;
-  virtual int start(int, size_t stacksize) override;
-  // TODO: refactoring NetProcessor::connect_re and UnixNetProcessor::connect_re_internal
-  // Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts) override;
-  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts);
+  int start(int, size_t stacksize) override;
 
-  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
-  virtual NetVConnection *allocate_vc(EThread *t) override;
+  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts) override;
+
+  NetVConnection *allocate_vc(EThread *t) override;
 
   Action *main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt) override;
 
   off_t quicPollCont_offset;
+
+protected:
+  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
 
 private:
   QUICNetProcessor(const QUICNetProcessor &);

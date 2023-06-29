@@ -43,7 +43,7 @@
 
 class PreWarmSM;
 class PreWarmManager;
-struct SNIConfigParams;
+class SNIConfigParams;
 
 extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
 extern PreWarmManager prewarmManager;

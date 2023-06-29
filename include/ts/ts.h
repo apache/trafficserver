@@ -806,6 +806,11 @@ tsapi void TSMimeParserClear(TSMimeParser parser);
 tsapi void TSMimeParserDestroy(TSMimeParser parser);
 
 /**
+  Parse a MIME header date string. Candidate for deprecation in v10.0.0
+ */
+tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
+
+/**
     Creates a new MIME header within bufp. Release with a call to
     TSHandleMLocRelease().
 
@@ -1061,6 +1066,7 @@ tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSM
 tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
 
 tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
+tsapi const char *TSMimeHdrStringToWKS(const char *str, int length);
 
 /* --------------------------------------------------------------------------
    HTTP headers */
@@ -1239,6 +1245,10 @@ tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 tsapi TSReturnCode TSMgmtSourceGet(const char *var_name, TSMgmtSource *source);
 tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 tsapi TSReturnCode TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result);
+
+/* --------------------------------------------------------------------------
+   TSHRTime, this is a candidate for deprecation in v10.0.0 */
+tsapi TSHRTime TShrtime(void);
 
 /* --------------------------------------------------------------------------
    Continuations */
@@ -1490,6 +1500,16 @@ tsapi struct sockaddr const *TSHttpTxnNextHopAddrGet(TSHttpTxn txnp);
 */
 tsapi const char *TSHttpTxnNextHopNameGet(TSHttpTxn txnp);
 
+/** Get the next hop port.
+ *
+    Retrieves the next hop parent port.
+                Returns -1 if not valid.
+
+    @return The port of the next hop for transaction @a txnp.
+
+ */
+tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
+
 tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp);
 tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr const *addr);
 tsapi TSReturnCode TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag);
@@ -1518,33 +1538,6 @@ tsapi TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
     @return TS_SUCCESS if the (future?) server connection was modified
 */
 tsapi TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
-
-/** Change packet TOS for the client side connection
- *
-    @note The change takes effect immediately
-
-    @note TOS is deprecated and replaced by DSCP, this is still used to
-    set DSCP however the first 2 bits of this value will be ignored as
-    they now belong to the ECN field.
-
-    @return TS_SUCCESS if the client connection was modified
-*/
-tsapi TSReturnCode TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos);
-
-/** Change packet TOS for the server side connection
- *
-
-    @note The change takes effect immediately, if no OS connection has been
-    made, then this sets the mark that will be used IF an OS connection
-    is established
-
-    @note TOS is deprecated and replaced by DSCP, this is still used to
-    set DSCP however the first 2 bits of this value will be ignored as
-    they now belong to the ECN field.
-
-    @return TS_SUCCESS if the (future?) server connection was modified
-*/
-tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
 
 /** Change packet DSCP for the client side connection
  *
@@ -2109,8 +2102,7 @@ tsapi struct sockaddr const *TSNetVConnLocalAddrGet(TSVConn vc);
 
 /* --------------------------------------------------------------------------
    Stats and configs based on librecords raw stats (this is preferred API until we
-   rewrite stats). This system has a limitation of up to 1,500 stats max, controlled
-   via proxy.config.stat_api.max_stats_allowed (default is 512).
+   rewrite stats).
 
    This is available as of Apache TS v2.2.*/
 typedef enum {
@@ -2148,6 +2140,29 @@ tsapi void TSStatIntSet(int the_stat, TSMgmtInt value);
 /* tsapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
 tsapi TSReturnCode TSStatFindName(const char *name, int *idp);
+
+/**
+   Records.yaml file handling API.
+
+   If you need to parse a records.yaml file and need to handle each node separately then
+   this API should be used, an example of this would be the conf_remap plugin.
+
+   TSYAMLRecNodeHandler
+
+   Callback function for the caller to deal with each parsed node. ``cfg`` holds
+   the details of the parsed field. `data` can be used to pass information along.
+*/
+typedef TSReturnCode (*TSYAMLRecNodeHandler)(const TSYAMLRecCfgFieldData *cfg, void *data);
+/**
+   Parse a YAML node following the record structure internals. On every scalar node
+   the @a handler callback will be invoked with the appropriate parsed fields. @a data
+   can be used to pass information along to every callback, this could be handy when
+   you need to read/set data inside the @c TSYAMLRecNodeHandler to be read at a later stage.
+
+   This will return TS_ERROR if there was an issue while parsing the file. Particular node errors
+   should be handled by the @c TSYAMLRecNodeHandler implementation.
+*/
+tsapi TSReturnCode TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data);
 
 /* --------------------------------------------------------------------------
    tracing api */
@@ -2827,6 +2842,30 @@ tsapi TSReturnCode TSRPCHandlerDone(TSYaml resp);
  * @return TS_SUCCESS if no issues. TS_ERROR otherwise.
  */
 tsapi TSReturnCode TSRPCHandlerError(int code, const char *descr, size_t descr_len);
+
+/** Do another cache lookup with a different cache key.
+ *
+ * @param txnp Transaction.
+ * @param url URL to use for cache key.
+ * @param length Length of the string in @a url
+ *
+ * @return @c TS_SUCCESS on success, @c TS_ERROR if the @a txnp is invalid or the @a url is
+ * not a valid URL.
+ *
+ * If @a length is negative, @c strlen will be used to determine the length of @a url.
+ *
+ * @a url must be syntactically a URL, but otherwise it is just a string and does not need to
+ * be retrievable.
+ *
+ * This can only be called in a @c TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK callback. To set the cache
+ * key for the first lookup, use @c TSCacheUrlSet.
+ *
+ * @see TSCacheUrlSet
+ */
+tsapi TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length);
+
+/* IP addr parsing. This is a candidate for deprecation in v10.0.0, in favor of libswoc */
+tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
 #ifdef __cplusplus
 }

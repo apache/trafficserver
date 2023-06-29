@@ -125,7 +125,7 @@ public:
   static constexpr size_t MAX_PAYLOAD_SIZE = 60;
   static constexpr std::array<Http3SettingsId, 4> VALID_SETTINGS_IDS{
     Http3SettingsId::HEADER_TABLE_SIZE,
-    Http3SettingsId::MAX_HEADER_LIST_SIZE,
+    Http3SettingsId::MAX_FIELD_SECTION_SIZE,
     Http3SettingsId::QPACK_BLOCKED_STREAMS,
     Http3SettingsId::NUM_PLACEHOLDERS,
   };

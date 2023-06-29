@@ -61,7 +61,7 @@ librecords_p_a_SOURCES = $(librecords_COMMON)
 TESTS = $(check_PROGRAMS)
 
 test_librecords_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_librecords_SOURCES = \
     unit_tests/unit_test_main.cc \
@@ -75,7 +75,7 @@ test_librecords_LDADD = \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBCAP@ @YAMLCPP_LIBS@
 
 test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_librecords_on_eventsystem_SOURCES = \
     unit_tests/unit_test_main_on_eventsystem.cc \

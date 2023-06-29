@@ -3,15 +3,16 @@
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-centos_7%2F&label=CentOS%207)](https://ci.trafficserver.apache.org/job/master/job/os-centos_7/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-debian_10%2F&label=Debian%2010)](https://ci.trafficserver.apache.org/job/master/job/os-debian_10/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-debian_11%2F&label=Debian%2011)](https://ci.trafficserver.apache.org/job/master/job/os-debian_11/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_35%2F&label=Fedora%2035)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_35/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_36%2F&label=Fedora%2036)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_36/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_37%2F&label=Fedora%2037)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_37/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_38%2F&label=Fedora%2038)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_38/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Ffreebsd%2F&label=FreeBSD)](https://ci.trafficserver.apache.org/job/master/job/freebsd/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx%2F&label=macOS)](https://ci.trafficserver.apache.org/job/master/job/osx/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx-m1%2F&label=macOS%20arm64)](https://ci.trafficserver.apache.org/job/master/job/osx-m1/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-rockylinux_8%2F&label=Rocky%20Linux%208)](https://ci.trafficserver.apache.org/job/master/job/os-rockylinux_8/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-rockylinux_8%2F&label=Rocky%20Linux%209)](https://ci.trafficserver.apache.org/job/master/job/os-rockylinux_9/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_20.04%2F&label=Ubuntu%2020.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_20.04/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_21.04%2F&label=Ubuntu%2021.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_21.04/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_22.04%2F&label=Ubuntu%2022.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_22.04/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-ubuntu_23.04%2F&label=Ubuntu%2023.04)](https://ci.trafficserver.apache.org/job/master/job/os-ubuntu_23.04/)
 
 Traffic Server is a high-performance building block for cloud services.
 It's more than just a caching proxy server; it also has support for

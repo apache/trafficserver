@@ -50,6 +50,8 @@
 #include "quic/QUICContext.h"
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICStreamManager_quiche.h"
+
+#include <netinet/in.h>
 #include <quiche.h>
 
 class QUICPacketHandler;
@@ -155,6 +157,7 @@ protected:
 
   // TLSSNISupport
   void _fire_ssl_servername_event() override;
+  in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &_getLocalEndpoint() override;

@@ -128,9 +128,7 @@ for i in range(num_peer):
     for i in range(num_upstream):
         prefix = f"http://ts_upstream{i}:{ts_upstream[i].Variables.port}/"
         ts.Disk.remap_config.AddLine(
-            f"map {prefix} {prefix} @plugin=parent_select.so @pparam=" +
-            ts.Variables.CONFIGDIR +
-            "/strategies.yaml @pparam=the-strategy")
+            f"map {prefix} {prefix} @plugin=parent_select.so @pparam=strategies.yaml @pparam=the-strategy")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)

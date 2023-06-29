@@ -65,6 +65,10 @@ preferred.
 value, and populated :arg:`value_len_ptr` with the length of the
 value in bytes. The returned header value is not NUL-terminated.
 
+In addition to all the predefined constants for Well-Known header strings, you can
+also do a lookup for a header string using :func:`TSMimeHdrStringToWKS`. If a lookup
+fails, this function returns a :code:`nullptr`
+
 Return Values
 =============
 

@@ -24,7 +24,7 @@ ATS Release Procedure Steps
 
    - Make sure all commits are in the branch being worked on
    - Update the configure.ac and trafficserver.spec version numbers
-   - Run `make changelog` to generate a new changelog file for the new versrion
+   - Run `make changelog` to generate a new changelog file for the new version (this is based on GitHub Milestone tags, so make sure PRs/Commits are properly tagged with the new version)
    - Commit the new changelog, configure.ac and trafficserver.spec files
    - Run `make rel-candidate`, this will generate the tar files and create a RC git tag
    - Push the new tag, `git push origin <tag_name>`

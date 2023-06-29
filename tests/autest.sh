@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 # vim: sw=4:ts=4:softtabstop=4:ai:et
 
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -17,20 +17,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+
 fail()
 {
     echo $1
     exit 1
 }
+
+cd "$SCRIPT_DIR"
+
 ./prepare_proxy_verifier.sh || fail "Failed to install Proxy Verifier."
-pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
 ./test-env-check.sh || fail "Failed Python environment checks."
 # this is for rhel or centos systems
 echo "Environment config finished. Running AuTest..."
-pipenv run env \
+exec pipenv run env \
     HTTP_PROXY= HTTPS_PROXY= NO_PROXY= http_proxy= https_proxy= no_proxy= \
     autest -D gold_tests "$@"
-ret=$?
-popd > /dev/null
-exit $ret

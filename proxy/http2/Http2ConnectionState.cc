@@ -305,7 +305,8 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     if (reset_header_after_decoding) {
       free_stream_after_decoding                 = true;
       uint32_t const initial_local_stream_window = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-      ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session())->is_outbound() == true);
+      ink_assert(dynamic_cast<Http2CommonSession *>(this->session->get_proxy_session()));
+      ink_assert(this->session->is_outbound() == true);
       stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread(), this->session->get_proxy_session(), stream_id,
                                  this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE), initial_local_stream_window,
                                  !STREAM_IS_REGISTERED);

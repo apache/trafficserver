@@ -903,6 +903,13 @@ HttpSM::state_read_client_request_header(int event, void *data)
       }
     }
 
+    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUSH &&
+        t_state.http_config_param->push_method_enabled == 0) {
+      SMDebug("http", "Rejecting PUSH request because push_method_enabled is 0.");
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return 0;
+    }
+
     // Call to ensure the content-length and transfer_encoding elements in client_request are filled in
     HttpTransact::set_client_request_state(&t_state, &t_state.hdr_info.client_request);
 
@@ -4112,6 +4119,16 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
   STATE_ENTER(&HttpSM::tunnel_handler_ssl_producer, event);
 
   switch (event) {
+  case VC_EVENT_READ_READY:
+    // This event is triggered when receiving DATA frames without the END_STREAM
+    // flag set in a HTTP/2 CONNECT request. Breaking as there are more DATA
+    // frames to come.
+    break;
+  case VC_EVENT_READ_COMPLETE:
+    // This event is triggered during an HTTP/2 CONNECT request when a DATA
+    // frame with the END_STREAM flag set is received, indicating the end of the
+    // stream.
+    [[fallthrough]];
   case VC_EVENT_EOS:
     // The write side of this connection is still alive
     //  so half-close the read
@@ -4143,7 +4160,6 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
       }
     }
     break;
-  case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   // We should never get these event since we don't know
   //  how long the stream is
@@ -4440,7 +4456,8 @@ HttpSM::check_sni_host()
       NetVConnection *netvc = ua_txn->get_netvc();
       if (netvc) {
         IpEndpoint ip = netvc->get_remote_endpoint();
-        if (SNIConfig::test_client_action(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), ip, host_sni_policy) &&
+        if (SNIConfig::test_client_action(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), netvc->get_local_port(),
+                                          ip, host_sni_policy) &&
             host_sni_policy > 0) {
           // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
           // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
@@ -5047,7 +5064,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDebug("http_seq", "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
   pending_action = cache_sm.open_read(
     &key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
@@ -5072,7 +5089,8 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
   SMDebug("http_seq", "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                      t_state.txn_conf->cache_generation_number);
   pending_action = cacheProcessor.remove(cont, &key);
 
   return;
@@ -5150,7 +5168,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDebug("http_cache_write", "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_generation_number);
+  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
   pending_action =
     c_sm->open_write(&key, s_url, &t_state.hdr_info.client_request, object_read_info,

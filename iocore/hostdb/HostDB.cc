@@ -23,7 +23,6 @@
 
 #include "swoc/swoc_file.h"
 
-#include "Main.h"
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "tscore/I_Layout.h"
@@ -487,6 +486,17 @@ HostDBCache::start(int flags)
   return 0;
 }
 
+int
+HostDBProcessor::clear_and_start(int, size_t)
+{
+  if (hostDB.start(0) < 0) {
+    return -1;
+  }
+
+  hostDB.refcountcache->clear();
+  return init();
+}
+
 // Start up the Host Database processor.
 // Load configuration, register configuration and statistics and
 // open the cache. This doesn't create any threads, so those
@@ -499,10 +509,12 @@ HostDBProcessor::start(int, size_t)
     return -1;
   }
 
-  if (auto_clear_hostdb_flag) {
-    hostDB.refcountcache->clear();
-  }
+  return init();
+}
 
+int
+HostDBProcessor::init()
+{
   statPagesManager.register_http("hostdb", register_ShowHostDB);
 
   //
@@ -1262,7 +1274,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
     ts::shared_mutex &bucket_lock = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
     std::shared_lock<ts::shared_mutex> lock{bucket_lock};
 
-    IntrusiveHashMap<RefCountCacheLinkage> &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
+    auto &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
     for (const auto &it : partMap) {
       auto *r = static_cast<HostDBRecord *>(it.item.get());
       if (r && !r->is_failed()) {
@@ -1394,7 +1406,9 @@ HostDBContinuation::remove_and_trigger_pending_dns()
       if (hash.hash == c->hash.hash) {
         Dbg(dbg_ctl_hostdb, "dequeuing additional request");
         q.remove(c);
-        qq.enqueue(c);
+        if (!c->action.cancelled) {
+          qq.enqueue(c);
+        }
       }
       c = n;
     }
@@ -1917,7 +1931,7 @@ struct HostDBTestReverse : public Continuation {
 #if TS_HAS_TESTS
 REGRESSION_TEST(HostDBTests)(RegressionTest *t, int atype, int *pstatus)
 {
-  eventProcessor.schedule_imm(new HostDBTestReverse(t, atype, pstatus), ET_CACHE);
+  eventProcessor.schedule_imm(new HostDBTestReverse(t, atype, pstatus), ET_CALL);
 }
 #endif
 

@@ -486,15 +486,16 @@ SSLConfigParams::initialize()
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
 
-  char *verify_server = nullptr;
-  REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
-  this->SetServerPolicy(verify_server);
-  ats_free(verify_server);
+  char *verify_server_policy = nullptr;
+  REC_ReadConfigStringAlloc(verify_server_policy, "proxy.config.ssl.client.verify.server.policy");
+  this->SetServerPolicy(verify_server_policy);
+  ats_free(verify_server_policy);
   REC_RegisterConfigUpdateFunc("proxy.config.ssl.client.verify.server.policy", UpdateServerPolicy, nullptr);
 
-  REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
-  this->SetServerPolicyProperties(verify_server);
-  ats_free(verify_server);
+  char *verify_server_properties = nullptr;
+  REC_ReadConfigStringAlloc(verify_server_properties, "proxy.config.ssl.client.verify.server.properties");
+  this->SetServerPolicyProperties(verify_server_properties);
+  ats_free(verify_server_properties);
   REC_RegisterConfigUpdateFunc("proxy.config.ssl.client.verify.server.properties", UpdateServerPolicyProperties, nullptr);
 
   ssl_client_cert_filename = nullptr;
@@ -951,7 +952,8 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
           SSLError("failed to attach client chain certificate from %s", client_cert.c_str());
           goto fail;
         }
-        X509_free(cert);
+        // Do not free cert becasue SSL_CTX_add_extra_chain_cert takes ownership of cert if it succeeds, unlike
+        // SSL_CTX_use_certificate.
         cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       }
 

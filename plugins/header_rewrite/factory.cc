@@ -157,6 +157,8 @@ condition_factory(const std::string &cond)
     c = new ConditionTcpInfo();
   } else if (c_name == "CACHE") {
     c = new ConditionCache();
+  } else if (c_name == "NEXT-HOP") { // This condition adapts to the hook
+    c = new ConditionNextHop();
   } else {
     TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
     return nullptr;

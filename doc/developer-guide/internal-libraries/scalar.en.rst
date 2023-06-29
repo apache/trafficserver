@@ -34,7 +34,7 @@ have the same memory footprint as the underlying integer storage type. It is int
 lengthy and error prone hand optimizations used to handle related values of different scales.
 
 Definition
-**********
+==========
 
 TS.Scalar consists primarily of the template class :code:`Scalar`. Instances of :class:`Scalar` hold
 a *count* and represent a *value* which is the *count* multiplied by :arg:`SCALE`. Note this
@@ -85,14 +85,14 @@ quantizes the values that can be represented by an instance.
       Set the count to :arg:`c`.
 
 Usage
-******
+======
 
 In normal use a scalar evaluates to its value rather than its count. The goal is to provide an
 instance that appears to store unscaled values in a quantized way. The count is accessible if
 needed.
 
 Assignment
-==========
+----------
 
 Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a few simple rules.
 
@@ -151,7 +151,7 @@ as possible.
    a = round_down(2480); // a has count 24, value 2400.
 
 Arithmetic
-==========
+----------
 
 Arithmetic with scalars is based on the idea that a scalar represents its value. This value retains the
 scalar type for conversion checking but otherwise acts as the value. This makes using scalar

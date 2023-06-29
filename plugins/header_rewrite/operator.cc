@@ -52,7 +52,8 @@ OperatorHeaders::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  _header = p.get_arg();
+  _header     = p.get_arg();
+  _header_wks = TSMimeHdrStringToWKS(_header.c_str(), _header.length());
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);

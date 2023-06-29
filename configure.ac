@@ -1473,7 +1473,7 @@ TS_CHECK_LIBSWOC
 AM_CONDITIONAL([BUILD_SWOC], [test "$has_libswoc" = "no"])
 
 TS_CHECK_SWOC_HEADERS_EXPORT
-AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test x"$enable_swoc_headers" = x"yes"])
+AM_CONDITIONAL([EXPORT_SWOC_HEADERS], [test ! x"$enable_swoc_headers" = x"no"])
 
 # Check for optional hiredis library
 TS_CHECK_HIREDIS
@@ -1879,8 +1879,7 @@ AM_CONDITIONAL([HAS_WASM], [test "x${has_wasm}" = "x1" ])
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
 #
-# Check for tcmalloc, jemalloc and mimalloc
-TS_CHECK_TCMALLOC
+# Check for jemalloc and mimalloc
 TS_CHECK_JEMALLOC
 TS_CHECK_MIMALLOC
 
@@ -1963,7 +1962,7 @@ AC_CHECK_HEADERS([sys/types.h \
 # On OpenBSD, pthread.h must be included before pthread_np.h
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
-AC_CHECK_HEADERS([linux/hdreg.h linux/major.h])
+AC_CHECK_HEADERS([linux/major.h])
 
 AC_CHECK_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H

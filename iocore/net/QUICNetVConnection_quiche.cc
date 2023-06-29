@@ -26,6 +26,8 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "quic/QUICStream_quiche.h"
 #include "quic/QUICGlobals.h"
+
+#include <netinet/in.h>
 #include <quiche.h>
 
 static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
@@ -345,10 +347,8 @@ QUICNetVConnection::reset_quic_connection()
 void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
-  IOBufferBlock *block = packet->getIOBlockChain();
-  uint8_t *buf         = reinterpret_cast<uint8_t *>(block->buf());
-  uint64_t buf_len     = block->size();
-
+  size_t buf_len{0};
+  uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
   net_activity(this, this_ethread());
   quiche_recv_info recv_info = {
     &packet->from.sa,
@@ -745,6 +745,12 @@ QUICNetVConnection::_get_tls_curve() const
 void
 QUICNetVConnection::_fire_ssl_servername_event()
 {
+}
+
+in_port_t
+QUICNetVConnection::_get_local_port()
+{
+  return this->get_local_port();
 }
 
 const IpEndpoint &

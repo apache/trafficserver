@@ -98,13 +98,13 @@ dnl TS_CHECK_SWOC: check if we want to export libswoc headers from trafficserver
 AC_DEFUN([TS_CHECK_SWOC_HEADERS_EXPORT], [
 AC_MSG_CHECKING([whether to export libswoc headers])
 AC_ARG_ENABLE([swoc-headers],
-  [AS_HELP_STRING([--enable-swoc-headers],[Export libswoc headers])],
+  [AS_HELP_STRING([--disable-swoc-headers],[Do not export ATS libswoc headers])],
+  [],
   [
-  if test "x$has_libswoc" = "xyes" ; then
-    enable_swoc_headers="no - cannot export external headers"
-  fi
-  ],
-  [enable_swoc_headers=no]
+    if test "x$has_libswoc" = "xyes" ; then
+      enable_swoc_headers=no
+    fi
+  ]
 )
 AC_MSG_RESULT([$enable_swoc_headers])
 ])

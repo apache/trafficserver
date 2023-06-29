@@ -25,7 +25,7 @@
 
 #include "QUICTypes.h"
 #include "QUICConnection.h"
-#include "tscore/MT_hashtable.h"
+#include "MTHashTable.h"
 
 class QUICConnectionTable
 {

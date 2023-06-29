@@ -36,17 +36,17 @@ public:
   void initialize();
 
   uint32_t header_table_size() const;
-  uint32_t max_header_list_size() const;
+  uint32_t max_field_section_size() const;
   uint32_t qpack_blocked_streams() const;
   uint32_t num_placeholders() const;
   uint32_t max_settings() const;
 
 private:
-  uint32_t _header_table_size     = 0;
-  uint32_t _max_header_list_size  = 0;
-  uint32_t _qpack_blocked_streams = 0;
-  uint32_t _num_placeholders      = 0;
-  uint32_t _max_settings          = 10;
+  uint32_t _header_table_size      = 0;
+  uint32_t _max_field_section_size = 0;
+  uint32_t _qpack_blocked_streams  = 0;
+  uint32_t _num_placeholders       = 0;
+  uint32_t _max_settings           = 10;
 };
 
 class Http3Config

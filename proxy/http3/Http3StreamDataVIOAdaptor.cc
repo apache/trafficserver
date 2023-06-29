@@ -24,7 +24,12 @@
 #include "Http3StreamDataVIOAdaptor.h"
 #include "I_VIO.h"
 
-Http3StreamDataVIOAdaptor::Http3StreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink) {}
+Http3StreamDataVIOAdaptor::Http3StreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink), _buffer(new_MIOBuffer(BUFFER_SIZE_INDEX_4K)) {}
+
+Http3StreamDataVIOAdaptor::~Http3StreamDataVIOAdaptor()
+{
+  free_MIOBuffer(this->_buffer);
+}
 
 std::vector<Http3FrameType>
 Http3StreamDataVIOAdaptor::interests()
@@ -33,15 +38,14 @@ Http3StreamDataVIOAdaptor::interests()
 }
 
 Http3ErrorUPtr
-Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */,
+                                        Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::DATA);
   const Http3DataFrame *dframe = dynamic_cast<const Http3DataFrame *>(frame.get());
 
-  SCOPED_MUTEX_LOCK(lock, this->_sink_vio->mutex, this_ethread());
-
-  MIOBuffer *writer = this->_sink_vio->get_writer();
-  writer->write(dframe->payload(), dframe->payload_length());
+  // Need to wait for headers to be written
+  this->_buffer->write(dframe->payload(), dframe->payload_length());
   this->_total_data_length += dframe->payload_length();
 
   return Http3ErrorUPtr(new Http3NoError());
@@ -50,5 +54,21 @@ Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
 void
 Http3StreamDataVIOAdaptor::finalize()
 {
+  SCOPED_MUTEX_LOCK(lock, this->_sink_vio->mutex, this_ethread());
+  MIOBuffer *writer      = this->_sink_vio->get_writer();
+  IOBufferReader *reader = this->_buffer->alloc_reader();
+  IOBufferBlock *block;
+  while (reader->read_avail() > 0 && (block = reader->get_current_block()) != nullptr) {
+    writer->append_block(block);
+    reader->consume(block->size());
+  }
+
+  this->_buffer->dealloc_reader(reader);
   this->_sink_vio->nbytes = this->_total_data_length;
+}
+
+bool
+Http3StreamDataVIOAdaptor::has_data()
+{
+  return this->_total_data_length > 0;
 }

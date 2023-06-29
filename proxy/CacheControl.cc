@@ -34,7 +34,6 @@
 #include "tscore/Filenames.h"
 #include "CacheControl.h"
 #include "ControlMatcher.h"
-#include "Main.h"
 #include "P_EventSystem.h"
 #include "ConfigProcessor.h"
 #include "HTTP.h"
@@ -104,7 +103,7 @@ int
 cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                     void * /* cookie ATS_UNUSED */)
 {
-  eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CACHE);
+  eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CALL);
   return 0;
 }
 
@@ -146,7 +145,7 @@ reloadCacheControl()
   CC_table *newTable;
 
   Debug("cache_control", "%s updated, reloading", ts::filename::CACHE);
-  eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
+  eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CALL);
   newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
 

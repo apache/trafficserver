@@ -1756,7 +1756,7 @@ memcpy_tolower(char *d, const char *s, int n)
   }
 }
 
-#define BUFSIZE 512
+#define BUFSIZE 4096
 
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
@@ -1801,7 +1801,8 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
 }
 
 static inline void
-url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, cache_generation_t generation)
+url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, bool ignore_query,
+                           cache_generation_t generation)
 {
   char buffer[BUFSIZE];
   char *p, *e;
@@ -1833,11 +1834,19 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
   strs[9]  = ";";
   strs[10] = url->m_ptr_params;
   strs[11] = "?";
-  strs[12] = url->m_ptr_query;
+
+  // Special case for the query paramters, allowing us to ignore them if requested
+  if (!ignore_query) {
+    strs[12] = url->m_ptr_query;
+    ends[12] = strs[12] + url->m_len_query;
+  } else {
+    strs[12] = nullptr;
+    ends[12] = nullptr;
+  }
+
   ends[9]  = strs[9] + 1;
   ends[10] = strs[10] + url->m_len_params;
   ends[11] = strs[11] + 1;
-  ends[12] = strs[12] + url->m_len_query;
 
   p = buffer;
   e = buffer + BUFSIZE;
@@ -1879,21 +1888,21 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
 }
 
 void
-url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, cache_generation_t generation)
+url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
-      ((url->m_len_user + url->m_len_password + url->m_len_params + url->m_len_query) == 0) &&
+      ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
     CryptoHash hash_general;
-    url_CryptoHash_get_general(url, ctx, hash_general, generation);
+    url_CryptoHash_get_general(url, ctx, hash_general, ignore_query, generation);
     ink_assert(*hash == hash_general);
 #endif
   } else {
-    url_CryptoHash_get_general(url, ctx, *hash, generation);
+    url_CryptoHash_get_general(url, ctx, *hash, ignore_query, generation);
   }
 }
 

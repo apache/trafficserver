@@ -720,10 +720,15 @@ struct HostDBProcessor : public Processor {
    */
   int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
 
+  // clear_and_start is the same start, except the persistent database is cleared first.
+  int clear_and_start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
+
   // Private
   HostDBCache *cache();
 
 private:
+  int init();
+
   Action *getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt);
 };
 

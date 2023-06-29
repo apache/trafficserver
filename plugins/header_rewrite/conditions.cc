@@ -231,7 +231,7 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   if (bufp && hdr_loc) {
     TSMLoc field_loc;
 
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier_wks ? _qualifier_wks : _qualifier.c_str(), _qualifier.size());
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
@@ -291,7 +291,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     // CLIENT always uses the pristine URL
     TSDebug(PLUGIN_NAME, "   Using the pristine url");
     if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url) != TS_SUCCESS) {
-      TSError("[header_rewrite] Error getting the pristine URL");
+      TSError("[%s] Error getting the pristine URL", PLUGIN_NAME);
       return;
     }
   } else if (res._rri != nullptr) {
@@ -307,7 +307,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       TSDebug(PLUGIN_NAME, "   Using the to url");
       url = res._rri->mapToUrl;
     } else {
-      TSError("[header_rewrite] Invalid option value");
+      TSError("[%s] Invalid option value", PLUGIN_NAME);
       return;
     }
   } else {
@@ -315,11 +315,11 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       bufp           = res.bufp;
       TSMLoc hdr_loc = res.hdr_loc;
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
-        TSError("[header_rewrite] Error getting the URL");
+        TSError("[%s] Error getting the URL", PLUGIN_NAME);
         return;
       }
     } else {
-      TSError("[header_rewrite] Rule not supported at this hook");
+      TSError("[%s] Rule not supported at this hook", PLUGIN_NAME);
       return;
     }
   }
@@ -398,7 +398,7 @@ ConditionDBM::initialize(Parser &p)
     //   TSDebug(PLUGIN_NAME, "Opened DBM file %s", _file.c_str());
     //   _key.set_value(_qualifier.substr(pos + 1));
     // } else {
-    //   TSError("Failed to open DBM file: %s", _file.c_str());
+    //   TSError("[%s] Failed to open DBM file: %s", PLUGIN_NAME, _file.c_str());
     // }
   } else {
     TSError("[%s] Malformed DBM condition", PLUGIN_NAME);
@@ -616,6 +616,7 @@ ConditionIp::append_value(std::string &s, const Resources &res)
     ip_set = (nullptr != getIP(TSHttpTxnServerAddrGet(res.txnp), ip));
     break;
   case IP_QUAL_OUTBOUND:
+    TSDebug(PLUGIN_NAME, "Requesting output ip");
     ip_set = (nullptr != getIP(TSHttpTxnOutgoingAddrGet(res.txnp), ip));
     break;
   }
@@ -1381,4 +1382,55 @@ ConditionCache::append_value(std::string &s, const Resources &res)
 
     s += names[status];
   }
+}
+
+// ConditionNextHop: request header.
+void
+ConditionNextHop::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  MatcherType *match = new MatcherType(_cond_op);
+  match->set(p.get_arg());
+  _matcher = match;
+}
+
+void
+ConditionNextHop::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+  TSDebug(PLUGIN_NAME, "\tParsing %%{NEXT-HOP:%s}", q.c_str());
+  _next_hop_qual = parse_next_hop_qualifier(q);
+}
+
+void
+ConditionNextHop::append_value(std::string &s, const Resources &res)
+{
+  switch (_next_hop_qual) {
+  case NEXT_HOP_HOST: {
+    char const *const name = TSHttpTxnNextHopNameGet(res.txnp);
+    if (nullptr != name) {
+      TSDebug(PLUGIN_NAME, "Appending '%s' to evaluation value", name);
+      s.append(name);
+    } else {
+      TSDebug(PLUGIN_NAME, "NextHopName is empty");
+    }
+  } break;
+  case NEXT_HOP_PORT: {
+    int const port = TSHttpTxnNextHopPortGet(res.txnp);
+    TSDebug(PLUGIN_NAME, "Appending '%d' to evaluation value", port);
+    s.append(std::to_string(port));
+  } break;
+  default:
+    TSReleaseAssert(!"All cases should have been handled");
+    break;
+  }
+}
+
+bool
+ConditionNextHop::eval(const Resources &res)
+{
+  std::string s;
+  append_value(s, res);
+  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }

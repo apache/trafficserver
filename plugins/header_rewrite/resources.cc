@@ -56,6 +56,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     break;
 
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:
+    TSDebug(PLUGIN_NAME, "Processing TS_HTTP_SEND_REQUEST_HDR_HOOK");
     // Read request headers to server
     if (ids & RSRC_SERVER_REQUEST_HEADERS) {
       TSDebug(PLUGIN_NAME, "\tAdding TXN server request header buffers");
