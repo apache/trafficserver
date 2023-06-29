@@ -213,8 +213,6 @@ check_symbol_exists(IN6_IS_ADDR_UNSPECIFIED "netinet/in.h" TS_HAS_IN6_IS_ADDR_UN
 check_symbol_exists(IP_TOS "netinet/ip.h" TS_HAS_IP_TOS)
 check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
 check_symbol_exists(SO_PEERCRED "sys/socket.h" TS_HAS_SO_PEERCRED)
-check_symbol_exists(TLS1_3_VERSION "${OPENSSL_INCLUDE_DIR}/openssl/ssl.h" TS_USE_TLS13)
-check_symbol_exists(OPENSSL_NO_TLS1_3 "${OPENSSL_INCLUDE_DIR}/openssl/ssl.h" TS_NO_USE_TLS13)
 if(TS_NO_USE_TLS13)
     set(TS_USE_TLS13 FALSE CACHE)
 endif()
@@ -257,8 +255,18 @@ check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
-check_symbol_exists(SSL_CTX_set_keylog_callback openssl/ssl.h TS_HAS_TLS_KEYLOGGING)
-check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb openssl/ssl.h HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
+check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
+check_symbol_exists(
+    SSL_CTX_set_keylog_callback
+    "openssl/ssl.h"
+    TS_HAS_TLS_KEYLOGGING
+)
+check_symbol_exists(
+    SSL_CTX_set_tlsext_ticket_key_cb
+    "openssl/ssl.h"
+    HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
+)
+check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 
 # Catch2 for tests
 set(CATCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/catch2)
