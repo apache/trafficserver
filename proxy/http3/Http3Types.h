@@ -37,15 +37,15 @@ enum class Http3StreamType : uint8_t {
 };
 
 enum class Http3SettingsId : uint64_t {
-  HEADER_TABLE_SIZE     = 0x01, ///< QPACK Settings
-  RESERVED_1            = 0x02, ///< HTTP/3 Settings
-  RESERVED_2            = 0x03, ///< HTTP/3 Settings
-  RESERVED_3            = 0x04, ///< HTTP/3 Settings
-  RESERVED_4            = 0x05, ///< HTTP/3 Settings
-  MAX_HEADER_LIST_SIZE  = 0x06, ///< HTTP/3 Settings
-  QPACK_BLOCKED_STREAMS = 0x07, ///< QPACK Settings
-  NUM_PLACEHOLDERS      = 0x09, ///< HTTP/3 Settings
-  UNKNOWN               = 0x0A0A,
+  HEADER_TABLE_SIZE      = 0x01, ///< QPACK Settings
+  RESERVED_1             = 0x02, ///< HTTP/3 Settings
+  RESERVED_2             = 0x03, ///< HTTP/3 Settings
+  RESERVED_3             = 0x04, ///< HTTP/3 Settings
+  RESERVED_4             = 0x05, ///< HTTP/3 Settings
+  MAX_FIELD_SECTION_SIZE = 0x06, ///< HTTP/3 Settings
+  QPACK_BLOCKED_STREAMS  = 0x07, ///< QPACK Settings
+  NUM_PLACEHOLDERS       = 0x09, ///< HTTP/3 Settings
+  UNKNOWN                = 0x0A0A,
 };
 
 // Update Http3Frame::type(const uint8_t *) too when you modify this list
@@ -73,28 +73,23 @@ enum class Http3ErrorClass {
 
 // Actual error code of QPACK is not decided yet on qpack-05. It will be changed.
 enum class Http3ErrorCode : uint16_t {
-  NO_ERROR                   = 0x0000,
-  WRONG_SETTING_DIRECTION    = 0x0001,
-  PUSH_REFUSED               = 0x0002,
-  INTERNAL_ERROR             = 0x0003,
-  PUSH_ALREADY_IN_CACHE      = 0x0004,
-  REQUEST_CANCELLED          = 0x0005,
-  INCOMPLETE_REQUEST         = 0x0006,
-  CONNECT_ERROR              = 0x0007,
-  EXCESSIVE_LOAD             = 0x0008,
-  VERSION_FALLBACK           = 0x0009,
-  WRONG_STREAM               = 0x000A,
-  LIMIT_EXCEEDED             = 0x000B,
-  DUPLICATE_PUSH             = 0x000C,
-  UNKNOWN_STREAM_TYPE        = 0x000D,
-  WRONG_STREAM_COUNT         = 0x000E,
-  CLOSED_CRITICAL_STREAM     = 0x000F,
-  WRONG_STREAM_DIRECTION     = 0x0010,
-  EARLY_RESPONSE             = 0x0011,
-  MISSING_SETTINGS           = 0x0012,
-  UNEXPECTED_FRAME           = 0x0013,
-  REQUEST_REJECTED           = 0x0014,
-  MALFORMED_FRAME            = 0x0100,
+  H3_NO_ERROR                = 0x0100,
+  H3_GENERAL_PROTOCOL_ERROR  = 0x0101,
+  H3_INTERNAL_ERROR          = 0x0102,
+  H3_STREAM_CREATION_ERROR   = 0x0103,
+  H3_CLOSED_CRITICAL_STREAM  = 0x0104,
+  H3_FRAME_UNEXPECTED        = 0x0105,
+  H3_FRAME_ERROR             = 0x0106,
+  H3_EXCESSIVE_LOAD          = 0x0107,
+  H3_ID_ERROR                = 0x0108,
+  H3_SETTINGS_ERROR          = 0x0109,
+  H3_MISSING_SETTINGS        = 0x010a,
+  H3_REQUEST_REJECTED        = 0x010b,
+  H3_REQUEST_CANCELLED       = 0x010c,
+  H3_REQUEST_INCOMPLETE      = 0x010d,
+  H3_MESSAGE_ERROR           = 0x010e,
+  H3_CONNECT_ERROR           = 0x010f,
+  H3_VERSION_FALLBACK        = 0x0110,
   QPACK_DECOMPRESSION_FAILED = 0x200,
   QPACK_ENCODER_STREAM_ERROR = 0x201,
   QPACK_DECODER_STREAM_ERROR = 0x202,
@@ -113,7 +108,7 @@ public:
   const char *msg = nullptr;
 
 protected:
-  Http3Error(){};
+  Http3Error() : app_error_code(Http3ErrorCode::H3_NO_ERROR){};
   Http3Error(const Http3ErrorCode error_code, const char *error_msg = nullptr)
     : cls(Http3ErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
 };

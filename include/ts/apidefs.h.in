@@ -704,7 +704,6 @@ typedef enum {
   TS_RECORDTYPE_CONFIG  = 0x01,
   TS_RECORDTYPE_PROCESS = 0x02,
   TS_RECORDTYPE_NODE    = 0x04,
-  TS_RECORDTYPE_LOCAL   = 0x10,
   TS_RECORDTYPE_PLUGIN  = 0x20,
   TS_RECORDTYPE_ALL     = 0x3F
 } TSRecordType;
@@ -888,7 +887,8 @@ typedef enum {
   TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS,
   TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT,
   TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT,
-  TS_CONFIG_LAST_ENTRY,
+  TS_CONFIG_HTTP_CACHE_IGNORE_QUERY,
+  TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
 /* The TASK pool of threads is the primary method of off-loading continuations from the
@@ -901,7 +901,18 @@ typedef enum {
   TS_THREAD_POOL_UDP
 } TSThreadPool;
 
+/* TSHRTime stuff, this is a candidate for deprecation in v10.0.0 */
 typedef int64_t TSHRTime;
+
+#define TS_HRTIME_SECOND  (1000 * TS_HRTIME_MSECOND)
+#define TS_HRTIME_MSECOND (1000 * TS_HRTIME_USECOND)
+#define TS_HRTIME_USECOND (1000 * TS_HRTIME_NSECOND)
+#define TS_HRTIME_NSECOND (1LL)
+
+#define TS_HRTIME_SECONDS(_x)  ((_x)*TS_HRTIME_SECOND)
+#define TS_HRTIME_MSECONDS(_x) ((_x)*TS_HRTIME_MSECOND)
+#define TS_HRTIME_USECONDS(_x) ((_x)*TS_HRTIME_USECOND)
+#define TS_HRTIME_NSECONDS(_x) ((_x)*TS_HRTIME_NSECOND)
 
 /* The TSMilestonesType is an enum defining all the various milestones ("timers") that
    we track for a request. */
@@ -1489,6 +1500,17 @@ typedef struct TSRPCHandlerOptions_s {
     int restricted; ///< Tells the RPC Manager if the call can be delivered or not based on the config rules.
   } auth;
 } TSRPCHandlerOptions;
+
+/// Configuration field info related to a parsed YAML node.
+///
+/// This contains information about the parsed record field. This will be passed back to the @a TSYAMLRecNodeHandler
+/// when you call @a TSRecYAMLConfigParse. This class holds the record name as well as the YAML node in case the caller
+/// wants to use this information to manipulate the record.
+typedef struct TSYAMLCfgFieldData_s {
+  const char *field_name;  ///< YAML field name. null terminated
+  const char *record_name; ///< record name. null terminated
+  TSYaml value_node;       ///< YAML::Node pointer.
+} TSYAMLRecCfgFieldData;
 
 #ifdef __cplusplus
 }

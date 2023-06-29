@@ -25,6 +25,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <filesystem>
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
@@ -271,10 +272,16 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
     return TS_ERROR;
   }
 
-  const char *remap_from       = argv[0];
-  const char *remap_to         = argv[1];
-  const char *config_file_path = argv[2];
-  const char *strategy_name    = argv[3];
+  const char *remap_from                     = argv[0];
+  const char *remap_to                       = argv[1];
+  std::filesystem::path config_file_path_obj = argv[2];
+  const char *strategy_name                  = argv[3];
+
+  if (config_file_path_obj.is_relative()) {
+    config_file_path_obj = std::filesystem::path(TSConfigDirGet()) / config_file_path_obj;
+  }
+
+  const char *const config_file_path = config_file_path_obj.c_str();
 
   TSDebug(PLUGIN_NAME, "%s %s Loading parent selection strategy file %s for strategy %s", remap_from, remap_to, config_file_path,
           strategy_name);

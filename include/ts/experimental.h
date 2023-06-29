@@ -95,39 +95,6 @@ tsapi void TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set);
  ****************************************************************************/
 tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength);
 
-/* ===== High Resolution Time ===== */
-#define TS_HRTIME_FOREVER (10 * TS_HRTIME_DECADE)
-#define TS_HRTIME_DECADE  (10 * TS_HRTIME_YEAR)
-#define TS_HRTIME_YEAR    (365 * TS_HRTIME_DAY + TS_HRTIME_DAY / 4)
-#define TS_HRTIME_WEEK    (7 * TS_HRTIME_DAY)
-#define TS_HRTIME_DAY     (24 * TS_HRTIME_HOUR)
-#define TS_HRTIME_HOUR    (60 * TS_HRTIME_MINUTE)
-#define TS_HRTIME_MINUTE  (60 * TS_HRTIME_SECOND)
-#define TS_HRTIME_SECOND  (1000 * TS_HRTIME_MSECOND)
-#define TS_HRTIME_MSECOND (1000 * TS_HRTIME_USECOND)
-#define TS_HRTIME_USECOND (1000 * TS_HRTIME_NSECOND)
-#define TS_HRTIME_NSECOND (1LL)
-
-#define TS_HRTIME_APPROX_SECONDS(_x) ((_x) >> 30) /*  off by 7.3% */
-#define TS_HRTIME_APPROX_FACTOR      (((float)(1 << 30)) / (((float)HRTIME_SECOND)))
-
-/*
-////////////////////////////////////////////////////////////////////
-//
-//	Map from units to ts_hrtime values
-//
-////////////////////////////////////////////////////////////////////
-*/
-#define TS_HRTIME_YEARS(_x)    ((_x)*TS_HRTIME_YEAR)
-#define TS_HRTIME_WEEKS(_x)    ((_x)*TS_HRTIME_WEEK)
-#define TS_HRTIME_DAYS(_x)     ((_x)*TS_HRTIME_DAY)
-#define TS_HRTIME_HOURS(_x)    ((_x)*TS_HRTIME_HOUR)
-#define TS_HRTIME_MINUTES(_x)  ((_x)*TS_HRTIME_MINUTE)
-#define TS_HRTIME_SECONDS(_x)  ((_x)*TS_HRTIME_SECOND)
-#define TS_HRTIME_MSECONDS(_x) ((_x)*TS_HRTIME_MSECOND)
-#define TS_HRTIME_USECONDS(_x) ((_x)*TS_HRTIME_USECOND)
-#define TS_HRTIME_NSECONDS(_x) ((_x)*TS_HRTIME_NSECOND)
-
 tsapi TSReturnCode TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time);
 
 /* ===== Cache ===== */
@@ -145,11 +112,6 @@ tsapi unsigned int TSrandom(void);
  *  Return random double between <X> and <Y>
  ****************************************************************************/
 tsapi double TSdrandom(void);
-
-/****************************************************************************
- *  Return Hi-resolution current time. (int64_t)
- ****************************************************************************/
-tsapi TSHRTime TShrtime(void);
 
 /* =====  CacheHttpInfo =====  */
 
@@ -180,27 +142,6 @@ tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
 tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
 tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
 
-/** Do another cache lookup with a different cache key.
- *
- * @param txnp Transaction.
- * @param url URL to use for cache key.
- * @param length Length of the string in @a url
- *
- * @return @c TS_SUCCESS on success, @c TS_ERROR if the @a txnp is invalid or the @a url is
- * not a valid URL.
- *
- * If @a length is negative, @c strlen will be used to determine the length of @a url.
- *
- * @a url must be syntactically a URL, but otherwise it is just a string and does not need to
- * be retrievable.
- *
- * This can only be called in a @c TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK callback. To set the cache
- * key for the first lookup, use @c TSCacheUrlSet.
- *
- * @see TSCacheUrlSet
- */
-tsapi TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length);
-
 /****************************************************************************
  *  ??
  *  Return ??
@@ -224,9 +165,6 @@ tsapi TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
  *  TODO: This returns a LookingUp_t value, we need to SDK'ify it.
  ****************************************************************************/
 tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
-
-/* ip addr parsing */
-tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
 /**
    Attempt to attach the contp continuation to sockets that have already been
@@ -323,12 +261,6 @@ tsapi char *TSMatcherLineName(TSMatcherLine ml, int element);
  *  Return
  ****************************************************************************/
 tsapi char *TSMatcherLineValue(TSMatcherLine ml, int element);
-
-/****************************************************************************
- *  Set a records.yaml integer variable
- ****************************************************************************/
-// DEPRECATED
-tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
 
 tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* ----------------------------------------------------------------------
@@ -436,11 +368,6 @@ tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
  * Get client response hdr mloc
  */
 tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
-
-/*
- * Parse a MIME header date string.
- */
-tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
 
 /*
  * Print as a MIME header date string.

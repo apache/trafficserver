@@ -22,12 +22,17 @@
 
 #pragma once
 
+#include <limits>
 #include <optional>
 
+#include "swoc/DiscreteRange.h"
 #include "swoc/swoc_ip.h"
 
 namespace ts
 {
+inline constexpr in_port_t MAX_PORT_VALUE{std::numeric_limits<in_port_t>::max()};
+using port_range_t = swoc::DiscreteRange<in_port_t>;
+
 /// Pair of addresses, each optional.
 /// Used in situations where both an IPv4 and IPv6 may be needed.
 class IPAddrPair

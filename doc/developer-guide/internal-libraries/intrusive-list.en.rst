@@ -28,7 +28,7 @@ iterators automatically convert to pointer as in normal use of this class the co
 will be referenced by pointers.
 
 Definition
-**********
+==========
 
 .. class:: template < typename L > IntrusiveDList
 
@@ -118,7 +118,7 @@ Definition
       the end iterator is returned.
 
 Usage
-*****
+=====
 
 An instance of :class:`IntrusiveDList` acts as a container for items, maintaining a doubly linked
 list / queue of the objects and tracking the number of objects in the container. There are methods
@@ -212,7 +212,7 @@ While this can be done directly with :code:`reinterpret_cast<>`, use of :code:`t
 typographic errors and warnings about type punning caused by :code:`-fstrict-aliasing`.
 
 Design Notes
-************
+============
 
 The historic goal of this class is to replace the :code:`DLL` list support. The benefits of this are
 

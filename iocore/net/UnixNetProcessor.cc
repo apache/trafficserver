@@ -30,7 +30,23 @@
 // For Stat Pages
 #include "StatPages.h"
 
-int net_accept_number = 0;
+// naVecMutext protects access to naVec.
+Ptr<ProxyMutex> naVecMutex;
+
+std::vector<NetAccept *> naVec;
+
+unsigned int
+net_next_connection_number()
+{
+  static int net_connection_number = 1;
+
+  unsigned int res = 0;
+  do {
+    res = ink_atomic_increment(&net_connection_number, 1);
+  } while (!res);
+  return res;
+}
+
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
 NetProcessor::AcceptOptions &
@@ -56,39 +72,28 @@ NetProcessor::AcceptOptions::reset()
   return *this;
 }
 
-int net_connection_number = 1;
-
-unsigned int
-net_next_connection_number()
-{
-  unsigned int res = 0;
-  do {
-    res = static_cast<unsigned int>(ink_atomic_increment(&net_connection_number, 1));
-  } while (!res);
-  return res;
-}
-
 Action *
-NetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
+UnixNetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
 {
   Debug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x", opt.local_port,
         opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
-  return ((UnixNetProcessor *)this)->accept_internal(cont, NO_FD, opt);
+  return accept_internal(cont, NO_FD, opt);
 }
 
 Action *
-NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
+UnixNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
 {
-  UnixNetProcessor *this_unp = static_cast<UnixNetProcessor *>(this);
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
         opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
-  return this_unp->accept_internal(cont, fd, opt);
+  return accept_internal(cont, fd, opt);
 }
 
 Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
+  static int net_accept_number = 0;
+
   ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
@@ -170,19 +175,21 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 }
 
 void
-NetProcessor::stop_accept()
+UnixNetProcessor::stop_accept()
 {
+  SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   for (auto &na : naVec) {
     na->stop_accept();
   }
 }
 
 Action *
-UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
+UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
   if (TSSystemState::is_event_system_shut_down()) {
     return nullptr;
   }
+
   EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt->etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
@@ -193,16 +200,15 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   }
 
   vc->set_context(NET_VCONNECTION_OUT);
-  bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
-#ifdef SOCKS_WITH_TS
-                      && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
-                          /* This implies we are tunnelling.
-                           * we need to connect using socks server even
-                           * if this ip is in no_socks list.
-                           */
-                          !socks_conf_stuff->ip_addrs.contains(swoc::IPAddr(target)))
-#endif
-  );
+
+  const bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS &&
+                            (opt->socks_version != SOCKS_DEFAULT_VERSION ||
+                             /* This implies we are tunnelling.
+                              * we need to connect using socks server even
+                              * if this ip is in no_socks list.
+                              */
+                             !socks_conf_stuff->ip_addrs.contains(swoc::IPAddr(target))));
+
   SocksEntry *socksEntry = nullptr;
 
   vc->id          = net_next_connection_number();
@@ -260,19 +266,11 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   }
 }
 
-Action *
-UnixNetProcessor::connect(Continuation *cont, UnixNetVConnection ** /* avc */, sockaddr const *target, NetVCOptions *opt)
-{
-  return connect_re(cont, target, opt);
-}
-
-struct PollCont;
-
 // This needs to be called before the ET_NET threads are started.
 void
 UnixNetProcessor::init()
 {
-  EventType etype = ET_NET;
+  naVecMutex = new_ProxyMutex();
 
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
@@ -285,7 +283,7 @@ UnixNetProcessor::init()
   // schedule per thread start up logic. Global init is done only here.
   NetHandler::init_for_process();
   NetHandler::active_thread_types[ET_NET] = true;
-  eventProcessor.schedule_spawn(&initialize_thread_for_net, etype);
+  eventProcessor.schedule_spawn(&initialize_thread_for_net, ET_NET);
 
   RecData d;
   d.rec_int = 0;
@@ -295,9 +293,7 @@ UnixNetProcessor::init()
    * Stat pages
    */
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  if (etype == ET_NET) {
-    statPagesManager.register_http("net", register_ShowNet);
-  }
+  statPagesManager.register_http("net", register_ShowNet);
 }
 
 void

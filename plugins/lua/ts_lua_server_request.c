@@ -84,6 +84,7 @@ static int ts_lua_server_request_server_addr_get_outgoing_port(lua_State *L);
 static int ts_lua_server_request_server_addr_set_outgoing_addr(lua_State *L);
 static int ts_lua_server_request_server_addr_get_nexthop_addr(lua_State *L);
 static int ts_lua_server_request_server_addr_get_nexthop_name(lua_State *L);
+static int ts_lua_server_request_server_addr_get_nexthop_port(lua_State *L);
 
 void
 ts_lua_inject_server_request_api(lua_State *L)
@@ -140,6 +141,9 @@ ts_lua_inject_server_request_server_addr_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_server_request_server_addr_get_nexthop_name);
   lua_setfield(L, -2, "get_nexthop_name");
+
+  lua_pushcfunction(L, ts_lua_server_request_server_addr_get_nexthop_port);
+  lua_setfield(L, -2, "get_nexthop_port");
 
   lua_setfield(L, -2, "server_addr");
 
@@ -968,6 +972,18 @@ ts_lua_server_request_server_addr_get_nexthop_name(lua_State *L)
   } else {
     lua_pushstring(L, name);
   }
+
+  return 1;
+}
+
+static int
+ts_lua_server_request_server_addr_get_nexthop_port(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+  const int port = TSHttpTxnNextHopPortGet(http_ctx->txnp);
+  lua_pushnumber(L, port);
 
   return 1;
 }

@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "common.h"
 #include "configs.h"
 #include "fetch_policy.h"

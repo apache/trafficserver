@@ -51,7 +51,6 @@
 
 /* Libraries */
 #define TS_HAS_JEMALLOC @jemalloch@
-#define TS_HAS_TCMALLOC @has_tcmalloc@
 #define TS_HAS_MIMALLOC @mimalloch@
 
 #define TS_USE_MALLOC_ALLOCATOR @enable_malloc_allocator@

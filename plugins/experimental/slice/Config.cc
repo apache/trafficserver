@@ -24,8 +24,6 @@
 #include <getopt.h>
 #include <string_view>
 
-#include "ts/experimental.h"
-
 namespace
 {
 constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};

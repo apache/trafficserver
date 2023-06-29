@@ -28,7 +28,7 @@
 #include "records/I_RecProcess.h"
 
 extern const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE;
-extern const uint32_t HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE;
+extern const uint32_t HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE;
 extern const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS;
 extern const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS;
 

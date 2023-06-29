@@ -327,9 +327,9 @@ private:
 };
 
 struct ParentSelectionPolicy {
-  int32_t ParentRetryTime;
-  int32_t ParentEnable;
-  int32_t FailThreshold;
+  int32_t ParentRetryTime = 0;
+  int32_t ParentEnable    = 0;
+  int32_t FailThreshold   = 0;
   ParentSelectionPolicy();
 };
 

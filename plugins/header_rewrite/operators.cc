@@ -651,7 +651,7 @@ OperatorSetHeader::exec(const Resources &res) const
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header_wks ? _header_wks : _header.c_str(), _header.size());
 
     TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
@@ -1089,8 +1089,9 @@ OperatorSetHttpCntl::initialize_hooks()
 }
 
 // This is only for the debug statement, and must be in sync with TSHttpCntlType in apidefs.h.in
-static const char *const HttpCntls[] = {"LOGGING",         "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE",
-                                        "SERVER_NO_STORE", "TXN_DEBUG",       "SKIP_REMAP"};
+static const char *const HttpCntls[] = {
+  "LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP",
+};
 void
 OperatorSetHttpCntl::exec(const Resources &res) const
 {

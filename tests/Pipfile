@@ -29,7 +29,7 @@ pyflakes = "*"
 autest = "==1.10.2"
 
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
-hyper = "*"
+h2 = "*"
 dnslib = "*"
 # These are likely to be available via yum/dnf or apt-get
 requests = "*"

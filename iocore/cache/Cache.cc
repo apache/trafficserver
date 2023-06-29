@@ -1037,9 +1037,6 @@ CacheProcessor::cacheInitialized()
       case CACHE_COMPRESSION_FASTLZ:
         break;
       case CACHE_COMPRESSION_LIBZ:
-#ifndef HAVE_ZLIB_H
-        Fatal("libz not available for RAM cache compression");
-#endif
         break;
       case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H

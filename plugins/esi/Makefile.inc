@@ -16,6 +16,7 @@
 
 ESI_CPPFLAGS = \
 	-I$(srcdir)/esi \
+	-I$(srcdir)/esi/common \
 	-I$(srcdir)/esi/lib \
 	-I$(srcdir)/esi/fetcher \
 	-I$(srcdir)/esi/test \
@@ -40,10 +41,10 @@ check_PROGRAMS += \
 	esi/gzip_test
 
 esi_libesicore_la_SOURCES = \
-	esi/lib/Attribute.h \
-	esi/lib/ComponentBase.h \
-	esi/lib/DocNode.cc \
-	esi/lib/DocNode.h \
+	esi/common/Attribute.h \
+	esi/common/ComponentBase.h \
+	esi/common/DocNode.cc \
+	esi/common/DocNode.h \
 	esi/lib/EsiGunzip.cc \
 	esi/lib/EsiGunzip.h \
 	esi/lib/EsiGzip.cc \
@@ -55,18 +56,18 @@ esi_libesicore_la_SOURCES = \
 	esi/lib/Expression.cc \
 	esi/lib/Expression.h \
 	esi/lib/HandlerManager.h \
-	esi/lib/HttpHeader.h \
+	esi/common/HttpHeader.h \
 	esi/lib/IncludeHandlerFactory.h \
 	esi/lib/SpecialIncludeHandler.h \
 	esi/lib/Stats.cc \
 	esi/lib/Stats.h \
-	esi/lib/StringHash.h \
-	esi/lib/Utils.cc \
-	esi/lib/Utils.h \
+	esi/common/StringHash.h \
+	esi/common/Utils.cc \
+	esi/common/Utils.h \
 	esi/lib/Variables.cc \
 	esi/lib/Variables.h \
-	esi/lib/gzip.cc \
-	esi/lib/gzip.h
+	esi/common/gzip.cc \
+	esi/common/gzip.h
 
 esi_libesicore_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_libesicore_la_CXXFLAGS = $(ESI_CXXFLAGS)
@@ -105,32 +106,38 @@ esi_combo_handler_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_combo_handler_la_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_combo_handler_la_LIBADD = esi/libesicore.la
 
-esi_docnode_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_docnode_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_docnode_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_docnode_test_LDADD = esi/libtest.la -lz
 esi_docnode_test_SOURCES = esi/test/docnode_test.cc
 
-esi_parser_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_parser_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_parser_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_parser_test_LDADD = esi/libtest.la -lz
 esi_parser_test_SOURCES = esi/test/parser_test.cc
 
-esi_processor_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_processor_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_processor_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_processor_test_LDADD = esi/libtest.la -lz
 esi_processor_test_SOURCES = esi/test/processor_test.cc
 
-esi_utils_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_utils_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_utils_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_utils_test_LDADD = esi/libtest.la -lz
 esi_utils_test_SOURCES = esi/test/utils_test.cc
 
-esi_vars_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_vars_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_vars_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_vars_test_LDADD = esi/libtest.la -lz
 esi_vars_test_SOURCES = esi/test/vars_test.cc
 
-esi_gzip_test_CPPFLAGS = $(ESI_CPPFLAGS)
+esi_gzip_test_CPPFLAGS = $(ESI_CPPFLAGS) \
+        -I$(abs_top_srcdir)/lib/catch2
 esi_gzip_test_CXXFLAGS = $(ESI_CXXFLAGS)
 esi_gzip_test_LDADD = esi/libtest.la -lz
 esi_gzip_test_SOURCES = esi/test/gzip_test.cc

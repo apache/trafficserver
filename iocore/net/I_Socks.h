@@ -23,12 +23,6 @@
 
 #pragma once
 
-/*When this is being compiled with TS, we enable more features the use
-  non modularized stuff. namely:
-  ip_ranges and multiple socks server support.
-*/
-#define SOCKS_WITH_TS
-
 #define SOCKS_DEFAULT_VERSION 0 // defined the configuration variable
 #define SOCKS4_VERSION        4
 #define SOCKS5_VERSION        5

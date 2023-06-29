@@ -72,7 +72,7 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 
 test_proxy_hdrs_CPPFLAGS = $(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_proxy_hdrs_SOURCES = \
 	unit_tests/unit_test_main.cc \
@@ -92,7 +92,7 @@ test_proxy_hdrs_LDADD = \
 	@LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_hdr_heap_SOURCES = \
 	unit_tests/unit_test_main.cc \
@@ -119,7 +119,7 @@ test_Huffmancode_SOURCES = \
 
 test_XPACK_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/lib/catch2
 
 test_XPACK_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \

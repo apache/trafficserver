@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-  MT_hashtable.h
+  MTHashTable.h
 
   Multithread Safe Hash table implementation
 

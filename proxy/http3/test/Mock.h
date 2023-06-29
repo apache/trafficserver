@@ -35,11 +35,11 @@ public:
   std::vector<Http3FrameType>
   interests() override
   {
-    return {Http3FrameType::DATA};
+    return {Http3FrameType::DATA, Http3FrameType::SETTINGS};
   }
 
   Http3ErrorUPtr
-  handle_frame(std::shared_ptr<const Http3Frame> frame) override
+  handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */) override
   {
     this->total_frame_received++;
     return Http3ErrorUPtr(new Http3NoError());

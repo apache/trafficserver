@@ -385,6 +385,7 @@ remove_all(const path &p, std::error_code &ec)
   // Invariant - @a p is a directory.
 
   // recursively remove nested files and directories
+  //coverity[toctou : SUPPRESS]
   if (nullptr == (dir = opendir(p.c_str()))) {
     ec = std::error_code(errno, std::system_category());
     return zret;
@@ -416,6 +417,7 @@ bool remove(path const& p, std::error_code &ec) {
   } else if (::stat(p.c_str(), &fs) < 0) {
     ec = std::error_code(errno, std::system_category());
   } else if (S_ISREG(fs.st_mode)) { // regular file, try to remove it!
+    //coverity[toctou : SUPPRESS]
     if (unlink(p.c_str()) != 0) {
       ec = std::error_code(errno, std::system_category());
     }

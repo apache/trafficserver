@@ -38,6 +38,23 @@
 #define PluginError Error
 #endif
 
+namespace
+{
+
+// concat_error joins msg to the given error string, separating it from
+// an existing error with a colon.
+void
+concat_error(std::string &error, const std::string &msg)
+{
+  if (error.empty()) {
+    error.assign(msg);
+  } else {
+    error.append(": ").append(msg);
+  }
+}
+
+} // namespace
+
 PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
   : _configPath(configPath), _effectivePath(effectivePath), _runtimePath(runtimePath)
 {
@@ -56,11 +73,10 @@ PluginDso::load(std::string &error)
 {
   /* Clear all errors */
   error.clear();
-  _errorCode.clear();
   bool result = true;
 
   if (isLoaded()) {
-    error.append("plugin already loaded");
+    concat_error(error, "plugin already loaded");
     return false;
   }
 
@@ -68,7 +84,7 @@ PluginDso::load(std::string &error)
 
   /* Find plugin DSO looking through the search dirs */
   if (_effectivePath.empty()) {
-    error.append("empty effective path");
+    concat_error(error, "empty effective path");
     result = false;
   } else {
     PluginDebug(_tag, "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
@@ -76,9 +92,8 @@ PluginDso::load(std::string &error)
     /* Copy the installed plugin DSO to a runtime directory if dynamic reload enabled */
     std::error_code ec;
     if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
-      std::string temp_error;
-      temp_error.append("failed to create a copy: ").append(strerror(ec.value()));
-      error.assign(temp_error);
+      concat_error(error, "failed to create a copy");
+      concat_error(error, ec.message());
       result = false;
     } else {
       PluginDebug(_tag, "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
@@ -94,12 +109,8 @@ PluginDso::load(std::string &error)
 #else
       if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
 #endif
-#if defined(freebsd) || defined(openbsd)
-        char *err = (char *)dlerror();
-#else
-        char *err = dlerror();
-#endif
-        error.append(err ? err : "Unknown dlopen() error");
+        const char *err = dlerror();
+        concat_error(error, err ? err : "unknown dlopen() error");
         _dlh = nullptr; /* mark that the constructor failed. */
 
         clean(error);
@@ -128,22 +139,24 @@ PluginDso::load(std::string &error)
 bool
 PluginDso::unload(std::string &error)
 {
-  bool result = false;
-
-  if (isLoaded()) {
-    result = (0 == dlclose(_dlh));
-    _dlh   = nullptr;
-    if (true == result) {
-      clean(error);
-    } else {
-      error.append("failed to unload plugin");
-    }
-  } else {
-    error.append("no plugin loaded");
-    result = false;
+  if (!isLoaded()) {
+    concat_error(error, "no plugin loaded");
+    return false;
   }
 
-  return result;
+  bool unloaded = (0 == dlclose(_dlh));
+
+  _dlh = nullptr;
+
+  if (!unloaded) {
+    const char *err = dlerror();
+    concat_error(error, "failed to unload plugin");
+    concat_error(error, err ? err : "unknown dlopen() error");
+    return false;
+  }
+
+  clean(error);
+  return true;
 }
 
 /**
@@ -242,8 +255,11 @@ PluginDso::clean(std::string &error)
     return;
   }
 
-  if (0 == remove_all(_runtimePath, _errorCode)) {
-    error.append("failed to remove runtime copy: ").append(_errorCode.message());
+  std::error_code err;
+  remove_all(_runtimePath, err);
+  if (err) {
+    concat_error(error, "failed to remove runtime copy");
+    concat_error(error, err.message());
   }
 }
 

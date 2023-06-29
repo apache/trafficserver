@@ -31,17 +31,8 @@
  ****************************************************************************/
 #pragma once
 
-#include <memory>
-
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
-#include <string_view>
-#include <cstring>
-#include <memory>
-
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/objects.h>
 
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
@@ -55,6 +46,15 @@
 #include "TLSCertSwitchSupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
+
+#include <netinet/in.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/objects.h>
+
+#include <cstring>
+#include <memory>
+#include <string_view>
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -141,6 +141,7 @@ public:
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
   void do_io_close(int lerrno = -1) override;
+  void update_early_data_config(uint32_t max_early_data, uint32_t recv_max_early_data);
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //
@@ -407,7 +408,9 @@ protected:
     return local_addr;
   }
 
+  // TLSSNISupport
   void _fire_ssl_servername_event() override;
+  in_port_t _get_local_port() override;
 
   bool _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;

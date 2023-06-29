@@ -27,7 +27,7 @@ Description
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
 connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
-file consists of a set of configuration items, each identified by an SNI value (``fqdn``).
+file consists of a set of configuration items, each identified by an SNI value and optionally a port range (``fqdn``, ``inbound_port_range``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
 the defaults. This is done during the inbound connection processing; some outbound properties
@@ -45,18 +45,41 @@ the user needs to enter the fqdn in the configuration with a ``*.`` followed by 
 For some settings, there is no guarantee that they will be applied to a connection under certain conditions.
 An established TLS connection may be reused for another server name if it’s used for HTTP/2. This also means that settings
 for server name A may affects requests for server name B as well. See https://daniel.haxx.se/blog/2016/08/18/http2-connection-coalescing/
-for a more detailed description of HTTP/2 connection coalescing.
+for a more detailed description of HTTP/2 connection coalescing. A similar thing can happen on a QUIC connection for HTTP/3 as well.
 
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
 .. _override-host-sni-policy:
 .. _override-h2-properties:
 
+The following fields make up the key for each item in the configuration file.
+
 ========================= ========= ========================================================================================
 Key                       Direction Meaning
 ========================= ========= ========================================================================================
-fqdn                      Both      Fully Qualified Domain Name. This item is used if the SNI value matches this.
+fqdn                      Both      Fully Qualified Domain Name.
 
+inbound_port_range        Inbound   The port range for the inbound connection in the form ``port`` or
+                                    ``min-max``.
+
+                                    For example:
+
+                                       ``443``
+
+                                    would match all requests with an SNI for example.com on port 443, and
+
+                                       ``443-446``
+
+                                    would match requests with an SNI for example.com on ports 443 to 446, inclusive.
+                                    By default this is all ports.
+
+========================= ========= ========================================================================================
+
+The following fields are the directives that determine the behavior of connections matching the key.
+
+========================= ========= ========================================================================================
+Key                       Direction Meaning
+========================= ========= ========================================================================================
 ip_allow                  Inbound   Specify a list of client IP address, subnets, or ranges what are allowed to complete
                                     the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
                                     Here is an example list ::
@@ -174,6 +197,11 @@ http2_buffer_water_mark   Inbound   Specifies the high water mark for all HTTP/2
                                     By default this is :ts:cv:`proxy.config.http2.default_buffer_water_mark`.
                                     NOTE: Connection coalescing may prevent this taking effect.
 
+quic                      Inbound   Indicates whether QUIC connections should be accepted. The valid values are :code:`on` or
+                                    :code:`off`. Note that this is a more specific setting to configure QUIC availability per server
+                                    name. More broadly, you will also need to configure :ts:cv:`proxy.config.http.server_ports` to
+                                    open ports for QUIC.
+
 tunnel_route              Inbound   Destination as an FQDN and port, separated by a colon ``:``.
                                     Match group number can be specified by ``$N`` where N should refer to a specified group
                                     in the FQDN, ``tunnel_route: $1.domain``.
@@ -218,6 +246,11 @@ tunnel_alpn               Inbound   List of ALPN Protocol Ids for Partial Blind 
 
                                     ATS negotiates application protocol with the client on behalf of the origin server.
                                     This only works with ``partial_blind_route``.
+
+server_max_early_data     Inbound   Specifies the maximum amount of early data in bytes that is permitted to be sent on a single connection.
+
+                                    If not specified, the value of :ts:cv:`proxy.config.ssl.server.max_early_data` is used.
+
 ========================= ========= ========================================================================================
 
 Pre-warming TLS Tunnel

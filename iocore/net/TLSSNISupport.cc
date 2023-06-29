@@ -20,10 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "P_SSLNextProtocolAccept.h"
+#include "SSLSNIConfig.h"
 #include "TLSSNISupport.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_inet.h"
 #include "tscore/Diags.h"
-#include "SSLSNIConfig.h"
 
 int TLSSNISupport::_ex_data_index = -1;
 
@@ -64,8 +66,9 @@ TLSSNISupport::perform_sni_action()
   }
 
   SNIConfig::scoped_config params;
-  if (const auto &actions = params->get({servername, std::strlen(servername)}); !actions.first) {
-    Debug("ssl_sni", "%s not available in the map", servername);
+  auto const port{this->_get_local_port()};
+  if (auto const &actions = params->get({servername, std::strlen(servername)}, port); !actions.first) {
+    Debug("ssl_sni", "%s:%i not available in the map", servername, port);
   } else {
     for (auto &&item : *actions.first) {
       auto ret = item->SNIAction(this, actions.second);

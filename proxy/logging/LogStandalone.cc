@@ -44,25 +44,13 @@
 
 #define LOG_FILENAME_SIZE 255
 
-class HttpBodyFactory;
-
-// globals the rest of the system depends on
+// Globals the rest of the system depends on.
 int fds_limit;
-extern int cluster_port_number;
 
-int command_flag                = 0;
-int http_accept_port_number     = 0;
-int http_accept_file_descriptor = 0;
-int remote_management_flag      = 0;
-int auto_clear_hostdb_flag      = 0;
-char proxy_name[MAXDNAME + 1]   = "unknown";
+static char error_tags[1024]  = "";
+static char action_tags[1024] = "";
 
-char error_tags[1024]    = "";
-char action_tags[1024]   = "";
-char command_string[512] = "";
-
-DiagsConfig *diagsConfig      = nullptr;
-HttpBodyFactory *body_factory = nullptr;
+static DiagsConfig *diagsConfig = nullptr;
 AppVersionInfo appVersionInfo;
 
 /*-------------------------------------------------------------------------

@@ -33,7 +33,7 @@ check_PROGRAMS += \
 experimental_traffic_dump_test_traffic_dump_CPPFLAGS = \
         $(AM_CPPFLAGS) \
         -I$(abs_top_srcdir)/plugins/experimental/traffic_dump \
-        -I$(abs_top_srcdir)/tests/include
+        -I$(abs_top_srcdir)/lib/catch2
 
 experimental_traffic_dump_test_traffic_dump_SOURCES = \
 	experimental/traffic_dump/unit_tests/unit_test_main.cc \

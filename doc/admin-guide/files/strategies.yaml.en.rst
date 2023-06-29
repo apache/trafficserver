@@ -34,7 +34,7 @@ Traffic Server uses the :file:`strategies.yaml` file only when one or more
 remap lines in remap.config specifies the use of a strategy with the @strategy tag.
 remap.config Example::
 
-  map http://www.foo.com http://www.bar.com @strategy='mid-tier-north'
+  map http://www.foo.com http://www.bar.com @strategy=mid-tier-north
 
 After you modify the :file:`strategies.yaml` file, run the :option:`traffic_ctl config reload`
 command to apply your changes.

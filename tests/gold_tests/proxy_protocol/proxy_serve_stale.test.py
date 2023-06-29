@@ -45,6 +45,7 @@ class ProxyServeStaleTest:
         self.ts_child = Test.MakeATSProcess("ts_child")
         # Config child proxy to route to parent proxy
         self.ts_child.Disk.records_config.update({
+            'proxy.config.http.push_method_enabled': 1,
             'proxy.config.http.parent_proxy.fail_threshold': 2,
             'proxy.config.http.parent_proxy.total_connect_attempts': 1,
             'proxy.config.http.cache.max_stale_age': 10,

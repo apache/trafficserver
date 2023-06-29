@@ -17,6 +17,9 @@
 
 
 add_library(inkutils STATIC Machine.cc OneWayMultiTunnel.cc OneWayTunnel.cc)
+add_library(ts::inkutils ALIAS inkutils)
+
+
 target_include_directories(inkutils PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns

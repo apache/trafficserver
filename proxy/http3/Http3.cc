@@ -24,10 +24,10 @@
 #include "Http3.h"
 
 // Default values of settings defined by specs (draft-17)
-const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE     = 0;
-const uint32_t HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE  = UINT32_MAX;
-const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS = 0;
-const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS      = 0;
+const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE      = 0;
+const uint32_t HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE = UINT32_MAX;
+const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS  = 0;
+const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS       = 0;
 
 RecRawStatBlock *http3_rsb;
 

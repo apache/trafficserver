@@ -35,6 +35,8 @@ typedef enum {
   TS_LUA_HOOK_TXN_CLOSE,
   TS_LUA_REQUEST_TRANSFORM,
   TS_LUA_RESPONSE_TRANSFORM,
+  TS_LUA_REQUEST_CLIENT,
+  TS_LUA_RESPONSE_CLIENT,
   TS_LUA_HOOK_LAST
 } TSLuaHookID;
 
@@ -52,6 +54,8 @@ char *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
                                  "TS_LUA_HOOK_TXN_CLOSE",
                                  "TS_LUA_REQUEST_TRANSFORM",
                                  "TS_LUA_RESPONSE_TRANSFORM",
+                                 "TS_LUA_REQUEST_CLIENT",
+                                 "TS_LUA_RESPONSE_CLIENT",
                                  "TS_LUA_HOOK_LAST"};
 
 static int ts_lua_add_hook(lua_State *L);
@@ -236,6 +240,20 @@ ts_lua_add_hook(lua_State *L)
         TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, connp);
       } else {
         TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+      }
+    }
+    break;
+
+  case TS_LUA_REQUEST_CLIENT:
+  case TS_LUA_RESPONSE_CLIENT:
+    if (http_ctx) {
+      connp = TSTransformCreate(ts_lua_client_entry, http_ctx->txnp);
+      ts_lua_create_http_transform_ctx(http_ctx, connp);
+
+      if (entry == TS_LUA_REQUEST_CLIENT) {
+        TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_REQUEST_CLIENT_HOOK, connp);
+      } else {
+        TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_RESPONSE_CLIENT_HOOK, connp);
       }
     }
     break;

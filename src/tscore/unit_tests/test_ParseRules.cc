@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include "../../../tests/include/catch.hpp"
+#include "catch.hpp"
 #include <tscore/ParseRules.h>
 #include <iostream>
 

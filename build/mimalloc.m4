@@ -23,9 +23,6 @@ has_mimalloc=no
 AC_ARG_WITH([mimalloc], [AS_HELP_STRING([--with-mimalloc=DIR],[use a specific mimalloc library])],
 [
   if test "$withval" != "no"; then
-    if test "x${has_tcmalloc}" = "xyes"; then
-      AC_MSG_ERROR([Cannot compile with both mimalloc and tcmalloc])
-    fi
     if test "x${has_jemalloc}" = "xyes"; then
       AC_MSG_ERROR([Cannot compile with both mimalloc and jemalloc])
     fi

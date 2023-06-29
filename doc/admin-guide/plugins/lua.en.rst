@@ -647,6 +647,8 @@ Hook point constants
     TS_LUA_HOOK_SEND_RESPONSE_HDR
     TS_LUA_REQUEST_TRANSFORM
     TS_LUA_RESPONSE_TRANSFORM
+    TS_LUA_REQUEST_CLIENT
+    TS_LUA_RESPONSE_CLIENT
 
 These constants are usually used in ts.hook method call.
 
@@ -693,6 +695,12 @@ Additional Information:
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_RESPONSE      | TS_LUA_RESPONSE_TRANSFORM |     YES              |    YES             |    YES               |
 | _TRANSFORM_HOOK       |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_REQUEST       | TS_LUA_REQUEST_CLIENT     |     YES              |    NO              |    YES               |
+| _CLIENT_HOOK          |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_RESPONSE      | TS_LUA_RESPONSE_CLIENT    |     YES              |    YES             |    YES               |
+| _CLIENT_HOOK          |                           |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_TXN           | TS_LUA_HOOK_TXN_CLOSE     |     YES              |    YES             |    YES               |
 | _CLOSE_HOOK           |                           |                      |                    |                      |
@@ -1949,6 +1957,27 @@ Here is an example:
 
     function do_global_send_request()
         name = ts.server_request.server_addr.get_nexthop_name()
+        print(name)             -- test
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.server_addr.get_nexthop_port
+----------------------------------------------
+**syntax:** *ts.server_request.server_addr.get_nexthop_port()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description**: This function can be used to get the port name of the next hop to the origin server.
+
+The ts.server_request.server_addr.get_nexthop_port function returns the port as an integer .
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        port = ts.server_request.server_addr.get_nexthop_port()
         print(name)             -- test
     end
 
@@ -4218,28 +4247,6 @@ ts.http.server_packet_mark_set
 **context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet mark for server connection.
-
-
-:ref:`TOP <admin-plugins-ts-lua>`
-
-ts.http.client_packet_tos_set
------------------------------
-**syntax:** *ts.http.client_packet_tos_set(NUMBER)*
-
-**context:** do_remap/do_os_response or do_global_* or later.
-
-**description:** This function can be used to set packet tos for client connection.
-
-
-:ref:`TOP <admin-plugins-ts-lua>`
-
-ts.http.server_packet_tos_set
------------------------------
-**syntax:** *ts.http.server_packet_tos_set(NUMBER)*
-
-**context:** do_remap/do_os_response or do_global_* or later.
-
-**description:** This function can be used to set packet tos for server connection.
 
 
 :ref:`TOP <admin-plugins-ts-lua>`

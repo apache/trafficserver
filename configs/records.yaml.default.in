@@ -47,11 +47,6 @@ ts:
 # Thread configurations. Docs:
 #    https://docs.trafficserver.apache.org/records.yaml#thread-variables
 ##############################################################################
-  diags:
-    debug:
-      enabled: 0
-      tags: http|dns
-
   exec_thread:
     affinity: 1
     autoconfig:

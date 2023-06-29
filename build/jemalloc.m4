@@ -23,9 +23,6 @@ has_jemalloc=no
 AC_ARG_WITH([jemalloc], [AS_HELP_STRING([--with-jemalloc=DIR],[use a specific jemalloc library])],
 [
   if test "$withval" != "no"; then
-    if test "x${has_tcmalloc}" = "xyes"; then
-      AC_MSG_ERROR([Cannot compile with both jemalloc and tcmalloc])
-    fi
     if test "x${has_mimalloc}" = "xyes"; then
       AC_MSG_ERROR([Cannot compile with both jemalloc and mimalloc])
     fi

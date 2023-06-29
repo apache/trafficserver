@@ -43,7 +43,7 @@ ServiceGroup::setSvcType(ServiceGroup::Type t)
 }
 
 bool
-ServiceGroup::operator==(self const &that) const
+ServiceGroup::operator==(self_type const &that) const
 {
   if (m_svc_type == STANDARD) {
     // If type are different, fail, else if both are STANDARD
@@ -128,7 +128,7 @@ CacheIdBox::initDefaultMask(uint32_t addr)
 }
 
 CacheIdBox &
-CacheIdBox::fill(self const &src)
+CacheIdBox::fill(self_type const &src)
 {
   size_t n = src.getSize();
   this->require(src.getSize());
@@ -144,7 +144,7 @@ CacheIdBox::fill(self const &src)
 }
 
 CacheIdBox &
-CacheIdBox::fill(void *base, self const &src)
+CacheIdBox::fill(void *base, self_type const &src)
 {
   m_size = src.getSize();
   m_cap  = 0;
@@ -463,7 +463,7 @@ SecurityComp::fill(MsgBuffer &buffer, Option opt)
 
   m_base = buffer.getTail();
 
-  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super::raw_t)).setOption(opt);
+  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super_type::raw_t)).setOption(opt);
 
   if (SECURITY_NONE != opt) {
     RawMD5::HashData &data = access_field(&RawMD5::m_data, m_base);
@@ -529,7 +529,7 @@ SecurityComp::parse(MsgBuffer &buffer)
         zret = PARSE_COMP_INVALID;
       else {
         size_t comp_size = this->calcSize(opt);
-        if (this->getLength() != comp_size - sizeof(super::raw_t))
+        if (this->getLength() != comp_size - sizeof(super_type::raw_t))
           zret = PARSE_COMP_WRONG_SIZE;
         else
           buffer.use(comp_size);
@@ -574,7 +574,7 @@ ServiceComp::fill(MsgBuffer &buffer, ServiceGroup const &svc)
 
   m_base = buffer.getTail();
 
-  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super::raw_t));
+  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super_type::raw_t));
 
   // Cast buffer to our serialized type, then cast to ServiceGroup
   // to get offset of that part of the serialization storage.
@@ -600,7 +600,7 @@ ServiceComp::parse(MsgBuffer &buffer)
       ServiceGroup::Type svc = this->getSvcType();
       if (ServiceGroup::DYNAMIC != svc && ServiceGroup::STANDARD != svc)
         zret = PARSE_COMP_INVALID;
-      else if (this->getLength() != comp_size - sizeof(super::raw_t))
+      else if (this->getLength() != comp_size - sizeof(super_type::raw_t))
         zret = PARSE_COMP_WRONG_SIZE;
       else
         buffer.use(comp_size);
@@ -706,7 +706,7 @@ RouterIdComp::fill(MsgBuffer &buffer, size_t n_caches)
 
   this->setType(COMP_TYPE);
   set_field(&raw_t::m_from_count, m_base, n_caches);
-  this->setLength(comp_size - sizeof(super::raw_t));
+  this->setLength(comp_size - sizeof(super_type::raw_t));
   buffer.use(comp_size);
 
   return *this;
@@ -726,7 +726,7 @@ RouterIdComp::fillSingleton(MsgBuffer &buffer, uint32_t addr, uint32_t recv_coun
 
   set_field(&raw_t::m_from_count, m_base, 1);
 
-  this->setLength(comp_size - sizeof(super::raw_t));
+  this->setLength(comp_size - sizeof(super_type::raw_t));
   buffer.use(comp_size);
 
   return *this;
@@ -743,7 +743,7 @@ RouterIdComp::parse(MsgBuffer &buffer)
     zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       size_t comp_size = this->calcSize(this->getFromCount());
-      if (this->getLength() != comp_size - sizeof(super::raw_t))
+      if (this->getLength() != comp_size - sizeof(super_type::raw_t))
         zret = PARSE_COMP_WRONG_SIZE;
       else
         buffer.use(comp_size);
@@ -1029,7 +1029,7 @@ CacheViewComp::fill(MsgBuffer &buffer, detail::cache::GroupData const &group)
     this->setCacheAddr(i, spot->idAddr());
   }
 
-  this->setLength(comp_size - sizeof(super::raw_t));
+  this->setLength(comp_size - sizeof(super_type::raw_t));
   buffer.use(comp_size);
   return *this;
 }
@@ -1046,7 +1046,7 @@ CacheViewComp::parse(MsgBuffer &buffer)
     if (PARSE_SUCCESS == zret) {
       m_cache_count    = reinterpret_cast<uint32_t *>(m_base + sizeof(raw_t) + this->getRouterCount() * sizeof(RouterIdElt));
       size_t comp_size = this->calcSize(this->getRouterCount(), this->getCacheCount());
-      if (this->getLength() != comp_size - sizeof(super::raw_t))
+      if (this->getLength() != comp_size - sizeof(super_type::raw_t))
         zret = PARSE_COMP_WRONG_SIZE;
       else
         buffer.use(comp_size);
@@ -1381,7 +1381,7 @@ CmdComp::fill(MsgBuffer &buffer, cmd_t cmd, uint32_t data)
 
   m_base = buffer.getTail();
 
-  this->setType(COMP_TYPE).setCmd(cmd).setCmdData(data).setLength(sizeof(raw_t) - sizeof(super::raw_t));
+  this->setType(COMP_TYPE).setCmd(cmd).setCmdData(data).setLength(sizeof(raw_t) - sizeof(super_type::raw_t));
   // Command length is always the same.
   set_field(&raw_t::m_length, m_base, sizeof(uint32_t));
   //  reinterpret_cast<raw_t*>(m_base)->m_length = htons(sizeof(uint32_t));
@@ -1398,7 +1398,7 @@ CmdComp::parse(MsgBuffer &buffer)
     m_base = buffer.getTail();
     zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
-      if (this->getLength() + sizeof(super::raw_t) != this->calcSize())
+      if (this->getLength() + sizeof(super_type::raw_t) != this->calcSize())
         zret = PARSE_COMP_WRONG_SIZE;
     }
   }
@@ -1408,13 +1408,13 @@ CmdComp::parse(MsgBuffer &buffer)
 CapabilityElt &
 CapComp::elt(int idx)
 {
-  return access_array<CapabilityElt>(m_base + sizeof(super::raw_t))[idx];
+  return access_array<CapabilityElt>(m_base + sizeof(super_type::raw_t))[idx];
 }
 
 CapabilityElt const &
 CapComp::elt(int idx) const
 {
-  return access_array<CapabilityElt>(m_base + sizeof(super::raw_t))[idx];
+  return access_array<CapabilityElt>(m_base + sizeof(super_type::raw_t))[idx];
 }
 
 void
@@ -1464,7 +1464,7 @@ CapComp::fill(MsgBuffer &buffer, int n)
     throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
-  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super::raw_t));
+  this->setType(COMP_TYPE).setLength(comp_size - sizeof(super_type::raw_t));
   m_count = n;
   buffer.use(comp_size);
 
@@ -1484,7 +1484,7 @@ CapComp::parse(MsgBuffer &buffer)
     if (PARSE_SUCCESS == zret) {
       // No explicit count, compute it from length.
       m_count = this->getLength() / sizeof(CapabilityElt);
-      buffer.use(this->getLength() + sizeof(super::raw_t));
+      buffer.use(this->getLength() + sizeof(super_type::raw_t));
     }
   }
   return zret;
@@ -1587,7 +1587,7 @@ detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
 
   if (m_buffer.getSize() < size) {
     ats_free(m_buffer.getBase());
-    m_buffer.set(ats_malloc(size), size);
+    m_buffer.assign(swoc::MemSpan<void>(ats_malloc(size), size).rebind<char>());
   }
   m_buffer.reset();
 
@@ -1690,7 +1690,7 @@ HereIAmMsg::fill_caps(detail::cache::RouterData const &router)
 }
 
 int
-HereIAmMsg::parse(ts::Buffer const &buffer)
+HereIAmMsg::parse(swoc::MemSpan<char> const &buffer)
 {
   int zret;
   this->setBuffer(buffer);
@@ -1760,7 +1760,7 @@ ISeeYouMsg::fill(detail::router::GroupData const &group, SecurityOption sec_opt,
 }
 
 int
-ISeeYouMsg::parse(ts::Buffer const &buffer)
+ISeeYouMsg::parse(buffer_type const &buffer)
 {
   int zret;
   this->setBuffer(buffer);
@@ -1814,7 +1814,7 @@ ISeeYouMsg::parse(ts::Buffer const &buffer)
 }
 // ------------------------------------------------------
 int
-RemovalQueryMsg::parse(ts::Buffer const &buffer)
+RemovalQueryMsg::parse(buffer_type const &buffer)
 {
   int zret;
   this->setBuffer(buffer);

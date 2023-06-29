@@ -106,9 +106,7 @@ s.AddLines([
     "      - *g1"])
 
 ts.Disk.remap_config.AddLine(
-    "map http://dummy.com http://not_used @plugin=parent_select.so @pparam=" +
-    ts.Variables.CONFIGDIR +
-    "/strategies.yaml @pparam=the-strategy")
+    "map http://dummy.com http://not_used @plugin=parent_select.so @pparam=strategies.yaml @pparam=the-strategy")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)

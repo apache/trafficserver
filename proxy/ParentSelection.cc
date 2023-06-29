@@ -560,7 +560,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
       }
     }
-    tmp3 = nullptr;
   }
 
   if (isPrimary) {
@@ -805,7 +804,7 @@ ParentRecord::Init(matcher_line *line_info)
     // record SCHEME modifier if present.
     // NULL if not present
     this->scheme = this->getSchemeModText();
-    if (this->scheme != nullptr) {
+    if (this->scheme != nullptr && this->parents != nullptr) {
       // update parent entries' schemes
       for (int j = 0; j < num_parents; j++) {
         this->parents[j].scheme = this->scheme;

@@ -86,23 +86,32 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
 
+if ENABLE_QUIC
+test_UDPNet_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 test_UDPNet_SOURCES = \
 	libinknet_stub.cc \
 	test_I_UDPNet.cc
 
 test_libinknet_SOURCES = \
 	libinknet_stub.cc \
-	unit_tests/test_ProxyProtocol.cc
+	unit_tests/unit_test_main.cc \
+	unit_tests/test_ProxyProtocol.cc \
+	unit_tests/test_SSLSNIConfig.cc \
+	unit_tests/test_YamlSNIConfig.cc
 
 test_libinknet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/catch2 \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-DLIBINKNET_UNIT_TEST_DIR="$(abs_top_srcdir)/iocore/net/unit_tests" \
 	@OPENSSL_INCLUDES@
 
 test_libinknet_LDFLAGS = \
@@ -120,6 +129,11 @@ test_libinknet_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
+
+if ENABLE_QUIC
+test_libinknet_LDADD += \
+	$(top_builddir)/iocore/net/quic/libquic.a
+endif
 
 libinknet_a_SOURCES = \
 	ALPNSupport.cc \

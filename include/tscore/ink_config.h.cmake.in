@@ -32,8 +32,10 @@
 #cmakedefine BUILD_GROUP "@BUILD_GROUP@"
 #define BUILD_NUMBER "@BUILD_NUMBER@"
 
+#cmakedefine HAVE_BROTLI_ENCODE_H 1
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FLOAT_H 1
+#cmakedefine HAVE_LZMA_H 1
 #cmakedefine HAVE_STDLIB_H 1
 #cmakedefine HAVE_STDINT_H 1
 #cmakedefine HAVE_INTTYPES_H 1
@@ -42,7 +44,9 @@
 #cmakedefine HAVE_LINUX_MAJOR_H 1
 #cmakedefine HAVE_SYS_DISK_H 1
 #cmakedefine HAVE_SYS_DISKLABEL_H 1
+#cmakedefine HAVE_SYS_CAPABILITY_H 1
 #cmakedefine HAVE_SYS_IOCTL_H 1
+#cmakedefine HAVE_SYS_PRCTL_H 1
 #cmakedefine HAVE_SYS_TYPES_H 1
 #cmakedefine HAVE_SYS_STAT_H 1
 #cmakedefine HAVE_SYS_STATVFS_H 1
@@ -61,6 +65,7 @@
 #cmakedefine HAVE_ARPA_NAMESER_H 1
 #cmakedefine HAVE_ARPA_NAMESER_COMPAT_H 1
 #cmakedefine HAVE_SIGINFO_H 1
+#cmakedefine HAVE_ENDIAN_H 1
 
 #cmakedefine01 HAVE_GETRESUID
 #cmakedefine01 HAVE_GETRESGID
@@ -68,6 +73,7 @@
 #cmakedefine01 HAVE_EVENTFD
 
 #cmakedefine01 HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB
+#cmakedefine01 TS_HAS_TLS_KEYLOGGING
 
 #cmakedefine HAVE_BIO_METH_NEW 1
 #cmakedefine HAVE_BIO_SET_DATA 1
@@ -76,6 +82,8 @@
 #cmakedefine HAVE_BIO_METH_GET_CTRL 1
 #cmakedefine HAVE_BIO_METH_GET_CREATE 1
 #cmakedefine HAVE_BIO_METH_GET_DESTROY 1
+
+#define SIZEOF_VOIDP @CMAKE_SIZEOF_VOID_P@
 
 /* TODO(cmcfarlen): make this configurable */
 #define TS_PKGSYSUSER "@pkgsysuser@"
@@ -101,16 +109,37 @@
 
 /* Build definitions */
 const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
+#define TS_IP_TRANSPARENT @TS_IP_TRANSPARENT@
 #define TS_MAX_HOST_NAME_LEN @TS_MAX_HOST_NAME_LEN@
+#define TS_MAX_NUMBER_EVENT_THREADS @TS_MAX_NUMBER_EVENT_THREADS@
+#define TS_MAX_THREADS_IN_EACH_THREAD_TYPE @TS_MAX_THREADS_IN_EACH_THREAD_TYPE@
 
 /* Feature Flags */
+#cmakedefine01 TS_HAS_128BIT_CAS
+#cmakedefine01 TS_HAS_BACKTRACE
+#cmakedefine01 TS_HAS_IN6_IS_ADDR_UNSPECIFIED
+#cmakedefine01 TS_HAS_IP_TOS
+#cmakedefine01 TS_HAS_JEMALLOC
+#cmakedefine01 TS_HAS_PROFILER
+#cmakedefine01 TS_HAS_QUICHE
+#cmakedefine01 TS_HAS_SO_MARK
+#cmakedefine01 TS_HAS_SO_PEERCRED
+#cmakedefine01 TS_HAS_TESTS
+#cmakedefine01 TS_HAS_WCCP
+#cmakedefine01 TS_USE_DIAGS
 #cmakedefine01 TS_USE_EPOLL
+#cmakedefine01 TS_USE_FAST_SDK
+#cmakedefine01 TS_USE_GET_DH_2048_256
+#cmakedefine01 TS_USE_HWLOC
 #cmakedefine01 TS_USE_KQUEUE
 #cmakedefine01 TS_USE_LINUX_IO_URING
 #cmakedefine01 TS_USE_LINUX_NATIVE_AIO
+#cmakedefine01 TS_USE_POSIX_CAP
+#cmakedefine01 TS_USE_QUIC
+#cmakedefine01 TS_USE_REMOTE_UNWINDING
 #cmakedefine01 TS_USE_SET_RBIO
-#cmakedefine01 TS_USE_DIAGS
-#cmakedefine01 TS_USE_GET_DH_2048_256
+#cmakedefine01 TS_USE_TLS13
+#cmakedefine01 TS_USE_TPROXY
 
 #define TS_BUILD_CANONICAL_HOST "@CMAKE_HOST@"
 

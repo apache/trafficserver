@@ -164,7 +164,6 @@ protected:
   fs::path _runtimePath;   /** @brief the plugin runtime path where the plugin was copied to be loaded */
 
   void *_dlh = nullptr; /** @brief dlopen handler used internally in this class, used as flag for loaded vs unloaded (nullptr) */
-  std::error_code _errorCode; /** @brief used in filesystem calls */
 
   static constexpr const char *const _tag = "plugin_dso";       /** @brief log tag used by this class */
   swoc::file::file_time_type _mtime{fs::file_time_type::min()}; /* @brief modification time of the DSO's file, used for checking */

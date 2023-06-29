@@ -311,6 +311,11 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   str = api.getPath(&length);
   String path("/");
   path.append(str, length);
+  str = api.getParams(&length);
+  if (length > 0) {
+    path.append(";", 1);
+    path.append(str, length);
+  }
   String canonicalUri = canonicalEncode(path, /* isObjectName */ true);
   sha256Update(&canonicalRequestSha256Ctx, canonicalUri);
   sha256Update(&canonicalRequestSha256Ctx, "\n");
@@ -735,7 +740,7 @@ AwsAuthV4::getAuthorizationHeader()
   std::cout << "<StringToSign>" << stringToSign << "</StringToSign>" << std::endl;
 #endif
 
-  char signature[EVP_MAX_MD_SIZE];
+  char signature[EVP_MAX_MD_SIZE] = "";
   size_t signatureLen =
     getSignature(_awsSecretAccessKey, _awsSecretAccessKeyLen, awsRegion.c_str(), awsRegion.length(), _awsService, _awsServiceLen,
                  _dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);

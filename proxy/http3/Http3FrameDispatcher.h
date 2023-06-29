@@ -33,7 +33,7 @@ class QUICStreamVCAdapter;
 class Http3FrameDispatcher
 {
 public:
-  Http3ErrorUPtr on_read_ready(QUICStreamId stream_id, IOBufferReader &reader, uint64_t &nread);
+  Http3ErrorUPtr on_read_ready(QUICStreamId stream_id, Http3StreamType stream_type, IOBufferReader &reader, uint64_t &nread);
 
   void add_handler(Http3FrameHandler *handler);
 

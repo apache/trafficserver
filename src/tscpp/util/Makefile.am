@@ -33,7 +33,7 @@ libtscpputil_la_SOURCES = \
 	ts_diags.cc ts_ip.cc TextView.cc YamlCfg.cc ts_unit_parser.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include @SWOC_INCLUDES@
+	-I$(abs_top_srcdir)/lib/catch2 @SWOC_INCLUDES@
 
 test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = \

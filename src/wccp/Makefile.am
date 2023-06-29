@@ -24,7 +24,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/proxy \
 	$(TS_INCLUDES) \
-	@YAMLCPP_INCLUDES@
+	@SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libwccp.a
 

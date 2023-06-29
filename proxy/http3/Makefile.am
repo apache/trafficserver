@@ -52,6 +52,7 @@ libhttp3_a_SOURCES = \
   Http3DataFramer.cc \
   Http3HeaderVIOAdaptor.cc \
   Http3StreamDataVIOAdaptor.cc \
+  Http3ProtocolEnforcer.cc \
   QPACK.cc
 
 #
@@ -66,7 +67,7 @@ TESTS = $(check_PROGRAMS)
 test_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/tests/include
+  -I$(abs_top_srcdir)/lib/catch2
 
 test_LDADD = \
   $(top_builddir)/iocore/net/quic/libquic.a \
@@ -86,6 +87,10 @@ test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
   ./test/test_Http3Frame.cc \
+  ./test/test_Http3FrameDispatcher.cc \
+  ./Http3ProtocolEnforcer.cc \
+  ./Http3FrameDispatcher.cc \
+  ./Http3DebugNames.cc \
   ./Http3Config.cc \
   ./Http3Frame.cc
 

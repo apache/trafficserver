@@ -29,6 +29,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
+#include "tscore/Encoding.h"
 #include "tscore/PluginUserArgs.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
@@ -61,7 +62,6 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "PluginVC.h"
-#include "ts/experimental.h"
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
@@ -73,12 +73,13 @@
 #include "records/I_RecordsConfig.h"
 #include "records/I_RecDefs.h"
 #include "records/I_RecCore.h"
+#include "records/RecYAMLDecoder.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
 
 #include "rpc/jsonrpc/JsonRPC.h"
-
+#include <swoc/bwf_base.h>
 #include "ts/ts.h"
 
 /****************************************************************
@@ -2594,7 +2595,7 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
   // However, if there is no destination argument, none is allocated.  I don't understand the full possibility of calling cases.
   // It seems like we might want to review how this is being called and perhaps create a number of smaller accessor methods that
   // can be set up correctly.
-  if (nullptr == LogUtils::pure_escapify_url(nullptr, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
+  if (nullptr == Encoding::pure_escapify_url(nullptr, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
     if (length) {
       *length = 0;
     }
@@ -3771,6 +3772,16 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 
   mime_field_value_delete_comma_val(heap, handle->mh, handle->field_ptr, idx);
   return TS_SUCCESS;
+}
+
+const char *
+TSMimeHdrStringToWKS(const char *str, int length)
+{
+  if (length < 0) {
+    return hdrtoken_string_to_wks(str);
+  } else {
+    return hdrtoken_string_to_wks(str, length);
+  }
 }
 
 /**************/
@@ -5915,6 +5926,20 @@ TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
   return sm->t_state.current.server->name;
 }
 
+int
+TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+  /**
+   * Return -1 if the server structure is not yet constructed.
+   */
+  if (nullptr == sm->t_state.current.server) {
+    return -1;
+  }
+  return sm->t_state.current.server->dst_addr.host_order_port();
+}
+
 TSReturnCode
 TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {
@@ -5968,46 +5993,6 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 
   // update the transactions mark config for future connections
   TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, mark);
-  return TS_SUCCESS;
-}
-
-TSReturnCode
-TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_txn) {
-    return TS_ERROR;
-  }
-
-  NetVConnection *vc = sm->ua_txn->get_netvc();
-  if (nullptr == vc) {
-    return TS_ERROR;
-  }
-
-  vc->options.packet_tos = (uint32_t)tos;
-  vc->apply_options();
-  return TS_SUCCESS;
-}
-
-TSReturnCode
-TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *)txnp;
-
-  // change the tos on an active server session
-  ProxyTransaction *ssn = sm->get_server_txn();
-  if (nullptr != ssn) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      vc->options.packet_tos = (uint32_t)tos;
-      vc->apply_options();
-    }
-  }
-
-  // update the transactions mark config for future connections
-  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, tos);
   return TS_SUCCESS;
 }
 
@@ -7615,20 +7600,6 @@ TSStatFindName(const char *name, int *idp)
   return TS_SUCCESS;
 }
 
-/**************************    Stats API    ****************************/
-// THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
-// #define ink_sanity_check_stat_structure(_x) TS_SUCCESS
-
-inline TSReturnCode
-ink_sanity_check_stat_structure(void *obj)
-{
-  if (obj == nullptr) {
-    return TS_ERROR;
-  }
-
-  return TS_SUCCESS;
-}
-
 /**************************   Tracing API   ****************************/
 // returns 1 or 0 to indicate whether TS is being run with a debug tag.
 int
@@ -7912,14 +7883,6 @@ TSMatcherLineValue(TSMatcherLine ml, int element)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   return (((matcher_line *)ml)->line)[1][element];
-}
-
-/* Configuration Setting */
-TSReturnCode
-TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
-{
-  Warning("This API is no longer supported.");
-  return TS_SUCCESS;
 }
 
 extern void load_config_file_callback(const char *parent, const char *remap_file);
@@ -8550,8 +8513,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_auth, conv);
     break;
-  case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_urls_that_look_dynamic, conv);
+  case TS_CONFIG_HTTP_CACHE_IGNORE_QUERY:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_query, conv);
     break;
   case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_required_headers, conv);
@@ -8828,6 +8791,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->default_inactivity_timeout, conv);
+    break;
+  case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_urls_that_look_dynamic, conv);
     break;
 
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -10316,4 +10282,34 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
   rpc::g_rpcHandlingCompletion.notify_one();
   Debug("rpc.api", ">> error  flagged.");
   return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
+{
+  swoc::Errata err;
+  try {
+    err = ParseRecordsFromYAML(
+      *reinterpret_cast<YAML::Node *>(node),
+      [handler, data](const CfgNode &field, swoc::Errata &) -> void {
+        // Errors from the handler should be reported and handled by the handler.
+        // RecYAMLConfigFileParse will report any YAML parsing error.
+        TSYAMLRecCfgFieldData cfg;
+        auto const &field_str = field.node.as<std::string>();
+        cfg.field_name        = field_str.c_str();
+        cfg.record_name       = field.get_record_name().data();
+        cfg.value_node        = reinterpret_cast<TSYaml>(const_cast<YAML::Node *>(&field.value_node));
+        handler(&cfg, data);
+      },
+      true /* lock */);
+  } catch (std::exception const &ex) {
+    err.note(ERRATA_ERROR, "RecYAMLConfigParse error cought: {}", ex.what());
+  }
+  // Drop API logs in case of an error.
+  if (!err.empty()) {
+    std::string buf;
+    Debug("plugin", "%s", swoc::bwprint(buf, "{}", err).c_str());
+  }
+
+  return err.empty() ? TS_SUCCESS : TS_ERROR;
 }

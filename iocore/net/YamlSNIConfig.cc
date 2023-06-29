@@ -21,15 +21,28 @@
 
 #include "YamlSNIConfig.h"
 
+#include <utility>
 #include <unordered_map>
 #include <set>
 #include <string_view>
+#include <string>
+#include <limits>
+#include <exception>
+#include <cstdint>
+#include <algorithm>
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
+#include <netinet/in.h>
+
+#include "swoc/TextView.h"
+#include "swoc/bwf_base.h"
 
 #include "P_SNIActionPerformer.h"
 
+#include "tscpp/util/ts_ip.h"
+
+#include "tscore/BufferWriterForward.h"
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/Errata.h"
@@ -58,6 +71,7 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
     }
   }
 }
+
 } // namespace
 
 ts::Errata
@@ -115,6 +129,40 @@ YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
   }
 }
 
+void
+YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
+{
+  if (offer_h2.has_value()) {
+    actions.push_back(std::make_unique<ControlH2>(offer_h2.value()));
+  }
+  if (offer_quic.has_value()) {
+    actions.push_back(std::make_unique<ControlQUIC>(offer_quic.value()));
+  }
+  if (verify_client_level != 255) {
+    actions.push_back(std::make_unique<VerifyClient>(verify_client_level, verify_client_ca_file, verify_client_ca_dir));
+  }
+  if (host_sni_policy != 255) {
+    actions.push_back(std::make_unique<HostSniPolicy>(host_sni_policy));
+  }
+  if (valid_tls_version_min_in >= 0 || valid_tls_version_max_in >= 0) {
+    actions.push_back(std::make_unique<TLSValidProtocols>(valid_tls_version_min_in, valid_tls_version_max_in));
+  } else if (!protocol_unset) {
+    actions.push_back(std::make_unique<TLSValidProtocols>(protocol_mask));
+  }
+  if (tunnel_destination.length() > 0) {
+    actions.push_back(std::make_unique<TunnelDestination>(tunnel_destination, tunnel_type, tunnel_prewarm, tunnel_alpn));
+  }
+  if (!client_sni_policy.empty()) {
+    actions.push_back(std::make_unique<OutboundSNIPolicy>(client_sni_policy));
+  }
+  if (http2_buffer_water_mark.has_value()) {
+    actions.push_back(std::make_unique<HTTP2BufferWaterMark>(http2_buffer_water_mark.value()));
+  }
+
+  actions.push_back(std::make_unique<ServerMaxEarlyData>(server_max_early_data));
+  actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
+}
+
 VerifyClient::~VerifyClient() {}
 
 TsEnumDescriptor LEVEL_DESCRIPTOR = {
@@ -131,6 +179,7 @@ TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {
 };
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
+                                               TS_inbound_port_range,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
@@ -151,13 +200,15 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_sni_policy,
                                                TS_http2,
                                                TS_http2_buffer_water_mark,
+                                               TS_quic,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
                                                TS_valid_tls_versions_in,
                                                TS_valid_tls_version_min_in,
                                                TS_valid_tls_version_max_in,
 #endif
-                                               TS_host_sni_policy};
+                                               TS_host_sni_policy,
+                                               TS_server_max_early_data};
 
 namespace YAML
 {
@@ -177,11 +228,34 @@ template <> struct convert<YamlSNIConfig::Item> {
     } else {
       return false; // servername must be present
     }
+
+    if (node[TS_inbound_port_range]) {
+      swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
+      auto min{port_view.split_prefix_at('-')};
+      if (!min) {
+        min = port_view;
+      }
+      auto const &max{port_view};
+
+      swoc::TextView parsed_min;
+      long min_port{swoc::svtoi(min, &parsed_min)};
+      swoc::TextView parsed_max;
+      long max_port{swoc::svtoi(max, &parsed_max)};
+      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
+          max_port < min_port) {
+        throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
+      }
+
+      item.port_range = ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+    }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
     }
     if (node[TS_http2_buffer_water_mark]) {
       item.http2_buffer_water_mark = node[TS_http2_buffer_water_mark].as<int>();
+    }
+    if (node[TS_quic]) {
+      item.offer_quic = node[TS_quic].as<bool>();
     }
 
     // enum
@@ -357,6 +431,13 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_valid_tls_version_max_in]) {
       item.valid_tls_version_max_in = TLS_PROTOCOLS_DESCRIPTOR.get(node[TS_valid_tls_version_max_in].as<std::string>());
     }
+
+    if (node[TS_server_max_early_data]) {
+      item.server_max_early_data = node[TS_server_max_early_data].as<uint32_t>();
+    } else {
+      item.server_max_early_data = SSLConfigParams::server_max_early_data;
+    }
+
     return true;
   }
 };
