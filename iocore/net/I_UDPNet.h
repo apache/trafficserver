@@ -34,6 +34,7 @@
 #include "tscore/I_Version.h"
 #include "I_EventSystem.h"
 #include "tscore/ink_inet.h"
+#include "NetVCOptions.h"
 
 /**
    UDP service

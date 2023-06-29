@@ -136,12 +136,16 @@ test_libinknet_LDADD += \
 endif
 
 libinknet_a_SOURCES = \
+	AcceptOptions.cc \
+	AcceptOptions.h \
 	ALPNSupport.cc \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	BoringSSLUtils.cc \
 	BoringSSLUtils.h \
 	Connection.cc \
+	EventIO.h \
+	EventIO.cc \
 	I_Net.h \
 	I_NetProcessor.h \
 	I_NetVConnection.h \
@@ -154,6 +158,10 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \
 	Net.cc \
+	NetHandler.h \
+	NetHandler.cc \
+	NetVCOptions.h \
+	NetVCOptions.cc \
 	NetVConnection.cc \
 	P_ALPNSupport.h \
 	P_SNIActionPerformer.h \
@@ -186,6 +194,8 @@ libinknet_a_SOURCES = \
 	P_UnixNetVConnection.h \
 	P_UnixPollDescriptor.h \
 	P_UnixUDPConnection.h \
+	PollCont.h \
+	PollCont.cc \
 	ProxyProtocol.h \
 	ProxyProtocol.cc \
 	Socks.cc \
@@ -229,18 +239,18 @@ libinknet_a_SOURCES = \
 
 if ENABLE_QUIC
 libinknet_a_SOURCES += \
-  P_QUICClosedConCollector.h \
-  P_QUICPacketHandler.h \
-  P_QUICNetProcessor.h \
-  P_QUICNetVConnection.h \
-  P_QUICNextProtocolAccept.h \
-  QUICClosedConCollector.cc \
-  QUICMultiCertConfigLoader.cc \
-  QUICNet.cc \
-  QUICNetProcessor_quiche.cc \
-  QUICNetVConnection_quiche.cc \
-  QUICNextProtocolAccept_quiche.cc \
-  QUICPacketHandler_quiche.cc
+	P_QUICClosedConCollector.h \
+	P_QUICPacketHandler.h \
+	P_QUICNetProcessor.h \
+	P_QUICNetVConnection.h \
+	P_QUICNextProtocolAccept.h \
+	QUICClosedConCollector.cc \
+	QUICMultiCertConfigLoader.cc \
+	QUICNet.cc \
+	QUICNetProcessor_quiche.cc \
+	QUICNetVConnection_quiche.cc \
+	QUICNextProtocolAccept_quiche.cc \
+	QUICPacketHandler_quiche.cc
 endif
 
 if BUILD_TESTS

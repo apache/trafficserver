@@ -34,6 +34,7 @@
 #include <utility>
 
 #include "tscore/ink_platform.h"
+#include "tscore/Allocator.h"
 
 class EThread;
 

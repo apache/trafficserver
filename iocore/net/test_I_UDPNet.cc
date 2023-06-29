@@ -34,6 +34,7 @@
 #include "I_UDPNet.h"
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
+#include "P_UDPConnection.h"
 
 #include "diags.i"
 

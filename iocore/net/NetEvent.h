@@ -25,7 +25,9 @@
 
 #include <atomic>
 
+#include "EventIO.h"
 #include "I_EventSystem.h"
+#include "P_UnixNetState.h"
 
 class NetHandler;
 
