@@ -23,8 +23,7 @@
 
 #pragma once
 
-#include <memory>
-#include <string_view>
+#include <string>
 
 class NetVConnection;
 
@@ -36,7 +35,7 @@ public:
   char const *
   client_sni_server_name() const
   {
-    return _client_sni_server_name.get();
+    return _client_sni_server_name.empty() ? nullptr : _client_sni_server_name.c_str();
   }
 
   bool
@@ -48,6 +47,6 @@ public:
   void init(NetVConnection const &new_vc);
 
 private:
-  std::unique_ptr<char[]> _client_sni_server_name;
+  std::string _client_sni_server_name;
   bool _client_provided_cert = false;
 };
