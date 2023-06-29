@@ -73,6 +73,23 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
 }
 
+// Parse NextHop qualifiers
+NextHopQualifiers
+Statement::parse_next_hop_qualifier(const std::string &q) const
+{
+  NextHopQualifiers qual = NEXT_HOP_NONE;
+
+  if (q == "HOST") {
+    qual = NEXT_HOP_HOST;
+  } else if (q == "PORT") {
+    qual = NEXT_HOP_PORT;
+  } else {
+    TSError("[%s] Invalid NextHop() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+
+  return qual;
+}
+
 // Parse URL qualifiers, this one is special since it's used in a few places.
 UrlQualifiers
 Statement::parse_url_qualifier(const std::string &q) const

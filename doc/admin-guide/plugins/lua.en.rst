@@ -1939,6 +1939,27 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.server_addr.get_nexthop_port
+----------------------------------------------
+**syntax:** *ts.server_request.server_addr.get_nexthop_port()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description**: This function can be used to get the port name of the next hop to the origin server.
+
+The ts.server_request.server_addr.get_nexthop_port function returns the port as an integer .
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        port = ts.server_request.server_addr.get_nexthop_port()
+        print(name)             -- test
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.sha256
 ---------
 **syntax:** *digest = ts.sha256(str)*

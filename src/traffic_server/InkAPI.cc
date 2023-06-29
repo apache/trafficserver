@@ -5976,6 +5976,20 @@ TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
   return sm->t_state.current.server->name;
 }
 
+int
+TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  auto sm = reinterpret_cast<HttpSM const *>(txnp);
+  /**
+   * Return -1 if the server structure is not yet constructed.
+   */
+  if (nullptr == sm->t_state.current.server) {
+    return -1;
+  }
+  return sm->t_state.current.server->dst_addr.host_order_port();
+}
+
 TSReturnCode
 TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {

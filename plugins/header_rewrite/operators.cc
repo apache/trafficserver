@@ -1083,8 +1083,9 @@ OperatorSetHttpCntl::initialize_hooks()
 }
 
 // This is only for the debug statement, and must be in sync with TSHttpCntlType in apidefs.h.in
-static const char *const HttpCntls[] = {"LOGGING",         "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE",
-                                        "SERVER_NO_STORE", "TXN_DEBUG",       "SKIP_REMAP"};
+static const char *const HttpCntls[] = {
+  "LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP",
+};
 void
 OperatorSetHttpCntl::exec(const Resources &res) const
 {

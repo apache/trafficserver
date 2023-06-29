@@ -1483,6 +1483,16 @@ tsapi struct sockaddr const *TSHttpTxnNextHopAddrGet(TSHttpTxn txnp);
 */
 tsapi const char *TSHttpTxnNextHopNameGet(TSHttpTxn txnp);
 
+/** Get the next hop port.
+ *
+    Retrieves the next hop parent port.
+                Returns -1 if not valid.
+
+    @return The port of the next hop for transaction @a txnp.
+
+ */
+tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
+
 tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp);
 tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr const *addr);
 tsapi TSReturnCode TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag);

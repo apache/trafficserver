@@ -3057,6 +3057,8 @@ struct SocketTest {
   bool test_server_req_get;
   bool test_server_resp_get;
   bool test_next_hop_ip_get;
+  bool test_next_hop_name_get;
+  bool test_next_hop_port_get;
   bool test_client_protocol_stack_get;
   bool test_client_protocol_stack_contains;
 
@@ -3175,6 +3177,60 @@ checkHttpTxnNextHopIPGet(SocketTest *test, void *data)
     test->test_next_hop_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %0.8x got %0.8x]",
                actual_ip, nexthopip);
+  }
+
+  return TS_EVENT_CONTINUE;
+}
+
+// This func is called by us from mytest_handler to check for TSHttpTxnNextHopNameGet
+static int
+checkHttpTxnNextHopNameGet(SocketTest *test, void *data)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
+
+  constexpr char const *const exp = "127.0.0.1";
+
+  char const *const name = TSHttpTxnNextHopNameGet(txnp);
+  if (nullptr == name) {
+    test->test_next_hop_name_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopNameGet", "TestCase1", TC_FAIL, "TSHttpTxnNextHopNameGet returns null/empty host");
+    return TS_EVENT_CONTINUE;
+  }
+
+  if (std::string_view(name) == exp) {
+    test->test_next_hop_name_get = true;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopNameGet", "TestCase1", TC_PASS, "ok");
+  } else {
+    test->test_next_hop_name_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopNameGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected '%s', got '%s'", exp,
+               name);
+  }
+
+  return TS_EVENT_CONTINUE;
+}
+
+// This func is called by us from mytest_handler to check for TSHttpTxnNextHopPortGet
+static int
+checkHttpTxnNextHopPortGet(SocketTest *test, void *data)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
+
+  constexpr int const exp = SYNSERVER_LISTEN_PORT;
+
+  int const port = TSHttpTxnNextHopPortGet(txnp);
+  if (port <= 0) {
+    test->test_next_hop_port_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopPortGet", "TestCase1", TC_FAIL, "TSHttpTxnNextHopPortGet returns '%d'", port);
+    return TS_EVENT_CONTINUE;
+  }
+
+  if (port == exp) {
+    test->test_next_hop_port_get = true;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopPortGet", "TestCase1", TC_PASS, "ok");
+  } else {
+    test->test_next_hop_port_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopPortGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected '%d', got '%d'", exp,
+               port);
   }
 
   return TS_EVENT_CONTINUE;
@@ -3462,6 +3518,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnServerReqGet(test, data);
     checkHttpTxnNextHopIPGet(test, data);
+    checkHttpTxnNextHopNameGet(test, data);
+    checkHttpTxnNextHopPortGet(test, data);
     checkHttpTxnClientProtocolStackContains(test, data);
     checkHttpTxnClientProtocolStackGet(test, data);
 
@@ -3529,7 +3587,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       if ((test->test_client_ip_get != true) || (test->test_client_incoming_port_get != true) ||
           (test->test_client_remote_port_get != true) || (test->test_client_req_get != true) ||
           (test->test_client_resp_get != true) || (test->test_server_ip_get != true) || (test->test_server_req_get != true) ||
-          (test->test_server_resp_get != true) || (test->test_next_hop_ip_get != true)) {
+          (test->test_server_resp_get != true) || (test->test_next_hop_ip_get != true) || (test->test_next_hop_name_get != true) ||
+          (test->test_next_hop_port_get != true)) {
         *(test->pstatus) = REGRESSION_TEST_FAILED;
       }
       // transaction is over. clean up.
@@ -3571,6 +3630,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
   socktest->test_server_req_get           = false;
   socktest->test_server_resp_get          = false;
   socktest->test_next_hop_ip_get          = false;
+  socktest->test_next_hop_name_get        = false;
+  socktest->test_next_hop_port_get        = false;
   socktest->magic                         = MAGIC_ALIVE;
   TSContDataSet(cont, socktest);
 

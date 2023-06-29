@@ -356,7 +356,7 @@ TSPluginInit(int argc, const char *argv[])
       TSDebug(PLUGIN_NAME, "Successfully loaded global config file %s", argv[i]);
       got_config = true;
     } else {
-      TSError("[header_rewrite] failed to parse configuration file %s", argv[i]);
+      TSError("[%s] failed to parse configuration file %s", PLUGIN_NAME, argv[i]);
     }
   }
 

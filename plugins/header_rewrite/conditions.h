@@ -604,3 +604,28 @@ public:
 protected:
   bool eval(const Resources &res) override;
 };
+
+// Next Hop
+class ConditionNextHop : public Condition
+{
+  using MatcherType = Matchers<std::string>;
+
+public:
+  enum HostType { NAME, PORT };
+
+  explicit ConditionNextHop() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNextHop"); }
+
+  // noncopyable
+  ConditionNextHop(const ConditionNextHop &) = delete;
+  void operator=(const ConditionNextHop &)   = delete;
+
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+private:
+  NextHopQualifiers _next_hop_qual = NEXT_HOP_NONE;
+};
