@@ -32,6 +32,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(DEBUG _DEBUG)
+endif()
+
 # ATS uses "unix" for variable names.  Make sure its not defined
 remove_definitions(-Dunix)
 
