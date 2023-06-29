@@ -1717,8 +1717,9 @@ UDPNetHandler::is_gro_enabled() const
 {
 #ifndef SOL_UDP
   return false;
-#endif
+#else
   return this->_cfg.enable_gro;
+#endif
 }
 
 int
