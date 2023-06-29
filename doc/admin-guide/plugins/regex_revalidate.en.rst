@@ -121,6 +121,12 @@ the parent. *Use with care* as this will increase bandwidth to the parent.
 During configuration reload, any rule which changes it type will be
 reloaded and treated as a new rule.
 
+NOTE: MISS Should *only* be used when the parent is known to be an origin.
+If the parent is another caching CDN it is likely that the refetch object
+will have the identical DATE header as the object currently in cache.
+In this case matching assets will effectively become no-cache assets
+until the refetch rule expires.
+
 Caveats
 =======
 
