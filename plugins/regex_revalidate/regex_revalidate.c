@@ -124,6 +124,7 @@ typedef struct invalidate_t {
 typedef struct {
   invalidate_t *invalidate_list;
   char *config_path;
+  char *match_header;
   time_t last_load;
   TSTextLogObject log;
   char *state_path;
@@ -176,6 +177,7 @@ init_plugin_state_t(plugin_state_t *pstate)
 {
   pstate->invalidate_list = NULL;
   pstate->config_path     = NULL;
+  pstate->match_header    = NULL;
   pstate->last_load       = 0;
   pstate->log             = NULL;
   pstate->state_path      = NULL;
@@ -190,6 +192,9 @@ free_plugin_state_t(plugin_state_t *pstate)
   }
   if (pstate->config_path) {
     TSfree(pstate->config_path);
+  }
+  if (pstate->match_header) {
+    TSfree(pstate->match_header);
   }
   if (pstate->log) {
     TSTextLogObjectDestroy(pstate->log);
@@ -302,7 +307,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
   now = time(NULL);
 
   config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, NULL);
-  TSAssert(NULL != config_re);
+  TSReleaseAssert(NULL != config_re);
 
   while (fgets(line, LINE_MAX, fs) != NULL) {
     TSDebug(PLUGIN_NAME, "state: processing: %d %s", ln, line);
@@ -397,7 +402,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     }
     TSDebug(PLUGIN_NAME, "Attempting to load rules from: '%s'", path);
     config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, NULL);
-    TSAssert(NULL != config_re);
+    TSReleaseAssert(NULL != config_re);
 
     while (fgets(line, LINE_MAX, fs) != NULL) {
       TSDebug(PLUGIN_NAME, "Processing: %d %s", ln, line);
@@ -602,13 +607,64 @@ get_date_from_cached_hdr(TSHttpTxn txn)
   return date;
 }
 
+static void
+add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
+{
+  TSMBuffer bufp  = NULL;
+  TSMLoc lochdr   = TS_NULL_MLOC;
+  TSMLoc locfield = TS_NULL_MLOC;
+  char rulestr[LINE_MAX];
+  int rulelen = 0;
+  char encstr[LINE_MAX];
+  size_t enclen = 0;
+
+  TSReleaseAssert(header && rule);
+
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txn, &bufp, &lochdr)) {
+    TSDebug(PLUGIN_NAME, "Unable to get client request from transaction");
+  }
+
+  rulelen = snprintf(rulestr, sizeof(rulestr), "%s %jd %s", rule->regex_text, rule->expiry, strForResult(rule->new_result));
+
+  if (TS_SUCCESS != TSStringPercentEncode(rulestr, rulelen, encstr, sizeof(encstr), &enclen, NULL)) {
+    TSDebug(PLUGIN_NAME, "Unable to get encode matching rule '%s'", rulestr);
+    return;
+  }
+
+  locfield = TSMimeHdrFieldFind(bufp, lochdr, header, strlen(header));
+
+  if (TS_NULL_MLOC == locfield) { // create header
+    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, lochdr, header, strlen(header), &locfield)) {
+      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen)) {
+        TSMimeHdrFieldAppend(bufp, lochdr, locfield);
+        TSDebug(PLUGIN_NAME, "Added header %s: '%.*s'", header, (int)enclen, encstr);
+      }
+    }
+    TSHandleMLocRelease(bufp, lochdr, locfield);
+  } else { // replace header
+    bool first = true;
+    while (locfield) {
+      const TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, lochdr, locfield);
+      if (first) {
+        first = false;
+        TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen);
+        TSDebug(PLUGIN_NAME, "Added header '%s': '%.*s'", header, (int)enclen, encstr);
+      } else {
+        TSMimeHdrFieldDestroy(bufp, lochdr, locfield);
+      }
+      TSHandleMLocRelease(bufp, lochdr, locfield);
+      locfield = tmp;
+    }
+  }
+}
+
 static int
 main_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
   int status;
-  invalidate_t *iptr;
-  plugin_state_t *pstate;
+  invalidate_t *iptr     = NULL;
+  plugin_state_t *pstate = NULL;
 
   time_t date = 0, now = 0;
   char *url   = NULL;
@@ -636,6 +692,10 @@ main_handler(TSCont cont, TSEvent event, void *edata)
                       iptr->regex_text, iptr->epoch, iptr->expiry, strForResult(iptr->new_result));
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
               increment_stat(iptr->new_result);
+
+              if (pstate->match_header) {
+                add_header(txn, pstate->match_header, iptr);
+              }
               iptr = NULL;
             }
           }
@@ -692,10 +752,11 @@ TSPluginInit(int argc, const char *argv[])
     {"log",                  required_argument, NULL, 'l'},
     {"disable-timed-reload", no_argument,       NULL, 'd'},
     {"state-file",           required_argument, NULL, 'f'},
+    {"match-header",         required_argument, NULL, 'm'},
     {NULL,                   0,                 NULL, 0  }
   };
 
-  while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:", longopts, NULL)) != -1) {
+  while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:m:", longopts, NULL)) != -1) {
     switch (c) {
     case 'c':
       pstate->config_path = TSstrdup(optarg);
@@ -711,6 +772,10 @@ TSPluginInit(int argc, const char *argv[])
       break;
     case 'f':
       pstate->state_path = make_state_path(optarg);
+      break;
+    case 'm':
+      pstate->match_header = TSstrdup(optarg);
+      break;
     default:
       break;
     }

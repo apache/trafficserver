@@ -86,7 +86,7 @@ server.addResponse("sessionlog.json", request_header_1, response_header_1)
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.plugin_config.AddLine(
-    'regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log'
+    'regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log -m reval'
 )
 
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')

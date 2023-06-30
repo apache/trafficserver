@@ -84,6 +84,12 @@ but an absolute path may be specified as well. Syntax is as follows::
 
     regex_revalidate.so -d -c <path to rules> -f <path to state file>
 
+The configuration parameter `--match-header` or `-m` may be used to
+populate a supplied client request header name with a base64 encoded
+version of the matched revalidation rule.  This can be useful for checking
+if the plugin has modified cache status. Syntax is a follows::
+
+    regex_revalidate.so -c <path to rules> -m <header name>
 
 Revalidation Rules
 ==================
