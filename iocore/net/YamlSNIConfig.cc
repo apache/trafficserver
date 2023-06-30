@@ -214,10 +214,8 @@ namespace YAML
 {
 template <> struct convert<YamlSNIConfig::Item> {
   static ts::port_range_t
-  parse_inbound_port_range(Node const &node)
+  parse_single_inbound_port_range(Node const &node, swoc::TextView &port_view)
   {
-    swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
-    port_view = port_view.take_prefix_at(',');
     auto min{port_view.split_prefix_at('-')};
     if (!min) {
       min = port_view;
@@ -233,7 +231,21 @@ template <> struct convert<YamlSNIConfig::Item> {
       throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
     }
 
-    return ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+    return {static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+  }
+
+  static std::vector<ts::port_range_t>
+  parse_inbound_port_ranges(Node const &node)
+  {
+    std::vector<ts::port_range_t> result;
+    swoc::TextView ranges_view{node[TS_inbound_port_range].Scalar()};
+    for (auto port_view{ranges_view.split_prefix_at(',')}; !port_view.empty(); port_view = ranges_view.split_prefix_at(',')) {
+      result.emplace_back(std::move(parse_single_inbound_port_range(node, port_view)));
+    }
+
+    result.emplace_back(std::move(parse_single_inbound_port_range(node, ranges_view)));
+
+    return result;
   }
 
   static bool
@@ -253,8 +265,11 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_range]) {
-      item.port_range = std::move(parse_inbound_port_range(node));
+      item.port_ranges = std::move(parse_inbound_port_ranges(node));
+    } else {
+      item.port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }
+    item.port_range = item.port_ranges[0];
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
     }
