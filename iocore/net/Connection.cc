@@ -210,33 +210,31 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     }
   }
 
-  if (ats_is_ip6(&addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (ats_is_ip6(&addr) && setsockopt_on(fd, IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
     goto Lerror;
   }
 
-  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
     goto Lerror;
   }
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
   if (listen_per_thread == 1) {
-    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int)) < 0) {
+    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;
     }
 #ifdef SO_REUSEPORT_LB
-    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT_LB, SOCKOPT_ON, sizeof(int)) < 0) {
+    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
       goto Lerror;
     }
 #endif
   }
 
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
-      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int)) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) && setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE) < 0) {
     goto Lerror;
   }
 
@@ -250,7 +248,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   if (opt.f_inbound_transparent) {
 #if TS_USE_TPROXY
     Debug("http_tproxy", "Listen port inbound transparency enabled.");
-    if (safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, SOCKOPT_ON, sizeof(int)) < 0) {
+    if (setsockopt_on(fd, SOL_IP, TS_IP_TRANSPARENT) < 0) {
       Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
 #else
@@ -272,7 +270,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   if (opt.f_mptcp) {
 #if MPTCP_ENABLED
-    if (safe_setsockopt(fd, IPPROTO_TCP, MPTCP_ENABLED, SOCKOPT_ON, sizeof(int)) < 0) {
+    if (setsockopt_on(fd, IPPROTO_TCP, MPTCP_ENABLED) < 0) {
       Error("[Server::listen] Unable to enable MPTCP socket-option [%d] %s\n", errno, strerror(errno));
       goto Lerror;
     }

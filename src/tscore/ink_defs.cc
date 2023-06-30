@@ -32,9 +32,6 @@
 
 #include <unistd.h>
 
-int off = 0;
-int on  = 1;
-
 int
 ink_login_name_max()
 {

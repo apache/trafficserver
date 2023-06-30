@@ -31,6 +31,7 @@
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
+#include "tscore/ink_sock.h"
 
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
@@ -175,7 +176,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 // cannot do this after connection on non-blocking connect
 #ifdef SET_TCP_NO_DELAY
   if (opt._use_tcp) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
+    if ((res = setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY)) < 0) {
       goto Lerror;
     }
   }
@@ -185,7 +186,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
+  if ((res = setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE)) < 0) {
     goto Lerror;
   }
 #endif

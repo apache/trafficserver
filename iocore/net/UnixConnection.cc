@@ -27,6 +27,7 @@
 **************************************************************************/
 #include "P_Net.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ink_sock.h"
 
 #define SET_NO_LINGER
 // set in the OS
@@ -112,8 +113,8 @@ int
 Connection::open(NetVCOptions const &opt)
 {
   ink_assert(fd == NO_FD);
-  int enable_reuseaddr = 1; // used for sockopt setting
-  int res              = 0; // temp result
+
+  int res = 0; // temp result
   IpEndpoint local_addr;
   sock_type = NetVCOptions::USE_UDP == opt.ip_proto ? SOCK_DGRAM : SOCK_STREAM;
   int family;
@@ -149,15 +150,14 @@ Connection::open(NetVCOptions const &opt)
 
   // Try setting the various socket options, if requested.
 
-  if (-1 == safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr))) {
+  if (-1 == setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR)) {
     return -errno;
   }
 
   if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding) {
     static char const *const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
 #if TS_USE_TPROXY
-    int value = 1;
-    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, reinterpret_cast<char *>(&value), sizeof(value))) {
+    if (-1 == setsockopt_on(fd, SOL_IP, TS_IP_TRANSPARENT)) {
       Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
       return -errno;
     } else {
@@ -272,11 +272,11 @@ Connection::apply_options(NetVCOptions const &opt)
   // ignore other changes
   if (SOCK_STREAM == sock_type) {
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
+      setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY);
       Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
-      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
+      setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE);
       Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) {

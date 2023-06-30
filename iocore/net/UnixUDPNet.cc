@@ -38,6 +38,8 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
+#include "tscore/ink_sock.h"
+
 #include "netinet/udp.h"
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.
@@ -802,14 +804,13 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
 
   if (opt.ip_family == AF_INET) {
     bool succeeded = false;
-    int enable     = 1;
 #ifdef IP_PKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IP, IP_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if (safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IP, IP_RECVDSTADDR) == 0) {
       succeeded = true;
     }
 #endif
@@ -819,14 +820,13 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
   } else if (opt.ip_family == AF_INET6) {
     bool succeeded = false;
-    int enable     = 1;
 #ifdef IPV6_PKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
       succeeded = true;
     }
 #endif
@@ -897,14 +897,13 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 
   if (addr->sa_family == AF_INET) {
     bool succeeded = false;
-    int enable     = 1;
 #ifdef IP_PKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IP, IP_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if (safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IP, IP_RECVDSTADDR) == 0) {
       succeeded = true;
     }
 #endif
@@ -914,14 +913,13 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
   } else if (addr->sa_family == AF_INET6) {
     bool succeeded = false;
-    int enable     = 1;
 #ifdef IPV6_PKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
+    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
       succeeded = true;
     }
 #endif
@@ -933,24 +931,22 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
-    int enable_reuseaddr = 1;
-
-    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) < 0) {
+    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
       goto Lerror;
     }
   }
 
-  if (need_bind && ats_is_ip6(addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (need_bind && ats_is_ip6(addr) && setsockopt_on(fd, IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
     goto Lerror;
   }
 
-  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT) < 0) {
     Debug("udpnet", "setsockopt for SO_REUSEPORT failed");
     goto Lerror;
   }
 
 #ifdef SO_REUSEPORT_LB
-  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT_LB, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
     Debug("udpnet", "setsockopt for SO_REUSEPORT_LB failed");
     goto Lerror;
   }

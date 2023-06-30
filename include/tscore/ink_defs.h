@@ -71,9 +71,6 @@ countof(const T (&)[N])
 #define countof(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
 #endif
 
-#define SOCKOPT_ON  ((char *)&on)
-#define SOCKOPT_OFF ((char *)&off)
-
 #ifndef ABS
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 #endif
@@ -92,11 +89,6 @@ countof(const T (&)[N])
 #endif
 
 #define MAX_ALPN_STRING 30
-
-/* Variables
- */
-extern int off;
-extern int on;
 
 /* Functions
  */
