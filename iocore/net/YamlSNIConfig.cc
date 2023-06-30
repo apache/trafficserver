@@ -213,6 +213,29 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
 namespace YAML
 {
 template <> struct convert<YamlSNIConfig::Item> {
+  static ts::port_range_t
+  parse_inbound_port_range(Node const &node)
+  {
+    swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
+    port_view = port_view.take_prefix_at(',');
+    auto min{port_view.split_prefix_at('-')};
+    if (!min) {
+      min = port_view;
+    }
+    auto const &max{port_view};
+
+    swoc::TextView parsed_min;
+    long min_port{swoc::svtoi(min, &parsed_min)};
+    swoc::TextView parsed_max;
+    long max_port{swoc::svtoi(max, &parsed_max)};
+    if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
+        max_port < min_port) {
+      throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
+    }
+
+    return ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+  }
+
   static bool
   decode(const Node &node, YamlSNIConfig::Item &item)
   {
@@ -230,23 +253,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_range]) {
-      swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
-      auto min{port_view.split_prefix_at('-')};
-      if (!min) {
-        min = port_view;
-      }
-      auto const &max{port_view};
-
-      swoc::TextView parsed_min;
-      long min_port{swoc::svtoi(min, &parsed_min)};
-      swoc::TextView parsed_max;
-      long max_port{swoc::svtoi(max, &parsed_max)};
-      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
-          max_port < min_port) {
-        throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
-      }
-
-      item.port_range = ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+      item.port_range = std::move(parse_inbound_port_range(node));
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
