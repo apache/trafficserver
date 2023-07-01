@@ -108,7 +108,7 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
 {
   YamlSNIConfig conf{};
 
-  std::string port_str{GENERATE("0-1", "65535-65536", "8080-433", "yowzers-1", "1-yowzers2")};
+  std::string port_str{GENERATE("0-1", "65535-65536", "8080-433", "yowzers-1", "1-yowzers2", "3-")};
 
   std::string filepath;
   swoc::bwprint(filepath, "{}/sni_conf_test_bad_port_{}.yaml", _XSTR(LIBINKNET_UNIT_TEST_DIR), port_str);

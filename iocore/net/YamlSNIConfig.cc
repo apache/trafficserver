@@ -235,7 +235,7 @@ template <> struct convert<YamlSNIConfig::Item> {
   }
 
   static std::vector<ts::port_range_t>
-  parse_inbound_port_ranges(Node const &node)
+  parse_delimited_inbound_port_ranges(Node const &node)
   {
     std::vector<ts::port_range_t> result;
     swoc::TextView ranges_view{node[TS_inbound_port_range].Scalar()};
@@ -265,7 +265,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_range]) {
-      item.port_ranges = std::move(parse_inbound_port_ranges(node));
+      item.port_ranges = std::move(parse_delimited_inbound_port_ranges(node));
     } else {
       item.port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }
