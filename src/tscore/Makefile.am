@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 noinst_PROGRAMS = CompileParseRules freelist_benchmark benchmark_shared_mutex
 check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore

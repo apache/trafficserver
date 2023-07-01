@@ -73,7 +73,7 @@ TESTS = $(check_PROGRAMS)
 #
 # clang-tidy
 #
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

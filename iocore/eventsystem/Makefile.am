@@ -122,7 +122,7 @@ benchmark_ProxyAllocator_CPPFLAGS = $(test_CPP_FLAGS)
 benchmark_ProxyAllocator_LDFLAGS = $(test_LD_FLAGS)
 benchmark_ProxyAllocator_LDADD = $(test_LD_ADD)
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

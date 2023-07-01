@@ -21,7 +21,6 @@ plugins to build large scale web applications.
 ## DIRECTORY STRUCTURE
 ```
 trafficserver ............. Top src dir
-├── build ................. Custom macros for configure.ac
 ├── ci .................... Quality assurance and other CI tools and configs
 ├── configs ............... Configurations
 ├── contrib ............... Various contributed auxiliary pieces
@@ -45,6 +44,8 @@ trafficserver ............. Top src dir
 ├── lib ...................
 │   ├── records ........... Library for config files
 │   └── yamlcpp ........... Library for YAML of C++
+├── m4 .................... Custom macros for configure.ac
+├── mk .................... Includes for Makefiles
 ├── mgmt .................. JSONRPC server/management and tools
 ├── plugins ............... Stable core plugins
 │   └── experimental ...... Experimental core plugins

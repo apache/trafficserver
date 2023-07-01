@@ -14,8 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/plugins.mk
+include $(top_srcdir)/mk/tidy.mk
 
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =

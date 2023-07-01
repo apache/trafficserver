@@ -19,7 +19,7 @@
 
 # Local Macros
 # http://www.gnu.org/software/automake/manual/automake.html#Local-Macros
-ACLOCAL_AMFLAGS = -I build
+ACLOCAL_AMFLAGS = -I m4
 
 export CCACHE_BASEDIR
 

@@ -259,7 +259,7 @@ libinknet_a_SOURCES += \
 	P_NetVCTest.h
 endif
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

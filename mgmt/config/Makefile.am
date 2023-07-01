@@ -55,7 +55,7 @@ libconfigmanager_la_LIBADD = \
 	$(top_builddir)/src/tscore/libtscore.la
 
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

@@ -65,7 +65,7 @@ test_mgmt_utils_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
         @SWOC_LIBS@
 
-include $(top_srcdir)/build/tidy.mk
+include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
