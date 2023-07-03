@@ -617,7 +617,7 @@ public:
 
   // noncopyable
   ConditionNextHop(const ConditionNextHop &) = delete;
-  void operator=(const ConditionNextHop &)   = delete;
+  void operator=(const ConditionNextHop &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
