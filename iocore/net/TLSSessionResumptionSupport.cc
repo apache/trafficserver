@@ -49,13 +49,6 @@ char mac_param_digest[] = "sha256";
 
 int TLSSessionResumptionSupport::_ex_data_index = -1;
 
-template <>
-TLSSessionResumptionSupport *
-NetVConnection::get_service() const
-{
-  return static_cast<TLSSessionResumptionSupport *>(this->_get_service(NetVConnection::Service::TLS_SessionResumption));
-}
-
 static bool
 is_ssl_session_timed_out(SSL_SESSION *session)
 {

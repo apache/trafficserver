@@ -24,17 +24,9 @@
 
 #include <openssl/ssl.h>
 #include "TLSEarlyDataSupport.h"
-#include "I_NetVConnection.h"
 #include "tscore/ink_assert.h"
 
 int TLSEarlyDataSupport::_ex_data_index = -1;
-
-template <>
-TLSEarlyDataSupport *
-NetVConnection::get_service() const
-{
-  return static_cast<TLSEarlyDataSupport *>(this->_get_service(NetVConnection::Service::TLS_EarlyData));
-}
 
 void
 TLSEarlyDataSupport::initialize()

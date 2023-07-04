@@ -574,3 +574,59 @@ NetVConnection::_set_service(enum NetVConnection::Service service, void *instanc
 {
   this->_services[static_cast<unsigned int>(service)] = instance;
 }
+
+class ALPNSupport;
+template <>
+inline ALPNSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<ALPNSupport *>(this->_get_service(NetVConnection::Service::TLS_ALPN));
+}
+
+class TLSBasicSupport;
+template <>
+inline TLSBasicSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSBasicSupport *>(this->_get_service(NetVConnection::Service::TLS_Basic));
+}
+
+class TLSEarlyDataSupport;
+template <>
+inline TLSEarlyDataSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSEarlyDataSupport *>(this->_get_service(NetVConnection::Service::TLS_EarlyData));
+}
+
+class TLSCertSwitchSupport;
+template <>
+inline TLSCertSwitchSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSCertSwitchSupport *>(this->_get_service(NetVConnection::Service::TLS_CertSwitch));
+}
+
+class TLSSNISupport;
+template <>
+inline TLSSNISupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSSNISupport *>(this->_get_service(NetVConnection::Service::TLS_SNI));
+}
+
+class TLSSessionResumptionSupport;
+template <>
+inline TLSSessionResumptionSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSSessionResumptionSupport *>(this->_get_service(NetVConnection::Service::TLS_SessionResumption));
+}
+
+class TLSTunnelSupport;
+template <>
+inline TLSTunnelSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSTunnelSupport *>(this->_get_service(NetVConnection::Service::TLS_Tunnel));
+}

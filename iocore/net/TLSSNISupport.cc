@@ -23,19 +23,11 @@
 #include "P_SSLNextProtocolAccept.h"
 #include "SSLSNIConfig.h"
 #include "TLSSNISupport.h"
-#include "I_NetVConnection.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_inet.h"
 #include "tscore/Diags.h"
 
 int TLSSNISupport::_ex_data_index = -1;
-
-template <>
-TLSSNISupport *
-NetVConnection::get_service() const
-{
-  return static_cast<TLSSNISupport *>(this->_get_service(NetVConnection::Service::TLS_SNI));
-}
 
 void
 TLSSNISupport::initialize()

@@ -23,17 +23,9 @@
  */
 
 #include "TLSBasicSupport.h"
-#include "I_NetVConnection.h"
 #include "SSLStats.h"
 
 int TLSBasicSupport::_ex_data_index = -1;
-
-template <>
-TLSBasicSupport *
-NetVConnection::get_service() const
-{
-  return static_cast<TLSBasicSupport *>(this->_get_service(NetVConnection::Service::TLS_Basic));
-}
 
 void
 TLSBasicSupport::initialize()
