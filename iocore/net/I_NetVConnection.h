@@ -541,11 +541,12 @@ protected:
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 
   void _set_service(enum Service service, void *instance);
+
+private:
   void *_services[static_cast<unsigned int>(Service::N_SERVICES)] = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   };
 
-private:
   void *_get_service(enum Service mixin_index) const;
 };
 
