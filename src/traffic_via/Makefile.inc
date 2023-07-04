@@ -23,7 +23,6 @@ traffic_via_traffic_via_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES)
 
 traffic_via_traffic_via_LDFLAGS = \
