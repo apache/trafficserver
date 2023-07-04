@@ -37,10 +37,8 @@ OPENSSL_BASE=${OPENSSL_BASE:-"${BASE}/openssl-quic"}
 OPENSSL_PREFIX=${OPENSSL_PREFIX:-"${OPENSSL_BASE}-${OPENSSL_BRANCH}"}
 MAKE="make"
 
-# These are for Linux like systems, specially the LDFLAGS, also depends on dirs above
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
-LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_PREFIX}/lib"}
 
 if [ -e /etc/redhat-release ]; then
     MAKE="gmake"
@@ -159,6 +157,17 @@ sudo ${MAKE} install_sw
 sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
 cd ..
 
+# OpenSSL will install in /lib or lib64 depending upon the architecture.
+if [ -f "${OPENSSL_PREFIX}/lib/libssl.so" ]; then
+  OPENSSL_LIB="${OPENSSL_PREFIX}/lib"
+elif [ -f "${OPENSSL_PREFIX}/lib64/libssl.so" ]; then
+  OPENSSL_LIB="${OPENSSL_PREFIX}/lib64"
+else
+  echo "Could not find the OpenSSL install library directory."
+  exit 1
+fi
+LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${OPENSSL_LIB}"}
+
 # Then nghttp3
 echo "Building nghttp3..."
 if [ ! -d nghttp3 ]; then
@@ -170,7 +179,7 @@ cd nghttp3
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
@@ -190,7 +199,7 @@ cd ngtcp2
 autoreconf -if
 ./configure \
   --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
@@ -222,7 +231,7 @@ fi
 # Note for FreeBSD: This will not build h2load. h2load can be run on a remote machine.
 ./configure \
   --prefix=${BASE} \
-  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig \
+  PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
   LDFLAGS="${LDFLAGS}" \
