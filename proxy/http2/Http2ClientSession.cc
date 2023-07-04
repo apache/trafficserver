@@ -101,8 +101,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->connection_state.mutex = this->mutex;
 
-  TLSEarlyDataSupport *eds = new_vc->get_service<TLSEarlyDataSupport>();
-  if (eds != nullptr) {
+  if (auto eds = new_vc->get_service<TLSEarlyDataSupport>(); eds) {
     this->read_from_early_data = eds->get_early_data_len();
     Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
   }
@@ -120,8 +119,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
 
   uint32_t buffer_water_mark;
-  TLSSNISupport *snis = this->_vc->get_service<TLSSNISupport>();
-  if (snis && snis->hints_from_sni.http2_buffer_water_mark.has_value()) {
+  if (auto snis = this->_vc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.http2_buffer_water_mark.has_value()) {
     buffer_water_mark = snis->hints_from_sni.http2_buffer_water_mark.value();
   } else {
     buffer_water_mark = Http2::buffer_water_mark;

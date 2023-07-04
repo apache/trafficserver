@@ -9674,9 +9674,8 @@ TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = net_vc->get_service<ALPNSupport>();
-  if (alpn_vc) {
-    alpn_vc->enableProtocol(protocol_idx);
+  if (auto alpn = net_vc->get_service<ALPNSupport>(); alpn) {
+    alpn->enableProtocol(protocol_idx);
     retval = TS_SUCCESS;
   }
   return retval;
@@ -9688,9 +9687,8 @@ TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto alpn_vc        = net_vc->get_service<ALPNSupport>();
-  if (alpn_vc) {
-    alpn_vc->disableProtocol(protocol_idx);
+  if (auto alpn = net_vc->get_service<ALPNSupport>(); alpn) {
+    alpn->disableProtocol(protocol_idx);
     retval = TS_SUCCESS;
   }
   return retval;
