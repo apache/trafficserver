@@ -98,4 +98,11 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
+
+  SECTION("The config matches an SNI for someport:482")
+  {
+    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 482)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 3);
+  }
 }

@@ -265,11 +265,10 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_range]) {
-      item.port_ranges = std::move(parse_delimited_inbound_port_ranges(node));
+      item.inbound_port_ranges = std::move(parse_delimited_inbound_port_ranges(node));
     } else {
-      item.port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
+      item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }
-    item.port_range = item.port_ranges[0];
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
     }

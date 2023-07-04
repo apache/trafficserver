@@ -80,8 +80,7 @@ struct YamlSNIConfig {
   struct Item {
     std::string fqdn;
 
-    ts::port_range_t port_range{1, ts::MAX_PORT_VALUE};
-    std::vector<ts::port_range_t> port_ranges{};
+    std::vector<ts::port_range_t> inbound_port_ranges;
 
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!

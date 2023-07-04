@@ -41,8 +41,8 @@
 static void
 check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_port_t max_expected)
 {
-  CHECK(item.port_ranges.at(0).min() == min_expected);
-  CHECK(item.port_ranges.at(0).max() == max_expected);
+  CHECK(item.inbound_port_ranges.at(0).min() == min_expected);
+  CHECK(item.inbound_port_ranges.at(0).max() == max_expected);
 }
 
 TEST_CASE("YamlSNIConfig sets port ranges appropriately")
@@ -93,14 +93,14 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
   SECTION("If multiple port ranges were specified, all of them should be checked.")
   {
     auto const &item{conf.items[1]};
-    CHECK(item.port_ranges.at(1).min() == 480);
-    CHECK(item.port_ranges.at(1).max() == 488);
+    CHECK(item.inbound_port_ranges.at(1).min() == 480);
+    CHECK(item.inbound_port_ranges.at(1).max() == 488);
   }
 
   SECTION("If one port range was specified, "
           "there should only be one port range.")
   {
-    CHECK(conf.items[2].port_ranges.size() == 1);
+    CHECK(conf.items[2].inbound_port_ranges.size() == 1);
   }
 }
 
