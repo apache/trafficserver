@@ -66,6 +66,7 @@ TSDECL(http2);
 TSDECL(http2_buffer_water_mark);
 TSDECL(quic);
 TSDECL(host_sni_policy);
+TSDECL(http2_initial_window_size_in);
 TSDECL(server_max_early_data);
 #undef TSDECL
 
@@ -103,6 +104,7 @@ struct YamlSNIConfig {
     std::vector<int> tunnel_alpn{};
     std::optional<int> http2_buffer_water_mark;
     uint32_t server_max_early_data = 0;
+    std::optional<int> http2_initial_window_size_in;
 
     bool tunnel_prewarm_srv                  = false;
     uint32_t tunnel_prewarm_min              = 0;

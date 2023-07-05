@@ -108,6 +108,26 @@ private:
   int value = -1;
 };
 
+class HTTP2InitialWindowSizeIn : public ActionItem
+{
+public:
+  HTTP2InitialWindowSizeIn(int value) : value(value) {}
+  ~HTTP2InitialWindowSizeIn() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+    if (ssl_vc) {
+      ssl_vc->hints_from_sni.http2_initial_window_size_in = value;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  int value = -1;
+};
+
 class TunnelDestination : public ActionItem
 {
   // ID of the configured variable. This will be used to know which function

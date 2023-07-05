@@ -58,6 +58,7 @@ public:
   struct HintsFromSNI {
     std::optional<uint32_t> http2_buffer_water_mark;
     std::optional<uint32_t> server_max_early_data;
+    std::optional<uint32_t> http2_initial_window_size_in;
   } hints_from_sni;
 
 protected:

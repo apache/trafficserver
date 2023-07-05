@@ -32,6 +32,8 @@
 #include "HttpDebugNames.h"
 #include "HttpSM.h"
 
+#include "TLSSNISupport.h"
+
 #include "tscore/ink_assert.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/LocalBuffer.h"
@@ -1096,7 +1098,15 @@ Http2ConnectionState::_get_configured_initial_window_size() const
   if (this->session->is_outbound()) {
     return Http2::initial_window_size_out;
   } else {
-    return Http2::initial_window_size_in;
+    uint32_t initial_window_size_in = Http2::initial_window_size_in;
+    if (this->session) {
+      TLSSNISupport *snis = dynamic_cast<TLSSNISupport *>(session->get_netvc());
+      if (snis && snis->hints_from_sni.http2_initial_window_size_in.has_value()) {
+        initial_window_size_in = snis->hints_from_sni.http2_initial_window_size_in.value();
+      }
+    }
+
+    return initial_window_size_in;
   }
 }
 
@@ -1198,6 +1208,7 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
     this->_local_rwnd              = configured_session_window;
     this->_local_rwnd_is_shrinking = false;
   }
+  Http2ConDebug(session, "initial _local_rwnd: %zd", this->_local_rwnd);
 
   local_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
   peer_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
