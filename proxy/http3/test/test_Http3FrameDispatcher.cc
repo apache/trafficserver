@@ -57,7 +57,7 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
   CHECK(nread == 12);
 }
 
-TEST_CASE("dispatch SETTINGS frame", "[http3]")
+TEST_CASE("control stream tests", "[http3]")
 {
   SECTION("Only one SETTINGS frame is allowed per the control stream")
   {
@@ -142,5 +142,105 @@ TEST_CASE("dispatch SETTINGS frame", "[http3]")
     CHECK(error->app_error_code == Http3ErrorCode::H3_MISSING_SETTINGS);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 3);
+  }
+
+  SECTION("DATA frame is not allowed on control stream")
+  {
+    uint8_t input[] = {0x04,       // Type
+                       0x08,       // Length
+                       0x06,       // Identifier
+                       0x44, 0x00, // Value
+                       0x09,       // Identifier
+                       0x0f,       // Value
+                       0x4a, 0x0a, // Identifier
+                       0x00,       // Value
+                       0x00,       // Type
+                       0x04,       // Length
+                       0x11, 0x22, 0x33, 0x44};
+
+    Http3FrameDispatcher http3FrameDispatcher;
+    Http3ProtocolEnforcer enforcer;
+    Http3MockFrameHandler handler;
+
+    http3FrameDispatcher.add_handler(&enforcer);
+    http3FrameDispatcher.add_handler(&handler);
+
+    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    IOBufferReader *reader = buf->alloc_reader();
+    uint64_t nread         = 0;
+    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+    buf->write(input, sizeof(input));
+
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
+
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(handler.total_frame_received == 1);
+    CHECK(nread == sizeof(input));
+  }
+
+  SECTION("HEADERS frame is not allowed on control stream")
+  {
+    uint8_t input[] = {0x04,       // Type
+                       0x08,       // Length
+                       0x06,       // Identifier
+                       0x44, 0x00, // Value
+                       0x09,       // Identifier
+                       0x0f,       // Value
+                       0x4a, 0x0a, // Identifier
+                       0x00,       // Value
+                       0x01,       // Type
+                       0x04,       // Length
+                       0x11, 0x22, 0x33, 0x44};
+
+    Http3FrameDispatcher http3FrameDispatcher;
+    Http3ProtocolEnforcer enforcer;
+    Http3MockFrameHandler handler;
+
+    http3FrameDispatcher.add_handler(&enforcer);
+    http3FrameDispatcher.add_handler(&handler);
+
+    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    IOBufferReader *reader = buf->alloc_reader();
+    uint64_t nread         = 0;
+    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+    buf->write(input, sizeof(input));
+
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
+
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+    CHECK(error->app_error_code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(handler.total_frame_received == 1);
+    CHECK(nread == sizeof(input));
+  }
+}
+
+TEST_CASE("ignore unknown frames", "[http3]")
+{
+  SECTION("ignore unkown frame")
+  {
+    uint8_t input[] = {
+      0x0f // Type
+    };
+
+    Http3FrameDispatcher http3FrameDispatcher;
+
+    MIOBuffer *buf         = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+    IOBufferReader *reader = buf->alloc_reader();
+    uint64_t nread         = 0;
+    Http3ErrorUPtr error   = Http3ErrorUPtr(new Http3NoError());
+
+    buf->write(input, sizeof(input));
+
+    CHECK(nread == 0);
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
+    CHECK(error->app_error_code == Http3ErrorCode::H3_NO_ERROR);
+    CHECK(nread == 0);
   }
 }
