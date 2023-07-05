@@ -38,7 +38,6 @@ target_include_directories(records_p
         "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/mgmt"
-        "${CMAKE_SOURCE_DIR}/mgmt/api/include"
         "${CMAKE_SOURCE_DIR}/mgmt/utils"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )

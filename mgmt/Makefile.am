@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = utils api config rpc
+SUBDIRS = utils config rpc
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
