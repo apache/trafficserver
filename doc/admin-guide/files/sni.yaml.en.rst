@@ -27,7 +27,7 @@ Description
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
 connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
-file consists of a set of configuration items, each identified by an SNI value and optionally a port range (``fqdn``, ``inbound_port_range``).
+file consists of a set of configuration items, each identified by an SNI value and optionally a sequence of port ranges (``fqdn``, ``inbound_port_ranges``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
 the defaults. This is done during the inbound connection processing; some outbound properties
@@ -59,19 +59,21 @@ Key                       Direction Meaning
 ========================= ========= ========================================================================================
 fqdn                      Both      Fully Qualified Domain Name.
 
-inbound_port_range        Inbound   The port range for the inbound connection in the form ``port`` or
+inbound_port_ranges       Inbound   The port ranges for the inbound connection in the form ``port`` or
                                     ``min-max``.
 
                                     For example:
 
-                                       ``443``
+                                       .. code-block:: yaml
 
-                                    would match all requests with an SNI for example.com on port 443, and
+                                       sni:
+                                         - fqdn: example.com
+                                           inbound_port_ranges:
+                                           - 443
+                                           - 8080-8086
 
-                                       ``443-446``
-
-                                    would match requests with an SNI for example.com on ports 443 to 446, inclusive.
-                                    By default this is all ports.
+                                    would match all requests with an SNI for example.com on port 443, and on ports
+                                    8080 through 8086 inclusive.
 
 ========================= ========= ========================================================================================
 
