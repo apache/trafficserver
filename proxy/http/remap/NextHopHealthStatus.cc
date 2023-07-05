@@ -76,6 +76,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   int64_t fail_threshold  = sm->t_state.txn_conf->parent_fail_threshold;
   int64_t retry_time      = sm->t_state.txn_conf->parent_retry_time;
   uint32_t new_fail_count = 0;
+  const char *host         = sm->t_state.request_data.get_host();
 
   // make sure we're called back with a result structure for a parent
   // that is being retried.
@@ -123,7 +124,9 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
           new_fail_count = h->failCount += 1;
         }
       } // end lock guard
-      NH_Note("[%" PRId64 "] NextHop %s marked as down %s", sm_id, (result.retry) ? "retry" : "initially", h->hostname.c_str());
+
+      NH_Note("[%" PRId64 "] NextHop %s marked as down %s for request %s", sm_id, (result.retry) ? "retry" : "initially",
+              h->hostname.c_str(), host);
     } else {
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
       { // lock guard
