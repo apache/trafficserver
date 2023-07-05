@@ -179,7 +179,7 @@ TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {
 };
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_inbound_port_range,
+                                               TS_inbound_port_ranges,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
@@ -238,7 +238,7 @@ template <> struct convert<YamlSNIConfig::Item> {
   parse_delimited_inbound_port_ranges(Node const &node)
   {
     std::vector<ts::port_range_t> result;
-    swoc::TextView ranges_view{node[TS_inbound_port_range].Scalar()};
+    swoc::TextView ranges_view{node[TS_inbound_port_ranges].Scalar()};
     for (auto port_view{ranges_view.split_prefix_at(',')}; !port_view.empty(); port_view = ranges_view.split_prefix_at(',')) {
       result.emplace_back(std::move(parse_single_inbound_port_range(node, port_view)));
     }
@@ -264,7 +264,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       return false; // servername must be present
     }
 
-    if (node[TS_inbound_port_range]) {
+    if (node[TS_inbound_port_ranges]) {
       item.inbound_port_ranges = std::move(parse_delimited_inbound_port_ranges(node));
     } else {
       item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);

@@ -16,4 +16,4 @@
 
 sni:
 - fqdn: badport.com
-  inbound_port_range: 8080-433
+  inbound_port_ranges: 8080-433

@@ -16,4 +16,4 @@
 
 sni:
 - fqdn: notaport.com
-  inbound_port_range: yowzers-1
+  inbound_port_ranges: yowzers-1

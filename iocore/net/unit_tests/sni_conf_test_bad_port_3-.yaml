@@ -16,4 +16,4 @@
 
 sni:
 - fqdn: missingport.com
-  inbound_port_range: 1-2,3-
+  inbound_port_ranges: 1-2,3-
