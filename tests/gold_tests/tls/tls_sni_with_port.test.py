@@ -15,11 +15,13 @@
 #  limitations under the License.
 
 import functools
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from ports import get_port
 
 Test.Summary = 'Tests SNI port-based routing'
+
+TestParams = Dict[str, Any]
 
 
 class TestSNIWithPort:
@@ -51,7 +53,17 @@ class TestSNIWithPort:
         tr.Processes.Default.StartBefore(server_two)
         tr.Processes.Default.StartBefore(self._ts)
 
-        return tr, self._ts, server_one, server_two, server_three, self._port_one, self._port_two, self._unspecified_port
+        return {
+            "tr": tr,
+            "ts": self._ts,
+            "server_one": server_one,
+            "server_two": server_two,
+            "server_three": server_three,
+            "port_one": self._port_one,
+            "port_two": self._port_two,
+            "port_three": self._port_three,
+            "port_unmapped": self._port_unmapped
+        }
 
     @classmethod
     def runner(cls, name: str, autorun: bool = True) -> Optional[Callable]:
@@ -68,10 +80,10 @@ class TestSNIWithPort:
         :param func: The test case to set up.
         """
         functools.wraps(func)
-        tr, *test_run_args = self._init_run()
+        test_params = self._init_run()
 
         def wrapper(*args, **kwargs) -> Any:
-            return func(tr, *test_run_args, *args, **kwargs)
+            return func(test_params, *args, **kwargs)
 
         if self.autorun:
             wrapper()
@@ -98,11 +110,12 @@ class TestSNIWithPort:
         ts.addDefaultSSLFiles()
         self._port_one = get_port(ts, "PortOne")
         self._port_two = get_port(ts, "PortTwo")
-        self._unspecified_port = get_port(ts, "UnspecifiedPort")
+        self._port_three = get_port(ts, "PortThree")
+        self._port_unmapped = get_port(ts, "UnspecifiedPort")
         ts.Disk.records_config.update({
             'proxy.config.ssl.server.cert.path': f"{ts.Variables.SSLDir}",
             'proxy.config.ssl.server.private_key.path': f"{ts.Variables.SSLDir}",
-            'proxy.config.http.server_ports': f"{self._port_one}:ssl {self._port_two}:ssl {self._unspecified_port}:ssl",
+            'proxy.config.http.server_ports': f"{self._port_one}:ssl {self._port_two}:ssl {self._port_three}:ssl {self._port_unmapped}:ssl",
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'dns|http|ssl|sni',
         })
@@ -112,10 +125,13 @@ class TestSNIWithPort:
         ts.Disk.sni_yaml.AddLines([
             "sni:",
             "- fqdn: yay.example.com",
-            f"  inbound_port_range: {self._port_one}-{self._port_one}",
+            "  inbound_port_ranges:",
+            f"  - {self._port_one}-{self._port_one}",
             f"  tunnel_route: localhost:{server_one.Variables.https_port}",
             "- fqdn: yay.example.com",
-            f"  inbound_port_range: {self._port_two}",
+            "  inbound_port_ranges:",
+            f"  - {self._port_two}",
+            f"  - {self._port_three}",
             f"  tunnel_route: localhost:{server_two.Variables.https_port}"
         ])
 
@@ -129,87 +145,81 @@ class TestSNIWithPort:
 # Tests start.
 
 @TestSNIWithPort.runner("Test that a request to a port not in the SNI does not get through.")
-def test0(
-        tr: "TestRun",
-        ts: "Process",
-        server_one: "Process",
-        server_two: "Process",
-        server_three: "Process",
-        port_one: int,
-        port_two: int,
-        unspecified_port: int):
-    client = tr.AddVerifierClientProcess(
+def test0(params: TestParams) -> None:
+    client = params["tr"].AddVerifierClientProcess(
         f"client0",
         TestSNIWithPort.replay_filepath,
-        https_ports=[unspecified_port],
+        https_ports=[params["port_unmapped"]],
         keys="conn_remapped"
     )
 
-    tr.Processes.Default.ReturnCode = 0
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    params["tr"].Processes.Default.ReturnCode = 0
+    params["ts"].Disk.diags_log.Content += Testers.ExcludesExpression(
         "unsupported key 'inbound_port_range'", "we should not warn about the key"
     )
-    ts.Disk.traffic_out.Content += Testers.IncludesExpression(
+    params["ts"].Disk.traffic_out.Content += Testers.IncludesExpression(
         "not available in the map", "the request should not match an SNI"
     )
-    server_one.Streams.All.Content += Testers.ExcludesExpression(
+    params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server one"
     )
-    server_two.Streams.All.Content += Testers.ExcludesExpression(
+    params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server two"
     )
-    server_three.Streams.All.Content += Testers.IncludesExpression(
+    params["server_three"].Streams.All.Content += Testers.IncludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "request was remaped to server three"
     )
 
 
 @TestSNIWithPort.runner("Test that a request to a port one goes to server one.")
-def test1(
-        tr: "TestRun",
-        ts: "Process",
-        server_one: "Process",
-        server_two: "Process",
-        server_three: "Process",
-        port_one: int,
-        port_two: int,
-        unspecified_port: int):
-    client = tr.AddVerifierClientProcess(
+def test1(params: TestParams) -> None:
+    client = params["tr"].AddVerifierClientProcess(
         f"client1",
         TestSNIWithPort.replay_filepath,
-        https_ports=[port_one],
+        https_ports=[params["port_one"]],
         keys="conn_accepted"
     )
 
-    tr.Processes.Default.ReturnCode = 0
-    server_one.Streams.All.Content += Testers.IncludesExpression(
+    params["tr"].Processes.Default.ReturnCode = 0
+    params["server_one"].Streams.All.Content += Testers.IncludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server one"
     )
-    server_two.Streams.All.Content += Testers.ExcludesExpression(
+    params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server two"
     )
 
 
 @TestSNIWithPort.runner("Test that a request to port two goes to server two.")
-def test2(
-        tr: "TestRun",
-        ts: "Process",
-        server_one: "Process",
-        server_two: "Process",
-        server_three: "Process",
-        port_one: int,
-        port_two: int,
-        unspecified_port: int):
-    client = tr.AddVerifierClientProcess(
+def test2(params: TestParams) -> None:
+    client = params["tr"].AddVerifierClientProcess(
         f"client2",
         TestSNIWithPort.replay_filepath,
-        https_ports=[port_two],
+        https_ports=[params["port_two"]],
         keys="conn_accepted"
     )
 
-    tr.Processes.Default.ReturnCode = 0
-    server_two.Streams.All.Content += Testers.IncludesExpression(
+    params["tr"].Processes.Default.ReturnCode = 0
+    params["server_two"].Streams.All.Content += Testers.IncludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server two"
     )
-    server_one.Streams.All.Content += Testers.ExcludesExpression(
+    params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server one"
+    )
+
+
+@TestSNIWithPort.runner("Test that a request to port three goes to server two.")
+def test3(params: TestParams) -> None:
+    client = params["tr"].AddVerifierClientProcess(
+        f"client3",
+        TestSNIWithPort.replay_filepath,
+        https_ports=[params["port_three"]],
+        keys="conn_accepted"
+    )
+
+    params["tr"].Processes.Default.ReturnCode = 0
+    params["server_two"].Streams.All.Content += Testers.IncludesExpression(
+        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server two"
+    )
+    params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
         "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server one"
     )
