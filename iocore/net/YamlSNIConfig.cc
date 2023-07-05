@@ -239,7 +239,7 @@ template <> struct convert<YamlSNIConfig::Item> {
   {
     std::vector<ts::port_range_t> result;
     for (Node const &port_range : port_ranges) {
-      result.emplace_back(std::move(parse_single_inbound_port_range(port_range, port_range.Scalar())));
+      result.emplace_back(parse_single_inbound_port_range(port_range, port_range.Scalar()));
     }
 
     return result;
@@ -262,7 +262,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_ranges]) {
-      item.inbound_port_ranges = std::move(parse_inbound_port_ranges_sequence(node[TS_inbound_port_ranges]));
+      item.inbound_port_ranges = parse_inbound_port_ranges_sequence(node[TS_inbound_port_ranges]);
     } else {
       item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }
