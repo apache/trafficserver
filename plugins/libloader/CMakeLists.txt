@@ -15,12 +15,6 @@
 #
 #######################
 
-# GCC warns that -Wno-invalid-offset, set in top-level CMakeLists.txt,
-# is invalid for C language
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
-
 add_atsplugin(libloader libloader.c)
 
 target_include_directories(libloader PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")
-
-target_compile_options(libloader PRIVATE -Wall -Wextra)
