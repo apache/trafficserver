@@ -214,7 +214,7 @@ namespace YAML
 {
 template <> struct convert<YamlSNIConfig::Item> {
   static ts::port_range_t
-  parse_single_inbound_port_range(Node const &node, swoc::TextView &port_view)
+  parse_single_inbound_port_range(Node const &node, swoc::TextView port_view)
   {
     auto min{port_view.split_prefix_at('-')};
     if (!min) {
@@ -228,22 +228,19 @@ template <> struct convert<YamlSNIConfig::Item> {
     long max_port{swoc::svtoi(max, &parsed_max)};
     if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
         max_port < min_port) {
-      throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
+      throw YAML::ParserException(node.Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
     }
 
     return {static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
   }
 
   static std::vector<ts::port_range_t>
-  parse_delimited_inbound_port_ranges(Node const &node)
+  parse_inbound_port_ranges_sequence(Node const &port_ranges)
   {
     std::vector<ts::port_range_t> result;
-    swoc::TextView ranges_view{node[TS_inbound_port_ranges].Scalar()};
-    for (auto port_view{ranges_view.split_prefix_at(',')}; !port_view.empty(); port_view = ranges_view.split_prefix_at(',')) {
-      result.emplace_back(std::move(parse_single_inbound_port_range(node, port_view)));
+    for (Node const &port_range : port_ranges) {
+      result.emplace_back(std::move(parse_single_inbound_port_range(port_range, port_range.Scalar())));
     }
-
-    result.emplace_back(std::move(parse_single_inbound_port_range(node, ranges_view)));
 
     return result;
   }
@@ -265,7 +262,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_inbound_port_ranges]) {
-      item.inbound_port_ranges = std::move(parse_delimited_inbound_port_ranges(node));
+      item.inbound_port_ranges = std::move(parse_inbound_port_ranges_sequence(node[TS_inbound_port_ranges]));
     } else {
       item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }

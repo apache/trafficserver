@@ -16,4 +16,5 @@
 
 sni:
 - fqdn: badport.com
-  inbound_port_ranges: 1-yowzers2
+  inbound_port_ranges:
+  - 1-yowzers2
