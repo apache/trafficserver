@@ -64,7 +64,10 @@ ts.Disk.sni_yaml.AddLines([
 
 tr = Test.AddTestRun("forward-non-http")
 tr.Setup.Copy("test-nc-s_client.sh")
-tr.Processes.Default.Command = "sh test-nc-s_client.sh {1} {0}".format(ts.Variables.ssl_port, ts.Variables.s_client_port)
+cmd_args = ["sh", "test-nc-s_client.sh", str(ts.Variables.s_client_port), str(ts.Variables.ssl_port)]
+if Condition.HasOpenSSLVersion("3.0.0"):
+    cmd_args += ["-ignore_unexpected_eof"]
+tr.Processes.Default.Command = " ".join(cmd_args)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)

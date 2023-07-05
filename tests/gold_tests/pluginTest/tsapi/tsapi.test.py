@@ -73,6 +73,13 @@ ts.Disk.remap_config.AddLine(
     "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so")
 )
 
+# For some reason, without this delay, traffic_server cannot reliably open the cleartext port for listening without an
+# error.
+#
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "sleep 3"
+tr.Processes.Default.ReturnCode = 0
+
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

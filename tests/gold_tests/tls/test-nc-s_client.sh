@@ -15,5 +15,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-nc -l -p $1 -c 'echo -e "This is a reply"' -o test.out &
-echo "This is a test" | openssl s_client -servername bar.com -connect localhost:$2 -ign_eof
+
+
+# See https://github.com/apache/trafficserver/issues/9880
+ignore_unexpecte_eof=''
+if openssl s_client --help 2>&1 | grep -q ignore_unexpected_eof
+then
+  ignore_unexpected_eof='-ignore_unexpected_eof'
+fi
+nc -l -p "$1" -c 'echo -e "This is a reply"' -o test.out &
+echo "This is a test" | openssl s_client -servername bar.com -connect "localhost:$2" -ign_eof ${ignore_unexpected_eof} "${@:3}"

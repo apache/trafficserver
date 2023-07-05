@@ -239,7 +239,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not conn
 
 # checks on random.com should fail with message only
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self signed certificate server=127.0.0.1\(127.0.0.1\) depth=0",
+    r"WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self.signed certificate server=127.0.0.1\(127.0.0.1\) depth=0",
     "Warning for self signed certificate")
 # permissive failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(

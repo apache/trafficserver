@@ -19,24 +19,23 @@
 from ports import get_port
 
 
-def MakeHttpBinServer(self, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
+def MakeHttpBinServer(self, name, ip='127.0.0.1', port=None,
+                      options={}) -> 'Process':
     data_dir = os.path.join(self.RunDirectory, name)
     # create Process
     p = self.Processes.Process(name)
-    if (port == False):
+    if port is None:
         port = get_port(p, "Port")
-    if (ip == False):
-        ip = '127.0.0.1'
-    if (delay == False):
-        delay = 0
 
     self._RootRunable.SkipUnless(
-        Condition.HasProgram("gunicorn", "gunicorn needs be installed with httpbin package for this extension to run")
+        Condition.HasProgram(
+            "go-httpbin",
+            "go-httpbin needs be installed and in PATH for this extension to run")
     )
 
-    command = "gunicorn -b {0}:{1} httpbin:app".format(ip, port)
+    command = f"go-httpbin -host {ip} -port {port} "
     for flag, value in options.items():
-        command += " {} {}".format(flag, value)
+        command += f"{flag} {value} "
 
     # create process
     p.Command = command
