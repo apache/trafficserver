@@ -5,7 +5,7 @@ To compile `async.wasm`
 * In this directory run `docker run -v $PWD:/work -w /work  wasmsdk:v2 /build_wasm.sh`
 
 Copy the yaml in this directory and the generated `async.wasm` to `/usr/local/var/wasm/` and activate the plugin in `plugin.config`
-* `wasm.so /usr/local/var/wasm/myproject.yaml`
+* `wasm.so /usr/local/var/wasm/async.yaml`
 
 Make sure you have mapping rules in remap.config like below
 * `map https://www.google.com/ https://www.google.com/
