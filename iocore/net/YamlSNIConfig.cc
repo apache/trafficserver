@@ -220,12 +220,12 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (!min) {
       min = port_view;
     }
-    auto const &max{port_view};
+    auto max{port_view};
 
     swoc::TextView parsed_min;
-    long min_port{swoc::svtoi(min, &parsed_min)};
+    auto min_port{swoc::svtoi(min, &parsed_min)};
     swoc::TextView parsed_max;
-    long max_port{swoc::svtoi(max, &parsed_max)};
+    auto max_port{swoc::svtoi(max, &parsed_max)};
     if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
         max_port < min_port) {
       throw YAML::ParserException(node.Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
