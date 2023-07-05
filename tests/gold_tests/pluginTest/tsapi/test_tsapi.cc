@@ -242,6 +242,22 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
   return 0;
 }
 
+static int
+shutdown_handler(TSCont contp, TSEvent event, void *edata)
+{
+  if (event != TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    return 0;
+  }
+  TSDebug(PIName, "Cleaning up global continuations.");
+  if (tCont) {
+    TSContDestroy(tCont);
+  }
+  if (gCont) {
+    TSContDestroy(gCont);
+  }
+  return 0;
+}
+
 } // end anonymous namespace
 
 TSReturnCode
@@ -286,6 +302,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, gCont);
 
   tCont = TSContCreate(transactionContFunc, mtx);
+
+  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, nullptr));
   return TS_SUCCESS;
 }
 
@@ -331,27 +349,3 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   return TSREMAP_NO_REMAP;
 }
-
-namespace
-{
-class Cleanup
-{
-public:
-  ~Cleanup()
-  {
-    // In practice it is not strictly necessary to destroy remaining continuations on program exit.
-
-    if (tCont) {
-      TSContDestroy(tCont);
-    }
-    if (gCont) {
-      TSContDestroy(gCont);
-    }
-  }
-};
-
-// Do any needed cleanup for this source file at program termination time.
-//
-Cleanup cleanup;
-
-} // end anonymous namespace
