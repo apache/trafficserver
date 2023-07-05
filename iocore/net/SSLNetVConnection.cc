@@ -868,7 +868,9 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     }
     case SSL_ERROR_SYSCALL:
-      num_really_written = -errno;
+      // SSL_ERROR_SYSCALL is an IO error. errno is likely 0, so set EPIPE, as
+      // we do with SSL_ERROR_SSL below, to indicate a connection error.
+      num_really_written = -EPIPE;
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
       Debug("ssl.error", "SSL_write-SSL_ERROR_SYSCALL");
       break;
