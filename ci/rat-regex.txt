@@ -9,7 +9,7 @@
 ^libtool$
 ^blib$
 ^stamp-h1$
-.*\.txt$
+.*(?<!CMakeLists)\.txt$
 .*\.cfg$
 .*\.in$
 .*\.dot$
