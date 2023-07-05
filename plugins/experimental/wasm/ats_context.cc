@@ -1715,11 +1715,10 @@ Context::getHeaderMap(WasmHeaderMapType type)
     map.bufp    = cr_hdr_buf_;
     map.hdr_loc = cr_hdr_loc_;
     return map;
-  case WasmHeaderMapType::HttpCallResponseTrailers:
-    return {};
   default:
   case WasmHeaderMapType::GrpcReceiveTrailingMetadata:
   case WasmHeaderMapType::GrpcReceiveInitialMetadata:
+  case WasmHeaderMapType::HttpCallResponseTrailers:
     return {};
   }
 }
