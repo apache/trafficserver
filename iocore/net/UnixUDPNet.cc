@@ -40,8 +40,8 @@
 #include "tscore/ink_inet.h"
 
 #include "tscore/ink_sock.h"
-#include <math.h>
 #include <netinet/udp.h>
+
 #ifndef UDP_SEGMENT
 // This is needed because old glibc may not have the constant even if Kernel supports it.
 #define UDP_SEGMENT 103
@@ -432,13 +432,13 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
 #endif
     }
 
-    // If we got the gso size, then we need to find out in how many parts this was spliced.
-    int const parts = gso_size ? static_cast<int>(ceil(static_cast<double>(r) / static_cast<double>(gso_size))) : 1;
-    Debug("udp-read", "Received %lld bytes. gso_size %lld. Ready to process the payload in %d parts(%s)", static_cast<long long>(r),
-          static_cast<long long>(gso_size), parts, (parts > 1 ? "GRO" : "No GRO"));
+    // If gro was used, then the kernel will tell us the size of each part that was spliced together.
+    Debug("udp-read", "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(r), static_cast<long long>(gso_size),
+          (gso_size > 0 ? "GRO" : "No GRO"));
 
     IOBufferBlock *block;
-    for (auto part = 0; part < parts; part++) {
+    int64_t remaining{r};
+    while (remaining > 0) {
       block                 = chain.get();
       int64_t this_packet_r = gso_size ? std::min(gso_size, r) : r;
       while (block && this_packet_r > 0) {
@@ -446,11 +446,13 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
           block->fill(buffer_size);
           this_packet_r -= buffer_size;
           block          = block->next.get();
+          remaining     -= buffer_size;
         } else {
           block->fill(this_packet_r);
-          this_packet_r = 0;
-          next_chain    = block->next.get();
-          block->next   = nullptr;
+          remaining     -= this_packet_r;
+          this_packet_r  = 0;
+          next_chain     = block->next.get();
+          block->next    = nullptr;
         }
       }
       Debug("udp-read", "Creating packet");
@@ -584,15 +586,14 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
     const int64_t received  = mmsg[packet_num].msg_len;
     total_bytes_read       += received;
 
-    // If we got the gso size, then we need to find out in how many parts this was spliced.
-    int const parts = gso_size ? static_cast<int>(ceil(static_cast<double>(received) / static_cast<double>(gso_size))) : 1;
-
-    Debug("udp-read", "Received %lld bytes. gso_size %lld. Ready to process the payload in %d parts(%s)",
-          static_cast<long long>(received), static_cast<long long>(gso_size), parts, (parts > 1 ? "GRO" : "No GRO"));
+    // If gro was used, then the kernel will tell us the size of each part that was spliced together.
+    Debug("udp-read", "Received %lld bytes. gso_size %lld (%s)", static_cast<long long>(received), static_cast<long long>(gso_size),
+          (gso_size > 0 ? "GRO" : "No GRO"));
 
     auto chain = buffer_chain[packet_num];
     IOBufferBlock *block;
-    for (auto part = 0; part < parts; part++) {
+    int64_t remaining{received};
+    while (remaining > 0) {
       block                 = chain.get();
       int64_t this_packet_r = gso_size ? std::min(gso_size, received) : received;
       while (block && this_packet_r > 0) {
@@ -600,14 +601,16 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
           block->fill(buffer_size);
           this_packet_r -= buffer_size;
           block          = block->next.get();
+          remaining     -= buffer_size;
         } else {
           block->fill(this_packet_r);
-          this_packet_r = 0;
-          next_chain    = block->next.get();
-          block->next   = nullptr;
+          remaining     -= this_packet_r;
+          this_packet_r  = 0;
+          next_chain     = block->next.get();
+          block->next    = nullptr;
         }
       }
-
+      Debug("udp-read", "Creating packet");
       // create packet
       UDPPacket *p =
         UDPPacket::new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr[packet_num]), ats_ip_sa_cast(&toaddr[packet_num]), chain);
