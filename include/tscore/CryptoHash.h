@@ -35,7 +35,7 @@
 #endif
 #define CRYPTO_HEX_SIZE ((CRYPTO_HASH_SIZE * 2) + 1)
 
-namespace ats
+namespace ts
 {
 /// Crypto hash output.
 union CryptoHash {
@@ -193,10 +193,10 @@ inline CryptoContext::~CryptoContext()
   std::destroy_at(reinterpret_cast<Hasher *>(_base));
 }
 
-ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash);
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ts::CryptoHash const &hash);
 
-} // namespace ats
+} // namespace ts
 
-using ats::CryptoHash;
-using ats::CryptoContext;
-using ats::CRYPTO_HASH_ZERO;
+using ts::CryptoHash;
+using ts::CryptoContext;
+using ts::CRYPTO_HASH_ZERO;

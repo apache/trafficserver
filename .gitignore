@@ -125,6 +125,7 @@ proxy/hdrs/test_proxy_hdrs
 proxy/hdrs/test_hdr_heap
 proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
+proxy/http/test_HttpTransact
 proxy/http/remap/test_NextHopRoundRobin
 proxy/http/remap/test_NextHopStrategyFactory
 proxy/http/remap/test_PluginDso
@@ -164,6 +165,7 @@ plugins/esi/vars_test
 plugins/experimental/uri_signing/test_uri_signing
 
 mgmt/rpc/overridable_txn_vars.cc
+mgmt/rpc/IPCSocketClient.cc
 mgmt/rpc/test_jsonrpc
 mgmt/rpc/test_jsonrpcserver
 mgmt/api/traffic_api_cli_remote
