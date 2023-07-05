@@ -23,6 +23,7 @@ add_atsplugin(header_rewrite
     lulu.cc
     operator.cc
     operators.cc
+    parser.cc
     regex_helper.cc
     resources.cc
     ruleset.cc
