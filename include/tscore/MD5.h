@@ -31,7 +31,7 @@
 #include <openssl/evp.h>
 #endif
 
-class MD5Context : public ats::CryptoContext::Hasher
+class MD5Context : public ts::CryptoContext::Hasher
 {
 public:
   MD5Context()
