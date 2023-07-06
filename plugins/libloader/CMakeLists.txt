@@ -15,4 +15,6 @@
 #
 #######################
 
-add_atsplugin(healthchecks healthchecks.c)
+add_atsplugin(libloader libloader.c)
+
+target_include_directories(libloader PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")
