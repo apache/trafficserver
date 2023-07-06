@@ -46,6 +46,7 @@ add_subdirectory(header_rewrite)
 add_subdirectory(libloader)
 add_subdirectory(multiplexer)
 add_subdirectory(prefetch)
+add_subdirectory(regex_remap)
 add_subdirectory(s3_auth)
 add_subdirectory(xdebug)
 
