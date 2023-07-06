@@ -15,5 +15,18 @@
 #
 #######################
 
-add_subdirectory(gold_tests/bigobj)
-add_subdirectory(gold_tests/pluginTest/TSVConnFd)
+add_executable(check_ramp check_ramp.c)
+
+set_property(
+  TARGET check_ramp
+  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_executable(push_request push_request.c)
+
+set_property(
+  TARGET push_request
+  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
