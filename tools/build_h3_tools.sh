@@ -69,6 +69,14 @@ elif [ -e /etc/debian_version ]; then
     echo
 fi
 
+if [ `uname -s` = "Darwin" ]; then
+    echo "+-------------------------------------------------------------------------+"
+    echo "| When building on a Mac, be aware that the Apple version of clang may    |"
+    echo "| fail to build curl due to the issue described here:                     |"
+    echo "| https://github.com/curl/curl/issues/11391#issuecomment-1623890325       |"
+    echo "+-------------------------------------------------------------------------+"
+fi
+
 if [ -z ${QUICHE_BSSL_PATH+x} ]; then
    QUICHE_BSSL_PATH=${TMP_QUICHE_BSSL_PATH:-"${BASE}/boringssl/lib"}
 fi
@@ -158,9 +166,9 @@ sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
 cd ..
 
 # OpenSSL will install in /lib or lib64 depending upon the architecture.
-if [ -f "${OPENSSL_PREFIX}/lib/libssl.so" ]; then
+if [ -d "${OPENSSL_PREFIX}/lib" ]; then
   OPENSSL_LIB="${OPENSSL_PREFIX}/lib"
-elif [ -f "${OPENSSL_PREFIX}/lib64/libssl.so" ]; then
+elif [ -d "${OPENSSL_PREFIX}/lib64" ]; then
   OPENSSL_LIB="${OPENSSL_PREFIX}/lib64"
 else
   echo "Could not find the OpenSSL install library directory."
