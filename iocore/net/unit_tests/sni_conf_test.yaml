@@ -22,8 +22,6 @@ sni:
   - 480-488
   http2: true
 - fqdn: someport.com
-  inbound_port_ranges:
-  - 8080-65535
+  inbound_port_ranges: 8080-65535
 - fqdn: oneport.com
-  inbound_port_ranges:
-  - 433
+  inbound_port_ranges: 433
