@@ -15,6 +15,12 @@
 #
 #######################
 
-add_subdirectory(gold_tests/bigobj)
-add_subdirectory(gold_tests/chunked_encoding)
-add_subdirectory(gold_tests/pluginTest/TSVConnFd)
+add_executable(smuggle-client smuggle-client.c)
+
+target_link_libraries(smuggle-client PRIVATE "${OPENSSL_SSL_LIBRARY}")
+
+set_property(
+    TARGET smuggle-client
+    PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
