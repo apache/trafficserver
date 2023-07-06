@@ -353,6 +353,7 @@ if(ENABLE_WCCP)
     add_subdirectory(src/traffic_wccp)
 endif()
 add_subdirectory(src/tests)
+add_subdirectory(tests)
 add_subdirectory(plugins)
 add_subdirectory(configs)
 
