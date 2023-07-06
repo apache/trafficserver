@@ -27,7 +27,7 @@ Description
 
 This file is used to configure aspects of TLS connection handling for both inbound and outbound
 connections. With the exception of ``host_sni_policy`` (see the description below), the configuration is driven by the SNI values provided by the inbound connection. The
-file consists of a set of configuration items, each identified by an SNI value and optionally a sequence of port ranges (``fqdn``, ``inbound_port_ranges``).
+file consists of a set of configuration items, each identified by an SNI value and optionally one or more port ranges (``fqdn``, ``inbound_port_ranges``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
 the defaults. This is done during the inbound connection processing; some outbound properties
@@ -71,9 +71,13 @@ inbound_port_ranges       Inbound   The port ranges for the inbound connection i
                                            inbound_port_ranges:
                                            - 443
                                            - 8080-8086
+                                         - fqdn: other.com
+                                           inbound_port_ranges: 443
 
                                     would match all requests with an SNI for example.com on port 443, and on ports
-                                    8080 through 8086 inclusive.
+                                    8080 through 8086 inclusive, and all
+                                    requests with an SNI for other.com on port
+                                    443
 
 ========================= ========= ========================================================================================
 
