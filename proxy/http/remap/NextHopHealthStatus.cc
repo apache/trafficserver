@@ -76,7 +76,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   int64_t fail_threshold  = sm->t_state.txn_conf->parent_fail_threshold;
   int64_t retry_time      = sm->t_state.txn_conf->parent_retry_time;
   uint32_t new_fail_count = 0;
-  const char *host         = sm->t_state.request_data.get_host();
+  const char *host        = sm->t_state.request_data.get_host();
 
   // make sure we're called back with a result structure for a parent
   // that is being retried.
