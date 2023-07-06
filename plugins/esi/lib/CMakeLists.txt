@@ -21,6 +21,7 @@ add_library(esicore
         EsiParser.cc
         EsiProcessor.cc
         Expression.cc
+        HandlerManager.cc
         Stats.cc
         Variables.cc
 )
