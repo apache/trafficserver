@@ -111,14 +111,16 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	@HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBCAP@ \
+	@YAMLCPP_LIBS@
 
 test_PreWarm_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/tests/include
 
 test_PreWarm_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
 	unit_tests/test_PreWarm.cc
@@ -158,7 +160,8 @@ test_HttpTransact_LDADD = \
 	@LIBZ@ \
 	@LIBLZMA@ \
 	@OPENSSL_LIBS@ \
-	-lm
+	-lm \
+	@YAMLCPP_LIBS@
 
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
