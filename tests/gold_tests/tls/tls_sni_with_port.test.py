@@ -125,8 +125,7 @@ class TestSNIWithPort:
         ts.Disk.sni_yaml.AddLines([
             "sni:",
             "- fqdn: yay.example.com",
-            "  inbound_port_ranges:",
-            f"  - {self._port_one}-{self._port_one}",
+            f"  inbound_port_ranges: {self._port_one}-{self._port_one}",
             f"  tunnel_route: localhost:{server_one.Variables.https_port}",
             "- fqdn: yay.example.com",
             "  inbound_port_ranges:",
