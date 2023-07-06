@@ -15,9 +15,12 @@
 #
 #######################
 
-add_library(TSVConnFd SHARED TSVConnFd.cc)
+add_library(TSVConnFd MODULE TSVConnFd.cc)
 
 set_target_properties(TSVConnFd PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.libs"
     PREFIX ""
 )
+target_link_libraries(TSVConnFd PRIVATE tscore traffic_server)
+set_target_properties( PROPERTIES PREFIX "")
+set_target_properties( PROPERTIES SUFFIX ".so")
