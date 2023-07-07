@@ -110,7 +110,7 @@ public:
      Create a new packet to be delivered to application.
      Internal function only
   */
-  static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> &block);
+  static UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Ptr<IOBufferBlock> block);
 
 private:
   SLINK(UDPPacket, alink); // atomic link
