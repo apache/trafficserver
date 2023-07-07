@@ -49,5 +49,9 @@ jsonschema = "*"
 python-jose = "*"
 pyyaml ="*"
 
+# For the grpc tests.
+grpcio = "*"
+grpcio-tools = "*"
+
 [requires]
 python_version = "3"
