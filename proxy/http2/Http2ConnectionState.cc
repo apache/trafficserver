@@ -1728,7 +1728,7 @@ Http2ConnectionState::restart_streams()
     // Call send_response_body() for each streams
     while (s != end) {
       Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
-      if (std::min(this->get_peer_rwnd(), s->get_peer_rwnd()) > 0) {
+      if (this->get_peer_rwnd() > 0 && s->get_peer_rwnd() > 0) {
         SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
         s->restart_sending();
       }
@@ -1738,7 +1738,7 @@ Http2ConnectionState::restart_streams()
 
     // The above stopped at end, so we need to call send_response_body() one
     // last time for the stream pointed to by end.
-    if (std::min(this->get_peer_rwnd(), s->get_peer_rwnd()) > 0) {
+    if (this->get_peer_rwnd() > 0 && s->get_peer_rwnd() > 0) {
       SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
       s->restart_sending();
     }
