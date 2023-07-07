@@ -20,17 +20,17 @@
 
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/iocore/utils \
-  -I$(abs_top_srcdir)/include \
-  -I$(abs_top_srcdir)/lib/ \
-  -I$(abs_top_srcdir)/mgmt/rpc \
-  -I$(abs_top_srcdir)/mgmt/ \
-  -I$(abs_top_srcdir)/proxy/ \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  $(TS_INCLUDES) @SWOC_INCLUDES@ \
-  @YAMLCPP_INCLUDES@
+    $(iocore_include_dirs) \
+    -I$(abs_top_srcdir)/iocore/utils \
+    -I$(abs_top_srcdir)/include \
+    -I$(abs_top_srcdir)/lib/ \
+    -I$(abs_top_srcdir)/mgmt/rpc \
+    -I$(abs_top_srcdir)/mgmt/ \
+    -I$(abs_top_srcdir)/proxy/ \
+    -I$(abs_top_srcdir)/proxy/http \
+    -I$(abs_top_srcdir)/proxy/hdrs \
+    $(TS_INCLUDES) @SWOC_INCLUDES@ \
+    @YAMLCPP_INCLUDES@
 
 # ^^ all the proxy is to include the PluginCallbacks.
 
@@ -51,7 +51,7 @@ libconfigmanager_la_SOURCES = \
 	$(libconfigmanager_COMMON)
 
 libconfigmanager_la_LIBADD = \
-	$(top_builddir)/src/tscore/libtscore.la
+	$(top_builddir)/src/tscore/libtscore.a
 
 
 include $(top_srcdir)/mk/tidy.mk

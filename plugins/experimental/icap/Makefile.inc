@@ -17,5 +17,4 @@
 pkglib_LTLIBRARIES += experimental/icap/icap.la
 
 experimental_icap_icap_la_SOURCES = \
-  experimental/icap/icap_plugin.cc
-
+    experimental/icap/icap_plugin.cc

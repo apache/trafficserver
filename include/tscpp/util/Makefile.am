@@ -19,8 +19,8 @@
 library_includedir=$(includedir)/tscpp/util
 
 library_include_HEADERS = \
-        ts_diag_levels.h \
-        ts_ip.h \
+	ts_diag_levels.h \
+	ts_ip.h \
 	IntrusiveDList.h \
 	LocalBuffer.h \
 	PostScript.h \
@@ -29,4 +29,4 @@ library_include_HEADERS = \
 	TsSharedMutex.h \
 	ts_unit_parser.h \
 	ts_time_parser.h \
-        YamlCfg.h
+	YamlCfg.h

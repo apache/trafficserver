@@ -73,11 +73,11 @@ test_libhttp2_LDADD = \
 	HPACK.o \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ @HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 if OS_LINUX
 test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\
@@ -86,7 +86,6 @@ else
 test_libhttp2_LDFLAGS = $(AM_LDFLAGS)\
     -Wl,-undefined -Wl,suppress -Wl,-flat_namespace -Wl,-dead_strip
 endif
-
 test_libhttp2_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
@@ -97,7 +96,7 @@ test_libhttp2_SOURCES = \
 	unit_tests/main.cc
 
 test_Http2DependencyTree_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@
 
@@ -110,9 +109,11 @@ test_Http2DependencyTree_SOURCES = \
 
 test_Http2FrequencyCounter_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@
+	@SWOC_LIBS@ \
+	@LIBPCRE@ \
+	@LIBCAP@
 
 test_Http2FrequencyCounter_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
@@ -124,11 +125,11 @@ test_Http2FrequencyCounter_SOURCES = \
 
 test_HPACK_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	@SWOC_LIBS@ @HWLOC_LIBS@
+	$(top_builddir)/src/tscore/libtscore.a \
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 
 test_HPACK_SOURCES = \
 	test_HPACK.cc \

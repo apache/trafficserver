@@ -17,11 +17,10 @@
 pkglib_LTLIBRARIES += server_push_preload/server_push_preload.la
 
 server_push_preload_server_push_preload_la_SOURCES = \
-  server_push_preload/server_push_preload.cc
+    server_push_preload/server_push_preload.cc
 
 server_push_preload_server_push_preload_la_LDFLAGS = \
-  $(AM_LDFLAGS)
+    $(AM_LDFLAGS)
 
 server_push_preload_server_push_preload_la_LIBADD = \
-  $(top_builddir)/src/tscpp/api/libtscppapi.la
-
+    $(top_builddir)/src/tscpp/api/libtscppapi.la

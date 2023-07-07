@@ -63,11 +63,11 @@ test_jsonrpc_SOURCES = \
 test_jsonrpc_LDADD = \
 	libjsonrpc_protocol.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/tscore/libtscore.la \
-	@YAMLCPP_LIBS@ @HWLOC_LIBS@
+	$(top_builddir)/src/tscore/libtscore.a \
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 
 
@@ -103,12 +103,12 @@ test_jsonrpcserver_SOURCES = \
 test_jsonrpcserver_LDADD = \
 	libjsonrpc_protocol.la \
 	libjsonrpc_server.la \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/src/tscore/libtscore.la \
-	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@
+	$(top_builddir)/src/tscore/libtscore.a \
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@  @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 
 ###########################################################################################

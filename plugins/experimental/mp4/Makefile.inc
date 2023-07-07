@@ -17,7 +17,7 @@
 pkglib_LTLIBRARIES += experimental/mp4/mp4.la
 
 experimental_mp4_mp4_la_SOURCES = \
-  experimental/mp4/mp4.cc \
-  experimental/mp4/mp4_common.h \
-  experimental/mp4/mp4_meta.cc \
-  experimental/mp4/mp4_meta.h
+    experimental/mp4/mp4.cc \
+    experimental/mp4/mp4_common.h \
+    experimental/mp4/mp4_meta.cc \
+    experimental/mp4/mp4_meta.h

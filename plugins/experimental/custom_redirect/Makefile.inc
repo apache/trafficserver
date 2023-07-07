@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/custom_redirect/custom_redirect.la
 
 experimental_custom_redirect_custom_redirect_la_SOURCES = \
-  experimental/custom_redirect/custom_redirect.cc
+    experimental/custom_redirect/custom_redirect.cc

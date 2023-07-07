@@ -105,23 +105,27 @@ test_proxy_http_SOURCES = \
 	HttpBodyFactory.h
 
 test_proxy_http_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@ \
-	@YAMLCPP_LIBS@
+	@YAMLCPP_LIBS@ \
+	@LIBPCRE@ \
+	@OPENSSL_LIBS@
 
 test_PreWarm_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
 
+test_PreWarm_LDFLAGS = $(AM_LDFLAGS) @YAMLCPP_LDFLAGS@
+
 test_PreWarm_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
@@ -150,14 +154,14 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/iocore/cache/libinkcache.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	-lz -llzma -lcrypto -lresolv -lssl \
-	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
+	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 
 if ENABLE_QUIC
 test_HttpTransact_LDADD += \

@@ -21,12 +21,12 @@ experimental_magick_magick_la_CXXFLAGS = $(AM_CXXFLAGS) -Wno-unused-variable
 pkglib_LTLIBRARIES += experimental/magick/magick.la
 
 experimental_magick_magick_la_SOURCES = \
-  experimental/magick/magick.cc
+    experimental/magick/magick.cc
 
 experimental_magick_magick_la_LDFLAGS = \
-  $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/tscpp/api
+    $(AM_LDFLAGS) \
+    -L$(top_builddir)/src/tscpp/api
 
 experimental_magick_magick_la_LIBADD = \
-  -ltscppapi \
-  $(LIBMAGICKCPP_LIBS)
+    -ltscppapi \
+    $(LIBMAGICKCPP_LIBS)

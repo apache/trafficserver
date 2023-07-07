@@ -17,28 +17,28 @@
 pkglib_LTLIBRARIES += experimental/uri_signing/uri_signing.la
 
 experimental_uri_signing_uri_signing_la_SOURCES = \
-  experimental/uri_signing/uri_signing.c          \
-  experimental/uri_signing/config.c               \
-  experimental/uri_signing/cookie.c               \
-  experimental/uri_signing/jwt.c                  \
-  experimental/uri_signing/match.c                \
-  experimental/uri_signing/parse.c                \
-  experimental/uri_signing/normalize.c            \
-  experimental/uri_signing/timing.c
+    experimental/uri_signing/uri_signing.c          \
+    experimental/uri_signing/config.c               \
+    experimental/uri_signing/cookie.c               \
+    experimental/uri_signing/jwt.c                  \
+    experimental/uri_signing/match.c                \
+    experimental/uri_signing/parse.c                \
+    experimental/uri_signing/normalize.c            \
+    experimental/uri_signing/timing.c
 
 experimental_uri_signing_uri_signing_la_LIBADD = @LIBJANSSON@ @LIBCJOSE@ @LIBPCRE@ -lm -lcrypto
 
 check_PROGRAMS += experimental/uri_signing/test_uri_signing
 
 experimental_uri_signing_test_uri_signing_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  -I$(abs_top_srcdir)/lib/catch2 \
-  -DURI_SIGNING_UNIT_TEST \
-  -DSRCDIR=\"$(srcdir)\"
+    $(AM_CPPFLAGS) \
+    -I$(abs_top_srcdir)/lib/catch2 \
+    -DURI_SIGNING_UNIT_TEST \
+    -DSRCDIR=\"$(srcdir)\"
 
 experimental_uri_signing_test_uri_signing_LDADD = @LIBJANSSON@ @LIBCJOSE@ @LIBPCRE@ -lm -lcrypto
 experimental_uri_signing_test_uri_signing_SOURCES = \
-	experimental/uri_signing/unit_tests/uri_signing_test.cc \
+    experimental/uri_signing/unit_tests/uri_signing_test.cc \
     experimental/uri_signing/jwt.c \
     experimental/uri_signing/common.c \
     experimental/uri_signing/parse.c \

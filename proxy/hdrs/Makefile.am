@@ -60,7 +60,7 @@ load_http_hdr_SOURCES = \
 
 load_http_hdr_LDADD = -L. -lhdrs \
         @SWOC_LIBS@ \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 check_PROGRAMS = \
@@ -82,14 +82,13 @@ test_proxy_hdrs_SOURCES = \
 	unit_tests/test_mime.cc
 
 test_proxy_hdrs_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
 	-L. -lhdrs \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.a \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBCAP@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
@@ -99,17 +98,15 @@ test_hdr_heap_SOURCES = \
 	unit_tests/test_HdrHeap.cc
 
 test_hdr_heap_LDADD = -L. -lhdrs \
-	$(top_builddir)/src/tscore/libtscore.la \
-	-L. -lhdrs \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 test_Huffmancode_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 test_Huffmancode_SOURCES = \
@@ -122,8 +119,9 @@ test_XPACK_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_XPACK_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
+	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@LIBPCRE@
 
 test_XPACK_SOURCES = \
 	unit_tests/test_XPACK.cc \
