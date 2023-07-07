@@ -127,12 +127,7 @@ namespace details // internal stuff
 
   //////////////////////////////////////////
 
-  bool &
-  areFieldsFinalized()
-  {
-    static bool finalized = false;
-    return finalized;
-  }
+  bool &areFieldsFinalized();
 
   /////////////////////////////////////////////////////////////////////
   /// ext::details::FieldDesc - type erased field descriptor, with type specific std::functions
@@ -729,7 +724,7 @@ viewFormat(T const &t, uintptr_t _base_addr = 0, int _full_size = ext::sizeOf<T>
 
 namespace details
 {
-  std::string
+  inline std::string
   ltrim(std::string const &str, const std::string &chars = "\t\n\v\f\r ")
   {
     std::string r(str);
@@ -779,22 +774,3 @@ toString(T const &t)
   return ss.str();
 }
 } // namespace ext
-
-// C API
-//
-
-FieldPtr
-ExtFieldPtr(DerivedPtr derived, ExtFieldContext field_context, int *size /*= nullptr*/)
-{
-  using namespace ext;
-  using namespace ext::details;
-  ink_assert(field_context);
-  ink_assert(derived);
-  FieldDesc const &desc = *static_cast<FieldDesc const *>(field_context);
-  if (size) {
-    *size = desc.size;
-  }
-
-  Offest_t const *loc = (Offest_t const *)(uintptr_t(derived) + desc.ext_loc_offset);
-  return FieldPtr(uintptr_t(derived) + (*loc) + desc.field_offset);
-}

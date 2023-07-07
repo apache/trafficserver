@@ -29,7 +29,7 @@ add_custom_command(
 
 add_custom_target(ParseRules ALL DEPENDS ParseRulesCType ParseRulesCTypeToUpper ParseRulesCTypeToLower)
 
-add_library(tscore SHARED
+add_library(tscore STATIC
         AcidPtr.cc
         AcidPtr.cc
         Arena.cc
@@ -116,24 +116,8 @@ target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${YAML_INCLUDE_DIRS}
 )
-target_link_libraries(tscore
-    PUBLIC
-        libswoc
-        ${OPENSSL_LIBRARIES}
-        ${PCRE_LIBRARIES}
-        resolv
-        tscpputil
-    PRIVATE
-        yaml-cpp::yaml-cpp
-)
-if(TS_USE_HWLOC)
-    target_link_libraries(tscore PUBLIC hwloc::hwloc)
-endif()
 if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
     target_compile_options(tscore PUBLIC "-mcx16")
-endif()
-if(TS_USE_POSIX_CAP)
-    target_link_libraries(tscore PUBLIC cap::cap)
 endif()
 
 add_executable(test_tscore
@@ -172,6 +156,12 @@ target_link_libraries(test_tscore
     PRIVATE
         libswoc
         tscore
+        yaml-cpp::yaml-cpp
+        libswoc
+        ${OPENSSL_LIBRARIES}
+        ${PCRE_LIBRARIES}
+        resolv
+        tscpputil
 )
 if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
@@ -179,5 +169,3 @@ endif()
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
 add_test(NAME test_tscore COMMAND $<TARGET_FILE:test_tscore>)
-
-install(TARGETS tscore)

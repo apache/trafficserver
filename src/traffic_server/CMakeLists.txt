@@ -35,6 +35,7 @@ target_include_directories(traffic_server PRIVATE
 )
 target_link_libraries(traffic_server
     PRIVATE
+        tscore
         http
         http_remap
         http2
@@ -49,7 +50,6 @@ target_link_libraries(traffic_server
         inkcache
         fastlz
         aio
-        tscore
         tscpputil
         proxy
         inknet
