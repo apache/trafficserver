@@ -7421,25 +7421,19 @@ HttpSM::plugin_agents_cleanup()
   // the VC table and cleaned up there. This handles the case where
   // something went wrong early.
   if (!has_active_response_plugin_agents) {
-    std::vector<APIHook *> agent_lists;
-    agent_lists.push_back(txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK));
-    for (auto &agent : agent_lists) {
-      while (agent) {
-        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-        contp->do_io_close();
-        agent = agent->next();
-      }
+    APIHook *agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+    while (agent) {
+      INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+      contp->do_io_close();
+      agent = agent->next();
     }
   }
   if (!has_active_request_plugin_agents) {
-    std::vector<APIHook *> agent_lists;
-    agent_lists.push_back(txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK));
-    for (auto &agent : agent_lists) {
-      while (agent) {
-        INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-        contp->do_io_close();
-        agent = agent->next();
-      }
+    APIHook *agent = txn_hook_get(TS_HTTP_REQUEST_CLIENT_HOOK);
+    while (agent) {
+      INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
+      contp->do_io_close();
+      agent = agent->next();
     }
   }
 }
