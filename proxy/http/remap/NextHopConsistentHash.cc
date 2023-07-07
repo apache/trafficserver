@@ -496,5 +496,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
              ParentResultStr[result.result]);
   }
 
+  setHostHeader(txnp, result.hostname);
+
   return;
 }
