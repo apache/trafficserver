@@ -2132,15 +2132,18 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   stream->update_sent_count(payload_length);
 
   // Are we at the end?
+  // We have no payload to send but might expect data from either trailer or body
+  // TODO(KS): does the expect send trailer and empty payload need a flush, or does it
+  //           warrant a separate flow with NO_ERROR?
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
-  if (!stream->is_write_vio_done() && payload_length == 0) {
+  if ((!stream->is_write_vio_done() || stream->expect_send_trailer()) && payload_length == 0) {
     Http2StreamDebug(this->session, stream->get_id(), "No payload");
     this->session->flush();
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done()) {
+  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(payload_length) && !stream->expect_send_trailer()) {
     Http2StreamDebug(this->session, stream->get_id(), "End of Data Frame");
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }

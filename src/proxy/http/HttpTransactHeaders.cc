@@ -26,7 +26,6 @@
 #include <array>
 #include <string_view>
 
-#include "MIME.h"
 #include "tscore/ink_platform.h"
 
 #include "proxy/http/HttpTransact.h"
@@ -34,6 +33,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrUtils.h"
 #include "proxy/hdrs/HttpCompat.h"
+#include "proxy/hdrs/MIME.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/PoolableSession.h"
 

@@ -285,11 +285,14 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   }
 
-  if (this->expect_send_trailer()) {
+  // moved this after converting and writing the headers
+  // because this code killed the stream and its buffers in
+  // tunnel kill_all, causing ats to crash
+  /*if (this->expect_receive_trailer()) {
     // Send read complete to terminate previous data tunnel
     this->read_vio.nbytes = this->read_vio.ndone;
     this->signal_read_event(VC_EVENT_READ_COMPLETE);
-  }
+  }*/
 
   ink_release_assert(this->_sm != nullptr);
   this->_http_sm_id = this->_sm->sm_id;
@@ -315,7 +318,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   } while (!done);
 
-  if (bufindex == 0) {
+  if (dumpoffset == 0) {
     // No data to signal read event
     return;
   }
@@ -323,11 +326,28 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   // Is the _sm ready to process the header?
   if (this->read_vio.nbytes > 0) {
     if (this->receive_end_stream) {
-      this->read_vio.nbytes = bufindex;
-      this->read_vio.ndone  = bufindex;
+      // this is dangerous, the _sm has possibly not read
+      // the data yet, so we end up with a mismatch if there
+      // is something async in between
+      // better would be to get the actual difference between
+      // the start of the headers and the actual position in
+      // the buffer for the ndone part.
+      // during testing we have not seen any issues
+      this->read_vio.nbytes = this->read_vio.ndone + dumpoffset;
       if (this->is_outbound_connection()) {
+        // This is a response trailer
+        // We don't set ndone, because the VC_EVENT_EOS will
+        // first flush the remaining content to consumers,
+        // after which the TUNNEL_EVENT_DONE will be fired
+        // and the trailer handler will be set up
+        // The trailer handler will read the buffer, and not
+        // get its content from the VIO
+        // This can break if the implementation
+        // changes
         this->signal_read_event(VC_EVENT_EOS);
       } else {
+        // not tested client trailing headers
+        this->read_vio.ndone = this->read_vio.nbytes;
         this->signal_read_event(VC_EVENT_READ_COMPLETE);
       }
     } else {

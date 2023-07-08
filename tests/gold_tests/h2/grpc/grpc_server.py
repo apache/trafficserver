@@ -62,18 +62,9 @@ def run_grpc_server(port: int, server_cert: str, server_key: str) -> int:
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        'port',
-        type=int,
-        help='The port on which to listen.')
-    parser.add_argument(
-        'server_crt',
-        type=argparse.FileType('rb'),
-        help="The public TLS certificate to use.")
-    parser.add_argument(
-        'server_key',
-        type=argparse.FileType('rb'),
-        help="The private TLS key to use.")
+    parser.add_argument('port', type=int, help='The port on which to listen.')
+    parser.add_argument('server_crt', type=argparse.FileType('rb'), help="The public TLS certificate to use.")
+    parser.add_argument('server_key', type=argparse.FileType('rb'), help="The private TLS key to use.")
     return parser.parse_args()
 
 

@@ -53,23 +53,20 @@ class TestGrpc():
         self._ts.addDefaultSSLFiles()
         self._ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
-        self._ts.Disk.remap_config.AddLine(
-            f"map / https://example.com:{server_port}/")
+        self._ts.Disk.remap_config.AddLine(f"map / https://example.com:{server_port}/")
 
-        self._ts.Disk.records_config.update({
-            "proxy.config.ssl.server.cert.path": self._ts.Variables.SSLDir,
-            "proxy.config.ssl.server.private_key.path": self._ts.Variables.SSLDir,
-
-            'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-            'proxy.config.http.server_session_sharing.pool': 'thread',
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-
-            'proxy.config.dns.nameservers': f"127.0.0.1:{dns_port}",
-            'proxy.config.dns.resolv_conf': "NULL",
-
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http",
-        })
+        self._ts.Disk.records_config.update(
+            {
+                "proxy.config.ssl.server.cert.path": self._ts.Variables.SSLDir,
+                "proxy.config.ssl.server.private_key.path": self._ts.Variables.SSLDir,
+                'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
+                'proxy.config.http.server_session_sharing.pool': 'thread',
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': f"127.0.0.1:{dns_port}",
+                'proxy.config.dns.resolv_conf': "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+            })
         return self._ts
 
     def _configure_grpc_server(self, tr: 'TestRun') -> 'Process':
@@ -87,10 +84,8 @@ class TestGrpc():
         self._server.Setup.Copy(server_key)
 
         port = get_port(self._server, 'port')
-        command = (
-            f'{sys.executable} {tr.RunDirectory}/grpc_server.py {port} '
-            'server.pem server.key'
-        )
+        command = (f'{sys.executable} {tr.RunDirectory}/grpc_server.py {port} '
+                   'server.pem server.key')
         self._server.Command = command
         self._server.ReturnCode = 0
         return self._server
@@ -105,10 +100,8 @@ class TestGrpc():
         ts_cert = os.path.join(self._ts.Variables.SSLDir, 'server.pem')
         # The cert is for example.com, so we must use that domain.
         hostname = 'example.com'
-        command = (
-            f'{sys.executable} {tr.RunDirectory}/grpc_client.py '
-            f'{hostname} {proxy_port} {ts_cert}'
-        )
+        command = (f'{sys.executable} {tr.RunDirectory}/grpc_client.py '
+                   f'{hostname} {proxy_port} {ts_cert}')
         tr.Processes.Default.Command = command
         tr.Processes.Default.ReturnCode = 0
 
@@ -118,8 +111,7 @@ class TestGrpc():
         tr.Setup.Copy('simple.proto')
         command = (
             f'{sys.executable} -m grpc_tools.protoc -I{tr.RunDirectory} '
-            f'--python_out={tr.RunDirectory} --grpc_python_out={tr.RunDirectory} simple.proto'
-        )
+            f'--python_out={tr.RunDirectory} --grpc_python_out={tr.RunDirectory} simple.proto')
         tr.Processes.Default.Command = command
         pb2_file = os.path.join(tr.RunDirectory, 'simple_pb2.py')
         tr.Disk.File(pb2_file, id='pb2', exists=True)

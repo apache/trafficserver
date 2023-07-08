@@ -49,18 +49,10 @@ def run_grpc_client(hostname: str, proxy_port: int, proxy_cert: bytes) -> int:
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        'hostname',
-        help='The hostname to which to connect.')
+    parser.add_argument('hostname', help='The hostname to which to connect.')
 
-    parser.add_argument(
-        'proxy_port',
-        type=int,
-        help='The ATS port to which to connect.')
-    parser.add_argument(
-        'proxy_cert',
-        type=argparse.FileType('rb'),
-        help='The public TLS certificate to use.')
+    parser.add_argument('proxy_port', type=int, help='The ATS port to which to connect.')
+    parser.add_argument('proxy_cert', type=argparse.FileType('rb'), help='The public TLS certificate to use.')
     return parser.parse_args()
 
 
