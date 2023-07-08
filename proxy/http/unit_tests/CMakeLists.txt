@@ -27,5 +27,8 @@ target_link_libraries(test_http
         ts::inkevent # transitive
         ts::proxy # transitive
 )
+if(TS_USE_POSIX_CAP)
+    target_link_libraries(test_http PUBLIC cap::cap)
+endif()
 
 add_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)

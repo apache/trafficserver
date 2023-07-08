@@ -34,6 +34,9 @@ target_link_libraries(traffic_layout
         ts::records_p
         yaml-cpp::yaml-cpp
 )
+if(TS_USE_POSIX_CAP)
+    target_link_libraries(traffic_layout PUBLIC cap::cap)
+endif()
 
 if(TS_USE_HWLOC)
     target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
