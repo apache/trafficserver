@@ -107,39 +107,6 @@ private:
   MIMEHdrImpl *_mh;
 };
 
-// [RFC 7541] 2.3.2. Dynamic Table
-class HpackDynamicTable
-{
-public:
-  explicit HpackDynamicTable(uint32_t size);
-  ~HpackDynamicTable();
-
-  // noncopyable
-  HpackDynamicTable(HpackDynamicTable &)                  = delete;
-  HpackDynamicTable &operator=(const HpackDynamicTable &) = delete;
-
-  const MIMEField *get_header_field(uint32_t index) const;
-  void add_header_field(const HpackHeaderField &header);
-
-  HpackLookupResult lookup(const HpackHeaderField &header) const;
-  uint32_t maximum_size() const;
-  uint32_t size() const;
-  void update_maximum_size(uint32_t new_size);
-
-  uint32_t length() const;
-
-private:
-  void _evict_overflowed_entries();
-  void _mime_hdr_gc();
-
-  uint32_t _current_size = 0;
-  uint32_t _maximum_size = 0;
-
-  MIMEHdr *_mhdr     = nullptr;
-  MIMEHdr *_mhdr_old = nullptr;
-  std::deque<MIMEField *> _headers;
-};
-
 // [RFC 7541] 2.3. Indexing Table
 class HpackIndexingTable
 {
@@ -160,7 +127,7 @@ public:
   void update_maximum_size(uint32_t new_size);
 
 private:
-  HpackDynamicTable _dynamic_table;
+  XpackDynamicTable _dynamic_table;
 };
 
 // Low level interfaces
