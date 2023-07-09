@@ -90,6 +90,8 @@ ConditionMethod::initialize(Parser &p)
 
   match->set(p.get_arg());
   _matcher = match;
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
 
 bool
