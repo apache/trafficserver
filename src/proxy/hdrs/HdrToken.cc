@@ -230,9 +230,6 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Strict-Transport-Security", MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                (HTIF_MULTVALS)                              },
   {"Subject",                   MIME_SLOTID_NONE,                MIME_PRESENCE_SUBJECT,             HTIF_NONE                                    },
   {"Summary",                   MIME_SLOTID_NONE,                MIME_PRESENCE_SUMMARY,             HTIF_NONE                                    },
- // TODO: In the past we have observed issues with having hop-by-hop in here
-  // for gRPC. We plan to work on gRPC in a future. We should experiment with
-  // this and verify that it works as expected.
   {"TE",                        MIME_SLOTID_TE,                  MIME_PRESENCE_TE,                  (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
   {"Transfer-Encoding",         MIME_SLOTID_TRANSFER_ENCODING,   MIME_PRESENCE_TRANSFER_ENCODING,
    (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)                                                                                                 },

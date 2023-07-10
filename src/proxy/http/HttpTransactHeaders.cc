@@ -26,6 +26,7 @@
 #include <array>
 #include <string_view>
 
+#include "MIME.h"
 #include "tscore/ink_platform.h"
 
 #include "proxy/http/HttpTransact.h"
@@ -222,7 +223,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         my opinion error prone and if the client doesn't follow the spec
   //         we'll have problems with the TE being forwarded to the server
   //         and us caching the transfer encoded documents and then
-  //         serving it to a client that can not handle it
+  //         serving it to a client that can not handle it. The exception
+  //         to this is that we will allow "TE: trailers" to be forwarded
+  //         because that is required for gRPC traffic.
   //      2) Transfer encoding is copied.  If the transfer encoding
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when the decision is made to dechunk it
@@ -235,10 +238,19 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
     int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
     if (field_flags & HTIF_HOPBYHOP) {
-      // Delete header if not in special proxy_auth retention mode
-      if ((!retain_proxy_auth_hdrs) || (!(field_flags & HTIF_PROXYAUTH))) {
-        new_hdr->field_delete(&field);
+      std::string_view name(field.name_get());
+      std::string_view value(field.value_get());
+      bool const is_te_trailers = name == MIME_FIELD_TE && value == "trailers";
+      if (is_te_trailers) {
+        // te: trailers is used by gRPC, do not delete it.
+        continue;
       }
+
+      // Delete header if not in special proxy_auth retention mode
+      if (retain_proxy_auth_hdrs && (field_flags & HTIF_PROXYAUTH)) {
+        continue;
+      }
+      new_hdr->field_delete(&field);
     } else if (field.m_wks_idx == MIME_WKSIDX_DATE) {
       date_hdr = true;
     }
