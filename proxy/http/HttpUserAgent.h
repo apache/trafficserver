@@ -144,7 +144,7 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
     m_client_connection_id = p->connection_id();
   }
 
-  m_conn_info.tcp_reused = txn->is_first_transaction();
+  m_conn_info.tcp_reused = !txn->is_first_transaction();
 
   auto netvc{txn->get_netvc()};
 

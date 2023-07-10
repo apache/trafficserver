@@ -1,18 +1,38 @@
-#include <catch.hpp>
+/** @file
+
+  HTTP state machine
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+ */
 
 #include "apidefs.h"
-#include "CacheControl.h"
 #include "Http1ClientSession.h"
 #include "Http1ClientTransaction.h"
-#include "HttpConfig.h"
 #include "HttpSessionAccept.h"
 #include "HttpSM.h"
 #include "I_IOBuffer.h"
 #include "I_VConnection.h"
 #include "InkAPIInternal.h"
 #include "P_SSLNetVConnection.h"
-#include "ParentSelection.h"
-#include "ReverseProxy.h"
+
+#include <catch.hpp>
 
 #include <cstring>
 
@@ -47,11 +67,6 @@ Http1ClientTestSession::set_vc(NetVConnection *new_vc)
 
 TEST_CASE("tcp_reused should be set correctly when a session is attached.")
 {
-  init_reverse_proxy();
-  initCacheControl();
-  HttpConfig::startup();
-  ParentConfig::startup();
-
   HttpSM sm;
   sm.init();
 

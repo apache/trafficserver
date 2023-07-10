@@ -35,12 +35,15 @@ target_link_libraries(test_http
     PRIVATE
         catch2::catch2
         ts::http
+        ts::hdrs # transitive
+        ts::inkutils # transitive
         inkcache # transitive
         inkhostdb # transitive
         logging # transitive
         ts::inkevent # transitive
         ts::proxy # transitive
         http_remap # transitive
+        ts::proxy # transitive
         aio # transitive
         inkdns # transitive
         fastlz # transitive

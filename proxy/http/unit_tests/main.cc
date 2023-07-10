@@ -21,13 +21,20 @@
     limitations under the License.
 */
 
+
+
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "tscore/I_Layout.h"
 
+#include "CacheControl.h"
+#include "HttpConfig.h"
 #include "I_EventSystem.h"
+#include "ParentSelection.h"
 #include "records/I_RecordsConfig.h"
+#include "ReverseProxy.h"
+
 
 #include "diags.i"
 
@@ -49,6 +56,11 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     EThread *main_thread = new EThread;
     main_thread->set_specific();
+
+    init_reverse_proxy();
+    initCacheControl();
+    HttpConfig::startup();
+    ParentConfig::startup();
   }
 
   void

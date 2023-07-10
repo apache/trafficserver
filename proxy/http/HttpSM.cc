@@ -687,8 +687,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         _ua.get_raw_buffer_reader()->dealloc();
         _ua.set_raw_buffer_reader(nullptr);
       }
-      // vio not holding our thread :/
-      //_ua.get_entry()->read_vio->reenable();
+      _ua.get_entry()->read_vio->reenable();
       return VC_EVENT_CONT;
     }
   case PARSE_RESULT_DONE:
