@@ -546,7 +546,6 @@ namespace bw_fmt
   /// Global named argument table.
   using GlobalSignature = void (*)(BufferWriter &, BWFSpec const &);
   using GlobalTable     = std::map<std::string_view, GlobalSignature>;
-  extern GlobalTable BWF_GLOBAL_TABLE;
   extern GlobalSignature Global_Table_Find(std::string_view name);
 
   /// Generic integral conversion.

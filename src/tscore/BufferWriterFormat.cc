@@ -217,7 +217,13 @@ BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
 
 namespace bw_fmt
 {
-  GlobalTable BWF_GLOBAL_TABLE;
+  GlobalTable &
+  bwf_global_table()
+  {
+    static GlobalTable BWF_GLOBAL_TABLE;
+
+    return BWF_GLOBAL_TABLE;
+  }
 
   void
   Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n)
@@ -726,8 +732,9 @@ bw_fmt::GlobalSignature
 bw_fmt::Global_Table_Find(std::string_view name)
 {
   if (name.size()) {
-    auto spot = bw_fmt::BWF_GLOBAL_TABLE.find(name);
-    if (spot != bw_fmt::BWF_GLOBAL_TABLE.end()) {
+    auto &global_table = bw_fmt::bwf_global_table();
+    auto spot          = global_table.find(name);
+    if (spot != global_table.end()) {
       return spot->second;
     }
   }
@@ -749,7 +756,7 @@ FixedBufferWriter::operator>>(int fd) const
 bool
 bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
 {
-  return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
+  return ts::bw_fmt::bwf_global_table().emplace(name, formatter).second;
 }
 
 BufferWriter &
@@ -980,11 +987,12 @@ BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
-  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
+  auto &global_table = ts::bw_fmt::bwf_global_table();
+  global_table.emplace("now", &BWF_Now);
+  global_table.emplace("tick", &BWF_Tick);
+  global_table.emplace("timestamp", &BWF_Timestamp);
+  global_table.emplace("thread-id", &BWF_ThreadID);
+  global_table.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
 
