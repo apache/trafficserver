@@ -141,8 +141,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   trans.mutex = mutex; // Share this mutex with the transaction
   in_destroy  = false;
 
-  TLSEarlyDataSupport *eds = new_vc->get_service<TLSEarlyDataSupport>();
-  if (eds != nullptr) {
+  if (TLSEarlyDataSupport *eds = new_vc->get_service<TLSEarlyDataSupport>()) {
     read_from_early_data = eds->get_early_data_len();
     Debug("ssl_early_data", "read_from_early_data = %" PRId64, read_from_early_data);
   }
