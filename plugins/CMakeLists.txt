@@ -48,6 +48,7 @@ add_subdirectory(multiplexer)
 add_subdirectory(prefetch)
 add_subdirectory(regex_remap)
 add_subdirectory(s3_auth)
+add_subdirectory(stats_over_http)
 add_subdirectory(xdebug)
 
 if(HOST_OS STREQUAL "linux")
