@@ -98,6 +98,8 @@ public:
   static int connection_table_size();
   static uint8_t scid_len();
 
+  bool disable_http_0_9() const;
+
 private:
   static int _connection_table_size;
   // TODO: make configurable
@@ -149,6 +151,8 @@ private:
 
   uint32_t _max_send_udp_payload_size_in  = 0;
   uint32_t _max_send_udp_payload_size_out = 0;
+
+  uint32_t _disable_http_0_9 = 1;
 
   // [draft-17 recovery] 6.4.1.  Constants of interest
   uint32_t _ld_packet_threshold = 3;

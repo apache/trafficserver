@@ -160,6 +160,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_recv_udp_payload_size_out, "proxy.config.quic.max_recv_udp_payload_size_out");
   REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
   REC_EstablishStaticConfigInt32U(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
+  REC_EstablishStaticConfigInt32U(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
@@ -476,6 +477,12 @@ const char *
 QUICConfigParams::get_qlog_file_base_name() const
 {
   return this->_qlog_file_base_name;
+}
+
+bool
+QUICConfigParams::disable_http_0_9() const
+{
+  return this->_disable_http_0_9;
 }
 
 //
