@@ -27,12 +27,10 @@
 
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 
-// We need at least this many internal record entries for our configurations and metrics. Any
-// additional slots in librecords will be allocated to the plugin metrics. These should be
-// updated if we change the internal librecords size significantly.
-#define REC_INTERNAL_RECORDS    1100
-#define REC_DEFAULT_API_RECORDS 1400
-
+// We need at least this many internal record entries for our configurations and metrics.
+// This may need adjustments if we make significant additions to librecords. Note that
+// plugins are using their own metrics systems.
+#define REC_MAX_RECORDS               1500
 #define REC_CONFIG_UPDATE_INTERVAL_MS 3000
 #define REC_REMOTE_SYNC_INTERVAL_MS   5000
 

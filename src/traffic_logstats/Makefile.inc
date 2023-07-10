@@ -58,3 +58,11 @@ traffic_logstats_traffic_logstats_LDADD = \
 	@YAMLCPP_LIBS@ \
 	@LIBCAP@ \
 	@LIBPROFILER@ -lm
+    $(top_builddir)/mgmt/utils/libutils_p.la \
+    $(top_builddir)/src/api/libtsapi.la
+
+traffic_logstats_traffic_logstats_LDADD += \
+  @SWOC_LIBS@ \
+  @HWLOC_LIBS@ \
+  @YAMLCPP_LIBS@ \
+  @LIBPROFILER@ -lm

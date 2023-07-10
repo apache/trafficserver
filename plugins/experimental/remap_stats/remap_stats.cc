@@ -46,9 +46,6 @@ struct config_t {
   int txn_slot{-1};
 };
 
-// From "core".... sigh, but we need it for now at least.
-extern int max_records_entries;
-
 namespace
 {
 void

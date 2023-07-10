@@ -355,6 +355,7 @@ configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
 enable_testing()
 
+add_subdirectory(src/api)
 add_subdirectory(src/tscpp/util)
 add_subdirectory(src/tscpp/api)
 add_subdirectory(src/tscore)

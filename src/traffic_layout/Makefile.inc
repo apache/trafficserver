@@ -45,4 +45,5 @@ traffic_layout_traffic_layout_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/api/libtsapi.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBLZMA@ @LIBPCRE@ @LIBCAP@

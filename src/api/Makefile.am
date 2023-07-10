@@ -1,3 +1,4 @@
+# libts Makefile.am
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,28 +18,21 @@
 
 include $(top_srcdir)/mk/tidy.mk
 
-bin_PROGRAMS =
-check_PROGRAMS =
-TESTS =
-lib_LTLIBRARIES =
-noinst_PROGRAMS =
+lib_LTLIBRARIES = libtsapi.la
 
-SUBDIRS = tscpp/api api
+AM_CPPFLAGS += \
+	@SWOC_INCLUDES@ \
+	$(TS_INCLUDES)
 
-if BUILD_WCCP
-SUBDIRS += wccp
-include traffic_wccp/Makefile.inc
-endif
+libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
 
-include traffic_cache_tool/Makefile.inc
-include traffic_via/Makefile.inc
-include traffic_top/Makefile.inc
-include traffic_server/Makefile.inc
-include traffic_logstats/Makefile.inc
-include traffic_crashlog/Makefile.inc
-include traffic_layout/Makefile.inc
-include traffic_logcat/Makefile.inc
-include traffic_ctl/Makefile.inc
+libtsapi_la_LIBADD = \
+    $(top_builddir)/src/tscore/libtscore.la \
+	@SWOC_LIBS@
+
+
+libtsapi_la_SOURCES = \
+	Metrics.cc
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
