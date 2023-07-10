@@ -49,6 +49,7 @@ add_subdirectory(prefetch)
 add_subdirectory(remap_purge)
 add_subdirectory(regex_remap)
 add_subdirectory(s3_auth)
+add_subdirectory(server_push_preload)
 add_subdirectory(stats_over_http)
 add_subdirectory(xdebug)
 

@@ -15,35 +15,8 @@
 #
 #######################
 
-add_library(tscppapi STATIC
-        AsyncHttpFetch.cc
-        AsyncTimer.cc
-        CaseInsensitiveStringComparator.cc
-        ClientRequest.cc
-        Continuation.cc
-        GlobalPlugin.cc
-        GzipDeflateTransformation.cc
-        GzipInflateTransformation.cc
-        Headers.cc
-        HttpMethod.cc
-        HttpVersion.cc
-        InterceptPlugin.cc
-        Logger.cc
-        Plugin.cc
-        RemapPlugin.cc
-        Request.cc
-        Response.cc
-        Stat.cc
-        Transaction.cc
-        TransactionPlugin.cc
-        TransformationPlugin.cc
-        Url.cc
-        utils.cc
-        utils_internal.cc
-        )
-add_library(ts::tscppapi ALIAS tscppapi)
+add_atsplugin(server_push_preload server_push_preload.cc)
 
-# server_push_preload plugin links directly to tscppapi
-set_target_properties(tscppapi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+target_include_directories(server_push_preload PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
-install(TARGETS tscppapi)
+target_link_libraries(server_push_preload PRIVATE ts::tscppapi)
