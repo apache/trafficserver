@@ -48,7 +48,7 @@
 
 #include <tscpp/util/ts_ip.h>
 
-#include "ink_autoconf.h"
+#include "tscore/ink_config.h"
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
