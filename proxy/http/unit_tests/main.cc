@@ -21,8 +21,6 @@
     limitations under the License.
 */
 
-
-
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
@@ -34,7 +32,6 @@
 #include "ParentSelection.h"
 #include "records/I_RecordsConfig.h"
 #include "ReverseProxy.h"
-
 
 #include "diags.i"
 
