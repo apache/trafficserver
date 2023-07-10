@@ -124,9 +124,12 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
           new_fail_count = h->failCount += 1;
         }
       } // end lock guard
-
-      NH_Note("[%" PRId64 "] NextHop %s marked as down %s for request %s", sm_id, (result.retry) ? "retry" : "initially",
-              h->hostname.c_str(), host);
+      if (host == nullptr) {
+        NH_Note("[%" PRId64 "] NextHop %s marked as down %s", sm_id, (result.retry) ? "retry" : "initially", h->hostname.c_str());
+      } else {
+        NH_Note("[%" PRId64 "] NextHop %s marked as down %s for request %s", sm_id, (result.retry) ? "retry" : "initially",
+                h->hostname.c_str(), host);
+      }
     } else {
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
       { // lock guard
