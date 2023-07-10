@@ -43,8 +43,8 @@ TEST_CASE("64-bit result works", "[evaluate64]")
 
 TEST_CASE("Larger number saturation", "[saturation]")
 {
-  REQUIRE(evaluate("3842948374928374982374982374") == "4294967295");
-  REQUIRE(evaluate("3248739487239847298374738924-4294967295") == "0");
+  REQUIRE(evaluate("3842948374928374982374982374") == "18446744073709551615");
+  REQUIRE(evaluate("3248739487239847298374738924-18446744073709551615") == "0");
 }
 
 TEST_CASE("Negative subtraction", "[negative]")

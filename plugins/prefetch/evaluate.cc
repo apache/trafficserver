@@ -59,7 +59,7 @@ evaluate(const String &v)
   pos             = stmt.find_first_of("+-");
 
   if (String::npos == pos) {
-    uint32_t tmp;
+    uint64_t tmp;
     std::istringstream iss(stmt);
     iss >> tmp;
     result = tmp;
@@ -68,16 +68,16 @@ evaluate(const String &v)
   } else {
     String leftOperand = stmt.substr(0, pos);
     std::istringstream liss(leftOperand);
-    uint32_t a;
+    uint64_t a;
     liss >> a;
 
     String rightOperand = stmt.substr(pos + 1);
     std::istringstream riss(rightOperand);
-    uint32_t b;
+    uint64_t b;
     riss >> b;
 
     if ('+' == stmt[pos]) {
-      result = static_cast<uint64_t>(a) + static_cast<uint64_t>(b);
+      result = a + b;
     } else {
       if (a <= b) {
         result = 0;
