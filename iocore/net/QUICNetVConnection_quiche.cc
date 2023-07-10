@@ -39,11 +39,11 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 QUICNetVConnection::QUICNetVConnection()
 {
-  this->_set_service(NetVConnection::Service::TLS_ALPN, static_cast<ALPNSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_Basic, static_cast<TLSBasicSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_CertSwitch, static_cast<TLSCertSwitchSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_SNI, static_cast<TLSSNISupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_SessionResumption, static_cast<TLSSessionResumptionSupport *>(this));
+  this->_set_service(static_cast<ALPNSupport *>(this));
+  this->_set_service(static_cast<TLSBasicSupport *>(this));
+  this->_set_service(static_cast<TLSCertSwitchSupport *>(this));
+  this->_set_service(static_cast<TLSSNISupport *>(this));
+  this->_set_service(static_cast<TLSSessionResumptionSupport *>(this));
 }
 
 QUICNetVConnection::~QUICNetVConnection() {}

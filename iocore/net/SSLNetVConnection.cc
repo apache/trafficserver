@@ -862,13 +862,13 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
 SSLNetVConnection::SSLNetVConnection()
 {
-  this->_set_service(NetVConnection::Service::TLS_ALPN, static_cast<ALPNSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_Basic, static_cast<TLSBasicSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_CertSwitch, static_cast<TLSCertSwitchSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_EarlyData, static_cast<TLSEarlyDataSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_SNI, static_cast<TLSSNISupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_SessionResumption, static_cast<TLSSessionResumptionSupport *>(this));
-  this->_set_service(NetVConnection::Service::TLS_Tunnel, static_cast<TLSTunnelSupport *>(this));
+  this->_set_service(static_cast<ALPNSupport *>(this));
+  this->_set_service(static_cast<TLSBasicSupport *>(this));
+  this->_set_service(static_cast<TLSCertSwitchSupport *>(this));
+  this->_set_service(static_cast<TLSEarlyDataSupport *>(this));
+  this->_set_service(static_cast<TLSSNISupport *>(this));
+  this->_set_service(static_cast<TLSSessionResumptionSupport *>(this));
+  this->_set_service(static_cast<TLSTunnelSupport *>(this));
 }
 
 void

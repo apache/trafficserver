@@ -540,7 +540,7 @@ protected:
   /// NetVConnection Context.
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 
-  void _set_service(enum Service service, void *instance);
+  template <typename S> void _set_service(S *instance);
 
 private:
   void *_services[static_cast<unsigned int>(Service::N_SERVICES)] = {
@@ -548,6 +548,7 @@ private:
   };
 
   void *_get_service(enum Service mixin_index) const;
+  void _set_service(enum Service mixin_index, void *instance);
 };
 
 inline NetVConnection::NetVConnection() : VConnection(nullptr)
@@ -582,6 +583,12 @@ NetVConnection::get_service() const
 {
   return static_cast<ALPNSupport *>(this->_get_service(NetVConnection::Service::TLS_ALPN));
 }
+template <>
+inline void
+NetVConnection::_set_service(ALPNSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_ALPN, instance);
+}
 
 class TLSBasicSupport;
 template <>
@@ -589,6 +596,12 @@ inline TLSBasicSupport *
 NetVConnection::get_service() const
 {
   return static_cast<TLSBasicSupport *>(this->_get_service(NetVConnection::Service::TLS_Basic));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSBasicSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Basic, instance);
 }
 
 class TLSEarlyDataSupport;
@@ -598,6 +611,12 @@ NetVConnection::get_service() const
 {
   return static_cast<TLSEarlyDataSupport *>(this->_get_service(NetVConnection::Service::TLS_EarlyData));
 }
+template <>
+inline void
+NetVConnection::_set_service(TLSEarlyDataSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_EarlyData, instance);
+}
 
 class TLSCertSwitchSupport;
 template <>
@@ -605,6 +624,12 @@ inline TLSCertSwitchSupport *
 NetVConnection::get_service() const
 {
   return static_cast<TLSCertSwitchSupport *>(this->_get_service(NetVConnection::Service::TLS_CertSwitch));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSCertSwitchSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_CertSwitch, instance);
 }
 
 class TLSSNISupport;
@@ -614,6 +639,12 @@ NetVConnection::get_service() const
 {
   return static_cast<TLSSNISupport *>(this->_get_service(NetVConnection::Service::TLS_SNI));
 }
+template <>
+inline void
+NetVConnection::_set_service(TLSSNISupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_SNI, instance);
+}
 
 class TLSSessionResumptionSupport;
 template <>
@@ -622,6 +653,12 @@ NetVConnection::get_service() const
 {
   return static_cast<TLSSessionResumptionSupport *>(this->_get_service(NetVConnection::Service::TLS_SessionResumption));
 }
+template <>
+inline void
+NetVConnection::_set_service(TLSSessionResumptionSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_SessionResumption, instance);
+}
 
 class TLSTunnelSupport;
 template <>
@@ -629,4 +666,10 @@ inline TLSTunnelSupport *
 NetVConnection::get_service() const
 {
   return static_cast<TLSTunnelSupport *>(this->_get_service(NetVConnection::Service::TLS_Tunnel));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSTunnelSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Tunnel, instance);
 }
