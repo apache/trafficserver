@@ -227,6 +227,7 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
     // detect if io_uring is available and can support the required features
     auto *ctx = IOUringContext::local_context();
     if (ctx && ctx->valid()) {
+      // check to see which ops we can use (this can't fail)
       setup_prep_ops(ctx);
       use_io_uring = true;
     } else {
@@ -588,12 +589,16 @@ prep_op prep_ops[] = {
   prep_writev,
 };
 
+/*
+ * The default io_uring ops are readv/writev as those were available since the first io_uring.
+ * This function checks for normal read/write support and changes to those if available.
+ */
 void
 setup_prep_ops(IOUringContext *ur)
 {
   if (!ur->supports_op(IORING_OP_READ)) {
-    prep_ops[LIO_READ]  = prep_readv;
-    prep_ops[LIO_WRITE] = prep_writev;
+    prep_ops[LIO_READ]  = prep_read;
+    prep_ops[LIO_WRITE] = prep_write;
   }
 }
 
