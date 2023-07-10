@@ -33,6 +33,83 @@
 
 namespace ats_wasm
 {
+
+static int
+async_handler(TSCont cont, TSEvent event, void *edata)
+{
+  // information for the handler
+  TSHttpTxn txn         = static_cast<TSHttpTxn>(edata);
+  AsyncInfo *ai         = (AsyncInfo *)TSContDataGet(cont);
+  uint32_t token        = ai->token;
+  Context *root_context = ai->root_context;
+  Wasm *wasm            = root_context->wasm();
+
+  // variables to be used in handler
+  TSEvent result    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
+  const void *body  = nullptr;
+  size_t body_size  = 0;
+  TSMBuffer hdr_buf = nullptr;
+  TSMLoc hdr_loc    = nullptr;
+  int header_size   = 0;
+
+  TSMutexLock(wasm->mutex());
+  // filling in variables for a successful fetch
+  if (event == static_cast<TSEvent>(FETCH_EVENT_ID_BASE)) {
+    int data_len;
+    const char *data_start = TSFetchRespGet(txn, &data_len);
+    if (data_start && (data_len > 0)) {
+      const char *data_end = data_start + data_len;
+      TSHttpParser parser  = TSHttpParserCreate();
+      hdr_buf              = TSMBufferCreate();
+      hdr_loc              = TSHttpHdrCreate(hdr_buf);
+      TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
+      if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
+        TSHttpStatus status = TSHttpHdrStatusGet(hdr_buf, hdr_loc);
+        header_size         = TSMimeHdrFieldsCount(hdr_buf, hdr_loc);
+        body                = data_start; // data_start will now be pointing to body
+        body_size           = data_end - data_start;
+        TSDebug(WASM_DEBUG_TAG, "[%s] Fetch result had a status code of %d with a body length of %ld", __FUNCTION__, status,
+                body_size);
+      } else {
+        TSError("[wasm][%s] Unable to parse call response", __FUNCTION__);
+        event = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
+      }
+      TSHttpParserDestroy(parser);
+    } else {
+      TSError("[wasm][%s] Successful fetch did not result in any content. Assuming failure", __FUNCTION__);
+      event = static_cast<TSEvent>(FETCH_EVENT_ID_BASE + 1);
+    }
+    result = event;
+  }
+
+  // callback function
+  TSDebug(WASM_DEBUG_TAG, "[%s] setting root context call result", __FUNCTION__);
+  root_context->setHttpCallResult(hdr_buf, hdr_loc, body, body_size, result);
+  TSDebug(WASM_DEBUG_TAG, "[%s] trigger root context function, token:  %d", __FUNCTION__, token);
+  root_context->onHttpCallResponse(token, header_size, body_size, 0);
+  TSDebug(WASM_DEBUG_TAG, "[%s] resetting root context call result", __FUNCTION__);
+  root_context->resetHttpCallResult();
+
+  // cleaning up
+  if (hdr_loc) {
+    TSMLoc null_parent_loc = nullptr;
+    TSHandleMLocRelease(hdr_buf, null_parent_loc, hdr_loc);
+  }
+  if (hdr_buf) {
+    TSMBufferDestroy(hdr_buf);
+  }
+
+  TSMutexUnlock(wasm->mutex());
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] delete async info and continuation", __FUNCTION__);
+  // delete the Async Info
+  delete ai;
+  // delete continuation
+  TSContDestroy(cont);
+
+  return 0;
+}
+
 // utiltiy function for properties
 static void
 print_address(struct sockaddr const *ip, std::string *result)
@@ -221,11 +298,10 @@ Context::Context(Wasm *wasm) : ContextBase(wasm) {}
 Context::Context(Wasm *wasm, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm, plugin) {}
 
 // NB: wasm can be nullptr if it failed to be created successfully.
-Context::Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm)
+Context::Context(Wasm *wasm, uint32_t parent_context_id, const std::shared_ptr<PluginBase> &plugin) : ContextBase(wasm, plugin)
 {
-  id_                = (wasm_ != nullptr) ? wasm_->allocContextId() : 0;
+  // setting up parent context
   parent_context_id_ = parent_context_id;
-  plugin_            = plugin;
   if (wasm_ != nullptr) {
     parent_context_ = wasm_->getContext(parent_context_id_);
   }
@@ -430,17 +506,78 @@ Context::getBuffer(WasmBufferType type)
     return buffer_.set(wasm_->vm_configuration());
   case WasmBufferType::PluginConfiguration:
     return buffer_.set(plugin_->plugin_configuration_);
+  case WasmBufferType::HttpCallResponseBody:
+    if (cr_body_ != nullptr) {
+      return buffer_.set(std::string(static_cast<const char *>(cr_body_), cr_body_size_));
+    }
+    return buffer_.set("");
   case WasmBufferType::CallData:
   case WasmBufferType::HttpRequestBody:
   case WasmBufferType::HttpResponseBody:
   case WasmBufferType::NetworkDownstreamData:
   case WasmBufferType::NetworkUpstreamData:
-  case WasmBufferType::HttpCallResponseBody:
   case WasmBufferType::GrpcReceiveBuffer:
   default:
     unimplemented();
     return nullptr;
   }
+}
+
+WasmResult
+Context::httpCall(std::string_view target, const Pairs &request_headers, std::string_view request_body,
+                  const Pairs &request_trailers, int timeout_millisconds, uint32_t *token_ptr)
+{
+  Wasm *wasm            = this->wasm();
+  Context *root_context = this->root_context();
+
+  TSCont contp;
+  std::string request, method, path, authority;
+
+  // setup local address for API call
+  struct sockaddr_in addr;
+  addr.sin_family      = AF_INET;
+  addr.sin_addr.s_addr = LOCAL_IP_ADDRESS;
+  addr.sin_port        = LOCAL_PORT;
+
+  for (const auto &p : request_headers) {
+    std::string key(p.first);
+    std::string value(p.second);
+
+    if (key == ":method") {
+      method = value;
+    } else if (key == ":path") {
+      path = value;
+    } else if (key == ":authority") {
+      authority = value;
+    }
+  }
+
+  /* request */
+  request = method + " https://" + authority + path + " HTTP/1.1\r\n";
+  for (const auto &p : request_headers) {
+    std::string key(p.first);
+    std::string value(p.second);
+    request += key + ": " + value + "\r\n";
+  }
+  request += "\r\n";
+  request += request_body;
+
+  TSFetchEvent event_ids;
+  event_ids.success_event_id = FETCH_EVENT_ID_BASE;
+  event_ids.failure_event_id = FETCH_EVENT_ID_BASE + 1;
+  event_ids.timeout_event_id = FETCH_EVENT_ID_BASE + 2;
+
+  contp            = TSContCreate(async_handler, TSMutexCreate());
+  AsyncInfo *ai    = new AsyncInfo();
+  ai->token        = wasm->nextHttpCallId();
+  ai->root_context = root_context;
+  *token_ptr       = ai->token; // to be returned to the caller
+  TSContDataSet(contp, ai);
+
+  // API call for async fetch
+  TSFetchUrl(request.c_str(), request.size(), reinterpret_cast<struct sockaddr const *>(&addr), contp, AFTER_BODY, event_ids);
+
+  return WasmResult::Ok;
 }
 
 // Metrics
@@ -1295,6 +1432,44 @@ Context::setProperty(std::string_view key, std::string_view serialized_value)
   return WasmResult::Ok;
 }
 
+WasmResult
+Context::continueStream(WasmStreamType /* stream_type */)
+{
+  if (reenable_txn_) {
+    TSError("[wasm][%s] transaction already reenabled", __FUNCTION__);
+    return WasmResult::Ok;
+  }
+
+  if (txnp_ == nullptr) {
+    TSError("[wasm][%s] Can't continue stream without a transaction", __FUNCTION__);
+    return WasmResult::InternalFailure;
+  } else {
+    TSDebug(WASM_DEBUG_TAG, "[%s] continuing txn for context %d", __FUNCTION__, id());
+    reenable_txn_ = true;
+    TSHttpTxnReenable(txnp_, TS_EVENT_HTTP_CONTINUE);
+    return WasmResult::Ok;
+  }
+}
+
+WasmResult
+Context::closeStream(WasmStreamType /* stream_type */)
+{
+  if (reenable_txn_) {
+    TSError("[wasm][%s] transaction already reenabled", __FUNCTION__);
+    return WasmResult::Ok;
+  }
+
+  if (txnp_ == nullptr) {
+    TSError("[wasm][%s] Can't continue stream without a transaction", __FUNCTION__);
+    return WasmResult::InternalFailure;
+  } else {
+    TSDebug(WASM_DEBUG_TAG, "[%s] continue txn for context %d with error", __FUNCTION__, id());
+    reenable_txn_ = true;
+    TSHttpTxnReenable(txnp_, TS_EVENT_HTTP_ERROR);
+    return WasmResult::Ok;
+  }
+}
+
 // send pre-made response
 WasmResult
 Context::sendLocalResponse(uint32_t response_code, std::string_view body_text, Pairs additional_headers,
@@ -1533,10 +1708,16 @@ Context::getHeaderMap(WasmHeaderMapType type)
     return {};
   case WasmHeaderMapType::ResponseTrailers:
     return {};
+  case WasmHeaderMapType::HttpCallResponseHeaders:
+    if (cr_hdr_buf_ == nullptr || cr_hdr_loc_ == nullptr) {
+      return {};
+    }
+    map.bufp    = cr_hdr_buf_;
+    map.hdr_loc = cr_hdr_loc_;
+    return map;
   default:
   case WasmHeaderMapType::GrpcReceiveTrailingMetadata:
   case WasmHeaderMapType::GrpcReceiveInitialMetadata:
-  case WasmHeaderMapType::HttpCallResponseHeaders:
   case WasmHeaderMapType::HttpCallResponseTrailers:
     return {};
   }

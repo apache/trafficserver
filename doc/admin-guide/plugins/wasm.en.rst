@@ -102,9 +102,8 @@ The plugin can also take more than one yaml file as arguments and can thus load 
 TODO
 ====
 
-* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime.
+* Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime later.
 * Need to support functionality for retrieving and setting request/response body
-* Need to support functionality for making async request call
 * Need to support L4 lifecycle handler functions
 
 Limitations
@@ -114,5 +113,6 @@ The plugin will not support the following functionality as specified in Proxy-Wa
 
 * Getting and setting trailer request and response header
 * Getting and setting HTTP/2 frame meta data
+* Support asynchronous request call in the start handler function of the plugin lifecycle
 * Support on Grpc lifecycle handler functions
 
