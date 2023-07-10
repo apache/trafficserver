@@ -15,7 +15,18 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(check_ramp check_ramp.c)
+
+set_property(
+  TARGET check_ramp
+  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_executable(push_request push_request.c)
+
+set_property(
+  TARGET push_request
+  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)

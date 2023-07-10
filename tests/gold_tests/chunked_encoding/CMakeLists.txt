@@ -15,7 +15,12 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(smuggle-client smuggle-client.c)
+
+target_link_libraries(smuggle-client PRIVATE "${OPENSSL_SSL_LIBRARY}")
+
+set_property(
+    TARGET smuggle-client
+    PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+

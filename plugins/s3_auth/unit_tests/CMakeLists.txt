@@ -15,7 +15,13 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(test_s3_auth
+    test_aws_auth_v4.cc
+    "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc"
+)
+
+target_link_libraries(test_s3_auth PRIVATE catch2::catch2)
+
+target_compile_definitions(test_s3_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
+
+add_test(NAME test_s3_auth COMMAND test_s3_auth)

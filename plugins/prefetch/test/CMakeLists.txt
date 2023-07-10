@@ -15,7 +15,14 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(test_evaluate
+    test_evaluate.cc
+    "${PROJECT_SOURCE_DIR}/common.cc"
+    "${PROJECT_SOURCE_DIR}/evaluate.cc"
+)
+
+target_link_libraries(test_evaluate PRIVATE catch2::catch2)
+
+target_compile_definitions(test_evaluate PRIVATE PREFETCH_UNIT_TEST)
+
+add_test(NAME test_evaluate COMMAND test_evaluate)

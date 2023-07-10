@@ -15,7 +15,12 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_atsplugin(stats_over_http stats_over_http.cc)
+
+target_include_directories(stats_over_http PRIVATE "${PROJECT_SOURCE_DIR}/include/")
+
+target_link_libraries(stats_over_http PRIVATE libswoc)
+
+if(HAVE_BROTLI_ENCODE_H)
+        target_link_libraries(stats_over_http PRIVATE brotli::brotlienc)
+endif()

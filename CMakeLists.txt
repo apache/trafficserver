@@ -261,6 +261,7 @@ check_symbol_exists(BIO_get_shutdown "openssl/bio.h" HAVE_BIO_GET_SHUTDOWN)
 check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
+check_symbol_exists(HMAC_CTX_new "openssl/hmac.h" HAVE_HMAC_CTX_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(
@@ -302,7 +303,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_compile_definitions(${HOST_OS} PACKAGE_NAME="ats" PACKAGE_VERSION="${TS_VERSION_STRING}")
-add_compile_options(-Wno-invalid-offsetof)
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>)
 
 # Common includes for everyone
 include_directories(
@@ -343,6 +344,7 @@ add_subdirectory(proxy)
 add_subdirectory(mgmt/utils)
 add_subdirectory(mgmt/config)
 add_subdirectory(mgmt/rpc)
+add_subdirectory(src/traffic_crashlog)
 add_subdirectory(src/traffic_server)
 add_subdirectory(src/traffic_ctl)
 add_subdirectory(src/traffic_layout)
@@ -351,6 +353,7 @@ if(ENABLE_WCCP)
     add_subdirectory(src/traffic_wccp)
 endif()
 add_subdirectory(src/tests)
+add_subdirectory(tests)
 add_subdirectory(plugins)
 add_subdirectory(configs)
 

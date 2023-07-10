@@ -15,7 +15,19 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+project(prefetch)
+
+add_atsplugin(prefetch
+    common.cc
+    configs.cc
+    evaluate.cc
+    fetch.cc
+    fetch_policy.cc
+    fetch_policy_simple.cc
+    fetch_policy_lru.cc
+    headers.cc
+    pattern.cc
+    plugin.cc
+)
+
+add_subdirectory(test)

@@ -23,7 +23,7 @@ if sys.version_info < (3, 6, 0):
     host.WriteError(
         "You need python 3.6 or later to run these tests\n", show_stack=False)
 
-needed_autest_version = "1.10.0"
+needed_autest_version = "1.10.3"
 found_autest_version = AuTestVersion()
 if AuTestVersion() < needed_autest_version:
     host.WriteError(

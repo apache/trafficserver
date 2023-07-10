@@ -15,7 +15,11 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_library(TSVConnFd MODULE TSVConnFd.cc)
+
+set_target_properties(TSVConnFd PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.libs"
+    PREFIX ""
+    SUFFIX ".so"
+)
+target_link_libraries(TSVConnFd PRIVATE tscore traffic_server)

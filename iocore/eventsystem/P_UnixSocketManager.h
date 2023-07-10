@@ -119,6 +119,21 @@ SocketManager::recvmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_U
   return r;
 }
 
+#ifdef HAVE_RECVMMSG
+TS_INLINE int
+SocketManager::recvmmsg(int fd, struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout, void * /* pOLP ATS_UNUSED */)
+{
+  int r;
+  do {
+    if (unlikely((r = ::recvmmsg(fd, msgvec, vlen, flags, timeout)) < 0)) {
+      r = -errno;
+      // EINVAL can ocur if timeout is invalid.
+    }
+  } while (r == -EINTR);
+  return r;
+}
+#endif
+
 TS_INLINE int64_t
 SocketManager::write(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
 {

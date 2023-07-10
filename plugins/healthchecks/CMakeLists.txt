@@ -15,10 +15,4 @@
 #
 #######################
 
-# GCC warns that -Wno-invalid-offset, set in top-level CMakeListsitxt,
-# is invalid for C language
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
-
 add_atsplugin(healthchecks healthchecks.c)
-
-target_compile_options(healthchecks PRIVATE -Wall -Wextra)

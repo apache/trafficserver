@@ -15,7 +15,13 @@
 #
 #######################
 
-add_library(esi-common DocNode.cc gzip.cc Utils.cc)
-target_link_libraries(esi-common PRIVATE ZLIB::ZLIB)
-target_include_directories(esi-common PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-set_target_properties(esi-common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc)
+
+target_link_libraries(traffic_crashlog
+    PRIVATE
+        ts::inkevent # transitive
+        ts::records_p
+        ts::tscore
+)
+
+install(TARGETS traffic_crashlog)
