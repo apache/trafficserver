@@ -1057,7 +1057,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
     }
   }
   // Also dump the new ts::Metrics if asked for
-  if (rec_type & TS_RECORDTYPE_PLUGIN) {
+  if (rec_type & RECT_PLUGIN) {
     RecData datum;
 
     for (auto &&[name, val] : ts::Metrics::getInstance()) {

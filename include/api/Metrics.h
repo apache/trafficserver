@@ -122,7 +122,7 @@ public:
   {
   public:
     using iterator_category = std::input_iterator_tag;
-    using value_type        = std::tuple<std::string_view, AtomicType::value_type>;
+    using value_type        = std::tuple<std::string_view, int64_t>;
     using difference_type   = ptrdiff_t;
     using pointer           = value_type *;
     using reference         = value_type &;
