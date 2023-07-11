@@ -214,7 +214,7 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 //
 // DynamicTable
 //
-XpackDynamicTable::XpackDynamicTable(uint16_t size) : _maximum_size(size), _available(size), _max_entries(size), _storage(size)
+XpackDynamicTable::XpackDynamicTable(uint32_t size) : _maximum_size(size), _available(size), _max_entries(size), _storage(size)
 {
   XPACKDebug("Dynamic table size: %u", size);
   this->_entries      = static_cast<struct XpackDynamicTableEntry *>(ats_malloc(sizeof(struct XpackDynamicTableEntry) * size));
@@ -231,10 +231,26 @@ XpackDynamicTable::~XpackDynamicTable()
 }
 
 inline const XpackLookupResult
-XpackDynamicTable::lookup(uint16_t index, const char **name, size_t *name_len, const char **value, size_t *value_len) const
+XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, const char **value, size_t *value_len) const
 {
   XPACKDebug("Lookup entry: abs_index=%u", index);
-  uint16_t pos = (this->_entries_head - (this->_entries[this->_entries_head].index - index)) % this->_max_entries;
+
+  if (this->is_empty()) {
+    // There's no entry
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  if (index > this->_entries[this->_entries_head].index) {
+    // The index is invalid
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  if (index < this->_entries[this->_entries_tail + 1].index) {
+    // The index is invalid
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  uint32_t pos = (this->_entries_head - (this->_entries[this->_entries_head].index - index)) % this->_max_entries;
   *name_len    = this->_entries[pos].name_len;
   *value_len   = this->_entries[pos].value_len;
   this->_storage.read(this->_entries[pos].offset, name, *name_len, value, *value_len);
@@ -249,14 +265,14 @@ XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, 
 {
   XPACKDebug("Lookup entry: name=%.*s, value=%.*s", static_cast<int>(name_len), name, static_cast<int>(value_len), value);
   XpackLookupResult::MatchType match_type = XpackLookupResult::MatchType::NONE;
-  uint16_t i                              = (this->_entries_tail + 1) % this->_max_entries;
-  int end                                 = (this->_entries_head + 1) % this->_max_entries;
-  uint16_t candidate_index                = 0;
+  uint32_t i                              = (this->_entries_tail + 1) % this->_max_entries;
+  uint32_t end                            = (this->_entries_head + 1) % this->_max_entries;
+  uint32_t candidate_index                = 0;
   const char *tmp_name                    = nullptr;
   const char *tmp_value                   = nullptr;
 
   // DynamicTable is empty
-  if (this->_entries_inserted == 0) {
+  if (this->is_empty()) {
     return {candidate_index, match_type};
   }
 
@@ -288,7 +304,7 @@ XpackDynamicTable::lookup(const std::string_view name, const std::string_view va
 }
 
 const XpackLookupResult
-XpackDynamicTable::lookup_relative(uint16_t relative_index, const char **name, size_t *name_len, const char **value,
+XpackDynamicTable::lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
                                    size_t *value_len) const
 {
   XPACKDebug("Lookup entry: rel_index=%u", relative_index);
@@ -313,16 +329,16 @@ const XpackLookupResult
 XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *value, size_t value_len)
 {
   if (this->_max_entries == 0) {
-    return {UINT16_C(0), XpackLookupResult::MatchType::NONE};
+    return {UINT32_C(0), XpackLookupResult::MatchType::NONE};
   }
 
   // Make enough space to insert a new entry
-  uint16_t required_size = name_len + value_len + ADDITIONAL_32_BYTES;
-  if (this->_available < required_size) {
+  uint64_t required_size = static_cast<uint64_t>(name_len) + static_cast<uint64_t>(value_len) + ADDITIONAL_32_BYTES;
+  if (required_size > this->_available) {
     if (!this->_make_space(required_size)) {
       // We can't insert a new entry because some stream(s) refer an entry that need to be evicted or the header is too big to
       // store. This is fine with HPACK, but not with QPACK.
-      return {UINT16_C(0), XpackLookupResult::MatchType::NONE};
+      return {UINT32_C(0), XpackLookupResult::MatchType::NONE};
     }
   }
 
@@ -332,9 +348,9 @@ XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *v
   this->_entries_head                 = (this->_entries_head + 1) % this->_max_entries;
   this->_entries[this->_entries_head] = {
     this->_entries_inserted++,
-    this->_storage.write(name, static_cast<uint16_t>(name_len), value, static_cast<uint16_t>(value_len)),
-    static_cast<uint16_t>(name_len),
-    static_cast<uint16_t>(value_len),
+    this->_storage.write(name, static_cast<uint32_t>(name_len), value, static_cast<uint32_t>(value_len)),
+    static_cast<uint32_t>(name_len),
+    static_cast<uint32_t>(value_len),
     0,
     wks};
   this->_available -= required_size;
@@ -351,7 +367,7 @@ XpackDynamicTable::insert_entry(const std::string_view name, const std::string_v
 }
 
 const XpackLookupResult
-XpackDynamicTable::duplicate_entry(uint16_t current_index)
+XpackDynamicTable::duplicate_entry(uint32_t current_index)
 {
   const char *name;
   size_t name_len;
@@ -372,7 +388,7 @@ XpackDynamicTable::duplicate_entry(uint16_t current_index)
 }
 
 bool
-XpackDynamicTable::should_duplicate(uint16_t index)
+XpackDynamicTable::should_duplicate(uint32_t index)
 {
   // TODO: Check whether a specified entry should be duplicated
   // Just return false for now
@@ -380,9 +396,9 @@ XpackDynamicTable::should_duplicate(uint16_t index)
 }
 
 bool
-XpackDynamicTable::update_maximum_size(uint16_t new_max_size)
+XpackDynamicTable::update_maximum_size(uint32_t new_max_size)
 {
-  uint16_t used = this->_maximum_size - this->_available;
+  uint32_t used = this->_maximum_size - this->_available;
   if (used < new_max_size) {
     this->_maximum_size = new_max_size;
     this->_available    = new_max_size - used;
@@ -398,45 +414,67 @@ XpackDynamicTable::update_maximum_size(uint16_t new_max_size)
   return ret;
 }
 
-uint16_t
+uint32_t
 XpackDynamicTable::size() const
 {
   return this->_maximum_size - this->_available;
 }
 
-uint16_t
+uint32_t
 XpackDynamicTable::maximum_size() const
 {
   return this->_maximum_size;
 }
 
 void
-XpackDynamicTable::ref_entry(uint16_t index)
+XpackDynamicTable::ref_entry(uint32_t index)
 {
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
+  uint32_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
   ++this->_entries[pos].ref_count;
 }
 
 void
-XpackDynamicTable::unref_entry(uint16_t index)
+XpackDynamicTable::unref_entry(uint32_t index)
 {
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
+  uint32_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
   --this->_entries[pos].ref_count;
 }
 
-uint16_t
+bool
+XpackDynamicTable::is_empty() const
+{
+  return this->_entries_head == this->_entries_tail;
+}
+
+uint32_t
 XpackDynamicTable::largest_index() const
 {
-  return this->_entries_inserted;
+  ink_assert(!this->is_empty());
+  return this->_entries_inserted - 1;
+}
+
+uint32_t
+XpackDynamicTable::count() const
+{
+  if (is_empty()) {
+    return 0;
+  } else if (this->_entries_head > this->_entries_tail) {
+    return this->_entries_head - this->_entries_tail;
+  } else {
+    return (this->_max_entries - this->_entries_tail - 1) + (this->_entries_head + 1);
+  }
 }
 
 bool
-XpackDynamicTable::_make_space(uint16_t required_size)
+XpackDynamicTable::_make_space(uint64_t required_size)
 {
-  uint16_t freed = 0;
-  uint16_t tail  = (this->_entries_tail + 1) % this->_max_entries;
+  uint32_t freed = 0;
+  uint32_t tail  = (this->_entries_tail + 1) % this->_max_entries;
 
-  while (freed < required_size) {
+  while (required_size > this->_available + freed) {
+    if (this->is_empty()) {
+      break;
+    }
     if (this->_entries[tail].ref_count) {
       break;
     }
@@ -453,14 +491,14 @@ XpackDynamicTable::_make_space(uint16_t required_size)
     XPACKDebug("Available size: %u", this->_available);
   }
 
-  return freed >= required_size;
+  return required_size <= this->_available;
 }
 
 //
 // DynamicTableStorage
 //
 
-XpackDynamicTableStorage::XpackDynamicTableStorage(uint16_t size) : _head(size * 2 - 1), _tail(size * 2 - 1)
+XpackDynamicTableStorage::XpackDynamicTableStorage(uint32_t size) : _head(size * 2 - 1), _tail(size * 2 - 1)
 {
   this->_data_size           = size * 2;
   this->_data                = reinterpret_cast<uint8_t *>(ats_malloc(this->_data_size));
@@ -474,16 +512,16 @@ XpackDynamicTableStorage::~XpackDynamicTableStorage()
 }
 
 void
-XpackDynamicTableStorage::read(uint16_t offset, const char **name, uint16_t name_len, const char **value, uint16_t value_len) const
+XpackDynamicTableStorage::read(uint32_t offset, const char **name, uint32_t name_len, const char **value, uint32_t value_len) const
 {
   *name  = reinterpret_cast<const char *>(this->_data + offset);
   *value = reinterpret_cast<const char *>(this->_data + offset + name_len);
 }
 
-uint16_t
-XpackDynamicTableStorage::write(const char *name, uint16_t name_len, const char *value, uint16_t value_len)
+uint32_t
+XpackDynamicTableStorage::write(const char *name, uint32_t name_len, const char *value, uint32_t value_len)
 {
-  uint16_t offset = (this->_head + 1) % this->_data_size;
+  uint32_t offset = (this->_head + 1) % this->_data_size;
   memcpy(this->_data + offset, name, name_len);
   memcpy(this->_data + offset + name_len, value, value_len);
 
@@ -496,7 +534,7 @@ XpackDynamicTableStorage::write(const char *name, uint16_t name_len, const char 
 }
 
 void
-XpackDynamicTableStorage::erase(uint16_t name_len, uint16_t value_len)
+XpackDynamicTableStorage::erase(uint32_t name_len, uint32_t value_len)
 {
   this->_tail = (this->_tail + (name_len + value_len)) % this->_data_size;
 }

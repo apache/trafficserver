@@ -338,14 +338,16 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
     // static table
     field.name_set(STATIC_TABLE[index].name.data(), STATIC_TABLE[index].name.size());
     field.value_set(STATIC_TABLE[index].value.data(), STATIC_TABLE[index].value.size());
-  } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table.largest_index()) {
+  } else if (index < (TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table.count())) {
     // dynamic table
     size_t name_len, value_len;
     const char *name;
     const char *value;
 
     auto result = _dynamic_table.lookup_relative(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM, &name, &name_len, &value, &value_len);
-    ink_assert(result.match_type == XpackLookupResult::MatchType::EXACT);
+    if (result.match_type != XpackLookupResult::MatchType::EXACT) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
 
     field.name_set(name, name_len);
     field.value_set(value, value_len);

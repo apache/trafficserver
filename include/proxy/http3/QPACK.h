@@ -33,6 +33,7 @@
 #include "tscore/Arena.h"
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/XPACK.h"
 #include "iocore/net/quic/QUICApplication.h"
 #include "iocore/net/quic/QUICStreamVCAdapter.h"
 #include "iocore/net/quic/QUICConnection.h"
@@ -80,81 +81,23 @@ public:
   static size_t estimate_header_block_size(const HTTPHdr &header_set);
 
 private:
-  struct LookupResult {
-    uint16_t index                                  = 0;
-    enum MatchType { NONE, NAME, EXACT } match_type = MatchType::NONE;
-  };
-
   struct Header {
     Header(const char *n, const char *v) : name(n), value(v), name_len(strlen(name)), value_len(strlen(value)) {}
     const char *name;
     const char *value;
-    const int name_len;
-    const int value_len;
+    const size_t name_len;
+    const size_t value_len;
   };
 
   class StaticTable
   {
   public:
-    static const LookupResult lookup(uint16_t index, const char **name, int *name_len, const char **value, int *value_len);
-    static const LookupResult lookup(const char *name, int name_len, const char *value, int value_len);
+    static const XpackLookupResult lookup(uint16_t index, const char **name, size_t *name_len, const char **value,
+                                          size_t *value_len);
+    static const XpackLookupResult lookup(const char *name, size_t name_len, const char *value, size_t value_len);
 
   private:
     static const Header STATIC_HEADER_FIELDS[];
-  };
-
-  struct DynamicTableEntry {
-    uint16_t index     = 0;
-    uint16_t offset    = 0;
-    uint16_t name_len  = 0;
-    uint16_t value_len = 0;
-    uint16_t ref_count = 0;
-  };
-
-  class DynamicTableStorage
-  {
-  public:
-    DynamicTableStorage(uint16_t size);
-    ~DynamicTableStorage();
-    void read(uint16_t offset, const char **name, uint16_t name_len, const char **value, uint16_t value_len) const;
-    uint16_t write(const char *name, uint16_t name_len, const char *value, uint16_t value_len);
-    void erase(uint16_t name_len, uint16_t value_len);
-
-  private:
-    uint16_t _overwrite_threshold = 0;
-    uint8_t *_data                = nullptr;
-    uint16_t _data_size           = 0;
-    uint16_t _head                = 0;
-    uint16_t _tail                = 0;
-  };
-
-  class DynamicTable
-  {
-  public:
-    DynamicTable(uint16_t size);
-    ~DynamicTable();
-
-    const LookupResult lookup(uint16_t index, const char **name, int *name_len, const char **value, int *value_len);
-    const LookupResult lookup(const char *name, int name_len, const char *value, int value_len);
-    const LookupResult insert_entry(bool is_static, uint16_t index, const char *value, uint16_t value_len);
-    const LookupResult insert_entry(const char *name, uint16_t name_len, const char *value, uint16_t value_len);
-    const LookupResult duplicate_entry(uint16_t current_index);
-    bool should_duplicate(uint16_t index);
-    void update_size(uint16_t max_size);
-    void ref_entry(uint16_t index);
-    void unref_entry(uint16_t index);
-    uint16_t largest_index() const;
-
-  private:
-    uint16_t _available        = 0;
-    uint16_t _entries_inserted = 0;
-
-    // FIXME It may be better to split this array into small arrays to reduce memory footprint
-    struct DynamicTableEntry *_entries = nullptr;
-    uint16_t _max_entries              = 0;
-    uint16_t _entries_head             = 0;
-    uint16_t _entries_tail             = 0;
-    DynamicTableStorage *_storage      = nullptr;
   };
 
   class DecodeRequest
@@ -248,7 +191,7 @@ private:
     uint16_t largest;
   };
 
-  DynamicTable _dynamic_table;
+  XpackDynamicTable _dynamic_table;
   std::map<uint64_t, struct EntryReference> _references;
   uint32_t _max_field_section_size = 0;
   uint16_t _max_table_size         = 0;
@@ -271,9 +214,9 @@ private:
 
   // Encoder Stream
   int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
-                                 uint16_t &value_len);
-  int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
-                                    uint16_t &value_len);
+                                 size_t &value_len);
+  int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, size_t &name_len, char **value,
+                                    size_t &value_len);
   int _read_duplicate(IOBufferReader &reader, uint16_t &index);
   int _read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_size);
   int _write_insert_with_name_ref(uint16_t index, bool dynamic, const char *value, uint16_t value_len);
