@@ -16,13 +16,18 @@
 #######################
 
 
-add_library(tscpputil STATIC
+add_library(tscpputil SHARED
         ts_ip.cc
         ts_diags.cc
         TextView.cc
         YamlCfg.cc
         ts_unit_parser.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
+target_link_libraries(tscpputil
+	PUBLIC
+		libswoc
+		yaml-cpp::yaml-cpp)
+install(TARGETS tscpputil)
 
 add_executable(test_tscpputil
         unit_tests/test_IntrusiveDList.cc
@@ -31,9 +36,9 @@ add_executable(test_tscpputil
         unit_tests/test_TextView.cc
         unit_tests/test_Strerror.cc
         unit_tests/test_ts_meta.cc
-		unit_tests/test_time_parser.cc
+        unit_tests/test_time_parser.cc
         unit_tests/unit_test_main.cc
-        )
+)
 target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc)
 target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
