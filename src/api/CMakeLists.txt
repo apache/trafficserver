@@ -16,6 +16,10 @@
 #######################
 
 add_library(tsapi SHARED Metrics.cc)
+add_library(ts::tsapi ALIAS tsapi)
+
+install(TARGETS tsapi)
+
 
 add_executable(test_Metrics
         test_Metrics.cc
