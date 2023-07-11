@@ -2790,13 +2790,11 @@ HttpSM::setup_tunnel_handler_trailer(HttpTunnelProducer *p)
   SMDbg(dbg_ctl_http, "Wait for the trailing header");
 
   // Swap out the default hander to set up the new tunnel for the trailer exchange.
-
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_trailer);
   if (_ua.get_txn()) {
     _ua.get_txn()->set_expect_send_trailer();
   }
   tunnel.local_finish_all(p);
-  SMDebug("http", "[%" PRId64 "] wait for that trailing header", sm_id);
 }
 
 int
