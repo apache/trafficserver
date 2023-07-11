@@ -134,6 +134,11 @@ test_NextHopStrategyFactory_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopStrategyFactory_LDADD = \
+<<<<<<< HEAD
+=======
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/src/api/libtsapi.la \
+>>>>>>> b6a133f27 (Fixes make check)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
@@ -168,6 +173,11 @@ test_NextHopRoundRobin_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopRoundRobin_LDADD = \
+<<<<<<< HEAD
+=======
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/src/api/libtsapi.la \
+>>>>>>> b6a133f27 (Fixes make check)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
@@ -202,6 +212,11 @@ test_NextHopConsistentHash_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopConsistentHash_LDADD = \
+<<<<<<< HEAD
+=======
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/src/api/libtsapi.la \
+>>>>>>> b6a133f27 (Fixes make check)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \

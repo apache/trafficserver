@@ -104,6 +104,7 @@ test_jsonrpcserver_LDADD = \
 	libjsonrpc_protocol.la \
 	libjsonrpc_server.la \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

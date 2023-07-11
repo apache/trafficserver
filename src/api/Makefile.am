@@ -21,6 +21,7 @@ include $(top_srcdir)/mk/tidy.mk
 lib_LTLIBRARIES = libtsapi.la
 
 AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/include \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 

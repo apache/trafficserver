@@ -104,6 +104,11 @@ test_proxy_http_SOURCES = \
 	HttpBodyFactory.h
 
 test_proxy_http_LDADD = \
+<<<<<<< HEAD
+=======
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/api/libtsapi.la \
+>>>>>>> b6a133f27 (Fixes make check)
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/src/records/librecords_p.a \

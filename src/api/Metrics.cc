@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ts/ts.h"
 #include "api/Metrics.h"
 
 namespace ts

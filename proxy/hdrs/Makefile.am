@@ -85,6 +85,7 @@ test_proxy_hdrs_SOURCES = \
 test_proxy_hdrs_LDFLAGS = @AM_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @OPENSSL_LDFLAGS@
 test_proxy_hdrs_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
@@ -100,6 +101,8 @@ test_hdr_heap_SOURCES = \
 
 test_hdr_heap_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/src/api/libtsapi.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \

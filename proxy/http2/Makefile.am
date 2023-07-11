@@ -125,6 +125,7 @@ test_Http2FrequencyCounter_SOURCES = \
 
 test_HPACK_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
