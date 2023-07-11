@@ -134,14 +134,15 @@ test_NextHopStrategyFactory_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopStrategyFactory_LDADD = \
-<<<<<<< HEAD
-=======
-  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/api/libtsapi.la \
->>>>>>> b6a133f27 (Fixes make check)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/src/records/librecords_p.a \
+  $(top_builddir)/src/api/libtsapi.la \
+  $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscore/libtscore.a \
   $(top_builddir)/proxy/logging/liblogging.a \
@@ -176,11 +177,15 @@ test_NextHopRoundRobin_LDADD = \
 <<<<<<< HEAD
 =======
   $(top_builddir)/src/tscore/libtscore.la \
+<<<<<<< HEAD
   $(top_builddir)/src/api/libtsapi.la \
 >>>>>>> b6a133f27 (Fixes make check)
+=======
+>>>>>>> b2c0a316d (More Makefile fixes)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
+  $(top_builddir)/src/api/libtsapi.la \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscore/libtscore.a \
@@ -215,11 +220,15 @@ test_NextHopConsistentHash_LDADD = \
 <<<<<<< HEAD
 =======
   $(top_builddir)/src/tscore/libtscore.la \
+<<<<<<< HEAD
   $(top_builddir)/src/api/libtsapi.la \
 >>>>>>> b6a133f27 (Fixes make check)
+=======
+>>>>>>> b2c0a316d (More Makefile fixes)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
+  $(top_builddir)/src/api/libtsapi.la \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscore/libtscore.a \
