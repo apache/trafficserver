@@ -37,7 +37,14 @@ static constexpr ink_hrtime WRITE_READY_INTERVAL = HRTIME_MSECONDS(2);
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
-QUICNetVConnection::QUICNetVConnection() {}
+QUICNetVConnection::QUICNetVConnection()
+{
+  this->_set_service(static_cast<ALPNSupport *>(this));
+  this->_set_service(static_cast<TLSBasicSupport *>(this));
+  this->_set_service(static_cast<TLSCertSwitchSupport *>(this));
+  this->_set_service(static_cast<TLSSNISupport *>(this));
+  this->_set_service(static_cast<TLSSessionResumptionSupport *>(this));
+}
 
 QUICNetVConnection::~QUICNetVConnection() {}
 

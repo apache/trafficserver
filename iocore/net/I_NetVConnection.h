@@ -507,7 +507,20 @@ public:
   bool has_proxy_protocol(IOBufferReader *);
   bool has_proxy_protocol(char *, int64_t *);
 
+  template <typename S> S *get_service() const;
+
 protected:
+  enum class Service : uint8_t {
+    TLS_ALPN,
+    TLS_Basic,
+    TLS_CertSwitch,
+    TLS_EarlyData,
+    TLS_SNI,
+    TLS_SessionResumption,
+    TLS_Tunnel,
+    N_SERVICES,
+  };
+
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
   ProxyProtocol pp_info;
@@ -526,6 +539,16 @@ protected:
   int write_buffer_empty_event = 0;
   /// NetVConnection Context.
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
+
+  template <typename S> void _set_service(S *instance);
+
+private:
+  void *_services[static_cast<unsigned int>(Service::N_SERVICES)] = {
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+  };
+
+  void *_get_service(enum Service mixin_index) const;
+  void _set_service(enum Service mixin_index, void *instance);
 };
 
 inline NetVConnection::NetVConnection() : VConnection(nullptr)
@@ -539,4 +562,114 @@ inline void
 NetVConnection::trapWriteBufferEmpty(int event)
 {
   write_buffer_empty_event = event;
+}
+
+inline void *
+NetVConnection::_get_service(enum NetVConnection::Service service) const
+{
+  return _services[static_cast<unsigned int>(service)];
+}
+
+inline void
+NetVConnection::_set_service(enum NetVConnection::Service service, void *instance)
+{
+  this->_services[static_cast<unsigned int>(service)] = instance;
+}
+
+class ALPNSupport;
+template <>
+inline ALPNSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<ALPNSupport *>(this->_get_service(NetVConnection::Service::TLS_ALPN));
+}
+template <>
+inline void
+NetVConnection::_set_service(ALPNSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_ALPN, instance);
+}
+
+class TLSBasicSupport;
+template <>
+inline TLSBasicSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSBasicSupport *>(this->_get_service(NetVConnection::Service::TLS_Basic));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSBasicSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Basic, instance);
+}
+
+class TLSEarlyDataSupport;
+template <>
+inline TLSEarlyDataSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSEarlyDataSupport *>(this->_get_service(NetVConnection::Service::TLS_EarlyData));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSEarlyDataSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_EarlyData, instance);
+}
+
+class TLSCertSwitchSupport;
+template <>
+inline TLSCertSwitchSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSCertSwitchSupport *>(this->_get_service(NetVConnection::Service::TLS_CertSwitch));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSCertSwitchSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_CertSwitch, instance);
+}
+
+class TLSSNISupport;
+template <>
+inline TLSSNISupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSSNISupport *>(this->_get_service(NetVConnection::Service::TLS_SNI));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSSNISupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_SNI, instance);
+}
+
+class TLSSessionResumptionSupport;
+template <>
+inline TLSSessionResumptionSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSSessionResumptionSupport *>(this->_get_service(NetVConnection::Service::TLS_SessionResumption));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSSessionResumptionSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_SessionResumption, instance);
+}
+
+class TLSTunnelSupport;
+template <>
+inline TLSTunnelSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSTunnelSupport *>(this->_get_service(NetVConnection::Service::TLS_Tunnel));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSTunnelSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Tunnel, instance);
 }
