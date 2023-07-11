@@ -482,23 +482,38 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err = REC_ERR_FAIL;
+  RecErrT err              = REC_ERR_FAIL;
+  ts::Metrics &api_metrics = ts::Metrics::getInstance();
+  auto it                  = api_metrics.find(name);
 
-  if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
-  }
+  if (it != api_metrics.end()) {
+    RecRecord r;
+    auto &&[name, val] = *it;
 
-  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
-    RecRecord *r = it->second;
+    r.rec_type     = RECT_PLUGIN;
+    r.data_type    = RECD_INT;
+    r.name         = name.data();
+    r.data.rec_int = val;
 
-    rec_mutex_acquire(&(r->lock));
-    callback(r, data);
+    callback(&r, data);
     err = REC_ERR_OKAY;
-    rec_mutex_release(&(r->lock));
-  }
+  } else {
+    if (lock) {
+      ink_rwlock_rdlock(&g_records_rwlock);
+    }
 
-  if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+      RecRecord *r = it->second;
+
+      rec_mutex_acquire(&(r->lock));
+      callback(r, data);
+      err = REC_ERR_OKAY;
+      rec_mutex_release(&(r->lock));
+    }
+
+    if (lock) {
+      ink_rwlock_unlock(&g_records_rwlock);
+    }
   }
 
   return err;
@@ -512,6 +527,21 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
 
   if (!regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED)) {
     return REC_ERR_FAIL;
+  }
+
+  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
+    RecRecord r;
+
+    r.rec_type  = RECT_PLUGIN;
+    r.data_type = RECD_INT;
+
+    for (auto &&[name, val] : ts::Metrics::getInstance()) {
+      if (regex.match(name.data()) >= 0) {
+        r.name         = name.data();
+        r.data.rec_int = val;
+        callback(&r, data);
+      }
+    }
   }
 
   num_records = g_num_records;
@@ -1057,7 +1087,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
     }
   }
   // Also dump the new ts::Metrics if asked for
-  if (rec_type & RECT_PLUGIN) {
+  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
     RecData datum;
 
     for (auto &&[name, val] : ts::Metrics::getInstance()) {

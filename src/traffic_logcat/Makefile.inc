@@ -46,10 +46,7 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-    $(top_builddir)/mgmt/utils/libutils_p.la \
-    $(top_builddir)/src/api/libtsapi.la
-
-traffic_logcat_traffic_logcat_LDADD += \
+	$(top_builddir)/src/api/libtsapi.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@ \
 	@LIBPROFILER@ -lm

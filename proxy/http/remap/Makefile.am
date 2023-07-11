@@ -139,11 +139,6 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/src/api/libtsapi.la \
-  $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/src/tscore/libtscore.a \
   $(top_builddir)/proxy/logging/liblogging.a \
@@ -175,14 +170,6 @@ test_NextHopRoundRobin_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopRoundRobin_LDADD = \
-<<<<<<< HEAD
-=======
-  $(top_builddir)/src/tscore/libtscore.la \
-<<<<<<< HEAD
-  $(top_builddir)/src/api/libtsapi.la \
->>>>>>> b6a133f27 (Fixes make check)
-=======
->>>>>>> b2c0a316d (More Makefile fixes)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
@@ -218,14 +205,6 @@ test_NextHopConsistentHash_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopConsistentHash_LDADD = \
-<<<<<<< HEAD
-=======
-  $(top_builddir)/src/tscore/libtscore.la \
-<<<<<<< HEAD
-  $(top_builddir)/src/api/libtsapi.la \
->>>>>>> b6a133f27 (Fixes make check)
-=======
->>>>>>> b2c0a316d (More Makefile fixes)
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
@@ -272,6 +251,7 @@ pkglib_LTLIBRARIES = \
 	unit-tests/plugin_missing_init.la \
 	unit-tests/plugin_missing_newinstance.la \
 	unit-tests/plugin_testing_calls.la
+
 unit_tests_plugin_v1_la_SOURCES = unit-tests/plugin_misc_cb.cc
 unit_tests_plugin_v1_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_v1_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)

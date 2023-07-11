@@ -78,8 +78,6 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/iocore/cache/libinkcache.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
-	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \

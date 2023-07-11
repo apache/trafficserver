@@ -130,8 +130,6 @@ test_HPACK_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/api/libtsapi.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@
 

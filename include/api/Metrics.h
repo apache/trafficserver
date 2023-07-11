@@ -194,6 +194,18 @@ public:
     return iterator(*this, _makeId(blob, offset));
   }
 
+  iterator
+  find(const std::string_view name) const
+  {
+    auto id = lookup(name);
+
+    if (id == NOT_FOUND) {
+      return end();
+    } else {
+      return iterator(*this, id);
+    }
+  }
+
 private:
   static constexpr std::tuple<uint16_t, uint16_t>
   _splitID(IdType value)
