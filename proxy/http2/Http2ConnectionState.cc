@@ -487,6 +487,8 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
         stream->send_request(*this);
       }
     }
+    // Give a chance to send response before reading next frame.
+    this->session->interrupt_reading_frames();
   } else {
     // NOTE: Expect CONTINUATION Frame. Do NOT change state of stream or decode
     // Header Blocks.
@@ -1047,6 +1049,8 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     stream->new_transaction(frame.is_from_early_data());
     // Send request header to SM
     stream->send_request(*this);
+    // Give a chance to send response before reading next frame.
+    this->session->interrupt_reading_frames();
   } else {
     // NOTE: Expect another CONTINUATION Frame. Do nothing.
     Http2StreamDebug(this->session, stream_id, "No END_HEADERS flag, expecting CONTINUATION frame");
