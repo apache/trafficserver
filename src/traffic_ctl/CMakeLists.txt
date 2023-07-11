@@ -35,4 +35,4 @@ target_link_libraries(traffic_ctl
         libswoc
         )
 
-install(TARGETS traffic_server)
+install(TARGETS traffic_ctl)
