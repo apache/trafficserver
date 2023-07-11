@@ -99,7 +99,7 @@ test_proxy_http_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_proxy_http_SOURCES = \
-	unit_tests/unit_test_main.cc \
+	unit_tests/main.cc \
 	unit_tests/test_ForwardedConfig.cc \
 	ForwardedConfig.cc \
 	unit_tests/test_error_page_selection.cc \
@@ -127,7 +127,8 @@ test_PreWarm_LDADD = \
 	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
-	unit_tests/test_PreWarm.cc
+	unit_tests/test_PreWarm.cc \
+	unit_tests/main.cc
 
 test_HttpTransact_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
