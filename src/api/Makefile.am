@@ -18,6 +18,10 @@
 
 include $(top_srcdir)/mk/tidy.mk
 
+check_PROGRAMS = test_Metrics
+
+TESTS = $(check_PROGRAMS)
+
 lib_LTLIBRARIES = libtsapi.la
 
 AM_CPPFLAGS += \
@@ -34,6 +38,14 @@ libtsapi_la_LIBADD = \
 
 libtsapi_la_SOURCES = \
 	Metrics.cc
+
+test_Metrics_SOURCES = test_Metrics.cc
+
+test_Metrics_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/lib/catch2
+
+test_Metrics_LDADD = libtsapi.la
+
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
