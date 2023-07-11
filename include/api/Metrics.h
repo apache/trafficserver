@@ -30,6 +30,8 @@
 #include <thread>
 #include <atomic>
 #include <cstdint>
+#include <string>
+#include <string_view>
 
 #include "tscore/ink_assert.h"
 
