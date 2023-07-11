@@ -51,6 +51,7 @@ option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
+option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
 option(ENABLE_POSIX_CAP
     "Use POSIX capabilities, turn OFF to use id switching. (default ON)"
@@ -140,6 +141,10 @@ endif()
 find_package(brotli)
 if(brotli_FOUND)
     set(HAVE_BROTLI_ENCODE_H TRUE)
+endif()
+
+if(ENABLE_LUAJIT)
+    find_package(LuaJIT REQUIRED)
 endif()
 
 if(ENABLE_POSIX_CAP)

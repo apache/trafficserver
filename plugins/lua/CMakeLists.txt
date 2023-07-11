@@ -15,8 +15,6 @@
 #
 #######################
 
-find_package(LuaJIT REQUIRED)
-
 add_atsplugin(tslua
     ts_lua.c
     ts_lua_cached_response.c
