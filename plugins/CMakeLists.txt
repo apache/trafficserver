@@ -54,6 +54,10 @@ add_subdirectory(stats_over_http)
 add_subdirectory(tcpinfo)
 add_subdirectory(xdebug)
 
+if(ENABLE_LUAJIT)
+    add_subdirectory(lua)
+endif()
+
 if(HOST_OS STREQUAL "linux")
     add_subdirectory(healthchecks)
 endif()
