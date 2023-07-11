@@ -163,12 +163,28 @@ the following URLs will be requested to be prefetched ::
 Note ``--fetch-path-pattern`` is a PCRE regex/capture pattern and
 ``{$2+2}`` is a mechanism to calculate the next path by adding or
 subtracting integer numbers.  The operands will be treated as unsigned
-64-bit integers.  Invalid numbers are treated as zeroes, and numbers
-too large will be interpreted as 2\ :sup:`64`\ -1.  If subtraction results in
+32-bit integers.  Invalid numbers are treated as zeroes, and numbers
+too large will be interpreted as 2\ :sup:`32`\ -1.  If subtraction results in
 a negative number, 0 is returned instead.  An output width may be
 specified with an integer followed by a colon, e.g. ``{8:$2+2}``,
 causing the resulting number to be padded with leading zeroes if it
 has fewer digits than the width.
+
+To allow larger numbers, the following parameter is supported ::
+
+  @pparam=--fetch-overflow=64
+
+This treats the operands as unsigned 64-bit integers. Numbers too
+large will be interpreted as 2\ :sup:`64`\ -1. Note in this case that
+adds between 2 very large numbers might result in overflow.
+
+To allow arbitrary numbers, the following parameter is supported ::
+
+  @pparam=--fetch-overflow=bignum
+
+Additionally bytewise decimal string add/subtract is supported which
+allows arbitrary big numbers. The regex must use \d+ to ensure that
+only digits are passed in the string.
 
 CMCD (Common Media Client Data) CMCD-Request header with nor field
 ------------------------------------------------------------------

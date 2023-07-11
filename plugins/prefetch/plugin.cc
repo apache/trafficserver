@@ -186,7 +186,7 @@ public:
  * @return void
  */
 static void
-expand(String &s)
+expand(String &s, const EvalPolicy oflow)
 {
   size_t cur = 0;
   while (String::npos != cur) {
@@ -194,7 +194,7 @@ expand(String &s)
     size_t stop  = s.find_first_of('}', start);
 
     if (String::npos != start && String::npos != stop) {
-      s.replace(start, stop - start + 1, evaluate(s.substr(start + 1, stop - start - 1)));
+      s.replace(start, stop - start + 1, evaluate(s.substr(start + 1, stop - start - 1), oflow));
       cur = stop + 1;
     } else {
       cur = stop;
@@ -637,7 +637,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
               if (config.getNextPath().replace(workingPath, expandedPath)) {
                 PrefetchDebug("replaced: %s", expandedPath.c_str());
-                expand(expandedPath);
+                expand(expandedPath, config.getFetchOverflow());
                 PrefetchDebug("expanded: %s cachekey: %s", expandedPath.c_str(), data->_cachekey.c_str());
 
                 BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, expandedPath.c_str(),
