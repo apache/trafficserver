@@ -32,7 +32,7 @@ AM_CPPFLAGS += \
 libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
 
 libtsapi_la_LIBADD = \
-    $(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.la \
 	@SWOC_LIBS@
 
 
@@ -44,7 +44,9 @@ test_Metrics_SOURCES = test_Metrics.cc
 test_Metrics_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
-test_Metrics_LDADD = libtsapi.la
+test_Metrics_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	libtsapi.la
 
 
 clang-tidy-local: $(DIST_SOURCES)
