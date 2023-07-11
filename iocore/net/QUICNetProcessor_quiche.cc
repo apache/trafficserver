@@ -79,7 +79,14 @@ QUICNetProcessor::start(int, size_t stacksize)
 
   quiche_enable_debug_logging(debug_log, NULL);
   this->_quiche_config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
-  quiche_config_set_application_protos(this->_quiche_config, (uint8_t *)"\02h3\x05h3-29\x05hq-29\x05h3-27\x05hq-27", 27);
+
+  std::string quic_app_protos = "\02h3\x05h3-29\x05h3-27";
+  if (!params->disable_http_0_9()) {
+    quic_app_protos = "\02h3\x05h3-29\x05hq-29\x05h3-27\x05hq-27\0";
+  }
+  quiche_config_set_application_protos(this->_quiche_config,
+                                       const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(quic_app_protos.c_str())),
+                                       quic_app_protos.size());
 
   quiche_config_set_max_idle_timeout(this->_quiche_config, params->no_activity_timeout_in());
   quiche_config_set_max_recv_udp_payload_size(this->_quiche_config, params->get_max_recv_udp_payload_size_in());

@@ -4854,6 +4854,10 @@ removed in the future without prior notice.
 
    Specified the maximum outgoing UDP payload size.
 
+.. ts:cv:: CONFIG proxy.config.quic.disable_http_0_9 INT 1
+
+   Disables HTTP/0.9 over QUIC by default.
+
 
 UDP Configuration
 =====================
