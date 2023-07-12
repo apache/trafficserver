@@ -51,25 +51,31 @@ CallbackHandler(TSCont cont, TSEvent id, void *data)
 #if TS_HAS_JEMALLOC
       if (msg->data_size) {
         int retval = 0;
-        if (strncmp((char *)msg->data, "dump", msg->data_size) == 0) {
+        if (strncmp(static_cast<const char *>(msg->data), "dump", msg->data_size) == 0) {
           if ((retval = mallctl("prof.dump", nullptr, nullptr, nullptr, 0)) != 0) {
-            TSError("mallct(prof.dump) failed retval=%d errno=%d", retval, errno);
+            TSError("mallctl(prof.dump) failed retval=%d errno=%d", retval, errno);
           }
-        } else if (strncmp((char *)msg->data, "activate", msg->data_size) == 0) {
+          TSDebug(PLUGIN_NAME, "mallctl(prof.dump) retval=%d errno=%d", retval, errno);
+        } else if (strncmp(static_cast<const char *>(msg->data), "activate", msg->data_size) == 0) {
           bool active = true;
 
           if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
-            TSError("mallct(prof.activate) on failed retval=%d errno=%d", retval, errno);
+            TSError("mallctl(prof.active) on failed retval=%d errno=%d", retval, errno);
           }
-        } else if (strncmp((char *)msg->data, "deactivate", msg->data_size) == 0) {
+          TSDebug(PLUGIN_NAME, "mallctl(prof.active) on retval=%d errno=%d", retval, errno);
+        } else if (strncmp(static_cast<const char *>(msg->data), "deactivate", msg->data_size) == 0) {
           bool active = false;
+
           if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
-            TSError("mallct(prof.activate) off failed retval=%d errno=%d", retval, errno);
+            TSError("mallctl(prof.active) off failed retval=%d errno=%d", retval, errno);
           }
-        } else if (strncmp((char *)msg->data, "stats", msg->data_size) == 0) {
+          TSDebug(PLUGIN_NAME, "mallctl(prof.active) off retval=%d errno=%d", retval, errno);
+        } else if (strncmp(static_cast<const char *>(msg->data), "stats", msg->data_size) == 0) {
           malloc_stats_print(nullptr, nullptr, nullptr);
+          TSDebug(PLUGIN_NAME, "stats");
         } else {
           TSError("Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
+          TSDebug(PLUGIN_NAME, "Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
         }
       }
 #else
