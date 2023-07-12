@@ -15,17 +15,40 @@
 #
 #######################
 
-add_executable(test_http test_ForwardedConfig.cc test_PreWarm.cc)
+add_executable(test_http
+    main.cc
+    "${PROJECT_SOURCE_DIR}/iocore/cache/test/stub.cc"
+    test_error_page_selection.cc
+    test_ForwardedConfig.cc
+    test_HttpTransact.cc
+    test_HttpUserAgent.cc
+    test_PreWarm.cc
+)
 
 # transitive
-target_include_directories(test_http PRIVATE "${PROJECT_SOURCE_DIR}/mgmt")
+target_include_directories(test_http
+    PRIVATE
+        "${PROJECT_BINARY_DIR}/include/ts"
+        "${PROJECT_SOURCE_DIR}/mgmt"
+)
 
 target_link_libraries(test_http
     PRIVATE
         catch2::catch2
         ts::http
+        ts::hdrs # transitive
+        ts::inkutils # transitive
+        inkcache # transitive
+        inkhostdb # transitive
+        logging # transitive
         ts::inkevent # transitive
         ts::proxy # transitive
+        http_remap # transitive
+        ts::proxy # transitive
+        aio # transitive
+        inkdns # transitive
+        fastlz # transitive
+        ts::inknet
 )
 
 add_test(NAME test_http COMMAND $<TARGET_FILE:test_http>)

@@ -1874,7 +1874,7 @@ LogAccess::marshal_client_req_http_version(char *buf)
 int
 LogAccess::marshal_client_req_protocol_version(char *buf)
 {
-  const char *protocol_str = m_http_sm->client_protocol;
+  const char *protocol_str = m_http_sm->get_user_agent().get_client_protocol();
   int len                  = LogAccess::strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
@@ -1984,7 +1984,7 @@ int
 LogAccess::marshal_client_req_tcp_reused(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->client_tcp_reused ? 1 : 0);
+    marshal_int(buf, m_http_sm->get_user_agent().get_client_tcp_reused() ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -1993,7 +1993,7 @@ int
 LogAccess::marshal_client_req_is_ssl(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->client_connection_is_ssl ? 1 : 0);
+    marshal_int(buf, m_http_sm->get_user_agent().get_client_connection_is_ssl() ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -2002,7 +2002,7 @@ int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
-    marshal_int(buf, m_http_sm->client_ssl_reused ? 1 : 0);
+    marshal_int(buf, m_http_sm->get_user_agent().get_client_ssl_reused() ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
@@ -2125,7 +2125,7 @@ LogAccess::marshal_client_tx_error_code(char *buf)
 int
 LogAccess::marshal_client_security_protocol(char *buf)
 {
-  const char *proto = m_http_sm->client_sec_protocol;
+  const char *proto = m_http_sm->get_user_agent().get_client_sec_protocol();
   int round_len     = LogAccess::strlen(proto);
 
   if (buf) {
@@ -2138,7 +2138,7 @@ LogAccess::marshal_client_security_protocol(char *buf)
 int
 LogAccess::marshal_client_security_cipher_suite(char *buf)
 {
-  const char *cipher = m_http_sm->client_cipher_suite;
+  const char *cipher = m_http_sm->get_user_agent().get_client_cipher_suite();
   int round_len      = LogAccess::strlen(cipher);
 
   if (buf) {
@@ -2151,7 +2151,7 @@ LogAccess::marshal_client_security_cipher_suite(char *buf)
 int
 LogAccess::marshal_client_security_curve(char *buf)
 {
-  const char *curve = m_http_sm->client_curve;
+  const char *curve = m_http_sm->get_user_agent().get_client_curve();
   int round_len     = LogAccess::strlen(curve);
 
   if (buf) {
@@ -2165,7 +2165,7 @@ int
 LogAccess::marshal_client_security_alpn(char *buf)
 {
   const char *alpn = "-";
-  if (const int alpn_id = m_http_sm->client_alpn_id; alpn_id != SessionProtocolNameRegistry::INVALID) {
+  if (const int alpn_id = m_http_sm->get_user_agent().get_client_alpn_id(); alpn_id != SessionProtocolNameRegistry::INVALID) {
     ts::TextView client_sec_alpn = globalSessionProtocolNameRegistry.nameFor(alpn_id);
     alpn                         = client_sec_alpn.data();
   }

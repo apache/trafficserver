@@ -80,6 +80,9 @@ libhttp_a_SOURCES = \
 	HttpTransactHeaders.h \
 	HttpTunnel.cc \
 	HttpTunnel.h \
+	HttpUserAgent.h \
+	HttpVCTable.cc \
+	HttpVCTable.h \
 	ForwardedConfig.cc \
 	PreWarmConfig.cc \
 	PreWarmManager.cc
@@ -124,6 +127,7 @@ test_PreWarm_LDADD = \
 	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
+	unit_tests/unit_test_main.cc \
 	unit_tests/test_PreWarm.cc
 
 test_HttpTransact_CPPFLAGS = \
