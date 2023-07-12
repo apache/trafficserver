@@ -80,9 +80,6 @@ libhttp_a_SOURCES = \
 	HttpTransactHeaders.h \
 	HttpTunnel.cc \
 	HttpTunnel.h \
-	HttpUserAgent.h \
-	HttpVCTable.cc \
-	HttpVCTable.h \
 	ForwardedConfig.cc \
 	PreWarmConfig.cc \
 	PreWarmManager.cc
@@ -99,13 +96,12 @@ test_proxy_http_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_proxy_http_SOURCES = \
-	unit_tests/main.cc \
+	unit_tests/unit_test_main.cc \
 	unit_tests/test_ForwardedConfig.cc \
 	ForwardedConfig.cc \
 	unit_tests/test_error_page_selection.cc \
 	HttpBodyFactory.cc \
-	HttpBodyFactory.h \
-        unit_tests/test_HttpUserAgent.cc
+	HttpBodyFactory.h
 
 test_proxy_http_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
@@ -128,8 +124,8 @@ test_PreWarm_LDADD = \
 	@YAMLCPP_LIBS@
 
 test_PreWarm_SOURCES = \
-	unit_tests/test_PreWarm.cc \
-	unit_tests/main.cc
+	unit_tests/unit_test_main.cc \
+	unit_tests/test_PreWarm.cc
 
 test_HttpTransact_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
