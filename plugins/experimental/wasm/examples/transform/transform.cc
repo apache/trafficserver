@@ -68,4 +68,3 @@ ExampleContext::onResponseBody(size_t body_buffer_length, bool end_of_stream)
 
   return FilterDataStatus::Continue;
 }
-
