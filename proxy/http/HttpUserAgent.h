@@ -173,7 +173,7 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
     }
   }
 
-  if (auto as = netvc->get_service(<ALPNSupport>()) {
+  if (auto as = netvc->get_service<ALPNSupport>()) {
     m_conn_info.alpn_id = as->get_negotiated_protocol_id();
   }
 

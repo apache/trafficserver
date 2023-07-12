@@ -5434,9 +5434,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   int scheme_to_use = t_state.scheme; // get initial scheme
   bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
-  if (ua_txn) {
   if (_ua.get_txn()) {
-    auto tts = _ua.get_txn->get_netvc()->get_service<TLSTunnelSupport>();
+    auto tts = _ua.get_txn()->get_netvc()->get_service<TLSTunnelSupport>();
     if (tts && raw) {
       tls_upstream = tts->is_upstream_tls();
       _tunnel_type = tts->get_tunnel_type();
