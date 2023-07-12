@@ -196,7 +196,6 @@ public:
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
   HttpUserAgent const &get_user_agent() const;
-  bool get_client_tcp_reused() const;
   ProxyTransaction *get_ua_txn();
   ProxyTransaction *get_server_txn();
 
@@ -620,12 +619,6 @@ inline HttpUserAgent const &
 HttpSM::get_user_agent() const
 {
   return _ua;
-}
-
-inline bool
-HttpSM::get_client_tcp_reused() const
-{
-  return _ua.get_client_tcp_reused();
 }
 
 inline ProxyTransaction *

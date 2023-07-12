@@ -22,14 +22,12 @@
 
  */
 
-#include "apidefs.h"
 #include "Http1ClientSession.h"
 #include "Http1ClientTransaction.h"
 #include "HttpSessionAccept.h"
-#include "HttpSM.h"
-#include "I_IOBuffer.h"
+#include "HttpUserAgent.h"
 #include "I_VConnection.h"
-#include "InkAPIInternal.h"
+#include "Milestones.h"
 #include "P_SSLNetVConnection.h"
 
 #include <catch.hpp>
@@ -67,34 +65,29 @@ Http1ClientTestSession::set_vc(NetVConnection *new_vc)
 
 TEST_CASE("tcp_reused should be set correctly when a session is attached.")
 {
-  HttpSM sm;
-  sm.init();
+  HttpUserAgent user_agent;
+  TransactionMilestones milestones;
 
   Http1ClientTestSession ssn;
   SSLNetVConnection netvc;
   ssn.set_vc(&netvc);
   HttpSessionAccept::Options options;
   ssn.accept_options = &options;
-
   Http1ClientTransaction txn{&ssn};
-  IOBufferReader reader;
-  txn.set_reader(&reader);
-
-  http_global_hooks = new HttpAPIHooks;
 
   SECTION("When a transaction is the first one, "
           "then tcp_reused should be false.")
   {
     ssn.set_transact_count(1);
-    sm.attach_client_session(&txn);
-    CHECK(sm.get_client_tcp_reused() == false);
+    user_agent.set_txn(&txn, milestones);
+    CHECK(user_agent.get_client_tcp_reused() == false);
   }
 
   SECTION("When a transaction is the second one, "
           "then tcp_reused should be true.")
   {
     ssn.set_transact_count(2);
-    sm.attach_client_session(&txn);
-    CHECK(sm.get_client_tcp_reused() == true);
+    user_agent.set_txn(&txn, milestones);
+    CHECK(user_agent.get_client_tcp_reused() == true);
   }
 }
