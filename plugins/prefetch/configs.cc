@@ -46,6 +46,39 @@ isTrue(const char *arg)
   return (0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
 }
 
+static String
+fetchOverflowString(const EvalPolicy policy)
+{
+  switch (policy) {
+  case EvalPolicy::Overflow64:
+    return "64";
+    break;
+  case EvalPolicy::Bignum:
+    return "Bignum";
+    break;
+  default:
+    return "32";
+    break;
+  }
+}
+
+static bool
+iequals(const StringView lhs, const StringView rhs)
+{
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+                    [](const char a, const char b) { return tolower(a) == tolower(b); });
+}
+
+void
+PrefetchConfig::setFetchOverflow(const char *optarg)
+{
+  if (StringView("64") == optarg) {
+    _fetchOverflow = EvalPolicy::Overflow64;
+  } else if (iequals("bignum", optarg)) {
+    _fetchOverflow = EvalPolicy::Bignum;
+  }
+}
+
 /**
  * @brief initializes plugin configuration.
  * @param argc number of plugin parameters
@@ -69,6 +102,7 @@ PrefetchConfig::init(int argc, char *argv[])
     {const_cast<char *>("metrics-prefix"),     optional_argument, nullptr, 'm'},
     {const_cast<char *>("exact-match"),        optional_argument, nullptr, 'y'},
     {const_cast<char *>("log-name"),           optional_argument, nullptr, 'l'},
+    {const_cast<char *>("fetch-overflow"),     optional_argument, nullptr, 'o'},
     {nullptr,                                  0,                 nullptr, 0  },
   };
 
@@ -134,6 +168,10 @@ PrefetchConfig::init(int argc, char *argv[])
       setFetchMax(optarg);
       break;
 
+    case 'o': /* --fetch-overflow */
+      setFetchOverflow(optarg);
+      break;
+
     case 'r': /* --replace-host */
       setReplaceHost(optarg);
       break;
@@ -178,6 +216,8 @@ PrefetchConfig::finalize()
   PrefetchDebug("fetch policy parameters: %s", _fetchPolicy.c_str());
   PrefetchDebug("fetch count: %d", _fetchCount);
   PrefetchDebug("fetch concurrently max: %d", _fetchMax);
+  String fostr = fetchOverflowString(_fetchOverflow);
+  PrefetchDebug("fetch overflow: %.*s", (int)fostr.length(), fostr.data());
   PrefetchDebug("replace host name: %s", _replaceHost.c_str());
   PrefetchDebug("name space: %s", _namespace.c_str());
   PrefetchDebug("log name: %s", _logName.c_str());

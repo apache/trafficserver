@@ -17,11 +17,13 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test prefetch.so plugin (simple mode).
+Test prefetch.so plugin (simple overflow64 mode).
 '''
 
 server = Test.MakeOriginServer("server")
-for i in list(range(1, 1 + 3)):
+vals = ["3842948374928374982374982374", "3842948374928374982374982375",
+        "3842948374928374982374982376", "3842948374928374982374982377"]
+for i in vals:
     request_header = {
         "headers":
             f"GET /texts/demo-{i}.txt HTTP/1.1\r\n"
@@ -57,7 +59,8 @@ ts.Disk.remap_config.AddLine(
     " @pparam=--front=true" +
     " @pparam=--fetch-policy=simple" +
     r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/" +
-    " @pparam=--fetch-count=3"
+    " @pparam=--fetch-count=3" +
+    " @pparam=--fetch-overflow=bignum"
 )
 
 tr = Test.AddTestRun()
@@ -69,7 +72,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-1.txt'
+    f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3842948374928374982374982374.txt'
 )
 tr.Processes.Default.ReturnCode = 0
 
@@ -77,5 +80,5 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     "grep 'GET http://domain.in' trace.log"
 )
-tr.Streams.stdout = "prefetch_simple.gold"
+tr.Streams.stdout = "prefetch_bignum.gold"
 tr.Processes.Default.ReturnCode = 0

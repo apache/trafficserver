@@ -24,4 +24,10 @@
 #pragma once
 #include "common.h"
 
-String evaluate(const String &v);
+enum EvalPolicy {
+  Overflow32 = 0,
+  Overflow64,
+  Bignum,
+};
+
+String evaluate(const StringView v, const EvalPolicy policy = Overflow32);

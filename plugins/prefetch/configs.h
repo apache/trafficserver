@@ -26,6 +26,7 @@
 #include <string>
 
 #include "common.h"
+#include "evaluate.h"
 #include "pattern.h"
 
 /**
@@ -141,6 +142,14 @@ public:
     return _fetchMax;
   }
 
+  void setFetchOverflow(const char *optarg);
+
+  EvalPolicy
+  getFetchOverflow() const
+  {
+    return _fetchOverflow;
+  }
+
   void
   setNameSpace(const char *optarg)
   {
@@ -210,10 +219,11 @@ private:
   std::string _metricsPrefix;
   std::string _logName;
   std::string _queryKey;
-  unsigned _fetchCount = 1;
-  unsigned _fetchMax   = 0;
-  bool _front          = false;
-  bool _exactMatch     = false;
-  bool _cmcd_nor       = false;
+  unsigned _fetchCount      = 1;
+  unsigned _fetchMax        = 0;
+  EvalPolicy _fetchOverflow = EvalPolicy::Overflow32;
+  bool _front               = false;
+  bool _exactMatch          = false;
+  bool _cmcd_nor            = false;
   MultiPattern _nextPaths;
 };
