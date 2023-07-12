@@ -104,7 +104,8 @@ test_proxy_http_SOURCES = \
 	ForwardedConfig.cc \
 	unit_tests/test_error_page_selection.cc \
 	HttpBodyFactory.cc \
-	HttpBodyFactory.h
+	HttpBodyFactory.h \
+        unit_tests/test_HttpUserAgent.cc
 
 test_proxy_http_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
