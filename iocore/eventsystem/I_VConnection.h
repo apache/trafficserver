@@ -130,9 +130,7 @@ enum TSApiDataType {
   TS_API_DATA_LAST ///< Used by other classes to extend the enum values.
 };
 
-extern "C" {
 typedef struct tsapi_vio *TSVIO;
-}
 
 /**
   Base class for the connection classes that provide IO capabilities.

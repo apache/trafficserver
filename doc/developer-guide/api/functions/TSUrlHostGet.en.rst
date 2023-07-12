@@ -76,7 +76,7 @@ Return Values
 =============
 
 All APIs except :func:`TSUrlPortGet` and :func:`TSUrlRawPortGet` return a string, which is
-not guaranteed to be NULL terminated. You must therefore always use the :arg:`length` value
+not guaranteed to be null-terminated. You must therefore always use the :arg:`length` value
 to determine the actual length of the returned string.
 
 :func:`TSUrlPortGet` simply returns the port number as an integer, possibly

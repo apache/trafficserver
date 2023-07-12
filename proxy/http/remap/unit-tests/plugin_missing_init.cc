@@ -27,10 +27,6 @@
 
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -39,7 +35,3 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   return TSREMAP_NO_REMAP;
 }
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */

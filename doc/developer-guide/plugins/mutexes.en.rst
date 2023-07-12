@@ -71,12 +71,12 @@ by other continuations).
 Locking Global Data
 ===================
 
-The :ref:`denylist-1.c` sample plugin implements a mutex that locks global
+The :ref:`denylist-1.cc` sample plugin implements a mutex that locks global
 data. The denylist plugin reads sites to be denied from a
 configuration file; file read operations are protected by a mutex
-created in :c:func:`TSPluginInit`. The :ref:`denylist-1.c` code uses
+created in :c:func:`TSPluginInit`. The :ref:`denylist-1.cc` code uses
 :c:func:`TSMutexLockTry` instead of :c:func:`TSMutexLock`. For more detailed
-information, see the :ref:`denylist-1.c` code;
+information, see the :ref:`denylist-1.cc` code;
 start by looking at the :c:func:`TSPluginInit` function.
 
 General guidelines for locking shared data are as follows:
@@ -153,7 +153,7 @@ uses a transaction-specific continuation called ``txn_contp``.
            {
                /* Plugin continuation */
                TSCont contp;
-               if ((contp = TSContCreate (plugin_cont_handler, NULL)) == TS_ERROR_PTR) {
+               if ((contp = TSContCreate (plugin_cont_handler, nullptr)) == TS_ERROR_PTR) {
                    LOG_ERROR("TSContCreate");
                } else {
                    if (TSHttpHookAdd (TS_HTTP_TXN_START_HOOK, contp) == TS_ERROR) {
@@ -170,13 +170,13 @@ In the plugin continuation handler, create the new continuation
 
            static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata)
            {
-               TSHttpTxn txnp = (TSHttpTxn)edata;
+               TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
                TSCont txn_contp;
 
                switch (event) {
                    case TS_EVENT_HTTP_TXN_START:
                        /* Create the HTTP txn continuation */
-                       txn_contp = TSContCreate(txn_cont_handler, NULL);
+                       txn_contp = TSContCreate(txn_cont_handler, nullptr);
 
                        /* Register txn_contp to be called back when txnp reaches TS_HTTP_TXN_CLOSE_HOOK */
                        if (TSHttpTxnHookAdd (txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) {
@@ -209,7 +209,7 @@ will have a memory leak.
                TSHttpTxn txnp;
                switch (event) {
                    case TS_EVENT_HTTP_TXN_CLOSE:
-                       txnp = (TSHttpTxn) edata;
+                       txnp = static_cast<TSHttpTxn>(edata);
                        TSContDestroy(txn_contp);
                        break;
 
@@ -234,9 +234,9 @@ suppose you want to store the state of the HTTP transaction:
 
 .. code-block:: c
 
-       typedef struct {
+       struct ContData {
              int state;
-         } ContData;
+         };
 
 You need to allocate the memory and initialize this structure for each
 HTTP ``txnp``. You can do that in the plugin continuation handler when
@@ -246,14 +246,14 @@ it is called back with ``TS_EVENT_HTTP_TXN_START``
 
            static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata)
            {
-               TSHttpTxn txnp = (TSHttpTxn)edata;
+               TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
                TSCont txn_contp;
                ContData *contData;
 
                switch (event) {
                    case TS_EVENT_HTTP_TXN_START:
                        /* Create the HTTP txn continuation */
-                       txn_contp = TSContCreate(txn_cont_handler, NULL);
+                       txn_contp = TSContCreate(txn_cont_handler, nullptr);
 
                        /* Allocate and initialize the txn_contp data */
                        contData = (ContData*) TSmalloc(sizeof(ContData));
@@ -304,7 +304,7 @@ Remember to free this memory before destroying the continuation:
                ContData *contData;
                switch (event) {
                    case TS_EVENT_HTTP_TXN_CLOSE:
-                       txnp = (TSHttpTxn) edata;
+                       txnp = static_cast<TSHttpTxn>(edata);
                        contData = TSContDataGet(txn_contp);
                        if (contData == TS_ERROR_PTR) {
                            LOG_ERROR("TSContDataGet");
@@ -335,7 +335,7 @@ example above, the continuation ``txn_contp`` has registered itself to
 be called back at HTTP hooks and it only uses the HTTP APIs. In this
 case only, it's safe to access data shared between ``txnp`` and
 ``txn_contp`` without grabbing a lock. In the example above,
-``txn_contp`` is created with a ``NULL`` mutex. This works because the
+``txn_contp`` is created with a ``nullptr`` mutex. This works because the
 HTTP transaction ``txnp`` is the only one that will call back
 ``txn_contp``, and you are guaranteed that ``txn_contp`` will be called
 back only one hook at a time. After processing is finished,
@@ -367,7 +367,7 @@ continuation created in ``txn_handler``:
     txn_handler (TSHttpTxn txnp, TSCont contp) {
         TSCont newCont;
         ....
-            newCont = TSContCreate (newCont_handler, NULL);
+            newCont = TSContCreate (newCont_handler, nullptr);
         // It's not necessary to create a new mutex for newCont.
 
         ...
@@ -377,7 +377,7 @@ continuation created in ``txn_handler``:
 
    static int
    test_plugin (TSCont contp, TSEvent event, void *edata) {
-       TSHttpTxn txnp = (TSHttpTxn) edata;
+       TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
        switch (event) {
            case TS_EVENT_HTTP_READ_REQUEST_HDR:

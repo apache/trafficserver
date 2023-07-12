@@ -44,9 +44,8 @@ struct remap_line {
 };
 
 #define PLUGIN_NAME "headeradd_remap"
-#define EXTERN      extern "C"
 
-EXTERN void
+void
 ParseArgIntoNv(const char *arg, char **n, char **v)
 {
   const char *colon_pos = strchr(arg, ':');

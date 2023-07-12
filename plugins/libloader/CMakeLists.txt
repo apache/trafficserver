@@ -15,6 +15,6 @@
 #
 #######################
 
-add_atsplugin(libloader libloader.c)
+add_atsplugin(libloader libloader.cc)
 
 target_include_directories(libloader PRIVATE "${CMAKE_SOURCE_DIR}/include/ts")

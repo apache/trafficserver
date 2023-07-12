@@ -49,7 +49,7 @@ information.
 the marshal buffer :arg:`bufp`.  (However :arg:`bufp` is actually superfluous and may be null.)
 :func:`TSUrlStringGet` stores the length of the allocated string in the parameter :arg:`length`.
 This is the same length that :func:`TSUrlLengthGet` returns. The returned string is allocated by a
-call to :func:`TSmalloc` and must be freed by a call to :func:`TSfree`. If length is :literal:`NULL`
+call to :func:`TSmalloc` and must be freed by a call to :func:`TSfree`. If length is :literal:`nullptr`
 then no attempt is made to de-reference it. The returned string is not guaranteed to have a null
 terminator - :arg:`length` must be used to correctly display the string.
 

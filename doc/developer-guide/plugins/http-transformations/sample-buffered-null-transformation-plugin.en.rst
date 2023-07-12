@@ -22,7 +22,7 @@
 Sample Buffered Null Transform Plugin
 *************************************
 
-The buffered null transform, ``bnull_transform.c``, reads the response
+The buffered null transform, ``bnull_transform.cc``, reads the response
 content into a buffer and then writes the full buffer out to the client.
 Many examples of transformations, such as compression, require you to
 gather the full response content in order to perform the transformation.
@@ -41,7 +41,7 @@ transform:
        void
           TSPluginInit (int argc, const char *argv[]) {
              TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK,
-                TSContCreate (transform_plugin, NULL)); }
+                TSContCreate (transform_plugin, nullptr)); }
 
     With this ``TSPluginInit`` routine, the plugin is called back every
     time Traffic Server reads a response header.

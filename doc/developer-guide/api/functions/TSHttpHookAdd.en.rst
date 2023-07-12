@@ -141,7 +141,7 @@ transaction hooks::
     TSPluginInit (int argc, const char *argv[])
     {
         TSCont contp;
-        contp = TSContCreate(handler, NULL);
+        contp = TSContCreate(handler, nullptr);
         TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
     }
 

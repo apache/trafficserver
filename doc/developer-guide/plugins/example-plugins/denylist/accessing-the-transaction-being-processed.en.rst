@@ -45,7 +45,7 @@ Denylist plugin's handler:
    static int
    denylist_plugin (TSCont contp, TSEvent event, void *edata)
    {
-      TSHttpTxn txnp = (TSHttpTxn) edata;
+      TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
       switch (event) {
          case TS_EVENT_HTTP_OS_DNS:
             handle_dns (txnp, contp);

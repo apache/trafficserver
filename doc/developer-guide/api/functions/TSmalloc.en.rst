@@ -32,6 +32,7 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: void * TSmalloc(size_t size)
+.. cpp:function:: template <typename T> T * malloc(size_t count = 1)
 .. function:: void * TSrealloc(void * ptr , size_t size)
 .. function:: char * TSstrdup(const char * str)
 .. function:: char * TSstrndup(const char * str, size_t size)
@@ -48,7 +49,7 @@ For example, :func:`TSrealloc` behaves like the C library routine :code:`realloc
 There are two reasons to use the routines provided by Traffic Server. The
 first is portability. The Traffic Server API routines behave the same on
 all of Traffic Servers supported platforms. For example, :code:`realloc` does
-not accept an argument of ``NULL`` on some platforms. The second reason is
+not accept an argument of ``nullptr`` on some platforms. The second reason is
 that the Traffic Server routines actually track the memory allocations by
 file and line number. This tracking is very efficient, is always turned
 on, and is useful for tracking down memory leaks.
@@ -57,6 +58,12 @@ on, and is useful for tracking down memory leaks.
 heap. Traffic Server uses :func:`TSmalloc` internally for memory allocations.
 Always use :func:`TSfree` to release memory allocated by :func:`TSmalloc`; do not use
 :code:`free`.
+
+**malloc()**, which is in the :code:`tsapi` namespace, returns a pointer, of type :code:`T *`,
+to allocated memory with enough bytes to hold an array of :code:`count` (default value
+of :code;`1`) instances of :code:`T`.  No constructor of :code:`T` is called for the
+array elements.  This function in turn calls :func:`TSmalloc`, so the memory it allocates
+should be released by calling :func:`TSfree`.
 
 :func:`TSstrdup` returns a pointer to a new string that is a duplicate of the
 string pointed to by str. The memory for the new string is allocated using
@@ -77,7 +84,11 @@ will append at most :arg:`size` - :code:`strlen(dst)` - 1 bytes, NUL-terminating
 result.
 
 :func:`TSfree` releases the memory allocated by :func:`TSmalloc` or :func:`TSrealloc`. If
-ptr is ``NULL``, :func:`TSfree` does no operation.
+ptr is ``nullptr``, :func:`TSfree` does no operation.
+
+Use of these functions should be avoided in new code.  For dynamic memory allocation,
+prefer in general to use C++ Standard Library containers and smart pointers.  Use of C++
+:code:`new` and :code:`delete` operators is the next best option.
 
 See also
 ========

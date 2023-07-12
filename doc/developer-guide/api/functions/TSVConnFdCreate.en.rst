@@ -43,7 +43,7 @@ Return Values
 =============
 
 On success, the returned :type:`TSVConn` object owns the socket and the
-caller must not close it. If :func:`TSVConnFdCreate` fails, :literal:`NULL`
+caller must not close it. If :func:`TSVConnFdCreate` fails, :literal:`nullptr`
 is returned, the socket is unchanged and the caller must close it.
 
 Examples

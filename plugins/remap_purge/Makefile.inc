@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += remap_purge/remap_purge.la
 
 remap_purge_remap_purge_la_SOURCES = \
-    remap_purge/remap_purge.c
+    remap_purge/remap_purge.cc

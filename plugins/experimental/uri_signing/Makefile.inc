@@ -17,14 +17,14 @@
 pkglib_LTLIBRARIES += experimental/uri_signing/uri_signing.la
 
 experimental_uri_signing_uri_signing_la_SOURCES = \
-    experimental/uri_signing/uri_signing.c          \
-    experimental/uri_signing/config.c               \
-    experimental/uri_signing/cookie.c               \
-    experimental/uri_signing/jwt.c                  \
-    experimental/uri_signing/match.c                \
-    experimental/uri_signing/parse.c                \
-    experimental/uri_signing/normalize.c            \
-    experimental/uri_signing/timing.c
+    experimental/uri_signing/uri_signing.cc       \
+    experimental/uri_signing/config.cc            \
+    experimental/uri_signing/cookie.cc            \
+    experimental/uri_signing/jwt.cc               \
+    experimental/uri_signing/match.cc             \
+    experimental/uri_signing/parse.cc             \
+    experimental/uri_signing/normalize.cc         \
+    experimental/uri_signing/timing.cc
 
 experimental_uri_signing_uri_signing_la_LIBADD = @LIBJANSSON@ @LIBCJOSE@ @LIBPCRE@ -lm -lcrypto
 
@@ -38,12 +38,12 @@ experimental_uri_signing_test_uri_signing_CPPFLAGS = \
 
 experimental_uri_signing_test_uri_signing_LDADD = @LIBJANSSON@ @LIBCJOSE@ @LIBPCRE@ -lm -lcrypto
 experimental_uri_signing_test_uri_signing_SOURCES = \
-    experimental/uri_signing/unit_tests/uri_signing_test.cc \
-    experimental/uri_signing/jwt.c \
-    experimental/uri_signing/common.c \
-    experimental/uri_signing/parse.c \
-    experimental/uri_signing/cookie.c \
-    experimental/uri_signing/config.c \
-    experimental/uri_signing/timing.c \
-    experimental/uri_signing/normalize.c \
-    experimental/uri_signing/match.c
+	  experimental/uri_signing/unit_tests/uri_signing_test.cc \
+    experimental/uri_signing/jwt.cc \
+    experimental/uri_signing/common.cc \
+    experimental/uri_signing/parse.cc \
+    experimental/uri_signing/cookie.cc \
+    experimental/uri_signing/config.cc \
+    experimental/uri_signing/timing.cc \
+    experimental/uri_signing/normalize.cc \
+    experimental/uri_signing/match.cc

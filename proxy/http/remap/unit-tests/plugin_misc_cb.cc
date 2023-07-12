@@ -29,10 +29,6 @@
 
 #include "plugin_testing_common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -85,7 +81,7 @@ TSRemapConfigReload(void)
 }
 
 /* This is meant for test with plugins of different versions */
-int
+extern "C" int
 pluginDsoVersionTest()
 {
 #ifdef PLUGINDSOVER
@@ -100,7 +96,3 @@ getPluginDebugObjectTest()
 {
   return (void *)&debugObject;
 }
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */

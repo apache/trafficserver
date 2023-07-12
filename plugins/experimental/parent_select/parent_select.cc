@@ -319,7 +319,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   return TS_SUCCESS;
 }
 
-extern "C" tsapi TSRemapStatus
+TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   TSDebug(PLUGIN_NAME, "TSRemapDoRemap calling");
@@ -368,7 +368,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   return TSREMAP_NO_REMAP;
 }
 
-extern "C" tsapi void
+void
 TSRemapDeleteInstance(void *ih)
 {
   TSDebug(PLUGIN_NAME, "TSRemapDeleteInstance calling");

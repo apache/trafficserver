@@ -15,7 +15,7 @@
 #
 #######################
 
-add_atsplugin(regex_revalidate regex_revalidate.c)
+add_atsplugin(regex_revalidate regex_revalidate.cc)
 
 target_include_directories(regex_revalidate PRIVATE "${PROJECT_SOURCE_DIR}/include")
 

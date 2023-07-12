@@ -38,5 +38,5 @@ Reads a line from the file pointed to by :arg:`filep` into the buffer
 
 Lines are terminated by a line feed character, ' '.  The line placed
 in the buffer includes the line feed character and is terminated with
-a ``NULL``.  If the line is longer than length bytes then only the first
+a ``nullptr``.  If the line is longer than length bytes then only the first
 length-minus-1 bytes are placed in :arg:`buf`.

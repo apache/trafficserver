@@ -56,7 +56,7 @@ private:
 
   class _RegistryAccessor;
 
-  friend TSDbgCtl const *TSDbgCtlCreate(char const *tag);
+  friend TSDbgCtl const *tsapi::c::TSDbgCtlCreate(char const *tag);
 
-  friend void TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
+  friend void tsapi::c::TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
 };

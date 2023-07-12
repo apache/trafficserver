@@ -112,7 +112,7 @@ Data Structures
 
    This class is a wrapper for :class:`HTTPCacheAlt`. It provides the
    external API for accessing data in the wrapped class. It contains only a
-   pointer (possibly ``NULL``) to an instance of the wrapped class.
+   pointer (possibly ``nullptr``) to an instance of the wrapped class.
 
 .. class:: CacheHTTPInfo
 

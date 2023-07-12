@@ -48,7 +48,7 @@ information.
 storing the new string in the :arg:`dst` buffer. The :arg:`length` parameter
 will be set to the new (encoded) string length, or :literal:`0` if the encoding
 failed.  :func:`TSStringPercentEncode` is similar but operates on a string. If
-the optional :arg:`map` parameter is provided (not :literal:`NULL`) , it should
+the optional :arg:`map` parameter is provided (not :literal:`nullptr`) , it should
 be a map of characters to encode.
 
 :func:`TSStringPercentDecode` perform percent-decoding of the string in the :arg:`str` buffer,

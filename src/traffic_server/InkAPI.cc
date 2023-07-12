@@ -116,271 +116,279 @@ UserArg UserArgTable[TS_USER_ARGS_COUNT][MAX_USER_ARGS[TS_USER_ARGS_GLB]];
 static PluginUserArgs<TS_USER_ARGS_GLB> global_user_args;
 std::atomic<int> UserArgIdx[TS_USER_ARGS_COUNT]; // Table of next reserved index.
 
-/* URL schemes */
-tsapi const char *TS_URL_SCHEME_FILE;
-tsapi const char *TS_URL_SCHEME_FTP;
-tsapi const char *TS_URL_SCHEME_GOPHER;
-tsapi const char *TS_URL_SCHEME_HTTP;
-tsapi const char *TS_URL_SCHEME_HTTPS;
-tsapi const char *TS_URL_SCHEME_MAILTO;
-tsapi const char *TS_URL_SCHEME_NEWS;
-tsapi const char *TS_URL_SCHEME_NNTP;
-tsapi const char *TS_URL_SCHEME_PROSPERO;
-tsapi const char *TS_URL_SCHEME_TELNET;
-tsapi const char *TS_URL_SCHEME_TUNNEL;
-tsapi const char *TS_URL_SCHEME_WAIS;
-tsapi const char *TS_URL_SCHEME_PNM;
-tsapi const char *TS_URL_SCHEME_RTSP;
-tsapi const char *TS_URL_SCHEME_RTSPU;
-tsapi const char *TS_URL_SCHEME_MMS;
-tsapi const char *TS_URL_SCHEME_MMSU;
-tsapi const char *TS_URL_SCHEME_MMST;
-tsapi const char *TS_URL_SCHEME_WS;
-tsapi const char *TS_URL_SCHEME_WSS;
+namespace tsapi
+{
+namespace c
+{
 
-/* URL schemes string lengths */
-tsapi int TS_URL_LEN_FILE;
-tsapi int TS_URL_LEN_FTP;
-tsapi int TS_URL_LEN_GOPHER;
-tsapi int TS_URL_LEN_HTTP;
-tsapi int TS_URL_LEN_HTTPS;
-tsapi int TS_URL_LEN_MAILTO;
-tsapi int TS_URL_LEN_NEWS;
-tsapi int TS_URL_LEN_NNTP;
-tsapi int TS_URL_LEN_PROSPERO;
-tsapi int TS_URL_LEN_TELNET;
-tsapi int TS_URL_LEN_TUNNEL;
-tsapi int TS_URL_LEN_WAIS;
-tsapi int TS_URL_LEN_PNM;
-tsapi int TS_URL_LEN_RTSP;
-tsapi int TS_URL_LEN_RTSPU;
-tsapi int TS_URL_LEN_MMS;
-tsapi int TS_URL_LEN_MMSU;
-tsapi int TS_URL_LEN_MMST;
-tsapi int TS_URL_LEN_WS;
-tsapi int TS_URL_LEN_WSS;
+  /* URL schemes */
+  const char *TS_URL_SCHEME_FILE;
+  const char *TS_URL_SCHEME_FTP;
+  const char *TS_URL_SCHEME_GOPHER;
+  const char *TS_URL_SCHEME_HTTP;
+  const char *TS_URL_SCHEME_HTTPS;
+  const char *TS_URL_SCHEME_MAILTO;
+  const char *TS_URL_SCHEME_NEWS;
+  const char *TS_URL_SCHEME_NNTP;
+  const char *TS_URL_SCHEME_PROSPERO;
+  const char *TS_URL_SCHEME_TELNET;
+  const char *TS_URL_SCHEME_TUNNEL;
+  const char *TS_URL_SCHEME_WAIS;
+  const char *TS_URL_SCHEME_PNM;
+  const char *TS_URL_SCHEME_RTSP;
+  const char *TS_URL_SCHEME_RTSPU;
+  const char *TS_URL_SCHEME_MMS;
+  const char *TS_URL_SCHEME_MMSU;
+  const char *TS_URL_SCHEME_MMST;
+  const char *TS_URL_SCHEME_WS;
+  const char *TS_URL_SCHEME_WSS;
 
-/* MIME fields */
-tsapi const char *TS_MIME_FIELD_ACCEPT;
-tsapi const char *TS_MIME_FIELD_ACCEPT_CHARSET;
-tsapi const char *TS_MIME_FIELD_ACCEPT_ENCODING;
-tsapi const char *TS_MIME_FIELD_ACCEPT_LANGUAGE;
-tsapi const char *TS_MIME_FIELD_ACCEPT_RANGES;
-tsapi const char *TS_MIME_FIELD_AGE;
-tsapi const char *TS_MIME_FIELD_ALLOW;
-tsapi const char *TS_MIME_FIELD_APPROVED;
-tsapi const char *TS_MIME_FIELD_AUTHORIZATION;
-tsapi const char *TS_MIME_FIELD_BYTES;
-tsapi const char *TS_MIME_FIELD_CACHE_CONTROL;
-tsapi const char *TS_MIME_FIELD_CLIENT_IP;
-tsapi const char *TS_MIME_FIELD_CONNECTION;
-tsapi const char *TS_MIME_FIELD_CONTENT_BASE;
-tsapi const char *TS_MIME_FIELD_CONTENT_ENCODING;
-tsapi const char *TS_MIME_FIELD_CONTENT_LANGUAGE;
-tsapi const char *TS_MIME_FIELD_CONTENT_LENGTH;
-tsapi const char *TS_MIME_FIELD_CONTENT_LOCATION;
-tsapi const char *TS_MIME_FIELD_CONTENT_MD5;
-tsapi const char *TS_MIME_FIELD_CONTENT_RANGE;
-tsapi const char *TS_MIME_FIELD_CONTENT_TYPE;
-tsapi const char *TS_MIME_FIELD_CONTROL;
-tsapi const char *TS_MIME_FIELD_COOKIE;
-tsapi const char *TS_MIME_FIELD_DATE;
-tsapi const char *TS_MIME_FIELD_DISTRIBUTION;
-tsapi const char *TS_MIME_FIELD_ETAG;
-tsapi const char *TS_MIME_FIELD_EXPECT;
-tsapi const char *TS_MIME_FIELD_EXPIRES;
-tsapi const char *TS_MIME_FIELD_FOLLOWUP_TO;
-tsapi const char *TS_MIME_FIELD_FROM;
-tsapi const char *TS_MIME_FIELD_HOST;
-tsapi const char *TS_MIME_FIELD_IF_MATCH;
-tsapi const char *TS_MIME_FIELD_IF_MODIFIED_SINCE;
-tsapi const char *TS_MIME_FIELD_IF_NONE_MATCH;
-tsapi const char *TS_MIME_FIELD_IF_RANGE;
-tsapi const char *TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
-tsapi const char *TS_MIME_FIELD_KEEP_ALIVE;
-tsapi const char *TS_MIME_FIELD_KEYWORDS;
-tsapi const char *TS_MIME_FIELD_LAST_MODIFIED;
-tsapi const char *TS_MIME_FIELD_LINES;
-tsapi const char *TS_MIME_FIELD_LOCATION;
-tsapi const char *TS_MIME_FIELD_MAX_FORWARDS;
-tsapi const char *TS_MIME_FIELD_MESSAGE_ID;
-tsapi const char *TS_MIME_FIELD_NEWSGROUPS;
-tsapi const char *TS_MIME_FIELD_ORGANIZATION;
-tsapi const char *TS_MIME_FIELD_PATH;
-tsapi const char *TS_MIME_FIELD_PRAGMA;
-tsapi const char *TS_MIME_FIELD_PROXY_AUTHENTICATE;
-tsapi const char *TS_MIME_FIELD_PROXY_AUTHORIZATION;
-tsapi const char *TS_MIME_FIELD_PROXY_CONNECTION;
-tsapi const char *TS_MIME_FIELD_PUBLIC;
-tsapi const char *TS_MIME_FIELD_RANGE;
-tsapi const char *TS_MIME_FIELD_REFERENCES;
-tsapi const char *TS_MIME_FIELD_REFERER;
-tsapi const char *TS_MIME_FIELD_REPLY_TO;
-tsapi const char *TS_MIME_FIELD_RETRY_AFTER;
-tsapi const char *TS_MIME_FIELD_SENDER;
-tsapi const char *TS_MIME_FIELD_SERVER;
-tsapi const char *TS_MIME_FIELD_SET_COOKIE;
-tsapi const char *TS_MIME_FIELD_STRICT_TRANSPORT_SECURITY;
-tsapi const char *TS_MIME_FIELD_SUBJECT;
-tsapi const char *TS_MIME_FIELD_SUMMARY;
-tsapi const char *TS_MIME_FIELD_TE;
-tsapi const char *TS_MIME_FIELD_TRANSFER_ENCODING;
-tsapi const char *TS_MIME_FIELD_UPGRADE;
-tsapi const char *TS_MIME_FIELD_USER_AGENT;
-tsapi const char *TS_MIME_FIELD_VARY;
-tsapi const char *TS_MIME_FIELD_VIA;
-tsapi const char *TS_MIME_FIELD_WARNING;
-tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
-tsapi const char *TS_MIME_FIELD_XREF;
-tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
-tsapi const char *TS_MIME_FIELD_FORWARDED;
+  /* URL schemes string lengths */
+  int TS_URL_LEN_FILE;
+  int TS_URL_LEN_FTP;
+  int TS_URL_LEN_GOPHER;
+  int TS_URL_LEN_HTTP;
+  int TS_URL_LEN_HTTPS;
+  int TS_URL_LEN_MAILTO;
+  int TS_URL_LEN_NEWS;
+  int TS_URL_LEN_NNTP;
+  int TS_URL_LEN_PROSPERO;
+  int TS_URL_LEN_TELNET;
+  int TS_URL_LEN_TUNNEL;
+  int TS_URL_LEN_WAIS;
+  int TS_URL_LEN_PNM;
+  int TS_URL_LEN_RTSP;
+  int TS_URL_LEN_RTSPU;
+  int TS_URL_LEN_MMS;
+  int TS_URL_LEN_MMSU;
+  int TS_URL_LEN_MMST;
+  int TS_URL_LEN_WS;
+  int TS_URL_LEN_WSS;
 
-/* MIME fields string lengths */
-tsapi int TS_MIME_LEN_ACCEPT;
-tsapi int TS_MIME_LEN_ACCEPT_CHARSET;
-tsapi int TS_MIME_LEN_ACCEPT_ENCODING;
-tsapi int TS_MIME_LEN_ACCEPT_LANGUAGE;
-tsapi int TS_MIME_LEN_ACCEPT_RANGES;
-tsapi int TS_MIME_LEN_AGE;
-tsapi int TS_MIME_LEN_ALLOW;
-tsapi int TS_MIME_LEN_APPROVED;
-tsapi int TS_MIME_LEN_AUTHORIZATION;
-tsapi int TS_MIME_LEN_BYTES;
-tsapi int TS_MIME_LEN_CACHE_CONTROL;
-tsapi int TS_MIME_LEN_CLIENT_IP;
-tsapi int TS_MIME_LEN_CONNECTION;
-tsapi int TS_MIME_LEN_CONTENT_BASE;
-tsapi int TS_MIME_LEN_CONTENT_ENCODING;
-tsapi int TS_MIME_LEN_CONTENT_LANGUAGE;
-tsapi int TS_MIME_LEN_CONTENT_LENGTH;
-tsapi int TS_MIME_LEN_CONTENT_LOCATION;
-tsapi int TS_MIME_LEN_CONTENT_MD5;
-tsapi int TS_MIME_LEN_CONTENT_RANGE;
-tsapi int TS_MIME_LEN_CONTENT_TYPE;
-tsapi int TS_MIME_LEN_CONTROL;
-tsapi int TS_MIME_LEN_COOKIE;
-tsapi int TS_MIME_LEN_DATE;
-tsapi int TS_MIME_LEN_DISTRIBUTION;
-tsapi int TS_MIME_LEN_ETAG;
-tsapi int TS_MIME_LEN_EXPECT;
-tsapi int TS_MIME_LEN_EXPIRES;
-tsapi int TS_MIME_LEN_FOLLOWUP_TO;
-tsapi int TS_MIME_LEN_FROM;
-tsapi int TS_MIME_LEN_HOST;
-tsapi int TS_MIME_LEN_IF_MATCH;
-tsapi int TS_MIME_LEN_IF_MODIFIED_SINCE;
-tsapi int TS_MIME_LEN_IF_NONE_MATCH;
-tsapi int TS_MIME_LEN_IF_RANGE;
-tsapi int TS_MIME_LEN_IF_UNMODIFIED_SINCE;
-tsapi int TS_MIME_LEN_KEEP_ALIVE;
-tsapi int TS_MIME_LEN_KEYWORDS;
-tsapi int TS_MIME_LEN_LAST_MODIFIED;
-tsapi int TS_MIME_LEN_LINES;
-tsapi int TS_MIME_LEN_LOCATION;
-tsapi int TS_MIME_LEN_MAX_FORWARDS;
-tsapi int TS_MIME_LEN_MESSAGE_ID;
-tsapi int TS_MIME_LEN_NEWSGROUPS;
-tsapi int TS_MIME_LEN_ORGANIZATION;
-tsapi int TS_MIME_LEN_PATH;
-tsapi int TS_MIME_LEN_PRAGMA;
-tsapi int TS_MIME_LEN_PROXY_AUTHENTICATE;
-tsapi int TS_MIME_LEN_PROXY_AUTHORIZATION;
-tsapi int TS_MIME_LEN_PROXY_CONNECTION;
-tsapi int TS_MIME_LEN_PUBLIC;
-tsapi int TS_MIME_LEN_RANGE;
-tsapi int TS_MIME_LEN_REFERENCES;
-tsapi int TS_MIME_LEN_REFERER;
-tsapi int TS_MIME_LEN_REPLY_TO;
-tsapi int TS_MIME_LEN_RETRY_AFTER;
-tsapi int TS_MIME_LEN_SENDER;
-tsapi int TS_MIME_LEN_SERVER;
-tsapi int TS_MIME_LEN_SET_COOKIE;
-tsapi int TS_MIME_LEN_STRICT_TRANSPORT_SECURITY;
-tsapi int TS_MIME_LEN_SUBJECT;
-tsapi int TS_MIME_LEN_SUMMARY;
-tsapi int TS_MIME_LEN_TE;
-tsapi int TS_MIME_LEN_TRANSFER_ENCODING;
-tsapi int TS_MIME_LEN_UPGRADE;
-tsapi int TS_MIME_LEN_USER_AGENT;
-tsapi int TS_MIME_LEN_VARY;
-tsapi int TS_MIME_LEN_VIA;
-tsapi int TS_MIME_LEN_WARNING;
-tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
-tsapi int TS_MIME_LEN_XREF;
-tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
-tsapi int TS_MIME_LEN_FORWARDED;
+  /* MIME fields */
+  const char *TS_MIME_FIELD_ACCEPT;
+  const char *TS_MIME_FIELD_ACCEPT_CHARSET;
+  const char *TS_MIME_FIELD_ACCEPT_ENCODING;
+  const char *TS_MIME_FIELD_ACCEPT_LANGUAGE;
+  const char *TS_MIME_FIELD_ACCEPT_RANGES;
+  const char *TS_MIME_FIELD_AGE;
+  const char *TS_MIME_FIELD_ALLOW;
+  const char *TS_MIME_FIELD_APPROVED;
+  const char *TS_MIME_FIELD_AUTHORIZATION;
+  const char *TS_MIME_FIELD_BYTES;
+  const char *TS_MIME_FIELD_CACHE_CONTROL;
+  const char *TS_MIME_FIELD_CLIENT_IP;
+  const char *TS_MIME_FIELD_CONNECTION;
+  const char *TS_MIME_FIELD_CONTENT_BASE;
+  const char *TS_MIME_FIELD_CONTENT_ENCODING;
+  const char *TS_MIME_FIELD_CONTENT_LANGUAGE;
+  const char *TS_MIME_FIELD_CONTENT_LENGTH;
+  const char *TS_MIME_FIELD_CONTENT_LOCATION;
+  const char *TS_MIME_FIELD_CONTENT_MD5;
+  const char *TS_MIME_FIELD_CONTENT_RANGE;
+  const char *TS_MIME_FIELD_CONTENT_TYPE;
+  const char *TS_MIME_FIELD_CONTROL;
+  const char *TS_MIME_FIELD_COOKIE;
+  const char *TS_MIME_FIELD_DATE;
+  const char *TS_MIME_FIELD_DISTRIBUTION;
+  const char *TS_MIME_FIELD_ETAG;
+  const char *TS_MIME_FIELD_EXPECT;
+  const char *TS_MIME_FIELD_EXPIRES;
+  const char *TS_MIME_FIELD_FOLLOWUP_TO;
+  const char *TS_MIME_FIELD_FROM;
+  const char *TS_MIME_FIELD_HOST;
+  const char *TS_MIME_FIELD_IF_MATCH;
+  const char *TS_MIME_FIELD_IF_MODIFIED_SINCE;
+  const char *TS_MIME_FIELD_IF_NONE_MATCH;
+  const char *TS_MIME_FIELD_IF_RANGE;
+  const char *TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
+  const char *TS_MIME_FIELD_KEEP_ALIVE;
+  const char *TS_MIME_FIELD_KEYWORDS;
+  const char *TS_MIME_FIELD_LAST_MODIFIED;
+  const char *TS_MIME_FIELD_LINES;
+  const char *TS_MIME_FIELD_LOCATION;
+  const char *TS_MIME_FIELD_MAX_FORWARDS;
+  const char *TS_MIME_FIELD_MESSAGE_ID;
+  const char *TS_MIME_FIELD_NEWSGROUPS;
+  const char *TS_MIME_FIELD_ORGANIZATION;
+  const char *TS_MIME_FIELD_PATH;
+  const char *TS_MIME_FIELD_PRAGMA;
+  const char *TS_MIME_FIELD_PROXY_AUTHENTICATE;
+  const char *TS_MIME_FIELD_PROXY_AUTHORIZATION;
+  const char *TS_MIME_FIELD_PROXY_CONNECTION;
+  const char *TS_MIME_FIELD_PUBLIC;
+  const char *TS_MIME_FIELD_RANGE;
+  const char *TS_MIME_FIELD_REFERENCES;
+  const char *TS_MIME_FIELD_REFERER;
+  const char *TS_MIME_FIELD_REPLY_TO;
+  const char *TS_MIME_FIELD_RETRY_AFTER;
+  const char *TS_MIME_FIELD_SENDER;
+  const char *TS_MIME_FIELD_SERVER;
+  const char *TS_MIME_FIELD_SET_COOKIE;
+  const char *TS_MIME_FIELD_STRICT_TRANSPORT_SECURITY;
+  const char *TS_MIME_FIELD_SUBJECT;
+  const char *TS_MIME_FIELD_SUMMARY;
+  const char *TS_MIME_FIELD_TE;
+  const char *TS_MIME_FIELD_TRANSFER_ENCODING;
+  const char *TS_MIME_FIELD_UPGRADE;
+  const char *TS_MIME_FIELD_USER_AGENT;
+  const char *TS_MIME_FIELD_VARY;
+  const char *TS_MIME_FIELD_VIA;
+  const char *TS_MIME_FIELD_WARNING;
+  const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
+  const char *TS_MIME_FIELD_XREF;
+  const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+  const char *TS_MIME_FIELD_FORWARDED;
 
-/* HTTP miscellaneous values */
-tsapi const char *TS_HTTP_VALUE_BYTES;
-tsapi const char *TS_HTTP_VALUE_CHUNKED;
-tsapi const char *TS_HTTP_VALUE_CLOSE;
-tsapi const char *TS_HTTP_VALUE_COMPRESS;
-tsapi const char *TS_HTTP_VALUE_DEFLATE;
-tsapi const char *TS_HTTP_VALUE_GZIP;
-tsapi const char *TS_HTTP_VALUE_BROTLI;
-tsapi const char *TS_HTTP_VALUE_IDENTITY;
-tsapi const char *TS_HTTP_VALUE_KEEP_ALIVE;
-tsapi const char *TS_HTTP_VALUE_MAX_AGE;
-tsapi const char *TS_HTTP_VALUE_MAX_STALE;
-tsapi const char *TS_HTTP_VALUE_MIN_FRESH;
-tsapi const char *TS_HTTP_VALUE_MUST_REVALIDATE;
-tsapi const char *TS_HTTP_VALUE_NONE;
-tsapi const char *TS_HTTP_VALUE_NO_CACHE;
-tsapi const char *TS_HTTP_VALUE_NO_STORE;
-tsapi const char *TS_HTTP_VALUE_NO_TRANSFORM;
-tsapi const char *TS_HTTP_VALUE_ONLY_IF_CACHED;
-tsapi const char *TS_HTTP_VALUE_PRIVATE;
-tsapi const char *TS_HTTP_VALUE_PROXY_REVALIDATE;
-tsapi const char *TS_HTTP_VALUE_PUBLIC;
-tsapi const char *TS_HTTP_VALUE_S_MAXAGE;
+  /* MIME fields string lengths */
+  int TS_MIME_LEN_ACCEPT;
+  int TS_MIME_LEN_ACCEPT_CHARSET;
+  int TS_MIME_LEN_ACCEPT_ENCODING;
+  int TS_MIME_LEN_ACCEPT_LANGUAGE;
+  int TS_MIME_LEN_ACCEPT_RANGES;
+  int TS_MIME_LEN_AGE;
+  int TS_MIME_LEN_ALLOW;
+  int TS_MIME_LEN_APPROVED;
+  int TS_MIME_LEN_AUTHORIZATION;
+  int TS_MIME_LEN_BYTES;
+  int TS_MIME_LEN_CACHE_CONTROL;
+  int TS_MIME_LEN_CLIENT_IP;
+  int TS_MIME_LEN_CONNECTION;
+  int TS_MIME_LEN_CONTENT_BASE;
+  int TS_MIME_LEN_CONTENT_ENCODING;
+  int TS_MIME_LEN_CONTENT_LANGUAGE;
+  int TS_MIME_LEN_CONTENT_LENGTH;
+  int TS_MIME_LEN_CONTENT_LOCATION;
+  int TS_MIME_LEN_CONTENT_MD5;
+  int TS_MIME_LEN_CONTENT_RANGE;
+  int TS_MIME_LEN_CONTENT_TYPE;
+  int TS_MIME_LEN_CONTROL;
+  int TS_MIME_LEN_COOKIE;
+  int TS_MIME_LEN_DATE;
+  int TS_MIME_LEN_DISTRIBUTION;
+  int TS_MIME_LEN_ETAG;
+  int TS_MIME_LEN_EXPECT;
+  int TS_MIME_LEN_EXPIRES;
+  int TS_MIME_LEN_FOLLOWUP_TO;
+  int TS_MIME_LEN_FROM;
+  int TS_MIME_LEN_HOST;
+  int TS_MIME_LEN_IF_MATCH;
+  int TS_MIME_LEN_IF_MODIFIED_SINCE;
+  int TS_MIME_LEN_IF_NONE_MATCH;
+  int TS_MIME_LEN_IF_RANGE;
+  int TS_MIME_LEN_IF_UNMODIFIED_SINCE;
+  int TS_MIME_LEN_KEEP_ALIVE;
+  int TS_MIME_LEN_KEYWORDS;
+  int TS_MIME_LEN_LAST_MODIFIED;
+  int TS_MIME_LEN_LINES;
+  int TS_MIME_LEN_LOCATION;
+  int TS_MIME_LEN_MAX_FORWARDS;
+  int TS_MIME_LEN_MESSAGE_ID;
+  int TS_MIME_LEN_NEWSGROUPS;
+  int TS_MIME_LEN_ORGANIZATION;
+  int TS_MIME_LEN_PATH;
+  int TS_MIME_LEN_PRAGMA;
+  int TS_MIME_LEN_PROXY_AUTHENTICATE;
+  int TS_MIME_LEN_PROXY_AUTHORIZATION;
+  int TS_MIME_LEN_PROXY_CONNECTION;
+  int TS_MIME_LEN_PUBLIC;
+  int TS_MIME_LEN_RANGE;
+  int TS_MIME_LEN_REFERENCES;
+  int TS_MIME_LEN_REFERER;
+  int TS_MIME_LEN_REPLY_TO;
+  int TS_MIME_LEN_RETRY_AFTER;
+  int TS_MIME_LEN_SENDER;
+  int TS_MIME_LEN_SERVER;
+  int TS_MIME_LEN_SET_COOKIE;
+  int TS_MIME_LEN_STRICT_TRANSPORT_SECURITY;
+  int TS_MIME_LEN_SUBJECT;
+  int TS_MIME_LEN_SUMMARY;
+  int TS_MIME_LEN_TE;
+  int TS_MIME_LEN_TRANSFER_ENCODING;
+  int TS_MIME_LEN_UPGRADE;
+  int TS_MIME_LEN_USER_AGENT;
+  int TS_MIME_LEN_VARY;
+  int TS_MIME_LEN_VIA;
+  int TS_MIME_LEN_WARNING;
+  int TS_MIME_LEN_WWW_AUTHENTICATE;
+  int TS_MIME_LEN_XREF;
+  int TS_MIME_LEN_X_FORWARDED_FOR;
+  int TS_MIME_LEN_FORWARDED;
 
-/* HTTP miscellaneous values string lengths */
-tsapi int TS_HTTP_LEN_BYTES;
-tsapi int TS_HTTP_LEN_CHUNKED;
-tsapi int TS_HTTP_LEN_CLOSE;
-tsapi int TS_HTTP_LEN_COMPRESS;
-tsapi int TS_HTTP_LEN_DEFLATE;
-tsapi int TS_HTTP_LEN_GZIP;
-tsapi int TS_HTTP_LEN_BROTLI;
-tsapi int TS_HTTP_LEN_IDENTITY;
-tsapi int TS_HTTP_LEN_KEEP_ALIVE;
-tsapi int TS_HTTP_LEN_MAX_AGE;
-tsapi int TS_HTTP_LEN_MAX_STALE;
-tsapi int TS_HTTP_LEN_MIN_FRESH;
-tsapi int TS_HTTP_LEN_MUST_REVALIDATE;
-tsapi int TS_HTTP_LEN_NONE;
-tsapi int TS_HTTP_LEN_NO_CACHE;
-tsapi int TS_HTTP_LEN_NO_STORE;
-tsapi int TS_HTTP_LEN_NO_TRANSFORM;
-tsapi int TS_HTTP_LEN_ONLY_IF_CACHED;
-tsapi int TS_HTTP_LEN_PRIVATE;
-tsapi int TS_HTTP_LEN_PROXY_REVALIDATE;
-tsapi int TS_HTTP_LEN_PUBLIC;
-tsapi int TS_HTTP_LEN_S_MAXAGE;
+  /* HTTP miscellaneous values */
+  const char *TS_HTTP_VALUE_BYTES;
+  const char *TS_HTTP_VALUE_CHUNKED;
+  const char *TS_HTTP_VALUE_CLOSE;
+  const char *TS_HTTP_VALUE_COMPRESS;
+  const char *TS_HTTP_VALUE_DEFLATE;
+  const char *TS_HTTP_VALUE_GZIP;
+  const char *TS_HTTP_VALUE_BROTLI;
+  const char *TS_HTTP_VALUE_IDENTITY;
+  const char *TS_HTTP_VALUE_KEEP_ALIVE;
+  const char *TS_HTTP_VALUE_MAX_AGE;
+  const char *TS_HTTP_VALUE_MAX_STALE;
+  const char *TS_HTTP_VALUE_MIN_FRESH;
+  const char *TS_HTTP_VALUE_MUST_REVALIDATE;
+  const char *TS_HTTP_VALUE_NONE;
+  const char *TS_HTTP_VALUE_NO_CACHE;
+  const char *TS_HTTP_VALUE_NO_STORE;
+  const char *TS_HTTP_VALUE_NO_TRANSFORM;
+  const char *TS_HTTP_VALUE_ONLY_IF_CACHED;
+  const char *TS_HTTP_VALUE_PRIVATE;
+  const char *TS_HTTP_VALUE_PROXY_REVALIDATE;
+  const char *TS_HTTP_VALUE_PUBLIC;
+  const char *TS_HTTP_VALUE_S_MAXAGE;
 
-/* HTTP methods */
-tsapi const char *TS_HTTP_METHOD_CONNECT;
-tsapi const char *TS_HTTP_METHOD_DELETE;
-tsapi const char *TS_HTTP_METHOD_GET;
-tsapi const char *TS_HTTP_METHOD_HEAD;
-tsapi const char *TS_HTTP_METHOD_OPTIONS;
-tsapi const char *TS_HTTP_METHOD_POST;
-tsapi const char *TS_HTTP_METHOD_PURGE;
-tsapi const char *TS_HTTP_METHOD_PUT;
-tsapi const char *TS_HTTP_METHOD_TRACE;
-tsapi const char *TS_HTTP_METHOD_PUSH;
+  /* HTTP miscellaneous values string lengths */
+  int TS_HTTP_LEN_BYTES;
+  int TS_HTTP_LEN_CHUNKED;
+  int TS_HTTP_LEN_CLOSE;
+  int TS_HTTP_LEN_COMPRESS;
+  int TS_HTTP_LEN_DEFLATE;
+  int TS_HTTP_LEN_GZIP;
+  int TS_HTTP_LEN_BROTLI;
+  int TS_HTTP_LEN_IDENTITY;
+  int TS_HTTP_LEN_KEEP_ALIVE;
+  int TS_HTTP_LEN_MAX_AGE;
+  int TS_HTTP_LEN_MAX_STALE;
+  int TS_HTTP_LEN_MIN_FRESH;
+  int TS_HTTP_LEN_MUST_REVALIDATE;
+  int TS_HTTP_LEN_NONE;
+  int TS_HTTP_LEN_NO_CACHE;
+  int TS_HTTP_LEN_NO_STORE;
+  int TS_HTTP_LEN_NO_TRANSFORM;
+  int TS_HTTP_LEN_ONLY_IF_CACHED;
+  int TS_HTTP_LEN_PRIVATE;
+  int TS_HTTP_LEN_PROXY_REVALIDATE;
+  int TS_HTTP_LEN_PUBLIC;
+  int TS_HTTP_LEN_S_MAXAGE;
 
-/* HTTP methods string lengths */
-tsapi int TS_HTTP_LEN_CONNECT;
-tsapi int TS_HTTP_LEN_DELETE;
-tsapi int TS_HTTP_LEN_GET;
-tsapi int TS_HTTP_LEN_HEAD;
-tsapi int TS_HTTP_LEN_OPTIONS;
-tsapi int TS_HTTP_LEN_POST;
-tsapi int TS_HTTP_LEN_PURGE;
-tsapi int TS_HTTP_LEN_PUT;
-tsapi int TS_HTTP_LEN_TRACE;
-tsapi int TS_HTTP_LEN_PUSH;
+  /* HTTP methods */
+  const char *TS_HTTP_METHOD_CONNECT;
+  const char *TS_HTTP_METHOD_DELETE;
+  const char *TS_HTTP_METHOD_GET;
+  const char *TS_HTTP_METHOD_HEAD;
+  const char *TS_HTTP_METHOD_OPTIONS;
+  const char *TS_HTTP_METHOD_POST;
+  const char *TS_HTTP_METHOD_PURGE;
+  const char *TS_HTTP_METHOD_PUT;
+  const char *TS_HTTP_METHOD_TRACE;
+  const char *TS_HTTP_METHOD_PUSH;
+
+  /* HTTP methods string lengths */
+  int TS_HTTP_LEN_CONNECT;
+  int TS_HTTP_LEN_DELETE;
+  int TS_HTTP_LEN_GET;
+  int TS_HTTP_LEN_HEAD;
+  int TS_HTTP_LEN_OPTIONS;
+  int TS_HTTP_LEN_POST;
+  int TS_HTTP_LEN_PURGE;
+  int TS_HTTP_LEN_PUT;
+  int TS_HTTP_LEN_TRACE;
+  int TS_HTTP_LEN_PUSH;
+
+} // end namespace c
+} // end namespace tsapi
 
 HttpAPIHooks *http_global_hooks        = nullptr;
 SslAPIHooks *ssl_hooks                 = nullptr;
@@ -405,7 +413,7 @@ static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle")
 ////////////////////////////////////////////////////////////////////
 
 void
-TSStatus(const char *fmt, ...)
+tsapi::c::TSStatus(const char *fmt, ...)
 {
   va_list args;
 
@@ -415,7 +423,7 @@ TSStatus(const char *fmt, ...)
 }
 
 void
-TSNote(const char *fmt, ...)
+tsapi::c::TSNote(const char *fmt, ...)
 {
   va_list args;
 
@@ -425,7 +433,7 @@ TSNote(const char *fmt, ...)
 }
 
 void
-TSWarning(const char *fmt, ...)
+tsapi::c::TSWarning(const char *fmt, ...)
 {
   va_list args;
 
@@ -435,7 +443,7 @@ TSWarning(const char *fmt, ...)
 }
 
 void
-TSError(const char *fmt, ...)
+tsapi::c::TSError(const char *fmt, ...)
 {
   va_list args;
 
@@ -445,7 +453,7 @@ TSError(const char *fmt, ...)
 }
 
 void
-TSFatal(const char *fmt, ...)
+tsapi::c::TSFatal(const char *fmt, ...)
 {
   va_list args;
 
@@ -455,7 +463,7 @@ TSFatal(const char *fmt, ...)
 }
 
 void
-TSAlert(const char *fmt, ...)
+tsapi::c::TSAlert(const char *fmt, ...)
 {
   va_list args;
 
@@ -465,7 +473,7 @@ TSAlert(const char *fmt, ...)
 }
 
 void
-TSEmergency(const char *fmt, ...)
+tsapi::c::TSEmergency(const char *fmt, ...)
 {
   va_list args;
 
@@ -476,7 +484,7 @@ TSEmergency(const char *fmt, ...)
 
 // Assert in debug AND optim
 void
-_TSReleaseAssert(const char *text, const char *file, int line)
+tsapi::c::_TSReleaseAssert(const char *text, const char *file, int line)
 {
   _ink_assert(text, file, line);
 }
@@ -484,13 +492,13 @@ _TSReleaseAssert(const char *text, const char *file, int line)
 // Assert only in debug
 int
 #ifdef DEBUG
-_TSAssert(const char *text, const char *file, int line)
+tsapi::c::_TSAssert(const char *text, const char *file, int line)
 {
   _ink_assert(text, file, line);
   return 0;
 }
 #else
-_TSAssert(const char *, const char *, int)
+tsapi::c::_TSAssert(const char *, const char *, int)
 {
   return 0;
 }
@@ -545,7 +553,7 @@ _TSAssert(const char *, const char *, int)
 //   * maintains the associated MIMEHdrImpl when returning field
 //     slots from lookup and create functions
 //
-// If the MIMEHdrImpl pointer is NULL, then the handle points
+// If the MIMEHdrImpl pointer is null, then the handle points
 // to a standalone field, otherwise the handle points to a field
 // within the MIME header.
 //
@@ -1717,38 +1725,38 @@ api_init()
 ////////////////////////////////////////////////////////////////////
 
 void *
-_TSmalloc(size_t size, const char * /* path ATS_UNUSED */)
+tsapi::c::_TSmalloc(size_t size, const char * /* path ATS_UNUSED */)
 {
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, size_t size, const char * /* path ATS_UNUSED */)
+tsapi::c::_TSrealloc(void *ptr, size_t size, const char * /* path ATS_UNUSED */)
 {
   return ats_realloc(ptr, size);
 }
 
 // length has to be int64_t and not size_t, since -1 means to call strlen() to get length
 char *
-_TSstrdup(const char *str, int64_t length, const char *path)
+tsapi::c::_TSstrdup(const char *str, int64_t length, const char *path)
 {
   return _xstrdup(str, length, path);
 }
 
 size_t
-_TSstrlcpy(char *dst, const char *str, size_t siz)
+tsapi::c::TSstrlcpy(char *dst, const char *str, size_t siz)
 {
   return ink_strlcpy(dst, str, siz);
 }
 
 size_t
-_TSstrlcat(char *dst, const char *str, size_t siz)
+tsapi::c::TSstrlcat(char *dst, const char *str, size_t siz)
 {
   return ink_strlcat(dst, str, siz);
 }
 
 void
-_TSfree(void *ptr)
+tsapi::c::TSfree(void *ptr)
 {
   ats_free(ptr);
 }
@@ -1759,7 +1767,7 @@ _TSfree(void *ptr)
 //
 ////////////////////////////////////////////////////////////////////
 TSReturnCode
-TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length)
+tsapi::c::TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
@@ -1768,7 +1776,7 @@ TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_s
 }
 
 TSReturnCode
-TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
+tsapi::c::TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
@@ -1783,19 +1791,19 @@ TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size
 ////////////////////////////////////////////////////////////////////
 
 unsigned int
-TSrandom()
+tsapi::c::TSrandom()
 {
   return this_ethread()->generator.random();
 }
 
 double
-TSdrandom()
+tsapi::c::TSdrandom()
 {
   return this_ethread()->generator.drandom();
 }
 
 ink_hrtime
-TShrtime()
+tsapi::c::TShrtime()
 {
   return ink_get_hrtime();
 }
@@ -1807,50 +1815,50 @@ TShrtime()
 ////////////////////////////////////////////////////////////////////
 
 const char *
-TSInstallDirGet()
+tsapi::c::TSInstallDirGet()
 {
   static std::string prefix = Layout::get()->prefix;
   return prefix.c_str();
 }
 
 const char *
-TSConfigDirGet()
+tsapi::c::TSConfigDirGet()
 {
   static std::string sysconfdir = RecConfigReadConfigDir();
   return sysconfdir.c_str();
 }
 
 const char *
-TSRuntimeDirGet()
+tsapi::c::TSRuntimeDirGet()
 {
   static std::string runtimedir = RecConfigReadRuntimeDir();
   return runtimedir.c_str();
 }
 
 const char *
-TSTrafficServerVersionGet()
+tsapi::c::TSTrafficServerVersionGet()
 {
   return traffic_server_version;
 }
 
 int
-TSTrafficServerVersionGetMajor()
+tsapi::c::TSTrafficServerVersionGetMajor()
 {
   return ts_major_version;
 }
 int
-TSTrafficServerVersionGetMinor()
+tsapi::c::TSTrafficServerVersionGetMinor()
 {
   return ts_minor_version;
 }
 int
-TSTrafficServerVersionGetPatch()
+tsapi::c::TSTrafficServerVersionGetPatch()
 {
   return ts_patch_version;
 }
 
 const char *
-TSPluginDirGet()
+tsapi::c::TSPluginDirGet()
 {
   static std::string path = RecConfigReadPluginDir();
   return path.c_str();
@@ -1863,7 +1871,7 @@ TSPluginDirGet()
 ////////////////////////////////////////////////////////////////////
 
 TSReturnCode
-TSPluginRegister(const TSPluginRegistrationInfo *plugin_info)
+tsapi::c::TSPluginRegister(const TSPluginRegistrationInfo *plugin_info)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_info) == TS_SUCCESS);
 
@@ -1889,7 +1897,7 @@ TSPluginRegister(const TSPluginRegistrationInfo *plugin_info)
 }
 
 TSReturnCode
-TSPluginDSOReloadEnable(int enabled)
+tsapi::c::TSPluginDSOReloadEnable(int enabled)
 {
   TSReturnCode ret = TS_SUCCESS;
   if (!plugin_reg_current) {
@@ -1911,8 +1919,8 @@ TSPluginDSOReloadEnable(int enabled)
 //
 ////////////////////////////////////////////////////////////////////
 
-TSFile
-TSfopen(const char *filename, const char *mode)
+tsapi::c::TSFile
+tsapi::c::TSfopen(const char *filename, const char *mode)
 {
   FileImpl *file;
 
@@ -1926,7 +1934,7 @@ TSfopen(const char *filename, const char *mode)
 }
 
 void
-TSfclose(TSFile filep)
+tsapi::c::TSfclose(TSFile filep)
 {
   FileImpl *file = (FileImpl *)filep;
   file->fclose();
@@ -1934,28 +1942,28 @@ TSfclose(TSFile filep)
 }
 
 ssize_t
-TSfread(TSFile filep, void *buf, size_t length)
+tsapi::c::TSfread(TSFile filep, void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
   return file->fread(buf, length);
 }
 
 ssize_t
-TSfwrite(TSFile filep, const void *buf, size_t length)
+tsapi::c::TSfwrite(TSFile filep, const void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
   return file->fwrite(buf, length);
 }
 
 void
-TSfflush(TSFile filep)
+tsapi::c::TSfflush(TSFile filep)
 {
   FileImpl *file = (FileImpl *)filep;
   file->fflush();
 }
 
 char *
-TSfgets(TSFile filep, char *buf, size_t length)
+tsapi::c::TSfgets(TSFile filep, char *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
   return file->fgets(buf, length);
@@ -1968,7 +1976,7 @@ TSfgets(TSFile filep, char *buf, size_t length)
 ////////////////////////////////////////////////////////////////////
 
 TSReturnCode
-TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
+tsapi::c::TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
 {
   MIMEFieldSDKHandle *field_handle;
   HdrHeapObjImpl *obj = (HdrHeapObjImpl *)mloc;
@@ -2008,8 +2016,8 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
 
 // TSMBuffer: pointers to HdrHeapSDKHandle objects
 
-TSMBuffer
-TSMBufferCreate()
+tsapi::c::TSMBuffer
+tsapi::c::TSMBufferCreate()
 {
   TSMBuffer bufp;
   HdrHeapSDKHandle *new_heap = new HdrHeapSDKHandle;
@@ -2022,7 +2030,7 @@ TSMBufferCreate()
 }
 
 TSReturnCode
-TSMBufferDestroy(TSMBuffer bufp)
+tsapi::c::TSMBufferDestroy(TSMBuffer bufp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2048,7 +2056,7 @@ TSMBufferDestroy(TSMBuffer bufp)
 // TSMBuffer: pointers to HdrHeapSDKHandle objects
 // TSMLoc:    pointers to URLImpl objects
 TSReturnCode
-TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
+tsapi::c::TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(locp) == TS_SUCCESS);
@@ -2062,7 +2070,7 @@ TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
 }
 
 TSReturnCode
-TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp)
+tsapi::c::TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(src_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(dest_bufp) == TS_SUCCESS);
@@ -2086,7 +2094,7 @@ TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp
 }
 
 TSReturnCode
-TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
+tsapi::c::TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(src_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(dest_bufp) == TS_SUCCESS);
@@ -2110,7 +2118,7 @@ TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_o
 }
 
 void
-TSUrlPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
+tsapi::c::TSUrlPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2144,8 +2152,8 @@ TSUrlPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
   } while (!done);
 }
 
-TSParseResult
-TSUrlParse(TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
+tsapi::c::TSParseResult
+tsapi::c::TSUrlParse(TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2165,7 +2173,7 @@ TSUrlParse(TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
 }
 
 int
-TSUrlLengthGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSUrlLengthGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2175,7 +2183,7 @@ TSUrlLengthGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 char *
-TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   // bufp is not actually used anymore, so it can be null.
   if (bufp) {
@@ -2231,13 +2239,13 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 }
 
 const char *
-TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::scheme_get);
 }
 
 const char *
-TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   char const *data = TSUrlRawSchemeGet(bufp, obj, length);
   if (data && *length) {
@@ -2260,7 +2268,7 @@ TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 }
 
 TSReturnCode
-TSUrlSchemeSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlSchemeSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::scheme_set);
 }
@@ -2268,43 +2276,43 @@ TSUrlSchemeSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 /* Internet specific URLs */
 
 const char *
-TSUrlUserGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlUserGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::user_get);
 }
 
 TSReturnCode
-TSUrlUserSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlUserSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::user_set);
 }
 
 const char *
-TSUrlPasswordGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlPasswordGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::password_get);
 }
 
 TSReturnCode
-TSUrlPasswordSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlPasswordSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::password_set);
 }
 
 const char *
-TSUrlHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::host_get);
 }
 
 TSReturnCode
-TSUrlHostSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlHostSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::host_set);
 }
 
 int
-TSUrlPortGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSUrlPortGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2317,7 +2325,7 @@ TSUrlPortGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 int
-TSUrlRawPortGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSUrlRawPortGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2330,7 +2338,7 @@ TSUrlRawPortGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
+tsapi::c::TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2350,13 +2358,13 @@ TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
 /* FTP and HTTP specific URLs  */
 
 const char *
-TSUrlPathGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlPathGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::path_get);
 }
 
 TSReturnCode
-TSUrlPathSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlPathSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::path_set);
 }
@@ -2364,7 +2372,7 @@ TSUrlPathSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 /* FTP specific URLs */
 
 int
-TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2376,7 +2384,7 @@ TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
+tsapi::c::TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 {
   // The valid values are : 0, 65('A'), 97('a'),
   // 69('E'), 101('e'), 73 ('I') and 105('i').
@@ -2398,44 +2406,44 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 /* HTTP specific URLs */
 
 const char *
-TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::params_get);
 }
 
 TSReturnCode
-TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::params_set);
 }
 
 const char *
-TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::query_get);
 }
 
 TSReturnCode
-TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::query_set);
 }
 
 const char *
-TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::fragment_get);
 }
 
 TSReturnCode
-TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::fragment_set);
 }
 
 // URL percent encoding
 TSReturnCode
-TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
+tsapi::c::TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
@@ -2469,7 +2477,7 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
 }
 
 TSReturnCode
-TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
+tsapi::c::TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
@@ -2497,7 +2505,7 @@ TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_siz
 }
 
 TSReturnCode
-TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
+tsapi::c::TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -2517,7 +2525,7 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_
 
 // pton
 TSReturnCode
-TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
+tsapi::c::TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
 
@@ -2538,8 +2546,8 @@ TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 /* MimeParser */
 /**************/
 
-TSMimeParser
-TSMimeParserCreate()
+tsapi::c::TSMimeParser
+tsapi::c::TSMimeParserCreate()
 {
   TSMimeParser parser = reinterpret_cast<TSMimeParser>(ats_malloc(sizeof(MIMEParser)));
 
@@ -2548,7 +2556,7 @@ TSMimeParserCreate()
 }
 
 void
-TSMimeParserClear(TSMimeParser parser)
+tsapi::c::TSMimeParserClear(TSMimeParser parser)
 {
   sdk_assert(sdk_sanity_check_mime_parser(parser) == TS_SUCCESS);
 
@@ -2556,7 +2564,7 @@ TSMimeParserClear(TSMimeParser parser)
 }
 
 void
-TSMimeParserDestroy(TSMimeParser parser)
+tsapi::c::TSMimeParserDestroy(TSMimeParser parser)
 {
   sdk_assert(sdk_sanity_check_mime_parser(parser) == TS_SUCCESS);
 
@@ -2572,11 +2580,11 @@ TSMimeParserDestroy(TSMimeParser parser)
 // TSMLoc:    pointers to MIMEFieldSDKHandle objects
 
 TSReturnCode
-TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
+tsapi::c::TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
-  // TS_ERROR. If not allowed, return NULL.
+  // TS_ERROR. If not allowed, set *locp to TS_NULL_MLOC.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)locp) == TS_SUCCESS);
 
@@ -2589,7 +2597,7 @@ TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
 }
 
 TSReturnCode
-TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2609,11 +2617,11 @@ TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
+tsapi::c::TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
-  // TS_ERROR. If not allowed, return NULL.
+  // TS_ERROR. If not allowed, set *locp to TS_NULL_MLOC.
   sdk_assert(sdk_sanity_check_mbuffer(dest_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(src_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mime_hdr_handle(src_hdr) == TS_SUCCESS);
@@ -2638,7 +2646,7 @@ TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *
 }
 
 TSReturnCode
-TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
+tsapi::c::TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2669,7 +2677,7 @@ TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc s
 }
 
 void
-TSMimeHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
+tsapi::c::TSMimeHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
@@ -2699,8 +2707,8 @@ TSMimeHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
   } while (!done);
 }
 
-TSParseResult
-TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
+tsapi::c::TSParseResult
+tsapi::c::TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
@@ -2719,7 +2727,7 @@ TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc obj, const char **sta
 }
 
 int
-TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
@@ -2729,7 +2737,7 @@ TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
@@ -2745,7 +2753,7 @@ TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc obj)
 }
 
 int
-TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
@@ -2756,7 +2764,7 @@ TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
 
 // The following three helper functions should not be used in plugins! Since they are not used
 // by plugins, there's no need to validate the input.
-const char *
+static const char *
 TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, int *value_len_ptr)
 {
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field_obj;
@@ -2768,7 +2776,7 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   }
 }
 
-void
+static void
 TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value, int length)
 {
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field_obj;
@@ -2785,7 +2793,7 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
   }
 }
 
-void
+static void
 TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int length, int idx)
 {
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field_obj;
@@ -2806,7 +2814,7 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
 // TSMLoc:    pointers to MIMEFieldSDKHandle objects
 
 int
-TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1_obj, TSMLoc field2_obj)
+tsapi::c::TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1_obj, TSMLoc field2_obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_field_handle(field1_obj, hdr_obj) == TS_SUCCESS);
@@ -2821,8 +2829,8 @@ TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1_obj, TSMLoc fi
   return (field1_handle->field_ptr == field2_handle->field_ptr);
 }
 
-TSMLoc
-TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr_obj, int idx)
+tsapi::c::TSMLoc
+tsapi::c::TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr_obj, int idx)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr_obj) == TS_SUCCESS) ||
@@ -2842,8 +2850,8 @@ TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr_obj, int idx)
   return reinterpret_cast<TSMLoc>(h);
 }
 
-TSMLoc
-TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
+tsapi::c::TSMLoc
+tsapi::c::TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr_obj) == TS_SUCCESS) ||
@@ -2868,7 +2876,7 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
 }
 
 TSReturnCode
-TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
+tsapi::c::TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2892,7 +2900,7 @@ TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
   // inside a MIME header (the correct way), or it might have been    //
   // created in isolation as a "standalone field" (the old way).      //
   //                                                                  //
-  // If it's a standalone field (the associated mime header is NULL), //
+  // If it's a standalone field (the associated mime header is null), //
   // then we need to now allocate a real field inside the header,     //
   // copy over the data, and convert the standalone field into a      //
   // forwarding pointer to the real field, in case it's used again    //
@@ -2919,7 +2927,7 @@ TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 }
 
 TSReturnCode
-TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
+tsapi::c::TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2946,7 +2954,7 @@ TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 }
 
 TSReturnCode
-TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
+tsapi::c::TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -2983,11 +2991,11 @@ TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
 }
 
 TSReturnCode
-TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc *locp)
+tsapi::c::TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc *locp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
-  // TS_ERROR. If not allowed, return NULL.
+  // TS_ERROR. If not allowed, set *locp to TS_NULL_MLOC.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(mh_mloc) == TS_SUCCESS) ||
              (sdk_sanity_check_http_hdr_handle(mh_mloc) == TS_SUCCESS));
@@ -3007,7 +3015,7 @@ TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc *locp)
 }
 
 TSReturnCode
-TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp)
+tsapi::c::TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(mh_mloc) == TS_SUCCESS) ||
@@ -3032,7 +3040,8 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
 }
 
 TSReturnCode
-TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field)
+tsapi::c::TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr,
+                             TSMLoc src_field)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3079,11 +3088,12 @@ TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMB
 }
 
 TSReturnCode
-TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field, TSMLoc *locp)
+tsapi::c::TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field,
+                              TSMLoc *locp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
-  // TS_ERROR. If not allowed, return NULL.
+  // TS_ERROR. If not allowed, set *locp to TS_NULL_MLOC.
   sdk_assert(sdk_sanity_check_mbuffer(dest_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(src_bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(dest_hdr) == TS_SUCCESS) ||
@@ -3107,8 +3117,8 @@ TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TS
 }
 
 TSReturnCode
-TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr,
-                         TSMLoc src_field)
+tsapi::c::TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr,
+                                   TSMLoc src_field)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3138,8 +3148,8 @@ TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field
   return TS_SUCCESS;
 }
 
-TSMLoc
-TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMLoc
+tsapi::c::TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3158,8 +3168,8 @@ TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
   return TS_NULL_MLOC;
 }
 
-TSMLoc
-TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMLoc
+tsapi::c::TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3178,7 +3188,7 @@ TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 }
 
 int
-TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3189,7 +3199,7 @@ TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 }
 
 const char *
-TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
+tsapi::c::TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3201,7 +3211,7 @@ TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
 }
 
 TSReturnCode
-TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name, int length)
+tsapi::c::TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3238,7 +3248,7 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
 }
 
 TSReturnCode
-TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3256,16 +3266,16 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
   HdrHeap *heap              = ((HdrHeapSDKHandle *)bufp)->m_heap;
 
   /**
-   * Modified the string value passed from an empty string ("") to NULL.
+   * Modified the string value passed from an empty string ("") to null.
    * An empty string is also considered to be a token. The correct value of
-   * the field after this function should be NULL.
+   * the field after this function should be null.
    */
   mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
   return TS_SUCCESS;
 }
 
 int
-TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3276,7 +3286,7 @@ TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 }
 
 const char *
-TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int *value_len_ptr)
+tsapi::c::TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int *value_len_ptr)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3287,7 +3297,7 @@ TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
 }
 
 time_t
-TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+tsapi::c::TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3304,7 +3314,7 @@ TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
 }
 
 time_t
-TSMimeParseDate(char const *const value_str, int const value_len)
+tsapi::c::TSMimeParseDate(char const *const value_str, int const value_len)
 {
   if (value_str == nullptr) {
     return (time_t)0;
@@ -3314,7 +3324,7 @@ TSMimeParseDate(char const *const value_str, int const value_len)
 }
 
 int
-TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
+tsapi::c::TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3331,7 +3341,7 @@ TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 }
 
 int64_t
-TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
+tsapi::c::TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3348,7 +3358,7 @@ TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 }
 
 unsigned int
-TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
+tsapi::c::TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
@@ -3365,7 +3375,7 @@ TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 }
 
 TSReturnCode
-TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
+tsapi::c::TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3389,7 +3399,7 @@ TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
 }
 
 TSReturnCode
-TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value)
+tsapi::c::TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3413,7 +3423,7 @@ TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t valu
 }
 
 TSReturnCode
-TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_length)
+tsapi::c::TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_length)
 {
   if (value_length == nullptr) {
     return TS_ERROR;
@@ -3428,7 +3438,7 @@ TSMimeFormatDate(time_t const value_time, char *const value_str, int *const valu
 }
 
 TSReturnCode
-TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value)
+tsapi::c::TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3450,7 +3460,7 @@ TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int
 }
 
 TSReturnCode
-TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int64_t value)
+tsapi::c::TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int64_t value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3472,7 +3482,7 @@ TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, i
 }
 
 TSReturnCode
-TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value)
+tsapi::c::TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3494,7 +3504,7 @@ TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, un
 }
 
 TSReturnCode
-TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
+tsapi::c::TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3521,7 +3531,7 @@ TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, con
 }
 
 TSReturnCode
-TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
+tsapi::c::TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3543,7 +3553,7 @@ TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int id
 }
 
 TSReturnCode
-TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value)
+tsapi::c::TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3564,7 +3574,7 @@ TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
 }
 
 TSReturnCode
-TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value)
+tsapi::c::TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3585,7 +3595,7 @@ TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
 }
 
 TSReturnCode
-TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value)
+tsapi::c::TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3611,7 +3621,7 @@ TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t v
 }
 
 TSReturnCode
-TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
+tsapi::c::TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3634,7 +3644,7 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 }
 
 const char *
-TSMimeHdrStringToWKS(const char *str, int length)
+tsapi::c::TSMimeHdrStringToWKS(const char *str, int length)
 {
   if (length < 0) {
     return hdrtoken_string_to_wks(str);
@@ -3646,8 +3656,8 @@ TSMimeHdrStringToWKS(const char *str, int length)
 /**************/
 /* HttpParser */
 /**************/
-TSHttpParser
-TSHttpParserCreate()
+tsapi::c::TSHttpParser
+tsapi::c::TSHttpParserCreate()
 {
   TSHttpParser parser = reinterpret_cast<TSHttpParser>(ats_malloc(sizeof(HTTPParser)));
   http_parser_init((HTTPParser *)parser);
@@ -3656,14 +3666,14 @@ TSHttpParserCreate()
 }
 
 void
-TSHttpParserClear(TSHttpParser parser)
+tsapi::c::TSHttpParserClear(TSHttpParser parser)
 {
   sdk_assert(sdk_sanity_check_http_parser(parser) == TS_SUCCESS);
   http_parser_clear((HTTPParser *)parser);
 }
 
 void
-TSHttpParserDestroy(TSHttpParser parser)
+tsapi::c::TSHttpParserDestroy(TSHttpParser parser)
 {
   sdk_assert(sdk_sanity_check_http_parser(parser) == TS_SUCCESS);
   http_parser_clear((HTTPParser *)parser);
@@ -3674,8 +3684,8 @@ TSHttpParserDestroy(TSHttpParser parser)
 /* HttpHdr */
 /***********/
 
-TSMLoc
-TSHttpHdrCreate(TSMBuffer bufp)
+tsapi::c::TSMLoc
+tsapi::c::TSHttpHdrCreate(TSMBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
 
@@ -3686,7 +3696,7 @@ TSHttpHdrCreate(TSMBuffer bufp)
 }
 
 void
-TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3698,11 +3708,11 @@ TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
+tsapi::c::TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
-  // TS_ERROR. If not allowed, return NULL.
+  // TS_ERROR. If not allowed, set *locp to TS_NULL_MLOC.
   sdk_assert(sdk_sanity_check_mbuffer(dest_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(src_bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(src_hdr) == TS_SUCCESS);
@@ -3731,7 +3741,7 @@ TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *
 }
 
 TSReturnCode
-TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
+tsapi::c::TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc src_obj)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3766,7 +3776,7 @@ TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc s
 }
 
 void
-TSHttpHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
+tsapi::c::TSHttpHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3800,8 +3810,8 @@ TSHttpHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
   } while (!done);
 }
 
-TSParseResult
-TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
+tsapi::c::TSParseResult
+tsapi::c::TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3821,8 +3831,8 @@ TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **
   return (TSParseResult)h.parse_req((HTTPParser *)parser, start, end, false);
 }
 
-TSParseResult
-TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
+tsapi::c::TSParseResult
+tsapi::c::TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **start, const char *end)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3843,7 +3853,7 @@ TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char *
 }
 
 int
-TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3855,8 +3865,8 @@ TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
   return h.length_get();
 }
 
-TSHttpType
-TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpType
+tsapi::c::TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3870,7 +3880,7 @@ TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
+tsapi::c::TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3909,7 +3919,7 @@ TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
 }
 
 int
-TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3922,7 +3932,7 @@ TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
+tsapi::c::TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3946,7 +3956,7 @@ TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
 }
 
 const char *
-TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3959,7 +3969,7 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
 }
 
 TSReturnCode
-TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -3985,7 +3995,7 @@ TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 }
 
 const char *
-TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -3998,7 +4008,7 @@ TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
 }
 
 TSReturnCode
-TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc obj, TSMLoc *locp)
+tsapi::c::TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc obj, TSMLoc *locp)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -4014,7 +4024,7 @@ TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc obj, TSMLoc *locp)
 }
 
 TSReturnCode
-TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc obj, TSMLoc url)
+tsapi::c::TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc obj, TSMLoc url)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -4040,8 +4050,8 @@ TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc obj, TSMLoc url)
   return TS_SUCCESS;
 }
 
-TSHttpStatus
-TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpStatus
+tsapi::c::TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -4053,7 +4063,7 @@ TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
+tsapi::c::TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -4075,7 +4085,7 @@ TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
 }
 
 const char *
-TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
+tsapi::c::TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
@@ -4088,7 +4098,7 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
 }
 
 TSReturnCode
-TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
+tsapi::c::TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
@@ -4117,7 +4127,7 @@ TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 }
 
 const char *
-TSHttpHdrReasonLookup(TSHttpStatus status)
+tsapi::c::TSHttpHdrReasonLookup(TSHttpStatus status)
 {
   return http_hdr_reason_lookup((HTTPStatus)status);
 }
@@ -4138,8 +4148,8 @@ sdk_sanity_check_cachekey(TSCacheKey key)
   return TS_SUCCESS;
 }
 
-TSCacheKey
-TSCacheKeyCreate()
+tsapi::c::TSCacheKey
+tsapi::c::TSCacheKeyCreate()
 {
   TSCacheKey key = (TSCacheKey) new CacheInfo();
 
@@ -4149,7 +4159,7 @@ TSCacheKeyCreate()
 }
 
 TSReturnCode
-TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
+tsapi::c::TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure((void *)input) == TS_SUCCESS);
@@ -4165,7 +4175,7 @@ TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
 }
 
 TSReturnCode
-TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url)
+tsapi::c::TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
@@ -4178,7 +4188,7 @@ TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url)
 }
 
 TSReturnCode
-TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type)
+tsapi::c::TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
@@ -4202,7 +4212,7 @@ TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type)
 }
 
 TSReturnCode
-TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len)
+tsapi::c::TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
@@ -4222,7 +4232,7 @@ TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len)
 }
 
 TSReturnCode
-TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache)
+tsapi::c::TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
@@ -4236,7 +4246,7 @@ TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache)
 }
 
 TSReturnCode
-TSCacheKeyDestroy(TSCacheKey key)
+tsapi::c::TSCacheKeyDestroy(TSCacheKey key)
 {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
@@ -4252,8 +4262,8 @@ TSCacheKeyDestroy(TSCacheKey key)
   return TS_SUCCESS;
 }
 
-TSCacheHttpInfo
-TSCacheHttpInfoCopy(TSCacheHttpInfo infop)
+tsapi::c::TSCacheHttpInfo
+tsapi::c::TSCacheHttpInfoCopy(TSCacheHttpInfo infop)
 {
   CacheHTTPInfo *new_info = new CacheHTTPInfo;
 
@@ -4262,7 +4272,7 @@ TSCacheHttpInfoCopy(TSCacheHttpInfo infop)
 }
 
 void
-TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
 
@@ -4272,7 +4282,7 @@ TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 void
-TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
 
@@ -4282,28 +4292,28 @@ TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 time_t
-TSCacheHttpInfoReqSentTimeGet(TSCacheHttpInfo infop)
+tsapi::c::TSCacheHttpInfoReqSentTimeGet(TSCacheHttpInfo infop)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
   return info->request_sent_time_get();
 }
 
 time_t
-TSCacheHttpInfoRespReceivedTimeGet(TSCacheHttpInfo infop)
+tsapi::c::TSCacheHttpInfoRespReceivedTimeGet(TSCacheHttpInfo infop)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
   return info->response_received_time_get();
 }
 
 int64_t
-TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop)
+tsapi::c::TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
   return info->object_size_get();
 }
 
 void
-TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 {
   HTTPHdr h;
 
@@ -4314,7 +4324,7 @@ TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 }
 
 void
-TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 {
   HTTPHdr h;
 
@@ -4325,7 +4335,7 @@ TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 }
 
 int
-TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
+tsapi::c::TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
   CacheHTTPInfoVector vector;
@@ -4343,13 +4353,13 @@ TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
 }
 
 void
-TSCacheHttpInfoDestroy(TSCacheHttpInfo infop)
+tsapi::c::TSCacheHttpInfoDestroy(TSCacheHttpInfo infop)
 {
   ((CacheHTTPInfo *)infop)->destroy();
 }
 
-TSCacheHttpInfo
-TSCacheHttpInfoCreate()
+tsapi::c::TSCacheHttpInfo
+tsapi::c::TSCacheHttpInfoCreate()
 {
   CacheHTTPInfo *info = new CacheHTTPInfo;
   info->create();
@@ -4364,7 +4374,7 @@ TSCacheHttpInfoCreate()
 ////////////////////////////////////////////////////////////////////
 
 unsigned int
-TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp)
+tsapi::c::TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp)
 {
   INKConfigImpl *config  = new INKConfigImpl;
   config->mdata          = data;
@@ -4372,20 +4382,20 @@ TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp)
   return configProcessor.set(id, config);
 }
 
-TSConfig
-TSConfigGet(unsigned int id)
+tsapi::c::TSConfig
+tsapi::c::TSConfigGet(unsigned int id)
 {
   return reinterpret_cast<TSConfig>(configProcessor.get(id));
 }
 
 void
-TSConfigRelease(unsigned int id, TSConfig configp)
+tsapi::c::TSConfigRelease(unsigned int id, TSConfig configp)
 {
   configProcessor.release(id, (ConfigInfo *)configp);
 }
 
 void *
-TSConfigDataGet(TSConfig configp)
+tsapi::c::TSConfigDataGet(TSConfig configp)
 {
   INKConfigImpl *config = (INKConfigImpl *)configp;
   return config->mdata;
@@ -4398,7 +4408,7 @@ TSConfigDataGet(TSConfig configp)
 ////////////////////////////////////////////////////////////////////
 
 void
-TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
+tsapi::c::TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_name) == TS_SUCCESS);
@@ -4407,25 +4417,25 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
 }
 
 TSReturnCode
-TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
+tsapi::c::TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
   return RecGetRecordInt((char *)var_name, (RecInt *)result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
+tsapi::c::TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
   return RecGetRecordCounter((char *)var_name, (RecCounter *)result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
+tsapi::c::TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
   return RecGetRecordFloat((char *)var_name, (RecFloat *)result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSMgmtStringGet(const char *var_name, TSMgmtString *result)
+tsapi::c::TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
   RecString tmp = nullptr;
   (void)RecGetRecordString_Xmalloc((char *)var_name, &tmp);
@@ -4439,13 +4449,13 @@ TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 }
 
 TSReturnCode
-TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
+tsapi::c::TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
 {
   return REC_ERR_OKAY == RecGetRecordSource(var_name, reinterpret_cast<RecSourceT *>(source)) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result)
+tsapi::c::TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result)
 {
   return REC_ERR_OKAY == RecGetRecordDataType(var_name, reinterpret_cast<RecDataT *>(result)) ? TS_SUCCESS : TS_ERROR;
 }
@@ -4458,10 +4468,10 @@ TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result)
 
 extern thread_local PluginThreadContext *pluginThreadContext;
 
-TSCont
-TSContCreate(TSEventFunc funcp, TSMutex mutexp)
+tsapi::c::TSCont
+tsapi::c::TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 {
-  // mutexp can be NULL
+  // mutexp can be null
   if (mutexp != nullptr) {
     sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
   }
@@ -4477,7 +4487,7 @@ TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 }
 
 void
-TSContDestroy(TSCont contp)
+tsapi::c::TSContDestroy(TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4491,7 +4501,7 @@ TSContDestroy(TSCont contp)
 }
 
 void
-TSContDataSet(TSCont contp, void *data)
+tsapi::c::TSContDataSet(TSCont contp, void *data)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4501,7 +4511,7 @@ TSContDataSet(TSCont contp, void *data)
 }
 
 void *
-TSContDataGet(TSCont contp)
+tsapi::c::TSContDataGet(TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4510,8 +4520,8 @@ TSContDataGet(TSCont contp)
   return i->mdata;
 }
 
-TSAction
-TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
+tsapi::c::TSAction
+tsapi::c::TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4558,8 +4568,8 @@ TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
   return action;
 }
 
-TSAction
-TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
+tsapi::c::TSAction
+tsapi::c::TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
 {
   ink_release_assert(ethread != nullptr);
 
@@ -4590,8 +4600,8 @@ TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
   return action;
 }
 
-TSAction
-TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
+tsapi::c::TSAction
+tsapi::c::TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4627,8 +4637,8 @@ TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
   return action;
 }
 
-TSAction
-TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread)
+tsapi::c::TSAction
+tsapi::c::TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread)
 {
   ink_release_assert(ethread != nullptr);
 
@@ -4655,7 +4665,7 @@ TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEven
 }
 
 TSReturnCode
-TSContThreadAffinitySet(TSCont contp, TSEventThread ethread)
+tsapi::c::TSContThreadAffinitySet(TSCont contp, TSEventThread ethread)
 {
   ink_release_assert(ethread != nullptr);
 
@@ -4672,8 +4682,8 @@ TSContThreadAffinitySet(TSCont contp, TSEventThread ethread)
   return TS_ERROR;
 }
 
-TSEventThread
-TSContThreadAffinityGet(TSCont contp)
+tsapi::c::TSEventThread
+tsapi::c::TSContThreadAffinityGet(TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4685,7 +4695,7 @@ TSContThreadAffinityGet(TSCont contp)
 }
 
 void
-TSContThreadAffinityClear(TSCont contp)
+tsapi::c::TSContThreadAffinityClear(TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4696,8 +4706,8 @@ TSContThreadAffinityClear(TSCont contp)
   i->clearThreadAffinity();
 }
 
-TSAction
-TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout)
+tsapi::c::TSAction
+tsapi::c::TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4726,7 +4736,7 @@ TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout)
 }
 
 int
-TSContCall(TSCont contp, TSEvent event, void *edata)
+tsapi::c::TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
   WEAK_MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
@@ -4737,8 +4747,8 @@ TSContCall(TSCont contp, TSEvent event, void *edata)
   return c->handleEvent((int)event, edata);
 }
 
-TSMutex
-TSContMutexGet(TSCont contp)
+tsapi::c::TSMutex
+tsapi::c::TSContMutexGet(TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4749,7 +4759,7 @@ TSContMutexGet(TSCont contp)
 /* HTTP hooks */
 
 void
-TSHttpHookAdd(TSHttpHookID id, TSCont contp)
+tsapi::c::TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 {
   INKContInternal *icontp;
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
@@ -4766,7 +4776,7 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 }
 
 void
-TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
+tsapi::c::TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_lifecycle_hook_id(id) == TS_SUCCESS);
@@ -4776,7 +4786,7 @@ TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
 
 /* HTTP sessions */
 void
-TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
+tsapi::c::TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
@@ -4787,7 +4797,7 @@ TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
 }
 
 int
-TSHttpSsnTransactionCount(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnTransactionCount(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
@@ -4795,15 +4805,15 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
   return cs->get_transact_count();
 }
 
-TSVConn
-TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
+tsapi::c::TSVConn
+tsapi::c::TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 {
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return reinterpret_cast<TSVConn>(cs->get_netvc());
 }
 
-TSVConn
-TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
+tsapi::c::TSVConn
+tsapi::c::TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
   PoolableSession *ss = reinterpret_cast<PoolableSession *>(ssnp);
   if (ss != nullptr) {
@@ -4812,8 +4822,8 @@ TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
   return nullptr;
 }
 
-TSVConn
-TSHttpTxnServerVConnGet(TSHttpTxn txnp)
+tsapi::c::TSVConn
+tsapi::c::TSHttpTxnServerVConnGet(TSHttpTxn txnp)
 {
   TSVConn vconn = nullptr;
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -4859,7 +4869,7 @@ private:
 };
 
 void
-TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
+tsapi::c::TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
@@ -4895,7 +4905,7 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 
 /* HTTP transactions */
 void
-TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
+tsapi::c::TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
@@ -4917,7 +4927,7 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
 // Private api function for gzip plugin.
 //  This function should only appear in TsapiPrivate.h
 TSReturnCode
-TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
+tsapi::c::TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
 {
   HttpSM *sm    = (HttpSM *)txnp;
   APIHook *hook = sm->txn_hook_get(id);
@@ -4932,8 +4942,8 @@ TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
   return TS_ERROR;
 }
 
-TSHttpSsn
-TSHttpTxnSsnGet(TSHttpTxn txnp)
+tsapi::c::TSHttpSsn
+tsapi::c::TSHttpTxnSsnGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -4943,7 +4953,7 @@ TSHttpTxnSsnGet(TSHttpTxn txnp)
 
 // TODO: Is this still necessary ??
 void
-TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set)
+tsapi::c::TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set)
 {
   HttpSM *sm             = (HttpSM *)txnp;
   HttpTransact::State *s = &(sm->t_state);
@@ -4952,7 +4962,7 @@ TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set)
 }
 
 TSReturnCode
-TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -4975,7 +4985,7 @@ TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
 // pristine url is the url before remap
 TSReturnCode
-TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
+tsapi::c::TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5001,7 +5011,7 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
 }
 
 int
-TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5014,7 +5024,7 @@ TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp)
 // The caller is responsible to free memory that is allocated for the string
 // that is returned.
 char *
-TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
+tsapi::c::TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(TS_SUCCESS == sdk_sanity_check_txn(txnp));
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
@@ -5024,7 +5034,7 @@ TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
 }
 
 TSReturnCode
-TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_t size, int64_t *length)
+tsapi::c::TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_t size, int64_t *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(hdr_buf) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(hdr_loc) == TS_SUCCESS);
@@ -5061,7 +5071,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
 }
 
 TSReturnCode
-TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5081,7 +5091,7 @@ TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5101,7 +5111,7 @@ TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5121,7 +5131,7 @@ TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5159,7 +5169,7 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5198,7 +5208,7 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
@@ -5234,7 +5244,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
+tsapi::c::TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)lookup_status) == TS_SUCCESS);
@@ -5264,7 +5274,7 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
 }
 
 TSReturnCode
-TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count)
+tsapi::c::TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)lookup_count) == TS_SUCCESS);
@@ -5279,7 +5289,7 @@ TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count)
    TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
  */
 TSReturnCode
-TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
+tsapi::c::TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5316,7 +5326,7 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
-TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
+tsapi::c::TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
@@ -5351,7 +5361,7 @@ TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 }
 
 int
-TSHttpTxnIsWebsocket(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnIsWebsocket(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5360,7 +5370,7 @@ TSHttpTxnIsWebsocket(TSHttpTxn txnp)
 }
 
 const char *
-TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
+tsapi::c::TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5378,7 +5388,7 @@ TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
 }
 
 TSReturnCode
-TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
@@ -5403,7 +5413,7 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
@@ -5439,7 +5449,7 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
  * overrides as proxy.config.http.transaction_active_timeout_out
  **/
 void
-TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
+tsapi::c::TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5452,7 +5462,7 @@ TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
  * overrides as proxy.config.http.connect_attempts_timeout
  **/
 void
-TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
+tsapi::c::TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5465,7 +5475,7 @@ TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
  * overrides as proxy.config.dns.lookup_timeout
  **/
 void
-TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
+tsapi::c::TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5479,7 +5489,7 @@ TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
  * overrides as proxy.config.http.transaction_no_activity_timeout_out
  **/
 void
-TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
+tsapi::c::TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5488,7 +5498,7 @@ TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 }
 
 TSReturnCode
-TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
+tsapi::c::TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5499,7 +5509,7 @@ TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
 }
 
 bool
-TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5508,7 +5518,7 @@ TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5531,7 +5541,7 @@ TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
+tsapi::c::TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5546,7 +5556,7 @@ TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event)
 }
 
 TSReturnCode
-TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
+tsapi::c::TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(client_abort != nullptr);
@@ -5573,7 +5583,7 @@ TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
 }
 
 void
-TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
+tsapi::c::TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5582,7 +5592,7 @@ TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
 }
 
 void
-TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag)
+tsapi::c::TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5591,7 +5601,7 @@ TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag)
 }
 
 int
-TSHttpTxnClientReqIsServerStyle(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientReqIsServerStyle(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5600,7 +5610,7 @@ TSHttpTxnClientReqIsServerStyle(TSHttpTxn txnp)
 }
 
 void
-TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time)
+tsapi::c::TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5609,7 +5619,7 @@ TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time)
 }
 
 TSReturnCode
-TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5635,7 +5645,7 @@ TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5652,7 +5662,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 sockaddr const *
-TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
 {
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -5662,7 +5672,7 @@ TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
   return cs->get_remote_addr();
 }
 sockaddr const *
-TSHttpTxnClientAddrGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5671,7 +5681,7 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const *
-TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
 {
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -5681,7 +5691,7 @@ TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
   return cs->get_local_addr();
 }
 sockaddr const *
-TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5690,7 +5700,7 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const *
-TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5708,7 +5718,7 @@ TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const *
-TSHttpTxnServerAddrGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5717,7 +5727,7 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
+tsapi::c::TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5730,7 +5740,7 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
 }
 
 void
-TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
+tsapi::c::TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5741,7 +5751,7 @@ TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
 // [amc] This might use the port. The code path should do that but it
 // hasn't been tested.
 TSReturnCode
-TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
+tsapi::c::TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -5752,7 +5762,7 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
 }
 
 sockaddr const *
-TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5769,7 +5779,7 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
 }
 
 const char *
-TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5786,7 +5796,7 @@ TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
@@ -5800,7 +5810,7 @@ TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
+tsapi::c::TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {
   if (TS_SUCCESS != sdk_sanity_check_txn(txnp)) {
     return TS_ERROR;
@@ -5816,7 +5826,7 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 }
 
 TSReturnCode
-TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
+tsapi::c::TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -5835,7 +5845,7 @@ TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
 }
 
 TSReturnCode
-TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
+tsapi::c::TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -5856,7 +5866,7 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 }
 
 TSReturnCode
-TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
+tsapi::c::TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -5875,7 +5885,7 @@ TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 }
 
 TSReturnCode
-TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
+tsapi::c::TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -5895,9 +5905,9 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
   return TS_SUCCESS;
 }
 
-// Set the body, or, if you provide a NULL buffer, clear the body message
+// Set the body, or, if you provide a null buffer, clear the body message
 void
-TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype)
+tsapi::c::TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5916,7 +5926,7 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetyp
 }
 
 void
-TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
+tsapi::c::TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5939,7 +5949,7 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 }
 
 TSReturnCode
-TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
+tsapi::c::TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5952,7 +5962,7 @@ TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 }
 
 void
-TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port)
+tsapi::c::TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
@@ -5965,7 +5975,7 @@ TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port)
 }
 
 TSReturnCode
-TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
@@ -5990,7 +6000,7 @@ TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+tsapi::c::TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
@@ -6025,7 +6035,7 @@ TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 }
 
 void
-TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on)
+tsapi::c::TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6034,7 +6044,7 @@ TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on)
 }
 
 void
-TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on)
+tsapi::c::TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6065,7 +6075,7 @@ private:
 
 //----------------------------------------------------------------------------
 void
-TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
+tsapi::c::TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6073,7 +6083,7 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   EThread *eth = this_ethread();
 
   // TS-2271: If this function is being executed on a thread which was not
-  // created using the ATS EThread API, eth will be NULL, and the
+  // created using the ATS EThread API, eth will be null, and the
   // continuation needs to be called back on a REGULAR thread.
   //
   // If we are not coming from the thread associated with the state machine,
@@ -6092,10 +6102,10 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   eventProcessor.schedule_imm(cb, ET_NET);
 }
 
-TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
+tsapi::c::TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
 
 TSReturnCode
-TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *ptr_idx)
+tsapi::c::TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *ptr_idx)
 {
   sdk_assert(sdk_sanity_check_null_ptr(ptr_idx) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(name) == TS_SUCCESS);
@@ -6134,7 +6144,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
 }
 
 TSReturnCode
-TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
+tsapi::c::TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
 {
   sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
   sdk_assert(SanityCheckUserIndex(type, idx));
@@ -6154,7 +6164,7 @@ TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char 
 
 // Not particularly efficient, but good enough for now.
 TSReturnCode
-TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description)
+tsapi::c::TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
   sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
@@ -6175,7 +6185,7 @@ TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, con
 
 // -------------
 void
-TSUserArgSet(void *data, int arg_idx, void *arg)
+tsapi::c::TSUserArgSet(void *data, int arg_idx, void *arg)
 {
   if (nullptr != data) {
     PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
@@ -6188,7 +6198,7 @@ TSUserArgSet(void *data, int arg_idx, void *arg)
 }
 
 void *
-TSUserArgGet(void *data, int arg_idx)
+tsapi::c::TSUserArgGet(void *data, int arg_idx)
 {
   if (nullptr != data) {
     PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
@@ -6201,7 +6211,7 @@ TSUserArgGet(void *data, int arg_idx)
 }
 
 void
-TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
+tsapi::c::TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6209,8 +6219,8 @@ TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
   sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
 }
 
-TSHttpStatus
-TSHttpTxnStatusGet(TSHttpTxn txnp)
+tsapi::c::TSHttpStatus
+tsapi::c::TSHttpTxnStatusGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6219,7 +6229,7 @@ TSHttpTxnStatusGet(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
+tsapi::c::TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6263,7 +6273,7 @@ TSHttpTxnCntlSet(TSHttpTxn txnp, TSHttpCntlType cntl, bool data)
 }
 
 bool
-TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
+tsapi::c::TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6308,8 +6318,8 @@ TSHttpTxnCntlGet(TSHttpTxn txnp, TSHttpCntlType ctrl)
 /* This is kinda horky, we have to use TSServerState instead of
    HttpTransact::ServerState_t, otherwise we have a prototype
    mismatch in the public ts/ts.h interfaces. */
-TSServerState
-TSHttpTxnServerStateGet(TSHttpTxn txnp)
+tsapi::c::TSServerState
+tsapi::c::TSHttpTxnServerStateGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6318,35 +6328,37 @@ TSHttpTxnServerStateGet(TSHttpTxn txnp)
 }
 
 void
-TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
+tsapi::c::TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   ((HttpSM *)txnp)->debug_on = on;
 }
 
 int
-TSHttpTxnDebugGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnDebugGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   return ((HttpSM *)txnp)->debug_on;
 }
 
 void
-TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
+tsapi::c::TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   (reinterpret_cast<ProxySession *>(ssnp))->set_debug(0 != on);
 }
 
 int
-TSHttpSsnDebugGet(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnDebugGet(TSHttpSsn ssnp, int *on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  return (reinterpret_cast<ProxySession *>(ssnp))->debug();
+  sdk_assert(on != nullptr);
+  *on = (reinterpret_cast<ProxySession *>(ssnp))->debug();
+  return TS_SUCCESS;
 }
 
 int
-TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6355,7 +6367,7 @@ TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp)
 }
 
 int64_t
-TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6364,7 +6376,7 @@ TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6373,7 +6385,7 @@ TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp)
 }
 
 int64_t
-TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6382,7 +6394,7 @@ TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6391,7 +6403,7 @@ TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp)
 }
 
 int64_t
-TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6400,7 +6412,7 @@ TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6409,7 +6421,7 @@ TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp)
 }
 
 int64_t
-TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6418,7 +6430,7 @@ TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSVConnIsSslReused(TSVConn sslp)
+tsapi::c::TSVConnIsSslReused(TSVConn sslp)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
@@ -6427,7 +6439,7 @@ TSVConnIsSslReused(TSVConn sslp)
 }
 
 const char *
-TSVConnSslCipherGet(TSVConn sslp)
+tsapi::c::TSVConnSslCipherGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
   TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
@@ -6436,7 +6448,7 @@ TSVConnSslCipherGet(TSVConn sslp)
 }
 
 const char *
-TSVConnSslProtocolGet(TSVConn sslp)
+tsapi::c::TSVConnSslProtocolGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
   TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
@@ -6445,7 +6457,7 @@ TSVConnSslProtocolGet(TSVConn sslp)
 }
 
 const char *
-TSVConnSslCurveGet(TSVConn sslp)
+tsapi::c::TSVConnSslCurveGet(TSVConn sslp)
 {
   NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
   TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
@@ -6454,7 +6466,7 @@ TSVConnSslCurveGet(TSVConn sslp)
 }
 
 int
-TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6463,7 +6475,7 @@ TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp)
 }
 
 int64_t
-TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6474,7 +6486,7 @@ TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp)
 // Get a particular milestone hrtime'r. Note that this can return 0, which means it has not
 // been set yet.
 TSReturnCode
-TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *time)
+tsapi::c::TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *time)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(time) == TS_SUCCESS);
@@ -6492,7 +6504,7 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
 }
 
 TSReturnCode
-TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
+tsapi::c::TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6508,7 +6520,7 @@ TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
 }
 
 int
-TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6519,7 +6531,7 @@ TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpCurrentClientConnectionsGet()
+tsapi::c::TSHttpCurrentClientConnectionsGet()
 {
   int64_t S;
 
@@ -6528,7 +6540,7 @@ TSHttpCurrentClientConnectionsGet()
 }
 
 int
-TSHttpCurrentActiveClientConnectionsGet()
+tsapi::c::TSHttpCurrentActiveClientConnectionsGet()
 {
   int64_t S;
 
@@ -6537,7 +6549,7 @@ TSHttpCurrentActiveClientConnectionsGet()
 }
 
 int
-TSHttpCurrentIdleClientConnectionsGet()
+tsapi::c::TSHttpCurrentIdleClientConnectionsGet()
 {
   int64_t total  = 0;
   int64_t active = 0;
@@ -6553,7 +6565,7 @@ TSHttpCurrentIdleClientConnectionsGet()
 }
 
 int
-TSHttpCurrentCacheConnectionsGet()
+tsapi::c::TSHttpCurrentCacheConnectionsGet()
 {
   int64_t S;
 
@@ -6562,7 +6574,7 @@ TSHttpCurrentCacheConnectionsGet()
 }
 
 int
-TSHttpCurrentServerConnectionsGet()
+tsapi::c::TSHttpCurrentServerConnectionsGet()
 {
   int64_t S;
 
@@ -6572,7 +6584,7 @@ TSHttpCurrentServerConnectionsGet()
 
 /* HTTP alternate selection */
 TSReturnCode
-TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_alt_info(infop) == TS_SUCCESS);
 
@@ -6585,7 +6597,7 @@ TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_alt_info(infop) == TS_SUCCESS);
 
@@ -6598,7 +6610,7 @@ TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_alt_info(infop) == TS_SUCCESS);
 
@@ -6611,7 +6623,7 @@ TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 void
-TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
+tsapi::c::TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
 {
   sdk_assert(sdk_sanity_check_alt_info(infop) == TS_SUCCESS);
 
@@ -6623,7 +6635,7 @@ extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
 const char *
-TSHttpTxnPluginTagGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6631,8 +6643,8 @@ TSHttpTxnPluginTagGet(TSHttpTxn txnp)
   return sm->plugin_tag;
 }
 
-TSHttpConnectOptions
-TSHttpConnectOptionsGet(TSConnectType connect_type)
+tsapi::c::TSHttpConnectOptions
+tsapi::c::TSHttpConnectOptionsGet(TSConnectType connect_type)
 {
   sdk_assert(connect_type > TS_CONNECT_UNDEFINED);
   sdk_assert(connect_type < TS_CONNECT_LAST_ENTRY);
@@ -6645,8 +6657,8 @@ TSHttpConnectOptionsGet(TSConnectType connect_type)
                               .buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT};
 }
 
-TSVConn
-TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
+tsapi::c::TSVConn
+tsapi::c::TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
 {
   TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
   options.addr                 = addr;
@@ -6656,8 +6668,8 @@ TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
   return TSHttpConnectPlugin(&options);
 }
 
-TSVConn
-TSHttpConnectPlugin(TSHttpConnectOptions *options)
+tsapi::c::TSVConn
+tsapi::c::TSHttpConnectPlugin(TSHttpConnectOptions *options)
 {
   sdk_assert(options != nullptr);
   sdk_assert(options->connect_type == TS_CONNECT_PLUGIN);
@@ -6697,14 +6709,14 @@ TSHttpConnectPlugin(TSHttpConnectOptions *options)
   return nullptr;
 }
 
-TSVConn
-TSHttpConnect(sockaddr const *addr)
+tsapi::c::TSVConn
+tsapi::c::TSHttpConnect(sockaddr const *addr)
 {
   return TSHttpConnectWithPluginId(addr, "plugin", 0);
 }
 
-TSVConn
-TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_addr)
+tsapi::c::TSVConn
+tsapi::c::TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_addr)
 {
   sdk_assert(ats_is_ip(client_addr));
   sdk_assert(ats_is_ip(server_addr));
@@ -6740,7 +6752,7 @@ TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_add
 
 /* Actions */
 void
-TSActionCancel(TSAction actionp)
+tsapi::c::TSActionCancel(TSAction actionp)
 {
   Action *thisaction;
   INKContInternal *i;
@@ -6768,15 +6780,15 @@ TSActionCancel(TSAction actionp)
 
 // Currently no error handling necessary, actionp can be anything.
 int
-TSActionDone(TSAction actionp)
+tsapi::c::TSActionDone(TSAction actionp)
 {
   return ((Action *)actionp == ACTION_RESULT_DONE) ? 1 : 0;
 }
 
 /* Connections */
 
-TSVConn
-TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
+tsapi::c::TSVConn
+tsapi::c::TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
 {
   if (mutexp == nullptr) {
     mutexp = (TSMutex)new_ProxyMutex();
@@ -6810,8 +6822,8 @@ struct ActionSink : public Continuation {
 
 static ActionSink a;
 
-TSVConn
-TSVConnFdCreate(int fd)
+tsapi::c::TSVConn
+tsapi::c::TSVConnFdCreate(int fd)
 {
   UnixNetVConnection *vc;
   EThread *t = this_ethread();
@@ -6848,8 +6860,8 @@ TSVConnFdCreate(int fd)
   return reinterpret_cast<TSVConn>(vc);
 }
 
-TSVIO
-TSVConnReadVIOGet(TSVConn connp)
+tsapi::c::TSVIO
+tsapi::c::TSVConnReadVIOGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6863,8 +6875,8 @@ TSVConnReadVIOGet(TSVConn connp)
   return nullptr;
 }
 
-TSVIO
-TSVConnWriteVIOGet(TSVConn connp)
+tsapi::c::TSVIO
+tsapi::c::TSVConnWriteVIOGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6879,7 +6891,7 @@ TSVConnWriteVIOGet(TSVConn connp)
 }
 
 int
-TSVConnClosedGet(TSVConn connp)
+tsapi::c::TSVConnClosedGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6890,8 +6902,8 @@ TSVConnClosedGet(TSVConn connp)
   return data;
 }
 
-TSVIO
-TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
+tsapi::c::TSVIO
+tsapi::c::TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
@@ -6904,8 +6916,8 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
   return reinterpret_cast<TSVIO>(vc->do_io_read((INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
 }
 
-TSVIO
-TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes)
+tsapi::c::TSVIO
+tsapi::c::TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
@@ -6919,7 +6931,7 @@ TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbyt
 }
 
 void
-TSVConnClose(TSVConn connp)
+tsapi::c::TSVConnClose(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6928,7 +6940,7 @@ TSVConnClose(TSVConn connp)
 }
 
 void
-TSVConnAbort(TSVConn connp, int error)
+tsapi::c::TSVConnAbort(TSVConn connp, int error)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6937,7 +6949,7 @@ TSVConnAbort(TSVConn connp, int error)
 }
 
 void
-TSVConnShutdown(TSVConn connp, int read, int write)
+tsapi::c::TSVConnShutdown(TSVConn connp, int read, int write)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6953,7 +6965,7 @@ TSVConnShutdown(TSVConn connp, int read, int write)
 }
 
 int64_t
-TSVConnCacheObjectSizeGet(TSVConn connp)
+tsapi::c::TSVConnCacheObjectSizeGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6962,7 +6974,7 @@ TSVConnCacheObjectSizeGet(TSVConn connp)
 }
 
 void
-TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
+tsapi::c::TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6974,8 +6986,8 @@ TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
 
 /* Transformations */
 
-TSVConn
-TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
+tsapi::c::TSVConn
+tsapi::c::TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -6983,8 +6995,8 @@ TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
                        reinterpret_cast<TSMutex>(static_cast<Continuation *>(reinterpret_cast<HttpSM *>(txnp))->getMutex()));
 }
 
-TSVConn
-TSTransformOutputVConnGet(TSVConn connp)
+tsapi::c::TSVConn
+tsapi::c::TSTransformOutputVConnGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -6996,7 +7008,7 @@ TSTransformOutputVConnGet(TSVConn connp)
 }
 
 void
-TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
+tsapi::c::TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
 {
   HttpSM *http_sm = (HttpSM *)txnp;
 
@@ -7011,7 +7023,7 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
 }
 
 void
-TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
+tsapi::c::TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 {
   HttpSM *http_sm = (HttpSM *)txnp;
 
@@ -7025,8 +7037,8 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp, buffer_index, buffer_water_mark);
 }
 
-TSIOBufferSizeIndex
-TSPluginVCIOBufferIndexGet(TSHttpTxn txnp)
+tsapi::c::TSIOBufferSizeIndex
+tsapi::c::TSPluginVCIOBufferIndexGet(TSHttpTxn txnp)
 {
   TSMgmtInt index;
 
@@ -7038,8 +7050,8 @@ TSPluginVCIOBufferIndexGet(TSHttpTxn txnp)
   return TS_IOBUFFER_SIZE_INDEX_32K;
 }
 
-TSIOBufferWaterMark
-TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
+tsapi::c::TSIOBufferWaterMark
+tsapi::c::TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
 {
   TSMgmtInt water_mark;
 
@@ -7057,7 +7069,7 @@ TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
 // api.
 /* Net VConnections */
 void
-TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
+tsapi::c::TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -7066,7 +7078,7 @@ TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
 }
 
 void
-TSVConnInactivityTimeoutCancel(TSVConn connp)
+tsapi::c::TSVConnInactivityTimeoutCancel(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -7075,7 +7087,7 @@ TSVConnInactivityTimeoutCancel(TSVConn connp)
 }
 
 void
-TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout)
+tsapi::c::TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -7084,7 +7096,7 @@ TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout)
 }
 
 void
-TSVConnActiveTimeoutCancel(TSVConn connp)
+tsapi::c::TSVConnActiveTimeoutCancel(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
@@ -7093,7 +7105,7 @@ TSVConnActiveTimeoutCancel(TSVConn connp)
 }
 
 sockaddr const *
-TSNetVConnLocalAddrGet(TSVConn connp)
+tsapi::c::TSNetVConnLocalAddrGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(connp);
@@ -7101,15 +7113,15 @@ TSNetVConnLocalAddrGet(TSVConn connp)
 }
 
 sockaddr const *
-TSNetVConnRemoteAddrGet(TSVConn connp)
+tsapi::c::TSNetVConnRemoteAddrGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(connp);
   return vc->get_remote_addr();
 }
 
-TSAction
-TSNetConnect(TSCont contp, sockaddr const *addr)
+tsapi::c::TSAction
+tsapi::c::TSNetConnect(TSCont contp, sockaddr const *addr)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(ats_is_ip(addr));
@@ -7128,8 +7140,8 @@ TSNetConnect(TSCont contp, sockaddr const *addr)
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), addr, opt));
 }
 
-TSAction
-TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr const *server_addr)
+tsapi::c::TSAction
+tsapi::c::TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr const *server_addr)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(ats_is_ip(server_addr));
@@ -7145,8 +7157,8 @@ TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr cons
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), server_addr, opt));
 }
 
-TSCont
-TSNetInvokingContGet(TSVConn conn)
+tsapi::c::TSCont
+tsapi::c::TSNetInvokingContGet(TSVConn conn)
 {
   NetVConnection *vc         = reinterpret_cast<NetVConnection *>(conn);
   UnixNetVConnection *net_vc = dynamic_cast<UnixNetVConnection *>(vc);
@@ -7158,8 +7170,8 @@ TSNetInvokingContGet(TSVConn conn)
   return ret;
 }
 
-TSHttpTxn
-TSNetInvokingTxnGet(TSVConn conn)
+tsapi::c::TSHttpTxn
+tsapi::c::TSNetInvokingTxnGet(TSVConn conn)
 {
   TSCont cont   = TSNetInvokingContGet(conn);
   TSHttpTxn ret = nullptr;
@@ -7173,8 +7185,8 @@ TSNetInvokingTxnGet(TSVConn conn)
   return ret;
 }
 
-TSAction
-TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
+tsapi::c::TSAction
+tsapi::c::TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {
   NetProcessor::AcceptOptions opt;
 
@@ -7201,7 +7213,7 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 extern bool ssl_register_protocol(const char *, Continuation *);
 
 TSReturnCode
-TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
+tsapi::c::TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
 {
   sdk_assert(protocol != nullptr);
   sdk_assert(contp != nullptr);
@@ -7221,7 +7233,7 @@ struct TSResolveInfo {
   HostDBRecord *record = nullptr; ///< Record for the FQDN.
 };
 
-int
+static int
 TSHostLookupTrampoline(TSCont contp, TSEvent ev, void *data)
 {
   auto c = reinterpret_cast<INKContInternal *>(contp);
@@ -7239,8 +7251,8 @@ TSHostLookupTrampoline(TSCont contp, TSEvent ev, void *data)
   return TS_SUCCESS;
 };
 
-TSAction
-TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
+tsapi::c::TSAction
+tsapi::c::TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
@@ -7260,7 +7272,7 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
 }
 
 sockaddr const *
-TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
+tsapi::c::TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
   auto ri{reinterpret_cast<TSResolveInfo *>(lookup_result)};
@@ -7274,7 +7286,7 @@ TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 /* Only TSCacheReady exposed in SDK. No need of TSCacheDataTypeReady */
 /* because SDK cache API supports only the data type: NONE */
 TSReturnCode
-TSCacheReady(int *is_ready)
+tsapi::c::TSCacheReady(int *is_ready)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)is_ready) == TS_SUCCESS);
   return TSCacheDataTypeReady(TS_CACHE_DATA_TYPE_NONE, is_ready);
@@ -7282,7 +7294,7 @@ TSCacheReady(int *is_ready)
 
 /* Private API (used by Mixt) */
 TSReturnCode
-TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
+tsapi::c::TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)is_ready) == TS_SUCCESS);
 
@@ -7306,8 +7318,8 @@ TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
 }
 
 /* Cache VConnections */
-TSAction
-TSCacheRead(TSCont contp, TSCacheKey key)
+tsapi::c::TSAction
+tsapi::c::TSCacheRead(TSCont contp, TSCacheKey key)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
@@ -7320,8 +7332,8 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   return (TSAction)cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
-TSAction
-TSCacheWrite(TSCont contp, TSCacheKey key)
+tsapi::c::TSAction
+tsapi::c::TSCacheWrite(TSCont contp, TSCacheKey key)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
@@ -7335,8 +7347,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
                                              info->len);
 }
 
-TSAction
-TSCacheRemove(TSCont contp, TSCacheKey key)
+tsapi::c::TSAction
+tsapi::c::TSCacheRemove(TSCont contp, TSCacheKey key)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
@@ -7349,8 +7361,8 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   return (TSAction)cacheProcessor.remove(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
-TSAction
-TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
+tsapi::c::TSAction
+tsapi::c::TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   // NOTE: key can be NULl here, so don't check for it.
@@ -7368,7 +7380,7 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
 /************************   REC Stats API    **************************/
 int
-TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
+tsapi::c::TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
   int id = global_api_metrics.newMetric(the_name);
 
@@ -7380,35 +7392,35 @@ TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence 
 }
 
 void
-TSStatIntIncrement(int id, TSMgmtInt amount)
+tsapi::c::TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   global_api_metrics[id].fetch_add(amount);
 }
 
 void
-TSStatIntDecrement(int id, TSMgmtInt amount)
+tsapi::c::TSStatIntDecrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   global_api_metrics[id].fetch_sub(amount);
 }
 
-TSMgmtInt
-TSStatIntGet(int id)
+tsapi::c::TSMgmtInt
+tsapi::c::TSStatIntGet(int id)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   return global_api_metrics[id].load();
 }
 
 void
-TSStatIntSet(int id, TSMgmtInt value)
+tsapi::c::TSStatIntSet(int id, TSMgmtInt value)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   global_api_metrics[id].store(value);
 }
 
 TSReturnCode
-TSStatFindName(const char *name, int *idp)
+tsapi::c::TSStatFindName(const char *name, int *idp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)idp) == TS_SUCCESS);
@@ -7426,13 +7438,13 @@ TSStatFindName(const char *name, int *idp)
 /**************************   Tracing API   ****************************/
 // returns 1 or 0 to indicate whether TS is being run with a debug tag.
 int
-TSIsDebugTagSet(const char *t)
+tsapi::c::TSIsDebugTagSet(const char *t)
 {
   return diags()->on_for_TSDebug(t);
 }
 
 void
-TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
+tsapi::c::TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
   if ((debug_flag && diags()->on_for_TSDebug()) || diags()->on_for_TSDebug(tag)) {
     va_list ap;
@@ -7446,7 +7458,7 @@ TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 // Plugins would use TSDebug just as the TS internal uses Debug
 // e.g. TSDebug("plugin-cool", "Snoopy is a cool guy even after %d requests.", num_reqs);
 void
-TSDebug(const char *tag, const char *format_str, ...)
+tsapi::c::TSDebug(const char *tag, const char *format_str, ...)
 {
   if (diags()->on_for_TSDebug() && diags()->tag_activated(tag)) {
     va_list ap;
@@ -7458,7 +7470,7 @@ TSDebug(const char *tag, const char *format_str, ...)
 }
 
 void
-_TSDbg(const char *tag, const char *format_str, ...)
+tsapi::c::_TSDbg(const char *tag, const char *format_str, ...)
 {
   va_list ap;
 
@@ -7470,7 +7482,7 @@ _TSDbg(const char *tag, const char *format_str, ...)
 /**************************   Logging API   ****************************/
 
 TSReturnCode
-TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_object)
+tsapi::c::TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_object)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)filename) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)new_object) == TS_SUCCESS);
@@ -7502,7 +7514,7 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
 }
 
 TSReturnCode
-TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
+tsapi::c::TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)format) == TS_SUCCESS);
@@ -7531,7 +7543,7 @@ TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
 }
 
 void
-TSTextLogObjectFlush(TSTextLogObject the_object)
+tsapi::c::TSTextLogObjectFlush(TSTextLogObject the_object)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7539,7 +7551,7 @@ TSTextLogObjectFlush(TSTextLogObject the_object)
 }
 
 TSReturnCode
-TSTextLogObjectDestroy(TSTextLogObject the_object)
+tsapi::c::TSTextLogObjectDestroy(TSTextLogObject the_object)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7551,7 +7563,7 @@ TSTextLogObjectDestroy(TSTextLogObject the_object)
 }
 
 void
-TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header)
+tsapi::c::TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7559,7 +7571,7 @@ TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header)
 }
 
 TSReturnCode
-TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
+tsapi::c::TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7572,7 +7584,7 @@ TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled
 }
 
 void
-TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec)
+tsapi::c::TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7580,7 +7592,7 @@ TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_int
 }
 
 void
-TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr)
+tsapi::c::TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7588,7 +7600,7 @@ TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset
 }
 
 void
-TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb)
+tsapi::c::TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
@@ -7596,7 +7608,7 @@ TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb)
 }
 
 TSReturnCode
-TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
+tsapi::c::TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
@@ -7616,7 +7628,7 @@ TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
   return TS_SUCCESS;
 }
 TSReturnCode
-TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
+tsapi::c::TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
@@ -7626,7 +7638,7 @@ TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
 }
 
 TSReturnCode
-TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
+tsapi::c::TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
@@ -7647,62 +7659,65 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
 
 /* Matcher Utils */
 char *
-TSMatcherReadIntoBuffer(char *file_name, int *file_len)
+tsapi::c::TSMatcherReadIntoBuffer(char *file_name, int *file_len)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)file_name) == TS_SUCCESS);
   return readIntoBuffer(file_name, "TSMatcher", file_len);
 }
 
 char *
-TSMatcherTokLine(char *buffer, char **last)
+tsapi::c::TSMatcherTokLine(char *buffer, char **last)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)buffer) == TS_SUCCESS);
   return tokLine(buffer, last);
 }
 
 char *
-TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void *)match_str) == TS_SUCCESS);
-  return (char *)ExtractIpRange(match_str, addr1, addr2);
-}
-// Conflict in header due to overload (must be C compatible).
-char *
-TSMatcherExtractIPRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
+tsapi::c::TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)match_str) == TS_SUCCESS);
   return (char *)ExtractIpRange(match_str, addr1, addr2);
 }
 
-TSMatcherLine
-TSMatcherLineCreate()
+#if 0 // Not used
+// Conflict in header due to overload (must be C compatible).
+char *
+tsapi::c::TSMatcherExtractIPRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)match_str) == TS_SUCCESS);
+  return (char *)ExtractIpRange(match_str, addr1, addr2);
+}
+#endif
+
+tsapi::c::TSMatcherLine
+tsapi::c::TSMatcherLineCreate()
 {
   return reinterpret_cast<TSMatcherLine>(ats_malloc(sizeof(matcher_line)));
 }
 
 void
-TSMatcherLineDestroy(TSMatcherLine ml)
+tsapi::c::TSMatcherLineDestroy(TSMatcherLine ml)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   ats_free(ml);
 }
 
 const char *
-TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml)
+tsapi::c::TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)line) == TS_SUCCESS);
   return parseConfigLine(line, (matcher_line *)ml, &ip_allow_src_tags);
 }
 
 char *
-TSMatcherLineName(TSMatcherLine ml, int element)
+tsapi::c::TSMatcherLineName(TSMatcherLine ml, int element)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   return (((matcher_line *)ml)->line)[0][element];
 }
 
 char *
-TSMatcherLineValue(TSMatcherLine ml, int element)
+tsapi::c::TSMatcherLineValue(TSMatcherLine ml, int element)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)ml) == TS_SUCCESS);
   return (((matcher_line *)ml)->line)[1][element];
@@ -7712,14 +7727,14 @@ extern void load_config_file_callback(const char *parent, const char *remap_file
 
 /* Config file name setting */
 TSReturnCode
-TSMgmtConfigFileAdd(const char *parent, const char *fileName)
+tsapi::c::TSMgmtConfigFileAdd(const char *parent, const char *fileName)
 {
   load_config_file_callback(parent, fileName);
   return TS_SUCCESS;
 }
 
 TSReturnCode
-TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
+tsapi::c::TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -7743,7 +7758,7 @@ TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 }
 
 void
-TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
+tsapi::c::TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 {
   // TODO: Check input ?
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
@@ -7753,7 +7768,7 @@ TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 }
 
 void
-TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
+tsapi::c::TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 {
   // TODO: Check input ?
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
@@ -7763,7 +7778,7 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
 void
-TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
+tsapi::c::TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)url) == TS_SUCCESS);
@@ -7787,7 +7802,7 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
 }
 
 const char *
-TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
+tsapi::c::TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -7798,7 +7813,7 @@ TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
 }
 
 int
-TSHttpTxnRedirectRetries(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnRedirectRetries(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -7808,7 +7823,7 @@ TSHttpTxnRedirectRetries(TSHttpTxn txnp)
 }
 
 char *
-TSFetchRespGet(TSHttpTxn txnp, int *length)
+tsapi::c::TSFetchRespGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
   FetchSM *fetch_sm = reinterpret_cast<FetchSM *>(txnp);
@@ -7816,7 +7831,7 @@ TSFetchRespGet(TSHttpTxn txnp, int *length)
 }
 
 TSReturnCode
-TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+tsapi::c::TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)obj) == TS_SUCCESS);
@@ -7836,7 +7851,7 @@ TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 extern ClassAllocator<FetchSM> FetchSMAllocator;
 
 void
-TSFetchPages(TSFetchUrlParams_t *params)
+tsapi::c::TSFetchPages(TSFetchUrlParams_t *params)
 {
   TSFetchUrlParams_t *myparams = params;
 
@@ -7851,9 +7866,9 @@ TSFetchPages(TSFetchUrlParams_t *params)
   }
 }
 
-TSFetchSM
-TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont contp, TSFetchWakeUpOptions callback_options,
-           TSFetchEvent events)
+tsapi::c::TSFetchSM
+tsapi::c::TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont contp, TSFetchWakeUpOptions callback_options,
+                     TSFetchEvent events)
 {
   if (callback_options != NO_CALLBACK) {
     sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
@@ -7868,14 +7883,15 @@ TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont cont
 }
 
 void
-TSFetchFlagSet(TSFetchSM fetch_sm, int flags)
+tsapi::c::TSFetchFlagSet(TSFetchSM fetch_sm, int flags)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
   (reinterpret_cast<FetchSM *>(fetch_sm))->set_fetch_flags(flags);
 }
 
-TSFetchSM
-TSFetchCreate(TSCont contp, const char *method, const char *url, const char *version, struct sockaddr const *client_addr, int flags)
+tsapi::c::TSFetchSM
+tsapi::c::TSFetchCreate(TSCont contp, const char *method, const char *url, const char *version, struct sockaddr const *client_addr,
+                        int flags)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(ats_is_ip(client_addr));
@@ -7888,7 +7904,7 @@ TSFetchCreate(TSCont contp, const char *method, const char *url, const char *ver
 }
 
 void
-TSFetchHeaderAdd(TSFetchSM fetch_sm, const char *name, int name_len, const char *value, int value_len)
+tsapi::c::TSFetchHeaderAdd(TSFetchSM fetch_sm, const char *name, int name_len, const char *value, int value_len)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7896,7 +7912,7 @@ TSFetchHeaderAdd(TSFetchSM fetch_sm, const char *name, int name_len, const char 
 }
 
 void
-TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len)
+tsapi::c::TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7904,7 +7920,7 @@ TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len)
 }
 
 ssize_t
-TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len)
+tsapi::c::TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7912,7 +7928,7 @@ TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len)
 }
 
 void
-TSFetchLaunch(TSFetchSM fetch_sm)
+tsapi::c::TSFetchLaunch(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7920,7 +7936,7 @@ TSFetchLaunch(TSFetchSM fetch_sm)
 }
 
 void
-TSFetchDestroy(TSFetchSM fetch_sm)
+tsapi::c::TSFetchDestroy(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7928,7 +7944,7 @@ TSFetchDestroy(TSFetchSM fetch_sm)
 }
 
 void
-TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
+tsapi::c::TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7936,23 +7952,23 @@ TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
 }
 
 void *
-TSFetchUserDataGet(TSFetchSM fetch_sm)
+tsapi::c::TSFetchUserDataGet(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
   return (reinterpret_cast<FetchSM *>(fetch_sm))->ext_get_user_data();
 }
 
-TSMBuffer
-TSFetchRespHdrMBufGet(TSFetchSM fetch_sm)
+tsapi::c::TSMBuffer
+tsapi::c::TSFetchRespHdrMBufGet(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
   return ((FetchSM *)fetch_sm)->resp_hdr_bufp();
 }
 
-TSMLoc
-TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
+tsapi::c::TSMLoc
+tsapi::c::TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
@@ -7960,7 +7976,7 @@ TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
 }
 
 int
-TSHttpSsnIsInternal(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnIsInternal(TSHttpSsn ssnp)
 {
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -7977,14 +7993,14 @@ TSHttpSsnIsInternal(TSHttpSsn ssnp)
 }
 
 int
-TSHttpTxnIsInternal(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnIsInternal(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
 }
 
 TSReturnCode
-TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
+tsapi::c::TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8026,7 +8042,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 }
 
 TSReturnCode
-TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
+tsapi::c::TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(stream_id != nullptr);
@@ -8041,7 +8057,7 @@ TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
 }
 
 TSReturnCode
-TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
+tsapi::c::TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
 {
   static_assert(sizeof(TSHttpPriority) >= sizeof(TSHttp2Priority),
                 "TSHttpPriorityType is incorrectly smaller than TSHttp2Priority.");
@@ -8063,7 +8079,7 @@ TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
 }
 
 TSReturnCode
-TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
+tsapi::c::TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -8090,21 +8106,21 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 }
 
 char *
-TSAIOBufGet(TSAIOCallback data)
+tsapi::c::TSAIOBufGet(TSAIOCallback data)
 {
   AIOCallback *pAIO = (AIOCallback *)data;
   return (char *)pAIO->aiocb.aio_buf;
 }
 
 int
-TSAIONBytesGet(TSAIOCallback data)
+tsapi::c::TSAIONBytesGet(TSAIOCallback data)
 {
   AIOCallback *pAIO = (AIOCallback *)data;
   return (int)pAIO->aio_result;
 }
 
 TSReturnCode
-TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
+tsapi::c::TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -8129,7 +8145,7 @@ TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
 }
 
 TSReturnCode
-TSAIOThreadNumSet(int thread_num)
+tsapi::c::TSAIOThreadNumSet(int thread_num)
 {
 #if AIO_MODE == AIO_MODE_NATIVE || AIO_MODE == AIO_MODE_IO_URING
   (void)thread_num;
@@ -8144,7 +8160,7 @@ TSAIOThreadNumSet(int thread_num)
 }
 
 void
-TSRecordDump(int rec_type, TSRecordDumpCb callback, void *edata)
+tsapi::c::TSRecordDump(int rec_type, TSRecordDumpCb callback, void *edata)
 {
   RecDumpRecords((RecT)rec_type, (RecDumpEntryCb)callback, edata);
 }
@@ -8153,7 +8169,7 @@ TSRecordDump(int rec_type, TSRecordDumpCb callback, void *edata)
    this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
 */
 void
-TSSkipRemappingSet(TSHttpTxn txnp, int flag)
+tsapi::c::TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8638,7 +8654,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, const OverridableHttpConfigParams 
 /* APIs to manipulate the overridable configuration options.
  */
 TSReturnCode
-TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
+tsapi::c::TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8659,7 +8675,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 }
 
 TSReturnCode
-TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value)
+tsapi::c::TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
@@ -8678,7 +8694,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 }
 
 TSReturnCode
-TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value)
+tsapi::c::TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8699,7 +8715,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 }
 
 TSReturnCode
-TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat *value)
+tsapi::c::TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(static_cast<void *>(value)) == TS_SUCCESS);
@@ -8716,7 +8732,7 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 }
 
 TSReturnCode
-TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char *value, int length)
+tsapi::c::TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char *value, int length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8834,7 +8850,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 }
 
 TSReturnCode
-TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char **value, int *length)
+tsapi::c::TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char **value, int *length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void **)value) == TS_SUCCESS);
@@ -8877,7 +8893,7 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 }
 
 TSReturnCode
-TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
+tsapi::c::TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
 {
   sdk_assert(sdk_sanity_check_null_ptr(name) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(conf) == TS_SUCCESS);
@@ -8892,7 +8908,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 }
 
 TSReturnCode
-TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
+tsapi::c::TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
 {
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
     return TS_ERROR;
@@ -8906,8 +8922,9 @@ TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
 
 // APIs to register new Mgmt (records) entries.
 TSReturnCode
-TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default, TSRecordUpdateType update_type,
-                   TSRecordCheckType check_type, const char *check_regex, TSRecordAccessType access_type)
+tsapi::c::TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default,
+                             TSRecordUpdateType update_type, TSRecordCheckType check_type, const char *check_regex,
+                             TSRecordAccessType access_type)
 {
   if (check_regex == nullptr && check_type != TS_RECORDCHECK_NULL) {
     return TS_ERROR;
@@ -8922,8 +8939,8 @@ TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString d
 }
 
 TSReturnCode
-TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default, TSRecordUpdateType update_type,
-                TSRecordCheckType check_type, const char *check_regex, TSRecordAccessType access_type)
+tsapi::c::TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default, TSRecordUpdateType update_type,
+                          TSRecordCheckType check_type, const char *check_regex, TSRecordAccessType access_type)
 {
   if (check_regex == nullptr && check_type != TS_RECORDCHECK_NULL) {
     return TS_ERROR;
@@ -8938,7 +8955,7 @@ TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
 }
 
 TSReturnCode
-TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
+tsapi::c::TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
 {
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
     return TS_ERROR;
@@ -8960,8 +8977,8 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
 }
 
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
-TSPortDescriptor
-TSPortDescriptorParse(const char *descriptor)
+tsapi::c::TSPortDescriptor
+tsapi::c::TSPortDescriptorParse(const char *descriptor)
 {
   HttpProxyPort *port = new HttpProxyPort();
 
@@ -8974,7 +8991,7 @@ TSPortDescriptorParse(const char *descriptor)
 }
 
 TSReturnCode
-TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
+tsapi::c::TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
   Action *action      = nullptr;
   HttpProxyPort *port = (HttpProxyPort *)descp;
@@ -8990,7 +9007,7 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 }
 
 TSReturnCode
-TSPluginDescriptorAccept(TSCont contp)
+tsapi::c::TSPluginDescriptorAccept(TSCont contp)
 {
   Action *action = nullptr;
 
@@ -9005,7 +9022,7 @@ TSPluginDescriptorAccept(TSCont contp)
 }
 
 int
-TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *s = (HttpSM *)txnp;
@@ -9014,7 +9031,7 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
+tsapi::c::TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -9040,7 +9057,7 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
 }
 
 int
-TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
+tsapi::c::TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -9051,7 +9068,7 @@ TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
     sdk_assert(sdk_sanity_check_mbuffer(response) == TS_SUCCESS);
     resp = reinterpret_cast<HTTPHdr *>(response);
   } else {
-    // Use the transactions origin response if the user passed NULL
+    // Use the transactions origin response if the user passed null
     resp = &(sm->t_state.hdr_info.server_response);
   }
 
@@ -9065,19 +9082,19 @@ TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
 
 // Lookup various debug names for common HTTP types.
 const char *
-TSHttpServerStateNameLookup(TSServerState state)
+tsapi::c::TSHttpServerStateNameLookup(TSServerState state)
 {
   return HttpDebugNames::get_server_state_name(static_cast<HttpTransact::ServerState_t>(state));
 }
 
 const char *
-TSHttpHookNameLookup(TSHttpHookID hook)
+tsapi::c::TSHttpHookNameLookup(TSHttpHookID hook)
 {
   return HttpDebugNames::get_api_hook_name(static_cast<TSHttpHookID>(hook));
 }
 
 const char *
-TSHttpEventNameLookup(TSEvent event)
+tsapi::c::TSHttpEventNameLookup(TSEvent event)
 {
   return HttpDebugNames::get_event_name(static_cast<int>(event));
 }
@@ -9105,7 +9122,7 @@ private:
 
 /// SSL Hooks
 TSReturnCode
-TSVConnTunnel(TSVConn sslp)
+tsapi::c::TSVConnTunnel(TSVConn sslp)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
@@ -9118,8 +9135,8 @@ TSVConnTunnel(TSVConn sslp)
   return zret;
 }
 
-TSSslConnection
-TSVConnSslConnectionGet(TSVConn sslp)
+tsapi::c::TSSslConnection
+tsapi::c::TSVConnSslConnectionGet(TSVConn sslp)
 {
   TSSslConnection ssl       = nullptr;
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
@@ -9131,7 +9148,7 @@ TSVConnSslConnectionGet(TSVConn sslp)
 }
 
 const char *
-TSVConnSslSniGet(TSVConn sslp, int *length)
+tsapi::c::TSVConnSslSniGet(TSVConn sslp, int *length)
 {
   char const *server_name = nullptr;
   NetVConnection *vc      = reinterpret_cast<NetVConnection *>(sslp);
@@ -9149,8 +9166,8 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
   return server_name;
 }
 
-tsapi TSSslVerifyCTX
-TSVConnSslVerifyCTXGet(TSVConn sslp)
+tsapi::c::TSSslVerifyCTX
+tsapi::c::TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
@@ -9160,8 +9177,8 @@ TSVConnSslVerifyCTXGet(TSVConn sslp)
   return nullptr;
 }
 
-tsapi TSSslContext
-TSSslContextFindByName(const char *name)
+tsapi::c::TSSslContext
+tsapi::c::TSSslContextFindByName(const char *name)
 {
   if (nullptr == name || 0 == strlen(name)) {
     // an empty name is an invalid input
@@ -9181,8 +9198,8 @@ TSSslContextFindByName(const char *name)
   }
   return ret;
 }
-tsapi TSSslContext
-TSSslContextFindByAddr(struct sockaddr const *addr)
+tsapi::c::TSSslContext
+tsapi::c::TSSslContextFindByAddr(struct sockaddr const *addr)
 {
   TSSslContext ret      = nullptr;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
@@ -9205,8 +9222,8 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
  * This function sets the secret cache value for a given secret name.  This allows
  * plugins to load cert/key PEM information on for use by the TLS core
  */
-tsapi TSReturnCode
-TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_len)
+TSReturnCode
+tsapi::c::TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secret_data, int secret_data_len)
 {
   TSReturnCode retval = TS_SUCCESS;
   std::string const secret_name_str{secret_name, unsigned(secret_name_length)};
@@ -9227,8 +9244,8 @@ TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secr
   return retval;
 }
 
-tsapi TSReturnCode
-TSSslSecretUpdate(const char *secret_name, int secret_name_length)
+TSReturnCode
+tsapi::c::TSSslSecretUpdate(const char *secret_name, int secret_name_length)
 {
   TSReturnCode retval     = TS_SUCCESS;
   SSLConfigParams *params = SSLConfig::acquire();
@@ -9239,8 +9256,8 @@ TSSslSecretUpdate(const char *secret_name, int secret_name_length)
   return retval;
 }
 
-tsapi char *
-TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data_length)
+char *
+tsapi::c::TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data_length)
 {
   sdk_assert(secret_name != nullptr);
   sdk_assert(secret_data_length != nullptr);
@@ -9277,8 +9294,8 @@ TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data
  * @param result Const char pointer arrays to be filled with lookup keys.
  * @param actual Total number of lookup keys.
  */
-tsapi TSReturnCode
-TSSslClientContextsNamesGet(int n, const char **result, int *actual)
+TSReturnCode
+tsapi::c::TSSslClientContextsNamesGet(int n, const char **result, int *actual)
 {
   sdk_assert(n == 0 || result != nullptr);
   int idx = 0, count = 0;
@@ -9320,8 +9337,8 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
  * @param first_key Key string for the top level.
  * @param second_key Key string for the second level.
  */
-tsapi TSSslContext
-TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
+tsapi::c::TSSslContext
+tsapi::c::TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
 {
   if (!ca_paths || !ck_paths || ca_paths[0] == '\0' || ck_paths[0] == '\0') {
     return nullptr;
@@ -9344,8 +9361,8 @@ TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
   return retval;
 }
 
-tsapi TSSslContext
-TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
+tsapi::c::TSSslContext
+tsapi::c::TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
 {
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
@@ -9363,14 +9380,14 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
   return ret;
 }
 
-tsapi void
-TSSslContextDestroy(TSSslContext ctx)
+void
+tsapi::c::TSSslContextDestroy(TSSslContext ctx)
 {
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
 }
 
 TSReturnCode
-TSSslClientCertUpdate(const char *cert_path, const char *key_path)
+tsapi::c::TSSslClientCertUpdate(const char *cert_path, const char *key_path)
 {
   if (nullptr == cert_path) {
     return TS_ERROR;
@@ -9432,7 +9449,7 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
 }
 
 TSReturnCode
-TSSslServerCertUpdate(const char *cert_path, const char *key_path)
+tsapi::c::TSSslServerCertUpdate(const char *cert_path, const char *key_path)
 {
   if (nullptr == cert_path) {
     return TS_ERROR;
@@ -9466,7 +9483,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     ASN1_STRING *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     char *common_name_str         = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
     if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
-      // Embedded NULL char
+      // Embedded null char
       return TS_ERROR;
     }
     Debug("ssl.cert_update", "Updating from %s with common name %s", cert_path, common_name_str);
@@ -9487,14 +9504,14 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
   return TS_ERROR;
 }
 
-tsapi TSReturnCode
-TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
+TSReturnCode
+tsapi::c::TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
 {
   return SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
+tsapi::c::TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
 {
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
@@ -9507,7 +9524,7 @@ TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
 }
 
 TSReturnCode
-TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
+tsapi::c::TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
 {
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
@@ -9519,16 +9536,16 @@ TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
   return retval;
 }
 
-TSAcceptor
-TSAcceptorGet(TSVConn sslp)
+tsapi::c::TSAcceptor
+tsapi::c::TSAcceptorGet(TSVConn sslp)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
   return ssl_vc ? reinterpret_cast<TSAcceptor>(ssl_vc->accept_object) : nullptr;
 }
 
-TSAcceptor
-TSAcceptorGetbyID(int ID)
+tsapi::c::TSAcceptor
+tsapi::c::TSAcceptorGetbyID(int ID)
 {
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   auto ret = naVec.at(ID);
@@ -9537,42 +9554,42 @@ TSAcceptorGetbyID(int ID)
 }
 
 int
-TSAcceptorIDGet(TSAcceptor acceptor)
+tsapi::c::TSAcceptorIDGet(TSAcceptor acceptor)
 {
   NetAccept *na = reinterpret_cast<NetAccept *>(acceptor);
   return na ? na->id : -1;
 }
 
 int
-TSAcceptorCount()
+tsapi::c::TSAcceptorCount()
 {
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   return naVec.size();
 }
 
-tsapi int
-TSVConnIsSsl(TSVConn sslp)
+int
+tsapi::c::TSVConnIsSsl(TSVConn sslp)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
   return ssl_vc != nullptr;
 }
 
-tsapi int
-TSVConnProvidedSslCert(TSVConn sslp)
+int
+tsapi::c::TSVConnProvidedSslCert(TSVConn sslp)
 {
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(sslp);
   return vc->provided_cert();
 }
 
 void
-TSVConnReenable(TSVConn vconn)
+tsapi::c::TSVConnReenable(TSVConn vconn)
 {
   TSVConnReenableEx(vconn, TS_EVENT_CONTINUE);
 }
 
 void
-TSVConnReenableEx(TSVConn vconn, TSEvent event)
+tsapi::c::TSVConnReenableEx(TSVConn vconn, TSEvent event)
 {
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(vconn);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
@@ -9593,8 +9610,8 @@ TSVConnReenableEx(TSVConn vconn, TSEvent event)
 
 extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 
-TSSslSession
-TSSslSessionGet(const TSSslSessionID *session_id)
+tsapi::c::TSSslSession
+tsapi::c::TSSslSessionGet(const TSSslSessionID *session_id)
 {
   SSL_SESSION *session = nullptr;
   if (session_id && session_cache) {
@@ -9604,7 +9621,7 @@ TSSslSessionGet(const TSSslSessionID *session_id)
 }
 
 int
-TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
+tsapi::c::TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
 {
   int true_len = 0;
   // Don't get if there is no session id or the cache is not yet set up
@@ -9615,7 +9632,7 @@ TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_p
 }
 
 TSReturnCode
-TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn)
+tsapi::c::TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn)
 {
   // Don't insert if there is no session id or the cache is not yet set up
   if (session_id && session_cache) {
@@ -9636,7 +9653,7 @@ TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, T
 }
 
 TSReturnCode
-TSSslSessionRemove(const TSSslSessionID *session_id)
+tsapi::c::TSSslSessionRemove(const TSSslSessionID *session_id)
 {
   // Don't remove if there is no session id or the cache is not yet set up
   if (session_id && session_cache) {
@@ -9649,22 +9666,22 @@ TSSslSessionRemove(const TSSslSessionID *session_id)
 }
 
 // APIs for managing and using UUIDs.
-TSUuid
-TSUuidCreate()
+tsapi::c::TSUuid
+tsapi::c::TSUuidCreate()
 {
   ATSUuid *uuid = new ATSUuid();
   return (TSUuid)uuid;
 }
 
 void
-TSUuidDestroy(TSUuid uuid)
+tsapi::c::TSUuidDestroy(TSUuid uuid)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
   delete (ATSUuid *)uuid;
 }
 
 TSReturnCode
-TSUuidCopy(TSUuid dest, const TSUuid src)
+tsapi::c::TSUuidCopy(TSUuid dest, const TSUuid src)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)dest) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)src) == TS_SUCCESS);
@@ -9680,7 +9697,7 @@ TSUuidCopy(TSUuid dest, const TSUuid src)
 }
 
 TSReturnCode
-TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
+tsapi::c::TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
   ATSUuid *u = (ATSUuid *)uuid;
@@ -9689,15 +9706,15 @@ TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
   return u->valid() ? TS_SUCCESS : TS_ERROR;
 }
 
-TSUuid
-TSProcessUuidGet()
+tsapi::c::TSUuid
+tsapi::c::TSProcessUuidGet()
 {
   Machine *machine = Machine::instance();
   return (TSUuid)(&machine->uuid);
 }
 
 const char *
-TSUuidStringGet(const TSUuid uuid)
+tsapi::c::TSUuidStringGet(const TSUuid uuid)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
   ATSUuid *u = (ATSUuid *)(uuid);
@@ -9710,7 +9727,7 @@ TSUuidStringGet(const TSUuid uuid)
 }
 
 TSReturnCode
-TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
+tsapi::c::TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid_str) == TS_SUCCESS);
 
@@ -9727,7 +9744,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
 }
 
 TSReturnCode
-TSUuidStringParse(TSUuid uuid, const char *str)
+tsapi::c::TSUuidStringParse(TSUuid uuid, const char *str)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
@@ -9740,8 +9757,8 @@ TSUuidStringParse(TSUuid uuid, const char *str)
   return TS_ERROR;
 }
 
-TSUuidVersion
-TSUuidVersionGet(TSUuid uuid)
+tsapi::c::TSUuidVersion
+tsapi::c::TSUuidVersionGet(TSUuid uuid)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
   ATSUuid *u = (ATSUuid *)uuid;
@@ -9751,7 +9768,7 @@ TSUuidVersionGet(TSUuid uuid)
 
 // Expose the HttpSM's sequence number (ID)
 uint64_t
-TSHttpTxnIdGet(TSHttpTxn txnp)
+tsapi::c::TSHttpTxnIdGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
@@ -9761,7 +9778,7 @@ TSHttpTxnIdGet(TSHttpTxn txnp)
 
 // Returns unique client session identifier
 int64_t
-TSHttpSsnIdGet(TSHttpSsn ssnp)
+tsapi::c::TSHttpSsnIdGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxySession const *cs = reinterpret_cast<ProxySession *>(ssnp);
@@ -9770,7 +9787,7 @@ TSHttpSsnIdGet(TSHttpSsn ssnp)
 
 // Return information about the protocols used by the client
 TSReturnCode
-TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
+tsapi::c::TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(count == 0 || result != nullptr);
@@ -9790,7 +9807,7 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const char **result, 
 }
 
 TSReturnCode
-TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, int *actual)
+tsapi::c::TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(count == 0 || result != nullptr);
@@ -9811,7 +9828,7 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, 
 
 // Return information about the protocols used by the server
 TSReturnCode
-TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
+tsapi::c::TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(count == 0 || result != nullptr);
@@ -9831,13 +9848,13 @@ TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char **result, 
 }
 
 const char *
-TSNormalizedProtocolTag(const char *tag)
+tsapi::c::TSNormalizedProtocolTag(const char *tag)
 {
   return RecNormalizeProtoTag(tag);
 }
 
 const char *
-TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
+tsapi::c::TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
@@ -9845,7 +9862,7 @@ TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 }
 
 const char *
-TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
+tsapi::c::TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
@@ -9853,7 +9870,7 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 }
 
 const char *
-TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
+tsapi::c::TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
@@ -9861,13 +9878,13 @@ TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
 }
 
 const char *
-TSRegisterProtocolTag(const char *tag)
+tsapi::c::TSRegisterProtocolTag(const char *tag)
 {
   return nullptr;
 }
 
 TSReturnCode
-TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
+tsapi::c::TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -9914,20 +9931,20 @@ remapUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp, URL *(UrlMappingContainer::*mfp)() 
 
 } // end anonymous namespace
 
-tsapi TSReturnCode
-TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+TSReturnCode
+tsapi::c::TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 {
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getFromURL);
 }
 
-tsapi TSReturnCode
-TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+TSReturnCode
+tsapi::c::TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 {
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }
 
-tsapi void *
-TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
+void *
+tsapi::c::TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
 {
   sdk_assert(sdk_sanity_check_null_ptr(plugin_info));
   RemapPluginInfo *info = reinterpret_cast<RemapPluginInfo *>(plugin_info);
@@ -9936,13 +9953,13 @@ TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
 }
 
 TSReturnCode
-TSHostnameIsSelf(const char *hostname, size_t hostname_len)
+tsapi::c::TSHostnameIsSelf(const char *hostname, size_t hostname_len)
 {
   return Machine::instance()->is_self(std::string_view{hostname, hostname_len}) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *status, unsigned int *reason)
+tsapi::c::TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *status, unsigned int *reason)
 {
   HostStatRec *hst = HostStatus::instance().getHostStatus(std::string_view(hostname, hostname_len));
   if (hst == nullptr) {
@@ -9958,8 +9975,8 @@ TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *s
 }
 
 void
-TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
-                const unsigned int reason)
+tsapi::c::TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
+                          const unsigned int reason)
 {
   HostStatus::instance().setHostStatus(std::string_view(hostname, hostname_len), status, down_time, reason);
 }
@@ -9970,8 +9987,8 @@ TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus st
 //
 // The passed *action must not be null, and is copied and may be destroyed after this call returns.
 // Callers must maintain owernship of action.hostname, and its lifetime must exceed the transaction.
-tsapi void
-TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
+void
+tsapi::c::TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
 {
   HttpSM *sm                 = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s     = &(sm->t_state);
@@ -9986,8 +10003,8 @@ TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
 //
 // The action members will always be zero, if no plugin has called TSHttpTxnResponseActionSet.
 //
-tsapi void
-TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action)
+void
+tsapi::c::TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action)
 {
   HttpSM *sm             = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s = &(sm->t_state);
@@ -9998,16 +10015,16 @@ TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action)
   }
 }
 
-tsapi TSIOBufferReader
-TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
+tsapi::c::TSIOBufferReader
+tsapi::c::TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return (TSIOBufferReader)sm->get_postbuf_clone_reader();
 }
 
-tsapi TSDbgCtl const *
-TSDbgCtlCreate(char const *tag)
+tsapi::c::TSDbgCtl const *
+tsapi::c::TSDbgCtlCreate(char const *tag)
 {
   sdk_assert(tag != nullptr);
   sdk_assert(*tag != '\0');
@@ -10015,8 +10032,8 @@ TSDbgCtlCreate(char const *tag)
   return DbgCtl::_new_reference(tag);
 }
 
-tsapi void
-TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl)
+void
+tsapi::c::TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl)
 {
   sdk_assert(dbg_ctl != nullptr);
 
@@ -10031,8 +10048,8 @@ extern ts::Rv<YAML::Node> g_rpcHandlerResponseData;
 extern bool g_rpcHandlerProcessingCompleted;
 } // namespace rpc
 
-tsapi TSRPCProviderHandle
-TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_version, size_t yamlcpp_lib_len)
+tsapi::c::TSRPCProviderHandle
+tsapi::c::TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_version, size_t yamlcpp_lib_len)
 {
   sdk_assert(sdk_sanity_check_null_ptr(yaml_version) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(provider_name) == TS_SUCCESS);
@@ -10050,9 +10067,9 @@ TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_v
   return (TSRPCProviderHandle)info;
 }
 
-tsapi TSReturnCode
-TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info,
-                           const TSRPCHandlerOptions *opt)
+TSReturnCode
+tsapi::c::TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb callback, TSRPCProviderHandle info,
+                                     const TSRPCHandlerOptions *opt)
 {
   sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
 
@@ -10068,9 +10085,9 @@ TSRPCRegisterMethodHandler(const char *name, size_t name_len, TSRPCMethodCb call
   return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
-TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback, TSRPCProviderHandle info,
-                                 const TSRPCHandlerOptions *opt)
+TSReturnCode
+tsapi::c::TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotificationCb callback,
+                                           TSRPCProviderHandle info, const TSRPCHandlerOptions *opt)
 {
   sdk_assert(sdk_sanity_check_rpc_handler_options(opt) == TS_SUCCESS);
 
@@ -10082,8 +10099,8 @@ TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotific
   return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
-TSRPCHandlerDone(TSYaml resp)
+TSReturnCode
+tsapi::c::TSRPCHandlerDone(TSYaml resp)
 {
   Debug("rpc.api", ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
@@ -10095,8 +10112,8 @@ TSRPCHandlerDone(TSYaml resp)
   return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
-TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
+TSReturnCode
+tsapi::c::TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 {
   Debug("rpc.api", ">> Handler seems to be done with an error");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
@@ -10108,7 +10125,7 @@ TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 }
 
 TSReturnCode
-TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
+tsapi::c::TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
 {
   swoc::Errata err;
   try {

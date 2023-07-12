@@ -46,7 +46,7 @@ of lookup keys (2 for each context).
 :func:`TSSslClientContextFindByName` can be used to retrieve the client context pointed by the lookup
 key pairs. User should call :func:`TSSslClientContextsNamesGet` first to determine which lookup keys are
 present before querying for the context. :arg:`ca_paths` should be the first key and :arg:`ck_paths`
-should be the second. This function returns NULL if the client context mapping are changed and no valid
+should be the second. This function returns nullptr if the client context mapping are changed and no valid
 context exists for the key pair. The caller is responsible for releasing the context returned by this
 function with :func:`TSSslContextDestroy`.
 

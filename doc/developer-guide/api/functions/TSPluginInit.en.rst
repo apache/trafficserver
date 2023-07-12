@@ -36,7 +36,8 @@ Synopsis
 Description
 ===========
 
-:func:`TSPluginInit` must be defined by all plugins. Traffic Server
+:func:`TSPluginInit` must be defined by all plugins. It should be at global
+scope (not in any namespace). Traffic Server
 calls this initialization routine when it loads the plugin and sets
 :arg:`argc` and :arg:`argv` appropriately based on the values in
 :file:`plugin.config`.

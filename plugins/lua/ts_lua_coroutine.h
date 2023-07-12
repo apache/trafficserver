@@ -20,9 +20,12 @@
 
 #include <stdio.h>
 
+extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+} // extern "C"
+
 #include <ts/ts.h>
 
 struct async_item;

@@ -20,10 +20,6 @@
 
 #include <sys/types.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* return codes */
 #define STRIP_RESULT_OK           0  /**< success */
 #define STRIP_RESULT_BAD_PARAM    -1 /**< one or more invalid arguments */
@@ -75,7 +71,7 @@ extern "C" {
  *                - STRIP_FLAG_UNSAFE_QUOTES  - Leave apos and quote in place.
  *                - STRIP_FLAG_UNSAFE_SLASHES - Leave backslashes in place.
  *                - STRIP_FLAG_UNSAFE_SPACES  - Leave spaces in place.
- * @param[in]     charset   NULL or the charset used to treat the input
+ * @param[in]     charset   null or the charset used to treat the input
  *
  * @return
  *    IV_RESULT_OK(0) on success.  Non-zero on failure.
@@ -114,7 +110,7 @@ extern "C" {
  *   - the input buffer does not need to be null-terminated
  *
  *   - the output is always null-terminated (except when it is
- *     not possible -- out==NULL || *out_len==0)
+ *     not possible -- out==nullptr || *out_len==0)
  *
  *   - no context is retained between calls
  *
@@ -129,7 +125,7 @@ extern "C" {
  *         required length in out_len and out set to the empty
  *         string
  *
- *       - can be called with out_len == 0 and out == NULL to
+ *       - can be called with out_len == 0 and out == nullptr to
  *         compute sufficient storage size, which is returned
  *         in out_len
  *
@@ -137,7 +133,3 @@ extern "C" {
  *         NUL-terminated
  */
 int get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned int flags);
-
-#ifdef __cplusplus
-}
-#endif

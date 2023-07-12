@@ -55,7 +55,7 @@ information.
 and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL
 located at offset within the marshal buffer :arg:`bufp` to the string
 value. If :arg:`length` is :literal:`-1` then these functions assume that value
-is NULL-terminated. Otherwise, the length of the :arg:`string` value is taken
+is null-terminated. Otherwise, the length of the :arg:`string` value is taken
 to be the value of :arg:`length`. These functions copy the string to within
 :arg:`bufp`, so it can be subsequently modified or deleted.
 

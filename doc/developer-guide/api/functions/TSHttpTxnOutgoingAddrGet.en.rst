@@ -54,5 +54,5 @@ what was passing :arg:`addr` if :ts:cv:`session sharing <proxy.config.http.serve
 Conversely :func:`TSHttpTxnOutgoingAddrGet` retrieves the local address and must be called in the
 :macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK` or later, after the outbound connection has been established. It returns a
 pointer to a :code:`sockaddr` which contains the local IP address and port. If there is no valid
-outbound connection, :arg:`addr` will be :code:`NULL`. The returned pointer is a transient pointer
+outbound connection, :arg:`addr` will be :code:`nullptr`. The returned pointer is a transient pointer
 and must not be referenced after the callback in which :func:`TSHttpTxnOutgoingAddrGet` was called.

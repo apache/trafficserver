@@ -38,7 +38,7 @@ Below is an overview of the null transform plugin:
         void
         TSPluginInit (int argc, const char *argv[]) {
             TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK,
-                    TSContCreate (transform_plugin, NULL));
+                    TSContCreate (transform_plugin, nullptr));
 
     With this ``TSPluginInit`` routine, the plugin is called back every
     time Traffic Server reads a response header.
@@ -48,7 +48,7 @@ Below is an overview of the null transform plugin:
     .. code-block:: c
 
         static int transform_plugin (TSCont contp, TSEvent event, void *edata) {
-            TSHttpTxn txnp = (TSHttpTxn) edata;
+            TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
             switch (event) {
                 case TS_EVENT_HTTP_READ_RESPONSE_HDR:
                     if (transformable (txnp)) {

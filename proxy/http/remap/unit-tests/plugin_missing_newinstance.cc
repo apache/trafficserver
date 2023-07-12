@@ -27,10 +27,6 @@
 
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -50,7 +46,3 @@ void
 TSRemapDeleteInstance(void *)
 {
 }
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
