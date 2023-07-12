@@ -1100,8 +1100,8 @@ Http2ConnectionState::_get_configured_initial_window_size() const
   } else {
     uint32_t initial_window_size_in = Http2::initial_window_size_in;
     if (this->session) {
-      TLSSNISupport *snis = dynamic_cast<TLSSNISupport *>(session->get_netvc());
-      if (snis && snis->hints_from_sni.http2_initial_window_size_in.has_value()) {
+      if (auto snis = session->get_netvc()->get_service<TLSSNISupport>();
+          snis && snis->hints_from_sni.http2_initial_window_size_in.has_value()) {
         initial_window_size_in = snis->hints_from_sni.http2_initial_window_size_in.value();
       }
     }
