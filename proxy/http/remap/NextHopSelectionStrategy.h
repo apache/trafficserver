@@ -202,6 +202,8 @@ public:
                    const time_t now = 0);
   bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
 
+  void setHostHeader(TSHttpTxn txnp, const char *hostname);
+
   virtual ParentRetry_t responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code);
 
   void retryComplete(TSHttpTxn txn, const char *hostname, const int port);
@@ -211,6 +213,7 @@ public:
   bool parent_is_proxy     = true;
   bool ignore_self_detect  = false;
   bool cache_peer_result   = true;
+  bool host_override       = false;
   NHPolicyType policy_type = NH_UNDEFINED;
   NHSchemeType scheme      = NH_SCHEME_NONE;
   NHRingMode ring_mode     = NH_ALTERNATE_RING;

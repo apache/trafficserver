@@ -82,6 +82,10 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
       cache_peer_result = n["cache_peer_result"].as<bool>();
     }
 
+    if (n["host_override"]) {
+      host_override = n["host_override"].as<bool>();
+    }
+
     // failover node.
     YAML::Node failover_node_n = n["failover"];
     if (failover_node_n) {
@@ -253,6 +257,16 @@ NextHopSelectionStrategy::markNextHop(TSHttpTxn txnp, const char *hostname, cons
                                       const time_t now)
 {
   return passive_health.markNextHop(txnp, hostname, port, status, ih, now);
+}
+
+void
+NextHopSelectionStrategy::setHostHeader(TSHttpTxn txnp, const char *hostname)
+{
+  if (host_override && nullptr != hostname) {
+    HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+    sm->t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, hostname, strlen(hostname));
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] overriding host header with parent %s", sm->sm_id, hostname);
+  }
 }
 
 bool
