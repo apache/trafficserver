@@ -292,8 +292,9 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view v, std::string_view 
 }
 
 // Buffer copyTo
-WasmResult Buffer::copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr,
-                          uint64_t size_ptr) const {
+WasmResult
+Buffer::copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr, uint64_t size_ptr) const
+{
   if (owned_data_str_ != "") {
     std::string_view s(owned_data_str_);
     if (!wasm->copyToPointerSize(s, ptr_ptr, size_ptr)) {

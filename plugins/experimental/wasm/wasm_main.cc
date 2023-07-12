@@ -139,7 +139,6 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
   }
 
   do {
-
     TSDebug(WASM_DEBUG_TAG, "[%s] inside transform handler loop", __FUNCTION__);
     proxy_wasm::FilterDataStatus status = proxy_wasm::FilterDataStatus::Continue;
 
@@ -161,7 +160,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
       } else {
         c->setTransformResult(start, towrite);
         TSIOBufferReaderConsume(ti->reserved_reader, towrite);
-        size = towrite;
+        size    = towrite;
         towrite = 0;
       }
 
@@ -189,8 +188,9 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
 
     TSDebug(WASM_DEBUG_TAG, "[%s] retrieving returns from wasm handler function and pass back to ATS", __FUNCTION__);
     if ((status == proxy_wasm::FilterDataStatus::Continue) ||
-        ((status == proxy_wasm::FilterDataStatus::StopIterationAndBuffer || status == proxy_wasm::FilterDataStatus::StopIterationAndWatermark) && eos && !towrite)) {
-
+        ((status == proxy_wasm::FilterDataStatus::StopIterationAndBuffer ||
+          status == proxy_wasm::FilterDataStatus::StopIterationAndWatermark) &&
+         eos && !towrite)) {
       res = c->getTransformResult(&res_len);
 
       if (res && res_len > 0) {
@@ -203,8 +203,8 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
         }
 
         TSIOBufferWrite(ti->output_buffer, res, res_len);
-        ti->total += res_len;
-        write_down            = 1;
+        ti->total  += res_len;
+        write_down  = 1;
       }
 
       c->clearTransformResult();
@@ -257,8 +257,8 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
   TSVIO input_vio;
   ats_wasm::TransformInfo *ti;
 
-  event         = (int)ev;
-  ti = (ats_wasm::TransformInfo *)TSContDataGet(contp);
+  event = (int)ev;
+  ti    = (ats_wasm::TransformInfo *)TSContDataGet(contp);
 
   TSDebug(WASM_DEBUG_TAG, "[%s] begin transform entry", __FUNCTION__);
   if (TSVConnClosedGet(contp)) {
@@ -552,12 +552,12 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
 
     // create transform items
     TSDebug(WASM_DEBUG_TAG, "[%s] creating transform info, continuation and hook", __FUNCTION__);
-    ats_wasm::TransformInfo *reqbody_ti = new ats_wasm::TransformInfo();
-    reqbody_ti->request = true;
-    reqbody_ti->context = context;
+    ats_wasm::TransformInfo *reqbody_ti  = new ats_wasm::TransformInfo();
+    reqbody_ti->request                  = true;
+    reqbody_ti->context                  = context;
     ats_wasm::TransformInfo *respbody_ti = new ats_wasm::TransformInfo();
-    respbody_ti->request = false;
-    respbody_ti->context = context;
+    respbody_ti->request                 = false;
+    respbody_ti->context                 = context;
 
     TSVConn reqbody_connp = TSTransformCreate(transform_entry, txnp);
     TSContDataSet(reqbody_connp, reqbody_ti);

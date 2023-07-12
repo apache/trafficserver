@@ -143,39 +143,44 @@ struct HeaderMap {
 class Buffer : public BufferBase
 {
 public:
-  Buffer() {
-    owned_data_str_ = "";
-  }
+  Buffer() { owned_data_str_ = ""; }
   ~Buffer() override = default;
 
-  size_t size() const override {
+  size_t
+  size() const override
+  {
     if (owned_data_str_ != "") {
       return owned_data_str_.size();
     }
     return BufferBase::size();
   }
 
-  WasmResult copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr,
-                    uint64_t size_ptr) const override;
+  WasmResult copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr, uint64_t size_ptr) const override;
 
-  WasmResult copyFrom(size_t start, size_t length ,
-                      std::string_view data) override {
+  WasmResult
+  copyFrom(size_t start, size_t length, std::string_view data) override
+  {
     owned_data_str_.replace(start, length, data);
     return WasmResult::Ok;
   }
 
-  void clear() override {
-      owned_data_str_ = "";
-      BufferBase::clear();
+  void
+  clear() override
+  {
+    owned_data_str_ = "";
+    BufferBase::clear();
   }
 
-  BufferBase *set(std::string data) {
-    //clear();
+  BufferBase *
+  set(std::string data)
+  {
     owned_data_str_ = owned_data_str_ + data;
     return this;
   }
 
-  std::string get() {
+  std::string
+  get()
+  {
     return owned_data_str_;
   }
 
@@ -248,11 +253,15 @@ public:
   }
 
   // transform result functions
-  void clearTransformResult() {
+  void
+  clearTransformResult()
+  {
     transform_result_.clear();
   }
 
-  void setTransformResult(const char *body, size_t body_size) {
+  void
+  setTransformResult(const char *body, size_t body_size)
+  {
     if (body == nullptr || body_size == 0) {
       std::string s("");
       transform_result_.set(s);
@@ -262,9 +271,11 @@ public:
     }
   }
 
-  const char *getTransformResult(size_t *body_size) {
+  const char *
+  getTransformResult(size_t *body_size)
+  {
     std::string s = transform_result_.get();
-    *body_size = s.size();
+    *body_size    = s.size();
     return s.c_str();
   }
 

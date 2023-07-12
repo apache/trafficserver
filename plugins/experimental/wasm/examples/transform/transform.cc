@@ -38,7 +38,8 @@ public:
 static RegisterContextFactory register_ExampleContext(CONTEXT_FACTORY(ExampleContext), ROOT_FACTORY(ExampleRootContext),
                                                       "myproject");
 
-bool ExampleRootContext::onStart(size_t)
+bool
+ExampleRootContext::onStart(size_t)
 {
   logInfo(std::string("onStart"));
   return true;
@@ -54,7 +55,9 @@ ExampleContext::onRequestHeaders(uint32_t headers, bool end_of_stream)
   return FilterHeadersStatus::Continue;
 }
 
-FilterDataStatus ExampleContext::onResponseBody(size_t body_buffer_length, bool end_of_stream) {
+FilterDataStatus
+ExampleContext::onResponseBody(size_t body_buffer_length, bool end_of_stream)
+{
   logInfo(std::string("inside onResponseBody"));
 
   size_t buffered_size;
