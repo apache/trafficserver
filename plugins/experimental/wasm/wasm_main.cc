@@ -191,7 +191,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
     if ((status == proxy_wasm::FilterDataStatus::Continue) ||
         ((status == proxy_wasm::FilterDataStatus::StopIterationAndBuffer || status == proxy_wasm::FilterDataStatus::StopIterationAndWatermark) && eos && !towrite)) {
 
-      res = c->getTransformResult(&res_len); 
+      res = c->getTransformResult(&res_len);
 
       if (res && res_len > 0) {
         if (!ti->output_vio) {
@@ -206,11 +206,11 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
         ti->total += res_len;
         write_down            = 1;
       }
-     
-      c->clearTransformResult(); 
+
+      c->clearTransformResult();
     }
 
-    if (status == proxy_wasm::FilterDataStatus::StopIterationNoBuffer) {     
+    if (status == proxy_wasm::FilterDataStatus::StopIterationNoBuffer) {
       c->clearTransformResult();
     }
 
@@ -555,7 +555,7 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
     ats_wasm::TransformInfo *reqbody_ti = new ats_wasm::TransformInfo();
     reqbody_ti->request = true;
     reqbody_ti->context = context;
-    ats_wasm::TransformInfo *respbody_ti = new ats_wasm::TransformInfo();  
+    ats_wasm::TransformInfo *respbody_ti = new ats_wasm::TransformInfo();
     respbody_ti->request = false;
     respbody_ti->context = context;
 
