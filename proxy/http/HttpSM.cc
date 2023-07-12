@@ -701,10 +701,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     if (!is_internal && t_state.http_config_param->scheme_proto_mismatch_policy != 0) {
       auto scheme = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
-      if ((this->get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
-          (!this->get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
+      if ((_ua.get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_WS)) ||
+          (!_ua.get_client_connection_is_ssl() && (scheme == URL_WKSIDX_HTTPS || scheme == URL_WKSIDX_WSS))) {
         Warning("scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
-                this->get_client_connection_is_ssl() ? "tls" : "plaintext");
+                _ua.get_client_connection_is_ssl() ? "tls" : "plaintext");
         if (t_state.http_config_param->scheme_proto_mismatch_policy == 2) {
           t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
           call_transact_and_set_next_state(HttpTransact::BadRequest);

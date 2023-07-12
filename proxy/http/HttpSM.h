@@ -195,14 +195,8 @@ public:
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
+  HttpUserAgent const &get_user_agent() const;
   bool get_client_tcp_reused() const;
-  bool get_client_ssl_reused() const;
-  bool get_client_connection_is_ssl() const;
-  char const *get_client_protocol() const;
-  char const *get_client_sec_protocol() const;
-  char const *get_client_cipher_suite() const;
-  char const *get_client_curve() const;
-  int get_client_alpn_id() const;
   ProxyTransaction *get_ua_txn();
   ProxyTransaction *get_server_txn();
 
@@ -622,52 +616,16 @@ HttpTransact::State::state_machine_id() const
   return state_machine->sm_id;
 }
 
+inline HttpUserAgent const &
+HttpSM::get_user_agent() const
+{
+  return _ua;
+}
+
 inline bool
 HttpSM::get_client_tcp_reused() const
 {
   return _ua.get_client_tcp_reused();
-}
-
-inline bool
-HttpSM::get_client_ssl_reused() const
-{
-  return _ua.get_client_ssl_reused();
-}
-
-inline bool
-HttpSM::get_client_connection_is_ssl() const
-{
-  return _ua.get_client_connection_is_ssl();
-}
-
-inline char const *
-HttpSM::get_client_protocol() const
-{
-  return _ua.get_client_protocol();
-}
-
-inline char const *
-HttpSM::get_client_sec_protocol() const
-{
-  return _ua.get_client_sec_protocol();
-}
-
-inline char const *
-HttpSM::get_client_cipher_suite() const
-{
-  return _ua.get_client_cipher_suite();
-}
-
-inline char const *
-HttpSM::get_client_curve() const
-{
-  return _ua.get_client_curve();
-}
-
-inline int
-HttpSM::get_client_alpn_id() const
-{
-  return _ua.get_client_alpn_id();
 }
 
 inline ProxyTransaction *
