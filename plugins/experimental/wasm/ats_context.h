@@ -47,6 +47,7 @@ const int FETCH_EVENT_ID_BASE       = 10000;
 
 using proxy_wasm::ContextBase;
 using proxy_wasm::PluginBase;
+using proxy_wasm::WasmBase;
 using proxy_wasm::WasmResult;
 using proxy_wasm::WasmStreamType;
 using proxy_wasm::BufferInterface;
@@ -138,6 +139,50 @@ struct HeaderMap {
   }
 };
 
+// extended BufferBase
+class Buffer : public BufferBase
+{
+public:
+  Buffer() {
+    owned_data_str_ = "";
+  }
+  ~Buffer() override = default;
+
+  size_t size() const override {
+    if (owned_data_str_ != "") {
+      return owned_data_str_.size();
+    }
+    return BufferBase::size();
+  }
+
+  WasmResult copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr,
+                    uint64_t size_ptr) const override;
+
+  WasmResult copyFrom(size_t start, size_t length ,
+                      std::string_view data) override {
+    owned_data_str_.replace(start, length, data);
+    return WasmResult::Ok;
+  }
+
+  void clear() override {
+      owned_data_str_ = "";
+      BufferBase::clear();
+  }
+
+  BufferBase *set(std::string data) {
+    //clear();
+    owned_data_str_ = owned_data_str_ + data;
+    return this;
+  }
+
+  std::string get() {
+    return owned_data_str_;
+  }
+
+private:
+  std::string owned_data_str_;
+};
+
 class Context : public ContextBase
 {
 public:
@@ -200,6 +245,27 @@ public:
     cr_body_      = nullptr;
     cr_body_size_ = 0;
     cr_result_    = (TSEvent)(FETCH_EVENT_ID_BASE + 1);
+  }
+
+  // transform result functions
+  void clearTransformResult() {
+    transform_result_.clear();
+  }
+
+  void setTransformResult(const char *body, size_t body_size) {
+    if (body == nullptr || body_size == 0) {
+      std::string s("");
+      transform_result_.set(s);
+    } else {
+      std::string s(body, body_size);
+      transform_result_.set(s);
+    }
+  }
+
+  const char *getTransformResult(size_t *body_size) {
+    std::string s = transform_result_.get();
+    *body_size = s.size();
+    return s.c_str();
   }
 
   // Metrics
@@ -278,12 +344,34 @@ private:
   size_t cr_body_size_  = 0;
   TSMBuffer cr_hdr_buf_ = nullptr;
   TSMLoc cr_hdr_loc_    = nullptr;
+
+  // transform result
+  Buffer transform_result_;
 };
 
 // local struct representing info for async transaction
 struct AsyncInfo {
   uint32_t token;
   Context *root_context;
+};
+
+// local struct representing info for transform
+struct TransformInfo {
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
+
+  TSVIO reserved_vio;
+  TSIOBuffer reserved_buffer;
+  TSIOBufferReader reserved_reader;
+
+  int64_t upstream_bytes;
+  int64_t downstream_bytes;
+  int64_t total;
+
+  Context *context;
+
+  bool request;
 };
 
 } // namespace ats_wasm

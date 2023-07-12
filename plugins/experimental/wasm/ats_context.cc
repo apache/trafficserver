@@ -291,6 +291,19 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view v, std::string_view 
   }
 }
 
+// Buffer copyTo
+WasmResult Buffer::copyTo(WasmBase *wasm, size_t start, size_t length, uint64_t ptr_ptr,
+                          uint64_t size_ptr) const {
+  if (owned_data_str_ != "") {
+    std::string_view s(owned_data_str_);
+    if (!wasm->copyToPointerSize(s, ptr_ptr, size_ptr)) {
+      return WasmResult::InvalidMemoryAccess;
+    }
+    return WasmResult::Ok;
+  }
+  return BufferBase::copyTo(wasm, start, length, ptr_ptr, size_ptr);
+}
+
 Context::Context() : ContextBase() {}
 
 Context::Context(Wasm *wasm) : ContextBase(wasm) {}
@@ -511,9 +524,11 @@ Context::getBuffer(WasmBufferType type)
       return buffer_.set(std::string(static_cast<const char *>(cr_body_), cr_body_size_));
     }
     return buffer_.set("");
-  case WasmBufferType::CallData:
   case WasmBufferType::HttpRequestBody:
   case WasmBufferType::HttpResponseBody:
+    // return transform result
+    return &transform_result_;
+  case WasmBufferType::CallData:
   case WasmBufferType::NetworkDownstreamData:
   case WasmBufferType::NetworkUpstreamData:
   case WasmBufferType::GrpcReceiveBuffer:
