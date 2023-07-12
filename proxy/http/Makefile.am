@@ -80,6 +80,9 @@ libhttp_a_SOURCES = \
 	HttpTransactHeaders.h \
 	HttpTunnel.cc \
 	HttpTunnel.h \
+	HttpUserAgent.h \
+	HttpVCTable.cc \
+	HttpVCTable.h \
 	ForwardedConfig.cc \
 	PreWarmConfig.cc \
 	PreWarmManager.cc
