@@ -51,6 +51,5 @@ target_include_directories(inkcache PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/http/remap
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
         ${CMAKE_SOURCE_DIR}/lib
 )

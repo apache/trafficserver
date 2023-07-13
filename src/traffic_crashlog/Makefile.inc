@@ -23,7 +23,6 @@ traffic_crashlog_traffic_crashlog_CPPFLAGS = \
     -I$(abs_top_srcdir)/include \
     -I$(abs_top_srcdir)/lib \
     -I$(abs_top_srcdir)/mgmt \
-    -I$(abs_top_srcdir)/mgmt/utils \
     @SWOC_INCLUDES@ \
     $(TS_INCLUDES)
 

@@ -56,7 +56,6 @@ target_include_directories(proxy PUBLIC
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
         ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include
         )
 

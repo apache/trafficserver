@@ -24,7 +24,6 @@ traffic_quic_traffic_quic_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/src/records \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
@@ -57,7 +56,6 @@ traffic_quic_traffic_quic_LDADD = \
 	$(top_builddir)/proxy/http2/libhttp2.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-        $(top_builddir)/mgmt/utils/libutils_p.la \
 	@HWLOC_LIBS@ \
 	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \

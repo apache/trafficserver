@@ -30,9 +30,7 @@ link_libraries(
         http2
         logging
         hdrs
-        configmanager
         diagsconfig
-        utils_p
         inkutils
         inkdns
         inkhostdb
@@ -53,7 +51,6 @@ link_libraries(
         tscpputil
         proxy
         inknet
-        records_p
         inkevent
         yaml-cpp
         libswoc

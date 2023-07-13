@@ -2382,7 +2382,6 @@ AC_CONFIG_FILES([
   lib/swoc/Makefile
   lib/yamlcpp/Makefile
   mgmt/Makefile
-  mgmt/utils/Makefile
   mgmt/rpc/Makefile
   mgmt/config/Makefile
   plugins/Makefile

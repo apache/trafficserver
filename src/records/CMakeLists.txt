@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(records_p STATIC
+add_library(records STATIC
         P_RecCore.cc
         RecConfigParse.cc
         RecCore.cc
@@ -30,16 +30,15 @@ add_library(records_p STATIC
         RecordsConfigUtils.cc
         RecRawStats.cc
         )
-add_library(ts::records_p ALIAS records_p)
+add_library(ts::records ALIAS records)
 
-target_include_directories(records_p
+target_include_directories(records
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
         "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/mgmt"
-        "${CMAKE_SOURCE_DIR}/mgmt/utils"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 
-target_link_libraries(records_p PUBLIC ts::tscore)
+target_link_libraries(records PUBLIC ts::tscore)

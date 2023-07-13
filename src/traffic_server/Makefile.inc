@@ -33,7 +33,6 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
@@ -89,7 +88,6 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
 	$(top_builddir)/mgmt/config/libconfigmanager.la \
 	$(top_builddir)/mgmt/rpc/librpcpublichandlers.la \
-	$(top_builddir)/mgmt/utils/libutils_p.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \

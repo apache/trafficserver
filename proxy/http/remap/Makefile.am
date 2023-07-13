@@ -24,8 +24,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/src/records \
 	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \

@@ -28,7 +28,6 @@ traffic_logcat_traffic_logcat_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@SWOC_INCLUDES@ $(TS_INCLUDES)
 
 traffic_logcat_traffic_logcat_LDFLAGS = \
@@ -46,8 +45,7 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-        $(top_builddir)/mgmt/utils/libutils_p.la
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 traffic_logcat_traffic_logcat_LDADD += \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
