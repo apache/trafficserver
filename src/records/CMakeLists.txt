@@ -41,3 +41,5 @@ target_include_directories(records_p
         "${CMAKE_SOURCE_DIR}/mgmt/utils"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
+
+target_link_libraries(records_p PUBLIC ts::tscore)
