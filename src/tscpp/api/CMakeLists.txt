@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(tscppapi STATIC
+add_library(tscppapi SHARED
         AsyncHttpFetch.cc
         AsyncTimer.cc
         CaseInsensitiveStringComparator.cc
@@ -42,8 +42,8 @@ add_library(tscppapi STATIC
         utils_internal.cc
         )
 add_library(ts::tscppapi ALIAS tscppapi)
-
-# server_push_preload plugin links directly to tscppapi
-set_target_properties(tscppapi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-
+target_link_libraries(tscppapi
+    PUBLIC
+    libswoc
+    yaml-cpp::yaml-cpp)
 install(TARGETS tscppapi)

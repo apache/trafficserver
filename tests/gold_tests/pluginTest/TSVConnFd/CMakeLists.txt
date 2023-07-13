@@ -22,4 +22,4 @@ set_target_properties(TSVConnFd PROPERTIES
     PREFIX ""
     SUFFIX ".so"
 )
-target_link_libraries(TSVConnFd PRIVATE tscore traffic_server)
+target_link_libraries(TSVConnFd PRIVATE traffic_server)

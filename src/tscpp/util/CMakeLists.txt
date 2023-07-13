@@ -23,13 +23,11 @@ add_library(tscpputil SHARED
         YamlCfg.cc
         ts_unit_parser.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
-
 target_link_libraries(tscpputil
-    PUBLIC
-        libswoc
-        # ts::tscore cyclic dependency
-        yaml-cpp::yaml-cpp
-)
+	PUBLIC
+		libswoc
+		yaml-cpp::yaml-cpp)
+install(TARGETS tscpputil)
 
 add_executable(test_tscpputil
         unit_tests/test_IntrusiveDList.cc
@@ -38,11 +36,10 @@ add_executable(test_tscpputil
         unit_tests/test_TextView.cc
         unit_tests/test_Strerror.cc
         unit_tests/test_ts_meta.cc
-	unit_tests/test_time_parser.cc
+        unit_tests/test_time_parser.cc
         unit_tests/unit_test_main.cc
-        )
+)
 target_link_libraries(test_tscpputil PRIVATE tscpputil libswoc)
 target_include_directories(test_tscpputil PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
-install(TARGETS tscpputil)
 
 add_test(NAME test_tscpputil COMMAND $<TARGET_FILE:test_tscpputil>)

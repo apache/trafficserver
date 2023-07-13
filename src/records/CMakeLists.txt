@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(records_p SHARED
+add_library(records_p STATIC
         P_RecCore.cc
         RecConfigParse.cc
         RecCore.cc
@@ -42,13 +42,4 @@ target_include_directories(records_p
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 
-target_link_libraries(records_p
-    PUBLIC
-        libswoc
-        #ts::inkevent cyclic dependency; I_RecProcess.h and P_RecProcess.h
-        ts::tscore
-        ts::tscpputil
-        yaml-cpp::yaml-cpp
-)
-
-install(TARGETS records_p)
+target_link_libraries(records_p PUBLIC ts::tscore)

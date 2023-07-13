@@ -88,11 +88,11 @@ test_CPPFLAGS = \
 	@OPENSSL_INCLUDES@
 
 test_LDADD = \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/cache/libinkcache.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/iocore/dns/libinkdns.a \
