@@ -53,10 +53,15 @@ option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_JEMALLOC "Use jemalloc (default OFF)")
 option(ENABLE_LUAJIT   "Use LuaJIT (default OFF)")
 option(ENABLE_MIMALLOC "Use mimalloc (default OFF)")
+
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    set(DEFAULT_POSIX_CAP ON)
+endif()
 option(ENABLE_POSIX_CAP
-    "Use POSIX capabilities, turn OFF to use id switching. (default ON)"
-    ON
+    "Use POSIX capabilities, turn OFF to use id switching. (default ON for Linux)"
+    "${DEFAULT_POSIX_CAP}"
 )
+
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
 set(ENABLE_TPROXY
     "AUTO"
