@@ -32,6 +32,5 @@ add_library(http2 STATIC
 target_include_directories(http2 PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
         ${YAMLCPP_INCLUDE_DIR}
 )

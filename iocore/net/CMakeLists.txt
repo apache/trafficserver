@@ -112,7 +112,6 @@ target_include_directories(inknet PUBLIC
         ${CMAKE_SOURCE_DIR}/proxy/shared
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/proxy/http/remap
-        ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/src/traffic_server
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}

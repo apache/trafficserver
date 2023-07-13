@@ -20,7 +20,6 @@
 include_directories(
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
         ${CATCH_INCLUDE_DIR}
 )
 
