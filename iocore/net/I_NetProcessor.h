@@ -115,7 +115,7 @@ public:
     @param options @see NetVCOptions.
 
   */
-  virtual Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr) = 0;
+  virtual Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions const &options) = 0;
 
   /**
     Initializes the net processor. This must be called before the event threads are started.

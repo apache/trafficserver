@@ -230,7 +230,7 @@ SocksEntry::startEvent(int event, void *data)
 
     NetVCOptions options;
     options.socks_support = NO_SOCKS;
-    netProcessor.connect_re(this, &server_addr.sa, &options);
+    netProcessor.connect_re(this, &server_addr.sa, options);
   }
 
   return EVENT_CONT;

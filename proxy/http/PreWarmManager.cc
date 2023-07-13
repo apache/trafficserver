@@ -548,7 +548,7 @@ PreWarmSM::_connect(const IpEndpoint &addr)
   case SNIRoutingType::FORWARD: {
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     // TODO: constify UnixNetProcessor::connect_re_internal()
-    connect_action_handle = netProcessor.connect_re(this, &addr.sa, &opt);
+    connect_action_handle = netProcessor.connect_re(this, &addr.sa, opt);
     break;
   }
   case SNIRoutingType::PARTIAL_BLIND: {
@@ -568,7 +568,7 @@ PreWarmSM::_connect(const IpEndpoint &addr)
     opt.ssl_client_ca_cert_name     = http_conf_params->oride.ssl_client_ca_cert_filename;
 
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    connect_action_handle = sslNetProcessor.connect_re(this, &addr.sa, &opt);
+    connect_action_handle = sslNetProcessor.connect_re(this, &addr.sa, opt);
     break;
   }
   default:

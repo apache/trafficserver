@@ -59,7 +59,7 @@ public:
   void init() override;
   int start(int, size_t stacksize) override;
 
-  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts) override;
+  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions const &opts) override;
 
   NetVConnection *allocate_vc(EThread *t) override;
 

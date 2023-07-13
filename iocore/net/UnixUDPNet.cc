@@ -1002,7 +1002,7 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 }
 
 bool
-UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt)
+UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
   int res = 0, fd = -1;
   int local_addr_len;

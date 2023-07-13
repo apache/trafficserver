@@ -5590,12 +5590,12 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
     pending_action = sslNetProcessor.connect_re(cont,                                 // state machine or ConnectingEntry
                                                 &t_state.current.server->dst_addr.sa, // addr + port
-                                                &opt);
+                                                opt);
   } else {
     SMDebug("http", "calling netProcessor.connect_re");
     pending_action = netProcessor.connect_re(cont,                                 // state machine or ConnectingEntry
                                              &t_state.current.server->dst_addr.sa, // addr + port
-                                             &opt);
+                                             opt);
   }
 
   return;
