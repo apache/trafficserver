@@ -80,9 +80,6 @@ endif (TS_USE_LINUX_IO_URING)
 if (TS_USE_LINUX_NATIVE_AIO)
     target_link_libraries(traffic_server PRIVATE aio)
 endif (TS_USE_LINUX_NATIVE_AIO)
-if(TS_USE_POSIX_CAP)
-    target_link_libraries(traffic_server PUBLIC cap::cap)
-endif()
 
 set_target_properties(traffic_server PROPERTIES ENABLE_EXPORTS ON)
 

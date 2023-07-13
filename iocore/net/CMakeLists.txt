@@ -118,9 +118,6 @@ target_include_directories(inknet PUBLIC
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}
         )
-if(TS_USE_POSIX_CAP)
-    target_link_libraries(inknet PUBLIC cap::cap)
-endif()
 
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)

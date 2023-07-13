@@ -23,8 +23,5 @@ target_link_libraries(traffic_crashlog
         ts::records_p
         ts::tscore
 )
-if(TS_USE_POSIX_CAP)
-    target_link_libraries(traffic_crashlog PUBLIC cap::cap)
-endif()
 
 install(TARGETS traffic_crashlog)

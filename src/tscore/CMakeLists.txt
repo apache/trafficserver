@@ -111,6 +111,10 @@ else()
     target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
+if(TS_USE_POSIX_CAP)
+    target_link_libraries(tscore PUBLIC cap::cap)
+endif()
+
 add_dependencies(tscore ParseRules tscpputil)
 target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
@@ -165,9 +169,6 @@ target_link_libraries(test_tscore
 )
 if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)
-endif()
-if(TS_USE_POSIX_CAP)
-    target_link_libraries(test_tscore PUBLIC cap::cap)
 endif()
 target_include_directories(test_tscore PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
 
