@@ -59,6 +59,10 @@ if(ENABLE_LUAJIT)
     add_subdirectory(lua)
 endif()
 
+if(BUILD_EXPERIMENTAL_PLUGINS)
+    add_subdirectory(experimental)
+endif()
+
 if(HOST_OS STREQUAL "linux")
     add_subdirectory(healthchecks)
 endif()
