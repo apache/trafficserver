@@ -399,7 +399,7 @@ add_clang_format_target(tests)
 
 add_custom_target(clang-format
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "formatting all files"
+        COMMENT "formatting all C++ files"
         DEPENDS ${CLANG_FORMAT_TARGETS}
         VERBATIM
         )
@@ -408,6 +408,12 @@ add_custom_target(autopep8 ${CMAKE_SOURCE_DIR}/tools/autopep8.sh ${CMAKE_SOURCE_
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "formatting python files"
         VERBATIM
+        )
+
+# Add a format target that depends upon both clang-format and autopep8.
+add_custom_target(format
+        DEPENDS clang-format autopep8
+        COMMENT "formatting all files"
         )
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
