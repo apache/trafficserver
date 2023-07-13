@@ -709,11 +709,11 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::HexDump const &hex) {
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void> const &span) {
+bwformat(BufferWriter &w, bwf::Spec const &spec, MemSpan<void const> const &span) {
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits =  ('X' == spec._type) ? bwf::UPPER_DIGITS : bwf::LOWER_DIGITS;
     size_t block       = spec._prec > 0 ? spec._prec : span.size();
-    TextView view{span.rebind<char>()};
+    TextView view{span.rebind<char const>()};
     bool space_p = false;
     while (view) {
       if (space_p)

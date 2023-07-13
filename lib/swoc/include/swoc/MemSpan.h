@@ -1500,6 +1500,12 @@ MemSpan<void>::rebind() const -> self_type {
   return *this;
 }
 
+template <>
+inline auto
+MemSpan<void>::rebind() const -> MemSpan<void const> {
+  return { _ptr, _size };
+}
+
 template <typename U> U *
 MemSpan<void>::as_ptr() const {
   if (_size != sizeof(U)) {
