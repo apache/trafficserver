@@ -71,7 +71,7 @@ struct NamedElement {
   void set_glob_name(std::string name);
   void set_regex_name(const std::string &regex_name);
 
-  ts::port_range_t ports{1, ts::MAX_PORT_VALUE};
+  std::vector<ts::port_range_t> inbound_port_ranges;
 
   std::unique_ptr<pcre, PcreFreer> match;
 };

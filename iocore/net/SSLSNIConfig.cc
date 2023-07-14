@@ -39,6 +39,7 @@
 #include "tscore/ink_memory.h"
 #include "tscore/I_Layout.h"
 
+#include "tscpp/util/ts_ip.h"
 #include "tscpp/util/TextView.h"
 
 #include <netinet/in.h>
@@ -46,6 +47,7 @@
 #include <sstream>
 #include <utility>
 #include <pcre.h>
+#include <algorithm>
 
 static constexpr int OVECSIZE{30};
 
@@ -61,8 +63,8 @@ NamedElement &
 NamedElement::operator=(NamedElement &&other)
 {
   if (this != &other) {
-    match = std::move(other.match);
-    ports = std::move(other.ports);
+    match               = std::move(other.match);
+    inbound_port_ranges = std::move(other.inbound_port_ranges);
   }
   return *this;
 }
@@ -116,7 +118,7 @@ SNIConfigParams::load_sni_config()
   for (auto &item : yaml_sni.items) {
     auto &ai = sni_action_list.emplace_back();
     ai.set_glob_name(item.fqdn);
-    ai.ports = item.port_range;
+    ai.inbound_port_ranges = item.inbound_port_ranges;
     Debug("ssl", "name: %s", item.fqdn.data());
 
     item.populate_sni_actions(ai.actions);
@@ -174,7 +176,9 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
       return {&retval.actions, {}};
     } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
                offset >= 0) {
-      if (!retval.ports.contains(dest_incoming_port)) {
+      if (std::none_of(
+            retval.inbound_port_ranges.begin(), retval.inbound_port_ranges.end(),
+            [dest_incoming_port](ts::port_range_t const &port_range) { return port_range.contains(dest_incoming_port); })) {
         continue;
       }
       if (offset == 1) {

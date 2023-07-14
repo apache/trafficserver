@@ -182,7 +182,7 @@ TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {
 };
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_inbound_port_range,
+                                               TS_inbound_port_ranges,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
@@ -233,24 +233,10 @@ template <> struct convert<YamlSNIConfig::Item> {
       return false; // servername must be present
     }
 
-    if (node[TS_inbound_port_range]) {
-      swoc::TextView port_view{node[TS_inbound_port_range].Scalar()};
-      auto min{port_view.split_prefix_at('-')};
-      if (!min) {
-        min = port_view;
-      }
-      auto const &max{port_view};
-
-      swoc::TextView parsed_min;
-      long min_port{swoc::svtoi(min, &parsed_min)};
-      swoc::TextView parsed_max;
-      long max_port{swoc::svtoi(max, &parsed_max)};
-      if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
-          max_port < min_port) {
-        throw YAML::ParserException(node[TS_fqdn].Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
-      }
-
-      item.port_range = ts::port_range_t{static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
+    if (node[TS_inbound_port_ranges]) {
+      item.inbound_port_ranges = parse_inbound_port_ranges(node[TS_inbound_port_ranges]);
+    } else {
+      item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
@@ -446,6 +432,42 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     return true;
+  }
+
+  static std::vector<ts::port_range_t>
+  parse_inbound_port_ranges(Node const &port_ranges)
+  {
+    std::vector<ts::port_range_t> result;
+    if (port_ranges.IsSequence()) {
+      for (Node const &port_range : port_ranges) {
+        result.emplace_back(parse_single_inbound_port_range(port_range, port_range.Scalar()));
+      }
+    } else {
+      result.emplace_back(parse_single_inbound_port_range(port_ranges, port_ranges.Scalar()));
+    }
+
+    return result;
+  }
+
+  static ts::port_range_t
+  parse_single_inbound_port_range(Node const &node, swoc::TextView port_view)
+  {
+    auto min{port_view.split_prefix_at('-')};
+    if (!min) {
+      min = port_view;
+    }
+    auto max{port_view};
+
+    swoc::TextView parsed_min;
+    auto min_port{swoc::svtoi(min, &parsed_min)};
+    swoc::TextView parsed_max;
+    auto max_port{swoc::svtoi(max, &parsed_max)};
+    if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
+        max_port < min_port) {
+      throw YAML::ParserException(node.Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
+    }
+
+    return {static_cast<in_port_t>(min_port), static_cast<in_port_t>(max_port)};
   }
 };
 } // namespace YAML
