@@ -15,11 +15,4 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(collapsed_forwarding)
-add_subdirectory(cookie_remap)
-add_subdirectory(custom_redirect)
-add_subdirectory(fq_pacing)
-add_subdirectory(traffic_dump)
+add_atsplugin(fq_pacing fq_pacing.c)
