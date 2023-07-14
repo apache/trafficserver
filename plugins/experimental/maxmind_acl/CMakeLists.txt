@@ -15,12 +15,18 @@
 #
 #######################
 
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
-if(NOT OPENSSL_IS_BORINGSSL)
-  add_subdirectory(ja3_fingerprint)
-endif()
-add_subdirectory(maxmind_acl)
-add_subdirectory(traffic_dump)
+add_atsplugin(maxmind_acl
+    maxmind_acl.cc
+    mmdb.cc
+)
+
+target_include_directories(maxmind_acl PRIVATE ${PROJECT_SOURCE_DIR}/include)
+
+find_package(maxminddb REQUIRED)
+
+target_link_libraries(maxmind_acl
+    PRIVATE
+        libswoc
+        yaml-cpp::yaml-cpp
+        maxminddb::maxminddb
+)
