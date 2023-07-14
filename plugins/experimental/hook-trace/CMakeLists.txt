@@ -15,5 +15,4 @@
 #
 #######################
 
-add_subdirectory(traffic_dump)
-add_subdirectory(hook-trace)
+add_atsplugin(hook-trace hook-trace.cc)
