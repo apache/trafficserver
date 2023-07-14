@@ -1674,11 +1674,11 @@ HttpSM::handle_api_return()
 }
 
 PoolableSession *
-HttpSM::create_server_session(NetVConnection *netvc, MIOBuffer *netvc_read_buffer, IOBufferReader *netvc_reader)
+HttpSM::create_server_session(NetVConnection &netvc, MIOBuffer *netvc_read_buffer, IOBufferReader *netvc_reader)
 {
   // Figure out what protocol was negotiated
   int proto_index = SessionProtocolNameRegistry::INVALID;
-  if (auto const alpn = netvc->get_service<ALPNSupport>(); alpn) {
+  if (auto const alpn = netvc.get_service<ALPNSupport>(); alpn) {
     proto_index = alpn->get_negotiated_protocol_id();
   }
   // No ALPN occurred. Assume it was HTTP/1.x and hope for the best
@@ -1691,14 +1691,12 @@ HttpSM::create_server_session(NetVConnection *netvc, MIOBuffer *netvc_read_buffe
   retval->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
   retval->sharing_match = static_cast<TSServerSessionSharingMatchMask>(t_state.txn_conf->server_session_sharing_match);
   retval->attach_hostname(t_state.current.server->name);
-  retval->new_connection(netvc, netvc_read_buffer, netvc_reader);
+  retval->new_connection(&netvc, netvc_read_buffer, netvc_reader);
 
   ATS_PROBE1(new_origin_server_connection, t_state.current.server->name);
   retval->set_active();
 
-  if (netvc) {
-    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
-  }
+  ats_ip_copy(&t_state.server_info.src_addr, netvc.get_local_addr());
 
   // If origin_max_connections or origin_min_keep_alive_connections is set then we are metering
   // the max and or min number of connections per host. Transfer responsibility for this to the
@@ -1774,7 +1772,7 @@ HttpSM::state_http_server_open(int event, void *data)
 
     } else { // in the case of an intercept plugin don't to the connect timeout change
       SMDebug("http_connect", "not setting handler for connection handshake");
-      this->create_server_txn(this->create_server_session(_netvc, _netvc_read_buffer, _netvc_reader));
+      this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
       handle_http_server_open();
     }
     ink_assert(pending_action.empty());
@@ -1798,7 +1796,7 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
     SMDebug("http_ss", "Connection handshake complete");
-    this->create_server_txn(this->create_server_session(_netvc, _netvc_read_buffer, _netvc_reader));
+    this->create_server_txn(this->create_server_session(*_netvc, _netvc_read_buffer, _netvc_reader));
     t_state.current.server->clear_connect_fail();
     handle_http_server_open();
     return 0;
