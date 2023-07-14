@@ -47,6 +47,7 @@ execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING
 execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Options
+option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
 set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
@@ -216,6 +217,11 @@ if(ENABLE_QUICHE)
     if(NOT OPENSSL_IS_BORINGSSL)
         message(FATAL_ERROR "Use of BoringSSL is required if quiche is used.")
     endif()
+endif()
+
+if(ENABLE_ASAN)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
 endif()
 
 find_package(ZLIB REQUIRED)
