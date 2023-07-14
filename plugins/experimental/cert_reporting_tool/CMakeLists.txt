@@ -15,7 +15,11 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(traffic_dump)
+project(cert_reporting_tool)
+
+add_atsplugin(cert_reporting_tool cert_reporting_tool.cc)
+
+target_link_libraries(cert_reporting_tool
+    PRIVATE
+        OpenSSL::SSL
+)
