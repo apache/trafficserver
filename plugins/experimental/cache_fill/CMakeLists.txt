@@ -15,6 +15,4 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(cache_fill)
-add_subdirectory(traffic_dump)
+add_atsplugin(cache_fill background_fetch.cc cache_fill.cc)
