@@ -169,9 +169,7 @@ Parser::preprocess(std::vector<std::string> tokens)
   // Is it a condition or operator?
   if (_cond) {
     if ((tokens[0].substr(0, 2) == "%{") && (tokens[0][tokens[0].size() - 1] == '}')) {
-      std::string s = tokens[0].substr(2, tokens[0].size() - 3);
-
-      _op = s;
+      _op = tokens[0].substr(2, tokens[0].size() - 3);
       if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) {
         // cond + [=<>] + argument
         _arg = tokens[1] + tokens[2];
