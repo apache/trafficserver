@@ -15,8 +15,14 @@
 #
 #######################
 
-add_subdirectory(traffic_dump)
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
+add_atsplugin(inliner
+    ats-inliner.cc
+    cache.cc
+    chunk-decoder.cc
+    fetcher.cc
+    html-parser.cc
+    inliner-handler.cc
+    ts.cc
+)
+
+target_compile_options(inliner PRIVATE -DPLUGIN_TAG=\"inliner\")
