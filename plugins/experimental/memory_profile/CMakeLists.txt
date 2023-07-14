@@ -15,13 +15,4 @@
 #
 #######################
 
-add_subdirectory(hook-trace)
-add_subdirectory(http_stats)
-add_subdirectory(icap)
-add_subdirectory(inliner)
-if(NOT OPENSSL_IS_BORINGSSL)
-  add_subdirectory(ja3_fingerprint)
-endif()
-add_subdirectory(maxmind_acl)
-add_subdirectory(memory_profile)
-add_subdirectory(traffic_dump)
+add_atsplugin(memory_profile memory_profile.cc)
