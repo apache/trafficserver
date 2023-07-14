@@ -76,7 +76,7 @@ template <> struct convert<ClearMetricRequest::Params> {
   encode(ClearMetricRequest::Params const &params)
   {
     Node node;
-    for (auto name : params.names) {
+    for (auto &name : params.names) {
       Node n;
       n["record_name"] = name;
       node.push_back(n);
