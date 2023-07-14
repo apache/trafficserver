@@ -114,6 +114,7 @@ public:
   {
     switch (event) {
     case CACHE_EVENT_OPEN_READ_FAILED:
+      this->_rt->close();
       delete this;
       break;
     default:
