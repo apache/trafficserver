@@ -34,6 +34,7 @@
 
 #include "tscore/I_Version.h"
 #include "tscpp/util/TsSharedMutex.h"
+#include <cstdint>
 #include <unistd.h>
 
 #define REFCOUNT_CACHE_EVENT_SYNC REFCOUNT_CACHE_EVENT_EVENTS_START
@@ -137,7 +138,7 @@ struct RefCountCacheLinkage {
   {
     return key;
   }
-  static key_type
+  static uint64_t
   key_of(value_type *v)
   {
     return v->meta.key;
