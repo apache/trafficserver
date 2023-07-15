@@ -27,8 +27,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES) @SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 EXTRA_DIST = LogStandalone.cc

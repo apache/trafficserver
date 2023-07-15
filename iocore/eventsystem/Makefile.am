@@ -90,8 +90,6 @@ test_CPP_FLAGS = \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/lib/catch2 \
 	@OPENSSL_INCLUDES@ @SWOC_INCLUDES@
 

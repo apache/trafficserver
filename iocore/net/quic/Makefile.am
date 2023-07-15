@@ -27,8 +27,6 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/logging \
   -I$(abs_top_srcdir)/proxy/http \
   -I$(abs_top_srcdir)/proxy/http3 \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
   $(TS_INCLUDES) @SWOC_INCLUDES@ \
   @OPENSSL_INCLUDES@ @YAMLCPP_INCLUDES@
 

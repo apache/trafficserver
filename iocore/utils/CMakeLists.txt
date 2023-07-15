@@ -30,6 +30,4 @@ target_include_directories(inkutils PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
         )

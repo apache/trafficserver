@@ -53,7 +53,7 @@
 
 #include "tscore/ink_apidefs.h"
 
-#include "MgmtDefs.h"
+#include "tscore/MgmtDefs.h"
 
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 

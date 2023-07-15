@@ -41,7 +41,7 @@ target_include_directories(inkevent PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(inkevent
     PUBLIC
-        ts::records_p
+        ts::records
         ts::tscore
     PRIVATE
         libswoc

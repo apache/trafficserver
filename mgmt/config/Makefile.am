@@ -26,7 +26,6 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib/ \
   -I$(abs_top_srcdir)/mgmt/rpc \
   -I$(abs_top_srcdir)/mgmt/ \
-  -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/proxy/ \
   -I$(abs_top_srcdir)/proxy/http \
   -I$(abs_top_srcdir)/proxy/hdrs \
@@ -59,4 +58,3 @@ include $(top_srcdir)/mk/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-

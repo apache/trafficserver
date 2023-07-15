@@ -37,8 +37,6 @@ add_library(http_remap STATIC
 target_include_directories(http_remap PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
         ${CMAKE_SOURCE_DIR}/src/records
         ${YAML_INCLUDE_DIRS}
         )

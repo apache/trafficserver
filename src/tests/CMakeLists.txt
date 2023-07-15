@@ -20,7 +20,6 @@
 include_directories(
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/mgmt
         ${CATCH_INCLUDE_DIR}
 )
 
@@ -30,9 +29,7 @@ link_libraries(
         http2
         logging
         hdrs
-        configmanager
         diagsconfig
-        utils_p
         inkutils
         inkdns
         inkhostdb
@@ -53,7 +50,6 @@ link_libraries(
         tscpputil
         proxy
         inknet
-        records_p
         inkevent
         yaml-cpp
         libswoc

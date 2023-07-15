@@ -31,7 +31,7 @@ target_link_libraries(traffic_layout
     PRIVATE
         ts::inkevent
         ${OPENSSL_LIBRARY}
-        ts::records_p
+        ts::records
         yaml-cpp::yaml-cpp
 )
 

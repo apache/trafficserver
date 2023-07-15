@@ -29,7 +29,7 @@
 #include "Show.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/bwf_std_format.h"
-#include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
+#include "tscore/MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 #include "HostFile.h"
 
 #include <utility>
