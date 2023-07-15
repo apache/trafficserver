@@ -15,14 +15,11 @@
 #
 #######################
 
-add_executable(test_traffic_dump
-    unit_test_main.cc
-    test_json_utils.cc
-    test_sensitive_fields.cc
-    ${PROJECT_SOURCE_DIR}/json_utils.cc
+project(cert_reporting_tool)
+
+add_atsplugin(cert_reporting_tool cert_reporting_tool.cc)
+
+target_link_libraries(cert_reporting_tool
+    PRIVATE
+        OpenSSL::SSL
 )
-
-target_include_directories(test_traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}")
-target_link_libraries(test_traffic_dump PRIVATE catch2::catch2)
-
-add_test(NAME test_traffic_dump COMMAND test_traffic_dump)
