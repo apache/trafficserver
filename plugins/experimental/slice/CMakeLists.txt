@@ -15,19 +15,25 @@
 #
 #######################
 
-add_subdirectory(access_control)
-add_subdirectory(cache_fill)
-add_subdirectory(cert_reporting_tool)
-add_subdirectory(collapsed_forwarding)
-add_subdirectory(cookie_remap)
-add_subdirectory(custom_redirect)
-add_subdirectory(fq_pacing)
-add_subdirectory(header_freq)
-add_subdirectory(metalink)
-add_subdirectory(money_trace)
-add_subdirectory(mp4)
-add_subdirectory(parent_select)
-add_subdirectory(redo_cache_lookup)
-add_subdirectory(remap_stats)
-add_subdirectory(slice)
-add_subdirectory(traffic_dump)
+project(slice)
+
+add_atsplugin(slice
+    Config.cc
+    ContentRange.cc
+    HttpHeader.cc
+    Range.cc
+    client.cc
+    intercept.cc
+    prefetch.cc
+    response.cc
+    server.cc
+    slice.cc
+    transfer.cc
+    util.cc
+)
+
+target_link_libraries(access_control PRIVATE ${PCRE_LIBRARY})
+
+if(BUILD_TESTING)
+    add_subdirectory(unit-tests)
+endif()
