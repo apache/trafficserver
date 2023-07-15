@@ -24,12 +24,10 @@ add_atsplugin(traffic_dump
     transaction_data.cc
 )
 
-target_include_directories(traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}/include")
-
 target_link_libraries(traffic_dump
     PRIVATE
         libswoc
-        "${OPENSSL_SSL_LIBRARY}"
+        OpenSSL::SSL
 )
 
 if(BUILD_TESTING)

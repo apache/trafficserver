@@ -30,7 +30,7 @@
 #include "common.h"
 #include "utils.h"
 #include "tscore/ink_base64.h"
-#include "ink_autoconf.h"
+#include "tscore/ink_config.h"
 
 /* ******* Encoding/Decoding functions ******* */
 

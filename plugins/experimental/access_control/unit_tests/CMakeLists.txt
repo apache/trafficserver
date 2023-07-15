@@ -15,14 +15,26 @@
 #
 #######################
 
-add_executable(test_traffic_dump
-    unit_test_main.cc
-    test_json_utils.cc
-    test_sensitive_fields.cc
-    ${PROJECT_SOURCE_DIR}/json_utils.cc
+add_executable(test_access_control
+    test_access_control.cc
+    test_utils.cc
+    ${PROJECT_SOURCE_DIR}/access_control.cc
+    ${PROJECT_SOURCE_DIR}/common.cc
+    ${PROJECT_SOURCE_DIR}/utils.cc
 )
 
-target_include_directories(test_traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}")
-target_link_libraries(test_traffic_dump PRIVATE catch2::catch2)
+target_include_directories(test_access_control
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}
+)
 
-add_test(NAME test_traffic_dump COMMAND test_traffic_dump)
+target_link_libraries(test_access_control
+    PRIVATE
+        ts::tscore
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        catch2::catch2
+)
+target_compile_definitions(test_access_control PRIVATE ACCESS_CONTROL_UNIT_TEST)
+
+add_test(NAME test_access_control COMMAND test_access_control)

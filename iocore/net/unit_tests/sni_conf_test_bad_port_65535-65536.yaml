@@ -16,4 +16,5 @@
 
 sni:
 - fqdn: badport.com
-  inbound_port_range: 65535-65536
+  inbound_port_ranges:
+  - 65535-65536

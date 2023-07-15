@@ -38,7 +38,7 @@
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
-TSDECL(inbound_port_range);
+TSDECL(inbound_port_ranges);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
@@ -81,7 +81,7 @@ struct YamlSNIConfig {
   struct Item {
     std::string fqdn;
 
-    ts::port_range_t port_range{1, ts::MAX_PORT_VALUE};
+    std::vector<ts::port_range_t> inbound_port_ranges;
 
     std::optional<bool> offer_h2;   // Has no value by default, so do not initialize!
     std::optional<bool> offer_quic; // Has no value by default, so do not initialize!

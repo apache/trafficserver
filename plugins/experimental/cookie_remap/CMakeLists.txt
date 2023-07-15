@@ -15,14 +15,26 @@
 #
 #######################
 
-add_executable(test_traffic_dump
-    unit_test_main.cc
-    test_json_utils.cc
-    test_sensitive_fields.cc
-    ${PROJECT_SOURCE_DIR}/json_utils.cc
+project(cookie_remap)
+
+add_atsplugin(cookie_remap
+    cookie_remap.cc
+    cookiejar.cc
+    strip.cc
 )
 
-target_include_directories(test_traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}")
-target_link_libraries(test_traffic_dump PRIVATE catch2::catch2)
+target_link_libraries(cookie_remap PRIVATE yaml-cpp::yaml-cpp)
 
-add_test(NAME test_traffic_dump COMMAND test_traffic_dump)
+if(BUILD_TESTING)
+    add_executable(test_cookiejar
+        test_cookiejar.cc
+        strip.cc
+        cookiejar.cc
+    )
+
+    target_include_directories(test_cookiejar PRIVATE "${PROJECT_SOURCE_DIR}")
+
+    target_link_libraries(test_cookiejar PRIVATE catch2::catch2)
+
+    add_test(NAME test_cookiejar COMMAND test_cookiejar)
+endif()

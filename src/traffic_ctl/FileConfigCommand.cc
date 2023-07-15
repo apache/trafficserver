@@ -158,7 +158,6 @@ FlatYAMLAccessor::find_or_create_node(swoc::TextView variable, bool search_all)
       // If nothing in it. Add one, it'll be the new node.
       _docs.emplace_back(YAML::NodeType::Map);
     }
-    return search_node(variable, _docs.back(), CREATE_IF_NOT_EXIST).second;
   } else {
     for (auto iter = _docs.rbegin(); iter != _docs.rend(); ++iter) {
       if (auto [found, node] = search_node(variable, *iter, DO_NOT_CREATE_IF_NOT_EXIST); found) {
@@ -171,10 +170,9 @@ FlatYAMLAccessor::find_or_create_node(swoc::TextView variable, bool search_all)
       _docs.emplace_back(YAML::NodeType::Map);
     }
     // Use the last doc.
-    return search_node(variable, _docs.back(), CREATE_IF_NOT_EXIST).second;
   }
 
-  return {};
+  return search_node(variable, _docs.back(), CREATE_IF_NOT_EXIST).second;
 }
 
 std::pair<bool, YAML::Node>
