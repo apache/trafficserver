@@ -45,8 +45,6 @@
 #include <sys/types.h>
 #include <chrono>
 
-#include "ink_autoconf.h"
-
 #ifdef HAVE_SYS_SYSINFO_H
 #include <sys/sysinfo.h>
 #endif
