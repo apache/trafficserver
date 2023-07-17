@@ -30,9 +30,15 @@ traffic_ctl_traffic_ctl_SOURCES = \
 	traffic_ctl/traffic_ctl.cc \
 	traffic_ctl/CtrlPrinters.cc \
 	traffic_ctl/CtrlCommands.cc \
-  traffic_ctl/FileConfigCommand.cc \
+	traffic_ctl/FileConfigCommand.cc \
 	shared/rpc/IPCSocketClient.cc
 
+traffic_ctl_traffic_ctl_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	@SWOC_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
+
+
 traffic_ctl_traffic_ctl_LDADD = \
-    $(top_builddir)/src/tscore/libtscore.la \
-    @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
+    $(top_builddir)/src/tscore/libtscore.a \
+    @HWLOC_LIBS@ @OPENSSL_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@

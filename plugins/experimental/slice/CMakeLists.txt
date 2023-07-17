@@ -15,28 +15,25 @@
 #
 #######################
 
+project(slice)
 
-add_library(http_remap STATIC
-        AclFiltering.cc
-        NextHopSelectionStrategy.cc
-        NextHopConsistentHash.cc
-        NextHopHealthStatus.cc
-        NextHopRoundRobin.cc
-        NextHopStrategyFactory.cc
-        RemapConfig.cc
-        RemapHitCount.cc
-        RemapPluginInfo.cc
-        PluginDso.cc
-        PluginFactory.cc
-        RemapPlugins.cc
-        RemapProcessor.cc
-        UrlMapping.cc
-        UrlMappingPathIndex.cc
-        UrlRewrite.cc
+add_atsplugin(slice
+    Config.cc
+    ContentRange.cc
+    HttpHeader.cc
+    Range.cc
+    client.cc
+    intercept.cc
+    prefetch.cc
+    response.cc
+    server.cc
+    slice.cc
+    transfer.cc
+    util.cc
 )
-target_include_directories(http_remap PRIVATE
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/src/records
-        ${YAML_INCLUDE_DIRS}
-        )
+
+target_link_libraries(access_control PRIVATE ${PCRE_LIBRARY})
+
+if(BUILD_TESTING)
+    add_subdirectory(unit-tests)
+endif()

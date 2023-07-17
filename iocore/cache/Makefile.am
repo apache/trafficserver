@@ -25,8 +25,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http/remap \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@SWOC_INCLUDES@
 	$(TS_INCLUDES)
 
@@ -80,8 +78,6 @@ test_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/lib/catch2 \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES) \
@@ -102,8 +98,8 @@ test_LDADD = \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
-	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/lib/fastlz/libfastlz.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	@SWOC_LIBS@ \
@@ -115,6 +111,7 @@ test_LDADD = \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@LIBCAP@ \
 	-lm
 
 if ENABLE_QUIC

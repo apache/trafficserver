@@ -26,7 +26,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <tscore/I_Layout.h>
-#include <tscore/BufferWriter.h>
+#include <swoc/BufferWriter.h>
 
 #include "IPCSocketClient.h"
 #include "yaml_codecs.h"
@@ -38,9 +38,9 @@ namespace shared::rpc
 ///
 class RPCClient
 {
-  // Large buffer, as we may query a full list of records.
+  // Large buffer, as we may query a full list of records(metrics can be a lot bigger).
   // TODO: should we add a parameter to increase the buffer? or maybe a record limit on the server's side?
-  static constexpr int BUFFER_SIZE{356000};
+  static constexpr size_t BUFFER_SIZE{35600000};
 
 public:
   RPCClient() : _client(Layout::get()->runtimedir + "/jsonrpc20.sock") {}
@@ -53,7 +53,8 @@ public:
   invoke(std::string_view req)
   {
     std::string text; // for error messages.
-    ts::LocalBufferWriter<BUFFER_SIZE> bw;
+    std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
+    swoc::FixedBufferWriter bw{buf.get(), BUFFER_SIZE};
     try {
       _client.connect();
       if (!_client.is_closed()) {

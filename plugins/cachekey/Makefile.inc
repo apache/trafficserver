@@ -16,8 +16,8 @@
 
 pkglib_LTLIBRARIES += cachekey/cachekey.la
 cachekey_cachekey_la_SOURCES = \
-  cachekey/cachekey.cc \
-  cachekey/common.cc \
-  cachekey/configs.cc \
-  cachekey/pattern.cc \
-  cachekey/plugin.cc
+    cachekey/cachekey.cc \
+    cachekey/common.cc \
+    cachekey/configs.cc \
+    cachekey/pattern.cc \
+    cachekey/plugin.cc

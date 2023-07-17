@@ -20,7 +20,7 @@
 bin_PROGRAMS += traffic_logcat/traffic_logcat
 
 traffic_logcat_traffic_logcat_CPPFLAGS = \
-    $(AM_CPPFLAGS) \
+	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
@@ -28,12 +28,11 @@ traffic_logcat_traffic_logcat_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@SWOC_INCLUDES@ $(TS_INCLUDES)
 
 traffic_logcat_traffic_logcat_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	@YAMLCPP_LDFLAGS@
+	@SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 
 traffic_logcat_traffic_logcat_SOURCES = \
 	traffic_logcat/logcat.cc
@@ -45,11 +44,8 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-        $(top_builddir)/mgmt/utils/libutils_p.la
-
-traffic_logcat_traffic_logcat_LDADD += \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
-	@YAMLCPP_LIBS@ \
+	@YAMLCPP_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@ \
 	@LIBPROFILER@ -lm

@@ -39,7 +39,7 @@
 #include "tscore/CryptoHash.h"
 #include "tscore/BufferWriterForward.h"
 #include "tscpp/util/TextView.h"
-#include <MgmtDefs.h>
+#include <tscore/MgmtDefs.h>
 #include "HttpProxyAPIEnums.h"
 #include "Show.h"
 

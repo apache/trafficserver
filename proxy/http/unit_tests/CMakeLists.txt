@@ -29,7 +29,6 @@ add_executable(test_http
 target_include_directories(test_http
     PRIVATE
         "${PROJECT_BINARY_DIR}/include/ts"
-        "${PROJECT_SOURCE_DIR}/mgmt"
 )
 
 target_link_libraries(test_http

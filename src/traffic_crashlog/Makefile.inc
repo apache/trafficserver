@@ -23,7 +23,6 @@ traffic_crashlog_traffic_crashlog_CPPFLAGS = \
     -I$(abs_top_srcdir)/include \
     -I$(abs_top_srcdir)/lib \
     -I$(abs_top_srcdir)/mgmt \
-    -I$(abs_top_srcdir)/mgmt/utils \
     @SWOC_INCLUDES@ \
     $(TS_INCLUDES)
 
@@ -40,6 +39,6 @@ traffic_crashlog_traffic_crashlog_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
+	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@

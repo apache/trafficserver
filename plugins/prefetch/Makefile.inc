@@ -16,16 +16,16 @@
 
 pkglib_LTLIBRARIES += prefetch/prefetch.la
 prefetch_prefetch_la_SOURCES = \
-  prefetch/plugin.cc \
-  prefetch/common.cc \
-  prefetch/configs.cc \
-  prefetch/fetch.cc \
-  prefetch/headers.cc \
-  prefetch/pattern.cc \
-  prefetch/fetch_policy.cc \
-  prefetch/fetch_policy_simple.cc \
-  prefetch/fetch_policy_lru.cc \
-  prefetch/evaluate.cc
+    prefetch/plugin.cc \
+    prefetch/common.cc \
+    prefetch/configs.cc \
+    prefetch/fetch.cc \
+    prefetch/headers.cc \
+    prefetch/pattern.cc \
+    prefetch/fetch_policy.cc \
+    prefetch/fetch_policy_simple.cc \
+    prefetch/fetch_policy_lru.cc \
+    prefetch/evaluate.cc
 
 check_PROGRAMS += prefetch/test_evaluate
 

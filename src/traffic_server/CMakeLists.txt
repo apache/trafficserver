@@ -31,7 +31,6 @@ target_include_directories(traffic_server PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/mgmt/utils
 )
 target_link_libraries(traffic_server
     PRIVATE
@@ -43,7 +42,6 @@ target_link_libraries(traffic_server
         hdrs
         configmanager
         diagsconfig
-        utils_p
         inkutils
         inkdns
         inkhostdb
@@ -53,7 +51,7 @@ target_link_libraries(traffic_server
         tscpputil
         proxy
         inknet
-        records_p
+        records
         inkevent
         yaml-cpp
         libswoc

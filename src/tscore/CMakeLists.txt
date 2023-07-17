@@ -103,6 +103,10 @@ add_library(tscore STATIC
 )
 add_library(ts::tscore ALIAS tscore)
 
+# Some plugins link against ts::tscore and therefore need it to be compiled as
+# position independent.
+set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 if(OPENSSL_IS_BORINGSSL)
     target_sources(tscore PRIVATE HKDF_boringssl.cc)
 elseif(OPENSSL_IS_OPENSSL3)

@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/metalink/metalink.la
 
 experimental_metalink_metalink_la_SOURCES = \
-  experimental/metalink/metalink.cc
+    experimental/metalink/metalink.cc

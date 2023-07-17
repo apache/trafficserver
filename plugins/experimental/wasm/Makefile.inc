@@ -41,48 +41,47 @@ endif
 pkglib_LTLIBRARIES += experimental/wasm/wasm.la
 
 experimental_wasm_wasm_la_SOURCES = \
-  experimental/wasm/lib/src/bytecode_util.cc \
-  experimental/wasm/lib/include/proxy-wasm/bytecode_util.h \
-  experimental/wasm/lib/src/context.cc \
-  experimental/wasm/lib/include/proxy-wasm/context.h \
-  experimental/wasm/lib/include/proxy-wasm/context_interface.h \
-  experimental/wasm/lib/src/exports.cc \
-  experimental/wasm/lib/include/proxy-wasm/exports.h \
-  experimental/wasm/lib/include/proxy-wasm/limits.h \
-  experimental/wasm/lib/include/proxy-wasm/proxy_wasm_common.h \
-  experimental/wasm/lib/include/proxy-wasm/proxy_wasm_enums.h \
-  experimental/wasm/lib/src/shared_data.cc \
-  experimental/wasm/lib/include/proxy-wasm/shared_data.h \
-  experimental/wasm/lib/src/shared_queue.cc \
-  experimental/wasm/lib/include/proxy-wasm/shared_queue.h \
-  experimental/wasm/lib/src/signature_util.cc \
-  experimental/wasm/lib/include/proxy-wasm/signature_util.h \
-  experimental/wasm/lib/src/vm_id_handle.cc \
-  experimental/wasm/lib/include/proxy-wasm/vm_id_handle.h \
-  experimental/wasm/lib/src/pairs_util.cc \
-  experimental/wasm/lib/include/proxy-wasm/pairs_util.h \
-  experimental/wasm/lib/include/proxy-wasm/wasm_vm.h \
-  experimental/wasm/lib/src/wasm.cc \
-  experimental/wasm/lib/include/proxy-wasm/wasm.h \
-  experimental/wasm/ats_wasm.cc \
-  experimental/wasm/ats_wasm.h \
-  experimental/wasm/ats_context.cc \
-  experimental/wasm/ats_context.h \
-  experimental/wasm/wasm_main.cc \
-  experimental/wasm/lib/src/common/types.h \
-  experimental/wasm/lib/include/proxy-wasm/word.h
+    experimental/wasm/lib/src/bytecode_util.cc \
+    experimental/wasm/lib/include/proxy-wasm/bytecode_util.h \
+    experimental/wasm/lib/src/context.cc \
+    experimental/wasm/lib/include/proxy-wasm/context.h \
+    experimental/wasm/lib/include/proxy-wasm/context_interface.h \
+    experimental/wasm/lib/src/exports.cc \
+    experimental/wasm/lib/include/proxy-wasm/exports.h \
+    experimental/wasm/lib/include/proxy-wasm/limits.h \
+    experimental/wasm/lib/include/proxy-wasm/proxy_wasm_common.h \
+    experimental/wasm/lib/include/proxy-wasm/proxy_wasm_enums.h \
+    experimental/wasm/lib/src/shared_data.cc \
+    experimental/wasm/lib/include/proxy-wasm/shared_data.h \
+    experimental/wasm/lib/src/shared_queue.cc \
+    experimental/wasm/lib/include/proxy-wasm/shared_queue.h \
+    experimental/wasm/lib/src/signature_util.cc \
+    experimental/wasm/lib/include/proxy-wasm/signature_util.h \
+    experimental/wasm/lib/src/vm_id_handle.cc \
+    experimental/wasm/lib/include/proxy-wasm/vm_id_handle.h \
+    experimental/wasm/lib/src/pairs_util.cc \
+    experimental/wasm/lib/include/proxy-wasm/pairs_util.h \
+    experimental/wasm/lib/include/proxy-wasm/wasm_vm.h \
+    experimental/wasm/lib/src/wasm.cc \
+    experimental/wasm/lib/include/proxy-wasm/wasm.h \
+    experimental/wasm/ats_wasm.cc \
+    experimental/wasm/ats_wasm.h \
+    experimental/wasm/ats_context.cc \
+    experimental/wasm/ats_context.h \
+    experimental/wasm/wasm_main.cc \
+    experimental/wasm/lib/src/common/types.h \
+    experimental/wasm/lib/include/proxy-wasm/word.h
 
 if HAS_WASMEDGE
 experimental_wasm_wasm_la_SOURCES += \
-  experimental/wasm/lib/src/wasmedge/wasmedge.cc \
-  experimetnal/wasm/lib/src/wasmedge/types.h \
-  experimental/wasm/lib/include/proxy-wasm/wasmedge.h
+    experimental/wasm/lib/src/wasmedge/wasmedge.cc \
+    experimetnal/wasm/lib/src/wasmedge/types.h \
+    experimental/wasm/lib/include/proxy-wasm/wasmedge.h
 endif
 
 if HAS_WAMR
 experimental_wasm_wasm_la_SOURCES += \
-  experimental/wasm/lib/src/wamr/wamr.cc \
-  experimetnal/wasm/lib/src/wamr/types.h \
-  experimental/wasm/lib/include/proxy-wasm/wamr.h
+    experimental/wasm/lib/src/wamr/wamr.cc \
+    experimetnal/wasm/lib/src/wamr/types.h \
+    experimental/wasm/lib/include/proxy-wasm/wamr.h
 endif
-
