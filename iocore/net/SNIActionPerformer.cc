@@ -33,7 +33,7 @@
 #endif
 
 int
-ControlQUIC::SNIAction(TLSSNISupport *snis, const Context &ctx) const
+ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
 {
 #if TS_USE_QUIC == 1
   if (enable_quic) {
@@ -41,14 +41,15 @@ ControlQUIC::SNIAction(TLSSNISupport *snis, const Context &ctx) const
   }
 
   // This action is only available for QUIC connections
-  auto *quic_vc = dynamic_cast<QUICNetVConnection *>(snis);
-  if (quic_vc == nullptr) {
+  if (dynamic_cast<QUICNetVConnection *>(SSLNetVCAccess(&ssl)) == nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
 
   if (dbg_ctl_ssl_sni.on()) {
-    const char *servername = quic_vc->get_server_name();
-    Dbg(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
+    if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+      const char *servername = snis->get_sni_server_name();
+      Dbg(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
+    }
   }
 
   return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -95,14 +96,14 @@ SNI_IpAllow::load(swoc::TextView content, swoc::TextView server_name)
 }
 
 int
-SNI_IpAllow::SNIAction(TLSSNISupport *snis, ActionItem::Context const &ctx) const
+SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const &ctx) const
 {
   // i.e, ip filtering is not required
   if (ip_addrs.count() == 0) {
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+  auto ssl_vc = SSLNetVCAccess(&ssl);
   auto ip     = swoc::IPAddr(ssl_vc->get_remote_endpoint());
 
   // check the allowed ips

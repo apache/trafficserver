@@ -64,7 +64,7 @@ TLSSNISupport::unbind(SSL *ssl)
 }
 
 int
-TLSSNISupport::perform_sni_action()
+TLSSNISupport::perform_sni_action(SSL &ssl)
 {
   const char *servername = this->get_sni_server_name();
   if (!servername) {
@@ -78,7 +78,7 @@ TLSSNISupport::perform_sni_action()
     Dbg(dbg_ctl_ssl_sni, "%s:%i not available in the map", servername, port);
   } else {
     for (auto &&item : *actions.first) {
-      auto ret = item->SNIAction(this, actions.second);
+      auto ret = item->SNIAction(ssl, actions.second);
       if (ret != SSL_TLSEXT_ERR_OK) {
         return ret;
       }

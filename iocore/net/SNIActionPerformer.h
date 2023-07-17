@@ -53,7 +53,7 @@ public:
     std::optional<CapturedGroupViewVec> _fqdn_wildcard_captured_groups;
   };
 
-  virtual int SNIAction(TLSSNISupport *snis, const Context &ctx) const = 0;
+  virtual int SNIAction(SSL &ssl, const Context &ctx) const = 0;
 
   /**
     This method tests whether this action would have been triggered by a

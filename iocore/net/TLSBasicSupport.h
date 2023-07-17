@@ -45,6 +45,10 @@ public:
   ink_hrtime get_tls_handshake_begin_time() const;
   ink_hrtime get_tls_handshake_end_time() const;
 
+  void set_valid_tls_version_min(int min);
+  void set_valid_tls_version_max(int max);
+  void set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask);
+
 protected:
   void clear();
 

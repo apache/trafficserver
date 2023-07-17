@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_config.h"
+#include "tscore/ink_memory.h"
 
 #include <netinet/in.h>
 #include <openssl/ssl.h>
@@ -42,7 +43,7 @@ public:
   static void bind(SSL *ssl, TLSSNISupport *snis);
   static void unbind(SSL *ssl);
 
-  int perform_sni_action();
+  int perform_sni_action(SSL &ssl);
   // Callback functions for OpenSSL libraries
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
 #ifdef OPENSSL_IS_BORINGSSL
@@ -59,6 +60,7 @@ public:
     std::optional<uint32_t> http2_buffer_water_mark;
     std::optional<uint32_t> server_max_early_data;
     std::optional<uint32_t> http2_initial_window_size_in;
+    std::optional<std::string_view> outbound_sni_policy;
   } hints_from_sni;
 
 protected:

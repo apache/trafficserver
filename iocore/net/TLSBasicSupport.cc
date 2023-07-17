@@ -118,6 +118,43 @@ TLSBasicSupport::get_tls_handshake_end_time() const
 }
 
 void
+TLSBasicSupport::set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+{
+  auto ssl = this->_get_ssl_object();
+  SSL_set_options(ssl, proto_mask);
+  SSL_clear_options(ssl, max_mask & ~proto_mask);
+}
+
+void
+TLSBasicSupport::set_valid_tls_version_min(int min)
+{
+  auto ssl = this->_get_ssl_object();
+
+  // Ignore available versions set by SSL_(CTX_)set_options if a ragne is specified
+  SSL_clear_options(ssl, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+
+  int ver = 0;
+  if (min >= 0) {
+    ver = TLS1_VERSION + min;
+  }
+  SSL_set_min_proto_version(ssl, ver);
+}
+
+void
+TLSBasicSupport::set_valid_tls_version_max(int max)
+{
+  auto ssl = this->_get_ssl_object();
+  // Ignore available versions set by SSL_(CTX_)set_options if a ragne is specified
+  SSL_clear_options(ssl, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+
+  int ver = 0;
+  if (max >= 0) {
+    ver = TLS1_VERSION + max;
+  }
+  SSL_set_max_proto_version(ssl, ver);
+}
+
+void
 TLSBasicSupport::_record_tls_handshake_begin_time()
 {
   this->_tls_handshake_begin_time = ink_get_hrtime();

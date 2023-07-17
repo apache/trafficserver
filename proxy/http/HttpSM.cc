@@ -5135,7 +5135,11 @@ HttpSM::get_outbound_sni() const
   swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
   if (_ua.get_txn()) {
-    if (const NetVConnection *netvc = _ua.get_txn()->get_netvc(); netvc->options.outbound_sni_policy) {
+    auto netvc = _ua.get_txn()->get_netvc();
+    if (auto snis = netvc->get_service<TLSSNISupport>(); snis->hints_from_sni.outbound_sni_policy.has_value()) {
+      netvc->options.outbound_sni_policy = snis->hints_from_sni.outbound_sni_policy.value();
+    }
+    if (netvc->options.outbound_sni_policy) {
       policy.assign(netvc->options.outbound_sni_policy.get(), swoc::TextView::npos);
     }
   }
