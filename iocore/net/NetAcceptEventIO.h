@@ -31,7 +31,6 @@ struct NetAcceptEventIO : public EventIO {
   NetAcceptEventIO() : EventIO() {}
   int start(EventLoop l, NetAccept *vc, int events);
   void process_event(int flags) override;
-  int close() override;
 
 private:
   NetAccept *_na = nullptr;

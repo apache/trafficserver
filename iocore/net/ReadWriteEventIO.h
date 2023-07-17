@@ -36,7 +36,6 @@ public:
   int start(EventLoop l, NetEvent *ne, NetHandler *nh, int events);
   int start(EventLoop l, int afd, NetEvent *ne, NetHandler *nh, int events);
   void process_event(int flags) override;
-  int close() override;
 
 private:
   NetEvent *_ne   = nullptr;

@@ -74,10 +74,3 @@ ReadWriteEventIO::process_event(int flags)
     }
   }
 }
-
-int
-ReadWriteEventIO::close()
-{
-  EventIO::close(); // discard retval
-  return _ne->close();
-}

@@ -40,7 +40,6 @@ public:
   DNSEventIO(DNSConnection &c) : EventIO(), _c(c) {}
   int start(EventLoop l, int fd, int events);
   void process_event(int flags) override;
-  int close() override;
 
 private:
   DNSConnection &_c;

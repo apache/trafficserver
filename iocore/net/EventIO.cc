@@ -157,14 +157,3 @@ EventIO::stop()
   }
   return 0;
 }
-
-int
-EventIO::close()
-{
-  if (!this->syscall) {
-    return 0;
-  }
-
-  stop();
-  return 0;
-}

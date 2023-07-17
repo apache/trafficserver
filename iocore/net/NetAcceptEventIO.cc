@@ -35,10 +35,3 @@ NetAcceptEventIO::process_event(int flags)
 {
   this_ethread()->schedule_imm(_na);
 }
-
-int
-NetAcceptEventIO::close()
-{
-  EventIO::stop(); // discard retval
-  return _na->server.close();
-}

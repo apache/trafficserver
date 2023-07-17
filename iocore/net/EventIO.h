@@ -65,17 +65,6 @@ struct EventIO {
   EventLoop event_loop = nullptr; ///< the assigned event loop
   bool syscall         = true;    ///< if false, disable all functionality (for QUIC)
 
-  /** The start methods all logically Setup a class to be called
-     when a file descriptor is available for read or write.
-     The type of the classes vary.  Generally the file descriptor
-     is pulled from the class, but there is one option that lets
-     the file descriptor be expressed directly.
-     @param l the event loop
-     @param events a mask of flags (for details `man epoll_ctl`)
-     @return int the number of events created, -1 is error
-   */
-  int start_common(EventLoop l, int fd, int events);
-
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)
      @return int the number of events created, -1 is error
@@ -91,11 +80,21 @@ struct EventIO {
   /// Remove the kernel or epoll event. Returns 0 on success.
   int stop();
 
-  virtual int close();
-
   // Process one event that has triggered.
   virtual void process_event(int flags) = 0;
 
   EventIO() {}
   virtual ~EventIO() {}
+
+protected:
+  /** The start methods all logically Setup a class to be called
+     when a file descriptor is available for read or write.
+     The type of the classes vary.  Generally the file descriptor
+     is pulled from the class, but there is one option that lets
+     the file descriptor be expressed directly.
+     @param l the event loop
+     @param events a mask of flags (for details `man epoll_ctl`)
+     @return int the number of events created, -1 is error
+   */
+  int start_common(EventLoop l, int fd, int events);
 };

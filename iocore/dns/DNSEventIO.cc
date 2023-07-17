@@ -36,10 +36,3 @@ DNSEventIO::process_event(int flags)
   _c.trigger(); // Make sure the DNSHandler for this con knows we triggered
   refresh(EVENTIO_READ);
 }
-
-int
-DNSEventIO::close()
-{
-  EventIO::close(); // discard retval
-  return _c.close();
-}
