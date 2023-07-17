@@ -284,7 +284,7 @@ TEST_CASE("IntrusiveDList", "[libtscpputil][IntrusiveDList]")
   REQUIRE(list.tail()->_payload == "trailer");
 
   PrivateThingList priv_list;
-  for (int i = 1; i <= 23; ++i) {
+  for (std::size_t i = 1; i <= 23; ++i) {
     std::string name;
     swoc::bwprint(name, "Item {}", i);
     priv_list.append(new PrivateThing(name));

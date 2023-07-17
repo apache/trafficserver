@@ -66,7 +66,11 @@ Http3Frame::Http3Frame(const uint8_t *buf, size_t buf_len)
 {
   // Type
   size_t type_field_length = 0;
-  int ret                  = QUICVariableInt::decode(reinterpret_cast<uint64_t &>(this->_type), type_field_length, buf, buf_len);
+  uint64_t type            = 0;
+  // Ideally we'd simply pass this->_type to decode, but arm compilers complain with:
+  // error: dereferencing type-punned pointer will break strict-aliasing rules
+  int ret     = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
+  this->_type = static_cast<Http3FrameType>(type);
   ink_assert(ret != 1);
 
   // Length
