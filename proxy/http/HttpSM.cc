@@ -8260,13 +8260,13 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       // The redirect URL did not begin with a slash, so we parsed some or all
       // of the relative URI path as the host.
       // Prepend a slash and parse again.
-      char redirect_url_leading_slash[arg_redirect_len + 1];
+      std::string redirect_url_leading_slash(arg_redirect_len + 1, '\0');
       redirect_url_leading_slash[0] = '/';
       if (arg_redirect_len > 0) {
-        memcpy(redirect_url_leading_slash + 1, arg_redirect_url, arg_redirect_len);
+        memcpy(redirect_url_leading_slash.data() + 1, arg_redirect_url, arg_redirect_len);
       }
       url_nuke_proxy_stuff(redirectUrl.m_url_impl);
-      redirectUrl.parse(redirect_url_leading_slash, arg_redirect_len + 1);
+      redirectUrl.parse(redirect_url_leading_slash.c_str(), arg_redirect_len + 1);
     }
   }
 

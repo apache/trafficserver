@@ -155,7 +155,8 @@ Layout::Layout(std::string_view const _prefix)
     std::string path;
     int len;
     if (getenv("TS_ROOT") != nullptr) {
-      std::string env_path(getenv("TS_ROOT"));
+      const char *const env = getenv("TS_ROOT");
+      std::string env_path(nullptr != env ? env : "");
       len = env_path.size();
       if ((len + 1) > PATH_NAME_MAX) {
         ink_fatal("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
