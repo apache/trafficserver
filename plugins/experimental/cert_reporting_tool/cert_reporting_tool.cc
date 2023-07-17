@@ -31,7 +31,7 @@
 #include <openssl/x509v3.h>
 
 #include "ts/ts.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #define PLUGIN_NAME "cert_reporting_tool"
 TSTextLogObject cert_reporting_log;
@@ -146,7 +146,7 @@ int
 CB_context_dump(TSCont, TSEvent, void *edata)
 {
   TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-  static constexpr std::string_view PLUGIN_PREFIX("cert_reporting_tool."_sv);
+  static constexpr std::string_view PLUGIN_PREFIX("cert_reporting_tool.");
 
   std::string_view tag(msg->tag, strlen(msg->tag));
 

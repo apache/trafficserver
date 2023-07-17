@@ -20,10 +20,10 @@
 #include "swoc/swoc_file.h"
 
 #include "ts/ts.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "regex.h"
 
-using ts::TextView;
+using swoc::TextView;
 
 namespace
 {
@@ -325,7 +325,7 @@ Bridge::net_accept(TSVConn vc)
 void
 Bridge::read_ready(TSVIO vio)
 {
-  using ts::TextView;
+  using swoc::TextView;
 
   TSDebug(PLUGIN_TAG, "READ READY");
   if (vio == _out._read._vio) {
@@ -379,7 +379,7 @@ Bridge::check_outbound_OK()
         block += 3;
         block.ltrim_if(&isspace);
         TextView code  = block.take_prefix_if(&isspace);
-        TSHttpStatus c = static_cast<TSHttpStatus>(ts::svtoi(code));
+        TSHttpStatus c = static_cast<TSHttpStatus>(swoc::svtoi(code));
         if (TS_HTTP_STATUS_OK == c) {
           _out_resp_state = OK;
         } else {

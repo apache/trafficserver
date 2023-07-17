@@ -317,7 +317,7 @@ public:
    *
    * The query name will stored and initialized, and the info instances initialized.
    */
-  static self_type *alloc(ts::TextView query_name, unsigned rr_count, size_t srv_name_size = 0);
+  static self_type *alloc(swoc::TextView query_name, unsigned rr_count, size_t srv_name_size = 0);
 
   /// Type of data stored in this record.
   HostDBType record_type = HostDBType::UNSPEC;
@@ -389,7 +389,7 @@ public:
    * @note Although not included in the view, the name is always nul terminated and the string can
    * be used as a C-string.
    */
-  ts::TextView name_view() const;
+  swoc::TextView name_view() const;
 
   /// Get the array of info instances.
   swoc::MemSpan<HostDBInfo> rr_info();
@@ -744,10 +744,10 @@ HostDBRecord::name() const
   return this->apply_offset<char const>(sizeof(self_type));
 }
 
-inline ts::TextView
+inline swoc::TextView
 HostDBRecord::name_view() const
 {
-  return {this->name(), ts::TextView::npos};
+  return {this->name(), swoc::TextView::npos};
 }
 
 inline ts_time

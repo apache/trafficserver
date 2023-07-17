@@ -1093,11 +1093,11 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
     // parse the list of status codes
-    ts::TextView status_list(data.rec_string, strlen(data.rec_string));
+    swoc::TextView status_list(data.rec_string, strlen(data.rec_string));
     auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
     while (!status_list.ltrim_if(is_sep).empty()) {
-      ts::TextView span, token{status_list.take_prefix_if(is_sep)};
-      auto n = ts::svtoi(token, &span);
+      swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
+      auto n = swoc::svtoi(token, &span);
       if (span.size() != token.size()) {
         Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
       } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {

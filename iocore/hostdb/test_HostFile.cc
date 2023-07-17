@@ -31,12 +31,14 @@
 #include "HostFile.h"
 #include "P_HostDBProcessor.h"
 
+using namespace std::literals;
+
 namespace
 {
 
 DbgCtl dbg_ctl_hostdb{"hostdb"};
 
-const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n"_sv;
+const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n";
 
 } // end anonymous namespace
 
@@ -101,7 +103,7 @@ TEST_CASE("HostFile", "[hostdb]")
   SECTION("forward lookup localhost v4")
   {
     HostDBHash h;
-    h.host_name = "localhost"_sv;
+    h.host_name = "localhost"sv;
     h.db_mark   = HOSTDB_MARK_IPV4;
 
     auto result = hf->lookup(h);
@@ -113,7 +115,7 @@ TEST_CASE("HostFile", "[hostdb]")
   SECTION("forward lookup localhost v6")
   {
     HostDBHash h;
-    h.host_name = "localhost"_sv;
+    h.host_name = "localhost"sv;
     h.db_mark   = HOSTDB_MARK_IPV6;
 
     auto result = hf->lookup(h);
@@ -125,7 +127,7 @@ TEST_CASE("HostFile", "[hostdb]")
   SECTION("forward lookup host v6")
   {
     HostDBHash h;
-    h.host_name = "host1"_sv;
+    h.host_name = "host1"sv;
     h.db_mark   = HOSTDB_MARK_IPV4;
 
     auto result = hf->lookup(h);
@@ -141,7 +143,7 @@ HostDBHash::~HostDBHash() {}
 #include "swoc/Scalar.h"
 
 HostDBRecord *
-HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_name_size)
+HostDBRecord::alloc(swoc::TextView query_name, unsigned int rr_count, size_t srv_name_size)
 {
   const swoc::Scalar<8, ssize_t> qn_size = swoc::round_up(query_name.size() + 1);
   const swoc::Scalar<8, ssize_t> r_size =

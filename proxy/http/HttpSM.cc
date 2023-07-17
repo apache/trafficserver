@@ -5101,28 +5101,28 @@ HttpSM::get_outbound_cert() const
 std::string_view
 HttpSM::get_outbound_sni() const
 {
-  using namespace ts::literals;
-  ts::TextView zret;
-  ts::TextView policy{t_state.txn_conf->ssl_client_sni_policy, ts::TextView::npos};
+  using namespace swoc::literals;
+  swoc::TextView zret;
+  swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
   if (_ua.get_txn()) {
     if (const NetVConnection *netvc = _ua.get_txn()->get_netvc(); netvc->options.outbound_sni_policy) {
-      policy.assign(netvc->options.outbound_sni_policy.get(), ts::TextView::npos);
+      policy.assign(netvc->options.outbound_sni_policy.get(), swoc::TextView::npos);
     }
   }
 
-  if (policy.empty() || !strcmp(policy, "host"_tv)) {
+  if (policy.empty() || policy == "host"_tv) {
     // By default the host header field value is used for the SNI.
     int len;
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
-  } else if (_ua.get_txn() && !strcmp(policy, "server_name"_tv)) {
-    zret.assign(_ua.get_txn()->get_netvc()->get_server_name(), ts::TextView::npos);
+  } else if (_ua.get_txn() && policy == "server_name"_tv) {
+    zret.assign(_ua.get_txn()->get_netvc()->get_server_name(), swoc::TextView::npos);
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
     // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
-    zret.assign(t_state.server_info.name, ts::TextView::npos);
+    zret.assign(t_state.server_info.name, swoc::TextView::npos);
   }
   return zret;
 }

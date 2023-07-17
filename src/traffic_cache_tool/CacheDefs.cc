@@ -74,14 +74,14 @@ operator<<(std::ostream &s, CacheDataBlocks const &n)
 }
 
 Errata
-URLparser::parseURL(TextView URI)
+URLparser::parseURL(swoc::TextView URI)
 {
   Errata zret;
-  static const TextView HTTP("http");
-  static const TextView HTTPS("https");
-  TextView scheme = URI.take_prefix_at(':');
+  static const swoc::TextView HTTP("http");
+  static const swoc::TextView HTTPS("https");
+  swoc::TextView scheme = URI.take_prefix_at(':');
   if ((strcasecmp(scheme, HTTP) == 0) || (strcasecmp(scheme, HTTPS) == 0)) {
-    TextView hostname = URI.take_prefix_at(':');
+    swoc::TextView hostname = URI.take_prefix_at(':');
     if (!hostname) // i.e. port not present
     {
     }
@@ -106,19 +106,19 @@ URLparser::getPort(std::string &fullURL, int &port_ptr, int &port_len)
   }
   if (u_pos != -1) {
     fullURL.insert(u_pos, ":@");
-    TextView url(fullURL.data(), static_cast<int>(fullURL.size()));
+    swoc::TextView url(fullURL.data(), static_cast<int>(fullURL.size()));
 
     url += 9;
 
-    TextView hostPort = url.take_prefix_at(':');
+    swoc::TextView hostPort = url.take_prefix_at(':');
     if (!hostPort.empty()) // i.e. port is present
     {
-      TextView port = url.take_prefix_at('/');
+      swoc::TextView port = url.take_prefix_at('/');
       if (port.empty()) { // i.e. backslash is not present, then the rest of the url must be just port
         port = url;
       }
       if (matcher.portmatch(port.data(), port.size())) {
-        TextView text;
+        swoc::TextView text;
         n_port = svtoi(port, &text);
         if (text == port) {
           port_ptr = fullURL.find(':', 9);

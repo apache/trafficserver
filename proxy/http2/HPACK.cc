@@ -24,7 +24,7 @@
 #include "HPACK.h"
 
 #include "tscpp/util/LocalBuffer.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 namespace
 {

@@ -23,10 +23,11 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = trafficserver.pc
 
 AM_CPPFLAGS += \
+    @SWOC_INCLUDES@ \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/include/wccp \
-	$(TS_INCLUDES) @SWOC_INCLUDES@
+	$(TS_INCLUDES)
 
 if BUILD_TEST_TOOLS
 bin_PROGRAMS = jtest/jtest
@@ -35,7 +36,7 @@ noinst_PROGRAMS = jtest/jtest
 endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
-jtest_jtest_LDADD = $(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la -lssl -lcrypto
+jtest_jtest_LDADD = $(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/lib/swoc/libtsswoc.la -lssl -lcrypto
 
 if BUILD_HTTP_LOAD
 

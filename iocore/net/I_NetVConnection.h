@@ -39,7 +39,7 @@
 #include "I_Socks.h"
 #include "ts/apidefs.h"
 #include "YamlSNIConfig.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0

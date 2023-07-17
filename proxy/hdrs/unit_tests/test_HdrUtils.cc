@@ -33,13 +33,13 @@
 
 TEST_CASE("HdrUtils", "[proxy][hdrutils]")
 {
-  static constexpr ts::TextView text{"One: alpha\r\n"
-                                     "Two: alpha, bravo\r\n"
-                                     "Three: zwoop, \"A,B\" , , phil  , \"unterminated\r\n"
-                                     "Five: alpha, bravo, charlie\r\n"
-                                     "Four: itchi, \"ni, \\\"san\" , \"\" , \"\r\n"
-                                     "Five: delta, echo\r\n"
-                                     "\r\n"};
+  static constexpr swoc::TextView text{"One: alpha\r\n"
+                                       "Two: alpha, bravo\r\n"
+                                       "Three: zwoop, \"A,B\" , , phil  , \"unterminated\r\n"
+                                       "Five: alpha, bravo, charlie\r\n"
+                                       "Four: itchi, \"ni, \\\"san\" , \"\" , \"\r\n"
+                                       "Five: delta, echo\r\n"
+                                       "\r\n"};
 
   static constexpr std::string_view ONE_TAG{"One"};
   static constexpr std::string_view TWO_TAG{"Two"};
@@ -125,14 +125,14 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
 TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
 {
   // Test empty field.
-  static constexpr ts::TextView text{"Host: example.one\r\n"
-                                     "Connection: keep-alive\r\n"
-                                     "Vary:\r\n"
-                                     "After: value\r\n"
-                                     "\r\n"};
-  static constexpr ts::TextView connection_tag{"Connection"};
-  static constexpr ts::TextView vary_tag{"Vary"};
-  static constexpr ts::TextView after_tag{"After"};
+  static constexpr swoc::TextView text{"Host: example.one\r\n"
+                                       "Connection: keep-alive\r\n"
+                                       "Vary:\r\n"
+                                       "After: value\r\n"
+                                       "\r\n"};
+  static constexpr swoc::TextView connection_tag{"Connection"};
+  static constexpr swoc::TextView vary_tag{"Vary"};
+  static constexpr swoc::TextView after_tag{"After"};
 
   char buff[text.size() + 1];
 
@@ -161,21 +161,21 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
   REQUIRE(idx == static_cast<int>(text.size()));
-  REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+  REQUIRE(0 == memcmp(swoc::TextView(buff, idx), text));
   heap->destroy();
 };
 
 TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
 {
   // Test empty field.
-  static constexpr ts::TextView text{"Host: example.one\r\n"
-                                     "Connection: keep-alive\r\n"
-                                     "Before: value\r\n"
-                                     "Vary: \r\n"
-                                     "\r\n"};
-  static constexpr ts::TextView connection_tag{"Connection"};
-  static constexpr ts::TextView vary_tag{"Vary"};
-  static constexpr ts::TextView before_tag{"Before"};
+  static constexpr swoc::TextView text{"Host: example.one\r\n"
+                                       "Connection: keep-alive\r\n"
+                                       "Before: value\r\n"
+                                       "Vary: \r\n"
+                                       "\r\n"};
+  static constexpr swoc::TextView connection_tag{"Connection"};
+  static constexpr swoc::TextView vary_tag{"Vary"};
+  static constexpr swoc::TextView before_tag{"Before"};
 
   char buff[text.size() + 1];
 
@@ -204,6 +204,6 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
   REQUIRE(idx == static_cast<int>(text.size()));
-  REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+  REQUIRE(0 == memcmp(swoc::TextView(buff, idx), text));
   heap->destroy();
 };

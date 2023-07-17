@@ -23,7 +23,7 @@
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include "misc.h"
 #include <cstring>
@@ -48,19 +48,19 @@ namespace
 // zero.
 //
 void
-strip_ae_value(ts::TextView &value)
+strip_ae_value(swoc::TextView &value)
 {
-  ts::TextView compression{value.take_prefix_at(';')};
+  swoc::TextView compression{value.take_prefix_at(';')};
   compression.trim(" \t");
   while (value) {
-    ts::TextView param{value.take_prefix_at(';')};
-    ts::TextView name{param.take_prefix_at('=')};
+    swoc::TextView param{value.take_prefix_at(';')};
+    swoc::TextView name{param.take_prefix_at('=')};
     name.trim(" \t");
     if (strcasecmp("q", name) == 0) {
       // If q value is valid and is zero, suppress compression types.
       param.trim(" \t");
       if (param) {
-        ts::TextView whole{param.take_prefix_at('.')};
+        swoc::TextView whole{param.take_prefix_at('.')};
         whole.ltrim(" \t");
         if ("0" == whole) {
           param.trim('0');
@@ -90,9 +90,9 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
     int val_len;
     const char *values_ = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, -1, &val_len);
     if (values_ && val_len) {
-      ts::TextView values(values_, val_len);
+      swoc::TextView values(values_, val_len);
       while (values) {
-        ts::TextView next{values.take_prefix_at(',')};
+        swoc::TextView next{values.take_prefix_at(',')};
         strip_ae_value(next);
         if (strcasecmp("gzip", next) == 0) {
           gzip = true;

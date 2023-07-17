@@ -72,7 +72,7 @@ public:
     return npnSet;
   }
 
-  void set_negotiated_protocol_id(const ts::TextView &proto);
+  void set_negotiated_protocol_id(const swoc::TextView &proto);
   int get_negotiated_protocol_id() const;
 
 private:
@@ -92,7 +92,7 @@ private:
 //
 
 inline void
-ALPNSupport::set_negotiated_protocol_id(const ts::TextView &proto)
+ALPNSupport::set_negotiated_protocol_id(const swoc::TextView &proto)
 {
   _negotiated_proto_id = globalSessionProtocolNameRegistry.indexFor(proto);
 }

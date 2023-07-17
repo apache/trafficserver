@@ -73,7 +73,7 @@ HdrCsvIter::find_csv()
       }
 
       // Trim and then see if there's anything left.
-      m_csv = m_value.take_prefix_at(idx).trim_if(&ParseRules::is_ws);
+      m_csv = m_value.take_prefix(idx).trim_if(&ParseRules::is_ws);
       if (m_csv && '"' == m_csv[0]) {
         m_csv.remove_prefix(1);
       }

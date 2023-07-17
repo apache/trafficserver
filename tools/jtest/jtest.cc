@@ -61,7 +61,7 @@
 #include "tscore/ink_time.h"
 #include "tscore/ink_args.h"
 #include "tscore/I_Version.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/Random.h"
 
 /*
@@ -3509,7 +3509,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
     ip    = proxy_addr;
   } else {
     if (xport) {
-      iport = ts::svtoi(port);
+      iport = swoc::svtoi(port);
     }
     if (!xhost) {
       if (verbose) {

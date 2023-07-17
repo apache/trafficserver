@@ -48,7 +48,7 @@
 #include <ts/remap.h>
 #include <tscpp/util/TsSharedMutex.h>
 #include "tscore/ink_config.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include "aws_auth_v4.h"
 
@@ -546,10 +546,10 @@ S3Config::parse_config(const std::string &config_fname)
     }
 
     for (std::string buf; std::getline(file, buf);) {
-      ts::TextView line{buf};
+      swoc::TextView line{buf};
 
       // Skip leading/trailing white spaces
-      ts::TextView key_val = line.trim_if(&isspace);
+      swoc::TextView key_val = line.trim_if(&isspace);
 
       // Skip empty or comment lines
       if (key_val.empty() || ('#' == key_val[0])) {

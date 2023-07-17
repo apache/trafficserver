@@ -30,7 +30,7 @@
 #include "test_Diags.h"
 #include "tscore/ink_defs.h"
 
-using ts::TextView;
+using swoc::TextView;
 
 TEST_CASE("RecHttp", "[librecords][RecHttp]")
 {

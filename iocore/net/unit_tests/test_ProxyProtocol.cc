@@ -34,7 +34,7 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
 
   SECTION("TCP over IPv4")
   {
-    ts::TextView raw_data = "PROXY TCP4 192.0.2.1 198.51.100.1 50000 443\r\n"sv;
+    swoc::TextView raw_data = "PROXY TCP4 192.0.2.1 198.51.100.1 50000 443\r\n"sv;
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, raw_data) == raw_data.size());
@@ -50,7 +50,7 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
 
   SECTION("TCP over IPv6")
   {
-    ts::TextView raw_data = "PROXY TCP6 2001:0DB8:0:0:0:0:0:1 2001:0DB8:0:0:0:0:0:2 50000 443\r\n"sv;
+    swoc::TextView raw_data = "PROXY TCP6 2001:0DB8:0:0:0:0:0:1 2001:0DB8:0:0:0:0:0:2 50000 443\r\n"sv;
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, raw_data) == raw_data.size());
@@ -66,7 +66,7 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
 
   SECTION("UNKNOWN connection (short form)")
   {
-    ts::TextView raw_data = "PROXY UNKNOWN\r\n"sv;
+    swoc::TextView raw_data = "PROXY UNKNOWN\r\n"sv;
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, raw_data) == raw_data.size());
@@ -77,7 +77,7 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
 
   SECTION("UNKNOWN connection (worst case)")
   {
-    ts::TextView raw_data =
+    swoc::TextView raw_data =
       "PROXY UNKNOWN ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 65535 65535\r\n"sv;
 
     ProxyProtocol pp_info;
@@ -140,7 +140,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x01, 0xBB,                                     ///< dst_port
     };
 
-    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
@@ -170,7 +170,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x01, 0xBB,                                     ///< dst_port
     };
 
-    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
@@ -200,7 +200,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x01, 0xBB,                                     ///< dst_port
     };
 
-    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
@@ -225,7 +225,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x01, 0xBB,                                     ///< dst_port
     };
 
-    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == 0);
@@ -250,7 +250,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
     };
 
-    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
@@ -284,7 +284,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -307,7 +307,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -330,7 +330,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -353,7 +353,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -376,7 +376,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01,                                           ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -397,7 +397,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
@@ -418,7 +418,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
         0x01, 0xBB,                                     ///< dst_port
       };
 
-      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+      swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
       CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
       CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);

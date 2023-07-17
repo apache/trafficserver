@@ -921,7 +921,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     const char *version_start;
     const char *version_end;
 
-    ts::TextView text, parsed;
+    swoc::TextView text, parsed;
 
     real_end = end;
 
@@ -1328,8 +1328,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       return PARSE_RESULT_ERROR;
     }
 
-    ts::TextView text{*start, real_end};
-    ts::TextView parsed;
+    swoc::TextView text{*start, real_end};
+    swoc::TextView parsed;
     err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
     *start = text.data();
     if (err < 0) {

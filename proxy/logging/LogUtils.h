@@ -26,7 +26,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Arena.h"
-#include <tscpp/util/TextView.h>
+#include <swoc/TextView.h>
 
 class MIMEHdr;
 
@@ -72,7 +72,7 @@ int file_is_writeable(const char *full_filename, off_t *size_bytes = nullptr, bo
  * @return The unrolled filename if it looked like a rolled log file or the
  * input filename if it didn't.
  */
-ts::TextView get_unrolled_filename(ts::TextView rolled_filename);
+swoc::TextView get_unrolled_filename(swoc::TextView rolled_filename);
 
 // Marshals header tags and values together, with a single terminating nul character.  Returns buffer space required.  'buf' points
 // to where to put the marshaled data.  If 'buf' is null, no data is marshaled, but the function returns the amount of space that

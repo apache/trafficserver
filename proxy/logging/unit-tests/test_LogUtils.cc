@@ -38,6 +38,7 @@
 #include "catch.hpp"
 
 using namespace LogUtils;
+using namespace swoc::literals;
 
 namespace
 {
@@ -132,22 +133,22 @@ _ink_assert(const char *a, const char *f, int line)
 TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_unrolled_filename]")
 {
   // Rolled log inputs.
-  constexpr ts::TextView with_underscore = "squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old";
+  constexpr swoc::TextView with_underscore = "squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old";
   REQUIRE(get_unrolled_filename(with_underscore) == "squid.log");
 
-  constexpr ts::TextView without_underscore = "diags.log.20191114.21h43m16s-20191114.21h43m17s.old";
+  constexpr swoc::TextView without_underscore = "diags.log.20191114.21h43m16s-20191114.21h43m17s.old";
   REQUIRE(get_unrolled_filename(without_underscore) == "diags.log");
 
-  constexpr ts::TextView dot_file = ".log.20191114.21h43m16s-20191114.21h43m17s.old";
+  constexpr swoc::TextView dot_file = ".log.20191114.21h43m16s-20191114.21h43m17s.old";
   // Maybe strange, but why not?
   REQUIRE(get_unrolled_filename(dot_file) == ".log");
 
   // Non-rolled log inputs.
   REQUIRE(get_unrolled_filename("") == "");
 
-  constexpr ts::TextView not_a_log = "logging.yaml";
+  constexpr swoc::TextView not_a_log = "logging.yaml";
   REQUIRE(get_unrolled_filename(not_a_log) == not_a_log);
 
-  constexpr ts::TextView no_dot = "logging_yaml";
+  constexpr swoc::TextView no_dot = "logging_yaml";
   REQUIRE(get_unrolled_filename(no_dot) == no_dot);
 }

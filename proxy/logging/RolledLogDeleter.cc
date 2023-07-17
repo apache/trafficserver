@@ -30,7 +30,7 @@
 
 #include "RolledLogDeleter.h"
 #include "LogUtils.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 namespace fs = swoc::file;
 

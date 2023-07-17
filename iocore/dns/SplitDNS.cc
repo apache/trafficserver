@@ -186,7 +186,7 @@ SplitDNSConfig::print()
    SplitDNS::getDNSRecord()
    -------------------------------------------------------------- */
 void *
-SplitDNS::getDNSRecord(ts::TextView hostname)
+SplitDNS::getDNSRecord(swoc::TextView hostname)
 {
   Dbg(dbg_ctl_splitdns, "Called SplitDNS::getDNSRecord(%.*s)", int(hostname.size()), hostname.data());
 

@@ -27,7 +27,7 @@
 #include <array>
 #include <string_view>
 #include <chrono>
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/BufferWriterForward.h"
 
 namespace std
@@ -78,7 +78,7 @@ namespace bwf
    * provided a format like "2017 Jun 29 14:11:29" is used.
    */
   struct Date {
-    static constexpr std::string_view DEFAULT_FORMAT{"%Y %b %d %H:%M:%S"_sv};
+    static constexpr std::string_view DEFAULT_FORMAT{"%Y %b %d %H:%M:%S"sv};
     time_t _epoch;
     std::string_view _fmt;
     Date(time_t t, std::string_view fmt = DEFAULT_FORMAT) : _epoch(t), _fmt(fmt) {}

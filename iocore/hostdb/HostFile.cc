@@ -39,10 +39,10 @@ constexpr unsigned IPV6_IDX = 1;
 } // namespace
 
 static void
-ParseHostLine(ts::TextView line, HostAddrMap &map, AddrHostMap &rmap)
+ParseHostLine(swoc::TextView line, HostAddrMap &map, AddrHostMap &rmap)
 {
   // Elements should be the address then a list of host names.
-  ts::TextView addr_text = line.take_prefix_if(&isspace);
+  swoc::TextView addr_text = line.take_prefix_if(&isspace);
   IpAddr addr;
 
   // Don't use RecHttpLoadIp because the address *must* be literal.
@@ -51,7 +51,7 @@ ParseHostLine(ts::TextView line, HostAddrMap &map, AddrHostMap &rmap)
   }
 
   while (!line.ltrim_if(&isspace).empty()) {
-    ts::TextView name = line.take_prefix_if(&isspace);
+    swoc::TextView name = line.take_prefix_if(&isspace);
     if (addr.isIp6()) {
       std::get<IPV6_IDX>(map[name]).push_back(addr);
     } else if (addr.isIp4()) {
@@ -95,7 +95,7 @@ ParseHostFile(swoc::file::path const &path, ts_seconds interval)
     if (!ec) {
       HostAddrMap addr_map;
       AddrHostMap host_map;
-      ts::TextView text{content};
+      swoc::TextView text{content};
       while (text) {
         auto line = text.take_prefix_at('\n').ltrim_if(&isspace);
         if (line.empty() || '#' == *line) {
@@ -106,7 +106,7 @@ ParseHostFile(swoc::file::path const &path, ts_seconds interval)
       // @a map should be loaded with all of the data, create the records.
       hf = std::make_shared<HostFile>(interval);
       // Common loading function for creating a record from the address vector.
-      auto loader = [](ts::TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
+      auto loader = [](swoc::TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
         HostDBRecord::Handle record{HostDBRecord::alloc(key, v.size())};
         record->af_family = v.front().family(); // @a v is presumed family homogeneous
         auto rr_info      = record->rr_info();

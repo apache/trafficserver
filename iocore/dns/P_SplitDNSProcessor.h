@@ -80,7 +80,7 @@ struct SplitDNS : public ConfigInfo {
   SplitDNS();
   ~SplitDNS() override;
 
-  void *getDNSRecord(ts::TextView hostname);
+  void *getDNSRecord(swoc::TextView hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);
 
   DNS_table *m_DNSSrvrTable = nullptr;
@@ -129,7 +129,7 @@ public:
   sockaddr const *get_ip() override;        // unused required virtual method.
   sockaddr const *get_client_ip() override; // unused required virtual method.
 
-  ts::TextView m_pHost;
+  swoc::TextView m_pHost;
 };
 
 /* --------------------------------------------------------------

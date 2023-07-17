@@ -198,9 +198,9 @@ struct HostDBHash {
 
   CryptoHash hash; ///< The hash value.
 
-  ts::TextView host_name; ///< Name of the host for the query.
-  IpAddr ip;              ///< IP address.
-  in_port_t port = 0;     ///< IP port (host order).
+  swoc::TextView host_name; ///< Name of the host for the query.
+  IpAddr ip;                ///< IP address.
+  in_port_t port = 0;       ///< IP port (host order).
   /// DNS server. Not strictly part of the hash data but
   /// it's both used by @c HostDBContinuation and provides access to
   /// hash data. It's just handier to store it here for both uses.
@@ -217,11 +217,11 @@ struct HostDBHash {
   /** Assign a hostname.
       This updates the split DNS data as well.
   */
-  self &set_host(ts::TextView name);
+  self &set_host(swoc::TextView name);
   self &
   set_host(char const *name)
   {
-    return this->set_host(ts::TextView{name, strlen(name)});
+    return this->set_host(swoc::TextView{name, strlen(name)});
   }
 };
 
@@ -288,10 +288,10 @@ struct HostDBContinuation : public Continuation {
   Ptr<HostDBRecord>
   lookup_done(const char *query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr, Ptr<HostDBRecord> record = Ptr<HostDBRecord>{})
   {
-    return this->lookup_done(ts::TextView{query_name, strlen(query_name)}, answer_ttl, s, record);
+    return this->lookup_done(swoc::TextView{query_name, strlen(query_name)}, answer_ttl, s, record);
   }
 
-  Ptr<HostDBRecord> lookup_done(ts::TextView query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr,
+  Ptr<HostDBRecord> lookup_done(swoc::TextView query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr,
                                 Ptr<HostDBRecord> record = Ptr<HostDBRecord>{});
 
   int key_partition();
