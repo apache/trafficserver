@@ -30,7 +30,6 @@
 #include "QUICApplication.h"
 #include "QUICStreamVCAdapter.h"
 
-class QUICNetVConnection;
 class Http09Session;
 
 /**
@@ -42,7 +41,7 @@ class Http09Session;
 class Http09App : public QUICApplication
 {
 public:
-  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
+  Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   ~Http09App();
 
   void on_new_stream(QUICStream &stream) override;

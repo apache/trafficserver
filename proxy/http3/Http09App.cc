@@ -27,7 +27,7 @@
 
 #include "P_Net.h"
 #include "P_VConnection.h"
-#include "P_QUICNetVConnection.h"
+#include "QUICStreamManager.h"
 #include "QUICDebugNames.h"
 #include "QUICStreamVCAdapter.h"
 
@@ -37,8 +37,9 @@
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";
 
-Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
-  : QUICApplication(client_vc)
+Http09App::Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
+                     const HttpSessionAccept::Options &options)
+  : QUICApplication(qc)
 {
   this->_ssn                 = new Http09Session(client_vc);
   this->_ssn->acl            = std::move(session_acl);

@@ -527,6 +527,7 @@ QUICNetVConnection::_bindSSLObject()
   TLSSessionResumptionSupport::bind(this->_ssl, this);
   TLSSNISupport::bind(this->_ssl, this);
   TLSCertSwitchSupport::bind(this->_ssl, this);
+  QUICSupport::bind(this->_ssl, this);
 }
 
 void
@@ -537,6 +538,7 @@ QUICNetVConnection::_unbindSSLObject()
   TLSSessionResumptionSupport::unbind(this->_ssl);
   TLSSNISupport::unbind(this->_ssl);
   TLSCertSwitchSupport::unbind(this->_ssl);
+  QUICSupport::unbind(this->_ssl);
 }
 
 void
@@ -732,6 +734,12 @@ bool
 QUICNetVConnection::support_sni() const
 {
   return true;
+}
+
+QUICConnection *
+QUICNetVConnection::get_quic_connection()
+{
+  return static_cast<QUICConnection *>(this);
 }
 
 SSL *

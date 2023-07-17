@@ -22,7 +22,7 @@
  */
 
 #include "Http3Transaction.h"
-#include "P_QUICNetVConnection.h"
+#include "QUICSupport.h"
 
 #include "QUICDebugNames.h"
 
@@ -33,14 +33,14 @@
 #include "Http3DataFramer.h"
 #include "HttpSM.h"
 
-#define Http3TransDebug(fmt, ...)                                                                                            \
-  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                            \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->_proxy_ssn->get_netvc()))->cids().data(), \
+#define NetVC2QUICCon(netvc) netvc->get_service<QUICSupport>()->get_quic_connection()
+
+#define Http3TransDebug(fmt, ...)                                                                              \
+  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
-#define Http3TransVDebug(fmt, ...)                                                                                           \
-  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                          \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->_proxy_ssn->get_netvc()))->cids().data(), \
+#define Http3TransVDebug(fmt, ...)                                                                               \
+  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
 // static void
