@@ -138,7 +138,7 @@ QUICNetProcessor::allocate_vc(EThread *t)
 }
 
 Action *
-QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions *opt)
+QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions const &opt)
 {
   Debug("quic_ps", "connect to server");
   EThread *t = cont->mutex->thread_holding;
@@ -146,15 +146,11 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
 
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
 
-  if (opt) {
-    vc->options = *opt;
-  } else {
-    opt = &vc->options;
-  }
+  vc->options = opt;
 
   int fd;
   Action *status;
-  bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &status, *opt);
+  bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &status, opt);
   if (!result) {
     vc->free(t);
     return status;
@@ -165,8 +161,8 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   Debug("quic_ps", "con=%p fd=%d", con, fd);
 
   QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut();
-  if (opt->local_ip.isValid()) {
-    con->setBinding(opt->local_ip, opt->local_port);
+  if (opt.local_ip.isValid()) {
+    con->setBinding(opt.local_ip, opt.local_port);
   }
   con->bindToThread(packet_handler, t);
 
@@ -194,7 +190,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
 
-  if (t->is_event_type(opt->etype)) {
+  if (t->is_event_type(opt.etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);
     if (lock.is_locked()) {
       MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
@@ -206,10 +202,10 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   }
 
   // Try to stay on the current thread if it is the right type
-  if (t->is_event_type(opt->etype)) {
+  if (t->is_event_type(opt.etype)) {
     t->schedule_imm(vc);
   } else { // Otherwise, pass along to another thread of the right type
-    eventProcessor.schedule_imm(vc, opt->etype);
+    eventProcessor.schedule_imm(vc, opt.etype);
   }
 
   return ACTION_RESULT_DONE;

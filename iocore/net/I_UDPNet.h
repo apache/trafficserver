@@ -50,7 +50,7 @@ public:
 
   // this function was internal initially.. this is required for public and
   // interface probably should change.
-  bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt);
+  bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt);
 
   /**
      create UDPConnection

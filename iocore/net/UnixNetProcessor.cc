@@ -161,25 +161,21 @@ UnixNetProcessor::stop_accept()
 }
 
 Action *
-UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
+UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOptions const &opt)
 {
   if (TSSystemState::is_event_system_shut_down()) {
     return nullptr;
   }
 
-  EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt->etype);
+  EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt.etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
-  if (opt) {
-    vc->options = *opt;
-  } else {
-    opt = &vc->options;
-  }
+  vc->options = opt;
 
   vc->set_context(NET_VCONNECTION_OUT);
 
-  const bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS &&
-                            (opt->socks_version != SOCKS_DEFAULT_VERSION ||
+  const bool using_socks = (socks_conf_stuff->socks_needed && opt.socks_support != NO_SOCKS &&
+                            (opt.socks_version != SOCKS_DEFAULT_VERSION ||
                              /* This implies we are tunnelling.
                               * we need to connect using socks server even
                               * if this ip is in no_socks list.
@@ -202,7 +198,7 @@ UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOp
     socksEntry = socksAllocator.alloc();
     // The socksEntry->init() will get the origin server addr by vc->get_remote_addr(),
     //   and save it to socksEntry->req_data.dest_ip.
-    socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
+    socksEntry->init(cont->mutex, vc, opt.socks_support, opt.socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont                = socksEntry;
     if (!ats_is_ip(&socksEntry->server_addr)) {

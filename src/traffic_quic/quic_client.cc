@@ -90,7 +90,7 @@ QUICClient::start(int, void *)
 
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-    Action *action = quic_NetProcessor.connect_re(this, info->ai_addr, &opt);
+    Action *action = quic_NetProcessor.connect_re(this, info->ai_addr, opt);
     if (action == ACTION_RESULT_DONE) {
       break;
     }
