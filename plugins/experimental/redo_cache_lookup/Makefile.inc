@@ -17,11 +17,10 @@
 pkglib_LTLIBRARIES += experimental/redo_cache_lookup/redo_cache_lookup.la
 
 experimental_redo_cache_lookup_redo_cache_lookup_la_SOURCES = \
-  experimental/redo_cache_lookup/redo_cache_lookup.cc
+    experimental/redo_cache_lookup/redo_cache_lookup.cc
 
 experimental_redo_cache_lookup_redo_cache_lookup_la_LDFLAGS = \
-  $(AM_LDFLAGS)
+    $(AM_LDFLAGS)
 
 experimental_redo_cache_lookup_redo_cache_lookup_la_LIBADD = \
-  $(top_builddir)/src/tscpp/api/libtscppapi.la
-
+    $(top_builddir)/src/tscpp/api/libtscppapi.la

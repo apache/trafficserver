@@ -26,23 +26,13 @@
 /*
  * Type definitions.
  */
-#include <functional>
 #include <string_view>
 
 #include "tscore/ink_defs.h"
-#include "swoc/MemSpan.h"
-#include "tscpp/util/TextView.h"
 
-using MgmtIntCounter = int64_t;
-using MgmtInt        = int64_t;
-using MgmtByte       = int8_t;
-using MgmtFloat      = float;
-using MgmtString     = char *;
-
-/// Management callback signature.
-/// The memory span is the message payload for the callback.
-/// This can be a lambda, which should be used if additional context information is needed.
-using MgmtCallback = std::function<void(swoc::MemSpan<void>)>;
+using MgmtInt   = int64_t;
+using MgmtByte  = int8_t;
+using MgmtFloat = float;
 
 //-------------------------------------------------------------------------
 // API conversion functions.

@@ -27,8 +27,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES) @SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 EXTRA_DIST = LogStandalone.cc
@@ -82,10 +80,10 @@ test_LogUtils_SOURCES = \
 	unit-tests/test_LogUtils.cc
 
 test_LogUtils_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_RolledLogDeleter_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -98,10 +96,10 @@ test_RolledLogDeleter_SOURCES = \
 	unit-tests/test_RolledLogDeleter.cc
 
 test_RolledLogDeleter_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)

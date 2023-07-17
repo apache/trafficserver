@@ -27,7 +27,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include <tscore/BufferWriter.h>
+#include <swoc/BufferWriter.h>
 
 namespace shared::rpc
 {
@@ -57,7 +57,7 @@ struct IPCSocketClient {
   self_reference send(std::string_view data);
 
   /// Read all the content from the socket till the passed buffer is full.
-  ReadStatus read_all(ts::FixedBufferWriter &bw);
+  ReadStatus read_all(swoc::FixedBufferWriter &bw);
 
   /// Closes the socket.
   void

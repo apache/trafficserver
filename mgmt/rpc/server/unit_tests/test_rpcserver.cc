@@ -33,7 +33,7 @@
 
 #include "swoc/swoc_file.h"
 
-#include <tscore/BufferWriter.h>
+#include <swoc/BufferWriter.h>
 #include "ts/ts.h"
 
 #include "rpc/jsonrpc/JsonRPC.h"
@@ -190,7 +190,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   std::string
   read()
   {
-    ts::LocalBufferWriter<32000> bw;
+    swoc::LocalBufferWriter<32000> bw;
     auto ret = super::read_all(bw);
     if (ret == ReadStatus::NO_ERROR) {
       return {bw.data(), bw.size()};
@@ -201,7 +201,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   std::string
   query(std::string_view msg)
   {
-    ts::LocalBufferWriter<32000> bw;
+    swoc::LocalBufferWriter<32000> bw;
     auto ret = connect().send(msg).read_all(bw);
     if (ret == ReadStatus::NO_ERROR) {
       return {bw.data(), bw.size()};

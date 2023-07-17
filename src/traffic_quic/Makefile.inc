@@ -24,7 +24,6 @@ traffic_quic_traffic_quic_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/src/records \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
@@ -50,14 +49,13 @@ traffic_quic_traffic_quic_LDADD = \
 	$(top_builddir)/iocore/net/quic/libquic.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	$(top_builddir)/proxy/http3/libhttp3.a \
 	$(top_builddir)/proxy/http2/libhttp2.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-        $(top_builddir)/mgmt/utils/libutils_p.la \
 	@HWLOC_LIBS@ \
 	@SWOC_LIBS@ \
 	@YAMLCPP_LIBS@ \

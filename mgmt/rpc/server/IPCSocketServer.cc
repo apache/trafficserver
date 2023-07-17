@@ -38,7 +38,6 @@
 #include "tscore/bwf_std_format.h"
 #include "records/I_RecProcess.h"
 #include "tscore/ink_sock.h"
-#include "utils/MgmtSocket.h"
 
 #include <ts/ts.h>
 
@@ -71,6 +70,57 @@ poll_on_socket(Func &&check_poll_return, std::chrono::milliseconds timeout, int 
   }
   return true;
 }
+
+static bool
+has_peereid()
+{
+#if HAVE_GETPEEREID
+  return true;
+#elif HAVE_GETPEERUCRED
+  return true;
+#elif TS_HAS_SO_PEERCRED
+  return true;
+#else
+  return false;
+#endif
+}
+
+static int
+get_peereid(int fd, uid_t *euid, gid_t *egid)
+{
+  *euid = -1;
+  *egid = -1;
+
+#if HAVE_GETPEEREID
+  return getpeereid(fd, euid, egid);
+#elif HAVE_GETPEERUCRED
+  ucred_t *ucred;
+
+  if (getpeerucred(fd, &ucred) == -1) {
+    return -1;
+  }
+
+  *euid = ucred_geteuid(ucred);
+  *egid = ucred_getegid(ucred);
+  ucred_free(ucred);
+  return 0;
+#elif TS_HAS_SO_PEERCRED
+  struct ucred cred;
+  socklen_t credsz = sizeof(cred);
+  if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &credsz) == -1) {
+    return -1;
+  }
+
+  *euid = cred.uid;
+  *egid = cred.gid;
+  return 0;
+#else
+  (void)fd;
+  errno = ENOTSUP;
+  return -1;
+#endif
+}
+
 } // namespace
 
 namespace rpc::comm
@@ -270,7 +320,7 @@ IPCSocketServer::bind(std::error_code &ec)
   // support. Otherwise, default to making it restricted.
   bool restricted{true};
   if (!_conf.restrictedAccessApi) {
-    restricted = !mgmt_has_peereid();
+    restricted = !has_peereid();
   }
 
   mode_t mode = restricted ? 00700 : 00777;
@@ -400,10 +450,10 @@ IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions con
 {
   ts::LocalBufferWriter<256> w;
   // For privileged calls, ensure we have caller credentials and that the caller is privileged.
-  if (mgmt_has_peereid() && options.auth.restricted) {
+  if (has_peereid() && options.auth.restricted) {
     uid_t euid = -1;
     gid_t egid = -1;
-    if (mgmt_get_peereid(peedFd, &euid, &egid) == -1) {
+    if (get_peereid(peedFd, &euid, &egid) == -1) {
       errata.push(1, static_cast<int>(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR),
                   w.print("Error getting peer credentials: {}\0", ts::bwf::Errno{}).data());
     } else if (euid != 0 && euid != geteuid()) {

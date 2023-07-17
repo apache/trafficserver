@@ -89,7 +89,6 @@ extern "C" int plock(int);
 #include "IPAllow.h"
 #include "ParentSelection.h"
 #include "HostStatus.h"
-#include "MgmtUtils.h"
 #include "StatPages.h"
 #include "HTTP.h"
 #include "HuffmanCodec.h"
@@ -136,6 +135,8 @@ static char diags_log_filename[PATH_NAME_MAX] = DEFAULT_DIAGS_LOG_FILENAME;
 static const long MAX_LOGIN = ink_login_name_max();
 
 static void init_ssl_ctx_callback(void *ctx, bool server);
+// This isn't static as its also called from InkAPI.cc
+void load_config_file_callback(const char *parent_file, const char *remap_file);
 static void load_ssl_file_callback(const char *ssl_file);
 static void task_threads_started_callback();
 
@@ -666,8 +667,6 @@ check_config_directories()
 static void
 initialize_process_manager()
 {
-  mgmt_use_syslog();
-
   RecProcessInit(diags());
   LibRecordsConfigInit();
 

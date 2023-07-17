@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/hook-trace/hook-trace.la
 
 experimental_hook_trace_hook_trace_la_SOURCES = \
-  experimental/hook-trace/hook-trace.cc
+    experimental/hook-trace/hook-trace.cc

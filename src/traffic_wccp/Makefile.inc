@@ -20,22 +20,22 @@
 bin_PROGRAMS += traffic_wccp/traffic_wccp
 
 traffic_wccp_traffic_wccp_CPPFLAGS = \
-    $(AM_CPPFLAGS) \
-    $(iocore_include_dirs) \
-    -I$(abs_top_srcdir)/include \
-    -I$(abs_top_srcdir)/lib \
-    $(TS_INCLUDES) \
-    @OPENSSL_INCLUDES@
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 traffic_wccp_traffic_wccp_LDFLAGS = \
-    $(AM_LDFLAGS) \
-    @OPENSSL_LDFLAGS@
+	$(AM_LDFLAGS) \
+	@OPENSSL_LDFLAGS@
 
 traffic_wccp_traffic_wccp_SOURCES = \
 	traffic_wccp/wccp_client.cc
 
 traffic_wccp_traffic_wccp_LDADD = \
 	$(top_builddir)/src/wccp/libwccp.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@OPENSSL_LIBS@

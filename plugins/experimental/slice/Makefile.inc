@@ -17,39 +17,39 @@
 pkglib_LTLIBRARIES += experimental/slice/slice.la
 
 experimental_slice_slice_la_SOURCES = \
-  experimental/slice/client.cc \
-  experimental/slice/client.h \
-  experimental/slice/Config.cc \
-  experimental/slice/Config.h \
-  experimental/slice/ContentRange.cc \
-  experimental/slice/ContentRange.h \
-  experimental/slice/Data.h \
-  experimental/slice/HttpHeader.cc \
-  experimental/slice/HttpHeader.h \
-  experimental/slice/intercept.cc \
-  experimental/slice/intercept.h \
-  experimental/slice/prefetch.cc \
-  experimental/slice/prefetch.h \
-  experimental/slice/Range.cc \
-  experimental/slice/Range.h \
-  experimental/slice/response.cc \
-  experimental/slice/response.h \
-  experimental/slice/server.cc \
-  experimental/slice/server.h \
-  experimental/slice/slice.cc \
-  experimental/slice/slice.h \
-  experimental/slice/Stage.h \
-  experimental/slice/transfer.cc \
-  experimental/slice/transfer.h \
-  experimental/slice/util.cc \
-  experimental/slice/util.h
+    experimental/slice/client.cc \
+    experimental/slice/client.h \
+    experimental/slice/Config.cc \
+    experimental/slice/Config.h \
+    experimental/slice/ContentRange.cc \
+    experimental/slice/ContentRange.h \
+    experimental/slice/Data.h \
+    experimental/slice/HttpHeader.cc \
+    experimental/slice/HttpHeader.h \
+    experimental/slice/intercept.cc \
+    experimental/slice/intercept.h \
+    experimental/slice/prefetch.cc \
+    experimental/slice/prefetch.h \
+    experimental/slice/Range.cc \
+    experimental/slice/Range.h \
+    experimental/slice/response.cc \
+    experimental/slice/response.h \
+    experimental/slice/server.cc \
+    experimental/slice/server.h \
+    experimental/slice/slice.cc \
+    experimental/slice/slice.h \
+    experimental/slice/Stage.h \
+    experimental/slice/transfer.cc \
+    experimental/slice/transfer.h \
+    experimental/slice/util.cc \
+    experimental/slice/util.h
 
 check_PROGRAMS += experimental/slice/test_content_range
 
 experimental_slice_test_content_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DUNITTEST
 experimental_slice_test_content_range_SOURCES = \
-  experimental/slice/unit-tests/test_content_range.cc \
-  experimental/slice/ContentRange.cc
+    experimental/slice/unit-tests/test_content_range.cc \
+    experimental/slice/ContentRange.cc
 
 experimental_slice_test_content_range_LDADD = @LIBPCRE@
 
@@ -57,8 +57,8 @@ check_PROGRAMS += experimental/slice/test_range
 
 experimental_slice_test_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DUNITTEST
 experimental_slice_test_range_SOURCES = \
-  experimental/slice/unit-tests/test_range.cc \
-  experimental/slice/Range.cc
+    experimental/slice/unit-tests/test_range.cc \
+    experimental/slice/Range.cc
 
 experimental_slice_test_range_LDADD = @LIBPCRE@
 
@@ -66,7 +66,7 @@ check_PROGRAMS += experimental/slice/test_config
 
 experimental_slice_test_config_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/lib/catch2 -DUNITTEST
 experimental_slice_test_config_SOURCES = \
-  experimental/slice/unit-tests/test_config.cc \
-  experimental/slice/Config.cc
+    experimental/slice/unit-tests/test_config.cc \
+    experimental/slice/Config.cc
 
 experimental_slice_test_config_LDADD = @LIBPCRE@

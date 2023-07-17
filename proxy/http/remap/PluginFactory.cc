@@ -243,7 +243,7 @@ PluginFactory::getEffectivePath(const fs::path &configPath)
 
   fs::path path;
 
-  for (auto dir : _searchDirs) {
+  for (auto const &dir : _searchDirs) {
     fs::path candidatePath = dir / configPath;
     if (fs::exists(candidatePath)) {
       path = fs::canonical(candidatePath, _ec);

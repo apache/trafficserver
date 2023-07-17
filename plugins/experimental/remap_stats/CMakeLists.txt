@@ -15,28 +15,6 @@
 #
 #######################
 
+add_atsplugin(remap_stats remap_stats.cc)
 
-add_library(utils_lm STATIC
-        MgmtSocket.cc
-        MgmtUtils.cc
-        ExpandingArray.cc
-)
-add_library(utils_p STATIC
-        MgmtSocket.cc
-        MgmtUtils.cc
-)
-include_directories(
-        ${IOCORE_INCLUDE_DIRS}
-        ${PROXY_INCLUDE_DIRS}
-        ${YAML_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/proxy
-        ${CMAKE_SOURCE_DIR}/proxy/http
-        ${CMAKE_SOURCE_DIR}/proxy/http2
-        ${CMAKE_SOURCE_DIR}/proxy/http3
-        ${CMAKE_SOURCE_DIR}/proxy/logging
-        ${CMAKE_SOURCE_DIR}/proxy/http/remap
-        ${CMAKE_SOURCE_DIR}/proxy/hdrs
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
+target_link_libraries(remap_stats PRIVATE ts::tscore)

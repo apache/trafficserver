@@ -43,7 +43,7 @@
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
 #include "ProxySession.h"
-#include "MgmtDefs.h"
+#include "tscore/MgmtDefs.h"
 
 #define HTTP_OUR_VIA_MAX_LENGTH 1024 // 512-bytes for hostname+via string, 512-bytes for the debug info
 

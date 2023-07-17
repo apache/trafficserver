@@ -17,13 +17,13 @@
 pkglib_LTLIBRARIES += experimental/parent_select/parent_select.la
 
 experimental_parent_select_parent_select_la_SOURCES = \
-  experimental/parent_select/strategy.cc \
-  experimental/parent_select/healthstatus.cc \
-  experimental/parent_select/consistenthash.cc \
-  experimental/parent_select/consistenthash_config.cc \
-  experimental/parent_select/parent_select.cc
+   experimental/parent_select/strategy.cc \
+   experimental/parent_select/healthstatus.cc \
+   experimental/parent_select/consistenthash.cc \
+   experimental/parent_select/consistenthash_config.cc \
+   experimental/parent_select/parent_select.cc
 
 experimental_parent_select_parent_select_la_LDFLAGS = \
-  $(AM_LDFLAGS)
+    $(AM_LDFLAGS)
 
 AM_CPPFLAGS += @YAMLCPP_INCLUDES@ $(TS_INCLUDES)

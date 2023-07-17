@@ -48,7 +48,7 @@ target_link_libraries(http3
         ts::inkevent
         ts::proxy
         ts::quic
-        ts::records_p
+        ts::records
         ts::tscpputil
         ts::tscore
 )

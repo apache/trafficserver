@@ -23,8 +23,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
@@ -52,10 +50,6 @@ check_PROGRAMS = test_RefCountCache test_HostFile
 test_RefCountCache_SOURCES = \
 	test_RefCountCache.cc
 
-#test_UNUSED_SOURCES = \
-#  test_I_HostDB.cc \
-#  test_P_HostDB.cc
-
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
 	@SWOC_LDFLAGS@ @OPENSSL_LDFLAGS@ @YAMLCPP_LDFLAGS@
@@ -67,16 +61,14 @@ test_CPP_FLAGS = \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
 	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @YAMLCPP_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 

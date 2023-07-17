@@ -36,7 +36,6 @@
 #include "P_EventSystem.h"
 #include "records/P_RecProcess.h"
 
-#include "MgmtUtils.h"
 // Needs LibRecordsConfigInit()
 #include "records/I_RecordsConfig.h"
 #include "I_Machine.h"
@@ -84,8 +83,6 @@ init_system(bool notify_syslog)
 static void
 initialize_process_manager()
 {
-  mgmt_use_syslog();
-
   // diags should have been initialized by caller, e.g.: sac.cc
   ink_assert(diags());
 
