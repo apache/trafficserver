@@ -82,7 +82,7 @@ test_proxy_hdrs_SOURCES = \
 	unit_tests/test_URL.cc \
 	unit_tests/test_mime.cc
 
-test_proxy_hdrs_LDFLAGS = @SWOC_LDFLAGS@
+test_proxy_hdrs_LDFLAGS = @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
 test_proxy_hdrs_LDADD = \
     @SWOC_LIBS@ \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
@@ -90,7 +90,7 @@ test_proxy_hdrs_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	@HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
