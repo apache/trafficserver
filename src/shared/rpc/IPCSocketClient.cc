@@ -61,7 +61,7 @@ IPCSocketClient ::send(std::string_view data)
 }
 
 IPCSocketClient::ReadStatus
-IPCSocketClient::read_all(ts::FixedBufferWriter &bw)
+IPCSocketClient::read_all(swoc::FixedBufferWriter &bw)
 {
   if (this->is_closed()) {
     // we had a failure.
@@ -69,10 +69,10 @@ IPCSocketClient::read_all(ts::FixedBufferWriter &bw)
   }
   ReadStatus readStatus{ReadStatus::UNKNOWN};
   while (bw.remaining()) {
-    swoc::MemSpan<char> span{bw.auxBuffer(), bw.remaining()};
+    swoc::MemSpan<char> span{bw.aux_data(), bw.remaining()};
     const ssize_t ret = ::read(_sock, span.data(), span.size());
     if (ret > 0) {
-      bw.fill(ret);
+      bw.commit(ret);
       if (bw.remaining() > 0) { // some space available.
         continue;
       } else {
