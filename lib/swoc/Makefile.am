@@ -22,7 +22,7 @@ library_includedir=$(includedir)/swoc
 
 AM_CPPFLAGS += @SWOC_INCLUDES@
 
-libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -release 1.5.1
+libtsswoc_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -release 1.5.2
 libtsswoc_la_SOURCES = \
 	src/ArenaWriter.cc  src/bw_format.cc  src/bw_ip_format.cc  src/Errata.cc  src/MemArena.cc  src/RBTree.cc  src/swoc_file.cc  src/swoc_ip.cc  src/TextView.cc src/string_view_util.cc
 
