@@ -84,13 +84,13 @@ test_proxy_hdrs_SOURCES = \
 
 test_proxy_hdrs_LDFLAGS = @SWOC_LDFLAGS@
 test_proxy_hdrs_LDADD = \
+    @SWOC_LIBS@ \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	@HWLOC_LIBS@ \
-	@LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
+	@HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
