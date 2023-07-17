@@ -28,6 +28,10 @@ target_link_libraries(traffic_layout
         ts::records
         OpenSSL::Crypto
         yaml-cpp::yaml-cpp
+        ts::tscore
+        ts::tsapi
+        PCRE::PCRE
+        ${OPENSSL_LIBRARY}
 )
 
 if(TS_USE_HWLOC)

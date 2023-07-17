@@ -34,6 +34,7 @@ TESTS = $(check_PROGRAMS)
 noinst_LIBRARIES = libtscore.a
 
 AM_CPPFLAGS += \
+	-fPIC -DPIC \
 	@SWOC_INCLUDES@ \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \

@@ -35,6 +35,7 @@ target_include_directories(traffic_server PRIVATE
 target_link_libraries(traffic_server
     PRIVATE
         ts::tscore
+        ts::tsapi
         ts::http
         ts::http_remap
         ts::http2

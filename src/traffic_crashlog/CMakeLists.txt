@@ -22,6 +22,7 @@ target_link_libraries(traffic_crashlog
         ts::inkevent
         ts::records
         ts::tscore
+        ts::tsapi
 )
 
 install(TARGETS traffic_crashlog)
