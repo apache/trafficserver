@@ -127,6 +127,10 @@ X-Remap
     If the URL was remapped for a request, this header gives the *to* and *from* field from the line in remap.config that caused
     the URL to be remapped.
 
+X-Effective-URL
+    If the URL was remapped for a request, this header gives the URL resulting from the remapping. Note that if there are
+    multiple remaps, this header aggregates the URLs, space-comma-separated. The URLs are inside doublequotes.
+
 X-ParentSelection-Key
     The ``X-ParentSelection-Key`` header contains the URL that is used to
     determine parent selection for an object in the Traffic Server. This
