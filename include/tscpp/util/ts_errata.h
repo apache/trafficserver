@@ -41,12 +41,12 @@ static constexpr std::array<swoc::TextView, 9> Severity_Names{
 };
 
 inline std::error_code
-ec_for()
+make_errno_code()
 {
   return {errno, std::system_category()};
 }
 inline std::error_code
-ec_for(int err)
+make_errno_code(int err)
 {
   return {err, std::system_category()};
 }

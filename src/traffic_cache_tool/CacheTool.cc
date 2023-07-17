@@ -461,9 +461,9 @@ Cache::loadSpan(swoc::file::path const &path)
   auto fs = swoc::file::status(path, ec);
 
   if (path.empty()) {
-    zret = Errata(ec_for(EINVAL), "A span file specified by --spans is required");
+    zret = Errata(make_errno_code(EINVAL), "A span file specified by --spans is required");
   } else if (!swoc::file::is_readable(path)) {
-    zret = Errata(ec_for(EPERM), R"("{}" is not readable.)", path);
+    zret = Errata(make_errno_code(EPERM), R"("{}" is not readable.)", path);
   } else if (swoc::file::is_regular_file(fs)) {
     zret = this->loadSpanConfig(path);
   } else {
@@ -546,7 +546,7 @@ Cache::loadSpanConfig(swoc::file::path const &path)
       }
     }
   } else {
-    zret = Errata(ec_for(EBADF), "Unable to load {}", path);
+    zret = Errata(make_errno_code(EBADF), "Unable to load {}", path);
   }
   return zret;
 }
@@ -581,7 +581,7 @@ Cache::loadURLs(swoc::file::path const &path)
       }
     }
   } else {
-    zret = Errata(ec_for(EBADF), "Unable to load ", path.string());
+    zret = Errata(make_errno_code(EBADF), "Unable to load ", path.string());
   }
   return zret;
 }
@@ -701,13 +701,13 @@ Span::load()
   auto fs = swoc::file::status(_path, ec);
 
   if (!swoc::file::is_readable(_path)) {
-    zret = Errata(ec_for(EPERM), R"("{}" is not readable.)", _path);
+    zret = Errata(make_errno_code(EPERM), R"("{}" is not readable.)", _path);
   } else if (swoc::file::is_char_device(fs) || swoc::file::is_block_device(fs)) {
     zret = this->loadDevice();
   } else if (swoc::file::is_dir(fs)) {
     zret.note("Directory support not yet available");
   } else {
-    zret = Errata(ec_for(EBADF), R"("{}" is not a valid file type)", _path);
+    zret = Errata(make_errno_code(EBADF), R"("{}" is not a valid file type)", _path);
   }
   return zret;
 }
@@ -763,13 +763,13 @@ Span::loadDevice()
         _fd     = fd.release();
         _offset = _base + span_hdr_size;
       } else {
-        zret = Errata(ec_for(), "Failed to read from {}", _path);
+        zret = Errata(make_errno_code(), "Failed to read from {}", _path);
       }
     } else {
       zret = Errata("Unable to get device geometry for {}", _path);
     }
   } else {
-    zret = Errata(ec_for(), "Unable to open {}", _path);
+    zret = Errata(make_errno_code(), "Unable to open {}", _path);
   }
   return zret;
 }
@@ -869,7 +869,7 @@ Span::updateHeader()
   if (OPEN_RW_FLAG) {
     ssize_t r = pwrite(_fd, hdr, hdr_size, ts::CacheSpan::OFFSET);
     if (r < ts::CacheSpan::OFFSET) {
-      zret = Errata(ec_for(errno), "Failed to update span.");
+      zret = Errata(make_errno_code(errno), "Failed to update span.");
     }
   } else {
     std::cout << "Writing not enabled, no updates performed" << std::endl;
@@ -1104,7 +1104,7 @@ VolumeConfig::load(swoc::file::path const &path)
       }
     }
   } else {
-    zret = Errata(ec_for(EBADF), "Unable to load ", path);
+    zret = Errata(make_errno_code(EBADF), "Unable to load ", path);
   }
   return zret;
 }

@@ -322,7 +322,7 @@ Stripe::updateHeaderFooter()
 
     ssize_t n = pwrite(_span->_fd, meta_t, hdr_size, _meta_pos[i][HEAD]);
     if (n < hdr_size) {
-      zret = swoc::Errata(ec_for(), "Failed to write stripe header ");
+      zret = swoc::Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing header to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << hdr_size << std::endl;
       ats_free(meta_t);
@@ -333,7 +333,7 @@ Stripe::updateHeaderFooter()
     memcpy(meta_t, (char *)dir, dir_size);
     n = pwrite(_span->_fd, meta_t, dir_size, _meta_pos[i][HEAD] + hdr_size); //
     if (n < dir_size) {
-      zret = Errata(ec_for(), "Failed to write stripe header ");
+      zret = Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing dir to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << dir_size << std::endl;
       ats_free(meta_t);
@@ -346,7 +346,7 @@ Stripe::updateHeaderFooter()
     int64_t footer_size = ROUND_TO_STORE_BLOCK(sizeof(StripeMeta));
     n                   = pwrite(_span->_fd, meta_t, footer_size, _meta_pos[i][FOOT]);
     if (n < footer_size) {
-      zret = Errata(ec_for(), "Failed to write stripe header ");
+      zret = Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing footer to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << footer_size << std::endl;
       ats_free(meta_t);
