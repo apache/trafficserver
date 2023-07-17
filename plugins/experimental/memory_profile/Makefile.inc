@@ -15,9 +15,9 @@
 #  limitations under the License.
 
 experimental_memory_profile_memory_profile_la_CPPFLAGS = \
-  $(AM_CPPFLAGS)
+    $(AM_CPPFLAGS)
 
 pkglib_LTLIBRARIES += experimental/memory_profile/memory_profile.la
 
 experimental_memory_profile_memory_profile_la_SOURCES = \
-  experimental/memory_profile/memory_profile.cc
+    experimental/memory_profile/memory_profile.cc

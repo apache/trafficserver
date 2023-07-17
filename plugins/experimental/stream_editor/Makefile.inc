@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/stream_editor/stream_editor.la
 
 experimental_stream_editor_stream_editor_la_SOURCES = \
-  experimental/stream_editor/stream_editor.cc
+    experimental/stream_editor/stream_editor.cc

@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/statichit/statichit.la
 
 experimental_statichit_statichit_la_SOURCES = \
-  experimental/statichit/statichit.cc
+    experimental/statichit/statichit.cc

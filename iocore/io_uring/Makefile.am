@@ -42,7 +42,7 @@ test_CPP_FLAGS = \
 	-I$(abs_top_srcdir)/lib/catch2
 
 test_LD_ADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/iocore/io_uring/libinkuring.a \
 	@HWLOC_LIBS@
 

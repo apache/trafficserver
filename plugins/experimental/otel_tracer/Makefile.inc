@@ -17,10 +17,10 @@
 pkglib_LTLIBRARIES += experimental/otel_tracer/otel_tracer.la
 
 experimental_otel_tracer_otel_tracer_la_SOURCES = \
-  experimental/otel_tracer/otel_tracer.cc \
-  experimental/otel_tracer/tracer_common.h
+    experimental/otel_tracer/otel_tracer.cc \
+    experimental/otel_tracer/tracer_common.h
 
 experimental_otel_tracer_otel_tracer_la_LIBADD = $(OTEL_LIBS)
 
 experimental_otel_tracer_otel_tracer_la_LDFLAGS = \
-        $(AM_LDFLAGS)
+    $(AM_LDFLAGS)

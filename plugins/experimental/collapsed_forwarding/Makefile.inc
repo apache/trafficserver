@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/collapsed_forwarding/collapsed_forwarding.la
 
 experimental_collapsed_forwarding_collapsed_forwarding_la_SOURCES = \
-  experimental/collapsed_forwarding/collapsed_forwarding.cc
+    experimental/collapsed_forwarding/collapsed_forwarding.cc

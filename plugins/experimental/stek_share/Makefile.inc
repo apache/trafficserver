@@ -18,7 +18,7 @@
 pkglib_LTLIBRARIES += experimental/stek_share/stek_share.la
 
 experimental_stek_share_stek_share_la_SOURCES = \
-  experimental/stek_share/common.cc \
+	experimental/stek_share/common.cc \
 	experimental/stek_share/common.h \
 	experimental/stek_share/log_store.cc \
 	experimental/stek_share/log_store.h \

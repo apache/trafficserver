@@ -19,10 +19,10 @@ multiplexer_multiplexer_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"multiplexer\
 pkglib_LTLIBRARIES += multiplexer/multiplexer.la
 
 multiplexer_multiplexer_la_SOURCES = \
-  multiplexer/ats-multiplexer.cc \
-  multiplexer/chunk-decoder.cc \
-  multiplexer/dispatch.cc \
-  multiplexer/fetcher.cc \
-  multiplexer/original-request.cc \
-  multiplexer/post.cc \
-  multiplexer/ts.cc
+    multiplexer/ats-multiplexer.cc \
+    multiplexer/chunk-decoder.cc \
+    multiplexer/dispatch.cc \
+    multiplexer/fetcher.cc \
+    multiplexer/original-request.cc \
+    multiplexer/post.cc \
+    multiplexer/ts.cc

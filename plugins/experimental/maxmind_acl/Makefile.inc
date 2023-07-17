@@ -17,12 +17,12 @@
 pkglib_LTLIBRARIES += experimental/maxmind_acl/maxmind_acl.la
 
 experimental_maxmind_acl_maxmind_acl_la_SOURCES = \
-  experimental/maxmind_acl/maxmind_acl.cc \
-  experimental/maxmind_acl/mmdb.cc
+    experimental/maxmind_acl/maxmind_acl.cc \
+    experimental/maxmind_acl/mmdb.cc
 
 experimental_maxmind_acl_maxmind_acl_la_LIBADD = $(MAXMINDDB_LIBS)
 
 experimental_maxmind_acl_maxmind_acl_la_LDFLAGS = \
-	$(AM_LDFLAGS)
+    $(AM_LDFLAGS)
 
 AM_CPPFLAGS += @YAMLCPP_INCLUDES@

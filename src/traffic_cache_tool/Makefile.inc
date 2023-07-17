@@ -36,23 +36,6 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
 traffic_cache_tool_traffic_cache_tool_LDFLAGS = $(AM_LDFLAGS) @SWOC_LDFLAGS@
 
 traffic_cache_tool_traffic_cache_tool_LDADD = \
-    $(top_builddir)/src/tscore/.libs/ArgParser.o \
-    $(top_builddir)/src/tscore/.libs/ink_assert.o \
-    $(top_builddir)/src/tscore/.libs/ink_error.o \
-    $(top_builddir)/src/tscore/.libs/ink_file.o \
-    $(top_builddir)/src/tscore/.libs/ink_memory.o \
-    $(top_builddir)/src/tscore/.libs/ink_mutex.o \
-    $(top_builddir)/src/tscore/.libs/ink_string.o \
-    $(top_builddir)/src/tscore/.libs/BufferWriterFormat.o \
-    $(top_builddir)/src/tscore/.libs/InkErrno.o \
-    $(top_builddir)/src/tscore/.libs/Errata.o \
+    $(top_builddir)/src/tscore/libtscore.a \
     $(top_builddir)/src/tscpp/util/.libs/TextView.o \
-    $(top_builddir)/src/tscore/.libs/Regex.o \
-    $(top_builddir)/src/tscore/.libs/CryptoHash.o \
-    $(top_builddir)/src/tscore/.libs/MMH.o \
-    $(top_builddir)/src/tscore/.libs/Version.o \
-    $(top_builddir)/src/tscore/.libs/Regression.o \
-    $(top_builddir)/src/tscore/.libs/ink_args.o \
-    $(top_builddir)/src/tscore/.libs/ParseRules.o \
-    $(top_builddir)/src/tscore/.libs/SourceLocation.o \
     @SWOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@

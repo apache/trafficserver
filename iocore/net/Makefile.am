@@ -52,11 +52,13 @@ test_certlookup_SOURCES = \
 
 test_certlookup_LDADD = \
 	@OPENSSL_LIBS@ \
-	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@YAMLCPP_LIBS@ \
-	@SWOC_LIBS@
+	@SWOC_LIBS@ \
+	@LIBPCRE@ \
+	@LIBCAP@
 
 test_UDPNet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -65,23 +67,26 @@ test_UDPNet_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/http \
 	@OPENSSL_INCLUDES@ \
-	@SWOC_INCLUDES@
+	@SWOC_INCLUDES@ \
+	@LIBPCRE@
+
 
 test_UDPNet_LDFLAGS = \
 	@AM_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@ \
 	@YAMLCPP_LDFLAGS@ \
-	@SWOC_LDFLAGS@
+	@SWOC_LDFLAGS@ \
+	@LIBPCRE@
+
 
 test_UDPNet_LDADD = \
 	libinknet.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
-	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/src/tscore/libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
-
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 if ENABLE_QUIC
 test_UDPNet_LDADD += \
 	$(top_builddir)/iocore/net/quic/libquic.a
@@ -119,10 +124,10 @@ test_libinknet_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@ @SWOC_LIBS@ @LIBCAP@
 
 if ENABLE_QUIC
 test_libinknet_LDADD += \

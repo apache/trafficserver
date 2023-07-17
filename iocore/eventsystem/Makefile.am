@@ -63,8 +63,8 @@ libinkevent_a_SOURCES = \
 	Processor.cc \
 	ProtectedQueue.cc \
 	ProxyAllocator.cc \
-    RecProcess.cc \
-    RecRawStatsImpl.cc \
+	RecProcess.cc \
+	RecRawStatsImpl.cc \
 	SocketManager.cc \
 	Tasks.cc \
 	Thread.cc \
@@ -81,7 +81,7 @@ check_PROGRAMS = test_IOBuffer \
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
+	@OPENSSL_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @LIBPCRE@
 
 test_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
@@ -97,9 +97,9 @@ test_LD_ADD = \
 	libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@
+	@HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_EventSystem_SOURCES = unit_tests/test_EventSystem.cc
 test_EventSystem_CPPFLAGS = $(test_CPP_FLAGS)

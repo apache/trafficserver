@@ -20,10 +20,10 @@ experimental_inliner_inliner_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"inliner
 pkglib_LTLIBRARIES += experimental/inliner/inliner.la
 
 experimental_inliner_inliner_la_SOURCES = \
-  experimental/inliner/ats-inliner.cc \
-  experimental/inliner/cache.cc \
-  experimental/inliner/chunk-decoder.cc \
-  experimental/inliner/fetcher.cc \
-  experimental/inliner/html-parser.cc \
-  experimental/inliner/inliner-handler.cc \
-  experimental/inliner/ts.cc
+    experimental/inliner/ats-inliner.cc \
+    experimental/inliner/cache.cc \
+    experimental/inliner/chunk-decoder.cc \
+    experimental/inliner/fetcher.cc \
+    experimental/inliner/html-parser.cc \
+    experimental/inliner/inliner-handler.cc \
+    experimental/inliner/ts.cc

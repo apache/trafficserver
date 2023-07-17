@@ -47,8 +47,8 @@ libhttp_remap_a_SOURCES = \
 	NextHopStrategyFactory.cc \
 	RemapConfig.cc \
 	RemapConfig.h \
-        RemapHitCount.cc \
-        RemapHitCount.h \
+	RemapHitCount.cc \
+	RemapHitCount.h \
 	RemapPluginInfo.cc \
 	RemapPluginInfo.h \
 	PluginDso.cc \
@@ -66,13 +66,12 @@ libhttp_remap_a_SOURCES = \
 	UrlRewrite.h
 
 COMMON_PLUGINDSO_LDADDS = \
-	$(OPENSSL_LIBS) \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ @HWLOC_LIBS@
+	@SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
@@ -135,18 +134,21 @@ test_NextHopStrategyFactory_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopStrategyFactory_LDADD = \
-  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
-  $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/src/tscore/libtscore.a \
+  $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ \
-	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@
+  @SWOC_LIBS@ \
+  @YAMLCPP_LIBS@ \
+  @HWLOC_LIBS@ \
+  @LIBPCRE@ \
+  @OPENSSL_LIBS@ \
+  @LIBCAP@
 
-test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore
 
 test_NextHopStrategyFactory_SOURCES = \
 	NextHopSelectionStrategy.cc \
@@ -166,18 +168,21 @@ test_NextHopRoundRobin_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopRoundRobin_LDADD = \
-  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/src/tscore/libtscore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ \
-	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@
+  @SWOC_LIBS@ \
+  @YAMLCPP_LIBS@ \
+  @HWLOC_LIBS@ \
+  @LIBPCRE@ \
+  @OPENSSL_LIBS@ \
+  @LIBCAP@
 
-test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore -L$(top_builddir)/src/tscpp/util/.libs -ltscpputil
+test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore -L$(top_builddir)/src/tscpp/util/.libs -ltscpputil
 
 test_NextHopRoundRobin_SOURCES = \
 	unit-tests/test_NextHopRoundRobin.cc \
@@ -197,18 +202,21 @@ test_NextHopConsistentHash_CPPFLAGS = \
 	@YAMLCPP_INCLUDES@
 
 test_NextHopConsistentHash_LDADD = \
-  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/src/records/librecords_p.a \
   $(top_builddir)/proxy/logging/liblogging.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/src/tscore/libtscore.a \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@SWOC_LIBS@ \
-	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@
+  @SWOC_LIBS@ \
+  @YAMLCPP_LIBS@ \
+  @HWLOC_LIBS@ \
+  @LIBPCRE@ \
+  @OPENSSL_LIBS@ \
+  @LIBCAP@
 
-test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore
 
 test_NextHopConsistentHash_SOURCES = \
 	NextHopSelectionStrategy.cc \

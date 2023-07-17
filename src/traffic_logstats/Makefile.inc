@@ -20,7 +20,7 @@
 bin_PROGRAMS += traffic_logstats/traffic_logstats
 
 traffic_logstats_traffic_logstats_CPPFLAGS = \
-    $(AM_CPPFLAGS) \
+	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
@@ -40,7 +40,7 @@ TESTS += \
 	traffic_logstats/tests/test_logstats_summary
 
 traffic_logstats_traffic_logstats_SOURCES = \
-    traffic_logstats/logstats.cc
+	traffic_logstats/logstats.cc
 
 traffic_logstats_traffic_logstats_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
@@ -49,11 +49,12 @@ traffic_logstats_traffic_logstats_LDADD = \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
-
-traffic_logstats_traffic_logstats_LDADD += \
-  @SWOC_LIBS@ \
-  @HWLOC_LIBS@ \
-  @YAMLCPP_LIBS@ \
-  @LIBPROFILER@ -lm
+	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@SWOC_LIBS@ \
+	@HWLOC_LIBS@ \
+	@OPENSSL_LIBS@ \
+	@LIBPCRE@ \
+	@YAMLCPP_LIBS@ \
+	@LIBCAP@ \
+	@LIBPROFILER@ -lm
