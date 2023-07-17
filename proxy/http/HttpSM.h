@@ -190,7 +190,7 @@ public:
   //  holding the lock for the server session
   void attach_server_session();
 
-  PoolableSession *create_server_session(NetVConnection *netvc, MIOBuffer *netvc_read_buffer, IOBufferReader *netvc_reader);
+  PoolableSession *create_server_session(NetVConnection &netvc, MIOBuffer *netvc_read_buffer, IOBufferReader *netvc_reader);
   bool create_server_txn(PoolableSession *new_session);
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;

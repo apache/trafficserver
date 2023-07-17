@@ -74,7 +74,7 @@ ConnectingEntry::state_http_server_open(int event, void *data)
     if (!connect_sms.empty()) {
       auto prime_iter = connect_sms.rbegin();
       ink_release_assert(prime_iter != connect_sms.rend());
-      PoolableSession *new_session = (*prime_iter)->create_server_session(netvc, _netvc_read_buffer, _netvc_reader);
+      PoolableSession *new_session = (*prime_iter)->create_server_session(*netvc, _netvc_read_buffer, _netvc_reader);
       netvc                        = nullptr;
       _netvc_read_buffer           = nullptr;
 
