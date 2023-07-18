@@ -33,12 +33,20 @@ meta:
           - [ Content-Length, 16 ]
           - [ Cache-Control, max-age=300 ]
 
+  - 404_ok_response: &404_ok_response
+      server-response:
+        status: 404
+        reason: "Not Found"
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Cache-Control, max-age=300 ]
+
 sessions:
 - transactions:
 
   # A simply path
-  - all: { headers: { fields: [[ uuid, 1 ]]}}
-    client-request:
+  - client-request:
       method: "GET"
       version: "1.1"
       scheme: "http"
@@ -46,6 +54,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
+        - [ uuid, 1 ]
 
     <<: *200_ok_response
 
@@ -54,8 +63,7 @@ sessions:
 
   # An initial // without an authority is not valid per RFC 3986 section-3.3,
   # but we have historically accepted it and will continue to do so.
-  - all: { headers: { fields: [[ uuid, 2 ]]}}
-    client-request:
+  - client-request:
       method: "GET"
       version: "1.1"
       scheme: "http"
@@ -63,6 +71,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
+        - [ uuid, 2 ]
 
     <<: *200_ok_response
 
@@ -70,8 +79,7 @@ sessions:
       status: 200
 
   # A '^' is an invalid path.
-  - all: { headers: { fields: [[ uuid, 3 ]]}}
-    client-request:
+  - client-request:
       method: "GET"
       version: "1.1"
       scheme: "http"
@@ -79,8 +87,99 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
+        - [ uuid, 3 ]
 
     <<: *200_ok_response
 
     proxy-response:
       status: 400
+
+- transactions:
+  #
+  # Make sure that we consistently treat encoding of paths.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path%2ffoo
+      headers:
+        fields:
+        - [ Host, test.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, encoded_path ]
+
+    proxy-request:
+      # Verify that the origin gets the encoded path.
+      url: /path%2ffoo
+
+    <<: *404_ok_response
+
+    proxy-response:
+      status: 404
+
+  # Request with an unencoded path: go to origin.
+  - client-request:
+      # Give plenty of time to cache the response.
+      delay: 200ms
+
+      method: "GET"
+      version: "1.1"
+      # Note that the path is not encoded.
+      url: /path/foo
+      headers:
+        fields:
+        - [ Host, test.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, unencoded_path ]
+
+    proxy-request:
+      url: /path/foo
+
+    <<: *200_ok_response
+
+    proxy-response:
+      # ATS should treat the unencoded path as different and go to the origin,
+      # not serve the encoded path out of cache.
+      status: 200
+
+  # Request again with an encoded path, should be served from cache.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path%2ffoo
+      headers:
+        fields:
+        - [ Host, test.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, encoded_path_again ]
+
+    # The origin should not receive this request, but if it does, reply with a
+    # non-404 response so we can detect it.
+    <<: *200_ok_response
+
+    proxy-response:
+      # ATS should serve the encoded path response from cache.
+      status: 404
+
+  # Request again with an encoded path, should be served from cache.
+  - client-request:
+      # Give plenty of time to cache the unencoded response.
+      delay: 200ms
+
+      method: "GET"
+      version: "1.1"
+      # Note that the path is not encoded.
+      url: /path/foo
+      headers:
+        fields:
+        - [ Host, test.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, unencoded_path_again ]
+
+    # The origin should not receive this request, but if it does, reply with a
+    # non-200 response so we can detect it.
+    <<: *404_ok_response
+
+    proxy-response:
+      # Verify that ATS returns out of cache for the uneencoded path object.
+      status: 200
