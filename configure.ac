@@ -1187,8 +1187,8 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 # Add hardening options to flags
 AS_IF([test "x${enable_hardening}" = "xyes"], [
   TS_ADDTO(AM_CPPFLAGS, [-D_FORTIFY_SOURCE=2])
-  TS_ADDTO(AM_CXXFLAGS, [-fPIE -fstack-protector])
-  TS_ADDTO(AM_CFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(AM_CXXFLAGS, [-fstack-protector])
+  TS_ADDTO(AM_CFLAGS, [-fstack-protector])
   AS_CASE("$host_os_def",
     [linux], [TS_ADDTO(AM_LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])]
   )
