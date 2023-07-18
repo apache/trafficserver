@@ -82,7 +82,7 @@ test_proxy_hdrs_SOURCES = \
 	unit_tests/test_URL.cc \
 	unit_tests/test_mime.cc
 
-test_proxy_hdrs_LDFLAGS = @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@
+test_proxy_hdrs_LDFLAGS = @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @OPENSSL_LDFLAGS@
 test_proxy_hdrs_LDADD = \
     @SWOC_LIBS@ \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
