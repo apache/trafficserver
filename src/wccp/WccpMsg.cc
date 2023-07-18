@@ -170,7 +170,7 @@ CacheIdBox::parse(MsgBuffer base)
       m_size = mptr->getSize();
       if (n < m_size) {
         zret = PARSE_BUFFER_TOO_SMALL;
-        logf(LVL_DEBUG, "I_SEE_YOU Cache Mask ID too small: %lu < %lu", n, m_size);
+        bw_log(DL_Note, "I_SEE_YOU Cache Mask ID too small: {} < {}", n, m_size);
       } else {
         m_tail = mptr->getTailPtr();
       }
@@ -178,7 +178,7 @@ CacheIdBox::parse(MsgBuffer base)
   } else {
     if (n < sizeof(CacheHashIdElt)) {
       zret = PARSE_BUFFER_TOO_SMALL;
-      logf(LVL_DEBUG, "I_SEE_YOU Cache Hash ID too small: %lu < %lu", n, sizeof(CacheHashIdElt));
+      bw_log(DL_Debug, "I_SEE_YOU Cache Hash ID too small: {} < {}", n, sizeof(CacheHashIdElt));
     } else {
       m_size = sizeof(CacheHashIdElt);
       m_tail = static_cast<CacheHashIdElt *>(m_base)->getTailPtr();
@@ -863,11 +863,12 @@ RouterViewComp::parse(MsgBuffer &buffer)
         zret = PARSE_MSG_INVALID;
       // check if cache count is past end of buffer
       else if (static_cast<void *>(m_cache_count = this->calc_cache_count_ptr()) >=
-               static_cast<void *>(buffer.getBase() + buffer.getSize()))
-        zret = PARSE_COMP_WRONG_SIZE, log(LVL_DEBUG, "I_SEE_YOU: cache counter past end of buffer");
-      else if ((ncaches = this->getCacheCount()) > MAX_CACHES)
+               static_cast<void *>(buffer.getBase() + buffer.getSize())) {
+        zret = PARSE_COMP_WRONG_SIZE;
+        bw_log(DL_Debug, "I_SEE_YOU: cache counter past end of buffer");
+      } else if ((ncaches = this->getCacheCount()) > MAX_CACHES) {
         zret = PARSE_MSG_INVALID;
-      else {
+      } else {
         size_t comp_size = reinterpret_cast<char *>(m_cache_count + 1) - m_base;
         // Walk the cache ID elements.
         MsgBuffer spot(buffer);
@@ -1447,7 +1448,7 @@ CapComp::cache() const
         m_cache_assign = static_cast<ServiceGroup::CacheAssignmentStyle>(x);
       break;
     default:
-      logf(LVL_INFO, "Invalid capability type %d in packet.", elt.getCapType());
+      bw_log(DL_Note, "Invalid capability type {} in packet.", elt.getCapType());
       break;
     }
   }
@@ -1627,7 +1628,7 @@ detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
     }
 
   if (!v_caches) { // no valid caches.
-    log(LVL_INFO, "Attempted to generate cache assignment but no valid caches were found.");
+    bw_log(DL_Note, "Attempted to generate cache assignment but no valid caches were found.");
     return false;
   }
   // Just sets the cache count.
@@ -1643,8 +1644,8 @@ detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
   // more complex here.
   m_mask_assign->init(0, 0, 0, 0)->addValue(m_hash_assign->getAddr(0), 0, 0, 0, 0);
 
-  logf(LVL_INFO, "Generated assignment for group %d with %d routers, %d valid caches.", group.m_svc.getSvcId(), n_routers,
-       v_caches);
+  bw_log(DL_Note, "Generated assignment for group {} with {} routers, {} valid caches.", group.m_svc.getSvcId(), n_routers,
+         v_caches);
 
   return true;
 }
@@ -1742,7 +1743,7 @@ RedirectAssignMsg::fill(detail::cache::GroupData const &group, SecurityOption se
     m_alt_mask_assign.fill(m_buffer, group.m_assign_info);
     break;
   default:
-    logf(LVL_WARN, "Bad assignment type [%d] for REDIRECT_ASSIGN", group.m_cache_assign);
+    bw_log(DL_Warning, "Bad assignment type [{}] for REDIRECT_ASSIGN", group.m_cache_assign);
     break;
   }
 }
@@ -1783,13 +1784,13 @@ ISeeYouMsg::parse(buffer_type const &buffer)
 
   zret = m_router_id.parse(m_buffer);
   if (PARSE_SUCCESS != zret) {
-    logf(LVL_DEBUG, "I_SEE_YOU: Invalid %d router id", zret);
+    bw_log(DL_Debug, "I_SEE_YOU: Invalid {} router id", zret);
     return zret;
   }
 
   zret = m_router_view.parse(m_buffer);
   if (PARSE_SUCCESS != zret) {
-    logf(LVL_DEBUG, "I_SEE_YOU: Invalid %d router view", zret);
+    bw_log(DL_Debug, "I_SEE_YOU: Invalid {} router view", zret);
     return zret;
   }
 
@@ -1807,7 +1808,7 @@ ISeeYouMsg::parse(buffer_type const &buffer)
 
   if (m_buffer.getSpace()) {
     zret = PARSE_DATA_OVERRUN;
-    logf(LVL_DEBUG, "I_SEE_YOU: Data overrun %lu", m_buffer.getSpace());
+    bw_log(DL_Debug, "I_SEE_YOU: Data overrun {}", m_buffer.getSpace());
   }
 
   return zret;

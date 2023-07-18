@@ -24,14 +24,14 @@
 
 #include <memory.h>
 #include <string_view>
-
 // INADDR_ANY
 #include <netinet/in.h>
+
+#include "tscpp/util/ts_errata.h"
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 #include "tscore/IntrusivePtr.h"
-#include "tscore/Errata.h"
 
 // Nasty, defining this with no prefix. The value is still available
 // in TS_VERSION_STRING.
@@ -88,6 +88,9 @@ struct ServiceConstants {
   };
 };
 
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ServiceConstants::PacketStyle);
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ServiceConstants::CacheAssignmentStyle);
+
 /** Service group definition.
 
     Also used as serialized layout internally by ServiceGroupElt. This is kept
@@ -121,7 +124,7 @@ public:
   static uint8_t const RESERVED = 50;
 
   /// Number of ports in component (defined by protocol).
-  static size_t const N_PORTS = 8;
+  static constexpr size_t const N_PORTS = 8;
 
   /// @name Flag mask values.
   //@{
@@ -240,8 +243,7 @@ public:
       @return 0 on success, -ERRNO on failure.
       @see setAddr
   */
-  int open(uint32_t addr = INADDR_ANY ///< Local IP address for socket.
-  );
+  swoc::Errata open(uint32_t addr = INADDR_ANY);
 
   /// Get the internal socket.
   /// Useful primarily for socket options and using
@@ -257,7 +259,7 @@ public:
 
   /// Receive and process a message on the socket.
   /// @return 0 for success, -ERRNO on system error.
-  ts::Rv<int> handleMessage();
+  swoc::Errata handleMessage();
 
 protected:
   /// Default constructor.
@@ -295,8 +297,8 @@ public:
   ~Cache() override;
 
   /// Define services from a configuration file.
-  ts::Errata loadServicesFromFile(char const *path ///< Path to file.
-  );
+  /// @param path Path to configuration file.
+  swoc::Errata loadServicesFromFile(char const *path);
 
   /** Define a service group.
 

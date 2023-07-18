@@ -56,28 +56,17 @@ static const char USAGE_TEXT[] = "%s\n"
                                  "--help Print usage and exit.\n";
 
 static void
-PrintErrata(ts::Errata const &err)
+PrintErrata(swoc::Errata const &err)
 {
-  size_t n;
-  static size_t const SIZE = 4096;
-  char buff[SIZE];
-  if (err.size()) {
-    ts::Errata::Code code = err.top().getCode();
-    if (do_debug || code >= wccp::LVL_WARN) {
-      n = err.write(buff, SIZE, 1, 0, 2, "> ");
-      // strip trailing newlines.
-      while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r')) {
-        buff[--n] = 0;
-      }
-      printf("%s\n", buff);
-    }
+  if (err.length()) {
+    bw_log(diags_level_of(err.severity()), "{}", err);
   }
 }
 
 static void
 Init_Errata_Logging()
 {
-  ts::Errata::registerSink(&PrintErrata);
+  swoc::Errata::register_sink(&PrintErrata);
 }
 
 static void
@@ -165,7 +154,7 @@ main(int argc, char **argv)
       }
       break;
     case OPT_SERVICE: {
-      ts::Errata status = wcp.loadServicesFromFile(optarg);
+      auto status = wcp.loadServicesFromFile(optarg);
       if (!status) {
         fail = true;
       }
@@ -185,7 +174,7 @@ main(int argc, char **argv)
     return 1;
   }
 
-  if (0 > wcp.open(ip_addr.s_addr)) {
+  if (auto result = wcp.open(ip_addr.s_addr); !result.is_ok()) {
     fprintf(stderr, "Failed to open or bind socket.\n");
     return 2;
   }

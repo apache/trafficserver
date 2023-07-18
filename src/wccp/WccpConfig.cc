@@ -27,7 +27,42 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "swoc/Lexicon.h"
+
 #include <yaml-cpp/yaml.h>
+
+using swoc::TextView;
+using swoc::Errata;
+
+using namespace swoc::literals;
+
+namespace wccp
+{
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ServiceGroup::Type type)
+{
+  return bwformat(w, spec, type == wccp::ServiceGroup::STANDARD ? "STANDARD"_tv : "DYNAMIC"_tv);
+}
+} // namespace wccp
+
+namespace YAML
+{
+swoc::Lexicon<NodeType::value> YamlNodeTypeNames{
+  {{NodeType::Undefined, "Undefined"},
+   {NodeType::Null, "NULL"},
+   {NodeType::Scalar, "Scalar"},
+   {NodeType::Sequence, "Sequence"},
+   {NodeType::Map, "Map"}},
+  "Unknown"
+};
+
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, NodeType::value v)
+{
+  return bwformat(w, spec, YamlNodeTypeNames[v]);
+}
+
+} // namespace YAML
 
 // WCCP related things that are file local.
 namespace
@@ -40,28 +75,28 @@ using namespace wccp;
 std::vector<uint32_t> Seed_Router;
 
 // Names used for various elements and properties.
-static const char *const SVC_NAME = "service";
+static constexpr TextView SVC_NAME = "service";
 
 const std::string SVCS_NAME = "services";
 const std::string WCCP_NAME = "wccp";
 
-static const char *const SVC_PROP_ID           = "id";
-static const char *const SVC_PROP_TYPE         = "type";
-static const char *const SVC_PROP_PRIORITY     = "priority";
-static const char *const SVC_PROP_PROTOCOL     = "protocol";
-static const char *const SVC_PROP_PRIMARY_HASH = "primary-hash";
-static const char *const SVC_PROP_ALT_HASH     = "alt-hash";
-static const char *const SVC_PROP_PORTS        = "ports";
-static const char *const SVC_PROP_PORT_TYPE    = "port-type";
-static const char *const SVC_PROP_SECURITY     = "security";
-static const char *const SVC_PROP_ROUTERS      = "routers";
-static const char *const SVC_PROP_FORWARD      = "forward";
-static const char *const SVC_PROP_RETURN       = "return";
-static const char *const SVC_PROP_ASSIGN       = "assignment";
-static const char *const SVC_PROP_PROC         = "proc-name";
+static constexpr TextView SVC_PROP_ID           = "id";
+static const char *const SVC_PROP_TYPE          = "type";
+static constexpr TextView SVC_PROP_PRIORITY     = "priority";
+static constexpr TextView SVC_PROP_PROTOCOL     = "protocol";
+static constexpr TextView SVC_PROP_PRIMARY_HASH = "primary-hash";
+static constexpr TextView SVC_PROP_ALT_HASH     = "alt-hash";
+static constexpr TextView SVC_PROP_PORTS        = "ports";
+static const char *const SVC_PROP_PORT_TYPE     = "port-type";
+static constexpr TextView SVC_PROP_SECURITY     = "security";
+static const char *const SVC_PROP_ROUTERS       = "routers";
+static constexpr TextView SVC_PROP_FORWARD      = "forward";
+static constexpr TextView SVC_PROP_RETURN       = "return";
+static constexpr TextView SVC_PROP_ASSIGN       = "assignment";
+static const char *const SVC_PROP_PROC          = "proc-name";
 
-static const char *const SECURITY_PROP_OPTION = "option";
-static const char *const SECURITY_PROP_KEY    = "key";
+static constexpr TextView SECURITY_PROP_OPTION = "option";
+static constexpr TextView SECURITY_PROP_KEY    = "key";
 
 /// Helper structure for processing configuration strings.
 struct CfgString {
@@ -96,189 +131,188 @@ CfgString HASH_OPTS[] = {
   {"dst_port", false}
 };
 
-ts::Errata::Code
-code_max(ts::Errata const &err)
-{
-  ts::Errata::Code zret            = std::numeric_limits<ts::Errata::Code::raw_type>::min();
-  ts::Errata::const_iterator spot  = err.begin();
-  ts::Errata::const_iterator limit = err.end();
-  for (; spot != limit; ++spot)
-    zret = std::max(zret, spot->getCode());
-  return zret;
-}
-
-ts::Errata::Message
+inline Errata
 Unable_To_Create_Service_Group(int line)
 {
-  std::ostringstream out;
-  out << "Unable to create service group at line " << line << " because of configuration errors.";
-  return ts::Errata::Message(23, LVL_FATAL, out.str());
+  return Errata(ec_for(EINVAL), ERRATA_FATAL, "Unable to create service group at line {} of configuration.", line);
 }
 
-ts::Errata::Message
+inline Errata &
+Note_Services_Not_Found(Errata &errata)
+{
+  return errata.note(ERRATA_NOTE, "No services found in configuration.");
+}
+
+inline Errata
 Services_Not_Found()
 {
-  return ts::Errata::Message(3, LVL_INFO, "No services found in configuration.");
+  Errata errata;
+  errata.note(ERRATA_NOTE, "No services found in configuration.");
+  return errata;
 }
 
-ts::Errata::Message
+inline Errata
 Services_Not_A_Sequence()
 {
-  return ts::Errata::Message(4, LVL_INFO, "The 'services' setting was not a list nor array.");
+  return Errata(ec_for(EINVAL), ERRATA_NOTE, "The 'services' setting was not a list nor array.");
 }
 
-ts::Errata::Message
+inline Errata &
+Note_Service_Type_Defaulted(Errata &errata, wccp::ServiceGroup::Type type, int line)
+{
+  return errata.note(ERRATA_NOTE, "'type' keyword not found in {} at line {} -- defaulting to {}", SVC_NAME, line, type);
+}
+
+inline Errata
 Service_Type_Defaulted(wccp::ServiceGroup::Type type, int line)
 {
-  std::ostringstream out;
-  out << "'type' not found in " << SVC_NAME << " at line " << line << "' -- defaulting to "
-      << (type == wccp::ServiceGroup::STANDARD ? "STANDARD" : "DYNAMIC");
-  return ts::Errata::Message(6, LVL_INFO, out.str());
+  Errata errata;
+  Note_Service_Type_Defaulted(errata.assign(ec_for(ENOENT)), type, line);
+  return errata;
 }
 
-ts::Errata::Message
-Service_Type_Invalid(const std::string &text, int line)
+inline Errata &
+Note_Service_Type_Invalid(Errata &errata, TextView text, int line)
 {
-  std::ostringstream out;
-  out << "Service type '" << text << "' at line " << line << " invalid. Must be \"STANDARD\" or \"DYNAMIC\"";
-  return ts::Errata::Message(7, LVL_WARN, out.str());
+  return errata.note(ERRATA_WARN, R"(Service type "{}" at line {} is invalid. Must be "STANDARD" or "DYNAMIC".)");
 }
 
-ts::Errata::Message
-Prop_Not_Found(const std::string &prop_name, const std::string &group_name, int line)
+inline Errata
+Service_Type_Invalid(TextView text, int line)
 {
-  std::ostringstream out;
-  out << "Required '" << prop_name << "' property not found in '" << group_name << "' at line " << line << ".";
-  return ts::Errata::Message(8, LVL_WARN, out.str());
+  Errata errata;
+  Note_Service_Type_Invalid(errata, text, line);
+  errata.assign(ec_for(EINVAL));
+  return errata;
 }
 
-ts::Errata::Message
-Prop_Invalid_Type(const std::string &prop_name, const YAML::Node &prop_cfg, YAML::NodeType::value expected)
+inline Errata &
+Note_Prop_Not_Found(Errata &errata, TextView prop_name, TextView group_name, int line)
 {
-  std::ostringstream out;
-  out << "'" << prop_name << "' is of type '" << prop_cfg.Type() << "' instead of required type '" << expected << "'.";
-  return ts::Errata::Message(9, LVL_WARN, out.str());
+  return errata.note(ERRATA_WARN, R"(Required property "{}" not found in "{}" at line {})", prop_name, group_name, line);
 }
 
-ts::Errata::Message
-Svc_Prop_Out_Of_Range(const std::string &name, int line, int v, int min, int max)
+inline Errata
+Prop_Not_Found(TextView prop_name, TextView group_name, int line)
 {
-  std::ostringstream out;
-  out << "Service property '" << name << "' at line " << line << " has a value " << v << " that is not in the allowed range of "
-      << min << ".." << max << ".";
-  return ts::Errata::Message(10, LVL_WARN, out.str());
+  Errata errata;
+  Note_Prop_Not_Found(errata, prop_name, group_name, line);
+  return errata;
 }
 
-ts::Errata::Message
-Svc_Prop_Ignored(const char *name, int line)
+inline Errata
+Prop_Invalid_Type(TextView prop_name, const YAML::Node &prop_cfg, YAML::NodeType::value expected)
 {
-  std::ostringstream out;
-  out << "Service property '" << name << "' at line " << line << " ignored because the service is of type standard.";
-  return ts::Errata::Message(11, LVL_INFO, out.str());
+  return {ec_for(EINVAL), ERRATA_WARN,     R"("{}" is not of type "{}" instead of required type "{}".)",
+          prop_name,      prop_cfg.Type(), expected};
 }
 
-ts::Errata::Message
-Svc_Ports_Too_Many(int line, int n)
+inline swoc::Errata &
+Note_Svc_Prop_Out_Of_Range(Errata &errata, TextView name, int line, int v, int min, int max)
 {
-  std::ostringstream out;
-  out << "Excess ports ignored at line " << line << ". " << n << " ports specified, only" << wccp::ServiceGroup::N_PORTS
-      << " supported.";
-  return ts::Errata::Message(14, LVL_INFO, out.str());
+  return errata.note(ERRATA_WARN,
+                     R"(Service property "{}" at line {} has a value "{}" that is not in the allowed range of {}..{} .)", name,
+                     line, v, min, max);
 }
 
-ts::Errata::Message
-Svc_Ports_None_Valid(int line)
+inline Errata &
+Note_Svc_Prop_Ignored(Errata &errata, TextView name, int line)
 {
-  std::ostringstream out;
-  out << "A '" << SVC_PROP_PORTS << "' property was found at line " << line << " but none of the ports were valid.";
-  return ts::Errata::Message(17, LVL_WARN, out.str());
+  errata.note(ERRATA_NOTE, R"(Service property "{}" at line {} ignored because the service is of type standard.)", name, line);
+  return errata;
 }
 
-ts::Errata::Message
-Svc_Ports_Not_Found(int line)
+inline Errata &
+Note_Svc_Ports_Too_Many(Errata &errata, int line, int n)
 {
-  std::ostringstream out;
-  out << "Ports not found in service at line " << line << ". Ports must be defined for a dynamic service.";
-  return ts::Errata::Message(18, LVL_WARN, out.str());
+  errata.note(ERRATA_NOTE, "Excess ports ignored at line {}. {} ports specified, only {} supported.", line, n,
+              wccp::ServiceGroup::N_PORTS);
+  return errata;
 }
 
-ts::Errata::Message
-Svc_Prop_Ignored_In_Standard(const std::string &name, int line)
+inline Errata &
+Note_Svc_Ports_None_Valid(Errata &errata, int line)
 {
-  std::ostringstream out;
-  out << "Service property '" << name << "' at line " << line << " ignored because the service is of type STANDARD.";
-  return ts::Errata::Message(19, LVL_INFO, out.str());
+  errata.note(ERRATA_WARN, R"(A "{}" property was found at line {} but none of the ports were valid.)", SVC_PROP_PORTS, line);
+  return errata;
 }
 
-ts::Errata::Message
-Security_Opt_Invalid(const std::string &text, int line)
+inline Errata &
+Note_Svc_Ports_Not_Found(Errata &errata, int line)
 {
-  std::ostringstream out;
-  out << "Security option '" << text << "' at line " << line << " is invalid. It must be 'none' or 'md5'.";
-  return ts::Errata::Message(20, LVL_WARN, out.str());
+  return errata.note("Ports not found in service at line {]. Ports must be defined for a dynamic service.", line);
 }
 
-ts::Errata::Message
-Value_Malformed(const std::string &name, const std::string &text, int line)
+Errata &
+Note_Svc_Prop_Ignored_In_Standard(Errata &errata, TextView name, int line)
 {
-  std::ostringstream out;
-  out << "'" << name << "' value '" << text << "' malformed at line " << line << ".";
-  return ts::Errata::Message(21, LVL_WARN, out.str());
+  return errata.note(R"(Service property "{}" at line {} ignored because the service is of type STANDARD.)", name, line);
 }
 
-ts::Errata::Message
-No_Valid_Routers(int line)
+inline Errata
+Security_Opt_Invalid(TextView text, int line)
 {
-  std::ostringstream out;
-  out << "No valid IP address for routers found for Service Group at line " << line << ".";
-  return ts::Errata::Message(22, LVL_WARN, out.str());
+  return {ERRATA_WARN, R"(Security option "{}" at line {} is invalid. It must be 'none' or 'md5'.)", text};
 }
 
-ts::Errata::Message
-Ignored_Option_Value(const std::string &text, const std::string &name, int line)
+inline Errata &
+Note_Value_Malformed(Errata &errata, const std::string &name, const std::string &text, int line)
 {
-  std::ostringstream out;
-  out << "Value '" << text << "' at line " << line << " was ignored because it is not a valid option for '" << name << "'.";
-  return ts::Errata::Message(24, LVL_INFO, out.str());
+  return errata.note(ERRATA_WARN, R"("{}" value "{}" malformed at line {})", name, text, line);
 }
 
-ts::Errata::Message
-Ignored_Opt_Errors(const std::string &name, int line)
+inline Errata &
+Note_No_Valid_Routers(Errata &errata, int line)
 {
-  std::ostringstream out;
-  out << "Errors in  '" << name << "' were ignored.";
-  return ts::Errata::Message(28, LVL_INFO, out.str());
+  return errata.note(ERRATA_WARN, "No valid IP address for routers found for Service Group at line {}.", line);
 }
 
-ts::Errata::Message
-List_Valid_Opts(const std::string &name, int line, CfgString *values, size_t n)
+inline Errata &
+Note_Ignored_Option_Value(Errata &errata, TextView text, TextView name, int line)
 {
-  std::ostringstream out;
-  out << "Valid values for the '" << name << "' property at line " << line << " are: ";
-  out << '"' << values[0].m_text << '"';
-  for (size_t i = 1; i < n; ++i)
-    out << ", \"" << values[i].m_text << '"';
-  out << '.';
-  return ts::Errata::Message(29, LVL_INFO, out.str());
+  return errata.note(ERRATA_NOTE, "Value \"{}\" at line {} was ignored because it is not a valid option for \"{}\".", text, line,
+                     name);
 }
 
-ts::Errata::Message
-Port_Type_Invalid(const std::string &text, int line)
+inline Errata &
+Note_Ignored_Opt_Errors(Errata &errata, TextView name, int line)
 {
-  std::ostringstream out;
-  out << "Value '" << text << "' at line " << line << "for property '" << SVC_PROP_PORT_TYPE
-      << "' is invalid. It must be 'src' or 'dst'.";
-  return ts::Errata::Message(30, LVL_WARN, out.str());
+  return errata.note(ERRATA_NOTE, "Errors in \"{}\" were ignored.", name);
+}
+
+Errata &
+Note_List_Valid_Opts(Errata &errata, TextView name, int line, CfgString *values, size_t n)
+{
+  swoc::LocalBufferWriter<2048> w;
+  w.print("Valid values for the \"{}\" property at line {} are:", name, line);
+  for (size_t i = 0; i < n; ++i) {
+    w.print("{}", values[i].m_text);
+  }
+  return errata.note(ERRATA_NOTE, w.view());
+}
+
+inline Errata &
+Note_Port_Type_Invalid(Errata &errata, TextView text, int line)
+{
+  return errata.note(ERRATA_WARN, R"(Value "{}" at line {} for property "{}" is invalid. It must be 'src' or 'dst'.)", text, line,
+                     SVC_PROP_PORT_TYPE);
+}
+
+inline Errata
+Port_Type_Invalid(TextView text, int line)
+{
+  Errata errata;
+  Note_Port_Type_Invalid(errata, text, line);
+  return errata;
 }
 
 } // namespace
 
 namespace wccp
 {
-ts::Errata
-load_option_set(const YAML::Node &setting, const char *name, CfgString *opts, size_t count)
+Errata
+load_option_set(const YAML::Node &setting, TextView name, CfgString *opts, size_t count)
 {
-  ts::Errata zret;
   CfgString *spot;
   CfgString *limit = opts + count;
   int src_line     = setting.Mark().line;
@@ -289,14 +323,14 @@ load_option_set(const YAML::Node &setting, const char *name, CfgString *opts, si
 
   // Walk through the strings in the setting.
   if (!setting.IsSequence()) {
-    zret.push(Prop_Invalid_Type(name, setting, YAML::NodeType::Sequence));
-    return zret;
+    return Prop_Invalid_Type(name, setting, YAML::NodeType::Sequence);
   }
 
+  Errata errata;
   bool list_opts = false;
   for (auto it = setting.begin(); it != setting.end(); ++it) {
-    YAML::Node item  = *it;
-    std::string text = item.as<std::string>();
+    YAML::Node item       = *it;
+    std::string_view text = item.Scalar();
     for (spot = opts; spot < limit; ++spot) {
       if (spot->m_text == text) {
         spot->m_found = true;
@@ -304,77 +338,69 @@ load_option_set(const YAML::Node &setting, const char *name, CfgString *opts, si
       }
     }
     if (spot >= limit) {
-      zret.push(Ignored_Option_Value(text, name, item.Mark().line));
+      Note_Ignored_Option_Value(errata, text, name, item.Mark().line);
       list_opts = true;
     }
   }
 
   if (list_opts) {
-    zret.push(List_Valid_Opts(name, src_line, opts, count));
+    Note_List_Valid_Opts(errata, name, src_line, opts, count);
   }
 
-  return zret;
+  return errata;
 }
 
-/** On success this returns a non @c NULL pointer if the MD5 option is
-  set.  In that case the pointer points at the MD5 key.  Otherwise
-  the option was none and the pointer is @c NULL
-  */
-ts::Rv<std::string>
-load_security(const YAML::Node &setting ///< Security setting.
-)
+/// If successful, the string contains the MD5 key is present, otherwise it's empty.
+swoc::Rv<std::string>
+load_security(const YAML::Node &setting)
 {
-  ts::Rv<std::string> zret;
-
-  auto opt = setting[SECURITY_PROP_OPTION];
+  auto opt = setting[SECURITY_PROP_OPTION.data()];
   if (!opt) {
-    zret.push(Prop_Not_Found(SECURITY_PROP_OPTION, SVC_PROP_SECURITY, setting.Mark().line));
-    return zret;
+    return Prop_Not_Found(SECURITY_PROP_OPTION, SVC_PROP_SECURITY, setting.Mark().line);
   }
 
-  std::string text = opt.as<std::string>();
+  TextView text = opt.Scalar();
   if ("none" == text) {
   } else if ("md5" == text) {
-    YAML::Node key = setting[SECURITY_PROP_KEY];
+    YAML::Node key = setting[SECURITY_PROP_KEY.data()];
     if (key) {
-      zret = key.as<std::string>();
+      return key.as<std::string>();
     } else {
-      zret.push(Prop_Not_Found(SECURITY_PROP_KEY, SVC_PROP_SECURITY, opt.Mark().line));
+      return Prop_Not_Found(SECURITY_PROP_KEY, SVC_PROP_SECURITY, opt.Mark().line);
     }
   } else {
-    zret.push(Security_Opt_Invalid(text, opt.Mark().line));
+    return Security_Opt_Invalid(text, opt.Mark().line);
   }
-  return zret;
+  return {};
 }
 
 /// Process a router address list.
-ts::Errata
+Errata
 load_routers(const YAML::Node &setting,   ///< Source of addresses.
              std::vector<uint32_t> &addrs ///< Output list
 )
 {
-  ts::Errata zret;
   static const char *const NAME = "IPv4 Address";
 
   if (!setting.IsSequence()) {
-    zret.push(Prop_Invalid_Type("routers", setting, YAML::NodeType::Sequence));
-    return zret;
+    return Prop_Invalid_Type("routers", setting, YAML::NodeType::Sequence);
   }
 
+  Errata errata;
   for (auto const &addr_cfg : setting) {
     in_addr addr;
     std::string text = addr_cfg.as<std::string>();
     if (inet_aton(text.c_str(), &addr)) {
       addrs.push_back(addr.s_addr);
     } else {
-      zret.push(Value_Malformed(NAME, text, addr_cfg.Mark().line));
+      Note_Value_Malformed(errata, NAME, text, addr_cfg.Mark().line);
     }
   }
 
-  return zret;
+  return errata;
 }
 
-ts::Errata
+Errata
 CacheImpl::loadServicesFromFile(const char *path)
 {
   try {
@@ -385,22 +411,20 @@ CacheImpl::loadServicesFromFile(const char *path)
 
     YAML::Node wccp_node = cfg[WCCP_NAME];
     if (!wccp_node) {
-      return ts::Errata::Message(3, LVL_INFO, "No 'wccp' node found in configuration.");
+      return Errata(ec_for(ENOENT), ERRATA_NOTE, "No 'wccp' node found in configuration.");
     }
 
     return loader(wccp_node);
   } catch (std::exception &ex) {
-    return ts::Errata::Message(1, 1, ex.what());
+    return Errata(ec_for(EINVAL), ERRATA_ERROR, ex.what());
   }
 
-  return ts::Errata();
+  return {};
 }
 
-ts::Errata
+Errata
 CacheImpl::loader(const YAML::Node &cfg)
 {
-  ts::Errata zret;
-
   YAML::Node svc_list = cfg[SVCS_NAME];
 
   // No point in going on from here.
@@ -412,21 +436,24 @@ CacheImpl::loader(const YAML::Node &cfg)
     return Services_Not_A_Sequence();
   }
 
+  Errata errata;
+
   // Check for global (default) security setting.
-  YAML::Node prop_sec = cfg[SVC_PROP_SECURITY];
+  YAML::Node prop_sec = cfg[SVC_PROP_SECURITY.data()];
   if (prop_sec) {
-    ts::Rv<std::string> rv = load_security(prop_sec);
-    if (rv.isOK() && rv.result().size() > 0) {
-      std::string md5_key = rv.result();
-      this->useMD5Security(md5_key);
+    auto rv = load_security(prop_sec);
+    if (rv.is_ok()) {
+      if (rv.result().size() > 0) {
+        this->useMD5Security(rv.result());
+      }
     } else {
-      zret.pull(rv.errata());
+      errata.note(rv);
     }
   }
 
   auto prop_routers = cfg[SVC_PROP_ROUTERS];
   if (prop_routers) {
-    zret.pull(load_routers(prop_routers, Seed_Router).doNotLog());
+    errata.note(load_routers(prop_routers, Seed_Router));
   }
 
   for (auto it = svc_list.begin(); it != svc_list.end(); ++it) {
@@ -438,16 +465,17 @@ CacheImpl::loader(const YAML::Node &cfg)
     ServiceGroup svc_info;
 
     // Get the service ID.
-    YAML::Node propId = svc_cfg[SVC_PROP_ID];
+    YAML::Node propId = svc_cfg[SVC_PROP_ID.data()];
     if (propId) {
       int x = propId.as<int>();
       if (0 <= x && x <= 255) {
         svc_info.setSvcId(x);
       } else {
-        zret.push(Svc_Prop_Out_Of_Range(SVC_PROP_ID, propId.Mark().line, x, 0, 255));
+        Note_Svc_Prop_Out_Of_Range(errata, SVC_PROP_ID, propId.Mark().line, x, 0, 255);
       }
     } else {
-      zret.push(Prop_Not_Found(SVC_PROP_ID, SVC_NAME, svc_cfg.Mark().line));
+      errata.note(ERRATA_WARN, R"(Required property "{}" not found in "{}" at line {})", SVC_PROP_ID, SVC_NAME,
+                  svc_cfg.Mark().line);
     }
 
     // Service type.
@@ -459,54 +487,54 @@ CacheImpl::loader(const YAML::Node &cfg)
       } else if ("STANDARD" == text) {
         svc_info.setSvcType(ServiceGroup::STANDARD);
       } else {
-        zret.push(Service_Type_Invalid(text, propType.Mark().line));
+        Note_Service_Type_Invalid(errata, text, propType.Mark().line);
       }
     } else { // default type based on ID.
       ServiceGroup::Type svc_type = svc_info.getSvcId() <= ServiceGroup::RESERVED ? ServiceGroup::STANDARD : ServiceGroup::DYNAMIC;
       svc_info.setSvcType(svc_type);
-      zret.push(Service_Type_Defaulted(svc_type, it->Mark().line));
+      Note_Service_Type_Defaulted(errata, svc_type, it->Mark().line);
     }
 
     // Get the protocol.
-    YAML::Node protocol = svc_cfg[SVC_PROP_PROTOCOL];
+    YAML::Node protocol = svc_cfg[SVC_PROP_PROTOCOL.data()];
     if (protocol) {
       if (svc_info.getSvcType() == ServiceGroup::STANDARD) {
-        zret.push(Svc_Prop_Ignored(SVC_PROP_PROTOCOL, protocol.Mark().line));
+        Note_Svc_Prop_Ignored(errata, SVC_PROP_PROTOCOL, protocol.Mark().line);
       } else {
         int x = protocol.as<int>();
         if (0 <= x && x <= 255) {
           svc_info.setProtocol(x);
         } else {
-          zret.push(Svc_Prop_Out_Of_Range(SVC_PROP_ID, protocol.Mark().line, x, 0, 255));
+          Note_Svc_Prop_Out_Of_Range(errata, SVC_PROP_ID, protocol.Mark().line, x, 0, 255);
         }
       }
     } else if (svc_info.getSvcType() != ServiceGroup::STANDARD) {
       // Required if it's not standard / predefined.
-      zret.push(Prop_Not_Found(SVC_PROP_PROTOCOL, SVC_NAME, it->Mark().line));
+      Note_Prop_Not_Found(errata, SVC_PROP_PROTOCOL, SVC_NAME, it->Mark().line);
     }
 
     // Get the priority.
     svc_info.setPriority(0); // OK to default to this value.
-    YAML::Node priority = svc_cfg[SVC_PROP_PRIORITY];
+    YAML::Node priority = svc_cfg[SVC_PROP_PRIORITY.data()];
     if (priority) {
       if (svc_info.getSvcType() == ServiceGroup::STANDARD) {
-        zret.push(Svc_Prop_Ignored(SVC_PROP_PRIORITY, priority.Mark().line));
+        Note_Svc_Prop_Ignored(errata, SVC_PROP_PRIORITY, priority.Mark().line);
       } else {
         int x = priority.as<int>();
         if (0 <= x && x <= 255) {
           svc_info.setPriority(x);
         } else {
-          zret.push(Svc_Prop_Out_Of_Range(SVC_PROP_ID, priority.Mark().line, x, 0, 255));
+          Note_Svc_Prop_Out_Of_Range(errata, SVC_PROP_ID, priority.Mark().line, x, 0, 255);
         }
       }
     }
 
     // Service flags.
     svc_info.setFlags(0);
-    YAML::Node primaryHash = svc_cfg[SVC_PROP_PRIMARY_HASH];
+    YAML::Node primaryHash = svc_cfg[SVC_PROP_PRIMARY_HASH.data()];
     if (primaryHash) {
-      ts::Errata status = load_option_set(primaryHash, SVC_PROP_PRIMARY_HASH, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32_t f        = 0;
+      Errata status = load_option_set(primaryHash, SVC_PROP_PRIMARY_HASH, HASH_OPTS, N_OPTS(HASH_OPTS));
+      uint32_t f    = 0;
       for (size_t i = 0; i < N_OPTS(HASH_OPTS); ++i) {
         if (HASH_OPTS[i].m_found) {
           f |= ServiceGroup::SRC_IP_HASH << i;
@@ -516,19 +544,19 @@ CacheImpl::loader(const YAML::Node &cfg)
       if (f) {
         svc_info.enableFlags(f);
         if (!status) {
-          zret.push(Ignored_Opt_Errors(SVC_PROP_PRIMARY_HASH, primaryHash.Mark().line).set(status));
+          Note_Ignored_Opt_Errors(errata, SVC_PROP_PRIMARY_HASH, primaryHash.Mark().line).note(status);
         }
       } else {
-        zret.push(List_Valid_Opts(SVC_PROP_PRIMARY_HASH, primaryHash.Mark().line, HASH_OPTS, N_OPTS(HASH_OPTS)).set(status));
+        Note_List_Valid_Opts(errata, SVC_PROP_PRIMARY_HASH, primaryHash.Mark().line, HASH_OPTS, N_OPTS(HASH_OPTS)).note(status);
       }
     } else {
-      zret.push(Prop_Not_Found(SVC_PROP_PRIMARY_HASH, SVC_NAME, primaryHash.Mark().line));
+      Note_Prop_Not_Found(errata, SVC_PROP_PRIMARY_HASH, SVC_NAME, primaryHash.Mark().line);
     }
 
-    YAML::Node altHash = svc_cfg[SVC_PROP_ALT_HASH];
+    YAML::Node altHash = svc_cfg[SVC_PROP_ALT_HASH.data()];
     if (altHash) {
-      ts::Errata status = load_option_set(altHash, SVC_PROP_ALT_HASH, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32_t f        = 0;
+      auto status = load_option_set(altHash, SVC_PROP_ALT_HASH, HASH_OPTS, N_OPTS(HASH_OPTS));
+      uint32_t f  = 0;
       for (size_t i = 0; i < N_OPTS(HASH_OPTS); ++i) {
         if (HASH_OPTS[i].m_found) {
           f |= ServiceGroup::SRC_IP_ALT_HASH << i;
@@ -540,7 +568,7 @@ CacheImpl::loader(const YAML::Node &cfg)
       }
 
       if (!status) {
-        zret.push(Ignored_Opt_Errors(SVC_PROP_ALT_HASH, altHash.Mark().line).set(status));
+        Note_Ignored_Opt_Errors(errata, SVC_PROP_ALT_HASH, altHash.Mark().line).note(status);
       }
     }
 
@@ -552,17 +580,17 @@ CacheImpl::loader(const YAML::Node &cfg)
       } else if ("dst" == text) {
         svc_info.disableFlags(ServiceGroup::PORTS_SOURCE);
       } else {
-        zret.push(Port_Type_Invalid(text, portType.Mark().line));
+        Note_Port_Type_Invalid(errata, text, portType.Mark().line);
       }
     }
 
     // Ports for service.
     svc_info.clearPorts();
 
-    YAML::Node ports = svc_cfg[SVC_PROP_PORTS];
+    YAML::Node ports = svc_cfg[SVC_PROP_PORTS.data()];
     if (ports) {
       if (ServiceGroup::STANDARD == svc_info.getSvcType()) {
-        zret.push(Svc_Prop_Ignored_In_Standard(SVC_PROP_PORTS, ports.Mark().line));
+        Note_Svc_Prop_Ignored_In_Standard(errata, SVC_PROP_PORTS, ports.Mark().line);
       } else {
         size_t sidx = 0;
         if (ports.IsSequence()) {
@@ -570,7 +598,7 @@ CacheImpl::loader(const YAML::Node &cfg)
 
           // Clip to maximum protocol allowed ports.
           if (nport > ServiceGroup::N_PORTS) {
-            zret.push(Svc_Ports_Too_Many(ports.Mark().line, nport));
+            Note_Svc_Ports_Too_Many(errata, ports.Mark().line, nport);
             nport = ServiceGroup::N_PORTS;
           }
 
@@ -581,14 +609,14 @@ CacheImpl::loader(const YAML::Node &cfg)
             if (0 <= x && x <= 65535) {
               svc_info.setPort(sidx++, x);
             } else {
-              zret.push(Svc_Prop_Out_Of_Range(SVC_PROP_PORTS, ports.Mark().line, x, 0, 65535));
+              Note_Svc_Prop_Out_Of_Range(errata, SVC_PROP_PORTS, ports.Mark().line, x, 0, 65535);
             }
           }
 
           if (sidx) {
             svc_info.enableFlags(ServiceGroup::PORTS_DEFINED);
           } else {
-            zret.push(Svc_Ports_None_Valid(ports.Mark().line));
+            Note_Svc_Ports_None_Valid(errata, ports.Mark().line);
           }
         } else {
           // port is a scalar
@@ -598,14 +626,14 @@ CacheImpl::loader(const YAML::Node &cfg)
         }
       }
     } else if (ServiceGroup::STANDARD != svc_info.getSvcType()) {
-      zret.push(Svc_Ports_Not_Found(ports.Mark().line));
+      Note_Svc_Ports_Not_Found(errata, ports.Mark().line);
     }
 
     // Security option for this service group.
-    YAML::Node sec_prop = svc_cfg[SVC_PROP_SECURITY];
+    YAML::Node sec_prop = svc_cfg[SVC_PROP_SECURITY.data()];
     if (sec_prop) {
-      ts::Rv<std::string> security = load_security(sec_prop);
-      if (security.isOK()) {
+      swoc::Rv<std::string> security = load_security(sec_prop);
+      if (security.is_ok()) {
         use_group_local_security = true;
         if (!security.result().empty()) {
           md5_key        = security.result();
@@ -614,27 +642,24 @@ CacheImpl::loader(const YAML::Node &cfg)
           security_style = SECURITY_NONE;
         }
       }
-      zret.pull(security.errata());
+      errata.note(security.errata());
     }
 
     // Get any group specific routers.
     std::vector<uint32_t> routers;
     YAML::Node routers_prop = svc_cfg[SVC_PROP_ROUTERS];
     if (routers_prop) {
-      ts::Errata status = load_routers(routers_prop, routers);
+      auto status = load_routers(routers_prop, routers);
       if (!status)
-        zret.push(ts::Errata::Message(23, LVL_INFO, "Router specification invalid.").set(status));
+        errata.note(status);
     }
 
     if (!routers.size() && !Seed_Router.size()) {
-      zret.push(No_Valid_Routers(routers_prop.Mark().line));
+      Note_No_Valid_Routers(errata, routers_prop.Mark().line);
     }
 
-    // See if can proceed with service group creation.
-    ts::Errata::Code code = code_max(zret);
-    if (code >= LVL_WARN) {
-      zret = Unable_To_Create_Service_Group(svc_cfg.Mark().line).set(zret);
-      return zret;
+    if (errata.severity() >= ERRATA_WARN) {
+      return std::move(Unable_To_Create_Service_Group(svc_cfg.Mark().line).note(errata));
     }
 
     // Properties after this are optional so we can proceed if they fail.
@@ -663,55 +688,55 @@ CacheImpl::loader(const YAML::Node &cfg)
     // Look for optional properties.
 
     svc.m_packet_forward = ServiceGroup::GRE; // default
-    YAML::Node forward   = svc_cfg[SVC_PROP_FORWARD];
+    YAML::Node forward   = svc_cfg[SVC_PROP_FORWARD.data()];
     if (forward) {
-      ts::Errata status = load_option_set(forward, SVC_PROP_FORWARD, FORWARD_OPTS, N_FORWARD_OPTS);
-      bool gre          = FORWARD_OPTS[0].m_found;
-      bool l2           = FORWARD_OPTS[1].m_found;
+      auto status = load_option_set(forward, SVC_PROP_FORWARD, FORWARD_OPTS, N_FORWARD_OPTS);
+      bool gre    = FORWARD_OPTS[0].m_found;
+      bool l2     = FORWARD_OPTS[1].m_found;
       if (gre || l2) {
         svc.m_packet_forward = gre ? l2 ? ServiceGroup::GRE_OR_L2 : ServiceGroup::GRE : ServiceGroup::L2;
-        if (!status.isOK()) {
-          zret.push(Ignored_Opt_Errors(SVC_PROP_FORWARD, forward.Mark().line).set(status));
+        if (!status.is_ok()) {
+          Note_Ignored_Opt_Errors(errata, SVC_PROP_FORWARD, forward.Mark().line).note(status);
         }
       } else {
-        zret.push(ts::Errata::Message(26, LVL_INFO, "Defaulting to GRE forwarding.").set(status));
+        errata.note(ERRATA_NOTE, "Defaulting to GRE forwarding").note(status);
       }
     }
 
     svc.m_packet_return    = ServiceGroup::GRE; // default.
-    YAML::Node prop_return = svc_cfg[SVC_PROP_RETURN];
+    YAML::Node prop_return = svc_cfg[SVC_PROP_RETURN.data()];
     if (prop_return) {
-      ts::Errata status = load_option_set(prop_return, SVC_PROP_RETURN, RETURN_OPTS, N_RETURN_OPTS);
-      bool gre          = RETURN_OPTS[0].m_found;
-      bool l2           = RETURN_OPTS[1].m_found;
+      auto status = load_option_set(prop_return, SVC_PROP_RETURN, RETURN_OPTS, N_RETURN_OPTS);
+      bool gre    = RETURN_OPTS[0].m_found;
+      bool l2     = RETURN_OPTS[1].m_found;
       if (gre || l2) {
         svc.m_packet_return = gre ? l2 ? ServiceGroup::GRE_OR_L2 : ServiceGroup::GRE : ServiceGroup::L2;
-        if (!status.isOK()) {
-          zret.push(Ignored_Opt_Errors(SVC_PROP_RETURN, prop_return.Mark().line).set(status));
+        if (!status.is_ok()) {
+          Note_Ignored_Opt_Errors(errata, SVC_PROP_RETURN, prop_return.Mark().line).note(status);
         }
       } else {
-        zret.push(ts::Errata::Message(26, LVL_INFO, "Defaulting to GRE return.").set(status));
+        errata.note(ERRATA_NOTE, "Defaulting to GRE return.").note(status);
       }
     }
 
     svc.m_cache_assign = ServiceGroup::HASH_ONLY; // default
-    YAML::Node assign  = svc_cfg[SVC_PROP_ASSIGN];
+    YAML::Node assign  = svc_cfg[SVC_PROP_ASSIGN.data()];
     if (assign) {
-      ts::Errata status = load_option_set(assign, SVC_PROP_ASSIGN, ASSIGN_OPTS, N_OPTS(ASSIGN_OPTS));
-      bool hash         = ASSIGN_OPTS[0].m_found;
-      bool mask         = ASSIGN_OPTS[1].m_found;
+      auto status = load_option_set(assign, SVC_PROP_ASSIGN, ASSIGN_OPTS, N_OPTS(ASSIGN_OPTS));
+      bool hash   = ASSIGN_OPTS[0].m_found;
+      bool mask   = ASSIGN_OPTS[1].m_found;
 
       if (hash || mask) {
         svc.m_cache_assign = hash ? mask ? ServiceGroup::HASH_OR_MASK : ServiceGroup::HASH_ONLY : ServiceGroup::MASK_ONLY;
-        if (!status.isOK())
-          zret.push(Ignored_Opt_Errors(SVC_PROP_ASSIGN, assign.Mark().line).set(status));
+        if (!status.is_ok())
+          Note_Ignored_Opt_Errors(errata, SVC_PROP_ASSIGN, assign.Mark().line).note(status);
       } else {
-        status.push(ts::Errata::Message(26, LVL_INFO, "Defaulting to hash assignment only."));
-        zret.push(List_Valid_Opts(SVC_PROP_ASSIGN, assign.Mark().line, ASSIGN_OPTS, N_OPTS(ASSIGN_OPTS)).set(status));
+        errata.note(ERRATA_NOTE, "Defaulting to hash assignment only.");
+        Note_List_Valid_Opts(errata, SVC_PROP_ASSIGN, assign.Mark().line, ASSIGN_OPTS, N_OPTS(ASSIGN_OPTS)).note(status);
       }
     }
   }
-  return zret;
+  return errata;
 }
 
 } // namespace wccp
