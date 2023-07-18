@@ -2431,7 +2431,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     }
 
     if (secret_key_data.empty()) {
-      Note("Empty private key for public key %.*s", int(secret_data.size()), secret_data.data());
+      Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
       secret_key_data = secret_data;
     }
     if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
