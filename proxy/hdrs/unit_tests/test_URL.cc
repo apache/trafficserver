@@ -44,3 +44,104 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
     }
   }
 }
+
+struct get_hash_test_case {
+  const std::string description;
+  const std::string uri_1;
+  const std::string uri_2;
+  const bool has_equal_hash;
+};
+
+constexpr bool HAS_EQUAL_HASH = true;
+
+// clang-format off
+std::vector<get_hash_test_case> get_hash_test_cases = {
+  {
+    "No encoding: equal hashes",
+    "http://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    "http://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Scheme encoded: equal hashes",
+    "http%3C://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    "http<://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Host encoded: equal hashes",
+    "http://one%2Eexample.com/a/path?name=value#some=value?with_question#fragment",
+    "http://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Path encoded: differing hashes",
+    "http://one.example.com/a%2Fpath?name=value#some=value?with_question#fragment",
+    "http://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    !HAS_EQUAL_HASH,
+  },
+  {
+    "Query = encoded: differing hashes",
+    "http://one.example.com/a/path?name%3Dvalue#some=value?with_question#fragment",
+    "http://one.example.com/a/path?name=value#some=value?with_question#fragment",
+    !HAS_EQUAL_HASH,
+  },
+  {
+    "Query internal encoded: differing hashes",
+    "http://one.example.com/a/path?name=valu%5D#some=value?with_question#fragment",
+    "http://one.example.com/a/path?name=valu]#some=value?with_question#fragment",
+    !HAS_EQUAL_HASH,
+  },
+  {
+    "Fragment encoded: fragment is not part of the hash",
+    "http://one.example.com/a/path?name=value#some=value?with_question#frag%7Dent",
+    "http://one.example.com/a/path?name=value#some=value?with_question/frag}ent",
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Username encoded: equal hashes",
+    "mysql://my%7Eser:mypassword@localhost/mydatabase",
+    "mysql://my~ser:mypassword@localhost/mydatabase",
+    HAS_EQUAL_HASH,
+  },
+  {
+    "Password encoded: equal hashes",
+    "mysql://myuser:mypa%24sword@localhost/mydatabase",
+    "mysql://myuser:mypa$sword@localhost/mydatabase",
+    HAS_EQUAL_HASH,
+  },
+};
+
+/** Return the hash related to a URI.
+  *
+  * @param[in] uri The URI to hash.
+  * @return The hash of the URI.
+ */
+CryptoHash
+get_hash(const std::string &uri)
+{
+  URL url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  url.parse(uri.c_str(), uri.length());
+  CryptoHash hash;
+  url.hash_get(&hash);
+  heap->destroy();
+  return hash;
+}
+
+TEST_CASE("UrlHashGet", "[url][hash_get]")
+{
+  for (auto const &test_case : get_hash_test_cases) {
+    std::string description = test_case.description + ": " + test_case.uri_1 + " vs " + test_case.uri_2;
+    SECTION(description) {
+      CryptoHash hash1 = get_hash(test_case.uri_1);
+      CryptoHash hash2 = get_hash(test_case.uri_2);
+      if (test_case.has_equal_hash) {
+        CHECK(hash1 == hash2);
+      } else {
+        CHECK(hash1 != hash2);
+      }
+    }
+  }
+}
