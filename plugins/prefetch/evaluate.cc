@@ -39,7 +39,7 @@ tonum(char ch)
 }
 
 inline char
-tochar(char ch)
+tochar(int8_t ch)
 {
   return ch + '0';
 }
@@ -74,7 +74,7 @@ add(StringView const lhs, StringView const rhs)
   auto ito = other.crbegin();
 
   while (ito != other.crend()) {
-    char val = tonum(*itr) + tonum(*ito);
+    int8_t val = tonum(*itr) + tonum(*ito);
     if (carry) {
       ++val;
     }
@@ -92,7 +92,7 @@ add(StringView const lhs, StringView const rhs)
   }
 
   while (result.rend() != itr && carry) {
-    char val = tonum(*itr) + 1;
+    int8_t val = tonum(*itr) + 1;
     if (val < 10) {
       carry = false;
     } else {
@@ -129,7 +129,7 @@ sub(StringView const lhs, StringView const rhs)
   auto itb = rhs.crbegin();
 
   while (result.rend() != itr && rhs.crend() != itb) {
-    char val = tonum(*itr) - tonum(*itb);
+    int8_t val = tonum(*itr) - tonum(*itb);
     if (borrow) {
       --val;
     }
@@ -148,7 +148,7 @@ sub(StringView const lhs, StringView const rhs)
 
   // keep pushing borrow
   while (result.rend() != itr && borrow) {
-    char val = tonum(*itr) - 1;
+    int8_t val = tonum(*itr) - 1;
     if (val < 0) {
       borrow  = true;
       val    += 10;
