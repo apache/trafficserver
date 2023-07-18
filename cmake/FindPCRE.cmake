@@ -15,20 +15,37 @@
 #
 #######################
 
+# FindPCRE.cmake
+#
+# This will define the following variables
+#
+#     PCRE_FOUND
+#     PCRE_LIBRARIES
+#     PCRE_INCLUDE_DIRS
+#
+# and the following imported targets
+#
+#     PCRE::PCRE
+#
 
-find_path(PCRE_INCLUDE_DIR NAMES pcre.h PATH_SUFFIXES pcre)
+
+find_path(PCRE_INCLUDE_DIR NAMES pcre.h)# PATH_SUFFIXES pcre)
 find_library(PCRE_LIBRARY NAMES pcre)
 
-message(PCRE_INCLUDE_DIR=${PCRE_INCLUDE_DIR})
-message(PCRE_LIBRARY=${PCRE_LIBRARY})
+mark_as_advanced(PCRE_FOUND PCRE_LIBRARY PCRE_INCLUDE_DIR)
 
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(PCRE DEFAULT_MSG PCRE_LIBRARY PCRE_INCLUDE_DIR)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PCRE
+    REQUIRED_VARS PCRE_INCLUDE_DIR PCRE_LIBRARY
+)
 
 if(PCRE_FOUND)
-    SET(PCRE_LIBRARIES ${PCRE_LIBRARY})
-    SET(PCRE_INCLUDE_DIRS ${PCRE_INCLUDE_DIR})
-else(PCRE_FOUND)
-    SET(PCRE_LIBRARIES)
-    SET(PCRE_INCLUDE_DIRS)
-endif(PCRE_FOUND)
+    set(PCRE_INCLUDE_DIRS "${PCRE_INCLUDE_DIR}")
+    set(PCRE_LIBRARIES "${PCRE_LIBRARY}")
+endif()
+
+if(PCRE_FOUND AND NOT TARGET PCRE::PCRE)
+    add_library(PCRE::PCRE INTERFACE IMPORTED)
+    target_include_directories(PCRE::PCRE INTERFACE ${PCRE_INCLUDE_DIRS})
+    target_link_libraries(PCRE::PCRE INTERFACE "${PCRE_LIBRARY}")
+endif()

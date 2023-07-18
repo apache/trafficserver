@@ -19,4 +19,4 @@ add_atsplugin(regex_revalidate regex_revalidate.c)
 
 target_include_directories(regex_revalidate PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
-target_link_libraries(regex_revalidate PRIVATE "${PCRE_LIBRARY}")
+target_link_libraries(regex_revalidate PRIVATE PCRE::PCRE)

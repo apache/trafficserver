@@ -179,7 +179,7 @@ if(LibLZMA_FOUND)
         set(HAVE_LZMA_H TRUE)
 endif()
 
-find_package(PCRE)
+find_package(PCRE REQUIRED)
 
 include(CheckOpenSSLIsBoringSSL)
 find_package(OpenSSL)
@@ -326,7 +326,6 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>)
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
-        ${PCRE_INCLUDE_DIRS}
 )
 
 if (OPENSSL_FOUND)

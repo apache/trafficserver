@@ -46,7 +46,7 @@ target_link_libraries(inkevent
     PRIVATE
         libswoc
         ${OPENSSL_LIBRARIES} # transitive
-        ${PCRE_LIBRARIES} # transitive
+        PCRE::PCRE # transitive
         resolv # transitive
         tscpputil # transitive
         yaml-cpp::yaml-cpp # transitive

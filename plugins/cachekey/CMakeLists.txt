@@ -22,3 +22,5 @@ add_atsplugin(cachekey
         pattern.cc
         plugin.cc
 )
+
+target_link_libraries(cachekey PRIVATE PCRE::PCRE)

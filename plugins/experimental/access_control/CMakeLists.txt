@@ -29,7 +29,7 @@ add_atsplugin(access_control
 
 target_link_libraries(access_control
     PRIVATE
-        ${PCRE_LIBRARY}
+        PCRE::PCRE
         OpenSSL::SSL
         OpenSSL::Crypto
 )
