@@ -32,7 +32,7 @@
 
 #include "Config.h"
 #include "common.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 Config::Config()
 {
@@ -68,14 +68,14 @@ Config::loadConfig(const std::string &filename)
       return success;
     }
 
-    ts::TextView content(config_data);
+    swoc::TextView content(config_data);
     while (content) {
-      ts::TextView line = content.take_prefix_at('\n');
+      swoc::TextView line = content.take_prefix_at('\n');
       if (line.empty() || '#' == *line) {
         continue;
       }
       line.ltrim_if(&isspace);
-      ts::TextView field = line.take_prefix_at('=');
+      swoc::TextView field = line.take_prefix_at('=');
       TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field.size()), field.data(), static_cast<int>(line.size()), line.data());
       if (field.size() > 0) {
         m_config[std::string(field.data(), field.size())] = std::string(line.data(), line.size());

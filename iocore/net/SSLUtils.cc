@@ -25,7 +25,6 @@
 
 #include "P_SSLUtils.h"
 
-#include "tscpp/util/TextView.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"

@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/ParseRules.h"
 #include "MIME.h"
 
@@ -43,7 +43,7 @@
  */
 class HdrCsvIter
 {
-  using TextView = ts::TextView;
+  using TextView = swoc::TextView;
 
 public:
   /** Construct the iterator in the initial state.
@@ -134,7 +134,7 @@ HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
   return tv.data();
 }
 
-inline ts::TextView
+inline swoc::TextView
 HdrCsvIter::get_first(const MIMEField *m, bool follow_dups)
 {
   field_init(m);
@@ -143,7 +143,7 @@ HdrCsvIter::get_first(const MIMEField *m, bool follow_dups)
   return m_csv;
 }
 
-inline ts::TextView
+inline swoc::TextView
 HdrCsvIter::get_next()
 {
   this->find_csv();
@@ -158,7 +158,7 @@ HdrCsvIter::get_next(int *len)
   return tv.data();
 }
 
-inline ts::TextView
+inline swoc::TextView
 HdrCsvIter::get_current()
 {
   return m_csv;
@@ -178,7 +178,7 @@ HdrCsvIter::get_first_int(MIMEField *m, int &result)
 
   if (val) {
     TextView parsed;
-    int n = ts::svtoi(val, &parsed);
+    int n = swoc::svtoi(val, &parsed);
     if (parsed) {
       result = n;
       return true;
@@ -194,7 +194,7 @@ HdrCsvIter::get_next_int(int &result)
 
   if (val) {
     TextView parsed;
-    int n = ts::svtoi(val, &parsed);
+    int n = swoc::svtoi(val, &parsed);
     if (parsed) {
       result = n;
       return true;

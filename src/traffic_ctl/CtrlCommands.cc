@@ -55,7 +55,7 @@ parse_format(ts::Arguments *args)
   BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::NOT_SET};
 
   if (auto data = args->get("format"); data) {
-    ts::TextView fmt{data.value()};
+    swoc::TextView fmt{data.value()};
     if (auto search = _Fmt_str_to_enum.find(fmt); search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
     }

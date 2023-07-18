@@ -274,7 +274,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
 TEST_CASE("bwstring", "[bwprint][bwstring]")
 {
   std::string s;
-  ts::TextView fmt("{} -- {}");
+  swoc::TextView fmt("{} -- {}");
   std::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
   ts::bwprint(s, fmt, "string", 956);
@@ -576,7 +576,7 @@ TEST_CASE("bwstring std formats", "[libts][bwprint]")
   const char *empty{nullptr};
   std::string s1{"Persia"};
   std::string_view s2{"Evil Dave"};
-  ts::TextView s3{"Leif"};
+  swoc::TextView s3{"Leif"};
   w.reset().print("name = {}", ts::bwf::FirstOf(empty, s3));
   REQUIRE(w.view() == "name = Leif");
   w.reset().print("name = {}", ts::bwf::FirstOf(s2, s3));
@@ -621,7 +621,7 @@ TEST_CASE("bwperf", "[bwprint][performance]")
   constexpr int N_LOOPS = 1000000;
 
   static constexpr const char * FMT = "Format |{:#010x}| '{}'";
-  static constexpr ts::TextView fmt{FMT, strlen(FMT)};
+  static constexpr swoc::TextView fmt{FMT, strlen(FMT)};
   static constexpr std::string_view text{"e99a18c428cb38d5f260853678922e03"sv};
   ts::LocalBufferWriter<256> bw;
 

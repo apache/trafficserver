@@ -28,6 +28,8 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 
+using namespace swoc::literals;
+
 // This method takes a SourceLocation source location data structure and
 // converts it to a human-readable representation, in the buffer <buf>
 // with length <buflen>.  The buffer will always be NUL-terminated, and
@@ -60,11 +62,11 @@ ts::BufferWriter &
 SourceLocation::print(ts::BufferWriter &w, ts::BWFSpec const &) const
 {
   if (this->valid()) {
-    ts::TextView base{
-      ts::TextView{file, strlen(file)}
+    swoc::TextView base{
+      swoc::TextView{file, strlen(file)}
       .take_suffix_at('/')
     };
-    w.print("{}:{}{}", base, line, ts::bwf::OptionalAffix(func, ")"_sv, " ("_sv));
+    w.print("{}:{}{}", base, line, ts::bwf::OptionalAffix(func, ")"_tv, " ("_tv));
   };
   return w;
 }

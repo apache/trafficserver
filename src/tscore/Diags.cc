@@ -51,6 +51,8 @@ int diags_on_for_plugins          = 0;
 char ts_new_debug_on_flag_        = 0;
 int DiagsConfigState::_enabled[2] = {0, 0};
 
+using namespace swoc::literals;
+
 void
 DiagsConfigState::enabled(DiagsTagType dtt, int new_value)
 {
@@ -251,7 +253,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // Save room for optional newline and terminating NUL bytes.
   format_writer.clip(2);
 
-  format_writer.print("[{timestamp}] ");
+  format_writer.print("[{timestamp}] "_tv);
   auto timestamp_offset = format_writer.size();
 
   format_writer.print("{thread-name}");

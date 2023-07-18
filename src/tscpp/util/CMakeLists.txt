@@ -19,7 +19,6 @@
 add_library(tscpputil SHARED
         ts_ip.cc
         ts_diags.cc
-        TextView.cc
         YamlCfg.cc
         ts_unit_parser.cc)
 add_library(ts::tscpputil ALIAS tscpputil)
@@ -33,7 +32,6 @@ add_executable(test_tscpputil
         unit_tests/test_IntrusiveDList.cc
         unit_tests/test_LocalBuffer.cc
         unit_tests/test_PostScript.cc
-        unit_tests/test_TextView.cc
         unit_tests/test_Strerror.cc
         unit_tests/test_ts_meta.cc
         unit_tests/test_time_parser.cc

@@ -30,7 +30,7 @@
 #include <vector>
 #include <map>
 
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/ink_assert.h"
 
 namespace ts
@@ -45,7 +45,7 @@ struct BWFSpec {
   constexpr BWFSpec() {}
 
   /// Construct by parsing @a fmt.
-  BWFSpec(TextView fmt);
+  BWFSpec(swoc::TextView fmt);
 
   char _fill = ' '; ///< Fill character.
   char _sign = '-'; ///< Numeric sign style, space + -

@@ -38,7 +38,7 @@ global_message_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_LIFECYCLE_MSG: {
     TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-    static constexpr std::string_view PLUGIN_PREFIX("traffic_dump."_sv);
+    static constexpr std::string_view PLUGIN_PREFIX("traffic_dump.");
 
     std::string_view tag(msg->tag, strlen(msg->tag));
     if (tag.substr(0, PLUGIN_PREFIX.size()) == PLUGIN_PREFIX) {
@@ -124,8 +124,8 @@ TSPluginInit(int argc, char const *argv[])
       // replaced the default sensitive fields with the user-supplied list of
       // sensitive fields.
       sensitive_fields_were_specified = true;
-      ts::TextView input_filter_fields{std::string_view{optarg}};
-      ts::TextView filter_field;
+      swoc::TextView input_filter_fields{std::string_view{optarg}};
+      swoc::TextView filter_field;
       while (!(filter_field = input_filter_fields.take_prefix_at(',')).empty()) {
         filter_field.trim_if(&isspace);
         if (filter_field.empty()) {

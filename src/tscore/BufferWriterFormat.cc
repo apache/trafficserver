@@ -36,6 +36,7 @@
 #include <exception>
 
 using namespace std::literals;
+using namespace swoc::literals;
 
 namespace
 {
@@ -44,7 +45,7 @@ namespace
 // times slower than snprintf to the same speed. This version handles only positive integers
 // in decimal.
 inline int
-tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
+tv_to_positive_decimal(swoc::TextView src, swoc::TextView *out)
 {
   int zret = 0;
 
@@ -102,9 +103,9 @@ BWFSpec::Property::Property()
 }
 
 /// Parse a format specification.
-BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
+BWFSpec::BWFSpec(swoc::TextView fmt) : _name(fmt.take_prefix_at(':'))
 {
-  TextView num; // temporary for number parsing.
+  swoc::TextView num; // temporary for number parsing.
   intmax_t n;
 
   // if it's parsable as a number, treat it as an index.
@@ -114,8 +115,8 @@ BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
   }
 
   if (fmt.size()) {
-    TextView sz = fmt.take_prefix_at(':'); // the format specifier.
-    _ext        = fmt;                     // anything past the second ':' is the extension.
+    swoc::TextView sz = fmt.take_prefix_at(':'); // the format specifier.
+    _ext              = fmt;                     // anything past the second ':' is the extension.
     if (sz.size()) {
       // fill and alignment
       if ('%' == *sz) { // enable URI encoding of the fill character so metasyntactic chars can be used if needed.
@@ -630,7 +631,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void> const &span)
+bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void const> const &span)
 {
   static const BWFormat default_fmt{"{:#x}@{:p}"};
   if ('x' == spec._type || 'X' == spec._type) {
@@ -642,7 +643,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void> const &span)
 }
 
 /// Preparse format string for later use.
-BWFormat::BWFormat(ts::TextView fmt)
+BWFormat::BWFormat(swoc::TextView fmt)
 {
   BWFSpec lit_spec{BWFSpec::DEFAULT};
   int arg_idx = 0;
@@ -678,13 +679,13 @@ BWFormat::~BWFormat() {}
 /// Pass the results back in @a literal and @a specifier as appropriate.
 /// Update @a fmt to strip the parsed text.
 bool
-BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &specifier)
+BWFormat::parse(swoc::TextView &fmt, std::string_view &literal, std::string_view &specifier)
 {
-  TextView::size_type off;
+  swoc::TextView::size_type off;
 
   // Check for brace delimiters.
   off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
-  if (off == TextView::npos) {
+  if (off == swoc::TextView::npos) {
     // not found, it's a literal, ship it.
     literal = fmt;
     fmt.remove_prefix(literal.size());
@@ -697,7 +698,7 @@ BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &
     char c2 = fmt[off + 1];
     if (c1 == c2) {
       // double braces count as literals, but must tweak to out only 1 brace.
-      literal = fmt.take_prefix_at(off + 1);
+      literal = fmt.take_prefix(off + 1);
       return false;
     } else if ('}' == c1) {
       throw std::invalid_argument("BWFormat:: Unopened } in format string.");
@@ -713,10 +714,10 @@ BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &
     // Need to be careful, because an empty format is OK and it's hard to tell if
     // take_prefix_at failed to find the delimiter or found it as the first byte.
     off = fmt.find('}');
-    if (off == TextView::npos) {
+    if (off == swoc::TextView::npos) {
       throw std::invalid_argument("BWFormat: Unclosed { in format string");
     }
-    specifier = fmt.take_prefix_at(off);
+    specifier = fmt.take_prefix(off);
     return true;
   }
   return false;
@@ -864,8 +865,8 @@ BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, std::error_code const &ec)
 {
   // This provides convenient safe access to the errno short name array.
-  static const BWFormat number_fmt{"[{}]"_sv}; // numeric value format.
-  if (spec.has_numeric_type()) {               // if numeric type, print just the numeric
+  static const BWFormat number_fmt{"[{}]"sv}; // numeric value format.
+  if (spec.has_numeric_type()) {              // if numeric type, print just the numeric
     // part.
     w.print(number_fmt, ec.value());
   } else {

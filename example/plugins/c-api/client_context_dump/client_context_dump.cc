@@ -31,7 +31,7 @@
 #include <openssl/x509v3.h>
 
 #include "ts/ts.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #define PLUGIN_NAME "client_context_dump"
 TSTextLogObject context_dump_log;
@@ -147,7 +147,7 @@ int
 CB_context_dump(TSCont, TSEvent, void *edata)
 {
   TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-  static constexpr std::string_view PLUGIN_PREFIX("client_context_dump."_sv);
+  static constexpr std::string_view PLUGIN_PREFIX("client_context_dump.");
 
   std::string_view tag(msg->tag, strlen(msg->tag));
 

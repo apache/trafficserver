@@ -176,7 +176,7 @@ public:
 
   static std::string_view convert_openssl_alpn_wire_format(int index);
 
-  using TextView = ts::TextView;
+  using TextView = swoc::TextView;
 
   /// Default constructor.
   /// Creates empty registry with no names.
@@ -529,8 +529,8 @@ extern void ts_session_protocol_well_known_name_indices_init();
  * the wire format does not support an empty protocol list, therefore this
  * function returns false if @a protocols is an empty string.
  *
- * TODO: ideally this would take a ts::TextView for @a protocols, but currently
- * ts::TextView does not have a char* constructor while std::string_view does.
- * Once that is added, this can be seamlessly switched to a ts::TextView.
+ * TODO: ideally this would take a swoc::TextView for @a protocols, but currently
+ * swoc::TextView does not have a char* constructor while std::string_view does.
+ * Once that is added, this can be seamlessly switched to a swoc::TextView.
  */
 bool convert_alpn_to_wire_format(std::string_view protocols, unsigned char *wire_format_buffer, int &wire_format_buffer_len);

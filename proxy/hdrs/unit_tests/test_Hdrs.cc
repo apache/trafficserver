@@ -42,7 +42,7 @@
 TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 {
   struct Test {
-    ts::TextView msg;
+    swoc::TextView msg;
     int expected_result;
     int expected_bytes_consumed;
   };
@@ -99,10 +99,10 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 
 TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
 {
-  constexpr ts::TextView const message = "GET /index.html HTTP/1.0\r\n";
+  constexpr swoc::TextView const message = "GET /index.html HTTP/1.0\r\n";
 
   struct Fragment {
-    ts::TextView msg;
+    swoc::TextView msg;
     bool shares_input;
     int expected_result;
   };
@@ -115,10 +115,10 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   };
 
   MIMEScanner scanner;
-  ts::TextView output; // only set on last call
+  swoc::TextView output; // only set on last call
 
   for (auto const &frag : fragments) {
-    ts::TextView input          = frag.msg;
+    swoc::TextView input        = frag.msg;
     bool got_shares_input       = !frag.shares_input;
     constexpr bool const is_eof = false;
     ParseResult const got_res   = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);

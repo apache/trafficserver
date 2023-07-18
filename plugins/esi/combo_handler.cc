@@ -36,7 +36,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"
@@ -44,6 +44,7 @@
 
 using namespace std;
 using namespace EsiLib;
+using namespace swoc::literals;
 
 #define DEBUG_TAG "combo_handler"
 
@@ -1077,11 +1078,11 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      ts::TextView tv{value, value_len};
-      tv = tv.prefix(';').rtrim(std::string_view(" \t"));
+      swoc::TextView tv{value, size_t(value_len)};
+      tv = tv.take_prefix_at(';').rtrim(" \t"_tv);
       if (_content_type_allowlist.empty()) {
         ;
-      } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](ts::TextView tv2) -> bool {
+      } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](swoc::TextView tv2) -> bool {
                    return strcasecmp(tv, tv2) == 0;
                  }) == _content_type_allowlist.end()) {
         return false;
@@ -1128,16 +1129,16 @@ ContentTypeHandler::loadAllowList(std::string const &file_spec)
       if (!fs.good()) {
         break;
       }
-      constexpr std::string_view bs{" \t"sv};
-      ts::TextView line{line_buffer, std::size_t(fs.gcount() - 1)};
+      constexpr swoc::TextView bs{" \t"};
+      swoc::TextView line{line_buffer, std::size_t(fs.gcount() - 1)};
       line.ltrim(bs);
       if (line.empty() || line[0] == '#') {
         // Empty/comment line.
         continue;
       }
-      ts::TextView content_type{line.take_prefix_at(bs)};
+      swoc::TextView content_type{line.take_prefix_at(bs)};
       line.trim(bs);
-      if (line.size() && (line[0] != '#')) {
+      if (!line.empty() && (line.front() != '#')) {
         extra_junk_on_line = true;
         break;
       }

@@ -508,32 +508,32 @@ Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, const Bytes &si
 Errata
 Cache::loadSpanConfig(swoc::file::path const &path)
 {
-  static const ts::TextView TAG_ID("id");
-  static const ts::TextView TAG_VOL("volume");
+  static const swoc::TextView TAG_ID("id");
+  static const swoc::TextView TAG_VOL("volume");
 
   Errata zret;
   std::error_code ec;
   std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
-    ts::TextView content(load_content);
+    swoc::TextView content(load_content);
     while (content) {
-      ts::TextView line = content.take_prefix_at('\n');
+      swoc::TextView line = content.take_prefix_at('\n');
       line.ltrim_if(&isspace);
       if (line.empty() || '#' == *line) {
         continue;
       }
-      ts::TextView localpath = line.take_prefix_if(&isspace);
+      swoc::TextView localpath = line.take_prefix_if(&isspace);
       if (localpath) {
         // After this the line is [size] [id=string] [volume=#]
         while (line) {
-          ts::TextView value(line.take_prefix_if(&isspace));
+          swoc::TextView value(line.take_prefix_if(&isspace));
           if (value) {
-            ts::TextView tag(value.take_prefix_at('='));
+            swoc::TextView tag(value.take_prefix_at('='));
             if (!tag) { // must be the size
             } else if (0 == strcasecmp(tag, TAG_ID)) {
             } else if (0 == strcasecmp(tag, TAG_VOL)) {
-              ts::TextView text;
-              auto n = ts::svtoi(value, &text);
+              swoc::TextView text;
+              auto n = swoc::svtoi(value, &text);
               if (text == value && 0 < n && n < 256) {
               } else {
                 zret.push(0, 0, "Invalid volume index '", value, "'");
@@ -553,18 +553,18 @@ Cache::loadSpanConfig(swoc::file::path const &path)
 Errata
 Cache::loadURLs(swoc::file::path const &path)
 {
-  static const ts::TextView TAG_VOL("url");
+  static const swoc::TextView TAG_VOL("url");
   ts::URLparser loadURLparser;
   Errata zret;
 
   std::error_code ec;
   std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
-    ts::TextView content(load_content);
+    swoc::TextView content(load_content);
     while (!content.empty()) {
-      ts::TextView blob = content.take_prefix_at('\n');
+      swoc::TextView blob = content.take_prefix_at('\n');
 
-      ts::TextView tag(blob.take_prefix_at('='));
+      swoc::TextView tag(blob.take_prefix_at('='));
       if (tag.empty()) {
       } else if (0 == strcasecmp(tag, TAG_VOL)) {
         std::string url;
@@ -1030,8 +1030,8 @@ Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
 Errata
 VolumeConfig::load(swoc::file::path const &path)
 {
-  static const ts::TextView TAG_SIZE("size");
-  static const ts::TextView TAG_VOL("volume");
+  static const swoc::TextView TAG_SIZE("size");
+  static const swoc::TextView TAG_VOL("volume");
 
   Errata zret;
 
@@ -1040,30 +1040,30 @@ VolumeConfig::load(swoc::file::path const &path)
   std::error_code ec;
   std::string load_content = swoc::file::load(path, ec);
   if (ec.value() == 0) {
-    ts::TextView content(load_content);
+    swoc::TextView content(load_content);
     while (content) {
       Data v;
 
       ++ln;
-      ts::TextView line = content.take_prefix_at('\n');
+      swoc::TextView line = content.take_prefix_at('\n');
       line.ltrim_if(&isspace);
       if (line.empty() || '#' == *line) {
         continue;
       }
 
       while (line) {
-        ts::TextView value(line.take_prefix_if(&isspace));
-        ts::TextView tag(value.take_prefix_at('='));
+        swoc::TextView value(line.take_prefix_if(&isspace));
+        swoc::TextView tag(value.take_prefix_at('='));
         if (tag.empty()) {
           zret.push(0, 1, "Line ", ln, " is invalid");
         } else if (0 == strcasecmp(tag, TAG_SIZE)) {
           if (v.hasSize()) {
             zret.push(0, 5, "Line ", ln, " has field ", TAG_SIZE, " more than once");
           } else {
-            ts::TextView text;
-            auto n = ts::svtoi(value, &text);
+            swoc::TextView text;
+            auto n = swoc::svtoi(value, &text);
             if (text) {
-              ts::TextView percent(text.data_end(), value.data_end()); // clip parsed number.
+              swoc::TextView percent(text.data_end(), value.data_end()); // clip parsed number.
               if (percent.empty()) {
                 v._size = CacheStripeBlocks(round_up(Megabytes(n)));
                 if (v._size.count() != n) {
@@ -1082,8 +1082,8 @@ VolumeConfig::load(swoc::file::path const &path)
           if (v.hasIndex()) {
             zret.push(0, 6, "Line ", ln, " has field ", TAG_VOL, " more than once");
           } else {
-            ts::TextView text;
-            auto n = ts::svtoi(value, &text);
+            swoc::TextView text;
+            auto n = swoc::svtoi(value, &text);
             if (text == value) {
               v._idx = n;
             } else {

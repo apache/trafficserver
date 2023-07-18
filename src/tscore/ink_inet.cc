@@ -30,7 +30,7 @@
 #include "tscore/CryptoHash.h"
 #include "tscore/ink_assert.h"
 #include "ts/apidefs.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/ink_inet.h"
 
 #include "swoc/TextView.h"

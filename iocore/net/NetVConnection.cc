@@ -30,6 +30,8 @@
 
  ****************************************************************************/
 
+#include <swoc/TextView.h>
+
 #include "P_Net.h"
 #include "ts/apidefs.h"
 
@@ -46,7 +48,7 @@ bool
 NetVConnection::has_proxy_protocol(IOBufferReader *reader)
 {
   char buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
-  ts::TextView tv;
+  swoc::TextView tv;
   tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);
@@ -67,7 +69,7 @@ NetVConnection::has_proxy_protocol(IOBufferReader *reader)
 bool
 NetVConnection::has_proxy_protocol(char *buffer, int64_t *bytes_r)
 {
-  ts::TextView tv;
+  swoc::TextView tv;
   tv.assign(buffer, *bytes_r);
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);

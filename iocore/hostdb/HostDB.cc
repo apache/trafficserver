@@ -40,7 +40,7 @@
 #include <shared_mutex>
 #include <http/HttpConfig.h>
 
-using ts::TextView;
+using swoc::TextView;
 using std::chrono::duration_cast;
 using swoc::round_down;
 using swoc::round_up;

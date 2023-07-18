@@ -33,7 +33,7 @@
 
 #include "swoc/MemSpan.h"
 
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 #include "tscore/BufferWriterForward.h"
 
 namespace ts
@@ -186,11 +186,11 @@ public:
       "{} {1} {}", and "{0} {1} {2}" are equivalent. Using an explicit index does not reset the
       position of subsequent substitutions, therefore "{} {0} {}" is equivalent to "{0} {0} {2}".
   */
-  template <typename... Rest> BufferWriter &print(TextView fmt, Rest &&...rest);
+  template <typename... Rest> BufferWriter &print(swoc::TextView fmt, Rest &&...rest);
   /** Print overload to take arguments as a tuple instead of explicitly.
       This is useful for forwarding variable arguments from other functions / methods.
   */
-  template <typename... Args> BufferWriter &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> BufferWriter &printv(swoc::TextView fmt, std::tuple<Args...> const &args);
 
   /// Print using a preparsed @a fmt.
   template <typename... Args> BufferWriter &print(BWFormat const &fmt, Args &&...args);
@@ -395,8 +395,8 @@ public:
   ssize_t operator>>(int fd) const override;
 
   // Overrides for co-variance
-  template <typename... Rest> self_type &print(TextView fmt, Rest &&...rest);
-  template <typename... Args> self_type &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Rest> self_type &print(swoc::TextView fmt, Rest &&...rest);
+  template <typename... Args> self_type &printv(swoc::TextView fmt, std::tuple<Args...> const &args);
   template <typename... Args> self_type &print(BWFormat const &fmt, Args &&...args);
   template <typename... Args> self_type &printv(BWFormat const &fmt, std::tuple<Args...> const &args);
 
@@ -570,7 +570,7 @@ class BWFormat
 {
 public:
   /// Construct from a format string @a fmt.
-  BWFormat(TextView fmt);
+  BWFormat(swoc::TextView fmt);
   ~BWFormat();
 
   /** Parse elements of a format string.
@@ -584,7 +584,7 @@ public:
       the case of no specifier found (@c false) or an empty specifier (@c true).
 
    */
-  static bool parse(TextView &fmt, std::string_view &literal, std::string_view &spec);
+  static bool parse(swoc::TextView &fmt, std::string_view &literal, std::string_view &spec);
 
   /** Parsed items from the format string.
 
@@ -610,14 +610,14 @@ protected:
 
 template <typename... Args>
 BufferWriter &
-BufferWriter::print(TextView fmt, Args &&...args)
+BufferWriter::print(swoc::TextView fmt, Args &&...args)
 {
   return this->printv(fmt, std::forward_as_tuple(args...));
 }
 
 template <typename... Args>
 BufferWriter &
-BufferWriter::printv(TextView fmt, std::tuple<Args...> const &args)
+BufferWriter::printv(swoc::TextView fmt, std::tuple<Args...> const &args)
 {
   using namespace std::literals;
   static constexpr int N = sizeof...(Args); // used as loop limit
@@ -712,14 +712,15 @@ BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 {
+  using namespace swoc::literals;
   BWFSpec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
 
   if (ptr == nullptr) {
     if (spec._type == 's' || spec._type == 'S') {
       ptr_spec._type = BWFSpec::DEFAULT_TYPE;
-      ptr_spec._ext  = ""_sv; // clear any extension.
-      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
+      ptr_spec._ext  = ""_tv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_tv : "NULL"_tv);
     } else if (spec._type == BWFSpec::DEFAULT_TYPE) {
       return w; // print nothing if there is no format character override.
     }
@@ -734,7 +735,17 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 }
 
 // MemSpan
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, swoc::MemSpan<void> const &span);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, swoc::MemSpan<void const> const &span);
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, swoc::MemSpan<char const> const &span)
+{
+  return bwformat(w, spec, span.rebind<void const>());
+}
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, swoc::MemSpan<char> const &span)
+{
+  return bwformat(w, spec, span.rebind<void const>());
+}
 
 // -- Common formatters --
 
@@ -766,7 +777,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const char *v)
 }
 
 inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, TextView tv)
+bwformat(BufferWriter &w, BWFSpec const &spec, swoc::TextView tv)
 {
   return bwformat(w, spec, static_cast<std::string_view>(tv));
 }
@@ -853,7 +864,7 @@ operator<<(BufferWriter &w, V &&v)
  */
 template <typename... Args>
 std::string &
-bwprintv(std::string &s, ts::TextView fmt, std::tuple<Args...> const &args)
+bwprintv(std::string &s, swoc::TextView fmt, std::tuple<Args...> const &args)
 {
   auto len = s.size(); // remember initial size
   size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, args).extent();
@@ -866,7 +877,7 @@ bwprintv(std::string &s, ts::TextView fmt, std::tuple<Args...> const &args)
 
 template <typename... Args>
 std::string &
-bwprint(std::string &s, ts::TextView fmt, Args &&...args)
+bwprint(std::string &s, swoc::TextView fmt, Args &&...args)
 {
   return bwprintv(s, fmt, std::forward_as_tuple(args...));
 }
@@ -881,14 +892,14 @@ inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _bu
 
 template <typename... Args>
 inline auto
-FixedBufferWriter::print(TextView fmt, Args &&...args) -> self_type &
+FixedBufferWriter::print(swoc::TextView fmt, Args &&...args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::printv(fmt, std::forward_as_tuple(args...)));
 }
 
 template <typename... Args>
 inline auto
-FixedBufferWriter::printv(TextView fmt, std::tuple<Args...> const &args) -> self_type &
+FixedBufferWriter::printv(swoc::TextView fmt, std::tuple<Args...> const &args) -> self_type &
 {
   return static_cast<self_type &>(this->super_type::printv(fmt, args));
 }

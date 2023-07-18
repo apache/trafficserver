@@ -21,7 +21,7 @@
 #include <cstring>
 
 #include "tscpp/util/ts_meta.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include "catch.hpp"
 

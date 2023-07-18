@@ -61,12 +61,12 @@ Errata::sink() {
 
 Errata &
 Errata::note(code_type const &code) {
-  return this->note("{}"_sv, code);
+  return this->note("{}"sv, code);
 }
 
 Errata &
 Errata::note(code_type const &code, Severity severity) {
-  return this->note(severity, "{}"_sv, code);
+  return this->note(severity, "{}"sv, code);
 }
 
 Errata::Data *

@@ -2166,8 +2166,8 @@ LogAccess::marshal_client_security_alpn(char *buf)
 {
   const char *alpn = "-";
   if (const int alpn_id = m_http_sm->get_user_agent().get_client_alpn_id(); alpn_id != SessionProtocolNameRegistry::INVALID) {
-    ts::TextView client_sec_alpn = globalSessionProtocolNameRegistry.nameFor(alpn_id);
-    alpn                         = client_sec_alpn.data();
+    swoc::TextView client_sec_alpn = globalSessionProtocolNameRegistry.nameFor(alpn_id);
+    alpn                           = client_sec_alpn.data();
   }
 
   int round_len = LogAccess::strlen(alpn);

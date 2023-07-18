@@ -34,7 +34,7 @@
 #include "HdrHeap.h"
 #include "HdrToken.h"
 
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 /***********************************************************************
  *                                                                     *
@@ -458,7 +458,7 @@ public:
    * accumulated in to a single line stored in the internal buffer. Otherwise the scanning
    * terminates at the first CR/LF.
    */
-  ParseResult get(ts::TextView &input, ts::TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type);
+  ParseResult get(swoc::TextView &input, swoc::TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type);
 
 protected:
   /** Append @a text to the internal buffer.
@@ -468,7 +468,7 @@ protected:
    *
    * A copy of @a text is appended to the internal line buffer.
    */
-  self_type &append(ts::TextView text);
+  self_type &append(swoc::TextView text);
 
   static constexpr MimeParseState INITIAL_PARSE_STATE = MIME_PARSE_BEFORE;
   std::string m_line;                          ///< Internally buffered line data for field coalescence.

@@ -27,7 +27,7 @@
 #include <string_view>
 
 #include "ts/ts.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #define PLUGIN_NAME "cert_update"
 
@@ -36,7 +36,7 @@ int
 CB_cert_update(TSCont, TSEvent, void *edata)
 {
   TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-  static constexpr std::string_view PLUGIN_PREFIX("cert_update."_sv);
+  static constexpr std::string_view PLUGIN_PREFIX("cert_update.");
 
   std::string_view tag(msg->tag, strlen(msg->tag));
   const char *server_cert_path = nullptr;

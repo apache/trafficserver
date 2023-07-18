@@ -26,7 +26,7 @@
 #include "swoc/swoc_file.h"
 
 #include "I_HostDBProcessor.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include <memory>
 #include <unordered_map>
@@ -37,7 +37,7 @@ struct HostFileRecord {
 };
 
 struct HostFile {
-  using HostFileForwardMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<std::string_view>>;
+  using HostFileForwardMap = std::unordered_map<swoc::TextView, HostFileRecord, std::hash<std::string_view>>;
   using HostFileReverseMap = std::unordered_map<IpAddr, HostDBRecord::Handle, IpAddr::Hasher>;
 
   HostFile(ts_seconds ttl) : ttl(ttl) {}

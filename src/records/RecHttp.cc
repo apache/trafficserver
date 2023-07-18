@@ -36,7 +36,7 @@
 #include <string_view>
 #include <unordered_set>
 
-using ts::TextView;
+using swoc::TextView;
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -796,7 +796,7 @@ SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(int index)
 }
 
 int
-SessionProtocolNameRegistry::toIndex(ts::TextView name)
+SessionProtocolNameRegistry::toIndex(swoc::TextView name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
@@ -832,15 +832,15 @@ SessionProtocolNameRegistry::toIndexConst(TextView name)
 int
 SessionProtocolNameRegistry::indexFor(TextView name) const
 {
-  const ts::TextView *end = m_names.begin() + m_n;
-  auto spot               = std::find(m_names.begin(), end, name);
+  const swoc::TextView *end = m_names.begin() + m_n;
+  auto spot                 = std::find(m_names.begin(), end, name);
   if (spot != end) {
     return static_cast<int>(spot - m_names.begin());
   }
   return INVALID;
 }
 
-ts::TextView
+swoc::TextView
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
   return 0 <= idx && idx < m_n ? m_names[idx] : TextView{};

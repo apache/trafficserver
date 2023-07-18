@@ -25,7 +25,7 @@
 #include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "P_SSLNextProtocolSet.h"
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 // For currently defined protocol strings, see
 // http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
@@ -64,7 +64,7 @@ SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, 
   }
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
-    if (enabled.contains(globalSessionProtocolNameRegistry.toIndex(ts::TextView{ep->protocol, strlen(ep->protocol)}))) {
+    if (enabled.contains(globalSessionProtocolNameRegistry.toIndex(swoc::TextView{ep->protocol, strlen(ep->protocol)}))) {
       Debug("ssl", "advertising protocol %s, %p", ep->protocol, ep->endpoint);
       advertised = append_protocol(ep->protocol, advertised);
     }

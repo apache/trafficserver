@@ -22,7 +22,7 @@
 
 #include <ts/ts.h>
 
-#include "tscpp/util/TextView.h"
+#include "swoc/TextView.h"
 
 #include "tscpp/api/Continuation.h"
 
@@ -52,13 +52,13 @@ namespace TextViewTest
 void
 f()
 {
-  ts::TextView tv("abcdefg");
+  swoc::TextView tv("abcdefg");
 
   std::ostringstream oss;
 
   oss << tv;
 
-  ALWAYS_ASSERT(memcmp(ts::TextView(oss.str()), tv) == 0)
+  ALWAYS_ASSERT(memcmp(swoc::TextView(oss.str()), tv) == 0)
 }
 
 TEST(f)

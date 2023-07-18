@@ -36,8 +36,39 @@
 #include <unordered_set>
 #include <memory>
 #include <string_view>
-#include <tscpp/util/TextView.h>
+#include <swoc/string_view_util.h>
+#include <swoc/TextView.h>
 
+namespace ts
+{
+
+/** Functor for STL containers that need caseless equality of standard string types.
+ *
+ * For example a @c std::set of strings with caseless comparison would be
+ *
+ * @code
+ * std::set<std::string, ts::caseless_compare> strings;
+ * @endcode
+ */
+struct caseless_equal {
+  bool
+  operator()(std::string_view const &lhs, std::string_view const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
+  }
+  bool
+  operator()(swoc::TextView const &lhs, swoc::TextView const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
+  }
+  bool
+  operator()(std::string const &lhs, std::string const &rhs) const
+  {
+    return strcasecmp(lhs, rhs) == 0;
+  }
+};
+
+} // namespace ts
 /**
   The Machine is a simple place holder for the hostname and the ip
   address of an internet host.

@@ -35,7 +35,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 
-using ts::TextView;
+using swoc::TextView;
 
 /***********************************************************************
  *                                                                     *
@@ -2292,14 +2292,14 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
   }
 
   if (field) {
-    ts::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
-    ts::TextView host, port;
+    swoc::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
+    swoc::TextView host, port;
 
     if (b) {
       if ('[' == *b) {
         auto idx = b.find(']');
         if (idx < b.size() - 1 && b[idx + 1] == ':') {
-          host = b.take_prefix_at(idx + 1);
+          host = b.take_prefix(idx + 1);
           port = b;
         } else {
           host = b;

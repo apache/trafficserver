@@ -275,8 +275,8 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
-ts::TextView
-LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
+swoc::TextView
+LogUtils::get_unrolled_filename(swoc::TextView rolled_filename)
 {
   auto unrolled_name = rolled_filename;
 
@@ -284,23 +284,26 @@ LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
   //   squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
   auto suffix = rolled_filename;
 
-  suffix.remove_prefix_at('.');
-  // Using the above squid.log example, suffix now looks like:
-  //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
+  if (auto idx = suffix.find('.'); idx != swoc::TextView::npos) {
+    suffix.remove_prefix(idx + 1);
+    // Using the above squid.log example, suffix now looks like:
+    //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
 
-  // Some suffixes do not have the hostname.  Rolled diags.log files will look
-  // something like this, for example:
-  //   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
-  //
-  // For these, the second delimiter will be a period. For this reason, we also
-  // split_prefix_at with a period as well.
-  if (suffix.split_prefix_at('_') || suffix.split_prefix_at('.')) {
-    // ' + 1' to remove the '_' or second '.':
-    return unrolled_name.remove_suffix(suffix.size() + 1);
+    // Some suffixes do not have the hostname.  Rolled diags.log files will look
+    // something like this, for example:
+    //   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
+    //
+    // For these, the second delimiter will be a period. For this reason, we also
+    // split_prefix_at with a period as well.
+    if (swoc::TextView::npos != (idx = suffix.find_first_of("_."))) {
+      suffix.remove_prefix(idx + 1);
+      // ' + 1' to remove the '_' or second '.':
+      return unrolled_name.remove_suffix(suffix.size() + 1);
+    }
   }
   // If there isn't a '.' or an '_' after the first '.', then this
   // doesn't look like a rolled file.
-  return rolled_filename;
+  return unrolled_name;
 }
 
 // Checks if the file pointed to by full_filename either is a regular

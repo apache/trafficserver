@@ -26,7 +26,7 @@
 #pragma once
 
 #include <tscore/ink_inet.h>
-#include <tscpp/util/TextView.h>
+#include <swoc/TextView.h>
 
 enum class ProxyProtocolVersion {
   UNDEFINED,
@@ -50,7 +50,7 @@ struct ProxyProtocol {
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
 const size_t PPv2_CONNECTION_HEADER_LEN     = 16;
 
-extern size_t proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv);
+extern size_t proxy_protocol_parse(ProxyProtocol *pp_info, swoc::TextView tv);
 extern size_t proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info,
                                    ProxyProtocolVersion force_version = ProxyProtocolVersion::UNDEFINED);
 extern ProxyProtocolVersion proxy_protocol_version_cast(int i);

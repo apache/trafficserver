@@ -506,7 +506,7 @@ public:
 
     /// Base name for event loop histogram stats.
     /// The actual stats are determined by the @c Histogram properties.
-    static constexpr ts::TextView LOOP_HISTOGRAM_STAT_STEM = "proxy.process.eventloop.time.";
+    static constexpr swoc::TextView LOOP_HISTOGRAM_STAT_STEM = "proxy.process.eventloop.time.";
     /// Base bucket size for @c Graph
     static constexpr ts_milliseconds LOOP_HISTOGRAM_BUCKET_SIZE{5};
 
@@ -515,7 +515,7 @@ public:
     Graph _loop_timing; ///< Event loop timings.
     /// Base name for event loop histogram stats.
     /// The actual stats are determined by the @c Histogram properties.
-    static constexpr ts::TextView API_HISTOGRAM_STAT_STEM = "proxy.process.api.time.";
+    static constexpr swoc::TextView API_HISTOGRAM_STAT_STEM = "proxy.process.api.time.";
     /// Base bucket size in milliseconds for plugin API timings.
     static constexpr ts_milliseconds API_HISTOGRAM_BUCKET_SIZE{1};
     Graph _api_timing; ///< Plugin API callout timings.
