@@ -21,6 +21,8 @@ limitations under the License.
 
 #pragma once
 
+#include <utility>
+
 #include "tscpp/util/ts_diag_levels.h"
 #include "swoc/TextView.h"
 #include "swoc/Errata.h"
@@ -35,6 +37,23 @@ static constexpr swoc::Errata::Severity ERRATA_FATAL{DL_Fatal};
 static constexpr swoc::Errata::Severity ERRATA_ALERT{DL_Alert};
 static constexpr swoc::Errata::Severity ERRATA_EMERGENCY{DL_Emergency};
 
+inline DiagsLevel
+diags_level_of(swoc::Errata::Severity s)
+{
+  return static_cast<DiagsLevel>(static_cast<int>(s));
+}
+
+inline std::error_code
+ec_for()
+{
+  return std::error_code(errno, std::system_category());
+}
+inline std::error_code
+ec_for(int e)
+{
+  return std::error_code(e, std::system_category());
+}
+
 // This is treated as an array so must numerically match with @c DiagsLevel
 static constexpr std::array<swoc::TextView, 9> Severity_Names{
   {"Diag", "Debug", "Status", "Note", "Warn", "Error", "Fatal", "Alert", "Emergency"}
@@ -42,3 +61,10 @@ static constexpr std::array<swoc::TextView, 9> Severity_Names{
 
 // Temporary string for formatting.
 inline thread_local std::string bw_dbg;
+
+template <typename... Args>
+void
+bw_log(DiagsLevel lvl, swoc::TextView fmt, Args &&...args)
+{
+  swoc::bwprint_v(bw_dbg, fmt, std::forward_as_tuple(args...));
+}

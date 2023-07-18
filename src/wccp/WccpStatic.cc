@@ -25,6 +25,8 @@
 #include "tscore/ink_error.h"
 #include "tscore/ink_defs.h"
 
+#include "swoc/Lexicon.h"
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -35,6 +37,28 @@
 
 namespace wccp
 {
+using swoc::TextView;
+// ------------------------------------------------------
+swoc::Lexicon<ServiceConstants::PacketStyle> PacketStyleNames{
+  {{ServiceConstants::PacketStyle::NO_PACKET_STYLE, "None"},
+   {ServiceConstants::PacketStyle::GRE, "GRE"},
+   {ServiceConstants::PacketStyle::GRE_OR_L2, "GRE_OR_L2"},
+   {ServiceConstants::PacketStyle::L2, "L2"}}
+};
+
+swoc::Lexicon<ServiceConstants::CacheAssignmentStyle> CacheStyleNames{
+  {{ServiceConstants::CacheAssignmentStyle::NO_CACHE_ASSIGN_STYLE, "None"},
+   {ServiceConstants::CacheAssignmentStyle::HASH_ONLY, "HASH"},
+   {ServiceConstants::CacheAssignmentStyle::MASK_ONLY, "MASK"},
+   {ServiceConstants::CacheAssignmentStyle::HASH_OR_MASK, "HASH_OR_MASK"}}
+};
+
+swoc::Lexicon<CapabilityElt::Type> CapabilityEltNames{
+  {{CapabilityElt::Type::NO_METHOD, "None"},
+   {CapabilityElt::Type::CACHE_ASSIGNMENT_METHOD, "CACHE"},
+   {CapabilityElt::Type::PACKET_FORWARD_METHOD, "FORWARD"},
+   {CapabilityElt::Type::PACKET_RETURN_METHOD, "RETURN"}}
+};
 // ------------------------------------------------------
 // Compile time checks for internal consistency.
 
@@ -99,14 +123,6 @@ log(ts::Errata &err, ts::Errata::Id id, ts::Errata::Code code, char const *text)
 ts::Errata &
 log(ts::Errata &err, ts::Errata::Code code, char const *text)
 {
-  err.push(0, code, text);
-  return err;
-}
-
-ts::Errata
-log(ts::Errata::Code code, char const *text)
-{
-  ts::Errata err;
   err.push(0, code, text);
   return err;
 }
@@ -185,6 +201,22 @@ logf_errno(ts::Errata::Code code, char const *format, ...)
   va_start(rest, format);
   va_end(rest);
   return vlogf_errno(code, format, rest);
+}
+// ------------------------------------------------------
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ServiceConstants::PacketStyle style)
+{
+  return bwformat(w, spec, PacketStyleNames[style]);
+}
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ServiceConstants::CacheAssignmentStyle style)
+{
+  return bwformat(w, spec, CacheStyleNames[style]);
+}
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, CapabilityElt::Type type)
+{
+  return bwformat(w, spec, CapabilityEltNames[type]);
 }
 // ------------------------------------------------------
 } // namespace wccp

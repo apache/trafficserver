@@ -360,6 +360,8 @@ protected:
   uint32_t m_cap_data   = 0;         ///< Capability data.
 };
 
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, CapabilityElt::Type);
+
 /// Sect 5.7.7: Mask element
 class MaskElt
 {
@@ -2205,7 +2207,7 @@ public:
 
   /// Open a socket for communications.
   /// @return 0 on success, -ERRNO on failure.
-  virtual int open(uint32_t addr ///< Local IP address.
+  virtual swoc::Errata open(uint32_t addr ///< Local IP address.
   );
 
   /// Use MD5 security.
@@ -2218,7 +2220,7 @@ public:
 
   /// Receive and process a message.
   /// @return 0 for success, -ERRNO on system error.
-  virtual ts::Rv<int> handleMessage();
+  virtual swoc::Errata handleMessage();
 
   /// Check if endpoint is configured.
   /// @return @c true if ready to operate, @c false otherwise.
@@ -2231,20 +2233,20 @@ public:
      to process relevant messages.
   */
   /// Process HERE_I_AM message.
-  virtual ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
-                                   buffer_type const &data ///< Buffer with message data.
+  virtual swoc::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
+                                     buffer_type const &data ///< Buffer with message data.
   );
   /// Process I_SEE_YOU message.
-  virtual ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
-                                   buffer_type const &data ///< Buffer with message data.
+  virtual swoc::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
+                                     buffer_type const &data ///< Buffer with message data.
   );
   /// Process REDIRECT_ASSIGN message.
-  virtual ts::Errata handleRedirectAssign(IpHeader const &header, ///< IP packet data.
-                                          buffer_type const &data ///< Buffer with message data.
+  virtual swoc::Errata handleRedirectAssign(IpHeader const &header, ///< IP packet data.
+                                            buffer_type const &data ///< Buffer with message data.
   );
   /// Process REMOVAL_QUERY message.
-  virtual ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
-                                        buffer_type const &data ///< Buffer with message data.
+  virtual swoc::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
+                                          buffer_type const &data ///< Buffer with message data.
   );
 
 protected:
@@ -2479,10 +2481,10 @@ public:
   );
 
   /// Define services from a configuration file.
-  ts::Errata loadServicesFromFile(const char *path ///< Path to file.
+  swoc::Errata loadServicesFromFile(const char *path ///< Path to file.
   );
 
-  int open(uint32_t addr) override;
+  swoc::Errata open(uint32_t addr) override;
 
   /// Time until next scheduled event.
   time_t waitTime() const;
@@ -2497,8 +2499,8 @@ public:
   /** Check cache assignment reported by a router against internal assign.
       @return @c true if they are the same, @c false otherwise.
   */
-  virtual ts::Errata checkRouterAssignment(GroupData const &group,    ///< Group with assignment.
-                                           RouterViewComp const &comp ///< Assignment reported by router.
+  virtual swoc::Errata checkRouterAssignment(GroupData const &group,    ///< Group with assignment.
+                                             RouterViewComp const &comp ///< Assignment reported by router.
   ) const;
 
 protected:
@@ -2516,13 +2518,13 @@ protected:
                               GroupData &group        ///< Group with data for message.
   );
   /// Process HERE_I_AM message.
-  ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
-                           buffer_type const &data ///< Buffer with message data.
-                           ) override;
+  swoc::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
+                             buffer_type const &data ///< Buffer with message data.
+                             ) override;
   /// Process REMOVAL_QUERY message.
-  ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
-                                buffer_type const &data ///< Message data.
-                                ) override;
+  swoc::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
+                                  buffer_type const &data ///< Message data.
+                                  ) override;
 
   /// Map Service Group ID to Service Group Data.
   using GroupMap = std::map<uint8_t, GroupData>;
@@ -2530,7 +2532,7 @@ protected:
   GroupMap m_groups;
 
 private:
-  ts::Errata loader(const YAML::Node &node);
+  swoc::Errata loader(const YAML::Node &node);
 };
 
 // ------------------------------------------------------
@@ -2628,9 +2630,9 @@ public:
   using RouterBag  = detail::router::RouterBag;
 
   /// Process HERE_I_AM message.
-  ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
-                           buffer_type const &data ///< Buffer with message data.
-                           ) override;
+  swoc::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
+                             buffer_type const &data ///< Buffer with message data.
+                             ) override;
   /// Perform all scheduled housekeeping functions.
   int housekeeping() override;
   /// Send pending I_SEE_YOU messages.
