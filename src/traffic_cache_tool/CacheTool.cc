@@ -46,15 +46,16 @@
 #include "CacheDefs.h"
 #include "CacheScan.h"
 
+using swoc::MemSpan;
+using swoc::Errata;
+
 using ts::Bytes;
 using ts::Megabytes;
 using ts::CacheStoreBlocks;
 using ts::CacheStripeBlocks;
 using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
-using ts::Errata;
 using ts::CacheDirEntry;
-using swoc::MemSpan;
 using ts::Doc;
 
 enum { SILENT = 0, NORMAL, VERBOSE } Verbosity = NORMAL;
@@ -215,10 +216,10 @@ Cache::allocStripe(Span *span, int vol_idx, const CacheStripeBlocks &len)
 {
   auto rv = span->allocStripe(vol_idx, len);
   std::cout << span->_path.string() << ":" << vol_idx << std::endl;
-  if (rv.isOK()) {
+  if (rv.is_ok()) {
     _volumes[vol_idx]._stripes.push_back(rv);
   }
-  return rv.errata();
+  return std::move(rv.errata());
 }
 
 #if 0
@@ -293,10 +294,10 @@ VolumeAllocator::load(swoc::file::path const &spanFile, swoc::file::path const &
   Errata zret;
 
   if (volumeFile.empty()) {
-    zret.push(0, 9, "Volume config file not set");
+    zret.note("Volume config file not set");
   }
   if (spanFile.empty()) {
-    zret.push(0, 9, "Span file not set");
+    zret.note("Span file not set");
   }
 
   if (zret) {
@@ -347,7 +348,7 @@ VolumeAllocator::allocateSpan(swoc::file::path const &input_file_path)
     if (span->_path.view() == input_file_path.view()) {
       std::cout << "===============================" << std::endl;
       if (span->_header) {
-        zret.push(0, 1, "Disk already initialized with valid header");
+        zret.note("Disk already initialized with valid header");
       } else {
         this->allocateFor(*span);
         span->updateHeader();
@@ -460,9 +461,9 @@ Cache::loadSpan(swoc::file::path const &path)
   auto fs = swoc::file::status(path, ec);
 
   if (path.empty()) {
-    zret = Errata::Message(0, EINVAL, "A span file specified by --spans is required");
+    zret = Errata(make_errno_code(EINVAL), "A span file specified by --spans is required");
   } else if (!swoc::file::is_readable(path)) {
-    zret = Errata::Message(0, EPERM, '\'', path.string(), "' is not readable.");
+    zret = Errata(make_errno_code(EPERM), R"("{}" is not readable.)", path);
   } else if (swoc::file::is_regular_file(fs)) {
     zret = this->loadSpanConfig(path);
   } else {
@@ -536,7 +537,7 @@ Cache::loadSpanConfig(swoc::file::path const &path)
               auto n = swoc::svtoi(value, &text);
               if (text == value && 0 < n && n < 256) {
               } else {
-                zret.push(0, 0, "Invalid volume index '", value, "'");
+                zret.note("Invalid volume index '{}'", value);
               }
             }
           }
@@ -545,7 +546,7 @@ Cache::loadSpanConfig(swoc::file::path const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
+    zret = Errata(make_errno_code(EBADF), "Unable to load {}", path);
   }
   return zret;
 }
@@ -580,7 +581,7 @@ Cache::loadURLs(swoc::file::path const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
+    zret = Errata(make_errno_code(EBADF), "Unable to load ", path.string());
   }
   return zret;
 }
@@ -700,13 +701,13 @@ Span::load()
   auto fs = swoc::file::status(_path, ec);
 
   if (!swoc::file::is_readable(_path)) {
-    zret = Errata::Message(0, EPERM, _path.string(), " is not readable.");
+    zret = Errata(make_errno_code(EPERM), R"("{}" is not readable.)", _path);
   } else if (swoc::file::is_char_device(fs) || swoc::file::is_block_device(fs)) {
     zret = this->loadDevice();
   } else if (swoc::file::is_dir(fs)) {
-    zret.push(0, 1, "Directory support not yet available");
+    zret.note("Directory support not yet available");
   } else {
-    zret.push(0, EBADF, _path.string(), " is not a valid file type");
+    zret = Errata(make_errno_code(EBADF), R"("{}" is not a valid file type)", _path);
   }
   return zret;
 }
@@ -754,7 +755,7 @@ Span::loadDevice()
           }
           _len = _header->num_blocks;
         } else {
-          zret = Errata::Message(0, 0, _path.string(), " header is uninitialized or invalid");
+          zret.note("{} header is uninitialized or invalid", _path);
           std::cout << "Span: " << _path.string() << " header is uninitialized or invalid" << std::endl;
           _len = round_down(_geometry.totalsz) - _base;
         }
@@ -762,18 +763,18 @@ Span::loadDevice()
         _fd     = fd.release();
         _offset = _base + span_hdr_size;
       } else {
-        zret = Errata::Message(0, errno, "Failed to read from ", _path.string(), '[', errno, ':', strerror(errno), ']');
+        zret = Errata(make_errno_code(), "Failed to read from {}", _path);
       }
     } else {
-      zret = Errata::Message(0, 23, "Unable to get device geometry for ", _path.string());
+      zret = Errata("Unable to get device geometry for {}", _path);
     }
   } else {
-    zret = Errata::Message(0, errno, "Unable to open ", _path.string());
+    zret = Errata(make_errno_code(), "Unable to open {}", _path);
   }
   return zret;
 }
 
-ts::Rv<Stripe *>
+swoc::Rv<Stripe *>
 Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
 {
   for (auto spot = _stripes.begin(), limit = _stripes.end(); spot != limit; ++spot) {
@@ -797,8 +798,7 @@ Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
       }
     }
   }
-  return ts::Rv<Stripe *>(nullptr,
-                          Errata::Message(0, 15, "Failed to allocate stripe of size ", len, " - no free block large enough"));
+  return Errata("Failed to allocate stripe of size {} - no free block large enough", len);
 }
 
 bool
@@ -869,7 +869,7 @@ Span::updateHeader()
   if (OPEN_RW_FLAG) {
     ssize_t r = pwrite(_fd, hdr, hdr_size, ts::CacheSpan::OFFSET);
     if (r < ts::CacheSpan::OFFSET) {
-      zret.push(0, errno, "Failed to update span - ", strerror(errno));
+      zret = Errata(make_errno_code(errno), "Failed to update span.");
     }
   } else {
     std::cout << "Writing not enabled, no updates performed" << std::endl;
@@ -1055,10 +1055,10 @@ VolumeConfig::load(swoc::file::path const &path)
         swoc::TextView value(line.take_prefix_if(&isspace));
         swoc::TextView tag(value.take_prefix_at('='));
         if (tag.empty()) {
-          zret.push(0, 1, "Line ", ln, " is invalid");
+          zret.note("Line {} is invalid", ln);
         } else if (0 == strcasecmp(tag, TAG_SIZE)) {
           if (v.hasSize()) {
-            zret.push(0, 5, "Line ", ln, " has field ", TAG_SIZE, " more than once");
+            zret.note("Line {} has field {} more than once", ln, TAG_SIZE);
           } else {
             swoc::TextView text;
             auto n = swoc::svtoi(value, &text);
@@ -1067,27 +1067,27 @@ VolumeConfig::load(swoc::file::path const &path)
               if (percent.empty()) {
                 v._size = CacheStripeBlocks(round_up(Megabytes(n)));
                 if (v._size.count() != n) {
-                  zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size);
+                  zret.note("Line {} size {} was rounded up to {}", ln, n, v._size);
                 }
               } else if ('%' == *percent && percent.size() == 1) {
                 v._percent = n;
               } else {
-                zret.push(0, 3, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+                zret.note("Line {} has invalid value '{}' for {} field", ln, value, TAG_SIZE);
               }
             } else {
-              zret.push(0, 2, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+              zret.note("Line {} has invalid value '{}' for {} field", ln, value, TAG_SIZE);
             }
           }
         } else if (0 == strcasecmp(tag, TAG_VOL)) {
           if (v.hasIndex()) {
-            zret.push(0, 6, "Line ", ln, " has field ", TAG_VOL, " more than once");
+            zret.note("Line {} has field {} more than once", ln, TAG_VOL);
           } else {
             swoc::TextView text;
             auto n = swoc::svtoi(value, &text);
             if (text == value) {
               v._idx = n;
             } else {
-              zret.push(0, 4, "Line ", ln, " has invalid value '", value, "' for ", TAG_VOL, " field");
+              zret.note("Line {} has invalid value '{}' for {} field", ln, value, TAG_VOL);
             }
           }
         }
@@ -1096,15 +1096,15 @@ VolumeConfig::load(swoc::file::path const &path)
         _volumes.push_back(std::move(v));
       } else {
         if (!v.hasSize()) {
-          zret.push(0, 7, "Line ", ln, " does not have the required field ", TAG_SIZE);
+          zret.note("Line {} does not have the required field {}", ln, TAG_SIZE);
         }
         if (!v.hasIndex()) {
-          zret.push(0, 8, "Line ", ln, " does not have the required field ", TAG_VOL);
+          zret.note("Line {} does not have the required field {}", ln, TAG_VOL);
         }
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
+    zret = Errata(make_errno_code(EBADF), "Unable to load ", path);
   }
   return zret;
 }
@@ -1139,14 +1139,14 @@ Simulate_Span_Allocation()
   VolumeAllocator va;
 
   if (VolumeFile.empty()) {
-    err.push(0, 9, "Volume config file not set");
+    err.note("Volume config file not set");
   }
   if (SpanFile.empty()) {
-    err.push(0, 9, "Span file not set");
+    err.note("Span file not set");
   }
 
   if (err) {
-    if ((err = va.load(SpanFile, VolumeFile)).isOK()) {
+    if ((err = va.load(SpanFile, VolumeFile)).is_ok()) {
       err = va.fillAllSpans();
       va.dumpVolumes();
     }
@@ -1159,7 +1159,7 @@ Clear_Spans()
   Cache cache;
 
   if (!OPEN_RW_FLAG) {
-    err.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    err.note("Writing Not Enabled.. Please use --write to enable writing to disk");
     return;
   }
 
@@ -1283,7 +1283,7 @@ Init_disk(swoc::file::path const &input_file_path)
   VolumeAllocator va;
 
   if (!OPEN_RW_FLAG) {
-    err.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    err.note("Writing Not Enabled.. Please use --write to enable writing to disk");
     return;
   }
 
@@ -1349,7 +1349,7 @@ Scan_Cache(swoc::file::path const &regex_path)
   Cache cache;
   std::vector<std::thread> threadPool;
   if ((err = cache.loadSpan(SpanFile))) {
-    if (err.size()) {
+    if (err.length()) {
       return;
     }
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
@@ -1424,7 +1424,7 @@ main(int argc, const char *argv[])
     arguments.invoke();
   }
 
-  if (err.size()) {
+  if (err.length()) {
     std::cerr << err;
     exit(1);
   }

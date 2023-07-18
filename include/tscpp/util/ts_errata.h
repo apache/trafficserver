@@ -40,5 +40,16 @@ static constexpr std::array<swoc::TextView, 9> Severity_Names{
   {"Diag", "Debug", "Status", "Note", "Warn", "Error", "Fatal", "Alert", "Emergency"}
 };
 
+inline std::error_code
+make_errno_code()
+{
+  return {errno, std::system_category()};
+}
+inline std::error_code
+make_errno_code(int err)
+{
+  return {err, std::system_category()};
+}
+
 // Temporary string for formatting.
 inline thread_local std::string bw_dbg;

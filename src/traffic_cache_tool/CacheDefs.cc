@@ -28,9 +28,12 @@
 using namespace std;
 using namespace ts;
 
-using ts::Errata;
 namespace ts
 {
+
+using swoc::Errata;
+using swoc::Rv;
+
 std::ostream &
 operator<<(std::ostream &s, Bytes const &n)
 {
@@ -305,7 +308,7 @@ Stripe::updateHeaderFooter()
   InitializeMeta();
 
   if (!OPEN_RW_FLAG) {
-    zret.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    zret.note("Writing Not Enabled.. Please use --write to enable writing to disk");
     return zret;
   }
 
@@ -319,9 +322,9 @@ Stripe::updateHeaderFooter()
 
     ssize_t n = pwrite(_span->_fd, meta_t, hdr_size, _meta_pos[i][HEAD]);
     if (n < hdr_size) {
+      zret = swoc::Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing header to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << hdr_size << std::endl;
-      zret = Errata::Message(0, errno, "Failed to write stripe header ");
       ats_free(meta_t);
       return zret;
     }
@@ -330,9 +333,9 @@ Stripe::updateHeaderFooter()
     memcpy(meta_t, (char *)dir, dir_size);
     n = pwrite(_span->_fd, meta_t, dir_size, _meta_pos[i][HEAD] + hdr_size); //
     if (n < dir_size) {
+      zret = Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing dir to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << dir_size << std::endl;
-      zret = Errata::Message(0, errno, "Failed to write stripe header ");
       ats_free(meta_t);
       return zret;
     }
@@ -343,9 +346,9 @@ Stripe::updateHeaderFooter()
     int64_t footer_size = ROUND_TO_STORE_BLOCK(sizeof(StripeMeta));
     n                   = pwrite(_span->_fd, meta_t, footer_size, _meta_pos[i][FOOT]);
     if (n < footer_size) {
+      zret = Errata(make_errno_code(), "Failed to write stripe header ");
       std::cout << "problem writing footer to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << footer_size << std::endl;
-      zret = Errata::Message(0, errno, "Failed to write stripe header ");
       ats_free(meta_t);
       return zret;
     }
@@ -897,8 +900,8 @@ Stripe::loadMeta()
   alignas(SBSIZE) char stripe_buff[SBSIZE];             // Use when reading a single stripe block.
   alignas(SBSIZE) char stripe_buff2[SBSIZE];            // use to save the stripe freelist
   if (io_align > SBSIZE) {
-    return Errata::Message(0, 1, "Cannot load stripe ", _idx, " on span ", _span->_path.string(),
-                           " because the I/O block alignment ", io_align, " is larger than the buffer alignment ", SBSIZE);
+    return Errata("Cannot load stripe {} on span [} because the I/O block alignment {} is larger than the buffer alignment {}",
+                  _idx, _span->_path.string(), io_align, SBSIZE);
   }
 
   _directory._start = pos;
@@ -940,7 +943,7 @@ Stripe::loadMeta()
       }
     }
   } else {
-    zret.push(0, 1, "Header A not found");
+    zret.note("Header A not found");
   }
   pos = _meta_pos[A][FOOT];
   // Technically if Copy A is valid, Copy B is not needed. But at this point it's cheap to retrieve
@@ -975,8 +978,8 @@ Stripe::loadMeta()
     } else if (_meta_pos[B][FOOT] > 0 && _meta[B][HEAD].sync_serial == _meta[B][FOOT].sync_serial) {
       this->updateLiveData(B);
     } else {
-      zret.push(0, 1, "Invalid stripe data - candidates found but sync serial data not valid. ", _meta[A][HEAD].sync_serial, ":",
-                _meta[A][FOOT].sync_serial, ":", _meta[B][HEAD].sync_serial, ":", _meta[B][FOOT].sync_serial);
+      zret.note("Invalid stripe data - candidates found but sync serial data not valid. {}:{}:{}:{}", _meta[A][HEAD].sync_serial,
+                _meta[A][FOOT].sync_serial, _meta[B][HEAD].sync_serial, _meta[B][FOOT].sync_serial);
     }
   }
 

@@ -29,12 +29,12 @@
 
 #include "swoc/swoc_file.h"
 #include "swoc/Scalar.h"
+#include "swoc/TextView.h"
+#include "tscpp/util/ts_errata.h"
 
 #include "tscore/I_Version.h"
 #include "tscore/ink_memory.h"
 #include "tscore/Regex.h"
-#include "tscore/Errata.h"
-#include "swoc/TextView.h"
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
 
@@ -228,7 +228,7 @@ class URLparser
 {
 public:
   bool verifyURL(std::string &url1);
-  Errata parseURL(swoc::TextView URI);
+  swoc::Errata parseURL(swoc::TextView URI);
   int getPort(std::string &fullURL, int &port_ptr, int &port_len);
 
 private:
@@ -344,15 +344,16 @@ private:
   DFA regex;
 };
 
+using swoc::Errata;
+using swoc::MemSpan;
+
 using ts::Bytes;
 using ts::Megabytes;
 using ts::CacheStoreBlocks;
 using ts::CacheStripeBlocks;
 using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
-using ts::Errata;
 using ts::CacheDirEntry;
-using swoc::MemSpan;
 using ts::Doc;
 
 constexpr int ESTIMATED_OBJECT_SIZE     = 8000;
@@ -454,7 +455,7 @@ struct Span {
   /// This is broken and needs to be cleaned up.
   void clearPermanently();
 
-  ts::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
+  swoc::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
   swoc::file::path _path;   ///< File system location of span.
