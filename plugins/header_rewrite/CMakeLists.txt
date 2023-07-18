@@ -33,6 +33,8 @@ add_atsplugin(header_rewrite
 
 add_library(header_rewrite_parser STATIC parser.cc)
 
+target_link_libraries(header_rewrite PRIVATE PCRE::PCRE)
+
 find_package(maxminddb QUIET)
 
 if(maxminddb_FOUND)

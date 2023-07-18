@@ -23,7 +23,11 @@ add_atsplugin(cookie_remap
     strip.cc
 )
 
-target_link_libraries(cookie_remap PRIVATE yaml-cpp::yaml-cpp)
+target_link_libraries(cookie_remap
+    PRIVATE
+        PCRE::PCRE
+        yaml-cpp::yaml-cpp
+)
 
 if(BUILD_TESTING)
     add_executable(test_cookiejar

@@ -30,4 +30,6 @@ add_atsplugin(prefetch
     plugin.cc
 )
 
+target_link_libraries(prefetch PRIVATE PCRE::PCRE)
+
 add_subdirectory(test)

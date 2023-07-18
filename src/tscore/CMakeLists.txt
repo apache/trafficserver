@@ -167,7 +167,7 @@ target_link_libraries(test_tscore
         yaml-cpp::yaml-cpp
         libswoc
         ${OPENSSL_LIBRARIES}
-        ${PCRE_LIBRARIES}
+        PCRE::PCRE
         resolv
         tscpputil
 )

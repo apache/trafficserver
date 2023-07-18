@@ -16,3 +16,5 @@
 #######################
 
 add_atsplugin(regex_remap regex_remap.cc)
+
+target_link_libraries(regex_remap PRIVATE PCRE::PCRE)
