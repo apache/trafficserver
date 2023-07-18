@@ -23,7 +23,6 @@ target_compile_definitions(test_content_range PRIVATE UNITTEST)
 target_include_directories(test_content_range PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_content_range
     PRIVATE
-        ${PCRE_LIBRARY}
         catch2::catch2
 )
 add_test(NAME test_content_range COMMAND test_content_range)
@@ -36,7 +35,6 @@ target_compile_definitions(test_range PRIVATE UNITTEST)
 target_include_directories(test_range PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_range
     PRIVATE
-        ${PCRE_LIBRARY}
         catch2::catch2
 )
 add_test(NAME test_range COMMAND test_range)
@@ -49,7 +47,7 @@ target_compile_definitions(test_config PRIVATE UNITTEST)
 target_include_directories(test_config PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_config
     PRIVATE
-        ${PCRE_LIBRARY}
+        PCRE::PCRE
         catch2::catch2
 )
 add_test(NAME test_config COMMAND test_config)
