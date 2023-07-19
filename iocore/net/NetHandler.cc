@@ -49,10 +49,9 @@ NetHandler::startIO(NetEvent *ne)
   int res = 0;
 
   PollDescriptor *pd = get_PollDescriptor(this->thread);
-  if (ne->ep.start(pd, ne, get_NetHandler(this->thread), EVENTIO_READ | EVENTIO_WRITE) < 0) {
+  if (ne->ep.start(pd, ne, this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     res = errno;
-    // EEXIST should be ok, though it should have been cleared before we got
-    // back here
+    // EEXIST should be ok, though it should have been cleared before we got back here
     if (errno != EEXIST) {
       Debug("iocore_net", "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
       return -res;
