@@ -453,7 +453,12 @@ private:
 class ServerMaxEarlyData : public ActionItem
 {
 public:
-  ServerMaxEarlyData(uint32_t value) : server_max_early_data(value) {}
+  ServerMaxEarlyData(uint32_t value)
+#if TS_HAS_TLS_EARLY_DATA
+    : server_max_early_data(value)
+#endif
+  {
+  }
   ~ServerMaxEarlyData() override {}
 
   int
@@ -472,6 +477,8 @@ public:
     return SSL_TLSEXT_ERR_OK;
   }
 
+#if TS_HAS_TLS_EARLY_DATA
 private:
   uint32_t server_max_early_data = 0;
+#endif
 };
