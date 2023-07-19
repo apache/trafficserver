@@ -15,7 +15,7 @@
 #
 #######################
 
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.20)
 project(ats VERSION 10.0.0)
 
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
