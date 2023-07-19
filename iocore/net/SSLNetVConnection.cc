@@ -964,7 +964,7 @@ SSLNetVConnection::clear()
   super::clear();
 }
 void
-SSLNetVConnection::free(EThread *t)
+SSLNetVConnection::free_thread(EThread *t)
 {
   ink_release_assert(t == this_ethread());
 
