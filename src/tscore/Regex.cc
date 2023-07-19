@@ -55,10 +55,10 @@ Regex::Regex(Regex &&that) noexcept : regex(that.regex), regex_extra(that.regex_
 bool
 Regex::compile(const char *pattern, const unsigned flags)
 {
-  const char *error;
-  int erroffset;
-  int options    = 0;
-  int study_opts = 0;
+  const char *error = NULL;
+  int erroffset     = 0;
+  int options       = 0;
+  int study_opts    = 0;
 
   if (regex) {
     return false;
