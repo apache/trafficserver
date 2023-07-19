@@ -680,7 +680,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
     if (nh) {
       nh->free_netevent(this);
     } else {
-      this->free(t);
+      this->free_from_thread(t);
     }
   }
 }
@@ -1021,7 +1021,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   // Send this NetVC to NetHandler and start to polling read & write event.
   if (h->startIO(this) < 0) {
-    free(t);
+    free_from_thread(t);
     return EVENT_DONE;
   }
 
@@ -1239,7 +1239,7 @@ fail:
   if (nullptr != nh) {
     nh->free_netevent(this);
   } else {
-    this->free(t);
+    this->free_from_thread(t);
   }
   return CONNECT_FAILURE;
 }
@@ -1286,7 +1286,7 @@ UnixNetVConnection::clear()
 }
 
 void
-UnixNetVConnection::free(EThread *t)
+UnixNetVConnection::free_from_thread(EThread *t)
 {
   ink_release_assert(t == this_ethread());
 

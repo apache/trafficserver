@@ -88,7 +88,7 @@ public:
   void set_local_addr() override;
 
   // NetEvent
-  void free(EThread *t) override;
+  void free_from_thread(EThread *t) override;
 
   // UnixNetVConnection
   void reenable(VIO *vio) override;

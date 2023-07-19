@@ -202,7 +202,7 @@ NetHandler::free_netevent(NetEvent *ne)
   // Release ne from NetHandler
   stopIO(ne);
   // Clear and deallocate ne
-  ne->free(t);
+  ne->free_from_thread(t);
 }
 
 //
