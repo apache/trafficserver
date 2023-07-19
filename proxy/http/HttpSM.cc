@@ -2185,8 +2185,9 @@ HttpSM::add_to_existing_request()
   if (nullptr == ethread->connecting_pool) {
     initialize_thread_for_connecting_pools(ethread);
   }
-  auto my_nh = ((UnixNetVConnection *)(this)->_ua.get_txn()->get_netvc())->nh;
-  ink_release_assert(my_nh == nullptr /* PluginVC */ || my_nh == get_NetHandler(this_ethread()));
+  NetVConnection *vc = _ua.get_txn()->get_netvc();
+  ink_assert(dynamic_cast<UnixNetVConnection *>(vc) == nullptr /* PluginVC */ ||
+             dynamic_cast<UnixNetVConnection *>(vc)->nh == get_NetHandler(this_ethread()));
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_http_server_open);
 
