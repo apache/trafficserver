@@ -173,4 +173,5 @@ HostDBRecord::alloc(ts::TextView query_name, unsigned int rr_count, size_t srv_n
 void
 HostDBRecord::free()
 {
+  delete this;
 }
