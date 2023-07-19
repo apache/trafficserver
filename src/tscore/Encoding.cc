@@ -19,11 +19,7 @@
   limitations under the License.
  */
 
-/*
-#include "tscore/Arena.h"
-#include "tscore/Diags.h"
-#include "tscore/ink_string.h"
-*/
+#include "swoc/bwf_ip.h"
 #include "tscore/Encoding.h"
 
 /*-------------------------------------------------------------------------

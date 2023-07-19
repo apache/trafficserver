@@ -665,15 +665,15 @@ SSLCertificateConfig::reconfigure()
   if (!errata.empty()) {
     errata.assign_annotation_glue_text("\n  ");
     errata.assign_severity_glue_text(" -> \n  ");
-    bwprint(bw_dbg, "\n{}", errata);
+    bwprint(ts::bw_dbg, "\n{}", errata);
   } else {
-    bw_dbg = "";
+    ts::bw_dbg = "";
   }
 
   if (retStatus) {
-    Note("%s finished loading%s", params->configFilePath, bw_dbg.c_str());
+    Note("%s finished loading%s", params->configFilePath, ts::bw_dbg.c_str());
   } else {
-    Error("%s failed to load%s", params->configFilePath, bw_dbg.c_str());
+    Error("%s failed to load%s", params->configFilePath, ts::bw_dbg.c_str());
   }
 
   return retStatus;
@@ -896,7 +896,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   shared_SSL_CTX client_ctx = nullptr;
   std::string top_level_key, ctx_key;
   ctx_key = client_cert;
-  ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
+  swoc::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
   Debug("ssl_client_ctx", "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
 

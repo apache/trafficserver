@@ -84,13 +84,12 @@ test_proxy_hdrs_SOURCES = \
 
 test_proxy_hdrs_LDFLAGS = @AM_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @OPENSSL_LDFLAGS@
 test_proxy_hdrs_LDADD = \
-    @SWOC_LIBS@ \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@YAMLCPP_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
+	@SWOC_LIBS@ @YAMLCPP_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBCAP@
 
 test_hdr_heap_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2
@@ -124,7 +123,7 @@ test_XPACK_CPPFLAGS = \
 test_XPACK_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@LIBPCRE@ @LIBCAP@
+	@SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_XPACK_SOURCES = \
 	unit_tests/test_XPACK.cc \

@@ -27,7 +27,7 @@
 #include <bitset>
 #include <random>
 #include <tscore/IntrusiveHashMap.h>
-#include <tscore/BufferWriter.h>
+#include <tscpp/util/ts_bw_format.h>
 #include "catch.hpp"
 
 // -------------
@@ -101,7 +101,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   std::bitset<64> marks;
   for (unsigned int i = 1; i <= 63; ++i) {
     std::string name;
-    ts::bwprint(name, "{} squared is {}", i, i * i);
+    swoc::bwprint(name, "{} squared is {}", i, i * i);
     Thing *thing = new Thing(name);
     thing->_n    = i;
     map.insert(thing);

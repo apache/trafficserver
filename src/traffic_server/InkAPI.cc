@@ -8935,7 +8935,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     if (value && length > 0) {
-      ts::LocalBufferWriter<1024> error;
+      swoc::LocalBufferWriter<1024> error;
       HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
       if (!error.size()) {
         s->t_state.my_txn_conf().insert_forwarded = bs;
@@ -9556,7 +9556,7 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
   SSLConfigParams *params   = SSLConfig::acquire();
 
   // Generate second level key for client context lookup
-  ts::bwprint(key, "{}:{}", cert_path, key_path);
+  swoc::bwprint(key, "{}:{}", cert_path, key_path);
   Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
 
   if (nullptr != params) {

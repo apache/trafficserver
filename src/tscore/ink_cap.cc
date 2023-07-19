@@ -22,10 +22,6 @@
 */
 
 #include "tscore/ink_config.h"
-#include "tscore/Diags.h"
-#include "tscore/ink_cap.h"
-#include "tscore/ink_thread.h"
-
 #include <grp.h>
 
 #if HAVE_SYS_CAPABILITY_H
@@ -35,6 +31,12 @@
 #if HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
+
+#include "swoc/bwf_ip.h"
+
+#include "tscore/Diags.h"
+#include "tscore/ink_cap.h"
+#include "tscore/ink_thread.h"
 
 // NOTE: Failing to acquire or release privileges is a fatal error. This is because that should never happen
 // and if it does, it is likely that some fundamental security assumption has been violated. In that case

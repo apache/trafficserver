@@ -33,7 +33,7 @@
 
 #include "tscore/ink_memory.h"
 #include "tscore/ink_apidefs.h"
-#include "tscore/BufferWriterForward.h"
+#include "swoc/bwf_fwd.h"
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED
 #if defined(IN6_IS_ADDR_UNSPECIFIED)
@@ -1603,23 +1603,15 @@ IpEndpoint::setToLoopback(int family)
 }
 
 // BufferWriter formatting support.
-namespace ts
+namespace swoc
 {
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr);
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IpAddr const &addr);
+
 inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, IpEndpoint const &addr)
+bwformat(BufferWriter &w, bwf::Spec const &spec, IpEndpoint const &addr)
 {
+  extern BufferWriter &bwformat(BufferWriter & w, bwf::Spec const &spec, sockaddr const *sa);
   return bwformat(w, spec, &addr.sa);
 }
 
-namespace bwf
-{
-  namespace detail
-  {
-    struct MemDump;
-  } // namespace detail
-
-  detail::MemDump Hex_Dump(IpEndpoint const &addr);
-} // namespace bwf
-} // namespace ts
+} // namespace swoc

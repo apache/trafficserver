@@ -34,8 +34,7 @@
 
  ****************************************************************************/
 
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_defs.h"
@@ -248,10 +247,10 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
                 va_list ap) const
 {
   ink_release_assert(diags_level < DiagsLevel_Count);
-  ts::LocalBufferWriter<1024> format_writer;
+  swoc::LocalBufferWriter<1024> format_writer;
 
   // Save room for optional newline and terminating NUL bytes.
-  format_writer.clip(2);
+  format_writer.restrict(2);
 
   format_writer.print("[{timestamp}] "_tv);
   auto timestamp_offset = format_writer.size();
@@ -269,7 +268,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
   format_writer.print("{}", format_string);
 
-  format_writer.extend(2);                   // restore the space for required termination.
+  format_writer.restore(2);                  // restore the space for required termination.
   if (format_writer.view().back() != '\n') { // safe because always some chars in the buffer.
     format_writer.write('\n');
   }

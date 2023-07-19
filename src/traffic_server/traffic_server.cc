@@ -716,7 +716,7 @@ initialize_jsonrpc_server()
     // jsonrpcServer object.
     ink_assert(jsonrpcServer == nullptr);
     std::string msg;
-    return {false, ts::bwprint(msg, "Server failed: '{}'", ex.what())};
+    return {false, swoc::bwprint(msg, "Server failed: '{}'", ex.what())};
   }
   // Register admin handlers.
   rpc::admin::register_admin_jsonrpc_handlers();

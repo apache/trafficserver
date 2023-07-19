@@ -79,6 +79,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_error.h"
 #include "tscore/ink_resolver.h"
 

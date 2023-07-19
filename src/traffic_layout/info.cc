@@ -25,7 +25,7 @@
 #include <openssl/crypto.h>
 #include "tscore/I_Layout.h"
 #include "tscore/Filenames.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "records/I_RecProcess.h"
 #include "records/I_RecordsConfig.h"
 #include "info.h"
@@ -172,7 +172,7 @@ produce_layout(bool json)
 void
 produce_versions(bool json)
 {
-  using LBW = ts::LocalBufferWriter<128>;
+  using LBW = swoc::LocalBufferWriter<128>;
   [[maybe_unused]] static const std::string_view undef{"undef"};
 
   if (json) {

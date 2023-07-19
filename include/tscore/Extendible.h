@@ -243,7 +243,7 @@ template <typename Derived_t> details::Schema Extendible<Derived_t>::schema;
 
 //////////////////////////////////////////////////////
 /// HexToString function for serializing untyped C storage
-// TODO: use ts::bwf::As_Hex() after PR goes through
+// TODO: use swoc::bwf::As_Hex() after PR goes through
 inline void
 hexToStream(std::ostream &os, void const *buf, uint16_t size)
 {

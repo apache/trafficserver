@@ -65,25 +65,14 @@ std::mutex etUdpMutex;
 std::condition_variable etUdpCheck;
 bool et_udp_threads_ready = false;
 
-/// Global BufferWriter format name functions.
-namespace
-{
-void
-TS_bwf_thread(ts::BufferWriter &w, ts::BWFSpec const &spec)
-{
-  bwformat(w, spec, this_thread());
-}
-void
-TS_bwf_ethread(ts::BufferWriter &w, ts::BWFSpec const &spec)
-{
-  bwformat(w, spec, this_ethread());
-}
-} // namespace
-
 // File / process scope initializations
 static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
-  ts::bwf_register_global("ts-thread", &TS_bwf_thread);
-  ts::bwf_register_global("ts-ethread", &TS_bwf_ethread);
+  swoc::bwf::Global_Names.assign("ts-thread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
+    return bwformat(w, spec, this_thread());
+  });
+  swoc::bwf::Global_Names.assign("ts-ethread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
+    return bwformat(w, spec, this_ethread());
+  });
   return true;
 }();
 

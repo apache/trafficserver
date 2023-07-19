@@ -22,13 +22,13 @@
  */
 
 #include "swoc/swoc_file.h"
+#include "tscpp/util/ts_bw_format.h"
 
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "tscore/I_Layout.h"
 #include "Show.h"
 #include "tscore/ink_apidefs.h"
-#include "tscore/bwf_std_format.h"
 #include "tscore/MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 #include "HostFile.h"
 
@@ -682,14 +682,14 @@ probe(HostDBHash const &hash, bool ignore_timeout)
     HOSTDB_INCREMENT_DYN_STAT_THREAD(hostdb_total_serve_stale_stat, this_ethread());
     if (hostDB.is_pending_dns_for_hash(hash.hash)) {
       Dbg(dbg_ctl_hostdb, "%s",
-          ts::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
-                      record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
+          swoc::bwprint(ts::bw_dbg, "stale {} {} {}, using with pending refresh", record->ip_age(),
+                        record->ip_timestamp.time_since_epoch(), record->ip_timeout_interval)
             .c_str());
       return record;
     }
     Dbg(dbg_ctl_hostdb, "%s",
-        ts::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
-                    record->ip_timeout_interval)
+        swoc::bwprint(ts::bw_dbg, "stale {} {} {}, using while refresh", record->ip_age(), record->ip_timestamp.time_since_epoch(),
+                      record->ip_timeout_interval)
           .c_str());
     HostDBContinuation *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
@@ -1531,7 +1531,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Dbg(dbg_ctl_hostdb, "%s",
-          ts::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), ts::bwf::FirstOf(path, ""))
+          swoc::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), swoc::bwf::FirstOf(path, ""))
             .c_str());
       // path to hostfile changed
       hostdb_hostfile_update_timestamp = TS_TIME_ZERO; // never updated from this file
@@ -1547,11 +1547,11 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
         }
       } else {
         Dbg(dbg_ctl_hostdb, "%s",
-            ts::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path.view(), ec).c_str());
+            swoc::bwprint(dbg, R"(Failed to stat host file "{}" - {})", hostdb_hostfile_path.view(), ec).c_str());
       }
     }
     if (update_p) {
-      Dbg(dbg_ctl_hostdb, "%s", ts::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path.view()).c_str());
+      Dbg(dbg_ctl_hostdb, "%s", swoc::bwprint(dbg, R"(Updating from host file "{}")", hostdb_hostfile_path.view()).c_str());
       UpdateHostsFile(hostdb_hostfile_path, hostdb_hostfile_check_interval);
     }
   }
@@ -2289,7 +2289,7 @@ ResolveInfo::resolve_immediate()
   if (resolved_p) {
     // nothing - already resolved.
   } else if (IpAddr tmp; TS_SUCCESS == tmp.load(lookup_name)) {
-    ts::bwprint(ts::bw_dbg, "[resolve_immediate] success - FQDN '{}' is a valid IP address.", lookup_name);
+    swoc::bwprint(ts::bw_dbg, "[resolve_immediate] success - FQDN '{}' is a valid IP address.", lookup_name);
     Dbg(dbg_ctl_hostdb, "%s", ts::bw_dbg.c_str());
     addr.assign(tmp);
     resolved_p = true;

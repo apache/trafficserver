@@ -22,8 +22,11 @@
  */
 
 #include "CacheDefs.h"
+
 #include <iostream>
 #include <fcntl.h>
+
+#include "tscore/ink_assert.h"
 
 using namespace std;
 using namespace ts;
@@ -221,7 +224,7 @@ Stripe::Chunk::clear()
 
 Stripe::Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len) : _span(span), _start(start), _len(len)
 {
-  ts::bwprint(hashText, "{} {}:{}", span->_path.view(), _start.count(), _len.count());
+  swoc::bwprint(hashText, "{} {}:{}", span->_path.view(), _start.count(), _len.count());
   CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
   printf("hash id of stripe is hash of %.*s\n", static_cast<int>(hashText.size()), hashText.data());
 }

@@ -38,7 +38,7 @@
 
 #include "tscore/ink_memory.h"
 #include "tscore/ink_file.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/ArgParser.h"
 #include <thread>
@@ -1195,7 +1195,7 @@ Find_Stripe(swoc::file::path const &input_file_path)
     for (auto host : cache.URLset) {
       CryptoContext ctx;
       CryptoHash hashT;
-      ts::LocalBufferWriter<33> w;
+      swoc::LocalBufferWriter<33> w;
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
       ctx.finalize(hashT);
@@ -1311,7 +1311,7 @@ Get_Response(swoc::file::path const &input_file_path)
     for (auto host : cache.URLset) {
       CryptoContext ctx;
       CryptoHash hashT;
-      ts::LocalBufferWriter<33> w;
+      swoc::LocalBufferWriter<33> w;
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
       ctx.finalize(hashT);

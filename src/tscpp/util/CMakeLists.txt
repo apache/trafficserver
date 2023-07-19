@@ -17,6 +17,7 @@
 
 
 add_library(tscpputil SHARED
+        ts_bwf.cc
         ts_ip.cc
         ts_diags.cc
         YamlCfg.cc

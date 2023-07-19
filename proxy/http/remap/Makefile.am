@@ -148,7 +148,7 @@ test_NextHopStrategyFactory_LDADD = \
   @OPENSSL_LIBS@ \
   @LIBCAP@
 
-test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore
+test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS)
 
 test_NextHopStrategyFactory_SOURCES = \
 	NextHopSelectionStrategy.cc \
@@ -182,7 +182,7 @@ test_NextHopRoundRobin_LDADD = \
   @OPENSSL_LIBS@ \
   @LIBCAP@
 
-test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore -L$(top_builddir)/src/tscpp/util/.libs -ltscpputil
+test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS)
 
 test_NextHopRoundRobin_SOURCES = \
 	unit-tests/test_NextHopRoundRobin.cc \
@@ -216,7 +216,7 @@ test_NextHopConsistentHash_LDADD = \
   @OPENSSL_LIBS@ \
   @LIBCAP@
 
-test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore -ltscore
+test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS)
 
 test_NextHopConsistentHash_SOURCES = \
 	NextHopSelectionStrategy.cc \

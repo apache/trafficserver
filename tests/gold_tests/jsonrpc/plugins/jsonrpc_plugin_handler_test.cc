@@ -31,7 +31,7 @@
 #include "yaml-cpp/yaml.h"
 #include "tscore/Errata.h"
 #include "tscore/I_Layout.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "rpc/jsonrpc/JsonRPC.h"
 
 namespace
@@ -202,7 +202,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
       }
     } catch (YAML::Exception const &e) {
       std::string buff;
-      ts::bwprint(buff, "Error during file handling: {}", e.what());
+      swoc::bwprint(buff, "Error during file handling: {}", e.what());
       TSRPCHandlerError(UNKNOWN_ERROR, buff.c_str(), buff.size());
       return TS_SUCCESS;
     }
@@ -225,7 +225,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
   std::error_code ec;
   if (fs::copy(tmpFile, dumpFile, ec); ec) {
     std::string buff;
-    ts::bwprint(buff, "Error during file handling: {}, {}", ec.value(), ec.message());
+    swoc::bwprint(buff, "Error during file handling: {}, {}", ec.value(), ec.message());
     TSRPCHandlerError(FILE_UPDATE_ERROR, buff.c_str(), buff.size());
     return TS_SUCCESS;
   }

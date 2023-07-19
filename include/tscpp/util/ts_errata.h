@@ -25,6 +25,7 @@ limitations under the License.
 
 #include "tscpp/util/ts_diag_levels.h"
 #include "swoc/TextView.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "swoc/Errata.h"
 
 static constexpr swoc::Errata::Severity ERRATA_DIAG{DL_Diag};
@@ -70,12 +71,9 @@ make_errno_code(int err)
   return {err, std::system_category()};
 }
 
-// Temporary string for formatting.
-inline thread_local std::string bw_dbg;
-
 template <typename... Args>
 void
 bw_log(DiagsLevel lvl, swoc::TextView fmt, Args &&...args)
 {
-  swoc::bwprint_v(bw_dbg, fmt, std::forward_as_tuple(args...));
+  swoc::bwprint_v(ts::bw_dbg, fmt, std::forward_as_tuple(args...));
 }

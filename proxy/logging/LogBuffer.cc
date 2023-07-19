@@ -26,7 +26,7 @@
   information on the structure of a LogBuffer.
  */
 #include "tscore/ink_platform.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -545,9 +545,9 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
         lastField      = field;
         field          = fieldlist->next(field);
       } else {
-        ts::LocalBufferWriter<10 * 1024> bw;
+        swoc::LocalBufferWriter<10 * 1024> bw;
         if (auto bs = fieldlist->badSymbols(); bs.size() > 0) {
-          bw << " (likely due to bad symbols " << bs << " in log format)";
+          bw.print(" (likely due to bad symbols \"{}\" in log format)", bs);
         }
         Note("There are more field markers than fields%*s;"
              " cannot process log entry '%.*s'. Last field = '%s' printf_str='%s' pos=%d/%d count=%d alt_printf_str='%s'",

@@ -15,7 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "tscore/Random.h"
 #include "policy.h"
 
@@ -39,11 +39,11 @@ int
 PromotionPolicy::create_stat(std::string_view name, std::string_view remap_identifier)
 {
   int stat_id = -1;
-  ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
+  swoc::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
 
-  stat_name.reset().clip(1);
+  stat_name.clear().restrict(1);
   stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, remap_identifier, name);
-  stat_name.extend(1).write('\0');
+  stat_name.restore(1).write('\0');
 
   if (TS_ERROR == TSStatFindName(stat_name.data(), &stat_id)) {
     stat_id = TSStatCreate(stat_name.data(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);

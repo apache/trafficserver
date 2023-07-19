@@ -21,7 +21,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_defs.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 
 #include "ts/ts.h"
 
@@ -141,11 +141,11 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 }
 
 void
-create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view const h, std::string_view const b)
+create_stat_name(swoc::FixedBufferWriter &stat_name, std::string_view const h, std::string_view const b)
 {
-  stat_name.reset().clip(1);
+  stat_name.clear().restrict(1);
   stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, h, b);
-  stat_name.extend(1).write('\0');
+  stat_name.restore(1).write('\0');
 }
 
 int
@@ -171,7 +171,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     uint64_t in_bytes  = TSHttpTxnClientReqHdrBytesGet(txn);
     in_bytes          += TSHttpTxnClientReqBodyBytesGet(txn);
 
-    ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
+    swoc::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
 
     create_stat_name(stat_name, hostsv, "in_bytes");
     stat_add(stat_name.data(), static_cast<TSMgmtInt>(in_bytes), config->persist_type, config->stat_creation_mutex);

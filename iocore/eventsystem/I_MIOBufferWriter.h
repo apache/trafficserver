@@ -33,7 +33,7 @@
 #define ink_assert ink_release_assert
 #endif
 
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
 #include "I_IOBuffer.h"
@@ -43,12 +43,15 @@
 
     @internal This should be changed to IOBufferChain once I port that to open source.
  */
-class MIOBufferWriter : public ts::BufferWriter
+class MIOBufferWriter : public swoc::BufferWriter
 {
-  using self_type = MIOBufferWriter; ///< Self reference type.
+  using self_type  = MIOBufferWriter; ///< Self reference type.
+  using super_type = swoc::BufferWriter;
 
 public:
   explicit MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
+
+  using super_type::write;
 
   self_type &write(const void *data_, size_t length) override;
 
@@ -65,7 +68,7 @@ public:
   }
 
   char *
-  auxBuffer() override
+  aux_data() override
   {
     IOBufferBlock *iobbPtr = _miob->first_write_block();
 
@@ -77,22 +80,28 @@ public:
   }
 
   size_t
-  auxBufferCapacity() const
+  remaining() const
   {
-    IOBufferBlock *iobbPtr = _miob->first_write_block();
-
-    if (!iobbPtr) {
-      return 0;
+    if (IOBufferBlock *iobbPtr = _miob->first_write_block(); iobbPtr) {
+      return iobbPtr->write_avail();
     }
+    return 0;
+  }
 
-    return iobbPtr->write_avail();
+  swoc::MemSpan<char>
+  aux_span()
+  {
+    if (IOBufferBlock *iobbPtr = _miob->first_write_block(); iobbPtr) {
+      return {iobbPtr->end(), size_t(iobbPtr->write_avail())};
+    }
+    return {};
   }
 
   // Write the first n characters that have been placed in the auxiliary buffer.  This call invalidates the auxiliary buffer.
   // This function should not be called if no auxiliary buffer is available.
   //
-  self_type &
-  fill(size_t n) override
+  bool
+  commit(size_t n) override
   {
     if (n) {
       IOBufferBlock *iobbPtr = _miob->first_write_block();
@@ -104,7 +113,7 @@ public:
       _numWritten += n;
     }
 
-    return *this;
+    return true;
   }
 
   // No fixed limit on capacity.
@@ -123,22 +132,17 @@ public:
 
   // Not useful in this derived class.
   //
-  self_type &
-  clip(size_t) override
-  {
-    return *this;
-  }
+  self_type &restrict(size_t) override { return *this; }
 
   // Not useful in this derived class.
   //
   self_type &
-  extend(size_t) override
+  restore(size_t) override
   {
     return *this;
   }
 
   // This must not be called for this derived class.
-  //
   const char *
   data() const override
   {
@@ -146,12 +150,28 @@ public:
     return nullptr;
   }
 
+  // This must not be called for this derived class.
+  self_type &
+  discard(size_t) override
+  {
+    ink_assert(false);
+    return *this;
+  }
+
+  // This must not be called for this derived class.
+  self_type &
+  copy(size_t, size_t, size_t) override
+  {
+    ink_assert(false);
+    return *this;
+  }
+
   /// Output the buffer contents to the @a stream.
   /// @return The destination stream.
   std::ostream &operator>>(std::ostream &stream) const override;
   /// Output the buffer contents to the file for file descriptor @a fd.
   /// @return The number of bytes written.
-  ssize_t operator>>(int fd) const override;
+  ssize_t operator>>(int fd) const;
 
 protected:
   MIOBuffer *_miob;

@@ -441,10 +441,10 @@ PreWarmSM::state_open(int event, void *data)
           read_len = std::min(static_cast<uint64_t>(sizeof(buf)), read_len);
           _read_buf_reader->memcpy(buf, read_len);
 
-          ts::LocalBufferWriter<2048> bw;
-          bw.print("{}", ts::bwf::Hex_Dump(buf));
+          swoc::LocalBufferWriter<2048> bw;
+          bw.print("{:x}", swoc::MemSpan<void const>(buf, read_len));
 
-          PreWarmSMVDebug("\n%.*s\n", (int)read_len * 2, bw.data());
+          PreWarmSMVDebug("\n%.*s\n", int(bw.extent()), bw.data());
         }
       }
     }

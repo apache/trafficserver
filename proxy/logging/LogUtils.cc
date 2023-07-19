@@ -26,7 +26,8 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_string.h"
 #include <tscore/ink_assert.h>
-#include <tscore/BufferWriter.h>
+
+#include "tscpp/util/ts_bw_format.h"
 
 #ifdef TEST_LOG_UTILS
 
@@ -422,7 +423,7 @@ namespace
 // Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
 //
 void
-marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
+marshalStr(swoc::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
 {
   int length;
   const char *data = (mf.*get_func)(&length);
@@ -440,7 +441,7 @@ marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEFiel
 }
 
 void
-unmarshalStr(ts::FixedBufferWriter &bw, const char *&data)
+unmarshalStr(swoc::FixedBufferWriter &bw, const char *&data)
 {
   bw << '{';
 
@@ -467,7 +468,7 @@ marshalMimeHdr(MIMEHdr *hdr, char *buf)
 {
   std::size_t bwSize = buf ? SIZE_MAX : 0;
 
-  ts::FixedBufferWriter bw(buf, bwSize);
+  swoc::FixedBufferWriter bw(buf, bwSize);
 
   if (hdr) {
     for (auto const &mfp : *hdr) {
@@ -486,15 +487,15 @@ marshalMimeHdr(MIMEHdr *hdr, char *buf)
 int
 unmarshalMimeHdr(char **buf, char *dest, int destLength)
 {
-  ink_assert(*buf != nullptr);
+  ink_assert(buf != nullptr);
 
   const char *data = *buf;
 
   ink_assert(data != nullptr);
 
-  ts::FixedBufferWriter bw(dest, destLength);
+  swoc::FixedBufferWriter bw(dest, destLength);
 
-  bw << '{';
+  bw.write('{');
 
   int pairEndFallback{0}, pairEndFallback2{0}, pairSeparatorFallback{0};
 
@@ -506,12 +507,12 @@ unmarshalMimeHdr(char **buf, char *dest, int destLength)
 
     // Add open bracket of pair.
     //
-    bw << '{';
+    bw.write('{');
 
     // Unmarshal field name.
     unmarshalStr(bw, data);
 
-    bw << ':';
+    bw.write(':');
 
     if (!bw.error()) {
       pairSeparatorFallback = bw.size();
@@ -521,42 +522,44 @@ unmarshalMimeHdr(char **buf, char *dest, int destLength)
     unmarshalStr(bw, data);
 
     // Add close bracket of pair.
-    bw << '}';
+    bw.write('}');
 
   } // end for loop
 
-  bw << '}';
+  bw.write('}');
 
   if (bw.error()) {
     // The output buffer wasn't big enough.
+    bw.discard(bw.extent() - destLength); // clip to max buffer size.
 
     static std::string_view FULL_ELLIPSES("...}}}");
+    ink_assert(bw.size() == size_t(destLength));
 
-    if ((pairSeparatorFallback > pairEndFallback) and ((pairSeparatorFallback + 7) <= destLength)) {
+    if ((pairSeparatorFallback > pairEndFallback) and ((pairSeparatorFallback + FULL_ELLIPSES.size()) < size_t(destLength))) {
       // In the report, we can show the existence of the last partial tag/value pair, and maybe part of the value.  If we only
       // show part of the value, we want to end it with an elipsis, to make it clear it's not complete.
 
-      bw.reduce(destLength - FULL_ELLIPSES.size());
-      bw << FULL_ELLIPSES;
+      bw.discard(FULL_ELLIPSES.size());
+      bw.write(FULL_ELLIPSES);
 
     } else if (pairEndFallback and (pairEndFallback < destLength)) {
-      bw.reduce(pairEndFallback);
-      bw << '}';
+      bw.discard(destLength - pairEndFallback);
+      bw.write('}');
 
-    } else if ((pairSeparatorFallback > pairEndFallback2) and ((pairSeparatorFallback + 7) <= destLength)) {
-      bw.reduce(destLength - FULL_ELLIPSES.size());
-      bw << FULL_ELLIPSES;
+    } else if ((pairSeparatorFallback > pairEndFallback2) and
+               ((pairSeparatorFallback + FULL_ELLIPSES.size()) < size_t(destLength))) {
+      bw.discard(FULL_ELLIPSES.size());
+      bw.write(FULL_ELLIPSES);
 
     } else if (pairEndFallback2 and (pairEndFallback2 < destLength)) {
-      bw.reduce(pairEndFallback2);
-      bw << '}';
+      bw.discard(destLength - pairEndFallback2);
+      bw.write('}');
 
     } else if (destLength > 1) {
-      bw.reduce(1);
-      bw << '}';
-
+      bw.discard(1);
+      bw.write('}');
     } else {
-      bw.reduce(0);
+      bw.clear();
     }
   }
 

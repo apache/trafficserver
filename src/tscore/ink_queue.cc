@@ -37,12 +37,16 @@
   ****************************************************************************/
 
 #include "tscore/ink_config.h"
+
 #include <cassert>
 #include <memory.h>
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_atomic.h"
 #include "tscore/ink_queue.h"
 #include "tscore/ink_memory.h"

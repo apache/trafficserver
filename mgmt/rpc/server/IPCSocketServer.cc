@@ -35,7 +35,7 @@
 #include <iostream>
 
 #include "tscore/Diags.h"
-#include "tscore/bwf_std_format.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "records/I_RecProcess.h"
 #include "tscore/ink_sock.h"
 
@@ -207,7 +207,7 @@ IPCSocketServer::run()
 {
   _running.store(true);
 
-  ts::LocalBufferWriter<MAX_REQUEST_BUFFER_SIZE> bw;
+  swoc::LocalBufferWriter<MAX_REQUEST_BUFFER_SIZE> bw;
   while (_running) {
     // poll till socket it's ready.
     if (!this->poll_for_new_client()) {
@@ -241,7 +241,7 @@ IPCSocketServer::run()
       Debug(logTag, "Error while accepting a new connection on the socket: %s", ec.message().c_str());
     }
 
-    bw.reset();
+    bw.clear();
   }
 
   this->close();
@@ -395,26 +395,26 @@ IPCSocketServer::Client::read(swoc::MemSpan<char> span) const
 }
 
 std::tuple<bool, std::string>
-IPCSocketServer::Client::read_all(ts::FixedBufferWriter &bw) const
+IPCSocketServer::Client::read_all(swoc::FixedBufferWriter &bw) const
 {
   std::string buff;
   while (bw.remaining() > 0) {
-    auto ret = read({bw.auxBuffer(), bw.remaining()});
+    auto ret = read({bw.aux_data(), bw.remaining()});
     if (ret < 0) {
       if (check_for_transient_errors()) {
         continue;
       } else {
-        return {false, ts::bwprint(buff, "Error reading the socket: {}", ts::bwf::Errno{})};
+        return {false, swoc::bwprint(buff, "Error reading the socket: {}", swoc::bwf::Errno{})};
       }
     }
 
     if (ret == 0) {
       if (bw.size()) {
-        return {false, ts::bwprint(buff, "Peer disconnected after reading {} bytes.", bw.size())};
+        return {false, swoc::bwprint(buff, "Peer disconnected after reading {} bytes.", bw.size())};
       }
-      return {false, ts::bwprint(buff, "Peer disconnected. EOF")};
+      return {false, swoc::bwprint(buff, "Peer disconnected. EOF")};
     }
-    bw.fill(ret);
+    bw.commit(ret);
     if (bw.remaining() > 0) {
       using namespace std::chrono_literals;
       if (!this->poll_for_data(1ms)) {
@@ -422,7 +422,7 @@ IPCSocketServer::Client::read_all(ts::FixedBufferWriter &bw) const
       }
       continue;
     } else {
-      ts::bwprint(buff, "Buffer is full, we hit the limit: {}", bw.capacity());
+      swoc::bwprint(buff, "Buffer is full, we hit the limit: {}", bw.capacity());
       break;
     }
   }
@@ -448,14 +448,14 @@ IPCSocketServer::Config::Config()
 void
 IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, ts::Errata &errata) const
 {
-  ts::LocalBufferWriter<256> w;
+  swoc::LocalBufferWriter<256> w;
   // For privileged calls, ensure we have caller credentials and that the caller is privileged.
   if (has_peereid() && options.auth.restricted) {
     uid_t euid = -1;
     gid_t egid = -1;
     if (get_peereid(peedFd, &euid, &egid) == -1) {
       errata.push(1, static_cast<int>(UnauthorizedErrorCode::PEER_CREDENTIALS_ERROR),
-                  w.print("Error getting peer credentials: {}\0", ts::bwf::Errno{}).data());
+                  w.print("Error getting peer credentials: {}\0", swoc::bwf::Errno{}).data());
     } else if (euid != 0 && euid != geteuid()) {
       errata.push(1, static_cast<int>(UnauthorizedErrorCode::PERMISSION_DENIED),
                   w.print("Denied privileged API access for uid={} gid={}\0", euid, egid).data());

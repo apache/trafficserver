@@ -26,6 +26,8 @@
 #include <cstring>
 #include <atomic>
 
+#include "swoc/bwf_ip.h"
+
 #include <tscore/ink_assert.h>
 #include <tscore/Diags.h>
 

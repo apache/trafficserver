@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -197,7 +197,7 @@ next_trace(std::string_view const request_hdr, TSHttpTxn const txnp)
   }
 
   // span becomes new parent
-  ts::LocalBufferWriter<8192> bwriter;
+  swoc::LocalBufferWriter<8192> bwriter;
 
   bwriter.write(traceid);
   bwriter.write(trace);
@@ -225,10 +225,10 @@ create_trace(TSHttpTxn const txnp)
     if (TS_SUCCESS == TSUuidInitialize(uuid, TS_UUID_V4)) {
       char const *const uuidstr = TSUuidStringGet(uuid);
       if (nullptr != uuidstr) {
-        ts::LocalBufferWriter<8192> bwriter;
+        swoc::LocalBufferWriter<8192> bwriter;
 
         bwriter.write(traceid);
-        bwriter.write(uuidstr);
+        bwriter.write(uuidstr, strlen(uuidstr));
         bwriter.write(sep);
         bwriter.write(parentid);
         bwriter.write(new_parent);

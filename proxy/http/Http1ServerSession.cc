@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 #include "tscore/ink_config.h"
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "tscore/Allocator.h"
 #include "Http1ServerSession.h"
 #include "HttpSessionManager.h"
@@ -102,7 +101,7 @@ Http1ServerSession::do_io_close(int alerrno)
 {
   // Only do the close bookkeeping 1 time
   if (state != SSN_CLOSED) {
-    ts::LocalBufferWriter<256> w;
+    swoc::LocalBufferWriter<256> w;
     bool debug_p = is_debug_tag_set("http_ss");
 
     state = SSN_CLOSED;

@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_defs.h"

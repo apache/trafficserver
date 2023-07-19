@@ -20,7 +20,7 @@
 
 #include <vector>
 #include <string>
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "tscore/ink_resolver.h"
 #include "test_Diags.h"
 

@@ -51,10 +51,10 @@ libjsonrpc_protocol_la_SOURCES = \
 test_jsonrpc_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/lib/catch2 \
-	@YAMLCPP_INCLUDES@
+	@SWOC_INCLUDES@ @YAMLCPP_INCLUDES@
 
 test_jsonrpc_LDFLAGS = \
-	@AM_LDFLAGS@
+	@AM_LDFLAGS@ @SWOC_LIBS@
 
 test_jsonrpc_SOURCES = \
 	jsonrpc/unit_tests/unit_test_main.cc \
@@ -67,7 +67,7 @@ test_jsonrpc_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
-	@YAMLCPP_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @LIBCAP@
+	@YAMLCPP_LIBS@ @SWOC_LIBS@ @HWLOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 
 

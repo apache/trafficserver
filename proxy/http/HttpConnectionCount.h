@@ -37,7 +37,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/Diags.h"
 #include "tscore/CryptoHash.h"
-#include "tscore/BufferWriterForward.h"
+#include "swoc/bwf_fwd.h"
 #include "swoc/TextView.h"
 #include <tscore/MgmtDefs.h>
 #include "HttpProxyAPIEnums.h"
@@ -420,9 +420,9 @@ OutboundConnTrack::Linkage::equal(key_type lhs, key_type rhs)
 
 Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
 
-namespace ts
+namespace swoc
 {
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type);
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group::Key const &key);
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group const &g);
-} // namespace ts
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::MatchType type);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group::Key const &key);
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group const &g);
+} // namespace swoc

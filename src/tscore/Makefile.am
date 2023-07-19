@@ -45,7 +45,6 @@ libtscore_a_SOURCES = \
 	Arena.cc \
 	ArgParser.cc \
 	BaseLogFile.cc \
-	BufferWriterFormat.cc \
 	ConsistentHash.cc \
 	ContFlags.cc \
 	CryptoHash.cc \
@@ -125,8 +124,6 @@ libtscore_a_SOURCES += \
   $(HKDF_impl)
 endif
 
-BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
-
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
 
@@ -134,7 +131,7 @@ ParseRulesCType: CompileParseRules
 	LSAN_OPTIONS='detect_leaks=0' ./CompileParseRules
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@ @LIBCAP@
+test_atomic_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.a $(top_builddir)/src/tscpp/util/libtscpputil.la @SWOC_LIBS@ @LIBPCRE@ @LIBCAP@
@@ -158,8 +155,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_AcidPtr.cc \
 	unit_tests/test_arena.cc \
 	unit_tests/test_ArgParser.cc \
-	unit_tests/test_BufferWriter.cc \
-	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_Bravo.cc \
 	unit_tests/test_CryptoHash.cc \
 	unit_tests/test_Extendible.cc \

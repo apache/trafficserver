@@ -25,8 +25,7 @@
 #include <cstring>
 #include "tscore/SourceLocation.h"
 #include "tscore/ink_defs.h"
-#include "tscore/BufferWriter.h"
-#include "tscore/bwf_std_format.h"
+#include "tscpp/util/ts_bw_format.h"
 
 using namespace swoc::literals;
 
@@ -58,15 +57,12 @@ SourceLocation::str(char *buf, int buflen) const
   return (buf);
 }
 
-ts::BufferWriter &
-SourceLocation::print(ts::BufferWriter &w, ts::BWFSpec const &) const
+swoc::BufferWriter &
+SourceLocation::print(swoc::BufferWriter &w, swoc::bwf::Spec const &) const
 {
   if (this->valid()) {
-    swoc::TextView base{
-      swoc::TextView{file, strlen(file)}
-      .take_suffix_at('/')
-    };
-    w.print("{}:{}{}", base, line, ts::bwf::OptionalAffix(func, ")"_tv, " ("_tv));
+    auto base = swoc::TextView{file, strlen(file)}.take_suffix_at('/');
+    w.print("{}:{}{}", base, line, swoc::bwf::If(func, " ({})"_tv, func));
   };
   return w;
 }
