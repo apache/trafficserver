@@ -29,10 +29,9 @@ AM_CPPFLAGS += \
 	@SWOC_INCLUDES@ \
 	$(TS_INCLUDES)
 
-libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
+libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
 
 libtsapi_la_LIBADD = \
-	$(top_builddir)/src/tscore/libtscore.a \
 	@SWOC_LIBS@
 
 
