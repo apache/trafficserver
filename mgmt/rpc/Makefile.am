@@ -149,7 +149,6 @@ librpcpublichandlers_la_SOURCES = \
 # for building.
 # We have also added a proper cleaning for it.
 shared_overridable_txn_vars_SOURCES = overridable_txn_vars.cc
-nodist_librpcpublichandlers_la_SOURCES = $(shared_overridable_txn_vars_SOURCES)
 
 shared_rpc_ipc_client_SOURCES = IPCSocketClient.cc
 
