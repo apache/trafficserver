@@ -23,6 +23,8 @@ add_library(inkhostdb STATIC
     HostFile.cc
     HostDBInfo.cc
 )
+add_library(ts::inkhostdb ALIAS inkhostdb)
+
 target_include_directories(inkhostdb PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring

@@ -34,30 +34,27 @@ target_include_directories(traffic_server PRIVATE
 )
 target_link_libraries(traffic_server
     PRIVATE
-        tscore
-        http
-        http_remap
-        http2
-        logging
-        hdrs
-        configmanager
-        diagsconfig
-        inkutils
-        inkdns
-        inkhostdb
-        inkcache
-        fastlz
-        aio
-        tscpputil
-        proxy
-        inknet
-        records
-        inkevent
-        yaml-cpp
+        ts::tscore
+        ts::http
+        ts::http_remap
+        ts::http2
+        ts::logging
+        ts::hdrs
+        ts::configmanager
+        ts::diagsconfig
+        ts::inkutils
+        ts::inkdns
+        ts::inkhostdb
+        ts::inkcache
+        ts::aio
+        ts::proxy
+        ts::inknet
+        ts::records
+        ts::inkevent
         libswoc
-        jsonrpc_protocol
-        jsonrpc_server
-        rpcpublichandlers
+        ts::jsonrpc_protocol
+        ts::jsonrpc_server
+        ts::rpcpublichandlers
 )
 
 if(TS_USE_QUIC)
