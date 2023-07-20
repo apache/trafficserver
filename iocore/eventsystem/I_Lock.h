@@ -389,9 +389,11 @@ class WeakMutexLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool locked_p;
+  bool locked_p{false};
 
 public:
+  WeakMutexLock() = default;
+
   WeakMutexLock(
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
@@ -406,6 +408,20 @@ public:
 #endif // DEBUG
         m, t);
     }
+  }
+
+  WeakMutexLock(WeakMutexLock &)                  = delete;
+  WeakMutexLock &operator=(const WeakMutexLock &) = delete;
+  WeakMutexLock(WeakMutexLock &&)                 = delete;
+
+  WeakMutexLock &
+  operator=(WeakMutexLock &&orig)
+  {
+    if (&orig != this) {
+      std::swap(m, orig.m);
+      std::swap(locked_p, orig.locked_p);
+    }
+    return *this;
   }
 
   void
@@ -425,10 +441,12 @@ public:
 class MutexLock
 {
 private:
-  Ptr<ProxyMutex> m;
-  bool locked_p;
+  Ptr<ProxyMutex> m{};
+  bool locked_p{false};
 
 public:
+  MutexLock() = default;
+
   MutexLock(
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
@@ -441,6 +459,20 @@ public:
       location, ahandler,
 #endif // DEBUG
       m, t);
+  }
+
+  MutexLock(MutexLock &)                  = delete;
+  MutexLock &operator=(const MutexLock &) = delete;
+  MutexLock(MutexLock &&)                 = delete;
+
+  MutexLock &
+  operator=(MutexLock &&orig)
+  {
+    if (&orig != this) {
+      std::swap(m, orig.m);
+      std::swap(locked_p, orig.locked_p);
+    }
+    return *this;
   }
 
   void
@@ -461,9 +493,11 @@ class WeakMutexTryLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool lock_acquired;
+  bool lock_acquired{false};
 
 public:
+  WeakMutexTryLock() = default;
+
   WeakMutexTryLock(
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
@@ -480,6 +514,20 @@ public:
     } else {
       lock_acquired = true;
     }
+  }
+
+  WeakMutexTryLock(WeakMutexTryLock &)                  = delete;
+  WeakMutexTryLock &operator=(const WeakMutexTryLock &) = delete;
+  WeakMutexTryLock(WeakMutexTryLock &&)                 = delete;
+
+  WeakMutexTryLock &
+  operator=(WeakMutexTryLock &&orig)
+  {
+    if (&orig != this) {
+      std::swap(m, orig.m);
+      std::swap(lock_acquired, orig.lock_acquired);
+    }
+    return *this;
   }
 
   ~WeakMutexTryLock()
@@ -529,9 +577,11 @@ class MutexTryLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool lock_acquired;
+  bool lock_acquired{false};
 
 public:
+  MutexTryLock() = default;
+
   MutexTryLock(
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
@@ -544,6 +594,20 @@ public:
       location, ahandler,
 #endif // DEBUG
       m, t);
+  }
+
+  MutexTryLock(MutexTryLock &)                  = delete;
+  MutexTryLock &operator=(const MutexTryLock &) = delete;
+  MutexTryLock(MutexTryLock &&)                 = delete;
+
+  MutexTryLock &
+  operator=(MutexTryLock &&orig)
+  {
+    if (&orig != this) {
+      std::swap(m, orig.m);
+      std::swap(lock_acquired, orig.lock_acquired);
+    }
+    return *this;
   }
 
   ~MutexTryLock()
