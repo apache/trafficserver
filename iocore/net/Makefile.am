@@ -36,6 +36,7 @@ AM_CPPFLAGS += \
 	@SWOC_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/regression.txt
 
 check_PROGRAMS = test_certlookup test_UDPNet test_libinknet
 noinst_LIBRARIES = libinknet.a
