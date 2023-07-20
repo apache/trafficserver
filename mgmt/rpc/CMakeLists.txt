@@ -33,7 +33,7 @@ add_library(jsonrpc_protocol STATIC
 )
 add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
 
-target_link_libraries(jsonrpc_protocol PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(jsonrpc_protocol PUBLIC ts::tscore)
 
 add_library(jsonrpc_server STATIC
         server/RPCServer.cc
@@ -43,7 +43,7 @@ add_library(jsonrpc_server STATIC
 )
 add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
 
-target_link_libraries(jsonrpc_server PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(jsonrpc_server PUBLIC ts::tscore)
 
 add_library(rpcpublichandlers STATIC
         handlers/common/RecordsUtils.cc
@@ -55,4 +55,4 @@ add_library(rpcpublichandlers STATIC
 )
 add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 
-target_link_libraries(rpcpublichandlers PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(rpcpublichandlers PUBLIC ts::tscore)

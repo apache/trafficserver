@@ -43,4 +43,4 @@ target_include_directories(http_remap PRIVATE
         ${YAML_INCLUDE_DIRS}
         )
 
-target_link_libraries(http_remap PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(http_remap PUBLIC ts::tscore)

@@ -41,4 +41,4 @@ target_include_directories(logging PRIVATE
         ${SWOC_INCLUDE_DIR}
 )
 
-target_link_libraries(logging PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(logging PUBLIC ts::tscore)

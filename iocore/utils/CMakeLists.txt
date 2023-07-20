@@ -32,4 +32,4 @@ target_include_directories(inkutils PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         )
 
-target_link_libraries(inkutils PRIVATE PCRE::PCRE) # transitive
+target_link_libraries(inkutils PUBLIC ts::tscore)
