@@ -81,7 +81,7 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
 void
 QUICNetVConnection::free()
 {
-  this->free(this_ethread());
+  this->free_thread(this_ethread());
 }
 
 // called by ET_UDP
@@ -112,7 +112,7 @@ QUICNetVConnection::set_local_addr()
 }
 
 void
-QUICNetVConnection::free(EThread *t)
+QUICNetVConnection::free_thread(EThread *t)
 {
   QUICConDebug("Free connection");
 
@@ -296,7 +296,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   // Send this NetVC to NetHandler and start to polling read & write event.
   if (h->startIO(this) < 0) {
-    free(t);
+    this->free_thread(t);
     return EVENT_DONE;
   }
 
