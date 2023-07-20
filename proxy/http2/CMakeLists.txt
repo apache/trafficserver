@@ -36,3 +36,5 @@ target_include_directories(http2 PRIVATE
         ${PROXY_INCLUDE_DIRS}
         ${YAMLCPP_INCLUDE_DIR}
 )
+
+target_link_libraries(http2 PRIVATE PCRE::PCRE) # transitive

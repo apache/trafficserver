@@ -40,3 +40,5 @@ target_include_directories(logging PRIVATE
         ${YAML_INCLUDE_DIRS}
         ${SWOC_INCLUDE_DIR}
 )
+
+target_link_libraries(logging PRIVATE PCRE::PCRE) # transitive

@@ -58,6 +58,8 @@ target_include_directories(proxy PUBLIC
         ${CMAKE_SOURCE_DIR}/lib/yamlcpp/include
         )
 
+target_link_libraries(proxy PRIVATE PCRE::PCRE) # transitive
+
 add_subdirectory(hdrs)
 add_subdirectory(shared)
 add_subdirectory(http)

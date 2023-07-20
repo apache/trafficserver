@@ -56,6 +56,8 @@ target_include_directories(http
         ${YAMLCPP_INCLUDE_DIR}
 )
 
+target_link_libraries(http PRIVATE PCRE::PCRE) # transitive
+
 if(TS_USE_QUIC)
     target_link_libraries(http PRIVATE ts::http3)
 endif()

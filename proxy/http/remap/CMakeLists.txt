@@ -42,3 +42,5 @@ target_include_directories(http_remap PRIVATE
         ${CMAKE_SOURCE_DIR}/src/records
         ${YAML_INCLUDE_DIRS}
         )
+
+target_link_libraries(http_remap PRIVATE PCRE::PCRE) # transitive
