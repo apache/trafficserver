@@ -177,7 +177,7 @@ public:
   int state_connection_closed(int event, Event *data);
   void start();
   void remove_connection_ids();
-  void free(EThread *t) override;
+  void free_thread(EThread *t) override;
   void free() override;
   void destroy(EThread *t);
 

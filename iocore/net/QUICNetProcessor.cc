@@ -122,7 +122,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   Action *status;
   bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &status, *opt);
   if (!result) {
-    vc->free(t);
+    vc->free_thread(t);
     return status;
   }
 

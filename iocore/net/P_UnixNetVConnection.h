@@ -187,7 +187,7 @@ public:
   // NetEvent
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual void net_write_io(NetHandler *nh, EThread *lthread) override;
-  virtual void free(EThread *t) override;
+  virtual void free_thread(EThread *t) override;
   virtual int
   close() override
   {
