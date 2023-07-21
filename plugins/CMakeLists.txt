@@ -22,7 +22,6 @@ function(add_atsplugin name)
   target_link_libraries(${name} PRIVATE traffic_server)
   set_target_properties(${name} PROPERTIES PREFIX "")
   set_target_properties(${name} PROPERTIES SUFFIX ".so")
-  set_target_properties(${name} PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
   install(TARGETS ${name} DESTINATION libexec/trafficserver)
 endfunction()
 

@@ -19,4 +19,6 @@ project(s3_auth)
 
 add_atsplugin(s3_auth s3_auth.cc aws_auth_v4.cc)
 
+target_link_libraries(s3_auth PRIVATE ts::tscore)
+
 add_subdirectory(unit_tests)

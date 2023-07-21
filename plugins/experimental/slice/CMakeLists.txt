@@ -32,7 +32,7 @@ add_atsplugin(slice
     util.cc
 )
 
-target_link_libraries(access_control PRIVATE PCRE::PCRE)
+target_link_libraries(slice PRIVATE ts::tscore)
 
 if(BUILD_TESTING)
     add_subdirectory(unit-tests)

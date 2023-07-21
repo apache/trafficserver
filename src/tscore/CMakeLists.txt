@@ -120,7 +120,7 @@ if(TS_USE_POSIX_CAP)
     target_link_libraries(tscore PUBLIC cap::cap)
 endif()
 
-add_dependencies(tscore ParseRules tscpputil)
+add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${YAML_INCLUDE_DIRS}
