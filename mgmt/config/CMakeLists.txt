@@ -19,6 +19,8 @@ add_library(configmanager STATIC
         FileManager.cc
         AddConfigFilesHere.cc
 )
+add_library(ts::configmanager ALIAS configmanager)
+
 include_directories(
         ${CMAKE_SOURCE_DIR}/mgmt
         ${CMAKE_SOURCE_DIR}/proxy

@@ -31,6 +31,7 @@ add_library(jsonrpc_protocol STATIC
         jsonrpc/JsonRPCManager.cc
         jsonrpc/Context.cc
 )
+add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
 
 add_library(jsonrpc_server STATIC
         server/RPCServer.cc
@@ -38,6 +39,7 @@ add_library(jsonrpc_server STATIC
         server/IPCSocketServer.cc
         config/JsonRPCConfig.cc
 )
+add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
 
 add_library(rpcpublichandlers STATIC
         handlers/common/RecordsUtils.cc
@@ -47,3 +49,4 @@ add_library(rpcpublichandlers STATIC
         handlers/server/Server.cc
         handlers/plugins/Plugins.cc
 )
+add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)

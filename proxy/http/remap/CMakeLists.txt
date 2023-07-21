@@ -34,6 +34,8 @@ add_library(http_remap STATIC
         UrlMappingPathIndex.cc
         UrlRewrite.cc
 )
+add_library(ts::http_remap ALIAS http_remap)
+
 target_include_directories(http_remap PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}

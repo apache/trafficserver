@@ -31,13 +31,12 @@ add_library(inkcache STATIC
     RamCacheLRU.cc
     Store.cc
 )
+add_library(ts::inkcache ALIAS inkcache)
+
 if(BUILD_REGRESSION_TESTING)
     target_sources(inkcache PRIVATE CacheTest.cc)
 endif()
-target_link_libraries(inkcache PRIVATE ZLIB::ZLIB)
-if(HAVE_LZMA_H)
-    target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
-endif()
+
 target_include_directories(inkcache PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
@@ -52,3 +51,14 @@ target_include_directories(inkcache PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         ${CMAKE_SOURCE_DIR}/lib
 )
+
+target_link_libraries(inkcache
+    PRIVATE
+        fastlz
+        ZLIB::ZLIB
+)
+
+if(HAVE_LZMA_H)
+    target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
+endif()
+

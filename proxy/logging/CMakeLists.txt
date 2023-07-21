@@ -32,6 +32,8 @@ add_library(logging STATIC
         YamlLogConfig.cc
         YamlLogConfigDecoders.cc
 )
+add_library(ts::logging ALIAS logging)
+
 target_include_directories(logging PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}

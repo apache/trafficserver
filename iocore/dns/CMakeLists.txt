@@ -22,6 +22,8 @@ add_library(inkdns STATIC
     Inline.cc
     SplitDNS.cc
 )
+add_library(ts::inkdns ALIAS inkdns)
+
 target_include_directories(inkdns PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns
