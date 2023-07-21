@@ -31,10 +31,11 @@ include_directories(
 add_executable(test_iouring
         unit_tests/test_diskIO.cc)
 target_link_libraries(test_iouring
+    PUBLIC
+        ts::tscore
     PRIVATE
         inkuring
         libswoc
-        ts::tscore
         tscpputil
         uring
 )

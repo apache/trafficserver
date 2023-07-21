@@ -28,3 +28,5 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${IOCORE_INCLUDE_DIRS}
 )
+
+target_link_libraries(configmanager PUBLIC ts::tscore)

@@ -97,7 +97,7 @@ if(BUILD_REGRESSION_TESTING)
     target_sources(inknet PRIVATE NetVCTest.cc)
 endif()
 
-target_link_libraries(inknet PUBLIC inkevent records)
+
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 target_include_directories(inknet PUBLIC
         ${CMAKE_SOURCE_DIR}/iocore/eventsystem
@@ -116,6 +116,13 @@ target_include_directories(inknet PUBLIC
         ${OPENSSL_INCLUDE_DIRS}
         ${YAML_INCLUDE_DIRS}
         )
+
+target_link_libraries(inknet
+    PUBLIC
+        ts::inkevent
+        ts::records
+        ts::tscore
+)
 
 # Fails to link because of circular dep with proxy (ParentSelection)
 # add_executable(test_net unit_tests/test_ProxyProtocol.cc)

@@ -45,5 +45,10 @@ add_library(ts::tscppapi ALIAS tscppapi)
 target_link_libraries(tscppapi
     PUBLIC
     libswoc
-    yaml-cpp::yaml-cpp)
+    yaml-cpp::yaml-cpp
+)
 install(TARGETS tscppapi)
+
+if(APPLE)
+  target_link_options(tscppapi PRIVATE -undefined dynamic_lookup)
+endif()

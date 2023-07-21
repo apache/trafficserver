@@ -36,3 +36,5 @@ target_include_directories(inkdns PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
 )
+
+target_link_libraries(inkdns PUBLIC ts::tscore)

@@ -53,6 +53,8 @@ target_include_directories(inkcache PRIVATE
 )
 
 target_link_libraries(inkcache
+    PUBLIC
+        ts::tscore
     PRIVATE
         fastlz
         ZLIB::ZLIB
@@ -61,4 +63,3 @@ target_link_libraries(inkcache
 if(HAVE_LZMA_H)
     target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()
-
