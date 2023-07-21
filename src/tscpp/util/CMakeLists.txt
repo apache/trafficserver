@@ -26,7 +26,8 @@ target_link_libraries(tscpputil
 	PUBLIC
 		libswoc
 		yaml-cpp::yaml-cpp
-                ts::tscore)
+                ts::tscore
+)
 install(TARGETS tscpputil)
 
 add_executable(test_tscpputil

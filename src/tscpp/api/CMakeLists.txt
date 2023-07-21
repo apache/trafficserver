@@ -46,7 +46,7 @@ target_link_libraries(tscppapi
     PUBLIC
     libswoc
     yaml-cpp::yaml-cpp
-    )
+)
 install(TARGETS tscppapi)
 
 if(APPLE)
