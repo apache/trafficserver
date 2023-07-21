@@ -49,6 +49,6 @@ target_link_libraries(tscppapi
     )
 install(TARGETS tscppapi)
 
-if (APPLE)
-    set_target_properties(tscppapi PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-endif(APPLE)
+if(APPLE)
+  target_link_options(tscppapi PRIVATE -undefined dynamic_lookup)
+endif()
