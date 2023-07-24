@@ -54,6 +54,7 @@ target_include_directories(http
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${YAMLCPP_INCLUDE_DIR}
+        OpenSSL::SSL
 )
 
 target_link_libraries(http PUBLIC ts::tscore)

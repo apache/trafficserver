@@ -115,7 +115,12 @@ else()
     target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
-target_link_libraries(tscore PUBLIC PCRE::PCRE)
+target_link_libraries(tscore
+  PUBLIC
+    OpenSSL::Crypto
+    PCRE::PCRE
+)
+
 if(TS_USE_POSIX_CAP)
     target_link_libraries(tscore PUBLIC cap::cap)
 endif()
@@ -164,12 +169,12 @@ add_executable(test_tscore
 target_link_libraries(test_tscore
     PRIVATE
         libswoc
-        tscore
+        ts::tscore
         yaml-cpp::yaml-cpp
-        libswoc
-        ${OPENSSL_LIBRARIES}
         resolv
-        tscpputil
+        ts::tscpputil
+        OpenSSL::Crypto
+        OpenSSL::SSL
 )
 if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)

@@ -22,16 +22,11 @@ add_executable(traffic_layout
     traffic_layout.cc
 )
 
-target_include_directories(traffic_layout
-    PRIVATE
-        ${OPENSSL_INCLUDE_DIRS}
-)
-
 target_link_libraries(traffic_layout
     PRIVATE
         ts::inkevent
-        ${OPENSSL_LIBRARY}
         ts::records
+        OpenSSL::Crypto
         yaml-cpp::yaml-cpp
 )
 

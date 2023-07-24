@@ -16,3 +16,9 @@
 #######################
 
 add_atsplugin(certifier certifier.cc)
+
+target_link_libraries(certifier
+    PRIVATE
+        OpenSSL::Crypto
+        OpenSSL::SSL
+)

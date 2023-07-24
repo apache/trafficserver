@@ -17,7 +17,7 @@
 
 add_executable(smuggle-client smuggle-client.c)
 
-target_link_libraries(smuggle-client PRIVATE "${OPENSSL_SSL_LIBRARY}")
+target_link_libraries(smuggle-client PRIVATE OpenSSL::SSL)
 
 set_property(
     TARGET smuggle-client

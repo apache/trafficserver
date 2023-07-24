@@ -182,7 +182,7 @@ endif()
 find_package(PCRE REQUIRED)
 
 include(CheckOpenSSLIsBoringSSL)
-find_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(OPENSSL_IS_BORINGSSL "${OPENSSL_INCLUDE_DIR}")
 
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
@@ -327,11 +327,6 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
 )
-
-if (OPENSSL_FOUND)
-    include_directories(${OPENSSL_INCLUDE_DIR})
-    link_libraries(${OPENSSL_CRYPTO_LIBRARY})
-endif(OPENSSL_FOUND)
 
 add_subdirectory(lib)
 

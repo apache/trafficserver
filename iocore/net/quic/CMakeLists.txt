@@ -39,7 +39,8 @@ target_link_libraries(quic
     PUBLIC
         inkevent
         inknet
-        ${OPENSSL_LIBRARY}
         quiche::quiche
         ts::tscore
+        OpenSSL::Crypto
+        OpenSSL::SSL
 )
