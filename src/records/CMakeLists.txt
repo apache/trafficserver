@@ -41,4 +41,8 @@ target_include_directories(records
         "${CMAKE_SOURCE_DIR}/iocore/utils"
 )
 
-target_link_libraries(records PUBLIC ts::tscore)
+target_link_libraries(records
+    PUBLIC
+        ts::tscore
+        yaml-cpp::yaml-cpp
+)

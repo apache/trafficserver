@@ -116,9 +116,11 @@ else()
 endif()
 
 target_link_libraries(tscore
-  PUBLIC
-    OpenSSL::Crypto
-    PCRE::PCRE
+    PUBLIC
+        OpenSSL::Crypto
+        PCRE::PCRE
+    PRIVATE
+        yaml-cpp::yaml-cpp
 )
 
 if(TS_USE_POSIX_CAP)
@@ -128,7 +130,6 @@ endif()
 add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
-        ${YAML_INCLUDE_DIRS}
 )
 if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
     target_compile_options(tscore PUBLIC "-mcx16")

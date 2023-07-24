@@ -40,7 +40,11 @@ target_include_directories(http_remap PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/src/records
-        ${YAML_INCLUDE_DIRS}
         )
 
-target_link_libraries(http_remap PUBLIC ts::tscore)
+target_link_libraries(http_remap
+    PUBLIC
+        ts::tscore
+    PRIVATE
+        yaml-cpp::yaml-cpp
+)
