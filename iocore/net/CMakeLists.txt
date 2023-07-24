@@ -113,8 +113,7 @@ target_include_directories(inknet PUBLIC
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/proxy/http/remap
         ${CMAKE_SOURCE_DIR}/src/traffic_server
-        ${YAML_INCLUDE_DIRS}
-        )
+)
 
 target_link_libraries(inknet
     PUBLIC
@@ -123,6 +122,8 @@ target_link_libraries(inknet
         ts::tscore
         OpenSSL::Crypto
         OpenSSL::SSL
+    PRIVATE
+        yaml-cpp::yaml-cpp
 )
 
 # Fails to link because of circular dep with proxy (ParentSelection)

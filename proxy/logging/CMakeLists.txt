@@ -37,8 +37,11 @@ add_library(ts::logging ALIAS logging)
 target_include_directories(logging PRIVATE
         ${IOCORE_INCLUDE_DIRS}
         ${PROXY_INCLUDE_DIRS}
-        ${YAML_INCLUDE_DIRS}
         ${SWOC_INCLUDE_DIR}
 )
 
-target_link_libraries(logging PUBLIC ts::tscore)
+target_link_libraries(logging
+    PUBLIC
+        ts::tscore
+        yaml-cpp::yaml-cpp
+)

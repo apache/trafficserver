@@ -29,9 +29,9 @@ target_include_directories(traffic_ctl PRIVATE
         ${CMAKE_SOURCE_DIR}/mgmt
         )
 target_link_libraries(traffic_ctl
-        tscore
-        yaml-cpp
+        ts::tscore
         libswoc
-        )
+        yaml-cpp::yaml-cpp
+)
 
 install(TARGETS traffic_ctl)
