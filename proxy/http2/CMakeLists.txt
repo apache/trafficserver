@@ -37,4 +37,8 @@ target_include_directories(http2 PRIVATE
         ${YAMLCPP_INCLUDE_DIR}
 )
 
-target_link_libraries(http2 PUBLIC ts::tscore)
+target_link_libraries(http2
+    PUBLIC
+        ts::inkevent
+        ts::tscore
+)

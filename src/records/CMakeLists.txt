@@ -35,7 +35,6 @@ add_library(ts::records ALIAS records)
 target_include_directories(records
     PUBLIC
         "${PROJECT_SOURCE_DIR}/include"
-        "${CMAKE_SOURCE_DIR}/iocore/eventsystem"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/mgmt"
         "${CMAKE_SOURCE_DIR}/iocore/utils"
@@ -43,6 +42,7 @@ target_include_directories(records
 
 target_link_libraries(records
     PUBLIC
+        ts::inkevent
         ts::tscore
         yaml-cpp::yaml-cpp
 )

@@ -38,7 +38,6 @@ if(BUILD_REGRESSION_TESTING)
 endif()
 
 target_include_directories(inkcache PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/aio
@@ -54,6 +53,7 @@ target_include_directories(inkcache PRIVATE
 
 target_link_libraries(inkcache
     PUBLIC
+        ts::inkevent
         ts::tscore
     PRIVATE
         fastlz

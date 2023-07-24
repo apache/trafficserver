@@ -26,7 +26,6 @@ add_library(inkhostdb STATIC
 add_library(ts::inkhostdb ALIAS inkhostdb)
 
 target_include_directories(inkhostdb PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/aio
@@ -38,4 +37,8 @@ target_include_directories(inkhostdb PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
 )
 
-target_link_libraries(inkhostdb PUBLIC ts::tscore)
+target_link_libraries(inkhostdb
+    PUBLIC
+        ts::inkevent
+        ts::tscore
+)

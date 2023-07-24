@@ -19,7 +19,7 @@ add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc)
 
 target_link_libraries(traffic_crashlog
     PRIVATE
-        ts::inkevent # transitive
+        ts::inkevent
         ts::records
         ts::tscore
 )
