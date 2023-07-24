@@ -74,12 +74,17 @@ tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port
 tr.StillRunningAfter = ts
 tr.TimeOut = 60
 
-# Just a check to flush out the traffic log until we have a clean shutdown for traffic_server
-tr = Test.AddTestRun("Wait for the access log to write out")
-tr.DelayStart = 10
+tr = Test.AddTestRun("Wait squid.log to be written")
+timeout = 30
+watcher = tr.Processes.Process("watcher")
+watcher.Command = f"sleep {timeout}"
+watcher.Ready = When.FileContains(ts.Disk.squid_log.Name, r'14 http/1.1 http/2')
+watcher.TimeOut = timeout
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'ls'
+tr.TimeOut = timeout
+tr.Processes.Default.StartBefore(watcher)
+tr.Processes.Default.Command = 'echo await_squid_log'
 tr.Processes.Default.ReturnCode = 0
 
 # UUIDs 1-4 should be http/1.1 clients and H2 origin
