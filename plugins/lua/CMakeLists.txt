@@ -49,4 +49,8 @@ add_atsplugin(tslua
 
 target_include_directories(tslua PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
-target_link_libraries(tslua PRIVATE LuaJIT::LuaJIT)
+target_link_libraries(tslua
+    PRIVATE
+        LuaJIT::LuaJIT
+        OpenSSL::Crypto
+)

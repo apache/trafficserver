@@ -22,3 +22,5 @@ add_atsplugin(cache_promote
         lru_policy.cc
         policy_manager.cc
 )
+
+target_link_libraries(cache_promote PRIVATE OpenSSL::Crypto)
