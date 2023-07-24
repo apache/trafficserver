@@ -47,7 +47,7 @@ tr = Test.AddTestRun()
 # before it detects the log message. So we add a separate process that waits
 # upon the log message.
 watcher = Test.Processes.Process("watcher")
-watcher.Command = "sleep 1"
+watcher.Command = "sleep 10"
 watcher.Ready = When.FileContains(ts.Disk.diags_log.Name, "testing emergency shutdown")
 watcher.StartBefore(ts)
 
