@@ -60,8 +60,11 @@ target_include_directories(proxy PUBLIC
 
 target_link_libraries(proxy
     PUBLIC
+        ts::inkcache
         ts::inkevent
         ts::tscore
+    PRIVATE
+        ts::inkutils
 )
 
 add_subdirectory(hdrs)

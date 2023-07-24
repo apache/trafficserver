@@ -43,6 +43,7 @@ target_include_directories(logging PRIVATE
 target_link_libraries(logging
     PUBLIC
         ts::inkevent
+        ts::inkutils
         ts::tscore
         yaml-cpp::yaml-cpp
 )

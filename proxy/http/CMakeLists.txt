@@ -60,7 +60,11 @@ target_include_directories(http
 target_link_libraries(http
     PUBLIC
         ts::inkevent
+        ts::inkhostdb
         ts::tscore
+    PRIVATE
+        ts::inkcache
+        ts::inkutils
 )
 
 if(TS_USE_QUIC)

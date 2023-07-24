@@ -35,14 +35,16 @@ add_library(ts::inkcache ALIAS inkcache)
 
 if(BUILD_REGRESSION_TESTING)
     target_sources(inkcache PRIVATE CacheTest.cc)
+    target_link_libraries(inkcache PRIVATE ts::proxy)
 endif()
 
-target_include_directories(inkcache PRIVATE
+target_include_directories(inkcache
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/iocore/cache
+    PRIVATE
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/dns
-        ${CMAKE_SOURCE_DIR}/iocore/aio
         ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/iocore/cache
         ${CMAKE_SOURCE_DIR}/iocore/hostdb
         ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/http
@@ -53,6 +55,7 @@ target_include_directories(inkcache PRIVATE
 
 target_link_libraries(inkcache
     PUBLIC
+        ts::aio
         ts::inkevent
         ts::tscore
     PRIVATE
