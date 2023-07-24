@@ -19,7 +19,6 @@ add_library(inkuring STATIC
         io_uring.cc
 )
 include_directories(
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/aio
         ${CMAKE_SOURCE_DIR}/iocore/io_uring

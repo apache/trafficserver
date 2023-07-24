@@ -57,7 +57,11 @@ target_include_directories(http
         OpenSSL::SSL
 )
 
-target_link_libraries(http PUBLIC ts::tscore)
+target_link_libraries(http
+    PUBLIC
+        ts::inkevent
+        ts::tscore
+)
 
 if(TS_USE_QUIC)
     target_link_libraries(http PRIVATE ts::http3)

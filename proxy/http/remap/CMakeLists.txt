@@ -46,5 +46,6 @@ target_link_libraries(http_remap
     PUBLIC
         ts::tscore
     PRIVATE
+        ts::inkevent
         yaml-cpp::yaml-cpp
 )

@@ -21,7 +21,6 @@ add_library(ts::inkutils ALIAS inkutils)
 
 
 target_include_directories(inkutils PRIVATE
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/aio
         ${CMAKE_SOURCE_DIR}/iocore/net
@@ -32,4 +31,8 @@ target_include_directories(inkutils PRIVATE
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         )
 
-target_link_libraries(inkutils PUBLIC ts::tscore)
+target_link_libraries(inkutils
+    PUBLIC
+        ts::inkevent
+        ts::tscore
+)

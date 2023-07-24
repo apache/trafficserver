@@ -37,10 +37,10 @@ target_include_directories(quic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(quic
     PUBLIC
-        inkevent
-        inknet
-        quiche::quiche
+        ts::inkevent
+        ts::inknet
         ts::tscore
         OpenSSL::Crypto
         OpenSSL::SSL
+        quiche::quiche
 )

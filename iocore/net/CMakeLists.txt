@@ -100,7 +100,6 @@ endif()
 
 target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 target_include_directories(inknet PUBLIC
-        ${CMAKE_SOURCE_DIR}/iocore/eventsystem
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/aio

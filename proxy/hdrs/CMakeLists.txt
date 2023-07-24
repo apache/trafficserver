@@ -42,4 +42,6 @@ target_link_libraries(hdrs
     PUBLIC
         libswoc
         ts::tscore
+    PRIVATE
+        ts::inkevent
 )
