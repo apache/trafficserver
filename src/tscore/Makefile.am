@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/mk/tidy.mk
 
-noinst_PROGRAMS = CompileParseRules freelist_benchmark benchmark_shared_mutex
+noinst_PROGRAMS = CompileParseRules
 check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore
 
 if EXPENSIVE_TESTS
@@ -189,15 +189,6 @@ if HAS_HKDF
 test_tscore_SOURCES += \
 	unit_tests/test_HKDF.cc
 endif
-
-freelist_benchmark_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
-freelist_benchmark_LDADD = libtscore.a @HWLOC_LIBS@ @LIBPCRE@ @LIBCAP@
-freelist_benchmark_SOURCES = unit_tests/freelist_benchmark.cc
-
-benchmark_shared_mutex_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS) -I$(abs_top_srcdir)/lib/catch2
-benchmark_shared_mutex_LDADD = libtscore.a @LIBPCRE@ @LIBCAP@
-
-benchmark_shared_mutex_SOURCES = unit_tests/benchmark_shared_mutex.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

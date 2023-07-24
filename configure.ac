@@ -2403,6 +2403,7 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
+  tools/benchmark/Makefile
   tests/Makefile
 ])
 
