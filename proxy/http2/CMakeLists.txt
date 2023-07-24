@@ -41,4 +41,6 @@ target_link_libraries(http2
     PUBLIC
         ts::inkevent
         ts::tscore
+    PRIVATE
+        ts::inkutils
 )

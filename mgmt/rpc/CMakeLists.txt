@@ -55,4 +55,9 @@ add_library(rpcpublichandlers STATIC
 )
 add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 
-target_link_libraries(rpcpublichandlers PUBLIC ts::tscore)
+target_link_libraries(rpcpublichandlers
+    PUBLIC
+        ts::tscore
+    PRIVATE
+        ts::inkcache
+)
