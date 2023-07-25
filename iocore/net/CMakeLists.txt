@@ -30,6 +30,7 @@ add_library(inknet STATIC
         NetVCOptions.cc
         NetVConnection.cc
         PollCont.cc
+        PreWarmManager.cc
         ProxyProtocol.cc
         Socks.cc
         SSLCertLookup.cc

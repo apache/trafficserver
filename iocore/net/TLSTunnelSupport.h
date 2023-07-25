@@ -25,6 +25,8 @@
 #pragma once
 
 #include <openssl/ssl.h>
+
+#include "PreWarmManager.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
 #include "YamlSNIConfig.h"
@@ -53,6 +55,8 @@ public:
   void set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
                               YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
+
+  PreWarm::SPtrConstDst create_dst(int pid) const;
 
 protected:
   void _clear();

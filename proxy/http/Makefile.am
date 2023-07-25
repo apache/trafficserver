@@ -82,8 +82,7 @@ libhttp_a_SOURCES = \
 	HttpVCTable.cc \
 	HttpVCTable.h \
 	ForwardedConfig.cc \
-	PreWarmConfig.cc \
-	PreWarmManager.cc
+	PreWarmConfig.cc
 
 if BUILD_TESTS
 libhttp_a_SOURCES += RegressionHttpTransact.cc

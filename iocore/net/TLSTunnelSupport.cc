@@ -22,11 +22,15 @@
   limitations under the License.
  */
 
+#include "SSLTypes.h"
+#include "PreWarmManager.h"
 #include "TLSTunnelSupport.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"
 
 #include "swoc/IPEndpoint.h"
+
+#include <memory>
 
 int TLSTunnelSupport::_ex_data_index = -1;
 
@@ -76,4 +80,11 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   } else {
     Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
   }
+}
+
+PreWarm::SPtrConstDst
+TLSTunnelSupport::create_dst(int pid) const
+{
+  return std::make_shared<const PreWarm::Dst>(get_tunnel_host(), get_tunnel_port(),
+                                              is_upstream_tls() ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
 }

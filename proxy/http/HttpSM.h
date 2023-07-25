@@ -34,6 +34,7 @@
 #include <string_view>
 #include <optional>
 
+#include "TLSTunnelSupport.h"
 #include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 #include "HttpCacheSM.h"
@@ -390,6 +391,9 @@ private:
   bool apply_ip_allow_filter();
   bool ip_allow_is_request_forbidden(const IpAllow::ACL &acl);
   void ip_allow_deny_request(const IpAllow::ACL &acl);
+  bool grab_pre_warmed_net_v_connection_if_possible(const TLSTunnelSupport &tts, int pid);
+  bool is_prewarm_enabled_or_sni_overridden(const TLSTunnelSupport &tts) const;
+  void open_prewarmed_connection();
   void send_origin_throttled_response();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
   void do_cache_prepare_write();
