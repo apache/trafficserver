@@ -175,5 +175,5 @@ HostDBRecord::alloc(swoc::TextView query_name, unsigned int rr_count, size_t srv
 void
 HostDBRecord::free()
 {
-  delete this;
+  std::free(this);
 }
