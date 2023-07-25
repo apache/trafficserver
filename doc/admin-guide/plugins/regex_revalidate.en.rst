@@ -84,6 +84,12 @@ but an absolute path may be specified as well. Syntax is as follows::
 
     regex_revalidate.so -d -c <path to rules> -f <path to state file>
 
+The configuration parameter `--match-header` or `-m` may be used to
+populate a supplied client request header name with a base64 encoded
+version of the matched revalidation rule.  This can be useful for checking
+if the plugin has modified cache status. Syntax is a follows::
+
+    regex_revalidate.so -c <path to rules> -m <header name>
 
 Revalidation Rules
 ==================
@@ -120,6 +126,12 @@ of a line the asset will be marked MISS instead, forcing a refetch from
 the parent. *Use with care* as this will increase bandwidth to the parent.
 During configuration reload, any rule which changes it type will be
 reloaded and treated as a new rule.
+
+NOTE: MISS Should *only* be used when the parent is known to be an origin.
+If the parent is another caching CDN it is likely that the refetch object
+will have the identical DATE header as the object currently in cache.
+In this case matching assets will effectively become no-cache assets
+until the refetch rule expires.
 
 Caveats
 =======

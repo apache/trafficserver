@@ -86,7 +86,7 @@ server.addResponse("sessionlog.json", request_header_1, response_header_1)
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.plugin_config.AddLine(
-    'regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log'
+    'regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log -m reval'
 )
 
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
@@ -115,7 +115,7 @@ ts.Disk.records_config.update({
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 
-# 0 Test - Load cache (miss) (path1)
+# 0 Request, cache miss expected
 tr = Test.AddTestRun("Cache miss path1")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -125,7 +125,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
 
-# 1 Test - Cache hit path1
+# 1 Request, cache hit expected
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -133,7 +133,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
 
-# 2 Stage - Load new regex_revalidate
+# 2 Reload, populated config
 tr = Test.AddTestRun("Reload config add path1")
 ps = tr.Processes.Default
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
@@ -148,7 +148,7 @@ tr.TimeOut = 5
 # Delay it so the reload can catch up the diff between config files timestamps.
 tr.DelayStart = 1
 
-# 3 Test - Revalidate path1
+# 3 Request, cache miss expected
 tr = Test.AddTestRun("Revalidate MISS path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
@@ -157,7 +157,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
 
-# 4 Test - Cache hit (path1)
+# 4 Request, cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -165,7 +165,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
 
-# 5 Stage - Change from MISS to STALE, reload
+# 5 Reload, change MISS to STALE (resets rule)
 tr = Test.AddTestRun("Reload config path1 STALE")
 ps = tr.Processes.Default
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' STALE')
@@ -179,7 +179,7 @@ tr.TimeOut = 5
 # Delay it so the reload can catch up the diff between config files timestamps.
 tr.DelayStart = 1
 
-# 6 Test - Cache stale
+# 6 Request, cache stale expected
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
@@ -188,7 +188,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
 tr.StillRunningAfter = ts
 
-# 7 Stage - Switch back to MISS
+# 7 Reload, change STALE to MISS (resets rule)
 tr = Test.AddTestRun("Reload config path1 MISS")
 ps = tr.Processes.Default
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
@@ -202,8 +202,8 @@ tr.TimeOut = 5
 # Delay it so the reload can catch up the diff between config files timestamps.
 tr.DelayStart = 1
 
-# 8 Test - Cache stale
-tr = Test.AddTestRun("Cache stale path1")
+# 8 Request, cache miss expected
+tr = Test.AddTestRun("Cache mis path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -211,11 +211,18 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
 
-# 9 Stage - Write out same contents, ensure rule not reset
-tr = Test.AddTestRun("Reload config path1 MISS again")
+# 9 Request, cache hit expected
+tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
-tr.Disk.File(regex_revalidate_conf_path + "_tr9", typename="ats:config").AddLine(path1_rule + ' MISSSTALE')
+tr.DelayStart = 5
+ps.Command = curl_and_args + ' http://ats/path1'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
+tr.StillRunningAfter = ts
+
+# 10 Reload, no changes
+tr = Test.AddTestRun("Reload no changes")
+ps = tr.Processes.Default
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
@@ -225,8 +232,8 @@ tr.TimeOut = 5
 # Delay it so the reload can catch up the diff between config files timestamps.
 tr.DelayStart = 1
 
-# 10 Test - Cache stale
-tr = Test.AddTestRun("Cache stale path1")
+# 11 Request again, cache hit expected
+tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -234,7 +241,27 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts
 
-# 11 Stats check
+# 12 Stage - Reload of same time updated rules file
+tr = Test.AddTestRun("Reload same config")
+ps = tr.Processes.Default
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+ps.Command = f'touch {regex_revalidate_conf_path} ; traffic_ctl config reload'
+ps.Env = ts.Env
+ps.ReturnCode = 0
+ps.TimeOut = 5
+tr.TimeOut = 5
+
+# 13 Request, Cache hit expected
+tr = Test.AddTestRun("Cache hit path1")
+ps = tr.Processes.Default
+tr.DelayStart = 5
+ps.Command = curl_and_args + ' http://ats/path1'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
+tr.StillRunningAfter = ts
+
+# 14 Stats check
 tr = Test.AddTestRun("Check stats")
 tr.DelayStart = 5
 tr.Processes.Default.Command = f"bash -c ./metrics_miss.sh"

@@ -124,6 +124,7 @@ typedef struct invalidate_t {
 typedef struct {
   invalidate_t *invalidate_list;
   char *config_path;
+  char *match_header;
   time_t last_load;
   TSTextLogObject log;
   char *state_path;
@@ -176,6 +177,7 @@ init_plugin_state_t(plugin_state_t *pstate)
 {
   pstate->invalidate_list = NULL;
   pstate->config_path     = NULL;
+  pstate->match_header    = NULL;
   pstate->last_load       = 0;
   pstate->log             = NULL;
   pstate->state_path      = NULL;
@@ -190,6 +192,9 @@ free_plugin_state_t(plugin_state_t *pstate)
   }
   if (pstate->config_path) {
     TSfree(pstate->config_path);
+  }
+  if (pstate->match_header) {
+    TSfree(pstate->match_header);
   }
   if (pstate->log) {
     TSTextLogObjectDestroy(pstate->log);
@@ -251,9 +256,9 @@ prune_config(invalidate_t **i)
     iptr  = *i;
     ilast = NULL;
     while (iptr) {
-      if (difftime(iptr->expiry, now) < 0) {
-        TSDebug(PLUGIN_NAME, "Removing %s expiry: %d type: %s now: %d", iptr->regex_text, (int)iptr->expiry,
-                strForResult(iptr->new_result), (int)now);
+      if (iptr->expiry <= now) {
+        TSDebug(PLUGIN_NAME, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, (intmax_t)iptr->expiry,
+                strForResult(iptr->new_result), (intmax_t)now);
         if (ilast) {
           ilast->next = iptr->next;
           free_invalidate_t(iptr);
@@ -302,7 +307,7 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
   now = time(NULL);
 
   config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s+(\\d+)\\s+(\\w+)\\s*$", 0, &errptr, &erroffset, NULL);
-  TSAssert(NULL != config_re);
+  TSReleaseAssert(NULL != config_re);
 
   while (fgets(line, LINE_MAX, fs) != NULL) {
     TSDebug(PLUGIN_NAME, "state: processing: %d %s", ln, line);
@@ -395,8 +400,9 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
       TSDebug(PLUGIN_NAME, "Could not open %s for reading", path);
       return false;
     }
+    TSDebug(PLUGIN_NAME, "Attempting to load rules from: '%s'", path);
     config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, NULL);
-    TSAssert(NULL != config_re);
+    TSReleaseAssert(NULL != config_re);
 
     while (fgets(line, LINE_MAX, fs) != NULL) {
       TSDebug(PLUGIN_NAME, "Processing: %d %s", ln, line);
@@ -435,8 +441,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
-            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry,
-                    strForResult(i->new_result));
+            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch,
+                    (intmax_t)i->expiry, strForResult(i->new_result));
           } else {
             iptr = *ilist;
             while (1) {
@@ -462,12 +468,13 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
             if (i) {
               iptr->next = i;
-              TSDebug(PLUGIN_NAME, "Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry, strForResult(i->new_result));
+              TSDebug(PLUGIN_NAME, "Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
+                      strForResult(i->new_result));
             }
           }
         }
       } else {
-        TSDebug(PLUGIN_NAME, "Skipping line %d", ln);
+        TSDebug(PLUGIN_NAME, "Skipping line %d, too few fields", ln);
       }
     }
     pcre_free(config_re);
@@ -475,7 +482,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     pstate->last_load = s.st_mtime;
     return true;
   } else {
-    TSDebug(PLUGIN_NAME, "File mod time is not newer: %d >= %d", (int)pstate->last_load, (int)s.st_mtime);
+    TSDebug(PLUGIN_NAME, "File mod time is not newer: ftime: %jd <= last_load: %jd", (intmax_t)s.st_mtime,
+            (intmax_t)pstate->last_load);
   }
   return false;
 }
@@ -502,13 +510,14 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
     iptr = i;
     while (iptr) {
       char const *const typestr = strForResult(iptr->new_result);
-      TSDebug(PLUGIN_NAME, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
+      TSDebug(PLUGIN_NAME, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry,
+              typestr);
       if (pstate->log) {
-        TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch,
-                             (int)iptr->expiry, typestr);
+        TSTextLogObjectWrite(pstate->log, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch,
+                             (intmax_t)iptr->expiry, typestr);
       }
       if (state_file) {
-        fprintf(state_file, "%s %d %d %s\n", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
+        fprintf(state_file, "%s %jd %jd %s\n", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry, typestr);
       }
       iptr = iptr->next;
     }
@@ -546,10 +555,11 @@ config_handler(TSCont cont, TSEvent event, void *edata)
   bool updated;
   TSMutex mutex;
 
+  TSDebug(PLUGIN_NAME, "In config_handler");
+
   mutex = TSContMutexGet(cont);
   TSMutexLock(mutex);
 
-  TSDebug(PLUGIN_NAME, "In config Handler");
   pstate = (plugin_state_t *)TSContDataGet(cont);
   i      = copy_config(pstate->invalidate_list);
 
@@ -600,13 +610,65 @@ get_date_from_cached_hdr(TSHttpTxn txn)
   return date;
 }
 
+static void
+add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
+{
+  TSMBuffer bufp  = NULL;
+  TSMLoc lochdr   = TS_NULL_MLOC;
+  TSMLoc locfield = TS_NULL_MLOC;
+  char rulestr[LINE_MAX];
+  int rulelen = 0;
+  char encstr[LINE_MAX];
+  size_t enclen = 0;
+
+  TSReleaseAssert(header && rule);
+
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txn, &bufp, &lochdr)) {
+    TSDebug(PLUGIN_NAME, "Unable to get client request from transaction");
+  }
+
+  rulelen =
+    snprintf(rulestr, sizeof(rulestr), "%s %jd %s", rule->regex_text, (intmax_t)rule->expiry, strForResult(rule->new_result));
+
+  if (TS_SUCCESS != TSStringPercentEncode(rulestr, rulelen, encstr, sizeof(encstr), &enclen, NULL)) {
+    TSDebug(PLUGIN_NAME, "Unable to get encode matching rule '%s'", rulestr);
+    return;
+  }
+
+  locfield = TSMimeHdrFieldFind(bufp, lochdr, header, strlen(header));
+
+  if (TS_NULL_MLOC == locfield) { // create header
+    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, lochdr, header, strlen(header), &locfield)) {
+      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen)) {
+        TSMimeHdrFieldAppend(bufp, lochdr, locfield);
+        TSDebug(PLUGIN_NAME, "Added header %s: '%.*s'", header, (int)enclen, encstr);
+      }
+    }
+    TSHandleMLocRelease(bufp, lochdr, locfield);
+  } else { // replace header
+    bool first = true;
+    while (locfield) {
+      const TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, lochdr, locfield);
+      if (first) {
+        first = false;
+        TSMimeHdrFieldValueStringSet(bufp, lochdr, locfield, -1, encstr, enclen);
+        TSDebug(PLUGIN_NAME, "Added header '%s': '%.*s'", header, (int)enclen, encstr);
+      } else {
+        TSMimeHdrFieldDestroy(bufp, lochdr, locfield);
+      }
+      TSHandleMLocRelease(bufp, lochdr, locfield);
+      locfield = tmp;
+    }
+  }
+}
+
 static int
 main_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
   int status;
-  invalidate_t *iptr;
-  plugin_state_t *pstate;
+  invalidate_t *iptr     = NULL;
+  plugin_state_t *pstate = NULL;
 
   time_t date = 0, now = 0;
   char *url   = NULL;
@@ -621,16 +683,23 @@ main_handler(TSCont cont, TSEvent event, void *edata)
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);
-            now  = time(NULL);
+            TSDebug(PLUGIN_NAME, "Cached Date header is: %jd", (intmax_t)date);
+            now = time(NULL);
           }
-          if ((difftime(iptr->epoch, date) >= 0) && (difftime(iptr->expiry, now) >= 0)) {
+          if (date <= iptr->epoch && now < iptr->expiry) {
             if (!url) {
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
+              TSDebug(PLUGIN_NAME, "Effective url is is '%.*s'", url_len, url);
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
+              TSDebug(PLUGIN_NAME, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'",
+                      iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry, strForResult(iptr->new_result));
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
               increment_stat(iptr->new_result);
-              TSDebug(PLUGIN_NAME, "Forced revalidate - %.*s %s", url_len, url, strForResult(iptr->new_result));
+
+              if (pstate->match_header) {
+                add_header(txn, pstate->match_header, iptr);
+              }
               iptr = NULL;
             }
           }
@@ -687,10 +756,11 @@ TSPluginInit(int argc, const char *argv[])
     {"log",                  required_argument, NULL, 'l'},
     {"disable-timed-reload", no_argument,       NULL, 'd'},
     {"state-file",           required_argument, NULL, 'f'},
+    {"match-header",         required_argument, NULL, 'm'},
     {NULL,                   0,                 NULL, 0  }
   };
 
-  while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:", longopts, NULL)) != -1) {
+  while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:m:", longopts, NULL)) != -1) {
     switch (c) {
     case 'c':
       pstate->config_path = TSstrdup(optarg);
@@ -706,6 +776,10 @@ TSPluginInit(int argc, const char *argv[])
       break;
     case 'f':
       pstate->state_path = make_state_path(optarg);
+      break;
+    case 'm':
+      pstate->match_header = TSstrdup(optarg);
+      break;
     default:
       break;
     }
