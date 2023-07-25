@@ -17,11 +17,23 @@
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 // All of these expect the address to be in network order.
-BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
-
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, in6_addr const &addr);
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr);
+
+/// @{
+/// @internal The various @c sockaddr types are handled almost identically due to how formatting
+/// codes are handled so it's ugly to split the code base on family. Instead we depend on
+/// @a sa_family being set correctly.
+
+inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in const *addr) {
+  return bwformat(w,spec,reinterpret_cast<sockaddr const*>(addr));
+}
+inline BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr_in6 const *addr) {
+  return bwformat(w,spec,reinterpret_cast<sockaddr const*>(addr));
+}
+
+/// @}
 
 // Use class information for ordering.
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, IP4Addr const &addr);

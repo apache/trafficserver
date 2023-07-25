@@ -23,11 +23,11 @@
 #pragma once
 
 #if !defined(SWOC_VERSION_NS)
-#define SWOC_VERSION_NS _1_5_2
+#define SWOC_VERSION_NS _1_5_3
 #endif
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 static constexpr unsigned MAJOR_VERSION = 1;
 static constexpr unsigned MINOR_VERSION = 5;
-static constexpr unsigned POINT_VERSION = 2;
+static constexpr unsigned POINT_VERSION = 3;
 }} // namespace swoc::SWOC_VERSION_NS

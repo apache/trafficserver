@@ -138,7 +138,7 @@ bwformat(BufferWriter &w, Spec const &spec, sockaddr const *addr) {
       bwformat(w, spec, reinterpret_cast<sockaddr_in6 const *>(addr)->sin6_addr);
       break;
     default:
-      w.print("*Not IP address [{}]*", addr->sa_family);
+      w.print("*Invalid IP family [{}]*", addr->sa_family);
       break;
     }
     if (bracket_p)

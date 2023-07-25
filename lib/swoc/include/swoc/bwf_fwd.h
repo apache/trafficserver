@@ -8,7 +8,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include "swoc/swoc_version.h"
+#include "swoc/TextView.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 class BufferWriter;
