@@ -115,6 +115,7 @@ public:
     uint32_t transaction_no_activity_timeout_in = 0;
     uint32_t keep_alive_no_activity_timeout_in  = 0;
     uint32_t default_inactivity_timeout         = 0;
+    uint32_t additional_accepts = 0;
 
     /** Return the address of the first value in this struct.
 

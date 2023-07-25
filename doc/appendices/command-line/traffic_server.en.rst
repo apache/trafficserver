@@ -32,8 +32,6 @@ Options
 
 .. option:: -a, --accepts_thread
 
-.. option:: -b, --accept_till_done
-
 .. option:: -B TAGS, --action_tags TAGS
 
 .. option:: --bind_stdout FILE

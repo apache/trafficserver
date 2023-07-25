@@ -476,6 +476,16 @@ Thread Variables
 Network
 =======
 
+.. ts:cv:: CONFIG proxy.config.net.additional_accepts INT -1
+   :reloadable:
+
+   The maximum number of additional accepts a thread can complete per event loop. When
+   set to -1, a thread will accept connections as long as there are connections
+   waiting in its listening queue. When set to 0, a thread accepts only 1 connection
+   per event loop. When set to any other positive integer x, a thread will 
+   accept up to x+1 connections per event loop. Setting to -1 (default) is equivalent
+   to "accept all", and setting to 0 is equivalent to "accept one". 
+
 .. ts:cv:: CONFIG proxy.config.net.connections_throttle INT 30000
 
    The total number of client and origin server connections that the server
