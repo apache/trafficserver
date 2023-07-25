@@ -257,8 +257,8 @@ prune_config(invalidate_t **i)
     ilast = NULL;
     while (iptr) {
       if (iptr->expiry <= now) {
-        TSDebug(PLUGIN_NAME, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, iptr->expiry,
-                strForResult(iptr->new_result), now);
+        TSDebug(PLUGIN_NAME, "Removing %s expiry: %jd type: %s now: %jd", iptr->regex_text, (intmax_t)iptr->expiry,
+                strForResult(iptr->new_result), (intmax_t)now);
         if (ilast) {
           ilast->next = iptr->next;
           free_invalidate_t(iptr);
@@ -441,8 +441,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
-            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %jd %jd %s", i->regex_text, i->epoch, i->expiry,
-                    strForResult(i->new_result));
+            TSDebug(PLUGIN_NAME, "Created new list and Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch,
+                    (intmax_t)i->expiry, strForResult(i->new_result));
           } else {
             iptr = *ilist;
             while (1) {
@@ -468,7 +468,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
             if (i) {
               iptr->next = i;
-              TSDebug(PLUGIN_NAME, "Loaded %s %jd %jd %s", i->regex_text, i->epoch, i->expiry, strForResult(i->new_result));
+              TSDebug(PLUGIN_NAME, "Loaded %s %jd %jd %s", i->regex_text, (intmax_t)i->epoch, (intmax_t)i->expiry,
+                      strForResult(i->new_result));
             }
           }
         }
@@ -481,7 +482,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     pstate->last_load = s.st_mtime;
     return true;
   } else {
-    TSDebug(PLUGIN_NAME, "File mod time is not newer: ftime: %jd <= last_load: %jd", s.st_mtime, pstate->last_load);
+    TSDebug(PLUGIN_NAME, "File mod time is not newer: ftime: %jd <= last_load: %jd", (intmax_t)s.st_mtime,
+            (intmax_t)pstate->last_load);
   }
   return false;
 }
@@ -508,13 +510,14 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
     iptr = i;
     while (iptr) {
       char const *const typestr = strForResult(iptr->new_result);
-      TSDebug(PLUGIN_NAME, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, iptr->epoch, iptr->expiry, typestr);
+      TSDebug(PLUGIN_NAME, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry,
+              typestr);
       if (pstate->log) {
-        TSTextLogObjectWrite(pstate->log, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, iptr->epoch, iptr->expiry,
-                             typestr);
+        TSTextLogObjectWrite(pstate->log, "%s epoch: %jd expiry: %jd result: %s", iptr->regex_text, (intmax_t)iptr->epoch,
+                             (intmax_t)iptr->expiry, typestr);
       }
       if (state_file) {
-        fprintf(state_file, "%s %jd %jd %s\n", iptr->regex_text, iptr->epoch, iptr->expiry, typestr);
+        fprintf(state_file, "%s %jd %jd %s\n", iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry, typestr);
       }
       iptr = iptr->next;
     }
@@ -624,7 +627,8 @@ add_header(TSHttpTxn txn, const char *const header, invalidate_t *const rule)
     TSDebug(PLUGIN_NAME, "Unable to get client request from transaction");
   }
 
-  rulelen = snprintf(rulestr, sizeof(rulestr), "%s %jd %s", rule->regex_text, rule->expiry, strForResult(rule->new_result));
+  rulelen =
+    snprintf(rulestr, sizeof(rulestr), "%s %jd %s", rule->regex_text, (intmax_t)rule->expiry, strForResult(rule->new_result));
 
   if (TS_SUCCESS != TSStringPercentEncode(rulestr, rulelen, encstr, sizeof(encstr), &enclen, NULL)) {
     TSDebug(PLUGIN_NAME, "Unable to get encode matching rule '%s'", rulestr);
@@ -679,7 +683,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);
-            TSDebug(PLUGIN_NAME, "Cached Date header is: %jd", date);
+            TSDebug(PLUGIN_NAME, "Cached Date header is: %jd", (intmax_t)date);
             now = time(NULL);
           }
           if (date <= iptr->epoch && now < iptr->expiry) {
@@ -689,7 +693,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
               TSDebug(PLUGIN_NAME, "Forced revalidate, Match with rule regex: '%s' epoch: %jd, expiry: %jd, result: '%s'",
-                      iptr->regex_text, iptr->epoch, iptr->expiry, strForResult(iptr->new_result));
+                      iptr->regex_text, (intmax_t)iptr->epoch, (intmax_t)iptr->expiry, strForResult(iptr->new_result));
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
               increment_stat(iptr->new_result);
 
