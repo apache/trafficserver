@@ -20,7 +20,6 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/mgmt/rpc
         ${IOCORE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/lib
-        ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         ${CMAKE_SOURCE_DIR}/proxy/http
 
@@ -60,4 +59,5 @@ target_link_libraries(rpcpublichandlers
         ts::tscore
     PRIVATE
         ts::inkcache
+        ts::proxy
 )

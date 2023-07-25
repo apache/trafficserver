@@ -106,7 +106,6 @@ target_include_directories(inknet PUBLIC
         ${CMAKE_SOURCE_DIR}/iocore/net
         ${CMAKE_SOURCE_DIR}/iocore/cache
         ${CMAKE_SOURCE_DIR}/iocore/hostdb
-        ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         ${CMAKE_SOURCE_DIR}/proxy/shared
         ${CMAKE_SOURCE_DIR}/proxy/http
@@ -117,6 +116,7 @@ target_include_directories(inknet PUBLIC
 target_link_libraries(inknet
     PUBLIC
         ts::inkevent
+        ts::proxy
         ts::records
         ts::tscore
         OpenSSL::Crypto

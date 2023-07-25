@@ -44,6 +44,7 @@ target_include_directories(http_remap PRIVATE
 
 target_link_libraries(http_remap
     PUBLIC
+        ts::proxy
         ts::tscore
     PRIVATE
         ts::inkevent

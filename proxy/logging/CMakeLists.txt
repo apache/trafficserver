@@ -44,6 +44,7 @@ target_link_libraries(logging
     PUBLIC
         ts::inkevent
         ts::inkutils
+        ts::proxy
         ts::tscore
         yaml-cpp::yaml-cpp
 )
