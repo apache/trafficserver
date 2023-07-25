@@ -2069,9 +2069,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if TS_USE_LINUX_IO_URING == 1
   IOUringContext *ur = IOUringContext::local_context();
-  IOUringContext::set_main_queue(ur);
-  auto [bounded, unbounded] = ur->get_wq_max_workers();
-  Note("io_uring: WQ workers - bounded = %d, unbounded = %d", bounded, unbounded);
+  if (ur->valid()) {
+    IOUringContext::set_main_queue(ur);
+    auto [bounded, unbounded] = ur->get_wq_max_workers();
+    Note("io_uring: WQ workers - bounded = %d, unbounded = %d", bounded, unbounded);
+  } else {
+    Note("io_uring: Not supported");
+  }
 #endif
 
   // !! ET_NET threads start here !!
@@ -2277,7 +2281,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   while (!TSSystemState::is_event_system_shut_down()) {
 #if TS_USE_LINUX_IO_URING == 1
-    ur->submit_and_wait(1 * HRTIME_SECOND);
+    if (ur->valid()) {
+      ur->submit_and_wait(1 * HRTIME_SECOND);
+    } else {
+      sleep(1);
+    }
 #else
     sleep(1);
 #endif

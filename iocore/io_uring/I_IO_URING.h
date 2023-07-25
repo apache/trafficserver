@@ -76,6 +76,12 @@ public:
   static void set_main_queue(IOUringContext *);
   static int get_main_queue_fd();
 
+  bool
+  valid()
+  {
+    return ring.ring_fd > 0;
+  }
+
 private:
   io_uring ring         = {};
   io_uring_probe *probe = nullptr;

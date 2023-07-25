@@ -92,6 +92,7 @@ struct AIOCallbackInternal : public AIOCallback {
   ink_hrtime sleep_time = 0;
   SLINK(AIOCallbackInternal, alink); /* for AIO_Reqs::aio_temp_list */
 #if TS_USE_LINUX_IO_URING
+  iovec iov                    = {}; // this is to support older kernels that only support readv/writev
   AIOCallbackInternal *this_op = nullptr;
   AIOCallbackInternal *aio_op  = nullptr;
 
@@ -132,7 +133,7 @@ AIOCallbackInternal::io_complete(int event, void *data)
     err_op->action               = aio_err_callbck;
     eventProcessor.schedule_imm(err_op);
   }
-  if (!action.cancelled) {
+  if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   }
   return EVENT_DONE;

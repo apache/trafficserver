@@ -30,6 +30,7 @@ Linux io_uring helper library
 
 #include "I_IO_URING.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/Diags.h"
 
 std::atomic<int> main_wq_fd;
 std::atomic<uint64_t> io_uring_submissions = 0;
@@ -65,12 +66,14 @@ IOUringContext::IOUringContext()
 
   int ret = io_uring_queue_init_params(config.queue_entries, &ring, &p);
   if (ret < 0) {
-    throw std::runtime_error(strerror(-ret));
-  }
-
-  /* no sharing for non-fixed either */
-  if (config.sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
-    throw std::runtime_error("No SQPOLL sharing with nonfixed");
+    char *err = strerror(-ret);
+    Debug("io_uring", "io_uring_queue_init_params failed: (%d) %s", -ret, err);
+    ring.ring_fd = -1;
+  } else {
+    /* no sharing for non-fixed either */
+    if (config.sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
+      Debug("io_uring", "No SQPOLL sharing with nonfixed");
+    }
   }
 
   // Fetch the probe info so we can check for op support

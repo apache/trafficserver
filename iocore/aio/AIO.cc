@@ -46,6 +46,12 @@
 // globals
 #if TS_USE_LINUX_IO_URING
 static bool use_io_uring = false;
+
+namespace
+{
+void setup_prep_ops(IOUringContext *);
+}
+
 #endif
 
 /* structure to hold information about each file descriptor */
@@ -220,7 +226,9 @@ ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
   case AIOBackend::AIO_BACKEND_AUTO: {
     // detect if io_uring is available and can support the required features
     auto *ctx = IOUringContext::local_context();
-    if (ctx && ctx->supports_op(IORING_OP_WRITE) && ctx->supports_op(IORING_OP_READ)) {
+    if (ctx && ctx->valid()) {
+      // check to see which ops we can use (this can't fail)
+      setup_prep_ops(ctx);
       use_io_uring = true;
     } else {
       Note("AIO using thread backend as required io_uring ops are not supported");
@@ -542,22 +550,115 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 #if TS_USE_LINUX_IO_URING
 #include "I_IO_URING.h"
 
+namespace
+{
+
+void
+prep_read(io_uring_sqe *sqe, AIOCallbackInternal *op)
+{
+  io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+}
+
+void
+prep_readv(io_uring_sqe *sqe, AIOCallbackInternal *op)
+{
+  op->iov.iov_len  = op->aiocb.aio_nbytes;
+  op->iov.iov_base = op->aiocb.aio_buf;
+  io_uring_prep_readv(sqe, op->aiocb.aio_fildes, &op->iov, 1, op->aiocb.aio_offset);
+}
+
+void
+prep_write(io_uring_sqe *sqe, AIOCallbackInternal *op)
+{
+  io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
+}
+
+void
+prep_writev(io_uring_sqe *sqe, AIOCallbackInternal *op)
+{
+  op->iov.iov_len  = op->aiocb.aio_nbytes;
+  op->iov.iov_base = op->aiocb.aio_buf;
+  io_uring_prep_writev(sqe, op->aiocb.aio_fildes, &op->iov, 1, op->aiocb.aio_offset);
+}
+
+using prep_op = void (*)(io_uring_sqe *, AIOCallbackInternal *);
+
+prep_op prep_ops[] = {
+  nullptr,
+  prep_readv,
+  prep_writev,
+};
+
+/*
+ * The default io_uring ops are readv/writev as those were available since the first io_uring.
+ * This function checks for normal read/write support and changes to those if available.
+ */
+void
+setup_prep_ops(IOUringContext *ur)
+{
+  if (!ur->supports_op(IORING_OP_READ)) {
+    prep_ops[LIO_READ]  = prep_read;
+    prep_ops[LIO_WRITE] = prep_write;
+  }
+}
+
+void
+io_uring_prep_ops_internal(AIOCallbackInternal *op_in, int op_type)
+{
+  IOUringContext *ur      = IOUringContext::local_context();
+  AIOCallbackInternal *op = op_in;
+  while (op) {
+    op->this_op       = op;
+    io_uring_sqe *sqe = ur->next_sqe(op);
+
+    ink_release_assert(sqe != nullptr);
+
+    prep_ops[op_type](sqe, op);
+
+    op->aiocb.aio_lio_opcode = op_type;
+    if (op->then) {
+      sqe->flags |= IOSQE_IO_LINK;
+    } else if (op->aio_op == nullptr) { // This condition leaves an existing aio_op in place if there is one. (EAGAIN)
+      op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
+    }
+
+    op = static_cast<AIOCallbackInternal *>(op->then);
+  }
+}
+
+} // namespace
+
 void
 AIOCallbackInternal::handle_complete(io_uring_cqe *cqe)
 {
   AIOCallbackInternal *op = this_op;
+
+  // Re-submit the request on EAGAIN.
+  // we might need to re-submit the entire rest of the chain, so just call prep again
+  // The manpage seems to indicate that the rest of the SQEs in the chain will not execute on an error.
+  if (cqe->res == -EAGAIN) {
+    io_uring_prep_ops_internal(op, op->aiocb.aio_lio_opcode);
+    return;
+  }
+
+  // if this was canceled, then we can ignore it.  It was probably resubmitted after an EAGAIN
+  if (cqe->res == -ECANCELED) {
+    return;
+  }
 
   op->aio_result = static_cast<int64_t>(cqe->res);
   op->link.prev  = nullptr;
   op->link.next  = nullptr;
   op->mutex      = op->action.mutex;
 
-  if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-    aio_num_write.fetch_add(1);
-    aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
-  } else {
-    aio_num_read.fetch_add(1);
-    aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
+  if (op->aio_result > 0) {
+    if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
+      aio_num_write.fetch_add(1);
+      aio_bytes_written.fetch_add(op->aiocb.aio_nbytes);
+    } else {
+      aio_num_read.fetch_add(1);
+      aio_bytes_read.fetch_add(op->aiocb.aio_nbytes);
+    }
   }
 
   // the last op in the linked ops will have the original op stored in the aiocb
@@ -573,6 +674,7 @@ AIOCallbackInternal::handle_complete(io_uring_cqe *cqe)
     }
   }
 }
+
 #endif
 
 int
@@ -580,21 +682,7 @@ ink_aio_read(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    IOUringContext *ur      = IOUringContext::local_context();
-    AIOCallbackInternal *op = static_cast<AIOCallbackInternal *>(op_in);
-    while (op) {
-      op->this_op       = op;
-      io_uring_sqe *sqe = ur->next_sqe(op);
-      io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-      op->aiocb.aio_lio_opcode = LIO_READ;
-      if (op->then) {
-        sqe->flags |= IOSQE_IO_LINK;
-      } else {
-        op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
-      }
-
-      op = static_cast<AIOCallbackInternal *>(op->then);
-    }
+    io_uring_prep_ops_internal(static_cast<AIOCallbackInternal *>(op_in), LIO_READ);
     return 1;
   }
 #endif
@@ -609,21 +697,7 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    IOUringContext *ur      = IOUringContext::local_context();
-    AIOCallbackInternal *op = static_cast<AIOCallbackInternal *>(op_in);
-    while (op) {
-      op->this_op       = op;
-      io_uring_sqe *sqe = ur->next_sqe(op);
-      io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
-      op->aiocb.aio_lio_opcode = LIO_WRITE;
-      if (op->then) {
-        sqe->flags |= IOSQE_IO_LINK;
-      } else {
-        op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
-      }
-
-      op = static_cast<AIOCallbackInternal *>(op->then);
-    }
+    io_uring_prep_ops_internal(static_cast<AIOCallbackInternal *>(op_in), LIO_WRITE);
     return 1;
   }
 #endif
