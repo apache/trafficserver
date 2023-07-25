@@ -40,6 +40,7 @@ target_include_directories(http2 PRIVATE
 target_link_libraries(http2
     PUBLIC
         ts::inkevent
+        ts::proxy
         ts::tscore
     PRIVATE
         ts::inkutils

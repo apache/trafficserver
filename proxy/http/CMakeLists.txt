@@ -61,6 +61,7 @@ target_link_libraries(http
     PUBLIC
         ts::inkevent
         ts::inkhostdb
+        ts::proxy
         ts::tscore
     PRIVATE
         ts::inkcache

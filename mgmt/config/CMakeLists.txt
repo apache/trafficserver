@@ -23,10 +23,14 @@ add_library(ts::configmanager ALIAS configmanager)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/mgmt
-        ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${IOCORE_INCLUDE_DIRS}
 )
 
-target_link_libraries(configmanager PUBLIC ts::tscore)
+target_link_libraries(configmanager
+    PUBLIC
+        ts::tscore
+    PRIVATE
+        ts::proxy
+)

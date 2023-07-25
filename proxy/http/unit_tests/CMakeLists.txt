@@ -37,9 +37,8 @@ target_link_libraries(test_http
         ts::http
         ts::hdrs # transitive
         logging # transitive
-        ts::proxy # transitive
         http_remap # transitive
-        ts::proxy # transitive
+        ts::proxy
         inkdns # transitive
         ts::inknet
 )

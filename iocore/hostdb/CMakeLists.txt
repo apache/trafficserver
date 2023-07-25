@@ -32,7 +32,6 @@ target_include_directories(inkhostdb
         ${CMAKE_SOURCE_DIR}/iocore/io_uring
         ${CMAKE_SOURCE_DIR}/iocore/dns
         ${CMAKE_SOURCE_DIR}/iocore/net
-        ${CMAKE_SOURCE_DIR}/proxy
         ${CMAKE_SOURCE_DIR}/proxy/http
         ${CMAKE_SOURCE_DIR}/proxy/hdrs
 )
@@ -42,4 +41,6 @@ target_link_libraries(inkhostdb
         ts::inkcache
         ts::inkevent
         ts::tscore
+    PRIVATE
+        ts::proxy
 )
