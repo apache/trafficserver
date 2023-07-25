@@ -131,7 +131,7 @@ it only makes sense to compress files above a certain size threshold.
 Compressing files below 150 bytes can actually make them larger. This setting
 only applies if the response explicitly sends Content-Length. Regardless of
 this setting, responses with ``Content-Length: 0`` are considered not
-compressible.
+compressible. Defaults to 1024 bytes.
 
 allow
 --------
