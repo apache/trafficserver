@@ -58,7 +58,7 @@ if test "$has_quiche" != "0"; then
   quiche_have_libs=0
   if test "$quiche_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${quiche_include}])
-    TS_ADDTO(LDFLAGS, [-L${quiche_ldflags} -rpath ${quiche_ldflags}])
+    TS_ADDTO(LDFLAGS, [-L${quiche_ldflags} -Wl,-rpath,${quiche_ldflags}])
     TS_ADDTO(LIBS, [-lquiche])
     TS_ADDTO_RPATH(${quiche_ldflags})
   fi
