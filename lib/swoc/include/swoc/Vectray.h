@@ -300,25 +300,25 @@ auto Vectray<T,N,A>::push_back(const T& t) -> self_type& {
       , [&](DynamicStore& ds) -> void {
         ds.push_back(t);
       }
-  }, _store);
+    }, _store);
   return *this;
 }
 
 template<typename T, size_t N, typename A>
 auto Vectray<T,N,A>::push_back(T && t) -> self_type& {
   std::visit(swoc::meta::vary{
-               [&](FixedStore& fs) -> void {
-                 if (fs._count < N) {
-                   new(reinterpret_cast<T*>(fs._raw.data()) + fs._count++) T(std::move(t)); // A::traits ?
-                 } else {
-                   this->transfer();
-                   std::get<DYNAMIC>(_store).push_back(t);
-                 }
-               }
-               , [&](DynamicStore& ds) -> void {
-                 ds.push_back(std::move(t));
-               }
-             }, _store);
+      [&](FixedStore& fs) -> void {
+        if (fs._count < N) {
+          new(reinterpret_cast<T*>(fs._raw.data()) + fs._count++) T(std::move(t)); // A::traits ?
+        } else {
+          this->transfer();
+          std::get<DYNAMIC>(_store).push_back(std::move(t));
+        }
+      }
+      , [&](DynamicStore& ds) -> void {
+        ds.push_back(std::move(t));
+      }
+    }, _store);
   return *this;
 }
 

@@ -301,9 +301,12 @@ public:
    */
   self_type &assign(std::string_view const &name, Generator const &generator);
 
-  bool contains(std::string_view name) {
-      return _map.end() != _map.find(name);
-  }
+  /** Check if a specific name is contained in this mapping.
+   *
+   * @param name Name to check.
+   * @return @c true if present, @c false if not.
+   */
+  bool contains(std::string_view name);
 
 protected:
   /// Copy @a name in to local storage and return a view of it.
@@ -556,6 +559,12 @@ template <typename F> NameMap<F>::NameMap(std::initializer_list<std::tuple<std::
   for (auto &&[name, generator] : list) {
     this->assign(name, generator);
   }
+}
+
+template <typename F>
+bool
+NameMap<F>::contains(std::string_view name) {
+  return _map.end() != _map.find(name);
 }
 
 template <typename F>

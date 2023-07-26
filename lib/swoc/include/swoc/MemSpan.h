@@ -138,7 +138,7 @@ public:
    *
    * @internal A non-const variant of this is needed because passing by CR means imposing constness
    * on the container which can then undesirably propagate that to the element type. Best example -
-   * consstructing from @c std::string. Without this variant it's not possible to construct a @c char
+   * constructing from @c std::string. Without this variant it's not possible to construct a @c char
    * span vs. a @c char @c const.
    */
   template < typename C
@@ -264,8 +264,11 @@ public:
    *
    * @tparam U Type for the created span.
    * @return A @c MemSpan which contains the same memory as instances of @a U.
+   *
+   * if no type is specified, the default is @c void or @c void @c const according to whether
+   * @a value_type is @c const.
    */
-  template <typename U = void> MemSpan<U> rebind() const;
+  template <typename U = std::conditional_t<std::is_const_v<T>, void const, void> > MemSpan<U> rebind() const;
 
   /// Set the span.
   /// This is faster but equivalent to constructing a new span with the same
@@ -310,6 +313,15 @@ public:
    */
   self_type &remove_prefix(size_t count);
 
+  /** Remove and return a prefix.
+   *
+   * @param count Number of items in the prefix.
+   * @return The removed prefix.
+   *
+   * @a count items are removed from the beginning of @a this and a view of those elements is returned.
+   */
+  self_type clip_prefix(size_t count);
+
   /** Get the trailing segment of @a count elements.
    *
    * @param count Number of elements to retrieve.
@@ -333,6 +345,15 @@ public:
    */
   self_type &remove_suffix(size_t count);
 
+  /** Remove and return a suffix.
+   *
+   * @param count Number of items in the suffix.
+   * @return The removed suffix.
+   *
+   * @a count items are removed from the end of @a this and a view of those elements is returned.
+   */
+  self_type clip_suffix(size_t count);
+
   /** Return a sub span of @a this span.
    *
    * @param offset Offset (index) of first element in subspan.
@@ -343,6 +364,15 @@ public:
    * Otherwise @c count is clipped by the number of elements available in @a this.
    */
   constexpr self_type subspan(size_t offset, size_t count) const;
+
+  /** Limit the size of the span.
+   *
+   * @param n Maximum number of elements.
+   * @return @a this
+   *
+   * If the number of elements is greater than @a n, the size is changed to @a n.
+   */
+  constexpr self_type &restrict(size_t n);
 
   /** Construct all elements in the span.
    *
@@ -389,6 +419,13 @@ public:
 
   /// Copy assignment
   constexpr self_type & operator = (self_type const& that) = default;
+
+  /** Construct to cover an array.
+   *
+   * @tparam N Number of elements in the array.
+   * @param a The array.
+   */
+  template <auto N, typename U> constexpr MemSpan(U (&a)[N]);
 
   /// Special constructor for @c void
   constexpr MemSpan(MemSpan<void> const& that);
@@ -550,6 +587,15 @@ public:
    */
   self_type &remove_prefix(size_t n);
 
+  /** Remove and return a prefix.
+   *
+   * @param n Number of bytes in the prefix.
+   * @return The removed prefix.
+   *
+   * @a n bytes are removed from the beginning of @a this and a view of those elements is returned.
+   */
+  self_type clip_prefix(size_t n);
+
   /** Get the trailing segment of @a n bytes.
    *
    * @param n Number of bytes to retrieve.
@@ -563,6 +609,15 @@ public:
    * @return @c *this
    */
   self_type &remove_suffix(size_t n);
+
+  /** Remove and return a suffix.
+   *
+   * @param n Number of items in the suffix.
+   * @return The removed suffix.
+   *
+   * @a n bytes are removed from the end of @a this and a view of those bytes is returned.
+   */
+  self_type clip_suffix(size_t n);
 
   /** Return a sub span of @a this span.
    *
@@ -618,6 +673,7 @@ template <> class MemSpan<void> : public MemSpan<void const> {
   template <typename U> friend class MemSpan;
 public:
   using value_type = void;
+  using pointer_type = value_type *;
 
   /// Default constructor (empty buffer).
   constexpr MemSpan() = default;
@@ -651,6 +707,14 @@ public:
    * @param end Past end of range.
    */
   MemSpan(value_type *begin, value_type *end);
+
+  /** Construct to cover an array.
+   *
+   * @tparam N Number of elements in the array.
+   * @tparam U Element type.
+   * @param a The array.
+   */
+  template <auto N, typename U> constexpr MemSpan(U (&a)[N]);
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -709,6 +773,16 @@ public:
    */
   self_type &remove_prefix(size_t count);
 
+  /** Remove and return a prefix.
+   *
+   * @param count Number of byte in the prefix.
+   * @return The removed prefix.
+   *
+   * @a n bytes are removed from the beginning of @a this and a view of those bytes is returned.
+   */
+  self_type clip_prefix(size_t n);
+
+
   /** Get the trailing segment of @a n bytes.
    *
    * @param n Number of bytes to retrieve.
@@ -722,6 +796,15 @@ public:
    * @return @c *this
    */
   self_type &remove_suffix(size_t n);
+
+  /** Remove and return a suffix.
+   *
+   * @param n Number of items in the suffix.
+   * @return The removed suffix.
+   *
+   * @a n bytes are removed from the end of @a this and a view of those bytes is returned.
+   */
+  self_type clip_suffix(size_t n);
 
   /** Return a sub span of @a this span.
    *
@@ -788,6 +871,17 @@ public:
   /// Clear the span (become an empty span).
   self_type &clear();
 
+protected:
+  /** Construct from @c const @c void span.
+   *
+   * @param super Source span.
+   *
+   * @note This is protected because it can only be used in situations were @c const correctness
+   * is not violated by converting a @c const span. The primary use is to enable @c void span
+   * method implementations to return a @c const span as @c self_type without explicit casting.
+   * In such cases the original span was not @c const and so there is no violation.
+   */
+  MemSpan(super_type const& super) : super_type(super) {}
 };
 
 
@@ -995,7 +1089,14 @@ template <typename T> constexpr MemSpan<T>::MemSpan(T *ptr, size_t count) : _ptr
 
 template <typename T> constexpr MemSpan<T>::MemSpan(T *begin, T *end) : _ptr{begin}, _count{detail::ptr_distance(begin, end)} {}
 
-template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {}
+template <typename T> template <auto N> constexpr MemSpan<T>::MemSpan(T (&a)[N]) : _ptr{a}, _count{N} {
+  // Magic for string literals to drop the trailing nul terminator, which is almost always what is expected.
+  if constexpr (N > 0 && std::is_same_v<char const, T>) {
+    if (a[N-1] == 0) {
+      _count -= 1;
+    }
+  }
+}
 
 template <typename T> constexpr MemSpan<T>::MemSpan(std::nullptr_t) {}
 
@@ -1164,6 +1265,32 @@ MemSpan<T>::remove_suffix(size_t count) {
 }
 
 template <typename T>
+auto
+MemSpan<T>::clip_prefix(size_t count) -> self_type {
+  if (count >= _count) {
+    auto zret = *this;
+    _count = 0;
+    return zret;
+  }
+  self_type zret { _ptr, count };
+  _ptr += count;
+  _count -= count;
+  return zret;
+}
+
+template <typename T>
+auto
+MemSpan<T>::clip_suffix(size_t count) -> self_type {
+  if (count >= _count) {
+    auto zret = *this;
+    _count = 0;
+    return zret;
+  }
+  _count -= count;
+  return { _ptr + _count , count };
+}
+
+template <typename T>
 constexpr MemSpan<T>
 MemSpan<T>::subspan(size_t offset, size_t count) const {
   return offset < _count ? self_type{this->data() + offset, std::min(count, _count - offset)} : self_type{};
@@ -1231,6 +1358,20 @@ inline constexpr MemSpan<void>::MemSpan(value_type *ptr, size_t n) : super_type(
 
 inline MemSpan<void const>::MemSpan(value_type *begin, value_type *end) : _ptr{const_cast<void*>(begin)}, _size{detail::ptr_distance(begin, end)} {}
 inline MemSpan<void >::MemSpan(value_type *begin, value_type *end) : super_type(begin, end) {}
+
+template <auto N, typename U>
+constexpr MemSpan<void const>::MemSpan(U (&a)[N]) : _ptr(const_cast<std::remove_const_t<U>*>(a)), _size(N * sizeof(U)) {
+  // Magic for string literals to drop the trailing nul terminator, which is almost always what is expected.
+  if constexpr (N > 0 && std::is_same_v<char const, U>) {
+    if (a[N-1] == 0) {
+      _size -= 1;
+    }
+  }
+}
+template <auto N, typename U>
+constexpr MemSpan<void>::MemSpan(U (&a)[N]) : super_type(a) {
+  static_assert(!std::is_const_v<U>, "Error: constructing non-constant view with constant data.");
+}
 
 template <typename C, typename>
 constexpr MemSpan<void const>::MemSpan(C const &c)
@@ -1426,6 +1567,36 @@ MemSpan<void>::remove_suffix(size_t n) -> self_type & {
   return *this;
 }
 
+inline auto
+MemSpan<void const>::clip_prefix(size_t n) -> self_type {
+  if (n >= _size) {
+    auto zret = *this;
+    _size = 0;
+    return zret;
+  }
+  self_type zret { _ptr, n };
+  _ptr = detail::ptr_add(_ptr, n);
+  _size -= n;
+  return zret;
+}
+
+inline auto
+MemSpan<void>::clip_prefix(size_t n) -> self_type { return super_type::clip_prefix(n); }
+
+inline auto
+MemSpan<void const>::clip_suffix(size_t n) -> self_type {
+  if (n >= _size) {
+    auto zret = *this;
+    _size = 0;
+    return zret;
+  }
+  _size -= n;
+  return { detail::ptr_add(_ptr, _size) , n };
+}
+
+inline auto
+MemSpan<void>::clip_suffix(size_t n) -> self_type { return super_type::clip_suffix(n); }
+
 inline constexpr auto
 MemSpan<void const>::subspan(size_t offset, size_t n) const -> self_type {
   return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(n, _size - offset)} : self_type{};
@@ -1434,6 +1605,13 @@ MemSpan<void const>::subspan(size_t offset, size_t n) const -> self_type {
 inline constexpr auto
 MemSpan<void>::subspan(size_t offset, size_t n) const -> self_type {
   return offset <= _size ? self_type{detail::ptr_add(this->data(), offset), std::min(n, _size - offset)} : self_type{};
+}
+
+template <typename T>
+constexpr auto
+MemSpan<T>::restrict(size_t n) -> self_type & {
+  _count = std::min(_count, n);
+  return *this;
 }
 
 template <typename T> auto

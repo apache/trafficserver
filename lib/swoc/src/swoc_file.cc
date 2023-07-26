@@ -359,6 +359,7 @@ copy(const path &from, const path &to, std::error_code &ec)
 uintmax_t
 remove_all(const path &p, std::error_code &ec)
 {
+  // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
   DIR *dir;
   struct dirent *entry;
   std::error_code err;
@@ -372,6 +373,7 @@ remove_all(const path &p, std::error_code &ec)
     ec = std::error_code(errno, std::system_category());
     return zret;
   } else if (S_ISREG(s.st_mode)) { // regular file, try to remove it!
+    //coverity[toctou : SUPPRESS]
     if (unlink(p.c_str()) != 0) {
       ec = std::error_code(errno, std::system_category());
     } else {
@@ -411,6 +413,7 @@ remove_all(const path &p, std::error_code &ec)
 }
 
 bool remove(path const& p, std::error_code &ec) {
+  // coverity TOCTOU - issue is doing stat before doing operation. Stupid complaint, ignore.
   struct ::stat fs;
   if (p.empty()) {
     ec = std::error_code(EINVAL, std::system_category());
@@ -422,6 +425,7 @@ bool remove(path const& p, std::error_code &ec) {
       ec = std::error_code(errno, std::system_category());
     }
   } else if (S_ISDIR(fs.st_mode)) { // not a directory
+    //coverity[toctou : SUPPRESS]
     if (rmdir(p.c_str()) != 0) {
       ec = std::error_code(errno, std::system_category());
     }

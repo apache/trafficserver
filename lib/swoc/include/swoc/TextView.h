@@ -788,8 +788,8 @@ public:
    * @param count Number of bytes in the view.
    * @return The view starting at @a pos for @a count bytes.
    *
-   * The returned view is clipped by @a this. @a count is reduced such that it covers only data
-   * in @a this.
+   * The returned view is clipped by @a this - that is, it will not extend beyond the original view.
+   * @a count is reduced such that it covers only data in @a this.
    *
    * @note This is provided primarily for co-variance, i.e. the returned view is a @c TextView
    * instead of a @c std::string_view.

@@ -671,8 +671,8 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr) {
   if (ptr == nullptr) {
     if (spec._type == 's' || spec._type == 'S') {
       ptr_spec._type = bwf::Spec::DEFAULT_TYPE;
-      ptr_spec._ext  = ""sv; // clear any extension.
-      return bwformat(w, spec, spec._type == 's' ? "null"sv : "NULL"sv);
+      ptr_spec._ext  = ""_sv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
     } else if (spec._type == bwf::Spec::DEFAULT_TYPE) {
       return w; // print nothing if there is no format character override.
     }
@@ -899,7 +899,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const &e) {
       if (short_p) {
         w.write(": ");
       }
-      w.write(strerror(e._e));
+      w.write(TextView(strerror(e._e), TextView::npos));
     }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');
@@ -966,7 +966,7 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, std::error_code con
   static const auto SYSTEM_CATEGORY  = &std::system_category();
 
   // This provides convenient safe access to the errno short name array.
-  static const swoc::bwf::Format number_fmt{"[{}]"sv}; // numeric value format.
+  static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
   if (spec.has_numeric_type()) {
     // if numeric type, print just the numeric part.
     bwformat(w, spec, ec.value());

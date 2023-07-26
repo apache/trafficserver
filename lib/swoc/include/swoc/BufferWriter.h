@@ -53,17 +53,19 @@ public:
    */
   virtual BufferWriter &write(void const *data, size_t length);
 
-  /** Add the contents of @a sv to the buffer, up to the size of the view.
+  /** Write data to the buffer.
+   *
+   * @param span Data source.
+   * @return @a this
+   *
+   * Data from @a span is written directly to the buffer, and clipped to the size of the buffer.
+   *
+   * @internal The char poointer overloads protect this method in order to protect against including
+   * the terminal nul in the destination buffer.
+   */
+  BufferWriter & write(MemSpan<void const> span);
 
-      Data is added only up to the remaining room in the buffer. If the remaining capacity is
-      exceeded (i.e. data is not written to the output), the instance is put in to an error
-      state. In either case the value for @c extent is incremented by the size of @a sv.
-
-      @return @c *this
-  */
-  BufferWriter &write(const std::string_view &sv);
-
-  /// Address of the first byte in the output buffer.
+  /// @return Pointer to first byte in buffer.
   virtual const char *data() const = 0;
 
   /// Get the error state.
@@ -440,10 +442,15 @@ BufferWriter::write(const void *data, size_t length) {
   return *this;
 }
 
+# if 0
 inline BufferWriter &
 BufferWriter::write(const std::string_view &sv) {
   return this->write(sv.data(), sv.size());
 }
+# endif
+
+inline BufferWriter &
+BufferWriter::write(MemSpan<void const> span) { return this->write(span.data(), span.size()); }
 
 inline char *
 BufferWriter::aux_data() {
