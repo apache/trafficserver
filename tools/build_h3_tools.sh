@@ -28,7 +28,7 @@ cd "${WORKDIR}"
 echo "Building H3 dependencies in ${WORKDIR} ..."
 
 # Update this as the draft we support updates.
-OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.0.9+quic"}
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"openssl-3.1.0+quic+locks"}
 
 # Set these, if desired, to change these to your preferred installation
 # directory
