@@ -247,7 +247,7 @@ fi
   PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_LIB}/pkgconfig \
   CFLAGS="${CFLAGS}" \
   CXXFLAGS="${CXXFLAGS}" \
-  LDFLAGS="${LDFLAGS}" \
+  LDFLAGS="${LDFLAGS} -L${OPENSSL_LIB}" \
   --enable-http3 \
   ${ENABLE_APP}
 ${MAKE} -j ${num_threads}
