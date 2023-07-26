@@ -28,7 +28,7 @@
 #include <memory>
 
 #include "swoc/MemSpan.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "tscore/I_Layout.h"
 
 #include "rpc/server/CommBase.h"
@@ -72,7 +72,7 @@ class IPCSocketServer : public BaseCommInterface
     /// The size of the buffer to be read is not defined in this function, but rather passed in the @c bw parameter.
     /// @return A tuple with a boolean flag indicating if the operation did success or not, in case of any error, a text will
     /// be added with a description.
-    std::tuple<bool, std::string> read_all(ts::FixedBufferWriter &bw) const;
+    std::tuple<bool, std::string> read_all(swoc::FixedBufferWriter &bw) const;
     /// Write the the socket with the passed data.
     /// @return std::error_code.
     void write(std::string const &data, std::error_code &ec) const;

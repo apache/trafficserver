@@ -189,24 +189,24 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
   } while (false)
 
 // A BufferWriter version of Dbg().
-#define Dbg_bw(ctl__, fmt, ...)                                                   \
-  do {                                                                            \
-    if (unlikely(diags()->on())) {                                                \
-      if (ctl__.ptr()->on) {                                                      \
-        DbgPrint(ctl__, "%s", ts::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
-      }                                                                           \
-    }                                                                             \
+#define Dbg_bw(ctl__, fmt, ...)                                                     \
+  do {                                                                              \
+    if (unlikely(diags()->on())) {                                                  \
+      if (ctl__.ptr()->on) {                                                        \
+        DbgPrint(ctl__, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
+      }                                                                             \
+    }                                                                               \
   } while (false)
 
 // A BufferWriter version of Debug().
-#define Debug_bw(tag__, fmt, ...)                                                        \
-  do {                                                                                   \
-    if (unlikely(diags()->on())) {                                                       \
-      static DbgCtl Debug_bw_ctl(tag__);                                                 \
-      if (Debug_bw_ctl.ptr()->on) {                                                      \
-        DbgPrint(Debug_bw_ctl, "%s", ts::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
-      }                                                                                  \
-    }                                                                                    \
+#define Debug_bw(tag__, fmt, ...)                                                          \
+  do {                                                                                     \
+    if (unlikely(diags()->on())) {                                                         \
+      static DbgCtl Debug_bw_ctl(tag__);                                                   \
+      if (Debug_bw_ctl.ptr()->on) {                                                        \
+        DbgPrint(Debug_bw_ctl, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
+      }                                                                                    \
+    }                                                                                      \
   } while (false)
 
 // printf-like debug output.  First parameter must be tag (C-string literal, or otherwise

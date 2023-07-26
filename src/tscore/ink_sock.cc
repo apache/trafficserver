@@ -27,6 +27,9 @@
 
 
 ***************************************************************************/
+
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_sock.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_assert.h"

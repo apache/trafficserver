@@ -104,10 +104,10 @@ CryptoHash::toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]) const
 
 namespace ts
 {
-ts::BufferWriter &
-bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ts::CryptoHash const &hash)
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ts::CryptoHash const &hash)
 {
-  ts::BWFSpec local_spec{spec};
+  swoc::bwf::Spec local_spec{spec};
   if ('X' != local_spec._type) {
     local_spec._type = 'x';
   }

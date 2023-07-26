@@ -23,11 +23,10 @@
 
 #include <algorithm>
 #include <deque>
+#include "tscpp/util/ts_bw_format.h"
 #include <records/P_RecDefs.h>
 #include <HttpConfig.h>
 #include "HttpConnectionCount.h"
-#include "tscore/bwf_std_format.h"
-#include "tscore/BufferWriter.h"
 
 using namespace std::literals;
 
@@ -191,7 +190,7 @@ OutboundConnTrack::Group::equal(const Key &lhs, const Key &rhs)
   }
 
   if (is_debug_tag_set(DEBUG_TAG)) {
-    ts::LocalBufferWriter<256> w;
+    swoc::LocalBufferWriter<256> w;
     w.print("Comparing {} to {} -> {}\0", lhs, rhs, zret ? "match" : "fail");
     Debug(DEBUG_TAG, "%s", w.data());
   }
@@ -241,20 +240,20 @@ OutboundConnTrack::to_json_string()
 {
   std::string text;
   size_t extent = 0;
-  static const ts::BWFormat header_fmt{R"({{"count": {}, "list": [
+  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [
 )"};
-  static const ts::BWFormat item_fmt{
+  static const swoc::bwf::Format item_fmt{
     R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
 )"};
   static const std::string_view trailer{" \n]}"};
 
-  static const auto printer = [](ts::BufferWriter &w, Group const *g) -> ts::BufferWriter & {
+  static const auto printer = [](swoc::BufferWriter &w, Group const *g) -> swoc::BufferWriter & {
     w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
             g->get_last_alert_epoch_time());
     return w;
   };
 
-  ts::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
+  swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
   std::vector<Group const *> groups;
 
   self_type::get(groups);
@@ -266,13 +265,13 @@ OutboundConnTrack::to_json_string()
   extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
 
   text.resize(extent);
-  ts::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
-  w.clip(trailer.size());
+  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
+  w.restrict(trailer.size());
   w.print(header_fmt, groups.size());
   for (auto g : groups) {
     printer(w, g);
   }
-  w.extend(trailer.size());
+  w.restore(trailer.size());
   w.write(trailer);
   return text;
 }
@@ -290,7 +289,7 @@ OutboundConnTrack::dump(FILE *f)
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
     for (Group const *g : groups) {
-      ts::LocalBufferWriter<128> w;
+      swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
     }
@@ -334,14 +333,14 @@ OutboundConnTrack::lookup_match_type(std::string_view tag, OutboundConnTrack::Ma
 void
 OutboundConnTrack::Warning_Bad_Match_Type(std::string_view tag)
 {
-  ts::LocalBufferWriter<256> w;
+  swoc::LocalBufferWriter<256> w;
   w.print("Invalid value '{}' for '{}' - must be one of", tag, CONFIG_VAR_MATCH);
   for (auto n : MATCH_TYPE_NAME) {
     w.write(" '"sv);
     w.write(n);
     w.write("',"sv);
   }
-  w.auxBuffer()[-1] = '\0'; // clip trailing comma and null terminate.
+  w.aux_data()[-1] = '\0'; // clip trailing comma and null terminate.
   Warning("%s", w.data());
 }
 
@@ -352,9 +351,9 @@ OutboundConnTrack::TxnState::Note_Unblocked(const TxnConfig *config, int count, 
 
   if (_g->_blocked > 0 && _g->should_alert(&lat)) {
     auto blocked = _g->_blocked.exchange(0);
-    ts::LocalBufferWriter<256> w;
+    swoc::LocalBufferWriter<256> w;
     w.print("upstream unblocked: [{}] count={} limit={} group=({}) blocked={} upstream={}\0",
-            ts::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->max, *_g, blocked, addr);
+            swoc::bwf::Date(lat, "%b %d %H:%M:%S"sv), count, config->max, *_g, blocked, addr);
     Debug(DEBUG_TAG, "%s", w.data());
     Note("%s", w.data());
   }
@@ -368,7 +367,7 @@ OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id
   auto blocked = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();
 
   if (alert_p || debug_tag) {
-    ts::LocalBufferWriter<256> w;
+    swoc::LocalBufferWriter<256> w;
     w.print("[{}] too many connections: count={} limit={} group=({}) blocked={} upstream={}\0", sm_id, count, config->max, *_g,
             blocked, addr);
 
@@ -381,10 +380,10 @@ OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id
   }
 }
 
-namespace ts
+namespace swoc
 {
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type)
+bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::MatchType type)
 {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, static_cast<unsigned int>(type));
@@ -395,7 +394,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group::Key const &key)
+bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group::Key const &key)
 {
   switch (key._match_type) {
   case OutboundConnTrack::MATCH_BOTH:
@@ -415,7 +414,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group::Key con
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group const &g)
+bwformat(BufferWriter &w, bwf::Spec const &spec, OutboundConnTrack::Group const &g)
 {
   switch (g._match_type) {
   case OutboundConnTrack::MATCH_BOTH:
@@ -434,4 +433,4 @@ bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group const &g
   return w;
 }
 
-} // namespace ts
+} // namespace swoc

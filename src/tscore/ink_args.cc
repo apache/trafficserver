@@ -26,6 +26,8 @@ Process arguments
 
 ****************************************************************************/
 
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Diags.h"

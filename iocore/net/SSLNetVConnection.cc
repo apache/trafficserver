@@ -2234,7 +2234,7 @@ SSLNetVConnection::_ssl_connect()
       std::string sni_addr = get_sni_addr(ssl);
       if (!sni_addr.empty()) {
         std::string lookup_key;
-        ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
+        swoc::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
 
         Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 

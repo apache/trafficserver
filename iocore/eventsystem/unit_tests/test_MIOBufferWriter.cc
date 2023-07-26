@@ -132,29 +132,29 @@ writeOnce(MIOBufferWriter &bw, std::size_t len)
   static bool toggle;
 
   std::string s{genData(len)};
+  swoc::MemSpan src(s);
 
   if (len == 1) {
     bw.write(s[0]);
-
   } else if (toggle) {
-    std::size_t cap{bw.auxBufferCapacity()};
+    auto span = bw.aux_span();
 
-    if (cap >= len) {
-      memcpy(bw.auxBuffer(), s.data(), len);
-      bw.fill(len);
-
+    if (span.size() >= src.size()) {
+      memcpy(span, src);
+      bw.commit(src.size());
     } else {
-      memcpy(bw.auxBuffer(), s.data(), cap);
-      bw.fill(cap);
-      bw.write(s.data() + cap, len - cap);
+      auto trailer = src.clip_suffix(src.size() - span.size());
+      memcpy(span, src);
+      bw.commit(span.size());
+      bw.write(trailer);
     }
   } else {
-    bw.write(s.data(), len);
+    bw.write(src);
   }
 
   toggle = !toggle;
 
-  REQUIRE(bw.auxBufferCapacity() <= BlockSize);
+  REQUIRE(bw.aux_span().size() <= BlockSize);
 }
 
 class InkAssertExcept
@@ -165,7 +165,7 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 {
   MIOBufferWriter bw(&theMIOBuffer);
 
-  REQUIRE(bw.auxBufferCapacity() == BlockSize);
+  REQUIRE(bw.remaining() == BlockSize);
 
   writeOnce(bw, 0);
   writeOnce(bw, 1);
@@ -189,7 +189,7 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 
   REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
 
-  REQUIRE_THROWS_AS(bw.fill(bw.auxBufferCapacity() + 1), InkAssertExcept);
+  REQUIRE_THROWS_AS(bw.commit(bw.remaining() + 1), InkAssertExcept);
   REQUIRE_THROWS_AS(bw.data(), InkAssertExcept);
 }
 

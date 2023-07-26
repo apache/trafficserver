@@ -165,7 +165,7 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
   std::string sni_addr = get_sni_addr(ssl);
   if (!sni_addr.empty()) {
     std::string lookup_key;
-    ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
+    swoc::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
     origin_sess_cache->insert_session(lookup_key, sess, ssl);
   } else {
     if (is_debug_tag_set("ssl.origin_session_cache")) {

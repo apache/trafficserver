@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 #include <openssl/evp.h>
 #include <string_view>
 
@@ -193,7 +193,7 @@ inline CryptoContext::~CryptoContext()
   std::destroy_at(reinterpret_cast<Hasher *>(_base));
 }
 
-ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ts::CryptoHash const &hash);
+swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, ts::CryptoHash const &hash);
 
 } // namespace ts
 

@@ -28,14 +28,16 @@
  *
  ****************************************************************************/
 
-#include "tscore/ink_inet.h"
-#include "tscore/ink_assert.h"
-#include "tscore/HostLookup.h"
-#include "swoc/TextView.h"
-
 #include <string_view>
 #include <array>
 #include <memory>
+
+#include "swoc/TextView.h"
+#include "swoc/bwf_ip.h"
+
+#include "tscore/ink_inet.h"
+#include "tscore/ink_assert.h"
+#include "tscore/HostLookup.h"
 
 using std::string_view;
 using swoc::TextView;

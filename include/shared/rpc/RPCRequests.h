@@ -21,8 +21,8 @@
 
 #include <string>
 #include <variant>
+#include "tscpp/util/ts_bw_format.h"
 #include <yaml-cpp/yaml.h>
-#include <tscore/BufferWriter.h>
 #include <tscore/ink_uuid.h>
 
 /// JSONRPC 2.0 Client API utility definitions. Only client applications should use these definitions. Internal handlers should not
@@ -194,10 +194,10 @@ inline std::ostream &
 operator<<(std::ostream &os, const RecordLookUpResponse::RecordError &re)
 {
   std::string text;
-  os << ts::bwprint(text, "{:16s}: {}\n", "Record Name ", re.recordName);
-  os << ts::bwprint(text, "{:16s}: {}\n", "Code", re.code);
+  os << swoc::bwprint(text, "{:16s}: {}\n", "Record Name ", re.recordName);
+  os << swoc::bwprint(text, "{:16s}: {}\n", "Code", re.code);
   if (!re.message.empty()) {
-    os << ts::bwprint(text, "{:16s}: {}\n", "Message", re.message);
+    os << swoc::bwprint(text, "{:16s}: {}\n", "Message", re.message);
   }
   return os;
 }

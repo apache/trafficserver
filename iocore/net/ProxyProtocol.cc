@@ -26,7 +26,7 @@
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_inet.h"
@@ -62,7 +62,7 @@ constexpr uint16_t PPv2_ADDR_LEN_INET  = 4 + 4 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 
-const ts::BWFSpec ADDR_ONLY_FMT{"::a"};
+const swoc::bwf::Spec ADDR_ONLY_FMT{"::a"};
 
 struct PPv2Hdr {
   uint8_t sig[12]; ///< preface
@@ -319,7 +319,7 @@ proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
     return 0;
   }
 
-  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+  swoc::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
 
   // preface
   bw.write(PPv1_CONNECTION_PREFACE);
@@ -345,15 +345,15 @@ proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
 
   // TCP source port
   {
-    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.src_addr), bw.auxBuffer(), bw.remaining());
-    bw.fill(len);
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.src_addr), bw.aux_data(), bw.remaining());
+    bw.commit(len);
     bw.write(PPv1_DELIMITER);
   }
 
   // TCP destination port
   {
-    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.dst_addr), bw.auxBuffer(), bw.remaining());
-    bw.fill(len);
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.dst_addr), bw.aux_data(), bw.remaining());
+    bw.commit(len);
   }
 
   Debug("proxyprotocol_v1", "Proxy Protocol v1: %.*s", static_cast<int>(bw.size()), bw.data());
@@ -374,7 +374,7 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
     return 0;
   }
 
-  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+  swoc::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
 
   // # proxy_hdr_v2
   // ## preface
@@ -403,7 +403,7 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
 
   // ## len field. this will be set at the end of this function
   const size_t len_field_offset = bw.size();
-  bw.fill(2);
+  bw.commit(2);
 
   ink_release_assert(bw.size() == PPv2_CONNECTION_HEADER_LEN);
 
@@ -428,7 +428,7 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
   }
   case AF_UNIX: {
     // unsupported yet
-    bw.fill(PPv2_ADDR_LEN_UNIX);
+    bw.commit(PPv2_ADDR_LEN_UNIX);
     break;
   }
   default:

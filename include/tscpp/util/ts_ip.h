@@ -27,6 +27,7 @@
 
 #include "swoc/DiscreteRange.h"
 #include "swoc/swoc_ip.h"
+#include "swoc/bwf_ip.h"
 
 namespace ts
 {

@@ -21,6 +21,9 @@
 
 #include <cstdio>
 #include <sys/mman.h>
+
+#include "swoc/bwf_ip.h"
+
 #include "tscore/Diags.h"
 #include "tscore/ink_align.h"
 

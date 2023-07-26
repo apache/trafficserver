@@ -25,7 +25,7 @@
 #include <string_view>
 
 #include "tscore/Errata.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 
 namespace rpc::handlers::errors
 {
@@ -54,7 +54,7 @@ static inline ts::Errata
 make_errata(int code, std::string_view fmt, Args &&...args)
 {
   std::string text;
-  return ts::Errata{}.push(ERRATA_DEFAULT_ID, code, ts::bwprint(text, fmt, std::forward<Args>(args)...));
+  return ts::Errata{}.push(ERRATA_DEFAULT_ID, code, swoc::bwprint(text, fmt, std::forward<Args>(args)...));
 }
 
 static inline ts::Errata

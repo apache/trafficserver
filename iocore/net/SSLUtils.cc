@@ -2164,7 +2164,7 @@ get_verify_str(SSL *ssl)
       break;
     }
 
-    ts::bwprint(verify_str, "{}:{}", policy_str.c_str(), property_str.c_str());
+    swoc::bwprint(verify_str, "{}:{}", policy_str.c_str(), property_str.c_str());
   }
 
   return verify_str;

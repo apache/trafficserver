@@ -33,7 +33,6 @@
 #include "tscore/Diags.h"
 #include "tscore/Filenames.h"
 #include "tscore/I_Layout.h"
-#include <tscore/BufferWriter.h>
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
@@ -57,7 +56,7 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
       RecConfigWarnIfUnregistered();
     } else {
       std::string str;
-      ret.push(1, ts::bwprint(str, "Error reading {}. {}", fileName));
+      ret.push(1, swoc::bwprint(str, "Error reading {}. {}", fileName));
     }
   } else {
     RecT rec_type;
@@ -66,7 +65,7 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
       RecSetSyncRequired(data);
     } else {
       std::string str;
-      ret.push(1, ts::bwprint(str, "Unknown file change {}.", configName));
+      ret.push(1, swoc::bwprint(str, "Unknown file change {}.", configName));
     }
   }
 

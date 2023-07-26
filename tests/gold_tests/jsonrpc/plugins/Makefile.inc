@@ -22,4 +22,7 @@ AM_CPPFLAGS += \
     @YAMLCPP_INCLUDES@
 
 gold_tests_jsonrpc_plugins_jsonrpc_plugin_handler_test_la_LDFLAGS = \
-    $(AM_LDFLAGS)
+    $(AM_LDFLAGS) @SWOC_LDFLAGS@
+
+gold_tests_jsonrpc_plugins_jsonrpc_plugin_handler_test_la_LIBADD = @SWOC_LIBS@
+

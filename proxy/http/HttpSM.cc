@@ -22,6 +22,7 @@
 
  */
 
+#include "tscpp/util/ts_bw_format.h"
 #include "../ProxyTransaction.h"
 #include "HttpSM.h"
 #include "ConnectingEntry.h"
@@ -56,7 +57,6 @@
 #include "ProxyProtocol.h"
 
 #include "tscore/I_Layout.h"
-#include "tscore/bwf_std_format.h"
 #include "ts/sdt.h"
 
 #include <openssl/ossl_typ.h>
@@ -100,7 +100,7 @@ static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response   = strlen(str_100_continue_response);
 
 // Handy alias for short (single line) message generation.
-using lbw = ts::LocalBufferWriter<256>;
+using lbw = swoc::LocalBufferWriter<256>;
 
 namespace
 {
@@ -4328,8 +4328,8 @@ HttpSM::check_sni_host()
             Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
             SMDebug("ssl_sni", "No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
             if (host_sni_policy == 2) {
-              ts::bwprint(error_bw_buffer, "No SNI for TLS request: connecting to {} for host='{}', returning a 403",
-                          t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)});
+              swoc::bwprint(error_bw_buffer, "No SNI for TLS request: connecting to {} for host='{}', returning a 403",
+                            t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)});
               Log::error("%s", error_bw_buffer.c_str());
               this->t_state.client_connection_enabled = false;
             }
@@ -4337,8 +4337,8 @@ HttpSM::check_sni_host()
             Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
             SMDebug("ssl_sni", "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
             if (host_sni_policy == 2) {
-              ts::bwprint(error_bw_buffer, "SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
-                          t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)}, sni_value);
+              swoc::bwprint(error_bw_buffer, "SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
+                            t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)}, sni_value);
               Log::error("%s", error_bw_buffer.c_str());
               this->t_state.client_connection_enabled = false;
             }
@@ -5748,9 +5748,9 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
             int host_len;
             const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
             std::string_view host_name{host_name_ptr, size_t(host_len)};
-            ts::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
-                        ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
-                        ts::bwf::FirstOf(url_str, "<none>"));
+            swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
+                          swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
+                          swoc::bwf::FirstOf(url_str, "<none>"));
             Log::error("%s", error_bw_buffer.c_str());
 
             if (url_str) {

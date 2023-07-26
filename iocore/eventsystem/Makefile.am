@@ -113,6 +113,7 @@ test_IOBuffer_LDADD = $(test_LD_ADD)
 test_MIOBufferWriter_SOURCES = unit_tests/test_MIOBufferWriter.cc
 test_MIOBufferWriter_CPPFLAGS = $(test_CPP_FLAGS)
 test_MIOBufferWriter_LDFLAGS = $(test_LD_FLAGS)
+test_MIOBufferWriter_LDADD = $(test_LD_ADD)
 
 include $(top_srcdir)/mk/tidy.mk
 

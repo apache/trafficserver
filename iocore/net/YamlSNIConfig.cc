@@ -42,7 +42,7 @@
 
 #include "tscpp/util/ts_ip.h"
 
-#include "tscore/BufferWriterForward.h"
+#include "swoc/bwf_fwd.h"
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/Errata.h"

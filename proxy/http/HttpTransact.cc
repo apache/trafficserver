@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "tscpp/util/ts_bw_format.h"
+
 #include "ts/parentselectdefs.h"
 #include "tscore/ink_platform.h"
 
@@ -35,7 +37,6 @@
 #include <ctime>
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
-#include "tscore/bwf_std_format.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -913,8 +914,8 @@ HttpTransact::OriginDown(State *s)
   int host_len;
   const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
   std::string_view host_name{host_name_ptr, size_t(host_len)};
-  ts::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
-              host_name, ts::bwf::FirstOf(url_str, "<none>"));
+  swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
+                host_name, swoc::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
   s->arena.str_free(url_str);
 
@@ -1913,7 +1914,7 @@ HttpTransact::OSDNSLookup(State *s)
         log_msg = "no valid server";
       }
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-      ts::bwprint(error_bw_buffer, "DNS Error: {} {}", log_msg, ts::bwf::FirstOf(url_str, "<none>"));
+      swoc::bwprint(error_bw_buffer, "DNS Error: {} {}", log_msg, swoc::bwf::FirstOf(url_str, "<none>"));
       Log::error("%s", error_bw_buffer.c_str());
       // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
@@ -3826,12 +3827,12 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
       host_name_ptr = s->unmapped_url.host_get(&host_len);
     }
     std::string_view host_name{host_name_ptr, size_t(host_len)};
-    ts::bwprint(error_bw_buffer,
-                "CONNECT: attempt fail [{}] to {} for host='{}' "
-                "connection_result={::s} error={::s} retry_attempts={} url='{}'",
-                HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
-                ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
-                s->current.retry_attempts.get(), ts::bwf::FirstOf(url_str, "<none>"));
+    swoc::bwprint(error_bw_buffer,
+                  "CONNECT: attempt fail [{}] to {} for host='{}' "
+                  "connection_result={::s} error={::s} retry_attempts={} url='{}'",
+                  HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                  swoc::bwf::Errno(s->current.server->connect_result), swoc::bwf::Errno(s->cause_of_death_errno),
+                  s->current.retry_attempts.get(), swoc::bwf::FirstOf(url_str, "<none>"));
     Log::error("%s", error_bw_buffer.c_str());
 
     s->arena.str_free(url_str);
@@ -4621,7 +4622,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     MIMEField *resp_via = s->hdr_info.server_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
     if (resp_via) {
       int saved_via_len = 0;
-      ts::LocalBufferWriter<HTTP_OUR_VIA_MAX_LENGTH> saved_via_w;
+      swoc::LocalBufferWriter<HTTP_OUR_VIA_MAX_LENGTH> saved_via_w;
       MIMEField *our_via;
       our_via = s->hdr_info.client_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
       if (our_via == nullptr) {

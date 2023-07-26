@@ -344,7 +344,7 @@ protected:
  *   Thing* _prev{nullptr};
  *   using Linkage = ts::IntrusiveLinkage<Thing, &Thing::_next, &Thing::_prev>;
  * };
- * using ThingList = ts::ts::IntrusiveDList<Thing::Linkage>;
+ * using ThingList = ts::IntrusiveDList<Thing::Linkage>;
  * @endcode
  * The template will default to the names '_next' and '_prev' therefore in the example it could
  * have been done as

@@ -37,7 +37,7 @@ class BadOptionsErrMsg
 public:
   // Construct with reference to string that will contain error message.
   //
-  BadOptionsErrMsg(ts::FixedBufferWriter &err) : _err(err), _count(0) {}
+  BadOptionsErrMsg(swoc::FixedBufferWriter &err) : _err(err), _count(0) {}
 
   // Add a bad option.
   //
@@ -86,7 +86,7 @@ private:
     _err << '\"' << sv << '\"';
   }
 
-  ts::FixedBufferWriter &_err;
+  swoc::FixedBufferWriter &_err;
 
   swoc::TextView _saveLast;
 
@@ -121,7 +121,7 @@ eqIgnoreCaseWs(swoc::TextView sv, const char *target)
 namespace HttpForwarded
 {
 OptionBitSet
-optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error)
+optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWriter &error)
 {
   const swoc::TextView Delimiters(":|");
 

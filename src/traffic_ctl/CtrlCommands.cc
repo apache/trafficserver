@@ -87,14 +87,14 @@ RPCAccessor::invoke_rpc(std::string const &request)
 {
   if (_printer->print_rpc_message()) {
     std::string text;
-    ts::bwprint(text, "--> {}", request);
+    swoc::bwprint(text, "--> {}", request);
     _printer->write_debug(std::string_view{text});
   }
   if (auto resp = _rpcClient.invoke(request); !resp.empty()) {
     // all good.
     if (_printer->print_rpc_message()) {
       std::string text;
-      ts::bwprint(text, "<-- {}", resp);
+      swoc::bwprint(text, "<-- {}", resp);
       _printer->write_debug(std::string_view{text});
     }
     return resp;
@@ -506,7 +506,7 @@ DirectRPCCommand::from_file_request()
 
       if (!validate_input(content)) {
         _printer->write_output(
-          ts::bwprint(text, "Content not accepted. expecting a valid sequence or structure. {} skipped.\n", filename));
+          swoc::bwprint(text, "Content not accepted. expecting a valid sequence or structure. {} skipped.\n", filename));
         continue;
       }
       std::string const &response = invoke_rpc(content);
@@ -514,12 +514,12 @@ DirectRPCCommand::from_file_request()
         // as we have the raw json in here, we cna just directly print it
         _printer->write_output(response);
       } else {
-        _printer->write_output(ts::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));
-        _printer->write_output(ts::bwprint(text, "<--\n{}\n", response));
+        _printer->write_output(swoc::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));
+        _printer->write_output(swoc::bwprint(text, "<--\n{}\n", response));
       }
 
     } catch (std::exception const &ex) {
-      _printer->write_output(ts::bwprint(text, "Error found: {}\n", ex.what()));
+      _printer->write_output(swoc::bwprint(text, "Error found: {}\n", ex.what()));
     }
   }
 }
@@ -543,14 +543,14 @@ DirectRPCCommand::read_from_input()
     // read cin.
     std::string content((std::istreambuf_iterator<char>(std::cin)), std::istreambuf_iterator<char>());
     if (!get_parsed_arguments()->get(RAW_STR) && !validate_input(content)) {
-      _printer->write_output(ts::bwprint(text, "Content not accepted. expecting a valid sequence or structure\n"));
+      _printer->write_output(swoc::bwprint(text, "Content not accepted. expecting a valid sequence or structure\n"));
       return;
     }
     std::string const &response = invoke_rpc(content);
     _printer->write_output("--> Request sent.\n");
-    _printer->write_output(ts::bwprint(text, "\n<-- {}\n", response));
+    _printer->write_output(swoc::bwprint(text, "\n<-- {}\n", response));
   } catch (std::exception const &ex) {
-    _printer->write_output(ts::bwprint(text, "Error found: {}\n", ex.what()));
+    _printer->write_output(swoc::bwprint(text, "Error found: {}\n", ex.what()));
   }
 }
 

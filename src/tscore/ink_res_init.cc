@@ -64,6 +64,8 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "swoc/bwf_ip.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 

@@ -47,7 +47,7 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/Regex.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 #include "HttpProxyAPIEnums.h"
 #include "ConfigProcessor.h"
 #include "records/I_RecProcess.h"
@@ -444,7 +444,7 @@ using OptionBitSet = std::bitset<NUM_OPTIONS>;
 // Converts string specifier for Forwarded options to bitset of options, and return the result.  If there are errors, an error
 // message will be inserted into 'error'.
 //
-OptionBitSet optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error);
+OptionBitSet optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWriter &error);
 
 } // namespace HttpForwarded
 

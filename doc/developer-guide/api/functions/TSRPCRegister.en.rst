@@ -204,7 +204,7 @@ Example:
                 // some code
             } catch (std::exception const &e) {
                 std::string buff;
-                ts::bwprint(buff, "Error during rpc handling: {}.", e.what());
+                swoc::bwprint(buff, "Error during rpc handling: {}.", e.what());
                 TSRPCHandlerError(ID_123456, buff.c_str(), buff.size());
                 return;
             }

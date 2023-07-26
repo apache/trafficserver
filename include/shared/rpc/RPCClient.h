@@ -66,18 +66,18 @@ public:
         }
         case IPCSocketClient::ReadStatus::BUFFER_FULL: {
           throw std::runtime_error(
-            ts::bwprint(text, "Buffer full, not enough space to read the response. Buffer size: {}", BUFFER_SIZE));
+            swoc::bwprint(text, "Buffer full, not enough space to read the response. Buffer size: {}", BUFFER_SIZE));
         } break;
         default:
           throw std::runtime_error("Something happened, we can't read the response");
           break;
         }
       } else {
-        throw std::runtime_error(ts::bwprint(text, "Node seems not available: {}", std ::strerror(errno)));
+        throw std::runtime_error(swoc::bwprint(text, "Node seems not available: {}", std ::strerror(errno)));
       }
     } catch (std::exception const &ex) {
       _client.disconnect();
-      throw std::runtime_error(ts::bwprint(text, "RPC Node Error: {}", ex.what()));
+      throw std::runtime_error(swoc::bwprint(text, "RPC Node Error: {}", ex.what()));
     }
 
     return {};

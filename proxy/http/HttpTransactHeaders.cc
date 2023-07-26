@@ -27,7 +27,7 @@
 #include <string_view>
 
 #include "tscore/ink_platform.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -975,7 +975,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
   if (optSet.any()) { // One or more Forwarded parameters enabled, so insert/append to Forwarded header.
 
-    ts::LocalBufferWriter<1024> hdr;
+    swoc::LocalBufferWriter<1024> hdr;
 
     IpEndpoint src_addr = s->client_info.src_addr;
     if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->get_netvc()) {
@@ -997,15 +997,15 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
         hdr << "\"[";
       }
 
-      if (ats_ip_ntop(&src_addr.sa, hdr.auxBuffer(), hdr.remaining()) == nullptr) {
+      if (ats_ip_ntop(&src_addr.sa, hdr.aux_data(), hdr.remaining()) == nullptr) {
         Debug("http_trans", "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
         return;
       }
 
       // Fail-safe.
-      hdr.auxBuffer()[hdr.remaining() - 1] = '\0';
+      hdr.aux_data()[hdr.remaining() - 1] = '\0';
 
-      hdr.fill(strlen(hdr.auxBuffer()));
+      hdr.commit(strlen(hdr.aux_data()));
 
       if (is_ipv6) {
         hdr << "]\"";
@@ -1051,15 +1051,15 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
         hdr << "\"[";
       }
 
-      if (ats_ip_ntop(&s->client_info.dst_addr.sa, hdr.auxBuffer(), hdr.remaining()) == nullptr) {
+      if (ats_ip_ntop(&s->client_info.dst_addr.sa, hdr.aux_data(), hdr.remaining()) == nullptr) {
         Debug("http_trans", "[add_forwarded_field_to_outgoing_request] ats_ip_ntop() call failed");
         return;
       }
 
       // Fail-safe.
-      hdr.auxBuffer()[hdr.remaining() - 1] = '\0';
+      hdr.aux_data()[hdr.remaining() - 1] = '\0';
 
-      hdr.fill(strlen(hdr.auxBuffer()));
+      hdr.commit(strlen(hdr.aux_data()));
 
       if (is_ipv6) {
         hdr << "]\"";
@@ -1086,10 +1086,10 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
       hdr << "proto=";
 
-      int numChars = HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), ProtocolStackDetail::Compact,
+      int numChars = HttpTransactHeaders::write_hdr_protocol_stack(hdr.aux_data(), hdr.remaining(), ProtocolStackDetail::Compact,
                                                                    protoBuf.data(), n_proto, '-');
       if (numChars > 0) {
-        hdr.fill(size_t(numChars));
+        hdr.commit(size_t(numChars));
       }
     }
 
@@ -1119,7 +1119,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     if (n_proto > 0) {
       auto Conn = [&](HttpForwarded::Option opt, HttpTransactHeaders::ProtocolStackDetail detail) -> void {
         if (optSet[opt] && hdr.remaining() > 0) {
-          ts::FixedBufferWriter lw{hdr.auxBuffer(), hdr.remaining()};
+          swoc::FixedBufferWriter lw{hdr.aux_data(), hdr.remaining()};
 
           if (hdr.size()) {
             lw << ';';
@@ -1128,9 +1128,9 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
           lw << "connection=";
 
           int numChars =
-            HttpTransactHeaders::write_hdr_protocol_stack(lw.auxBuffer(), lw.remaining(), detail, protoBuf.data(), n_proto, '-');
-          if (numChars > 0 && !lw.fill(size_t(numChars)).error()) {
-            hdr.fill(lw.size());
+            HttpTransactHeaders::write_hdr_protocol_stack(lw.aux_data(), lw.remaining(), detail, protoBuf.data(), n_proto, '-');
+          if (numChars > 0 && !(lw.commit(size_t(numChars)), lw.error())) {
+            hdr.commit(lw.size());
           }
         }
       };

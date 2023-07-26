@@ -33,6 +33,7 @@
 #include <cinttypes>
 #include <sys/time.h>
 
+#include "tscore/ink_assert.h"
 #include "shared/rpc/RPCRequests.h"
 #include "shared/rpc/RPCClient.h"
 #include "shared/rpc/yaml_codecs.h"

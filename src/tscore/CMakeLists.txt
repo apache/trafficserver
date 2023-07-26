@@ -35,7 +35,6 @@ add_library(tscore STATIC
         Arena.cc
         ArgParser.cc
         BaseLogFile.cc
-        BufferWriterFormat.cc
         ConsistentHash.cc
         ContFlags.cc
         CryptoHash.cc
@@ -138,8 +137,6 @@ endif()
 add_executable(test_tscore
         unit_tests/test_AcidPtr.cc
         unit_tests/test_ArgParser.cc
-        unit_tests/test_BufferWriter.cc
-        unit_tests/test_BufferWriterFormat.cc
         unit_tests/test_CryptoHash.cc
         unit_tests/test_Errata.cc
         unit_tests/test_Extendible.cc

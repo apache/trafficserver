@@ -24,7 +24,7 @@
 #include <string_view>
 
 #include "tscore/History.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/ts_bw_format.h"
 #include "catch.hpp"
 
 using std::string_view;
@@ -64,7 +64,7 @@ TEST_CASE("History", "[libts][History]")
   history[1].location.str(buf, sizeof(buf));
   REQUIRE(string_view{buf} == "test_History.cc:49 (C_A_T_C_H_T_E_S_T_0)");
 
-  ts::LocalBufferWriter<128> w;
+  swoc::LocalBufferWriter<128> w;
   SM<HISTORY_DEFAULT_SIZE> *sm = new SM<HISTORY_DEFAULT_SIZE>;
   SM_REMEMBER(sm, 1, 1);
   SM_REMEMBER(sm, 2, 2);
@@ -73,7 +73,7 @@ TEST_CASE("History", "[libts][History]")
   w.print("{}", sm->history[0].location);
   REQUIRE(w.view() == "test_History.cc:69 (C_A_T_C_H_T_E_S_T_0)");
 
-  w.reset().print("{}", sm->history[1].location);
+  w.clear().print("{}", sm->history[1].location);
   REQUIRE(w.view() == "test_History.cc:70 (C_A_T_C_H_T_E_S_T_0)");
 
   REQUIRE(sm->history[0].event == 1);
@@ -105,10 +105,10 @@ TEST_CASE("History", "[libts][History]")
   REQUIRE(sm2->history.size() == 2);
   REQUIRE(sm2->history.overflowed() == true);
 
-  w.reset().print("{}", sm2->history[0].location);
+  w.clear().print("{}", sm2->history[0].location);
   REQUIRE(w.view() == "test_History.cc:103 (C_A_T_C_H_T_E_S_T_0)");
 
-  w.reset().print("{}", sm2->history[1].location);
+  w.clear().print("{}", sm2->history[1].location);
   REQUIRE(w.view() == "test_History.cc:98 (C_A_T_C_H_T_E_S_T_0)");
 
   sm2->history.clear();

@@ -94,7 +94,7 @@ public:
 void
 test(const char *spec, const char *reqErr, const OptionBitSet &bS)
 {
-  ts::LocalBufferWriter<1024> error;
+  swoc::LocalBufferWriter<1024> error;
 
   error << "cheese";
 
