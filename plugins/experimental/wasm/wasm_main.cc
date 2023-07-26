@@ -58,7 +58,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
   const char *start;
   const char *res;
   size_t res_len;
-  int eos, write_down, empty_input;
+  bool eos, write_down, empty_input;
 
   ats_wasm::Context *c;
 
@@ -68,7 +68,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
   output_conn = TSTransformOutputVConnGet(contp);
   input_vio   = TSVConnWriteVIOGet(contp);
 
-  empty_input = 0;
+  empty_input = false;
 
   TSDebug(WASM_DEBUG_TAG, "[%s] cheking input VIO", __FUNCTION__);
   if (!TSVIOBufferGet(input_vio)) {
@@ -79,11 +79,11 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
       return 0;
     } else {
       TSDebug(WASM_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
-      empty_input = 1;
+      empty_input = true;
     }
   }
 
-  if (empty_input == 0) {
+  if (!empty_input) {
     input_reader = TSVIOReaderGet(input_vio);
   }
 
@@ -95,7 +95,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
     ti->reserved_buffer = TSIOBufferCreate();
     ti->reserved_reader = TSIOBufferReaderAlloc(ti->reserved_buffer);
 
-    if (empty_input == 0) {
+    if (!empty_input) {
       ti->upstream_bytes = TSVIONBytesGet(input_vio);
     } else {
       ti->upstream_bytes = 0;
@@ -105,21 +105,21 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
   }
 
   TSDebug(WASM_DEBUG_TAG, "[%s] init variables inside handler", __FUNCTION__);
-  if (empty_input == 0) {
+  if (!empty_input) {
     input_avail   = TSIOBufferReaderAvail(input_reader);
     upstream_done = TSVIONDoneGet(input_vio);
     toread        = TSVIONTodoGet(input_vio);
 
     if (toread <= input_avail) { // upstream finished
-      eos = 1;
+      eos = true;
     } else {
-      eos = 0;
+      eos = false;
     }
   } else {
     input_avail   = 0;
     upstream_done = 0;
     toread        = 0;
-    eos           = 1;
+    eos           = true;
   }
 
   if (input_avail > 0) {
@@ -131,8 +131,8 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
     TSVIONDoneSet(input_vio, upstream_done + input_avail);
   }
 
-  write_down = 0;
-  if (empty_input == 0) {
+  write_down = false;
+  if (!empty_input) {
     towrite = TSIOBufferReaderAvail(ti->reserved_reader);
   } else {
     towrite = 0;
@@ -142,12 +142,12 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
     TSDebug(WASM_DEBUG_TAG, "[%s] inside transform handler loop", __FUNCTION__);
     proxy_wasm::FilterDataStatus status = proxy_wasm::FilterDataStatus::Continue;
 
-    if (towrite == 0 && empty_input == 0) {
+    if (towrite == 0 && !empty_input) {
       break;
     }
 
     TSDebug(WASM_DEBUG_TAG, "[%s] retrieving text and calling the wasm handler function", __FUNCTION__);
-    if (empty_input == 0) {
+    if (!empty_input) {
       blk   = TSIOBufferReaderStart(ti->reserved_reader);
       start = TSIOBufferBlockReadStart(blk, ti->reserved_reader, &blk_len);
 
@@ -204,7 +204,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
 
         TSIOBufferWrite(ti->output_buffer, res, res_len);
         ti->total  += res_len;
-        write_down  = 1;
+        write_down  = true;
       }
 
       c->clearTransformResult();
@@ -215,7 +215,6 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
     }
 
     if (eos && !towrite) { // EOS
-      eos = 1;
       break;
     }
 
@@ -232,17 +231,17 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
   if (toread > input_avail) { // upstream not finished.
     if (eos) {
       TSVIONBytesSet(ti->output_vio, ti->total);
-      if (empty_input == 0) {
+      if (!empty_input) {
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_EOS, input_vio);
       }
     } else {
-      if (empty_input == 0) {
+      if (!empty_input) {
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
       }
     }
   } else { // upstream is finished.
     TSVIONBytesSet(ti->output_vio, ti->total);
-    if (empty_input == 0) {
+    if (!empty_input) {
       TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
     }
   }
