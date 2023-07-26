@@ -120,7 +120,6 @@ struct NetAccept : public Continuation {
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   ~NetAccept() override { action_ = nullptr; }
-
 };
 
 extern Ptr<ProxyMutex> naVecMutex;

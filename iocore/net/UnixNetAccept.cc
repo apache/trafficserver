@@ -563,7 +563,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc = nullptr;
   } while (count <= additional_accepts);
 
- Ldone:
+Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
