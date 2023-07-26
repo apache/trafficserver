@@ -15,13 +15,13 @@
 #
 #######################
 
-add_subdirectory(tools/plugins)
-add_subdirectory(gold_tests/bigobj)
-add_subdirectory(gold_tests/chunked_encoding)
-add_subdirectory(gold_tests/continuations/plugins)
-add_subdirectory(gold_tests/jsonrpc/plugins)
-add_subdirectory(gold_tests/pluginTest/polite_hook_wait)
-add_subdirectory(gold_tests/pluginTest/tsapi)
-add_subdirectory(gold_tests/pluginTest/TSVConnFd)
-add_subdirectory(gold_tests/timeout)
-add_subdirectory(gold_tests/tls)
+find_package(Threads)
+
+add_executable(ssl-post ssl-post.c)
+
+target_link_libraries(ssl-post PRIVATE OpenSSL::SSL Threads::Threads)
+
+set_target_properties(ssl-post
+    PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
