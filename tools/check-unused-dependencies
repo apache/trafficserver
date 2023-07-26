@@ -54,24 +54,43 @@ def get_dependencies(program):
                     'libgcc_s.so.',
                     'libm.so.',       # Why does Libtool call ld with -lm?
                     'libpthread.so.', # Because we add -lpthread to LIBS
-                    'librt.so.'       # clang + asan pulls this in
                 ])):
             continue
 
+        progbase = os.path.basename(program)
+
         # Why does Libtool call ld with -lcrypto -lresolv -lssl?
-        if os.path.basename(program) == 'traffic_manager':
+        if progbase == 'traffic_manager':
             if any(
                 map(
                     os.path.basename(dependency).startswith, [
                         'libcrypto.so.',
                         'libresolv.so.',
-                        'libssl.so.'
+                        'libssl.so.',
                     ])):
                 continue
 
+        # clang+asan pulls in dependencies for these specific tools:
+        if any(
+            map(
+                progbase.__eq__,
+                [
+                    'jtest',
+                    'http_load',
+                    'escape_mapper',
+                ])):
+            if any(
+                map(
+                    os.path.basename(dependency).startswith,
+                    [
+                        'librt.so',
+                        'libresolv.so',
+                    ])):
+                continue
+
+
         if re.sub(r'\s+', '', dependency):
             yield dependency
-
 
 success = True
 filename = 'config.status'
