@@ -15,11 +15,4 @@
 #
 #######################
 
-add_library(TSVConnFd MODULE TSVConnFd.cc)
-
-set_target_properties(TSVConnFd PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.libs"
-    PREFIX ""
-    SUFFIX ".so"
-)
-target_link_libraries(TSVConnFd PRIVATE traffic_server)
+add_autest_plugin(TSVConnFd TSVConnFd.cc)

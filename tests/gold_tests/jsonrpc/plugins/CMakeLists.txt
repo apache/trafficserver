@@ -15,6 +15,14 @@
 #
 #######################
 
-add_autest_plugin(smuggle-client smuggle-client.c)
+add_autest_plugin(jsonrpc_plugin_handler_test jsonrpc_plugin_handler_test.cc)
 
-target_link_libraries(smuggle-client PRIVATE OpenSSL::SSL)
+target_include_directories(jsonrpc_plugin_handler_test
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/mgmt"
+)
+
+target_link_libraries(jsonrpc_plugin_handler_test
+    PRIVATE
+        jsonrpc_protocol
+)

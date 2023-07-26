@@ -15,6 +15,4 @@
 #
 #######################
 
-add_autest_plugin(smuggle-client smuggle-client.c)
-
-target_link_libraries(smuggle-client PRIVATE OpenSSL::SSL)
+add_autest_plugin(session_id_verify session_id_verify.cc)
