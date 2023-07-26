@@ -24,10 +24,7 @@ autopep8 = "*"
 pyflakes = "*"
 
 [packages]
-
 # Keep init.cli.ext updated with this required autest version.
-autest = "==1.10.3"
-
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 h2 = "*"
 dnslib = "*"
@@ -35,13 +32,12 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 psutil = "*"
-
 # Keep init.cli.ext updated with this required microserver version.
 microserver = ">=1.0.6"
-
 jsonschema = "*"
 python-jose = "*"
 pyyaml ="*"
+autest = {git = "https://bitbucket.org/autestsuite/reusable-gold-testing-system.git"}
 
 [requires]
 python_version = "3"
