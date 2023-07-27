@@ -97,7 +97,6 @@ libtscore_a_SOURCES = \
 	MMH.cc \
 	ParseRules.cc \
 	Random.cc \
-	RbTree.cc \
 	Regex.cc \
 	Regression.cc \
 	runroot.cc \

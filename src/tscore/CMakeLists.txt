@@ -56,7 +56,6 @@ add_library(tscore STATIC
         MatcherUtils.cc
         ParseRules.cc
         Random.cc
-        RbTree.cc
         Regex.cc
         Regression.cc
         SourceLocation.cc
