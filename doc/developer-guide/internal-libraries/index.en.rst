@@ -35,5 +35,4 @@ development team.
    MemSpan.en
    TextView.en
    buffer-writer.en
-   intrusive-list.en
    scalar.en

@@ -23,7 +23,6 @@ library_include_HEADERS = \
 	ts_bw_format.h \
 	ts_diag_levels.h \
 	ts_ip.h \
-	IntrusiveDList.h \
 	LocalBuffer.h \
 	PostScript.h \
 	Strerror.h \
