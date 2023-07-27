@@ -162,7 +162,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
 	unit_tests/test_ink_memory.cc \
-	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_List.cc \
