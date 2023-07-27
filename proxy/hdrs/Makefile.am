@@ -50,7 +50,9 @@ libhdrs_a_SOURCES = \
 	HuffmanCodec.cc \
 	HuffmanCodec.h \
 	XPACK.cc \
-	XPACK.h
+	XPACK.h \
+	HeaderValidator.cc \
+	HeaderValidator.h
 
 load_http_hdr_SOURCES = \
 	HTTP.h \
@@ -80,7 +82,8 @@ test_proxy_hdrs_SOURCES = \
 	unit_tests/test_Hdrs.cc \
 	unit_tests/test_HdrUtils.cc \
 	unit_tests/test_URL.cc \
-	unit_tests/test_mime.cc
+	unit_tests/test_mime.cc \
+	unit_tests/test_HeaderValidator.cc
 
 test_proxy_hdrs_LDFLAGS = @AM_LDFLAGS@ @SWOC_LDFLAGS@ @YAMLCPP_LDFLAGS@ @OPENSSL_LDFLAGS@
 test_proxy_hdrs_LDADD = \

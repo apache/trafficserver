@@ -28,6 +28,7 @@ add_library(hdrs STATIC
         VersionConverter.cc
         HuffmanCodec.cc
         XPACK.cc
+        HeaderValidator.cc
 )
 add_library(ts::hdrs ALIAS hdrs)
 
