@@ -25,12 +25,13 @@
 
 #include <vector>
 
+#include "swoc/IntrusiveDList.h"
+
 #include "tscore/Ptr.h"
 #include "PluginDso.h"
 #include "RemapPluginInfo.h"
 
 #include "tscore/Ptr.h"
-#include "tscpp/util/IntrusiveDList.h"
 
 #include "tscore/ink_uuid.h"
 #include "ts/apidefs.h"
@@ -58,7 +59,7 @@ public:
   using self_type  = RemapPluginInst; ///< Self reference type.
   self_type *_next = nullptr;
   self_type *_prev = nullptr;
-  using Linkage    = ts::IntrusiveLinkage<self_type>;
+  using Linkage    = swoc::IntrusiveLinkage<self_type>;
 
   /* Plugin instance = the plugin info + the data returned by the init callback */
   RemapPluginInfo &_plugin;
@@ -87,7 +88,7 @@ public:
  */
 class PluginFactory
 {
-  using PluginInstList = ts::IntrusiveDList<RemapPluginInst::Linkage>;
+  using PluginInstList = swoc::IntrusiveDList<RemapPluginInst::Linkage>;
 
 public:
   PluginFactory();

@@ -76,14 +76,14 @@ to not be an issue, or there must be a provision for some sort of garbage collec
 
 Generally |MemArena| is not as useful for classes that allocate their own internal memory
 (such as :code:`std::string` or :code:`std::vector`), which includes most container classes. One
-container class that can be easily used is :class:`IntrusiveDList` because the links are in the
+container class that can be easily used is :code:`swoc::IntrusiveDList` because the links are in the
 instance and therefore also in the arena.
 
 Objects created in the arena must not have :code:`delete` called on them as this will corrupt
 memory, usually leading to an immediate crash. The memory for the instance will be released when the
 arena is destroyed. The destructor can be called if needed but in general if a destructor is needed
 it is probably not a class that should be constructed in the arena. Looking at
-:class:`IntrusiveDList` again for an example, if this is used to link objects in the arena, there is
+:code`:`swoc::IntrusiveDList` again for an example, if this is used to link objects in the arena, there is
 no need for a destructor to clean up the links - all of the objects will be de-allocated when the
 arena is destroyed. Whether this kind of situation can be arranged with reasonable effort is a good
 heuristic on whether |MemArena| is an appropriate choice.

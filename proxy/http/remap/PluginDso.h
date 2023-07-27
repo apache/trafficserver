@@ -37,6 +37,8 @@
 #include <forward_list>
 #include <ctime>
 
+#include "swoc/IntrusiveDList.h"
+
 #include "ts/apidefs.h"
 #include "ts/remap.h"
 
@@ -44,7 +46,6 @@ namespace fs = swoc::file;
 
 #include "tscore/Ptr.h"
 #include "I_EventSystem.h"
-#include "tscpp/util/IntrusiveDList.h"
 
 #include "Plugin.h"
 
@@ -85,8 +86,8 @@ public:
   using self_type  = PluginDso; ///< Self reference type.
   self_type *_next = nullptr;
   self_type *_prev = nullptr;
-  using Linkage    = ts::IntrusiveLinkage<self_type>;
-  using PluginList = ts::IntrusiveDList<PluginDso::Linkage>;
+  using Linkage    = swoc::IntrusiveLinkage<self_type>;
+  using PluginList = swoc::IntrusiveDList<PluginDso::Linkage>;
 
   /* Methods to be called when processing a list of plugins, to be overloaded by the remap or the global plugins correspondingly */
   virtual void indicatePreReload()                                  = 0;

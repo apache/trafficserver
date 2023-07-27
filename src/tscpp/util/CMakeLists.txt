@@ -32,7 +32,6 @@ target_link_libraries(tscpputil
 install(TARGETS tscpputil)
 
 add_executable(test_tscpputil
-        unit_tests/test_IntrusiveDList.cc
         unit_tests/test_LocalBuffer.cc
         unit_tests/test_PostScript.cc
         unit_tests/test_Strerror.cc
