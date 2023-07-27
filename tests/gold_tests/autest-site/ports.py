@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from typing import Set
 import socket
 import subprocess
 import os
@@ -38,7 +39,7 @@ class PortQueueSelectionError(Exception):
     pass
 
 
-def PortOpen(port: int, address: str = None, listening_ports: set[int] = None) -> bool:
+def PortOpen(port: int, address: str = None, listening_ports: Set[int] = None) -> bool:
     """
     Detect whether the port is open, that is a socket is currently using that port.
 
@@ -127,12 +128,12 @@ def _get_available_port(queue):
     return port
 
 
-def _get_listening_ports() -> set[int]:
+def _get_listening_ports() -> Set[int]:
     """Use psutil to get the set of ports that are currently listening.
 
     :return: The set of ports that are currently listening.
     """
-    ports: set[int] = set()
+    ports: Set[int] = set()
     try:
         connections = psutil.net_connections(kind='all')
         for conn in connections:
