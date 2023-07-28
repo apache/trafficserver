@@ -394,7 +394,7 @@ static int ts_minor_version             = 0;
 static int ts_patch_version             = 0;
 
 static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
-static ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
+extern ClassAllocator<INKContInternal> INKContAllocator;
 static ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
 
@@ -1038,129 +1038,6 @@ FileImpl::fgets(char *buf, size_t length)
 // INKContInternal
 //
 ////////////////////////////////////////////////////////////////////
-
-INKContInternal::INKContInternal()
-  : DummyVConnection(nullptr),
-    mdata(nullptr),
-    m_event_func(nullptr),
-    m_event_count(0),
-    m_closed(1),
-    m_deletable(0),
-    m_deleted(0),
-    m_context(0),
-    m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
-{
-}
-
-INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp)
-  : DummyVConnection((ProxyMutex *)mutexp),
-    mdata(nullptr),
-    m_event_func(funcp),
-    m_event_count(0),
-    m_closed(1),
-    m_deletable(0),
-    m_deleted(0),
-    m_context(0),
-    m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
-{
-  SET_HANDLER(&INKContInternal::handle_event);
-}
-
-void
-INKContInternal::init(TSEventFunc funcp, TSMutex mutexp, void *context)
-{
-  SET_HANDLER(&INKContInternal::handle_event);
-
-  mutex        = (ProxyMutex *)mutexp;
-  m_event_func = funcp;
-  m_context    = context;
-}
-
-void
-INKContInternal::clear()
-{
-}
-
-void
-INKContInternal::free()
-{
-  clear();
-  this->mutex.clear();
-  m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
-  THREAD_FREE(this, INKContAllocator, this_thread());
-}
-
-void
-INKContInternal::destroy()
-{
-  if (m_free_magic == INKCONT_INTERN_MAGIC_DEAD) {
-    ink_release_assert(!"Plugin tries to use a continuation which is deleted");
-  }
-  m_deleted = 1;
-  if (m_deletable) {
-    free();
-  } else {
-    // TODO: Should this schedule on some other "thread" ?
-    // TODO: we don't care about the return action?
-    if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
-      ink_assert(!"not reached");
-    }
-    EThread *p = this_ethread();
-
-    // If this_thread() returns null, the EThread object for the current thread has been destroyed (or it never existed).
-    // Presumably this will only happen during destruction of statically-initialized objects at TS shutdown, so no further
-    // action is needed.
-    //
-    if (p) {
-      p->schedule_imm(this);
-    }
-  }
-}
-
-void
-INKContInternal::handle_event_count(int event)
-{
-  if ((event == EVENT_IMMEDIATE) || (event == EVENT_INTERVAL) || event == TS_EVENT_HTTP_TXN_CLOSE) {
-    int val = ink_atomic_increment((int *)&m_event_count, -1);
-    if (val <= 0) {
-      ink_assert(!"not reached");
-    }
-
-    m_deletable = (m_closed != 0) && (val == 1);
-  }
-}
-
-int
-INKContInternal::handle_event(int event, void *edata)
-{
-  if (m_free_magic == INKCONT_INTERN_MAGIC_DEAD) {
-    ink_release_assert(!"Plugin tries to use a continuation which is deleted");
-  }
-  handle_event_count(event);
-  if (m_deleted) {
-    if (m_deletable) {
-      free();
-    } else {
-      Debug("plugin", "INKCont Deletable but not deleted %d", m_event_count);
-    }
-  } else {
-    /* set the plugin context */
-    auto *previousContext = pluginThreadContext;
-    pluginThreadContext   = reinterpret_cast<PluginThreadContext *>(m_context);
-    int retval            = m_event_func((TSCont)this, (TSEvent)event, edata);
-    pluginThreadContext   = previousContext;
-    if (edata && event == EVENT_INTERVAL) {
-      Event *e = reinterpret_cast<Event *>(edata);
-      if (e->period != 0) {
-        // In the interval case, we must re-increment the m_event_count for
-        // the next go around.  Otherwise, our event count will go negative.
-        ink_release_assert(ink_atomic_increment((int *)&this->m_event_count, 1) >= 0);
-      }
-    }
-    return retval;
-  }
-  return EVENT_DONE;
-}
 
 ////////////////////////////////////////////////////////////////////
 //
