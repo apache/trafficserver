@@ -50,11 +50,12 @@ traffic_logstats_traffic_logstats_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@OPENSSL_LIBS@ \
 	@SWOC_LIBS@ \
 	@HWLOC_LIBS@ \
-	@OPENSSL_LIBS@ \
+	@LIBCAP@ \
 	@LIBPCRE@ \
 	@YAMLCPP_LIBS@ \
-	@LIBCAP@ \
 	@LIBPROFILER@ -lm

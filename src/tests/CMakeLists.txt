@@ -46,7 +46,9 @@ link_libraries(
         inkcache
         fastlz
         aio
+        records
         tscore
+        tsapi
         tscpputil
         proxy
         inknet

@@ -102,6 +102,7 @@ src/tscore/test_tscore
 src/tscpp/util/test_tscpputil
 src/records/test_librecords
 src/records/test_librecords_on_eventsystem
+src/api/test_Metrics
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup

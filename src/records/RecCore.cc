@@ -34,14 +34,11 @@
 #include "records/P_RecUtils.h"
 #include "tscore/I_Layout.h"
 #include "tscpp/util/ts_errata.h"
-
-// This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
-// and used (read) from several binaries / modules.
-int max_records_entries = REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS;
+#include "api/Metrics.h"
 
 static bool g_initialized = false;
 
-RecRecord *g_records = nullptr;
+RecRecord g_records[REC_MAX_RECORDS];
 std::unordered_map<std::string, RecRecord *> g_records_ht;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
@@ -204,9 +201,6 @@ RecCoreInit(Diags *_diags)
   RecConfigFileInit();
 
   g_num_records = 0;
-
-  // initialize record array for our internal stats (this can be reallocated later)
-  g_records = static_cast<RecRecord *>(ats_malloc(max_records_entries * sizeof(RecRecord)));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);
@@ -488,23 +482,38 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT err = REC_ERR_FAIL;
+  RecErrT err              = REC_ERR_FAIL;
+  ts::Metrics &api_metrics = ts::Metrics::getInstance();
+  auto it                  = api_metrics.find(name);
 
-  if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
-  }
+  if (it != api_metrics.end()) {
+    RecRecord r;
+    auto &&[name, val] = *it;
 
-  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
-    RecRecord *r = it->second;
+    r.rec_type     = RECT_PLUGIN;
+    r.data_type    = RECD_INT;
+    r.name         = name.data();
+    r.data.rec_int = val;
 
-    rec_mutex_acquire(&(r->lock));
-    callback(r, data);
+    callback(&r, data);
     err = REC_ERR_OKAY;
-    rec_mutex_release(&(r->lock));
-  }
+  } else {
+    if (lock) {
+      ink_rwlock_rdlock(&g_records_rwlock);
+    }
 
-  if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+      RecRecord *r = it->second;
+
+      rec_mutex_acquire(&(r->lock));
+      callback(r, data);
+      err = REC_ERR_OKAY;
+      rec_mutex_release(&(r->lock));
+    }
+
+    if (lock) {
+      ink_rwlock_unlock(&g_records_rwlock);
+    }
   }
 
   return err;
@@ -518,6 +527,21 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
 
   if (!regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED)) {
     return REC_ERR_FAIL;
+  }
+
+  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
+    RecRecord r;
+
+    r.rec_type  = RECT_PLUGIN;
+    r.data_type = RECD_INT;
+
+    for (auto &&[name, val] : ts::Metrics::getInstance()) {
+      if (regex.match(name.data()) >= 0) {
+        r.name         = name.data();
+        r.data.rec_int = val;
+        callback(&r, data);
+      }
+    }
   }
 
   num_records = g_num_records;
@@ -1060,6 +1084,15 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
       rec_mutex_acquire(&(r->lock));
       callback(r->rec_type, edata, r->registered, r->name, r->data_type, &r->data);
       rec_mutex_release(&(r->lock));
+    }
+  }
+  // Also dump the new ts::Metrics if asked for
+  if (rec_type & RECT_PLUGIN) { // ToDo: This should change if we use the new metrics for core metrics
+    RecData datum;
+
+    for (auto &&[name, val] : ts::Metrics::getInstance()) {
+      datum.rec_int = val;
+      callback(RECT_PLUGIN, edata, true, name.data(), TS_RECORDDATATYPE_INT, &datum);
     }
   }
 }

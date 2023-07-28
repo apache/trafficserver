@@ -1,3 +1,4 @@
+# libts Makefile.am
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,35 +16,37 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-add_executable(traffic_layout
-    engine.cc
-    file_system.cc
-    info.cc
-    traffic_layout.cc
-)
+include $(top_srcdir)/mk/tidy.mk
 
-target_link_libraries(traffic_layout
-    PRIVATE
-        ts::inkevent
-        ts::records
-        OpenSSL::Crypto
-        yaml-cpp::yaml-cpp
-        ts::tscore
-        ts::tsapi
-        PCRE::PCRE
-        ${OPENSSL_LIBRARY}
-)
+check_PROGRAMS = test_Metrics
 
-if(TS_USE_HWLOC)
-    target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
-endif()
+TESTS = $(check_PROGRAMS)
 
-if(HAVE_LZMA_H)
-    target_link_libraries(traffic_layout PRIVATE LibLZMA::LibLZMA)
-endif()
+lib_LTLIBRARIES = libtsapi.la
 
-if(HAVE_BROTLI_ENCODE_H)
-    target_link_libraries(traffic_layout PRIVATE brotli::brotlienc)
-endif()
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/include \
+	@SWOC_INCLUDES@ \
+	$(TS_INCLUDES)
 
-install(TARGETS traffic_layout)
+libtsapi_la_LDFLAGS = @AM_LDFLAGS@ -version-info @TS_LIBTOOL_VERSION@ @SWOC_LDFLAGS@
+
+libtsapi_la_LIBADD = \
+	@SWOC_LIBS@
+
+
+libtsapi_la_SOURCES = \
+	Metrics.cc
+
+test_Metrics_SOURCES = test_Metrics.cc
+
+test_Metrics_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/lib/catch2
+
+test_Metrics_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.a \
+	libtsapi.la
+
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

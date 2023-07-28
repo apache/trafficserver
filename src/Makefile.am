@@ -23,7 +23,7 @@ TESTS =
 lib_LTLIBRARIES =
 noinst_PROGRAMS =
 
-SUBDIRS = tscpp/api
+SUBDIRS = tscpp/api api
 
 if BUILD_WCCP
 SUBDIRS += wccp

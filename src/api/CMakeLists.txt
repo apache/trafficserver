@@ -15,14 +15,17 @@
 #
 #######################
 
-add_executable(traffic_crashlog procinfo.cc traffic_crashlog.cc)
+add_library(tsapi SHARED Metrics.cc)
+add_library(ts::tsapi ALIAS tsapi)
 
-target_link_libraries(traffic_crashlog
-    PRIVATE
-        ts::inkevent
-        ts::records
-        ts::tscore
-        ts::tsapi
-)
+install(TARGETS tsapi)
 
-install(TARGETS traffic_crashlog)
+
+add_executable(test_Metrics
+        test_Metrics.cc
+        )
+
+target_link_libraries(test_Metrics PRIVATE tsapi tscore)
+target_include_directories(test_Metrics PRIVATE ${CMAKE_SOURCE_DIR}/include ${CATCH_INCLUDE_DIR})
+
+add_test(NAME test_Metrics COMMAND $<TARGET_FILE:test_Metrics>)

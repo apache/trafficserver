@@ -25,9 +25,6 @@
 
 #include "records/P_RecCore.h"
 
-// This is to manage the librecords table sizes. Not awesome, but better than the earlier recompiling of ATS requirement...
-extern int max_records_entries;
-
 enum RecordRequiredType {
   RR_NULL,    // config is _not_ required to be defined in records.yaml
   RR_REQUIRED // config _is_ required to be defined in record.config

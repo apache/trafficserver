@@ -34,6 +34,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
 #include "tscore/Diags.h"
+#include "api/Metrics.h"
 
 #include "InkAPIInternal.h"
 #include "Log.h"
@@ -101,10 +102,6 @@
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
 
 extern AppVersionInfo appVersionInfo;
-
-// Globals for new librecords stats
-static int api_rsb_index;
-static RecRawStatBlock *api_rsb;
 
 /** Reservation for a user arg.
  */
@@ -389,6 +386,7 @@ HttpAPIHooks *http_global_hooks        = nullptr;
 SslAPIHooks *ssl_hooks                 = nullptr;
 LifecycleAPIHooks *lifecycle_hooks     = nullptr;
 ConfigUpdateCbTable *global_config_cbs = nullptr;
+static ts::Metrics &global_api_metrics = ts::Metrics::getInstance();
 
 static char traffic_server_version[128] = "";
 static int ts_major_version             = 0;
@@ -752,11 +750,7 @@ sdk_sanity_check_null_ptr(void const *ptr)
 static TSReturnCode
 sdk_sanity_check_stat_id(int id)
 {
-  if (id < 0 || id >= api_rsb->max_stats) {
-    return TS_ERROR;
-  }
-
-  return TS_SUCCESS;
+  return (global_api_metrics.valid(id) ? TS_SUCCESS : TS_ERROR);
 }
 
 static TSReturnCode
@@ -1828,18 +1822,6 @@ api_init()
     ssl_hooks         = new SslAPIHooks;
     lifecycle_hooks   = new LifecycleAPIHooks;
     global_config_cbs = new ConfigUpdateCbTable;
-
-    int api_metrics = max_records_entries - REC_INTERNAL_RECORDS;
-    if (api_metrics > 0) {
-      api_rsb = RecAllocateRawStatBlock(api_metrics);
-      if (nullptr == api_rsb) {
-        Warning("Can't allocate API stats block");
-      } else {
-        Debug("sdk", "initialized SDK stats APIs with %d slots", api_metrics);
-      }
-    } else {
-      api_rsb = nullptr;
-    }
 
     // Setup the version string for returning to plugins
     ink_strlcpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
@@ -7511,40 +7493,9 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int id                  = ink_atomic_increment(&api_rsb_index, 1);
-  RecRawStatSyncCb syncer = RecRawStatSyncCount;
+  int id = global_api_metrics.newMetric(the_name);
 
-  // TODO: This only supports "int" data types at this point, since the "Raw" stats
-  // interfaces only supports integers. Going forward, we could extend either the "Raw"
-  // stats APIs, or make non-int use the direct (synchronous) stats APIs (slower).
-  if ((sdk_sanity_check_null_ptr((void *)the_name) != TS_SUCCESS) || (sdk_sanity_check_null_ptr((void *)api_rsb) != TS_SUCCESS) ||
-      (id >= api_rsb->max_stats)) {
-    return TS_ERROR;
-  }
-
-  switch (sync) {
-  case TS_STAT_SYNC_SUM:
-    syncer = RecRawStatSyncSum;
-    break;
-  case TS_STAT_SYNC_AVG:
-    syncer = RecRawStatSyncAvg;
-    break;
-  case TS_STAT_SYNC_TIMEAVG:
-    syncer = RecRawStatSyncHrTimeAvg;
-    break;
-  default:
-    syncer = RecRawStatSyncCount;
-    break;
-  }
-
-  switch (persist) {
-  case TS_STAT_PERSISTENT:
-    RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RECP_PERSISTENT, id, syncer);
-    break;
-  case TS_STAT_NON_PERSISTENT:
-    RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RECP_NON_PERSISTENT, id, syncer);
-    break;
-  default:
+  if (id == ts::Metrics::NOT_FOUND) {
     return TS_ERROR;
   }
 
@@ -7555,49 +7506,44 @@ void
 TSStatIntIncrement(int id, TSMgmtInt amount)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  RecIncrRawStat(api_rsb, nullptr, id, amount);
+  global_api_metrics[id].fetch_add(amount);
 }
 
 void
 TSStatIntDecrement(int id, TSMgmtInt amount)
 {
-  RecDecrRawStat(api_rsb, nullptr, id, amount);
+  sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
+  global_api_metrics[id].fetch_sub(amount);
 }
 
 TSMgmtInt
 TSStatIntGet(int id)
 {
-  TSMgmtInt value;
-
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  RecGetGlobalRawStatSum(api_rsb, id, &value);
-  return value;
+  return global_api_metrics[id].load();
 }
 
 void
 TSStatIntSet(int id, TSMgmtInt value)
 {
   sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
-  RecSetGlobalRawStatSum(api_rsb, id, value);
+  global_api_metrics[id].store(value);
 }
 
 TSReturnCode
 TSStatFindName(const char *name, int *idp)
 {
-  int id;
-
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)idp) == TS_SUCCESS);
 
-  if (RecGetRecordOrderAndId(name, nullptr, &id, true, true) != REC_ERR_OKAY) {
+  int id = global_api_metrics.lookup(name);
+
+  if (id == ts::Metrics::NOT_FOUND) {
     return TS_ERROR;
+  } else {
+    *idp = id;
+    return TS_SUCCESS;
   }
-
-  if (RecGetGlobalRawStatPtr(api_rsb, id) == nullptr) {
-    return TS_ERROR;
-  }
-
-  *idp = id;
-  return TS_SUCCESS;
 }
 
 /**************************   Tracing API   ****************************/

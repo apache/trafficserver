@@ -110,6 +110,7 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@SWOC_LIBS@ @HWLOC_LIBS@ \
 	@LIBCAP@ \
@@ -158,6 +159,7 @@ test_HttpTransact_LDADD  =  \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/src/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.a \
+	$(top_builddir)/src/api/libtsapi.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	-lz -llzma -lcrypto -lresolv -lssl \
 	@LIBPCRE@ @HWLOC_LIBS@ @SWOC_LIBS@ @YAMLCPP_LIBS@ @LIBCAP@

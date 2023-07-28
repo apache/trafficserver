@@ -2400,6 +2400,7 @@ AC_CONFIG_FILES([
   src/tscpp/util/Makefile
   src/tscore/Makefile
   src/records/Makefile
+  src/api/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
