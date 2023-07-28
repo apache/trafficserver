@@ -103,7 +103,6 @@ TODO
 ====
 
 * Currently only the WAMR and WasmEdge runtime is supported. We should also support V8 and Wasmtime later.
-* Need to support functionality for retrieving and setting request/response body
 * Need to support L4 lifecycle handler functions
 
 Limitations

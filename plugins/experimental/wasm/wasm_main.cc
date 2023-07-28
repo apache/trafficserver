@@ -46,6 +46,252 @@ struct WasmInstanceConfig {
 
 static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
 
+// handler for transform event
+static int
+transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
+{
+  TSVConn output_conn;
+  TSVIO input_vio;
+  TSIOBufferReader input_reader;
+  TSIOBufferBlock blk;
+  int64_t toread, towrite, blk_len, upstream_done, input_avail;
+  const char *start;
+  const char *res;
+  size_t res_len;
+  bool eos, write_down, empty_input;
+
+  ats_wasm::Context *c;
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] transform handler begins", __FUNCTION__);
+  c = ti->context;
+
+  output_conn = TSTransformOutputVConnGet(contp);
+  input_vio   = TSVConnWriteVIOGet(contp);
+
+  empty_input = false;
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] cheking input VIO", __FUNCTION__);
+  if (!TSVIOBufferGet(input_vio)) {
+    if (ti->output_vio) {
+      TSDebug(WASM_DEBUG_TAG, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
+      TSVIONBytesSet(ti->output_vio, ti->total);
+      TSVIOReenable(ti->output_vio);
+      return 0;
+    } else {
+      TSDebug(WASM_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
+      empty_input = true;
+    }
+  }
+
+  if (!empty_input) {
+    input_reader = TSVIOReaderGet(input_vio);
+  }
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] creating buffer and reader", __FUNCTION__);
+  if (!ti->output_buffer) {
+    ti->output_buffer = TSIOBufferCreate();
+    ti->output_reader = TSIOBufferReaderAlloc(ti->output_buffer);
+
+    ti->reserved_buffer = TSIOBufferCreate();
+    ti->reserved_reader = TSIOBufferReaderAlloc(ti->reserved_buffer);
+
+    if (!empty_input) {
+      ti->upstream_bytes = TSVIONBytesGet(input_vio);
+    } else {
+      ti->upstream_bytes = 0;
+    }
+
+    ti->downstream_bytes = INT64_MAX;
+  }
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] init variables inside handler", __FUNCTION__);
+  if (!empty_input) {
+    input_avail   = TSIOBufferReaderAvail(input_reader);
+    upstream_done = TSVIONDoneGet(input_vio);
+    toread        = TSVIONTodoGet(input_vio);
+
+    if (toread <= input_avail) { // upstream finished
+      eos = true;
+    } else {
+      eos = false;
+    }
+  } else {
+    input_avail   = 0;
+    upstream_done = 0;
+    toread        = 0;
+    eos           = true;
+  }
+
+  if (input_avail > 0) {
+    // move to the reserved.buffer
+    TSIOBufferCopy(ti->reserved_buffer, input_reader, input_avail, 0);
+
+    // reset input
+    TSIOBufferReaderConsume(input_reader, input_avail);
+    TSVIONDoneSet(input_vio, upstream_done + input_avail);
+  }
+
+  write_down = false;
+  if (!empty_input) {
+    towrite = TSIOBufferReaderAvail(ti->reserved_reader);
+  } else {
+    towrite = 0;
+  }
+
+  do {
+    TSDebug(WASM_DEBUG_TAG, "[%s] inside transform handler loop", __FUNCTION__);
+    proxy_wasm::FilterDataStatus status = proxy_wasm::FilterDataStatus::Continue;
+
+    if (towrite == 0 && !empty_input) {
+      break;
+    }
+
+    TSDebug(WASM_DEBUG_TAG, "[%s] retrieving text and calling the wasm handler function", __FUNCTION__);
+    if (!empty_input) {
+      blk   = TSIOBufferReaderStart(ti->reserved_reader);
+      start = TSIOBufferBlockReadStart(blk, ti->reserved_reader, &blk_len);
+
+      int size = 0;
+      if (towrite > blk_len) {
+        c->setTransformResult(start, blk_len);
+        towrite -= blk_len;
+        TSIOBufferReaderConsume(ti->reserved_reader, blk_len);
+        size = blk_len;
+      } else {
+        c->setTransformResult(start, towrite);
+        TSIOBufferReaderConsume(ti->reserved_reader, towrite);
+        size    = towrite;
+        towrite = 0;
+      }
+
+      if (!towrite && eos) {
+        if (ti->request) {
+          status = c->onRequestBody(size, true);
+        } else {
+          status = c->onResponseBody(size, true);
+        }
+      } else {
+        if (ti->request) {
+          status = c->onRequestBody(size, false);
+        } else {
+          status = c->onResponseBody(size, false);
+        }
+      }
+    } else {
+      c->setTransformResult(nullptr, 0);
+      if (ti->request) {
+        status = c->onRequestBody(0, true);
+      } else {
+        status = c->onResponseBody(0, true);
+      }
+    }
+
+    TSDebug(WASM_DEBUG_TAG, "[%s] retrieving returns from wasm handler function and pass back to ATS", __FUNCTION__);
+    if ((status == proxy_wasm::FilterDataStatus::Continue) ||
+        ((status == proxy_wasm::FilterDataStatus::StopIterationAndBuffer ||
+          status == proxy_wasm::FilterDataStatus::StopIterationAndWatermark) &&
+         eos && !towrite)) {
+      res = c->getTransformResult(&res_len);
+
+      if (res && res_len > 0) {
+        if (!ti->output_vio) {
+          if (eos && !towrite) {
+            ti->output_vio = TSVConnWrite(output_conn, contp, ti->output_reader, res_len); // HttpSM go on
+          } else {
+            ti->output_vio = TSVConnWrite(output_conn, contp, ti->output_reader, ti->downstream_bytes); // HttpSM go on
+          }
+        }
+
+        TSIOBufferWrite(ti->output_buffer, res, res_len);
+        ti->total  += res_len;
+        write_down  = true;
+      }
+
+      c->clearTransformResult();
+    }
+
+    if (status == proxy_wasm::FilterDataStatus::StopIterationNoBuffer) {
+      c->clearTransformResult();
+    }
+
+    if (eos && !towrite) { // EOS
+      break;
+    }
+
+  } while (towrite > 0);
+
+  if (eos && !ti->output_vio) {
+    ti->output_vio = TSVConnWrite(output_conn, contp, ti->output_reader, 0);
+  }
+
+  if (write_down || eos) {
+    TSVIOReenable(ti->output_vio);
+  }
+
+  if (toread > input_avail) { // upstream not finished.
+    if (eos) {
+      // this should not happen because eos is set to true if toread <= input_avail
+      // we are, though, expecting that eos may be set by the wasm module function in the future
+      TSVIONBytesSet(ti->output_vio, ti->total);
+      if (!empty_input) {
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_EOS, input_vio);
+      }
+    } else {
+      if (!empty_input) {
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
+      }
+    }
+  } else { // upstream is finished.
+    TSVIONBytesSet(ti->output_vio, ti->total);
+    if (!empty_input) {
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+    }
+  }
+
+  return 0;
+}
+
+static int
+transform_entry(TSCont contp, TSEvent ev, void *edata)
+{
+  int event;
+  TSVIO input_vio;
+  ats_wasm::TransformInfo *ti;
+
+  event = (int)ev;
+  ti    = (ats_wasm::TransformInfo *)TSContDataGet(contp);
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] begin transform entry", __FUNCTION__);
+  if (TSVConnClosedGet(contp)) {
+    delete ti;
+    TSContDestroy(contp);
+    return 0;
+  }
+
+  TSDebug(WASM_DEBUG_TAG, "[%s] checking event inside transform entry", __FUNCTION__);
+  switch (event) {
+  case TS_EVENT_ERROR:
+    TSDebug(WASM_DEBUG_TAG, "[%s] event error", __FUNCTION__);
+    input_vio = TSVConnWriteVIOGet(contp);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
+    break;
+
+  // we should handle TS_EVENT_VCONN_EOS similarly here if we support setting EOS from wasm module
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write complete", __FUNCTION__);
+    TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
+    break;
+
+  case TS_EVENT_VCONN_WRITE_READY:
+  default:
+    TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write ready/default", __FUNCTION__);
+    transform_handler(contp, ti);
+    break;
+  }
+
+  return 0;
+}
+
 // handler for timer event
 static int
 schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
@@ -305,6 +551,23 @@ global_hook_handler(TSCont /*contp*/, TSEvent /*event*/, void *data)
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp);
 
     TSContDataSet(txn_contp, context);
+
+    // create transform items
+    TSDebug(WASM_DEBUG_TAG, "[%s] creating transform info, continuation and hook", __FUNCTION__);
+    ats_wasm::TransformInfo *reqbody_ti  = new ats_wasm::TransformInfo();
+    reqbody_ti->request                  = true;
+    reqbody_ti->context                  = context;
+    ats_wasm::TransformInfo *respbody_ti = new ats_wasm::TransformInfo();
+    respbody_ti->request                 = false;
+    respbody_ti->context                 = context;
+
+    TSVConn reqbody_connp = TSTransformCreate(transform_entry, txnp);
+    TSContDataSet(reqbody_connp, reqbody_ti);
+    TSVConn respbody_connp = TSTransformCreate(transform_entry, txnp);
+    TSContDataSet(respbody_connp, respbody_ti);
+
+    TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, reqbody_connp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, respbody_connp);
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
