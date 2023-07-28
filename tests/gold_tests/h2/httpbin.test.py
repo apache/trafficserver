@@ -65,7 +65,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: access
-      format: '[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
+      format: '[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
 
   logs:
     - filename: access
