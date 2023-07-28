@@ -44,6 +44,12 @@ Http3DebugNames::frame_type(Http3FrameType type)
     return "GOAWAY";
   case Http3FrameType::DUPLICATE_PUSH_ID:
     return "DUPLICATE_PUSH_ID";
+  case Http3FrameType::X_RESERVED_1:
+    return "X_RESERVED_1";
+  case Http3FrameType::X_RESERVED_2:
+    return "X_RESERVED_2";
+  case Http3FrameType::X_RESERVED_3:
+    return "X_RESERVED_3";
   case Http3FrameType::UNKNOWN:
   default:
     return "UNKNOWN";
