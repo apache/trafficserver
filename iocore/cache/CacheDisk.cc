@@ -147,7 +147,7 @@ CacheDisk::clearDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
+  if (!io.ok()) {
     Warning("Could not clear disk header for disk %s: declaring disk bad", path);
     incrErrors(&io);
     SET_DISK_BAD(this);
@@ -163,7 +163,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
+  if (!io.ok()) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
 
     // the header could have random values by the AIO read error
@@ -237,7 +237,7 @@ CacheDisk::syncDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
+  if (!io.ok()) {
     Warning("Error writing disk header for disk %s:disk bad", path);
     incrErrors(&io);
     SET_DISK_BAD(this);
