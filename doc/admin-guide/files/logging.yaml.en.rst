@@ -117,7 +117,7 @@ the logging output.
 
 Multiple logging fields may of course be used::
 
-    '%<cqtq> %<chi> %<cqhm> %<cqtx>'
+    '%<cqtq> %<chi> %<cqhm> %<cqhm> %<pqu> %<cqpv>'
 
 Each logging field is separately enclosed in its own percent-brace set.
 

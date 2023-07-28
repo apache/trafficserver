@@ -388,11 +388,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqtt", field);
 
-  field =
-    new LogField("client_req_text", "cqtx", LogField::STRING, &LogAccess::marshal_client_req_text, &LogAccess::unmarshal_http_text);
-  global_field_list.add(field, false);
-  field_symbol_hash.emplace("cqtx", field);
-
   field = new LogField("client_req_http_method", "cqhm", LogField::STRING, &LogAccess::marshal_client_req_http_method,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);

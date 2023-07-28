@@ -61,15 +61,6 @@ In Squid- and Netscape-format log files, what do the cache result codes mean?
 
 This is described in detail in the :ref:`admin-logging-cache-results` documentation.
 
-What is recorded by the ``cqtx`` field in a custom log file?
-------------------------------------------------------------
-
--  In *forward proxy mode*, the ``cqtx`` field records the complete client
-   request in the log file (for example, ``GET http://www.company.com HTTP/1.0``).
--  In *reverse proxy mode*, the ``cqtx`` field records the hostname or IP
-   address of the origin server because Traffic Server first remaps the
-   request as per map rules in the :file:`remap.config` file.
-
 Does Traffic Server refresh entries in its host database after a certain period of time if they have not been used?
 -------------------------------------------------------------------------------------------------------------------
 
