@@ -1,7 +1,4 @@
-/** @file
-
-  A brief file description
-
+/**
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one

@@ -37,9 +37,9 @@ AsyncSignalEventIO::process_event(int flags)
 {
 #if HAVE_EVENTFD
   uint64_t counter;
-  ATS_UNUSED_RETURN(read(_fd, &counter, sizeof(uint64_t)));
+  static_cast<void>(read(_fd, &counter, sizeof(uint64_t)));
 #else
   char dummy[1024];
-  ATS_UNUSED_RETURN(read(_fd, &dummy[0], 1024));
+  static_cast<void>(read(_fd, &dummy[0], 1024));
 #endif
 }
