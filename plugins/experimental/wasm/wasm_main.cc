@@ -48,7 +48,7 @@ static std::unique_ptr<WasmInstanceConfig> wasm_config = nullptr;
 
 // handler for transform event
 static int
-transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
+transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 {
   TSVConn output_conn;
   TSVIO input_vio;
@@ -230,6 +230,8 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti, TSEvent event)
 
   if (toread > input_avail) { // upstream not finished.
     if (eos) {
+      // this should not happen because eos is set to true if toread <= input_avail
+      // we are, though, expecting that eos may be set by the wasm module function in the future
       TSVIONBytesSet(ti->output_vio, ti->total);
       if (!empty_input) {
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_EOS, input_vio);
@@ -274,6 +276,7 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     break;
 
+  // we should handle TS_EVENT_VCONN_EOS similarly here if we support setting EOS from wasm module
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write complete", __FUNCTION__);
     TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
@@ -282,7 +285,7 @@ transform_entry(TSCont contp, TSEvent ev, void *edata)
   case TS_EVENT_VCONN_WRITE_READY:
   default:
     TSDebug(WASM_DEBUG_TAG, "[%s] event vconn write ready/default", __FUNCTION__);
-    transform_handler(contp, ti, ev);
+    transform_handler(contp, ti);
     break;
   }
 
