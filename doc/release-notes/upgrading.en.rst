@@ -85,3 +85,8 @@ Metrics
 ------------------
 
 The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
+
+Logging
+------------------
+
+The `cqtx` log field has been deprecated.
