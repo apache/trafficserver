@@ -281,6 +281,7 @@ check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTR
 check_symbol_exists(HMAC_CTX_new "openssl/hmac.h" HAVE_HMAC_CTX_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
+check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
 check_symbol_exists(
     SSL_CTX_set_keylog_callback
     "openssl/ssl.h"
