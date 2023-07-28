@@ -573,7 +573,7 @@ CacheProcessor::start_internal(int flags)
   memset(sds, 0, sizeof(Span *) * gndisks);
 
   gndisks = 0;
-  ink_aio_set_callback(new AIO_Callback_handler());
+  ink_aio_set_err_callback(new AIO_failure_handler());
 
   config_volumes.read_config_file();
 
@@ -1275,7 +1275,7 @@ Vol::handle_dir_clear(int event, void *data)
 
   if (event == AIO_EVENT_DONE) {
     op = static_cast<AIOCallback *>(data);
-    if (static_cast<size_t>(op->aio_result) != op->aiocb.aio_nbytes) {
+    if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
       fd = -1;
@@ -1304,7 +1304,7 @@ Vol::handle_dir_read(int event, void *data)
   AIOCallback *op = static_cast<AIOCallback *>(data);
 
   if (event == AIO_EVENT_DONE) {
-    if (static_cast<size_t>(op->aio_result) != op->aiocb.aio_nbytes) {
+    if (!op->ok()) {
       Note("Directory read failed: clearing cache directory %s", this->hash_text.get());
       clear_dir();
       return EVENT_DONE;
@@ -1399,7 +1399,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
     }
   } else if (event == AIO_EVENT_DONE) {
-    if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
+    if (!io.ok()) {
       Warning("disk read error on recover '%s', clearing", hash_text.get());
       disk->incrErrors(&io);
       goto Lclear;
@@ -1659,7 +1659,7 @@ Vol::handle_header_read(int event, void *data)
     for (auto &i : hf) {
       ink_assert(op != nullptr);
       i = static_cast<VolHeaderFooter *>(op->aiocb.aio_buf);
-      if (static_cast<size_t>(op->aio_result) != op->aiocb.aio_nbytes) {
+      if (!op->ok()) {
         Note("Header read failed: clearing cache directory %s", this->hash_text.get());
         clear_dir();
         return EVENT_DONE;
@@ -1941,7 +1941,7 @@ CacheProcessor::has_online_storage() const
 }
 
 int
-AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data)
+AIO_failure_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data)
 {
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready) {
@@ -1950,6 +1950,10 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
   int disk_no     = 0;
   AIOCallback *cb = static_cast<AIOCallback *>(data);
 
+  // DEBUG
+  ink_release_assert(cb != nullptr);
+  bool found = false;
+  // END DEBUG
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
 
@@ -1966,9 +1970,17 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
         Warning("%s", message);
         cacheProcessor.mark_storage_offline(d); // take it out of service
       }
+      // DEBUG
+      found = true;
+      // END DEBUG
       break;
     }
   }
+  // DEBUG
+  if (!found) {
+    Warning("Didn't find failing disk!");
+  }
+  // END DEBUG
 
   delete cb;
   return EVENT_DONE;
@@ -2363,7 +2375,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       goto Lcollision;
     }
     // check read completed correct FIXME: remove bad vols
-    if (static_cast<size_t>(io.aio_result) != io.aiocb.aio_nbytes) {
+    if (!io.ok()) {
       goto Ldone;
     }
     {
