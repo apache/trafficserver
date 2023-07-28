@@ -35,6 +35,7 @@ add_library(inknet STATIC
         ProxyProtocol.cc
         ReadWriteEventIO.cc
         Socks.cc
+        SSLAPIHooks.cc
         SSLCertLookup.cc
         SSLClientCoordinator.cc
         SSLClientUtils.cc

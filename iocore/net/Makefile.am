@@ -208,6 +208,8 @@ libinknet_a_SOURCES = \
 	ReadWriteEventIO.h \
 	ReadWriteEventIO.cc \
 	Socks.cc \
+	SSLAPIHooks.h \
+	SSLAPIHooks.cc \
 	SSLCertLookup.cc \
 	SSLClientCoordinator.cc \
 	SSLClientUtils.cc \

@@ -55,6 +55,8 @@ target_include_directories(inkcache
 target_link_libraries(inkcache
     PUBLIC
         ts::aio
+        ts::hdrs
+        ts::http
         ts::inkevent
         ts::tscore
     PRIVATE

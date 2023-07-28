@@ -42,6 +42,7 @@
 #include "P_TLSKeyLogger.h"
 #include "BoringSSLUtils.h"
 #include "ProxyProtocol.h"
+#include "SSLAPIHooks.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
 #include "SSLDynlock.h"
@@ -228,7 +229,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   session_cache->insertSession(sid, sess, ssl);
 
   // Call hook after new session is created
-  APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
+  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
   while (hook) {
     hook->invoke(TS_EVENT_SSL_SESSION_NEW, &sid);
     hook = hook->m_link.next;
@@ -251,7 +252,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   SSLSessionID sid(id, len);
 
   // Call hook before session is removed
-  APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
+  APIHook *hook = g_ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
   while (hook) {
     hook->invoke(TS_EVENT_SSL_SESSION_REMOVE, &sid);
     hook = hook->m_link.next;

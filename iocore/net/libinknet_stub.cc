@@ -67,42 +67,7 @@ ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, 
   ink_assert(false);
 }
 
-#include "api/InkAPIInternal.h"
-int
-APIHook::invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-int
-APIHook::blocking_invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-APIHook *
-APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHook::prev() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::head() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
+#include "InkAPIInternal.h"
 #include "ControlMatcher.h"
 char *
 HttpRequestData::get_string()
@@ -132,7 +97,6 @@ HttpRequestData::get_client_ip()
   return nullptr;
 }
 
-SslAPIHooks *ssl_hooks             = nullptr;
 LifecycleAPIHooks *lifecycle_hooks = nullptr;
 StatPagesManager statPagesManager;
 

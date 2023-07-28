@@ -23,6 +23,9 @@
 
 #include "tscore/ink_config.h"
 #include <string_view>
+#include "HttpAPIHooks.h"
+#include "SSLAPIHooks.h"
+
 #define CATCH_CONFIG_MAIN
 #include "main.h"
 
@@ -136,6 +139,9 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     LibRecordsConfigInit();
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
     ink_assert(GLOBAL_DATA != nullptr);
+
+    init_global_http_hooks();
+    init_global_ssl_hooks();
 
     statPagesManager.init(); // mutex needs to be initialized before calling netProcessor.init
     netProcessor.init();

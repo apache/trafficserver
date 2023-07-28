@@ -35,8 +35,13 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http2 \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/logging \
-    -I$(abs_top_srcdir)/mgmt/rpc \
-    -I$(abs_top_srcdir)/mgmt/ \
+	-I$(abs_top_srcdir)/mgmt/rpc \
+	-I$(abs_top_srcdir)/mgmt/ \
+	-I$(abs_top_srcdir)/iocore/eventsystem \
+	-I$(abs_top_srcdir)/iocore/cache \
+	-I$(abs_top_srcdir)/iocore/aio \
+	-I$(abs_top_srcdir)/iocore/net \
+	-I$(abs_top_srcdir)/iocore/dns \
 	@SWOC_INCLUDES@ \
 	@YAMLCPP_INCLUDES@ \
 	$(TS_INCLUDES)
@@ -59,6 +64,8 @@ endif
 # libtsapicore.a
 
 libtsapicore_a_SOURCES = \
+	APIHook.cc \
+	APIHooks.cc \
 	Metrics.cc \
 	ConfigUpdateCbTable.cc \
 	InkContInternal.cc \

@@ -21,47 +21,13 @@
   limitations under the License.
  */
 
+#include "SSLAPIHooks.h"
+
 #include "tscore/I_Version.h"
 
 AppVersionInfo appVersionInfo;
 
-#include "api/InkAPIInternal.h"
-void
-APIHooks::append(INKContInternal *cont)
-{
-}
-
-int
-APIHook::invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-int
-APIHook::blocking_invoke(int, void *) const
-{
-  ink_assert(false);
-  return 0;
-}
-
-APIHook *
-APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::head() const
-{
-  return nullptr;
-}
-
-void
-APIHooks::clear()
-{
-}
+#include "api/FetchSM.h"
 
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
@@ -79,12 +45,8 @@ HttpHookState::getNext()
   return nullptr;
 }
 
-HttpAPIHooks *http_global_hooks        = nullptr;
-SslAPIHooks *ssl_hooks                 = nullptr;
-LifecycleAPIHooks *lifecycle_hooks     = nullptr;
-ConfigUpdateCbTable *global_config_cbs = nullptr;
+LifecycleAPIHooks *lifecycle_hooks = nullptr;
 
-#include "api/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
 void
 FetchSM::ext_launch()

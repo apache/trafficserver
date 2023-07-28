@@ -55,6 +55,8 @@ libproxy_a_SOURCES = \
 	ControlMatcher.h \
 	HostStatus.cc \
 	HostStatus.h \
+	HttpAPIHooks.cc \
+	HttpAPIHooks.h \
 	IPAllow.cc \
 	IPAllow.h \
 	ParentConsistentHash.cc \

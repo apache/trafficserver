@@ -23,6 +23,8 @@ add_library(ts::tsapi ALIAS tsapi)
 target_link_libraries(tsapi PRIVATE ts::tscore)
 
 add_library(tsapicore STATIC
+  APIHook.cc
+  APIHooks.cc
   Metrics.cc
   ConfigUpdateCbTable.cc
   InkContInternal.cc
@@ -36,6 +38,15 @@ include_directories(
   ${IOCORE_INCLUDE_DIRS}
   ${PROXY_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}/mgmt
+)
+
+target_link_libraries(tsapi
+    PUBLIC
+        ts::inkcache # transitive via ts/InkAPIPrivateIOCore
+        ts::tsapicore
+        ts::tscore
+    PRIVATE
+        ts::inkevent
 )
 
 install(TARGETS tsapi)
