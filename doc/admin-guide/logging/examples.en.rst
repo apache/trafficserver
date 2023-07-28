@@ -53,14 +53,14 @@ The following figure shows a sample log entry in a Netscape Common log file.
 The numbered sections correspond to the following log fields in |TS|:
 
 === ============= ===============================================================
-No. Field        Description
+No. Field         Description
 === ============= ===============================================================
 1   chi           The IP address of the client's host machine.
 2   --            This hyphen (``-``) is always present in Netscape log entries.
 3   caun          The authenticated client username. A hyphen (``-``) means no
                   authentication was required.
 4   cqtn          The date and time of the client request, enclosed in brackets.
-5   cqhm pqu cqpv The request line, enclosed in quotes.
+5   cqhm,pqu,cqpv The request line, enclosed in quotes.
 6   pssc          The proxy response status code (HTTP reply code).
 7   pscl          The length of the |TS| response to the client in bytes.
 === ============= ===============================================================
