@@ -47,6 +47,7 @@ public:
   operator()(std::string_view str) const
   {
     std::string lower;
+    lower.resize(str.size());
     std::transform(str.begin(), str.end(), lower.begin(), [](unsigned char c) -> unsigned char { return std::tolower(c); });
     return std::hash<std::string>()(lower);
   }
