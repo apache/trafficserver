@@ -409,6 +409,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   }
 
   t_state.setup_per_txn_configs();
+  t_state.api_skip_all_remapping = netvc->is_unmanaged();
 
   ink_assert(_ua.get_txn()->get_proxy_ssn());
   ink_assert(_ua.get_txn()->get_proxy_ssn()->accept_options);

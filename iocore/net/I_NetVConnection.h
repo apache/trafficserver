@@ -419,6 +419,18 @@ public:
     is_internal_request = val;
   }
 
+  bool
+  is_unmanaged() const
+  {
+    return _is_unmanaged;
+  }
+
+  void
+  set_unmanaged(bool val)
+  {
+    _is_unmanaged = val;
+  }
+
   /// Get the transparency state.
   bool
   get_is_transparent() const
@@ -529,6 +541,7 @@ protected:
   bool got_remote_addr = false;
 
   bool is_internal_request = false;
+  bool _is_unmanaged       = false;
   /// Set if this connection is transparent.
   bool is_transparent = false;
   /// Set if proxy protocol is enabled

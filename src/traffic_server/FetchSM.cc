@@ -92,6 +92,11 @@ FetchSM::httpConnect()
     }
   }
 
+  if (fetch_flags & TS_FETCH_FLAGS_SKIP_REMAP) {
+    PluginVC *other_side = reinterpret_cast<PluginVC *>(http_vc)->get_other_side();
+    other_side->set_unmanaged(true);
+  }
+
   read_vio  = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
   write_vio = http_vc->do_io_write(this, getReqLen() + req_content_length, req_reader);
 }

@@ -309,9 +309,9 @@ public:
 
     this->_fsm = FetchSMAllocator.alloc();
     if (use_post) {
-      this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
+      this->_fsm->ext_init(this, "POST", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), TS_FETCH_FLAGS_SKIP_REMAP);
     } else {
-      this->_fsm->ext_init(this, "GET", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), 0);
+      this->_fsm->ext_init(this, "GET", uri, "HTTP/1.1", reinterpret_cast<sockaddr *>(&sin), TS_FETCH_FLAGS_SKIP_REMAP);
     }
   }
 
