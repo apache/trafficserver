@@ -142,6 +142,8 @@ libinknet_a_SOURCES = \
 	AcceptOptions.cc \
 	AcceptOptions.h \
 	ALPNSupport.cc \
+	AsyncSignalEventIO.cc \
+	AsyncSignalEventIO.h \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	BoringSSLUtils.cc \
@@ -161,6 +163,8 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \
 	Net.cc \
+	NetAcceptEventIO.h \
+	NetAcceptEventIO.cc \
 	NetHandler.h \
 	NetHandler.cc \
 	NetVCOptions.h \
@@ -202,6 +206,8 @@ libinknet_a_SOURCES = \
 	PreWarmManager.cc \
 	ProxyProtocol.h \
 	ProxyProtocol.cc \
+	ReadWriteEventIO.h \
+	ReadWriteEventIO.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
 	SSLClientCoordinator.cc \
@@ -229,6 +235,8 @@ libinknet_a_SOURCES = \
 	TLSSNISupport.cc \
 	TLSTunnelSupport.cc \
 	TLSCertSwitchSupport.cc \
+	UDPEventIO.h \
+	UDPEventIO.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
 	UnixNet.cc \

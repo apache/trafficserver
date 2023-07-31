@@ -107,10 +107,6 @@ public:
   Que(NetEvent, active_queue_link) active_queue;
   uint32_t active_queue_size = 0;
 
-#ifdef TS_USE_LINUX_IO_URING
-  EventIO uring_evio;
-#endif
-
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
     uint32_t max_connections_in                 = 0;

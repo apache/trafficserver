@@ -24,16 +24,11 @@
 #pragma once
 #include "P_UnixPollDescriptor.h"
 
+using EventLoop = PollDescriptor *;
+
 #define USE_EDGE_TRIGGER_EPOLL  1
 #define USE_EDGE_TRIGGER_KQUEUE 1
 #define USE_EDGE_TRIGGER_PORT   1
-
-#define EVENTIO_NETACCEPT      1
-#define EVENTIO_READWRITE_VC   2
-#define EVENTIO_DNS_CONNECTION 3
-#define EVENTIO_UDP_CONNECTION 4
-#define EVENTIO_ASYNC_SIGNAL   5
-#define EVENTIO_IO_URING       6
 
 #if TS_USE_EPOLL
 #ifndef EPOLLEXCLUSIVE
@@ -61,15 +56,6 @@
 #define EVENTIO_ERROR (0x010 | 0x002 | 0x020) // ERR PRI HUP
 #endif
 
-struct PollDescriptor;
-using EventLoop = PollDescriptor *;
-
-class NetEvent;
-class UnixUDPConnection;
-class DiskHandler;
-struct DNSConnection;
-struct NetAccept;
-
 /// Unified API for setting and clearing kernel and epoll events.
 struct EventIO {
   int fd = -1; ///< file descriptor, often a system port
@@ -78,31 +64,6 @@ struct EventIO {
 #endif
   EventLoop event_loop = nullptr; ///< the assigned event loop
   bool syscall         = true;    ///< if false, disable all functionality (for QUIC)
-  int type             = 0;       ///< class identifier of union data.
-  union {
-    void *untyped;
-    NetEvent *ne;
-    DNSConnection *dnscon;
-    NetAccept *na;
-    UnixUDPConnection *uc;
-    DiskHandler *dh;
-  } data; ///< a kind of continuation
-
-  /** The start methods all logically Setup a class to be called
-     when a file descriptor is available for read or write.
-     The type of the classes vary.  Generally the file descriptor
-     is pulled from the class, but there is one option that lets
-     the file descriptor be expressed directly.
-     @param l the event loop
-     @param events a mask of flags (for details `man epoll_ctl`)
-     @return int the number of events created, -1 is error
-   */
-  int start(EventLoop l, DNSConnection *vc, int events);
-  int start(EventLoop l, NetAccept *vc, int events);
-  int start(EventLoop l, NetEvent *ne, int events);
-  int start(EventLoop l, UnixUDPConnection *vc, int events);
-  int start(EventLoop l, int fd, NetEvent *ne, int events);
-  int start_common(EventLoop l, int fd, int events);
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)
@@ -119,8 +80,21 @@ struct EventIO {
   /// Remove the kernel or epoll event. Returns 0 on success.
   int stop();
 
-  /// Remove the epoll event and close the connection. Returns 0 on success.
-  int close();
+  // Process one event that has triggered.
+  virtual void process_event(int flags) = 0;
 
-  EventIO() { data.untyped = nullptr; }
+  EventIO() {}
+  virtual ~EventIO() {}
+
+protected:
+  /** The start methods all logically Setup a class to be called
+     when a file descriptor is available for read or write.
+     The type of the classes vary.  Generally the file descriptor
+     is pulled from the class, but there is one option that lets
+     the file descriptor be expressed directly.
+     @param l the event loop
+     @param events a mask of flags (for details `man epoll_ctl`)
+     @return int the number of events created, -1 is error
+   */
+  int start_common(EventLoop l, int fd, int events);
 };

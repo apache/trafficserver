@@ -25,9 +25,10 @@
 
 #include <atomic>
 
-#include "EventIO.h"
 #include "I_EventSystem.h"
 #include "P_UnixNetState.h"
+#include "EventIO.h"
+#include "ReadWriteEventIO.h"
 
 class NetHandler;
 
@@ -67,7 +68,7 @@ public:
   virtual Ptr<ProxyMutex> &get_mutex()   = 0;
   virtual ContFlags &get_control_flags() = 0;
 
-  EventIO ep{};
+  ReadWriteEventIO ep{};
   NetState read{};
   NetState write{};
 
