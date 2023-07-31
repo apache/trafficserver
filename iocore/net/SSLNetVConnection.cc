@@ -153,6 +153,40 @@ private:
 // Private
 //
 
+char const *
+SSLNetVConnection::get_ssl_handshake_hook_state_name(SSLHandshakeHookState state)
+{
+  switch (state) {
+  case HANDSHAKE_HOOKS_PRE:
+    return "TS_SSL_HOOK_PRE_ACCEPT";
+  case HANDSHAKE_HOOKS_PRE_INVOKE:
+    return "TS_SSL_HOOK_PRE_ACCEPT_INVOKE";
+  case HANDSHAKE_HOOKS_CLIENT_HELLO:
+    return "TS_SSL_HOOK_CLIENT_HELLO";
+  case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
+    return "TS_SSL_HOOK_CLIENT_HELLO_INVOKE";
+  case HANDSHAKE_HOOKS_SNI:
+    return "TS_SSL_HOOK_SERVERNAME";
+  case HANDSHAKE_HOOKS_CERT:
+    return "TS_SSL_HOOK_CERT";
+  case HANDSHAKE_HOOKS_CERT_INVOKE:
+    return "TS_SSL_HOOK_CERT_INVOKE";
+  case HANDSHAKE_HOOKS_CLIENT_CERT:
+    return "TS_SSL_HOOK_CLIENT_CERT";
+  case HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+    return "TS_SSL_HOOK_CLIENT_CERT_INVOKE";
+  case HANDSHAKE_HOOKS_OUTBOUND_PRE:
+    return "TS_SSL_HOOK_PRE_CONNECT";
+  case HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE:
+    return "TS_SSL_HOOK_PRE_CONNECT_INVOKE";
+  case HANDSHAKE_HOOKS_VERIFY_SERVER:
+    return "TS_SSL_HOOK_VERIFY_SERVER";
+  case HANDSHAKE_HOOKS_DONE:
+    return "TS_SSL_HOOKS_DONE";
+  }
+  return "unknown handshake hook name";
+}
+
 void
 SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
 {
@@ -1238,7 +1272,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_DONE;
   }
 
-  Debug("ssl", "Go on with the handshake state=%d", sslHandshakeHookState);
+  Debug("ssl", "Go on with the handshake state=%s", get_ssl_handshake_hook_state_name(sslHandshakeHookState));
 
   // All the pre-accept hooks have completed, proceed with the actual accept.
   if (this->handShakeReader) {
@@ -1607,7 +1641,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 void
 SSLNetVConnection::reenable(NetHandler *nh, int event)
 {
-  Debug("ssl", "Handshake reenable from state=%d", sslHandshakeHookState);
+  Debug("ssl", "Handshake reenable from state=%s", get_ssl_handshake_hook_state_name(sslHandshakeHookState));
 
   // Mark as error to stop the Handshake
   if (event == TS_EVENT_ERROR) {
@@ -1712,7 +1746,7 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
     default:
       break;
     }
-    Debug("ssl", "iterate from reenable curHook=%p %d", curHook, sslHandshakeHookState);
+    Debug("ssl", "iterate from reenable curHook=%p %s", curHook, get_ssl_handshake_hook_state_name(sslHandshakeHookState));
   }
 
   this->readReschedule(nh);
@@ -1725,7 +1759,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   ink_assert(eventId == TS_EVENT_SSL_CLIENT_HELLO || eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME ||
              eventId == TS_EVENT_SSL_VERIFY_SERVER || eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE ||
              eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
-  Debug("ssl", "sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
+  Debug("ssl", "sslHandshakeHookState=%s eventID=%d", get_ssl_handshake_hook_state_name(this->sslHandshakeHookState), eventId);
 
   // Move state if it is appropriate
   if (eventId == TS_EVENT_VCONN_CLOSE) {
@@ -1863,7 +1897,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     reenabled =
       (this->sslHandshakeHookState != HANDSHAKE_HOOKS_CERT_INVOKE && this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE_INVOKE &&
        this->sslHandshakeHookState != HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE);
-    Debug("ssl", "Called hook on state=%d reenabled=%d", sslHandshakeHookState, reenabled);
+    Debug("ssl", "Called hook on state=%s reenabled=%d", get_ssl_handshake_hook_state_name(sslHandshakeHookState), reenabled);
   }
 
   return reenabled;
@@ -2509,8 +2543,9 @@ SSLNetVConnection::update_early_data_config(uint32_t max_early_data, uint32_t re
 #else
   // If SSL_set_max_early_data is unavailable, it's probably BoringSSL,
   // and SSL_set_early_data_enabled should be available.
-  SSL_set_early_data_enabled(ssl, max_early_data > 0 ? 1 : 0);
-  Warning("max_early_data is not used due to library limitations");
+  bool const early_data_enabled = max_early_data > 0 ? 1 : 0;
+  SSL_set_early_data_enabled(ssl, early_data_enabled);
+  Debug("ssl", "Called SSL_set_early_data_enabled with %d", early_data_enabled);
 #endif
 #endif
 }
