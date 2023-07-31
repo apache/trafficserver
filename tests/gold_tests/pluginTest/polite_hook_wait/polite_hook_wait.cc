@@ -40,9 +40,6 @@ namespace
 {
 char PIName[] = PINAME;
 
-atscppapi::TSDbgCtlUniqPtr dbg_ctl_guard{TSDbgCtlCreate(PIName)};
-TSDbgCtl const *const dbg_ctl{dbg_ctl_guard.get()};
-
 enum Test_step { BEGIN, GLOBAL_CONT_READ_HDRS, THREAD, TXN_CONT_READ_HDRS, END };
 
 char const *
@@ -94,7 +91,7 @@ next_step(int curr)
     curr = BEGIN;
   }
 
-  TSDbg(dbg_ctl, "Entering test step %s", step_cstr(curr));
+  TSDebug(PIName, "Entering test step %s", step_cstr(curr));
 
   test_step.store(curr, std::memory_order_relaxed);
 }
@@ -111,9 +108,10 @@ private:
   {
     // This should either not block, or only block very briefly.
     //
+    TSDebug(PIName, "In ~Blocking_action(), waiting for thread to finish.");
     TSThreadWait(_checker.get());
 
-    TSDbg(dbg_ctl, "In ~Blocking_action()");
+    TSDebug(PIName, "Leaving ~Blocking_action()");
   }
 
   Blocking_action() = default;
@@ -146,7 +144,7 @@ Blocking_action::init()
 int
 Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
 {
-  TSDbg(dbg_ctl, "entering _global_cont_func()");
+  TSDebug(PIName, "entering _global_cont_func() with event %d", event);
 
   TSReleaseAssert(eventData != nullptr);
 
@@ -156,6 +154,7 @@ Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     next_step(BEGIN);
 
+    TSDebug(PIName, "Getting the blocking action in TS_EVENT_HTTP_READ_REQUEST_HDR");
     Blocking_action &ba = AuxDataMgr::data(txn);
 
     if (!ba._checker.get()) {
@@ -164,11 +163,14 @@ Blocking_action::_global_cont_func(TSCont, TSEvent event, void *eventData)
       return 0;
     }
 
+    TSDebug(PIName, "Locking the mutex in TS_EVENT_HTTP_READ_REQUEST_HDR");
     TSHttpTxnHookAdd(txn, TS_HTTP_READ_REQUEST_HDR_HOOK, ba._txn_hook_cont.get());
 
+    TSDebug(PIName, "Waiting for the mutex to be locked.");
     while (!ba._cont_mutex_locked.load(std::memory_order_acquire)) {
       std::this_thread::yield();
     }
+    TSDebug(PIName, "Done waiting for the mutex to be locked.");
   } break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -199,7 +201,9 @@ Blocking_action::_thread_func(void *vba)
 
   auto ba = static_cast<Blocking_action *>(vba);
 
+  TSDebug(PIName, "Locking via TSCONTMutexLock()");
   TSMutexLock(TSContMutexGet(ba->_txn_hook_cont.get())); // This will never block.
+  TSDebug(PIName, "Setting _cont_mutex_locked to true");
   ba->_cont_mutex_locked.store(true, std::memory_order_release);
 
   // This is a stand-in for some blocking call to validate the HTTP request in some way.
@@ -214,6 +218,7 @@ Blocking_action::_thread_func(void *vba)
 
   // Let per-txn continuation run.
   //
+  TSDebug(PIName, "Unlocking via TSCONTMutexUnlock()");
   TSMutexUnlock(TSContMutexGet(ba->_txn_hook_cont.get()));
 
   return nullptr;
@@ -222,6 +227,7 @@ Blocking_action::_thread_func(void *vba)
 int
 Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 {
+  TSDebug(PIName, "Calling _txn_cont_func withe event %d", event);
   next_step(THREAD);
 
   TSReleaseAssert(eventData != nullptr);
@@ -229,11 +235,14 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 
   TSHttpTxn txn{static_cast<TSHttpTxn>(eventData)};
 
+  TSDebug(PIName, "Retrieving data for txn %p", txn);
   Blocking_action &ba = AuxDataMgr::data(txn);
 
   if (!ba.txn_valid) {
+    TSDebug(PIName, "Data was invalid.");
     TSHttpTxnStatusSet(txn, TS_HTTP_STATUS_FORBIDDEN);
   }
+  TSDebug(PIName, "Data was valid.");
 
   TSHttpTxnReenable(txn, ba.txn_valid ? TS_EVENT_HTTP_CONTINUE : TS_EVENT_HTTP_ERROR);
 
@@ -245,7 +254,7 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 void
 TSPluginInit(int n_arg, char const *arg[])
 {
-  TSDbg(dbg_ctl, "initializing plugin");
+  TSDebug(PIName, "initializing plugin");
 
   TSPluginRegistrationInfo info;
 
@@ -257,7 +266,7 @@ TSPluginInit(int n_arg, char const *arg[])
     TSError(PINAME ": failure calling TSPluginRegister.");
     return;
   } else {
-    TSDbg(dbg_ctl, "Plugin registration succeeded.");
+    TSDebug(PIName, "Plugin registration succeeded.");
   }
 
   AuxDataMgr::init(PIName);

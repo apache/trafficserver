@@ -38,7 +38,7 @@ ts = Test.MakeATSProcess("ts", enable_cache=False, block_for_debug=False)
 ts.Disk.records_config.update({
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.url_remap.remap_required': 1,
-    'proxy.config.diags.debug.enabled': 3,
+    'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': f'{plugin_name}',
 })
 
