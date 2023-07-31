@@ -25,4 +25,5 @@ target_include_directories(jsonrpc_plugin_handler_test
 target_link_libraries(jsonrpc_plugin_handler_test
     PRIVATE
         jsonrpc_protocol
+        libswoc
 )
