@@ -57,7 +57,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   EThread *t             = e->ethread;
   NetHandler *handler    = get_NetHandler(t);
   int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX;
+  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
 
   if (!blockable) {
     if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex, e->ethread)) {
@@ -307,7 +307,7 @@ NetAccept::do_blocking_accept(EThread *t)
   int count              = 0;
   NetHandler *handler    = get_NetHandler(t);
   int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX;
+  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
 
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
@@ -460,7 +460,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   EThread *t             = e->ethread;
   NetHandler *handler    = get_NetHandler(t);
   int config_value       = handler->config.additional_accepts;
-  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX;
+  int additional_accepts = config_value >= 0 ? config_value : INT32_MAX - 1;
 
   do {
     socklen_t sz = sizeof(con.addr);
