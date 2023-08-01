@@ -1473,6 +1473,10 @@ done:
     if (!path_end) {
       path_end = cur;
     }
+    // Remove all preceding slashes
+    while (path_start < path_end && *path_start == '/') {
+      ++path_start;
+    }
     url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
   }
   if (params_start) {
@@ -1553,6 +1557,10 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
 
   // path is anything that's left.
   if (cur < end) {
+    // Remove all preceding slashes
+    while (cur < end && *cur == '/') {
+      cur++;
+    }
     url_path_set(heap, url, cur, end - cur, copy_strings);
     cur = end;
   }
