@@ -20,6 +20,9 @@ add_library(ts::tsapi ALIAS tsapi)
 
 install(TARGETS tsapi)
 
+if(APPLE)
+  target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
+endif()
 
 add_executable(test_Metrics
         test_Metrics.cc
