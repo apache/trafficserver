@@ -27,6 +27,7 @@
 #endif
 
 #include <mutex>
+#include <string>
 
 // Data Structures and Classes
 struct Config {
