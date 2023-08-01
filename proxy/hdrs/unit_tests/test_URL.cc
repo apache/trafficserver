@@ -174,6 +174,14 @@ constexpr bool VERIFY_HOST_CHARACTERS = true;
 // clang-format off
 std::vector<url_parse_test_case> url_parse_test_cases = {
   {
+    "///dir////index.html",
+    "/dir////index.html",
+    VERIFY_HOST_CHARACTERS,
+    "/dir////index.html",
+    IS_VALID,
+    IS_VALID
+  },
+  {
     "/index.html",
     "/index.html",
     VERIFY_HOST_CHARACTERS,
@@ -183,9 +191,9 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
   },
   {
     "//index.html",
-    "//index.html",
+    "/index.html",
     VERIFY_HOST_CHARACTERS,
-    "//index.html",
+    "/index.html",
     IS_VALID,
     IS_VALID
   },
@@ -215,9 +223,9 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
     // with two slash characters ("//"). We have historically allowed this,
     // however, and will continue to do so.
     "https:////",
-    "https:////",
+    "https:///",
     VERIFY_HOST_CHARACTERS,
-    "https:////",
+    "https:///",
     IS_VALID,
     IS_VALID
   },
@@ -257,9 +265,9 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
   },
   {
     "https://www.example.com//",
-    "https://www.example.com//",
+    "https://www.example.com/",
     VERIFY_HOST_CHARACTERS,
-    "https://www.example.com//",
+    "https://www.example.com/",
     IS_VALID,
     IS_VALID
   },
@@ -313,9 +321,9 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
   },
   {
     "https://www.example.com//a/path",
-    "https://www.example.com//a/path",
+    "https://www.example.com/a/path",
     VERIFY_HOST_CHARACTERS,
-    "https://www.example.com//a/path",
+    "https://www.example.com/a/path",
     IS_VALID,
     IS_VALID
   },
