@@ -1524,8 +1524,13 @@ done:
       // correcting this behavior, therefore, we maintain the current
       // functionality but add state to determine whether the path was
       // absolutely empty so we can reconstruct such URLs.
-      ++path_start;
+      //
+      // Remove all preceding slashes
+      while (path_start < path_end && *path_start == '/') {
+        ++path_start;
+      }
     }
+
     url->set_path(heap, path_start, path_end - path_start, copy_strings);
   } else if (!nothing_after_host) {
     // There was no path set via '/': it is absolutely empty. However, if there
@@ -1577,7 +1582,10 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
   cur              = static_cast<const char *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
-    ++cur;
+    // Remove all preceding slashes
+    while (cur < end && *cur == '/') {
+      cur++;
+    }
   } else {
     host_end = cur = end;
   }
