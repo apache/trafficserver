@@ -333,15 +333,17 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, hname, hlen);
         return EVENT_CONT;
       } else {
-        offset          = reinterpret_cast<char *>(doc) - buf->data();
-        write_len       = 0;
-        frag_type       = CACHE_FRAG_TYPE_HTTP;
-        f.use_first_key = 1;
-        f.evac_vector   = 1;
-        first_key = key   = doc->first_key;
+        offset            = reinterpret_cast<char *>(doc) - buf->data();
+        write_len         = 0;
+        frag_type         = CACHE_FRAG_TYPE_HTTP;
+        f.use_first_key   = 1;
+        f.evac_vector     = 1;
         alternate_index   = CACHE_ALT_REMOVED;
-        earliest_key      = zero_key;
         writer_lock_retry = 0;
+
+        first_key = key = doc->first_key;
+        earliest_key.clear();
+
         SET_HANDLER(&CacheVC::scanOpenWrite);
         return scanOpenWrite(EVENT_NONE, nullptr);
       }

@@ -195,7 +195,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     HTTPHdr *cached_request  = obj->request_get();
     HTTPHdr *cached_response = obj->response_get();
 
-    if (!(obj->object_key_get() == zero_key)) {
+    if (!(obj->object_key_get().is_zero())) {
       ink_assert(cached_request->valid());
       ink_assert(cached_response->valid());
 

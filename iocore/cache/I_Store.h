@@ -96,11 +96,13 @@ public:
   {
     return is_mmapable_internal;
   }
+
   void
   set_mmapable(bool s)
   {
     is_mmapable_internal = s;
   }
+
   int64_t
   size() const
   {

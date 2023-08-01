@@ -330,9 +330,8 @@ Vol::force_evacuate_head(Dir *evac_dir, int pinned)
   }
   b->f.pinned        = pinned;
   b->f.evacuate_head = 1;
-  b->evac_frags.key  = zero_key; // ensure that the block gets
-  // evacuated no matter what
-  b->readers = 0; // ensure that the block does not disappear
+  b->evac_frags.key.clear(); // ensure that the block gets evacuated no matter what
+  b->readers = 0;            // ensure that the block does not disappear
   return b;
 }
 
@@ -441,10 +440,10 @@ new_DocEvacuator(int nbytes, Vol *vol)
   ProxyMutex *mutex = vol->mutex.get();
   c->base_stat      = cache_evacuate_active_stat;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->buf          = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  c->vol          = vol;
-  c->f.evacuator  = 1;
-  c->earliest_key = zero_key;
+  c->buf         = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  c->vol         = vol;
+  c->f.evacuator = 1;
+  c->earliest_key.clear();
   SET_CONTINUATION_HANDLER(c, &CacheVC::evacuateDocDone);
   return c;
 }
@@ -844,7 +843,7 @@ agg_copy(char *p, CacheVC *vc)
       if (doc->data_len() || vc->f.allow_empty_doc) {
         doc->key = vc->earliest_key;
       } else { // the vector is being written by itself
-        if (vc->earliest_key == zero_key) {
+        if (vc->earliest_key.is_zero()) {
           do {
             rand_CacheKey(&doc->key, vc->vol->mutex);
           } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
@@ -871,7 +870,7 @@ agg_copy(char *p, CacheVC *vc)
       if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
         ink_assert(vc->write_vector->count() > 0);
         if (!vc->f.update && !vc->f.evac_vector) {
-          ink_assert(!(vc->first_key == zero_key));
+          ink_assert(!(vc->first_key.is_zero()));
           CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
           http_info->object_size_set(vc->total_len);
         }
@@ -1832,7 +1831,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->base_stat = cache_update_active_stat;
     DDbg(dbg_ctl_cache_update, "Update called");
     info->object_key_get(&c->update_key);
-    ink_assert(!(c->update_key == zero_key));
+    ink_assert(!(c->update_key.is_zero()));
     c->update_len = info->object_size_get();
   } else {
     c->base_stat = cache_write_active_stat;

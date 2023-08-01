@@ -132,8 +132,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
-extern Store theCacheStore;
-
 void
 init_cache(size_t size, const char *name)
 {

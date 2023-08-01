@@ -37,8 +37,6 @@ CryptoContext::HashType CryptoContext::Setting = CryptoContext::SHA256;
 CryptoContext::HashType CryptoContext::Setting = CryptoContext::MD5;
 #endif
 
-ts::CryptoHash const ts::CRYPTO_HASH_ZERO; // default constructed is correct.
-
 CryptoContext::CryptoContext()
 {
   switch (Setting) {
