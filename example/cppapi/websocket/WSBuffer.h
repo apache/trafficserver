@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 enum ws_frametype {
   WS_FRAME_CONTINUATION = 0x0,
