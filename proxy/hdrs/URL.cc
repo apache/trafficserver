@@ -1582,7 +1582,10 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
   cur              = static_cast<const char *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
-    ++cur;
+    // Remove all preceding slashes
+    while (cur < end && *cur == '/') {
+      cur++;
+    }
   } else {
     host_end = cur = end;
   }
@@ -1619,10 +1622,6 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
 
   // path is anything that's left.
   if (cur < end) {
-    // Remove all preceding slashes
-    while (cur < end && *cur == '/') {
-      cur++;
-    }
     url->set_path(heap, cur, end - cur, copy_strings);
     cur = end;
   }
