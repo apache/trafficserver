@@ -155,7 +155,7 @@ dnl   Adds path to variable with the '-rpath' directive.
 dnl
 AC_DEFUN([TS_ADDTO_RPATH], [
   AC_MSG_NOTICE([adding $1 to RPATH])
-  TS_ADDTO(AM_LDFLAGS, [-R$1])
+  TS_ADDTO(AM_LDFLAGS, [-Wl,-rpath,$1])
 ])dnl
 
 dnl
