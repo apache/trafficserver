@@ -16,12 +16,14 @@
 #######################
 
 # This is a script intended to be passed to install(SCRIPT ...)
-# This copies default config files to the destination  without overwriting existing files.
-# If the config file already exists, the source config is copied with the '.default' extension
+# This copies default config files to the destination without overwriting existing files.
+# If the config file doesn't exist, the source config file is copied  without the '.default' extension
+# If the config file already exists, the source config file is copied with the '.default' extension
 
 file(GLOB CONFIG_FILES ${CONFIG_SOURCE_GLOBS})
 file(MAKE_DIRECTORY ${CONFIG_DEST_PATH})
 foreach(CONFIG_FILE ${CONFIG_FILES})
+  # remove the '.default' extension from the path
   cmake_path(GET CONFIG_FILE STEM LAST_ONLY CONFIG_FILE_NAME)
   set(DEST_FILE "${CONFIG_DEST_PATH}/${CONFIG_FILE_NAME}")
   if (EXISTS ${DEST_FILE})
