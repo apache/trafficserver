@@ -8940,12 +8940,14 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     }
     [[fallthrough]];
   default: {
-    MgmtConverter const *conv;
-    void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
-    if (dest != nullptr && conv != nullptr && conv->store_string) {
-      conv->store_string(dest, std::string_view(value, length));
-    } else {
-      return TS_ERROR;
+    if (value && length > 0) {
+      MgmtConverter const *conv;
+      void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
+      if (dest != nullptr && conv != nullptr && conv->store_string) {
+        conv->store_string(dest, std::string_view(value, length));
+      } else {
+        return TS_ERROR;
+      }
     }
     break;
   }
