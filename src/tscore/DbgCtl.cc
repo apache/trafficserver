@@ -129,6 +129,7 @@ DbgCtl::_new_reference(char const *tag)
   TSDbgCtl ctl;
 
   ctl.tag = tag;
+  ctl.on  = diags() && diags()->tag_activated(tag, DiagsTagType_Debug);
 
   // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
@@ -155,7 +156,6 @@ DbgCtl::_new_reference(char const *tag)
     std::memcpy(t, tag, sz + 1);
     ctl.tag = t;
   }
-  ctl.on = diags() && diags()->tag_activated(tag, DiagsTagType_Debug);
 
   auto res = d.set.insert(ctl);
 

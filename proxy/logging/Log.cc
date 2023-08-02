@@ -55,6 +55,9 @@
 
 #include "tscore/MgmtDefs.h"
 
+#include <mutex>
+#include <condition_variable>
+
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
@@ -66,6 +69,9 @@ Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 EventNotify *Log::preproc_notify;
 EventNotify *Log::flush_notify;
 InkAtomicList *Log::flush_data_list;
+std::mutex flush_condition_mutex;
+std::condition_variable flush_condition_variable;
+bool flush_thread_is_initialized = false;
 
 // Log private objects
 int Log::preproc_threads;
@@ -1150,6 +1156,11 @@ Log::create_threads()
   ink_atomiclist_init(flush_data_list, "Logging flush buffer list", 0);
   Continuation *flush_cont = new LoggingFlushContinuation(0);
   eventProcessor.spawn_thread(flush_cont, "[LOG_FLUSH]", stacksize);
+
+  {
+    std::unique_lock<std::mutex> lk(flush_condition_mutex);
+    flush_condition_variable.wait(lk, [] { return flush_thread_is_initialized; });
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -1320,6 +1331,15 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   int len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
   ProxyMutex *mutex = this_thread()->mutex.get();
+
+  // #10129: Keep this log here so we initialize PCRE thread_local storage
+  // early before plugins are loaded. This avoids a deadlock.
+  Debug("log", "Starting the flushing thread.");
+  {
+    std::lock_guard<std::mutex> lk(flush_condition_mutex);
+    flush_thread_is_initialized = true;
+  }
+  flush_condition_variable.notify_one();
 
   Log::flush_notify->lock();
 

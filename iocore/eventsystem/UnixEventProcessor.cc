@@ -477,6 +477,12 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
 void
 EventProcessor::initThreadState(EThread *t)
 {
+  // #10129: Initialize DbgCtl early on so that we process the PCRE regex before
+  // we load plugins. Otherwise, PCRE compilation on first use will try to grab
+  // the dl_load_lock, which might race and deadlock with our dlopen calls for
+  // plugins.
+  DbgCtl::update();
+
   // Run all thread type initialization continuations that match the event types for this thread.
   for (int i = 0; i < MAX_EVENT_TYPES; ++i) {
     if (t->is_event_type(i)) {
