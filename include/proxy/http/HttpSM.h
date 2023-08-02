@@ -258,6 +258,7 @@ public:
 
   bool is_private() const;
   bool is_redirect_required();
+  bool is_redirect_required_for_status(HTTPStatus *status);
 
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results

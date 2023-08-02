@@ -6260,6 +6260,11 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
 
+  // don't cache a 302 when a redirect is being chased
+  if (response_code == HTTP_STATUS_MOVED_TEMPORARILY && s->state_machine->is_redirect_required_for_status(&response_code)) {
+    return false;
+  }
+
   // check if cache control overrides default cacheability
   int indicator;
   indicator = response_cacheable_indicated_by_cc(response, s->cache_control.ignore_server_no_cache);

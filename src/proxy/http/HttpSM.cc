@@ -8499,9 +8499,16 @@ HttpSM::is_private() const
   return res;
 }
 
-// check to see if redirection is enabled and less than max redirections tries or if a plugin enabled redirection
+// convenience method for callers that do not want to provide a status
 inline bool
 HttpSM::is_redirect_required()
+{
+  return is_redirect_required_for_status(nullptr);
+}
+
+// check to see if redirection is enabled and less than max redirections tries or if a plugin enabled redirection
+inline bool
+HttpSM::is_redirect_required_for_status(HTTPStatus *status)
 {
   bool redirect_required = (enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections) &&
                             !HttpTransact::is_fresh_cache_hit(t_state.cache_lookup_result));
@@ -8509,9 +8516,16 @@ HttpSM::is_redirect_required()
   SMDbg(dbg_ctl_http_redirect, "redirect_required: %u", redirect_required);
 
   if (redirect_required == true) {
-    HTTPStatus status = t_state.hdr_info.client_response.status_get();
+    HTTPStatus s;
+
+    if (status != nullptr) {
+      s = *status;
+    } else {
+      s = t_state.hdr_info.client_response.status_get();
+    }
+
     // check to see if the response from the origin was a 301, 302, or 303
-    switch (status) {
+    switch (s) {
     case HTTP_STATUS_MULTIPLE_CHOICES:   // 300
     case HTTP_STATUS_MOVED_PERMANENTLY:  // 301
     case HTTP_STATUS_MOVED_TEMPORARILY:  // 302
