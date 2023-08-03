@@ -584,7 +584,7 @@ sshv  Origin Response       Origin server's response HTTP version.
 Request Details
 ~~~~~~~~~~~~~~~
 
-The following logging fields show the details of the actual HTTP request and can be used in combination to reproduce a HTTP/1.1 request line (e.g. ``GET http://www.company.com HTTP/1.0``).
+The following logging fields show the details of the actual HTTP request and can be used in combination to reproduce a client request line (e.g. ``GET http://www.company.com HTTP/1.0``).
 
 ===== ============== ==========================================================
 Field Source         Description

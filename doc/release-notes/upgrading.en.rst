@@ -89,4 +89,4 @@ The HTTP connection metric proxy.process.http.dead_server.no_requests has been r
 Logging
 ------------------
 
-The ``cqtx`` log field has been deprecated.
+The ``cqtx`` log field has been deprecated, but can be replaced by ``cqhm pqu cqpv``.
