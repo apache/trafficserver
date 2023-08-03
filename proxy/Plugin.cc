@@ -31,6 +31,7 @@
 #include "Plugin.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
+#include "tscore/DbgCtl.h"
 
 #define MAX_PLUGIN_ARGS 64
 
@@ -102,8 +103,11 @@ PluginRegInfo::~PluginRegInfo()
 bool
 plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error)
 {
-  handle = dlopen(path, RTLD_NOW);
-  init   = nullptr;
+  {
+    DbgCtl::Guard_dlopen g;
+    handle = dlopen(path, RTLD_NOW);
+  }
+  init = nullptr;
   if (!handle) {
     error.assign("unable to load '").append(path).append("': ").append(dlerror());
     Error("%s", error.c_str());

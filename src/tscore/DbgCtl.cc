@@ -66,7 +66,7 @@ public:
       _mtx.unlock();
     }
 
-    std::mutex _mtx;
+    std::recursive_mutex _mtx;
 
     friend class DbgCtl::_RegistryAccessor;
   };
@@ -194,4 +194,11 @@ DbgCtl::update()
   for (auto &i : d.set) {
     const_cast<char volatile &>(i.on) = diags()->tag_activated(i.tag, DiagsTagType_Debug);
   }
+}
+
+DbgCtl::Guard_dlopen::Guard_dlopen() : rap{new _RegistryAccessor} {};
+
+DbgCtl::Guard_dlopen::~Guard_dlopen()
+{
+  delete rap;
 }

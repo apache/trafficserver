@@ -59,4 +59,27 @@ private:
   friend TSDbgCtl const *TSDbgCtlCreate(char const *tag);
 
   friend void TSDbgCtlDestroy(TSDbgCtl const *dbg_ctl);
+
+public:
+  // When loading an ATS plugin with dlopen(), an instance of this class should exist in the stack.  This will prevent
+  // https://github.com/apache/trafficserver/issues/10129 .  It will prevent DbgCtl member functions from indiredtly
+  // calling Regex::compile(), which calls a function that defines a thread_local variable.  Such functions try to lock
+  // the same global mutex (in the C/C++ runtime) that is locked when dlopen() is in progress.  This prevents a deadlock
+  // where shared library static initialization is holding the global mutex and waiting on the Registry mutex, and
+  // a DbgCtl intanstantiantion has called Regex::compile() in a different thread, is holding the Registry mutex, and
+  // waiting on the global mutex.
+  //
+  class Guard_dlopen
+  {
+  public:
+    Guard_dlopen();
+    ~Guard_dlopen();
+
+    // No copying.
+    Guard_dlopen(Guard_dlopen const &)            = delete;
+    Guard_dlopen &operator=(Guard_dlopen const &) = delete;
+
+  private:
+    _RegistryAccessor *rap;
+  };
 };

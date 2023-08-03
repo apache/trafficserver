@@ -34,6 +34,7 @@
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
+#include "tscore/DbgCtl.h"
 #define PluginDebug Debug
 #define PluginError Error
 #endif
@@ -105,10 +106,15 @@ PluginDso::load(std::string &error)
 
       /* Now attempt to load the plugin DSO */
 #if defined(darwin)
-      if (!dlopen_preflight(_runtimePath.c_str()) || (_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
-#else
-      if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
+      if (!dlopen_preflight(_runtimePath.c_str())) {
+        _dlh = nullptr;
+      } else
 #endif
+      {
+        DbgCtl::Guard_dlopen g;
+        _dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL);
+      }
+      if (_dlh == nullptr) {
         const char *err = dlerror();
         concat_error(error, err ? err : "unknown dlopen() error");
         _dlh = nullptr; /* mark that the constructor failed. */
