@@ -78,51 +78,7 @@ span_file_typename(mode_t st_mode)
   }
 }
 
-Ptr<ProxyMutex> tmp_p;
 Store::Store() {}
-
-void
-Store::add(Span *ds)
-{
-  extend(n_disks + 1);
-  disk[n_disks - 1] = ds;
-}
-
-void
-Store::add(Store &s)
-{
-  // assume on different disks
-  for (unsigned i = 0; i < s.n_disks; i++) {
-    add(s.disk[i]);
-  }
-  s.n_disks = 0;
-  s.delete_all();
-}
-
-// should be changed to handle offset in more general
-// case (where this is not a free of a "just" allocated
-// store
-void
-Store::free(Store &s)
-{
-  for (unsigned i = 0; i < s.n_disks; i++) {
-    for (Span *sd = s.disk[i]; sd; sd = sd->link.next) {
-      for (unsigned j = 0; j < n_disks; j++) {
-        for (Span *d = disk[j]; d; d = d->link.next) {
-          if (!strcmp(sd->pathname, d->pathname)) {
-            if (sd->offset < d->offset) {
-              d->offset = sd->offset;
-            }
-            d->blocks += sd->blocks;
-            goto Lfound;
-          }
-        }
-      }
-      ink_release_assert(!"Store::free failed");
-    Lfound:;
-    }
-  }
-}
 
 void
 Store::sort()
@@ -226,24 +182,6 @@ Span::errorstr(span_error_t serr)
   }
 }
 
-int
-Span::path(char *filename, int64_t *aoffset, char *buf, int buflen)
-{
-  ink_assert(!aoffset);
-  Span *ds = this;
-
-  if ((strlen(ds->pathname) + strlen(filename) + 2) > static_cast<size_t>(buflen)) {
-    return -1;
-  }
-  if (!ds->file_pathname) {
-    ink_filepath_make(buf, buflen, ds->pathname, filename);
-  } else {
-    ink_strlcpy(buf, ds->pathname, buflen);
-  }
-
-  return strlen(buf);
-}
-
 void
 Span::hash_base_string_set(const char *s)
 {
@@ -279,31 +217,6 @@ Span::~Span()
   if (link.next) {
     delete link.next;
   }
-}
-
-int
-Store::remove(char *n)
-{
-  bool found = false;
-Lagain:
-  for (unsigned i = 0; i < n_disks; i++) {
-    Span *p = nullptr;
-    for (Span *sd = disk[i]; sd; sd = sd->link.next) {
-      if (!strcmp(n, sd->pathname)) {
-        found = true;
-        if (p) {
-          p->link.next = sd->link.next;
-        } else {
-          disk[i] = sd->link.next;
-        }
-        sd->link.next = nullptr;
-        delete sd;
-        goto Lagain;
-      }
-      p = sd;
-    }
-  }
-  return found ? 0 : -1;
 }
 
 Result
@@ -587,160 +500,6 @@ fail:
   return Span::errorstr(serr);
 }
 
-void
-Store::normalize()
-{
-  unsigned ndisks = 0;
-  for (unsigned i = 0; i < n_disks; i++) {
-    if (disk[i]) {
-      disk[ndisks++] = disk[i];
-    }
-  }
-  n_disks = ndisks;
-}
-
-static unsigned int
-try_alloc(Store &target, Span *source, unsigned int start_blocks, bool one_only = false)
-{
-  unsigned int blocks = start_blocks;
-  Span *ds            = nullptr;
-  while (source && blocks) {
-    if (source->blocks) {
-      unsigned int a; // allocated
-      if (blocks > source->blocks) {
-        a = source->blocks;
-      } else {
-        a = blocks;
-      }
-      Span *d = new Span(*source);
-
-      d->blocks    = a;
-      d->link.next = ds;
-
-      if (d->file_pathname) {
-        source->offset += a;
-      }
-      source->blocks -= a;
-      ds              = d;
-      blocks         -= a;
-      if (one_only) {
-        break;
-      }
-    }
-    source = source->link.next;
-  }
-  if (ds) {
-    target.add(ds);
-  }
-  return start_blocks - blocks;
-}
-
-void
-Store::spread_alloc(Store &s, unsigned int blocks, bool mmapable)
-{
-  //
-  // Count the eligible disks..
-  //
-  int mmapable_disks = 0;
-  for (unsigned k = 0; k < n_disks; k++) {
-    if (disk[k]->is_mmapable()) {
-      mmapable_disks++;
-    }
-  }
-
-  int spread_over = n_disks;
-  if (mmapable) {
-    spread_over = mmapable_disks;
-  }
-
-  if (spread_over == 0) {
-    return;
-  }
-
-  int disks_left = spread_over;
-
-  for (unsigned i = 0; blocks && disks_left && i < n_disks; i++) {
-    if (!(mmapable && !disk[i]->is_mmapable())) {
-      unsigned int target = blocks / disks_left;
-      if (blocks - target > total_blocks(i + 1)) {
-        target = blocks - total_blocks(i + 1);
-      }
-      blocks -= try_alloc(s, disk[i], target);
-      disks_left--;
-    }
-  }
-}
-
-void
-Store::try_realloc(Store &s, Store &diff)
-{
-  for (unsigned i = 0; i < s.n_disks; i++) {
-    Span *prev = nullptr;
-    for (Span *sd = s.disk[i]; sd;) {
-      for (unsigned j = 0; j < n_disks; j++) {
-        for (Span *d = disk[j]; d; d = d->link.next) {
-          if (!strcmp(sd->pathname, d->pathname)) {
-            if (sd->offset >= d->offset && (sd->end() <= d->end())) {
-              if (!sd->file_pathname || (sd->end() == d->end())) {
-                d->blocks -= sd->blocks;
-                goto Lfound;
-              } else if (sd->offset == d->offset) {
-                d->blocks -= sd->blocks;
-                d->offset += sd->blocks;
-                goto Lfound;
-              } else {
-                Span *x = new Span(*d);
-                // d will be the first vol
-                d->blocks    = sd->offset - d->offset;
-                d->link.next = x;
-                // x will be the last vol
-                x->offset  = sd->offset + sd->blocks;
-                x->blocks -= x->offset - d->offset;
-                goto Lfound;
-              }
-            }
-          }
-        }
-      }
-      {
-        if (!prev) {
-          s.disk[i] = s.disk[i]->link.next;
-        } else {
-          prev->link.next = sd->link.next;
-        }
-        diff.extend(i + 1);
-        sd->link.next = diff.disk[i];
-        diff.disk[i]  = sd;
-        sd            = prev ? prev->link.next : s.disk[i];
-        continue;
-      }
-    Lfound:;
-      prev = sd;
-      sd   = sd->link.next;
-    }
-  }
-  normalize();
-  s.normalize();
-  diff.normalize();
-}
-
-//
-// Stupid grab first available space allocator
-//
-void
-Store::alloc(Store &s, unsigned int blocks, bool one_only, bool mmapable)
-{
-  unsigned int oblocks = blocks;
-  for (unsigned i = 0; blocks && i < n_disks; i++) {
-    if (!(mmapable && !disk[i]->is_mmapable())) {
-      blocks -= try_alloc(s, disk[i], blocks, one_only);
-      if (one_only && oblocks != blocks) {
-        break;
-      }
-    }
-  }
-}
-
 Span *
 Span::dup()
 {
@@ -749,47 +508,4 @@ Span::dup()
     ds->link.next = this->link.next->dup();
   }
   return ds;
-}
-
-void
-Store::dup(Store &s)
-{
-  s.n_disks = n_disks;
-  s.disk    = static_cast<Span **>(ats_malloc(sizeof(Span *) * n_disks));
-  for (unsigned i = 0; i < n_disks; i++) {
-    s.disk[i] = disk[i]->dup();
-  }
-}
-
-int
-Store::clear(char *filename, bool clear_dirs)
-{
-  char z[STORE_BLOCK_SIZE];
-  memset(z, 0, STORE_BLOCK_SIZE);
-  for (unsigned i = 0; i < n_disks; i++) {
-    Span *ds = disk[i];
-    for (unsigned j = 0; j < disk[i]->paths(); j++) {
-      char path[PATH_NAME_MAX];
-      Span *d = ds->nth(j);
-      if (!clear_dirs && !d->file_pathname) {
-        continue;
-      }
-      int r = d->path(filename, nullptr, path, PATH_NAME_MAX);
-      if (r < 0) {
-        return -1;
-      }
-      int fd = ::open(path, O_RDWR | O_CREAT, 0644);
-      if (fd < 0) {
-        return -1;
-      }
-      for (int b = 0; d->blocks; b++) {
-        if (SocketManager::pwrite(fd, z, STORE_BLOCK_SIZE, d->offset + (b * STORE_BLOCK_SIZE)) < 0) {
-          close(fd);
-          return -1;
-        }
-      }
-      close(fd);
-    }
-  }
-  return 0;
 }
