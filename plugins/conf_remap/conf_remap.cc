@@ -164,7 +164,7 @@ scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
   RemapConfigs::Item *item = &ctx.items[*ctx.current];
 
   auto type = try_deduce_type(value);
-
+  TSDebug(PLUGIN_NAME, "### deduced type %d for %s", type, cfg->record_name);
   // If we detected a type but it's different from the one registered with the in ATS, then we ignore it.
   if (type != TS_RECORDDATATYPE_NULL && expected_type != type) {
     TSError("%s", swoc::bwprint(text, "[{}] '{}' variable type mismatch, expected {}, got {}", PLUGIN_NAME, cfg->record_name,
@@ -173,8 +173,8 @@ scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
     return TS_ERROR; // Ignore the field
   }
 
-  // We use the expected type. If no type set or the time did match, then it's
-  // safe to use the expected type.
+  // If no type set or the type did match, then we assume it's safe to use the
+  // expected type.
   try {
     switch (expected_type) {
     case TS_RECORDDATATYPE_INT:
@@ -182,7 +182,7 @@ scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
       break;
     case TS_RECORDDATATYPE_STRING: {
       std::string str = value.as<std::string>();
-      if (str == "NULL") {
+      if (value.IsNull() || str == "NULL") {
         item->_data.rec_string = nullptr;
         item->_data_len        = 0;
       } else {

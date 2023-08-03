@@ -171,3 +171,19 @@ test3 = conf_remap_yaml_load_test(
     '''
 )
 test3.run(diags_fail_exp="'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden")
+
+
+# Check null values
+test4 = conf_remap_yaml_load_test(
+    "Test success - with NULL variable",
+    gold_file="gold/200OK_test.gold",
+    remap_filename="testexample_remap.yaml",
+    remap_content='''
+    ts:
+      url_remap:
+        pristine_host_hdr: 1
+      hostdb:
+        ip_resolve: "NULL" # We want to make sure this gets read as it should. "NULL" could be the value of this field.
+    '''
+)
+test4.run()
