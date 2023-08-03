@@ -55,6 +55,8 @@ experimental_wasm_wasm_la_SOURCES = \
     experimental/wasm/lib/include/proxy-wasm/shared_data.h \
     experimental/wasm/lib/src/shared_queue.cc \
     experimental/wasm/lib/include/proxy-wasm/shared_queue.h \
+    experimental/wasm/lib/src/hash.cc \
+    experimental/wasm/lib/src/hash.h \
     experimental/wasm/lib/src/signature_util.cc \
     experimental/wasm/lib/include/proxy-wasm/signature_util.h \
     experimental/wasm/lib/src/vm_id_handle.cc \

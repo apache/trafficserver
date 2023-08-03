@@ -23,6 +23,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "include/proxy-wasm/context_interface.h"
@@ -53,8 +54,7 @@ struct PluginBase {
              std::string_view key)
       : name_(std::string(name)), root_id_(std::string(root_id)), vm_id_(std::string(vm_id)),
         engine_(std::string(engine)), plugin_configuration_(plugin_configuration),
-        fail_open_(fail_open),
-        key_(root_id_ + "||" + plugin_configuration_ + "||" + std::string(key)),
+        fail_open_(fail_open), key_(makePluginKey(root_id, plugin_configuration, key)),
         log_prefix_(makeLogPrefix()) {}
 
   const std::string name_;
@@ -69,6 +69,8 @@ struct PluginBase {
 
 private:
   std::string makeLogPrefix() const;
+  static std::string makePluginKey(std::string_view root_id, std::string_view plugin_configuration,
+                                   std::string_view key);
 
   const std::string key_;
   const std::string log_prefix_;
