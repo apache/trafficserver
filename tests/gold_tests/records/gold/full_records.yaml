@@ -1,9 +1,5 @@
 ts:
   accept_threads: 1
-  alarm:
-    abs_path: nullpt
-    bin: example_alarm_bin.sh
-    script_runtime: 5
   allocator:
     dontdump_iobuffers: 1
     hugepages: 0
