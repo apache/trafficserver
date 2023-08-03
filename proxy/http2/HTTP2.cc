@@ -22,6 +22,7 @@
  */
 
 #include "hdrs/VersionConverter.h"
+#include "hdrs/HeaderValidator.h"
 #include "HTTP2.h"
 #include "HPACK.h"
 
@@ -470,11 +471,6 @@ Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
                            bool is_trailing_header, uint32_t maximum_table_size, bool is_outbound)
 {
-  const MIMEField *field = nullptr;
-  const char *name       = nullptr;
-  int name_len           = 0;
-  const char *value      = nullptr;
-  int value_len          = 0;
   int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
 
   if (result < 0) {
@@ -489,105 +485,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (len_read) {
     *len_read = result;
   }
-
-  MIMEFieldIter iter;
-  auto method_field       = hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
-  bool has_connect_method = false;
-  if (method_field) {
-    int method_len;
-    const char *method_value = method_field->value_get(&method_len);
-    has_connect_method       = method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method_value, HTTP_LEN_CONNECT) == 0;
-  }
-  unsigned int expected_pseudo_header_count = is_outbound ? 1 : has_connect_method ? 2 : 4;
-  unsigned int pseudo_header_count          = 0;
-
-  if (is_trailing_header) {
-    expected_pseudo_header_count = 0;
-  }
-  for (auto &field : *hdr) {
-    name = field.name_get(&name_len);
-    // Pseudo headers must appear before regular headers
-    if (name_len && name[0] == ':') {
-      ++pseudo_header_count;
-      if (pseudo_header_count > expected_pseudo_header_count) {
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    } else if (name_len <= 0) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    } else {
-      if (pseudo_header_count != expected_pseudo_header_count) {
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    }
-  }
-
-  // rfc7540,sec8.1.2.2: Any message containing connection-specific header
-  // fields MUST be treated as malformed
-  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr ||
-      hdr->field_find(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE) != nullptr ||
-      hdr->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION) != nullptr ||
-      hdr->field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE) != nullptr) {
-    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-  }
-
-  // :path pseudo header MUST NOT empty for http or https URIs
-  field = hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
-  if (field) {
-    field->value_get(&value_len);
-    if (value_len == 0) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    }
-  }
-
-  // when The TE header field is received, it MUST NOT contain any
-  // value other than "trailers".
-  field = hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
-  if (field) {
-    value = field->value_get(&value_len);
-    if (!(value_len == 8 && memcmp(value, "trailers", 8) == 0)) {
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    }
-  }
-
-  if (!is_trailing_header) {
-    // Check pseudo headers
-    if (is_outbound) {
-      if (hdr->fields_count() >= 1) {
-        if (hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) == nullptr) {
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-      } else {
-        // There should at least be :status pseudo header.
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    } else {
-      if (!has_connect_method && hdr->fields_count() >= 4) {
-        if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
-          // Decoded header field is invalid
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-      } else if (has_connect_method && hdr->fields_count() >= 2) {
-        if (hdr->field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) != nullptr ||
-            hdr->field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) != nullptr ||
-            hdr->field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-            hdr->field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
-          // Decoded header field is invalid
-          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-        }
-
-      } else {
-        // Pseudo headers is insufficient
-        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-      }
-    }
-  }
-
-  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  return HeaderValidator::is_h2_h3_header_valid(*hdr, is_outbound, is_trailing_header) ? Http2ErrorCode::HTTP2_ERROR_NO_ERROR :
+                                                                                         Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
 }
 
 // Initialize this subsystem with librecords configs (for now)
