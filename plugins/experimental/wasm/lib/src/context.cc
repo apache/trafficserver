@@ -22,6 +22,7 @@
 
 #include "include/proxy-wasm/context.h"
 #include "include/proxy-wasm/wasm.h"
+#include "src/hash.h"
 #include "src/shared_data.h"
 #include "src/shared_queue.h"
 
@@ -83,6 +84,11 @@ std::string PluginBase::makeLogPrefix() const {
     prefix = prefix + " " + std::string(vm_id_);
   }
   return prefix;
+}
+
+std::string PluginBase::makePluginKey(std::string_view root_id,
+                                      std::string_view plugin_configuration, std::string_view key) {
+  return Sha256String({root_id, "||", plugin_configuration, "||", key});
 }
 
 ContextBase::ContextBase() : parent_context_(this) {}
