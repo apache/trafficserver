@@ -15,15 +15,20 @@
 #
 #######################
 
-# This is odd but seems to be the idiomatic way to pass arguments to install scripts
-install(CODE "set(CONFIG_SOURCE_GLOBS \"${CMAKE_BINARY_DIR}/configs/*.default\" \"${CMAKE_SOURCE_DIR}/configs/*.default\")")
-install(CODE "set(CONFIG_DEST_PATH \"$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/etc/trafficserver\")")
+# This is a script intended to be passed to install(SCRIPT ...)
+# This copies default config files to the destination without overwriting existing files.
+# If the config file doesn't exist, the source config file is copied  without the '.default' extension
+# If the config file already exists, the source config file is copied with the '.default' extension
 
-install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install_configs.cmake)
-
-file(GLOB BODY_FACTORY_FILES body_factory/default/*)
-list(FILTER BODY_FACTORY_FILES EXCLUDE REGEX Makefile.*)
-
-foreach(BODY_FACTORY_FILE ${BODY_FACTORY_FILES})
-  install(FILES ${BODY_FACTORY_FILE} DESTINATION etc/trafficserver/body_factory/default)
+file(GLOB CONFIG_FILES ${CONFIG_SOURCE_GLOBS})
+file(MAKE_DIRECTORY ${CONFIG_DEST_PATH})
+foreach(CONFIG_FILE ${CONFIG_FILES})
+  # remove the '.default' extension from the path
+  cmake_path(GET CONFIG_FILE STEM LAST_ONLY CONFIG_FILE_NAME)
+  set(DEST_FILE "${CONFIG_DEST_PATH}/${CONFIG_FILE_NAME}")
+  if (EXISTS ${DEST_FILE})
+    set(DEST_FILE "${DEST_FILE}.default")
+  endif()
+  message(STATUS "Installing config: ${DEST_FILE}")
+  file(COPY_FILE ${CONFIG_FILE} ${DEST_FILE})
 endforeach()
