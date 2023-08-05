@@ -17,5 +17,5 @@
 pkglib_LTLIBRARIES += libloader/libloader.la
 
 libloader_libloader_la_SOURCES = \
-	libloader/libloader.c
+	libloader/libloader.c \
 	libloader/libloader.h
