@@ -15,6 +15,7 @@
 #include "swoc/bwf_base.h"
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
+using namespace literals;
 
 /// Format atomics by stripping the atomic and formatting the underlying type.
 template <typename T>
@@ -48,5 +49,10 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, std::chrono::time_point<Clock, 
   return bwformat(w, spec, t.time_since_epoch());
 }
 
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const& spec, std::exception const& e) {
+  w.write("Exception - "_tv);
+  return bwformat(w, spec, e.what());
+}
 
 }} // end namespace swoc

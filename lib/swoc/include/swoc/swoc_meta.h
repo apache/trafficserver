@@ -123,17 +123,22 @@ template <typename T> T TypeFunc();
  * This has no effect on @a u but fools the compiler in to thinking @a T has been used.
  * This avoids metaprogramming issues with unused template parameters.
  *
- * Suppose an API has changed a function from "delain" to "Delain". To handle this the metacase support is used, but there is
- * no apparent template parameter. A fake one can be used and defaulted to @c void. But that creates the unused template
- * parameter warning. This is fixed by doing something like
+ * Suppose an API has changed a function from "cheer_for_delain" to "cheer_delain". To handle this
+ * the metacase support is used, but there is no apparent template parameter. A fake one can be used
+ * and defaulted to @c void. But that creates the unused template parameter warning. This is fixed
+ * by doing something to erase the template parameter @a V while forwarding parameter @a x. The result
+ * is a function @c f that calls the correct function automatically. Note this can't be in the body of
+ * the function because even for SFINAE the function body must compile and the variant with the wrong
+ * function will fail.
+ *
  * @code
  *   template <typename V = void>
- *   auto f(UDT x, swoc::meta::CaseTag<0>) -> decltype(delain(eraser<V>(x)))
- *   { return delain(eraser<V>(x));  }
+ *   auto f(UDT x, swoc::meta::CaseTag<0>) -> decltype(cheer_for_delain(eraser<V>(x)))
+ *   { return cheer_for_delain(eraser<V>(x));  }
  *
  *   template <typename V = void>
- *   auto f(UDT x, swoc::meta::CaseTag<1>) -> decltype(Delain(eraser<V>(x)))
- *   { return Delain(eraser<V>(vc)); }
+ *   auto f(UDT x, swoc::meta::CaseTag<1>) -> decltype(cheer_delain(eraser<V>(x)))
+ *   { return cheer_delain(eraser<V>(x)); }
  *
  *   f(x, swoc::meta::CaseArg); // Invoke the correctly named function
  * @endcode

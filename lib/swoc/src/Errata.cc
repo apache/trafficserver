@@ -142,12 +142,14 @@ bwformat(BufferWriter &bw, bwf::Spec const &spec, Errata::Severity level) {
 
 BufferWriter &
 bwformat(BufferWriter &bw, bwf::Spec const &, Errata const &errata) {
+  bwf::Format const code_fmt{"[{0:s} {0:d}] "};
+
   if (errata.has_severity()) {
     bw.print("{}{}", errata.severity(), errata.severity_glue_text());
   }
 
   if (errata.code()) {
-    bw.print("[{0:s} {0:d}] ", errata.code());
+    bw.print(code_fmt, errata.code());
   }
 
   bool trailing_p = false;

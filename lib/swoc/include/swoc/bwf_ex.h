@@ -206,6 +206,23 @@ SubText<ARG>
 Optional(TextView fmt, ARG &&arg) {
   return detail::Optional(meta::CaseArg, fmt, std::forward<ARG>(arg));
 }
+
+/** Convert from ASCII hexadecimal to raw bytes.
+ *
+ * E.g. if the source span contains "4576696c20446176652052756c7a" then "Evil Dave Rulz" is the output.
+ * For format specifier support, on lhe max width is used. Any @c MemSpan compatible class can be used
+ * as the target, including @c std::string and @c std::string_view.
+ *
+ * @code
+ *   void f(std::string const& str) {
+ *     w.print("{}", bwf::UnHex(str));
+ *     // ...
+ * @endcode
+ */
+struct UnHex {
+  UnHex(MemSpan<void const> const& span) : _span(span) {}
+  MemSpan<void const> _span; ///< Source span.
+};
 } // namespace bwf
 
 /** Repeatedly output a pattern.
@@ -236,6 +253,8 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Errno const 
  * @return @a w
  */
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, bwf::Date const &date);
+
+BufferWriter &bwformat(BufferWriter &w, bwf::Spec const& spec, bwf::UnHex const& obj);
 
 /** Output a nested formatted string.
  *
