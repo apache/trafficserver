@@ -27,6 +27,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "tscore/Diags.h"
@@ -1236,26 +1237,27 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     // recipient MUST treat it as an unrecoverable error.  If this is a
     // request message, the server MUST respond with a 400 (Bad Request)
     // status code and then close the connection
-    int content_length_len         = 0;
-    const char *content_length_val = content_length_field->value_get(&content_length_len);
+    std::string_view value = content_length_field->value_get();
 
-    // RFC 7230 section 3.3.2
+    // RFC 9110 section 8.6.
     // Content-Length = 1*DIGIT
     //
+    if (value.empty()) {
+      Debug("http", "Content-Length headers don't match the ABNF, returning parse error");
+      return PARSE_RESULT_ERROR;
+    }
+
     // If the content-length value contains a non-numeric value, the header is invalid
-    for (int i = 0; i < content_length_len; i++) {
-      if (!isdigit(content_length_val[i])) {
-        Debug("http", "Content-Length value contains non-digit, returning parse error");
-        return PARSE_RESULT_ERROR;
-      }
+    if (std::find_if(value.cbegin(), value.cend(), [](std::string_view::value_type c) { return !std::isdigit(c); }) !=
+        value.cend()) {
+      Debug("http", "Content-Length value contains non-digit, returning parse error");
+      return PARSE_RESULT_ERROR;
     }
 
     while (content_length_field->has_dups()) {
-      int content_length_len_2         = 0;
-      const char *content_length_val_2 = content_length_field->m_next_dup->value_get(&content_length_len_2);
+      std::string_view value_dup = content_length_field->m_next_dup->value_get();
 
-      if ((content_length_len != content_length_len_2) ||
-          (memcmp(content_length_val, content_length_val_2, content_length_len) != 0)) {
+      if ((value.length() != value_dup.length()) || value.compare(value_dup) != 0) {
         // Values are different, parse error
         Debug("http", "Content-Length headers don't match, returning parse error");
         return PARSE_RESULT_ERROR;
