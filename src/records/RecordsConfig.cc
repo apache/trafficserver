@@ -262,21 +262,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.udp.enable_gro", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  //##############################################################################
-  //#
-  //# Alarm Configuration
-  //#
-  //##############################################################################
-  //        #################################################################
-  //        # execute alarm as "<abs_path>/<bin> "<MSG_STRING_FROM_PROXY>"" #
-  //        #################################################################
-  {RECT_CONFIG, "proxy.config.alarm.bin", RECD_STRING, "example_alarm_bin.sh", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.alarm.abs_path", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.alarm.script_runtime", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-300]", RECA_NULL}
-  ,
-
   //        ###########
   //        # Parsing #
   //        ###########

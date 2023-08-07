@@ -659,22 +659,6 @@ Management
    This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
    out about the new admin API mechanism.
 
-Alarm Configuration
-===================
-
-.. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
-   :reloadable:
-
-   The absolute path to the directory containing the alarm script.
-   If this is not set, the script will be located relative to
-   :ts:cv:`proxy.config.bin_path`.
-
-.. ts:cv:: CONFIG proxy.config.alarm.script_runtime INT 5
-   :reloadable:
-
-   The number of seconds that |TS| allows the alarm script
-   to run before aborting it.
-
 HTTP Engine
 ===========
 
