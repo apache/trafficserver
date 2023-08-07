@@ -94,7 +94,7 @@ FetchSM::httpConnect()
 
   if (fetch_flags & TS_FETCH_FLAGS_SKIP_REMAP) {
     PluginVC *other_side = reinterpret_cast<PluginVC *>(http_vc)->get_other_side();
-    other_side->set_unmanaged(true);
+    other_side->set_is_unmanaged_request(true);
   }
 
   read_vio  = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
