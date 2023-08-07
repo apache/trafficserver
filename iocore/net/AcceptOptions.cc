@@ -37,6 +37,7 @@ AcceptOptions::reset()
   frequent_accept       = true;
   recv_bufsize          = 0;
   send_bufsize          = 0;
+  defer_accept          = 0;
   sockopt_flags         = 0;
   packet_mark           = 0;
   packet_tos            = 0;
