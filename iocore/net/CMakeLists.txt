@@ -17,7 +17,6 @@
 
 
 add_library(inknet STATIC
-        AcceptOptions.cc
         ALPNSupport.cc
         AsyncSignalEventIO.cc
         BIO_fastopen.cc
