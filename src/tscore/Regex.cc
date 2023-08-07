@@ -29,6 +29,13 @@
 #include "tscore/Regex.h"
 
 #ifdef PCRE_CONFIG_JIT
+/*
+Using two thread locals avoids the deadlock because without the thread local object access, get_jit_stack doesn't call
+the TLS init function which ends up calling __cxx_thread_atexit(which locks the dl_whatever mutex). Since the raw
+pointer doesn't have a destructor to call, it doesn't need to call this. Interestingly, get_jit_stack was calling the
+TLS init function to setup the destructor call at thread exit whether or not the class was declared in the function
+body.
+*/
 namespace
 {
 thread_local pcre_jit_stack *jit_stack;
