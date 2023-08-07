@@ -971,7 +971,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // that it inserted
           od->first_dir   = first_dir;
           od->writing_vec = true;
-          earliest_key    = zero_key;
+
+          earliest_key.clear();
 
           // set up this VC as a alternate delete write_vc
           vio.op          = VIO::WRITE;

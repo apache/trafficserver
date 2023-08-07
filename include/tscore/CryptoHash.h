@@ -23,6 +23,7 @@
 #pragma once
 
 #include "tscpp/util/ts_bw_format.h"
+#include "ink_memory.h"
 #include <openssl/evp.h>
 #include <string_view>
 
@@ -63,7 +64,7 @@ union CryptoHash {
   bool
   operator==(CryptoHash const &that) const
   {
-    return memcmp(this, &that, sizeof(*this)) == 0;
+    return ::memcmp(this, &that, sizeof(*this)) == 0;
   }
 
   /// Equality - bitwise identical.
@@ -90,6 +91,7 @@ union CryptoHash {
   {
     return u64[i];
   }
+
   /// Access 64 bit slice.
   /// @note Identical to @ operator[] but included for symmetry.
   uint64_t
@@ -107,9 +109,20 @@ union CryptoHash {
 
   /// Fast conversion to hex in fixed sized string.
   char *toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]) const;
-};
 
-extern CryptoHash const CRYPTO_HASH_ZERO;
+  bool
+  is_zero() const
+  {
+    constexpr uint8_t z64[sizeof(u64)] = {0};
+    return ::memcmp(u64, z64, sizeof(z64)) == 0;
+  }
+
+  void
+  clear()
+  {
+    ink_zero(u64);
+  }
+};
 
 class CryptoContext
 {
@@ -137,6 +150,7 @@ public:
   };
 
   CryptoContext();
+
   /// Update the hash with @a data of @a length bytes.
   bool update(void const *data, int length);
 
@@ -199,4 +213,3 @@ swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec,
 
 using ts::CryptoHash;
 using ts::CryptoContext;
-using ts::CRYPTO_HASH_ZERO;

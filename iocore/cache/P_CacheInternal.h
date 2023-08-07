@@ -543,7 +543,6 @@ struct CacheRemoveCont : public Continuation {
 
 // Global Data
 extern ClassAllocator<CacheVC> cacheVConnectionAllocator;
-extern CacheKey zero_key;
 extern CacheSync *cacheDirSync;
 // Function Prototypes
 int cache_write(CacheVC *, CacheHTTPInfoVector *);

@@ -86,14 +86,14 @@ int cache_config_read_while_writer_max_retries = 10;
 
 // Globals
 
-RecRawStatBlock *cache_rsb          = nullptr;
-Cache *theCache                     = nullptr;
-CacheDisk **gdisks                  = nullptr;
-int gndisks                         = 0;
-std::atomic<int> initialize_disk    = 0;
-Cache *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
-CacheSync *cacheDirSync             = nullptr;
-Store theCacheStore;
+RecRawStatBlock *cache_rsb              = nullptr;
+Cache *theCache                         = nullptr;
+CacheDisk **gdisks                      = nullptr;
+int gndisks                             = 0;
+static std::atomic<int> initialize_disk = 0;
+Cache *caches[NUM_CACHE_FRAG_TYPES]     = {nullptr};
+CacheSync *cacheDirSync                 = nullptr;
+static Store theCacheStore;
 int CacheProcessor::initialized          = CACHE_INITIALIZING;
 uint32_t CacheProcessor::cache_ready     = 0;
 int CacheProcessor::start_done           = 0;
@@ -110,7 +110,6 @@ ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
-CacheKey zero_key;
 
 namespace
 {

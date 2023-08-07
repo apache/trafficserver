@@ -234,7 +234,7 @@ PoolableSession::release_outbound_connection_tracking()
 inline void
 PoolableSession::attach_hostname(const char *hostname)
 {
-  if (CRYPTO_HASH_ZERO == hostname_hash) {
+  if (hostname_hash.is_zero()) {
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
