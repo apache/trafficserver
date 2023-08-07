@@ -17,6 +17,8 @@ Verify ip_allow filtering behavior.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Verify ip_allow filtering behavior.
 '''
@@ -95,7 +97,7 @@ ts.Disk.records_config.update({
 })
 
 format_string = ('%<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
-                 '%<cqhm> %<pquc> %<phr>/%<pqsn> %<psct> %<{Y-RID}pqh> '
+                 '%<cqhm> %<pquc> %<phr> %<psct> %<{Y-RID}pqh> '
                  '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
                  'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
                  'sftcls=%<{x-safet-classification}cqh> '
@@ -175,3 +177,11 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'stdout_wait') + ' 60 "{} {}" {}'.format(
+        os.path.join(Test.TestDirectory, 'run_sed.sh'), os.path.join(ts.Variables.LOGDIR, 'squid.log'),
+        os.path.join(Test.TestDirectory, 'gold/log.gold'))
+)
+tr.Processes.Default.ReturnCode = 0
