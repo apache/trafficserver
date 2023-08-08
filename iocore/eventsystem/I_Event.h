@@ -144,7 +144,7 @@ class EThread;
   schedule_in is that in the former it is an absolute value of time
   that is expected to be in the future where in the latter it is
   an amount of time to add to the current time (obtained with
-  ink_get_hrtime).
+  ink_ink_get_hrtime).
 
 */
 class Event : public Action

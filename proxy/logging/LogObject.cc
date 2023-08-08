@@ -516,7 +516,7 @@ private:
   wakeup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     for (auto &[o, b] : current_buffers) {
-      if (b && ink_hrtime_to_sec(Thread::get_hrtime()) > b->expiration_time()) {
+      if (b && ink_hrtime_to_sec(ink_get_hrtime()) > b->expiration_time()) {
         o->flush_buffer(b);
         b = nullptr;
       }
@@ -1423,7 +1423,7 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     box.check(mgr2.get_num_objects() == 4, "Testing that manager 2 has 4 objects");
 
     rprintf(t, "running Log::periodoc_tasks()\n");
-    Log::periodic_tasks(Thread::get_hrtime() / HRTIME_SECOND);
+    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECOND);
     rprintf(t, "Log::periodoc_tasks() done\n");
   }
 

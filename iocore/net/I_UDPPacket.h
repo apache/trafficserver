@@ -100,7 +100,7 @@ public:
      copies data from a buffer.
 
      @param to  address of where to send packet
-     @param when ink_hrtime relative to ink_get_hrtime_internal()
+     @param when ink_hrtime relative to ink_get_hrtime()
      @param buf IOBufferBlock chain of data to use
      @param segment_size Segment size
   */

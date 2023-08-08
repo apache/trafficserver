@@ -225,11 +225,15 @@ ink_hrtime_to_timeval(ink_hrtime t)
 #define NT_TIMEBASE_DIFFERENCE_100NSECS 116444736000000000i64
 
 static inline ink_hrtime
-ink_get_hrtime_internal()
+ink_get_hrtime()
 {
 #if defined(freebsd) || HAVE_CLOCK_GETTIME
   timespec ts;
+#if defined(CLOCK_REALTIME_COARSE)
+  clock_gettime(CLOCK_REALTIME_COARSE, &ts);
+#else
   clock_gettime(CLOCK_REALTIME, &ts);
+#endif
   return ink_hrtime_from_timespec(&ts);
 #else
   timeval tv;
@@ -241,13 +245,13 @@ ink_get_hrtime_internal()
 static inline struct timeval
 ink_gettimeofday()
 {
-  return ink_hrtime_to_timeval(ink_get_hrtime_internal());
+  return ink_hrtime_to_timeval(ink_get_hrtime());
 }
 
 static inline int
 ink_time()
 {
-  return (int)ink_hrtime_to_sec(ink_get_hrtime_internal());
+  return (int)ink_hrtime_to_sec(ink_get_hrtime());
 }
 
 static inline int

@@ -120,13 +120,13 @@ TLSBasicSupport::get_tls_handshake_end_time() const
 void
 TLSBasicSupport::_record_tls_handshake_begin_time()
 {
-  this->_tls_handshake_begin_time = Thread::get_hrtime();
+  this->_tls_handshake_begin_time = ink_get_hrtime();
 }
 
 void
 TLSBasicSupport::_record_tls_handshake_end_time()
 {
-  this->_tls_handshake_end_time       = Thread::get_hrtime();
+  this->_tls_handshake_end_time       = ink_get_hrtime();
   const ink_hrtime ssl_handshake_time = this->_tls_handshake_end_time - this->_tls_handshake_begin_time;
 
   Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);

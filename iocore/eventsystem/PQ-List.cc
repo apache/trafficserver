@@ -25,7 +25,7 @@
 
 PriorityEventQueue::PriorityEventQueue()
 {
-  last_check_time    = Thread::get_hrtime_updated();
+  last_check_time    = ink_get_hrtime();
   last_check_buckets = last_check_time / PQ_BUCKET_TIME(0);
 }
 

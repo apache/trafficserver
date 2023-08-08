@@ -99,7 +99,7 @@ NetTimeout::set_active_timeout(ink_hrtime timeout_in)
   }
 
   _active_timeout_in      = timeout_in;
-  _next_active_timeout_at = Thread::get_hrtime() + timeout_in;
+  _next_active_timeout_at = ink_get_hrtime() + timeout_in;
 }
 
 inline void
@@ -110,7 +110,7 @@ NetTimeout::set_inactive_timeout(ink_hrtime timeout_in)
   }
 
   _inactive_timeout_in      = timeout_in;
-  _next_inactive_timeout_at = Thread::get_hrtime() + timeout_in;
+  _next_inactive_timeout_at = ink_get_hrtime() + timeout_in;
 }
 
 inline void
@@ -134,7 +134,7 @@ NetTimeout::reset_active_timeout()
     return;
   }
 
-  _next_active_timeout_at = Thread::get_hrtime() + _active_timeout_in;
+  _next_active_timeout_at = ink_get_hrtime() + _active_timeout_in;
 }
 
 inline void
@@ -144,7 +144,7 @@ NetTimeout::reset_inactive_timeout()
     return;
   }
 
-  _next_inactive_timeout_at = Thread::get_hrtime() + _inactive_timeout_in;
+  _next_inactive_timeout_at = ink_get_hrtime() + _inactive_timeout_in;
 }
 
 inline bool
@@ -203,7 +203,7 @@ NetTimeout::update_inactivity()
     return;
   }
 
-  _next_inactive_timeout_at = Thread::get_hrtime() + _inactive_timeout_in;
+  _next_inactive_timeout_at = ink_get_hrtime() + _inactive_timeout_in;
 }
 
 //
@@ -233,7 +233,7 @@ template <class T, class List>
 inline int
 ActivityCop<T, List>::check_activity(int /* event */, Event *e)
 {
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
 
   // Traverse list & check inactivity or activity
   T *t = _list->head;

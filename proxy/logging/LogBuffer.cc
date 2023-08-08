@@ -203,7 +203,7 @@ LogBuffer::fast_write(size_t *write_offset, size_t write_size)
     size_t offset = m_state.s.offset;
 
     LogEntryHeader *entry_header = reinterpret_cast<LogEntryHeader *>(&m_buffer[offset]);
-    struct timeval tp            = ink_hrtime_to_timeval(Thread::get_hrtime());
+    struct timeval tp            = ink_hrtime_to_timeval(ink_get_hrtime());
 
     entry_header->timestamp      = tp.tv_sec;
     entry_header->timestamp_usec = tp.tv_usec;

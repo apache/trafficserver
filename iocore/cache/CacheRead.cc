@@ -322,7 +322,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
     // before the open_write, but the reader could not get the volume
     // lock. If we don't reset the clock here, we won't choose any writer
     // and hence fail the read request.
-    start_time                = Thread::get_hrtime();
+    start_time                = ink_get_hrtime();
     f.read_from_writer_called = 1;
   }
   cancel_trigger();

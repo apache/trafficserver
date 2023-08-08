@@ -8282,7 +8282,7 @@ HttpTransact::get_error_string(int erno)
 ink_time_t
 ink_local_time()
 {
-  return Thread::get_hrtime() / HRTIME_SECOND;
+  return ink_get_hrtime() / HRTIME_SECOND;
 }
 
 //
@@ -8292,7 +8292,7 @@ ink_local_time()
 void
 HttpTransact::milestone_start_api_time(State *s)
 {
-  s->state_machine->api_timer = Thread::get_hrtime_updated();
+  s->state_machine->api_timer = ink_get_hrtime();
 }
 
 void

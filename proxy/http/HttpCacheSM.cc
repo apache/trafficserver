@@ -164,7 +164,7 @@ HttpCacheSM::write_retry_done() const
 {
   MgmtInt const timeout_ms = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
   if (0 < timeout_ms && 0 < open_write_start) {
-    ink_hrtime const elapsed = Thread::get_hrtime() - open_write_start;
+    ink_hrtime const elapsed = ink_get_hrtime() - open_write_start;
     MgmtInt const msecs      = ink_hrtime_to_msec(elapsed);
     return timeout_ms < msecs;
   } else {
@@ -217,7 +217,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
         open_write_tries            = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
         MgmtInt const retry_timeout = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
         if (0 < retry_timeout) {
-          open_write_start = Thread::get_hrtime() - ink_hrtime_from_msec(retry_timeout);
+          open_write_start = ink_get_hrtime() - ink_hrtime_from_msec(retry_timeout);
         }
       }
     }
@@ -366,7 +366,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   open_write_cb = false;
   open_write_tries++;
   if (0 == open_write_start) {
-    open_write_start = Thread::get_hrtime();
+    open_write_start = ink_get_hrtime();
   }
   this->retry_write = retry;
 

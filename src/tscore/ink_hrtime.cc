@@ -210,9 +210,9 @@ init_hrtime_basis()
   init_hrtime_TCS();
 #endif
   do {
-    t1 = ink_get_hrtime_internal();
+    t1 = ink_get_hrtime();
 #if HAVE_CLOCK_GETTIME
-    ink_assert(!clock_gettime(CLOCK_REALTIME, &timespec_basis));
+    ink_assert(!clock_gettime(CLOCK_REALTIME_COARSE, &timespec_basis));
 #else
     {
       struct timeval tnow;
@@ -221,7 +221,7 @@ init_hrtime_basis()
       timespec_basis.tv_nsec = tnow.tv_usec * 1000;
     }
 #endif
-    t2 = ink_get_hrtime_internal();
+    t2 = ink_get_hrtime();
     // accuracy must be at least 100 microseconds
   } while (t2 - t1 > HRTIME_USECONDS(100));
   b   = (t2 + t1) / 2;

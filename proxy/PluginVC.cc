@@ -205,7 +205,7 @@ PluginVC::main_handler(int event, void *data)
   if (call_event == active_event) {
     process_timeout(&active_event, VC_EVENT_ACTIVE_TIMEOUT);
   } else if (call_event == inactive_event) {
-    if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
+    if (inactive_timeout_at && inactive_timeout_at < ink_get_hrtime()) {
       process_timeout(&inactive_event, VC_EVENT_INACTIVITY_TIMEOUT);
     }
   } else {
@@ -743,7 +743,7 @@ PluginVC::update_inactive_time()
   if (inactive_event && inactive_timeout) {
     // inactive_event->cancel();
     // inactive_event = eventProcessor.schedule_in(this, inactive_timeout);
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    inactive_timeout_at = ink_get_hrtime() + inactive_timeout;
   }
 }
 
@@ -800,7 +800,7 @@ PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   inactive_timeout = timeout_in;
   if (inactive_timeout != 0) {
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    inactive_timeout_at = ink_get_hrtime() + inactive_timeout;
     if (inactive_event == nullptr) {
       inactive_event = eventProcessor.schedule_every(this, HRTIME_SECONDS(1));
     }
