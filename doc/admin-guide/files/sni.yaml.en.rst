@@ -66,13 +66,13 @@ inbound_port_ranges       Inbound   The port ranges for the inbound connection i
 
                                        .. code-block:: yaml
 
-                                       sni:
-                                         - fqdn: example.com
-                                           inbound_port_ranges:
-                                           - 443
-                                           - 8080-8086
-                                         - fqdn: other.com
-                                           inbound_port_ranges: 443
+                                          sni:
+                                            - fqdn: example.com
+                                              inbound_port_ranges:
+                                              - 443
+                                              - 8080-8086
+                                            - fqdn: other.com
+                                              inbound_port_ranges: 443
 
                                     would match all requests with an SNI for example.com on port 443, and on ports
                                     8080 through 8086 inclusive, and all
