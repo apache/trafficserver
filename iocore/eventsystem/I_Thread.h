@@ -175,7 +175,7 @@ public:
 protected:
   Thread();
 
-  static thread_local ink_hrtime cur_time;
+  static ink_hrtime cur_time;
 };
 
 extern Thread *this_thread();
@@ -189,5 +189,12 @@ Thread::get_hrtime()
 TS_INLINE ink_hrtime
 Thread::get_hrtime_updated()
 {
-  return cur_time = ink_get_hrtime_internal();
+  ink_hrtime now = ink_get_hrtime_internal();
+  if (now > cur_time) {
+    // Thread::cur_time is used frequently in most threads.  By avoiding unnecessary writes of it, locks of its cache line
+    // in (all) per-core caches are reduced.  This should reduce CPU core stalls.
+    //
+    cur_time = now;
+  }
+  return cur_time;
 }
