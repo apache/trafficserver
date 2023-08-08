@@ -35,6 +35,8 @@
 #include "tscore/ink_queue.h"
 #include "tscore/X509HostnameValidator.h"
 
+#include "tscpp/util/PostScript.h"
+
 // clang-format off
 
 // A simple certificate for CN=test.sslheaders.trafficserver.apache.org.
@@ -98,6 +100,8 @@ static X509 *
 load_cert_from_string(const char *cert_string)
 {
   BIO *bio = BIO_new_mem_buf((void *)cert_string, -1);
+  ts::PostScript bio_defer([&]() -> void { BIO_free(bio); });
+
   return PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 }
 
@@ -105,6 +109,8 @@ TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
 {
   char *matching;
   X509 *x = load_cert_from_string(test_certificate_cn);
+  ts::PostScript x_defer([&]() -> void { X509_free(x); });
+
   REQUIRE(x != nullptr);
   REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
   REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
@@ -115,6 +121,8 @@ TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
 TEST_CASE("bad_wildcard_SANs", "[libts][X509HostnameValidator]")
 {
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
+  ts::PostScript x_defer([&]() -> void { X509_free(x); });
+
   REQUIRE(x != nullptr);
   REQUIRE(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false);
   REQUIRE(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false);
@@ -127,6 +135,8 @@ TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
 {
   char *matching;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  ts::PostScript x_defer([&]() -> void { X509_free(x); });
+
   REQUIRE(x != nullptr);
   REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
   REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
@@ -143,6 +153,8 @@ TEST_CASE("IDNA_hostnames", "[libts][X509HostnameValidator]")
 {
   char *matching;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  ts::PostScript x_defer([&]() -> void { X509_free(x); });
+
   REQUIRE(x != nullptr);
   REQUIRE(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true);
   REQUIRE(strcmp("*.trafficserver.org", matching) == 0);
@@ -156,6 +168,8 @@ TEST_CASE("middle_label_match", "[libts][X509HostnameValidator]")
 {
   char *matching;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
+  ts::PostScript x_defer([&]() -> void { X509_free(x); });
+
   REQUIRE(x != nullptr);
   REQUIRE(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true);
   REQUIRE(strcmp("foo*.trafficserver.com", matching) == 0);
