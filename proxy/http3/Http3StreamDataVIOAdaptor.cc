@@ -48,7 +48,7 @@ Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame,
   this->_buffer->write(dframe->payload(), dframe->payload_length());
   this->_total_data_length += dframe->payload_length();
 
-  return Http3ErrorUPtr(new Http3NoError());
+  return Http3ErrorUPtr(nullptr);
 }
 
 void

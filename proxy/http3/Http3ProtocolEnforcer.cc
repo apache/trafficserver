@@ -37,7 +37,7 @@ Http3ProtocolEnforcer::interests()
 Http3ErrorUPtr
 Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq, Http3StreamType s_type)
 {
-  Http3ErrorUPtr error  = Http3ErrorUPtr(new Http3NoError());
+  Http3ErrorUPtr error  = Http3ErrorUPtr(nullptr);
   Http3FrameType f_type = frame->type();
   if (s_type == Http3StreamType::CONTROL) {
     if (frame_seq == 0 && f_type != Http3FrameType::SETTINGS) {
