@@ -34,7 +34,7 @@ sessions:
         - [:scheme, https]
         - [:authority, example.com]
         - [:path, /path/test1]
-        - [ uuid, nodelays ]
+        - [ uuid, 1 ]
     server-response:
       status: 200
       reason: "OK"

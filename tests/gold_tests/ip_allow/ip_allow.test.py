@@ -185,3 +185,127 @@ tr.Processes.Default.Command = (
         os.path.join(Test.TestDirectory, 'gold/log.gold'))
 )
 tr.Processes.Default.ReturnCode = 0
+
+IP_ALLOW_CONFIG_ALLOW_ALL = '''ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: allow
+    methods: ALL
+'''
+
+IP_ALLOW_CONFIG_DENY_ALL = '''ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: deny
+    methods: ALL
+'''
+
+
+class Test_ip_allow_h3:
+    """Configure a test to verify ip_allow behavior for h3 connections."""
+
+    replay_file = "replays/h3.replay.yaml"
+    client_counter: int = 0
+    ts_counter: int = 0
+    server_counter: int = 0
+
+    def __init__(self, name: str, ip_allow_config: str, gold_file="", replay_keys="", expect_request_rejected=False):
+        """Initialize the test.
+
+        :param name: The name of the test.
+        :param ip_allow_config: The ip_allow configuration to be used.
+        :param gold_file: (Optional) Gold file to be checked.
+        :param replay_keys: (Optional) Keys to be used by pv.
+        :param expect_request_rejected: (Optional) Whether or not the client request is expected to be rejected.
+        """
+        self.name = name
+        self.gold_file = gold_file
+        self.replay_keys = replay_keys
+        self.ip_allow_config = ip_allow_config
+        self.expect_request_rejected = expect_request_rejected
+
+    def _configure_server(self, tr: 'TestRun'):
+        """Configure the server.
+
+        :param tr: The TestRun object to associate the server process with.
+        """
+        server = tr.AddVerifierServerProcess(
+            f"server_{Test_ip_allow_h3.server_counter}",
+            self.replay_file)
+        Test_ip_allow_h3.server_counter += 1
+        self._server = server
+
+    def _configure_traffic_server(self, tr: 'TestRun'):
+        """Configure Traffic Server.
+
+        :param tr: The TestRun object to associate the ts process with.
+        """
+        ts = tr.MakeATSProcess(f"ts-{Test_ip_allow_h3.ts_counter}", enable_quic=True, enable_tls=True)
+
+        Test_ip_allow_h3.ts_counter += 1
+        self._ts = ts
+        # Configure TLS for Traffic Server.
+        self._ts.addDefaultSSLFiles()
+        self._ts.Disk.ssl_multicert_config.AddLine(
+            'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+        )
+        self._ts.Disk.records_config.update({
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'v_quic|quic|http|ip_allow',
+            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+            'proxy.config.quic.no_activity_timeout_in': 0,
+            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        })
+
+        self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
+
+        # Set ip_allow policy based on the input configuration.
+        self._ts.Disk.ip_allow_yaml.AddLines(
+            self.ip_allow_config.split("\n")
+        )
+
+    def run(self):
+        """Run the test."""
+        tr = Test.AddTestRun(self.name)
+        self._configure_server(tr)
+        self._configure_traffic_server(tr)
+
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
+
+        tr.AddVerifierClientProcess(
+            f'client-{Test_ip_allow_h3.client_counter}',
+            self.replay_file,
+            http3_ports=[self._ts.Variables.ssl_port],
+            keys=self.replay_keys)
+        Test_ip_allow_h3.client_counter += 1
+
+        if self.expect_request_rejected:
+            # The client request should time out because ATS rejects it and does
+            # not send a response.
+            tr.Processes.Default.ReturnCode = 1
+            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+                "client.*prohibited by ip-allow policy", "Request should be rejected by ip_allow")
+        else:
+            # Verify the client request is successful.
+            tr.Processes.Default.ReturnCode = 0
+            self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+                "client.*allowed by ip-allow policy", "Request should be allowed by ip_allow")
+
+        if self.gold_file:
+            tr.Processes.Default.Streams.all = self.gold_file
+
+
+# ip_allow tests for h3.
+if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
+
+    # TEST 4: Perform a request in h3 with ip_allow configured to allow all IPs.
+    test0 = Test_ip_allow_h3(
+        "", ip_allow_config=IP_ALLOW_CONFIG_ALLOW_ALL, expect_request_rejected=False)
+    test0.run()
+
+    # TEST 5: Perform a request in h3 with ip_allow configured to deny all IPs.
+    test1 = Test_ip_allow_h3(
+        "", ip_allow_config=IP_ALLOW_CONFIG_DENY_ALL, expect_request_rejected=True)
+    test1.run()
