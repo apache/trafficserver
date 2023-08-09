@@ -144,7 +144,7 @@ Http1ServerSession::release(ProxyTransaction *trans)
 {
   Debug("http_ss", "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
         sharing_match);
-  if (state == SSN_IN_USE) {
+  if (state == SSN_IN_USE || state == PoolableSession::KA_RESERVED) {
     // The caller should have already set the inactive timeout to the keep alive timeout
     // Unfortunately, we do not have access to that value from here.
     // However we can clear the active timeout here.  The active timeout makes no sense
@@ -236,7 +236,7 @@ Http1ServerSession ::release_transaction()
       ink_release_assert(transact_count >= released_transactions);
     }
   } else { // Not to be released
-    if (transact_count == released_transactions) {
+    if (state != PoolableSession::KA_RESERVED && transact_count == released_transactions) {
       // Make sure we previously called release() or do_io_close() on the session
       ink_release_assert(state != INIT);
       do_io_close(HTTP_ERRNO);
