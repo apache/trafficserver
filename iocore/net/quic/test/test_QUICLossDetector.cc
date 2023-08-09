@@ -86,7 +86,6 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
       packet->is_ack_eliciting(),
       true,
       packet->size(),
-      ink_get_hrtime(),
       packet->type(),
       {},
       QUICPacketNumberSpace::HANDSHAKE,

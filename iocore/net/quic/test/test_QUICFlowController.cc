@@ -104,7 +104,6 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
-  ink_get_hrtime();
 
   // Exceed limit
   ret = fc.update(1280);
@@ -288,7 +287,6 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
-  ink_get_hrtime();
 
   // Exceed limit
   ret = fc.update(1280);
