@@ -42,6 +42,8 @@
 #include <cstring>
 #include <sys/time.h>
 
+int gSystemClock = 0; // 0 == CLOCK_REALTIME, the default
+
 char *
 int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
 {

@@ -86,11 +86,7 @@ now(void)
 {
   struct timespec t;
 
-#if defined(CLOCK_REALTIME_COARSE)
-  if (!clock_gettime(CLOCK_REALTIME_COARSE, &t)) {
-#else
   if (!clock_gettime(CLOCK_REALTIME, &t)) {
-#endif
     return (double)t.tv_sec + 1.0e-9 * (double)t.tv_nsec;
   }
   return NAN;
