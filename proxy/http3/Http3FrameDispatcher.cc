@@ -44,7 +44,7 @@ Http3ErrorUPtr
 Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stream_type, IOBufferReader &reader, uint64_t &nread)
 {
   std::shared_ptr<const Http3Frame> frame(nullptr);
-  Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
+  Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
   nread                = 0;
   uint32_t frame_count = 0;
 
@@ -108,7 +108,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
       std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
       for (auto h : handlers) {
         error = h->handle_frame(frame, frame_count - 1, stream_type);
-        if (error->cls != Http3ErrorClass::NONE) {
+        if (error && error->cls != Http3ErrorClass::NONE) {
           return error;
         }
       }

@@ -47,7 +47,7 @@ Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, s
     all_done &= g->is_done();
   }
 
-  return Http3ErrorUPtr(new Http3NoError());
+  return Http3ErrorUPtr(nullptr);
 }
 
 void

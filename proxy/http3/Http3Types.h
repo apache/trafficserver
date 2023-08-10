@@ -113,12 +113,6 @@ protected:
     : cls(Http3ErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
 };
 
-class Http3NoError : public Http3Error
-{
-public:
-  Http3NoError() : Http3Error() {}
-};
-
 class Http3ConnectionError : public Http3Error
 {
 public:
@@ -142,6 +136,4 @@ public:
   Http3Stream *stream;
 };
 
-using Http3ErrorUPtr           = std::unique_ptr<Http3Error>;
-using Http3ConnectionErrorUPtr = std::unique_ptr<Http3ConnectionError>;
-using Http3StreamErrorUPtr     = std::unique_ptr<Http3StreamError>;
+using Http3ErrorUPtr = std::unique_ptr<Http3Error>;

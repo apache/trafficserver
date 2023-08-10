@@ -65,7 +65,7 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, int
     ink_abort("should not be here");
   }
 
-  return Http3ErrorUPtr(new Http3NoError());
+  return Http3ErrorUPtr(nullptr);
 }
 
 bool

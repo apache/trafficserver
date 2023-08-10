@@ -192,7 +192,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 void
 Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
 {
-  Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
+  Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
   Http3StreamType type;
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
   auto it                      = this->_remote_uni_stream_map.find(adapter->stream().id());
@@ -390,7 +390,7 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int3
 
   if (!settings_frame) {
     // make error
-    return Http3ErrorUPtr(new Http3NoError());
+    return Http3ErrorUPtr(nullptr);
   }
 
   if (settings_frame->is_valid()) {
@@ -426,7 +426,7 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int3
     Debug("http3", "SETTINGS_NUM_PLACEHOLDERS: %" PRId64, num_placeholders);
   }
 
-  return Http3ErrorUPtr(new Http3NoError());
+  return Http3ErrorUPtr(nullptr);
 }
 
 //
