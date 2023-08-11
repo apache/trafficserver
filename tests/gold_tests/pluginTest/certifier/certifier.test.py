@@ -64,7 +64,7 @@ class DynamicCertTest:
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
         # Verify logs for dynamic generation of certs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "Creating shadow certs",
+            "creating shadow certs",
             "Verify the certifier plugin generates the certificate dynamically.")
 
     def runHTTPSTraffic(self):
@@ -148,7 +148,8 @@ class ReuseExistingCertTest:
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}')
         # Verify logs for reusing existing cert
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "Reuse existing cert and context for www.tls.com", "Should reuse the existing certificate")
+            "reusing existing cert and context for www.tls.com",
+            "Should reuse the existing certificate")
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
