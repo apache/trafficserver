@@ -49,14 +49,10 @@ Test.testName = "cache_range_requests_cache_200s"
 
 # Generate bodies for our responses
 small_body_len = 10000
-small_body = ''
-for i in range(small_body_len):
-    small_body += 'x'
+small_body = 'x' * small_body_len
 
 slice_body_len = 4 * 1024 * 1024
-slice_body = ''
-for i in range(slice_body_len):
-    slice_body += 'x'
+slice_body = 'x' * slice_body_len
 
 # Define and configure ATS
 ts = Test.MakeATSProcess("ts", command="traffic_server")
