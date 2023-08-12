@@ -86,7 +86,7 @@ Metrics::lookup(const std::string_view name) const
   return NOT_FOUND;
 }
 
-Metrics::AtomicType *
+Metrics::IntType *
 Metrics::lookup(IdType id, std::string_view *name) const
 {
   auto [blob_ix, offset]       = _splitID(id);

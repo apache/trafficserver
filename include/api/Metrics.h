@@ -40,11 +40,12 @@ namespace ts
 class Metrics
 {
 private:
-  using self_type  = Metrics;
-  using IdType     = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
-  using AtomicType = std::atomic<int64_t>;
+  using self_type = Metrics;
+  using IdType    = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
 
 public:
+  using IntType = std::atomic<int64_t>;
+
   static constexpr uint16_t METRICS_MAX_BLOBS = 8192;
   static constexpr uint16_t METRICS_MAX_SIZE  = 2048;                               // For a total of 16M metrics
   static constexpr IdType NOT_FOUND           = std::numeric_limits<IdType>::min(); // <16-bit,16-bit> = <blob-index,offset>
@@ -52,7 +53,7 @@ public:
 private:
   using NameAndId       = std::tuple<std::string, IdType>;
   using NameContainer   = std::array<NameAndId, METRICS_MAX_SIZE>;
-  using AtomicContainer = std::array<AtomicType, METRICS_MAX_SIZE>;
+  using AtomicContainer = std::array<IntType, METRICS_MAX_SIZE>;
   using MetricStorage   = std::tuple<NameContainer, AtomicContainer>;
   using MetricBlobs     = std::array<MetricStorage *, METRICS_MAX_BLOBS>;
   using LookupTable     = std::unordered_map<std::string_view, IdType>;
@@ -84,9 +85,16 @@ public:
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
   IdType newMetric(const std::string_view name);
   IdType lookup(const std::string_view name) const;
-  AtomicType *lookup(IdType id, std::string_view *name = nullptr) const;
+  IntType *lookup(IdType id, std::string_view *name = nullptr) const;
 
-  AtomicType &
+  // A bit of a convenience, since we use the ptr to the atomic frequently in the core
+  IntType *
+  newMetricPtr(const std::string_view name)
+  {
+    return lookup(newMetric(name));
+  }
+
+  IntType &
   operator[](IdType id)
   {
     return *lookup(id);

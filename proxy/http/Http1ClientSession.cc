@@ -118,7 +118,7 @@ Http1ClientSession::free()
 #endif
 
   if (conn_decrease) {
-    HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
+    Metrics::decrement(http_rsb.current_client_connections);
     conn_decrease = false;
   }
 
@@ -154,26 +154,26 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   schedule_event = nullptr;
 
-  HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
+  Metrics::increment(http_rsb.current_client_connections);
   conn_decrease = true;
-  HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
+  Metrics::increment(http_rsb.total_client_connections);
   if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TRANSPORT_SSL) {
-    HTTP_INCREMENT_DYN_STAT(https_total_client_connections_stat);
+    Metrics::increment(http_rsb.https_total_client_connections);
   }
 
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
-  HTTP_INCREMENT_DYN_STAT(http_total_incoming_connections_stat);
+  Metrics::increment(http_rsb.total_incoming_connections);
 
   // check what type of socket address we just accepted
   // by looking at the address family value of sockaddr_storage
   // and logging to stat system
   switch (new_vc->get_remote_addr()->sa_family) {
   case AF_INET:
-    HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv4_stat);
+    Metrics::increment(http_rsb.total_client_connections_ipv4);
     break;
   case AF_INET6:
-    HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv6_stat);
+    Metrics::increment(http_rsb.total_client_connections_ipv6);
     break;
   default:
     // don't do anything if the address family is not ipv4 or ipv6
@@ -263,7 +263,7 @@ Http1ClientSession::do_io_close(int alerrno)
     _reader->consume(_reader->read_avail());
   } else {
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
-    HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
+    Metrics::increment(http_rsb.transactions_per_client_con, transact_count);
     read_state = HCS_CLOSED;
 
     if (_vc) {
@@ -514,12 +514,12 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 void
 Http1ClientSession::increment_current_active_connections_stat()
 {
-  HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
+  Metrics::increment(http_rsb.current_active_client_connections);
 }
 void
 Http1ClientSession::decrement_current_active_connections_stat()
 {
-  HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+  Metrics::decrement(http_rsb.current_active_client_connections);
 }
 
 void

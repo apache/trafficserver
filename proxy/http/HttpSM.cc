@@ -1603,7 +1603,7 @@ HttpSM::handle_api_return()
       // a blind tunnel.
       IOBufferReader *initial_data = nullptr;
       if (t_state.is_websocket) {
-        HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
+        Metrics::increment(http_rsb.websocket_current_active_client_connections);
         if (server_txn) {
           initial_data = server_txn->get_remote_reader();
         }
@@ -1720,8 +1720,8 @@ HttpSM::create_server_txn(PoolableSession *new_session)
     server_txn->attach_transaction(this);
     if (t_state.current.request_to == ResolveInfo::PARENT_PROXY) {
       new_session->to_parent_proxy = true;
-      HTTP_INCREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
-      HTTP_INCREMENT_DYN_STAT(http_total_parent_proxy_connections_stat);
+      Metrics::increment(http_rsb.current_parent_proxy_connections);
+      Metrics::increment(http_rsb.total_parent_proxy_connections);
     } else {
       new_session->to_parent_proxy = false;
     }
@@ -1841,7 +1841,7 @@ HttpSM::state_http_server_open(int event, void *data)
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
       terminate_sm                   = true;
     } else if (ENET_THROTTLING == t_state.current.server->connect_result) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      Metrics::increment(http_rsb.origin_connections_throttled);
       send_origin_throttled_response();
     } else {
       // Go ahead and release the failed server session.  Since it didn't receive a response, the release logic will
@@ -2454,7 +2454,7 @@ HttpSM::state_cache_open_write(int event, void *data)
   if (_ua.get_txn()) {
     pending_action = _ua.get_txn()->adjust_thread(this, event, data);
     if (!pending_action.empty()) {
-      HTTP_INCREMENT_DYN_STAT(http_cache_open_write_adjust_thread_stat);
+      Metrics::increment(http_rsb.cache_open_write_adjust_thread);
       return 0; // Go away if we reschedule
     }
     NetVConnection *vc = _ua.get_txn()->get_netvc();
@@ -3006,7 +3006,7 @@ HttpSM::tunnel_handler(int event, void *data)
   terminate_sm = true;
 
   if (unlikely(t_state.is_websocket)) {
-    HTTP_DECREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
+    Metrics::decrement(http_rsb.websocket_current_active_client_connections);
   }
 
   return 0;
@@ -3067,11 +3067,11 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     close_connection = false;
   } else {
     if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_no_keep_alive);
+      Metrics::increment(http_rsb.origin_shutdown_tunnel_server_no_keep_alive);
     } else if (server_entry->eos == true) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_eos);
+      Metrics::increment(http_rsb.origin_shutdown_tunnel_server_eos);
     } else {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_plugin_tunnel);
+      Metrics::increment(http_rsb.origin_shutdown_tunnel_server_plugin_tunnel);
     }
     close_connection = true;
   }
@@ -3100,7 +3100,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
       break;
     }
-    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server);
+    Metrics::increment(http_rsb.origin_shutdown_tunnel_server);
     close_connection = true;
 
     ink_assert(p->vc_type == HT_HTTP_SERVER);
@@ -3178,7 +3178,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     p->read_success               = true;
     t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
     t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
-    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_detach);
+    Metrics::increment(http_rsb.origin_shutdown_tunnel_server_detach);
     close_connection = true;
     break;
 
@@ -3199,7 +3199,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   // If we had a ground fill, check update our status
   if (background_fill == BACKGROUND_FILL_STARTED) {
     background_fill = p->read_success ? BACKGROUND_FILL_COMPLETED : BACKGROUND_FILL_ABORTED;
-    HTTP_DECREMENT_DYN_STAT(http_background_fill_current_count_stat);
+    Metrics::decrement(http_rsb.background_fill_current_count);
   }
   // We handled the event.  Now either shutdown the connection or
   //   setup it up for keep-alive
@@ -3446,8 +3446,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       // There is another consumer (cache write) so
       //  detach the user agent
       if (background_fill == BACKGROUND_FILL_STARTED) {
-        HTTP_INCREMENT_DYN_STAT(http_background_fill_current_count_stat);
-        HTTP_INCREMENT_DYN_STAT(http_background_fill_total_count_stat);
+        Metrics::increment(http_rsb.background_fill_current_count);
+        Metrics::increment(http_rsb.background_fill_total_count);
 
         ink_assert(c->is_downstream_from(server_txn));
         server_txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
@@ -3664,7 +3664,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
       p->vc->do_io_close(EHTTP_ERROR);
       p->read_vio = nullptr;
       tunnel.chain_abort_all(p);
-      HTTP_INCREMENT_DYN_STAT(http_cache_read_errors);
+      Metrics::increment(http_rsb.cache_read_errors);
       break;
     } else {
       tunnel.local_finish_all(p);
@@ -3685,7 +3685,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
     break;
   }
 
-  HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
+  Metrics::decrement(http_rsb.current_cache_connections);
   return 0;
 }
 
@@ -3706,7 +3706,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     c->write_vio = nullptr;
     c->vc->do_io_close(EHTTP_ERROR);
 
-    HTTP_INCREMENT_DYN_STAT(http_cache_write_errors);
+    Metrics::increment(http_rsb.cache_write_errors);
     SMDebug("http", "aborting cache write due %s event from cache", HttpDebugNames::get_event_name(event));
     // abort the producer if the cache_writevc is the only consumer.
     if (c->producer->alive && c->producer->num_consumers == 1) {
@@ -3740,7 +3740,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     server_response_body_bytes = c->bytes_written;
   }
 
-  HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
+  Metrics::decrement(http_rsb.current_cache_connections);
   return 0;
 }
 
@@ -4231,7 +4231,7 @@ HttpSM::tunnel_handler_transform_read(int event, HttpTunnelProducer *p)
   //  transform hasn't detached yet.  If it is still alive,
   //  don't close the transform vc
   if (p->self_consumer->alive == false) {
-    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_transform_read);
+    Metrics::increment(http_rsb.origin_shutdown_tunnel_transform_read);
     p->vc->do_io_close();
   }
   p->handler_state = HTTP_SM_TRANSFORM_CLOSED;
@@ -4934,7 +4934,7 @@ HttpSM::do_cache_lookup_and_read()
   t_state.request_sent_time      = UNDEFINED_TIME;
   t_state.response_received_time = UNDEFINED_TIME;
 
-  HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
+  Metrics::increment(http_rsb.cache_lookups);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
   t_state.cache_lookup_result                    = HttpTransact::CACHE_LOOKUP_NONE;
@@ -5382,16 +5382,16 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
     switch (shared_result) {
     case HSM_DONE:
-      HTTP_INCREMENT_DYN_STAT(http_origin_reuse);
+      Metrics::increment(http_rsb.origin_reuse);
       hsm_release_assert(server_txn != nullptr);
       handle_http_server_open();
       return;
     case HSM_NOT_FOUND:
-      HTTP_INCREMENT_DYN_STAT(http_origin_not_found);
+      Metrics::increment(http_rsb.origin_not_found);
       hsm_release_assert(server_txn == nullptr);
       break;
     case HSM_RETRY:
-      HTTP_INCREMENT_DYN_STAT(http_origin_reuse_fail);
+      Metrics::increment(http_rsb.origin_reuse_fail);
       //  Could not get shared pool lock
       //   FIX: should retry lock
       break;
@@ -5439,15 +5439,15 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   }
 
   if (!try_reuse) {
-    HTTP_INCREMENT_DYN_STAT(http_origin_make_new);
+    Metrics::increment(http_rsb.origin_make_new);
     if (TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_no_sharing);
+      Metrics::increment(http_rsb.origin_no_sharing);
     } else if ((t_state.txn_conf->keep_alive_post_out != 1 && t_state.hdr_info.request_content_length > 0)) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_body);
+      Metrics::increment(http_rsb.origin_body);
     } else if (is_private()) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_private);
+      Metrics::increment(http_rsb.origin_private);
     } else if (raw) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_raw);
+      Metrics::increment(http_rsb.origin_raw);
     } else {
       ink_release_assert(_ua.get_txn() == nullptr);
     }
@@ -5468,15 +5468,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // Atomically read the current number of connections and check to see
   // if we have gone above the max allowed.
   if (t_state.http_config_param->server_max_connections > 0) {
-    int64_t sum;
-
-    HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, sum);
-
-    // Note that there is a potential race condition here where
-    // the value of the http_current_server_connections_stat gets changed
-    // between the statement above and the check below.
-    // If this happens, we might go over the max by 1 but this is ok.
-    if (sum >= t_state.http_config_param->server_max_connections) {
+    if (Metrics::read(http_rsb.current_server_connections) >= t_state.http_config_param->server_max_connections) {
       httpSessionManager.purge_keepalives();
       // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
       // of retries and errors.  But at this point, we are just going to allow the error case.
@@ -5502,7 +5494,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       ink_assert(pending_action.empty()); // in case of reschedule must not have already pending.
 
       ct_state.blocked();
-      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      Metrics::increment(http_rsb.origin_connections_throttled);
       ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
                             debug_on && is_debug_tag_set("http") ? "http" : nullptr);
       send_origin_throttled_response();
@@ -5881,21 +5873,21 @@ HttpSM::release_server_session(bool serve_from_cache)
   } else {
     server_txn->do_io_close();
     if (TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_sharing);
+      Metrics::increment(http_rsb.origin_shutdown_release_no_sharing);
     } else if (t_state.current.server == nullptr) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_server);
+      Metrics::increment(http_rsb.origin_shutdown_release_no_server);
     } else if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_keep_alive);
+      Metrics::increment(http_rsb.origin_shutdown_release_no_keep_alive);
     } else if (!t_state.hdr_info.server_response.valid()) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_invalid_response);
+      Metrics::increment(http_rsb.origin_shutdown_release_invalid_response);
     } else if (!t_state.hdr_info.server_request.valid()) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_invalid_request);
+      Metrics::increment(http_rsb.origin_shutdown_release_invalid_request);
     } else if (t_state.hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
                (t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_HEAD ||
                 t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE)) {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_modified);
+      Metrics::increment(http_rsb.origin_shutdown_release_modified);
     } else {
-      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_misc);
+      Metrics::increment(http_rsb.origin_shutdown_release_misc);
     }
   }
 
@@ -8233,7 +8225,7 @@ HttpSM::do_redirect()
         ats_free((void *)redirect_url);
         redirect_url     = nullptr;
         redirect_url_len = 0;
-        HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
+        Metrics::increment(http_rsb.total_x_redirect);
       } else {
         // get the location header and setup the redirect
         int redir_len = 0;

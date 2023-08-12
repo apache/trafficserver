@@ -53,6 +53,7 @@
 #include "records/I_RecProcess.h"
 #include "HttpConnectionCount.h"
 #include "tscpp/util/ts_ip.h"
+#include "api/Metrics.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
@@ -60,315 +61,279 @@ using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
-enum {
-  http_background_fill_current_count_stat,
-  http_current_client_connections_stat,
-  http_current_active_client_connections_stat,
-  http_websocket_current_active_client_connections_stat,
-  tunnel_current_active_connections_stat,
-  http_current_client_transactions_stat,
-  http_total_incoming_connections_stat,
-  http_current_server_transactions_stat,
-  http_pooled_server_connections_stat,
-
-  //  Http Abort information (from HttpNetConnection)
-  http_ua_msecs_counts_errors_pre_accept_hangups_stat,
-
-  // Http Total Connections Stats
-  //
-  // it is assumed that this inequality will always be satisfied:
-  //   http_total_client_connections_stat >=
-  //     http_total_client_connections_ipv4_stat +
-  //     http_total_client_connections_ipv6_stat
-  http_total_client_connections_stat,
-  http_total_client_connections_ipv4_stat,
-  http_total_client_connections_ipv6_stat,
-  http_total_server_connections_stat,
-  http_total_parent_proxy_connections_stat,
-  http_total_parent_retries_stat,
-  http_total_parent_switches_stat,
-  http_total_parent_retries_exhausted_stat,
-  http_total_parent_marked_down_count,
-  http_background_fill_total_count_stat,
-  http_current_parent_proxy_connections_stat,
-  http_current_server_connections_stat,
-  http_current_cache_connections_stat,
-
-  // Http K-A Stats
-  http_transactions_per_client_con,
-  http_transactions_per_server_con,
-
-  // Transactional stats
-  http_incoming_requests_stat,
-  http_outgoing_requests_stat,
-  http_incoming_responses_stat,
-  http_invalid_client_requests_stat,
-  http_missing_host_hdr_stat,
-  http_get_requests_stat,
-  http_head_requests_stat,
-  http_trace_requests_stat,
-  http_options_requests_stat,
-  http_post_requests_stat,
-  http_put_requests_stat,
-  http_push_requests_stat,
-  http_delete_requests_stat,
-  http_purge_requests_stat,
-  http_connect_requests_stat,
-  http_extension_method_requests_stat,
-  http_proxy_loop_detected_stat,
-  http_proxy_mh_loop_detected_stat,
-
-  http_completed_requests_stat,
-  http_broken_server_connections_stat,
-
-  http_cache_lookups_stat,
-  http_cache_writes_stat,
-  http_cache_updates_stat,
-  http_cache_deletes_stat,
-
-  http_tunnels_stat,
-
-  // document size stats
-  http_user_agent_request_header_total_size_stat,
-  http_user_agent_response_header_total_size_stat,
-  http_user_agent_request_document_total_size_stat,
-  http_user_agent_response_document_total_size_stat,
-
-  http_origin_server_request_header_total_size_stat,
-  http_origin_server_response_header_total_size_stat,
-  http_origin_server_request_document_total_size_stat,
-  http_origin_server_response_document_total_size_stat,
-
-  http_parent_proxy_request_total_bytes_stat,
-  http_parent_proxy_response_total_bytes_stat,
-
-  http_pushed_response_header_total_size_stat,
-  http_pushed_document_total_size_stat,
-
-  http_background_fill_bytes_aborted_stat,
-  http_background_fill_bytes_completed_stat,
-
-  http_response_document_size_100_stat,
-  http_response_document_size_1K_stat,
-  http_response_document_size_3K_stat,
-  http_response_document_size_5K_stat,
-  http_response_document_size_10K_stat,
-  http_response_document_size_1M_stat,
-  http_response_document_size_inf_stat,
-
-  http_request_document_size_100_stat,
-  http_request_document_size_1K_stat,
-  http_request_document_size_3K_stat,
-  http_request_document_size_5K_stat,
-  http_request_document_size_10K_stat,
-  http_request_document_size_1M_stat,
-  http_request_document_size_inf_stat,
-
-  // connection speed stats
-  http_user_agent_speed_bytes_per_sec_100_stat,
-  http_user_agent_speed_bytes_per_sec_1K_stat,
-  http_user_agent_speed_bytes_per_sec_10K_stat,
-  http_user_agent_speed_bytes_per_sec_100K_stat,
-  http_user_agent_speed_bytes_per_sec_1M_stat,
-  http_user_agent_speed_bytes_per_sec_10M_stat,
-  http_user_agent_speed_bytes_per_sec_100M_stat,
-  http_origin_server_speed_bytes_per_sec_100_stat,
-  http_origin_server_speed_bytes_per_sec_1K_stat,
-  http_origin_server_speed_bytes_per_sec_10K_stat,
-  http_origin_server_speed_bytes_per_sec_100K_stat,
-  http_origin_server_speed_bytes_per_sec_1M_stat,
-  http_origin_server_speed_bytes_per_sec_10M_stat,
-  http_origin_server_speed_bytes_per_sec_100M_stat,
-
-  // cache result stats
-  http_cache_hit_fresh_stat,
-  http_cache_hit_mem_fresh_stat,
-  http_cache_hit_rww_stat,
-  http_cache_hit_reval_stat,
-  http_cache_hit_ims_stat,
-  http_cache_hit_stale_served_stat,
-  http_cache_miss_cold_stat,
-  http_cache_miss_changed_stat,
-  http_cache_miss_client_no_cache_stat,
-  http_cache_miss_uncacheable_stat,
-  http_cache_miss_ims_stat,
-  http_cache_read_error_stat,
-
-  // bandwidth savings stats
-  http_tcp_hit_count_stat,
-  http_tcp_hit_user_agent_bytes_stat,
-  http_tcp_hit_origin_server_bytes_stat,
-  http_tcp_miss_count_stat,
-  http_tcp_miss_user_agent_bytes_stat,
-  http_tcp_miss_origin_server_bytes_stat,
-  http_tcp_expired_miss_count_stat,
-  http_tcp_expired_miss_user_agent_bytes_stat,
-  http_tcp_expired_miss_origin_server_bytes_stat,
-  http_tcp_refresh_hit_count_stat,
-  http_tcp_refresh_hit_user_agent_bytes_stat,
-  http_tcp_refresh_hit_origin_server_bytes_stat,
-  http_tcp_refresh_miss_count_stat,
-  http_tcp_refresh_miss_user_agent_bytes_stat,
-  http_tcp_refresh_miss_origin_server_bytes_stat,
-  http_tcp_client_refresh_count_stat,
-  http_tcp_client_refresh_user_agent_bytes_stat,
-  http_tcp_client_refresh_origin_server_bytes_stat,
-  http_tcp_ims_hit_count_stat,
-  http_tcp_ims_hit_user_agent_bytes_stat,
-  http_tcp_ims_hit_origin_server_bytes_stat,
-  http_tcp_ims_miss_count_stat,
-  http_tcp_ims_miss_user_agent_bytes_stat,
-  http_tcp_ims_miss_origin_server_bytes_stat,
-  http_err_client_abort_count_stat,
-  http_err_client_abort_user_agent_bytes_stat,
-  http_err_client_abort_origin_server_bytes_stat,
-  http_err_client_read_error_count_stat,
-  http_err_client_read_error_user_agent_bytes_stat,
-  http_err_client_read_error_origin_server_bytes_stat,
-  http_err_connect_fail_count_stat,
-  http_err_connect_fail_user_agent_bytes_stat,
-  http_err_connect_fail_origin_server_bytes_stat,
-  http_misc_count_stat,
-  http_misc_user_agent_bytes_stat,
-  http_misc_origin_server_bytes_stat,
-
-  // http - time and count of transactions classified by client's point of view
-  http_ua_msecs_counts_hit_fresh_stat,
-
-  http_ua_msecs_counts_hit_fresh_process_stat,
-  http_ua_msecs_counts_hit_reval_stat,
-  http_ua_msecs_counts_miss_cold_stat,
-  http_ua_msecs_counts_miss_changed_stat,
-  http_ua_msecs_counts_miss_client_no_cache_stat,
-  http_ua_msecs_counts_miss_uncacheable_stat,
-  http_ua_msecs_counts_errors_aborts_stat,
-  http_ua_msecs_counts_errors_possible_aborts_stat,
-  http_ua_msecs_counts_errors_connect_failed_stat,
-  http_ua_msecs_counts_errors_other_stat,
-  http_ua_msecs_counts_other_unclassified_stat,
-
-  disallowed_post_100_continue,
-  http_post_body_too_large,
-
-  http_total_x_redirect_stat,
-
-  // Times
-  http_total_transactions_time_stat,
-  http_parent_proxy_transaction_time_stat,
-
-  // Http cache errors
-  http_cache_write_errors,
-  http_cache_read_errors,
-
-  // status code stats
-  http_response_status_100_count_stat,
-  http_response_status_101_count_stat,
-  http_response_status_1xx_count_stat,
-  http_response_status_200_count_stat,
-  http_response_status_201_count_stat,
-  http_response_status_202_count_stat,
-  http_response_status_203_count_stat,
-  http_response_status_204_count_stat,
-  http_response_status_205_count_stat,
-  http_response_status_206_count_stat,
-  http_response_status_2xx_count_stat,
-  http_response_status_300_count_stat,
-  http_response_status_301_count_stat,
-  http_response_status_302_count_stat,
-  http_response_status_303_count_stat,
-  http_response_status_304_count_stat,
-  http_response_status_305_count_stat,
-  http_response_status_307_count_stat,
-  http_response_status_308_count_stat,
-  http_response_status_3xx_count_stat,
-  http_response_status_400_count_stat,
-  http_response_status_401_count_stat,
-  http_response_status_402_count_stat,
-  http_response_status_403_count_stat,
-  http_response_status_404_count_stat,
-  http_response_status_405_count_stat,
-  http_response_status_406_count_stat,
-  http_response_status_407_count_stat,
-  http_response_status_408_count_stat,
-  http_response_status_409_count_stat,
-  http_response_status_410_count_stat,
-  http_response_status_411_count_stat,
-  http_response_status_412_count_stat,
-  http_response_status_413_count_stat,
-  http_response_status_414_count_stat,
-  http_response_status_415_count_stat,
-  http_response_status_416_count_stat,
-  http_response_status_4xx_count_stat,
-  http_response_status_500_count_stat,
-  http_response_status_501_count_stat,
-  http_response_status_502_count_stat,
-  http_response_status_503_count_stat,
-  http_response_status_504_count_stat,
-  http_response_status_505_count_stat,
-  http_response_status_5xx_count_stat,
-
-  https_incoming_requests_stat,
-  https_total_client_connections_stat,
-
-  // milestone timing statistics in milliseconds
-  http_ua_begin_time_stat,
-  http_ua_first_read_time_stat,
-  http_ua_read_header_done_time_stat,
-  http_ua_begin_write_time_stat,
-  http_ua_close_time_stat,
-  http_server_first_connect_time_stat,
-  http_server_connect_time_stat,
-  http_server_connect_end_time_stat,
-  http_server_begin_write_time_stat,
-  http_server_first_read_time_stat,
-  http_server_read_header_done_time_stat,
-  http_server_close_time_stat,
-  http_cache_open_read_begin_time_stat,
-  http_cache_open_read_end_time_stat,
-  http_cache_open_write_begin_time_stat,
-  http_cache_open_write_end_time_stat,
-  http_dns_lookup_begin_time_stat,
-  http_dns_lookup_end_time_stat,
-  http_sm_start_time_stat,
-  http_sm_finish_time_stat,
-
-  http_origin_connections_throttled_stat,
-
-  http_origin_connect_adjust_thread_stat,
-  http_cache_open_write_adjust_thread_stat,
-
-  http_origin_shutdown_pool_lock_contention,
-  http_origin_shutdown_migration_failure,
-  http_origin_shutdown_tunnel_server,
-  http_origin_shutdown_tunnel_server_no_keep_alive,
-  http_origin_shutdown_tunnel_server_eos,
-  http_origin_shutdown_tunnel_server_plugin_tunnel,
-  http_origin_shutdown_tunnel_server_detach,
-  http_origin_shutdown_tunnel_client,
-  http_origin_shutdown_tunnel_transform_read,
-  http_origin_shutdown_release_no_sharing,
-  http_origin_shutdown_release_no_server,
-  http_origin_shutdown_release_no_keep_alive,
-  http_origin_shutdown_release_invalid_response,
-  http_origin_shutdown_release_invalid_request,
-  http_origin_shutdown_release_modified,
-  http_origin_shutdown_release_misc,
-  http_origin_shutdown_cleanup_entry,
-  http_origin_shutdown_tunnel_abort,
-
-  http_down_server_no_requests,
-
-  http_origin_reuse,
-  http_origin_not_found,
-  http_origin_reuse_fail,
-  http_origin_make_new,
-  http_origin_no_sharing,
-  http_origin_body,
-  http_origin_private,
-  http_origin_close_private,
-  http_origin_raw,
-  http_parent_count,
-  http_stat_count
+struct HttpStatsBlock {
+  // Need two stats for these for counts and times
+  ts::Metrics::IntType *background_fill_bytes_aborted;
+  ts::Metrics::IntType *background_fill_bytes_completed;
+  ts::Metrics::IntType *background_fill_current_count;
+  ts::Metrics::IntType *background_fill_total_count;
+  ts::Metrics::IntType *broken_server_connections;
+  ts::Metrics::IntType *cache_deletes;
+  ts::Metrics::IntType *cache_hit_fresh;
+  ts::Metrics::IntType *cache_hit_ims;
+  ts::Metrics::IntType *cache_hit_mem_fresh;
+  ts::Metrics::IntType *cache_hit_reval;
+  ts::Metrics::IntType *cache_hit_rww;
+  ts::Metrics::IntType *cache_hit_stale_served;
+  ts::Metrics::IntType *cache_lookups;
+  ts::Metrics::IntType *cache_miss_changed;
+  ts::Metrics::IntType *cache_miss_client_no_cache;
+  ts::Metrics::IntType *cache_miss_cold;
+  ts::Metrics::IntType *cache_miss_ims;
+  ts::Metrics::IntType *cache_miss_uncacheable;
+  ts::Metrics::IntType *cache_open_read_begin_time;
+  ts::Metrics::IntType *cache_open_read_end_time;
+  ts::Metrics::IntType *cache_open_write_adjust_thread;
+  ts::Metrics::IntType *cache_open_write_begin_time;
+  ts::Metrics::IntType *cache_open_write_end_time;
+  ts::Metrics::IntType *cache_read_error;
+  ts::Metrics::IntType *cache_read_errors;
+  ts::Metrics::IntType *cache_updates;
+  ts::Metrics::IntType *cache_write_errors;
+  ts::Metrics::IntType *cache_writes;
+  ts::Metrics::IntType *completed_requests;
+  ts::Metrics::IntType *connect_requests;
+  ts::Metrics::IntType *current_active_client_connections;
+  ts::Metrics::IntType *current_cache_connections;
+  ts::Metrics::IntType *current_client_connections;
+  ts::Metrics::IntType *current_client_transactions;
+  ts::Metrics::IntType *current_parent_proxy_connections;
+  ts::Metrics::IntType *current_server_connections;
+  ts::Metrics::IntType *current_server_transactions;
+  ts::Metrics::IntType *delete_requests;
+  ts::Metrics::IntType *disallowed_post_100_continue;
+  ts::Metrics::IntType *dns_lookup_begin_time;
+  ts::Metrics::IntType *dns_lookup_end_time;
+  ts::Metrics::IntType *down_server_no_requests;
+  ts::Metrics::IntType *err_client_abort_count;
+  ts::Metrics::IntType *err_client_abort_origin_server_bytes;
+  ts::Metrics::IntType *err_client_abort_user_agent_bytes;
+  ts::Metrics::IntType *err_client_read_error_count;
+  ts::Metrics::IntType *err_client_read_error_origin_server_bytes;
+  ts::Metrics::IntType *err_client_read_error_user_agent_bytes;
+  ts::Metrics::IntType *err_connect_fail_count;
+  ts::Metrics::IntType *err_connect_fail_origin_server_bytes;
+  ts::Metrics::IntType *err_connect_fail_user_agent_bytes;
+  ts::Metrics::IntType *extension_method_requests;
+  ts::Metrics::IntType *get_requests;
+  ts::Metrics::IntType *head_requests;
+  ts::Metrics::IntType *https_incoming_requests;
+  ts::Metrics::IntType *https_total_client_connections;
+  ts::Metrics::IntType *incoming_requests;
+  ts::Metrics::IntType *incoming_responses;
+  ts::Metrics::IntType *invalid_client_requests;
+  ts::Metrics::IntType *misc_count;
+  ts::Metrics::IntType *misc_origin_server_bytes;
+  ts::Metrics::IntType *misc_user_agent_bytes;
+  ts::Metrics::IntType *missing_host_hdr;
+  ts::Metrics::IntType *options_requests;
+  ts::Metrics::IntType *origin_body;
+  ts::Metrics::IntType *origin_close_private;
+  ts::Metrics::IntType *origin_connect_adjust_thread;
+  ts::Metrics::IntType *origin_connections_throttled;
+  ts::Metrics::IntType *origin_make_new;
+  ts::Metrics::IntType *origin_no_sharing;
+  ts::Metrics::IntType *origin_not_found;
+  ts::Metrics::IntType *origin_private;
+  ts::Metrics::IntType *origin_raw;
+  ts::Metrics::IntType *origin_reuse;
+  ts::Metrics::IntType *origin_reuse_fail;
+  ts::Metrics::IntType *origin_server_request_document_total_size;
+  ts::Metrics::IntType *origin_server_request_header_total_size;
+  ts::Metrics::IntType *origin_server_response_document_total_size;
+  ts::Metrics::IntType *origin_server_response_header_total_size;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100K;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_100M;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_10K;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_10M;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_1K;
+  ts::Metrics::IntType *origin_server_speed_bytes_per_sec_1M;
+  ts::Metrics::IntType *origin_shutdown_cleanup_entry;
+  ts::Metrics::IntType *origin_shutdown_migration_failure;
+  ts::Metrics::IntType *origin_shutdown_pool_lock_contention;
+  ts::Metrics::IntType *origin_shutdown_release_invalid_request;
+  ts::Metrics::IntType *origin_shutdown_release_invalid_response;
+  ts::Metrics::IntType *origin_shutdown_release_misc;
+  ts::Metrics::IntType *origin_shutdown_release_modified;
+  ts::Metrics::IntType *origin_shutdown_release_no_keep_alive;
+  ts::Metrics::IntType *origin_shutdown_release_no_server;
+  ts::Metrics::IntType *origin_shutdown_release_no_sharing;
+  ts::Metrics::IntType *origin_shutdown_tunnel_abort;
+  ts::Metrics::IntType *origin_shutdown_tunnel_client;
+  ts::Metrics::IntType *origin_shutdown_tunnel_server;
+  ts::Metrics::IntType *origin_shutdown_tunnel_server_detach;
+  ts::Metrics::IntType *origin_shutdown_tunnel_server_eos;
+  ts::Metrics::IntType *origin_shutdown_tunnel_server_no_keep_alive;
+  ts::Metrics::IntType *origin_shutdown_tunnel_server_plugin_tunnel;
+  ts::Metrics::IntType *origin_shutdown_tunnel_transform_read;
+  ts::Metrics::IntType *outgoing_requests;
+  ts::Metrics::IntType *parent_count;
+  ts::Metrics::IntType *parent_proxy_request_total_bytes;
+  ts::Metrics::IntType *parent_proxy_response_total_bytes;
+  ts::Metrics::IntType *parent_proxy_transaction_time;
+  ts::Metrics::IntType *pooled_server_connections;
+  ts::Metrics::IntType *post_body_too_large;
+  ts::Metrics::IntType *post_requests;
+  ts::Metrics::IntType *proxy_loop_detected;
+  ts::Metrics::IntType *proxy_mh_loop_detected;
+  ts::Metrics::IntType *purge_requests;
+  ts::Metrics::IntType *push_requests;
+  ts::Metrics::IntType *pushed_document_total_size;
+  ts::Metrics::IntType *pushed_response_header_total_size;
+  ts::Metrics::IntType *put_requests;
+  ts::Metrics::IntType *request_document_size_100;
+  ts::Metrics::IntType *request_document_size_10K;
+  ts::Metrics::IntType *request_document_size_1K;
+  ts::Metrics::IntType *request_document_size_1M;
+  ts::Metrics::IntType *request_document_size_3K;
+  ts::Metrics::IntType *request_document_size_5K;
+  ts::Metrics::IntType *request_document_size_inf;
+  ts::Metrics::IntType *response_document_size_100;
+  ts::Metrics::IntType *response_document_size_10K;
+  ts::Metrics::IntType *response_document_size_1K;
+  ts::Metrics::IntType *response_document_size_1M;
+  ts::Metrics::IntType *response_document_size_3K;
+  ts::Metrics::IntType *response_document_size_5K;
+  ts::Metrics::IntType *response_document_size_inf;
+  ts::Metrics::IntType *response_status_100_count;
+  ts::Metrics::IntType *response_status_101_count;
+  ts::Metrics::IntType *response_status_1xx_count;
+  ts::Metrics::IntType *response_status_200_count;
+  ts::Metrics::IntType *response_status_201_count;
+  ts::Metrics::IntType *response_status_202_count;
+  ts::Metrics::IntType *response_status_203_count;
+  ts::Metrics::IntType *response_status_204_count;
+  ts::Metrics::IntType *response_status_205_count;
+  ts::Metrics::IntType *response_status_206_count;
+  ts::Metrics::IntType *response_status_2xx_count;
+  ts::Metrics::IntType *response_status_300_count;
+  ts::Metrics::IntType *response_status_301_count;
+  ts::Metrics::IntType *response_status_302_count;
+  ts::Metrics::IntType *response_status_303_count;
+  ts::Metrics::IntType *response_status_304_count;
+  ts::Metrics::IntType *response_status_305_count;
+  ts::Metrics::IntType *response_status_307_count;
+  ts::Metrics::IntType *response_status_308_count;
+  ts::Metrics::IntType *response_status_3xx_count;
+  ts::Metrics::IntType *response_status_400_count;
+  ts::Metrics::IntType *response_status_401_count;
+  ts::Metrics::IntType *response_status_402_count;
+  ts::Metrics::IntType *response_status_403_count;
+  ts::Metrics::IntType *response_status_404_count;
+  ts::Metrics::IntType *response_status_405_count;
+  ts::Metrics::IntType *response_status_406_count;
+  ts::Metrics::IntType *response_status_407_count;
+  ts::Metrics::IntType *response_status_408_count;
+  ts::Metrics::IntType *response_status_409_count;
+  ts::Metrics::IntType *response_status_410_count;
+  ts::Metrics::IntType *response_status_411_count;
+  ts::Metrics::IntType *response_status_412_count;
+  ts::Metrics::IntType *response_status_413_count;
+  ts::Metrics::IntType *response_status_414_count;
+  ts::Metrics::IntType *response_status_415_count;
+  ts::Metrics::IntType *response_status_416_count;
+  ts::Metrics::IntType *response_status_4xx_count;
+  ts::Metrics::IntType *response_status_500_count;
+  ts::Metrics::IntType *response_status_501_count;
+  ts::Metrics::IntType *response_status_502_count;
+  ts::Metrics::IntType *response_status_503_count;
+  ts::Metrics::IntType *response_status_504_count;
+  ts::Metrics::IntType *response_status_505_count;
+  ts::Metrics::IntType *response_status_5xx_count;
+  ts::Metrics::IntType *server_begin_write_time;
+  ts::Metrics::IntType *server_close_time;
+  ts::Metrics::IntType *server_connect_end_time;
+  ts::Metrics::IntType *server_connect_time;
+  ts::Metrics::IntType *server_first_connect_time;
+  ts::Metrics::IntType *server_first_read_time;
+  ts::Metrics::IntType *server_read_header_done_time;
+  ts::Metrics::IntType *sm_finish_time;
+  ts::Metrics::IntType *sm_start_time;
+  ts::Metrics::IntType *tcp_client_refresh_count;
+  ts::Metrics::IntType *tcp_client_refresh_origin_server_bytes;
+  ts::Metrics::IntType *tcp_client_refresh_user_agent_bytes;
+  ts::Metrics::IntType *tcp_expired_miss_count;
+  ts::Metrics::IntType *tcp_expired_miss_origin_server_bytes;
+  ts::Metrics::IntType *tcp_expired_miss_user_agent_bytes;
+  ts::Metrics::IntType *tcp_hit_count;
+  ts::Metrics::IntType *tcp_hit_origin_server_bytes;
+  ts::Metrics::IntType *tcp_hit_user_agent_bytes;
+  ts::Metrics::IntType *tcp_ims_hit_count;
+  ts::Metrics::IntType *tcp_ims_hit_origin_server_bytes;
+  ts::Metrics::IntType *tcp_ims_hit_user_agent_bytes;
+  ts::Metrics::IntType *tcp_ims_miss_count;
+  ts::Metrics::IntType *tcp_ims_miss_origin_server_bytes;
+  ts::Metrics::IntType *tcp_ims_miss_user_agent_bytes;
+  ts::Metrics::IntType *tcp_miss_count;
+  ts::Metrics::IntType *tcp_miss_origin_server_bytes;
+  ts::Metrics::IntType *tcp_miss_user_agent_bytes;
+  ts::Metrics::IntType *tcp_refresh_hit_count;
+  ts::Metrics::IntType *tcp_refresh_hit_origin_server_bytes;
+  ts::Metrics::IntType *tcp_refresh_hit_user_agent_bytes;
+  ts::Metrics::IntType *tcp_refresh_miss_count;
+  ts::Metrics::IntType *tcp_refresh_miss_origin_server_bytes;
+  ts::Metrics::IntType *tcp_refresh_miss_user_agent_bytes;
+  ts::Metrics::IntType *total_client_connections;
+  ts::Metrics::IntType *total_client_connections_ipv4;
+  ts::Metrics::IntType *total_client_connections_ipv6;
+  ts::Metrics::IntType *total_incoming_connections;
+  ts::Metrics::IntType *total_parent_marked_down_count;
+  ts::Metrics::IntType *total_parent_proxy_connections;
+  ts::Metrics::IntType *total_parent_retries;
+  ts::Metrics::IntType *total_parent_retries_exhausted;
+  ts::Metrics::IntType *total_parent_switches;
+  ts::Metrics::IntType *total_server_connections;
+  ts::Metrics::IntType *total_transactions_time;
+  ts::Metrics::IntType *total_x_redirect;
+  ts::Metrics::IntType *trace_requests;
+  ts::Metrics::IntType *transactions_per_client_con;
+  ts::Metrics::IntType *transactions_per_server_con;
+  ts::Metrics::IntType *tunnel_current_active_connections;
+  ts::Metrics::IntType *tunnels;
+  ts::Metrics::IntType *ua_begin_time;
+  ts::Metrics::IntType *ua_begin_write_time;
+  ts::Metrics::IntType *ua_close_time;
+  ts::Metrics::IntType *ua_counts_errors_aborts;
+  ts::Metrics::IntType *ua_counts_errors_connect_failed;
+  ts::Metrics::IntType *ua_counts_errors_other;
+  ts::Metrics::IntType *ua_counts_errors_possible_aborts;
+  ts::Metrics::IntType *ua_counts_errors_pre_accept_hangups;
+  ts::Metrics::IntType *ua_counts_hit_fresh;
+  ts::Metrics::IntType *ua_counts_hit_fresh_process;
+  ts::Metrics::IntType *ua_counts_hit_reval;
+  ts::Metrics::IntType *ua_counts_miss_changed;
+  ts::Metrics::IntType *ua_counts_miss_client_no_cache;
+  ts::Metrics::IntType *ua_counts_miss_cold;
+  ts::Metrics::IntType *ua_counts_miss_uncacheable;
+  ts::Metrics::IntType *ua_counts_other_unclassified;
+  ts::Metrics::IntType *ua_first_read_time;
+  ts::Metrics::IntType *ua_msecs_errors_aborts;
+  ts::Metrics::IntType *ua_msecs_errors_connect_failed;
+  ts::Metrics::IntType *ua_msecs_errors_other;
+  ts::Metrics::IntType *ua_msecs_errors_possible_aborts;
+  ts::Metrics::IntType *ua_msecs_errors_pre_accept_hangups;
+  ts::Metrics::IntType *ua_msecs_hit_fresh;
+  ts::Metrics::IntType *ua_msecs_hit_fresh_process;
+  ts::Metrics::IntType *ua_msecs_hit_reval;
+  ts::Metrics::IntType *ua_msecs_miss_changed;
+  ts::Metrics::IntType *ua_msecs_miss_client_no_cache;
+  ts::Metrics::IntType *ua_msecs_miss_cold;
+  ts::Metrics::IntType *ua_msecs_miss_uncacheable;
+  ts::Metrics::IntType *ua_msecs_other_unclassified;
+  ts::Metrics::IntType *ua_read_header_done_time;
+  ts::Metrics::IntType *user_agent_request_document_total_size;
+  ts::Metrics::IntType *user_agent_request_header_total_size;
+  ts::Metrics::IntType *user_agent_response_document_total_size;
+  ts::Metrics::IntType *user_agent_response_header_total_size;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100K;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_100M;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_10K;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_10M;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_1K;
+  ts::Metrics::IntType *user_agent_speed_bytes_per_sec_1M;
+  ts::Metrics::IntType *websocket_current_active_client_connections;
 };
 
 enum CacheOpenWriteFailAction_t {
@@ -381,22 +346,7 @@ enum CacheOpenWriteFailAction_t {
   TOTAL_CACHE_WL_FAIL_ACTION_TYPES
 };
 
-extern RecRawStatBlock *http_rsb;
-
-/* Stats should only be accessed using these macros */
-#define HTTP_INCREMENT_DYN_STAT(x)     RecIncrRawStat(http_rsb, this_ethread(), (int)x, 1)
-#define HTTP_DECREMENT_DYN_STAT(x)     RecIncrRawStat(http_rsb, this_ethread(), (int)x, -1)
-#define HTTP_SUM_DYN_STAT(x, y)        RecIncrRawStat(http_rsb, this_ethread(), (int)x, (int64_t)y)
-#define HTTP_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(http_rsb, x, y)
-
-#define HTTP_CLEAR_DYN_STAT(x)          \
-  do {                                  \
-    RecSetRawStatSum(http_rsb, x, 0);   \
-    RecSetRawStatCount(http_rsb, x, 0); \
-  } while (0);
-
-#define HTTP_READ_DYN_SUM(x, S)        RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
-#define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, (int)x, &S)
+extern HttpStatsBlock http_rsb;
 
 /////////////////////////////////////////////////////////////
 //
