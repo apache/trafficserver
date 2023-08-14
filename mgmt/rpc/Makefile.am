@@ -164,10 +164,10 @@ distclean-local:
 
 # Build with this file instead of the original one.
 $(shared_overridable_txn_vars_SOURCES):
-	echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
+	@echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
 
 $(shared_rpc_ipc_client_SOURCES):
-	echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
+	@echo "#include \"$(top_builddir)/src/shared/rpc/$@\"" >$@
 
 include $(top_srcdir)/mk/tidy.mk
 
