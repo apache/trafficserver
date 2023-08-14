@@ -27,6 +27,7 @@ TS_PLUGIN_LD_FLAGS = \
 TS_PLUGIN_CPPFLAGS = \
   -I$(abs_top_srcdir)/include \
   -I$(abs_top_srcdir)/lib \
+  @YAMLCPP_INCLUDES@ \
   @SWOC_INCLUDES@
 
 # Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool
