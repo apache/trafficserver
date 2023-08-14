@@ -71,7 +71,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
 {
   switch (event) {
   case EVENT_INTERVAL: {
-    if (this->_loss_detection_alarm_at <= Thread::get_hrtime()) {
+    if (this->_loss_detection_alarm_at <= ink_get_hrtime()) {
       this->_loss_detection_alarm_at = 0;
       this->_on_loss_detection_timeout();
     }
@@ -254,7 +254,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   //  ack-eliciting, update the RTT.
   const auto &largest_acked = newly_acked_packets[0];
   if (largest_acked->packet_number == ack_frame.largest_acknowledged() && this->_include_ack_eliciting(newly_acked_packets)) {
-    ink_hrtime latest_rtt = Thread::get_hrtime() - largest_acked->time_sent;
+    ink_hrtime latest_rtt = ink_get_hrtime() - largest_acked->time_sent;
     // _latest_rtt is nanosecond but ack_frame.ack_delay is microsecond and scaled
     ink_hrtime ack_delay = 0;
     if (pn_space == QUICPacketNumberSpace::APPLICATION_DATA) {
@@ -338,10 +338,10 @@ QUICLossDetector::_get_pto_time_and_space(QUICPacketNumberSpace &space)
     ink_assert(!this->_peer_completed_address_validation());
     if (this->_context.connection_info()->has_keys_for(QUICPacketNumberSpace::HANDSHAKE)) {
       space = QUICPacketNumberSpace::HANDSHAKE;
-      return Thread::get_hrtime() + duration;
+      return ink_get_hrtime() + duration;
     } else {
       space = QUICPacketNumberSpace::INITIAL;
-      return Thread::get_hrtime() + duration;
+      return ink_get_hrtime() + duration;
     }
   }
   ink_hrtime pto_timeout          = INT64_MAX;
@@ -398,7 +398,7 @@ QUICLossDetector::_set_loss_detection_timer()
   if (earliest_loss_time != 0) {
     update_timer(earliest_loss_time);
     QUICLDDebug("[%s] time threshold loss detection timer: %" PRId64 "ms", QUICDebugNames::pn_space(pn_space),
-                (this->_loss_detection_alarm_at - Thread::get_hrtime()) / HRTIME_MSECOND);
+                (this->_loss_detection_alarm_at - ink_get_hrtime()) / HRTIME_MSECOND);
     return;
   }
 
@@ -492,7 +492,7 @@ QUICLossDetector::_detect_and_remove_lost_packets(QUICPacketNumberSpace pn_space
   loss_delay = std::max(loss_delay, this->_rtt_measure->k_granularity());
 
   // Packets sent before this time are deemed lost.
-  ink_hrtime lost_send_time = Thread::get_hrtime() - loss_delay;
+  ink_hrtime lost_send_time = ink_get_hrtime() - loss_delay;
 
   // Packets with packet numbers before this are deemed lost.
   //  QUICPacketNumber lost_pn = this->_largest_acked_packet[static_cast<int>(pn_space)] - this->_k_packet_threshold;

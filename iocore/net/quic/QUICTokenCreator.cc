@@ -49,7 +49,7 @@ QUICTokenCreator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64
   if (this->_context->connection_info()->direction() == NET_VCONNECTION_IN) {
     // TODO Make expiration period configurable
     QUICResumptionToken token(this->_context->connection_info()->five_tuple().source(),
-                              this->_context->connection_info()->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
+                              this->_context->connection_info()->connection_id(), ink_get_hrtime() + HRTIME_HOURS(24));
     frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
     if (frame) {
       if (frame->size() < maximum_frame_size) {

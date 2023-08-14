@@ -276,7 +276,7 @@ HostDBBackgroundTask::HostDBBackgroundTask(int frequency) : Continuation(new_Pro
 int
 HostDBBackgroundTask::wait_event(int, void *)
 {
-  ink_hrtime next_sync = HRTIME_SECONDS(this->frequency) - (Thread::get_hrtime() - start_time);
+  ink_hrtime next_sync = HRTIME_SECONDS(this->frequency) - (ink_get_hrtime() - start_time);
 
   SET_HANDLER(&HostDBBackgroundTask::sync_event);
   if (next_sync > HRTIME_MSECONDS(100)) {
@@ -296,7 +296,7 @@ struct HostDBSync : public HostDBBackgroundTask {
   sync_event(int, void *) override
   {
     SET_HANDLER(&HostDBSync::wait_event);
-    start_time = Thread::get_hrtime();
+    start_time = ink_get_hrtime();
 
     new RefCountCacheSerializer<HostDBInfo>(this, hostDBProcessor.cache()->refcountcache, this->frequency, this->storage_path,
                                             this->full_path);

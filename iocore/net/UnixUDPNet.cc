@@ -859,7 +859,7 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now     = Thread::get_hrtime_updated();
+  ink_hrtime now     = ink_get_hrtime();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
   ink_hrtime pktSendTime;
@@ -905,8 +905,8 @@ void
 UDPQueue::SendPackets()
 {
   UDPPacketInternal *p;
-  static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
-  ink_hrtime now                    = Thread::get_hrtime_updated();
+  static ink_hrtime lastCleanupTime = ink_get_hrtime();
+  ink_hrtime now                    = ink_get_hrtime();
   ink_hrtime send_threshold_time    = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
@@ -945,7 +945,7 @@ sendPackets:
 
   if ((bytesThisSlot > 0) && sentOne) {
     // redistribute the slack...
-    now = Thread::get_hrtime_updated();
+    now = ink_get_hrtime();
     if (pipeInfo.firstPacket(now) == nullptr) {
       pipeInfo.advanceNow(now);
     }
@@ -1033,7 +1033,7 @@ net_signal_hook_callback(EThread *thread)
 
 UDPNetHandler::UDPNetHandler()
 {
-  nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
+  nextCheck = ink_get_hrtime() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER(&UDPNetHandler::startNetEvent);
 }
@@ -1122,7 +1122,7 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
   } // end for
 
   // remove dead UDP connections
-  ink_hrtime now = Thread::get_hrtime_updated();
+  ink_hrtime now = ink_get_hrtime();
   if (now >= nextCheck) {
     forl_LL(UnixUDPConnection, xuc, open_list)
     {
@@ -1133,7 +1133,7 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
         xuc->Release();
       }
     }
-    nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
+    nextCheck = ink_get_hrtime() + HRTIME_MSECONDS(1000);
   }
   // service UDPConnections with data ready for callback.
   Que(UnixUDPConnection, callback_link) q = udp_callbacks;

@@ -345,7 +345,7 @@ bool
 QUICResumptionToken::is_valid(const IpEndpoint &src) const
 {
   QUICResumptionToken x(src, this->cid(), this->expire_time() << 30);
-  return *this == x && this->expire_time() >= (Thread::get_hrtime() >> 30);
+  return *this == x && this->expire_time() >= (ink_get_hrtime() >> 30);
 }
 
 const QUICConnectionId

@@ -71,7 +71,7 @@ public:
 
 
    @param to  address of where to send packet
-   @param when ink_hrtime relative to ink_get_hrtime_internal()
+   @param when ink_hrtime relative to ink_get_hrtime()
    @param buf if !nullptr, then len bytes copied from buf and made into packet.
    @param len # of bytes to copy from buf
  */
@@ -82,7 +82,7 @@ extern UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, 
 
 
    @param to  address of where to send packet
-   @param when ink_hrtime relative to ink_get_hrtime_internal()
+   @param when ink_hrtime relative to ink_get_hrtime()
    @param block if !nullptr, then the IOBufferBlock chain of data to use
    for packet
    @param len # of bytes to reference from block

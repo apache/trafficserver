@@ -26,7 +26,7 @@
 void
 Http2FrequencyCounter::increment(uint16_t amount)
 {
-  ink_hrtime hrtime_sec = this->_get_hrtime();
+  ink_hrtime hrtime_sec = this->_ink_get_hrtime();
   uint8_t counter_index = ((hrtime_sec % 60) >= 30);
   uint8_t last_index    = ((this->_last_update % 60) >= 30);
 
@@ -55,7 +55,7 @@ Http2FrequencyCounter::get_count()
 }
 
 ink_hrtime
-Http2FrequencyCounter::_get_hrtime()
+Http2FrequencyCounter::_ink_get_hrtime()
 {
-  return ink_hrtime_to_sec(Thread::get_hrtime());
+  return ink_hrtime_to_sec(ink_get_hrtime());
 }

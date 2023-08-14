@@ -380,7 +380,7 @@ query_responder(BIO *b, const char *host, const char *path, const char *user_age
   OCSP_REQ_CTX *ctx;
   int rv;
 
-  start = Thread::get_hrtime();
+  start = ink_get_hrtime();
   end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
 
   ctx = OCSP_sendreq_new(b, path, nullptr, -1);
@@ -393,7 +393,7 @@ query_responder(BIO *b, const char *host, const char *path, const char *user_age
   do {
     rv = OCSP_sendreq_nbio(&resp, ctx);
     ink_hrtime_sleep(HRTIME_MSECONDS(1));
-  } while ((rv == -1) && BIO_should_retry(b) && (Thread::get_hrtime() < end));
+  } while ((rv == -1) && BIO_should_retry(b) && (ink_get_hrtime() < end));
 
   OCSP_REQ_CTX_free(ctx);
 

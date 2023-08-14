@@ -73,7 +73,7 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   int64_t new_val = 0;
   int64_t diff    = 0;
   int64_t count, sum;
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
   // The RecGetGlobalXXX stat functions are cheaper than the
   // RecGetXXX functions. The Global ones are expensive
   // for increments and decrements. But for AIO stats we
@@ -118,7 +118,7 @@ static AIOTestData *data;
 int
 AIOTestData::ink_aio_stats(int event, void *d)
 {
-  ink_hrtime now   = Thread::get_hrtime();
+  ink_hrtime now   = ink_get_hrtime();
   double time_msec = (double)(now - start) / (double)HRTIME_MSECOND;
   int i            = (aio_reqs[0] == nullptr) ? 1 : 0;
   for (; i < num_filedes; ++i)
@@ -487,7 +487,7 @@ aio_thread_main(void *arg)
       }
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (true);
-    timespec timedwait_msec = ink_hrtime_to_timespec(Thread::get_hrtime_updated() + HRTIME_MSECONDS(net_config_poll_timeout));
+    timespec timedwait_msec = ink_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
     ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }
   return nullptr;

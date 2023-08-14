@@ -291,7 +291,7 @@ public:
 
   Event *schedule_local(Event *e);
 
-  InkRand generator = static_cast<uint64_t>(Thread::get_hrtime_updated() ^ reinterpret_cast<uintptr_t>(this));
+  InkRand generator = static_cast<uint64_t>(ink_get_hrtime() ^ reinterpret_cast<uintptr_t>(this));
 
   /*-------------------------------------------------------*\
   |  UNIX Interface                                         |
@@ -366,7 +366,7 @@ public:
     int
     waitForActivity(ink_hrtime timeout) override
     {
-      _q.wait(Thread::get_hrtime() + timeout);
+      _q.wait(ink_get_hrtime() + timeout);
       return 0;
     }
     void

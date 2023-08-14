@@ -311,7 +311,7 @@ PreWarmSM::state_dns_lookup(int event, void *data)
       if (rr) {
         char srv_hostname[MAXDNAME] = {0};
 
-        ink_hrtime now = Thread::get_hrtime();
+        ink_hrtime now = ink_get_hrtime();
         srv = rr->select_best_srv(srv_hostname, &mutex->thread_holding->generator, ink_hrtime_to_sec(now), DOWN_SERVER_TIMEOUT);
         hostname = std::string_view(srv_hostname);
 

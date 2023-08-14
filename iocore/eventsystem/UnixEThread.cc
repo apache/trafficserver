@@ -138,7 +138,7 @@ EThread::process_event(Event *e, int calling_code)
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
   WEAK_MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
-    e->timeout_at = cur_time + DELAY_FOR_RETRY;
+    e->timeout_at = ink_get_hrtime() + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
   } else {
     if (e->cancelled) {
@@ -159,7 +159,7 @@ EThread::process_event(Event *e, int calling_code)
         if (e->period < 0) {
           e->timeout_at = e->period;
         } else {
-          e->timeout_at = Thread::get_hrtime_updated() + e->period;
+          e->timeout_at = ink_get_hrtime() + e->period;
         }
         EventQueueExternal.enqueue_local(e);
       }
@@ -187,7 +187,7 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
       ink_assert(e->period == 0);
       process_event(e, e->callback_event);
     } else if (e->timeout_at > 0) { // INTERVAL
-      EventQueue.enqueue(e, cur_time);
+      EventQueue.enqueue(e, ink_get_hrtime());
     } else { // NEGATIVE
       Event *p = nullptr;
       Event *a = NegativeQueue->head;
@@ -216,7 +216,7 @@ EThread::execute_regular()
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
-  EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
+  EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime() / HRTIME_SECOND) % N_EVENT_METRICS);
 
   int nq_count;
   int ev_count;
@@ -230,7 +230,7 @@ EThread::execute_regular()
       return;
     }
 
-    loop_start_time = Thread::get_hrtime_updated();
+    loop_start_time = ink_get_hrtime();
     nq_count        = 0; // count # of elements put on negative queue.
     ev_count        = 0; // # of events handled.
 
@@ -252,7 +252,7 @@ EThread::execute_regular()
       done_one = false;
       // execute all the eligible internal events
       EventQueue.check_ready(loop_start_time, this);
-      while ((e = EventQueue.dequeue_ready(cur_time))) {
+      while ((e = EventQueue.dequeue_ready(ink_get_hrtime()))) {
         ink_assert(e);
         ink_assert(e->timeout_at > 0);
         if (e->cancelled) {
@@ -275,7 +275,7 @@ EThread::execute_regular()
     }
 
     next_time             = EventQueue.earliest_timeout();
-    ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
+    ink_hrtime sleep_time = next_time - ink_get_hrtime();
     if (sleep_time > 0) {
       if (EventQueueExternal.localQueue.empty()) {
         sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
@@ -292,7 +292,7 @@ EThread::execute_regular()
     tail_cb->waitForActivity(sleep_time);
 
     // loop cleanup
-    loop_finish_time = Thread::get_hrtime_updated();
+    loop_finish_time = ink_get_hrtime();
     delta            = loop_finish_time - loop_start_time;
 
     // This can happen due to time of day adjustments (which apparently happen quite frequently). I

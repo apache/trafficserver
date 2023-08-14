@@ -1104,7 +1104,7 @@ Lrestart:
     }
 
     if (!vol->dir_sync_in_progress) {
-      start_time = Thread::get_hrtime();
+      start_time = ink_get_hrtime();
     }
 
     // recompute hit_evacuate_window
@@ -1186,7 +1186,7 @@ Lrestart:
     } else {
       vol->dir_sync_in_progress = false;
       CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
-      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, Thread::get_hrtime() - start_time);
+      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, ink_get_hrtime() - start_time);
       start_time = 0;
       goto Ldone;
     }
@@ -1500,19 +1500,19 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   // test insert-delete
   rprintf(t, "insert-delete test\n");
   regress_rand_init(13);
-  ttime = Thread::get_hrtime_updated();
+  ttime = ink_get_hrtime();
   for (i = 0; i < newfree; i++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
-  uint64_t us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
+  uint64_t us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the insert rate only if its not 0
   if (us) {
     rprintf(t, "insert rate = %d / second\n", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
   }
   regress_rand_init(13);
-  ttime = Thread::get_hrtime_updated();
+  ttime = ink_get_hrtime();
   for (i = 0; i < newfree; i++) {
     Dir *last_collision = nullptr;
     regress_rand_CacheKey(&key);
@@ -1520,7 +1520,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
       ret = REGRESSION_TEST_FAILED;
     }
   }
-  us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
+  us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the probe rate only if its not 0
   if (us) {

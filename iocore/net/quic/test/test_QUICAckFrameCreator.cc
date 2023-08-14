@@ -169,7 +169,6 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC delay too much time", "[quic]")
   {
-    Thread::get_hrtime_updated();
     QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
@@ -177,7 +176,6 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     sleep(1);
-    Thread::get_hrtime_updated();
     ack_manager.update(level, 1, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
@@ -209,7 +207,6 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     sleep(1);
-    Thread::get_hrtime_updated();
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
@@ -231,7 +228,6 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     // Delay due to some reason, the frame is not valued any more, but still valued
     sleep(1);
-    Thread::get_hrtime_updated();
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
     ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
@@ -293,8 +289,6 @@ TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
   CHECK(packet_numbers.largest_ack_number() == 0);
   CHECK(packet_numbers.largest_ack_received_time() == 0);
 
-  Thread::get_hrtime_updated();
-
   packet_numbers.push_back(3, 2, false);
   CHECK(packet_numbers.size() == 1);
   CHECK(packet_numbers.largest_ack_number() == 3);
@@ -302,21 +296,15 @@ TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
   ink_hrtime ti = packet_numbers.largest_ack_received_time();
   CHECK(packet_numbers.largest_ack_received_time() != 0);
 
-  Thread::get_hrtime_updated();
-
   packet_numbers.push_back(2, 2, false);
   CHECK(packet_numbers.size() == 2);
   CHECK(packet_numbers.largest_ack_number() == 3);
   CHECK(packet_numbers.largest_ack_received_time() == ti);
 
-  Thread::get_hrtime_updated();
-
   packet_numbers.push_back(10, 2, false);
   CHECK(packet_numbers.size() == 3);
   CHECK(packet_numbers.largest_ack_number() == 10);
   CHECK(packet_numbers.largest_ack_received_time() > ti);
-
-  Thread::get_hrtime_updated();
 
   packet_numbers.clear();
   CHECK(packet_numbers.size() == 0);

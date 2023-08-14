@@ -361,7 +361,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
              &this->_rtable, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->thread      = eth;
     vc->mutex       = new_ProxyMutex();
     vc->action_     = *this->action_;

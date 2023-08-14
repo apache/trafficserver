@@ -42,6 +42,8 @@
 #include <cstring>
 #include <sys/time.h>
 
+int gSystemClock = 0; // 0 == CLOCK_REALTIME, the default
+
 char *
 int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
@@ -178,58 +180,3 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
 
   return res;
 }
-
-#ifdef USE_TIME_STAMP_COUNTER_HRTIME
-uint32_t
-init_hrtime_TCS()
-{
-  int freqlen = sizeof(hrtime_freq);
-  if (sysctlbyname("machdep.tsc_freq", &hrtime_freq, (size_t *)&freqlen, nullptr, 0) < 0) {
-    perror("sysctl: machdep.tsc_freq");
-    exit(1);
-  }
-  hrtime_freq_float = (double)1000000000 / (double)hrtime_freq;
-  return hrtime_freq;
-}
-
-double hrtime_freq_float = 0.5; // 500 Mhz
-uint32_t hrtime_freq     = init_hrtime_TCS();
-#endif
-
-#ifdef NEED_HRTIME_BASIS
-timespec timespec_basis;
-ink_hrtime hrtime_offset;
-ink_hrtime hrtime_basis = init_hrtime_basis();
-
-ink_hrtime
-init_hrtime_basis()
-{
-  ink_hrtime t1, t2, b, now;
-  timespec ts;
-#ifdef USE_TIME_STAMP_COUNTER_HRTIME
-  init_hrtime_TCS();
-#endif
-  do {
-    t1 = ink_get_hrtime_internal();
-#if HAVE_CLOCK_GETTIME
-    ink_assert(!clock_gettime(CLOCK_REALTIME, &timespec_basis));
-#else
-    {
-      struct timeval tnow;
-      ink_assert(!gettimeofday(&tnow, nullptr));
-      timespec_basis.tv_sec  = tnow.tv_sec;
-      timespec_basis.tv_nsec = tnow.tv_usec * 1000;
-    }
-#endif
-    t2 = ink_get_hrtime_internal();
-    // accuracy must be at least 100 microseconds
-  } while (t2 - t1 > HRTIME_USECONDS(100));
-  b   = (t2 + t1) / 2;
-  now = ink_hrtime_from_timespec(&timespec_basis);
-  ts  = ink_hrtime_to_timespec(now);
-  ink_assert(ts.tv_sec == timespec_basis.tv_sec && ts.tv_nsec == timespec_basis.tv_nsec);
-  hrtime_offset = now - b;
-  hrtime_basis  = b;
-  return b;
-}
-#endif
