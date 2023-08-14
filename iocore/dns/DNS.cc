@@ -412,7 +412,7 @@ DNSEntry::init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProce
       qtype = T_AAAA;
     }
   }
-  submit_time   = Thread::get_hrtime();
+  submit_time   = ink_get_hrtime();
   action        = acont;
   submit_thread = acont->mutex->thread_holding;
 
@@ -688,7 +688,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 void
 DNSHandler::try_primary_named(bool reopen)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
@@ -990,7 +990,7 @@ DNSHandler::mainEvent(int event, Event *e)
     if (DNS_CONN_MODE::TCP_RETRY == dns_conn_mode) {
       check_and_reset_tcp_conn();
     }
-    ink_hrtime t = Thread::get_hrtime();
+    ink_hrtime t = ink_get_hrtime();
     if (t - last_primary_retry > DNS_PRIMARY_RETRY_PERIOD) {
       for (int i = 0; i < n_con; i++) {
         if (ns_down[i]) {
@@ -1218,7 +1218,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   ++h->in_flight;
   DNS_INCREMENT_DYN_STAT(dns_in_flight_stat);
 
-  e->send_time = Thread::get_hrtime();
+  e->send_time = ink_get_hrtime();
 
   if (e->timeout) {
     e->timeout->cancel();
@@ -1393,9 +1393,9 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
   }
   if (!cancelled) {
     if (!ent || !ent->good) {
-      DNS_SUM_DYN_STAT(dns_fail_time_stat, Thread::get_hrtime() - e->submit_time);
+      DNS_SUM_DYN_STAT(dns_fail_time_stat, ink_get_hrtime() - e->submit_time);
     } else {
-      DNS_SUM_DYN_STAT(dns_success_time_stat, Thread::get_hrtime() - e->submit_time);
+      DNS_SUM_DYN_STAT(dns_success_time_stat, ink_get_hrtime() - e->submit_time);
     }
   }
 
@@ -1543,7 +1543,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   --(handler->in_flight);
   DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
 
-  DNS_SUM_DYN_STAT(dns_response_time_stat, Thread::get_hrtime() - e->send_time);
+  DNS_SUM_DYN_STAT(dns_response_time_stat, ink_get_hrtime() - e->send_time);
 
   // retrying over TCP when truncated is set
   if (dns_conn_mode == DNS_CONN_MODE::TCP_RETRY && h->tc == 1) {

@@ -224,12 +224,14 @@ ink_hrtime_to_timeval(ink_hrtime t)
    which translates to (365 + 0.25)369*24*60*60 seconds   */
 #define NT_TIMEBASE_DIFFERENCE_100NSECS 116444736000000000i64
 
+extern int gSystemClock; // 0 == CLOCK_REALTIME, the default
+
 static inline ink_hrtime
-ink_get_hrtime_internal()
+ink_get_hrtime()
 {
 #if defined(freebsd) || HAVE_CLOCK_GETTIME
   timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
+  clock_gettime(static_cast<clockid_t>(gSystemClock), &ts);
   return ink_hrtime_from_timespec(&ts);
 #else
   timeval tv;
@@ -241,13 +243,13 @@ ink_get_hrtime_internal()
 static inline struct timeval
 ink_gettimeofday()
 {
-  return ink_hrtime_to_timeval(ink_get_hrtime_internal());
+  return ink_hrtime_to_timeval(ink_get_hrtime());
 }
 
 static inline int
 ink_time()
 {
-  return (int)ink_hrtime_to_sec(ink_get_hrtime_internal());
+  return (int)ink_hrtime_to_sec(ink_get_hrtime());
 }
 
 static inline int

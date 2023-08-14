@@ -206,7 +206,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   SocksEntry *socksEntry = nullptr;
 
   vc->id          = net_next_connection_number();
-  vc->submit_time = Thread::get_hrtime();
+  vc->submit_time = ink_get_hrtime();
   vc->mutex       = cont->mutex;
   Action *result  = &vc->action_;
   // Copy target to con.addr,

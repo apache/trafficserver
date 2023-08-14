@@ -48,7 +48,7 @@ public:
   };
 
 protected:
-  ink_hrtime _time = Thread::get_hrtime();
+  ink_hrtime _time = ink_get_hrtime();
 };
 
 using QLogEventUPtr = std::unique_ptr<QLogEvent>;

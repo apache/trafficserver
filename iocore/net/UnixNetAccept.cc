@@ -88,7 +88,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(na->opt.f_proxy_protocol);
@@ -344,7 +344,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);
@@ -497,7 +497,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
-    vc->submit_time = Thread::get_hrtime();
+    vc->submit_time = ink_get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(opt.f_proxy_protocol);

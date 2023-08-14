@@ -444,7 +444,7 @@ MC::cache_read_event(int event, void *data)
       goto Lfail;
     }
     {
-      ink_hrtime t = Thread::get_hrtime();
+      ink_hrtime t = ink_get_hrtime();
       if ((static_cast<ink_hrtime>(rcache_header->settime)) <= last_flush ||
           t >= (static_cast<ink_hrtime>(rcache_header->settime)) + HRTIME_SECONDS(rcache_header->exptime)) {
         goto Lfail;
@@ -777,7 +777,7 @@ MC::ascii_set_event(int event, void *data)
       if (header.nkey != wcache_header->nkey || hlen < static_cast<int>(sizeof(MCCacheHeader) + wcache_header->nkey)) {
         goto Lfail;
       }
-      ink_hrtime t = Thread::get_hrtime();
+      ink_hrtime t = ink_get_hrtime();
       if ((static_cast<ink_hrtime>(wcache_header->settime)) <= last_flush ||
           t >= (static_cast<ink_hrtime>(wcache_header->settime)) + HRTIME_SECONDS(wcache_header->exptime)) {
         goto Lstale;
@@ -792,7 +792,7 @@ MC::ascii_set_event(int event, void *data)
       }
     }
     memcpy(tmp_cache_header_key, key, header.nkey);
-    header.settime = Thread::get_hrtime();
+    header.settime = ink_get_hrtime();
     if (exptime) {
       if (exptime > REALTIME_MAXDELTA) {
         if (HRTIME_SECONDS(exptime) <= (static_cast<ink_hrtime>(header.settime))) {
@@ -937,7 +937,7 @@ MC::ascii_incr_decr_event(int event, void *data)
         if (header.nkey != wcache_header->nkey || hlen < static_cast<int>(sizeof(MCCacheHeader) + wcache_header->nkey)) {
           goto Lfail;
         }
-        ink_hrtime t = Thread::get_hrtime();
+        ink_hrtime t = ink_get_hrtime();
         if ((static_cast<ink_hrtime>(wcache_header->settime)) <= last_flush ||
             t >= (static_cast<ink_hrtime>(wcache_header->settime)) + HRTIME_SECONDS(wcache_header->exptime)) {
           goto Lfail;
@@ -946,7 +946,7 @@ MC::ascii_incr_decr_event(int event, void *data)
         goto Lfail;
       }
       memcpy(tmp_cache_header_key, key, header.nkey);
-      header.settime = Thread::get_hrtime();
+      header.settime = ink_get_hrtime();
       if (exptime) {
         if (exptime > REALTIME_MAXDELTA) {
           if (HRTIME_SECONDS(exptime) <= (static_cast<ink_hrtime>(header.settime))) {
@@ -1385,7 +1385,7 @@ MC::read_ascii_from_client_event(int event, void *data)
       GET_NUM(time_offset);
     }
     f.noreply                 = is_noreply(&s, e);
-    ink_hrtime new_last_flush = Thread::get_hrtime() + HRTIME_SECONDS(time_offset);
+    ink_hrtime new_last_flush = ink_get_hrtime() + HRTIME_SECONDS(time_offset);
 #if __WORDSIZE == 64
     last_flush = new_last_flush; // this will be atomic for native word size
 #else

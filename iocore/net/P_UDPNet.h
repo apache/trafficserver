@@ -78,7 +78,7 @@ public:
   init()
   {
     now_slot       = 0;
-    ink_hrtime now = ink_get_hrtime_internal();
+    ink_hrtime now = ink_get_hrtime();
     int i          = now_slot;
     int j          = 0;
     while (j < N_SLOTS) {

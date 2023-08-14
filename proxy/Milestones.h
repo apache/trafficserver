@@ -53,7 +53,7 @@ public:
   mark(T ms)
   {
     if (this->_milestones[static_cast<size_t>(ms)] == 0) {
-      this->_milestones[static_cast<size_t>(ms)] = Thread::get_hrtime();
+      this->_milestones[static_cast<size_t>(ms)] = ink_get_hrtime();
     }
   }
 

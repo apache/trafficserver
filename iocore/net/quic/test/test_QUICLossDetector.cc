@@ -86,7 +86,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
       packet->is_ack_eliciting(),
       true,
       packet->size(),
-      Thread::get_hrtime(),
+      ink_get_hrtime(),
       packet->type(),
       {},
       QUICPacketNumberSpace::HANDSHAKE,
@@ -187,7 +187,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet1->is_ack_eliciting(),
                                                                           true,
                                                                           packet1->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet1->type(),
                                                                           {},
                                                                           pn_space}));
@@ -195,7 +195,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet2->is_ack_eliciting(),
                                                                           true,
                                                                           packet2->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet2->type(),
                                                                           {},
                                                                           pn_space}));
@@ -203,7 +203,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet3->is_ack_eliciting(),
                                                                           true,
                                                                           packet3->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet3->type(),
                                                                           {},
                                                                           pn_space}));
@@ -211,7 +211,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet4->is_ack_eliciting(),
                                                                           true,
                                                                           packet4->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet4->type(),
                                                                           {},
                                                                           pn_space}));
@@ -219,7 +219,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet5->is_ack_eliciting(),
                                                                           true,
                                                                           packet5->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet5->type(),
                                                                           {},
                                                                           pn_space}));
@@ -227,7 +227,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet6->is_ack_eliciting(),
                                                                           true,
                                                                           packet6->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet6->type(),
                                                                           {},
                                                                           pn_space}));
@@ -235,7 +235,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet6->is_ack_eliciting(),
                                                                           true,
                                                                           packet7->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet7->type(),
                                                                           {},
                                                                           pn_space}));
@@ -243,7 +243,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet6->is_ack_eliciting(),
                                                                           true,
                                                                           packet8->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet8->type(),
                                                                           {},
                                                                           pn_space}));
@@ -251,7 +251,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet6->is_ack_eliciting(),
                                                                           true,
                                                                           packet9->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet9->type(),
                                                                           {},
                                                                           pn_space}));
@@ -259,7 +259,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                           packet10->is_ack_eliciting(),
                                                                           true,
                                                                           packet10->size(),
-                                                                          Thread::get_hrtime(),
+                                                                          ink_get_hrtime(),
                                                                           packet10->type(),
                                                                           {},
                                                                           pn_space}));
@@ -306,11 +306,11 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   MockQUICCongestionController cc;
   QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
 
-  auto t1           = Thread::get_hrtime();
+  auto t1           = ink_get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);
   ack->ack_block_section()->add_ack_block({20000000, 30000000});
   detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack);
-  auto t2 = Thread::get_hrtime();
+  auto t2 = ink_get_hrtime();
   CHECK(t2 - t1 < HRTIME_MSECONDS(100));
   ack->~QUICAckFrame();
 }

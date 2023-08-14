@@ -562,7 +562,7 @@ new_CacheVC(Continuation *cont)
   c->vector.data.data = &c->vector.data.fast_data[0];
   c->_action          = cont;
   c->mutex            = cont->mutex;
-  c->start_time       = Thread::get_hrtime();
+  c->start_time       = ink_get_hrtime();
   c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);

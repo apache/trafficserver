@@ -89,7 +89,7 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, RefCoun
     dirname(std::move(dirname)),
     filename(std::move(filename)),
     time_per_partition(HRTIME_SECONDS(frequency) / cc->partition_count()),
-    start(Thread::get_hrtime()),
+    start(ink_get_hrtime()),
     total_items(0),
     total_size(0),
     rsb(cc->get_rsb())
@@ -155,7 +155,7 @@ template <class C>
 int
 RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
 {
-  int curr_time = Thread::get_hrtime() / HRTIME_SECOND;
+  int curr_time = ink_get_hrtime() / HRTIME_SECOND;
 
   // write the partition to disk
   // for item in this->partitionItems
@@ -198,7 +198,7 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
   SET_HANDLER(&RefCountCacheSerializer::pause_event);
 
   // Figure out how much time we spent
-  ink_hrtime elapsed          = Thread::get_hrtime() - this->start;
+  ink_hrtime elapsed          = ink_get_hrtime() - this->start;
   ink_hrtime expected_elapsed = (this->partition * this->time_per_partition);
 
   // If we were quicker than our pace-- lets reschedule in the future
@@ -299,7 +299,7 @@ RefCountCacheSerializer<C>::finalize_sync()
   this->fd = -1;
 
   if (this->rsb) {
-    RecSetRawStatCount(this->rsb, refcountcache_last_sync_time, Thread::get_hrtime() / HRTIME_SECOND);
+    RecSetRawStatCount(this->rsb, refcountcache_last_sync_time, ink_get_hrtime() / HRTIME_SECOND);
     RecSetRawStatCount(this->rsb, refcountcache_last_total_items, this->total_items);
     RecSetRawStatCount(this->rsb, refcountcache_last_total_size, this->total_size);
   }

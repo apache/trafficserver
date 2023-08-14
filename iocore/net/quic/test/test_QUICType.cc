@@ -133,7 +133,7 @@ TEST_CASE("QUICType", "[quic]")
                          0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
     QUICConnectionId cid(cid_buf, sizeof(cid_buf));
 
-    ink_hrtime expire_date = Thread::get_hrtime() + (3 * HRTIME_DAY);
+    ink_hrtime expire_date = ink_get_hrtime() + (3 * HRTIME_DAY);
 
     QUICResumptionToken token1(ep, cid, expire_date);
     QUICResumptionToken token2(token1.buf(), token1.length());

@@ -39,7 +39,7 @@ public:
 
 private:
   ink_hrtime
-  _get_hrtime() override
+  _ink_get_hrtime() override
   {
     return this->_now;
   }
@@ -59,14 +59,14 @@ TEST_CASE("Http2FrequencyCounter_basic", "[http2][Http2FrequencyCounter]")
     counter.increment(2);
     REQUIRE(counter.get_count() == 3);
 
-    ink_hrtime now = ink_hrtime_to_sec(Thread::get_hrtime_updated());
+    ink_hrtime now = ink_hrtime_to_sec(ink_get_hrtime());
     counter.set_internal_state(now, now - 10, 1, 2);
     REQUIRE(counter.get_count() == 3);
   }
 
   SECTION("Update at 0")
   {
-    ink_hrtime now = ink_hrtime_to_sec(Thread::get_hrtime_updated());
+    ink_hrtime now = ink_hrtime_to_sec(ink_get_hrtime());
     now -= now % 60;
 
     counter.set_internal_state(now, now - 5, 1, 2);
@@ -104,7 +104,7 @@ TEST_CASE("Http2FrequencyCounter_basic", "[http2][Http2FrequencyCounter]")
 
   SECTION("Update at 10")
   {
-    ink_hrtime now = ink_hrtime_to_sec(Thread::get_hrtime_updated());
+    ink_hrtime now = ink_hrtime_to_sec(ink_get_hrtime());
     now -= now % 60;
     now += 10;
 
@@ -143,7 +143,7 @@ TEST_CASE("Http2FrequencyCounter_basic", "[http2][Http2FrequencyCounter]")
 
   SECTION("Update at 30")
   {
-    ink_hrtime now = ink_hrtime_to_sec(Thread::get_hrtime_updated());
+    ink_hrtime now = ink_hrtime_to_sec(ink_get_hrtime());
     now -= now % 60;
     now += 30;
 
@@ -182,7 +182,7 @@ TEST_CASE("Http2FrequencyCounter_basic", "[http2][Http2FrequencyCounter]")
 
   SECTION("Update at 40")
   {
-    ink_hrtime now = ink_hrtime_to_sec(Thread::get_hrtime_updated());
+    ink_hrtime now = ink_hrtime_to_sec(ink_get_hrtime());
     now -= now % 60;
     now += 40;
 

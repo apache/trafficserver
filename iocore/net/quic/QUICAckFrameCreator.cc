@@ -174,12 +174,12 @@ void
 QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_number, size_t size, bool ack_only)
 {
   if (packet_number == 0 || packet_number > this->_largest_ack_number) {
-    this->_largest_ack_received_time = Thread::get_hrtime();
+    this->_largest_ack_received_time = ink_get_hrtime();
     this->_largest_ack_number        = packet_number;
   }
 
   if (!this->_latest_packet_received_time) {
-    this->_latest_packet_received_time = Thread::get_hrtime();
+    this->_latest_packet_received_time = ink_get_hrtime();
   }
 
   // unorder packet should send ack immediately to accelerate the recovery
@@ -332,7 +332,7 @@ uint64_t
 QUICAckFrameManager::QUICAckFrameCreator::_calculate_delay()
 {
   // Ack delay is in microseconds and scaled
-  ink_hrtime now             = Thread::get_hrtime();
+  ink_hrtime now             = ink_get_hrtime();
   uint64_t delay             = (now - this->_largest_ack_received_time) / 1000;
   uint8_t ack_delay_exponent = 3;
   if (this->_pn_space != QUICPacketNumberSpace::INITIAL && this->_pn_space != QUICPacketNumberSpace::HANDSHAKE) {
@@ -351,7 +351,7 @@ bool
 QUICAckFrameManager::QUICAckFrameCreator::is_ack_frame_ready()
 {
   if (this->_available && this->_has_new_data && !this->_packet_numbers.empty() &&
-      this->_latest_packet_received_time + this->_max_ack_delay * HRTIME_MSECOND <= Thread::get_hrtime()) {
+      this->_latest_packet_received_time + this->_max_ack_delay * HRTIME_MSECOND <= ink_get_hrtime()) {
     // when we has new data and the data is available to send (not ack only). and we delay for too much time. Send it out
     this->_should_send = true;
   }

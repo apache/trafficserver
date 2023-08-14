@@ -1433,11 +1433,11 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
     // Time to work on periodic events??
     //
-    now = Thread::get_hrtime_updated() / HRTIME_SECOND;
+    now = ink_get_hrtime() / HRTIME_SECOND;
     if (now >= last_time + periodic_tasks_interval) {
       Debug("log-preproc", "periodic tasks for %" PRId64, (int64_t)now);
       periodic_tasks(now);
-      last_time = Thread::get_hrtime() / HRTIME_SECOND;
+      last_time = ink_get_hrtime() / HRTIME_SECOND;
     }
 
     // wait for more work; a spurious wake-up is ok since we'll just

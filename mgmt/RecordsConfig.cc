@@ -77,6 +77,9 @@ static const RecordElement RecordsConfig[] =
   //# 0 = disable (seconds)
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  //# 0 == CLOCK_REALTIME, change carefully
+  {RECT_CONFIG, "proxy.config.system_clock", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]+", RECA_NULL}
+  ,
   //# 0 = disable
   {RECT_CONFIG, "proxy.config.http_ui_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
   ,

@@ -646,7 +646,7 @@ fast(int sock, int speed, int d)
 static ink_hrtime
 elapsed_from_start(int sock)
 {
-  ink_hrtime timenow = ink_get_hrtime_internal();
+  ink_hrtime timenow = ink_get_hrtime();
   return ink_hrtime_diff_msec(timenow, fd[sock].start);
 }
 
@@ -1788,7 +1788,7 @@ poll_loop()
   }
   pollfd pfd[POLL_GROUP_SIZE];
   int ip = 0;
-  now    = ink_get_hrtime_internal();
+  now    = ink_get_hrtime();
   for (int i = 0; i <= last_fd; i++) {
     if (fd[i].fd > 0 && (!fd[i].ready || now >= fd[i].ready)) {
       pfd[ip].fd      = i;
@@ -2409,7 +2409,7 @@ read_response(int sock)
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].bytes += err;
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].active = ink_get_hrtime();
     int total_read  = fd[sock].req_pos;
     char *p         = fd[sock].req_header;
     char *cl        = nullptr;
@@ -2609,7 +2609,7 @@ read_response(int sock)
     if (fd[sock].length != INT_MAX) {
       fd[sock].length -= err;
     }
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].active = ink_get_hrtime();
     if (verbose) {
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length, fd[sock].keepalive, fd[sock].drop_after_CL);
     }
@@ -2625,7 +2625,7 @@ Ldone:
   if (!fd[sock].client_abort && !(server_abort_rate > 0) && fd[sock].length && fd[sock].length != INT_MAX) {
     if (verbose || verbose_errors) {
       printf("bad length %d wanted %d after %d ms: '%s'\n", fd[sock].response_length - fd[sock].length, fd[sock].response_length,
-             (int)((ink_get_hrtime_internal() - fd[sock].active) / HRTIME_MSECOND), fd[sock].base_url);
+             (int)((ink_get_hrtime() - fd[sock].active) / HRTIME_MSECOND), fd[sock].base_url);
     }
     return read_response_error(sock);
   }
@@ -2683,7 +2683,7 @@ write_request(int sock)
     new_tbytes += err;
     total_client_request_bytes += err;
     fd[sock].req_pos += err;
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].active = ink_get_hrtime();
 
     if (fd[sock].req_pos >= fd[sock].length) {
       if (verbose) {
@@ -2726,7 +2726,7 @@ write_request(int sock)
     new_tbytes += err;
     total_client_request_bytes += err;
     fd[sock].req_pos += err;
-    fd[sock].active = ink_get_hrtime_internal();
+    fd[sock].active = ink_get_hrtime();
 
     if (fd[sock].req_pos >= fd[sock].post_size) {
       if (verbose) {
@@ -3232,7 +3232,7 @@ void
 interval_report()
 {
   static int here = 0;
-  now             = ink_get_hrtime_internal();
+  now             = ink_get_hrtime();
   if (!(here++ % 20)) {
     printf(" con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
   }
@@ -3673,7 +3673,7 @@ main(int argc __attribute__((unused)), const char *argv[])
     printf("maximum of %d connections\n", max_fds);
   }
   signal(SIGPIPE, SIG_IGN);
-  start_time = now = ink_get_hrtime_internal();
+  start_time = now = ink_get_hrtime();
 
   urls_mode = n_file_arguments || *urls_file;
   nclients  = client_rate ? 0 : nclients;

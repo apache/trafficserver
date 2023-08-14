@@ -30,7 +30,7 @@
 void
 QUICRateAnalyzer::update(QUICOffset offset)
 {
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
   if (offset > 0 && now > this->_start_time) {
     this->_rate = static_cast<double>(offset) / (now - this->_start_time);
   }

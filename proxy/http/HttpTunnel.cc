@@ -1715,7 +1715,7 @@ HttpTunnel::internal_error()
 void
 HttpTunnel::mark_tls_tunnel_active()
 {
-  _tls_tunnel_last_update = Thread::get_hrtime();
+  _tls_tunnel_last_update = ink_get_hrtime();
 
   if (_tls_tunnel_active) {
     return;
@@ -1766,7 +1766,7 @@ HttpTunnel::_is_tls_tunnel_active() const
   // This should not be called if period is 0
   ink_release_assert(period > 0);
 
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
 
   Debug("http_tunnel", "now=%" PRId64 " last_update=%" PRId64, now, _tls_tunnel_last_update);
 

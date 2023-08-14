@@ -37,7 +37,7 @@ public:
 
 private:
   double _rate           = 0.0;
-  ink_hrtime _start_time = Thread::get_hrtime();
+  ink_hrtime _start_time = ink_get_hrtime();
 };
 
 class QUICFlowController : public QUICFrameGenerator
