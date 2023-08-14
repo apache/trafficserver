@@ -47,7 +47,8 @@ typedef enum {
   TS_FETCH_FLAGS_STREAM               = 1 << 1, // enable stream IO
   TS_FETCH_FLAGS_DECHUNK              = 1 << 2, // dechunk body content
   TS_FETCH_FLAGS_NEWLOCK              = 1 << 3, // allocate new lock for fetch sm
-  TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4  // Allow this fetch to be created as a non-internal request.
+  TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4, // Allow this fetch to be created as a non-internal request.
+  TS_FETCH_FLAGS_SKIP_REMAP           = 1 << 5, // Skip remapping and allow requesting arbitary URL
 } TSFetchFlags;
 
 /* Forward declaration of in_addr, any user of these APIs should probably
