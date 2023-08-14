@@ -342,7 +342,7 @@ struct RawStatCont:public Continuation
     RecFloat stat_a, stat_d, stat_e;
     // comments out here
 
-    hr_start = ink_ink_get_hrtime();
+    hr_start = ink_get_hrtime();
 
     // test_raw_stat_a should have around 16000 in it (avg of rand())
     RecIncrRawStat(g_rsb, mutex->thread_holding, (int) MY_STAT_A, rand());
@@ -494,7 +494,7 @@ struct RawStatCont:public Continuation
     ink_atomic_increment(&g_count, 1);
 
     // test_raw_stat_e should have the time it takes to run this function
-    hr_finish = ink_ink_get_hrtime();
+    hr_finish = ink_get_hrtime();
     RecIncrRawStat(g_rsb, mutex->thread_holding, (int) MY_STAT_E, hr_finish - hr_start);
 
     return 0;
