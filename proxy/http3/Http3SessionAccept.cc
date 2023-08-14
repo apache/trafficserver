@@ -48,6 +48,12 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
     Warning("QUIC client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
     return false;
   }
+  // RFC9114, section 3.2-2: Client must send the SNI extension.
+  if (auto sni = netvc->get_service<TLSSNISupport>(); !sni || sni->get_sni_server_name()[0] == '\0') {
+    ip_port_text_buffer ipb;
+    Debug("http3", "SNI not found in connection from %s.", ats_ip_nptop(client_ip, ipb, sizeof(ipb)));
+    return false;
+  }
 
   netvc->attributes = this->options.transport_type;
 
@@ -59,7 +65,6 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
     Debug("http3", "[%s] accepted connection from %s transport type = %d", qvc->cids().data(),
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
-
   std::string_view alpn = qvc->negotiated_application_name();
 
   if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
