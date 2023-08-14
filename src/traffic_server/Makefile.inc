@@ -88,7 +88,7 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_server.la \
 	$(top_builddir)/mgmt/rpc/libjsonrpc_protocol.la \
-	$(top_builddir)/mgmt/config/libconfigmanager.la \
+	$(top_builddir)/mgmt/config/libconfigmanager.a \
 	$(top_builddir)/mgmt/rpc/librpcpublichandlers.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
