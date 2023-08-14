@@ -264,6 +264,28 @@ public:
    */
   template <typename Binding> BufferWriter &print_n(Binding const &names, TextView const &fmt);
 
+  /** Write formattted data.
+   *
+   * @tparam T Data type.
+   * @param spec Format specifier.
+   * @param t Instance to print.
+   * @return @a this
+   *
+   * Essentially this forwards @a t to @c bwformat.
+   */
+  template <typename T> BufferWriter & format(bwf::Spec const& spec, T && t);
+
+  /** Write formattted data.
+   *
+   * @tparam T Data type.
+   * @param spec Format specifier.
+   * @param t Instance to print.
+   * @return @a this
+   *
+   * Essentially this forwards @a t to @c bwformat.
+   */
+  template <typename T> BufferWriter & format(bwf::Spec const& spec, T const& t);
+
   /** IO stream operator.
    *
    * @param stream Output stream.
