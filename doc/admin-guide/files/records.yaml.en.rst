@@ -5204,6 +5204,13 @@ Sockets
    ``2`` Tracks IO Buffer Memory and OpenSSL Memory allocations and releases
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.system_clock INT 0
+
+   *For advanced users only*. This allows to specify the underlying system clock
+   used by ATS. The default is ``CLOCK_REALTIME`` (``0``), but a higher performance
+   option could be ``CLOCK_REALTIME_COARSE`` (``5``). See ``clock_gettime(2)`` for
+   more details. On Linux, these definitions can be found in ``<linux/time.h>``.
+
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
    Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported

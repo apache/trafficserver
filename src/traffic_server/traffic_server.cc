@@ -1943,6 +1943,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
+  // Pick the system clock to choose, likely only on Linux. See <linux/time.h>.
+  extern int gSystemClock; // 0 == CLOCK_REALTIME, the default
+  REC_ReadConfigInteger(gSystemClock, "proxy.config.system_clock");
+
   // JSONRPC server and handlers
   if (auto &&[ok, msg] = initialize_jsonrpc_server(); !ok) {
     Warning("JSONRPC server could not be started.\n  Why?: '%s' ... Continuing without it.", msg.c_str());

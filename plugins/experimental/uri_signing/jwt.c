@@ -85,6 +85,7 @@ double
 now(void)
 {
   struct timespec t;
+
   if (!clock_gettime(CLOCK_REALTIME, &t)) {
     return (double)t.tv_sec + 1.0e-9 * (double)t.tv_nsec;
   }

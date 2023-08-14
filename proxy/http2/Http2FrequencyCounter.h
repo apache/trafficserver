@@ -38,5 +38,5 @@ protected:
   ink_hrtime _last_update = 0;
 
 private:
-  virtual ink_hrtime _get_hrtime();
+  virtual ink_hrtime _ink_get_hrtime();
 };

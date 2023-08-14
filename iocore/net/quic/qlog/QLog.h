@@ -47,7 +47,7 @@ public:
   };
 
   Trace(const std::string &odcid, const std::string &title = "", const std::string &desc = "")
-    : _reference_time(Thread::get_hrtime()), _odcid(odcid)
+    : _reference_time(ink_get_hrtime()), _odcid(odcid)
   {
   }
 
@@ -96,7 +96,7 @@ public:
   void encode(YAML::Node &node);
 
 private:
-  int64_t _reference_time = Thread::get_hrtime();
+  int64_t _reference_time = ink_get_hrtime();
   std::string _odcid;
   std::string _title;
   std::string _desc;

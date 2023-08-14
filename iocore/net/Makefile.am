@@ -52,9 +52,9 @@ test_certlookup_SOURCES = \
 	SSLCertLookup.cc
 
 test_certlookup_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	@YAMLCPP_LIBS@ \
 	@SWOC_LIBS@ \

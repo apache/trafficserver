@@ -107,7 +107,7 @@ net_connections_to_throttle(ThrottleType t)
 TS_INLINE void
 check_shedding_warning()
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
     Warning("number of connections reaching shedding limit");
@@ -129,7 +129,7 @@ check_net_throttle(ThrottleType t)
 TS_INLINE void
 check_throttle_warning(ThrottleType type)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     int connections       = net_connections_to_throttle(type);
@@ -205,7 +205,7 @@ accept_error_seriousness(int res)
 TS_INLINE void
 check_transient_accept_error(int res)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ink_hrtime t = ink_get_hrtime();
   if (!last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);

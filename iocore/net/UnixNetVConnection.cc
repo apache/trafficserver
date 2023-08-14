@@ -65,7 +65,7 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
   Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
   (void)thread;
   if (vc->inactivity_timeout_in) {
-    vc->next_inactivity_timeout_at = Thread::get_hrtime() + vc->inactivity_timeout_in;
+    vc->next_inactivity_timeout_at = ink_get_hrtime() + vc->inactivity_timeout_in;
   } else {
     vc->next_inactivity_timeout_at = 0;
   }
@@ -844,7 +844,7 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
-    next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
+    next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
   }
 }
 
@@ -1319,7 +1319,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
-  next_inactivity_timeout_at = (timeout_in > 0) ? Thread::get_hrtime() + inactivity_timeout_in : 0;
+  next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
 }
 
 TS_INLINE void

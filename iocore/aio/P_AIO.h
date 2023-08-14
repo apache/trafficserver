@@ -152,7 +152,7 @@ public:
 
   AIOTestData() : Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
   {
-    start = ink_get_hrtime();
+    start = ink_ink_get_hrtime();
     SET_HANDLER(&AIOTestData::ink_aio_stats);
   }
 };

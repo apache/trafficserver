@@ -133,7 +133,7 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
 
   ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
-  e->start_time = Thread::get_hrtime();
+  e->start_time = ink_get_hrtime();
 #endif
 
 #ifdef ENABLE_EVENT_TRACKER
@@ -175,7 +175,7 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
 
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
+  return schedule(e->init(cont, ink_get_hrtime() + t, 0), et);
 }
 
 TS_INLINE Event *
@@ -195,6 +195,6 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   if (t < 0) {
     return schedule(e->init(cont, t, t), et);
   } else {
-    return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
+    return schedule(e->init(cont, ink_get_hrtime() + t, t), et);
   }
 }

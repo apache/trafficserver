@@ -375,7 +375,7 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
     return true;
   }
 
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
 
   // loop over the non-active connections and try to close them
   NetEvent *ne         = active_queue.head;
@@ -422,7 +422,7 @@ void
 NetHandler::manage_keep_alive_queue()
 {
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now                = Thread::get_hrtime();
+  ink_hrtime now                = ink_get_hrtime();
 
   Debug("v_net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);

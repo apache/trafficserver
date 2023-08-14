@@ -72,7 +72,7 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = Thread::get_hrtime();
+    ink_hrtime now = ink_get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
@@ -106,7 +106,7 @@ public:
         Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
               nh.config.default_inactivity_timeout);
         ne->use_default_inactivity_timeout = true;
-        ne->next_inactivity_timeout_at     = Thread::get_hrtime() + ne->default_inactivity_timeout_in;
+        ne->next_inactivity_timeout_at     = ink_get_hrtime() + ne->default_inactivity_timeout_in;
         ne->inactivity_timeout_in          = 0;
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
       }
