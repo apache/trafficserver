@@ -418,7 +418,8 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         ArgParser::Option cur_option = it->second;
         // handle environment variable
         if (!cur_option.envvar.empty()) {
-          ret.set_env(cur_option.key, getenv(cur_option.envvar.c_str()) ? getenv(cur_option.envvar.c_str()) : "");
+          const char *const env = getenv(cur_option.envvar.c_str());
+          ret.set_env(cur_option.key, nullptr != env ? env : "");
         }
         ret.append_arg(cur_option.key, value);
         check_map[cur_option.long_option] += 1;
@@ -462,7 +463,8 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         }
         // handle environment variable
         if (!cur_option.envvar.empty()) {
-          ret.set_env(cur_option.key, getenv(cur_option.envvar.c_str()) ? getenv(cur_option.envvar.c_str()) : "");
+          const char *const env = getenv(cur_option.envvar.c_str());
+          ret.set_env(cur_option.key, nullptr != env ? env : "");
         }
       }
     }
@@ -507,7 +509,8 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
       }
       // set ENV var
       if (!_envvar.empty()) {
-        ret.set_env(_key, getenv(_envvar.c_str()) ? getenv(_envvar.c_str()) : "");
+        const char *const env = getenv(_envvar.c_str());
+        ret.set_env(_key, nullptr != env ? env : "");
       }
       break;
     }
