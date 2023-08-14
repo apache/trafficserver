@@ -63,7 +63,12 @@ public:
   Metrics &operator=(Metrics &&)          = delete;
   Metrics(Metrics &&)                     = delete;
 
-  virtual ~Metrics() = default;
+  virtual ~Metrics()
+  {
+    for (size_t i = 0; i <= _cur_blob; ++i) {
+      delete _blobs[i];
+    }
+  }
 
   Metrics()
   {
