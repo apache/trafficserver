@@ -2352,10 +2352,6 @@ AC_CONFIG_FILES([
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
-  example/Makefile
-  example/plugins/Makefile
-  example/plugins/c-api/Makefile
-  example/plugins/cpp-api/Makefile
   include/Makefile
   include/ts/Makefile
   include/tscpp/api/Makefile
@@ -2382,6 +2378,9 @@ AC_CONFIG_FILES([
   mgmt/rpc/Makefile
   mgmt/config/Makefile
   plugins/Makefile
+  plugins/example/Makefile
+  plugins/example/c-api/Makefile
+  plugins/example/cpp-api/Makefile
   proxy/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile

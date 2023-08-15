@@ -27,7 +27,7 @@ export CCACHE_BASEDIR
 # and mgmt, hence we have to build proxy/hdrs first.
 
 # depends on the generates ts/ts.h include file.
-SUBDIRS = include lib src/tscpp/util src/tscore src/records iocore proxy mgmt src plugins tools example rc configs tests
+SUBDIRS = include lib src/tscpp/util src/tscore src/records iocore proxy mgmt src plugins tools rc configs tests
 
 if BUILD_DOCS
 SUBDIRS += doc include
@@ -91,10 +91,10 @@ rel-candidate: asf-dist-sign-rc
 	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all
-	@cd example && $(MAKE) $(AM_MAKEFLAGS)
+	@cd plugins/example && $(MAKE) $(AM_MAKEFLAGS)
 
 install-examples: examples
-	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
+	@cd plugins/example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
 
 $(abs_top_srcdir)/.git/hooks/pre-commit: $(abs_top_srcdir)/tools/git/pre-commit
 	@if [ -d $(abs_top_srcdir)/.git/hooks ]; then \
@@ -125,7 +125,6 @@ autopep8:
 #
 CLANG_FORMAT_DIR_TARGETS = \
 	clang-format-src \
-	clang-format-example \
 	clang-format-iocore \
 	clang-format-include \
 	clang-format-mgmt \
@@ -146,9 +145,6 @@ clang-format: $(CLANG_FORMAT_SENTINEL)
 
 clang-format-src:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/src
-
-clang-format-example:
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/example
 
 clang-format-iocore:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/iocore
