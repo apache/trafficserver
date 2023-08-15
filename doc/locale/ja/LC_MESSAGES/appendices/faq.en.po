@@ -132,32 +132,6 @@ msgid ""
 msgstr ""
 "これについては :ref:`log-formats-squid-format` に詳細に説明されています。"
 
-#: ../../../appendices/faq.en.rst:66
-msgid "What is recorded by the ``cqtx`` field in a custom log file?"
-msgstr ""
-"カスタムログファイル内の ``cqtx`` フィールドには何が記録されていますか？"
-
-#: ../../../appendices/faq.en.rst:68
-msgid ""
-"In *forward proxy mode*, the ``cqtx`` field records the complete client "
-"request in the log file (for example, ``GET http://www.company.com "
-"HTTP/1.0``)."
-msgstr ""
-"*フォワードプロキシーモード* では、 ``cqtx`` フィールドは完全なクライアント"
-"のリクエストをログファイルに記録します (例: ``GET http://www.company.com "
-"HTTP/1.0``)。"
-
-#: ../../../appendices/faq.en.rst:70
-msgid ""
-"In *reverse proxy mode*, the ``cqtx`` field records the hostname or IP "
-"address of the origin server because Traffic Server first remaps the "
-"request as per map rules in the :file:`remap.config` file."
-msgstr ""
-"*リバースプロキシーモード* では ``cqtx`` フィールドはオリジンサーバーのホス"
-"ト名または IP アドレスを記録します。なぜなら Traffic Server はリクエストを :"
-"file:`remap.config` ファイル内のマッピングルールごとにリクエストをまずリマッ"
-"プを行うからです。"
-
 #: ../../../appendices/faq.en.rst:75
 msgid ""
 "Does Traffic Server refresh entries in its host database after a certain "

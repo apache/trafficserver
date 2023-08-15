@@ -584,19 +584,18 @@ sshv  Origin Response       Origin server's response HTTP version.
 Request Details
 ~~~~~~~~~~~~~~~
 
-.. _cqtx:
-
-The following logging fields are used to obtain the actual HTTP request
-details.
+The following logging fields show the details of the actual HTTP request and can be used in combination to reproduce a client request line (e.g. ``GET http://www.company.com HTTP/1.0``).
 
 ===== ============== ==========================================================
 Field Source         Description
 ===== ============== ==========================================================
-cqtx  Client Request The full HTTP client request text, minus headers, e.g.
-                     ``GET http://www.company.com HTTP/1.0``. In reverse proxy
-                     mode, |TS| logs rewritten/mapped URL (according to the
-                     rules in :file:`remap.config`), not the pristine/unmapped
-                     URL.
+cqhm  Client Request HTTP method used in the client request to the |TS| proxy
+                     (e.g. ``GET``, ``POST``, etc.).
+pqu   Proxy Request  URL of the proxy request from |TS| to the origin. If a
+                     remap rule is used (:file:`remap.config`), the original
+                     client URL is replaced with the URL in the target of the
+                     remap rule.
+cqpv  Client Request Client request protocol and version.
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-ssl:
