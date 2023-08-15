@@ -125,6 +125,35 @@ public:
     return (id >= 0 && ((blob < _cur_blob && entry < METRICS_MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
   }
 
+  // Static methods to encapsulate access to the atomic's
+  static void
+  increment(IntType *metric, uint64_t val = 1)
+  {
+    ink_assert(metric);
+    metric->fetch_add(val);
+  }
+
+  static void
+  decrement(IntType *metric, uint64_t val = 1)
+  {
+    ink_assert(metric);
+    metric->fetch_sub(val);
+  }
+
+  static int64_t
+  read(IntType *metric)
+  {
+    ink_assert(metric);
+    return metric->load();
+  }
+
+  static void
+  write(IntType *metric, int64_t val)
+  {
+    ink_assert(metric);
+    return metric->store(val);
+  }
+
   class iterator
   {
   public:
