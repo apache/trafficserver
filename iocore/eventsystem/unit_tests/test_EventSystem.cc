@@ -71,10 +71,10 @@ TEST_CASE("EventSystem", "[iocore]")
     }
   };
 
-  alarm_printer *alrm    = new alarm_printer(new_ProxyMutex());
-  process_killer *killer = new process_killer(new_ProxyMutex());
-  eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
-  eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));
+  alarm_printer alrm{new_ProxyMutex()};
+  process_killer killer{new_ProxyMutex()};
+  eventProcessor.schedule_in(&killer, HRTIME_SECONDS(10));
+  eventProcessor.schedule_every(&alrm, HRTIME_SECONDS(1));
 
   while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
