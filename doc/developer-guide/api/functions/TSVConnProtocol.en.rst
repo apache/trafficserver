@@ -43,11 +43,11 @@ To be effective, these calls must be made from the early TLS negotiation hooks l
 Examples
 ========
 
-The example below is excerpted from `example/plugins/c-api/disable_http2/disable_http2.cc`
+The example below is excerpted from `plugins/example/c-api/disable_http2/disable_http2.cc`
 in the Traffic Server source distribution. It shows how the :func:`TSVConnProtocolDisable` function
 can be used in a plugin called from the :member:`TS_SSL_SERVERNAME_HOOK`.
 
-.. literalinclude:: ../../../../example/plugins/c-api/disable_http2/disable_http2.cc
+.. literalinclude:: ../../../../plugins/example/c-api/disable_http2/disable_http2.cc
   :language: c
   :lines: 41-54
 

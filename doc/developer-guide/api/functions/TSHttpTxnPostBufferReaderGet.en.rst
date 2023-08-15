@@ -74,5 +74,5 @@ handler makes use of :c:func:`TSHttpTxnPostBufferReaderGet`.
      return 0;
    }
 
-:ts:git:`example/plugins/c-api/request_buffer/request_buffer.cc` is a simple
+:ts:git:`plugins/example/c-api/request_buffer/request_buffer.cc` is a simple
 yet complete plugin that accesses HTTP request bodies.

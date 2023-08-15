@@ -43,5 +43,5 @@ This plugin illustrates:
 
 -  How to use the plugin configuration management interface
 
-.. literalinclude:: ../../../../../example/plugins/c-api/denylist_1/denylist_1.cc
+.. literalinclude:: ../../../../../plugins/example/c-api/denylist_1/denylist_1.cc
    :language: c
