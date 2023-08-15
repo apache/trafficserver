@@ -16,3 +16,7 @@
 
 noinst_LTLIBRARIES += gold_tests/pluginTest/tsapi/test_tsapi.la
 gold_tests_pluginTest_tsapi_test_tsapi_la_SOURCES = gold_tests/pluginTest/tsapi/test_tsapi.cc
+
+noinst_LTLIBRARIES += gold_tests/pluginTest/tsapi/test_TSHttpTxnServerAddrSet.la
+gold_tests_pluginTest_tsapi_test_TSHttpTxnServerAddrSet_la_SOURCES = \
+  gold_tests/pluginTest/tsapi/test_TSHttpTxnServerAddrSet.cc
