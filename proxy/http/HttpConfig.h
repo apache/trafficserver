@@ -55,6 +55,8 @@
 #include "tscpp/util/ts_ip.h"
 #include "api/Metrics.h"
 
+using ts::Metrics;
+
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
 

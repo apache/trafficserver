@@ -36,13 +36,13 @@
 #include "tscpp/util/ts_errata.h"
 #include "api/Metrics.h"
 
+using ts::Metrics;
+
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
-int max_records_entries = REC_MAX_RECORDS;
-
+int max_records_entries   = REC_MAX_RECORDS;
 static bool g_initialized = false;
-
-RecRecord *g_records = nullptr;
+RecRecord *g_records      = nullptr;
 std::unordered_map<std::string, RecRecord *> g_records_ht;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
