@@ -23,7 +23,7 @@ check_PROGRAMS =
 noinst_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 
-SUBDIRS =
+SUBDIRS = example
 
 AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 
